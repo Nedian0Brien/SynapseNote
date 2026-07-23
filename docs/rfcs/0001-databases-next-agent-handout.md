@@ -73,6 +73,8 @@
 - Latest Agent Run current-view recovery changeset: `../../.changeset/agent-run-current-view-recovery.md`
 - Latest retrieval explainability changeset: `../../.changeset/database-retrieval-explainability.md`
 - Latest Notion canvas vocabulary changeset: `../../.changeset/notion-canvas-page-vocabulary.md`
+- Latest converged-creation changeset: `../../.changeset/notion-converged-creation.md`
+- Latest route-handoff changeset: `../../.changeset/notion-route-handoff.md`
 
 ## Objective and completion rule
 
@@ -128,12 +130,15 @@ This is a vocabulary and hierarchy correction, not evidence that visual,
 Electron, manual accessibility, usability, performance, or release gates are
 closed.
 
-The focused Electron launch was attempted once after this change. It did not
-reach an Electron window: Turbo stopped at
-`@nedian0brien/synapse-native-config#build` because `@napi-rs/cli` could not
-run `cargo metadata`. Treat this as an environment/toolchain blocker for
-NUI-105, not as a failed Notion interaction; do not repeat the full launch
-until the native-config Rust prerequisites are repaired.
+The packaged Turbo Electron launch remains blocked at
+`@nedian0brien/synapse-native-config#build` because `@napi-rs/cli` cannot run
+`cargo metadata` in this checkout. A direct development Electron fallback can
+launch after rebuilding `packages/core`; it has reached the canonical table
+surface once, but that partial observation is not a complete NUI-105 journey.
+The latest post-fix capture attempt was stopped by the locked Mac. Treat this
+as an evidence blocker, not a failed Notion interaction, and do not repeat the
+full launch until the desktop is unlocked and the native-config path is
+available.
 
 ### Notion surface continuation (2026-07-23)
 
@@ -177,6 +182,28 @@ record peek/page behavior. The table-edge property picker is covered by
 schema commit still uses the reviewed mutation seam. `4cd0d8ff` adds a narrow
 human-only direct-safe policy for adding an empty property from a table edge;
 agent-authored schema writes remain review-required.
+
+### 2026-07-23 Notion creation handoff continuity
+
+`a450e698 fix: complete notion database page handoff` completes the functional
+handoff guard around the primary Notion path:
+
+- A no-op plan whose desired canonical state already exists is reported as
+  `converged`, so a renderer reload or repeated navigation opens the existing
+  page instead of showing a blocked creation state.
+- The temporary `#database/new` page closes explicitly after replacing the
+  hash with the canonical `#database/<database>/<source>/<view>` workspace.
+- The request is reused across React StrictMode's development effect
+  probe; the page no longer issues duplicate mutations or gets stuck in
+  `Preparing your editable table`. Real unmounts still abort the request.
+- Focused DOM, mutation-client, typecheck, Biome, and diff checks pass. No
+  repository-wide server suite or repeated E2E run was used.
+
+This is a functional continuity fix, not a claim of DBMS feature parity or
+complete Notion visual parity. The primary acceptance flow remains:
+
+`new page or slash → page/block title → editable table → inline New page row →
+property/view controls → record peek/page`.
 
 ## Current status
 
@@ -249,8 +276,9 @@ agent-authored schema writes remain review-required.
   opened the shared full-page route, and removed the linked block without
   deleting the canonical record. The follow-up slash-menu capture now proves
   `/database` and `/table` lead with `New database` and `Linked view of
-  database`. Electron, complete linked
-  state-matrix, accessibility, responsive, usability, performance, and
+  database`. A direct Electron dev fallback has reached the canonical table
+  once, but the complete post-fix Electron journey is not captured. Complete
+  linked state-matrix, accessibility, responsive, usability, performance, and
   packaged-release evidence remain open.
 - A-K, M-P are complete. L is complete except L-017. Q is complete except
   Q-012. R-005, R-017, and R-019 remain; R-018 is closed. S-010 and S-011

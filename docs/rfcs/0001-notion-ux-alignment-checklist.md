@@ -49,12 +49,15 @@ The following are non-negotiable for the primary human path:
    recovery, but are hidden from the first-use surface and never determine the
    default layout.
 
-The current running capture fails this bar: `#database/new` shows a large
-`New database` method chooser while an `Untitled database` table surface is
-already mounted underneath it. This is an administration workflow, not the
-Notion page/block workflow. The capture is retained as
-`assets/0001-notion-ux-audit/06-current-new-database-screen.png`; it is the
-starting regression target for the next implementation pass.
+The historical capture failed this bar: `#database/new` showed a large
+`New database` method chooser while an `Untitled database` table surface was
+already mounted underneath it. That was an administration workflow, not the
+Notion page/block workflow. The capture remains at
+`assets/0001-notion-ux-audit/06-current-new-database-screen.png` as a regression
+baseline. The current implementation removes that chooser from the blank
+human path and hands the page directly to the canonical workspace; the live
+web capture proves the resulting table route, while a complete Electron,
+visual, and human-session capture remains an acceptance gate.
 
 - The command palette, sidebar toolbar, empty-space menu, onboarding footer,
   and empty-editor footer now expose a user-facing `New database` entry. A
@@ -128,7 +131,7 @@ user's canonical project, or run the repository-wide/server test suite.
 | Creation       | `DatabaseCreationDialog.tsx` accepts an optional blank title, keeps storage details in a collapsed disclosure, and presents Blank, Template, Existing folder, CSV/TSV, and Assistant in one chooser. Blank routes through an automatic exact-plan commit; templates/imports/folder/agent paths retain the explicit review boundary, with the production surface injecting the installed-agent composer. Existing-folder identity assignment then hands off to a dedicated advanced source-identity migration surface. | The first-use path is shorter and safer for routine human creation while all higher-risk methods remain discoverable from the same start surface and retain explicit review boundaries. |
 | Blank schema   | `createBlankDatabaseDesiredState` creates one title property; after commit the shell selects the new source and first view on the canonical route. | A minimal database lands in an editable table; the management surface remains available for administration. |
 | Inline block   | Fresh `New database`/`Linked view of database`/`Inline database` inserts use a catalog/source/view picker; raw references remain advanced for existing MDX, and the block renders shared records with visible tabs and full-page handoff. | The core inline/linked journey is now unified for creation, editing, conversion, and removal; duplicate-view action and full state-matrix parity remain open. |
-| Database shell | `DatabaseTableDialog.tsx` supports the canonical `DatabaseWorkspacePage` plus the legacy management wrapper; the page header owns breadcrumbs, title, favorite, icon/cover, and page actions while the table surface remains shared. | The engine is reusable, but the captured default creation surface still exposes the dense management toolbar/wizard and an overlapping table. This does **not** pass Notion UX parity; administration must become secondary. |
+| Database shell | `DatabaseTableDialog.tsx` supports the canonical `DatabaseWorkspacePage` plus the legacy management wrapper; the page header owns breadcrumbs, title, favorite, icon/cover, and page actions while the table surface remains shared. Blank creation now explicitly closes the temporary page shell after route handoff, including when the parent listener order changes. | The primary path is document-native in source and focused DOM coverage; the legacy administration surface remains secondary. Visual, responsive, accessibility, and cross-host evidence are still required before claiming full Notion parity. |
 | Human writes   | Direct-safe cell/row writes use plan → auto-approval → commit; destructive, bulk, schema, and elevated writes retain plan → ghost → explicit review → commit.                    | The interruption is removed for common edits, but optimistic/offline acknowledgement and full policy coverage remain. |
 | Views          | Saved views now render as visible tabs with `+`; the dropdown and `Manage views` dialog remain available.                                                                      | The primary view switch is closer to Notion, but reorder/rename/favorite controls still live in management.          |
 | Renderer       | `editor/components/DatabaseView.tsx` renders all major layouts and record peeks.                                                                                               | This is reusable once insertion, editing, and view controls are redesigned.                                          |
@@ -1139,6 +1142,31 @@ This closes UX-808 at the functional resulting-page handoff layer. Cross-host
 agent commit callbacks, visual first-use, responsive, and packaged-release
 evidence remain open under UX-11.
 
+### Notion creation handoff continuity evidence (2026-07-23)
+
+The page-first blank creation path now treats an already-converged canonical
+database as a successful navigation target instead of a blocked mutation. The
+temporary creation page closes explicitly after it replaces the route, so the
+canonical page workspace cannot remain hidden behind an overlay when navigation
+listeners run in a different order. The in-flight request is kept alive across
+the React StrictMode effect probe, preventing both duplicate database creation
+and the prior indefinite `Preparing your editable table` state; a real unmount
+still aborts the request.
+
+Focused evidence in `a450e698 fix: complete notion database page handoff`:
+
+- `NotionDatabaseCreationPage.dom.test.tsx`: 3 tests / 15 expectations,
+  including parent-callback churn and a StrictMode no-duplicate mutation probe.
+- `database-mutation-client.test.ts`: converged non-committable plans remain
+  converged and never enter review/commit.
+- `DatabaseTableDialog.dom.test.tsx`: blank catalog creation and post-handoff
+  inline new-page focus pass (2 filtered tests / 9 expectations).
+- App typecheck and targeted Biome/diff checks pass.
+
+This closes a functional continuity failure in the Notion-first slice; it does
+not close UX-008/UX-009, NUI-105, NUI-701–NUI-705, or the manual accessibility,
+visual, usability, performance, and release gates.
+
 ### Stable machine-ID disclosure evidence (2026-07-23)
 
 Canonical database workspaces and record surfaces now carry stable database,
@@ -1552,7 +1580,7 @@ crossed the document-native UX bar:
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, command-palette recents/search, backlink and relation links, normal page chrome, and local overflow guardrails | Route, page surface, and navigation identity are evidenced; responsive visual/cross-host proof remains incomplete. |
 | Inline linked view | Catalog → source → saved-view picker, inline creation, shared rows, visible tabs, replacement, conversion, duplicate configuration, block removal, and aligned loading/empty/error/permission/offline/stale states | The core inline/linked functional contract is evidenced; the complete visual state matrix remains open. |
 | Direct editing | Direct-safe cell/row auto-approval, optimistic reconciliation, offline/conflict/failure states, post-commit focus, standard undo/redo, and durable History receipts are covered by focused DOM evidence | Elevated mutations retain exact review; full visual/cross-host acceptance remains open. |
-| Browser evidence | In-app web renderer is reachable on IPv4 and normal New-page, page-first, inline creation, record sharing, and cancellation journeys are captured; no Electron or complete state-matrix journey is captured | The core web slice is evidenced, but NUI-105/NUI-701–NUI-705 remain release gates for cross-host, accessibility, responsive, usability, performance, and packaged-release parity. |
+| Browser evidence | In-app web renderer is reachable on IPv4 and normal New-page, page-first, inline creation, record sharing, and cancellation journeys are captured. Direct Electron dev launch has reached the canonical table once, but a complete post-handoff journey is not yet captured; the latest attempt was blocked by the locked Mac. | The core web slice and a partial Electron surface are evidenced, but NUI-105/NUI-701–NUI-705 remain release gates for cross-host, accessibility, responsive, usability, performance, and packaged-release parity. |
 
 ### Priority order for the next implementation pass
 
