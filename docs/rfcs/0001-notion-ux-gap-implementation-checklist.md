@@ -508,7 +508,7 @@ treated as visual parity until a browser capture is attached.
   entry. Pixel-level Notion visual parity remains open. Evidence:
   `DatabaseTableDialog.dom.test.tsx`
   schema-management and contextual property-menu journeys in the verified
-  80-test / 526-expectation suite, `DatabasePropertiesDialog.dom.test.tsx`
+  focused suite, `DatabasePropertiesDialog.dom.test.tsx`
   rename/reorder/delete journeys, and the
   linked-view DOM journey. Pixel-level visual parity remains a separate
   NUI-701/NUI-702 gate; the stable-ID property affordance and

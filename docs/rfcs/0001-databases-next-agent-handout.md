@@ -2674,7 +2674,9 @@ Focused evidence:
   contextual-menu journeys still pass, plus a dedicated test proves a
   Notion-surface rename calls `onRenameProperty` and does not open
   `onManageProperties`.
-- The complete affected DOM file passes **80 tests / 526 expectations**.
+- The affected DOM file's pre-follow-up full run passed **80 tests / 526
+  expectations**; the later Title-rename and header-insertion additions each
+  pass their focused regressions, avoiding another expensive full DOM sweep.
 - App typecheck and targeted Biome pass; `git diff --check` passes.
 
 This closes only the canonical in-table rename subpath. Keep the broader
