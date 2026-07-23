@@ -433,6 +433,11 @@ view: Tasks · Open tasks`, `Change database view: Tasks · Open tasks`, and
 three names and the offline-refresh journey verifies the refresh action still
 works after the context is added.
 
+The inline agent trigger follows the same visible context (`Ask agent about
+Tasks · Open tasks`) instead of a document-wide generic `Ask agent` label. Its
+scope payload remains the stable database/source/view reference; only the
+human/AX label is contextualized.
+
 The follow-up regression capture found that remounting the manager during a
 draft could replay the initial action and create duplicate copies. The manager
 now keeps a stable instance across schema refreshes, synchronizes its view-name
