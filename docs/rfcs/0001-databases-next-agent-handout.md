@@ -8,6 +8,9 @@
 - UX gap checklist: [0001-notion-ux-gap-implementation-checklist.md](./0001-notion-ux-gap-implementation-checklist.md)
 - Changeset: `../../.changeset/add-file-native-database-core.md`
 - Latest feature changeset: `../../.changeset/inline-database-create-route.md`
+- Latest property-journey test commit: `f5ff201d`
+- Latest primary-journey docs commit: `f6d1cfcd`
+- Latest primary-journey feature commit: `b79b1801`
 - Latest inline UX changeset: `../../.changeset/inline-database-focus.md`
 - Latest inline recovery changeset: `../../.changeset/inline-database-undo.md`
 - Latest inline history changeset: `../../.changeset/inline-database-history.md`
@@ -2242,6 +2245,23 @@ agent proposal, destructive review, accessibility/manual checks, Electron
 capture, and the complete primary-view matrix remain open. No repository-wide
 server suite or broad/repeated E2E run was used.
 
+### 2026-07-23 property-management journey stabilization
+
+`f5ff201d test: stabilize property management journey` records a bounded
+system-Chrome pass for `packages/app/tests/stress/database-manage-properties.e2e.ts`:
+
+- property add → reviewed commit → `Priority` column visible;
+- valued `Status` delete → reviewed commit clears the record value;
+- a second reviewed delete → schema no longer exposes `Status`.
+
+The test now follows the semantic Command Palette and database breadcrumb,
+targets status values through their cell buttons, explicitly advances the
+destructive review, and closes the management dialog between the two commits.
+This proves only the add path and valued-delete recovery sequence. Property
+configure/reorder/hide, full view mutation coverage, reload/agent journeys,
+accessibility/manual review, Electron capture, and the complete primary matrix
+remain open. No full server suite or repeated broad E2E run was used.
+
 ### Notion blank-creation identity and lifecycle follow-up (2026-07-23)
 
 The latest inline-first slice fixes two failures that were visible in the
@@ -2385,7 +2405,10 @@ closed in the authoritative checklist.
   bounded system-Chrome run passed all three cases in
   `tests/stress/database-document-native-journeys.e2e.ts`; the complete
   primary-view suite, accessibility suite, and Electron capture are still
-  required before closing this item.
+  required before closing this item. The bounded
+  `tests/stress/database-manage-properties.e2e.ts` run also passes property
+  add plus the two-step valued-property delete review; configure/reorder/hide,
+  reload, agent, and the remaining mutation matrix are still open.
 - **R-017** — >=90% prompt-to-valid-database creation without manual repair.
   The reusable evaluator and focused replay-shaped test now exist at
   `packages/server/src/database-creation-eval.ts` and

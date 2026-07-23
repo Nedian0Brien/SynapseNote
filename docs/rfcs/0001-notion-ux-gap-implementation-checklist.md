@@ -598,9 +598,12 @@ treated as visual parity until a browser capture is attached.
   View task` affordance. On 2026-07-23, all three primary cases ran green in
   bounded focused system-Chrome runs (temporary no-video config; Playwright
   Chromium/ffmpeg cache remains incomplete) after `b79b1801` aligned the
-  current page/role contracts. Property configuration, agent proposal,
-  destructive review, reload persistence, and full primary coverage remain
-  open.
+  current page/role contracts. A separate bounded system-Chrome pass also
+  covers property add and the two-step valued-property deletion review in
+  `database-manage-properties.e2e.ts`; `f5ff201d` aligns that journey with the
+  semantic palette/breadcrumb and reviewed destructive-action surfaces.
+  Property configure/reorder/hide, agent proposal, reload persistence, and
+  full primary coverage remain open.
 - [ ] **NUI-702** Run keyboard, screen-reader, contrast, 768px responsive, and
   reduced-motion checks on those same journeys.
 - [ ] **NUI-703** Run five uncoached first-use sessions. At least four users

@@ -664,8 +664,14 @@ copy/paste, import/export, API, agent schema, permissions, and tests agree.
       undo/redo/record route, bulk property edit/undo, and saved-view
       create/switch/rename plus List context inspection) and all three cases
       in `tests/stress/database-document-native-journeys.e2e.ts`. The complete
-      primary-view matrix, accessibility suite, reload/destructive/agent
-      journeys, and Electron capture remain required before closing R-005.
+      primary-view matrix, accessibility suite, reload/agent journeys, and
+      Electron capture remain required before closing R-005. The bounded
+      `tests/stress/database-manage-properties.e2e.ts` run now also passes the
+      add-property case and the valued-property delete flow (record value
+      cleanup followed by a separate schema removal review); `f5ff201d` keeps
+      the test on the semantic command-palette/breadcrumb contracts. Full
+      property/view mutation coverage and the remaining destructive/agent
+      matrix are still open.
 - [x] **R-006** Add property-based tests for filters, sorts, pagination, formula
       evaluation, transactions, and import/export round trips.
 - [x] **R-007** Add fuzz corpora for manifests, YAML/frontmatter, formula syntax,

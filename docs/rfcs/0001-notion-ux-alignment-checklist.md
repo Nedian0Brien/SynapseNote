@@ -2224,7 +2224,11 @@ capability alone is insufficient.
       undo/redo, and stable record-route opening in system Chrome; reload
       persistence remains open.
 - [ ] **UX-1105** E2E property add/configure/reorder/hide and destructive delete
-      review.
+      review. The bounded `database-manage-properties.e2e.ts` system-Chrome
+      run now passes property add and the valued-property delete flow with its
+      two reviewed commits (unset record values, then remove the unused
+      schema property); configure/reorder/hide and the full matrix remain
+      open.
 - [ ] **UX-1106** E2E view create/switch/configure/duplicate/reorder/delete using
       visible tabs. The primary journey now passes saved-view create, tab
       switch, List rendering, title-based context inspection, and rename in
