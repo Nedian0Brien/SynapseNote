@@ -3514,6 +3514,8 @@ describe('DatabaseTableDialog', () => {
     expect(document.querySelector('[data-slot="dialog-portal"]')).toBeNull();
     expect(document.querySelector('[data-slot="dialog-overlay"]')).toBeNull();
     expect(screen.queryByTestId('database-create-button')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open page' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Show archived' })).toBeNull();
     expect(
       screen.queryByText('Browse canonical Markdown records through a snapshot-consistent table.'),
     ).toBeNull();

@@ -5651,7 +5651,7 @@ function DatabaseTableSurface({
                   <Settings2 aria-hidden="true" /> <Trans>Customize page</Trans>
                 </Button>
               ) : null}
-              {description?.source && selection ? (
+              {description?.source && selection && !isCanvasPresentation ? (
                 <Button
                   variant="outline"
                   size="sm"
@@ -5931,7 +5931,12 @@ function DatabaseTableSurface({
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h2 className="font-semibold text-lg">{description.source.name}</h2>
-                    <p className="text-muted-foreground text-sm">
+                    <p
+                      className={cn(
+                        'text-muted-foreground text-sm',
+                        isCanvasPresentation && 'sr-only',
+                      )}
+                    >
                       {description.source.recordMeaning}
                     </p>
                     <nav
@@ -5981,7 +5986,10 @@ function DatabaseTableSurface({
                             type="button"
                             variant="ghost"
                             size="icon-xs"
-                            className="cursor-grab touch-none active:cursor-grabbing"
+                            className={cn(
+                              'cursor-grab touch-none active:cursor-grabbing',
+                              isCanvasPresentation && 'sr-only',
+                            )}
                             aria-label={`Drag ${view.name} view`}
                             draggable
                             disabled={mutationStatus !== 'idle'}
@@ -6127,16 +6135,18 @@ function DatabaseTableSurface({
                     >
                       <Plus /> <Trans>New record</Trans>
                     </Button>
-                    <Button
-                      variant={showArchived ? 'secondary' : 'outline'}
-                      size="sm"
-                      disabled={mutationStatus !== 'idle'}
-                      aria-pressed={showArchived}
-                      onClick={() => setShowArchived((value) => !value)}
-                    >
-                      <Archive />
-                      {showArchived ? <Trans>Hide archived</Trans> : <Trans>Show archived</Trans>}
-                    </Button>
+                    {!isCanvasPresentation ? (
+                      <Button
+                        variant={showArchived ? 'secondary' : 'outline'}
+                        size="sm"
+                        disabled={mutationStatus !== 'idle'}
+                        aria-pressed={showArchived}
+                        onClick={() => setShowArchived((value) => !value)}
+                      >
+                        <Archive />
+                        {showArchived ? <Trans>Hide archived</Trans> : <Trans>Show archived</Trans>}
+                      </Button>
+                    ) : null}
                     {!isCanvasPresentation ? (
                       <>
                         <Badge variant={description.index.state === 'idle' ? 'gray' : 'warning'}>
@@ -6221,6 +6231,19 @@ function DatabaseTableSurface({
                         >
                           <Trans>Manage views</Trans>
                         </DropdownMenuItem>
+                        {isCanvasPresentation ? (
+                          <DropdownMenuItem
+                            disabled={mutationStatus !== 'idle'}
+                            onSelect={() => setShowArchived((value) => !value)}
+                          >
+                            <Archive aria-hidden="true" />
+                            {showArchived ? (
+                              <Trans>Hide archived</Trans>
+                            ) : (
+                              <Trans>Show archived</Trans>
+                            )}
+                          </DropdownMenuItem>
+                        ) : null}
                         {selectedView && description.source.defaultViewId !== selectedView.id ? (
                           <DropdownMenuItem
                             disabled={mutationStatus !== 'idle'}
