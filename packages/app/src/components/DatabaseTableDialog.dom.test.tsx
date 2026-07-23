@@ -889,6 +889,36 @@ describe('DatabaseTableDialog', () => {
     expect(view.container.querySelector('[data-property-id="prop_url"]')).toBeNull();
   });
 
+  test('renames a property from the Notion table surface without opening the manager', async () => {
+    const onRenameProperty = mock(() => {});
+    const onManageProperties = mock(() => {});
+    const user = userEvent.setup();
+    render(
+      <DatabaseTable
+        databaseId={database.id}
+        source={source}
+        result={queryResult()}
+        notionSurface
+        onRenameProperty={onRenameProperty}
+        onManageProperties={onManageProperties}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Property options for Budget' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Rename or configure property' }));
+
+    const input = await screen.findByRole('textbox', { name: 'Property name for Budget' });
+    await user.clear(input);
+    await user.type(input, 'Estimate');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(onRenameProperty).toHaveBeenCalledWith(
+      source.properties.find((property) => property.id === 'prop_budget'),
+      'Estimate',
+    );
+    expect(onManageProperties).not.toHaveBeenCalled();
+  });
+
   test('renders first-match row colors and property-specific overrides with inspectable metadata', () => {
     render(
       <DatabaseTable

@@ -152,7 +152,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -955,6 +955,7 @@ export function DatabaseTable({
   onInvokeButton,
   onVerificationAction,
   onManageProperties,
+  onRenameProperty,
   onRemoveProperty,
   initialViewState,
   onViewStateChange,
@@ -1027,6 +1028,8 @@ export function DatabaseTable({
     action: 'verify' | 'renew' | 'unverify',
   ) => void;
   onManageProperties?: (propertyId?: string) => void;
+  /** In the document-native table, rename a property from its header menu. */
+  onRenameProperty?: (property: DatabaseProperty, name: string) => void;
   onRemoveProperty?: (property: DatabaseProperty) => void;
   initialViewState?: DatabaseTableViewState;
   onViewStateChange?: (state: DatabaseTableViewState) => void;
@@ -1123,6 +1126,8 @@ export function DatabaseTable({
   const [addPropertyOpen, setAddPropertyOpen] = useState(false);
   const [newPropertyName, setNewPropertyName] = useState('New property');
   const [newPropertyType, setNewPropertyType] = useState<DatabasePropertyType>('text');
+  const [propertyRenameTarget, setPropertyRenameTarget] = useState<DatabaseProperty | null>(null);
+  const [propertyRenameDraft, setPropertyRenameDraft] = useState('');
   const [cellRange, setCellRange] = useState<DatabaseCellRange | null>(null);
   const [gridAnnouncement, setGridAnnouncement] = useState('');
   const [cellMenu, setCellMenu] = useState<DatabaseCellMenu | null>(null);
@@ -1415,8 +1420,85 @@ export function DatabaseTable({
     setNewPropertyName('New property');
   };
 
+  const openPropertyRename = (property: DatabaseProperty) => {
+    setPropertyRenameTarget(property);
+    setPropertyRenameDraft(property.name);
+  };
+
+  const closePropertyRename = () => {
+    setPropertyRenameTarget(null);
+    setPropertyRenameDraft('');
+  };
+
+  const submitPropertyRename = () => {
+    const property = propertyRenameTarget;
+    const name = propertyRenameDraft.trim();
+    if (!property || property.type === 'title' || !name || !onRenameProperty || mutationLocked) {
+      return;
+    }
+    onRenameProperty(property, name);
+    closePropertyRename();
+  };
+
   return (
-    <div ref={tableHostRef}>
+    <div ref={tableHostRef} className="relative">
+      {propertyRenameTarget ? (
+        <Popover
+          open
+          onOpenChange={(nextOpen) => {
+            if (!nextOpen) closePropertyRename();
+          }}
+        >
+          <PopoverAnchor asChild>
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute top-2 left-1/2 size-px"
+            />
+          </PopoverAnchor>
+          <PopoverContent align="center" className="w-72">
+            <div className="grid gap-3">
+              <div>
+                <h3 className="font-medium text-sm">Edit property</h3>
+                <p className="mt-1 text-muted-foreground text-xs">
+                  Change the name without leaving this table.
+                </p>
+              </div>
+              <Input
+                autoFocus
+                value={propertyRenameDraft}
+                aria-label={`Property name for ${propertyRenameTarget.name}`}
+                onChange={(event) => setPropertyRenameDraft(event.currentTarget.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    submitPropertyRename();
+                  }
+                  if (event.key === 'Escape') {
+                    event.preventDefault();
+                    closePropertyRename();
+                  }
+                }}
+              />
+              <p className="text-muted-foreground text-xs">
+                Type: {databasePropertyTypeLabel(propertyRenameTarget.type)}
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="ghost" size="sm" onClick={closePropertyRename}>
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={!propertyRenameDraft.trim() || mutationLocked}
+                  onClick={submitPropertyRename}
+                >
+                  Save
+                </Button>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      ) : null}
       {!notionSurface ? (
         <details
           className="mb-2 rounded-md border bg-muted/10 p-2"
@@ -1908,8 +1990,19 @@ export function DatabaseTable({
                         </DropdownMenuItem>
                       ) : null}
                       <DropdownMenuItem
-                        disabled={!onManageProperties}
-                        onSelect={() => onManageProperties?.(property.id)}
+                        disabled={
+                          property.type === 'title' || (!onManageProperties && !onRenameProperty)
+                        }
+                        onSelect={() => {
+                          if (notionSurface && onRenameProperty) {
+                            // Let the menu finish its dismiss cycle before mounting the
+                            // anchored editor; otherwise Radix treats the newly-opened
+                            // popover as part of the menu's outside interaction.
+                            window.setTimeout(() => openPropertyRename(property), 0);
+                          } else {
+                            onManageProperties?.(property.id);
+                          }
+                        }}
                       >
                         <Pencil aria-hidden="true" />
                         <Trans>Rename or configure property</Trans>
@@ -7957,6 +8050,7 @@ function DatabaseTableSurface({
                       setPropertiesDialogRenameId(propertyId ?? null);
                       setPropertiesDialogOpen(true);
                     }}
+                    onRenameProperty={renameSchemaProperty}
                     onRemoveProperty={removeSchemaProperty}
                   />
                 )}
