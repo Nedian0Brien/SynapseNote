@@ -105,7 +105,7 @@ import { DatabaseFeed } from '@/components/DatabaseFeed';
 import { DatabaseFilesCellEditor } from '@/components/DatabaseFilesCellEditor';
 import { DatabaseForm } from '@/components/DatabaseForm';
 import { DatabaseGallery } from '@/components/DatabaseGallery';
-import { DatabaseList } from '@/components/DatabaseList';
+import { DATABASE_LIST_COLORS, DatabaseList } from '@/components/DatabaseList';
 import { DatabaseMachineIdsDetails } from '@/components/DatabaseMachineIdsDetails';
 import { DatabaseMap } from '@/components/DatabaseMap';
 import { DatabaseSourceIdentityMigrationDialog } from '@/components/DatabaseOnboardingDialog';
@@ -651,6 +651,13 @@ function databaseLinkHref(property: DatabaseProperty, value: unknown): string | 
   if (property.type === 'email') return `mailto:${value}`;
   if (property.type === 'phone') return `tel:${value.replace(/[^+\d]/g, '')}`;
   return null;
+}
+
+function databaseInlineOptionColorClass(color?: string): string {
+  if (color && color in DATABASE_LIST_COLORS) {
+    return DATABASE_LIST_COLORS[color as keyof typeof DATABASE_LIST_COLORS];
+  }
+  return 'bg-muted/70 text-muted-foreground dark:bg-muted/50';
 }
 
 function DatabaseValueCopyButton({
@@ -3001,6 +3008,43 @@ export function DatabaseTable({
                               <MapPin aria-hidden="true" />
                             </Button>
                           </div>
+                        ) : notionSurface &&
+                          (property.type === 'select' ||
+                            property.type === 'status' ||
+                            property.type === 'multi_select') ? (
+                          (() => {
+                            const tagValues = (
+                              Array.isArray(shownValue) ? shownValue : [shownValue]
+                            ).filter(
+                              (value) => value !== undefined && value !== null && value !== '',
+                            );
+                            if (tagValues.length === 0) return '—';
+                            return (
+                              <div className="flex min-w-0 flex-wrap gap-1">
+                                {tagValues.map((value) => {
+                                  const option = property.options.find(
+                                    (candidate) => candidate.id === String(value),
+                                  );
+                                  return (
+                                    <span
+                                      key={String(value)}
+                                      className={cn(
+                                        'inline-flex max-w-full items-center rounded-full border border-transparent px-2 py-0.5 font-sans text-xs normal-case tracking-normal',
+                                        databaseInlineOptionColorClass(option?.color),
+                                      )}
+                                      title={option?.name ?? String(value)}
+                                      data-database-property-tag={property.id}
+                                      data-database-property-tag-option={String(value)}
+                                    >
+                                      <span className="truncate">
+                                        {option?.name ?? String(value)}
+                                      </span>
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })()
                         ) : property.type === 'title' && onOpen ? (
                           <div className="flex min-w-0 items-center gap-1">
                             <Button

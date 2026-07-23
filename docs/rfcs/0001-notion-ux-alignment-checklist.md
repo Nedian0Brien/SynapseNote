@@ -2360,6 +2360,20 @@ matrix.
 - This supports UX-009's density target without closing its required desktop /
   compact captures, manual accessibility review, or browser journey gates.
 
+### Inline select tag treatment pass (2026-07-23)
+
+- Inline `Select`, `Status`, and `Multi-select` values now render as compact,
+  rounded property tags with their configured option color when available.
+  Empty values remain `—`; the canonical/admin table keeps its existing plain
+  display. Tag text remains a normal grid-cell name and option IDs stay in
+  machine-readable data attributes for agent/test inspection.
+- Focused DOM evidence: `DatabaseTableDialog.dom.test.tsx` passes the inline
+  tag case plus the type-icon, title, cell-menu, and row-menu cases (5 tests /
+  30 expectations); targeted Biome and app typecheck pass.
+- This is supporting UX-009/UX-1105 visual evidence only. Color contrast,
+  768px behavior, cross-host screenshots, manual accessibility, and the full
+  browser journey matrix remain open.
+
 - [x] **UX-1001** Define keyboard order across title, tabs, controls, headers,
       cells, new row, and pagination. The canonical page DOM and focused table
       tests pin this progression, while arrow-key navigation handles the grid

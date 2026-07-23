@@ -3098,6 +3098,19 @@ their broad evidence is actually assembled:
   Biome and app typecheck pass. This is a density improvement, not closure of
   the visual baseline or manual/browser gates.
 
+### 2026-07-23 Inline select tag treatment pass
+
+- Inline Select, Status, and Multi-select cells now use compact rounded tags,
+  colored from the configured option palette when present, instead of plain
+  text. Empty values still read as `—`; canonical/admin tables remain
+  unchanged. The visible tag text and grid-cell semantics stay accessible,
+  while stable option IDs are exposed through data attributes for agent/test
+  tooling.
+- Evidence: focused `DatabaseTableDialog.dom.test.tsx` passes 5 tests / 30
+  expectations, including the inline `Active` tag, alongside targeted Biome
+  and app typecheck. This does not close contrast, responsive, cross-host,
+  manual accessibility, usability, or full browser gates.
+
 ## Recommended execution order
 
 1. When a browser-enabled runner is available, run only the new primary-journey

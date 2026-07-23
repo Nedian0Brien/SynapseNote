@@ -2931,6 +2931,18 @@ describe('DatabaseTableDialog', () => {
     expect(titleLink?.className).toContain('hover:underline');
   });
 
+  test('renders inline select values as compact page-property tags', () => {
+    render(<DatabaseTable source={source} result={queryResult()} notionSurface />);
+
+    const statusTag = document.querySelector<HTMLElement>(
+      '[data-database-property-tag="prop_status"]',
+    );
+    expect(statusTag?.textContent).toBe('Active');
+    expect(statusTag?.getAttribute('data-database-property-tag-option')).toBe('opt_active');
+    expect(statusTag?.className).toContain('rounded-full');
+    expect(screen.getByRole('gridcell', { name: 'Active' })).toBeTruthy();
+  });
+
   test('contextualizes the inline cell action menu with title and property', () => {
     const view = render(
       <DatabaseTable
