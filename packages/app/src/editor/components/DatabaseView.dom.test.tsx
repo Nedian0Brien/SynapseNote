@@ -110,6 +110,12 @@ describe('DatabaseView', () => {
       <DatabaseView databaseId={database.id} sourceId={source.id} viewId={view.id} mode="inline" />,
     );
 
+    expect(await screen.findByRole('heading', { name: source.name })).toBeTruthy();
+    const titleButton = screen.getByRole('button', { name: source.name, exact: true });
+    expect(titleButton.getAttribute('title')).toBe('Rename inline database');
+    fireEvent.click(titleButton);
+    expect(screen.getByRole('textbox', { name: 'Inline database title' })).toBeTruthy();
+
     expect(await screen.findByRole('button', { name: view.name })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'New database view' })).toBeTruthy();
     expect(document.querySelector('[data-linked-database-view-tabs]')).toBeTruthy();
@@ -1404,10 +1410,11 @@ describe('DatabaseView', () => {
     );
 
     expect(await screen.findByRole('heading', { name: source.name })).toBeTruthy();
+    expect(screen.getByRole('button', { name: source.name, exact: true })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Open tasks' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Done tasks' })).toBeTruthy();
     const titleCommitCount = commitCalls;
-    fireEvent.click(screen.getByRole('button', { name: 'Rename inline database' }));
+    fireEvent.click(screen.getByRole('button', { name: source.name, exact: true }));
     const inlineTitleInput = screen.getByRole('textbox', { name: 'Inline database title' });
     fireEvent.change(inlineTitleInput, { target: { value: 'Project tasks' } });
     fireEvent.keyDown(inlineTitleInput, { key: 'Enter' });

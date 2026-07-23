@@ -1504,7 +1504,8 @@ export function DatabaseView({
                 variant="ghost"
                 size="sm"
                 className="h-8 max-w-full justify-start truncate px-1 text-left font-medium"
-                aria-label="Rename inline database"
+                aria-label={state.description.source?.name ?? state.description.database.name}
+                title="Rename inline database"
                 onClick={() => {
                   setInlineTitleDraft(
                     state.description.source?.name ?? state.description.database.name,
