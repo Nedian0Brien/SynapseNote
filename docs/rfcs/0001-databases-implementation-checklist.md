@@ -661,11 +661,12 @@ copy/paste, import/export, API, agent schema, permissions, and tests agree.
       discovery-checked. Bounded system-Chrome focused runs on 2026-07-23
       passed all three cases in
       `tests/stress/database-primary-journeys.e2e.ts` (canonical create/edit/
-      undo/redo/record route, bulk property edit/undo, and saved-view
-      create/switch/rename plus List context inspection) and all three cases
+      undo/redo/reload/peek/full-page return, bulk property edit/undo, and
+      saved-view create/switch/rename) and all three cases
       in `tests/stress/database-document-native-journeys.e2e.ts`. The complete
-      primary-view matrix, accessibility suite, reload/agent journeys, and
-      Electron capture remain required before closing R-005. The bounded
+      primary-view matrix, accessibility suite, agent journeys, and Electron
+      capture remain required before closing R-005. Reload and row-continuity
+      evidence is now recorded by commit `8fc8bb0f`; the bounded
       `tests/stress/database-manage-properties.e2e.ts` run now also passes the
       add-property case and the valued-property delete flow (record value
       cleanup followed by a separate schema removal review); `f5ff201d` keeps

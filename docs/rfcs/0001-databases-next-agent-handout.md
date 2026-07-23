@@ -350,7 +350,7 @@ Chromium executable, so no additional full E2E run was started.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **113/129 complete**. The page-first and normal
+- Notion UX alignment checklist: **114/129 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
@@ -414,7 +414,7 @@ Chromium executable, so no additional full E2E run was started.
   v1 manifest/migration corpus, saved-view and typed Markdown/MDX record
   fixtures, a real MDX `DatabaseView` stable-reference block, descriptor dirty
   serialization, live block projection/reference writes, and database
-  last-opened route persistence. The structural UX count is **113/129**;
+  last-opened route persistence. The structural UX count is **114/129**;
   UX-011 remains open for the user-facing terminology and progressive-
   disclosure audit, with its implementation companion NUI-016.
 - The Context Inspector description was corrected to a block-level semantic
@@ -2281,6 +2281,39 @@ manual accessibility, reload, agent-policy, or release evidence. Filters,
 layout-specific settings, the remaining view matrix, and the external Electron
 gate remain open. No full server suite or broad/repeated E2E run was used.
 
+### 2026-07-23 canonical canvas reload and peek continuity
+
+Commit `8fc8bb0f fix: preserve canonical database canvas navigation` extends
+the primary canonical journey without changing the reviewed administration
+surface:
+
+- A source with no explicit `defaultViewId` deterministically selects its first
+  saved view. Page presentation writes that resolved view into the canonical
+  `#database/<database>/<source>/<view>` hash, so reload does not briefly fall
+  back to the unscoped All-records table.
+- The page canvas keeps its root presentation open while nested menus and the
+  record sheet are active. The explicit breadcrumb clears the canonical hash;
+  opening a row therefore remains a Notion-style side peek instead of closing
+  the database page when a portal opens.
+- The primary system-Chrome case now covers create → Title edit → undo/redo →
+  reload → row side peek → full page → browser return, and verifies the original
+  `All tasks` saved-view tab is still selected. The focused saved-view case also
+  passes once after the same canvas lifetime fix.
+- Property-management selector alignment remains in the same feature-unit
+  change; its bounded add and two-step valued-property deletion journey had
+  already passed. No full E2E or repository-wide server suite was run.
+
+Focused static evidence after the commit: targeted Biome and app typecheck pass;
+`git diff --check` passes. A targeted DOM run reported 77 passing tests and
+three unrelated existing Calendar/Timeline/conflict failures, so those broad
+fixtures remain outside this slice. The temporary system-Chrome config was
+removed before commit.
+
+This closes UX-1107 at the focused functional-evidence layer and adds partial
+evidence toward UX-1104/NUI-701/R-005. Typed non-Title editors, the complete
+view/mutation matrix, accessibility/manual review, agent journeys, Electron
+capture, and release gates remain open.
+
 ### Notion blank-creation identity and lifecycle follow-up (2026-07-23)
 
 The latest inline-first slice fixes two failures that were visible in the
@@ -2427,7 +2460,9 @@ closed in the authoritative checklist.
   required before closing this item. The bounded
   `tests/stress/database-manage-properties.e2e.ts` run also passes property
   add plus the two-step valued-property delete review; configure/reorder/hide,
-  reload, agent, and the remaining mutation matrix are still open.
+  agent, and the remaining mutation matrix are still open. Canonical reload and
+  row-continuity evidence is recorded in `8fc8bb0f`, but it does not replace the
+  full primary-view, agent, accessibility, or Electron gates.
 - **R-017** — >=90% prompt-to-valid-database creation without manual repair.
   The reusable evaluator and focused replay-shaped test now exist at
   `packages/server/src/database-creation-eval.ts` and
