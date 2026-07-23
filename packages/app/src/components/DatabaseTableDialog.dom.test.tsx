@@ -1277,6 +1277,21 @@ describe('DatabaseTableDialog', () => {
 
     await waitFor(() => expect(plannedPaths).toContain('/api/databases/plan'));
     expect(screen.queryByRole('heading', { name: 'Manage saved views' })).toBeNull();
+
+    cleanup();
+    render(
+      <DatabaseTableDialog
+        open
+        onOpenChange={() => {}}
+        initialTarget={{ databaseId: database.id, sourceId: source.id, viewId: firstView.id }}
+        initialDatabaseSurface="view-manager"
+        initialViewAction={{ kind: 'clear-default', viewId: firstView.id }}
+      />,
+    );
+    await waitFor(() =>
+      expect(plannedPaths.filter((path) => path === '/api/databases/plan').length).toBe(2),
+    );
+    expect(screen.queryByRole('heading', { name: 'Manage saved views' })).toBeNull();
   });
 
   test('drags a saved-view tab to a stable target and compiles one reorder-to plan', async () => {
