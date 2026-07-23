@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
+import { CC1_CHANNEL_DATABASE_CHANGED, CC1_CONTRACT_VERSION } from '@nedian0brien/synapsenote-core';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { DATABASE_NAVIGATION_CHANGE_EVENT } from '@/lib/database-navigation';
+import { emitDatabaseChanged } from '@/lib/documents-events';
 import { renderLinguiTemplate } from '@/test-utils/lingui-mock';
 
 let catalogImpl = async (_options?: { signal?: AbortSignal }) => ({
@@ -208,5 +210,67 @@ describe('DatabaseSidebarSection', () => {
         screen.getByTestId('database-sidebar-source-ds_tasks').getAttribute('aria-current'),
       ).toBe('page'),
     );
+  });
+
+  test('refreshes catalog labels after a database schema change event', async () => {
+    let databaseName = 'Tasks';
+    catalogImpl = async () => ({
+      query: null,
+      manifestRevision: databaseName,
+      catalogRevision: `sha256:${'a'.repeat(64)}`,
+      complete: true as const,
+      candidates: [
+        {
+          id: 'db_tasks',
+          key: 'tasks',
+          name: databaseName,
+          purpose: `Track ${databaseName}`,
+          sources: [
+            {
+              id: 'ds_tasks',
+              key: 'tasks',
+              name: databaseName,
+              recordMeaning: `One ${databaseName} record`,
+              propertyCount: 3,
+            },
+          ],
+          viewCount: 1,
+          relationCount: 0,
+          score: 1,
+          matchedBy: [],
+        },
+      ],
+    });
+
+    const { DatabaseSidebarSection } = await import('./DatabaseSidebarSection');
+    render(<DatabaseSidebarSection />);
+    fireEvent.click(screen.getByTestId('database-sidebar-trigger'));
+    await waitFor(() => expect(screen.getAllByText('Tasks')).toHaveLength(2));
+
+    databaseName = 'Roadmap';
+    await act(async () => {
+      emitDatabaseChanged({
+        v: CC1_CONTRACT_VERSION,
+        ch: CC1_CHANNEL_DATABASE_CHANGED,
+        seq: 2,
+        scope: 'workspace',
+        reasons: ['schema-change'],
+        databaseIds: ['db_tasks'],
+        sourceIds: ['ds_tasks'],
+        recordIds: [],
+        affectedIdsComplete: true,
+        index: {
+          state: 'idle',
+          revision: `sha256:${'b'.repeat(64)}`,
+          manifestRevision: `sha256:${'c'.repeat(64)}`,
+          recordCount: 0,
+          issueCount: 0,
+          progress: null,
+        },
+      });
+    });
+
+    await waitFor(() => expect(screen.getAllByText('Roadmap')).toHaveLength(2));
+    expect(fetchCalls).toHaveLength(2);
   });
 });

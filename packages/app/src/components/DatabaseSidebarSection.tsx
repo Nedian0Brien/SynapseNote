@@ -12,6 +12,7 @@ import {
   databasePageTargetToHash,
 } from '@/lib/database-navigation';
 import { ROUTE_NAVIGATION_CHANGE_EVENT } from '@/lib/doc-hash';
+import { subscribeToDatabaseChanged } from '@/lib/documents-events';
 import { cn } from '@/lib/utils';
 
 type LoadState = 'idle' | 'loading' | 'success' | 'error';
@@ -112,6 +113,18 @@ export function DatabaseSidebarSection() {
       }
     };
   }, [loadAttempt, open]);
+
+  useEffect(() => {
+    if (!open) return;
+    return subscribeToDatabaseChanged(() => {
+      // Database names/source names are part of the catalog, so a schema
+      // commit must invalidate an already-open sidebar instead of leaving the
+      // old Notion-style page title visible until the section is reopened.
+      loadStateRef.current = 'idle';
+      setLoadState('idle');
+      setLoadAttempt((attempt) => attempt + 1);
+    });
+  }, [open]);
 
   function openSource(databaseId: string, sourceId: string) {
     window.location.hash = databasePageTargetToHash({ databaseId, sourceId });
