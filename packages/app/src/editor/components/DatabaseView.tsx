@@ -1054,6 +1054,9 @@ export function DatabaseView({
   const inlineNewViewLabel = inlineDatabaseContext
     ? t`New database view for ${inlineDatabaseContext}`
     : t`New database view`;
+  const linkedDatabaseRegionLabel = inlineDatabaseContext
+    ? t`Linked database view: ${inlineDatabaseContext}`
+    : t`Linked database view`;
   const linkedSourceViews =
     linkedDatabase?.views.filter((view) => view.sourceId === reference.data.sourceId) ?? [];
   const defaultInlineAgentScope: DatabaseAgentScope = {
@@ -1491,7 +1494,7 @@ export function DatabaseView({
       contentEditable={false}
       onKeyDown={handleInlineHistoryKeyDown}
       tabIndex={-1}
-      aria-label="Linked database view"
+      aria-label={linkedDatabaseRegionLabel}
       aria-busy={state.status === 'loading'}
       data-database-view-state={state.status}
       data-database-id={reference.data.databaseId}

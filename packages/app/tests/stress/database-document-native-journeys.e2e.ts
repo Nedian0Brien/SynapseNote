@@ -87,7 +87,7 @@ test.describe('document-native database browser journeys', () => {
     const editor = await openEditorDocument(page, docName);
 
     await chooseSlashBlock(page, 'database', 'Inline database');
-    const inline = page.getByRole('region', { name: 'Linked database view' });
+    const inline = page.getByRole('region', { name: /^Linked database view:/ });
     await expect(inline).toHaveAttribute('data-view-mode', 'inline', { timeout: 20_000 });
     await expect(inline.getByRole('grid')).toBeVisible({ timeout: 20_000 });
 
@@ -150,7 +150,7 @@ test.describe('document-native database browser journeys', () => {
     await expect(savedViewButtons).toHaveCount(2, { timeout: 10_000 });
     await savedViewButtons.nth(1).click();
 
-    const inline = page.getByRole('region', { name: 'Linked database view' });
+    const inline = page.getByRole('region', { name: /^Linked database view:/ });
     await expect(inline).toHaveAttribute('data-view-mode', 'inline', { timeout: 15_000 });
     await expect(inline.getByRole('gridcell', { name: 'Shared linked task' })).toBeVisible({
       timeout: 15_000,
@@ -165,7 +165,7 @@ test.describe('document-native database browser journeys', () => {
 
     await page.goBack();
     await expect(page).toHaveURL(new RegExp(`#/${docName}$`), { timeout: 10_000 });
-    const returnedInline = page.getByRole('region', { name: 'Linked database view' });
+    const returnedInline = page.getByRole('region', { name: /^Linked database view:/ });
     await expect(returnedInline.getByRole('gridcell', { name: 'Shared linked task' })).toBeVisible({
       timeout: 15_000,
     });

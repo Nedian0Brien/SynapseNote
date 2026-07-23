@@ -111,6 +111,9 @@ describe('DatabaseView', () => {
     );
 
     expect(await screen.findByRole('heading', { name: source.name })).toBeTruthy();
+    expect(
+      screen.getByRole('region', { name: 'Linked database view: Tasks · Open tasks' }),
+    ).toBeTruthy();
     const titleButton = screen.getByRole('button', { name: source.name, exact: true });
     expect(titleButton.getAttribute('title')).toBe('Rename inline database');
     fireEvent.click(titleButton);
