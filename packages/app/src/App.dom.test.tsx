@@ -539,6 +539,23 @@ describe('App runtime wiring', () => {
     expect(dialog.getAttribute('data-creation-experience')).toBe('notion');
   });
 
+  test('closes the database surface when ordinary document navigation leaves the database hash', async () => {
+    renderApp();
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('sidebar-new-database'));
+    });
+    await waitFor(() => expect(window.location.hash).toBe('#database/new'));
+    expect(screen.getByTestId('database-table-dialog').getAttribute('data-open')).toBe('true');
+
+    await act(async () => {
+      window.location.hash = '#/brain/Untitled';
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId('database-table-dialog').getAttribute('data-open')).toBe('false'),
+    );
+  });
+
   test('opens database discovery in the page presentation from the command palette', async () => {
     renderApp();
     await waitFor(() => expect(openDatabasesCommand).toBeFunction());

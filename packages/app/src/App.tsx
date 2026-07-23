@@ -55,6 +55,7 @@ import {
   assetPathFromHash,
   docNameFromHash,
   isContentRootHash,
+  ROUTE_NAVIGATION_CHANGE_EVENT,
   skillFileFromHash,
 } from '@/lib/doc-hash';
 import { mark, ProfilerBoundary } from '@/lib/perf';
@@ -147,9 +148,11 @@ function DatabasePageRoute({
   useEffect(() => {
     const onHashChange = () => setTarget(databasePageTargetFromHash(window.location.hash));
     window.addEventListener('hashchange', onHashChange);
+    window.addEventListener(ROUTE_NAVIGATION_CHANGE_EVENT, onHashChange);
     window.addEventListener(DATABASE_NAVIGATION_CHANGE_EVENT, onHashChange);
     return () => {
       window.removeEventListener('hashchange', onHashChange);
+      window.removeEventListener(ROUTE_NAVIGATION_CHANGE_EVENT, onHashChange);
       window.removeEventListener(DATABASE_NAVIGATION_CHANGE_EVENT, onHashChange);
     };
   }, []);
@@ -708,6 +711,29 @@ function AppBody() {
     window.addEventListener(DATABASE_NAVIGATION_CHANGE_EVENT, onDatabaseNavigation);
     return () => window.removeEventListener(DATABASE_NAVIGATION_CHANGE_EVENT, onDatabaseNavigation);
   }, []);
+
+  // A normal document navigation can happen while the database surface is
+  // open (for example, clicking New file in the sidebar). The database route
+  // owns its canvas, but the creation/admin surface is App-level state; close
+  // it as soon as the hash leaves the database namespace so a stale table
+  // cannot remain mounted over the newly opened page.
+  useEffect(() => {
+    const onHashNavigation = () => {
+      const hash = window.location.hash;
+      if (isDatabaseCreationHash(hash) || isDatabasePageHash(hash)) return;
+      if (!databasesOpen && databaseOpenAction === null) return;
+      databaseCreationRouteOpenRef.current = false;
+      resetDatabaseSurface();
+    };
+    window.addEventListener('hashchange', onHashNavigation);
+    window.addEventListener('popstate', onHashNavigation);
+    window.addEventListener(ROUTE_NAVIGATION_CHANGE_EVENT, onHashNavigation);
+    return () => {
+      window.removeEventListener('hashchange', onHashNavigation);
+      window.removeEventListener('popstate', onHashNavigation);
+      window.removeEventListener(ROUTE_NAVIGATION_CHANGE_EVENT, onHashNavigation);
+    };
+  }, [databaseOpenAction, databasesOpen]);
 
   // "Open in terminal" launcher — desktop-only. Routes a scope-derived prompt
   // to the docked terminal in EditorPane. `composeTerminalLaunchPrompt` drops

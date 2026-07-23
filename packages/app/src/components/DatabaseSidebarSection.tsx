@@ -11,6 +11,7 @@ import {
   databasePageTargetFromHash,
   databasePageTargetToHash,
 } from '@/lib/database-navigation';
+import { ROUTE_NAVIGATION_CHANGE_EVENT } from '@/lib/doc-hash';
 import { cn } from '@/lib/utils';
 
 type LoadState = 'idle' | 'loading' | 'success' | 'error';
@@ -41,10 +42,12 @@ export function DatabaseSidebarSection() {
     };
     window.addEventListener('hashchange', onHashChange);
     window.addEventListener('popstate', onHashChange);
+    window.addEventListener(ROUTE_NAVIGATION_CHANGE_EVENT, onHashChange);
     window.addEventListener(DATABASE_NAVIGATION_CHANGE_EVENT, onHashChange);
     return () => {
       window.removeEventListener('hashchange', onHashChange);
       window.removeEventListener('popstate', onHashChange);
+      window.removeEventListener(ROUTE_NAVIGATION_CHANGE_EVENT, onHashChange);
       window.removeEventListener(DATABASE_NAVIGATION_CHANGE_EVENT, onHashChange);
     };
   }, []);

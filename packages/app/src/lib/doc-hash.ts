@@ -1,5 +1,8 @@
 import { MANAGED_ARTIFACT_SCOPES, type SkillScope } from '@nedian0brien/synapsenote-core';
 
+/** Emitted when an internal route replaces the hash without native navigation. */
+export const ROUTE_NAVIGATION_CHANGE_EVENT = 'synapsenote:route-navigation-change';
+
 /** Narrow a free string to a known skill scope (`project` | `global`). */
 function isSkillScope(value: string): value is SkillScope {
   return (MANAGED_ARTIFACT_SCOPES as readonly string[]).includes(value);
@@ -61,6 +64,7 @@ export function replaceHashWithoutNavigation(hash: string): void {
   if (window.location.hash === hash) return;
   const { pathname, search } = window.location;
   window.history.replaceState(null, '', `${pathname}${search}${hash}`);
+  window.dispatchEvent(new Event(ROUTE_NAVIGATION_CHANGE_EVENT));
 }
 
 /**
