@@ -2234,6 +2234,10 @@ Focused evidence:
   commit expectations instead of masking a delayed title-cell save. The full
   `DatabaseView.dom.test.tsx` file now passes 20 tests / 254 expectations; no
   production mutation behavior was changed by that test-only fix.
+- Commit `6594165e` adds an integration guard at the `DatabaseTableDialog`
+  boundary: the Notion creation route must render the page-first table shell
+  and must not expose the administration wizard's database-name, Blank, or
+  Template controls. The focused test passes 1 test / 5 expectations.
 
 This is functional handoff evidence only. Do not close UX-1102/NUI-105 or the
 browser visual/usability gates from this smoke; the full Playwright journey and
