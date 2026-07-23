@@ -402,7 +402,7 @@ function InlineDatabaseCreationDialog({
       {
         desiredState,
         actor: { principalId: policy.principalId },
-        idempotencyKey: `ui-inline-database-${Date.now()}`,
+        idempotencyKey: `ui-inline-database-${crypto.randomUUID()}`,
         assertions: {
           databaseAbsent: true,
           createdRecords: desiredState.sampleRecords?.length ?? 0,
@@ -479,6 +479,7 @@ function InlineDatabaseCreationDialog({
         data-notion-inline-database-creation
         data-testid="inline-database-create-dialog"
         aria-label="New inline database"
+        aria-busy={status === 'creating'}
       >
         <header className="flex items-center justify-between gap-3 border-b px-4 py-3">
           <div className="min-w-0">
@@ -539,9 +540,21 @@ function InlineDatabaseCreationDialog({
           </table>
         </div>
         {error ? (
-          <p className="border-t p-3 text-destructive text-xs" role="alert">
-            {error}
-          </p>
+          <div
+            className="flex items-center justify-between gap-3 border-t p-3 text-destructive text-xs"
+            role="alert"
+          >
+            <span>{error}</span>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              data-testid="inline-database-create-retry"
+              onClick={() => void submit()}
+            >
+              Retry
+            </Button>
+          </div>
         ) : null}
       </section>
     );

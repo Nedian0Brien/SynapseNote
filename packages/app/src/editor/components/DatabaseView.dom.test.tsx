@@ -2289,4 +2289,131 @@ describe('DatabaseView', () => {
     ).toMatch(/^untitled_database_[a-z0-9_]+$/);
     expect(dispatched[0]?.props.create).toBeUndefined();
   });
+
+  test('offers an in-place retry when Notion-style inline creation fails', async () => {
+    const dispatched: Array<Record<string, unknown>> = [];
+    const node = {
+      type: { name: 'jsxComponent' },
+      attrs: { componentName: 'DatabaseView', props: { create: 'blank', mode: 'inline' } },
+    };
+    const editor = {
+      state: {
+        doc: { nodeAt: () => node },
+        tr: {
+          setNodeMarkup: (_pos: number, _type: unknown, attrs: Record<string, unknown>) => {
+            dispatched.push(attrs);
+            return {};
+          },
+        },
+      },
+      view: { dispatch: () => {}, focus: () => {} },
+    } as never;
+    const inlineSource = { ...source, id: 'ds_notion_retry', name: 'Untitled database' };
+    const inlineView = { ...view, id: 'view_notion_retry', sourceId: inlineSource.id };
+    const inlineDatabase = {
+      ...database,
+      id: 'db_notion_retry',
+      sources: [inlineSource],
+      views: [inlineView],
+    };
+    let createDraftCount = 0;
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input);
+      const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : {};
+      if (path === '/api/databases/plan' && body.action === 'create_draft') {
+        createDraftCount += 1;
+        if (createDraftCount === 1) {
+          return Response.json({ detail: 'offline' }, { status: 503 });
+        }
+        return Response.json({
+          action: 'create_draft',
+          draft: {
+            id: 'draft_notion_retry',
+            revision: hash,
+            normalized: {
+              definition: {
+                id: inlineDatabase.id,
+                sources: [{ id: inlineSource.id }],
+                views: [{ id: inlineView.id, sourceId: inlineSource.id }],
+              },
+            },
+          },
+        });
+      }
+      if (path === '/api/databases/plan' && body.action === 'create_plan') {
+        return Response.json({
+          action: 'create_plan',
+          plan: {
+            id: 'plan_notion_retry',
+            hash,
+            snapshotRevision: hash,
+            committable: true,
+            requiresCommit: false,
+            conflicts: [],
+            approvals: [],
+            diff: { manifests: [], records: [], templates: [], policy: {} },
+          },
+        });
+      }
+      if (path === '/api/databases/describe') {
+        return Response.json({
+          manifestRevision: hash,
+          schemaRevision: hash,
+          database: inlineDatabase,
+          source: inlineSource,
+          index: {
+            state: 'idle',
+            revision: hash,
+            manifestRevision: hash,
+            recordCount: 0,
+            issueCount: 0,
+            progress: null,
+            lastRebuiltAt: null,
+            lastIncrementalAt: null,
+            lastError: null,
+          },
+          allowedOperations: ['describe', 'query'],
+        });
+      }
+      if (path === '/api/databases/query') {
+        return Response.json({
+          sourceId: inlineSource.id,
+          snapshotRevision: hash,
+          matched: 0,
+          returned: 0,
+          isComplete: true,
+          nextCursor: null,
+          truncatedBy: null,
+          indexFreshness: 'snapshot',
+          records: [],
+          aggregation: null,
+        });
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
+      <StrictMode>
+        <JsxComponentHostProvider value={{ editor, getPos: () => 0, addChild: null }}>
+          <DatabaseView create="blank" mode="inline" />
+        </JsxComponentHostProvider>
+      </StrictMode>,
+    );
+
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('offline'));
+    expect(screen.getByTestId('inline-database-create-dialog').getAttribute('aria-busy')).toBe(
+      'false',
+    );
+    fireEvent.click(screen.getByTestId('inline-database-create-retry'));
+
+    await waitFor(() =>
+      expect(dispatched[0]?.props).toMatchObject({
+        databaseId: inlineDatabase.id,
+        sourceId: inlineSource.id,
+        viewId: inlineView.id,
+        mode: 'inline',
+      }),
+    );
+    expect(createDraftCount).toBe(2);
+  });
 });
