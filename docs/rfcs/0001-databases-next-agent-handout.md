@@ -769,6 +769,10 @@ do not reconstruct behavior solely from this summary.
   were updated. `DatabaseTableDialog.dom.test.tsx` directly covers the inline
   URL link/copy/edit labels (1 test / 3 expectations). Changeset:
   `.changeset/inline-cell-action-labels.md`.
+- Commit `b51ec7bc fix: contextualize inline cell menu actions` names the
+  inline cell context menu with record title and property, and contextualizes
+  its open/edit/inspect/agent actions. Focused menu regression: 2 tests / 13
+  expectations. Changeset: `.changeset/inline-cell-menu-context.md`.
 - `DatabaseRecordPageSurface` is now the shared structural component used by
   side peek, center peek, and the ordinary full-page editor. Sheet/Dialog and
   live Y.Doc bindings remain host adapters, while the record-page identity and

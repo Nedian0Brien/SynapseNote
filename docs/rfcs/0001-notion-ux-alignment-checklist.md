@@ -858,6 +858,10 @@ buttons, and cell-edit affordances with the visible page title; full-page
 management retains stable-ID labels for compatibility.
 `DatabaseTableDialog.dom.test.tsx` also directly covers the inline URL
 link/copy/edit labels (1 test / 3 expectations).
+The inline cell context menu now carries the same record/property context and
+names open/edit/inspect/agent actions by title; its focused regression passes
+2 tests / 13 expectations. Full-page management keeps its existing generic
+menu names for compatibility.
 
 This closes UX-701 at the functional implementation/evidence layer. Shared
 record-page composition, breadcrumbs, body editing, and visual/cross-host

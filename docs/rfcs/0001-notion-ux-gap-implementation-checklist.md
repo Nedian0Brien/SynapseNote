@@ -410,6 +410,10 @@ treated as visual parity until a browser capture is attached.
   and edit affordances now use the same visible title context, while the
   stable record ID remains the underlying scope. `DatabaseTableDialog.dom.test.tsx`
   covers the inline URL link/copy/edit labels directly (1 test / 3 expectations).
+  Its inline cell context menu is also named with the visible title and property
+  (`Database cell actions for First task · Budget`), with contextual open/edit/
+  inspect/agent menu items; the focused menu regression passes 2 tests / 13
+  expectations.
 - [x] **NUI-403** Use one canonical record-page component for title cell, peek,
   full page, comments, history, relation navigation, previous/next, and return
   to the originating view. Record opens now persist the originating database,
