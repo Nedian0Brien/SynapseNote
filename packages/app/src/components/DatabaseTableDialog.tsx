@@ -41,6 +41,7 @@ import type {
 import {
   AlertCircle,
   Archive,
+  ArrowDownAZ,
   Braces,
   CalendarDays,
   Check,
@@ -48,11 +49,13 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock3,
+  Columns3,
   Copy,
   Database,
   Download,
   ExternalLink,
   FileText,
+  Filter,
   GripVertical,
   Hash,
   History,
@@ -6661,7 +6664,7 @@ function DatabaseTableSurface({
                   )}
                 </span>
               ) : null}
-              {activeAgentScope ? (
+              {activeAgentScope && !isPagePresentation ? (
                 <DatabaseAgentScopeMenu
                   scope={activeAgentScope}
                   open={agentMenuOpen}
@@ -6697,7 +6700,7 @@ function DatabaseTableSurface({
                   <Star aria-hidden="true" />
                 </Button>
               ) : null}
-              {isPagePresentation && description?.source ? (
+              {isPagePresentation && !isCanvasPresentation && description?.source ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -6725,16 +6728,17 @@ function DatabaseTableSurface({
                   <ExternalLink /> <Trans>Open page</Trans>
                 </Button>
               ) : null}
-              <Button
-                variant={isCanvasPresentation ? 'ghost' : 'outline'}
-                size={isCanvasPresentation ? 'icon-sm' : 'sm'}
-                aria-label={isCanvasPresentation ? 'Refresh database' : undefined}
-                disabled={loading}
-                onClick={() => setRefresh((value) => value + 1)}
-              >
-                <RefreshCw className={cn(loading && 'animate-spin')} />
-                {!isCanvasPresentation ? <Trans>Refresh</Trans> : null}
-              </Button>
+              {!isCanvasPresentation ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={loading}
+                  onClick={() => setRefresh((value) => value + 1)}
+                >
+                  <RefreshCw className={cn(loading && 'animate-spin')} />
+                  <Trans>Refresh</Trans>
+                </Button>
+              ) : null}
             </div>
           </div>
         </DialogHeader>
@@ -7020,16 +7024,22 @@ function DatabaseTableSurface({
                       data-database-view-tabs
                       data-database-primary-view-tabs
                     >
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={selectedViewId ? 'ghost' : 'secondary'}
-                        role="tab"
-                        aria-selected={!selectedViewId}
-                        onClick={() => selectView('__all__')}
-                      >
-                        {isPagePresentation ? <Trans>All pages</Trans> : <Trans>All records</Trans>}
-                      </Button>
+                      {!isCanvasPresentation ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={selectedViewId ? 'ghost' : 'secondary'}
+                          role="tab"
+                          aria-selected={!selectedViewId}
+                          onClick={() => selectView('__all__')}
+                        >
+                          {isPagePresentation ? (
+                            <Trans>All pages</Trans>
+                          ) : (
+                            <Trans>All records</Trans>
+                          )}
+                        </Button>
+                      ) : null}
                       {sourceViews.map((view, index) => (
                         <fieldset
                           key={view.id}
@@ -7144,13 +7154,15 @@ function DatabaseTableSurface({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="__all__">
-                            {isPagePresentation ? (
-                              <Trans>All pages</Trans>
-                            ) : (
-                              <Trans>All records</Trans>
-                            )}
-                          </SelectItem>
+                          {!isCanvasPresentation ? (
+                            <SelectItem value="__all__">
+                              {isPagePresentation ? (
+                                <Trans>All pages</Trans>
+                              ) : (
+                                <Trans>All records</Trans>
+                              )}
+                            </SelectItem>
+                          ) : null}
                           {sourceViews.map((view) => (
                             <SelectItem key={view.id} value={view.id}>
                               {view.favorite === true ? '★ ' : ''}
@@ -7178,22 +7190,65 @@ function DatabaseTableSurface({
                           {button.name}
                         </Button>
                       ))}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={!selectedView || mutationStatus !== 'idle'}
-                      onClick={() => setFilterDialogOpen(true)}
-                    >
-                      <Trans>Filters</Trans>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={!selectedView || mutationStatus !== 'idle'}
-                      onClick={() => setViewSettingsOpen(true)}
-                    >
-                      <Trans>View settings</Trans>
-                    </Button>
+                    {isCanvasPresentation ? (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={mutationStatus !== 'idle'}
+                          aria-label="New page"
+                          onClick={() => setNewRecordOpen(true)}
+                        >
+                          <Plus aria-hidden="true" /> <Trans>New</Trans>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={!selectedView || mutationStatus !== 'idle'}
+                          onClick={() => setFilterDialogOpen(true)}
+                        >
+                          <Filter aria-hidden="true" /> <Trans>Filters</Trans>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={!selectedView || mutationStatus !== 'idle'}
+                          onClick={() => setViewSettingsOpen(true)}
+                        >
+                          <ArrowDownAZ aria-hidden="true" /> <Trans>Sort</Trans>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={mutationStatus !== 'idle'}
+                          onClick={() => {
+                            setPropertiesDialogRenameId(null);
+                            setPropertiesDialogOpen(true);
+                          }}
+                        >
+                          <Columns3 aria-hidden="true" /> <Trans>Properties</Trans>
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={!selectedView || mutationStatus !== 'idle'}
+                          onClick={() => setFilterDialogOpen(true)}
+                        >
+                          <Trans>Filters</Trans>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={!selectedView || mutationStatus !== 'idle'}
+                          onClick={() => setViewSettingsOpen(true)}
+                        >
+                          <Trans>View settings</Trans>
+                        </Button>
+                      </>
+                    )}
                     <Input
                       ref={csvInputRef}
                       type="file"
@@ -7206,16 +7261,18 @@ function DatabaseTableSurface({
                         if (file) inspectImportFile(file);
                       }}
                     />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={mutationStatus !== 'idle'}
-                      aria-label={isPagePresentation ? t`New page` : undefined}
-                      onClick={() => setNewRecordOpen(true)}
-                    >
-                      <Plus />
-                      {isPagePresentation ? <Trans>New</Trans> : <Trans>New record</Trans>}
-                    </Button>
+                    {!isCanvasPresentation ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={mutationStatus !== 'idle'}
+                        aria-label={isPagePresentation ? t`New page` : undefined}
+                        onClick={() => setNewRecordOpen(true)}
+                      >
+                        <Plus />
+                        {isPagePresentation ? <Trans>New</Trans> : <Trans>New record</Trans>}
+                      </Button>
+                    ) : null}
                     {!isCanvasPresentation ? (
                       <Button
                         variant={showArchived ? 'secondary' : 'outline'}
@@ -7254,6 +7311,40 @@ function DatabaseTableSurface({
                         <DropdownMenuLabel>
                           <Trans>Database actions</Trans>
                         </DropdownMenuLabel>
+                        {isCanvasPresentation && activeAgentScope ? (
+                          <DropdownMenuItem
+                            onSelect={() =>
+                              window.setTimeout(() => openDatabaseAgentScope(activeAgentScope), 0)
+                            }
+                          >
+                            <Sparkles aria-hidden="true" /> <Trans>Ask agent</Trans>
+                          </DropdownMenuItem>
+                        ) : null}
+                        {isCanvasPresentation && description?.source ? (
+                          <DropdownMenuItem
+                            disabled={mutationStatus !== 'idle'}
+                            onSelect={() => setAppearanceOpen(true)}
+                          >
+                            <Settings2 aria-hidden="true" /> <Trans>Customize page</Trans>
+                          </DropdownMenuItem>
+                        ) : null}
+                        {isCanvasPresentation && selectedView ? (
+                          <DropdownMenuItem
+                            disabled={mutationStatus !== 'idle'}
+                            onSelect={() => setViewSettingsOpen(true)}
+                          >
+                            <Settings2 aria-hidden="true" /> <Trans>View settings</Trans>
+                          </DropdownMenuItem>
+                        ) : null}
+                        {isCanvasPresentation ? (
+                          <DropdownMenuItem
+                            disabled={loading}
+                            onSelect={() => setRefresh((value) => value + 1)}
+                          >
+                            <RefreshCw className={cn(loading && 'animate-spin')} />{' '}
+                            <Trans>Refresh</Trans>
+                          </DropdownMenuItem>
+                        ) : null}
                         {onOpenAgentRuns ? (
                           <DropdownMenuItem onSelect={onOpenAgentRuns}>
                             <History aria-hidden="true" /> <Trans>History</Trans>

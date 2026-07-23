@@ -4241,13 +4241,26 @@ describe('DatabaseTableDialog', () => {
 
   test('renders the canonical database workspace in the caller canvas without a portal', async () => {
     let catalogCalls = 0;
+    const user = userEvent.setup();
+    const tableView = {
+      id: 'view_table',
+      key: 'table',
+      name: 'Table',
+      sourceId: source.id,
+      layout: { type: 'table' as const, configuration: {} },
+      sort: [],
+      groups: [],
+      projection: { propertyIds: ['prop_title'], body: 'hidden' as const },
+    };
     globalThis.fetch = mock(async (input: RequestInfo | URL) => {
       const path = String(input);
       if (path.startsWith('/api/databases/catalog')) {
         catalogCalls += 1;
         return Response.json(catalog());
       }
-      if (path === '/api/databases/describe') return Response.json(description());
+      if (path === '/api/databases/describe') {
+        return Response.json({ ...description(), database: { ...database, views: [tableView] } });
+      }
       if (path === '/api/databases/query') return Response.json(queryResult());
       return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
     }) as typeof fetch;
@@ -4266,7 +4279,8 @@ describe('DatabaseTableDialog', () => {
     const workspace = document.querySelector('[data-database-workspace]');
     expect(grid).not.toBeNull();
     expect(grid.getAttribute('aria-label')).toBe('Tasks database pages');
-    expect(screen.getByRole('tab', { name: 'All pages' })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Table' })).toBeTruthy();
+    expect(screen.queryByRole('tab', { name: 'All pages' })).toBeNull();
     expect(workspace?.closest('[data-testid="database-canvas-host"]')).not.toBeNull();
     expect(workspace?.getAttribute('data-database-page-workspace')).toBe('');
     expect(document.querySelector('nav[aria-label="Databases"]')).toBeNull();
@@ -4281,10 +4295,19 @@ describe('DatabaseTableDialog', () => {
     expect(
       screen.queryByText('Browse canonical Markdown records through a snapshot-consistent table.'),
     ).toBeNull();
-    expect(screen.getByRole('button', { name: 'Refresh database' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Refresh database' })).toBeNull();
     expect(screen.getByRole('button', { name: 'New page' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Filters', exact: true })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Sort', exact: true })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Properties', exact: true })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'New record', exact: true })).toBeNull();
     expect(workspace?.querySelector('main h2')).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'More database actions' }));
+    expect(screen.getByRole('menuitem', { name: 'Ask agent' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Customize page' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'View settings' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Refresh' })).toBeTruthy();
+    await user.keyboard('{Escape}');
     fireEvent.click(screen.getByRole('button', { name: 'New page' }));
     expect(
       screen.getAllByRole('textbox', { name: 'New page title' }).length,

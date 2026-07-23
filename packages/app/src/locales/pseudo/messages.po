@@ -943,6 +943,7 @@ msgid "Add properties"
 msgstr ""
 
 #: src/components/DatabasePropertiesDialog.tsx
+#: src/components/DatabaseTableDialog.tsx
 #: src/components/PropertyPanel.tsx
 #: src/components/TemplateForm.tsx
 msgid "Add property"
@@ -1225,6 +1226,10 @@ msgstr ""
 msgid "Approve revocation"
 msgstr ""
 
+#: src/components/DatabaseTableDialog.tsx
+msgid "Archive"
+msgstr ""
+
 #: src/components/DatabaseRecordPageChrome.tsx
 #: src/components/DatabaseTableDialog.tsx
 msgid "Archive page"
@@ -1274,6 +1279,11 @@ msgstr ""
 
 #: src/components/chat/ChatMessageList.tsx
 msgid "Ask about your current document or project."
+msgstr ""
+
+#: src/components/DatabaseTableDialog.tsx
+#: src/editor/components/DatabaseView.tsx
+msgid "Ask agent"
 msgstr ""
 
 #: src/editor/components/DatabaseView.tsx
@@ -1787,14 +1797,6 @@ msgstr ""
 msgid "Captured Context Pack"
 msgstr ""
 
-#: src/editor/components/DatabaseView.tsx
-msgid "Change database view"
-msgstr ""
-
-#: src/editor/components/DatabaseView.tsx
-msgid "Change database view: {inlineDatabaseContext}"
-msgstr ""
-
 #: src/components/DatabaseTableDialog.tsx
 msgid "Change property type"
 msgstr ""
@@ -1886,6 +1888,10 @@ msgstr ""
 
 #: src/components/DatabaseComputedPropertyDialog.tsx
 msgid "Choose a compatible relation, target property, and aggregation."
+msgstr ""
+
+#: src/components/DatabaseTableDialog.tsx
+msgid "Choose a name and type for the new column."
 msgstr ""
 
 #: src/components/BottomComposer.tsx
@@ -2319,6 +2325,10 @@ msgstr ""
 
 #: src/components/settings/SharingSection.tsx
 msgid "Config sharing unchanged — see details below."
+msgstr ""
+
+#: src/components/DatabaseTableDialog.tsx
+msgid "Configure options"
 msgstr ""
 
 #: src/components/settings/SettingsDialogShell.tsx
@@ -3379,6 +3389,7 @@ msgstr ""
 msgid "Definitions"
 msgstr ""
 
+#: src/components/DatabaseTableDialog.tsx
 #: src/components/DatabaseViewTabMenu.tsx
 #: src/components/DeleteConfirmationDialog.tsx
 #: src/components/skill-actions.tsx
@@ -3751,6 +3762,7 @@ msgstr ""
 msgid "Drag item {0} to reorder"
 msgstr ""
 
+#: src/components/DatabaseTableDialog.tsx
 #: src/components/DatabaseViewTabMenu.tsx
 #: src/components/FileTree.tsx
 #: src/components/skill-actions.tsx
@@ -5303,8 +5315,28 @@ msgstr ""
 msgid "Insert a markdown hard break."
 msgstr ""
 
+#: src/components/DatabaseTableDialog.tsx
+msgid "Insert left"
+msgstr ""
+
 #: src/editor/bubble-menu/LinkEditPopover.tsx
 msgid "Insert link"
+msgstr ""
+
+#: src/components/DatabaseTableDialog.tsx
+msgid "Insert property"
+msgstr ""
+
+#: src/components/DatabaseTableDialog.tsx
+msgid "Insert property to the left"
+msgstr ""
+
+#: src/components/DatabaseTableDialog.tsx
+msgid "Insert property to the right"
+msgstr ""
+
+#: src/components/DatabaseTableDialog.tsx
+msgid "Insert right"
 msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts
@@ -5321,6 +5353,7 @@ msgid "Inspect agent data context"
 msgstr ""
 
 #: src/components/DatabaseGallery.tsx
+#: src/components/DatabaseTableDialog.tsx
 msgid "Inspect context"
 msgstr ""
 
@@ -5903,6 +5936,10 @@ msgstr ""
 msgid "Manage hidden files in Settings → Ignore patterns."
 msgstr ""
 
+#: src/components/DatabaseTableDialog.tsx
+msgid "Manage Multi-select options"
+msgstr ""
+
 #: src/components/DatabasePropertiesDialog.tsx
 #: src/components/DatabaseTableDialog.tsx
 #: src/editor/components/DatabaseView.tsx
@@ -6089,6 +6126,10 @@ msgstr ""
 #. placeholder {0}: blocked.length
 #: src/editor/components/PreviewBlockedNotice.tsx
 msgid "More than {0} requests were blocked by the preview's security policy"
+msgstr ""
+
+#: src/components/DatabaseTableDialog.tsx
+msgid "Move"
 msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts
@@ -6730,6 +6771,10 @@ msgstr ""
 msgid "No pages link to this PDF yet."
 msgstr ""
 
+#: src/components/DatabaseTableDialog.tsx
+msgid "No pages match “{searchQuery}”."
+msgstr ""
+
 #: src/components/DatabaseFeed.tsx
 msgid "No pages match this view."
 msgstr ""
@@ -7037,6 +7082,7 @@ msgid "Only the current document uses <0>#{tag}</0>."
 msgstr ""
 
 #: src/components/DatabaseGallery.tsx
+#: src/components/DatabaseTableDialog.tsx
 #: src/components/GraphPanel.tsx
 msgid "Open"
 msgstr ""
@@ -7954,8 +8000,10 @@ msgid "properties"
 msgstr ""
 
 #: src/components/DatabaseCreationDialog.tsx
+#: src/components/DatabaseTableDialog.tsx
 #: src/components/PropertyPanel.tsx
 #: src/components/TemplateProperties.tsx
+#: src/editor/components/DatabaseView.tsx
 msgid "Properties"
 msgstr ""
 
@@ -8249,15 +8297,8 @@ msgstr ""
 #: src/components/DatabasePermissionsDialog.tsx
 #: src/components/DatabasePublicSharesSection.tsx
 #: src/components/DatabaseTableDialog.tsx
+#: src/editor/components/DatabaseView.tsx
 msgid "Refresh"
-msgstr ""
-
-#: src/editor/components/DatabaseView.tsx
-msgid "Refresh linked database view"
-msgstr ""
-
-#: src/editor/components/DatabaseView.tsx
-msgid "Refresh linked database view: {inlineDatabaseContext}"
 msgstr ""
 
 #: src/components/DatabaseOnboardingDialog.tsx
@@ -8714,6 +8755,7 @@ msgstr ""
 msgid "Restarting the server…"
 msgstr ""
 
+#: src/components/DatabaseTableDialog.tsx
 #: src/components/TimelinePanel.tsx
 msgid "Restore"
 msgstr ""
@@ -9149,8 +9191,20 @@ msgstr ""
 msgid "Search files, commands, projects, and AI handoff actions. With text selected in the visual editor, this chord adds a link instead."
 msgstr ""
 
+#: src/editor/components/DatabaseView.tsx
+msgid "Search loaded pages in this view"
+msgstr ""
+
 #: src/components/CommandPalette.tsx
 msgid "Search matches file names, paths, and folders. Open a file to search its body (⌘F)."
+msgstr ""
+
+#: src/editor/components/DatabaseView.tsx
+msgid "Search pages"
+msgstr ""
+
+#: src/editor/components/DatabaseView.tsx
+msgid "Search pages in {inlineDatabaseContext}"
 msgstr ""
 
 #: src/components/CommandPalette.tsx
@@ -9787,6 +9841,8 @@ msgid "Something went wrong. Please try again."
 msgstr ""
 
 #: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/DatabaseTableDialog.tsx
+#: src/editor/components/DatabaseView.tsx
 msgid "Sort"
 msgstr ""
 

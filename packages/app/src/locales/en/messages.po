@@ -948,6 +948,7 @@ msgid "Add properties"
 msgstr "Add properties"
 
 #: src/components/DatabasePropertiesDialog.tsx
+#: src/components/DatabaseTableDialog.tsx
 #: src/components/PropertyPanel.tsx
 #: src/components/TemplateForm.tsx
 msgid "Add property"
@@ -1230,6 +1231,10 @@ msgstr "Approve permission change"
 msgid "Approve revocation"
 msgstr "Approve revocation"
 
+#: src/components/DatabaseTableDialog.tsx
+msgid "Archive"
+msgstr "Archive"
+
 #: src/components/DatabaseRecordPageChrome.tsx
 #: src/components/DatabaseTableDialog.tsx
 msgid "Archive page"
@@ -1280,6 +1285,11 @@ msgstr "Ask {0} CLI"
 #: src/components/chat/ChatMessageList.tsx
 msgid "Ask about your current document or project."
 msgstr "Ask about your current document or project."
+
+#: src/components/DatabaseTableDialog.tsx
+#: src/editor/components/DatabaseView.tsx
+msgid "Ask agent"
+msgstr "Ask agent"
 
 #: src/editor/components/DatabaseView.tsx
 msgid "Ask agent about {inlineDatabaseContext}"
@@ -1792,14 +1802,6 @@ msgstr "Caption"
 msgid "Captured Context Pack"
 msgstr "Captured Context Pack"
 
-#: src/editor/components/DatabaseView.tsx
-msgid "Change database view"
-msgstr "Change database view"
-
-#: src/editor/components/DatabaseView.tsx
-msgid "Change database view: {inlineDatabaseContext}"
-msgstr "Change database view: {inlineDatabaseContext}"
-
 #: src/components/DatabaseTableDialog.tsx
 msgid "Change property type"
 msgstr "Change property type"
@@ -1892,6 +1894,10 @@ msgstr "Choose a compatible data source. The move will use the same reviewed pla
 #: src/components/DatabaseComputedPropertyDialog.tsx
 msgid "Choose a compatible relation, target property, and aggregation."
 msgstr "Choose a compatible relation, target property, and aggregation."
+
+#: src/components/DatabaseTableDialog.tsx
+msgid "Choose a name and type for the new column."
+msgstr "Choose a name and type for the new column."
 
 #: src/components/BottomComposer.tsx
 #: src/components/empty-state/CreatePromptComposer.tsx
@@ -2325,6 +2331,10 @@ msgstr "Config sharing unavailable: {0}."
 #: src/components/settings/SharingSection.tsx
 msgid "Config sharing unchanged — see details below."
 msgstr "Config sharing unchanged — see details below."
+
+#: src/components/DatabaseTableDialog.tsx
+msgid "Configure options"
+msgstr "Configure options"
 
 #: src/components/settings/SettingsDialogShell.tsx
 msgid "Configure user, project, and integration settings."
@@ -3384,6 +3394,7 @@ msgstr "Default properties"
 msgid "Definitions"
 msgstr "Definitions"
 
+#: src/components/DatabaseTableDialog.tsx
 #: src/components/DatabaseViewTabMenu.tsx
 #: src/components/DeleteConfirmationDialog.tsx
 #: src/components/skill-actions.tsx
@@ -3756,6 +3767,7 @@ msgstr "Drag {patternText} to reorder"
 msgid "Drag item {0} to reorder"
 msgstr "Drag item {0} to reorder"
 
+#: src/components/DatabaseTableDialog.tsx
 #: src/components/DatabaseViewTabMenu.tsx
 #: src/components/FileTree.tsx
 #: src/components/skill-actions.tsx
@@ -5308,9 +5320,29 @@ msgstr "Insert a footnote reference + matching definition stub."
 msgid "Insert a markdown hard break."
 msgstr "Insert a markdown hard break."
 
+#: src/components/DatabaseTableDialog.tsx
+msgid "Insert left"
+msgstr "Insert left"
+
 #: src/editor/bubble-menu/LinkEditPopover.tsx
 msgid "Insert link"
 msgstr "Insert link"
+
+#: src/components/DatabaseTableDialog.tsx
+msgid "Insert property"
+msgstr "Insert property"
+
+#: src/components/DatabaseTableDialog.tsx
+msgid "Insert property to the left"
+msgstr "Insert property to the left"
+
+#: src/components/DatabaseTableDialog.tsx
+msgid "Insert property to the right"
+msgstr "Insert property to the right"
+
+#: src/components/DatabaseTableDialog.tsx
+msgid "Insert right"
+msgstr "Insert right"
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Insert, delete, move, copy, and indent source editor lines through CodeMirror's default keymap."
@@ -5326,6 +5358,7 @@ msgid "Inspect agent data context"
 msgstr "Inspect agent data context"
 
 #: src/components/DatabaseGallery.tsx
+#: src/components/DatabaseTableDialog.tsx
 msgid "Inspect context"
 msgstr "Inspect context"
 
@@ -5908,6 +5941,10 @@ msgstr "Make this knowledge base available as a Claude Skill."
 msgid "Manage hidden files in Settings → Ignore patterns."
 msgstr "Manage hidden files in Settings → Ignore patterns."
 
+#: src/components/DatabaseTableDialog.tsx
+msgid "Manage Multi-select options"
+msgstr "Manage Multi-select options"
+
 #: src/components/DatabasePropertiesDialog.tsx
 #: src/components/DatabaseTableDialog.tsx
 #: src/editor/components/DatabaseView.tsx
@@ -6095,6 +6132,10 @@ msgstr "More requests were blocked."
 #: src/editor/components/PreviewBlockedNotice.tsx
 msgid "More than {0} requests were blocked by the preview's security policy"
 msgstr "More than {0} requests were blocked by the preview's security policy"
+
+#: src/components/DatabaseTableDialog.tsx
+msgid "Move"
+msgstr "Move"
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Move between table cells"
@@ -6735,6 +6776,10 @@ msgstr "No pages link here yet."
 msgid "No pages link to this PDF yet."
 msgstr "No pages link to this PDF yet."
 
+#: src/components/DatabaseTableDialog.tsx
+msgid "No pages match “{searchQuery}”."
+msgstr "No pages match “{searchQuery}”."
+
 #: src/components/DatabaseFeed.tsx
 msgid "No pages match this view."
 msgstr "No pages match this view."
@@ -7042,6 +7087,7 @@ msgid "Only the current document uses <0>#{tag}</0>."
 msgstr "Only the current document uses <0>#{tag}</0>."
 
 #: src/components/DatabaseGallery.tsx
+#: src/components/DatabaseTableDialog.tsx
 #: src/components/GraphPanel.tsx
 msgid "Open"
 msgstr "Open"
@@ -7959,8 +8005,10 @@ msgid "properties"
 msgstr "properties"
 
 #: src/components/DatabaseCreationDialog.tsx
+#: src/components/DatabaseTableDialog.tsx
 #: src/components/PropertyPanel.tsx
 #: src/components/TemplateProperties.tsx
+#: src/editor/components/DatabaseView.tsx
 msgid "Properties"
 msgstr "Properties"
 
@@ -8254,16 +8302,9 @@ msgstr "References and functions"
 #: src/components/DatabasePermissionsDialog.tsx
 #: src/components/DatabasePublicSharesSection.tsx
 #: src/components/DatabaseTableDialog.tsx
+#: src/editor/components/DatabaseView.tsx
 msgid "Refresh"
 msgstr "Refresh"
-
-#: src/editor/components/DatabaseView.tsx
-msgid "Refresh linked database view"
-msgstr "Refresh linked database view"
-
-#: src/editor/components/DatabaseView.tsx
-msgid "Refresh linked database view: {inlineDatabaseContext}"
-msgstr "Refresh linked database view: {inlineDatabaseContext}"
 
 #: src/components/DatabaseOnboardingDialog.tsx
 msgid "Refresh preview"
@@ -8719,6 +8760,7 @@ msgstr "Restarting closes this project's server. Connected agents (Claude Code, 
 msgid "Restarting the server…"
 msgstr "Restarting the server…"
 
+#: src/components/DatabaseTableDialog.tsx
 #: src/components/TimelinePanel.tsx
 msgid "Restore"
 msgstr "Restore"
@@ -9154,9 +9196,21 @@ msgstr "Search failed."
 msgid "Search files, commands, projects, and AI handoff actions. With text selected in the visual editor, this chord adds a link instead."
 msgstr "Search files, commands, projects, and AI handoff actions. With text selected in the visual editor, this chord adds a link instead."
 
+#: src/editor/components/DatabaseView.tsx
+msgid "Search loaded pages in this view"
+msgstr "Search loaded pages in this view"
+
 #: src/components/CommandPalette.tsx
 msgid "Search matches file names, paths, and folders. Open a file to search its body (⌘F)."
 msgstr "Search matches file names, paths, and folders. Open a file to search its body (⌘F)."
+
+#: src/editor/components/DatabaseView.tsx
+msgid "Search pages"
+msgstr "Search pages"
+
+#: src/editor/components/DatabaseView.tsx
+msgid "Search pages in {inlineDatabaseContext}"
+msgstr "Search pages in {inlineDatabaseContext}"
 
 #: src/components/CommandPalette.tsx
 msgid "Search pages, databases, folders, and commands for the current workspace."
@@ -9792,6 +9846,8 @@ msgid "Something went wrong. Please try again."
 msgstr "Something went wrong. Please try again."
 
 #: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/DatabaseTableDialog.tsx
+#: src/editor/components/DatabaseView.tsx
 msgid "Sort"
 msgstr "Sort"
 

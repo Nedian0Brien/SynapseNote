@@ -144,6 +144,7 @@
     "1nSsAU": ["Inspect agent context"],
     "1nke1r": ["Open ", ["0"], " on GitHub (opens in a new tab)"],
     "1oHl_w": ["No previous chats"],
+    "1pZos8": ["No pages match “", ["searchQuery"], "”."],
     "1rPfBk": ["Truncation"],
     "1t_NnN": ["Reject"],
     "1vaMx1": ["Default Codex chat model"],
@@ -179,6 +180,7 @@
     "2bVHbB": ["Available in every project on this computer."],
     "2dX91g": ["Loading page content"],
     "2fkdnR": ["Nothing to undo on this file"],
+    "2gHiFT": ["Ask agent"],
     "2hYmUH": ["my@email.com"],
     "2j1kfc": ["Enter a valid URL (for example https://api.openai.com/v1)."],
     "2mmqoO": ["Anchor time (ISO)"],
@@ -665,6 +667,7 @@
       "This project lives only on this computer. Connect it to GitHub to back it up and share it with other people."
     ],
     "Aif3E7": ["Enable semantic search"],
+    "Al82EK": ["Search pages in ", ["inlineDatabaseContext"]],
     "Am78jY": ["Drag ", ["keyName"], " to reorder"],
     "Amv6me": ["1 line selected"],
     "Approximate coordinates are rounded before storage, so later searches, exports, and map links cannot recover the exact location.": [
@@ -683,6 +686,7 @@
     "B2DrPb": ["Auto-save"],
     "B2Srgd": [["packName"], " skill installed."],
     "B3NAZC": ["Open Navigator"],
+    "B495Gs": ["Archive"],
     "B4_ipX": [
       [
         "conflictCount",
@@ -1293,6 +1297,7 @@
     "MHcDPm": ["SynapseNote quit unexpectedly last time."],
     "MHrjPM": ["Title"],
     "MJqRO6": ["Your report is being sent."],
+    "MKIM3K": ["Search pages"],
     "MKOVhz": ["Enable git auto-sync"],
     "MOmZS1": ["Publish only the selected properties. Link credentials are shown once."],
     "MQIM_Y": ["Couldn't copy. Select the URL above to copy it manually."],
@@ -1316,6 +1321,7 @@
     "Mhk9g_": ["Selected field preview"],
     "Mj8R8K": ["Couldn't install skill: ", ["0"]],
     "MmDDWK": ["Recently opened"],
+    "MmDknU": ["Insert right"],
     "MmdSH3": ["Button plan · not executed"],
     "MmqnGI": ["No global skills yet."],
     "Mnavhe": [["propPanelDescriptorLabel"], " Properties"],
@@ -1531,6 +1537,7 @@
     "QQghPu": ["Install in Claude Desktop"],
     "QR5SP1": ["created template"],
     "QTHNBz": ["Inline database"],
+    "QWdKwH": ["Move"],
     "QYfQdv": [["displayName"], " CLI"],
     "Q_HTan": ["Repeat schedule"],
     "QcpeeE": ["Navigate to ", ["docName"]],
@@ -1672,7 +1679,6 @@
     "T67A0Y": [
       "Auto-sync pushes/pulls commits to your git remote on intervals and on save. Toggling on requires confirmation."
     ],
-    "TFTD6w": ["Change database view: ", ["inlineDatabaseContext"]],
     "TJnkyf": ["ok ui responded but server.lock has no port yet"],
     "TKQ7K-": ["Install"],
     "TLIO3j": ["Toggle italic formatting."],
@@ -1918,6 +1924,7 @@
     "Xw_maT": ["Type a query, then press ↵ to search your pages by meaning."],
     "XyOUTJ": ["Exit merge"],
     "XylyIH": ["The first pages will open in the editable database after this plan commits."],
+    "XzcwMQ": ["Search loaded pages in this view"],
     "Xzy0s0": ["Remove ", ["fullLabel"], " from context"],
     "Y-Urt2": ["Block math equation rendered with KaTeX from a LaTeX source string."],
     "Y1QMlM": ["Get set up"],
@@ -1965,7 +1972,6 @@
     "Z77cjh": ["Shared database"],
     "Z8KDox": ["Enter a folder name (e.g. brain)."],
     "Z8lGw6": ["Share"],
-    "Z8qMaR": ["Change database view"],
     "Z8vqCN": ["Show undo token"],
     "Z97-6-": ["Inspect selected context"],
     "Z9Bl0e": ["New page type"],
@@ -2046,6 +2052,7 @@
       "Read-only copy of a MirrorSource block from another doc. Edit at the source and it updates live."
     ],
     "_XWY2J": ["Terminal disabled"],
+    "_cxklM": ["Insert property"],
     "_dqduX": ["Next page"],
     "_eguJc": ["Uploading"],
     "_gkGSK": ["deleted template"],
@@ -2267,6 +2274,7 @@
     ],
     "dn-x7E": ["Add URL"],
     "dprWmL": ["Anchor in this page"],
+    "dpy6BW": ["Choose a name and type for the new column."],
     "dqYEBv": ["Undo last change"],
     "dr1vFs": ["Replace all matches"],
     "drB9Dv": [["0"], " filter fields"],
@@ -2310,6 +2318,7 @@
     "egmHiO": ["Public without token"],
     "el312q": ["Install skills into"],
     "emgiet": ["Authoritative content; mirrored verbatim everywhere it's referenced."],
+    "empT7O": ["Insert property to the right"],
     "eneWvv": ["Draft"],
     "epuNYK": [
       "Mark a block as the source of truth. Mirrors elsewhere update live as you edit it."
@@ -2549,6 +2558,7 @@
     ],
     "iuTKci": ["No edits yet."],
     "ixX4-h": ["Ask agent about page"],
+    "iyTG_5": ["Manage Multi-select options"],
     "iyVIqx": ["This Map view has an invalid Place mapping."],
     "iycx_A": ["Pushing"],
     "j7icCg": ["Approve revocation"],
@@ -2583,7 +2593,6 @@
     "jjkiiq": ["Delete this memo?"],
     "jjtmV_": ["First file name"],
     "jkZFIw": ["No memo text"],
-    "jm5wMX": ["Refresh linked database view: ", ["inlineDatabaseContext"]],
     "jol95m": ["Failed to open Project Navigator."],
     "jpctdh": ["View"],
     "jpsnUP": ["Markdown starter body"],
@@ -2946,6 +2955,7 @@
     "pha01Y": ["Project-level pages with no incoming graph edges."],
     "pjotuC": ["This form is unavailable."],
     "pkAft1": ["Search failed."],
+    "pkzQGh": ["Configure options"],
     "pmKdif": ["Failed: ", ["loadError"]],
     "pmOGtg": [
       "Use the default OpenAI endpoint or override it with an OpenAI-compatible base URL for Azure or a self-hosted provider."
@@ -3159,10 +3169,10 @@
     "tUvUfp": ["Use a folder you already have."],
     "tViRUw": ["Move record"],
     "tW_yvQ": ["Expand ", ["docName"]],
-    "tXc-Or": ["Refresh linked database view"],
     "tXkhj_": ["Start"],
     "t_HmsR": ["Apply across the workspace"],
     "t_YqKh": ["Remove"],
+    "tcCIrI": ["Insert left"],
     "tdta9X": ["Page ", ["0"]],
     "teD0H9": ["Couldn't open a worktree for that branch."],
     "tfDRzk": ["Save"],
@@ -3280,6 +3290,7 @@
     "vKC52t": ["No annotations"],
     "vKcOk6": ["Clear linked selections"],
     "vLyv1R": ["Hide"],
+    "vNhgNE": ["Insert property to the left"],
     "vQIVHc": ["Folder properties"],
     "vVJWTJ": ["Submit response"],
     "vVkJqG": ["Refresh preview"],
