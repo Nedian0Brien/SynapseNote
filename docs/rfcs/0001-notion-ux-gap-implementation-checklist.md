@@ -376,16 +376,16 @@ treated as visual parity until a browser capture is attached.
 - [x] **NUI-501** Add a table-edge property `+` and header menu for add,
   rename, configure, hide/reorder, calculate, and delete with dependency and
   recovery previews. The table edge now exposes an accessible `+ Add property`
-  affordance when schema management is available and routes to the existing
-  dependency/recovery-aware properties dialog. Each visible property header now
-  has a keyboard-accessible contextual menu for show/hide, left/right reorder,
-  calculation, settings, type conversion, and dependency-aware delete. The
-  reviewed properties dialog now supports stable-ID inline rename as well as
-  the existing reorder/delete recovery path. Inline table blocks now wire the
-  same callback, so the table-edge `+` and header menu open the canonical
-  reviewed properties surface without exposing raw IDs; a linked-view action
-  also provides an explicit `Manage properties` entry. Pixel-level Notion
-  visual parity remains open. Evidence: `DatabaseTableDialog.dom.test.tsx`
+  affordance when schema management is available. Each visible property header
+  now has a keyboard-accessible contextual menu for show/hide, left/right
+  reorder, calculation, settings, type conversion, and dependency-aware delete.
+  The reviewed properties dialog now supports stable-ID inline rename as well as
+  the existing reorder/delete recovery path. Inline table blocks use a human
+  direct-safe, undoable path for adding an empty common property from the table
+  edge; rename/configure/conversion/delete still open the canonical reviewed
+  properties surface without exposing raw IDs. A linked-view action also
+  provides an explicit `Manage properties` entry. Pixel-level Notion visual
+  parity remains open. Evidence: `DatabaseTableDialog.dom.test.tsx`
   schema-management and contextual property-menu journeys in the verified
   64-test / 387-expectation suite, `DatabasePropertiesDialog.dom.test.tsx`
   rename/reorder/delete journeys (7/7 tests, 23 expectations), and the

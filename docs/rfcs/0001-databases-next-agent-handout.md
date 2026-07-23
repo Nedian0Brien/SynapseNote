@@ -111,6 +111,27 @@ agent context, diagnostics, and review receipts must remain secondary
 progressive-disclosure surfaces. The captured regression image is
 `docs/rfcs/assets/0001-notion-ux-audit/06-current-new-database-screen.png`.
 
+### Notion surface continuation (2026-07-23)
+
+The follow-up implementation keeps the temporary creation shell honest and
+pushes the linked block closer to Notion's document grammar:
+
+- `a6dd621c fix: disable pending database preview controls` disables the
+  preview's non-functional Table, new-view, and property controls until the
+  canonical table is mounted; cancellation still aborts the pending mutation.
+- `756256d1 feat: reveal table controls on hover` keeps selection, property,
+  and row-management chrome available to keyboard/focus users while revealing
+  it on hover/focus on the Notion surface instead of presenting an always-on
+  admin toolbar.
+- `0561a56 feat: show database title above inline views` separates the
+  database/source title from the saved-view tab name in inline blocks.
+- `32e998a3 feat: rename inline databases in place` adds click-to-rename with
+  Enter/Escape behavior and the existing direct-safe, undoable title mutation.
+
+These are implementation slices, not visual-gate closures: the checklist
+remains **101/128**, and browser/Electron capture is still required before
+claiming pixel-level Notion parity.
+
 ### Implementation slice completed after the correction (2026-07-23)
 
 Three feature commits now move the default experience toward that grammar:
