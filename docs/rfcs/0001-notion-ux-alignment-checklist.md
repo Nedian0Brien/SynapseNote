@@ -2359,7 +2359,10 @@ capability alone is insufficient.
       view projection; focused DOM/live-web evidence covers that add subpath.
       The primary table now dispatches option configuration for both Select and
       Multi-select, with focused array-migration compiler evidence.
-      Configure/reorder/hide and the full matrix remain open.
+      Saved-table Move left/right now follows the visible projection order even
+      when hidden properties are interleaved in the stored layout; focused
+      utility and DOM coverage records that boundary behavior. Configure,
+      reorder/hide end-to-end coverage and the full matrix remain open.
 - [ ] **UX-1106** E2E view create/switch/configure/duplicate/reorder/delete using
       visible tabs. The primary journey now passes saved-view create, tab
       switch, List rendering, and rename in bounded system-Chrome runs. The

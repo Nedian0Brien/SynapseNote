@@ -2948,6 +2948,21 @@ their broad evidence is actually assembled:
 - This is a supporting UX-1105/NUI-701 improvement. It does not close the
   remaining full E2E, visual, manual accessibility, or usability gates.
 
+### 2026-07-23 visible saved-view property ordering
+
+- `moveDatabaseTableProperty` now computes neighbors from the visible table
+  projection before translating the move back into the persisted full layout.
+  A hidden property between two visible columns no longer absorbs a Move
+  left/right action, and a hidden trailing column no longer leaves a false
+  enabled action at the visible boundary.
+- `DatabaseTable` now uses the same visible projection for menu disabled states.
+  Focused evidence: `database-table-layout.test.ts` (4 tests / 12
+  expectations), `DatabaseTableDialog.dom.test.tsx` (3 saved-view/order tests /
+  10 expectations), targeted Biome, and app typecheck all pass. Feature commit:
+  `007f247d`; changeset: `.changeset/notion-saved-view-visible-order.md`.
+- This is supporting UX-1105/R-005 evidence only. Full configure/reorder/hide
+  E2E, visual, accessibility, Electron, usability, and agent gates remain open.
+
 ## Recommended execution order
 
 1. When a browser-enabled runner is available, run only the new primary-journey
