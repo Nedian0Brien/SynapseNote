@@ -132,6 +132,21 @@ describe('R-017 prompt-to-valid-database evaluator', () => {
     expect(report.passes).toBe(true);
   });
 
+  test('accepts planner responses that omit the optional repair count', async () => {
+    const engine = await fixture();
+    const report = runDatabaseCreationEval(
+      engine,
+      () => ({
+        desiredState: desiredState('Tasks', ['status', 'owner'], 'table'),
+      }),
+      [CASES[0]],
+    );
+
+    expect(report.repairFreeRate).toBe(1);
+    expect(report.outcomes[0]?.repairAttempts).toBe(0);
+    expect(report.passes).toBe(true);
+  });
+
   test('fails the gate when planner output needs repair or misses requested schema', async () => {
     const engine = await fixture();
     const report = runDatabaseCreationEval(

@@ -60,12 +60,7 @@ export interface DatabaseCreationEvalReport {
 const R017_REPAIR_FREE_RATE_MIN = 0.9;
 
 function normalizedPlannerResult(result: DatabasePromptPlannerResult | unknown) {
-  if (
-    result &&
-    typeof result === 'object' &&
-    'desiredState' in result &&
-    'repairAttempts' in result
-  ) {
+  if (result && typeof result === 'object' && 'desiredState' in result) {
     const candidate = result as { desiredState: unknown; repairAttempts?: unknown };
     return {
       desiredState: candidate.desiredState,
