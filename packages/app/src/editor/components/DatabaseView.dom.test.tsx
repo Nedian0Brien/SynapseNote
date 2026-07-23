@@ -1576,7 +1576,7 @@ describe('DatabaseView', () => {
     const titleInput = screen.getByLabelText('Edit Title') as HTMLInputElement;
     fireEvent.change(titleInput, { target: { value: 'Renamed task' } });
     fireEvent.keyDown(titleInput, { key: 'Enter' });
-    await waitFor(() => expect(commitCalls).toBe(1));
+    await waitFor(() => expect(commitCalls).toBe(2));
     expect(await screen.findByTestId('inline-save-feedback')).toBeTruthy();
     const textInput = await screen.findByTestId('database-new-row-title');
     fireEvent.keyDown(textInput, { key: 'z', ctrlKey: true });
@@ -1596,7 +1596,7 @@ describe('DatabaseView', () => {
     const newRowTitle = await screen.findByTestId('database-new-row-title');
     fireEvent.change(newRowTitle, { target: { value: 'Inline page' } });
     fireEvent.keyDown(newRowTitle, { key: 'Enter' });
-    await waitFor(() => expect(commitCalls).toBe(2));
+    await waitFor(() => expect(commitCalls).toBe(3));
     undoBlocked = true;
     fireEvent.click(screen.getByRole('button', { name: 'Undo inline database change' }));
     await waitFor(() => expect(undoCalls).toBe(9));
@@ -1610,7 +1610,7 @@ describe('DatabaseView', () => {
     fireEvent.paste(titleCell as HTMLElement, {
       clipboardData: { getData: () => 'Pasted task' },
     });
-    await waitFor(() => expect(commitCalls).toBe(3));
+    await waitFor(() => expect(commitCalls).toBe(4));
     const reviewTitleCell = document.querySelector(
       '[data-database-cell-row="0"][data-database-cell-column="0"]',
     );
@@ -1619,7 +1619,7 @@ describe('DatabaseView', () => {
       clipboardData: { getData: () => 'Reviewed first\nReviewed second' },
     });
     expect(await screen.findByTestId('database-ghost-review')).toBeTruthy();
-    expect(commitCalls).toBe(3);
+    expect(commitCalls).toBe(4);
     fireEvent.click(screen.getByText('Discard'));
     await waitFor(() => expect(screen.queryByTestId('database-ghost-review')).toBeNull());
     fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0] as HTMLElement);
