@@ -3411,6 +3411,11 @@ describe('DatabaseTableDialog', () => {
     expect(tableScroll?.className).toContain('overflow-auto');
     const viewTabs = screen.getByRole('navigation', { name: 'Database views' });
     expect(viewTabs.className).toContain('overflow-x-auto');
+    const compactViewSwitcher = workspace?.querySelector('[data-database-compact-view-switcher]');
+    expect(compactViewSwitcher).not.toBeNull();
+    if (!compactViewSwitcher) throw new Error('compact view switcher is missing');
+    expect(compactViewSwitcher.className).toContain('md:hidden');
+    expect(compactViewSwitcher.querySelector('[aria-label="Saved database view"]')).not.toBeNull();
     const unnamedButtons = [...(workspace?.querySelectorAll('button') ?? [])].filter((button) => {
       const visibleLabel = button.textContent?.trim() ?? '';
       return visibleLabel.length === 0 && !button.getAttribute('aria-label');
