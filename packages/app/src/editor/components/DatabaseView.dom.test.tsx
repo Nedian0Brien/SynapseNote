@@ -240,6 +240,132 @@ describe('DatabaseView', () => {
     expect(surfaces[1]?.querySelector('[data-record-id="rec_shared"]')).toBeTruthy();
   });
 
+  test('persists inline property order in the linked block projection', async () => {
+    const priorityProperty = {
+      id: 'prop_priority',
+      key: 'priority',
+      name: 'Priority',
+      type: 'text' as const,
+    };
+    const inlineSource = {
+      ...source,
+      properties: [...source.properties, priorityProperty],
+    };
+    const inlineView = {
+      ...view,
+      projection: {
+        propertyIds: ['prop_title', 'prop_status', 'prop_priority'],
+        body: 'hidden' as const,
+      },
+    };
+    const inlineDatabase = {
+      ...database,
+      sources: [inlineSource],
+      views: [inlineView],
+    };
+    const dispatched: Array<Record<string, unknown>> = [];
+    const node = {
+      type: { name: 'jsxComponent' },
+      attrs: {
+        componentName: 'DatabaseView',
+        props: {
+          databaseId: inlineDatabase.id,
+          sourceId: inlineSource.id,
+          viewId: inlineView.id,
+          mode: 'inline',
+        },
+      },
+    };
+    const editor = {
+      state: {
+        doc: { nodeAt: () => node },
+        tr: {
+          setNodeMarkup: (_pos: number, _type: unknown, attrs: Record<string, unknown>) => {
+            dispatched.push(attrs);
+            return {};
+          },
+        },
+      },
+      view: { dispatch: () => {}, focus: () => {} },
+    } as never;
+
+    globalThis.fetch = mock(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path === '/api/databases/describe') {
+        return Response.json({
+          manifestRevision: hash,
+          schemaRevision: hash,
+          database: inlineDatabase,
+          source: inlineSource,
+          index: {
+            state: 'idle',
+            revision: hash,
+            manifestRevision: hash,
+            recordCount: 1,
+            issueCount: 0,
+            progress: null,
+            lastRebuiltAt: '2026-07-20T00:00:00.000Z',
+            lastIncrementalAt: null,
+            lastError: null,
+          },
+          allowedOperations: ['describe', 'query'],
+        });
+      }
+      if (path === '/api/databases/query') {
+        return Response.json({
+          sourceId: inlineSource.id,
+          snapshotRevision: hash,
+          matched: 1,
+          returned: 1,
+          isComplete: true,
+          nextCursor: null,
+          truncatedBy: null,
+          indexFreshness: 'snapshot',
+          records: [
+            {
+              id: 'rec_shared',
+              path: 'tasks/shared.md',
+              revision: hash,
+              values: {
+                prop_title: 'Shared canonical row',
+                prop_status: 'Open',
+                prop_priority: 'High',
+              },
+            },
+          ],
+          aggregation: null,
+        });
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
+      <JsxComponentHostProvider value={{ editor, getPos: () => 0, addChild: null }}>
+        <DatabaseView
+          databaseId={inlineDatabase.id}
+          sourceId={inlineSource.id}
+          viewId={inlineView.id}
+          mode="inline"
+        />
+      </JsxComponentHostProvider>,
+    );
+
+    expect(await screen.findByText('Shared canonical row')).toBeTruthy();
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Property options for Status' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Move right' }));
+
+    await waitFor(() =>
+      expect(dispatched.at(-1)?.props).toMatchObject({
+        viewOverrides: {
+          projection: {
+            propertyIds: ['prop_title', 'prop_priority', 'prop_status'],
+            body: 'hidden',
+          },
+        },
+      }),
+    );
+  });
+
   test('renders a linked Feed through its saved chronology and canonical source identity', async () => {
     const feedSource = {
       ...source,

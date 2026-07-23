@@ -2189,6 +2189,20 @@ export function DatabaseView({
                     ? activeLinkedView.layout.configuration
                     : undefined
                 }
+                onViewPropertyIdsChange={(propertyIds) => {
+                  // A linked block owns its visible column projection. Keep
+                  // table-edge hide/reorder actions in the block's stable
+                  // viewOverrides instead of the canonical view or an
+                  // ephemeral component layout, so a refresh preserves the
+                  // Notion-style per-block view configuration.
+                  persistLinkedViewOverrides({
+                    ...(localViewOverrides ?? {}),
+                    projection: {
+                      ...activeLinkedView.projection,
+                      propertyIds: [...propertyIds],
+                    },
+                  });
+                }}
                 onOpen={openRecord}
                 onEdit={editInlineCell}
                 onCreateRecord={createInlineRecord}
