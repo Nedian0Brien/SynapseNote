@@ -80,6 +80,7 @@
 - Latest route-handoff changeset: `../../.changeset/notion-route-handoff.md`
 - Latest blank-identity/StrictMode changeset: `../../.changeset/notion-blank-database-identity.md`
 - Latest creation-retry changeset: `../../.changeset/notion-creation-retry.md`
+- Latest inline creation-retry changeset: `../../.changeset/inline-database-create-retry.md`
 
 ## Objective and completion rule
 
@@ -2270,6 +2271,27 @@ the Mac, but Computer Use still reported the OS as locked and returned no
 accessibility tree or screenshot. The dev process was stopped cleanly. This
 remains an environment capture blocker, not a product-test pass; do not close
 UX-009, UX-1101–UX-1114, NUI-105, or NUI-701–NUI-705 from this attempt.
+
+### 2026-07-23 Inline creation recovery follow-up
+
+The inline `/database` Notion-style creator now has the same recovery contract
+as the full-page creator:
+
+- A failed automatic blank creation remains in the page-shaped block instead of
+  reopening the database picker or silently disappearing.
+- The inline landmark exposes `aria-busy="true"` during the request and offers
+  an in-place `Retry` button from the error state.
+- Each attempt uses a fresh UUID idempotency key, so a retry cannot accidentally
+  reuse a prior failed request identity.
+- `DatabaseView.dom.test.tsx` passes 21 tests / 259 expectations, including a
+  first-request 503 followed by a successful retry under React StrictMode;
+  targeted Biome and app typecheck pass.
+- The accompanying changeset is
+  `../../.changeset/inline-database-create-retry.md`.
+
+This is functional recovery evidence only. Browser/Electron visual comparison,
+manual keyboard/screen-reader review, and first-use usability evidence remain
+open under NUI-105/NUI-701–NUI-705 and UX-009/UX-1101–UX-1114.
 
 ## Work in progress: do this first
 
