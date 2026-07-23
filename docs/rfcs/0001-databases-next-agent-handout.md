@@ -762,6 +762,11 @@ do not reconstruct behavior solely from this summary.
   Timeline open/inspect/move/resize, List expand/collapse/inspect, and
   Gallery/Feed/Chart/Map open/inspect controls are all title-first. Stable IDs
   remain the underlying identity and mutation scope.
+- Commit `8259f7e7 fix: name inline cell actions by record title` extends the
+  contract to inline Table property links, copy controls, buttons, and edit
+  affordances. Full-page management keeps stable-ID labels; the inline
+  DatabaseView journey passes after its title-based edit/selection selectors
+  were updated. Changeset: `.changeset/inline-cell-action-labels.md`.
 - `DatabaseRecordPageSurface` is now the shared structural component used by
   side peek, center peek, and the ordinary full-page editor. Sheet/Dialog and
   live Y.Doc bindings remain host adapters, while the record-page identity and

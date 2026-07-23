@@ -406,7 +406,9 @@ treated as visual parity until a browser capture is attached.
   title-first naming to their inline open, inspect, scheduling, resize, and
   expand/collapse controls. The focused alternate-renderer suite passes 24
   tests / 91 expectations, and the linked-view DatabaseView slice passes 6
-  tests / 62 expectations.
+  tests / 62 expectations. Inline Table property links, copy controls, buttons,
+  and edit affordances now use the same visible title context, while the
+  stable record ID remains the underlying scope.
 - [x] **NUI-403** Use one canonical record-page component for title cell, peek,
   full page, comments, history, relation navigation, previous/next, and return
   to the originating view. Record opens now persist the originating database,

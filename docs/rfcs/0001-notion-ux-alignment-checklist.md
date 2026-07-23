@@ -853,7 +853,9 @@ inspect controls; Gallery, Feed, Chart, and Map name open/inspect controls.
 Stable record IDs remain in the DOM markers and callbacks. Focused evidence
 passes 24 tests / 91 expectations across the seven renderer suites and 6 tests
 / 62 expectations in the linked DatabaseView journeys; no browser E2E rerun
-was needed.
+was needed. The primary inline Table also names property links, copy controls,
+buttons, and cell-edit affordances with the visible page title; full-page
+management retains stable-ID labels for compatibility.
 
 This closes UX-701 at the functional implementation/evidence layer. Shared
 record-page composition, breadcrumbs, body editing, and visual/cross-host
