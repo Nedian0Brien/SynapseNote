@@ -500,9 +500,10 @@ copy/paste, import/export, API, agent schema, permissions, and tests agree.
       agent, and automation entry points.
 - [ ] **L-017** Complete security and privacy review before public beta and GA.
       Evidence attachment exists at
-      `docs/rfcs/0001-database-security-scan-2026-07-22.md`; its current scan is
-      non-passing, and named public-beta/GA approval plus residual-risk
-      disposition are still required.
+      `docs/rfcs/0001-database-security-scan-2026-07-23.md`; the current scan is
+      non-passing (76 advisories, including 22 high and zero critical), and
+      named public-beta/GA approval plus residual-risk disposition are still
+      required.
 
 ## M. Collaboration, offline, Git, and conflict recovery
 

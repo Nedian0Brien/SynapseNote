@@ -2841,9 +2841,11 @@ closed in the authoritative checklist.
 
 - **L-017** — complete the security/privacy review. The evidence template is
   [0001-database-security-privacy-release-review.md](./0001-database-security-privacy-release-review.md).
-  The dependency scan attachment records the initial 99-advisory snapshot and
-  the latest non-passing rerun at 58 advisories (zero critical, 14 high); keep
-  remediating or record named, time-bounded exceptions, then obtain approvals.
+  The historical dependency scan recorded 99 findings, while the current
+  2026-07-23 rerun records 76 advisories (zero critical, 22 high) in
+  [0001-database-security-scan-2026-07-23.md](./0001-database-security-scan-2026-07-23.md).
+  Keep remediating or record named, time-bounded exceptions, then obtain
+  approvals.
   Do not self-sign public-beta or GA approvals.
 - **Q-012** — complete usability testing for creation, Table editing, view
   configuration, Relations, bulk changes and agent review. Automated DOM tests

@@ -41,8 +41,10 @@ decision and date; passing automated tests alone is not a release approval.
 - [x] Dependency/security scan results attached for the release candidate. The
   2026-07-22 baseline is recorded in
   [0001-database-security-scan-2026-07-22.md](./0001-database-security-scan-2026-07-22.md);
-  the latest focused rerun reports 58 advisories (14 high, 35 moderate, 9 low,
-  zero critical). It is explicitly non-passing and does not close L-017.
+  the current 2026-07-23 rerun is recorded in
+  [0001-database-security-scan-2026-07-23.md](./0001-database-security-scan-2026-07-23.md)
+  and reports 76 advisories (22 high, 44 moderate, 10 low, zero critical). It
+  is explicitly non-passing and does not close L-017.
 - [ ] Public-beta exploratory abuse test completed against the packaged build.
 - [ ] Privacy notice and user-facing deletion/export copy reviewed. Draft
   copy is now published in the [Databases guide](/docs/features/databases#privacy-retention-deletion-and-export)
