@@ -2871,7 +2871,9 @@ closed in the authoritative checklist.
   output replay is attached rather than counting the deterministic test
   planner as model evidence. The evaluator now also accepts planner responses
   that omit the optional `repairAttempts` field and normalizes that omission to
-  zero; the focused suite covers this integration boundary.
+  zero; the focused suite covers this integration boundary. Its gate now uses
+  the `held` split (when present) for release pass/fail and reports separate
+  held-out repair-free/schema/view rates, so tune cases cannot inflate R-017.
 - **R-018** is closed with a transport-neutral final-state evaluator and a real
   commit → Context Pack → undo scenario. The focused suite passes 2 tests / 9
   expectations; it rejects wrong citations and partial recovery.

@@ -701,8 +701,11 @@ copy/paste, import/export, API, agent schema, permissions, and tests agree.
       manual schema repair.
       The reusable evaluator now accepts the typed planner response with or
       without its optional `repairAttempts` field; omitted counts normalize to
-      zero and remain subject to the same repair-free threshold. Real model or
-      agent replay evidence is still required before closing this gate.
+      zero and remain subject to the same repair-free threshold. When the eval
+      set includes `tune` and `held` cases, the release pass/fail decision and
+      split metrics use the held-out cases so tuning examples cannot mask a
+      failure. Real model or agent replay evidence is still required before
+      closing this gate.
 - [x] **R-018** Evaluate final database state, evidence correctness, tokens, tool
       calls, latency, and recovery rather than transcript appearance alone.
       Evidence: `packages/server/src/database-final-eval.ts` is a pure,
