@@ -112,7 +112,10 @@ import { DatabaseSavedViewSettingsDialog } from '@/components/DatabaseSavedViewS
 import { DatabaseTemplatesDialog } from '@/components/DatabaseTemplatesDialog';
 import { DatabaseTimeline, type DatabaseTimelineChange } from '@/components/DatabaseTimeline';
 import { DatabaseUniqueIdPropertyDialog } from '@/components/DatabaseUniqueIdPropertyDialog';
-import { DatabaseViewManagerDialog } from '@/components/DatabaseViewManagerDialog';
+import {
+  DatabaseViewManagerDialog,
+  type DatabaseViewManagerInitialAction,
+} from '@/components/DatabaseViewManagerDialog';
 import { DatabaseViewQuerySummary } from '@/components/DatabaseViewQuerySummary';
 import { DatabaseViewRenameDialog } from '@/components/DatabaseViewRenameDialog';
 import { type DatabaseViewTabAction, DatabaseViewTabMenu } from '@/components/DatabaseViewTabMenu';
@@ -3349,7 +3352,7 @@ export type DatabaseTableDialogProps = {
   /** Optional reviewed surface to open when an inline view delegates a control. */
   initialDatabaseSurface?: 'properties' | 'view-settings' | 'view-manager' | 'filters';
   /** Optional reviewed saved-view action forwarded from an inline block. */
-  initialViewAction?: { kind: 'duplicate'; viewId: string };
+  initialViewAction?: DatabaseViewManagerInitialAction;
   initialPropertyId?: string;
   initialSelectedRecordIds?: readonly string[];
   presentation?: 'dialog' | 'page' | 'canvas';

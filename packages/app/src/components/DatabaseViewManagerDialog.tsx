@@ -41,6 +41,12 @@ import {
   duplicateDatabaseView,
 } from '@/lib/database-view-lifecycle';
 
+export type DatabaseViewManagerInitialAction =
+  | { kind: 'duplicate'; viewId: string }
+  | { kind: 'favorite'; viewId: string; favorite: boolean }
+  | { kind: 'reorder'; viewId: string; direction: -1 | 1 }
+  | { kind: 'delete'; viewId: string };
+
 export function DatabaseViewManagerDialog({
   open,
   onOpenChange,
@@ -55,7 +61,7 @@ export function DatabaseViewManagerDialog({
   source: DatabaseSource;
   views: readonly DatabaseView[];
   busy: boolean;
-  initialAction?: { kind: 'duplicate'; viewId: string };
+  initialAction?: DatabaseViewManagerInitialAction;
   onChange: (change: DatabaseViewLifecycleChange) => void;
 }) {
   'use no memo';
@@ -155,19 +161,25 @@ export function DatabaseViewManagerDialog({
 
   useEffect(() => {
     if (!open || !initialAction || busy) return;
-    const actionKey = `${initialAction.kind}:${initialAction.viewId}`;
+    const actionKey = `${initialAction.kind}:${initialAction.viewId}:${
+      'favorite' in initialAction ? initialAction.favorite : ''
+    }`;
     if (handledInitialAction.current === actionKey) return;
     const view = views.find((candidate) => candidate.id === initialAction.viewId);
     if (!view) return;
     handledInitialAction.current = actionKey;
-    onChange({
-      kind: 'duplicate',
-      view: duplicateDatabaseView({
-        view,
-        existingViews: views,
-        uuid: crypto.randomUUID(),
-      }),
-    });
+    if (initialAction.kind === 'duplicate') {
+      onChange({
+        kind: 'duplicate',
+        view: duplicateDatabaseView({
+          view,
+          existingViews: views,
+          uuid: crypto.randomUUID(),
+        }),
+      });
+      return;
+    }
+    onChange(initialAction);
   }, [open, initialAction, busy, views, onChange]);
 
   return (

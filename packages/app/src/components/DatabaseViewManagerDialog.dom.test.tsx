@@ -560,4 +560,39 @@ describe('DatabaseViewManagerDialog', () => {
     );
     await waitFor(() => expect(onChange).toHaveBeenCalledTimes(1));
   });
+
+  test('starts reviewed favorite, reorder, and delete changes from inline tab actions', async () => {
+    const actions = [
+      {
+        initialAction: { kind: 'favorite' as const, viewId: 'view_recent', favorite: true },
+        expected: { kind: 'favorite', viewId: 'view_recent', favorite: true },
+      },
+      {
+        initialAction: { kind: 'reorder' as const, viewId: 'view_recent', direction: -1 as const },
+        expected: { kind: 'reorder', viewId: 'view_recent', direction: -1 },
+      },
+      {
+        initialAction: { kind: 'delete' as const, viewId: 'view_recent' },
+        expected: { kind: 'delete', viewId: 'view_recent' },
+      },
+    ];
+
+    for (const action of actions) {
+      const onChange = mock(() => {});
+      render(
+        <DatabaseViewManagerDialog
+          open
+          onOpenChange={() => {}}
+          source={source}
+          views={views}
+          busy={false}
+          initialAction={action.initialAction}
+          onChange={onChange}
+        />,
+      );
+      await waitFor(() => expect(onChange).toHaveBeenCalledTimes(1));
+      expect(onChange.mock.calls[0]?.[0]).toEqual(action.expected);
+      cleanup();
+    }
+  });
 });

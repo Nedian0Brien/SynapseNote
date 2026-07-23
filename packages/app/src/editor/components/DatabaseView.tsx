@@ -45,6 +45,7 @@ import type {
   DatabaseInitialRecordAction,
   DatabaseTableViewState,
 } from '@/components/DatabaseTableDialog';
+import type { DatabaseViewManagerInitialAction } from '@/components/DatabaseViewManagerDialog';
 import { DatabaseViewQuerySummary } from '@/components/DatabaseViewQuerySummary';
 import { type DatabaseViewTabAction, DatabaseViewTabMenu } from '@/components/DatabaseViewTabMenu';
 import type { DatabaseAgentScope } from '@/components/handoff/database-agent-scope';
@@ -191,6 +192,26 @@ interface InlineDatabasePickerProps {
   message?: string;
   onSelected: (reference: { databaseId: string; sourceId: string; viewId: string }) => void;
   onCreateBlank?: () => void;
+}
+
+export function databaseViewTabActionToInitialAction(
+  view: Pick<CoreDatabaseView, 'id' | 'favorite'>,
+  action: DatabaseViewTabAction,
+): DatabaseViewManagerInitialAction | null {
+  switch (action) {
+    case 'duplicate':
+      return { kind: 'duplicate', viewId: view.id };
+    case 'favorite':
+      return { kind: 'favorite', viewId: view.id, favorite: view.favorite !== true };
+    case 'move-left':
+      return { kind: 'reorder', viewId: view.id, direction: -1 };
+    case 'move-right':
+      return { kind: 'reorder', viewId: view.id, direction: 1 };
+    case 'delete':
+      return { kind: 'delete', viewId: view.id };
+    default:
+      return null;
+  }
 }
 
 /**
@@ -766,7 +787,7 @@ export function DatabaseView({
     'properties' | 'view-settings' | 'view-manager' | 'filters'
   >();
   const [initialViewAction, setInitialViewAction] = useState<
-    { kind: 'duplicate'; viewId: string } | undefined
+    DatabaseViewManagerInitialAction | undefined
   >();
   const [initialPropertyId, setInitialPropertyId] = useState<string>();
   const [initialSelectedRecordIds, setInitialSelectedRecordIds] = useState<readonly string[]>();
@@ -1142,11 +1163,9 @@ export function DatabaseView({
       openInlineDatabaseSurface('view-settings');
       return;
     }
-    if (action === 'duplicate') {
-      openInlineDatabaseSurface('view-manager', undefined, {
-        kind: 'duplicate',
-        viewId: view.id,
-      });
+    const initialAction = databaseViewTabActionToInitialAction(view, action);
+    if (initialAction) {
+      openInlineDatabaseSurface('view-manager', undefined, initialAction);
       return;
     }
     openInlineDatabaseSurface('view-manager');
@@ -1478,7 +1497,7 @@ export function DatabaseView({
   const openInlineDatabaseSurface = (
     surface: 'properties' | 'view-settings' | 'view-manager' | 'filters',
     propertyId?: string,
-    viewAction?: { kind: 'duplicate'; viewId: string },
+    viewAction?: DatabaseViewManagerInitialAction,
   ) => {
     if (surface === 'view-settings') {
       setLinkedSortTargetId(propertyId);

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { StrictMode } from 'react';
-import { DatabaseView } from './DatabaseView';
+import { DatabaseView, databaseViewTabActionToInitialAction } from './DatabaseView';
 import { JsxComponentHostProvider } from './jsx-host-context';
 
 const originalFetch = globalThis.fetch;
@@ -55,6 +55,29 @@ afterEach(() => {
 });
 
 describe('DatabaseView', () => {
+  test('maps inline saved-view tab actions to reviewed manager intents', () => {
+    const candidate = { id: 'view_open', favorite: false };
+    expect(databaseViewTabActionToInitialAction(candidate, 'duplicate')).toEqual({
+      kind: 'duplicate',
+      viewId: 'view_open',
+    });
+    expect(databaseViewTabActionToInitialAction(candidate, 'favorite')).toEqual({
+      kind: 'favorite',
+      viewId: 'view_open',
+      favorite: true,
+    });
+    expect(databaseViewTabActionToInitialAction(candidate, 'move-right')).toEqual({
+      kind: 'reorder',
+      viewId: 'view_open',
+      direction: 1,
+    });
+    expect(databaseViewTabActionToInitialAction(candidate, 'delete')).toEqual({
+      kind: 'delete',
+      viewId: 'view_open',
+    });
+    expect(databaseViewTabActionToInitialAction(candidate, 'rename')).toBeNull();
+  });
+
   test('exposes an accessible loading state while the linked view is unresolved', async () => {
     globalThis.fetch = mock(() => new Promise<Response>(() => {})) as typeof fetch;
 
