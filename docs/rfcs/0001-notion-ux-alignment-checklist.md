@@ -2321,7 +2321,9 @@ capability alone is insufficient.
       new-item shortcut → `Page`/`Database` type-chooser path. The sidebar
       page-first creation case passed with system Chrome on 2026-07-23; the
       type-chooser case is queued for the next bounded run, and visual/manual
-      parity evidence remains open.
+      parity evidence remains open. The shared catalog client now retries one
+      transient HTTP 409 during post-creation manifest/index settling; a
+      persistent conflict remains visible and actionable.
 - [ ] **UX-1102** E2E `/database` inline creation. The focused journey is
       implemented in `tests/stress/database-document-native-journeys.e2e.ts`;
       the slash inline case passed with system Chrome on 2026-07-23. A direct Electron

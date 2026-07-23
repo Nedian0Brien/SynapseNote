@@ -2796,6 +2796,22 @@ plus Select and Multi-select header dispatch checks (3 tests / 5 expectations);
 app typecheck and targeted Biome pass. This remains implementation evidence,
 not closure of UX-1103/UX-1105 or the cross-host visual/accessibility gates.
 
+### 2026-07-23 Catalog conflict recovery handoff
+
+The running-app inspection exposed a real race after `New database`: a catalog
+read could overlap the short manifest/index transaction window and return HTTP
+409, leaving the sidebar in a persistent error state until the user clicked
+Retry. `packages/app/src/lib/database-catalog-client.ts` now retries exactly one
+409 after a 50 ms abort-aware delay. A second 409 remains an explicit conflict;
+the change does not hide persistent errors or retry other statuses.
+
+Feature commit: `7e8bcddd fix: retry transient database catalog conflicts`.
+Focused evidence: `database-catalog-client.test.ts` passes the 409 → success
+case and the existing validation cases (3 tests / 7 expectations); targeted
+Biome and app typecheck pass. The bounded browser observation confirmed the
+original race and that the existing Retry action recovers it. Changeset:
+`../../.changeset/retry-transient-database-catalog.md`.
+
 ## Work in progress: do this first
 
 `packages/core/src/database/property-invariants.test.ts` is now verified and

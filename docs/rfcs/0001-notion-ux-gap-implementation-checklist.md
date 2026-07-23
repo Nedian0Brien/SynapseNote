@@ -310,7 +310,11 @@ treated as visual parity until a browser capture is attached.
   journeys; `b79b1801` also wires List context inspection through the canonical
   surface. Command-palette, empty-state, the NewItemDialog type chooser,
   complete cross-host visual comparison, and manual interaction evidence
-  remain open.
+  remain open. The shared catalog client now retries one transient HTTP 409
+  that can occur during the short manifest/index transaction window immediately
+  after a new database is created; persistent conflicts still surface with the
+  existing retry action. Focused client evidence covers the 409 → success
+  recovery.
   Map to UX-112/UX-1101/UX-1102.
 
 ## P0 — Integrate the workspace with normal navigation
