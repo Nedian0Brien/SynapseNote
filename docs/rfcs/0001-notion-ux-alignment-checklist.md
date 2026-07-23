@@ -2066,7 +2066,10 @@ capability alone is insufficient.
 - [x] **UX-1109** Migration fixtures for existing manifests, pages, views, MDX
       references, and last-opened state.
 - [ ] **UX-1110** Automated accessibility plus manual keyboard/screen-reader
-      checks on primary journeys.
+      checks on primary journeys. The Context Inspector description now uses a
+      block-level semantic container so expanded stable-ID details do not nest
+      `<details>/<dl>` inside a paragraph; its focused DOM suite passes. Manual
+      keyboard and screen-reader checks remain required before closing this gate.
 - [ ] **UX-1111** Five uncoached first-use sessions: at least four users create a
       database, add a property, add two pages, and create a second view without the
       command palette or raw IDs.

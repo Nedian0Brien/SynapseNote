@@ -238,6 +238,10 @@ agent-authored schema writes remain review-required.
   fixtures, a real MDX `DatabaseView` stable-reference block, descriptor dirty
   serialization, live block projection/reference writes, and database
   last-opened route persistence. The structural UX count is **112/128**.
+- The Context Inspector description was corrected to a block-level semantic
+  container so expanded machine-ID details do not create invalid nested
+  `<p>/<details>/<dl>` markup. Its focused DOM suite passes; manual keyboard and
+  screen-reader review remains part of UX-1110.
 - The goal is active and is not complete or blocked.
 
 ## What is implemented
