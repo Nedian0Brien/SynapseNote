@@ -1048,6 +1048,9 @@ export function DatabaseView({
   const inlineOpenDatabaseLabel = inlineDatabaseContext
     ? t`Open full database: ${inlineDatabaseContext}`
     : t`Open full database`;
+  const inlineAgentLabel = inlineDatabaseContext
+    ? t`Ask agent about ${inlineDatabaseContext}`
+    : undefined;
   const linkedSourceViews =
     linkedDatabase?.views.filter((view) => view.sourceId === reference.data.sourceId) ?? [];
   const defaultInlineAgentScope: DatabaseAgentScope = {
@@ -1614,6 +1617,7 @@ export function DatabaseView({
         <div className="flex flex-wrap justify-end gap-1">
           <DatabaseAgentScopeMenu
             scope={activeInlineAgentScope}
+            label={inlineAgentLabel}
             open={inlineAgentMenuOpen}
             onOpenChange={handleInlineAgentMenuChange}
           />
