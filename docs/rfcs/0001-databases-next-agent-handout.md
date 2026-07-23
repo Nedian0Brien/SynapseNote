@@ -2929,6 +2929,19 @@ their broad evidence is actually assembled:
   adversarial autonomy budgets; production-scale durable recovery; zero
   critical release issues; clean standalone clone without hidden services.
 
+### 2026-07-23 Multi-select option editor labels
+
+- The inline option editor now derives its visible summary and accessible names
+  from the selected property type. `Select` continues to expose `Manage Select
+  options`; `Multi-select` exposes `Manage Multi-select options`, including its
+  property, option, option-name, option-color, and impact-preview controls.
+- Focused evidence: `DatabaseTableDialog.dom.test.tsx` (2 tests / 7
+  expectations for the Select and Multi-select handoffs), targeted Biome, and
+  app typecheck passed. The user-facing changeset is
+  `.changeset/notion-multiselect-option-labels.md`.
+- This is a supporting UX-1105/NUI-701 improvement. It does not close the
+  remaining full E2E, visual, manual accessibility, or usability gates.
+
 ## Recommended execution order
 
 1. When a browser-enabled runner is available, run only the new primary-journey

@@ -694,6 +694,9 @@ Focused evidence:
 - `packages/core/src/database/select-options.test.ts`: scalar and array-valued
   option lifecycle previews, including Multi-select merge deduplication,
   default-key migration, saved-view rewrites, and delete dependency conflicts.
+- `DatabaseTableDialog.dom.test.tsx` also asserts that the inline editor uses
+  `Manage Multi-select options` and matching accessible names when the active
+  property is array-valued; Select keeps its existing labels.
 - `packages/app/src/lib/database-cell-mutation.test.ts`: Multi-select merge
   compiles an exact array-valued record mutation and remains schema-valid.
 - `packages/app/src/lib/database-cell-mutation.test.ts`: source and active-view
