@@ -46,7 +46,9 @@ export type DatabaseViewManagerInitialAction =
   | { kind: 'favorite'; viewId: string; favorite: boolean }
   | { kind: 'reorder'; viewId: string; direction: -1 | 1 }
   | { kind: 'delete'; viewId: string }
-  | { kind: 'rename'; viewId: string };
+  | { kind: 'rename'; viewId: string }
+  | { kind: 'make-default'; viewId: string }
+  | { kind: 'clear-default'; viewId: string };
 
 export function DatabaseViewManagerDialog({
   open,
@@ -180,7 +182,13 @@ export function DatabaseViewManagerDialog({
       });
       return;
     }
-    if (initialAction.kind === 'rename') return;
+    if (
+      initialAction.kind === 'rename' ||
+      initialAction.kind === 'make-default' ||
+      initialAction.kind === 'clear-default'
+    ) {
+      return;
+    }
     onChange(initialAction);
   }, [open, initialAction, busy, views, onChange]);
 

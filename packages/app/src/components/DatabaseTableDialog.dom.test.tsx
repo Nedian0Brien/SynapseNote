@@ -1229,6 +1229,56 @@ describe('DatabaseTableDialog', () => {
     ).toBe('Open tasks');
   });
 
+  test('starts inline make-default handoffs at the reviewed default mutation boundary', async () => {
+    const firstView = {
+      id: 'view_default',
+      key: 'default',
+      name: 'Table',
+      sourceId: source.id,
+      layout: { type: 'table' as const, configuration: {} },
+      sort: [],
+      groups: [],
+      projection: { propertyIds: ['prop_title'], body: 'hidden' as const },
+    };
+    const secondView = { ...firstView, id: 'view_make_default', key: 'make-default', name: 'Open' };
+    const databaseWithViews = {
+      ...database,
+      sources: [{ ...source, defaultViewId: firstView.id }],
+      views: [firstView, secondView],
+    };
+    const plannedPaths: string[] = [];
+    globalThis.fetch = mock(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      plannedPaths.push(path);
+      if (path.startsWith('/api/databases/catalog')) return Response.json(catalog());
+      if (path === '/api/databases/describe') {
+        return Response.json({
+          ...description(),
+          database: databaseWithViews,
+          source: databaseWithViews.sources[0],
+        });
+      }
+      if (path === '/api/databases/query') return Response.json(queryResult());
+      if (path === '/api/databases/plan') {
+        return Response.json({ detail: 'default planning unavailable' }, { status: 503 });
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
+      <DatabaseTableDialog
+        open
+        onOpenChange={() => {}}
+        initialTarget={{ databaseId: database.id, sourceId: source.id, viewId: secondView.id }}
+        initialDatabaseSurface="view-manager"
+        initialViewAction={{ kind: 'make-default', viewId: secondView.id }}
+      />,
+    );
+
+    await waitFor(() => expect(plannedPaths).toContain('/api/databases/plan'));
+    expect(screen.queryByRole('heading', { name: 'Manage saved views' })).toBeNull();
+  });
+
   test('drags a saved-view tab to a stable target and compiles one reorder-to plan', async () => {
     const viewFirst = {
       id: 'view_first',

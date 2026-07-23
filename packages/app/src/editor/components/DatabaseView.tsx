@@ -211,6 +211,10 @@ export function databaseViewTabActionToInitialAction(
       return { kind: 'delete', viewId: view.id };
     case 'rename':
       return { kind: 'rename', viewId: view.id };
+    case 'make-default':
+      return { kind: 'make-default', viewId: view.id };
+    case 'clear-default':
+      return { kind: 'clear-default', viewId: view.id };
     default:
       return null;
   }

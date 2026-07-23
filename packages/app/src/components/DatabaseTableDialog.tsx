@@ -3831,6 +3831,26 @@ function DatabaseTableSurface({
     }
   };
 
+  const commitDefaultViewChange = useEffectEvent((viewId?: string): boolean => {
+    if (!description?.source || mutationStatus !== 'idle') return false;
+    try {
+      runMutation(
+        createDatabaseDefaultViewChangeDesiredState({
+          database: description.database,
+          source: description.source,
+          ...(viewId ? { viewId } : {}),
+        }),
+        `ui-default-view${viewId ? '' : '-clear'}`,
+        'Default view change failed',
+        { policy: { operation: 'view', actor: 'human', principalId: 'user:local' } },
+      );
+      return true;
+    } catch (cause) {
+      setMutationError(classifyDatabaseUiProblem(cause, 'Unable to prepare default view change'));
+      return false;
+    }
+  });
+
   const reconcileQueuedWrites = useEffectEvent(async () => {
     if (!selection || queueReconciliationRunning.current || typeof indexedDB === 'undefined') {
       return;
@@ -4422,14 +4442,20 @@ function DatabaseTableSurface({
       return;
     }
     if (initialDatabaseSurface === 'view-manager') {
-      if (initialViewAction?.kind === 'rename') {
-        const view = description.database.views.find(
-          (candidate) => candidate.id === initialViewAction.viewId,
-        );
-        if (view) {
-          setViewRenameTarget(view);
-          return;
-        }
+      const view = initialViewAction
+        ? description.database.views.find((candidate) => candidate.id === initialViewAction.viewId)
+        : undefined;
+      if (initialViewAction?.kind === 'rename' && view) {
+        setViewRenameTarget(view);
+        return;
+      }
+      if (initialViewAction?.kind === 'make-default' && view) {
+        commitDefaultViewChange(view.id);
+        return;
+      }
+      if (initialViewAction?.kind === 'clear-default' && view) {
+        commitDefaultViewChange();
+        return;
       }
       setViewManagerOpen(true);
       return;
@@ -5435,25 +5461,6 @@ function DatabaseTableSurface({
       return true;
     } catch (cause) {
       setMutationError(classifyDatabaseUiProblem(cause, 'Unable to prepare saved view change'));
-      return false;
-    }
-  };
-  const commitDefaultViewChange = (viewId?: string): boolean => {
-    if (!description?.source || mutationStatus !== 'idle') return false;
-    try {
-      runMutation(
-        createDatabaseDefaultViewChangeDesiredState({
-          database: description.database,
-          source: description.source,
-          ...(viewId ? { viewId } : {}),
-        }),
-        `ui-default-view${viewId ? '' : '-clear'}`,
-        'Default view change failed',
-        { policy: { operation: 'view', actor: 'human', principalId: 'user:local' } },
-      );
-      return true;
-    } catch (cause) {
-      setMutationError(classifyDatabaseUiProblem(cause, 'Unable to prepare default view change'));
       return false;
     }
   };

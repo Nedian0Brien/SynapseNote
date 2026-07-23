@@ -612,4 +612,27 @@ describe('DatabaseViewManagerDialog', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(onChange).not.toHaveBeenCalled();
   });
+
+  test('does not treat inline default handoffs as lifecycle mutations', async () => {
+    for (const initialAction of [
+      { kind: 'make-default' as const, viewId: 'view_recent' },
+      { kind: 'clear-default' as const, viewId: 'view_open' },
+    ]) {
+      const onChange = mock(() => {});
+      render(
+        <DatabaseViewManagerDialog
+          open
+          onOpenChange={() => {}}
+          source={source}
+          views={views}
+          busy={false}
+          initialAction={initialAction}
+          onChange={onChange}
+        />,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(onChange).not.toHaveBeenCalled();
+      cleanup();
+    }
+  });
 });
