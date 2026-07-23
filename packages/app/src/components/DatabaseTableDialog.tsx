@@ -149,6 +149,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -876,6 +877,20 @@ export type DatabaseTableViewState = {
   focusedCell?: { recordId: string; propertyId: string };
 };
 
+const NOTION_PROPERTY_TYPES: readonly { type: DatabasePropertyType; label: string }[] = [
+  { type: 'text', label: 'Text' },
+  { type: 'number', label: 'Number' },
+  { type: 'select', label: 'Select' },
+  { type: 'multi_select', label: 'Multi-select' },
+  { type: 'date', label: 'Date' },
+  { type: 'checkbox', label: 'Checkbox' },
+  { type: 'url', label: 'URL' },
+  { type: 'email', label: 'Email' },
+  { type: 'phone', label: 'Phone' },
+  { type: 'files', label: 'Files' },
+  { type: 'place', label: 'Place' },
+];
+
 export function DatabaseTable({
   databaseId = '',
   viewId = null,
@@ -915,6 +930,7 @@ export function DatabaseTable({
   onOpenPropertyFilter,
   onViewPropertyIdsChange,
   onDuplicateProperty,
+  onAddProperty,
   onInvokeButton,
   onVerificationAction,
   onManageProperties,
@@ -979,6 +995,7 @@ export function DatabaseTable({
   onOpenPropertyFilter?: (property: DatabaseProperty) => void;
   onViewPropertyIdsChange?: (propertyIds: readonly string[]) => void;
   onDuplicateProperty?: (property: DatabaseProperty) => void;
+  onAddProperty?: (input: { name: string; type: DatabasePropertyType }) => void;
   onInvokeButton?: (
     record: ProjectedDatabaseRecord,
     property: Extract<DatabaseProperty, { type: 'button' }>,
@@ -1081,6 +1098,9 @@ export function DatabaseTable({
   );
   const remotePresence = useRemoteDatabasePresence();
   const [editError, setEditError] = useState<string | null>(null);
+  const [addPropertyOpen, setAddPropertyOpen] = useState(false);
+  const [newPropertyName, setNewPropertyName] = useState('New property');
+  const [newPropertyType, setNewPropertyType] = useState<DatabasePropertyType>('text');
   const [cellRange, setCellRange] = useState<DatabaseCellRange | null>(null);
   const [gridAnnouncement, setGridAnnouncement] = useState('');
   const [cellMenu, setCellMenu] = useState<DatabaseCellMenu | null>(null);
@@ -1363,6 +1383,14 @@ export function DatabaseTable({
   const copyCellRange = (row: number, column: number) => {
     if (!navigator.clipboard?.writeText) return;
     void navigator.clipboard.writeText(rangeTsv(row, column));
+  };
+
+  const submitAddProperty = () => {
+    const name = newPropertyName.trim();
+    if (!onAddProperty || !name || mutationLocked) return;
+    onAddProperty({ name, type: newPropertyType });
+    setAddPropertyOpen(false);
+    setNewPropertyName('New property');
   };
 
   return (
@@ -1861,7 +1889,63 @@ export function DatabaseTable({
               <span className={notionSurface ? 'sr-only' : undefined}>
                 <Trans>Actions</Trans>
               </span>
-              {onManageProperties ? (
+              {notionSurface && onAddProperty ? (
+                <Popover open={addPropertyOpen} onOpenChange={setAddPropertyOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      className="ml-1"
+                      aria-label="Add property"
+                      disabled={mutationLocked}
+                    >
+                      <Plus aria-hidden="true" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-80">
+                    <div className="grid gap-3">
+                      <div>
+                        <h3 className="font-medium text-sm">Add property</h3>
+                        <p className="mt-1 text-muted-foreground text-xs">
+                          Choose a name and type for the new column.
+                        </p>
+                      </div>
+                      <Input
+                        value={newPropertyName}
+                        aria-label="New property name"
+                        placeholder="Property name"
+                        onChange={(event) => setNewPropertyName(event.currentTarget.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') submitAddProperty();
+                        }}
+                      />
+                      <fieldset className="grid grid-cols-2 gap-1.5">
+                        <legend className="sr-only">Property type</legend>
+                        {NOTION_PROPERTY_TYPES.map((candidate) => (
+                          <Button
+                            key={candidate.type}
+                            type="button"
+                            size="sm"
+                            variant={newPropertyType === candidate.type ? 'secondary' : 'ghost'}
+                            aria-pressed={newPropertyType === candidate.type}
+                            onClick={() => setNewPropertyType(candidate.type)}
+                          >
+                            {candidate.label}
+                          </Button>
+                        ))}
+                      </fieldset>
+                      <Button
+                        type="button"
+                        disabled={!newPropertyName.trim() || mutationLocked}
+                        onClick={submitAddProperty}
+                      >
+                        Add property
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              ) : onManageProperties ? (
                 <Button
                   type="button"
                   variant="ghost"
@@ -7548,6 +7632,7 @@ function DatabaseTableSurface({
                     }
                     onDuplicateProperty={duplicateSchemaProperty}
                     onInvokeButton={planButton}
+                    onAddProperty={addSchemaProperty}
                     onManageProperties={(propertyId) => {
                       setPropertiesDialogRenameId(propertyId ?? null);
                       setPropertiesDialogOpen(true);

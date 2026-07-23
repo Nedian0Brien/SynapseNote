@@ -779,6 +779,30 @@ describe('DatabaseTableDialog', () => {
     expect(onManageProperties).toHaveBeenCalledTimes(2);
   });
 
+  test('opens a Notion-style property picker from the table edge', async () => {
+    const onAddProperty = mock(() => {});
+    const user = userEvent.setup();
+    render(
+      <DatabaseTable
+        databaseId={database.id}
+        source={source}
+        result={queryResult()}
+        notionSurface
+        onAddProperty={onAddProperty}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Add property' }));
+    const name = screen.getByRole('textbox', { name: 'New property name' });
+    await user.clear(name);
+    await user.type(name, 'Priority');
+    await user.click(screen.getByRole('button', { name: 'Select', exact: true }));
+    const addButtons = screen.getAllByRole('button', { name: 'Add property', exact: true });
+    await user.click(addButtons.at(-1) as HTMLElement);
+
+    expect(onAddProperty).toHaveBeenCalledWith({ name: 'Priority', type: 'select' });
+  });
+
   test('opens a contextual property menu for visibility, order, calculations, and settings', async () => {
     const onManageProperties = mock(() => {});
     const onRemoveProperty = mock(() => {});
