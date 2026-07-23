@@ -1877,7 +1877,7 @@ export function DatabaseTable({
         data-row-height={layout.rowHeight}
         containerClassName={cn(
           'max-h-[62vh] overflow-auto',
-          notionSurface ? 'rounded-none border-y border-border/60' : 'rounded-md border',
+          notionSurface ? 'rounded-md border border-border/60' : 'rounded-md border',
         )}
         containerRef={scrollContainerRef}
         onContainerScroll={(event) => {

@@ -2432,6 +2432,19 @@ matrix.
   thumbnail fidelity, contrast, responsive behavior, manual accessibility,
   cross-host, usability, and full browser gates remain open.
 
+### Inline table surface boundary pass (2026-07-23)
+
+- The document-native table now has one subtle rounded border on all sides,
+  matching Notion's embedded database block instead of visually floating on
+  top of the page with only top/bottom rules. The actions rail remains quiet
+  and the canonical table surface is unchanged.
+- Focused DOM evidence: the property-picker plus inline visual slice passes
+  9 tests / 44 expectations, including the new rounded/border surface contract;
+  targeted Biome and app typecheck remain green from the same affected slice.
+- This is a structural visual correction for UX-009. Desktop/compact captures,
+  cross-host comparison, contrast, manual accessibility, usability, and full
+  browser gates remain open.
+
 - [x] **UX-1001** Define keyboard order across title, tabs, controls, headers,
       cells, new row, and pagination. The canonical page DOM and focused table
       tests pin this progression, while arrow-key navigation handles the grid

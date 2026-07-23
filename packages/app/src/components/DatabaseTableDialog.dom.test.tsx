@@ -795,6 +795,11 @@ describe('DatabaseTableDialog', () => {
     expect(document.querySelector('[data-database-inline-table]')).toBeTruthy();
     expect(document.querySelector('[data-database-actions-column]')).toBeTruthy();
     expect(document.querySelector('[data-database-row-actions]')).toBeTruthy();
+    const inlineTableContainer = document.querySelector<HTMLElement>(
+      '[data-database-inline-table]',
+    )?.parentElement;
+    expect(inlineTableContainer?.className).toContain('rounded-md');
+    expect(inlineTableContainer?.className).toContain('border-border/60');
 
     await user.click(screen.getByRole('button', { name: 'Add property' }));
     const name = screen.getByRole('textbox', { name: 'New property name' });

@@ -3166,6 +3166,19 @@ their broad evidence is actually assembled:
   contrast/responsive, manual accessibility, cross-host, browser, hosted, and
   real-model gates open.
 
+### 2026-07-23 Inline table surface boundary pass
+
+- The linked document-native table now uses a single subtle rounded border on
+  all sides, closer to Notion's embedded database block. The canonical/admin
+  table keeps its existing surface treatment; the row action rail remains a
+  hover/focus affordance.
+- Evidence: the property-picker plus inline visual slice passes 9 tests / 44
+  expectations, including the rounded/border container contract; targeted
+  Biome and app typecheck remain green for the affected files.
+- This is a visual boundary correction only. Keep desktop/compact screenshots,
+  cross-host, contrast, manual accessibility, usability, browser, hosted, and
+  real-model gates open.
+
 ## Recommended execution order
 
 1. When a browser-enabled runner is available, run only the new primary-journey
