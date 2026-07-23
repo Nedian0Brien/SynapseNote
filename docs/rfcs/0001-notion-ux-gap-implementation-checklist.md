@@ -641,6 +641,8 @@ treated as visual parity until a browser capture is attached.
   `4f30e862` records that extension. The follow-up canonical case now also
   covers reload persistence plus row → side peek → full page → browser return
   to the same saved view in a bounded system-Chrome run (`8fc8bb0f`). Property
+  add now has focused DOM/live-web evidence for both the commit-ready
+  Select/Multi-select schema path and immediate active-view projection update;
   configure/reorder/hide, agent proposal, and full primary coverage remain
   open.
 - [ ] **NUI-702** Run keyboard, screen-reader, contrast, 768px responsive, and

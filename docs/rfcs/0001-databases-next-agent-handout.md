@@ -2594,6 +2594,42 @@ passed across bounded runs (sidebar page-first, slash inline, and linked
 record continuity). Console warnings and visual/manual/Electron/release gates
 remain open; do not treat this as Notion parity sign-off.
 
+### 2026-07-23 property-picker commit and active-view projection follow-up
+
+Live web inspection found that the Notion-style table-edge picker offered
+Select/Multi-select but sent `options: []`, which the canonical manifest rejects
+because a configured Select family needs an option. The shared
+`createDatabasePropertyDefinitionForAdd` builder now seeds one inert
+`Option 1` option (no cell is assigned), and both the full-page table and linked
+inline `DatabaseView` use that builder. The property remains editable through
+the existing Select option manager.
+
+The same reviewed add-property plan now accepts the active `viewId`, converts
+that view's existing projection IDs to stable property keys, appends the new
+key, and lets the server resolve the new stable property ID atomically. This
+keeps the new column visible immediately in the active Table instead of
+silently hiding it behind View settings. Duplicate-property callers can pass
+the same target view.
+
+Focused evidence:
+
+- `packages/app/src/lib/database-cell-mutation.test.ts`: 32 tests / 144
+  expectations, including Select/Multi-select construction and projection
+  update.
+- `packages/app/src/components/DatabaseTableDialog.dom.test.tsx` plus
+  `packages/app/src/editor/components/DatabaseView.dom.test.tsx`: 102 tests /
+  790 expectations pass together.
+- App typecheck, targeted Biome, and `git diff --check` pass.
+- A live web journey now commits and renders a new Select column next to
+  Title; the prior HTTP 400 no longer occurs.
+- Changeset: `../../.changeset/notion-property-picker-commit.md`.
+
+This is functional add-path evidence only. Do not close UX-1105/NUI-701 or
+R-005: property configure/reorder/hide, the complete mutation matrix, visual
+and Electron capture, manual accessibility/usability, and release gates remain
+open. The clean manual journey created ignored/local database artifacts in the
+worktree; preserve them and do not commit them.
+
 ## Work in progress: do this first
 
 `packages/core/src/database/property-invariants.test.ts` is now verified and
@@ -2641,9 +2677,11 @@ closed in the authoritative checklist.
   required before closing this item. The bounded
   `tests/stress/database-manage-properties.e2e.ts` run also passes property
   add plus the two-step valued-property delete review; configure/reorder/hide,
-  agent, and the remaining mutation matrix are still open. Canonical reload and
-  row-continuity evidence is recorded in `8fc8bb0f`, but it does not replace the
-  full primary-view, agent, accessibility, or Electron gates.
+  agent, and the remaining mutation matrix are still open. The latest focused
+  DOM/live-web slice also proves commit-ready Select/Multi-select add plus
+  immediate active-view projection visibility, but it does not replace the
+  full primary-view, agent, accessibility, or Electron gates. Canonical reload
+  and row-continuity evidence is recorded in `8fc8bb0f`.
 - **R-017** — >=90% prompt-to-valid-database creation without manual repair.
   The reusable evaluator and focused replay-shaped test now exist at
   `packages/server/src/database-creation-eval.ts` and

@@ -1674,6 +1674,32 @@ rerun was needed.
 This closes UX-1007 at the DOM/CSS guardrail layer. A manual 768px browser
 capture and full visual responsive matrix remain release follow-up work.
 
+### Notion property-picker commit and projection evidence (2026-07-23)
+
+The one-step table-edge property picker now produces a commit-ready schema for
+Select and Multi-select properties. Because the canonical manifest requires an
+option, the picker seeds an inert `Option 1` entry while leaving every new cell
+empty; the option remains editable through the normal property configuration
+surface. The same pure builder is shared by the full-page table and linked
+inline table, so the two entry points cannot drift back to the old empty-option
+400 failure.
+
+When a view has an explicit property projection, the reviewed add-property
+plan converts its existing stable property IDs to stable keys, appends the new
+property key, and lets the server resolve the complete projection atomically.
+As a result, a property added from the active Table appears immediately in the
+current view instead of being silently hidden until View settings are opened.
+
+Focused evidence: `database-cell-mutation.test.ts` passes 32 tests / 144
+expectations, including valid Select/Multi-select construction and active-view
+projection updates; the affected `DatabaseTableDialog.dom.test.tsx` and
+`DatabaseView.dom.test.tsx` files pass 102 tests / 790 expectations together.
+App typecheck, targeted Biome, and `git diff --check` pass. A live web journey
+also commits a new Select column and renders it beside Title without the prior
+HTTP 400. This is functional evidence for the add-property subpath, not
+closure of UX-1105/NUI-701: configure/reorder/hide, destructive review,
+visual/cross-host, accessibility, and usability gates remain open.
+
 ### Database History and recovery evidence (2026-07-23)
 
 The `Database actions` menu now exposes a human-facing `History` item on both
@@ -2279,8 +2305,10 @@ capability alone is insufficient.
       review. The bounded `database-manage-properties.e2e.ts` system-Chrome
       run now passes property add and the valued-property delete flow with its
       two reviewed commits (unset record values, then remove the unused
-      schema property); configure/reorder/hide and the full matrix remain
-      open.
+      schema property). The shared property builder now makes Select and
+      Multi-select adds commit-ready and appends the new property to the active
+      view projection; focused DOM/live-web evidence covers that add subpath.
+      Configure/reorder/hide and the full matrix remain open.
 - [ ] **UX-1106** E2E view create/switch/configure/duplicate/reorder/delete using
       visible tabs. The primary journey now passes saved-view create, tab
       switch, List rendering, and rename in bounded system-Chrome runs. The
