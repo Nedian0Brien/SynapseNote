@@ -217,6 +217,10 @@ describe('DatabaseView', () => {
     );
 
     expect((await screen.findAllByText('Shared canonical row')).length).toBe(2);
+    expect(screen.getAllByLabelText('Open record Shared canonical row')).toHaveLength(2);
+    expect(
+      screen.getAllByLabelText('Inspect context for record Shared canonical row'),
+    ).toHaveLength(2);
     await waitFor(() => expect(requests).toHaveLength(2));
     expect(requests.map((request) => request.viewId)).toEqual([view.id, view.id]);
     expect(requests[0]?.viewOverrides).toMatchObject({
@@ -1488,7 +1492,7 @@ describe('DatabaseView', () => {
     expect(document.querySelector('[data-record-id="rec_first"]')).toBeTruthy();
     expect(screen.getByLabelText('Edit Title for record rec_first')).toBeTruthy();
     expect(screen.getByTestId('database-new-row-title')).toBeTruthy();
-    fireEvent.click(screen.getByLabelText('Inspect context for record rec_first'));
+    fireEvent.click(screen.getByLabelText('Inspect context for record First task'));
     expect(await screen.findByText('What the agent saw')).toBeTruthy();
     expect(
       inspectPaths.some((path) =>
@@ -1599,10 +1603,10 @@ describe('DatabaseView', () => {
     await waitFor(() => expect(screen.queryByTestId('database-ghost-review')).toBeNull());
     fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0] as HTMLElement);
     await waitFor(() => expect(document.querySelector('[data-database-workspace]')).toBeNull());
-    expect(screen.getByLabelText('Duplicate record rec_first')).toBeTruthy();
-    expect(screen.getByLabelText('Archive record rec_first')).toBeTruthy();
-    expect(screen.getByLabelText('Move record rec_first')).toBeTruthy();
-    expect(screen.getByLabelText('Delete record rec_first')).toBeTruthy();
+    expect(screen.getByLabelText('Duplicate record First task')).toBeTruthy();
+    expect(screen.getByLabelText('Archive record First task')).toBeTruthy();
+    expect(screen.getByLabelText('Move record First task')).toBeTruthy();
+    expect(screen.getByLabelText('Delete record First task')).toBeTruthy();
     fireEvent.pointerDown(
       screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
     );
@@ -1683,7 +1687,7 @@ describe('DatabaseView', () => {
     );
     if (workspaceClose) fireEvent.click(workspaceClose);
     await waitFor(() => expect(document.querySelector('[data-database-workspace]')).toBeNull());
-    fireEvent.click(screen.getByLabelText('Open record rec_first'));
+    fireEvent.click(screen.getByLabelText('Open record First task'));
     expect(await screen.findByText('Linked canonical body.')).toBeTruthy();
     expect(window.location.hash).toBe(originalHash);
     fireEvent.click(screen.getByRole('button', { name: 'Open full page' }));
@@ -1693,7 +1697,7 @@ describe('DatabaseView', () => {
       screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
     );
     fireEvent.click(screen.getByRole('menuitem', { name: 'Show archived' }));
-    expect(await screen.findByLabelText('Restore record rec_first')).toBeTruthy();
+    expect(await screen.findByLabelText('Restore record First task')).toBeTruthy();
     await waitFor(() =>
       expect(
         requests.filter((request) => request.path === '/api/databases/query').at(-1)?.body,

@@ -1035,6 +1035,7 @@ export function DatabaseTable({
         property !== undefined && (!viewPropertySet || viewPropertySet.has(property.id)),
     );
   const properties = visibleProperties.slice(0, DATABASE_TABLE_RENDERED_COLUMN_LIMIT);
+  const titleProperty = allProperties.find((property) => property.type === 'title');
   const omittedColumnCount = visibleProperties.length - properties.length;
   const computedErrorSummaries = new Map<string, { count: number; codes: ReadonlySet<string> }>();
   for (const record of result.records) {
@@ -2003,6 +2004,21 @@ export function DatabaseTable({
             </TableRow>
           ) : null}
           {renderedRecords.map(({ record, ghostCreated, rowIndex }) => {
+            const recordTitle = titleProperty
+              ? displayValue(
+                  titleProperty,
+                  record.values[titleProperty.id],
+                  people,
+                  relationRecords,
+                  personLabels,
+                  result.fileStates,
+                  missingFileLabel,
+                  i18n.locale,
+                ).trim()
+              : '';
+            const recordLabel =
+              notionSurface && recordTitle && recordTitle !== '—' ? recordTitle : record.id;
+            const recordActionLabel = (action: string) => `${action} record ${recordLabel}`;
             const conditionalColorRecord = result.conditionalColors?.records[record.id];
             const pageColorRule = conditionalColorRecord?.pageRuleId
               ? conditionalColorRules.get(conditionalColorRecord.pageRuleId)
@@ -2050,7 +2066,7 @@ export function DatabaseTable({
                   {!ghostCreated ? (
                     <Checkbox
                       checked={selectedRecordIds.has(record.id)}
-                      aria-label={`Select record ${record.id}`}
+                      aria-label={recordActionLabel('Select')}
                       className={
                         notionSurface
                           ? 'opacity-0 transition-opacity group-hover/row:opacity-100 group-focus-within/row:opacity-100 focus-visible:opacity-100'
@@ -2776,7 +2792,7 @@ export function DatabaseTable({
                           variant="ghost"
                           size="icon-sm"
                           disabled={mutationLocked || proposedRecord !== undefined}
-                          aria-label={`Open record ${record.id}`}
+                          aria-label={recordActionLabel('Open')}
                           onClick={() => onOpen(record)}
                         >
                           <ExternalLink />
@@ -2787,7 +2803,7 @@ export function DatabaseTable({
                           variant="ghost"
                           size="icon-sm"
                           disabled={mutationLocked || proposedRecord !== undefined}
-                          aria-label={`Inspect context for record ${record.id}`}
+                          aria-label={recordActionLabel('Inspect context for')}
                           onClick={() => onOpenContextInspector(record)}
                         >
                           <Braces aria-hidden="true" />
@@ -2798,7 +2814,7 @@ export function DatabaseTable({
                           variant="ghost"
                           size="icon-sm"
                           disabled={mutationLocked || proposedRecord !== undefined}
-                          aria-label={`Ask agent about record ${record.id}`}
+                          aria-label={recordActionLabel('Ask agent about')}
                           onClick={() =>
                             onOpenAgentScope({
                               databaseId,
@@ -2816,7 +2832,7 @@ export function DatabaseTable({
                           variant="ghost"
                           size="icon-sm"
                           disabled={mutationLocked || proposedRecord !== undefined}
-                          aria-label={`Duplicate record ${record.id}`}
+                          aria-label={recordActionLabel('Duplicate')}
                           onClick={() => onDuplicate(record)}
                         >
                           <Copy />
@@ -2827,9 +2843,7 @@ export function DatabaseTable({
                           variant="ghost"
                           size="icon-sm"
                           disabled={mutationLocked || proposedRecord !== undefined}
-                          aria-label={`${
-                            record.archivedAt ? 'Restore' : 'Archive'
-                          } record ${record.id}`}
+                          aria-label={recordActionLabel(record.archivedAt ? 'Restore' : 'Archive')}
                           onClick={() =>
                             onArchive(record, record.archivedAt ? 'restore' : 'archive')
                           }
@@ -2842,7 +2856,7 @@ export function DatabaseTable({
                           variant="ghost"
                           size="icon-sm"
                           disabled={mutationLocked || proposedRecord !== undefined}
-                          aria-label={`Move record ${record.id}`}
+                          aria-label={recordActionLabel('Move')}
                           onClick={() => onRequestMove(record)}
                         >
                           <MoveRight />
@@ -2853,7 +2867,7 @@ export function DatabaseTable({
                           variant="ghost"
                           size="icon-sm"
                           disabled={mutationLocked || proposedRecord !== undefined}
-                          aria-label={`Delete record ${record.id}`}
+                          aria-label={recordActionLabel('Delete')}
                           onClick={() => onDelete(record)}
                         >
                           <Trash2 />
