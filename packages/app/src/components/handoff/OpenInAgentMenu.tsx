@@ -42,6 +42,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Separator } from '@/components/ui/separator';
 import { useIsEmbedded } from '@/hooks/use-is-embedded';
 import { VISIBLE_TARGETS } from '@/lib/handoff/targets';
+import { cn } from '@/lib/utils';
 import {
   type DatabaseAgentScope,
   databaseAgentScopeInstruction,
@@ -61,6 +62,8 @@ interface OpenInAgentMenuProps {
   readonly onOpenChange?: (open: boolean) => void;
   readonly triggerLabel?: ReactNode;
   readonly triggerAriaLabel?: string;
+  /** Optional visual override for surfaces that open the handoff from another menu. */
+  readonly triggerClassName?: string;
 }
 
 interface OpenWithAiPanelProps {
@@ -244,6 +247,7 @@ export function OpenInAgentMenu({
   onOpenChange,
   triggerLabel,
   triggerAriaLabel,
+  triggerClassName,
 }: OpenInAgentMenuProps): ReactNode {
   const { t } = useLingui();
   const { states, refresh } = useInstalledAgents();
@@ -324,7 +328,7 @@ export function OpenInAgentMenu({
           size="sm"
           disabled={triggerDisabled}
           aria-label={triggerAriaLabel}
-          className="gap-1.5 text-muted-foreground px-1.5"
+          className={cn('gap-1.5 px-1.5 text-muted-foreground', triggerClassName)}
           data-testid="open-in-agent-trigger"
           // macOS swallows pointerdown inside the editor header's
           // `-webkit-app-region: drag` zone before the DOM sees it — even on

@@ -27,6 +27,7 @@ import {
   RefreshCw,
   Search,
   Settings2,
+  Sparkles,
   Table2,
   Trash2,
 } from 'lucide-react';
@@ -1739,14 +1740,10 @@ export function DatabaseView({
         >
           <DatabaseAgentScopeMenu
             scope={activeInlineAgentScope}
-            // Keep the agent handoff one click away without letting its
-            // descriptive copy compete with the document-native database
-            // controls. The full scope remains available in the accessible
-            // name and in the opened handoff panel.
-            label=""
             ariaLabel={inlineAgentLabel}
             open={inlineAgentMenuOpen}
             onOpenChange={handleInlineAgentMenuChange}
+            hiddenTrigger
           />
           {activeLinkedView?.layout.type !== 'form' ? (
             <Button
@@ -1878,6 +1875,15 @@ export function DatabaseView({
               <DropdownMenuItem onSelect={() => setReplacementPickerOpen(true)}>
                 <Search /> <Trans>Choose another view</Trans>
               </DropdownMenuItem>
+              {state.status === 'ready' ? (
+                <DropdownMenuItem
+                  onSelect={() =>
+                    window.setTimeout(() => openInlineAgentScope(activeInlineAgentScope), 0)
+                  }
+                >
+                  <Sparkles /> <Trans>Ask agent</Trans>
+                </DropdownMenuItem>
+              ) : null}
               {state.status === 'ready' ? (
                 <DropdownMenuItem onSelect={() => setInlineContextInspectorScope({})}>
                   <Braces /> <Trans>Inspect agent context</Trans>

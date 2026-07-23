@@ -13,12 +13,15 @@ export function DatabaseAgentScopeMenu({
   ariaLabel,
   open,
   onOpenChange,
+  hiddenTrigger = false,
 }: {
   scope: DatabaseAgentScope | null;
   label?: ReactNode;
   ariaLabel?: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** Keep the controlled popover mounted without adding a visible toolbar trigger. */
+  hiddenTrigger?: boolean;
 }): React.JSX.Element | null {
   const [requested, setRequested] = useState(false);
   const [internalOpen, setInternalOpen] = useState(false);
@@ -36,6 +39,7 @@ export function DatabaseAgentScopeMenu({
         variant="outline"
         size="sm"
         aria-label={ariaLabel}
+        className={hiddenTrigger ? 'sr-only' : undefined}
         data-testid="open-in-agent-trigger"
         data-database-agent-scope-trigger
         onClick={() => {
@@ -60,6 +64,7 @@ export function DatabaseAgentScopeMenu({
         setInternalOpen(nextOpen);
         onOpenChange?.(nextOpen);
       }}
+      triggerClassName={hiddenTrigger ? 'sr-only' : undefined}
     />
   );
 }

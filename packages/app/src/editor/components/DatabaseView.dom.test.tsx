@@ -172,7 +172,7 @@ describe('DatabaseView', () => {
     ).toBeTruthy();
     const agentButton = screen.getByRole('button', { name: 'Ask agent about Tasks · Open tasks' });
     expect(agentButton).toBeTruthy();
-    expect(agentButton.textContent?.trim()).toBe('');
+    expect(agentButton.className).toContain('sr-only');
 
     expect(await screen.findByRole('button', { name: view.name })).toBeTruthy();
     expect(
@@ -1677,9 +1677,12 @@ describe('DatabaseView', () => {
     expect(inlineSurface?.getAttribute('data-source-id')).toBe(source.id);
     expect(inlineSurface?.getAttribute('data-view-id')).toBe(view.id);
     expect(document.querySelector('[data-record-id="rec_first"]')).toBeTruthy();
-    expect(screen.getByLabelText('Edit Title for page First task')).toBeTruthy();
+    expect(screen.getByLabelText('Open page First task')).toBeTruthy();
     expect(screen.getByTestId('database-new-row-title')).toBeTruthy();
-    fireEvent.click(screen.getByLabelText('Inspect context for page First task'));
+    fireEvent.pointerDown(screen.getByLabelText('More actions for page First task'));
+    fireEvent.click(
+      await screen.findByRole('menuitem', { name: 'Inspect context for page First task' }),
+    );
     expect(await screen.findByText('What the agent saw')).toBeTruthy();
     expect(
       inspectPaths.some((path) =>
@@ -1738,7 +1741,12 @@ describe('DatabaseView', () => {
     await waitFor(() => expect(document.querySelector('[data-database-workspace]')).toBeNull());
     fireEvent.click(screen.getByRole('button', { name: 'Clear selection' }));
     await waitFor(() => expect(screen.queryByTestId('inline-selection-toolbar')).toBeNull());
-    fireEvent.click(screen.getByLabelText('Edit Title for page First task'));
+    const editTitleCell = document.querySelector(
+      '[data-database-cell-row="0"][data-database-cell-column="0"]',
+    );
+    expect(editTitleCell).toBeTruthy();
+    fireEvent.contextMenu(editTitleCell as HTMLElement);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Edit Title for page First task' }));
     const titleInput = screen.getByLabelText('Edit Title') as HTMLInputElement;
     fireEvent.change(titleInput, { target: { value: 'Renamed task' } });
     fireEvent.keyDown(titleInput, { key: 'Enter' });
@@ -1790,15 +1798,23 @@ describe('DatabaseView', () => {
     await waitFor(() => expect(screen.queryByTestId('database-ghost-review')).toBeNull());
     fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0] as HTMLElement);
     await waitFor(() => expect(document.querySelector('[data-database-workspace]')).toBeNull());
-    expect(screen.getByLabelText('Duplicate page First task')).toBeTruthy();
-    expect(screen.getByLabelText('Archive page First task')).toBeTruthy();
-    expect(screen.getByLabelText('Move page First task')).toBeTruthy();
-    expect(screen.getByLabelText('Delete page First task')).toBeTruthy();
+    fireEvent.pointerDown(screen.getByLabelText('More actions for page First task'));
+    expect(await screen.findByRole('menuitem', { name: 'Duplicate page First task' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Archive page First task' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Move page First task' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Delete page First task' })).toBeTruthy();
+    fireEvent.keyDown(screen.getByRole('menu', { name: 'More actions for page First task' }), {
+      key: 'Escape',
+    });
+    await waitFor(() =>
+      expect(screen.queryByRole('menu', { name: 'More actions for page First task' })).toBeNull(),
+    );
     fireEvent.pointerDown(
       screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
     );
     expect(screen.getByRole('menuitem', { name: 'Convert to full page' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Choose another view' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Ask agent' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Duplicate view configuration' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Manage properties' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Inspect agent context' })).toBeTruthy();
@@ -1884,7 +1900,11 @@ describe('DatabaseView', () => {
       screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
     );
     fireEvent.click(screen.getByRole('menuitem', { name: 'Show archived' }));
-    expect(await screen.findByLabelText('Restore page First task')).toBeTruthy();
+    fireEvent.pointerDown(await screen.findByLabelText('More actions for page First task'));
+    expect(await screen.findByRole('menuitem', { name: 'Restore page First task' })).toBeTruthy();
+    fireEvent.keyDown(screen.getByRole('menu', { name: 'More actions for page First task' }), {
+      key: 'Escape',
+    });
     await waitFor(() =>
       expect(
         requests.filter((request) => request.path === '/api/databases/query').at(-1)?.body,
