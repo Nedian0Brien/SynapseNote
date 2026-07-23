@@ -273,6 +273,12 @@ single-view assertion passes; the broader inline journey retains the known
 multiline-paste commit-count baseline failure and was not treated as release
 evidence.
 
+Commit `d7ace02f fix: contextualize inline database landmark` names the ready
+inline region `Linked database view: Tasks · Open tasks` and updates all three
+document-native journey selectors. Loading retains the generic landmark name
+until the description is available; the focused DOM journey passes and the
+Playwright file is only discovery-checked.
+
 ## Current status
 
 - Numbered A-S items: **310/335 complete (92.5%)**.

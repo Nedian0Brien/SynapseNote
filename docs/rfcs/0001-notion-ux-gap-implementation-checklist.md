@@ -393,7 +393,9 @@ treated as visual parity until a browser capture is attached.
   title/tab/cache/state contract is complete; the remaining visual state
   matrix is a separate NUI-701/NUI-702 gate. The inline add-view affordance
   also carries the same visible context (`New database view for Tasks · Open
-  tasks`). Map to UX-304/UX-305/UX-309.
+  tasks`). The ready inline landmark is also named with that same context so
+  repeated blocks can be located without opening them. Map to
+  UX-304/UX-305/UX-309.
 - [x] **NUI-403** Use one canonical record-page component for title cell, peek,
   full page, comments, history, relation navigation, previous/next, and return
   to the originating view. Record opens now persist the originating database,

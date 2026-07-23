@@ -444,6 +444,11 @@ Open tasks`, preserving the compact plus icon while making its target explicit
 to agents. The focused single-view journey covers this label and the existing
 long journey uses it for view-manager navigation.
 
+The containing landmark follows the same convention: a ready block is exposed
+as `Linked database view: Tasks · Open tasks` while loading keeps the generic
+`Linked database view` label. The browser journey selectors now match the
+contextual landmark without requiring a machine ID.
+
 The follow-up regression capture found that remounting the manager during a
 draft could replay the initial action and create duplicate copies. The manager
 now keeps a stable instance across schema refreshes, synchronizes its view-name
