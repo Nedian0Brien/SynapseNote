@@ -13,7 +13,7 @@
 - Latest primary-journey feature commit: `b79b1801`
 - Latest page-terminology feature commit: `33ad933c`
 - Latest route-handoff feature commit: `8896e7bd`
-- Latest database-sidebar request-lifecycle commit: `3d5713b0`
+- Latest database-sidebar request-lifecycle commit: `226626cf` (supersedes `3d5713b0`)
 - Latest database-sidebar request-lifecycle changeset: `../../.changeset/database-sidebar-load-lifecycle.md`
 - Latest page-terminology changeset: `../../.changeset/notion-database-page-language.md`
 - Latest inline UX changeset: `../../.changeset/inline-database-focus.md`
@@ -167,13 +167,14 @@ Two small continuity defects were closed in the running database surface:
   document route replaces a canonical database hash; the focused DOM journey
   and a live browser recheck showed the database grid disappears and the new
   document route remains active.
-- `3d5713b0 fix: keep database sidebar catalog requests alive` removes the
+- `226626cf fix: bound database sidebar catalog loading` removes the
   translator-function identity from the catalog request effect and keeps the
   current translator in a ref. The focused sidebar suite passes with an
   intentionally fresh translator on every render, covering the lifecycle that
-  could abort an in-flight catalog request. A fresh host-level network capture
-  is still required before this counts toward NUI-105/UX-1101; the focused
-  test alone is not a visual-gate closure.
+  could abort an in-flight catalog request. A ten-second timeout now exposes a
+  retryable error instead of leaving an indefinite spinner. A fresh host-level
+  network capture is still required before this counts toward NUI-105/UX-1101;
+  the focused test alone is not a visual-gate closure.
 
 These commits improve navigation continuity and request resilience; they do
 not close the remaining cross-host visual, accessibility, usability, or release
