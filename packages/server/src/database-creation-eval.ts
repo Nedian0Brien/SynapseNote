@@ -53,6 +53,11 @@ export interface DatabaseCreationEvalReport {
   repairFreeRate: number;
   schemaCoverageRate: number;
   viewCoverageRate: number;
+  heldOutEvaluated: number;
+  heldOutValidWithoutRepair: number;
+  heldOutRepairFreeRate: number;
+  heldOutSchemaCoverageRate: number;
+  heldOutViewCoverageRate: number;
   passes: boolean;
   outcomes: readonly DatabaseCreationEvalOutcome[];
 }
@@ -148,13 +153,33 @@ export function runDatabaseCreationEval(
   const repairFreeRate = validWithoutRepair / expected;
   const schemaCoverageRate = schemaCoverage / expected;
   const viewCoverageRate = viewCoverage / expected;
+  const heldOutOutcomes = outcomes.filter((outcome) => outcome.case.split === 'held');
+  const heldOutValidWithoutRepair = heldOutOutcomes.filter(
+    (outcome) => outcome.validWithoutRepair,
+  ).length;
+  const heldOutExpected = heldOutOutcomes.length || 1;
+  const heldOutSchemaCoverage = heldOutOutcomes.filter(
+    (outcome) => outcome.expectedPropertiesPresent,
+  ).length;
+  const heldOutViewCoverage = heldOutOutcomes.filter(
+    (outcome) => outcome.expectedViewLayoutsPresent,
+  ).length;
+  const heldOutRepairFreeRate = heldOutValidWithoutRepair / heldOutExpected;
+  const heldOutSchemaCoverageRate = heldOutSchemaCoverage / heldOutExpected;
+  const heldOutViewCoverageRate = heldOutViewCoverage / heldOutExpected;
+  const gateRate = heldOutOutcomes.length > 0 ? heldOutRepairFreeRate : repairFreeRate;
   return {
     evaluated: outcomes.length,
     validWithoutRepair,
     repairFreeRate,
     schemaCoverageRate,
     viewCoverageRate,
-    passes: outcomes.length > 0 && repairFreeRate >= R017_REPAIR_FREE_RATE_MIN,
+    heldOutEvaluated: heldOutOutcomes.length,
+    heldOutValidWithoutRepair,
+    heldOutRepairFreeRate,
+    heldOutSchemaCoverageRate,
+    heldOutViewCoverageRate,
+    passes: outcomes.length > 0 && gateRate >= R017_REPAIR_FREE_RATE_MIN,
     outcomes,
   };
 }

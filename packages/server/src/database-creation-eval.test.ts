@@ -129,6 +129,8 @@ describe('R-017 prompt-to-valid-database evaluator', () => {
     expect(report.repairFreeRate).toBe(1);
     expect(report.schemaCoverageRate).toBe(1);
     expect(report.viewCoverageRate).toBe(1);
+    expect(report.heldOutEvaluated).toBe(4);
+    expect(report.heldOutRepairFreeRate).toBe(1);
     expect(report.passes).toBe(true);
   });
 
@@ -160,5 +162,22 @@ describe('R-017 prompt-to-valid-database evaluator', () => {
     expect(report.repairFreeRate).toBe(0);
     expect(report.passes).toBe(false);
     expect(report.outcomes.every((outcome) => outcome.repairAttempts === 1)).toBe(true);
+  });
+
+  test('uses the held-out split for the release gate instead of tune cases', async () => {
+    const engine = await fixture();
+    const report = runDatabaseCreationEval(
+      engine,
+      (_prompt, context) =>
+        context.caseId === 'tasks'
+          ? { desiredState: desiredState('Tasks', ['status', 'owner'], 'table') }
+          : { desiredState: desiredState('Incomplete', [], 'table') },
+      CASES.slice(0, 2),
+    );
+
+    expect(report.repairFreeRate).toBe(0.5);
+    expect(report.heldOutEvaluated).toBe(1);
+    expect(report.heldOutRepairFreeRate).toBe(0);
+    expect(report.passes).toBe(false);
   });
 });
