@@ -3179,6 +3179,19 @@ their broad evidence is actually assembled:
   cross-host, contrast, manual accessibility, usability, browser, hosted, and
   real-model gates open.
 
+### 2026-07-23 Inline value accessible-summary pass
+
+- Relation, Person, and File edit controls now expose the current resolved
+  values in their accessible names in addition to the compact visual tags.
+  Screen readers and agents can identify the target property and value without
+  opening the editor; permission-filtered values remain explicitly unavailable.
+- Evidence: the property-picker plus inline visual/semantic slice passes 9
+  tests / 44 expectations, including value-aware labels, with targeted Biome
+  and app typecheck passing.
+- This improves the semantic contract but does not close manual screen-reader,
+  contrast, cross-host, responsive, usability, browser, hosted, or real-model
+  gates.
+
 ## Recommended execution order
 
 1. When a browser-enabled runner is available, run only the new primary-journey

@@ -2993,7 +2993,11 @@ describe('DatabaseTableDialog', () => {
     expect(availableTag?.className).toContain('rounded-md');
     expect(unavailableTag?.textContent).toContain('rec_denied (unavailable)');
     expect(unavailableTag?.className).toContain('border-dashed');
-    expect(screen.getByLabelText('Edit Projects for page First task')).toBeTruthy();
+    expect(
+      screen.getByLabelText(
+        'Edit Projects for page First task: Alpha project, rec_denied (unavailable)',
+      ),
+    ).toBeTruthy();
   });
 
   test('renders inline people values as page-property tags', () => {
@@ -3048,7 +3052,9 @@ describe('DatabaseTableDialog', () => {
     expect(availableTag?.className).toContain('rounded-md');
     expect(unavailableTag?.textContent).toContain('person_missing (unavailable)');
     expect(unavailableTag?.className).toContain('border-dashed');
-    expect(screen.getByLabelText('Edit Owners for page First task')).toBeTruthy();
+    expect(
+      screen.getByLabelText('Edit Owners for page First task: Owner, person_missing (unavailable)'),
+    ).toBeTruthy();
   });
 
   test('renders inline file values as page-property tags', () => {
@@ -3092,7 +3098,11 @@ describe('DatabaseTableDialog', () => {
     expect(missingTag?.className).toContain('border-dashed');
     expect(demoTag?.textContent).toContain('Demo');
     expect(demoTag?.className).toContain('rounded-md');
-    expect(screen.getByLabelText('Edit Assets for page First task')).toBeTruthy();
+    expect(
+      screen.getByLabelText(
+        'Edit Assets for page First task: missing.pdf (missing) — Old caption, Demo',
+      ),
+    ).toBeTruthy();
   });
 
   test('renders inline checkbox properties as direct-safe toggles', async () => {

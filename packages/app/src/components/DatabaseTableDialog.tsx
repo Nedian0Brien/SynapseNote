@@ -3146,7 +3146,7 @@ export function DatabaseTable({
                                 variant="ghost"
                                 disabled={mutationLocked || proposed}
                                 className="h-auto max-w-full justify-start px-1 py-0.5 font-inherit"
-                                aria-label={`Edit ${property.name} for page ${recordLabel}`}
+                                aria-label={`Edit ${property.name} for page ${recordLabel}: ${relationValues.length > 0 ? relationValues.map((relation) => relation.label).join(', ') : 'empty'}`}
                                 onClick={() => beginEdit(record, property)}
                               >
                                 {relationTags}
@@ -3190,7 +3190,7 @@ export function DatabaseTable({
                                 variant="ghost"
                                 disabled={mutationLocked || proposed}
                                 className="h-auto max-w-full justify-start px-1 py-0.5 font-inherit"
-                                aria-label={`Edit ${property.name} for page ${recordLabel}`}
+                                aria-label={`Edit ${property.name} for page ${recordLabel}: ${personValues.length > 0 ? personValues.map((person) => person.label).join(', ') : 'empty'}`}
                                 onClick={() => beginEdit(record, property)}
                               >
                                 {personTags}
@@ -3234,7 +3234,7 @@ export function DatabaseTable({
                                 variant="ghost"
                                 disabled={mutationLocked || proposed}
                                 className="h-auto max-w-full justify-start px-1 py-0.5 font-inherit"
-                                aria-label={`Edit ${property.name} for page ${recordLabel}`}
+                                aria-label={`Edit ${property.name} for page ${recordLabel}: ${fileValues.length > 0 ? fileValues.map((file) => file.label).join(', ') : 'empty'}`}
                                 onClick={() => beginEdit(record, property)}
                               >
                                 {fileTags}

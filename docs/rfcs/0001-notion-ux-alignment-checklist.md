@@ -2445,6 +2445,19 @@ matrix.
   cross-host comparison, contrast, manual accessibility, usability, and full
   browser gates remain open.
 
+### Inline value accessible-summary pass (2026-07-23)
+
+- Relation, Person, and File edit controls now include the resolved page,
+  identity, or attachment summary in their accessible name, while the visual
+  tag treatment remains compact. Agents and screen readers can therefore
+  identify both the property and its current values without expanding the
+  editor; unavailable values stay explicitly marked.
+- Focused DOM evidence: the property-picker plus inline visual/semantic slice
+  passes 9 tests / 44 expectations, including the value-aware labels; targeted
+  Biome and app typecheck pass.
+- This strengthens UX-1003/UX-1105's semantic contract but does not close
+  manual screen-reader, cross-host, contrast, usability, or browser gates.
+
 - [x] **UX-1001** Define keyboard order across title, tabs, controls, headers,
       cells, new row, and pagination. The canonical page DOM and focused table
       tests pin this progression, while arrow-key navigation handles the grid
