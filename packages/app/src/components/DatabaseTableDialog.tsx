@@ -3254,6 +3254,7 @@ export function DatabaseTable({
                                 notionSurface &&
                                   'text-foreground hover:bg-transparent hover:underline',
                               )}
+                              aria-label={recordActionLabel('Open')}
                               data-record-title-link={record.id}
                               onClick={(event) => {
                                 event.stopPropagation();

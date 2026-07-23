@@ -3194,7 +3194,7 @@ describe('DatabaseTableDialog', () => {
     );
 
     expect(screen.getByRole('button', { name: 'More actions for page First task' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Open page First task' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Open page First task' })).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'More actions for page First task' }));
 
     expect(screen.getByRole('menu', { name: 'More actions for page First task' })).toBeTruthy();

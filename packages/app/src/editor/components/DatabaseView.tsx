@@ -15,7 +15,9 @@ import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-s
 import {
   AlertCircle,
   Archive,
+  ArrowDownAZ,
   Braces,
+  Columns3,
   Copy,
   ExternalLink,
   Filter,
@@ -25,6 +27,7 @@ import {
   RefreshCw,
   Search,
   Settings2,
+  Table2,
   Trash2,
 } from 'lucide-react';
 import {
@@ -1568,132 +1571,141 @@ export function DatabaseView({
       data-database-inline-surface={reference.data.mode === 'inline' ? '' : undefined}
     >
       <header
-        className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 border-b border-border/60 px-3 pt-3 pb-2"
+        className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 border-b border-border/60 px-3 pt-3 pb-1.5"
         data-database-inline-header
       >
-        <div className="min-w-0">
-          <h3 className="truncate font-medium" data-database-inline-title>
-            {state.status === 'ready' && inlineTitleEditing ? (
-              <Input
-                value={inlineTitleDraft}
-                autoFocus
-                aria-label="Inline database title"
-                className="h-8 max-w-sm"
-                disabled={inlineMutationStatus !== 'idle'}
-                onChange={(event) => setInlineTitleDraft(event.currentTarget.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') commitInlineTitle();
-                  if (event.key === 'Escape') {
+        <div className="flex min-w-0 items-start gap-2">
+          <span
+            className="mt-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-md bg-muted/60 text-muted-foreground"
+            aria-hidden="true"
+            data-database-inline-icon
+          >
+            <Table2 className="size-4" />
+          </span>
+          <div className="min-w-0">
+            <h3 className="truncate font-medium" data-database-inline-title>
+              {state.status === 'ready' && inlineTitleEditing ? (
+                <Input
+                  value={inlineTitleDraft}
+                  autoFocus
+                  aria-label="Inline database title"
+                  className="h-8 max-w-sm"
+                  disabled={inlineMutationStatus !== 'idle'}
+                  onChange={(event) => setInlineTitleDraft(event.currentTarget.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') commitInlineTitle();
+                    if (event.key === 'Escape') {
+                      setInlineTitleDraft(
+                        state.description.source?.name ?? state.description.database.name,
+                      );
+                      setInlineTitleEditing(false);
+                    }
+                  }}
+                />
+              ) : state.status === 'ready' ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto max-w-full justify-start truncate rounded-none px-0 py-0.5 text-left font-semibold text-base tracking-tight hover:bg-transparent"
+                  aria-label={state.description.source?.name ?? state.description.database.name}
+                  title={t`Rename inline database`}
+                  onClick={() => {
                     setInlineTitleDraft(
                       state.description.source?.name ?? state.description.database.name,
                     );
-                    setInlineTitleEditing(false);
-                  }
-                }}
-              />
-            ) : state.status === 'ready' ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-auto max-w-full justify-start truncate rounded-none px-0 py-0.5 text-left font-semibold text-base tracking-tight hover:bg-transparent"
-                aria-label={state.description.source?.name ?? state.description.database.name}
-                title={t`Rename inline database`}
-                onClick={() => {
-                  setInlineTitleDraft(
-                    state.description.source?.name ?? state.description.database.name,
-                  );
-                  setInlineTitleEditing(true);
-                }}
+                    setInlineTitleEditing(true);
+                  }}
+                >
+                  {state.description.source?.name ?? state.description.database.name}
+                </Button>
+              ) : (
+                'Linked database view'
+              )}
+            </h3>
+            {state.status === 'ready' ? (
+              <p className="sr-only" data-database-source-context>
+                {state.description.database.name} · {state.description.source?.name}
+              </p>
+            ) : null}
+            {state.status === 'ready' ? (
+              <p className="sr-only" data-linked-record-sharing>
+                Shared pages · edits affect the database; this view keeps its own settings.
+              </p>
+            ) : null}
+            {state.status === 'ready' && linkedDatabase && linkedSource ? (
+              <nav
+                className="mt-1.5 flex max-w-full gap-0.5 overflow-x-auto"
+                aria-label="Linked database views"
+                data-linked-database-view-tabs
               >
-                {state.description.source?.name ?? state.description.database.name}
-              </Button>
-            ) : (
-              'Linked database view'
-            )}
-          </h3>
-          {state.status === 'ready' ? (
-            <p className="sr-only" data-database-source-context>
-              {state.description.database.name} · {state.description.source?.name}
-            </p>
-          ) : null}
-          {state.status === 'ready' ? (
-            <p className="sr-only" data-linked-record-sharing>
-              Shared pages · edits affect the database; this view keeps its own settings.
-            </p>
-          ) : null}
-          {state.status === 'ready' && linkedDatabase && linkedSource ? (
-            <nav
-              className="mt-2 flex max-w-full gap-0.5 overflow-x-auto"
-              aria-label="Linked database views"
-              data-linked-database-view-tabs
-            >
-              {linkedSourceViews.map((candidate, index) => (
-                <Fragment key={candidate.id}>
-                  <Button
-                    type="button"
-                    size="xs"
-                    variant="ghost"
-                    className={cn(
-                      'rounded-none border-b-2 border-transparent px-2 py-1 text-xs',
-                      candidate.id === reference.data.viewId
-                        ? 'border-primary font-medium text-foreground'
-                        : 'text-muted-foreground hover:text-foreground',
-                    )}
-                    aria-current={candidate.id === reference.data.viewId ? 'page' : undefined}
-                    onClick={() =>
-                      applyReference({
-                        databaseId: reference.data.databaseId,
-                        sourceId: reference.data.sourceId,
-                        viewId: candidate.id,
-                      })
-                    }
-                  >
-                    {candidate.name}
-                  </Button>
-                  {candidate.id === reference.data.viewId ? (
-                    <DatabaseViewTabMenu
-                      source={linkedSource}
-                      view={candidate}
-                      index={index}
-                      count={linkedSourceViews.length}
-                      busy={
-                        inlineMutationStatus !== 'idle' ||
-                        inlineUndoStatus !== 'idle' ||
-                        inlineRedoStatus !== 'idle'
+                {linkedSourceViews.map((candidate, index) => (
+                  <Fragment key={candidate.id}>
+                    <Button
+                      type="button"
+                      size="xs"
+                      variant="ghost"
+                      className={cn(
+                        'rounded-none border-b-2 border-transparent px-2 py-1 text-xs',
+                        candidate.id === reference.data.viewId
+                          ? 'border-primary font-medium text-foreground'
+                          : 'text-muted-foreground hover:text-foreground',
+                      )}
+                      aria-current={candidate.id === reference.data.viewId ? 'page' : undefined}
+                      onClick={() =>
+                        applyReference({
+                          databaseId: reference.data.databaseId,
+                          sourceId: reference.data.sourceId,
+                          viewId: candidate.id,
+                        })
                       }
-                      onAction={(action) => handleInlineViewTabAction(candidate, action)}
-                    />
-                  ) : null}
-                </Fragment>
-              ))}
-              <Button
-                type="button"
-                size="icon-sm"
-                variant="ghost"
-                aria-label={inlineNewViewLabel}
-                disabled={
-                  inlineMutationStatus !== 'idle' ||
-                  inlineUndoStatus !== 'idle' ||
-                  inlineRedoStatus !== 'idle'
-                }
-                onClick={() => openInlineDatabaseSurface('view-manager')}
-              >
-                <Plus aria-hidden="true" />
-              </Button>
-            </nav>
-          ) : null}
-          {state.status === 'ready' && linkedSource && activeLinkedView ? (
-            <DatabaseViewQuerySummary
-              source={linkedSource}
-              view={activeLinkedView}
-              onOpenFilters={() => openInlineDatabaseSurface('filters')}
-              onOpenSorts={() => openInlineDatabaseSurface('view-settings')}
-            />
-          ) : null}
+                    >
+                      {candidate.name}
+                    </Button>
+                    {candidate.id === reference.data.viewId ? (
+                      <DatabaseViewTabMenu
+                        source={linkedSource}
+                        view={candidate}
+                        index={index}
+                        count={linkedSourceViews.length}
+                        busy={
+                          inlineMutationStatus !== 'idle' ||
+                          inlineUndoStatus !== 'idle' ||
+                          inlineRedoStatus !== 'idle'
+                        }
+                        onAction={(action) => handleInlineViewTabAction(candidate, action)}
+                      />
+                    ) : null}
+                  </Fragment>
+                ))}
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="ghost"
+                  aria-label={inlineNewViewLabel}
+                  disabled={
+                    inlineMutationStatus !== 'idle' ||
+                    inlineUndoStatus !== 'idle' ||
+                    inlineRedoStatus !== 'idle'
+                  }
+                  onClick={() => openInlineDatabaseSurface('view-manager')}
+                >
+                  <Plus aria-hidden="true" />
+                </Button>
+              </nav>
+            ) : null}
+            {state.status === 'ready' && linkedSource && activeLinkedView ? (
+              <DatabaseViewQuerySummary
+                source={linkedSource}
+                view={activeLinkedView}
+                onOpenFilters={() => openInlineDatabaseSurface('filters')}
+                onOpenSorts={() => openInlineDatabaseSurface('view-settings')}
+              />
+            ) : null}
+          </div>
         </div>
         <div
-          className="flex flex-wrap items-center justify-end gap-0.5 text-muted-foreground"
+          className="flex flex-wrap items-center justify-end gap-0.5 pt-0.5 text-muted-foreground"
           data-database-inline-toolbar
         >
           <DatabaseAgentScopeMenu
@@ -1751,7 +1763,16 @@ export function DatabaseView({
                 className="text-muted-foreground"
                 onClick={() => openInlineDatabaseSurface('view-settings')}
               >
-                <Settings2 /> <Trans>View settings</Trans>
+                <ArrowDownAZ /> <Trans>Sort</Trans>
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground"
+                onClick={() => openInlineDatabaseSurface('properties')}
+              >
+                <Columns3 /> <Trans>Properties</Trans>
               </Button>
             </>
           ) : null}

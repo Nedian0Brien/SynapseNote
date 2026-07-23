@@ -5485,6 +5485,34 @@ html.electron-mode [data-slot="sidebar-inner"] {
   background: transparent;
 }
 
+[data-database-inline-surface] [data-database-inline-icon] {
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+[data-database-inline-surface] [data-database-inline-toolbar] {
+  max-width: 100%;
+}
+
+[data-database-inline-table] th {
+  font-family: var(--font-sans, inherit);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+[data-database-inline-table] tbody tr {
+  background: transparent;
+}
+
+[data-database-inline-table] tbody tr:hover {
+  background: color-mix(in srgb, var(--muted) 42%, transparent);
+}
+
+[data-database-inline-table] tbody td {
+  border-bottom-color: color-mix(in srgb, var(--border) 68%, transparent);
+}
+
 [data-database-inline-table] [data-database-actions-column] {
   border-left-color: transparent;
 }

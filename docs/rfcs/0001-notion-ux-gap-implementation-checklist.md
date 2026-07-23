@@ -170,6 +170,20 @@ targeted Biome passes, and app typecheck passes. This functional subpath does
 not close NUI-105 or NUI-701–NUI-705; visual, cross-host, accessibility,
 usability, performance, and release evidence remains required.
 
+### Inline Notion chrome hierarchy follow-up (2026-07-23)
+
+The inline linked-view shell now uses a compact table icon and a document-like
+title block. Its primary controls are grouped as `Filters`, `Sort`, and
+`Properties`, while the more administrative `View settings` action remains in
+the overflow menu. Inline table headers and rows use a denser, lower-contrast
+grid treatment, and title links expose a value-specific `Open page …` name for
+screen readers and agents.
+
+This is a focused visual/semantic correction backed by the inline-view DOM
+journey, targeted Biome, and app typecheck. It does not close the 1280/1440/768
+visual baselines, cross-host comparison, manual accessibility/contrast,
+responsive, usability, browser, hosted, or real-model gates.
+
 ## Implemented in the current slice
 
 These items are code-backed and have focused DOM/type checks. They must not be

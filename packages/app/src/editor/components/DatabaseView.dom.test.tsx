@@ -490,7 +490,8 @@ describe('DatabaseView', () => {
     expect(screen.getByText('Tasks · tasks/update.md')).toBeTruthy();
     expect(document.querySelector('[data-database-layout="feed"]')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Filters' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'View settings' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Sort' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Properties' })).toBeTruthy();
     expect(screen.getByLabelText('Inspect context for page Linked feed update')).toBeTruthy();
   });
 

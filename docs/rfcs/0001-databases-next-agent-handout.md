@@ -3192,6 +3192,23 @@ their broad evidence is actually assembled:
   contrast, cross-host, responsive, usability, browser, hosted, or real-model
   gates.
 
+### 2026-07-23 Inline Notion chrome hierarchy pass
+
+- Inline linked databases now lead with a compact table icon and a document-like
+  title block. The view tabs stay attached to the title while the primary
+  toolbar exposes `Filters`, `Sort`, and `Properties`; `View settings` remains
+  available from the overflow menu for advanced configuration.
+- The inline table header/cell rules now use the same low-contrast, dense grid
+  treatment across the embedded surface, while canonical/admin tables keep
+  their existing chrome. Title links also expose an explicit `Open page …`
+  accessible name so agents and screen readers can address the page without
+  relying on row text alone.
+- Evidence: targeted Biome and app typecheck, the focused inline-view toolbar
+  journey, and the bounded DatabaseTable value/property slice. This is a visual
+  hierarchy correction, not closure of the 1280/1440/768 baselines,
+  cross-host, contrast, manual accessibility, usability, browser, hosted, or
+  real-model gates.
+
 ## Recommended execution order
 
 1. When a browser-enabled runner is available, run only the new primary-journey
