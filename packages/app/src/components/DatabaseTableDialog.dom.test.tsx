@@ -3195,6 +3195,11 @@ describe('DatabaseTableDialog', () => {
       />,
     );
 
+    const rowActions = document.querySelector<HTMLElement>(
+      '[data-record-id="rec_first"] [data-database-row-actions]',
+    );
+    expect(rowActions?.className).toContain('opacity-0');
+    expect(rowActions?.className).toContain('group-hover/row:opacity-100');
     expect(screen.getByRole('button', { name: 'More actions for page First task' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Open page First task' })).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'More actions for page First task' }));

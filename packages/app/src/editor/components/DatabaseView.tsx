@@ -1125,9 +1125,6 @@ export function DatabaseView({
   const inlineViewActionsLabel = inlineDatabaseContext
     ? t`Database view actions for ${inlineDatabaseContext}`
     : t`Database view actions`;
-  const inlineRefreshLabel = inlineDatabaseContext
-    ? t`Refresh linked database view: ${inlineDatabaseContext}`
-    : t`Refresh linked database view`;
   const inlineSearchLabel = inlineDatabaseContext
     ? t`Search pages in ${inlineDatabaseContext}`
     : t`Search pages`;
@@ -1761,20 +1758,6 @@ export function DatabaseView({
               <Plus /> <Trans>New</Trans>
             </Button>
           ) : null}
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label={inlineRefreshLabel}
-            disabled={
-              state.status === 'loading' ||
-              (state.status === 'error' &&
-                (state.problem.kind === 'permission' || state.problem.kind === 'missing'))
-            }
-            onClick={() => setRefresh((current) => current + 1)}
-          >
-            <RefreshCw className={cn(state.status === 'loading' && 'animate-spin')} />
-          </Button>
           {state.status === 'ready' && activeLinkedView ? (
             <>
               <Button
@@ -1882,6 +1865,12 @@ export function DatabaseView({
                   }
                 >
                   <Sparkles /> <Trans>Ask agent</Trans>
+                </DropdownMenuItem>
+              ) : null}
+              {state.status === 'ready' ? (
+                <DropdownMenuItem onSelect={() => setRefresh((current) => current + 1)}>
+                  <RefreshCw />
+                  <Trans>Refresh</Trans>
                 </DropdownMenuItem>
               ) : null}
               {state.status === 'ready' ? (

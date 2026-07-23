@@ -1839,7 +1839,14 @@ export function DatabaseTable({
         (record) => record.action === 'create' && record.sourceId === source.id,
       ) ? (
         <div
-          className="mb-2 rounded-md border border-dashed p-3 text-muted-foreground text-sm"
+          className={cn(
+            'mb-2 text-muted-foreground text-sm',
+            notionSurface
+              ? searchQuery.trim()
+                ? 'px-1 text-xs'
+                : 'sr-only'
+              : 'rounded-md border border-dashed p-3',
+          )}
           data-database-state="empty"
         >
           {notionSurface && searchQuery.trim() ? (
@@ -1949,7 +1956,7 @@ export function DatabaseTable({
                         'sticky z-30 min-w-56 bg-background',
                         notionSurface ? 'left-7' : 'left-10',
                       ),
-                    notionSurface && 'font-sans normal-case tracking-normal text-[11px]',
+                    notionSurface && '!font-sans !normal-case tracking-normal text-[11px]',
                   )}
                   data-property-id={property.id}
                   style={{
@@ -3356,7 +3363,8 @@ export function DatabaseTable({
                       className={cn(
                         'flex justify-end gap-1',
                         notionSurface && 'gap-0.5',
-                        notionSurface && 'transition-opacity',
+                        notionSurface &&
+                          'opacity-0 transition-opacity group-hover/row:opacity-100 group-focus-within/row:opacity-100',
                       )}
                       data-database-row-actions
                     >

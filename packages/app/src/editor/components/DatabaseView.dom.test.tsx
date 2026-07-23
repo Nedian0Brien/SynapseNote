@@ -157,10 +157,20 @@ describe('DatabaseView', () => {
       screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
     ).toBeTruthy();
     expect(
-      screen.getByRole('button', {
+      screen.queryByRole('button', {
         name: 'Refresh linked database view: Tasks · Open tasks',
       }),
-    ).toBeTruthy();
+    ).toBeNull();
+    fireEvent.pointerDown(
+      screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
+    );
+    expect(screen.getByRole('menuitem', { name: 'Refresh' })).toBeTruthy();
+    fireEvent.keyDown(
+      screen.getByRole('menu', { name: 'Database view actions for Tasks · Open tasks' }),
+      {
+        key: 'Escape',
+      },
+    );
     expect(screen.getByRole('button', { name: 'Search pages in Tasks · Open tasks' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Search pages in Tasks · Open tasks' }));
     const pageSearch = screen.getByRole('textbox', { name: 'Search pages' });
@@ -261,9 +271,9 @@ describe('DatabaseView', () => {
 
     expect((await screen.findAllByText('Shared canonical row')).length).toBe(2);
     expect(screen.getAllByLabelText('Open page Shared canonical row')).toHaveLength(2);
-    expect(screen.getAllByLabelText('Inspect context for page Shared canonical row')).toHaveLength(
-      2,
-    );
+    expect(
+      screen.getAllByRole('button', { name: 'More actions for page Shared canonical row' }),
+    ).toHaveLength(2);
     await waitFor(() => expect(requests).toHaveLength(2));
     expect(requests.map((request) => request.viewId)).toEqual([view.id, view.id]);
     expect(requests[0]?.viewOverrides).toMatchObject({
@@ -2000,11 +2010,10 @@ describe('DatabaseView', () => {
     expect(screen.getByText(/Shared pages/)).toBeTruthy();
 
     offline = true;
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: 'Refresh linked database view: Tasks · Open tasks',
-      }),
+    fireEvent.pointerDown(
+      screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
     );
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Refresh' }));
     expect(await screen.findByTestId('database-view-stale')).toBeTruthy();
     expect(screen.getByText('Cached task')).toBeTruthy();
   });
