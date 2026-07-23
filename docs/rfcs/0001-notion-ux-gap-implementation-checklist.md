@@ -395,7 +395,9 @@ treated as visual parity until a browser capture is attached.
   also carries the same visible context (`New database view for Tasks · Open
   tasks`). The ready inline landmark is also named with that same context so
   repeated blocks can be located without opening them. Map to
-  UX-304/UX-305/UX-309.
+  UX-304/UX-305/UX-309. In the primary Notion table surface, row actions now
+  use the visible record title (`Open record Shared canonical row`, etc.) while
+  the stable record ID remains in the data attributes and mutation scope.
 - [x] **NUI-403** Use one canonical record-page component for title cell, peek,
   full page, comments, history, relation navigation, previous/next, and return
   to the originating view. Record opens now persist the originating database,

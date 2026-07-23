@@ -279,6 +279,13 @@ document-native journey selectors. Loading retains the generic landmark name
 until the description is available; the focused DOM journey passes and the
 Playwright file is only discovery-checked.
 
+Commit `3e224595 fix: expose inline row actions by record title` applies the
+same agent-friendly rule to the primary inline Table rows. Actions now read
+`Open record Shared canonical row` / `Inspect context for record Shared
+canonical row` and use the title for duplicate/archive/move/delete/select;
+full-page administration keeps its stable-ID labels. Focused inline and
+canonical-table DOM checks pass; no additional E2E run was made.
+
 ## Current status
 
 - Numbered A-S items: **310/335 complete (92.5%)**.

@@ -449,6 +449,13 @@ as `Linked database view: Tasks · Open tasks` while loading keeps the generic
 `Linked database view` label. The browser journey selectors now match the
 contextual landmark without requiring a machine ID.
 
+Table row controls in the primary inline surface now name the visible page title
+instead of an opaque record ID (`Inspect context for record Shared canonical
+row`, `Open record Shared canonical row`, and the corresponding duplicate,
+archive, move, and delete actions). Stable IDs remain available to the data
+scope and `data-record-id` attributes, so this is an accessibility/agent-label
+change rather than an identity change.
+
 The follow-up regression capture found that remounting the manager during a
 draft could replay the initial action and create duplicate copies. The manager
 now keeps a stable instance across schema refreshes, synchronizes its view-name
