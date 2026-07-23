@@ -220,6 +220,10 @@ checked with the smallest affected UI actions:
   reviewed form remained portaled after canonical navigation. Commit
   `21a35284 fix: keep notion database creation page on top` clears that child
   state when its host closes, and the focused regression test passes.
+- Commit `16e64889 fix: expose database page title to agents` aligns the
+  page-title button's accessible name with the visible database title and
+  retains rename guidance in the tooltip. The canonical workspace DOM journey
+  covers this name explicitly.
 
 This is partial cross-host evidence, not closure of NUI-105. Command-palette,
 slash, normal New-page, visual comparison, manual accessibility, usability,

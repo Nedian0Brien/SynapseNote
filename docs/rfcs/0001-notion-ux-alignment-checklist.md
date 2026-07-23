@@ -262,6 +262,11 @@ temporary Notion creator's nested reviewed form was still portaled after the
 canonical route mounted. The host now clears child creation state on close,
 with a focused `DatabaseTableDialog.dom.test.tsx` regression test.
 
+Commit `16e64889` then aligned the page title's accessible name with its
+visible value (`Untitled database`/the renamed title), while keeping
+`Rename database page` as tooltip guidance. This keeps screen-reader and agent
+navigation anchored to the page identity rather than the edit action.
+
 ### UX-0 and continuity evidence closure (2026-07-23)
 
 The route, state, mutation, and continuity contracts are now backed by focused
