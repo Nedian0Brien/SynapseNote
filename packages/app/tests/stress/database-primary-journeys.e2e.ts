@@ -195,6 +195,9 @@ test.describe('database primary browser journeys', () => {
     await page.getByRole('combobox', { name: 'Saved database view' }).click();
     await page.getByRole('option', { name: 'List of tasks' }).click();
     await expect(page.getByText('View task')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByLabel('Inspect context for record View task')).toBeVisible({
+      timeout: 10_000,
+    });
 
     await page.getByRole('button', { name: /View options for/ }).click();
     await page.getByRole('menuitem', { name: 'Manage views' }).click();
