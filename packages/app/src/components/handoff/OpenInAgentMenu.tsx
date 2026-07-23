@@ -60,6 +60,7 @@ interface OpenInAgentMenuProps {
   readonly open?: boolean;
   readonly onOpenChange?: (open: boolean) => void;
   readonly triggerLabel?: ReactNode;
+  readonly triggerAriaLabel?: string;
 }
 
 interface OpenWithAiPanelProps {
@@ -232,15 +233,17 @@ function OpenWithAiPanel({
 }
 
 /**
- * Renders the popover trigger + content. Trigger is a `Sparkles` icon +
- * visible "Open with AI" label (the visible text is the accessible name — no
- * `aria-label`, which would override it and break WCAG 2.5.3 Label in Name).
+ * Renders the popover trigger + content. Trigger is a `Sparkles` icon and a
+ * visible label. A longer aria label is supported for compact surfaces that
+ * need to keep their visible chrome short while retaining full context for
+ * assistive technology.
  */
 export function OpenInAgentMenu({
   input,
   open,
   onOpenChange,
   triggerLabel,
+  triggerAriaLabel,
 }: OpenInAgentMenuProps): ReactNode {
   const { t } = useLingui();
   const { states, refresh } = useInstalledAgents();
@@ -320,6 +323,7 @@ export function OpenInAgentMenu({
           variant="ghost"
           size="sm"
           disabled={triggerDisabled}
+          aria-label={triggerAriaLabel}
           className="gap-1.5 text-muted-foreground px-1.5"
           data-testid="open-in-agent-trigger"
           // macOS swallows pointerdown inside the editor header's

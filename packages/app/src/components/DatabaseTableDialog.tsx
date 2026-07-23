@@ -1464,7 +1464,11 @@ export function DatabaseTable({
   };
 
   return (
-    <div ref={tableHostRef} className="relative">
+    <div
+      ref={tableHostRef}
+      className="relative"
+      data-database-table-surface={notionSurface ? 'inline' : 'canonical'}
+    >
       {propertyRenameTarget ? (
         <Popover
           open
@@ -1737,11 +1741,16 @@ export function DatabaseTable({
         aria-colcount={properties.length + 2}
         className={cn(
           'min-w-full w-max',
+          notionSurface && '[&_td]:px-3 [&_td]:py-2 [&_th]:h-9 [&_th]:px-3',
           layout.rowHeight === 'compact' && '[&_td]:py-1',
           layout.rowHeight === 'tall' && '[&_td]:py-5',
         )}
+        data-database-inline-table={notionSurface ? '' : undefined}
         data-row-height={layout.rowHeight}
-        containerClassName="max-h-[62vh] overflow-auto rounded-md border"
+        containerClassName={cn(
+          'max-h-[62vh] overflow-auto',
+          notionSurface ? 'rounded-none border-y border-border/60' : 'rounded-md border',
+        )}
         containerRef={scrollContainerRef}
         onContainerScroll={(event) => {
           const nextScrollTop = event.currentTarget.scrollTop;
@@ -1757,10 +1766,18 @@ export function DatabaseTable({
             <Trans>Canonical database records</Trans>
           )}
         </TableCaption>
-        <TableHeader className="sticky top-0 z-20 bg-background">
+        <TableHeader
+          className={cn(
+            'sticky top-0 z-20 bg-background',
+            notionSurface && 'bg-background/95 [&_tr]:border-border/60',
+          )}
+        >
           <TableRow noHover aria-rowindex={1}>
             <TableHead
-              className="group/column sticky left-0 z-40 w-10 bg-background"
+              className={cn(
+                'group/column sticky left-0 z-40 w-10 bg-background',
+                notionSurface && 'px-1',
+              )}
               aria-colindex={1}
             >
               <Checkbox
@@ -1795,6 +1812,7 @@ export function DatabaseTable({
                   className={cn(
                     'group/column',
                     index === 0 && 'sticky left-10 z-30 min-w-56 bg-background',
+                    notionSurface && 'font-sans normal-case tracking-normal text-[11px]',
                   )}
                   data-property-id={property.id}
                   style={{
@@ -2089,8 +2107,12 @@ export function DatabaseTable({
               );
             })}
             <TableHead
-              className="sticky right-0 z-30 w-32 bg-background text-right"
+              className={cn(
+                'sticky right-0 z-30 text-right',
+                notionSurface ? 'w-8 min-w-8 bg-background/95 px-1' : 'w-32 bg-background',
+              )}
               aria-colindex={properties.length + 2}
+              data-database-actions-column
             >
               <span className={notionSurface ? 'sr-only' : undefined}>
                 <Trans>Actions</Trans>
@@ -2951,7 +2973,11 @@ export function DatabaseTable({
                 <TableCell
                   role="gridcell"
                   aria-colindex={properties.length + 2}
-                  className="sticky right-0 z-10 bg-background text-right"
+                  className={cn(
+                    'sticky right-0 z-10 text-right',
+                    notionSurface ? 'w-8 min-w-8 bg-background/95 px-1' : 'w-32 bg-background',
+                  )}
+                  data-database-actions-column
                 >
                   {proposedDeletion ? (
                     <Badge variant="warning">
@@ -2973,9 +2999,11 @@ export function DatabaseTable({
                     <div
                       className={cn(
                         'flex justify-end gap-1',
+                        notionSurface && 'gap-0.5',
                         notionSurface &&
                           'opacity-0 transition-opacity group-hover/row:opacity-100 group-focus-within/row:opacity-100',
                       )}
+                      data-database-row-actions
                     >
                       {record.archivedAt ? (
                         <Badge variant="gray">
@@ -3090,9 +3118,16 @@ export function DatabaseTable({
               aria-rowindex={tableRecords.length + 2}
               data-new-record-row
               data-canonical="false"
-              className="border-primary/30 border-dashed bg-primary/5"
+              className={cn(
+                'border-primary/30 border-dashed bg-primary/5',
+                notionSurface && 'border-border/60 bg-transparent',
+              )}
             >
-              <TableCell role="gridcell" aria-colindex={1} className="sticky left-0 z-20 w-10" />
+              <TableCell
+                role="gridcell"
+                aria-colindex={1}
+                className={cn('sticky left-0 z-20 w-10', notionSurface && 'px-1')}
+              />
               {properties.map((property, index) => (
                 <TableCell
                   key={property.id}
@@ -3101,6 +3136,7 @@ export function DatabaseTable({
                   className={cn(
                     index === 0 && 'sticky left-10 z-10 font-medium',
                     layout.wrap ? 'whitespace-normal' : 'whitespace-nowrap',
+                    notionSurface && 'px-3 py-2',
                   )}
                   style={{
                     minWidth: layout.widths[property.id],
@@ -3114,7 +3150,11 @@ export function DatabaseTable({
                       aria-label={notionSurface ? 'New page title' : 'New row title'}
                       placeholder={notionSurface ? t`New page` : t`New record title`}
                       disabled={mutationLocked}
-                      className="h-8"
+                      className={cn(
+                        'h-8',
+                        notionSurface &&
+                          'border-0 bg-transparent px-1 shadow-none focus-visible:ring-0',
+                      )}
                       onKeyDown={(event) => {
                         if (event.nativeEvent.isComposing) return;
                         if (event.key === 'Enter') {
@@ -3144,7 +3184,7 @@ export function DatabaseTable({
               <TableCell
                 role="gridcell"
                 aria-colindex={properties.length + 2}
-                className="sticky right-0 z-10"
+                className={cn('sticky right-0 z-10', notionSurface ? 'w-8 min-w-8 px-1' : 'w-32')}
               >
                 <span className="text-muted-foreground text-xs">
                   {notionSurface ? t`Press Enter to create page` : t`Press Enter to add`}

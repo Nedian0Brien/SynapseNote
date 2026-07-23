@@ -3018,6 +3018,29 @@ their broad evidence is actually assembled:
   tests / 26 expectations, targeted Biome and app typecheck pass. Changeset:
   `.changeset/context-inspector-token-estimate.md`.
 
+### 2026-07-23 Inline database visual parity pass
+
+- A fresh Electron capture of the document-native linked Table confirmed the
+  remaining Notion mismatch was visual: the block was framed like an admin
+  widget, table headers were uppercase monospace, the `Actions` column reserved
+  too much space, and row actions competed with the page content.
+- The inline shell now uses a border-light document treatment; title and saved
+  view tabs use text-first hierarchy; toolbar actions use quiet ghost controls;
+  the visible agent control is reduced to `Ask agent` while its full database /
+  view context remains in the accessible name; property headers use normal-case
+  sans-serif typography; the actions column is
+  narrow and reveals its controls only on row hover/focus; and the new-page row
+  no longer reads as a prominent dashed form.
+- The catalog client now gives transient HTTP 409 responses a bounded
+  three-attempt settling window. The sidebar keeps cached database sources
+  usable without a red error banner when a refresh fails after a successful
+  load. Focused client/sidebar DOM coverage records both behaviors.
+- Evidence: Electron capture in the current worktree, targeted Biome, app
+  typecheck, `database-catalog-client.test.ts`, and focused sidebar/table/view
+  DOM tests. This pass improves the open UX-008/UX-009 visual gate; it does not
+  close the cross-host, manual accessibility, usability, or browser journey
+  gates.
+
 ## Recommended execution order
 
 1. When a browser-enabled runner is available, run only the new primary-journey

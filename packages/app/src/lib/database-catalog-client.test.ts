@@ -98,11 +98,11 @@ test('loads a validated compact catalog and exact source description', async () 
   ]);
 });
 
-test('retries one transient catalog conflict after a database creation', async () => {
+test('retries transient catalog conflicts while the index settles', async () => {
   let calls = 0;
   const fetchImplementation = mock(async () => {
     calls += 1;
-    if (calls === 1) {
+    if (calls <= 2) {
       return Response.json({ detail: 'catalog is still settling' }, { status: 409 });
     }
     return Response.json({
@@ -117,7 +117,7 @@ test('retries one transient catalog conflict after a database creation', async (
   await expect(
     fetchDatabaseCatalog({ fetch: fetchImplementation as typeof fetch }),
   ).resolves.toMatchObject({ complete: true, candidates: [] });
-  expect(calls).toBe(2);
+  expect(calls).toBe(3);
 });
 
 describe('database catalog client validation', () => {

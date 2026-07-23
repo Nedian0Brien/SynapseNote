@@ -273,4 +273,72 @@ describe('DatabaseSidebarSection', () => {
     await waitFor(() => expect(screen.getAllByText('Roadmap')).toHaveLength(2));
     expect(fetchCalls).toHaveLength(2);
   });
+
+  test('keeps cached sources usable when a refresh fails', async () => {
+    let calls = 0;
+    catalogImpl = async () => {
+      calls += 1;
+      if (calls === 2) throw new Error('catalog is still settling');
+      return {
+        query: null,
+        manifestRevision: 'rev-1',
+        catalogRevision: `sha256:${'a'.repeat(64)}`,
+        complete: true as const,
+        candidates: [
+          {
+            id: 'db_tasks',
+            key: 'tasks',
+            name: 'Tasks',
+            purpose: 'Track tasks',
+            sources: [
+              {
+                id: 'ds_tasks',
+                key: 'tasks',
+                name: 'Tasks',
+                recordMeaning: 'One task',
+                propertyCount: 3,
+              },
+            ],
+            viewCount: 1,
+            relationCount: 0,
+            score: 1,
+            matchedBy: [],
+          },
+        ],
+      };
+    };
+
+    const { DatabaseSidebarSection } = await import('./DatabaseSidebarSection');
+    render(<DatabaseSidebarSection />);
+    fireEvent.click(screen.getByTestId('database-sidebar-trigger'));
+    await waitFor(() =>
+      expect(screen.getByTestId('database-sidebar-source-ds_tasks')).toBeTruthy(),
+    );
+
+    await act(async () => {
+      emitDatabaseChanged({
+        v: CC1_CONTRACT_VERSION,
+        ch: CC1_CHANNEL_DATABASE_CHANGED,
+        seq: 3,
+        scope: 'workspace',
+        reasons: ['schema-change'],
+        databaseIds: ['db_tasks'],
+        sourceIds: ['ds_tasks'],
+        recordIds: [],
+        affectedIdsComplete: true,
+        index: {
+          state: 'idle',
+          revision: `sha256:${'b'.repeat(64)}`,
+          manifestRevision: `sha256:${'c'.repeat(64)}`,
+          recordCount: 0,
+          issueCount: 0,
+          progress: null,
+        },
+      });
+    });
+
+    await waitFor(() => expect(calls).toBe(2));
+    expect(screen.getByTestId('database-sidebar-source-ds_tasks')).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
 });

@@ -792,6 +792,10 @@ describe('DatabaseTableDialog', () => {
       />,
     );
 
+    expect(document.querySelector('[data-database-inline-table]')).toBeTruthy();
+    expect(document.querySelector('[data-database-actions-column]')).toBeTruthy();
+    expect(document.querySelector('[data-database-row-actions]')).toBeTruthy();
+
     await user.click(screen.getByRole('button', { name: 'Add property' }));
     const name = screen.getByRole('textbox', { name: 'New property name' });
     await user.clear(name);

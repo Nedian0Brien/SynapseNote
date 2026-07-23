@@ -7,6 +7,7 @@ import { z } from 'zod';
 
 const RevisionSchema = z.string().regex(/^sha256:[a-f0-9]{64}$/);
 const CATALOG_RETRY_DELAY_MS = 50;
+const CATALOG_MAX_ATTEMPTS = 3;
 
 export const DatabaseCatalogCandidateSchema = z
   .object({
@@ -177,9 +178,14 @@ export async function fetchDatabaseCatalog(
       return parsed.data;
     } catch (error) {
       // A catalog read can overlap the short manifest/index transaction window
-      // immediately after creating a database. Retry that one transient 409 so
-      // the sidebar does not strand a successful page behind a manual retry.
-      if (!(error instanceof DatabaseCatalogClientError) || error.status !== 409 || attempt > 0) {
+      // immediately after creating a database. Give that transient 409 a small
+      // bounded settling window so a usable sidebar does not flash a destructive
+      // error while the index catches up.
+      if (
+        !(error instanceof DatabaseCatalogClientError) ||
+        error.status !== 409 ||
+        attempt >= CATALOG_MAX_ATTEMPTS - 1
+      ) {
         throw error;
       }
       await waitForCatalogRetry(options.signal);

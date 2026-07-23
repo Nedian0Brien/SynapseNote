@@ -2276,6 +2276,32 @@ capability alone is insufficient.
 
 ### UX-10 — Accessibility, responsive behavior, and performance
 
+### Visual audit — inline database surface (2026-07-23)
+
+The Electron capture of the document-native linked Table confirmed the
+remaining visual gap is not a missing database primitive; it is the surface
+grammar. The block still read as a dense admin table because it had a framed
+card, an always-sized `Actions` column, uppercase monospace headers, persistent
+row-control chrome, and a long agent action competing with the database title.
+The sidebar also showed a destructive HTTP 409 message while cached database
+sources were already usable.
+
+This pass moves the inline surface toward Notion's calmer page-block hierarchy:
+
+- the inline shell is border-light and document-native;
+- the title and view tabs use text-first hierarchy instead of pills;
+- filters/settings/new use a quiet toolbar treatment;
+- property headers use normal case, sans-serif text and lower density;
+- the actions column collapses to a narrow hover/focus reveal and the new row is
+  visually quiet;
+- transient catalog conflicts retry within a bounded settling window, and a
+  cached source list no longer turns red when a refresh fails.
+
+This is a visual convergence pass, not closure of UX-008/UX-009 or UX-1101–
+UX-1116. The remaining gates still require the desktop/compact comparison,
+manual keyboard and screen-reader review, and the bounded browser journey
+matrix.
+
 - [x] **UX-1001** Define keyboard order across title, tabs, controls, headers,
       cells, new row, and pagination. The canonical page DOM and focused table
       tests pin this progression, while arrow-key navigation handles the grid

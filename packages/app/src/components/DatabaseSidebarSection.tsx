@@ -160,7 +160,7 @@ export function DatabaseSidebarSection() {
               <Trans>Loading databases</Trans>
             </div>
           ) : null}
-          {loadState === 'error' ? (
+          {loadState === 'error' && candidates.length === 0 ? (
             <div
               className="flex items-center gap-2 px-2 py-2 text-destructive text-xs"
               role="alert"

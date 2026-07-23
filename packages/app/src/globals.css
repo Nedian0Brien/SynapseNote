@@ -5474,6 +5474,45 @@ html.electron-mode [data-slot="sidebar-inner"] {
   @apply font-mono bg-muted text-inherit border border-border rounded-md px-1 py-0.5 text-sm;
 }
 
+/* Linked databases are document blocks, not admin panels. Keep the inline
+   surface quiet in the page flow and reveal destructive/secondary row actions
+   only when the user is actually working with a row. */
+[data-database-inline-surface] {
+  border-radius: 0.5rem;
+}
+
+[data-database-inline-surface] [data-database-inline-header] {
+  background: transparent;
+}
+
+[data-database-inline-table] [data-database-actions-column] {
+  border-left-color: transparent;
+}
+
+[data-database-inline-table] [data-database-row-actions] {
+  position: absolute;
+  top: 50%;
+  right: 0.25rem;
+  z-index: 2;
+  width: max-content;
+  min-height: 1.5rem;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+[data-database-inline-table] tbody tr:hover [data-database-row-actions],
+[data-database-inline-table] tbody tr:focus-within [data-database-row-actions] {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  box-shadow: -0.5rem 0 1rem rgb(0 0 0 / 12%);
+  pointer-events: auto;
+}
+
+[data-database-inline-table] [data-new-record-row] {
+  color: var(--muted-foreground);
+}
+
 /* Database workspaces remain usable in narrow desktop panes and respect the
    platform accessibility preferences without changing canonical data. */
 @media (prefers-reduced-motion: reduce) {

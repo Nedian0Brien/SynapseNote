@@ -10,11 +10,13 @@ import { useWorkspace } from '@/lib/use-workspace';
 export function DatabaseAgentScopeMenu({
   scope,
   label = 'Ask agent',
+  ariaLabel,
   open,
   onOpenChange,
 }: {
   scope: DatabaseAgentScope | null;
   label?: ReactNode;
+  ariaLabel?: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }): React.JSX.Element | null {
@@ -33,6 +35,7 @@ export function DatabaseAgentScopeMenu({
         type="button"
         variant="outline"
         size="sm"
+        aria-label={ariaLabel}
         data-testid="open-in-agent-trigger"
         data-database-agent-scope-trigger
         onClick={() => {
@@ -51,6 +54,7 @@ export function DatabaseAgentScopeMenu({
     <OpenInAgentMenu
       input={input}
       triggerLabel={label}
+      triggerAriaLabel={ariaLabel}
       open={menuOpen}
       onOpenChange={(nextOpen) => {
         setInternalOpen(nextOpen);

@@ -1113,6 +1113,7 @@ export function DatabaseView({
   const inlineAgentLabel = inlineDatabaseContext
     ? t`Ask agent about ${inlineDatabaseContext}`
     : undefined;
+  const inlineAgentTriggerLabel = t`Ask agent`;
   const inlineNewViewLabel = inlineDatabaseContext
     ? t`New database view for ${inlineDatabaseContext}`
     : t`New database view`;
@@ -1548,7 +1549,8 @@ export function DatabaseView({
   return (
     <section
       className={cn(
-        'my-4 overflow-hidden rounded-lg border bg-background',
+        'my-4 overflow-hidden bg-background',
+        reference.data.mode === 'inline' ? 'database-inline-surface' : 'rounded-lg border',
         reference.data.mode === 'full-page' &&
           'relative left-1/2 w-[min(96vw,90rem)] -translate-x-1/2',
       )}
@@ -1563,8 +1565,12 @@ export function DatabaseView({
       data-view-id={reference.data.viewId}
       data-view-mode={reference.data.mode}
       data-database-layout={activeLinkedView?.layout.type}
+      data-database-inline-surface={reference.data.mode === 'inline' ? '' : undefined}
     >
-      <header className="flex items-center justify-between gap-3 border-b px-4 py-3">
+      <header
+        className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 border-b border-border/60 px-3 pt-3 pb-2"
+        data-database-inline-header
+      >
         <div className="min-w-0">
           <h3 className="truncate font-medium" data-database-inline-title>
             {state.status === 'ready' && inlineTitleEditing ? (
@@ -1590,7 +1596,7 @@ export function DatabaseView({
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="h-8 max-w-full justify-start truncate px-1 text-left font-medium"
+                className="h-auto max-w-full justify-start truncate rounded-none px-0 py-0.5 text-left font-semibold text-base tracking-tight hover:bg-transparent"
                 aria-label={state.description.source?.name ?? state.description.database.name}
                 title={t`Rename inline database`}
                 onClick={() => {
@@ -1618,7 +1624,7 @@ export function DatabaseView({
           ) : null}
           {state.status === 'ready' && linkedDatabase && linkedSource ? (
             <nav
-              className="mt-2 flex max-w-full gap-1 overflow-x-auto"
+              className="mt-2 flex max-w-full gap-0.5 overflow-x-auto"
               aria-label="Linked database views"
               data-linked-database-view-tabs
             >
@@ -1627,7 +1633,13 @@ export function DatabaseView({
                   <Button
                     type="button"
                     size="xs"
-                    variant={candidate.id === reference.data.viewId ? 'secondary' : 'ghost'}
+                    variant="ghost"
+                    className={cn(
+                      'rounded-none border-b-2 border-transparent px-2 py-1 text-xs',
+                      candidate.id === reference.data.viewId
+                        ? 'border-primary font-medium text-foreground'
+                        : 'text-muted-foreground hover:text-foreground',
+                    )}
                     aria-current={candidate.id === reference.data.viewId ? 'page' : undefined}
                     onClick={() =>
                       applyReference({
@@ -1680,18 +1692,23 @@ export function DatabaseView({
             />
           ) : null}
         </div>
-        <div className="flex flex-wrap justify-end gap-1">
+        <div
+          className="flex flex-wrap items-center justify-end gap-0.5 text-muted-foreground"
+          data-database-inline-toolbar
+        >
           <DatabaseAgentScopeMenu
             scope={activeInlineAgentScope}
-            label={inlineAgentLabel}
+            label={inlineAgentTriggerLabel}
+            ariaLabel={inlineAgentLabel}
             open={inlineAgentMenuOpen}
             onOpenChange={handleInlineAgentMenuChange}
           />
           {activeLinkedView?.layout.type !== 'form' ? (
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               size="sm"
+              className="font-medium"
               aria-label="New page"
               disabled={state.status !== 'ready'}
               onClick={() => {
@@ -1720,16 +1737,18 @@ export function DatabaseView({
             <>
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 size="sm"
+                className="text-muted-foreground"
                 onClick={() => openInlineDatabaseSurface('filters')}
               >
                 <Filter /> <Trans>Filters</Trans>
               </Button>
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 size="sm"
+                className="text-muted-foreground"
                 onClick={() => openInlineDatabaseSurface('view-settings')}
               >
                 <Settings2 /> <Trans>View settings</Trans>
