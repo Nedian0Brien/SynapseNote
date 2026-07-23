@@ -2511,6 +2511,15 @@ describe('DatabaseTableDialog', () => {
     expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'rec_first' }));
   });
 
+  test('names inline cell controls with the visible record title', () => {
+    render(
+      <DatabaseTable source={source} result={queryResult()} notionSurface onEdit={() => {}} />,
+    );
+    expect(screen.getByLabelText('Open URL for record First task')).toBeTruthy();
+    expect(screen.getByLabelText('Copy URL for record First task')).toBeTruthy();
+    expect(screen.getByLabelText('Edit URL for record First task')).toBeTruthy();
+  });
+
   test('offers a row-level agent scope with the canonical record ID', () => {
     const onOpenAgentScope = mock(() => {});
     render(
