@@ -348,7 +348,7 @@ export function DatabaseChart({
                       type="button"
                       variant="outline"
                       size="icon-sm"
-                      aria-label={`Inspect context for record ${record.id}`}
+                      aria-label={`Inspect context for record ${titleProperty ? String(record.values[titleProperty.id] ?? 'Untitled') : 'Untitled'}`}
                       onClick={() => onOpenContextInspector(record)}
                     >
                       <Braces aria-hidden="true" />

@@ -162,7 +162,7 @@ export function DatabaseFeed({
                 type="button"
                 size="icon-sm"
                 variant="ghost"
-                aria-label="Open feed item"
+                aria-label={`Open record ${valueText(record.values[titleProperty.id])}`}
                 onClick={() => open(record)}
               >
                 <ExternalLink />
@@ -172,7 +172,7 @@ export function DatabaseFeed({
                   type="button"
                   size="icon-sm"
                   variant="ghost"
-                  aria-label={`Inspect context for record ${record.id}`}
+                  aria-label={`Inspect context for record ${valueText(record.values[titleProperty.id])}`}
                   onClick={() => onOpenContextInspector(record)}
                 >
                   <Braces aria-hidden="true" />

@@ -148,7 +148,7 @@ describe('DatabaseTimeline', () => {
     const onChange = mock(() => {});
     render(<DatabaseTimeline source={source} view={view} result={result} onChange={onChange} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Move rec_plan later' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Move record Plan later' }));
     expect(onChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         record: expect.objectContaining({ id: 'rec_plan' }),
@@ -161,7 +161,7 @@ describe('DatabaseTimeline', () => {
       }),
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Resize end for rec_plan' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Resize end for Plan' }));
     expect(onChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         changes: [expect.objectContaining({ value: { start: '2026-07-20', end: '2026-07-23' } })],
@@ -202,14 +202,12 @@ describe('DatabaseTimeline', () => {
       />,
     );
     const inspectButtons = screen.getAllByRole('button', {
-      name: 'Inspect context for record rec_plan',
+      name: 'Inspect context for record Plan',
     });
     const inspectButton = inspectButtons[0];
     if (!inspectButton) throw new Error('Timeline context inspector control is missing');
     fireEvent.click(inspectButton);
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Inspect context for record rec_unscheduled' }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect context for record Later' }));
     expect(onOpenContextInspector).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({ id: 'rec_plan' }),
@@ -235,7 +233,7 @@ describe('DatabaseTimeline', () => {
         onOpenContextInspector={onOpenContextInspector}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Inspect context for record rec_plan' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect context for record Plan' }));
     expect(onOpenContextInspector).toHaveBeenLastCalledWith(
       expect.objectContaining({ id: 'rec_plan' }),
     );
@@ -288,7 +286,7 @@ describe('DatabaseTimeline', () => {
         onChange={onChange}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Move rec_plan later' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Move record Plan later' }));
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({
         changes: [

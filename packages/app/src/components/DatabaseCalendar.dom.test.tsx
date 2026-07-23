@@ -154,7 +154,7 @@ describe('DatabaseCalendar', () => {
       }),
     );
 
-    const resizeEnd = screen.getAllByRole('button', { name: 'Resize end for rec_span' })[0];
+    const resizeEnd = screen.getAllByRole('button', { name: 'Resize end for Multi-day launch' })[0];
     if (!resizeEnd) throw new Error('Calendar end resize control is missing');
     fireEvent.click(resizeEnd);
     expect(onChange).toHaveBeenLastCalledWith(
@@ -176,7 +176,7 @@ describe('DatabaseCalendar', () => {
       />,
     );
     const inspectButtons = screen.getAllByRole('button', {
-      name: 'Inspect context for record rec_span',
+      name: 'Inspect context for record Multi-day launch',
     });
     const inspectButton = inspectButtons[0];
     if (!inspectButton) throw new Error('Calendar context inspector control is missing');

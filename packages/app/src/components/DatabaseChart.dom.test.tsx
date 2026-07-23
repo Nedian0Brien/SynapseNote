@@ -170,7 +170,7 @@ describe('DatabaseChart', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Todo, Records: 2' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Inspect context for record rec_a' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect context for record A' }));
     expect(onOpenContextInspector).toHaveBeenCalledWith(expect.objectContaining({ id: 'rec_a' }));
   });
 });

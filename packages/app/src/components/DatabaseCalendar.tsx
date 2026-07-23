@@ -412,7 +412,7 @@ export function DatabaseCalendar({
                           variant="ghost"
                           size="icon-xs"
                           draggable={!mutationLocked && !!onChange}
-                          aria-label={`Resize start for ${record.id}`}
+                          aria-label={`Resize start for ${recordTitle(source, record)}`}
                           onClick={() => emitChange(record, 'resize-start', shiftDayKey(day, -1))}
                           onDragStart={(event) => {
                             event.stopPropagation();
@@ -436,7 +436,7 @@ export function DatabaseCalendar({
                           type="button"
                           variant="ghost"
                           size="icon-xs"
-                          aria-label={`Open record ${record.id}`}
+                          aria-label={`Open record ${recordTitle(source, record)}`}
                           onClick={() => onOpen(record)}
                         >
                           <ExternalLink />
@@ -447,7 +447,7 @@ export function DatabaseCalendar({
                           type="button"
                           variant="ghost"
                           size="icon-xs"
-                          aria-label={`Inspect context for record ${record.id}`}
+                          aria-label={`Inspect context for record ${recordTitle(source, record)}`}
                           disabled={mutationLocked}
                           onClick={() => onOpenContextInspector(record)}
                         >
@@ -460,7 +460,7 @@ export function DatabaseCalendar({
                           variant="ghost"
                           size="icon-xs"
                           draggable={!mutationLocked && !!onChange}
-                          aria-label={`Resize end for ${record.id}`}
+                          aria-label={`Resize end for ${recordTitle(source, record)}`}
                           onClick={() => emitChange(record, 'resize-end', shiftDayKey(day, 1))}
                           onDragStart={(event) => {
                             event.stopPropagation();

@@ -545,7 +545,7 @@ export function DatabaseTimeline({
                                 type="button"
                                 variant="ghost"
                                 size="icon-xs"
-                                aria-label={`Open record ${record.id}`}
+                                aria-label={`Open record ${titleForRecord(source, record)}`}
                                 onClick={() => onOpen(record)}
                               >
                                 <ExternalLink />
@@ -556,7 +556,7 @@ export function DatabaseTimeline({
                                 type="button"
                                 variant="ghost"
                                 size="icon-xs"
-                                aria-label={`Inspect context for record ${record.id}`}
+                                aria-label={`Inspect context for record ${titleForRecord(source, record)}`}
                                 disabled={mutationLocked}
                                 onClick={() => onOpenContextInspector(record)}
                               >
@@ -630,7 +630,7 @@ export function DatabaseTimeline({
                             size="icon-xs"
                             className="text-primary-foreground hover:text-primary"
                             draggable={!mutationLocked && !!onChange}
-                            aria-label={`Resize start for ${record.id}`}
+                            aria-label={`Resize start for ${titleForRecord(source, record)}`}
                             onClick={() =>
                               emitChange(
                                 record,
@@ -666,7 +666,7 @@ export function DatabaseTimeline({
                               variant="ghost"
                               size="icon-xs"
                               className="text-primary-foreground hover:text-primary"
-                              aria-label={`Inspect context for record ${record.id}`}
+                              aria-label={`Inspect context for record ${titleForRecord(source, record)}`}
                               disabled={mutationLocked}
                               onClick={() => onOpenContextInspector(record)}
                             >
@@ -678,7 +678,7 @@ export function DatabaseTimeline({
                             variant="ghost"
                             size="icon-xs"
                             className="text-primary-foreground hover:text-primary"
-                            aria-label={`Move ${record.id} earlier`}
+                            aria-label={`Move record ${titleForRecord(source, record)} earlier`}
                             onClick={() =>
                               emitChange(
                                 record,
@@ -694,7 +694,7 @@ export function DatabaseTimeline({
                             variant="ghost"
                             size="icon-xs"
                             className="text-primary-foreground hover:text-primary"
-                            aria-label={`Move ${record.id} later`}
+                            aria-label={`Move record ${titleForRecord(source, record)} later`}
                             onClick={() =>
                               emitChange(
                                 record,
@@ -711,7 +711,7 @@ export function DatabaseTimeline({
                             size="icon-xs"
                             className="text-primary-foreground hover:text-primary"
                             draggable={!mutationLocked && !!onChange}
-                            aria-label={`Resize end for ${record.id}`}
+                            aria-label={`Resize end for ${titleForRecord(source, record)}`}
                             onClick={() =>
                               emitChange(
                                 record,
@@ -761,7 +761,7 @@ export function DatabaseTimeline({
                       type="button"
                       variant="ghost"
                       size="icon-xs"
-                      aria-label={`Inspect context for record ${record.id}`}
+                      aria-label={`Inspect context for record ${titleForRecord(source, record)}`}
                       disabled={mutationLocked}
                       onClick={() => onOpenContextInspector(record)}
                     >

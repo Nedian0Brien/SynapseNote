@@ -334,7 +334,7 @@ function DatabaseMapContent({
                   type="button"
                   size="icon-xs"
                   variant="secondary"
-                  aria-label={`Inspect context for record ${firstMarker.record.id}`}
+                  aria-label={`Inspect context for record ${titleForRecord(source, firstMarker.record)}`}
                   onPointerDown={(event) => event.stopPropagation()}
                   onClick={() => onOpenContextInspector(firstMarker.record)}
                 >
@@ -366,7 +366,7 @@ function DatabaseMapContent({
                           type="button"
                           variant="ghost"
                           size="icon-xs"
-                          aria-label={`Inspect context for record ${marker.record.id}`}
+                          aria-label={`Inspect context for record ${titleForRecord(source, marker.record)}`}
                           onClick={() => onOpenContextInspector(marker.record)}
                         >
                           <Braces aria-hidden="true" />
@@ -465,7 +465,7 @@ function DatabaseMapContent({
                     type="button"
                     size="icon-sm"
                     variant="outline"
-                    aria-label={`Inspect context for record ${record.id}`}
+                    aria-label={`Inspect context for record ${titleForRecord(source, record)}`}
                     onClick={() => onOpenContextInspector(record)}
                   >
                     <Braces aria-hidden="true" />

@@ -125,7 +125,7 @@ describe('DatabaseList', () => {
     expect(document.activeElement).toBe(child);
     fireEvent.keyDown(child as HTMLElement, { key: 'Enter' });
     expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'rec_child' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Collapse rec_parent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse Parent' }));
     expect(document.querySelector('[data-list-row="rec_child"]')).toBeNull();
   });
 
@@ -141,7 +141,7 @@ describe('DatabaseList', () => {
         onOpenContextInspector={onOpenContextInspector}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Inspect context for record rec_child' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect context for record Child' }));
     expect(onOpenContextInspector).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'rec_child' }),
     );

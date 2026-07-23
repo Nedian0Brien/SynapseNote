@@ -158,12 +158,12 @@ describe('DatabaseMap', () => {
         onOpenContextInspector={onOpenContextInspector}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Inspect context for record rec_seoul' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect context for record Seoul' }));
     expect(onOpenContextInspector).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'rec_seoul' }),
     );
     fireEvent.click(screen.getByText('Missing locations (1)'));
-    fireEvent.click(screen.getByRole('button', { name: 'Inspect context for record rec_missing' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect context for record Unknown' }));
     expect(onOpenContextInspector).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'rec_missing' }),
     );

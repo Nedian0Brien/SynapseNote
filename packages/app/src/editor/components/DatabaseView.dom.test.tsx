@@ -330,7 +330,7 @@ describe('DatabaseView', () => {
     expect(document.querySelector('[data-database-layout="feed"]')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Filters' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'View settings' })).toBeTruthy();
-    expect(screen.getByLabelText('Inspect context for record rec_feed')).toBeTruthy();
+    expect(screen.getByLabelText('Inspect context for record Linked feed update')).toBeTruthy();
   });
 
   test('renders a linked Dashboard by querying only its child saved views', async () => {
@@ -579,12 +579,15 @@ describe('DatabaseView', () => {
         mode="inline"
       />,
     );
-    expect(await screen.findByRole('heading', { name: 'Task gallery' })).toBeTruthy();
+    expect(
+      await screen.findByRole('region', { name: 'Linked database view: Tasks · Task gallery' }),
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Task gallery' })).toBeTruthy();
     await waitFor(() =>
       expect(document.querySelector('[data-gallery-card="rec_first"]')).toBeTruthy(),
     );
     expect(screen.getByRole('img', { name: 'First task' })).toBeTruthy();
-    expect(screen.getByLabelText('Inspect context for record rec_first')).toBeTruthy();
+    expect(screen.getByLabelText('Inspect context for record First task')).toBeTruthy();
   });
 
   test('renders a linked List from stable view references', async () => {
@@ -660,9 +663,12 @@ describe('DatabaseView', () => {
         mode="inline"
       />,
     );
-    expect(await screen.findByRole('heading', { name: 'Task list' })).toBeTruthy();
+    expect(
+      await screen.findByRole('region', { name: 'Linked database view: Tasks · Task list' }),
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Task list' })).toBeTruthy();
     await waitFor(() => expect(document.querySelector('[data-list-row="rec_first"]')).toBeTruthy());
-    expect(screen.getByLabelText('Inspect context for record rec_first')).toBeTruthy();
+    expect(screen.getByLabelText('Inspect context for record First task')).toBeTruthy();
   });
 
   test('renders a linked Board from saved grouping and returned-page memberships', async () => {
@@ -1072,11 +1078,14 @@ describe('DatabaseView', () => {
       />,
     );
 
-    expect(await screen.findByRole('heading', { name: 'Task calendar' })).toBeTruthy();
+    expect(
+      await screen.findByRole('region', { name: 'Linked database view: Tasks · Task calendar' }),
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Task calendar' })).toBeTruthy();
     await waitFor(() =>
       expect(document.querySelector('[data-calendar-card="rec_first"]')).toBeTruthy(),
     );
-    expect(screen.getByLabelText('Inspect context for record rec_first')).toBeTruthy();
+    expect(screen.getByLabelText('Inspect context for record First task')).toBeTruthy();
     const card = document.querySelector<HTMLElement>('[data-calendar-card="rec_first"]');
     const currentDay = card?.closest<HTMLElement>('[data-calendar-day]')?.dataset.calendarDay;
     const targetDay = [...document.querySelectorAll<HTMLElement>('[data-calendar-day]')].find(
@@ -1238,13 +1247,16 @@ describe('DatabaseView', () => {
       />,
     );
 
-    expect(await screen.findByRole('heading', { name: 'Task timeline' })).toBeTruthy();
+    expect(
+      await screen.findByRole('region', { name: 'Linked database view: Tasks · Task timeline' }),
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Task timeline' })).toBeTruthy();
     expect((await screen.findAllByText('First task')).length).toBeGreaterThan(0);
     expect(document.querySelector('[data-timeline-bar="rec_first"]')).toBeTruthy();
-    expect(screen.getAllByLabelText('Inspect context for record rec_first').length).toBeGreaterThan(
-      0,
-    );
-    fireEvent.click(screen.getByLabelText('Move rec_first later'));
+    expect(
+      screen.getAllByLabelText('Inspect context for record First task').length,
+    ).toBeGreaterThan(0);
+    fireEvent.click(screen.getByLabelText('Move record First task later'));
     await waitFor(() => expect(commitCalls).toBe(1));
     expect(screen.getByText('Saving inline database change')).toBeTruthy();
     releaseCommit?.();

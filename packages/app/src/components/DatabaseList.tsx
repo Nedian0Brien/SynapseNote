@@ -288,7 +288,7 @@ export function DatabaseList({
                         variant="ghost"
                         size="icon-xs"
                         className={cn(!row.hasChildren && 'invisible')}
-                        aria-label={`${rowCollapsed ? 'Expand' : 'Collapse'} ${row.record.id}`}
+                        aria-label={`${rowCollapsed ? 'Expand' : 'Collapse'} ${title(source, row.record)}`}
                         onClick={(event) => {
                           event.stopPropagation();
                           toggle(setCollapsedRows, row.record.id);
@@ -344,7 +344,7 @@ export function DatabaseList({
                           type="button"
                           variant="ghost"
                           size="icon-xs"
-                          aria-label={`Inspect context for record ${row.record.id}`}
+                          aria-label={`Inspect context for record ${title(source, row.record)}`}
                           onClick={(event) => {
                             event.stopPropagation();
                             onOpenContextInspector(row.record);

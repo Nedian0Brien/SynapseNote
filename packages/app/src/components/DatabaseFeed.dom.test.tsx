@@ -85,7 +85,7 @@ describe('DatabaseFeed', () => {
     expect(card?.textContent).toContain('Team updates · updates/launch.md');
     expect(card?.textContent).toContain('Published');
     expect(screen.getByText(/Showing 1 of 2 items/)).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Open feed item' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open record Launch complete' }));
     expect(onOpen).toHaveBeenCalledTimes(1);
     expect(card?.getAttribute('data-read')).toBe('true');
     expect(
@@ -115,7 +115,9 @@ describe('DatabaseFeed', () => {
         onOpenContextInspector={onOpenContextInspector}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Inspect context for record rec_update' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Inspect context for record Launch complete' }),
+    );
     expect(onOpenContextInspector).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'rec_update' }),
     );

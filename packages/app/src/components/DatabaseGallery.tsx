@@ -284,7 +284,7 @@ export function DatabaseGallery({
                         type="button"
                         variant="ghost"
                         size="icon-xs"
-                        aria-label={`Inspect context for record ${record.id}`}
+                        aria-label={`Inspect context for record ${recordTitle(source, record)}`}
                         onClick={() => onOpenContextInspector(record)}
                       >
                         <Braces aria-hidden="true" />
@@ -334,7 +334,7 @@ export function DatabaseGallery({
                         type="button"
                         variant="ghost"
                         size="icon-sm"
-                        aria-label={`Inspect context for record ${record.id}`}
+                        aria-label={`Inspect context for record ${recordTitle(source, record)}`}
                         onClick={() => onOpenContextInspector(record)}
                       >
                         <Braces aria-hidden="true" />
@@ -348,7 +348,7 @@ export function DatabaseGallery({
                     variant="ghost"
                     size="sm"
                     className="w-full"
-                    aria-label={`Inspect context for record ${record.id}`}
+                    aria-label={`Inspect context for record ${recordTitle(source, record)}`}
                     onClick={() => onOpenContextInspector(record)}
                   >
                     <Braces aria-hidden="true" /> <Trans>Inspect context</Trans>
