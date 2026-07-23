@@ -3125,6 +3125,20 @@ their broad evidence is actually assembled:
   contrast/responsive, manual accessibility, cross-host, usability, browser,
   hosted, and real-model gates open until their evidence exists.
 
+### 2026-07-23 Inline relation tag treatment pass
+
+- Document-native Relation cells now show compact page-like tags with a link
+  glyph and resolved target title. Permission-filtered or stale IDs render as
+  dashed unavailable tags instead of exposing a misleading blank value. The
+  existing direct Relation editor remains the click/Enter path, and canonical
+  tables retain their comma-separated display.
+- Evidence: the bounded `DatabaseTableDialog.dom.test.tsx` slice passes the
+  inline relation, checkbox, select-tag, title, cell-menu, and row-menu cases
+  (6 tests / 28 expectations), with targeted Biome and app typecheck passing.
+- This is visual/property-grammar convergence, not clickable relation
+  navigation. Keep the contrast/responsive, manual accessibility, cross-host,
+  browser, hosted, and real-model gates open.
+
 ## Recommended execution order
 
 1. When a browser-enabled runner is available, run only the new primary-journey

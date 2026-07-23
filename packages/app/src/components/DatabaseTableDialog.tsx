@@ -660,6 +660,24 @@ function databaseInlineOptionColorClass(color?: string): string {
   return 'bg-muted/70 text-muted-foreground dark:bg-muted/50';
 }
 
+function databaseInlineRelationValues(
+  value: unknown,
+  relationRecords: readonly ProjectedDatabaseRelationRecord[],
+): readonly { id: string; label: string; available: boolean }[] {
+  if (value === undefined || value === null || value === '') return [];
+  const ids = Array.isArray(value) ? value.map(String) : [String(value)];
+  return ids.map((id) => {
+    const record = relationRecords.find((candidate) => candidate.id === id);
+    return {
+      id,
+      label: record
+        ? `${record.title}${record.archivedAt ? ' (archived)' : ''}`
+        : `${id} (unavailable)`,
+      available: record !== undefined,
+    };
+  });
+}
+
 function DatabaseValueCopyButton({
   value,
   label,
@@ -3054,6 +3072,49 @@ export function DatabaseTable({
                                   );
                                 })}
                               </div>
+                            );
+                          })()
+                        ) : notionSurface && property.type === 'relation' ? (
+                          (() => {
+                            const relationValues = databaseInlineRelationValues(
+                              shownValue,
+                              relationRecords,
+                            );
+                            const relationTags =
+                              relationValues.length > 0 ? (
+                                <span className="flex min-w-0 flex-wrap gap-1">
+                                  {relationValues.map((relation) => (
+                                    <span
+                                      key={relation.id}
+                                      className={cn(
+                                        'inline-flex max-w-full items-center gap-1 rounded-md border border-border/60 bg-muted/60 px-1.5 py-0.5 font-sans text-xs normal-case tracking-normal',
+                                        !relation.available &&
+                                          'border-dashed text-muted-foreground italic',
+                                      )}
+                                      title={relation.label}
+                                      data-database-property-relation={property.id}
+                                      data-database-property-relation-id={relation.id}
+                                    >
+                                      <Link2 className="size-3 shrink-0" aria-hidden="true" />
+                                      <span className="truncate">{relation.label}</span>
+                                    </span>
+                                  ))}
+                                </span>
+                              ) : (
+                                '—'
+                              );
+                            return onEdit && !ghostCreated ? (
+                              <Button
+                                variant="ghost"
+                                disabled={mutationLocked || proposed}
+                                className="h-auto max-w-full justify-start px-1 py-0.5 font-inherit"
+                                aria-label={`Edit ${property.name} for page ${recordLabel}`}
+                                onClick={() => beginEdit(record, property)}
+                              >
+                                {relationTags}
+                              </Button>
+                            ) : (
+                              relationTags
                             );
                           })()
                         ) : property.type === 'title' && onOpen ? (

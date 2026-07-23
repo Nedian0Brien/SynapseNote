@@ -2943,6 +2943,54 @@ describe('DatabaseTableDialog', () => {
     expect(screen.getByRole('gridcell', { name: 'Active' })).toBeTruthy();
   });
 
+  test('renders inline relation values as page-like tags', () => {
+    const relationSource = {
+      ...source,
+      properties: [
+        source.properties[0],
+        {
+          id: 'prop_projects',
+          key: 'projects',
+          name: 'Projects',
+          type: 'relation' as const,
+          targetSourceId: 'ds_projects',
+          cardinality: 'many' as const,
+        },
+      ],
+    };
+    const relationResult = {
+      ...queryResult(),
+      relationRecords: [{ id: 'rec_alpha', sourceId: 'ds_projects', title: 'Alpha project' }],
+      records: queryResult().records.map((record) => ({
+        ...record,
+        values: {
+          ...record.values,
+          prop_projects: ['rec_alpha', 'rec_denied'],
+        },
+      })),
+    };
+    render(
+      <DatabaseTable
+        source={relationSource}
+        result={relationResult}
+        notionSurface
+        onEdit={() => {}}
+      />,
+    );
+
+    const availableTag = document.querySelector<HTMLElement>(
+      '[data-database-property-relation="prop_projects"][data-database-property-relation-id="rec_alpha"]',
+    );
+    const unavailableTag = document.querySelector<HTMLElement>(
+      '[data-database-property-relation="prop_projects"][data-database-property-relation-id="rec_denied"]',
+    );
+    expect(availableTag?.textContent).toContain('Alpha project');
+    expect(availableTag?.className).toContain('rounded-md');
+    expect(unavailableTag?.textContent).toContain('rec_denied (unavailable)');
+    expect(unavailableTag?.className).toContain('border-dashed');
+    expect(screen.getByLabelText('Edit Projects for page First task')).toBeTruthy();
+  });
+
   test('renders inline checkbox properties as direct-safe toggles', async () => {
     const checkboxSource = {
       ...source,

@@ -2388,6 +2388,21 @@ matrix.
   baselines, contrast, responsive behavior, manual accessibility, cross-host,
   usability, and the full browser journey matrix remain open.
 
+### Inline relation tag treatment pass (2026-07-23)
+
+- Inline Relation values now read as compact page-like tags with a link glyph,
+  readable target title, and a dashed unavailable state when the permission-
+  filtered relation projection cannot disclose a target. The existing cell
+  editor remains the direct click/Enter path; canonical/admin tables keep the
+  established comma-separated display.
+- Focused DOM evidence: the bounded `DatabaseTableDialog.dom.test.tsx` slice
+  passes the inline relation, checkbox, select-tag, title, cell-menu, and
+  row-menu cases (6 tests / 28 expectations); targeted Biome and app typecheck
+  pass.
+- This supports UX-009/UX-1105's page-property grammar but is not a clickable
+  relation navigation contract. Contrast, responsive behavior, manual
+  accessibility, cross-host, usability, and full browser gates remain open.
+
 - [x] **UX-1001** Define keyboard order across title, tabs, controls, headers,
       cells, new row, and pagination. The canonical page DOM and focused table
       tests pin this progression, while arrow-key navigation handles the grid
