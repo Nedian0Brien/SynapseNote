@@ -2782,6 +2782,19 @@ narrows UX-1105/NUI-501 evidence. It does not close the broader configure,
 reorder, hide, full mutation matrix, visual, accessibility, Electron,
 usability, agent, or release gates.
 
+### 2026-07-23 Inline option-editor continuity handoff
+
+An inline linked Table’s Select/Multi-select header action now opens the full
+database workspace with `initialDatabaseSurface="options"` and the stable
+property ID. The existing option editor is therefore opened directly in the
+same property context; no second inline mutation path or raw-ID UI was added.
+
+Feature commit: `2299a0bf feat: preserve inline option configuration context`.
+Focused evidence: `DatabaseTableDialog.dom.test.tsx` passes the inline handoff
+plus Select and Multi-select header dispatch checks (3 tests / 5 expectations);
+app typecheck and targeted Biome pass. This remains implementation evidence,
+not closure of UX-1103/UX-1105 or the cross-host visual/accessibility gates.
+
 ## Work in progress: do this first
 
 `packages/core/src/database/property-invariants.test.ts` is now verified and

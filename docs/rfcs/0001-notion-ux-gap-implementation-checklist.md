@@ -507,6 +507,9 @@ treated as visual parity until a browser capture is attached.
   now migrate through the same exact, reviewed compiler boundary; Multi-select
   merge deduplicates the target option while preserving array order, and its
   defaults and dependency checks are covered by focused core/app tests.
+  Linked inline tables pass an `options` initial surface and stable property ID
+  into the full database workspace, so the same editor opens in context rather
+  than dropping users into an unrelated properties list.
   The reviewed properties dialog continues to support stable-ID inline rename as
   well as the existing reorder/delete recovery path. Inline table blocks use a
   human direct-safe, undoable path for adding an empty common property from the

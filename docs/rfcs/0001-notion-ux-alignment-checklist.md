@@ -656,6 +656,9 @@ reorder/archive/merge/delete boundary; it does not introduce a second writer.
 Multi-select headers use the same entry point, and array-valued merge migrations
 replace the source stable ID, deduplicate an existing target, and update
 multi-select defaults without changing record order.
+Linked inline tables preserve this context by opening the full database
+workspace directly on the selected property’s option editor, rather than
+redirecting to a generic properties list.
 
 The same surface now uses human-facing property type labels and examples
 (`Multi-select`, “Several choices from a list”, and so on) in the add-property
