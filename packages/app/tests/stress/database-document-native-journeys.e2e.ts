@@ -99,7 +99,7 @@ test.describe('document-native database browser journeys', () => {
       timeout: 15_000,
     });
 
-    await inline.getByRole('button', { name: 'Rename inline database' }).click();
+    await inline.getByRole('heading').getByRole('button').click();
     const inlineDatabaseTitle = inline.getByRole('textbox', { name: 'Inline database title' });
     await inlineDatabaseTitle.fill('Inline journey database');
     await inlineDatabaseTitle.press('Enter');
@@ -107,7 +107,7 @@ test.describe('document-native database browser journeys', () => {
       timeout: 15_000,
     });
 
-    await inline.getByRole('button', { name: 'Open full database' }).click();
+    await inline.getByRole('button', { name: /^Open full database:/ }).click();
     await expect(page).toHaveURL(/#database\//, { timeout: 10_000 });
     await expect(page.getByRole('gridcell', { name: 'Inline first record' })).toBeVisible({
       timeout: 15_000,
