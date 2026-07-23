@@ -2293,6 +2293,13 @@ This is functional recovery evidence only. Browser/Electron visual comparison,
 manual keyboard/screen-reader review, and first-use usability evidence remain
 open under NUI-105/NUI-701–NUI-705 and UX-009/UX-1101–UX-1114.
 
+The single planned browser-run attempt was also bounded: `bunx playwright
+install chromium` downloaded the archive but its post-download process stopped
+with only a partial cache after roughly two minutes, so it was interrupted and
+no E2E test was started. Do not repeat the install/test loop in this checkout
+until the Playwright cache/runtime issue is diagnosed or a browser-enabled
+runner is available.
+
 ## Work in progress: do this first
 
 `packages/core/src/database/property-invariants.test.ts` is now verified and
