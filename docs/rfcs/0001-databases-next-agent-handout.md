@@ -99,7 +99,7 @@
 - Latest blank-identity/StrictMode changeset: `../../.changeset/notion-blank-database-identity.md`
 - Latest creation-retry changeset: `../../.changeset/notion-creation-retry.md`
 - Latest inline creation-retry changeset: `../../.changeset/inline-database-create-retry.md`
-- Latest bounded document-native journey test commit: `917ee0f4`
+- Latest bounded document-native journey test commit: `ce9a0cb9`
 - Latest primary journey affordance commit: `b79b1801`
 - Latest primary journey affordance changeset: `../../.changeset/primary-database-journey-affordances.md`
 - Latest saved-view mutation journey test commit: `4f30e862`
