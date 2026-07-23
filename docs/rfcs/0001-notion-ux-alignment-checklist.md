@@ -2220,6 +2220,15 @@ capability alone is insufficient.
       block-level semantic container so expanded stable-ID details do not nest
       `<details>/<dl>` inside a paragraph; its focused DOM suite passes. Manual
       keyboard and screen-reader checks remain required before closing this gate.
+
+  The automated database-workspace slice is now defined in
+  `packages/app/tests/a11y/database-primary.e2e.ts` (`DB-A11Y-01`). It seeds a
+  canonical record through the same plan/commit API as the agent path, opens the
+  normal `Databases` surface, waits for the real Table workspace, and runs
+  axe-core against `[data-database-workspace]` with WCAG 2.1 tags, blocking
+  serious and critical violations. Biome, app typecheck, and Playwright test
+  discovery pass; execution is still pending the missing local Chromium
+  binary, and manual keyboard/screen-reader review remains open.
 - [ ] **UX-1111** Five uncoached first-use sessions: at least four users create a
       database, add a property, add two pages, and create a second view without the
       command palette or raw IDs.

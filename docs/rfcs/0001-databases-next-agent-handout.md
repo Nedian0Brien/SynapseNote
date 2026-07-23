@@ -304,6 +304,20 @@ alternate-renderer run passes 24 tests / 91 expectations; the linked-view
 DatabaseView slice passes 6 tests / 62 expectations. The changeset is
 `.changeset/inline-alternate-record-labels.md`; no E2E browser run was repeated.
 
+### 2026-07-23 Database workspace accessibility gate
+
+Commit `a80d9495 test: add database workspace accessibility gate` adds
+`packages/app/tests/a11y/database-primary.e2e.ts` with `DB-A11Y-01`. The test
+creates a canonical database through the plan/commit API, opens it through the
+normal `Databases` command-palette surface, waits for the rendered Table and
+title-based record action, then runs axe-core against the database workspace
+with WCAG 2.1 tags. Serious and critical violations are blocking; color
+contrast remains excluded from this automated slice because visual contrast is
+a separate cross-host/manual gate. Biome and app typecheck pass, and Playwright
+discovery lists one test. Execution is intentionally deferred: this checkout
+still lacks the Playwright Chromium executable, so no additional full E2E run
+was started.
+
 ## Current status
 
 - Numbered A-S items: **310/335 complete (92.5%)**.

@@ -653,6 +653,14 @@ copy/paste, import/export, API, agent schema, permissions, and tests agree.
 - [x] **R-004** Add server API and MCP contract tests.
 - [ ] **R-005** Add app DOM tests and end-to-end tests for every primary view and
       mutation journey.
+
+      The focused browser coverage now includes
+      `packages/app/tests/a11y/database-primary.e2e.ts` (`DB-A11Y-01`), which
+      seeds a canonical Table workspace, opens it through the normal database
+      command surface, and audits the rendered workspace with axe-core. The
+      test is discovery-checked but cannot execute in this checkout until the
+      Playwright Chromium binary is available; the complete primary-view run
+      and Electron capture remain required before closing R-005.
 - [x] **R-006** Add property-based tests for filters, sorts, pagination, formula
       evaluation, transactions, and import/export round trips.
 - [x] **R-007** Add fuzz corpora for manifests, YAML/frontmatter, formula syntax,
