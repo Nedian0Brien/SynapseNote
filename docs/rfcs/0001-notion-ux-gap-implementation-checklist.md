@@ -524,8 +524,10 @@ treated as visual parity until a browser capture is attached.
   changes for the selected stable view instead of falling through to a generic
   manager open. Rename, Make/Clear default, and Manage views intentionally
   retain their manager handoff because they require user input or the full
-  management surface. The focused manager-plus-inline suite passes 37 tests /
-  295 expectations.
+  management surface. Follow-up `80fb4807` routes inline Rename directly to
+  the reviewed rename dialog while preserving the stable view ID; the focused
+  `DatabaseTableDialog.dom.test.tsx` suite passes 78 tests / 516 expectations,
+  and the manager-plus-inline suite passes 38 tests / 296 expectations.
   Pixel-level visual parity remains a separate NUI-701/NUI-702 gate; the
   stable-ID reorder and active-view settings/menu handoff are complete. Map to
   UX-601–UX-610.

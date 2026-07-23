@@ -21,6 +21,8 @@
 - Latest inline-view projection changeset: `../../.changeset/inline-view-projection-persistence.md`
 - Latest inline-view tab-action commit: `18682ec2`
 - Latest inline-view tab-action changeset: `../../.changeset/inline-view-tab-actions.md`
+- Latest inline-view rename commit: `80fb4807`
+- Latest inline-view rename changeset: `../../.changeset/inline-view-rename-handoff.md`
 - Latest page-terminology changeset: `../../.changeset/notion-database-page-language.md`
 - Latest inline UX changeset: `../../.changeset/inline-database-focus.md`
 - Latest inline recovery changeset: `../../.changeset/inline-database-undo.md`
@@ -240,6 +242,15 @@ covers favorite, reorder, and delete forwarding. App typecheck, targeted
 Biome, and `git diff --check` pass. This closes the inline action-routing
 implementation slice, but not the remaining visual, accessibility, Electron,
 responsive, performance, or packaged-release gates.
+
+`80fb4807 fix: route inline view rename directly` completes the remaining
+inline rename handoff: selecting Rename now opens the reviewed rename dialog
+with the current saved-view name and stable ID, rather than opening the generic
+manager. The manager explicitly ignores that handoff because the rename dialog
+owns the required user input. Focused evidence adds the rename handoff DOM
+journey to the 78-test / 516-expectation `DatabaseTableDialog` suite; the
+manager-plus-inline suite passes 38 tests / 296 expectations. App typecheck,
+targeted Biome, and diff checks pass.
 
 ### Notion surface continuation (2026-07-23)
 

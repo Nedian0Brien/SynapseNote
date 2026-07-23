@@ -782,9 +782,11 @@ canonical tab journey (1 / 25).
 
 The inline tab action bridge now forwards Duplicate, Favorite, move-left/right,
 and Delete as explicit reviewed lifecycle intents for the selected stable view;
-the manager-plus-inline focused suite passes 37 tests / 295 expectations.
-Rename, Make/Clear default, and Manage views continue to open the manager by
-design because they require user input or the full management surface.
+the manager-plus-inline focused suite passes 38 tests / 296 expectations.
+Inline Rename now opens the reviewed rename dialog directly, with the current
+name and stable view ID; the affected `DatabaseTableDialog` suite passes 78
+tests / 516 expectations. Make/Clear default and Manage views continue to open
+the manager by design because they require the full management surface.
 
 This closes UX-606 at the functional implementation/evidence layer.
 
