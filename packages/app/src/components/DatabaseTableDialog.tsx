@@ -3004,12 +3004,36 @@ export function DatabaseTable({
             const record = result.records[cellMenu.row];
             const property = properties[cellMenu.column];
             if (!record || !property) return null;
+            const cellRecordTitle = titleProperty
+              ? displayValue(
+                  titleProperty,
+                  record.values[titleProperty.id],
+                  people,
+                  relationRecords,
+                  personLabels,
+                  result.fileStates,
+                  missingFileLabel,
+                  i18n.locale,
+                ).trim()
+              : '';
+            const cellRecordLabel =
+              notionSurface && cellRecordTitle && cellRecordTitle !== '—'
+                ? cellRecordTitle
+                : record.id;
+            const cellPropertyActionLabel = (action: string) =>
+              notionSurface ? `${action} ${property.name} for record ${cellRecordLabel}` : action;
+            const cellRecordActionLabel = (action: string) =>
+              notionSurface ? `${action} ${cellRecordLabel}` : action;
             const close = () => setCellMenu(null);
             return (
               <div
                 ref={cellMenuRef}
                 role="menu"
-                aria-label="Database cell actions"
+                aria-label={
+                  notionSurface
+                    ? `Database cell actions for ${cellRecordLabel} · ${property.name}`
+                    : 'Database cell actions'
+                }
                 className="fixed z-[100] min-w-48 rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
                 style={{ left: cellMenu.x, top: cellMenu.y }}
                 onKeyDown={(event) => {
@@ -3047,6 +3071,7 @@ export function DatabaseTable({
                   variant="ghost"
                   size="sm"
                   className="w-full justify-start"
+                  aria-label={cellPropertyActionLabel('Copy selected cells')}
                   onClick={() => {
                     copyCellRange(cellMenu.row, cellMenu.column);
                     close();
@@ -3059,6 +3084,11 @@ export function DatabaseTable({
                   variant="ghost"
                   size="sm"
                   className="w-full justify-start"
+                  aria-label={
+                    notionSurface
+                      ? `Edit ${property.name} for record ${cellRecordLabel}`
+                      : 'Edit cell'
+                  }
                   disabled={mutationLocked || !onEdit || !isDatabaseCellEditable(property)}
                   onClick={() => {
                     beginEdit(record, property);
@@ -3073,6 +3103,7 @@ export function DatabaseTable({
                     variant="ghost"
                     size="sm"
                     className="w-full justify-start"
+                    aria-label={cellRecordActionLabel('Open record')}
                     disabled={mutationLocked}
                     onClick={() => {
                       onOpen(record);
@@ -3088,6 +3119,9 @@ export function DatabaseTable({
                     variant="ghost"
                     size="sm"
                     className="w-full justify-start"
+                    aria-label={
+                      notionSurface ? `Inspect context for record ${cellRecordLabel}` : undefined
+                    }
                     disabled={mutationLocked}
                     onClick={() => {
                       onOpenContextInspector(record);
@@ -3103,6 +3137,9 @@ export function DatabaseTable({
                     variant="ghost"
                     size="sm"
                     className="w-full justify-start"
+                    aria-label={
+                      notionSurface ? `Ask agent about record ${cellRecordLabel}` : undefined
+                    }
                     disabled={mutationLocked}
                     onClick={() => {
                       onOpenAgentScope({
@@ -3123,6 +3160,7 @@ export function DatabaseTable({
                     variant="ghost"
                     size="sm"
                     className="w-full justify-start"
+                    aria-label={cellRecordActionLabel('Duplicate record')}
                     disabled={mutationLocked}
                     onClick={() => {
                       onDuplicate(record);
@@ -3138,6 +3176,9 @@ export function DatabaseTable({
                     variant="ghost"
                     size="sm"
                     className="w-full justify-start"
+                    aria-label={cellRecordActionLabel(
+                      record.archivedAt ? 'Restore record' : 'Archive record',
+                    )}
                     disabled={mutationLocked}
                     onClick={() => {
                       onArchive(record, record.archivedAt ? 'restore' : 'archive');
@@ -3158,6 +3199,7 @@ export function DatabaseTable({
                     variant="ghost"
                     size="sm"
                     className="w-full justify-start"
+                    aria-label={cellRecordActionLabel('Move record')}
                     disabled={mutationLocked}
                     onClick={() => {
                       onRequestMove(record);
@@ -3173,6 +3215,7 @@ export function DatabaseTable({
                     variant="ghost"
                     size="sm"
                     className="w-full justify-start text-destructive"
+                    aria-label={cellRecordActionLabel('Delete record')}
                     disabled={mutationLocked}
                     onClick={() => {
                       onDelete(record);

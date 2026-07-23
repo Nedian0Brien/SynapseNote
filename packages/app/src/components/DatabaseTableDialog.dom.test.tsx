@@ -2520,6 +2520,35 @@ describe('DatabaseTableDialog', () => {
     expect(screen.getByLabelText('Edit URL for record First task')).toBeTruthy();
   });
 
+  test('contextualizes the inline cell action menu with title and property', () => {
+    const view = render(
+      <DatabaseTable
+        source={source}
+        result={queryResult()}
+        notionSurface
+        onEdit={() => {}}
+        onOpen={() => {}}
+        onOpenContextInspector={() => {}}
+        onOpenAgentScope={() => {}}
+      />,
+    );
+    const budgetCell = view.container.querySelector<HTMLElement>(
+      '[data-record-id="rec_first"] [data-property-id="prop_budget"]',
+    );
+    if (!budgetCell) throw new Error('inline budget cell is missing');
+    fireEvent.contextMenu(budgetCell, { clientX: 20, clientY: 30 });
+    expect(
+      screen.getByRole('menu', { name: 'Database cell actions for First task · Budget' }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('menuitem', { name: 'Edit Budget for record First task' }),
+    ).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Open record First task' })).toBeTruthy();
+    expect(
+      screen.getByRole('menuitem', { name: 'Ask agent about record First task' }),
+    ).toBeTruthy();
+  });
+
   test('offers a row-level agent scope with the canonical record ID', () => {
     const onOpenAgentScope = mock(() => {});
     render(
