@@ -94,9 +94,10 @@ The user has explicitly rejected a DBMS/administration-first experience. The
 target is Notion-equivalent UI/UX: a database is an ordinary editor block or
 page, the table is visible immediately, and the user can rename the title, add
 a property, add a row, and switch views without opening a management wizard or
-handling IDs. The current `#database/new` capture still shows a method chooser
-over an already-mounted table, so it is a confirmed parity failure even when
-the underlying mutation and agent contracts are correct.
+handling IDs. The earlier `#database/new` capture showed a method chooser over
+an already-mounted table; that was the confirmed parity failure that drove the
+current direct table-first creation slice. The remaining visual/cross-host
+gates still must prove the new surface in a running app.
 
 The earlier 101/128 snapshot is structural evidence only. The current
 structural count is **112/128**; do not close

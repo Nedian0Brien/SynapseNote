@@ -1536,17 +1536,18 @@ crossed the document-native UX bar:
 
 ### Priority order for the next implementation pass
 
-1. **P0 — Notion-first creation:** remove the default method chooser/management
-   overlay from the human blank path. New page and slash insertion must land
-   directly on a normal page/block with title focus, a Title column, and a
-   first-row affordance.
-2. **P0 — One document-native shell:** make inline and full-page surfaces share
-   the same compact title/tabs/table chrome. Keep the database rail, schema,
+1. **P0 — Notion-first verification:** the method chooser is now removed from
+   the blank human path in code and focused DOM evidence. Capture the running
+   web/Electron surface to verify title focus, immediate table editing, and the
+   first-row affordance visually.
+2. **P0 — One document-native shell:** inline and full-page surfaces now share
+   the compact title/tabs/table contract in code. Complete the linked state
+   matrix and cross-host evidence while keeping database rail, schema,
    diagnostics, and import/template/agent tools secondary.
-3. **P0 — Direct manipulation:** make routine human cell/row/property/view
-   edits optimistic and undoable; retain exact review only for agent,
-   destructive, permission, external, and threshold-crossing bulk work.
-4. **P1 — Inline/record continuity:** support inline creation, conversion,
+3. **P0 — Direct manipulation:** routine human cell/row/property/view edits are
+   optimistic and undoable in focused evidence; retain exact review only for
+   agent, destructive, permission, external, and threshold-crossing bulk work.
+4. **P1 — Inline/record continuity:** finish inline creation, conversion,
    block actions, canonical record pages, and relation navigation without the
    global database manager.
 5. **P1 — In-context configuration:** move property and active-view actions
