@@ -1182,6 +1182,53 @@ describe('DatabaseTableDialog', () => {
     );
   });
 
+  test('opens inline rename handoffs directly in the reviewed rename dialog', async () => {
+    const savedView = {
+      id: 'view_inline_rename',
+      key: 'inline-rename',
+      name: 'Open tasks',
+      sourceId: source.id,
+      layout: { type: 'table' as const, configuration: {} },
+      sort: [],
+      groups: [],
+      projection: { propertyIds: ['prop_title'], body: 'hidden' as const },
+    };
+    const databaseWithView = {
+      ...database,
+      sources: [{ ...source, defaultViewId: savedView.id }],
+      views: [savedView],
+    };
+    globalThis.fetch = mock(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path.startsWith('/api/databases/catalog')) return Response.json(catalog());
+      if (path === '/api/databases/describe') {
+        return Response.json({
+          ...description(),
+          database: databaseWithView,
+          source: databaseWithView.sources[0],
+        });
+      }
+      if (path === '/api/databases/query') return Response.json(queryResult());
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
+      <DatabaseTableDialog
+        open
+        onOpenChange={() => {}}
+        initialTarget={{ databaseId: database.id, sourceId: source.id, viewId: savedView.id }}
+        initialDatabaseSurface="view-manager"
+        initialViewAction={{ kind: 'rename', viewId: savedView.id }}
+      />,
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Rename saved view' })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Manage saved views' })).toBeNull();
+    expect(
+      (screen.getByRole('textbox', { name: 'Saved view name' }) as HTMLInputElement).value,
+    ).toBe('Open tasks');
+  });
+
   test('drags a saved-view tab to a stable target and compiles one reorder-to plan', async () => {
     const viewFirst = {
       id: 'view_first',

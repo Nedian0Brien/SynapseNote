@@ -4410,7 +4410,10 @@ function DatabaseTableSurface({
 
   useEffect(() => {
     if (!open || !initialDatabaseSurface || !description?.source || !result) return;
-    const surfaceKey = `${initialDatabaseSurface}:${initialPropertyId ?? ''}`;
+    const initialActionKey = initialViewAction
+      ? `${initialViewAction.kind}:${initialViewAction.viewId}`
+      : '';
+    const surfaceKey = `${initialDatabaseSurface}:${initialPropertyId ?? ''}:${initialActionKey}`;
     if (handledInitialDatabaseSurface.current === surfaceKey) return;
     handledInitialDatabaseSurface.current = surfaceKey;
     if (initialDatabaseSurface === 'properties') {
@@ -4419,6 +4422,15 @@ function DatabaseTableSurface({
       return;
     }
     if (initialDatabaseSurface === 'view-manager') {
+      if (initialViewAction?.kind === 'rename') {
+        const view = description.database.views.find(
+          (candidate) => candidate.id === initialViewAction.viewId,
+        );
+        if (view) {
+          setViewRenameTarget(view);
+          return;
+        }
+      }
       setViewManagerOpen(true);
       return;
     }
@@ -4427,7 +4439,7 @@ function DatabaseTableSurface({
       return;
     }
     setViewSettingsOpen(true);
-  }, [open, initialDatabaseSurface, initialPropertyId, description, result]);
+  }, [open, initialDatabaseSurface, initialViewAction, initialPropertyId, description, result]);
 
   useEffect(() => {
     if (!open || !initialSelectedRecordIds?.length || !result) return;

@@ -75,7 +75,10 @@ describe('DatabaseView', () => {
       kind: 'delete',
       viewId: 'view_open',
     });
-    expect(databaseViewTabActionToInitialAction(candidate, 'rename')).toBeNull();
+    expect(databaseViewTabActionToInitialAction(candidate, 'rename')).toEqual({
+      kind: 'rename',
+      viewId: 'view_open',
+    });
   });
 
   test('exposes an accessible loading state while the linked view is unresolved', async () => {

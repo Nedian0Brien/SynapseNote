@@ -595,4 +595,21 @@ describe('DatabaseViewManagerDialog', () => {
       cleanup();
     }
   });
+
+  test('does not treat an inline rename handoff as a lifecycle mutation', async () => {
+    const onChange = mock(() => {});
+    render(
+      <DatabaseViewManagerDialog
+        open
+        onOpenChange={() => {}}
+        source={source}
+        views={views}
+        busy={false}
+        initialAction={{ kind: 'rename', viewId: 'view_recent' }}
+        onChange={onChange}
+      />,
+    );
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(onChange).not.toHaveBeenCalled();
+  });
 });

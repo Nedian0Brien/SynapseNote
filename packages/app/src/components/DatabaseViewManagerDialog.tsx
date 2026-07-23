@@ -45,7 +45,8 @@ export type DatabaseViewManagerInitialAction =
   | { kind: 'duplicate'; viewId: string }
   | { kind: 'favorite'; viewId: string; favorite: boolean }
   | { kind: 'reorder'; viewId: string; direction: -1 | 1 }
-  | { kind: 'delete'; viewId: string };
+  | { kind: 'delete'; viewId: string }
+  | { kind: 'rename'; viewId: string };
 
 export function DatabaseViewManagerDialog({
   open,
@@ -179,6 +180,7 @@ export function DatabaseViewManagerDialog({
       });
       return;
     }
+    if (initialAction.kind === 'rename') return;
     onChange(initialAction);
   }, [open, initialAction, busy, views, onChange]);
 
