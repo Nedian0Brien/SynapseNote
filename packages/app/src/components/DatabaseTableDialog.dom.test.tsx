@@ -2991,6 +2991,61 @@ describe('DatabaseTableDialog', () => {
     expect(screen.getByLabelText('Edit Projects for page First task')).toBeTruthy();
   });
 
+  test('renders inline people values as page-property tags', () => {
+    const peopleSource = {
+      ...source,
+      properties: [
+        source.properties[0],
+        {
+          id: 'prop_owners',
+          key: 'owners',
+          name: 'Owners',
+          type: 'person' as const,
+          multiple: true,
+        },
+      ],
+    };
+    const peopleResult = {
+      ...queryResult(),
+      records: queryResult().records.map((record) => ({
+        ...record,
+        values: {
+          ...record.values,
+          prop_owners: ['person_owner', 'person_missing'],
+        },
+      })),
+    };
+    render(
+      <DatabaseTable
+        source={peopleSource}
+        result={peopleResult}
+        people={[
+          {
+            id: 'person_owner',
+            key: 'owner',
+            name: 'Owner',
+            kind: 'collaborator',
+            active: true,
+          },
+        ]}
+        notionSurface
+        onEdit={() => {}}
+      />,
+    );
+
+    const availableTag = document.querySelector<HTMLElement>(
+      '[data-database-property-person="prop_owners"][data-database-property-person-id="person_owner"]',
+    );
+    const unavailableTag = document.querySelector<HTMLElement>(
+      '[data-database-property-person="prop_owners"][data-database-property-person-id="person_missing"]',
+    );
+    expect(availableTag?.textContent).toContain('Owner');
+    expect(availableTag?.className).toContain('rounded-md');
+    expect(unavailableTag?.textContent).toContain('person_missing (unavailable)');
+    expect(unavailableTag?.className).toContain('border-dashed');
+    expect(screen.getByLabelText('Edit Owners for page First task')).toBeTruthy();
+  });
+
   test('renders inline checkbox properties as direct-safe toggles', async () => {
     const checkboxSource = {
       ...source,

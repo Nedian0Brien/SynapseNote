@@ -3139,6 +3139,20 @@ their broad evidence is actually assembled:
   navigation. Keep the contrast/responsive, manual accessibility, cross-host,
   browser, hosted, and real-model gates open.
 
+### 2026-07-23 Inline people tag treatment pass
+
+- Document-native Person cells now render compact tags with a person glyph,
+  readable name, and a dashed unavailable state for identities omitted by the
+  permission-filtered projection. Existing click/Enter direct editing and the
+  canonical table display remain unchanged.
+- Evidence: the bounded `DatabaseTableDialog.dom.test.tsx` slice passes the
+  inline people, relation, checkbox, select-tag, title, cell-menu, and row-menu
+  cases (7 tests / 33 expectations), with targeted Biome and app typecheck
+  passing.
+- This does not claim avatar-level Notion parity or close contrast,
+  responsive, manual accessibility, cross-host, browser, hosted, or real-model
+  gates.
+
 ## Recommended execution order
 
 1. When a browser-enabled runner is available, run only the new primary-journey

@@ -678,6 +678,25 @@ function databaseInlineRelationValues(
   });
 }
 
+function databaseInlinePersonValues(
+  value: unknown,
+  people: readonly ProjectedDatabasePerson[],
+  personLabels: { agent: string; inactive: string },
+): readonly { id: string; label: string; available: boolean }[] {
+  if (value === undefined || value === null || value === '') return [];
+  const ids = Array.isArray(value) ? value.map(String) : [String(value)];
+  return ids.map((id) => {
+    const person = people.find((candidate) => candidate.id === id);
+    return {
+      id,
+      label: person
+        ? `${person.name}${person.kind === 'agent' ? ` (${personLabels.agent})` : ''}${person.active ? '' : ` (${personLabels.inactive})`}`
+        : `${id} (unavailable)`,
+      available: person !== undefined,
+    };
+  });
+}
+
 function DatabaseValueCopyButton({
   value,
   label,
@@ -3115,6 +3134,50 @@ export function DatabaseTable({
                               </Button>
                             ) : (
                               relationTags
+                            );
+                          })()
+                        ) : notionSurface && property.type === 'person' ? (
+                          (() => {
+                            const personValues = databaseInlinePersonValues(
+                              shownValue,
+                              people,
+                              personLabels,
+                            );
+                            const personTags =
+                              personValues.length > 0 ? (
+                                <span className="flex min-w-0 flex-wrap gap-1">
+                                  {personValues.map((person) => (
+                                    <span
+                                      key={person.id}
+                                      className={cn(
+                                        'inline-flex max-w-full items-center gap-1 rounded-md border border-border/60 bg-muted/60 px-1.5 py-0.5 font-sans text-xs normal-case tracking-normal',
+                                        !person.available &&
+                                          'border-dashed text-muted-foreground italic',
+                                      )}
+                                      title={person.label}
+                                      data-database-property-person={property.id}
+                                      data-database-property-person-id={person.id}
+                                    >
+                                      <UserRound className="size-3 shrink-0" aria-hidden="true" />
+                                      <span className="truncate">{person.label}</span>
+                                    </span>
+                                  ))}
+                                </span>
+                              ) : (
+                                '—'
+                              );
+                            return onEdit && !ghostCreated ? (
+                              <Button
+                                variant="ghost"
+                                disabled={mutationLocked || proposed}
+                                className="h-auto max-w-full justify-start px-1 py-0.5 font-inherit"
+                                aria-label={`Edit ${property.name} for page ${recordLabel}`}
+                                onClick={() => beginEdit(record, property)}
+                              >
+                                {personTags}
+                              </Button>
+                            ) : (
+                              personTags
                             );
                           })()
                         ) : property.type === 'title' && onOpen ? (

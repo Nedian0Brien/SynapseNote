@@ -2403,6 +2403,21 @@ matrix.
   relation navigation contract. Contrast, responsive behavior, manual
   accessibility, cross-host, usability, and full browser gates remain open.
 
+### Inline people tag treatment pass (2026-07-23)
+
+- Inline Person values now use the same compact page-property grammar as
+  Relation values, with a person glyph, readable name, and an unavailable
+  dashed state for filtered identities. Direct editing remains one click away
+  through the existing type-specific editor; canonical/admin tables remain
+  unchanged.
+- Focused DOM evidence: the bounded `DatabaseTableDialog.dom.test.tsx` slice
+  passes the inline people, relation, checkbox, select-tag, title, cell-menu,
+  and row-menu cases (7 tests / 33 expectations); targeted Biome and app
+  typecheck pass.
+- This supports UX-009/UX-1105's property-density target. Avatar fidelity,
+  contrast, responsive behavior, manual accessibility, cross-host, usability,
+  and full browser gates remain open.
+
 - [x] **UX-1001** Define keyboard order across title, tabs, controls, headers,
       cells, new row, and pagination. The canonical page DOM and focused table
       tests pin this progression, while arrow-key navigation handles the grid
