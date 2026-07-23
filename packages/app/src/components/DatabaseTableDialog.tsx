@@ -1624,10 +1624,18 @@ export function DatabaseTable({
         </TableCaption>
         <TableHeader className="sticky top-0 z-20 bg-background">
           <TableRow noHover aria-rowindex={1}>
-            <TableHead className="sticky left-0 z-40 w-10 bg-background" aria-colindex={1}>
+            <TableHead
+              className="group/column sticky left-0 z-40 w-10 bg-background"
+              aria-colindex={1}
+            >
               <Checkbox
                 checked={allLoadedSelected}
                 aria-label="Select all loaded records"
+                className={
+                  notionSurface
+                    ? 'opacity-0 transition-opacity group-hover/column:opacity-100 group-focus-within/column:opacity-100 focus-visible:opacity-100'
+                    : undefined
+                }
                 disabled={!onSelectionChange || mutationLocked || result.records.length === 0}
                 onCheckedChange={(checked) =>
                   onSelectionChange?.(
@@ -1649,7 +1657,10 @@ export function DatabaseTable({
                   key={property.id}
                   aria-colindex={index + 2}
                   dir="auto"
-                  className={cn(index === 0 && 'sticky left-10 z-30 min-w-56 bg-background')}
+                  className={cn(
+                    'group/column',
+                    index === 0 && 'sticky left-10 z-30 min-w-56 bg-background',
+                  )}
                   data-property-id={property.id}
                   style={{
                     minWidth: layout.widths[property.id],
@@ -1686,7 +1697,11 @@ export function DatabaseTable({
                       type="button"
                       variant="ghost"
                       size="icon-xs"
-                      className="ml-1"
+                      className={cn(
+                        'ml-1',
+                        notionSurface &&
+                          'opacity-0 transition-opacity group-hover/column:opacity-100 group-focus-within/column:opacity-100 focus-visible:opacity-100',
+                      )}
                       aria-label={`Configure ${property.name} ${propertyTypeLabel}`}
                       onClick={() => onConfigureComputedProperty(property)}
                     >
@@ -1698,7 +1713,11 @@ export function DatabaseTable({
                       type="button"
                       variant="ghost"
                       size="icon-xs"
-                      className="ml-1"
+                      className={cn(
+                        'ml-1',
+                        notionSurface &&
+                          'opacity-0 transition-opacity group-hover/column:opacity-100 group-focus-within/column:opacity-100 focus-visible:opacity-100',
+                      )}
                       aria-label={`Configure ${property.name} Unique ID`}
                       onClick={() => onConfigureUniqueIdProperty(property)}
                     >
@@ -1710,7 +1729,11 @@ export function DatabaseTable({
                       type="button"
                       variant="ghost"
                       size="icon-xs"
-                      className="ml-1"
+                      className={cn(
+                        'ml-1',
+                        notionSurface &&
+                          'opacity-0 transition-opacity group-hover/column:opacity-100 group-focus-within/column:opacity-100 focus-visible:opacity-100',
+                      )}
                       aria-label={`Configure ${property.name} Place privacy`}
                       onClick={() => onConfigurePlaceProperty(property)}
                     >
@@ -1722,7 +1745,11 @@ export function DatabaseTable({
                       type="button"
                       variant="ghost"
                       size="icon-xs"
-                      className="ml-1"
+                      className={cn(
+                        'ml-1',
+                        notionSurface &&
+                          'opacity-0 transition-opacity group-hover/column:opacity-100 group-focus-within/column:opacity-100 focus-visible:opacity-100',
+                      )}
                       aria-label={`Convert ${property.name} property type`}
                       disabled={mutationLocked}
                       onClick={() => onConvertProperty(property)}
@@ -1736,7 +1763,11 @@ export function DatabaseTable({
                         type="button"
                         variant="ghost"
                         size="icon-xs"
-                        className="ml-1"
+                        className={cn(
+                          'ml-1',
+                          notionSurface &&
+                            'opacity-0 transition-opacity group-hover/column:opacity-100 group-focus-within/column:opacity-100 focus-visible:opacity-100',
+                        )}
                         aria-label={`Property options for ${property.name}`}
                         disabled={mutationLocked}
                         data-property-menu-trigger={property.id}
@@ -2001,6 +2032,7 @@ export function DatabaseTable({
                 data-conditional-color={pageColorRule?.color}
                 data-conditional-color-rule={pageColorRule?.id}
                 className={cn(
+                  notionSurface && 'group/row',
                   pageColorRule && DATABASE_CONDITIONAL_COLOR_CLASSES[pageColorRule.color],
                   nonCanonical && 'border-primary/40 border-dashed bg-primary/5',
                   proposedDeletion && 'opacity-70',
@@ -2019,6 +2051,11 @@ export function DatabaseTable({
                     <Checkbox
                       checked={selectedRecordIds.has(record.id)}
                       aria-label={`Select record ${record.id}`}
+                      className={
+                        notionSurface
+                          ? 'opacity-0 transition-opacity group-hover/row:opacity-100 group-focus-within/row:opacity-100 focus-visible:opacity-100'
+                          : undefined
+                      }
                       disabled={
                         !onSelectionChange || mutationLocked || proposedRecord !== undefined
                       }
@@ -2722,7 +2759,13 @@ export function DatabaseTable({
                       <Trans>Proposed move</Trans>
                     </Badge>
                   ) : !ghostCreated ? (
-                    <div className="flex justify-end gap-1">
+                    <div
+                      className={cn(
+                        'flex justify-end gap-1',
+                        notionSurface &&
+                          'opacity-0 transition-opacity group-hover/row:opacity-100 group-focus-within/row:opacity-100',
+                      )}
+                    >
                       {record.archivedAt ? (
                         <Badge variant="gray">
                           <Trans>Archived</Trans>
