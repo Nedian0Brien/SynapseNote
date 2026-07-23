@@ -2197,7 +2197,12 @@ capability alone is insufficient.
       pending a Playwright Chromium runtime in this checkout.
 - [ ] **UX-1102** E2E `/database` inline creation. The focused journey is
       implemented in `tests/stress/database-document-native-journeys.e2e.ts`;
-      execution is pending the same browser runtime gate.
+      execution is pending the same browser runtime gate. A direct Electron
+      renderer check also reached the ordinary document, opened `/database`,
+      and rendered the inline creation shell after restoring the normal
+      document body slot (`DatabaseRecordPageChrome.dom.test.tsx`); the
+      auto-created plan remained in `Preparing table` in this local session,
+      so this is partial handoff evidence, not closure of the E2E gate.
 - [ ] **UX-1103** E2E linked-view insertion for an existing database. The
       focused journey is implemented in
       `tests/stress/database-document-native-journeys.e2e.ts`; execution is

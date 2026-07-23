@@ -2134,6 +2134,22 @@ do not reconstruct behavior solely from this summary.
   closes **NUI-402**, taking the UX-gap count to **34/42 (81.0%)**. The complete
   visual state matrix and cross-host capture remain under NUI-701/NUI-702.
 
+### 2026-07-23 ordinary document body recovery and Electron smoke
+
+- `DatabaseRecordPageChrome` now renders the supplied editor body for ordinary
+  non-record documents as well as canonical database record pages. The missing
+  normal-document branch had prevented the ProseMirror surface from mounting,
+  which in turn made `/` and inline database insertion impossible from a blank
+  page. `DatabaseRecordPageChrome.dom.test.tsx` now passes 8 tests / 86
+  expectations, including the body-after-page-header regression guard.
+- A direct `bun run dev:electron` launch (the wrapper still hits the unrelated
+  native-config `cargo metadata` build failure) reached the real Electron
+  renderer. After the fix, the blank document exposed `.ProseMirror`, `/database`
+  opened the slash menu, and selecting **Inline database** rendered the
+  Notion-style inline creation shell. The local auto-create plan stayed at
+  `Preparing table`, so the complete post-handoff Electron journey remains an
+  open runtime/backend follow-up; no E2E checkbox was self-closed.
+
 ## Verification already completed
 
 Do not rerun these simply for reassurance; rerun only when later edits touch

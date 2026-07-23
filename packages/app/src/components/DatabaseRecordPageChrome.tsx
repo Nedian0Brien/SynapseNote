@@ -809,6 +809,15 @@ export function DatabaseRecordPageChrome({
           fallbackTitle={fallbackTitle}
         />
         <PropertyPanel provider={provider} reservedKeys={['_sn']} />
+        {body ? (
+          <div
+            className="relative min-h-0 flex-1"
+            data-database-record-body
+            data-record-body-position="below-properties"
+          >
+            {body}
+          </div>
+        ) : null}
       </DatabaseRecordPageSurface>
     );
   }

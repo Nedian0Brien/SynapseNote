@@ -142,6 +142,33 @@ afterEach(() => {
 });
 
 describe('DatabaseRecordPageChrome', () => {
+  test('keeps the normal document body below the property panel', () => {
+    const view = render(
+      <TooltipProvider>
+        <PropertyProvider>
+          <DatabaseRecordPageChrome
+            provider={provider()}
+            docName="notes/blank"
+            docExt=".md"
+            fallbackTitle="blank"
+            body={<div data-testid="record-body-editor">Editable document body</div>}
+          />
+        </PropertyProvider>
+      </TooltipProvider>,
+    );
+
+    const bodyHost = view.getByTestId('record-body-editor');
+    const bodySurface = bodyHost.closest('[data-database-record-body]');
+    expect(bodySurface?.getAttribute('data-record-body-position')).toBe('below-properties');
+
+    const pageHeader = view.container.querySelector('[data-testid="page-header"]');
+    expect(pageHeader).not.toBeNull();
+    expect(
+      (pageHeader?.compareDocumentPosition(bodySurface ?? bodyHost) ?? 0) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   test('synchronizes the page title and routes owned property edits through the database command', async () => {
     const desiredStates: DatabaseDesiredStateDraftInput[] = [];
     const confirmations: string[] = [];
