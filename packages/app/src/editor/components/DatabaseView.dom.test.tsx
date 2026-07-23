@@ -1406,6 +1406,13 @@ describe('DatabaseView', () => {
     expect(await screen.findByRole('heading', { name: source.name })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Open tasks' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Done tasks' })).toBeTruthy();
+    const titleCommitCount = commitCalls;
+    fireEvent.click(screen.getByRole('button', { name: 'Rename inline database' }));
+    const inlineTitleInput = screen.getByRole('textbox', { name: 'Inline database title' });
+    fireEvent.change(inlineTitleInput, { target: { value: 'Project tasks' } });
+    fireEvent.keyDown(inlineTitleInput, { key: 'Enter' });
+    await waitFor(() => expect(commitCalls).toBeGreaterThan(titleCommitCount));
+    expect(screen.queryByRole('textbox', { name: 'Inline database title' })).toBeNull();
     fireEvent.pointerDown(screen.getByRole('button', { name: 'View options for Open tasks' }));
     expect(screen.getByRole('menuitem', { name: 'Filters' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'View settings' })).toBeTruthy();

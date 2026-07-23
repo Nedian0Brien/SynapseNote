@@ -66,6 +66,7 @@ import {
 import {
   createDatabaseAddPropertyDesiredState,
   createDatabaseCellMutationDesiredState,
+  createDatabasePageTitleDesiredState,
   createDatabaseRecordDesiredState,
   createDatabaseTablePasteDesiredState,
   databasePropertyKeyFromName,
@@ -747,6 +748,8 @@ export function DatabaseView({
     useState<DatabaseAgentScope | null>(null);
   const [inlineAgentMenuOpen, setInlineAgentMenuOpen] = useState(false);
   const [inlineCreationOpen, setInlineCreationOpen] = useState(false);
+  const [inlineTitleEditing, setInlineTitleEditing] = useState(false);
+  const [inlineTitleDraft, setInlineTitleDraft] = useState('');
   const [focusInlineNewRecord, setFocusInlineNewRecord] = useState(false);
   const [inlineMutationStatus, setInlineMutationStatus] = useState<'idle' | 'saving'>('idle');
   const [inlineMutationError, setInlineMutationError] = useState<string | null>(null);
@@ -769,6 +772,11 @@ export function DatabaseView({
     record: ProjectedDatabaseRecord;
     mode: 'side_peek' | 'center_peek';
   } | null>(null);
+
+  useEffect(() => {
+    if (state.status !== 'ready' || inlineTitleEditing) return;
+    setInlineTitleDraft(state.description.source?.name ?? state.description.database.name);
+  }, [inlineTitleEditing, state]);
 
   useEffect(() => {
     void refresh;
@@ -1086,9 +1094,11 @@ export function DatabaseView({
   const runInlineMutation = (
     desiredState: DatabaseDesiredStateDraftInput,
     policy: {
-      operation: 'cell' | 'record-create' | 'property-create';
+      operation: 'cell' | 'title' | 'record-create' | 'property-create';
       optimisticCellKey?: string;
       optimisticCellKeys?: readonly string[];
+      onCommitted?: () => void;
+      onFailed?: () => void;
     },
   ) => {
     if (
@@ -1130,18 +1140,21 @@ export function DatabaseView({
         if (outcome.status !== 'committed') {
           clearOptimisticValues();
           setInlineMutationError('The inline database change was blocked by the current data.');
+          policy.onFailed?.();
           return;
         }
         clearOptimisticValues();
         setInlineUndoToken(outcome.result.undoToken);
         setInlineRedoToken(null);
         setRefresh((current) => current + 1);
+        policy.onCommitted?.();
       })
       .catch((cause: unknown) => {
         clearOptimisticValues();
         setInlineMutationError(
           cause instanceof Error ? cause.message : 'Unable to save the inline database change',
         );
+        policy.onFailed?.();
       })
       .finally(() => setInlineMutationStatus('idle'));
   };
@@ -1222,6 +1235,38 @@ export function DatabaseView({
         setInlineMutationError(cause instanceof Error ? cause.message : 'Inline redo failed');
       })
       .finally(() => setInlineRedoStatus('idle'));
+  };
+
+  const commitInlineTitle = () => {
+    if (state.status !== 'ready' || !linkedSource || !linkedDatabase) return;
+    const nextTitle = inlineTitleDraft.trim();
+    if (!nextTitle) {
+      setInlineMutationError('A database title is required');
+      return;
+    }
+    if (nextTitle === linkedSource.name) {
+      setInlineTitleEditing(false);
+      return;
+    }
+    try {
+      runInlineMutation(
+        createDatabasePageTitleDesiredState({
+          database: linkedDatabase,
+          source: linkedSource,
+          name: nextTitle,
+        }),
+        {
+          operation: 'title',
+          onCommitted: () => setInlineTitleEditing(false),
+          onFailed: () => setInlineTitleEditing(true),
+        },
+      );
+    } catch (cause) {
+      setInlineMutationError(
+        cause instanceof Error ? cause.message : 'Unable to rename the database',
+      );
+      setInlineTitleEditing(true);
+    }
   };
 
   const editInlineCell = (
@@ -1435,9 +1480,43 @@ export function DatabaseView({
       <header className="flex items-center justify-between gap-3 border-b px-4 py-3">
         <div className="min-w-0">
           <h3 className="truncate font-medium" data-database-inline-title>
-            {state.status === 'ready'
-              ? (state.description.source?.name ?? state.description.database.name)
-              : 'Linked database view'}
+            {state.status === 'ready' && inlineTitleEditing ? (
+              <Input
+                value={inlineTitleDraft}
+                autoFocus
+                aria-label="Inline database title"
+                className="h-8 max-w-sm"
+                disabled={inlineMutationStatus !== 'idle'}
+                onChange={(event) => setInlineTitleDraft(event.currentTarget.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') commitInlineTitle();
+                  if (event.key === 'Escape') {
+                    setInlineTitleDraft(
+                      state.description.source?.name ?? state.description.database.name,
+                    );
+                    setInlineTitleEditing(false);
+                  }
+                }}
+              />
+            ) : state.status === 'ready' ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 max-w-full justify-start truncate px-1 text-left font-medium"
+                aria-label="Rename inline database"
+                onClick={() => {
+                  setInlineTitleDraft(
+                    state.description.source?.name ?? state.description.database.name,
+                  );
+                  setInlineTitleEditing(true);
+                }}
+              >
+                {state.description.source?.name ?? state.description.database.name}
+              </Button>
+            ) : (
+              'Linked database view'
+            )}
           </h3>
           {state.status === 'ready' ? (
             <p className="sr-only" data-database-source-context>
