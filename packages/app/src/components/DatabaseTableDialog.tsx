@@ -4489,7 +4489,10 @@ function DatabaseTableSurface({
     setOptionPreview(null);
   };
 
-  const addSchemaProperty = (input: { name: string; type: DatabasePropertyType }) => {
+  const addSchemaProperty = (
+    input: { name: string; type: DatabasePropertyType },
+    policy: DatabaseUiMutationPolicyInput = databaseSchemaMutationPolicy,
+  ) => {
     if (!description?.source || mutationStatus !== 'idle') return;
     const selectedSource = description.source;
     const selectedDatabase = description.database;
@@ -4517,9 +4520,7 @@ function DatabaseTableSurface({
         property,
       });
       setPropertiesDialogOpen(false);
-      runMutation(desiredState, 'ui-add-property', 'Add database property failed', {
-        policy: databaseSchemaMutationPolicy,
-      });
+      runMutation(desiredState, 'ui-add-property', 'Add database property failed', { policy });
     } catch (cause) {
       setPropertiesError(classifyDatabaseUiProblem(cause, 'Unable to add the property').message);
     }
@@ -7632,7 +7633,18 @@ function DatabaseTableSurface({
                     }
                     onDuplicateProperty={duplicateSchemaProperty}
                     onInvokeButton={planButton}
-                    onAddProperty={addSchemaProperty}
+                    onAddProperty={(input) =>
+                      addSchemaProperty(
+                        input,
+                        isCanvasPresentation
+                          ? {
+                              operation: 'property-create',
+                              actor: 'human',
+                              principalId: 'user:local',
+                            }
+                          : databaseSchemaMutationPolicy,
+                      )
+                    }
                     onManageProperties={(propertyId) => {
                       setPropertiesDialogRenameId(propertyId ?? null);
                       setPropertiesDialogOpen(true);

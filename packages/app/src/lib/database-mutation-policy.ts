@@ -11,6 +11,7 @@ export type DatabaseUiMutationOperation =
   | 'title'
   | 'record-create'
   | 'blank-database-create'
+  | 'property-create'
   | 'view'
   | 'schema'
   | 'bulk'
@@ -39,6 +40,9 @@ export const DATABASE_UI_MUTATION_POLICY = {
   title: { human: 'automatic', agent: 'required' },
   'record-create': { human: 'automatic', agent: 'required' },
   'blank-database-create': { human: 'automatic', agent: 'required' },
+  // Adding an empty property changes only the schema shape and can be undone;
+  // migrations, conversions, and destructive schema edits remain reviewed.
+  'property-create': { human: 'automatic', agent: 'required' },
   view: { human: 'automatic', agent: 'required' },
   schema: { human: 'required', agent: 'required' },
   bulk: { human: 'required', agent: 'required' },

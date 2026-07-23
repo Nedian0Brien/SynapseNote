@@ -64,9 +64,11 @@ import {
   fetchDatabaseCatalog,
 } from '@/lib/database-catalog-client';
 import {
+  createDatabaseAddPropertyDesiredState,
   createDatabaseCellMutationDesiredState,
   createDatabaseRecordDesiredState,
   createDatabaseTablePasteDesiredState,
+  databasePropertyKeyFromName,
 } from '@/lib/database-cell-mutation';
 import { createBlankDatabaseDesiredState } from '@/lib/database-creation';
 import {
@@ -1072,7 +1074,7 @@ export function DatabaseView({
   const runInlineMutation = (
     desiredState: DatabaseDesiredStateDraftInput,
     policy: {
-      operation: 'cell' | 'record-create';
+      operation: 'cell' | 'record-create' | 'property-create';
       optimisticCellKey?: string;
       optimisticCellKeys?: readonly string[];
     },
@@ -1258,6 +1260,40 @@ export function DatabaseView({
     } catch (cause) {
       setInlineMutationError(
         cause instanceof Error ? cause.message : 'Unable to create the inline database page',
+      );
+    }
+  };
+
+  const addInlineProperty = (input: { name: string; type: DatabaseProperty['type'] }) => {
+    if (state.status !== 'ready' || !linkedSource || !linkedDatabase) return;
+    try {
+      const key = databasePropertyKeyFromName(
+        input.name,
+        linkedSource.properties.map((property) => property.key),
+      );
+      const property =
+        input.type === 'select' || input.type === 'multi_select'
+          ? { key, name: input.name, type: input.type, options: [] }
+          : input.type === 'place'
+            ? {
+                key,
+                name: input.name,
+                type: input.type,
+                externalSearch: 'disabled' as const,
+                externalMap: 'disabled' as const,
+              }
+            : { key, name: input.name, type: input.type };
+      runInlineMutation(
+        createDatabaseAddPropertyDesiredState({
+          database: linkedDatabase,
+          source: linkedSource,
+          property,
+        }),
+        { operation: 'property-create' },
+      );
+    } catch (cause) {
+      setInlineMutationError(
+        cause instanceof Error ? cause.message : 'Unable to add the inline database property',
       );
     }
   };
@@ -2001,6 +2037,7 @@ export function DatabaseView({
                   setInlineContextInspectorScope({ propertyIds: [property.id] })
                 }
                 onOpenAgentScope={openInlineAgentScope}
+                onAddProperty={addInlineProperty}
                 onManageProperties={(propertyId) =>
                   openInlineDatabaseSurface('properties', propertyId)
                 }
