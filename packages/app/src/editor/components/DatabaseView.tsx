@@ -1462,13 +1462,14 @@ export function DatabaseView({
               type="button"
               variant="outline"
               size="sm"
+              aria-label="New page"
               disabled={state.status !== 'ready'}
               onClick={() => {
                 setInitialRecordAction({ kind: 'create' });
                 setFullDatabaseOpen(true);
               }}
             >
-              <Plus /> <Trans>New record</Trans>
+              <Plus /> <Trans>New</Trans>
             </Button>
           ) : null}
           <Button

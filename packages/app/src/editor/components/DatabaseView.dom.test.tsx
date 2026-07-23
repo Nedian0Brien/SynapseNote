@@ -1893,8 +1893,8 @@ describe('DatabaseView', () => {
     render(
       <DatabaseView databaseId={database.id} sourceId={source.id} viewId={view.id} mode="inline" />,
     );
-    fireEvent.click(await screen.findByText('New record'));
-    expect(await screen.findByLabelText('New record title')).toBeTruthy();
+    fireEvent.click(await screen.findByRole('button', { name: 'New page' }));
+    expect(await screen.findByLabelText('New page title')).toBeTruthy();
   });
 
   test('offers a guided database/source/view picker when stable references are invalid', async () => {

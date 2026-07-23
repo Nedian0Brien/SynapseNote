@@ -1553,7 +1553,9 @@ export function DatabaseTable({
           data-database-state="empty"
         >
           <Trans>No records in this source.</Trans>{' '}
-          <span className="text-xs">{t`Use the last row to add one.`}</span>
+          <span className="text-xs">
+            {notionSurface ? t`Use the row below to add a page.` : t`Use the last row to add one.`}
+          </span>
         </div>
       ) : null}
       {omittedColumnCount > 0 ? (
@@ -2773,8 +2775,8 @@ export function DatabaseTable({
                   {index === 0 && property.type === 'title' ? (
                     <Input
                       data-testid="database-new-row-title"
-                      aria-label="New row title"
-                      placeholder={t`New record title`}
+                      aria-label={notionSurface ? 'New page title' : 'New row title'}
+                      placeholder={notionSurface ? t`New page` : t`New record title`}
                       disabled={mutationLocked}
                       className="h-8"
                       onKeyDown={(event) => {
@@ -2804,7 +2806,9 @@ export function DatabaseTable({
                 aria-colindex={properties.length + 2}
                 className="sticky right-0 z-10"
               >
-                <span className="text-muted-foreground text-xs">{t`Press Enter to add`}</span>
+                <span className="text-muted-foreground text-xs">
+                  {notionSurface ? t`Press Enter to create page` : t`Press Enter to add`}
+                </span>
               </TableCell>
             </TableRow>
           ) : null}
