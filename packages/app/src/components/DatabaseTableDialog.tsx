@@ -5672,7 +5672,8 @@ function DatabaseTableSurface({
                         variant="ghost"
                         size="sm"
                         className="h-8 min-w-0 justify-start truncate px-1 text-left hover:underline"
-                        aria-label={t`Rename database page`}
+                        aria-label={databasePageTitle}
+                        title={t`Rename database page`}
                         data-testid="database-page-title-value"
                         onClick={() => {
                           setPageTitleDraft(databasePageTitle);

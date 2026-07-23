@@ -3427,6 +3427,7 @@ describe('DatabaseTableDialog', () => {
     expect(document.querySelector('nav[aria-label="Databases"]')).not.toBeNull();
     expect(document.querySelector('[data-database-page-chrome]')?.textContent).toContain('Tasks');
     expect(screen.getByTestId('database-page-title').textContent).toBe('Tasks');
+    expect(screen.getByRole('button', { name: 'Tasks', exact: true })).toBeTruthy();
     expect(screen.getByTestId('database-page-icon')).not.toBeNull();
     const pageBody = workspace?.querySelector('[data-slot="dialog-body"]');
     expect(pageBody?.className).toContain('overflow-x-hidden');
