@@ -260,10 +260,11 @@ targeted Biome, and diff checks pass.
 convergence to Make default and Clear default. Inline tabs now call the
 existing reviewed default-view mutation boundary with the selected stable view
 ID (or an explicit clear), and do not open the generic manager. The focused
-default handoff test reaches the plan endpoint and asserts that the manager is
-absent; the manager-plus-inline suite passes 39 tests / 300 expectations. The
-default helper uses `useEffectEvent` so an initial handoff cannot be replayed by
-state refreshes.
+default handoff test reaches the plan endpoint for both Make and Clear and
+asserts that the manager is absent (1 test / 6 expectations); the
+manager-plus-inline suite passes 39 tests / 300 expectations. The default
+helper uses `useEffectEvent` so an initial handoff cannot be replayed by state
+refreshes. Follow-up test commit `2372c42f` adds the explicit Clear coverage.
 
 ### Notion surface continuation (2026-07-23)
 

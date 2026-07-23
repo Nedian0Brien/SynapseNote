@@ -528,7 +528,7 @@ treated as visual parity until a browser capture is attached.
   and the manager-plus-inline suite passes 38 tests / 296 expectations.
   Follow-up `f9ef4f4d` routes inline Make default and Clear default through the
   reviewed default-view mutation boundary without opening the manager; the
-  focused handoff test passes 1 test / 3 expectations and the manager-plus-
+  focused handoff test passes 1 test / 6 expectations and the manager-plus-
   inline suite passes 39 tests / 300 expectations.
   Pixel-level visual parity remains a separate NUI-701/NUI-702 gate; the
   stable-ID reorder and active-view settings/menu handoff are complete. Map to
