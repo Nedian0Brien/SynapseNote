@@ -222,7 +222,7 @@ Focused evidence (no repository-wide/server suite or broad E2E):
 - `component-items.test.ts` transient blank-create intent test
 - app `typecheck`
 
-This is implementation evidence only. The structural count is now **109/128**;
+This is implementation evidence only. The structural count is now **110/128**;
 no visual parity checkbox is closed until the running web/Electron journey
 confirms the same interaction and appearance.
 
@@ -265,8 +265,14 @@ code and test evidence rather than remaining documentation-only gates:
   budget and currently reports p95 238.857 ms for the 1,000-row/30-property
   render (5 samples). Browser/Electron journey timing still needs to collect
   the remaining four labels.
+- **UX-1115**: iteration used the smallest affected checks: focused navigation,
+  mutation-policy, offline-queue, JSON compatibility, view-state, DatabaseView,
+  Table continuity, latency-budget, and 1,000-row performance suites, plus one
+  attempt at the single document-native Playwright file. The repository-wide
+  check and slow server suite were not used as an iteration loop, matching the
+  release-check policy.
 
-These closures increase the structural UX count to **109/128**. UX-008/UX-009
+These closures increase the structural UX count to **110/128**. UX-008/UX-009
 and UX-10/UX-11 visual, manual, cross-host, and release gates remain open.
 
 ## Follow-up browser evidence (2026-07-23)
@@ -1509,7 +1515,7 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 109/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, layout-independent new-view `+` affordances, layout-specific saved-view property suggestions, coherent saved-view settings, active filter/sort explainers, saved-view tab lifecycle menu, last-view deletion safety, saved-view switch memory, independent linked-block view settings without copied rows, cross-layout title/tab/control/state/record-opening contract, canonical record-title entrypoints, shared side/center/full-page record surface, record breadcrumbs and return-to-view continuity, table/page synchronization, record body editing below properties, record-page comments/history/permissions/appearance/layout affordances, previous/next record navigation in the active view context, row/page mutation menu parity for duplicate/archive/restore/move/delete, direct Relation property links to canonical record pages, safe record deep-link/reload/missing/archived/permission states, unified Blank/template/import/folder/Assistant creation start surface, realistic template views/property-type/sample-page previews, Blank-fast-path/reset behavior without implicit advanced choices, CSV/TSV format/header/type/invalid-row/target-view previews, dedicated existing-folder source-identity migration review, natural-language agent plan previews for properties/views/templates/optional samples, editable agent property/view/sample suggestions carried into the handoff, resulting-page/block landing after every successful creation method, stable machine-ID attributes and collapsed advanced disclosure across canonical surfaces, compact Context Inspector summary for schema/view/selection/tokens/truncation/citations, retrieval query/filter/ranking/projection/permission/token explainability, stable agent API/MCP contracts across the UI route redesign, scoped agent invocation from database/view/selection/row/property/record page with stable-ID MCP boundaries, agent proposal provenance and atomic review grouping, human-language agent plan summaries with technical details under disclosure, atomic approval copy with server-enforced required-scope selection, sensitive-operation review policy and permission-change confirmation, current-view-preserving Agent Run undo/retry/resume recovery, keyboard order across title/tabs/controls/headers/cells/new-row/pagination, focus-visible grid navigation with selection/edit announcements, named and semantically labelled controls/menus/dialogs, screen-reader landmarks across table/board/calendar/record peek/property editor/agent review, shared focus return after menus/pickers/peeks/advanced dialogs/review, theme-safe WCAG contrast for light/dark conditional colors and tags, 768px compact primary-path guardrails without page-level two-axis scrolling, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, durable History/receipt recovery, explicit route/state/mutation/continuity contracts, direct-safe/offline/undo evidence, focus/scroll preservation, and explicit warm-local interaction budgets are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
+| Notion UX checklist | 110/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, layout-independent new-view `+` affordances, layout-specific saved-view property suggestions, coherent saved-view settings, active filter/sort explainers, saved-view tab lifecycle menu, last-view deletion safety, saved-view switch memory, independent linked-block view settings without copied rows, cross-layout title/tab/control/state/record-opening contract, canonical record-title entrypoints, shared side/center/full-page record surface, record breadcrumbs and return-to-view continuity, table/page synchronization, record body editing below properties, record-page comments/history/permissions/appearance/layout affordances, previous/next record navigation in the active view context, row/page mutation menu parity for duplicate/archive/restore/move/delete, direct Relation property links to canonical record pages, safe record deep-link/reload/missing/archived/permission states, unified Blank/template/import/folder/Assistant creation start surface, realistic template views/property-type/sample-page previews, Blank-fast-path/reset behavior without implicit advanced choices, CSV/TSV format/header/type/invalid-row/target-view previews, dedicated existing-folder source-identity migration review, natural-language agent plan previews for properties/views/templates/optional samples, editable agent property/view/sample suggestions carried into the handoff, resulting-page/block landing after every successful creation method, stable machine-ID attributes and collapsed advanced disclosure across canonical surfaces, compact Context Inspector summary for schema/view/selection/tokens/truncation/citations, retrieval query/filter/ranking/projection/permission/token explainability, stable agent API/MCP contracts across the UI route redesign, scoped agent invocation from database/view/selection/row/property/record page with stable-ID MCP boundaries, agent proposal provenance and atomic review grouping, human-language agent plan summaries with technical details under disclosure, atomic approval copy with server-enforced required-scope selection, sensitive-operation review policy and permission-change confirmation, current-view-preserving Agent Run undo/retry/resume recovery, keyboard order across title/tabs/controls/headers/cells/new-row/pagination, focus-visible grid navigation with selection/edit announcements, named and semantically labelled controls/menus/dialogs, screen-reader landmarks across table/board/calendar/record peek/property editor/agent review, shared focus return after menus/pickers/peeks/advanced dialogs/review, theme-safe WCAG contrast for light/dark conditional colors and tags, 768px compact primary-path guardrails without page-level two-axis scrolling, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, durable History/receipt recovery, explicit route/state/mutation/continuity contracts, direct-safe/offline/undo evidence, focus/scroll preservation, explicit warm-local interaction budgets, and focused-check iteration policy are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery, sidebar/recent navigation, and the web first-use path are evidenced; additional entry points and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; the same start surface now exposes template/import/folder/Assistant entry points while their review and visual browser proof remain open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, command-palette recents/search, backlink and relation links, normal page chrome, and local overflow guardrails | Route, page surface, and navigation identity are evidenced; responsive visual/cross-host proof remains incomplete. |
@@ -2015,7 +2021,7 @@ capability alone is insufficient.
       screen-reader behavior. Table rendering virtualizes 1,000-row views,
       caps mounted columns at 100, and preserves roving focus while scrolling
       into an unmounted range. Evidence: `DatabaseTable.performance.dom.test.tsx`
-      (2 tests / 14 expectations, p95 261.188 ms against a 500 ms render
+      (2 tests / 14 expectations, p95 238.857 ms against a 500 ms render
       budget) and the focused virtual-range journey in
       `DatabaseTableDialog.dom.test.tsx` (1 test / 6 expectations).
 - [x] **UX-1009** Set budgets for shell, first data, view switch, cell save, and
@@ -2025,9 +2031,17 @@ capability alone is insufficient.
 
 ### UX-11 — Journey tests, usability gates, and release
 
-- [ ] **UX-1101** E2E full-page blank creation from the new-page flow.
-- [ ] **UX-1102** E2E `/database` inline creation.
-- [ ] **UX-1103** E2E linked-view insertion for an existing database.
+- [ ] **UX-1101** E2E full-page blank creation from the new-page flow. The
+      focused journey is implemented in
+      `tests/stress/database-document-native-journeys.e2e.ts`; execution is
+      pending a Playwright Chromium runtime in this checkout.
+- [ ] **UX-1102** E2E `/database` inline creation. The focused journey is
+      implemented in `tests/stress/database-document-native-journeys.e2e.ts`;
+      execution is pending the same browser runtime gate.
+- [ ] **UX-1103** E2E linked-view insertion for an existing database. The
+      focused journey is implemented in
+      `tests/stress/database-document-native-journeys.e2e.ts`; execution is
+      pending the same browser runtime gate.
 - [ ] **UX-1104** E2E row creation, typed cell editing, reload persistence, and
       undo.
 - [ ] **UX-1105** E2E property add/configure/reorder/hide and destructive delete
@@ -2050,7 +2064,7 @@ capability alone is insufficient.
 second view → switch back` under 25 seconds.
 - [ ] **UX-1114** Capture final desktop/compact journeys beside this baseline
       and record remaining differences.
-- [ ] **UX-1115** Run affected app/component/E2E tests while iterating; reserve
+- [x] **UX-1115** Run affected app/component/E2E tests while iterating; reserve
       the repository-wide check and slow server suite for PR readiness.
 - [ ] **UX-1116** Update help, release notes, parity claims, and the engine
       checklist only after usability gates pass.

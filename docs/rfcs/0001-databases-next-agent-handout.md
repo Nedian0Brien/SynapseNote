@@ -98,7 +98,8 @@ handling IDs. The current `#database/new` capture still shows a method chooser
 over an already-mounted table, so it is a confirmed parity failure even when
 the underlying mutation and agent contracts are correct.
 
-Treat the current 101/128 UX count as structural evidence only. Do not close
+The earlier 101/128 snapshot is structural evidence only. The current
+structural count is **110/128**; do not close
 the remaining UX gates or describe the feature as Notion-parity complete until
 the following first-use flow is visually and interactively true:
 
@@ -128,8 +129,8 @@ pushes the linked block closer to Notion's document grammar:
 - `32e998a3 feat: rename inline databases in place` adds click-to-rename with
   Enter/Escape behavior and the existing direct-safe, undoable title mutation.
 
-These are implementation slices, not visual-gate closures: the checklist
-remains **101/128**, and browser/Electron capture is still required before
+These are implementation slices, not visual-gate closures: the checklist was
+**101/128** at that point, and browser/Electron capture is still required before
 claiming pixel-level Notion parity.
 
 ### Implementation slice completed after the correction (2026-07-23)
@@ -146,8 +147,8 @@ Three feature commits now move the default experience toward that grammar:
 
 The follow-up table-control slice (`3c241c52`) also hides layout/calculation
 controls and property type labels from the Notion surface. These commits do
-not close visual UX gates: the structural count remains 101/128, and the
-running Electron/web journey still needs to confirm appearance, focus, and
+not close visual UX gates: the structural count was 101/128 at that point, and
+the running Electron/web journey still needs to confirm appearance, focus, and
 record peek/page behavior. The table-edge property picker is covered by
 `d8f621a5 feat: add properties from the notion table edge`; its advanced
 schema commit still uses the reviewed mutation seam. `4cd0d8ff` adds a narrow
@@ -175,7 +176,7 @@ agent-authored schema writes remain review-required.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **101/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **110/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
@@ -1979,14 +1980,15 @@ their scope.
 
 The new primary-journey Playwright file is
 `packages/app/tests/stress/database-primary-journeys.e2e.ts`. It is typed and
-formatted. The local Chromium/headless-shell binaries are now available. The
-first browser attempt exposed an existing React Compiler transform failure in
-the inline creation dialog; that `try/catch/finally` boundary was rewritten as
-a promise chain and the focused `DatabaseView` DOM suite still passes. A full
-browser rerun was deliberately deferred after the user requested that E2E not
-be run repeatedly; R-005 stays open until one complete run and an Electron
-capture are available. The in-app browser observation is useful visual evidence
-for the web shell, but it is not an E2E pass.
+formatted. The checkout currently has no runnable Playwright Chromium binary:
+`bunx playwright install chromium` downloaded the archive but its macOS
+StreamingUnzip step hung and was terminated. The focused
+`database-document-native-journeys.e2e.ts` file was attempted once and failed
+before the app launched for that environment reason. A full browser rerun was
+deliberately avoided after the user requested that E2E not be run repeatedly;
+R-005 stays open until one complete run and an Electron capture are available.
+The in-app browser observation is useful visual evidence for the web shell, but
+it is not an E2E pass.
 
 ## Work in progress: do this first
 
@@ -2029,8 +2031,9 @@ closed in the authoritative checklist.
 
 - **R-005** — primary-view DOM and end-to-end journeys. DOM coverage now passes
   for creation, diagnostics, Table, view manager, and all linked renderers. The
-  new primary-journey E2E file is blocked only by the missing local Playwright
-  browser binary; run it on a browser-enabled runner before closing this item.
+  new document-native journey file is present, but execution is blocked by the
+  missing local Playwright browser binary; run it on a browser-enabled runner
+  before closing this item.
 - **R-017** — >=90% prompt-to-valid-database creation without manual repair.
   The reusable evaluator and focused replay-shaped test now exist at
   `packages/server/src/database-creation-eval.ts` and
