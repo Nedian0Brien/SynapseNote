@@ -11,6 +11,8 @@
 - Latest property-journey test commit: `f5ff201d`
 - Latest primary-journey docs commit: `f6d1cfcd`
 - Latest primary-journey feature commit: `b79b1801`
+- Latest page-terminology feature commit: `33ad933c`
+- Latest page-terminology changeset: `../../.changeset/notion-database-page-language.md`
 - Latest inline UX changeset: `../../.changeset/inline-database-focus.md`
 - Latest inline recovery changeset: `../../.changeset/inline-database-undo.md`
 - Latest inline history changeset: `../../.changeset/inline-database-history.md`
@@ -116,7 +118,7 @@ current direct table-first creation slice. The remaining visual/cross-host
 gates still must prove the new surface in a running app.
 
 The earlier 101/128 snapshot is structural evidence only. The current
-structural count is **113/129**; do not close
+structural count is **115/129**; do not close
 the remaining UX gates or describe the feature as Notion-parity complete until
 the following first-use flow is visually and interactively true:
 
@@ -329,13 +331,38 @@ gate. Biome and app typecheck pass, and Playwright discovery lists two tests.
 Execution is intentionally deferred: this checkout still lacks the Playwright
 Chromium executable, so no additional full E2E run was started.
 
+### 2026-07-23 Human page terminology and progressive disclosure
+
+The terminology slice is now implemented and covered without a full E2E or
+server-wide run. Canonical/page, inline, table, peek, page chrome, loading and
+recovery states use `page` where a Notion user sees the object; board, calendar,
+timeline, list, gallery, feed, chart, map, and dashboard renderers receive the
+same page-surface flag. Stable `record` fields, IDs, API names, and machine-ID
+details remain available in advanced/agent/diagnostic disclosures.
+
+Focused evidence:
+
+- `bun run typecheck` in `packages/app` passed.
+- Targeted Biome and `git diff --check` passed for the changed renderer,
+  accessibility, DOM-test, and bounded journey files.
+- The focused DOM set passed 134 tests / 882 expectations before the final
+  three expectation updates; those three stale-label cases were then rerun
+  directly and passed (the route-level page case, the inline cell-control case,
+  and the live projection case). No full E2E or server-wide test was repeated.
+
+This closes NUI-016 and UX-011. UX-009 visual baselines, manual screen-reader
+review, observed usability, responsive browser capture, Electron packaging,
+and the remaining release gates stay open. Feature changeset:
+`../../.changeset/notion-database-page-language.md`.
+
 ## Current status
 
 - Numbered A-S items: **310/335 complete (92.5%)**.
 - Numbered A-S items still open: **5**.
 - Total unchecked Markdown boxes: **25**. The extra 20 are M1-M4 milestone
   release gates, all intentionally still open.
-- Notion UX gap implementation checklist: **36/43 complete**. NUI-201,
+- Notion UX gap implementation checklist: **37/43 complete**. NUI-016,
+  NUI-201,
   NUI-202, NUI-203, NUI-204, NUI-302, NUI-304, and NUI-401 are closed with
   focused implementation evidence; NUI-301, NUI-303, and NUI-403 are now
   closed for implementation evidence; NUI-501 is now closed for the complete
@@ -350,7 +377,7 @@ Chromium executable, so no additional full E2E run was started.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **114/129 complete**. The page-first and normal
+- Notion UX alignment checklist: **115/129 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
@@ -410,13 +437,13 @@ Chromium executable, so no additional full E2E run was started.
 - A-K, M-P are complete. L is complete except L-017. Q is complete except
   Q-012. R-005, R-017, and R-019 remain; R-018 is closed. S-010 and S-011
   are closed.
-- UX-010 and UX-1109 are now closed with focused compatibility evidence:
+- UX-010, UX-011, and UX-1109 are now closed with focused compatibility and
+  terminology evidence:
   v1 manifest/migration corpus, saved-view and typed Markdown/MDX record
   fixtures, a real MDX `DatabaseView` stable-reference block, descriptor dirty
   serialization, live block projection/reference writes, and database
-  last-opened route persistence. The structural UX count is **114/129**;
-  UX-011 remains open for the user-facing terminology and progressive-
-  disclosure audit, with its implementation companion NUI-016.
+  last-opened route persistence. The structural UX count is **115/129**;
+  UX-009 and UX-1101–UX-1114 visual/manual/release gates remain open.
 - The Context Inspector description was corrected to a block-level semantic
   container so expanded machine-ID details do not create invalid nested
   `<p>/<details>/<dl>` markup. Its focused DOM suite passes; manual keyboard and
