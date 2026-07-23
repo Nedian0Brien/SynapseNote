@@ -3538,6 +3538,7 @@ describe('DatabaseTableDialog', () => {
     expect(catalogCalls).toBe(0);
     expect(document.querySelector('[data-slot="dialog-portal"]')).toBeNull();
     expect(document.querySelector('[data-slot="dialog-overlay"]')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Close', exact: true })).toBeNull();
     expect(screen.queryByTestId('database-create-button')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Open page' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Show archived' })).toBeNull();

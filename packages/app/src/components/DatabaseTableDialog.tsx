@@ -5547,6 +5547,7 @@ function DatabaseTableSurface({
       <DialogContent
         portal={!isCanvasPresentation}
         showOverlay={!isPagePresentation}
+        showCloseButton={!isCanvasPresentation}
         onPointerDownOutside={
           presentation === 'page' ? (event) => event.preventDefault() : undefined
         }
