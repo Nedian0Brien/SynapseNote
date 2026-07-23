@@ -1433,7 +1433,7 @@ export function DatabaseTable({
   const submitPropertyRename = () => {
     const property = propertyRenameTarget;
     const name = propertyRenameDraft.trim();
-    if (!property || property.type === 'title' || !name || !onRenameProperty || mutationLocked) {
+    if (!property || !name || !onRenameProperty || mutationLocked) {
       return;
     }
     onRenameProperty(property, name);
@@ -1991,7 +1991,8 @@ export function DatabaseTable({
                       ) : null}
                       <DropdownMenuItem
                         disabled={
-                          property.type === 'title' || (!onManageProperties && !onRenameProperty)
+                          !(notionSurface && onRenameProperty) &&
+                          !(onManageProperties && property.type !== 'title')
                         }
                         onSelect={() => {
                           if (notionSurface && onRenameProperty) {

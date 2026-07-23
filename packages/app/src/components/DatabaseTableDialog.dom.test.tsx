@@ -919,6 +919,36 @@ describe('DatabaseTableDialog', () => {
     expect(onManageProperties).not.toHaveBeenCalled();
   });
 
+  test('allows the required title property to be renamed in the Notion table surface', async () => {
+    const onRenameProperty = mock(() => {});
+    const onManageProperties = mock(() => {});
+    const user = userEvent.setup();
+    render(
+      <DatabaseTable
+        databaseId={database.id}
+        source={source}
+        result={queryResult()}
+        notionSurface
+        onRenameProperty={onRenameProperty}
+        onManageProperties={onManageProperties}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Property options for Title' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Rename or configure property' }));
+
+    const input = await screen.findByRole('textbox', { name: 'Property name for Title' });
+    await user.clear(input);
+    await user.type(input, 'Task');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(onRenameProperty).toHaveBeenCalledWith(
+      source.properties.find((property) => property.id === 'prop_title'),
+      'Task',
+    );
+    expect(onManageProperties).not.toHaveBeenCalled();
+  });
+
   test('renders first-match row colors and property-specific overrides with inspectable metadata', () => {
     render(
       <DatabaseTable
