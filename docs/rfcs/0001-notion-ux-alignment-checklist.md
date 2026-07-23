@@ -2302,6 +2302,23 @@ UX-1116. The remaining gates still require the desktop/compact comparison,
 manual keyboard and screen-reader review, and the bounded browser journey
 matrix.
 
+### Inline row action menu parity pass (2026-07-23)
+
+- Inline table rows now expose one hover/focus-revealed Notion-style ellipsis
+  trigger instead of seven competing icon buttons. The menu keeps the row
+  title in its trigger and action accessible names, while preserving Open,
+  context inspection, agent scope, duplicate, archive/restore, move, and
+  delete callbacks. Canonical/admin tables retain their existing direct icon
+  actions.
+- Focused DOM evidence: `DatabaseTableDialog.dom.test.tsx` passes the inline
+  cell-menu, inline row-menu, and canonical agent-scope cases (4 tests / 19
+  expectations); targeted Biome and app typecheck pass. The row-menu test
+  verifies that all seven actions remain discoverable and that selecting Open
+  dispatches the canonical record.
+- This is a supporting UX-008/UX-009 and UX-1104 improvement. It does not
+  close the cross-host visual baseline, manual keyboard/screen-reader,
+  usability, or full browser-journey gates.
+
 - [x] **UX-1001** Define keyboard order across title, tabs, controls, headers,
       cells, new row, and pagination. The canonical page DOM and focused table
       tests pin this progression, while arrow-key navigation handles the grid

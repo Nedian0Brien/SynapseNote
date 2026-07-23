@@ -3041,6 +3041,24 @@ their broad evidence is actually assembled:
   close the cross-host, manual accessibility, usability, or browser journey
   gates.
 
+### 2026-07-23 Inline row action menu parity pass
+
+- The document-native Table now collapses row-level actions behind a single
+  hover/focus-revealed ellipsis button, matching Notion's low-noise row
+  interaction. The trigger and menu items retain page-title context in their
+  accessible names, so agents and screen readers can identify the target
+  without parsing the whole row.
+- Inline menu actions cover Open, Inspect context, Ask agent, Duplicate,
+  Archive/Restore, Move, and Delete. Canonical/admin table surfaces continue
+  to use their direct icon controls, avoiding a behavior change outside the
+  Notion-like surface.
+- Evidence: focused `DatabaseTableDialog.dom.test.tsx` row/cell menu slice
+  (4 passing tests / 19 expectations), targeted Biome, and app typecheck.
+  The test also asserts the full action set and Open callback dispatch.
+- This pass is not a closure of UX-009/UX-1110/UX-1111–UX-1116 or the
+  remaining browser, manual accessibility, usability, hosted, and real-model
+  gates. Keep the full app/E2E suites deferred as requested.
+
 ## Recommended execution order
 
 1. When a browser-enabled runner is available, run only the new primary-journey

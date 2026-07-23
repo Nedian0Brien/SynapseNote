@@ -2236,6 +2236,15 @@ export function DatabaseTable({
               notionSurface && recordTitle && recordTitle !== '—' ? recordTitle : record.id;
             const recordActionLabel = (action: string) =>
               `${action} ${notionSurface ? 'page' : 'record'} ${recordLabel}`;
+            const hasRecordActions = Boolean(
+              onOpen ||
+                onOpenContextInspector ||
+                onOpenAgentScope ||
+                onDuplicate ||
+                onArchive ||
+                onRequestMove ||
+                onDelete,
+            );
             const conditionalColorRecord = result.conditionalColors?.records[record.id];
             const pageColorRule = conditionalColorRecord?.pageRuleId
               ? conditionalColorRules.get(conditionalColorRecord.pageRuleId)
@@ -3005,97 +3014,218 @@ export function DatabaseTable({
                       )}
                       data-database-row-actions
                     >
-                      {record.archivedAt ? (
+                      {record.archivedAt && !notionSurface ? (
                         <Badge variant="gray">
                           <Trans>Archived</Trans>
                         </Badge>
                       ) : null}
-                      {onOpen ? (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          disabled={mutationLocked || proposedRecord !== undefined}
-                          aria-label={recordActionLabel('Open')}
-                          onClick={() => onOpen(record)}
-                        >
-                          <ExternalLink />
-                        </Button>
-                      ) : null}
-                      {onOpenContextInspector ? (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          disabled={mutationLocked || proposedRecord !== undefined}
-                          aria-label={recordActionLabel('Inspect context for')}
-                          onClick={() => onOpenContextInspector(record)}
-                        >
-                          <Braces aria-hidden="true" />
-                        </Button>
-                      ) : null}
-                      {onOpenAgentScope ? (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          disabled={mutationLocked || proposedRecord !== undefined}
-                          aria-label={recordActionLabel('Ask agent about')}
-                          onClick={() =>
-                            onOpenAgentScope({
-                              databaseId,
-                              sourceId: source.id,
-                              ...(viewId ? { viewId } : {}),
-                              recordId: record.id,
-                            })
-                          }
-                        >
-                          <Sparkles aria-hidden="true" />
-                        </Button>
-                      ) : null}
-                      {onDuplicate ? (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          disabled={mutationLocked || proposedRecord !== undefined}
-                          aria-label={recordActionLabel('Duplicate')}
-                          onClick={() => onDuplicate(record)}
-                        >
-                          <Copy />
-                        </Button>
-                      ) : null}
-                      {onArchive ? (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          disabled={mutationLocked || proposedRecord !== undefined}
-                          aria-label={recordActionLabel(record.archivedAt ? 'Restore' : 'Archive')}
-                          onClick={() =>
-                            onArchive(record, record.archivedAt ? 'restore' : 'archive')
-                          }
-                        >
-                          {record.archivedAt ? <RotateCcw /> : <Archive />}
-                        </Button>
-                      ) : null}
-                      {onRequestMove ? (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          disabled={mutationLocked || proposedRecord !== undefined}
-                          aria-label={recordActionLabel('Move')}
-                          onClick={() => onRequestMove(record)}
-                        >
-                          <MoveRight />
-                        </Button>
-                      ) : null}
-                      {onDelete ? (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          disabled={mutationLocked || proposedRecord !== undefined}
-                          aria-label={recordActionLabel('Delete')}
-                          onClick={() => onDelete(record)}
-                        >
-                          <Trash2 />
-                        </Button>
-                      ) : null}
+                      {notionSurface ? (
+                        hasRecordActions ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                disabled={mutationLocked || proposedRecord !== undefined}
+                                aria-label={recordActionLabel('More actions for')}
+                                data-database-row-action-menu-trigger={record.id}
+                              >
+                                <MoreHorizontalIcon aria-hidden="true" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align="end"
+                              className="w-56"
+                              aria-label={recordActionLabel('Actions for')}
+                              data-database-row-action-menu={record.id}
+                            >
+                              <DropdownMenuLabel>{recordLabel}</DropdownMenuLabel>
+                              {onOpen ? (
+                                <DropdownMenuItem
+                                  disabled={mutationLocked || proposedRecord !== undefined}
+                                  aria-label={recordActionLabel('Open')}
+                                  onSelect={() => onOpen(record)}
+                                >
+                                  <ExternalLink aria-hidden="true" />
+                                  <Trans>Open</Trans>
+                                </DropdownMenuItem>
+                              ) : null}
+                              {onOpenContextInspector ? (
+                                <DropdownMenuItem
+                                  disabled={mutationLocked || proposedRecord !== undefined}
+                                  aria-label={recordActionLabel('Inspect context for')}
+                                  onSelect={() => onOpenContextInspector(record)}
+                                >
+                                  <Braces aria-hidden="true" />
+                                  <Trans>Inspect context</Trans>
+                                </DropdownMenuItem>
+                              ) : null}
+                              {onOpenAgentScope ? (
+                                <DropdownMenuItem
+                                  disabled={mutationLocked || proposedRecord !== undefined}
+                                  aria-label={recordActionLabel('Ask agent about')}
+                                  onSelect={() =>
+                                    onOpenAgentScope({
+                                      databaseId,
+                                      sourceId: source.id,
+                                      ...(viewId ? { viewId } : {}),
+                                      recordId: record.id,
+                                    })
+                                  }
+                                >
+                                  <Sparkles aria-hidden="true" />
+                                  <Trans>Ask agent</Trans>
+                                </DropdownMenuItem>
+                              ) : null}
+                              {onDuplicate ? (
+                                <DropdownMenuItem
+                                  disabled={mutationLocked || proposedRecord !== undefined}
+                                  aria-label={recordActionLabel('Duplicate')}
+                                  onSelect={() => onDuplicate(record)}
+                                >
+                                  <Copy aria-hidden="true" />
+                                  <Trans>Duplicate</Trans>
+                                </DropdownMenuItem>
+                              ) : null}
+                              {onArchive ? (
+                                <DropdownMenuItem
+                                  disabled={mutationLocked || proposedRecord !== undefined}
+                                  aria-label={recordActionLabel(
+                                    record.archivedAt ? 'Restore' : 'Archive',
+                                  )}
+                                  onSelect={() =>
+                                    onArchive(record, record.archivedAt ? 'restore' : 'archive')
+                                  }
+                                >
+                                  {record.archivedAt ? (
+                                    <RotateCcw aria-hidden="true" />
+                                  ) : (
+                                    <Archive aria-hidden="true" />
+                                  )}
+                                  {record.archivedAt ? (
+                                    <Trans>Restore</Trans>
+                                  ) : (
+                                    <Trans>Archive</Trans>
+                                  )}
+                                </DropdownMenuItem>
+                              ) : null}
+                              {onRequestMove ? (
+                                <DropdownMenuItem
+                                  disabled={mutationLocked || proposedRecord !== undefined}
+                                  aria-label={recordActionLabel('Move')}
+                                  onSelect={() => onRequestMove(record)}
+                                >
+                                  <MoveRight aria-hidden="true" />
+                                  <Trans>Move</Trans>
+                                </DropdownMenuItem>
+                              ) : null}
+                              {onDelete ? (
+                                <DropdownMenuItem
+                                  variant="destructive"
+                                  disabled={mutationLocked || proposedRecord !== undefined}
+                                  aria-label={recordActionLabel('Delete')}
+                                  onSelect={() => onDelete(record)}
+                                >
+                                  <Trash2 aria-hidden="true" />
+                                  <Trans>Delete</Trans>
+                                </DropdownMenuItem>
+                              ) : null}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ) : null
+                      ) : (
+                        <>
+                          {onOpen ? (
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              disabled={mutationLocked || proposedRecord !== undefined}
+                              aria-label={recordActionLabel('Open')}
+                              onClick={() => onOpen(record)}
+                            >
+                              <ExternalLink />
+                            </Button>
+                          ) : null}
+                          {onOpenContextInspector ? (
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              disabled={mutationLocked || proposedRecord !== undefined}
+                              aria-label={recordActionLabel('Inspect context for')}
+                              onClick={() => onOpenContextInspector(record)}
+                            >
+                              <Braces aria-hidden="true" />
+                            </Button>
+                          ) : null}
+                          {onOpenAgentScope ? (
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              disabled={mutationLocked || proposedRecord !== undefined}
+                              aria-label={recordActionLabel('Ask agent about')}
+                              onClick={() =>
+                                onOpenAgentScope({
+                                  databaseId,
+                                  sourceId: source.id,
+                                  ...(viewId ? { viewId } : {}),
+                                  recordId: record.id,
+                                })
+                              }
+                            >
+                              <Sparkles aria-hidden="true" />
+                            </Button>
+                          ) : null}
+                          {onDuplicate ? (
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              disabled={mutationLocked || proposedRecord !== undefined}
+                              aria-label={recordActionLabel('Duplicate')}
+                              onClick={() => onDuplicate(record)}
+                            >
+                              <Copy />
+                            </Button>
+                          ) : null}
+                          {onArchive ? (
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              disabled={mutationLocked || proposedRecord !== undefined}
+                              aria-label={recordActionLabel(
+                                record.archivedAt ? 'Restore' : 'Archive',
+                              )}
+                              onClick={() =>
+                                onArchive(record, record.archivedAt ? 'restore' : 'archive')
+                              }
+                            >
+                              {record.archivedAt ? <RotateCcw /> : <Archive />}
+                            </Button>
+                          ) : null}
+                          {onRequestMove ? (
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              disabled={mutationLocked || proposedRecord !== undefined}
+                              aria-label={recordActionLabel('Move')}
+                              onClick={() => onRequestMove(record)}
+                            >
+                              <MoveRight />
+                            </Button>
+                          ) : null}
+                          {onDelete ? (
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              disabled={mutationLocked || proposedRecord !== undefined}
+                              aria-label={recordActionLabel('Delete')}
+                              onClick={() => onDelete(record)}
+                            >
+                              <Trash2 />
+                            </Button>
+                          ) : null}
+                        </>
+                      )}
                     </div>
                   ) : null}
                 </TableCell>

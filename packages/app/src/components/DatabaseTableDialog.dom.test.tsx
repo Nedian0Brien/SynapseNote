@@ -2923,6 +2923,51 @@ describe('DatabaseTableDialog', () => {
     expect(screen.getByRole('menuitem', { name: 'Ask agent about page First task' })).toBeTruthy();
   });
 
+  test('collapses inline row actions into one contextual more menu', async () => {
+    const user = userEvent.setup();
+    const onOpen = mock(() => {});
+    const onOpenContextInspector = mock(() => {});
+    const onOpenAgentScope = mock(() => {});
+    const onDuplicate = mock(() => {});
+    const onArchive = mock(() => {});
+    const onRequestMove = mock(() => {});
+    const onDelete = mock(() => {});
+    render(
+      <DatabaseTable
+        databaseId={database.id}
+        viewId="view_table"
+        source={source}
+        result={queryResult()}
+        notionSurface
+        onOpen={onOpen}
+        onOpenContextInspector={onOpenContextInspector}
+        onOpenAgentScope={onOpenAgentScope}
+        onDuplicate={onDuplicate}
+        onArchive={onArchive}
+        onRequestMove={onRequestMove}
+        onDelete={onDelete}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'More actions for page First task' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Open page First task' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'More actions for page First task' }));
+
+    expect(screen.getByRole('menu', { name: 'More actions for page First task' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Open page First task' })).toBeTruthy();
+    expect(
+      screen.getByRole('menuitem', { name: 'Inspect context for page First task' }),
+    ).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Ask agent about page First task' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Duplicate page First task' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Archive page First task' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Move page First task' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Delete page First task' })).toBeTruthy();
+
+    await user.click(screen.getByRole('menuitem', { name: 'Open page First task' }));
+    expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'rec_first' }));
+  });
+
   test('offers a row-level agent scope with the canonical record ID', () => {
     const onOpenAgentScope = mock(() => {});
     render(
