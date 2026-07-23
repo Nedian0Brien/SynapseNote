@@ -3059,6 +3059,21 @@ their broad evidence is actually assembled:
   remaining browser, manual accessibility, usability, hosted, and real-model
   gates. Keep the full app/E2E suites deferred as requested.
 
+### 2026-07-23 Inline property type affordance pass
+
+- Inline property headers now show compact type glyphs beside the property
+  name, using the existing icon system for text/title, number, select/status,
+  date, URL, people, files, relation, formula, and other supported types.
+  This follows Notion's quick-scan header grammar without adding another
+  visible label or widening the table.
+- Icons are `aria-hidden`; the existing type text remains available to
+  assistive technology and column accessible names stay unchanged. Focused
+  DOM coverage verifies representative Title, Number, Select, and URL icons.
+- Evidence: the bounded `DatabaseTableDialog.dom.test.tsx` slice passes 5
+  tests / 28 expectations (including row menu and header icon behavior), plus
+  targeted Biome and app typecheck. This does not close the remaining visual,
+  manual accessibility, usability, or browser/hosted gates.
+
 ## Recommended execution order
 
 1. When a browser-enabled runner is available, run only the new primary-journey

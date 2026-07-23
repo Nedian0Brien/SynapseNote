@@ -41,30 +41,46 @@ import {
   AlertCircle,
   Archive,
   Braces,
+  CalendarDays,
   Check,
+  CheckSquare2,
   ChevronLeft,
   ChevronRight,
+  Clock3,
   Copy,
   Database,
   Download,
   ExternalLink,
+  FileText,
   GripVertical,
+  Hash,
   History,
+  Link2,
   Loader2,
+  type LucideIcon,
+  Mail,
   MapPin,
   MoreHorizontalIcon,
   MoveRight,
+  Paperclip,
   Pencil,
+  Phone,
   Plus,
   RefreshCw,
   RotateCcw,
   Settings2,
   ShieldCheck,
+  Sigma,
   Sparkles,
   Star,
   Table2,
+  Tags,
   Trash2,
+  Type,
   Upload,
+  UserRound,
+  Users,
+  Workflow,
   X,
 } from 'lucide-react';
 import {
@@ -661,6 +677,46 @@ function DatabaseValueCopyButton({ value, label }: { value: string; label: strin
     >
       {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
     </Button>
+  );
+}
+
+const DATABASE_PROPERTY_TYPE_ICONS: Record<DatabasePropertyType, LucideIcon> = {
+  title: Type,
+  text: FileText,
+  number: Hash,
+  checkbox: CheckSquare2,
+  date: CalendarDays,
+  select: Tags,
+  status: Tags,
+  multi_select: Tags,
+  url: Link2,
+  email: Mail,
+  phone: Phone,
+  created_time: Clock3,
+  last_edited_time: Clock3,
+  created_by: UserRound,
+  last_edited_by: UserRound,
+  verification: ShieldCheck,
+  button: Settings2,
+  unique_id: Hash,
+  place: MapPin,
+  person: Users,
+  files: Paperclip,
+  relation: Workflow,
+  formula: Sigma,
+  rollup: Sigma,
+};
+
+function DatabasePropertyTypeIcon({ type, label }: { type: DatabasePropertyType; label: string }) {
+  const Icon = DATABASE_PROPERTY_TYPE_ICONS[type];
+  return (
+    <span
+      className="mr-1 inline-flex size-3.5 shrink-0 items-center justify-center text-muted-foreground/75"
+      title={label}
+      data-database-property-type-icon={type}
+    >
+      <Icon className="size-3.5" aria-hidden="true" />
+    </span>
   );
 }
 
@@ -1821,6 +1877,9 @@ export function DatabaseTable({
                     maxWidth: layout.widths[property.id],
                   }}
                 >
+                  {notionSurface ? (
+                    <DatabasePropertyTypeIcon type={property.type} label={propertyTypeLabel} />
+                  ) : null}
                   <span>{property.name}</span>
                   <span
                     className={cn(

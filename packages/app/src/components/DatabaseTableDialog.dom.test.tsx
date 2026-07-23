@@ -2898,6 +2898,27 @@ describe('DatabaseTableDialog', () => {
     expect(screen.getByLabelText('Edit URL for page First task')).toBeTruthy();
   });
 
+  test('shows property type icons in inline headers without changing accessible names', () => {
+    render(<DatabaseTable source={source} result={queryResult()} notionSurface />);
+
+    for (const [propertyId, typeLabel] of [
+      ['prop_title', 'Title'],
+      ['prop_budget', 'Number'],
+      ['prop_status', 'Select'],
+      ['prop_url', 'URL'],
+    ] as const) {
+      const icon = document.querySelector<HTMLElement>(
+        `[data-property-id="${propertyId}"] [data-database-property-type-icon]`,
+      );
+      expect(icon?.getAttribute('data-database-property-type-icon')).toBe(
+        source.properties.find((property) => property.id === propertyId)?.type,
+      );
+      expect(icon?.getAttribute('title')).toBe(typeLabel);
+    }
+
+    expect(screen.getByRole('columnheader', { name: 'TitleTitle' })).toBeTruthy();
+  });
+
   test('contextualizes the inline cell action menu with title and property', () => {
     const view = render(
       <DatabaseTable

@@ -2319,6 +2319,21 @@ matrix.
   close the cross-host visual baseline, manual keyboard/screen-reader,
   usability, or full browser-journey gates.
 
+### Inline property type affordance pass (2026-07-23)
+
+- Inline property headers now show a small type glyph beside each property
+  name (text, number, select, URL, date, people, relation, and the remaining
+  supported types map to the existing Lucide icon set). The glyph is hidden
+  from the accessibility tree while its native label and the existing
+  screen-reader type text remain available, preserving column names and
+  keyboard navigation.
+- Focused DOM evidence: `DatabaseTableDialog.dom.test.tsx` passes the inline
+  header icon/accessibility case plus the row/cell menu slice (5 tests / 28
+  expectations); targeted Biome and app typecheck pass.
+- This is a supporting UX-009/UX-1105 visual affordance. It does not close the
+  cross-host baseline, manual contrast/assistive-technology, usability, or
+  full browser-journey gates.
+
 - [x] **UX-1001** Define keyboard order across title, tabs, controls, headers,
       cells, new row, and pagination. The canonical page DOM and focused table
       tests pin this progression, while arrow-key navigation handles the grid
