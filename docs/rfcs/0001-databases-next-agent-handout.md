@@ -33,6 +33,7 @@
 - Latest atomic approval scope changeset: `../../.changeset/atomic-approval-scope.md`
 - Latest database page appearance changeset: `../../.changeset/database-page-appearance.md`
 - Latest inline title accessibility changeset: `../../.changeset/inline-title-accessible-name.md`
+- Latest inline action-context changeset: `../../.changeset/inline-action-context.md`
 - Latest database responsive changeset: `../../.changeset/database-page-responsive.md`
 - Latest property deletion safety changeset: `../../.changeset/database-property-deletion-preview.md`
 - Latest view-scoped property layout changeset: `../../.changeset/database-view-scoped-property-layout.md`
@@ -244,6 +245,13 @@ activating the named button still opens the `Inline database title` input. The
 focused single-view DOM test passes 1 test / 6 expectations; the broader
 `DatabaseView.dom.test.tsx` file retains a pre-existing multiline-paste
 commit-count mismatch and was intentionally not rerun as a release gate.
+
+The follow-up `fa80636c fix: contextualize inline database actions` gives the
+overflow menu an accessible name containing the displayed source/database and
+saved-view names (`Database view actions for Tasks · Open tasks`). This keeps
+the icon-only Notion-style chrome compact while making repeated linked blocks
+searchable and distinguishable by agents. Its focused journey passes 1 test /
+7 expectations; no full E2E or server suite was run.
 
 ## Current status
 

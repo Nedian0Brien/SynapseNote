@@ -417,6 +417,16 @@ an action-only label. The focused `DatabaseView.dom.test.tsx` single-view
 journey passes 1 test / 6 expectations; the broader file still contains a
 known multiline-paste commit-count baseline failure and was not rerun.
 
+### Inline action-menu context evidence (2026-07-23)
+
+The inline overflow button now exposes `Database view actions for Tasks · Open
+tasks` when the linked view is ready, while retaining the generic loading label
+until the database description resolves. The context is derived from the
+visible source/database and saved-view names, not machine IDs, so an agent can
+select the right repeated inline block without opening the menu first. The
+focused single-view DOM journey passes 1 test / 7 expectations, with the
+existing long journey assertions updated to the contextual name.
+
 The follow-up regression capture found that remounting the manager during a
 draft could replay the initial action and create duplicate copies. The manager
 now keeps a stable instance across schema refreshes, synchronizes its view-name
