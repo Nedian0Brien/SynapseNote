@@ -1407,7 +1407,12 @@ export function DatabaseView({
     }
   };
 
-  const addInlineProperty = (input: { name: string; type: DatabaseProperty['type'] }) => {
+  const addInlineProperty = (input: {
+    name: string;
+    type: DatabaseProperty['type'];
+    insertBeforePropertyId?: string;
+    insertAfterPropertyId?: string;
+  }) => {
     if (state.status !== 'ready' || !linkedSource || !linkedDatabase) return;
     try {
       const property = createDatabasePropertyDefinitionForAdd({
@@ -1420,6 +1425,12 @@ export function DatabaseView({
           database: linkedDatabase,
           source: linkedSource,
           viewId: reference.data.viewId,
+          ...(input.insertBeforePropertyId
+            ? { insertBeforePropertyId: input.insertBeforePropertyId }
+            : {}),
+          ...(input.insertAfterPropertyId
+            ? { insertAfterPropertyId: input.insertAfterPropertyId }
+            : {}),
           property,
         }),
         { operation: 'property-create' },

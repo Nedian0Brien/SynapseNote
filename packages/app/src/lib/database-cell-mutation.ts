@@ -758,6 +758,8 @@ export function createDatabaseAddPropertyDesiredState(input: {
   source: DatabaseSource;
   property: { key: string; name: string; type: DatabasePropertyType } & Record<string, unknown>;
   viewId?: string;
+  insertBeforePropertyId?: string;
+  insertAfterPropertyId?: string;
 }): DatabaseDesiredStateDraftInput {
   const currentSource = input.database.sources.find((source) => source.id === input.source.id);
   if (!currentSource) throw new Error('The selected source is unavailable');
@@ -769,6 +771,17 @@ export function createDatabaseAddPropertyDesiredState(input: {
     currentSource.properties.map((property) => [property.id, property.key] as const),
   );
   const baseViews = base.views ?? [];
+  const sourcePropertyIndex = currentSource.properties.findIndex((candidate) =>
+    input.insertBeforePropertyId
+      ? candidate.id === input.insertBeforePropertyId
+      : input.insertAfterPropertyId
+        ? candidate.id === input.insertAfterPropertyId
+        : false,
+  );
+  const sourceInsertIndex =
+    sourcePropertyIndex < 0
+      ? currentSource.properties.length
+      : sourcePropertyIndex + (input.insertAfterPropertyId ? 1 : 0);
   const views = input.viewId
     ? baseViews.map((view) => {
         if (view.id !== input.viewId || view.sourceKey !== currentSource.key) return view;
@@ -789,11 +802,25 @@ export function createDatabaseAddPropertyDesiredState(input: {
         // leave that compact/default representation untouched.
         if (!existingKeys || existingKeys.includes(input.property.key)) return view;
         const { propertyIds: _propertyIds, propertyKeys: _propertyKeys, ...rest } = rawProjection;
+        const targetProperty = currentSource.properties.find((candidate) =>
+          input.insertBeforePropertyId
+            ? candidate.id === input.insertBeforePropertyId
+            : input.insertAfterPropertyId
+              ? candidate.id === input.insertAfterPropertyId
+              : false,
+        );
+        const targetKeyIndex = targetProperty ? existingKeys.indexOf(targetProperty.key) : -1;
+        const projectionInsertIndex =
+          targetKeyIndex < 0
+            ? existingKeys.length
+            : targetKeyIndex + (input.insertAfterPropertyId ? 1 : 0);
+        const nextPropertyKeys = [...existingKeys];
+        nextPropertyKeys.splice(projectionInsertIndex, 0, input.property.key);
         return {
           ...view,
           projection: {
             ...rest,
-            propertyKeys: [...existingKeys, input.property.key],
+            propertyKeys: nextPropertyKeys,
           },
         };
       })
@@ -803,7 +830,14 @@ export function createDatabaseAddPropertyDesiredState(input: {
     views,
     sources: base.sources.map((source) =>
       source.key === currentSource.key
-        ? { ...source, properties: [...source.properties, input.property] }
+        ? {
+            ...source,
+            properties: [
+              ...source.properties.slice(0, sourceInsertIndex),
+              input.property,
+              ...source.properties.slice(sourceInsertIndex),
+            ],
+          }
         : source,
     ),
     sampleRecords: [],

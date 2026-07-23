@@ -1017,7 +1017,12 @@ export function DatabaseTable({
   onOpenPropertyFilter?: (property: DatabaseProperty) => void;
   onViewPropertyIdsChange?: (propertyIds: readonly string[]) => void;
   onDuplicateProperty?: (property: DatabaseProperty) => void;
-  onAddProperty?: (input: { name: string; type: DatabasePropertyType }) => void;
+  onAddProperty?: (input: {
+    name: string;
+    type: DatabasePropertyType;
+    insertBeforePropertyId?: string;
+    insertAfterPropertyId?: string;
+  }) => void;
   onInvokeButton?: (
     record: ProjectedDatabaseRecord,
     property: Extract<DatabaseProperty, { type: 'button' }>,
@@ -1126,6 +1131,10 @@ export function DatabaseTable({
   const [addPropertyOpen, setAddPropertyOpen] = useState(false);
   const [newPropertyName, setNewPropertyName] = useState('New property');
   const [newPropertyType, setNewPropertyType] = useState<DatabasePropertyType>('text');
+  const [propertyInsertTarget, setPropertyInsertTarget] = useState<{
+    propertyId: string;
+    position: 'before' | 'after';
+  } | null>(null);
   const [propertyRenameTarget, setPropertyRenameTarget] = useState<DatabaseProperty | null>(null);
   const [propertyRenameDraft, setPropertyRenameDraft] = useState('');
   const [cellRange, setCellRange] = useState<DatabaseCellRange | null>(null);
@@ -1415,9 +1424,22 @@ export function DatabaseTable({
   const submitAddProperty = () => {
     const name = newPropertyName.trim();
     if (!onAddProperty || !name || mutationLocked) return;
-    onAddProperty({ name, type: newPropertyType });
+    onAddProperty({
+      name,
+      type: newPropertyType,
+      ...(propertyInsertTarget?.position === 'before'
+        ? { insertBeforePropertyId: propertyInsertTarget.propertyId }
+        : propertyInsertTarget?.position === 'after'
+          ? { insertAfterPropertyId: propertyInsertTarget.propertyId }
+          : {}),
+    });
     setAddPropertyOpen(false);
     setNewPropertyName('New property');
+  };
+
+  const openPropertyInsert = (property: DatabaseProperty, position: 'before' | 'after') => {
+    setPropertyInsertTarget({ propertyId: property.id, position });
+    setAddPropertyOpen(true);
   };
 
   const openPropertyRename = (property: DatabaseProperty) => {
@@ -1930,6 +1952,28 @@ export function DatabaseTable({
                         <ChevronRight aria-hidden="true" />
                         <Trans>Move right</Trans>
                       </DropdownMenuItem>
+                      {notionSurface && onAddProperty ? (
+                        <>
+                          <DropdownMenuItem
+                            disabled={property.type === 'title' || mutationLocked}
+                            onSelect={() =>
+                              window.setTimeout(() => openPropertyInsert(property, 'before'), 20)
+                            }
+                          >
+                            <ChevronLeft aria-hidden="true" />
+                            <Trans>Insert left</Trans>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            disabled={mutationLocked}
+                            onSelect={() =>
+                              window.setTimeout(() => openPropertyInsert(property, 'after'), 20)
+                            }
+                          >
+                            <ChevronRight aria-hidden="true" />
+                            <Trans>Insert right</Trans>
+                          </DropdownMenuItem>
+                        </>
+                      ) : null}
                       {onOpenPropertySort ? (
                         <DropdownMenuItem onSelect={() => onOpenPropertySort(property)}>
                           <Trans>Sort by property</Trans>
@@ -2045,7 +2089,13 @@ export function DatabaseTable({
                 <Trans>Actions</Trans>
               </span>
               {notionSurface && onAddProperty ? (
-                <Popover open={addPropertyOpen} onOpenChange={setAddPropertyOpen}>
+                <Popover
+                  open={addPropertyOpen}
+                  onOpenChange={(nextOpen) => {
+                    setAddPropertyOpen(nextOpen);
+                    if (!nextOpen) setPropertyInsertTarget(null);
+                  }}
+                >
                   <PopoverTrigger asChild>
                     <Button
                       type="button"
@@ -2061,9 +2111,19 @@ export function DatabaseTable({
                   <PopoverContent align="end" className="w-80">
                     <div className="grid gap-3">
                       <div>
-                        <h3 className="font-medium text-sm">Add property</h3>
+                        <h3 className="font-medium text-sm">
+                          {propertyInsertTarget ? (
+                            propertyInsertTarget.position === 'before' ? (
+                              <Trans>Insert property to the left</Trans>
+                            ) : (
+                              <Trans>Insert property to the right</Trans>
+                            )
+                          ) : (
+                            <Trans>Add property</Trans>
+                          )}
+                        </h3>
                         <p className="mt-1 text-muted-foreground text-xs">
-                          Choose a name and type for the new column.
+                          <Trans>Choose a name and type for the new column.</Trans>
                         </p>
                       </div>
                       <Input
@@ -2095,7 +2155,11 @@ export function DatabaseTable({
                         disabled={!newPropertyName.trim() || mutationLocked}
                         onClick={submitAddProperty}
                       >
-                        Add property
+                        {propertyInsertTarget ? (
+                          <Trans>Insert property</Trans>
+                        ) : (
+                          <Trans>Add property</Trans>
+                        )}
                       </Button>
                     </div>
                   </PopoverContent>
@@ -4793,7 +4857,12 @@ function DatabaseTableSurface({
   };
 
   const addSchemaProperty = (
-    input: { name: string; type: DatabasePropertyType },
+    input: {
+      name: string;
+      type: DatabasePropertyType;
+      insertBeforePropertyId?: string;
+      insertAfterPropertyId?: string;
+    },
     policy: DatabaseUiMutationPolicyInput = databaseSchemaMutationPolicy,
   ) => {
     if (!description?.source || mutationStatus !== 'idle') return;
@@ -4810,6 +4879,12 @@ function DatabaseTableSurface({
         database: selectedDatabase,
         source: selectedSource,
         ...(selectedView?.id ? { viewId: selectedView.id } : {}),
+        ...(input.insertBeforePropertyId
+          ? { insertBeforePropertyId: input.insertBeforePropertyId }
+          : {}),
+        ...(input.insertAfterPropertyId
+          ? { insertAfterPropertyId: input.insertAfterPropertyId }
+          : {}),
         property,
       });
       setPropertiesDialogOpen(false);

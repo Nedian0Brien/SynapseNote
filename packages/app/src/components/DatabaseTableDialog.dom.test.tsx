@@ -949,6 +949,36 @@ describe('DatabaseTableDialog', () => {
     expect(onManageProperties).not.toHaveBeenCalled();
   });
 
+  test('inserts a property beside a header from the Notion table menu', async () => {
+    const onAddProperty = mock(() => {});
+    const user = userEvent.setup();
+    render(
+      <DatabaseTable
+        databaseId={database.id}
+        source={source}
+        result={queryResult()}
+        notionSurface
+        onAddProperty={onAddProperty}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Property options for Budget' }));
+    expect(screen.getByRole('menuitem', { name: 'Insert left' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Insert right' })).toBeTruthy();
+    await user.click(screen.getByRole('menuitem', { name: 'Insert left' }));
+
+    const input = await screen.findByRole('textbox', { name: 'New property name' });
+    await user.clear(input);
+    await user.type(input, 'Priority');
+    await user.click(screen.getByRole('button', { name: 'Insert property' }));
+
+    expect(onAddProperty).toHaveBeenCalledWith({
+      name: 'Priority',
+      type: 'text',
+      insertBeforePropertyId: 'prop_budget',
+    });
+  });
+
   test('renders first-match row colors and property-specific overrides with inspectable metadata', () => {
     render(
       <DatabaseTable

@@ -168,6 +168,35 @@ describe('database cell mutation compiler', () => {
     expect(projection).not.toHaveProperty('propertyIds');
   });
 
+  test('inserts a new property beside the selected header in source and view order', () => {
+    const source = database.sources[0];
+    if (!source) throw new Error('invalid source fixture');
+    const property = createDatabasePropertyDefinitionForAdd({
+      name: 'Priority',
+      type: 'select',
+      existingKeys: source.properties.map((candidate) => candidate.key),
+    });
+    const desired = createDatabaseAddPropertyDesiredState({
+      database,
+      source,
+      viewId: 'view_scored',
+      property,
+      insertBeforePropertyId: 'prop_score',
+    });
+    const desiredSource = desired.sources.find((candidate) => candidate.id === source.id);
+    expect(desiredSource?.properties.map((candidate) => candidate.key)).toEqual([
+      'title',
+      'priority',
+      'score',
+      'tags',
+      'status',
+      'complete',
+    ]);
+    const projection = desired.views[0]?.projection as Record<string, unknown> | undefined;
+    expect(projection).toMatchObject({ propertyKeys: ['title', 'priority', 'score'] });
+    expect(projection).not.toHaveProperty('propertyIds');
+  });
+
   test('rebases queued record operations onto the current schema without replaying stale views', () => {
     const currentSource = database.sources[0];
     const statusProperty = currentSource?.properties.find(
