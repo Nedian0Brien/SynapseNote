@@ -2994,6 +2994,19 @@ their broad evidence is actually assembled:
   or R-005 until a bounded system-Chrome/hosted run and the remaining
   visual/accessibility gates are attached.
 
+### 2026-07-23 Agent View projection-order regression coverage
+
+- `DatabaseDataPlane.pack` already defaults an Agent View request without
+  explicit `propertyIds` to the saved view's ordered projection. A focused
+  regression test now changes the fixture so that the saved projection order
+  differs from source schema order, then asserts both the returned schema and
+  explainability projection preserve that order.
+- Focused evidence: `packages/server/src/database-data-plane.test.ts` passes the
+  new test (`1 pass / 2 expectations`), targeted Biome passes, and server
+  typecheck passes. This is contract-protection evidence for token-efficient,
+  view-shaped agent delivery; it does not close real-model, hosted CI, or
+  usability gates.
+
 ## Recommended execution order
 
 1. When a browser-enabled runner is available, run only the new primary-journey
@@ -3002,8 +3015,9 @@ their broad evidence is actually assembled:
    system-Chrome document-native evidence is already recorded. This should
    identify missing tests instead of duplicating the existing 124 app DOM tests
    and many focused recovery/race suites.
-2. Create the missing prompt-to-valid-database eval harness for R-017; record
-   its threshold and held-out baseline in machine-readable output.
+2. Replay real model/agent outputs through the existing prompt-to-valid-database
+   evaluator for R-017; attach the threshold and held-out baseline in
+   machine-readable output.
 3. Attach the first hosted run of the focused R-019 workflow, then perform the
    S-010/S-011 platform and upgrade/restore rehearsals.
 4. Schedule Q-012 user sessions and obtain the L-017 named approvals. These are
