@@ -204,11 +204,13 @@ const DatabaseTableDialogMock = ({
   open,
   presentation,
   initialAction,
+  creationExperience,
   initialTarget,
 }: {
   open: boolean;
   presentation?: string;
   initialAction?: string;
+  creationExperience?: string;
   initialTarget?: { databaseId: string; sourceId: string; viewId?: string };
 }) => (
   <div
@@ -216,6 +218,7 @@ const DatabaseTableDialogMock = ({
     data-open={String(open)}
     data-presentation={presentation}
     data-initial-action={initialAction}
+    data-creation-experience={creationExperience}
     data-initial-target={initialTarget ? JSON.stringify(initialTarget) : ''}
   />
 );
@@ -512,6 +515,9 @@ describe('App runtime wiring', () => {
     expect(screen.getByTestId('database-table-dialog').getAttribute('data-initial-action')).toBe(
       'create',
     );
+    expect(
+      screen.getByTestId('database-table-dialog').getAttribute('data-creation-experience'),
+    ).toBe('notion');
 
     await act(async () => window.history.back());
     await waitFor(() => expect(window.location.hash).toBe(''));
@@ -530,6 +536,7 @@ describe('App runtime wiring', () => {
     expect(dialog.getAttribute('data-open')).toBe('true');
     expect(dialog.getAttribute('data-presentation')).toBe('page');
     expect(dialog.getAttribute('data-initial-action')).toBe('create');
+    expect(dialog.getAttribute('data-creation-experience')).toBe('notion');
   });
 
   test('opens database discovery in the page presentation from the command palette', async () => {
@@ -544,6 +551,7 @@ describe('App runtime wiring', () => {
       const dialog = screen.getByTestId('database-table-dialog');
       expect(dialog.getAttribute('data-open')).toBe('true');
       expect(dialog.getAttribute('data-presentation')).toBe('page');
+      expect(dialog.getAttribute('data-creation-experience')).toBe('admin');
     });
   });
 
