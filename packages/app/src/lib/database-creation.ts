@@ -194,6 +194,27 @@ function stableKey(value: string, fallback: string): string {
   return (normalized || fallback).slice(0, 128).replace(/_+$/g, '') || fallback;
 }
 
+let notionDatabaseKeySequence = 0;
+
+/**
+ * Return a readable-but-unique stable key for a Notion-style blank database.
+ *
+ * Inline creation keeps the visible title as "Untitled database", so the
+ * internal key cannot be derived from that title alone: a second inline block
+ * would otherwise resolve to the first database. The optional suffix keeps
+ * this helper deterministic in tests while the default path uses the browser
+ * UUID source when available.
+ */
+export function createNotionDatabaseKey(suffix?: string): string {
+  notionDatabaseKeySequence += 1;
+  const generatedSuffix =
+    suffix ??
+    (typeof globalThis.crypto?.randomUUID === 'function'
+      ? globalThis.crypto.randomUUID().replaceAll('-', '').slice(0, 12)
+      : `${Date.now().toString(36)}_${notionDatabaseKeySequence}`);
+  return stableKey(`Untitled database ${generatedSuffix}`, 'untitled_database');
+}
+
 function uniqueKeys(names: readonly string[]): string[] {
   const used = new Set<string>();
   return names.map((name, index) => {
@@ -211,6 +232,7 @@ function uniqueKeys(names: readonly string[]): string[] {
 
 function baseDesiredState(input: {
   name: string;
+  key?: string;
   folder?: string;
   includeSubfolders?: boolean;
   properties: readonly CreationProperty[];
@@ -219,7 +241,7 @@ function baseDesiredState(input: {
 }): DatabaseDesiredStateDraftInput {
   const name = input.name.trim();
   if (!name) throw new Error('Database name is required');
-  const key = stableKey(name, 'database');
+  const key = stableKey(input.key ?? name, 'database');
   const folder = input.folder?.trim() || key;
   const records = input.records ?? [];
   return {
@@ -271,6 +293,7 @@ function baseDesiredState(input: {
 
 export function createBlankDatabaseDesiredState(input: {
   name: string;
+  key?: string;
   folder?: string;
 }): DatabaseDesiredStateDraftInput {
   return baseDesiredState({

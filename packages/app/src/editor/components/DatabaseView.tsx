@@ -72,7 +72,7 @@ import {
   createDatabaseTablePasteDesiredState,
   databasePropertyKeyFromName,
 } from '@/lib/database-cell-mutation';
-import { createBlankDatabaseDesiredState } from '@/lib/database-creation';
+import { createBlankDatabaseDesiredState, createNotionDatabaseKey } from '@/lib/database-creation';
 import {
   readDatabaseLinkedView,
   rememberDatabaseLinkedView,
@@ -375,13 +375,18 @@ function InlineDatabaseCreationDialog({
   const [name, setName] = useState('');
   const [status, setStatus] = useState<'idle' | 'creating'>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [inlineDatabaseKey] = useState(() => createNotionDatabaseKey());
   const autoStartRef = useRef(false);
-  const mutationControllerRef = useRef<AbortController | null>(null);
+  const mutationRequestRef = useRef<{
+    controller: AbortController;
+    abortScheduled: boolean;
+  } | null>(null);
 
   const submit = () => {
     if (status !== 'idle') return;
     const desiredState: DatabaseDesiredStateDraftInput = createBlankDatabaseDesiredState({
       name: name.trim() || 'Untitled database',
+      ...(autoStart ? { key: inlineDatabaseKey } : {}),
     });
     const policy = {
       operation: 'blank-database-create' as const,
@@ -389,7 +394,8 @@ function InlineDatabaseCreationDialog({
       principalId: 'user:local',
     };
     const controller = new AbortController();
-    mutationControllerRef.current = controller;
+    const request = { controller, abortScheduled: false };
+    mutationRequestRef.current = request;
     setStatus('creating');
     setError(null);
     void executeDatabaseUiMutation(
@@ -407,7 +413,7 @@ function InlineDatabaseCreationDialog({
     )
       .then((outcome) => {
         if (controller.signal.aborted) return;
-        if (outcome.status !== 'committed') {
+        if (outcome.status !== 'committed' && outcome.status !== 'converged') {
           setError('The inline database creation plan was not committed');
           return;
         }
@@ -427,7 +433,7 @@ function InlineDatabaseCreationDialog({
         setError(cause instanceof Error ? cause.message : 'Unable to create the inline database');
       })
       .finally(() => {
-        if (mutationControllerRef.current === controller) mutationControllerRef.current = null;
+        if (mutationRequestRef.current === request) mutationRequestRef.current = null;
         if (!controller.signal.aborted) setStatus('idle');
       });
   };
@@ -444,7 +450,23 @@ function InlineDatabaseCreationDialog({
     }
   }, [autoStart, open, status]);
 
-  useEffect(() => () => mutationControllerRef.current?.abort(), []);
+  useEffect(() => {
+    const existingRequest = mutationRequestRef.current;
+    if (existingRequest) existingRequest.abortScheduled = false;
+    return () => {
+      const request = mutationRequestRef.current;
+      if (!request) return;
+      // React StrictMode runs effect cleanup/setup synchronously as a probe.
+      // Defer abort so the replay can keep the same in-flight creation alive;
+      // a real unmount still aborts the request on the next microtask.
+      request.abortScheduled = true;
+      queueMicrotask(() => {
+        if (!request.abortScheduled || mutationRequestRef.current !== request) return;
+        request.controller.abort();
+        mutationRequestRef.current = null;
+      });
+    };
+  }, []);
 
   if (!open) return null;
 

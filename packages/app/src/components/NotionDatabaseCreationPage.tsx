@@ -2,7 +2,7 @@ import { Database, Loader2, Plus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { createBlankDatabaseDesiredState } from '@/lib/database-creation';
+import { createBlankDatabaseDesiredState, createNotionDatabaseKey } from '@/lib/database-creation';
 import { executeDatabaseUiMutation } from '@/lib/database-mutation-client';
 import { databaseUiMutationReviewMode } from '@/lib/database-mutation-policy';
 
@@ -64,7 +64,10 @@ export function NotionDatabaseCreationPage({
     const request = { controller, abortScheduled: false };
     creationRequestRef.current = request;
 
-    const desiredState = createBlankDatabaseDesiredState({ name: 'Untitled database' });
+    const desiredState = createBlankDatabaseDesiredState({
+      name: 'Untitled database',
+      key: createNotionDatabaseKey(),
+    });
     const policy = {
       operation: 'blank-database-create' as const,
       actor: 'human' as const,

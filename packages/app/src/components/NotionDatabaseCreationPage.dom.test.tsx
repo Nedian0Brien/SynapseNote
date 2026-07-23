@@ -51,6 +51,13 @@ describe('NotionDatabaseCreationPage', () => {
         viewId: 'view_notion_blank',
       }),
     );
+    expect(
+      (
+        createMutation.mock.calls[0]?.[0] as
+          | { desiredState?: { database?: { key?: string } } }
+          | undefined
+      )?.desiredState?.database?.key,
+    ).toMatch(/^untitled_database_[a-z0-9_]+$/);
     expect(createMutation).toHaveBeenCalledTimes(1);
   });
 

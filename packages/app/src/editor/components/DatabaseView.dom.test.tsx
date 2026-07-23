@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { StrictMode } from 'react';
 import { DatabaseView } from './DatabaseView';
 import { JsxComponentHostProvider } from './jsx-host-context';
 
@@ -2171,10 +2172,12 @@ describe('DatabaseView', () => {
       sources: [inlineSource],
       views: [inlineView],
     };
+    const createDraftBodies: Array<Record<string, unknown>> = [];
     globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = String(input);
       const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : {};
       if (path === '/api/databases/plan' && body.action === 'create_draft') {
+        createDraftBodies.push(body);
         return Response.json({
           action: 'create_draft',
           draft: {
@@ -2198,7 +2201,7 @@ describe('DatabaseView', () => {
             hash,
             snapshotRevision: hash,
             committable: true,
-            requiresCommit: true,
+            requiresCommit: false,
             conflicts: [],
             approvals: [],
             diff: { manifests: [], records: [], templates: [], policy: {} },
@@ -2254,9 +2257,11 @@ describe('DatabaseView', () => {
     }) as typeof fetch;
 
     render(
-      <JsxComponentHostProvider value={{ editor, getPos: () => 0, addChild: null }}>
-        <DatabaseView create="blank" mode="inline" />
-      </JsxComponentHostProvider>,
+      <StrictMode>
+        <JsxComponentHostProvider value={{ editor, getPos: () => 0, addChild: null }}>
+          <DatabaseView create="blank" mode="inline" />
+        </JsxComponentHostProvider>
+      </StrictMode>,
     );
 
     expect(screen.queryByText('Choose a database view')).toBeNull();
@@ -2278,6 +2283,10 @@ describe('DatabaseView', () => {
         mode: 'inline',
       }),
     );
+    expect(
+      (createDraftBodies[0]?.desiredState as { database?: { key?: string } } | undefined)?.database
+        ?.key,
+    ).toMatch(/^untitled_database_[a-z0-9_]+$/);
     expect(dispatched[0]?.props.create).toBeUndefined();
   });
 });

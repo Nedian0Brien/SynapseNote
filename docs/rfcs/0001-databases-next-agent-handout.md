@@ -78,6 +78,7 @@
 - Latest Notion canvas vocabulary changeset: `../../.changeset/notion-canvas-page-vocabulary.md`
 - Latest converged-creation changeset: `../../.changeset/notion-converged-creation.md`
 - Latest route-handoff changeset: `../../.changeset/notion-route-handoff.md`
+- Latest blank-identity/StrictMode changeset: `../../.changeset/notion-blank-database-identity.md`
 
 ## Objective and completion rule
 
@@ -2200,6 +2201,39 @@ Commit `93411d21 test: cover alternate view title actions` extends
 task` after creating and switching to a saved List view. Playwright discovery
 still lists 3 tests; the new assertion has not been executed without the
 Chromium runtime.
+
+### Notion blank-creation identity and lifecycle follow-up (2026-07-23)
+
+The latest inline-first slice fixes two failures that were visible in the
+running Electron renderer:
+
+- `createNotionDatabaseKey()` keeps the visible `Untitled database` title while
+  giving each Notion-style blank creation a readable unique internal key. The
+  same key is used for the source folder, so a second inline or full-page blank
+  database cannot silently converge on the first one.
+- `InlineDatabaseCreationDialog` now defers abort during React StrictMode's
+  cleanup/setup probe. A real unmount still aborts the request, while a
+  development replay keeps the original draft/plan request alive instead of
+  leaving the shell in `Preparing table` forever. Converged plans are treated
+  as a successful handoff, matching the full-page creator.
+
+Focused evidence:
+
+- `packages/app/src/lib/database-creation.test.ts`: 10 tests / 65
+  expectations.
+- `packages/app/src/editor/components/DatabaseView.dom.test.tsx`: the
+  StrictMode inline blank-intent test passes 10 expectations.
+- `packages/app/src/components/NotionDatabaseCreationPage.dom.test.tsx`: 3
+  tests / 16 expectations, including the unique-key request assertion.
+- App typecheck and targeted Biome checks pass.
+- One direct Electron smoke after the fix reached the ready inline table with
+  `Untitled database · Table`, `New`, `Filters`, `View settings`, `Title`, and
+  `Press Enter to create page`; the temporary `Untitled.md` and generated
+  manifest were removed afterward.
+
+This is functional handoff evidence only. Do not close UX-1102/NUI-105 or the
+browser visual/usability gates from this smoke; the full Playwright journey and
+cross-host evidence are still outstanding.
 
 ## Work in progress: do this first
 

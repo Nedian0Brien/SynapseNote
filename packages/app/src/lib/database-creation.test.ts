@@ -5,6 +5,7 @@ import {
   createBlankDatabaseDesiredState,
   createDelimitedDatabaseDesiredState,
   createExistingFolderDatabaseDesiredState,
+  createNotionDatabaseKey,
   createTemplateDatabaseDesiredState,
   DATABASE_CREATION_TEMPLATES,
   summarizeDatabaseCreation,
@@ -25,6 +26,17 @@ describe('database creation desired state', () => {
       ],
       views: [{ key: 'table', sourceKey: 'project_tasks', layout: { type: 'table' } }],
       sampleRecords: [],
+    });
+  });
+
+  test('keeps the visible inline title while assigning a unique internal key', () => {
+    const key = createNotionDatabaseKey('test_42');
+    const desired = createBlankDatabaseDesiredState({ name: 'Untitled database', key });
+
+    expect(key).toBe('untitled_database_test_42');
+    expect(desired).toMatchObject({
+      database: { key, name: 'Untitled database' },
+      sources: [{ key, folder: key, name: 'Untitled database' }],
     });
   });
 

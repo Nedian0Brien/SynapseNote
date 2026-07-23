@@ -2200,9 +2200,13 @@ capability alone is insufficient.
       execution is pending the same browser runtime gate. A direct Electron
       renderer check also reached the ordinary document, opened `/database`,
       and rendered the inline creation shell after restoring the normal
-      document body slot (`DatabaseRecordPageChrome.dom.test.tsx`); the
-      auto-created plan remained in `Preparing table` in this local session,
-      so this is partial handoff evidence, not closure of the E2E gate.
+      document body slot (`DatabaseRecordPageChrome.dom.test.tsx`). The
+      follow-up StrictMode-safe request lifecycle and collision-safe internal
+      key now let the same Electron flow reach the ready table with `Table`,
+      `New`, `Filters`, `View settings`, `Title`, and the new-page affordance.
+      This is stronger functional handoff evidence, not closure of the E2E
+      gate: the Playwright run, visual comparison, and manual interaction
+      evidence remain open.
 - [ ] **UX-1103** E2E linked-view insertion for an existing database. The
       focused journey is implemented in
       `tests/stress/database-document-native-journeys.e2e.ts`; execution is

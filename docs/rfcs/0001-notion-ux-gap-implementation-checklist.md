@@ -141,6 +141,24 @@ command-palette, slash, normal New-page, web/Electron visual comparison,
 manual accessibility, five-user usability, and performance/release gates still
 need their own evidence.
 
+### Inline blank-creation lifecycle follow-up (2026-07-23)
+
+The direct Electron slash flow initially stayed in `Preparing table` even
+though the generated desired state was valid. The cause was React StrictMode:
+the inline dialog's development cleanup aborted the first request and the
+auto-start guard prevented a replay. The dialog now defers abort across the
+cleanup/setup probe, accepts a converged no-op handoff, and assigns each
+Notion-style blank creation a readable unique internal key while keeping the
+visible `Untitled database` title. The same key is applied to full-page blank
+creation so repeated New actions cannot silently reuse the first database.
+
+Focused app tests pass for the key helper, the StrictMode inline DOM journey,
+the full-page creation page, and app typecheck. A single post-fix Electron
+smoke reached the ready inline Table with the new-page row and view controls;
+the temporary document and manifest were removed. This evidence does not
+close NUI-105/NUI-701 or UX-1102 because browser E2E, cross-host visual
+comparison, and manual usability/accessibility gates remain open.
+
 ## Implemented in the current slice
 
 These items are code-backed and have focused DOM/type checks. They must not be
