@@ -164,6 +164,79 @@ describe('Select option lifecycle preview', () => {
     });
   });
 
+  test('migrates Multi-select arrays, defaults, and dependency checks by stable option ID', () => {
+    const multiSelectDefinition: DatabaseDefinition = {
+      ...structuredClone(definition),
+      sources: definition.sources.map((source) => ({
+        ...source,
+        properties: source.properties.map((property) =>
+          property.id === 'prop_status' && property.type === 'select'
+            ? {
+                ...property,
+                type: 'multi_select' as const,
+                semantics: {
+                  ...property.semantics,
+                  defaultValue: ['todo', 'done'],
+                },
+              }
+            : property,
+        ),
+      })),
+    };
+    const multiRecords = [
+      {
+        id: 'rec_multi',
+        revision: `sha256:${'c'.repeat(64)}`,
+        values: { prop_title: 'Multi', prop_status: ['opt_todo', 'opt_done'] },
+      },
+      {
+        id: 'rec_target_only',
+        revision: `sha256:${'d'.repeat(64)}`,
+        values: { prop_title: 'Already target', prop_status: ['opt_doing'] },
+      },
+    ];
+    const merged = previewDatabaseSelectOptionChange({
+      definition: multiSelectDefinition,
+      sourceId: 'ds_tasks',
+      propertyId: 'prop_status',
+      records: multiRecords,
+      change: { kind: 'merge', sourceOptionId: 'opt_todo', targetOptionId: 'opt_doing' },
+    });
+    expect(merged).toMatchObject({
+      canApply: true,
+      defaultChanged: true,
+      recordChanges: [
+        {
+          recordId: 'rec_multi',
+          beforeOptionIds: ['opt_todo', 'opt_done'],
+          afterOptionIds: ['opt_doing', 'opt_done'],
+        },
+      ],
+    });
+    const property = merged.definition.sources[0]?.properties[1];
+    expect(property?.type === 'multi_select' ? property.semantics.defaultValue : undefined).toEqual(
+      ['doing', 'done'],
+    );
+    expect(merged.definition.views[0]?.where).toEqual({
+      and: [
+        { propertyId: 'prop_status', operator: 'equals', value: 'opt_doing' },
+        { propertyId: 'prop_status', operator: 'not_equals', value: 'doing' },
+      ],
+    });
+
+    const deleted = previewDatabaseSelectOptionChange({
+      definition: multiSelectDefinition,
+      sourceId: 'ds_tasks',
+      propertyId: 'prop_status',
+      records: multiRecords,
+      change: { kind: 'delete', optionId: 'opt_todo' },
+    });
+    expect(deleted.canApply).toBe(false);
+    expect(deleted.conflicts).toContainEqual(
+      expect.objectContaining({ code: 'delete_in_use', recordIds: ['rec_multi'] }),
+    );
+  });
+
   test('blocks deletion while records, defaults, views, or the last option depend on it', () => {
     const preview = previewDatabaseSelectOptionChange({
       definition,

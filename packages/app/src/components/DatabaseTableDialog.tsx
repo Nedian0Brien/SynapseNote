@@ -3,7 +3,6 @@ import type {
   DatabaseCalculationFunction,
   DatabaseDateValue,
   DatabaseDefinition,
-  DatabaseOption,
   DatabaseProperty,
   DatabasePropertyType,
   DatabaseQueryResult,
@@ -376,13 +375,10 @@ function databaseTableAggregate(
 }
 
 type LoadStatus = 'idle' | 'loading' | 'success' | 'error';
-type DatabaseSelectProperty = DatabaseProperty & {
-  type: 'select';
-  options: DatabaseOption[];
-};
+type DatabaseSelectProperty = Extract<DatabaseProperty, { type: 'select' | 'multi_select' }>;
 
 function isDatabaseSelectProperty(property: DatabaseProperty): property is DatabaseSelectProperty {
-  return property.type === 'select';
+  return property.type === 'select' || property.type === 'multi_select';
 }
 
 const DATABASE_EXPORT_RECORD_LIMIT = 10_000;

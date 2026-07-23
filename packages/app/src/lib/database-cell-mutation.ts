@@ -644,11 +644,15 @@ export function createDatabaseSelectOptionChangeDesiredState(input: {
   preview: DatabaseSelectOptionPreview;
   desiredState: DatabaseDesiredStateDraftInput;
 } {
-  if (input.property.type !== 'select') {
-    throw new Error('Select option lifecycle changes require a Select property');
+  if (input.property.type !== 'select' && input.property.type !== 'multi_select') {
+    throw new Error('Option lifecycle changes require a Select or Multi-select property');
   }
-  if (!input.source.properties.some((property) => property.id === input.property.id)) {
-    throw new Error('The Select property is outside the selected source');
+  if (
+    !input.source.properties.some(
+      (property) => property.id === input.property.id && property.type === input.property.type,
+    )
+  ) {
+    throw new Error('The option property is outside the selected source');
   }
   if ((input.change.kind === 'merge' || input.change.kind === 'delete') && !input.recordsComplete) {
     throw new Error('Merge and delete require a complete source snapshot');
@@ -667,6 +671,11 @@ export function createDatabaseSelectOptionChangeDesiredState(input: {
     if (!change.expectedRevision) {
       throw new Error(`Record ${change.recordId} cannot be migrated without an exact revision`);
     }
+    const nextValue =
+      change.afterOptionIds !== undefined ? [...change.afterOptionIds] : change.afterOptionId;
+    if (nextValue === undefined) {
+      throw new Error(`Record ${change.recordId} has no option migration value`);
+    }
     return {
       id: change.recordId,
       expectedRevision: change.expectedRevision,
@@ -675,7 +684,7 @@ export function createDatabaseSelectOptionChangeDesiredState(input: {
         {
           op: 'set' as const,
           propertyKey: input.property.key,
-          value: change.afterOptionId,
+          value: nextValue,
         },
       ],
     };

@@ -1000,6 +1000,42 @@ describe('DatabaseTableDialog', () => {
     );
   });
 
+  test('exposes Multi-select option configuration from the property header menu', async () => {
+    const onConfigureSelectProperty = mock(() => {});
+    const user = userEvent.setup();
+    const multiSelectSource = {
+      ...source,
+      properties: source.properties.map((property) =>
+        property.id === 'prop_status' && property.type === 'select'
+          ? { ...property, type: 'multi_select' as const }
+          : property,
+      ),
+    };
+    const multiSelectResult = {
+      ...queryResult(),
+      records: queryResult().records.map((record) => ({
+        ...record,
+        values: { ...record.values, prop_status: ['opt_active'] },
+      })),
+    };
+    render(
+      <DatabaseTable
+        databaseId={database.id}
+        source={multiSelectSource}
+        result={multiSelectResult}
+        notionSurface
+        onConfigureSelectProperty={onConfigureSelectProperty}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Property options for Status' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Configure options' }));
+
+    expect(onConfigureSelectProperty).toHaveBeenCalledWith(
+      multiSelectSource.properties.find((property) => property.id === 'prop_status'),
+    );
+  });
+
   test('renders first-match row colors and property-specific overrides with inspectable metadata', () => {
     render(
       <DatabaseTable

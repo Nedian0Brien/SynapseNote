@@ -1489,4 +1489,72 @@ describe('database cell mutation compiler', () => {
       }),
     ).toThrow('complete source snapshot');
   });
+
+  test('compiles Multi-select option merges as array-valued exact record migrations', () => {
+    const source = database.sources[0];
+    const property = source?.properties.find((candidate) => candidate.id === 'prop_tags');
+    if (!source || !property || property.type !== 'multi_select') {
+      throw new Error('invalid multi-select fixture');
+    }
+    const multiDatabase: DatabaseDefinition = {
+      ...database,
+      sources: [
+        {
+          ...source,
+          properties: source.properties.map((candidate) =>
+            candidate.id === property.id
+              ? {
+                  ...candidate,
+                  semantics: {
+                    ...candidate.semantics,
+                    defaultValue: ['red'],
+                  },
+                }
+              : candidate,
+          ),
+        },
+      ],
+    };
+    const multiSource = multiDatabase.sources[0];
+    const multiProperty = multiSource?.properties.find((candidate) => candidate.id === property.id);
+    if (!multiSource || !multiProperty || multiProperty.type !== 'multi_select') {
+      throw new Error('invalid multi-select migrated fixture');
+    }
+    const result = createDatabaseSelectOptionChangeDesiredState({
+      database: multiDatabase,
+      source: multiSource,
+      property: multiProperty,
+      records: [
+        {
+          id: 'rec_tags',
+          path: 'tasks/tags.md',
+          revision: `sha256:${'e'.repeat(64)}`,
+          values: { prop_title: 'Tagged', prop_tags: ['opt_red', 'opt_blue'] },
+        },
+      ],
+      recordsComplete: true,
+      change: { kind: 'merge', sourceOptionId: 'opt_red', targetOptionId: 'opt_blue' },
+    });
+    expect(result.preview.recordChanges).toEqual([
+      {
+        recordId: 'rec_tags',
+        expectedRevision: `sha256:${'e'.repeat(64)}`,
+        beforeOptionIds: ['opt_red', 'opt_blue'],
+        afterOptionIds: ['opt_blue'],
+      },
+    ]);
+    expect(result.desiredState.recordMutations).toEqual([
+      {
+        id: 'rec_tags',
+        expectedRevision: `sha256:${'e'.repeat(64)}`,
+        sourceKey: 'tasks',
+        operations: [{ op: 'set', propertyKey: 'tags', value: ['opt_blue'] }],
+      },
+    ]);
+    expect(DatabaseDesiredStateDraftSchema.safeParse(result.desiredState).success).toBe(true);
+    const mergedProperty = result.desiredState.sources[0]?.properties.find(
+      (candidate) => candidate.id === property.id,
+    );
+    expect(mergedProperty?.semantics.defaultValue).toEqual(['blue']);
+  });
 });

@@ -1,8 +1,7 @@
 import type { DatabaseValue } from './record.ts';
 import type { DatabaseDefinition, DatabaseOption, DatabaseProperty } from './schema.ts';
 
-type OptionProperty = Extract<DatabaseProperty, { options: DatabaseOption[] }>;
-type SelectProperty = Omit<OptionProperty, 'type'> & { type: 'select' };
+type OptionProperty = Extract<DatabaseProperty, { type: 'select' | 'multi_select' }>;
 
 export type DatabaseSelectOptionChange =
   | { kind: 'rename'; optionId: string; name: string }
@@ -21,8 +20,12 @@ export interface DatabaseSelectOptionRecord {
 export interface DatabaseSelectOptionRecordChange {
   recordId: string;
   expectedRevision: string | null;
-  beforeOptionId: string;
-  afterOptionId: string;
+  /** Populated for a single-valued Select property. */
+  beforeOptionId?: string;
+  afterOptionId?: string;
+  /** Populated for an array-valued Multi-select property. */
+  beforeOptionIds?: readonly string[];
+  afterOptionIds?: readonly string[];
 }
 
 export interface DatabaseSelectOptionConflict {
@@ -50,18 +53,20 @@ function requireSelectProperty(
   definition: DatabaseDefinition,
   sourceId: string,
   propertyId: string,
-): { sourceIndex: number; propertyIndex: number; property: SelectProperty } {
+): { sourceIndex: number; propertyIndex: number; property: OptionProperty } {
   const sourceIndex = definition.sources.findIndex((source) => source.id === sourceId);
   const source = definition.sources[sourceIndex];
   if (!source) throw new Error(`Unknown database source "${sourceId}"`);
   const propertyIndex = source.properties.findIndex((property) => property.id === propertyId);
   const property = source.properties[propertyIndex];
   if (!property) throw new Error(`Unknown database property "${propertyId}"`);
-  if (property.type !== 'select') throw new Error(`Property "${propertyId}" is not Select`);
-  return { sourceIndex, propertyIndex, property: property as SelectProperty };
+  if (property.type !== 'select' && property.type !== 'multi_select') {
+    throw new Error(`Property "${propertyId}" is not Select or Multi-select`);
+  }
+  return { sourceIndex, propertyIndex, property };
 }
 
-function requireOption(property: SelectProperty, optionId: string): DatabaseOption {
+function requireOption(property: OptionProperty, optionId: string): DatabaseOption {
   const option = property.options.find((candidate) => candidate.id === optionId);
   if (!option) throw new Error(`Unknown Select option "${optionId}"`);
   return option;
@@ -96,6 +101,60 @@ function rewriteOptionReference(
   return rewriteExact(rewriteExact(value, source.id, target.id), source.key, target.key);
 }
 
+function canonicalOptionIds(value: unknown, property: OptionProperty): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    if (typeof entry !== 'string') return [];
+    const option = property.options.find(
+      (candidate) => candidate.id === entry || candidate.key === entry,
+    );
+    return option ? [option.id] : [];
+  });
+}
+
+function mergeMultiSelectValue(
+  value: unknown,
+  property: OptionProperty,
+  source: DatabaseOption,
+  target: DatabaseOption,
+): string[] {
+  const result: string[] = [];
+  for (const optionId of canonicalOptionIds(value, property)) {
+    const nextId = optionId === source.id ? target.id : optionId;
+    if (!result.includes(nextId)) result.push(nextId);
+  }
+  return result;
+}
+
+function defaultReferencesOption(
+  value: unknown,
+  property: OptionProperty,
+  option: DatabaseOption,
+): boolean {
+  if (property.type === 'multi_select') {
+    return Array.isArray(value) && value.some((entry) => entry === option.key);
+  }
+  return value === option.key;
+}
+
+function rewriteDefaultOptionReference(
+  value: unknown,
+  property: OptionProperty,
+  source: DatabaseOption,
+  target: DatabaseOption,
+): string | string[] | unknown {
+  if (property.type === 'multi_select' && Array.isArray(value)) {
+    const result: string[] = [];
+    for (const entry of value) {
+      if (typeof entry !== 'string') continue;
+      const next = entry === source.key ? target.key : entry;
+      if (!result.includes(next)) result.push(next);
+    }
+    return result;
+  }
+  return value === source.key ? target.key : value;
+}
+
 function containsOptionReference(
   value: unknown,
   option: Pick<DatabaseOption, 'id' | 'key'>,
@@ -128,10 +187,14 @@ export function previewDatabaseSelectOptionChange(input: {
   } = requireSelectProperty(input.definition, input.sourceId, input.propertyId);
   const nextSource = next.sources[sourceIndex];
   const nextPropertyCandidate = nextSource?.properties[propertyIndex];
-  if (!nextSource || !nextPropertyCandidate || nextPropertyCandidate.type !== 'select') {
+  if (
+    !nextSource ||
+    !nextPropertyCandidate ||
+    (nextPropertyCandidate.type !== 'select' && nextPropertyCandidate.type !== 'multi_select')
+  ) {
     throw new Error('Select option preview could not clone the target property');
   }
-  const nextProperty = nextPropertyCandidate as SelectProperty;
+  const nextProperty = nextPropertyCandidate;
   const conflicts: DatabaseSelectOptionConflict[] = [];
   const recordChanges: DatabaseSelectOptionRecordChange[] = [];
   const affectedViewIds: string[] = [];
@@ -165,21 +228,41 @@ export function previewDatabaseSelectOptionChange(input: {
       });
     }
     for (const record of input.records) {
-      if (record.values[input.propertyId] !== sourceOption.id) continue;
-      recordChanges.push({
-        recordId: record.id,
-        expectedRevision: record.revision,
-        beforeOptionId: sourceOption.id,
-        afterOptionId: targetOption.id,
-      });
+      const recordValue = record.values[input.propertyId];
+      if (!containsOptionReference(recordValue, sourceOption)) continue;
+      if (currentProperty.type === 'multi_select') {
+        recordChanges.push({
+          recordId: record.id,
+          expectedRevision: record.revision,
+          beforeOptionIds: canonicalOptionIds(recordValue, currentProperty),
+          afterOptionIds: mergeMultiSelectValue(
+            recordValue,
+            currentProperty,
+            sourceOption,
+            targetOption,
+          ),
+        });
+      } else {
+        recordChanges.push({
+          recordId: record.id,
+          expectedRevision: record.revision,
+          beforeOptionId: sourceOption.id,
+          afterOptionId: targetOption.id,
+        });
+      }
     }
     for (const [index, view] of next.views.entries()) {
       if (!containsOptionReference(view, sourceOption)) continue;
       next.views[index] = rewriteOptionReference(view, sourceOption, targetOption) as typeof view;
       affectedViewIds.push(view.id);
     }
-    if (nextProperty.semantics?.defaultValue === sourceOption.key) {
-      nextProperty.semantics.defaultValue = targetOption.key;
+    if (defaultReferencesOption(nextProperty.semantics?.defaultValue, nextProperty, sourceOption)) {
+      nextProperty.semantics.defaultValue = rewriteDefaultOptionReference(
+        nextProperty.semantics.defaultValue,
+        nextProperty,
+        sourceOption,
+        targetOption,
+      ) as typeof nextProperty.semantics.defaultValue;
       defaultChanged = true;
     }
     nextProperty.options = nextProperty.options.filter((option) => option.id !== sourceOption.id);
@@ -209,7 +292,7 @@ export function previewDatabaseSelectOptionChange(input: {
       else delete nextOption.archived;
     } else {
       const recordIds = input.records
-        .filter((record) => record.values[input.propertyId] === option.id)
+        .filter((record) => containsOptionReference(record.values[input.propertyId], option))
         .map((record) => record.id)
         .sort();
       const viewIds = next.views
@@ -223,7 +306,7 @@ export function previewDatabaseSelectOptionChange(input: {
           recordIds,
         });
       }
-      if (nextProperty.semantics?.defaultValue === option.key) {
+      if (defaultReferencesOption(nextProperty.semantics?.defaultValue, nextProperty, option)) {
         conflicts.push({
           code: 'delete_default_in_use',
           message: `Select option "${option.name}" is the property default`,
