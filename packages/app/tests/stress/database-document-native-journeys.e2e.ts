@@ -87,7 +87,14 @@ test.describe('document-native database browser journeys', () => {
 
   test('New file → Database keeps the page-first table experience', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('button', { name: 'New file', exact: true }).click();
+    await page.locator('body').click({ position: { x: 5, y: 5 } });
+    await page.waitForFunction(
+      () => document.activeElement === null || document.activeElement === document.body,
+      null,
+      { timeout: 1_000 },
+    );
+    const modKey = process.platform === 'darwin' ? 'Meta' : 'Control';
+    await page.keyboard.press(`${modKey}+Alt+KeyN`);
 
     const newFile = page.getByRole('dialog', { name: 'New file' });
     await expect(newFile).toBeVisible({ timeout: 5_000 });
