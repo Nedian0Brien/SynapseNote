@@ -6,6 +6,7 @@ import type {
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
   DatabaseContextInspectorBody,
+  estimateContextPreviewTokens,
   fetchContextInspection,
   fetchContextInspectionList,
   projectContextPackForProperties,
@@ -123,6 +124,13 @@ function inspection(): DatabaseContextInspection {
 }
 
 describe('DatabaseContextInspectorDialog', () => {
+  test('estimates selected previews with the captured pack tokenizer', () => {
+    expect(estimateContextPreviewTokens('abcd', 'utf8_bytes_div3')).toBe(2);
+    expect(estimateContextPreviewTokens('abcd', 'utf8_bytes_div2')).toBe(2);
+    expect(estimateContextPreviewTokens('abcde', 'utf8_bytes_div3')).toBe(2);
+    expect(estimateContextPreviewTokens('abcde', 'utf8_bytes_div2')).toBe(3);
+  });
+
   test('renders exact pack, tokens, redactions, omissions, freshness, and truncation', () => {
     const selected = inspection();
     const html = renderToStaticMarkup(

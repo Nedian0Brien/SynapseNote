@@ -170,6 +170,14 @@ function scopePropertyCount(scope: DatabaseContextInspectionScope | undefined): 
 
 type ContextPackProperty = DatabaseContextPack['schema']['properties'][number];
 
+export function estimateContextPreviewTokens(
+  value: string,
+  tokenizer: DatabaseContextInspection['tokenCount']['tokenizer'],
+): number {
+  const divisor = tokenizer === 'utf8_bytes_div2' ? 2 : 3;
+  return Math.ceil(new TextEncoder().encode(value).byteLength / divisor);
+}
+
 function projectPropertyMap<T>(
   value: Readonly<Record<string, Readonly<Record<string, T>>>> | undefined,
   propertyIds: ReadonlySet<string>,
@@ -287,8 +295,10 @@ function ContextFieldControls({
 
   const projectedPack = projectContextPackForProperties(selected.exactPack, selectedPropertyIds);
   const projectedJson = JSON.stringify(projectedPack, null, 2);
-  const previewBytes = new TextEncoder().encode(projectedJson);
-  const estimatedPreviewTokens = Math.ceil(previewBytes.byteLength / 3);
+  const estimatedPreviewTokens = estimateContextPreviewTokens(
+    projectedJson,
+    selected.tokenCount.tokenizer,
+  );
   const selectedSet = new Set(selectedPropertyIds);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
   const selectAll = (): void =>
