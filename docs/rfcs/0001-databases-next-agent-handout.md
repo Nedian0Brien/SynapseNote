@@ -119,6 +119,25 @@ server suite takes roughly ten minutes and should be avoided during iteration;
 run individual server test files with `--conditions development`, then reserve
 the repository-wide check for final release readiness.
 
+### 2026-07-23 bounded system-Chrome document-native run
+
+One focused Playwright run used the installed system Chrome (headless,
+1280x720, one worker, no retries) against the running IPv4 app. All three
+document-native cases passed in **45.9s**:
+
+- sidebar `New database` → editable Table → first page creation;
+- slash-menu `/database` inline creation → first row/title → canonical handoff
+  → browser Back;
+- linked view insertion → shared row → record peek/full-page route → browser
+  return.
+
+This is supporting web evidence only. It does not close the visual baseline,
+compact-width, accessibility/manual, NewItemDialog-specific, Electron,
+agent-policy, or full mutation-matrix gates. The run emitted non-blocking
+diagnostics for the existing frozen-table-header lookup, missing dialog
+description metadata, and React `flushSync` lifecycle warnings; preserve those
+as follow-up quality work rather than treating them as journey failures.
+
 ## Important product correction (2026-07-23)
 
 The user has explicitly rejected a DBMS/administration-first experience. The

@@ -100,6 +100,12 @@ the variant to the attachment metadata.
 - The existing primary Playwright journey file and accessibility suite define
   the runnable browser attachment points. A missing local Chromium binary is a
   runner limitation, not a reason to change the user-facing success criteria.
+- On 2026-07-23, one bounded system-Chrome run (1280x720, one worker, 45.9s)
+  passed the sidebar page-first, slash inline, and linked-view/record-
+  continuity document-native journeys. This is supporting web evidence only;
+  visual comparison, compact-width, accessibility/manual, and Electron
+  captures remain open. The run retained the existing frozen-header, dialog
+  description, and React lifecycle diagnostics for follow-up.
 
 Future UX-008/UX-009/UX-1101–UX-1114 attachments should link their records to
 this catalog instead of inventing one-off metrics or storing page content.
