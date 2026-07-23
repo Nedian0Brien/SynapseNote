@@ -402,6 +402,11 @@ treated as visual parity until a browser capture is attached.
   duplicate, inspect, archive/restore, and delete actions identify the visible
   record title while stable IDs remain the mutation and DOM identity. Focused
   `DatabaseBoard.dom.test.tsx` evidence passes 3 tests / 16 expectations.
+  Calendar, Timeline, List, Gallery, Feed, Chart, and Map now apply the same
+  title-first naming to their inline open, inspect, scheduling, resize, and
+  expand/collapse controls. The focused alternate-renderer suite passes 24
+  tests / 91 expectations, and the linked-view DatabaseView slice passes 6
+  tests / 62 expectations.
 - [x] **NUI-403** Use one canonical record-page component for title cell, peek,
   full page, comments, history, relation navigation, previous/next, and return
   to the originating view. Record opens now persist the originating database,

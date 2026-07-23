@@ -296,6 +296,14 @@ journey with landmark` updates the two linked-Board DOM journeys to assert the
 semantic region and active `Task board` view tab; they pass 2 tests / 17
 expectations. No E2E browser run was repeated.
 
+Commit `44c6d0a6 fix: name alternate view actions by record title` extends the
+same agent-facing naming to Calendar, Timeline, List, Gallery, Feed, Chart, and
+Map. Open/inspect, scheduling, resize, and hierarchy controls use the visible
+record title while stable IDs remain in callbacks and DOM markers. The focused
+alternate-renderer run passes 24 tests / 91 expectations; the linked-view
+DatabaseView slice passes 6 tests / 62 expectations. The changeset is
+`.changeset/inline-alternate-record-labels.md`; no E2E browser run was repeated.
+
 ## Current status
 
 - Numbered A-S items: **310/335 complete (92.5%)**.
@@ -750,6 +758,10 @@ do not reconstruct behavior solely from this summary.
   Focused title journeys cover Table, List, Board, Feed, Calendar, and
   Timeline; existing Gallery/Chart/Map/Dashboard/workspace journeys cover the
   remaining entry points.
+- Alternate-view action labels now use those same visible titles: Calendar and
+  Timeline open/inspect/move/resize, List expand/collapse/inspect, and
+  Gallery/Feed/Chart/Map open/inspect controls are all title-first. Stable IDs
+  remain the underlying identity and mutation scope.
 - `DatabaseRecordPageSurface` is now the shared structural component used by
   side peek, center peek, and the ordinary full-page editor. Sheet/Dialog and
   live Y.Doc bindings remain host adapters, while the record-page identity and

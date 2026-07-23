@@ -846,6 +846,15 @@ Gallery, Chart, Map, Dashboard, and full workspace journeys cover the remaining
 renderer entry points. The affected renderer suite passes 99 tests / 553
 expectations.
 
+The same title-first rule now covers action labels, not only title links, in
+the alternate inline renderers. Calendar and Timeline controls identify the
+record for open/inspect/move/resize actions; List names expand/collapse and
+inspect controls; Gallery, Feed, Chart, and Map name open/inspect controls.
+Stable record IDs remain in the DOM markers and callbacks. Focused evidence
+passes 24 tests / 91 expectations across the seven renderer suites and 6 tests
+/ 62 expectations in the linked DatabaseView journeys; no browser E2E rerun
+was needed.
+
 This closes UX-701 at the functional implementation/evidence layer. Shared
 record-page composition, breadcrumbs, body editing, and visual/cross-host
 proof remain open under UX-702 onward and the release gates.
