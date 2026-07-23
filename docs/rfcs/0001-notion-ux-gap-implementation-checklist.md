@@ -408,7 +408,8 @@ treated as visual parity until a browser capture is attached.
   tests / 91 expectations, and the linked-view DatabaseView slice passes 6
   tests / 62 expectations. Inline Table property links, copy controls, buttons,
   and edit affordances now use the same visible title context, while the
-  stable record ID remains the underlying scope.
+  stable record ID remains the underlying scope. `DatabaseTableDialog.dom.test.tsx`
+  covers the inline URL link/copy/edit labels directly (1 test / 3 expectations).
 - [x] **NUI-403** Use one canonical record-page component for title cell, peek,
   full page, comments, history, relation navigation, previous/next, and return
   to the originating view. Record opens now persist the originating database,

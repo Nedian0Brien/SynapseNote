@@ -766,7 +766,9 @@ do not reconstruct behavior solely from this summary.
   contract to inline Table property links, copy controls, buttons, and edit
   affordances. Full-page management keeps stable-ID labels; the inline
   DatabaseView journey passes after its title-based edit/selection selectors
-  were updated. Changeset: `.changeset/inline-cell-action-labels.md`.
+  were updated. `DatabaseTableDialog.dom.test.tsx` directly covers the inline
+  URL link/copy/edit labels (1 test / 3 expectations). Changeset:
+  `.changeset/inline-cell-action-labels.md`.
 - `DatabaseRecordPageSurface` is now the shared structural component used by
   side peek, center peek, and the ordinary full-page editor. Sheet/Dialog and
   live Y.Doc bindings remain host adapters, while the record-page identity and

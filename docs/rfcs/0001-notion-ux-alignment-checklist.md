@@ -856,6 +856,8 @@ passes 24 tests / 91 expectations across the seven renderer suites and 6 tests
 was needed. The primary inline Table also names property links, copy controls,
 buttons, and cell-edit affordances with the visible page title; full-page
 management retains stable-ID labels for compatibility.
+`DatabaseTableDialog.dom.test.tsx` also directly covers the inline URL
+link/copy/edit labels (1 test / 3 expectations).
 
 This closes UX-701 at the functional implementation/evidence layer. Shared
 record-page composition, breadcrumbs, body editing, and visual/cross-host
