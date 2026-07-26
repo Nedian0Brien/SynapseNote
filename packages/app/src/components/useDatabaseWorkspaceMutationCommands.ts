@@ -6,7 +6,7 @@ import type {
   ProjectedDatabaseRelationRecord,
 } from '@nedian0brien/synapsenote-core';
 import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-server';
-import { useEffect, useEffectEvent } from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 import { getBranchSnapshot } from '@/lib/current-branch-store';
 import { describeDatabase } from '@/lib/database-catalog-client';
 import {
@@ -44,6 +44,7 @@ import type { DatabaseWorkspaceControllerContext } from './database-workspace-co
 
 export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceControllerContext) {
   'use no memo';
+  const activeMutationRef = useRef(false);
   const {
     open,
     reviewResolver: reviewResolverRef,
@@ -117,6 +118,8 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
       onFailed?: () => void;
     } = {},
   ) => {
+    if (activeMutationRef.current) return;
+    activeMutationRef.current = true;
     const idempotencyKey = `${idempotencyPrefix}-${crypto.randomUUID()}`;
     setMutationError(null);
     setMutationConflict(null);
@@ -236,6 +239,17 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
             replan: () => runMutation(desiredState, idempotencyPrefix, failureMessage, options),
           });
         }
+        if (problem.kind === 'conflict' && !(cause instanceof DatabasePlanExecutionError)) {
+          // Planning can race a just-committed manifest refresh. There is no
+          // reviewed user change to resolve yet, so refresh the canonical
+          // snapshot quietly instead of flashing a stale-target error banner.
+          setMutationConflict(null);
+          setMutationError(null);
+          setSaveFeedback(null);
+          setRefresh((current: number) => current + 1);
+          options.onFailed?.();
+          return;
+        }
         const recordMutations = offlineQueueableRecordMutations(desiredState);
         if (problem.kind === 'offline' && selection && recordMutations) {
           try {
@@ -267,6 +281,9 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
         setSaveFeedback('failed');
         setMutationError(problem);
         options.onFailed?.();
+      })
+      .finally(() => {
+        activeMutationRef.current = false;
       });
   };
 
