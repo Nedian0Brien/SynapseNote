@@ -6,6 +6,47 @@ import { createDatabaseTestFixture } from './database-test-fixture';
 afterEach(cleanup);
 
 describe('database focused cell suite', () => {
+  test('opens the editor when the cell surface is clicked outside its value', () => {
+    const fixture = createDatabaseTestFixture();
+    render(
+      <DatabaseTable
+        source={fixture.source as never}
+        result={fixture.result as never}
+        notionSurface
+        onEdit={() => {}}
+      />,
+    );
+    const statusCell = document.querySelector<HTMLElement>(
+      '[data-database-cell-row="0"][data-property-id="status"]',
+    );
+    if (!statusCell) throw new Error('status cell was not rendered');
+
+    fireEvent.click(statusCell);
+
+    expect(screen.getByRole('combobox', { name: 'Edit Status' })).toBeTruthy();
+  });
+
+  test('keeps shift-click reserved for extending the cell selection', () => {
+    const fixture = createDatabaseTestFixture();
+    render(
+      <DatabaseTable
+        source={fixture.source as never}
+        result={fixture.result as never}
+        notionSurface
+        onEdit={() => {}}
+      />,
+    );
+    const statusCell = document.querySelector<HTMLElement>(
+      '[data-database-cell-row="0"][data-property-id="status"]',
+    );
+    if (!statusCell) throw new Error('status cell was not rendered');
+
+    fireEvent.click(statusCell, { shiftKey: true });
+
+    expect(screen.queryByRole('combobox', { name: 'Edit Status' })).toBeNull();
+    expect(statusCell.getAttribute('data-database-cell-selected')).toBe('true');
+  });
+
   test('opens an empty select editor from the document-native cell', () => {
     const fixture = createDatabaseTestFixture();
     const edits: unknown[] = [];

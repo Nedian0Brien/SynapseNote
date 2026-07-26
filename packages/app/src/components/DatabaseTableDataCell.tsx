@@ -2,6 +2,7 @@ import { useLingui } from '@lingui/react/macro';
 import type { DatabaseValue, ProjectedDatabaseRecord } from '@nedian0brien/synapsenote-core';
 import { projectDatabaseRichText } from '@nedian0brien/synapsenote-core';
 import { TableCell } from '@/components/ui/table';
+import { isDatabaseCellEditable } from '@/lib/database-cell-mutation';
 import type { DatabaseTableGeometry } from '@/lib/database-table-geometry';
 import { cn } from '@/lib/utils';
 import { DatabaseTableCellContent } from './DatabaseTableCellContent';
@@ -194,6 +195,12 @@ export function DatabaseTableDataCell({
         layout.wrap
           ? 'break-words whitespace-normal'
           : 'overflow-hidden truncate whitespace-nowrap',
+        onEdit &&
+          !mutationLocked &&
+          !ghostCreated &&
+          !proposed &&
+          isDatabaseCellEditable(property) &&
+          'cursor-pointer',
         propertyIndex === 0 && 'sticky left-0 z-10 bg-background font-medium',
         notionSurface && propertyIndex === 0 && 'relative pr-16',
         effectiveColorRule && DATABASE_CONDITIONAL_COLOR_CLASSES[effectiveColorRule.color],
@@ -279,6 +286,14 @@ export function DatabaseTableDataCell({
         setGridAnnouncement(
           `Row ${rowIndex + 1}, ${property.name}. ${selectedCount} cell${selectedCount === 1 ? '' : 's'} selected.`,
         );
+        const interactiveTarget =
+          event.target instanceof Element &&
+          event.target.closest(
+            'a, button, input, textarea, select, [contenteditable="true"], [role="button"], [role="checkbox"], [role="combobox"], [role="link"]',
+          );
+        if (!event.shiftKey && !cellEditing && !ghostCreated && !proposed && !interactiveTarget) {
+          beginEdit(record, property);
+        }
       }}
       onContextMenu={(event) => {
         event.preventDefault();
