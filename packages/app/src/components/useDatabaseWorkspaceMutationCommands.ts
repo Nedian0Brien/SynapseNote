@@ -6,7 +6,7 @@ import type {
   ProjectedDatabaseRelationRecord,
 } from '@nedian0brien/synapsenote-core';
 import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-server';
-import { useEffect, useEffectEvent } from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 import { getBranchSnapshot } from '@/lib/current-branch-store';
 import { describeDatabase } from '@/lib/database-catalog-client';
 import {
@@ -44,6 +44,8 @@ import type { DatabaseWorkspaceControllerContext } from './database-workspace-co
 
 export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceControllerContext) {
   'use no memo';
+  const activeMutationRef = useRef(false);
+  const optimisticMutationIdsRef = useRef(new Map<string, string>());
   const {
     open,
     reviewResolver: reviewResolverRef,
@@ -108,6 +110,7 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
       review?: 'required' | 'automatic';
       policy?: DatabaseUiMutationPolicyInput;
       optimisticCellKey?: string;
+      background?: boolean;
       presentation?: 'default' | 'silent';
       recordRefresh?: { databaseId: string; sourceId: string; recordId: string };
       onCommitted?: (
@@ -117,21 +120,43 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
       onFailed?: () => void;
     } = {},
   ) => {
+    const reviewMode = options.policy
+      ? databaseUiMutationReviewMode(options.policy)
+      : (options.review ?? 'required');
+    // Direct-safe cell writes keep their optimistic value interactive while
+    // planning and committing. Reviewed/schema mutations still own the global
+    // workspace lock because they can change the whole rendered surface.
+    const background = options.background === true && reviewMode === 'automatic';
+    if (!background && activeMutationRef.current) return;
+    if (!background) activeMutationRef.current = true;
     const idempotencyKey = `${idempotencyPrefix}-${crypto.randomUUID()}`;
-    setMutationError(null);
-    setMutationConflict(null);
-    setOfflineQueueMessage(null);
-    setSaveFeedback(null);
-    setMutationProgressVisible(options.presentation !== 'silent');
+    if (options.optimisticCellKey) {
+      optimisticMutationIdsRef.current.set(options.optimisticCellKey, idempotencyKey);
+    }
+    const clearOptimisticCell = () => {
+      const cellKey = options.optimisticCellKey;
+      if (!cellKey || optimisticMutationIdsRef.current.get(cellKey) !== idempotencyKey) return;
+      optimisticMutationIdsRef.current.delete(cellKey);
+      setOptimisticCellValues((current: ReadonlyMap<string, DatabaseValue | undefined>) => {
+        if (!current.has(cellKey)) return current;
+        const next = new Map(current);
+        next.delete(cellKey);
+        return next;
+      });
+    };
+    if (!background) {
+      setMutationError(null);
+      setMutationConflict(null);
+      setOfflineQueueMessage(null);
+      setSaveFeedback(null);
+      setMutationProgressVisible(options.presentation !== 'silent');
+      setMutationReviewMode(reviewMode);
+      setMutationStatus('planning');
+    }
     const localRecordStartedAt = options.recordRefresh ? Date.now() : null;
     if (options.recordRefresh && localRecordStartedAt !== null) {
       locallyHandledRecordIdsRef.current.set(options.recordRefresh.recordId, localRecordStartedAt);
     }
-    const reviewMode = options.policy
-      ? databaseUiMutationReviewMode(options.policy)
-      : (options.review ?? 'required');
-    setMutationReviewMode(reviewMode);
-    setMutationStatus('planning');
     void executeDatabaseMutation({
       desiredState,
       actor: { principalId: 'user:local' },
@@ -164,10 +189,10 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
           );
         }
         if (outcome.status === 'committed') {
-          if (options.presentation !== 'silent') setSaveFeedback('saved');
+          if (!background && options.presentation !== 'silent') setSaveFeedback('saved');
           setLastUndoToken(outcome.result.undoToken);
           setLastRedoToken(null);
-          setSelectedRecordIds(new Set());
+          if (!background) setSelectedRecordIds(new Set());
           const recordRefresh = options.recordRefresh;
           if (recordRefresh) {
             try {
@@ -204,37 +229,38 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
           }
           options.onCommitted?.(outcome);
         }
-        if (options.optimisticCellKey) {
-          setOptimisticCellValues((current: ReadonlyMap<string, DatabaseValue | undefined>) => {
-            if (!current.has(options.optimisticCellKey as string)) return current;
-            const next = new Map(current);
-            next.delete(options.optimisticCellKey as string);
-            return next;
-          });
+        clearOptimisticCell();
+        if (!background) {
+          setMutationStatus('idle');
+          setMutationProgressVisible(true);
         }
-        setMutationStatus('idle');
-        setMutationProgressVisible(true);
       })
       .catch(async (cause: unknown) => {
         if (options.recordRefresh) {
           locallyHandledRecordIdsRef.current.delete(options.recordRefresh.recordId);
         }
-        if (options.optimisticCellKey) {
-          setOptimisticCellValues((current: ReadonlyMap<string, DatabaseValue | undefined>) => {
-            if (!current.has(options.optimisticCellKey as string)) return current;
-            const next = new Map(current);
-            next.delete(options.optimisticCellKey as string);
-            return next;
-          });
+        clearOptimisticCell();
+        if (!background) {
+          setMutationStatus('idle');
+          setMutationProgressVisible(true);
         }
-        setMutationStatus('idle');
-        setMutationProgressVisible(true);
         const problem = classifyDatabaseUiProblem(cause, failureMessage);
         if (problem.kind === 'conflict' && cause instanceof DatabasePlanExecutionError) {
           setMutationConflict({
             plan: cause.plan,
             replan: () => runMutation(desiredState, idempotencyPrefix, failureMessage, options),
           });
+        }
+        if (problem.kind === 'conflict' && !(cause instanceof DatabasePlanExecutionError)) {
+          // Planning can race a just-committed manifest refresh. There is no
+          // reviewed user change to resolve yet, so refresh the canonical
+          // snapshot quietly instead of flashing a stale-target error banner.
+          setMutationConflict(null);
+          setMutationError(null);
+          setSaveFeedback(null);
+          setRefresh((current: number) => current + 1);
+          options.onFailed?.();
+          return;
         }
         const recordMutations = offlineQueueableRecordMutations(desiredState);
         if (problem.kind === 'offline' && selection && recordMutations) {
@@ -267,6 +293,9 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
         setSaveFeedback('failed');
         setMutationError(problem);
         options.onFailed?.();
+      })
+      .finally(() => {
+        if (!background) activeMutationRef.current = false;
       });
   };
 

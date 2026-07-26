@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { DatabaseTable } from './DatabaseTableDialog';
 
 const revision = `sha256:${'e'.repeat(64)}`;
@@ -59,6 +60,25 @@ function result(values: Record<string, unknown> = {}) {
 afterEach(cleanup);
 
 describe('database empty-cell editor matrix', () => {
+  test('dismisses an unchanged Select picker without emitting an edit', async () => {
+    const edits: unknown[] = [];
+    render(
+      <DatabaseTable
+        source={source as never}
+        result={result({ status: 'active' }) as never}
+        notionSurface
+        onEdit={(_record, _property, value) => edits.push(value)}
+      />,
+    );
+
+    fireEvent.click(screen.getByLabelText('Edit Status for page First task: Active'));
+    expect(screen.getByRole('combobox', { name: 'Edit Status' })).toBeTruthy();
+    await userEvent.click(document.body);
+
+    expect(edits).toEqual([]);
+    expect(screen.queryByRole('combobox', { name: 'Edit Status' })).toBeNull();
+  });
+
   test('opens, saves, and reopens empty text and number cells', () => {
     const edits: unknown[] = [];
     const view = render(
