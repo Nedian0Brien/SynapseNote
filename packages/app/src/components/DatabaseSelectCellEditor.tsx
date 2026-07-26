@@ -35,6 +35,7 @@ export function DatabaseSelectCellEditor({
   const listboxId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const finishedRef = useRef(false);
+  const initialDraftRef = useRef(draft);
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const [orderedOptionIds, setOrderedOptionIds] = useState(() =>
@@ -93,6 +94,14 @@ export function DatabaseSelectCellEditor({
     onCancel();
   };
 
+  const finishClose = () => {
+    if (draft === initialDraftRef.current) {
+      finishCancel();
+      return;
+    }
+    finishCommit(draft);
+  };
+
   const commitOption = (optionId: string) => {
     if (property.type === 'select') {
       finishCommit(optionId);
@@ -134,7 +143,7 @@ export function DatabaseSelectCellEditor({
     <Popover
       open
       onOpenChange={(open) => {
-        if (!open) finishCommit(draft);
+        if (!open) finishClose();
       }}
     >
       <PopoverAnchor asChild>
@@ -173,7 +182,7 @@ export function DatabaseSelectCellEditor({
         aria-label={`Edit ${property.name}`}
         data-database-select-picker={property.id}
         onOpenAutoFocus={(event) => event.preventDefault()}
-        onInteractOutside={() => finishCommit(draft)}
+        onInteractOutside={finishClose}
         onEscapeKeyDown={(event) => {
           event.preventDefault();
           finishCancel();

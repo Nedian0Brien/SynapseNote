@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { DatabaseSelectCellEditor } from './DatabaseSelectCellEditor';
 
@@ -74,6 +75,25 @@ function MultiSelectHarness({
 }
 
 describe('DatabaseSelectCellEditor', () => {
+  test('cancels an unchanged picker when it is dismissed outside', async () => {
+    const onCommit = mock(() => {});
+    const onCancel = mock(() => {});
+    render(
+      <DatabaseSelectCellEditor
+        property={selectProperty}
+        draft="opt_ready"
+        onDraftChange={() => {}}
+        onCommit={onCommit}
+        onCancel={onCancel}
+      />,
+    );
+
+    await userEvent.click(document.body);
+
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(onCommit).not.toHaveBeenCalled();
+  });
+
   test('filters options from the input and commits a single selection immediately', () => {
     const onCommit = mock(() => {});
     render(<SelectHarness onCommit={onCommit} />);
