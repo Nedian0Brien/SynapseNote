@@ -69,6 +69,45 @@ final result: passed
 
 ---
 
+# Full-page database record breadcrumb design QA
+
+## Visual truth and compared implementation
+
+- Source visual truth: user attachment `Screenshot 2026-07-27 at 4.10.34 AM.png`, cropped to the full-page record header at 447 × 57 pixels.
+- Browser-rendered implementation screenshot: temporary artifact `synapsenote-breadcrumb-full.png`, captured from the live app at a 973 × 946 pixel browser viewport.
+- Focused implementation evidence: temporary 447 × 44 crop `synapsenote-breadcrumb-focused.png`.
+- Combined comparison input: `synapsenote-breadcrumb-final-comparison.png`, with the 447 × 57 source and 447 × 44 implementation crop at native pixel size. No density normalization was applied.
+- State: dark theme, full-page database record named `asdf`, database and source both named `Untitled database`.
+
+## Findings and comparison history
+
+| Iteration | Severity | Finding | Resolution and post-fix evidence |
+| --- | --- | --- | --- |
+| 1 | P2 | The header rendered the equal database and source names as two adjacent `Untitled database` segments, creating a false hierarchy, and both ancestors were display-only. | Adjacent database/source labels are now compared case-insensitively after trimming and collapsed to one segment when equal. Explicit database breadcrumb segments render as canonical links. The combined comparison shows one ancestor, followed by the unchanged `asdf` current-page title and `MD` badge. |
+
+## Required fidelity surfaces
+
+- Fonts and typography: the existing 12 px muted breadcrumb, 13 px medium page title, and compact `MD` badge remain unchanged.
+- Spacing and layout rhythm: removing the duplicate segment shortens the hierarchy without changing the 44 px header row, separators, gaps, or title alignment.
+- Colors and visual tokens: link, hover, title, badge, border, and background use the existing foreground and muted semantic tokens.
+- Image and asset fidelity: no image asset was added or replaced; the existing Lucide breadcrumb separator remains unchanged.
+- Copy and content: the duplicate `Untitled database` label is removed. The remaining label, `asdf` title, and `MD` badge reflect the live record identity.
+
+## Interaction and final assessment
+
+- The live DOM exposes exactly one `Untitled database` link.
+- Clicking the link navigated to the remembered database, source, and view hash.
+- The current record title remains non-interactive, following the breadcrumb current-page convention.
+- The final record-page reload produced zero new error-level console entries.
+- Automated evidence: 27 focused breadcrumb, toolbar, and full-page record DOM tests passed.
+- P0 findings: none.
+- Unresolved P1 findings: none.
+- Unresolved P2 findings: none.
+
+final result: passed
+
+---
+
 # Select and Multi-select cell picker design QA
 
 ## Visual truth and compared implementation

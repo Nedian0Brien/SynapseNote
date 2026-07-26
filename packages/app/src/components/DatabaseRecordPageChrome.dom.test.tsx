@@ -1,12 +1,20 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test';
 import { HocuspocusProvider } from '@hocuspocus/provider';
-import { DatabaseDefinitionSchema } from '@nedian0brien/synapsenote-core';
+import {
+  DatabaseDefinitionSchema,
+  DatabaseRecordCommentsSchema,
+} from '@nedian0brien/synapsenote-core';
 import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-server';
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import { PropertyProvider } from '@/components/PropertyContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { DatabaseCatalogClientError } from '@/lib/database-catalog-client';
 import { DatabaseQueryClientError } from '@/lib/database-query-client';
+import { useDatabaseRecordHeader } from '@/lib/database-record-header';
+import type {
+  DatabaseCommentRequest,
+  DatabaseCommentSnapshot,
+} from '@/lib/database-comments-client';
 import { emitDatabaseChanged } from '@/lib/documents-events';
 import type { DatabaseRecordPageServices } from './DatabaseRecordPageChrome';
 import { DatabaseRecordPageChrome } from './DatabaseRecordPageChrome';
@@ -14,6 +22,11 @@ import { DatabaseRecordPageChrome } from './DatabaseRecordPageChrome';
 const DUMMY_WS = 'ws://localhost:1/collab';
 const hash = `sha256:${'a'.repeat(64)}`;
 const providers: HocuspocusProvider[] = [];
+
+function DatabaseRecordHeaderProbe({ docName }: { docName: string }) {
+  const header = useDatabaseRecordHeader(docName);
+  return <div data-testid="database-record-header-probe">{JSON.stringify(header)}</div>;
+}
 
 const database = DatabaseDefinitionSchema.parse({
   version: 1,
@@ -68,6 +81,12 @@ const database = DatabaseDefinitionSchema.parse({
 });
 const source = database.sources.at(0);
 if (!source) throw new Error('Expected the test database source');
+const emptyComments = DatabaseRecordCommentsSchema.parse({
+  version: 1,
+  databaseId: database.id,
+  recordId: 'rec_first',
+  threads: [],
+});
 const databaseWithMove = DatabaseDefinitionSchema.parse({
   ...database,
   sources: [
@@ -236,20 +255,31 @@ describe('DatabaseRecordPageChrome', () => {
       },
     };
     const recordProvider = provider();
+    const commentRequests: DatabaseCommentRequest[] = [];
+    const commentsRequest = async (
+      input: DatabaseCommentRequest,
+    ): Promise<DatabaseCommentSnapshot> => {
+      commentRequests.push(input);
+      return { revision: hash, document: emptyComments };
+    };
     const forceSync = mock(() => {});
     recordProvider.forceSync = forceSync;
     recordProvider.unsyncedChanges = 0;
     const view = render(
       <TooltipProvider>
         <PropertyProvider>
-          <DatabaseRecordPageChrome
-            provider={recordProvider}
-            docName="records/rec_first"
-            docExt=".md"
-            fallbackTitle="rec_first"
-            body={<div data-testid="record-body-editor">Editable record body</div>}
-            services={services}
-          />
+          <>
+            <DatabaseRecordPageChrome
+              provider={recordProvider}
+              docName="records/rec_first"
+              docExt=".md"
+              fallbackTitle="rec_first"
+              body={<div data-testid="record-body-editor">Editable record body</div>}
+              services={services}
+              commentsRequest={commentsRequest}
+            />
+            <DatabaseRecordHeaderProbe docName="records/rec_first" />
+          </>
         </PropertyProvider>
       </TooltipProvider>,
     );
@@ -264,16 +294,39 @@ describe('DatabaseRecordPageChrome', () => {
     expect(recordSurface?.getAttribute('data-database-id')).toBe('db_tasks');
     expect(recordSurface?.getAttribute('data-source-id')).toBe('ds_tasks');
     expect(recordSurface?.getAttribute('data-record-id')).toBe('rec_first');
-    expect(recordSurface?.getAttribute('data-database-machine-ids')).toBe('stable');
-    expect(recordSurface?.querySelector('[data-database-machine-ids]')).not.toBeNull();
-    expect(view.getByLabelText('Database breadcrumbs')).toBeDefined();
-    expect(view.getByRole('button', { name: 'Ask agent' })).toBeDefined();
-    expect(view.getByRole('link', { name: 'Tasks' }).getAttribute('href')).toBe(
-      '#database/db_tasks/ds_tasks',
+    expect(recordSurface?.hasAttribute('data-database-machine-ids')).toBe(false);
+    expect(recordSurface?.querySelector('[data-database-machine-ids]')).toBeNull();
+    expect(view.queryByLabelText('Database breadcrumbs')).toBeNull();
+    expect(view.queryByText('Advanced machine IDs')).toBeNull();
+    expect(
+      JSON.parse(view.getByTestId('database-record-header-probe').textContent ?? 'null'),
+    ).toEqual({
+      databaseName: 'Tasks',
+      databaseHref: '#database/db_tasks/ds_tasks',
+      sourceName: 'Tasks',
+      sourceHref: '#database/db_tasks/ds_tasks',
+      recordTitle: 'Canonical title',
+    });
+    const recordToolbar = view.container.querySelector<HTMLElement>(
+      '[data-database-record-toolbar]',
     );
+    expect(recordToolbar).not.toBeNull();
+    expect(recordToolbar?.classList.contains('flex-wrap')).toBe(false);
+    expect(recordToolbar?.parentElement?.classList.contains('editor-content-aligned')).toBe(true);
+    expect(view.getByRole('button', { name: 'Ask agent' })).toBeDefined();
+    const commentComposer = await view.findByRole('textbox', { name: 'Add comment' });
+    const commentsSection = commentComposer.closest('[data-database-peek-comments]');
+    expect(commentsSection).not.toBeNull();
+    expect(view.queryByRole('dialog', { name: 'Comments' })).toBeNull();
+    expect(commentRequests.at(0)).toMatchObject({ action: 'read', recordId: 'rec_first' });
+    expect(view.queryByRole('button', { name: 'Comments' })).toBeNull();
     const bodyHost = view.getByTestId('record-body-editor');
     const bodySurface = bodyHost.closest('[data-database-record-body]');
     expect(bodySurface?.getAttribute('data-record-body-position')).toBe('below-properties');
+    expect(
+      (commentsSection?.compareDocumentPosition(bodySurface ?? bodyHost) ?? 0) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(
       view
         .getAllByTestId('property-row')
@@ -318,14 +371,24 @@ describe('DatabaseRecordPageChrome', () => {
     expect(view.queryByText('Hidden value')).toBeNull();
     expect(view.container.querySelector('[data-full-width-content="true"]')).not.toBeNull();
     expect(view.queryByText('_sn')).toBeNull();
-    expect(view.getByRole('button', { name: 'Comments' })).toBeDefined();
-    expect(view.getByRole('button', { name: 'Page history' })).toBeDefined();
-    expect(view.getByRole('button', { name: 'Permissions' })).toBeDefined();
-    expect(view.getByRole('button', { name: 'Customize appearance' })).toBeDefined();
-    expect(view.getByRole('button', { name: 'Customize this page' })).toBeDefined();
-    expect(view.getByRole('button', { name: 'Customize layout' })).toBeDefined();
+    expect(view.queryByRole('button', { name: 'Comments' })).toBeNull();
+    expect(view.queryByRole('button', { name: 'Page history' })).toBeNull();
+    expect(view.queryByRole('button', { name: 'Permissions' })).toBeNull();
+    expect(view.queryByRole('button', { name: 'Customize appearance' })).toBeNull();
+    expect(view.queryByRole('button', { name: 'Customize this page' })).toBeNull();
+    expect(view.queryByRole('button', { name: 'Customize layout' })).toBeNull();
 
-    fireEvent.click(view.getByRole('button', { name: 'Customize appearance' }));
+    const openPageMenu = () => {
+      const trigger = view.getByRole('button', { name: 'More page actions' });
+      fireEvent.pointerDown(trigger, { button: 0 });
+      fireEvent.click(trigger);
+    };
+    openPageMenu();
+    expect(view.getByRole('menuitem', { name: 'Page history' })).toBeDefined();
+    expect(view.getByRole('menuitem', { name: 'Permissions' })).toBeDefined();
+    expect(view.getByRole('menuitem', { name: 'Customize this page' })).toBeDefined();
+    expect(view.getByRole('menuitem', { name: 'Customize layout' })).toBeDefined();
+    fireEvent.click(view.getByRole('menuitem', { name: 'Customize appearance' }));
     expect(view.getByRole('heading', { name: 'Customize record page' })).toBeDefined();
     fireEvent.change(view.getByRole('textbox', { name: 'Record page icon' }), {
       target: { value: '🧭' },
@@ -362,7 +425,8 @@ describe('DatabaseRecordPageChrome', () => {
     expect(confirmations).toHaveLength(2);
     expect(confirmations[0]).toContain('Exact plan: plan_page_title');
 
-    fireEvent.click(view.getByRole('button', { name: 'Customize layout' }));
+    openPageMenu();
+    fireEvent.click(view.getByRole('menuitem', { name: 'Customize layout' }));
     fireEvent.click(view.getByRole('combobox', { name: 'Owner placement' }));
     fireEvent.click(await view.findByRole('option', { name: 'Hidden' }));
     fireEvent.click(view.getByLabelText('Use full-width page content'));
@@ -375,7 +439,8 @@ describe('DatabaseRecordPageChrome', () => {
     });
     expect(confirmations[2]).toContain('Apply this page layout');
 
-    fireEvent.click(view.getByRole('button', { name: 'Customize this page' }));
+    openPageMenu();
+    fireEvent.click(view.getByRole('menuitem', { name: 'Customize this page' }));
     fireEvent.click(view.getByRole('combobox', { name: 'Owner record placement' }));
     fireEvent.click(await view.findByRole('option', { name: 'Panel' }));
     fireEvent.click(view.getByRole('combobox', { name: 'Notes group record state' }));

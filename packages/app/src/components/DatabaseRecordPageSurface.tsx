@@ -33,7 +33,6 @@ export function DatabaseRecordPageSurface({
       data-source-id={sourceId ?? undefined}
       data-view-id={viewId ?? undefined}
       data-record-id={recordId ?? undefined}
-      data-database-machine-ids="stable"
       className={mode === 'full_page' ? 'contents' : 'flex min-h-0 flex-1 flex-col'}
     >
       {children}

@@ -4,6 +4,7 @@ import { Fragment } from 'react';
 import {
   Breadcrumb,
   BreadcrumbItem,
+  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
@@ -11,8 +12,15 @@ import {
 import { tabParts } from '@/editor/editor-tabs';
 import { cn } from '@/lib/utils';
 
+export interface EditorBreadcrumbSegment {
+  label: string;
+  href: string;
+}
+
 interface EditorBreadcrumbProps {
   docName: string | null;
+  /** Explicit hierarchy labels for virtual documents such as database records. */
+  segments?: readonly (string | EditorBreadcrumbSegment)[];
   /** Optional extra classes for the outer breadcrumb nav (e.g. layout overrides). */
   className?: string;
 }
@@ -28,14 +36,14 @@ const TRAILING_VISIBLE = 2;
 const COLLAPSE_THRESHOLD = 4;
 
 type BreadcrumbNode =
-  | { kind: 'segment'; value: string; key: string }
+  | { kind: 'segment'; value: string; href?: string; key: string }
   | { kind: 'ellipsis'; hidden: readonly string[] };
 
 /**
  * Folder-path breadcrumb for the active doc — renders nothing at project root.
  *
- * Pure display: no click / hover navigation behavior. Every segment renders
- * as a non-link `BreadcrumbPage`. Folder segments derive from
+ * Folder-derived segments render as non-link `BreadcrumbPage` elements, while
+ * explicit virtual segments can provide canonical hrefs. Folder segments derive from
  * `tabParts(docName, '').prefix` so the breadcrumb and the tab label parse
  * the path through the same primitive (single source of truth for the path
  * split — keep them on one parser).
@@ -61,33 +69,52 @@ type BreadcrumbNode =
  * spread-props (BreadcrumbPage forwards every attr to its inner span), so the
  * native truncation tooltip continues to reveal the full segment on hover.
  */
-export function EditorBreadcrumb({ docName, className }: EditorBreadcrumbProps) {
+export function EditorBreadcrumb({
+  docName,
+  segments: explicitSegments,
+  className,
+}: EditorBreadcrumbProps) {
   if (!docName) return null;
   // Managed-artifact tabs derive their breadcrumb from the parsed artifact, not
   // the raw `__skill__`/`__template__` doc-name prefix: a template shows its
   // owning folder path; a skill has no folder hierarchy (its identity lives in
   // the property panel + tab badge), so it renders no breadcrumb.
   const managed = parseManagedArtifactName(docName);
-  const segments = managed
-    ? managed.kind === 'template'
-      ? managed.folder.split('/').filter(Boolean)
-      : []
-    : tabParts(docName, '').prefix.replace(/\/$/, '').split('/').filter(Boolean);
+  const rawSegments =
+    explicitSegments ??
+    (managed
+      ? managed.kind === 'template'
+        ? managed.folder.split('/').filter(Boolean)
+        : []
+      : tabParts(docName, '').prefix.replace(/\/$/, '').split('/').filter(Boolean));
+  const segments = rawSegments.map((segment) =>
+    typeof segment === 'string' ? { label: segment } : segment,
+  );
   if (segments.length === 0) return null;
 
   // Stable per-segment key: full prefix slice up to that segment.
   // Disambiguates identical names at different depths (e.g. `notes/notes`).
-  const segmentNode = (value: string, absoluteIndex: number): BreadcrumbNode => ({
+  const segmentNode = (
+    segment: { label: string; href?: string },
+    absoluteIndex: number,
+  ): BreadcrumbNode => ({
     kind: 'segment',
-    value,
-    key: segments.slice(0, absoluteIndex + 1).join('/'),
+    value: segment.label,
+    ...(segment.href ? { href: segment.href } : {}),
+    key: segments
+      .slice(0, absoluteIndex + 1)
+      .map(({ label }) => label)
+      .join('/'),
   });
 
   const collapsed = segments.length > COLLAPSE_THRESHOLD;
   const nodes: BreadcrumbNode[] = collapsed
     ? [
         ...segments.slice(0, LEADING_VISIBLE).map((value, i) => segmentNode(value, i)),
-        { kind: 'ellipsis', hidden: segments.slice(LEADING_VISIBLE, -TRAILING_VISIBLE) },
+        {
+          kind: 'ellipsis',
+          hidden: segments.slice(LEADING_VISIBLE, -TRAILING_VISIBLE).map(({ label }) => label),
+        },
         ...segments
           .slice(-TRAILING_VISIBLE)
           .map((value, i) => segmentNode(value, segments.length - TRAILING_VISIBLE + i)),
@@ -128,13 +155,23 @@ export function EditorBreadcrumb({ docName, className }: EditorBreadcrumbProps) 
                 </BreadcrumbItem>
               ) : (
                 <BreadcrumbItem className="min-w-0">
-                  <BreadcrumbPage
-                    current={false}
-                    className="min-w-0 truncate font-normal text-muted-foreground/70"
-                    title={node.value}
-                  >
-                    {node.value}
-                  </BreadcrumbPage>
+                  {node.href ? (
+                    <BreadcrumbLink
+                      href={node.href}
+                      className="min-w-0 truncate font-normal text-muted-foreground/70"
+                      title={node.value}
+                    >
+                      {node.value}
+                    </BreadcrumbLink>
+                  ) : (
+                    <BreadcrumbPage
+                      current={false}
+                      className="min-w-0 truncate font-normal text-muted-foreground/70"
+                      title={node.value}
+                    >
+                      {node.value}
+                    </BreadcrumbPage>
+                  )}
                 </BreadcrumbItem>
               )}
             </Fragment>

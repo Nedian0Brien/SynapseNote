@@ -11,22 +11,25 @@ import {
 } from '@nedian0brien/synapsenote-core';
 import {
   Archive,
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
   Copy,
   History,
   Link2,
-  MessageSquare,
   MoreHorizontal,
   MoveRight,
+  Palette,
   RotateCcw,
   Settings2,
+  Shield,
+  SlidersHorizontal,
   Trash2,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { DatabaseAgentScopeMenu } from '@/components/DatabaseAgentScopeMenu';
-import { DatabaseCommentsDialog } from '@/components/DatabaseCommentsDialog';
 import { DatabaseConflictResolutionNotice } from '@/components/DatabaseConflictResolutionNotice';
-import { DatabaseMachineIdsDetails } from '@/components/DatabaseMachineIdsDetails';
 import {
   type DatabasePageAppearance,
   DatabasePageAppearanceDialog,
@@ -37,6 +40,7 @@ import { DatabasePresenceBadges } from '@/components/DatabasePresenceBadges';
 import { DatabaseRecordHistoryDialog } from '@/components/DatabaseRecordHistoryDialog';
 import { DatabaseRecordLayoutOverrideDialog } from '@/components/DatabaseRecordLayoutOverrideDialog';
 import { DatabaseRecordPageSurface } from '@/components/DatabaseRecordPageSurface';
+import { DatabaseRecordPeekComments } from '@/components/DatabaseRecordPeekComments';
 import { DatabaseRelationsDialog } from '@/components/DatabaseRelationsDialog';
 import { PageHeader } from '@/components/PageHeader';
 import { PropertyPanel } from '@/components/PropertyPanel';
@@ -66,6 +70,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { subscribeToDatabaseAgentRunChanged } from '@/lib/database-agent-run-events';
+import type {
+  DatabaseCommentRequest,
+  DatabaseCommentSnapshot,
+} from '@/lib/database-comments-client';
+import { publishDatabaseRecordHeader } from '@/lib/database-record-header';
 import { describeDatabase } from '@/lib/database-catalog-client';
 import {
   createDatabaseCellMutationDesiredState,
@@ -120,6 +129,7 @@ interface DatabaseRecordPageChromeProps {
    */
   body?: ReactNode;
   services?: DatabaseRecordPageServices;
+  commentsRequest?: (input: DatabaseCommentRequest) => Promise<DatabaseCommentSnapshot>;
 }
 
 export interface DatabaseRecordPageServices {
@@ -148,31 +158,33 @@ function DatabaseRecordPageStateNotice({
   onBack?: () => void;
 }) {
   return (
-    <div
-      className="editor-content-aligned flex flex-wrap items-start justify-between gap-3 py-3 text-sm"
-      role="alert"
-      data-database-record-state={problem.kind}
-    >
-      <div>
-        <p className="font-medium">
-          {problem.kind === 'missing'
-            ? 'Page is unavailable'
-            : problem.kind === 'permission'
-              ? 'Permission required'
-              : 'Page could not be loaded'}
-        </p>
-        <p className="text-muted-foreground">{problem.message}</p>
-        {problem.kind === 'permission' ? (
-          <p className="text-muted-foreground">
-            Request access or use fields available to your current policy.
+    <div className="editor-content-aligned py-3 text-sm">
+      <div
+        className="flex flex-wrap items-start justify-between gap-3"
+        role="alert"
+        data-database-record-state={problem.kind}
+      >
+        <div>
+          <p className="font-medium">
+            {problem.kind === 'missing'
+              ? 'Page is unavailable'
+              : problem.kind === 'permission'
+                ? 'Permission required'
+                : 'Page could not be loaded'}
           </p>
+          <p className="text-muted-foreground">{problem.message}</p>
+          {problem.kind === 'permission' ? (
+            <p className="text-muted-foreground">
+              Request access or use fields available to your current policy.
+            </p>
+          ) : null}
+        </div>
+        {onBack ? (
+          <Button type="button" variant="outline" size="sm" onClick={onBack}>
+            <Trans>Back to database view</Trans>
+          </Button>
         ) : null}
       </div>
-      {onBack ? (
-        <Button type="button" variant="outline" size="sm" onClick={onBack}>
-          <Trans>Back to database view</Trans>
-        </Button>
-      ) : null}
     </div>
   );
 }
@@ -184,6 +196,7 @@ export function DatabaseRecordPageChrome({
   fallbackTitle,
   body,
   services = DEFAULT_SERVICES,
+  commentsRequest,
 }: DatabaseRecordPageChromeProps) {
   'use no memo';
   const [snapshot, setSnapshot] = useState<FrontmatterSnapshot>(() =>
@@ -220,7 +233,6 @@ export function DatabaseRecordPageChrome({
   const [recordActionRunning, setRecordActionRunning] = useState(false);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [moveTargetSourceId, setMoveTargetSourceId] = useState('');
-  const [commentsDialogOpen, setCommentsDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [relationsDialogOpen, setRelationsDialogOpen] = useState(false);
   const [relationTargets, setRelationTargets] = useState<DatabaseRelationNavigationItem[]>([]);
@@ -364,6 +376,20 @@ export function DatabaseRecordPageChrome({
     titleProperty && typeof snapshot.map[titleProperty.key] === 'string'
       ? (snapshot.map[titleProperty.key] as string)
       : undefined;
+  useEffect(() => {
+    if (!currentBinding || !source) return;
+    const sourceHref = recordNavigation
+      ? databaseRecordPageOriginHash(recordNavigation)
+      : databaseRecordPageFallbackHash(currentBinding.database.id, source.id);
+    const defaultSourceId = currentBinding.database.sources.at(0)?.id ?? source.id;
+    return publishDatabaseRecordHeader(docName, {
+      databaseName: currentBinding.database.name,
+      databaseHref: databaseRecordPageFallbackHash(currentBinding.database.id, defaultSourceId),
+      sourceName: source.name,
+      sourceHref,
+      recordTitle: databaseTitle ?? fallbackTitle,
+    });
+  }, [currentBinding, databaseTitle, docName, fallbackTitle, recordNavigation, source]);
   const recordIcon = typeof snapshot.map.icon === 'string' ? snapshot.map.icon : undefined;
   const recordCover = typeof snapshot.map.cover === 'string' ? snapshot.map.cover : undefined;
   const reservedKeys = ['_sn', ...(titleProperty ? [titleProperty.key] : [])];
@@ -632,10 +658,6 @@ export function DatabaseRecordPageChrome({
     }
   }
 
-  async function openComments(): Promise<void> {
-    if (await ensureCurrentRecord()) setCommentsDialogOpen(true);
-  }
-
   async function openRelations(): Promise<void> {
     if (await ensureCurrentRecord()) setRelationsDialogOpen(true);
   }
@@ -815,37 +837,6 @@ export function DatabaseRecordPageChrome({
       sourceId={metadata.source_id}
       recordId={metadata.record_id}
     >
-      <nav
-        className="editor-content-aligned flex items-center gap-1 truncate py-2 text-muted-foreground text-xs"
-        aria-label="Database breadcrumbs"
-        data-database-breadcrumbs
-      >
-        <a
-          className="truncate underline underline-offset-2"
-          href={
-            recordNavigation
-              ? databaseRecordPageOriginHash(recordNavigation)
-              : databaseRecordPageFallbackHash(metadata.database_id, metadata.source_id)
-          }
-        >
-          {currentBinding?.database.name ?? metadata.database_id}
-        </a>
-        <span aria-hidden="true">/</span>
-        <span className="truncate">{source?.name ?? metadata.source_id}</span>
-        <span aria-hidden="true">/</span>
-        <span className="truncate" aria-current="page">
-          {databaseTitle ?? fallbackTitle}
-        </span>
-      </nav>
-      <div className="editor-content-aligned py-1">
-        <DatabaseMachineIdsDetails
-          entries={[
-            { kind: 'database', label: <Trans>Database</Trans>, value: metadata.database_id },
-            { kind: 'source', label: <Trans>Source</Trans>, value: metadata.source_id },
-            { kind: 'record', label: <Trans>Record</Trans>, value: metadata.record_id },
-          ]}
-        />
-      </div>
       <PageHeader
         provider={provider}
         docName={docName}
@@ -862,9 +853,11 @@ export function DatabaseRecordPageChrome({
         <DatabasePresenceBadges entries={recordPresence} scope="record" />
       </div>
       {binding.status === 'loading' || binding.key !== metadataKey ? (
-        <p className="editor-content-aligned py-3 text-sm text-muted-foreground" role="status">
-          <Trans>Loading verified database properties</Trans>
-        </p>
+        <div className="editor-content-aligned py-3">
+          <p className="text-sm text-muted-foreground" role="status">
+            <Trans>Loading verified database properties</Trans>
+          </p>
+        </div>
       ) : null}
       {recordUnavailable ? (
         <DatabaseRecordPageStateNotice
@@ -878,13 +871,15 @@ export function DatabaseRecordPageChrome({
         />
       ) : null}
       {!recordUnavailable && currentRecord?.archivedAt ? (
-        <p
-          className="editor-content-aligned py-2 text-sm text-muted-foreground"
-          role="status"
-          data-database-record-state="archived"
-        >
-          <Trans>This page is archived. Restore it from More page actions.</Trans>
-        </p>
+        <div className="editor-content-aligned py-2">
+          <p
+            className="text-sm text-muted-foreground"
+            role="status"
+            data-database-record-state="archived"
+          >
+            <Trans>This page is archived. Restore it from More page actions.</Trans>
+          </p>
+        </div>
       ) : null}
       {!recordUnavailable && mutationConflict ? (
         <div className="editor-content-aligned py-2">
@@ -897,44 +892,52 @@ export function DatabaseRecordPageChrome({
           />
         </div>
       ) : !recordUnavailable && mutationError ? (
-        <p className="editor-content-aligned py-2 text-sm text-destructive" role="alert">
-          {mutationError}
-        </p>
+        <div className="editor-content-aligned py-2">
+          <p className="text-sm text-destructive" role="alert">
+            {mutationError}
+          </p>
+        </div>
       ) : null}
       {source && !recordUnavailable ? (
         <div className="editor-content-aligned py-1">
-          <div className="flex justify-end">
+          <div className="flex min-w-0 items-center justify-end gap-1" data-database-record-toolbar>
             {recordNavigation ? (
               <>
                 <Button
                   type="button"
-                  size="sm"
+                  size="icon-sm"
                   variant="ghost"
+                  aria-label="Previous page"
+                  title="Previous page"
                   disabled={recordNavigation.index === 0}
                   onClick={() => navigateToRecord(recordNavigation.index - 1)}
                 >
-                  Previous page
+                  <ChevronLeft aria-hidden="true" />
                 </Button>
                 <Button
                   type="button"
-                  size="sm"
+                  size="icon-sm"
                   variant="ghost"
+                  aria-label="Next page"
+                  title="Next page"
                   disabled={recordNavigation.index === recordNavigation.paths.length - 1}
                   onClick={() => navigateToRecord(recordNavigation.index + 1)}
                 >
-                  Next page
+                  <ChevronRight aria-hidden="true" />
                 </Button>
                 <Button
                   type="button"
-                  size="sm"
+                  size="icon-sm"
                   variant="ghost"
+                  aria-label="Back to database view"
+                  title="Back to database view"
                   onClick={() => {
                     navigateToDatabaseRecordPageHash(
                       databaseRecordPageOriginHash(recordNavigation),
                     );
                   }}
                 >
-                  Back to database view
+                  <ArrowLeft aria-hidden="true" />
                 </Button>
               </>
             ) : null}
@@ -945,59 +948,6 @@ export function DatabaseRecordPageChrome({
                 recordId: metadata.record_id,
               }}
             />
-            <Button type="button" size="sm" variant="ghost" onClick={() => void openComments()}>
-              <MessageSquare /> <Trans>Comments</Trans>
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={() => setHistoryDialogOpen(true)}
-            >
-              <History /> <Trans>Page history</Trans>
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={() => setPermissionsDialogOpen(true)}
-              data-database-record-permissions
-            >
-              <Trans>Permissions</Trans>
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              disabled={appearanceSaving || mutationPropertyId !== null}
-              onClick={() => setAppearanceDialogOpen(true)}
-              data-database-record-appearance
-            >
-              <Trans>Customize appearance</Trans>
-            </Button>
-            {source.properties.some((property) => property.type === 'relation') ? (
-              <Button type="button" size="sm" variant="ghost" onClick={() => void openRelations()}>
-                <Link2 /> <Trans>Relations</Trans>
-              </Button>
-            ) : null}
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              disabled={layoutMutationRunning || mutationPropertyId !== null}
-              onClick={() => setRecordLayoutDialogOpen(true)}
-            >
-              <Settings2 /> <Trans>Customize this page</Trans>
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              disabled={layoutMutationRunning || mutationPropertyId !== null}
-              onClick={() => setLayoutDialogOpen(true)}
-            >
-              <Settings2 /> <Trans>Customize layout</Trans>
-            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -1012,6 +962,43 @@ export function DatabaseRecordPageChrome({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <Trans>Page options</Trans>
+                </DropdownMenuLabel>
+                <DropdownMenuItem onSelect={() => setHistoryDialogOpen(true)}>
+                  <History aria-hidden="true" /> <Trans>Page history</Trans>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => setPermissionsDialogOpen(true)}
+                  data-database-record-permissions
+                >
+                  <Shield aria-hidden="true" /> <Trans>Permissions</Trans>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={appearanceSaving || mutationPropertyId !== null}
+                  onSelect={() => setAppearanceDialogOpen(true)}
+                  data-database-record-appearance
+                >
+                  <Palette aria-hidden="true" /> <Trans>Customize appearance</Trans>
+                </DropdownMenuItem>
+                {source.properties.some((property) => property.type === 'relation') ? (
+                  <DropdownMenuItem onSelect={() => void openRelations()}>
+                    <Link2 aria-hidden="true" /> <Trans>Relations</Trans>
+                  </DropdownMenuItem>
+                ) : null}
+                <DropdownMenuItem
+                  disabled={layoutMutationRunning || mutationPropertyId !== null}
+                  onSelect={() => setRecordLayoutDialogOpen(true)}
+                >
+                  <Settings2 aria-hidden="true" /> <Trans>Customize this page</Trans>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={layoutMutationRunning || mutationPropertyId !== null}
+                  onSelect={() => setLayoutDialogOpen(true)}
+                >
+                  <SlidersHorizontal aria-hidden="true" /> <Trans>Customize layout</Trans>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuLabel>
                   <Trans>Page actions</Trans>
                 </DropdownMenuLabel>
@@ -1118,10 +1105,22 @@ export function DatabaseRecordPageChrome({
           />
         )
       ) : null}
+      {source && currentBinding && currentRecord && !recordUnavailable ? (
+        <div className="editor-content-aligned">
+          <DatabaseRecordPeekComments
+            database={currentBinding.database}
+            source={source}
+            record={currentRecord}
+            request={commentsRequest}
+          />
+        </div>
+      ) : null}
       {mutationPropertyId ? (
-        <p className="editor-content-aligned py-2 text-xs text-muted-foreground" role="status">
-          <Trans>Verifying database change</Trans>
-        </p>
+        <div className="editor-content-aligned py-2">
+          <p className="text-xs text-muted-foreground" role="status">
+            <Trans>Verifying database change</Trans>
+          </p>
+        </div>
       ) : null}
       {body && !recordUnavailable ? (
         <div
@@ -1149,15 +1148,6 @@ export function DatabaseRecordPageChrome({
           override={recordPageLayoutOverride}
           onOpenChange={setRecordLayoutDialogOpen}
           onSave={(override) => void commitRecordPageLayoutOverride(override)}
-        />
-      ) : null}
-      {source && currentBinding && !recordUnavailable && currentRecord && commentsDialogOpen ? (
-        <DatabaseCommentsDialog
-          open
-          onOpenChange={setCommentsDialogOpen}
-          database={currentBinding.database}
-          source={source}
-          record={currentRecord}
         />
       ) : null}
       {source && currentBinding && !recordUnavailable && currentRecord && relationsDialogOpen ? (
