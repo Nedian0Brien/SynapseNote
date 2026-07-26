@@ -271,6 +271,7 @@ export function DatabaseTableDataCell({
         );
       }}
       onClick={(event) => {
+        event.stopPropagation();
         setCellMenu(null);
         const next = {
           anchorRow: event.shiftKey && cellRange ? cellRange.anchorRow : rowIndex,

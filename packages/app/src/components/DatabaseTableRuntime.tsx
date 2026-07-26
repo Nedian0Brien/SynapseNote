@@ -2,6 +2,7 @@ import type { DatabaseProperty, ProjectedDatabaseRecord } from '@nedian0brien/sy
 import { useEffect, useState } from 'react';
 import { isDatabaseCellEditable, parseDatabaseCellDraft } from '@/lib/database-cell-mutation';
 import { databaseRangeToTsv, planDatabaseTsvPaste } from '@/lib/database-tsv';
+import { nextDatabasePropertyName } from './DatabasePropertyInsertPopover';
 import { DatabaseTableComposition } from './DatabaseTableComposition';
 import type { DatabaseTableProps } from './database-table-types';
 import {
@@ -198,7 +199,7 @@ export function DatabaseTable({
     setPendingPropertyRequest(null);
     setAddPropertyOpen(false);
     setPropertyInsertTarget(null);
-    setNewPropertyName('New property');
+    setNewPropertyName(nextDatabasePropertyName(newPropertyType, allProperties));
   }, [
     addPropertyOpen,
     allProperties,
@@ -206,6 +207,7 @@ export function DatabaseTable({
     setAddPropertyOpen,
     setNewPropertyName,
     setPropertyInsertTarget,
+    newPropertyType,
   ]);
   const beginEdit = (record: ProjectedDatabaseRecord, property: DatabaseProperty) => {
     const current = record.values[property.id];
@@ -410,6 +412,7 @@ export function DatabaseTable({
   };
 
   const openPropertyInsert = (property: DatabaseProperty, position: 'before' | 'after') => {
+    setNewPropertyName(nextDatabasePropertyName(newPropertyType, allProperties));
     setPropertyInsertTarget({ propertyId: property.id, position });
     setAddPropertyOpen(true);
   };

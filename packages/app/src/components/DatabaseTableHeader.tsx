@@ -41,6 +41,7 @@ export interface DatabaseTableHeaderProps
   viewId: string | null;
   source: DatabaseSource;
   properties: readonly DatabaseProperty[];
+  allProperties: readonly DatabaseProperty[];
   layout: DatabaseTableLayoutState;
   visibleLayoutPropertyIds: readonly string[];
   notionSurface: boolean;
@@ -73,6 +74,7 @@ export function DatabaseTableHeader({
   viewId,
   source,
   properties,
+  allProperties,
   layout,
   geometry,
   visibleLayoutPropertyIds,
@@ -158,6 +160,7 @@ export function DatabaseTableHeader({
           setNewPropertyName={setNewPropertyName}
           newPropertyType={newPropertyType}
           setNewPropertyType={setNewPropertyType}
+          properties={allProperties}
           submitAddProperty={submitAddProperty}
           showLabel
         />

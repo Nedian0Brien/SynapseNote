@@ -5,6 +5,12 @@ import { loadStyleManifest } from '../build/style-manifest';
 const css = loadStyleManifest(join(__dirname, '..', 'globals.css')).css;
 
 describe('database row selection control styles', () => {
+  test('does not paint the generic JSX selection halo around database views', () => {
+    expect(css).toMatch(
+      /\.jsx-component-wrapper\[data-component-type="databaseview"\]::after\s*\{[^}]*display:\s*none;/,
+    );
+  });
+
   test('reveals the selection control as soon as its row interaction layer is active', () => {
     expect(css).toMatch(
       /\[data-database-table-interaction-layer\]\[data-state\]\s+\.ok-row-selection-btn\s*\{[^}]*opacity:\s*1;/,

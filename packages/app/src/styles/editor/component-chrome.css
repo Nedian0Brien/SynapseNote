@@ -87,6 +87,13 @@
   box-sizing: border-box;
 }
 
+/* Database views already expose focused cells, headers, and row controls.
+ * The generic JSX block halo competes with those controls and reads as an
+ * unexplained border around the whole database, so this component opts out. */
+.ProseMirror .jsx-component-wrapper[data-component-type="databaseview"]::after {
+  display: none;
+}
+
 /* Compositor-safe fade — only animate when motion is welcome. */
 @media (prefers-reduced-motion: no-preference) {
   .ProseMirror .jsx-component-wrapper::after {
