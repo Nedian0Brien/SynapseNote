@@ -4,6 +4,12 @@
 - Last updated: 2026-07-20
 - Owners: SynapseNote maintainers
 
+Proposed successor storage decision: [RFC 0008: Markdown table canonical
+database storage](./0008-markdown-table-canonical-database-storage.md) replaces
+the per-record frontmatter/source-folder storage model with one owner Markdown
+table per source. RFC 0001 describes the currently implemented v1 model until
+that migration is implemented and verified.
+
 Implementation tracking: [Full implementation checklist](./0001-databases-implementation-checklist.md)
 
 Capability tracking: [Notion parity matrix](./0001-notion-parity-matrix.md)
