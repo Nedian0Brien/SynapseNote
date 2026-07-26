@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useDatabaseMutationController } from '@/lib/database-mutation-controller';
 import type { InlineDatabaseReference, InlineDatabaseReferenceData } from './inline-database-types';
 import { useInlineDatabaseCommands } from './use-inline-database-commands';
@@ -71,6 +71,22 @@ export function useInlineDatabaseController({
     mode,
     controller: controllerState,
   });
+  const conflictRefreshObservedRef = useRef(false);
+  useEffect(() => {
+    if (mutation.errorKind !== 'conflict') {
+      conflictRefreshObservedRef.current = false;
+      return;
+    }
+    if (read.state.status !== 'ready') return;
+    if (read.state.refreshing) {
+      conflictRefreshObservedRef.current = true;
+      return;
+    }
+    if (conflictRefreshObservedRef.current && !read.state.refreshProblem && !read.state.stale) {
+      mutation.setError(null);
+      conflictRefreshObservedRef.current = false;
+    }
+  }, [mutation.errorKind, mutation.setError, read.state]);
   const commands = useInlineDatabaseCommands({
     referenceData,
     controller: controllerState,

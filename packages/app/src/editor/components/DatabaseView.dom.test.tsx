@@ -1886,6 +1886,7 @@ describe('DatabaseView', () => {
       },
       view: { dispatch: () => {}, focus: () => {} },
     } as never;
+    let draftCalls = 0;
     let commitCalls = 0;
     let undoCalls = 0;
     let undoBlocked = false;
@@ -1987,6 +1988,7 @@ describe('DatabaseView', () => {
       if (path === '/api/databases/plan') {
         const action = (body as { action?: string }).action;
         if (action === 'create_draft') {
+          draftCalls += 1;
           return Response.json({ action, draft: { id: 'draft_inline_edit', revision: hash } });
         }
         return Response.json({
@@ -2050,12 +2052,18 @@ describe('DatabaseView', () => {
     expect(screen.getByRole('button', { name: source.name, exact: true })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Open tasks' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Done tasks' })).toBeTruthy();
+    const titleDraftCount = draftCalls;
     const titleCommitCount = commitCalls;
     fireEvent.click(screen.getByRole('button', { name: source.name, exact: true }));
     const inlineTitleInput = screen.getByRole('textbox', { name: 'Inline database title' });
     fireEvent.change(inlineTitleInput, { target: { value: 'Project tasks' } });
-    fireEvent.keyDown(inlineTitleInput, { key: 'Enter' });
+    act(() => {
+      rawFireEvent.keyDown(inlineTitleInput, { key: 'Enter' });
+      rawFireEvent.keyDown(inlineTitleInput, { key: 'Enter' });
+    });
     await waitFor(() => expect(commitCalls).toBeGreaterThan(titleCommitCount));
+    expect(draftCalls - titleDraftCount).toBe(1);
+    expect(commitCalls - titleCommitCount).toBe(1);
     expect(screen.queryByRole('textbox', { name: 'Inline database title' })).toBeNull();
     fireEvent.pointerDown(screen.getByRole('button', { name: 'View options for Open tasks' }));
     expect(screen.getByRole('menuitem', { name: 'Filters' })).toBeTruthy();
