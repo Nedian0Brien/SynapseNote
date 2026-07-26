@@ -4,6 +4,7 @@
 - 작성일: 2026-07-27
 - 대상: `packages/core`, `packages/server`, `packages/app`, `packages/cli`, 데이터베이스 저장·인덱스·Git merge·마이그레이션 경계
 - 성격: canonical 저장 형식 변경, 단일 데이터베이스 엔진 결정
+- 구현 체크리스트: [RFC 0008 implementation checklist](./0008-markdown-table-database-storage-implementation-checklist.md)
 - 선행 문서:
   - [RFC 0001: File-native databases and the Agent Data Plane](./0001-databases-and-agent-data-plane.md)
   - [RFC 0005: Document-native database interaction parity](./0005-database-document-native-interaction-parity-plan.md)
@@ -210,15 +211,28 @@ record_id = rec_<base32(sha256(source_id + NUL + document_id))>
 
 기존 v1 `rec_*` ID는 API와 relation compatibility를 위해 migration manifest의 bounded `legacyRecordIds` mapping으로 보존한다. 새 ID 조회와 기존 ID 조회는 같은 canonical row를 반환하며, 새 mutation receipt는 canonical derived ID와 legacy alias를 함께 기록한다. Alias는 migration compatibility metadata이며 record value의 두 번째 원본이 아니다.
 
-### 6.3 Wikilink 규칙
+### 6.3 Title property와 Wikilink 규칙
 
-- 첫 stored property는 `document` 유형이며 정확히 하나의 non-embed wikilink를 가져야 한다.
+v2는 새 public `document` property type을 추가하지 않는다. Source의 기존 단일
+`title` property ID를 첫 번째 물리 열에 그대로 사용하되, 그 열의 v2 cell codec을
+document wikilink로 변경한다. 논리 API에서 Title property는 계속 같은 stable
+property ID로 조회되며 값은 linked document의 canonical title projection이다.
+
+- Marker의 `columns` 첫 항목은 source의 유일한 `title` property ID여야 한다.
+- 첫 열은 정확히 하나의 non-embed wikilink를 가져야 한다.
 - `[[path]]`와 `[[path|alias]]`를 허용한다.
-- alias는 표시 문자열일 뿐 document title 또는 identity의 원본이 아니다.
+- alias는 표시 문자열일 뿐 document identity의 원본이 아니다. Document title과
+  다르면 stale-alias diagnostic을 낼 수 있지만 record resolution은 유지한다.
 - heading anchor가 있는 `[[path#heading]]`은 record entity로 허용하지 않는다. relation/reference cell에서는 schema가 허용할 수 있다.
 - 링크 target 이동은 existing rename log와 wikilink remap 경계를 통해 갱신한다. `document_id`는 바뀌지 않는다.
 - 링크 대상이 없으면 행을 삭제하지 않고 `broken_document_link` diagnostic을 낸다.
 - 같은 source에 같은 `document_id`가 두 번 나오면 두 행 모두 byte-preserved invalid 상태로 격리한다.
+
+v1 Title 값은 migration 중 linked document의 ordinary title contract로 옮긴다.
+현재 문서 title과 v1 Title이 같으면 bytes를 바꾸지 않는다. v1 Title만 존재하면
+일반 문서 title로 materialize할 변경을 preview한다. 두 값이 다르면 어느 쪽도
+자동으로 덮어쓰지 않고 사용자가 `keep_document_title`, `use_record_title`,
+`custom_title` 중 하나를 선택하기 전까지 migration을 막는다.
 
 ### 6.4 삭제 의미
 
@@ -244,7 +258,7 @@ Manifest가 property type과 stable option IDs/keys를 소유한다. Markdown ce
 
 | Property type | Canonical cell representation |
 | --- | --- |
-| `document` / title | 정확히 하나의 `[[wikilink]]` |
+| `title` | 정확히 하나의 linked-document `[[wikilink]]`; 논리 값은 문서 title projection |
 | `text` | literal single-line text; `""` means empty string |
 | `number` | locale-independent finite decimal, grouping separator 없음 |
 | `checkbox` | `[x]` 또는 `[ ]`; 빈 cell은 null |
@@ -540,27 +554,435 @@ Existing folder 기능은 별도 live storage mode가 아니라 다음 일회성
 
 ### 17.1 원칙
 
-- migration은 preview, backup, exact target set, approval, atomic commit, verification, rollback receipt를 가진다.
-- v1과 v2에 동시에 쓰지 않는다.
-- migration 전 v1 source는 compatibility reader로 열 수 있지만 mutation은 migration을 요구한다.
-- 실패한 migration은 manifest, owner table, linked documents를 정확한 이전 bytes로 복구한다.
+- Migration은 preview, backup, exact target set, approval, atomic cutover,
+  verification, rollback receipt를 가진 durable task다.
+- v1과 v2에 동시에 쓰지 않는다. Compatibility 기간에는 둘 다 읽을 수
+  있지만 하나의 database manifest와 그 모든 source에는 active writer가 항상 하나다.
+- Migration 전 v1 source는 v1 reader로 정상 조회할 수 있다. 사용자가
+  migration plan을 승인하고 write freeze가 시작된 뒤에는 해당 source의
+  일반 mutation을 거부한다.
+- Staging artifact는 canonical state가 아니다. Manifest가 v2로 cutover되고
+  post-commit verification이 통과한 순간부터 v2 owner table만 canonical이다.
+- 실패한 migration과 승인된 undo는 manifest, owner document, linked
+  documents, 이전 v1 record documents를 recorded SHA-256 bytes로 복구한다.
+- Invalid value를 임의로 정상화하거나 버리지 않는다. Raw value와 source
+  location을 보존한 채 blocker 또는 explicit preserved-invalid cell로 옮긴다.
+- 대형 source를 몰래 다른 저장 엔진으로 넘기지 않는다. v2 byte/row/column
+  한계를 넘으면 source split 또는 export를 안내하고 migration을 막는다.
 
-### 17.2 절차
+### 17.2 Version 경계와 v2 manifest target
 
-1. v1 manifest와 모든 indexed record revision을 freeze한다.
-2. 각 record document에 범용 `document_id`를 배정한다.
-3. database-owned frontmatter property를 typed canonical cell text로 변환한다.
-4. inline `DatabaseView`가 source owner 역할을 하던 경우 그 block 위치에 marker/table을 생성한다.
-5. standalone database는 사용자가 선택한 normal Markdown owner document에 marker/table을 생성한다.
-6. 기존 폴더에서 시작한 record 문서는 현재 path를 유지한다.
-7. 앱이 만든 generated folder/`rec_*` 문서는 title-based normal document path로 이동하는 preview를 제공하고 충돌을 명시한다.
-8. record body와 unrelated frontmatter를 유지하고 database-specific `_sn` identity/property fields를 제거한다.
-9. 기존 stable record ID를 `legacyRecordIds` compatibility mapping으로 보존한다.
-10. manifest를 owner document/block 및 stored column codec 계약으로 갱신한다.
-11. v2 table parser/index로 재구축하고 record count, IDs, values, relations, formulas, rollups를 비교한다.
-12. 검증 성공 후 v1 source folder ownership을 해제하고 transaction receipt를 반환한다.
+현재 구현의 v1 manifest는 `version: 1`, source별 `folder`와
+`includeSubfolders`, record별 `_sn.database_id`, `_sn.source_id`,
+`_sn.record_id`, database-owned property frontmatter를 사용한다. v2 manifest는
+논리적 database/source/property/view 정의는 유지하면서 source의 물리 저장
+계약을 다음처럼 바꾼다.
 
-Synthetic 문서의 자동 rename은 충돌·링크 rewrite·사용자 경로 선택을 preview하지 않고 실행하지 않는다. 문서 body가 없는 레코드도 page-like entity 계약에 따라 정상적인 `.md` 문서를 유지한다.
+```yaml
+version: 2
+id: db_orders
+key: orders
+name: Orders
+sources:
+  - id: ds_orders
+    key: orders
+    name: Orders
+    recordMeaning: One order
+    storage:
+      kind: markdown_table
+      formatVersion: 2
+      owner:
+        path: orders.md
+        blockId: dbb_orders_primary
+      titlePropertyId: prop_order_title
+      storedPropertyIds:
+        - prop_order_title
+        - prop_quantity
+        - prop_price
+        - prop_project
+    properties:
+      # 기존 stable property definitions 유지
+```
+
+`storage.owner.path`는 content root 기준 normalized Markdown path이고
+`blockId`는 owner marker의 `block`과 일치해야 한다. `storedPropertyIds`는
+marker의 `columns`와 정확히 같은 순서여야 하며 Formula, Rollup, audit-derived,
+button property를 포함하지 않는다. `titlePropertyId`는 source의 기존 단일
+Title property ID이고 `storedPropertyIds`의 첫 항목이어야 한다.
+
+Migration compatibility metadata는 manifest의 bounded `migration` block에
+기록한다. 이 block은 값의 두 번째 원본이 아니며 v1 writer나 folder discovery를
+활성화하지 않는다.
+
+```yaml
+migration:
+  fromVersion: 1
+  committedAt: 2026-07-27T00:00:00Z
+  sourceFolders:
+    ds_orders: generated/orders
+  legacyRecordIds:
+    rec_old_order_001:
+      sourceId: ds_orders
+      documentId: doc_order_001
+      canonicalRecordId: rec_v2_order_001
+```
+
+Plan은 migration block을 포함한 manifest가 기존 1 MiB manifest boundary를
+넘는지 사전에 계산한다. Alias가 예산을 넘는 source는 alias를 잘라내지 않고
+migration 전체를 막는다. 별도 alias artifact를 추가하려면 이 RFC를 개정하여
+하나의 versioned canonical 위치와 standalone-clone 계약부터 결정해야 한다.
+
+### 17.3 Canonical ownership 변환표
+
+| v1 state | v2 target | 변환 규칙 |
+| --- | --- | --- |
+| Manifest `version: 1` | Manifest `version: 2` | 기존 logical IDs/schema/views는 보존하고 source storage shape만 교체한다. |
+| `source.folder` / `includeSubfolders` | `source.storage.owner` | 이전 값은 compatibility provenance로만 남고 discovery/write scope로 사용하지 않는다. |
+| `_sn.database_id`, `_sn.source_id` | Owner marker와 manifest | Linked document에서는 제거한다. |
+| `_sn.record_id` | Derived canonical record ID + `legacyRecordIds` alias | 기존 API ID가 같은 row를 resolve하는지 검증한다. |
+| v1 Title frontmatter | Linked document title + 첫 wikilink 열 | 충돌 없는 경우만 자동 변환하고 title conflict는 사용자 선택을 요구한다. |
+| Stored property frontmatter | Owner table typed cell | Stable property ID와 raw/typed equivalence를 모두 검증한다. |
+| Relation record ID | Target document wikilink | Target source에서 legacy ID를 stable document ID/path로 해석할 수 있어야 한다. |
+| Formula/Rollup definition | v2 manifest definition | Stable property-ID AST와 definition revision을 보존한다. 결과 cell은 만들지 않는다. |
+| Formula/Rollup cached result | 없음 | 같은 frozen evaluation context에서 재계산한 결과만 비교한다. |
+| `_sn.archived_at` | Reserved stored lifecycle column | Manifest가 선언한 stable system property로 변환하고 기본 view에서는 숨긴다. |
+| `_sn.created_at/by`, `_sn.last_edited_at/by` | Audit-derived baseline + transaction history | v1 값을 migration verification baseline으로 보존하고 cell에는 쓰지 않는다. |
+| `_sn.page_layout_override` | Manifest-owned record layout override | Canonical record ID로 key를 바꾸고 orphan reference를 거부한다. |
+| Unrelated frontmatter/body | 같은 linked document | Document ID/title에 필요한 승인 변경 외에는 byte-for-byte 보존한다. |
+| v1 record path | Linked document path | Existing-folder 문서는 유지하고 generated path rename은 별도 선택으로 처리한다. |
+| Inline/full-page `DatabaseView` | Owner block 또는 linked view | Source마다 정확히 하나만 owner가 되고 나머지는 reference-only linked view가 된다. |
+
+Reserved lifecycle/audit/layout representation은 v2 manifest schema가 확정될 때
+strict schema와 size budget을 가져야 한다. 이 세 필드의 canonical target이
+구현되지 않은 상태에서는 migration을 출시할 수 없다.
+
+### 17.4 Migration eligibility와 blockers
+
+Inventory는 source마다 다음 항목을 전부 수집한다.
+
+Migration의 최소 write unit은 v1 manifest 하나다. Top-level manifest version이
+writer를 선택하므로 사용자가 source 하나만 선택해도 같은 manifest의 다른 source를
+전부 write target에 포함한다. 다른 database manifest의 relation/Rollup target은
+temporary read dependency가 될 수 있다.
+
+- manifest path, byte revision, declared/supported version
+- source folder의 resolved real path와 symlink 여부
+- 포함되는 `.md`/`.mdx` record path, byte revision, size, line ending, BOM
+- record/database/source ID와 중복 여부
+- property별 raw value, typed value, invalid diagnostic
+- relation target과 target source resolution
+- Formula/Rollup definition revision, dependency graph, frozen computed result
+- title source, document body, unrelated frontmatter key와 ownership
+- archive/audit/layout override metadata
+- inline/full-page/linked `DatabaseView` reference와 potential owner location
+- destination document path, marker block ID, expected table bytes
+
+다음 중 하나라도 있으면 plan은 `blocked`이며 apply를 제공하지 않는다.
+
+- malformed/unsupported manifest 또는 알려지지 않은 schema version
+- source root 밖의 path, symlink escape, case-folding collision
+- duplicate database/source/property/record ID
+- missing 또는 mismatched `_sn` database/source/record identity
+- unresolved Title conflict 또는 owner 위치 미선택
+- owner path 충돌, duplicate owner marker, unsafe destination path
+- relation target missing/ambiguous, temporary v1 read dependency로 안전하게 고정할
+  수 없음, 또는 migration batch에도 포함되지 않음
+- Formula/Rollup parse/type/cycle/permission failure
+- cell codec으로 lossless하게 표현할 수 없는 stored value
+- v2 owner document, table, manifest 또는 migration alias size limit 초과
+- revision을 읽는 동안 manifest/record/view reference가 변경됨
+- backup 또는 transaction journal을 durable하게 쓸 수 없음
+
+Invalid-but-preserved v1 property는 해당 v2 codec이 raw representation을
+round-trip할 수 있고 UI/API가 같은 invalid diagnostic을 유지할 때만 blocker가
+아니다. 그렇지 않으면 사용자가 값을 수정하거나 명시적으로 제외할 때까지 막는다.
+
+### 17.5 Durable task state machine
+
+Migration task는 다음 상태만 사용한다.
+
+```text
+discovered
+  -> blocked
+  -> planned
+  -> approved
+  -> staging
+  -> verifying_staged
+  -> committing
+  -> verifying_committed
+  -> committed
+
+discovered|planned|approved|staging|verifying_staged -> failed
+approved|staging|verifying_staged -> cancelled
+staging|verifying_staged|committing|verifying_committed -> rolling_back
+rolling_back -> rolled_back | rollback_blocked
+```
+
+각 전이는 task ID, idempotency key hash, plan hash, actor, expected workspace
+snapshot, target file set, per-file before/after hash, checkpoint cursor를 durable
+task store에 먼저 기록한다. 같은 idempotency key와 plan hash의 재요청은 기존
+task를 반환한다. 같은 key로 다른 plan을 제출하면 거부한다.
+
+`blocked`는 데이터나 사용자 선택 때문에 committable plan을 만들 수 없는 상태이고
+`failed`는 I/O 또는 내부 실행 실패지만 canonical cutover가 시작되지 않은 상태다.
+`committing` 이후 실패는 바로 `failed`로 끝내지 않고 반드시 `rolling_back` 또는
+`rollback_blocked`로 전이하여 active storage 상태를 설명한다.
+
+- `planned` 이전에는 파일을 쓰지 않는다.
+- `approved` 이후 staging 전에는 모든 expected revision을 다시 확인한다.
+- `committing` 진입 뒤 cancel 요청은 취소가 아니라 rollback 요청이 된다.
+- Process restart는 마지막 durable checkpoint에서 재개하되 이미 쓴 파일의
+  hash가 expected after hash와 일치할 때만 다음 단계로 간다.
+- Unknown bytes가 발견되면 자동 overwrite하지 않고 `rollback_blocked`로 멈춘다.
+
+### 17.6 상세 전환 절차
+
+#### Phase 0 — Format과 구현 경계 동결
+
+1. Manifest v2 schema, owner marker grammar, property cell codec을 versioned core
+   contract로 고정한다.
+2. Title/document, lifecycle, audit, layout override의 canonical 위치를 결정한다.
+3. Parser/serializer limits와 semantic revision 알고리즘을 고정한다.
+4. v1 reader와 v2 reader가 동일한 logical `DatabaseRecord` projection을
+   반환하는 adapter boundary를 만든다.
+5. v2 writer가 없는 상태에서 fixtures를 읽고 equivalence report를 생성한다.
+
+이 phase는 파일 mutation이 전혀 없고, 모든 codec conformance fixture와 manifest
+schema test가 통과해야 끝난다.
+
+#### Phase 1 — Read-only inventory와 preflight
+
+1. Workspace snapshot을 획득하고 대상 database manifest의 모든 source를 write
+   closure로 만든다.
+2. Cross-database relation/rollup dependency는 migration 대상 또는 version-pinned
+   temporary read dependency로 closure에 추가한다.
+3. v1 reader로 모든 record를 materialize하고 raw bytes와 typed snapshot을 함께
+   hash한다.
+4. Owner 후보, document title 충돌, destination path 충돌을 분석한다.
+5. 각 stored property를 v2 cell codec으로 encode한 뒤 decode하여 typed/raw
+   equivalence를 확인한다.
+6. 예상 owner table/manifest/document diff와 byte/row/column 예산을 계산한다.
+7. Blocker, warning, lossy choice, 사용자 선택이 필요한 항목을 source location과
+   함께 반환한다.
+
+Preflight는 read-only이며 incomplete scan을 `complete: true`로 표시해서는 안
+된다. 파일 한 개라도 읽지 못하면 committable plan을 만들 수 없다.
+
+#### Phase 2 — Exact plan과 사용자 승인
+
+Plan에는 다음이 전부 포함되어야 한다.
+
+- create/update/rename/delete되는 project-relative path
+- 각 기존 파일의 expected SHA-256와 각 결과 파일의 planned SHA-256
+- owner marker/table의 exact preview와 property column mapping
+- document ID assignment, record ID/legacy alias mapping
+- frontmatter key별 `preserve`, `move_to_cell`, `move_to_document_title`, `remove`
+- relation ID → target wikilink mapping
+- archived/audit/layout metadata mapping
+- generated path rename 선택과 모든 rewritten wikilink
+- expected logical before/after counts와 revisions
+- warning, loss acknowledgement, rollback scope와 estimated bytes
+
+Plan hash는 이 canonical plan 전체에 바인딩한다. Approval UI와 Agent Data Plane은
+요약 숫자뿐 아니라 path/record/property별 diff를 inspect할 수 있어야 한다.
+
+#### Phase 3 — Backup, freeze, and staging
+
+1. Apply 직전 workspace/manifest/index revision이 plan과 일치하는지 확인한다.
+2. 대상 source에 write freeze를 설치하고 UI/API/MCP/offline queue/automation의
+   새 mutation을 `migration_in_progress`로 거부한다.
+3. 대상 모든 before bytes와 Git object ID를 recovery journal에 기록한다.
+4. 같은 filesystem/volume의 task-scoped staging directory에 v2 manifest,
+   owner documents, modified linked documents를 쓴다.
+5. 새 파일을 fsync하고 staging hash가 plan의 after hash와 같은지 확인한다.
+6. Canonical v1 파일은 이 단계에서 수정하지 않는다.
+
+Backup은 before bytes를 복구할 수 있다는 것을 실제 read-back/hash verification으로
+증명해야 한다. 단순히 “Git에 있을 것”이라고 가정하지 않는다.
+
+#### Phase 4 — Staged logical verification
+
+Staging root를 독립 workspace처럼 열어 cache 없이 다음을 검증한다.
+
+1. v2 manifest와 모든 owner marker/table이 strict parse된다.
+2. source마다 owner가 정확히 하나이고 marker/manifest binding이 일치한다.
+3. 모든 linked document가 content root 안에서 하나의 document ID로 resolve된다.
+4. record count, canonical/legacy IDs, stored typed values, invalid raw values가
+   v1 frozen snapshot과 일치한다.
+5. Title, archive, audit baseline, layout override가 mapping contract와 일치한다.
+6. Relation target set과 cardinality가 일치한다.
+7. Formula/Rollup을 같은 frozen evaluation timestamp, timezone, permission
+   revision으로 계산한 결과와 error state가 일치한다.
+8. v1 database-owned frontmatter가 계획대로 제거됐고 unrelated frontmatter/body
+   hash는 계획된 title/document-ID edit 외에는 같다.
+9. Cache/index 없이 catalog/query/open-record/export smoke scenario가 통과한다.
+
+하나라도 실패하면 canonical files를 건드리지 않고 staging을 폐기하거나 보존하여
+diagnostic을 제공한다.
+
+#### Phase 5 — Atomic cutover
+
+1. 모든 expected revision과 write freeze 소유권을 마지막으로 확인한다.
+2. Commit 동안 새 reader는 차단하고 기존 reader에는 frozen pre-migration snapshot만
+   제공한다.
+3. Owner document와 새 destination document처럼 v1 source를 손상하지 않는 additive
+   v2 artifact를 transaction journal 순서대로 materialize한다. Existing document를
+   그대로 쓰는 경우 v1 `_sn`과 property frontmatter를 유지한 채 범용 document ID처럼
+   v1 reader가 무시할 수 있는 필드만 먼저 추가한다.
+4. Generated record를 normal path로 옮기는 선택은 destination에 복사본을 먼저 만들고
+   v1 original은 그대로 둔다. Owner table은 destination을 참조한다.
+5. v2 manifest를 **활성화 write**로 교체한다. 이 전까지 v1이 canonical이고,
+   이 write 이후 v2가 canonical이다.
+6. Manifest 활성화 후 v1 database-owned frontmatter를 제거하고, 검증된 destination이
+   있는 generated original만 cleanup target으로 처리한다.
+7. 각 step의 after hash를 journal에 기록하고 directory entry를 fsync한다.
+
+운영체제가 전체 file set에 대한 단일 atomic rename을 제공하지 않으므로 journal과
+manifest activation이 논리 transaction 경계다. Activation 전 write는 v1을 계속
+읽을 수 있는 additive change여야 하고 activation 후 write는 v2가 이미 읽을 수 있는
+state에서 cleanup만 수행해야 한다. Crash recovery는 manifest
+version과 journal checkpoint를 읽어 forward-complete 또는 exact rollback 중 하나만
+수행하며 mixed writer 상태를 허용하지 않는다.
+
+#### Phase 6 — Post-commit rebuild와 verification
+
+1. 모든 database index/computed cache를 삭제한 조건에서 v2 manifest/table로
+   재구축한다.
+2. HTTP, MCP, app read model이 같은 snapshot/derived revision을 반환하는지 확인한다.
+3. Representative create/edit/move/archive/delete plan을 dry-run하고 target이 owner
+   table/document뿐이며 v1 frontmatter writer를 호출하지 않는지 확인한다.
+4. Formula/Rollup reverse index와 dependency invalidation smoke test를 실행한다.
+5. Git diff에 expected manifest/table/document 변경만 있는지 검사한다.
+6. Verification receipt와 undo token을 기록한 뒤 write freeze를 해제한다.
+
+Post-commit verification 실패는 성공으로 보고하지 않는다. 즉시 automatic rollback을
+시도하고, unknown external changes 때문에 안전한 rollback이 불가능하면 source를
+read-only `recovery_required` 상태로 둔다.
+
+#### Phase 7 — Finalization과 v1 cleanup
+
+Commit 직후 v1 compatibility provenance와 rollback material을 삭제하지 않는다.
+정해진 retention window 동안 undo를 제공한다. Retention 종료 뒤에도 다음 조건을
+모두 만족해야 cleanup을 제안할 수 있다.
+
+- 같은 v2 snapshot으로 최소 두 번의 cold rebuild 성공
+- 사용자가 승인한 v2 mutation과 undo 각 1회 이상 성공 또는 release fixture 증거
+- unresolved migration/recovery diagnostic 없음
+- 외부 link/reference가 legacy path나 ID를 요구하지 않음
+- backup export와 standalone clone rebuild 성공
+
+Cleanup은 별도 destructive plan이다. Generated v1 폴더가 비었더라도 자동 삭제하지
+않고 exact target과 recovery 가능성을 보여준다.
+
+### 17.7 Document path와 Title 처리
+
+- Existing-folder source의 문서는 기본적으로 현재 path를 유지한다.
+- 앱이 만든 `untitled_database_*`/`rec_*` path는 자동 rename하지 않는다.
+  Migration preview가 `keep_path`와 `move_to_normal_document`를 제공한다.
+- `move_to_normal_document`는 normalized slug 후보, case-folding collision,
+  existing link rewrite, Git rename detection을 보여주고 사용자가 승인해야 한다.
+- 같은 record body를 여러 v1 source가 소유한 것으로 발견하면 자동 병합하지 않는다.
+- 문서 body가 비어 있어도 `.md` document entity와 document ID를 유지한다.
+- v1 Title과 문서 title conflict는 bulk default를 허용할 수 있지만 각 conflict를
+  개별 inspect할 수 있어야 하며 선택이 plan hash에 포함된다.
+
+### 17.8 Relation, Formula, Rollup 순서
+
+Relation을 path로 변환하려면 target record mapping이 먼저 필요하므로 apply 순서는
+다음으로 고정한다.
+
+1. 전체 dependency closure의 record ID → document ID/path mapping 생성
+2. 모든 scalar/title cell encode
+3. relation record ID를 target document wikilink로 encode
+4. owner table 전체 strict parse 및 relation resolution
+5. Formula AST stable property ID resolution/typecheck
+6. source 간 Formula/Rollup DAG와 reverse relation index 생성
+7. frozen v1/v2 derived result 비교
+
+Target source가 다른 database manifest에 있고 migration 대상이 아니라면 closure에서
+version-pinned read dependency로 고정할 수 있다. Target이 v1이면 dependency document에
+범용 document ID가 존재하거나 exact plan으로 추가되어야 하고 storage-neutral v1 adapter가
+같은 logical target values를 제공해야 한다. 이것은 read compatibility이지 dual-write가
+아니다. Cross-version relation/Rollup adapter는 compatibility 기간에만 유지하며 target
+revision invalidation과 후속 target migration을 지원해야 한다. 이 조건을 충족하지 못하면
+관련 database manifest를 같은 batch에 포함하거나 migration을 막는다.
+
+### 17.9 Verification equivalence matrix
+
+| 대상 | 완료 조건 |
+| --- | --- |
+| Database/source/schema/view IDs | Set equality와 stable definition revision 일치 |
+| Record identity | 모든 canonical ID와 legacy ID lookup이 정확히 한 v2 row를 반환 |
+| Record count | Active/archived/invalid/broken 분류별 count가 각각 일치 |
+| Stored values | Property ID별 typed deep equality; invalid value는 raw bytes와 diagnostic code 일치 |
+| Title/document | v1 logical Title, v2 document title projection, first-cell resolution이 일치 |
+| Relations | Source record/property별 ordered target record set과 cardinality 일치 |
+| Formula/Rollup | Frozen context에서 value 또는 explicit error code deep equality |
+| Body/frontmatter | 계획된 key/title/document-ID edit 외의 normalized-independent byte hash 일치 |
+| Permissions | Representative principals별 visible/redacted/error 결과 일치 |
+| Query | Filter/sort/group/projection/page cursor 결과 record ID sequence 일치 |
+| API/MCP | Logical payload와 completeness/revision semantics 일치; storage path shape만 documented change |
+| Standalone clone | Cache/task store 없이 manifest/table/documents에서 catalog와 records 재구축 |
+| Rollback | 모든 before-path bytes와 manifest/index logical snapshot이 migration 전 hash와 일치 |
+
+Line ending이나 YAML key order가 달라도 된다고 포괄적으로 허용하지 않는다. 변경이
+필요한 정확한 source range만 plan에 기록하며 나머지는 byte equality를 요구한다.
+
+### 17.10 실패, retry, cancel, rollback
+
+| 발생 시점 | 처리 |
+| --- | --- |
+| Inventory/preflight 실패 | 쓰기 없음; blocker report만 반환 |
+| Staging 실패 | canonical v1 유지; staging 정리 또는 resumable checkpoint 보존 |
+| Staged verification 실패 | canonical v1 유지; apply 금지 |
+| Cutover 중 crash, v1 manifest active | Journal의 partial v2 files를 제거하거나 before bytes로 복구 |
+| Cutover 중 crash, v2 manifest active | Journal hash가 맞으면 forward-complete 후 검증; 아니면 rollback |
+| Post-commit verification 실패 | Automatic rollback 시도; 불가하면 read-only recovery-required |
+| Undo 요청, 이후 변경 없음 | Exact reverse transaction 적용 후 v1 index cold rebuild |
+| Undo 요청, 이후 파일 변경 있음 | 덮어쓰지 않고 path별 three-way conflict preview 반환 |
+
+Retry는 같은 plan hash와 expected revisions에서만 가능하다. Blocker를 수정한 뒤에는
+새 inventory와 새 plan/approval이 필요하다. Rollback 성공은 파일 복사 성공이 아니라
+v1 manifest parse, record index rebuild, logical before snapshot equality까지 확인해야 한다.
+
+### 17.11 Rollout과 compatibility 제거
+
+1. **Read-only foundation**: v2 core schema/parser/codec과 equivalence harness를
+   ship하되 production writer와 migration apply는 비활성화한다. Supported read
+   versions와 default write version을 별도 상수/capability로 분리하여 이 단계에서
+   database creation default를 실수로 v2로 올리지 않는다.
+2. **Internal fixtures**: generated blank, existing folder, inline, full-page,
+   multi-source relation, Formula/Rollup corpus를 CI에서 반복 migration/rollback한다.
+3. **Opt-in pilot**: 새 v2 database와 수동 migration을 feature flag 아래 제한된
+   workspace에서 제공하고 v1 writer는 v1 source에만 유지한다.
+4. **V2 new-default**: release gate 통과 뒤 새 database 생성은 v2만 사용한다.
+   기존 v1 source는 계속 읽히지만 edit 시 migration preview를 요구한다.
+5. **Migration recommended**: blocker-free source에 명시적 migration CTA를 제공한다.
+   Background auto-migration은 하지 않는다.
+6. **V1 writer removal**: supported releases/rollback window가 지난 뒤 v1 mutation
+   endpoint와 record-frontmatter writer를 제거한다. V1 reader/importer는 read-only다.
+7. **Compatibility retirement**: migration coverage와 release policy가 허용할 때만
+   v1 reader와 legacy aliases cleanup을 별도 RFC/release note로 제거한다.
+
+Compatibility 기간의 “둘 다 읽기”는 두 저장 엔진에 쓰는 dual-write가 아니다.
+Database manifest version이 그 manifest의 모든 source writer routing에 대한 유일한
+권위이며 v2 mutation code에서
+v1 record-frontmatter write가 관찰되면 invariant violation으로 commit을 중단한다.
+
+### 17.12 운영 지표와 privacy
+
+Migration telemetry는 content나 cell 값을 기록하지 않고 다음만 집계한다.
+
+- 대상/성공/blocked/rolled-back source와 record count
+- phase별 duration, retry, crash recovery, rollback 결과
+- blocker/error code와 property type
+- before/after byte count, owner table row/column count
+- cold rebuild와 Formula/Rollup verification duration
+- semantic merge conflict와 post-migration repair count
+
+Path, title, wikilink, cell content, document body, Formula expression, person/email/file
+값은 telemetry에 포함하지 않는다. Local diagnostics export는 사용자가 명시적으로
+생성하며 redaction preview를 제공한다.
 
 ## 18. API와 Agent Data Plane 영향
 
@@ -615,6 +1037,11 @@ Rename, localization, duplicate labels에서 identity가 깨지므로 거부한�
 ## 21. 구현 순서
 
 이 RFC는 한 번에 저장 형식을 바꾸는 대규모 patch를 요구하지 않는다. 그러나 각 단계는 최종 단일 엔진을 향해야 하며 영구 dual-write를 추가해서는 안 된다.
+
+세부 작업, 의존성, 영역별 완료 증거와 release gate의 normative tracker는
+[RFC 0008 implementation checklist](./0008-markdown-table-database-storage-implementation-checklist.md)다.
+아래 순서는 요약이며 checklist 항목이 코드·테스트·운영 증거 없이 체크되어서는
+안 된다. RFC 본문과 checklist가 충돌하면 이 RFC의 저장 불변식이 우선한다.
 
 1. **Core format**
    - marker grammar와 versioned cell codec
@@ -689,6 +1116,10 @@ Rename, localization, duplicate labels에서 identity가 깨지므로 거부한�
 - [ ] Semantic merge가 서로 다른 cell 변경을 합치고 같은 cell 충돌을 표시한다.
 - [ ] V1 migration이 record count, stable IDs/aliases, stored values, relations, Formula/Rollup 결과를 검증한다.
 - [ ] Migration failure와 undo가 manifest, owner table, linked documents를 정확히 복구한다.
+- [ ] V1 Title, archive/audit metadata, page layout override가 documented v2 target으로 lossless하게 이동한다.
+- [ ] Migration task가 manifest activation boundary와 durable checkpoint로 모든 crash boundary에서 v1 또는 v2 한쪽으로만 복구된다.
+- [ ] 같은 manifest의 모든 source가 한 migration batch에 포함되고 cross-database relation/rollup은 migrated target 또는 version-pinned read dependency로 검증되며 mixed writer가 생기지 않는다.
+- [ ] Post-commit dry-run에서 v1 frontmatter writer target이 하나라도 발견되면 migration을 성공으로 확정하지 않는다.
 
 ### 22.5 Standalone clone
 

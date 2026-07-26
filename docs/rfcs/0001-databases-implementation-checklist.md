@@ -6,8 +6,14 @@
 > acceptance are tracked in the
 > [Notion UX alignment checklist](./0001-notion-ux-alignment-checklist.md).
 
+> **Storage successor note:** 이 checklist의 완료 표시는 현재 v1 logical
+> capability와 record-per-file 구현 증거다. Markdown owner table로의 v2 저장
+> 전환은 [RFC 0008 implementation checklist](./0008-markdown-table-database-storage-implementation-checklist.md)에서
+> 별도로 추적한다. 기존 항목이 체크되어 있다는 사실만으로 v2 format, migration,
+> semantic merge 또는 v1 writer removal이 완료된 것으로 간주하지 않는다.
+
 - Status: Active
-- Last updated: 2026-07-22
+- Last updated: 2026-07-27
 - Companion RFC: [File-native databases and the Agent Data Plane](./0001-databases-and-agent-data-plane.md)
 
 ## How to use this checklist
