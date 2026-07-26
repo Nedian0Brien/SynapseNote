@@ -26,8 +26,17 @@ for a different workflow.
 
 ### 2. Verify, commit, and push
 
-- Run the smallest relevant checks while iterating and all checks required by
-  the affected area before presenting the work as ready.
+- Run only the smallest relevant checks for the changed behavior. A focused
+  change with a dedicated test should normally run only that test file.
+- Do not run full-package, affected-package, PR, or repository-wide test suites
+  for a focused change. In particular, do not run `check:package`,
+  `check:changed`, `check:pr`, `check:repository`, or `check` merely because work
+  is being committed, pushed, or presented for review.
+- Escalate beyond focused tests only when the user explicitly requests broader
+  verification or the change itself necessarily spans multiple packages,
+  repository configuration, CI/release behavior, or shared contracts that
+  cannot be covered by a narrower check. State the concrete reason before
+  starting the broader command.
 - Commit only the intended task changes with a focused commit message.
 - Push the task branch to `origin` before reporting the implementation as ready
   for user review.
@@ -71,21 +80,25 @@ bun run build
 `bun run check` is the compatibility alias for the final repository gate. Do
 not use it as the default loop for every local edit.
 
-During development:
+Verification commands are escalation options, not a cumulative checklist:
 
 ```bash
-# Use the narrowest command that covers the change.
+# Default for focused changes.
 bun run test:file -- <test-path>
+
+# Use only when the change genuinely spans the named scope.
 bun run check:domain -- <domain>
 bun run check:package -- <app|server|core|cli|desktop>
 bun run check:changed
 bun run check:pr
 ```
 
-Use the broader format/lint/typecheck commands for focused iterations when
-needed. Use `bun run check:repository` (or its compatibility alias
-`bun run check`) for cross-package, PR-final, `main`, and release verification—
-not for every local edit. `check:pr` is the local affected-package PR plan.
+Do not escalate after a focused check passes just to obtain a broader green
+result. Use broader format/lint/typecheck commands only when the changed code
+requires them. Use `bun run check:repository` (or its compatibility alias
+`bun run check`) only when explicitly requested or when changing cross-package
+configuration, `main`, CI, or release behavior. `check:pr` is the local
+affected-package PR plan, not a default pre-push gate.
 Server test tasks are split into `test:unit`, `test:database`,
 `test:filesystem`, `test:git`, `test:process`, and `test:contract`;
 process-sensitive tasks can be run with deterministic `--shard=INDEX/COUNT`
@@ -160,24 +173,26 @@ Every behavior-changing pull request includes a `.changeset/<kebab-name>.md` fil
 
 ## Before finishing
 
-Run the smallest relevant check while iterating. For local desktop packaging or
-installation workflow changes, run:
+Run the smallest relevant check and stop once the changed behavior is covered.
+Do not add a full-package or repository-wide test run solely because the task is
+finishing. For local desktop packaging or installation workflow changes, run:
 
 ```bash
 bun run check:desktop:local
 ```
 
-For completed desktop or editor work, run the affected tests and:
+For completed desktop-specific work, run the affected tests and:
 
 ```bash
 bun run check:desktop
 ```
 
-Reserve the repository-wide check for cross-package changes, PR readiness, or
-release verification:
+Run the repository-wide check only when the user explicitly requests it or the
+task changes cross-package configuration, CI, or release behavior:
 
 ```bash
 bun run check
 ```
 
-For UI or editor changes, also run the affected tests from `packages/app`.
+For web UI or editor changes, run only the directly affected tests from
+`packages/app` unless the escalation rules above apply.
