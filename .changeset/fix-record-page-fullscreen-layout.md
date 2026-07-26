@@ -2,4 +2,4 @@
 '@nedian0brien/synapsenote': patch
 ---
 
-Move database record identity into the editor header and keep full-page actions compact and visible.
+Align full-page database records with peek views through shared header identity, compact actions, and inline comments.

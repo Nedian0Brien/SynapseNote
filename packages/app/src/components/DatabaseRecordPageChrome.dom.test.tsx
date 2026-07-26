@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test';
 import { HocuspocusProvider } from '@hocuspocus/provider';
-import { DatabaseDefinitionSchema } from '@nedian0brien/synapsenote-core';
+import {
+  DatabaseDefinitionSchema,
+  DatabaseRecordCommentsSchema,
+} from '@nedian0brien/synapsenote-core';
 import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-server';
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import { PropertyProvider } from '@/components/PropertyContext';
@@ -8,6 +11,10 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { DatabaseCatalogClientError } from '@/lib/database-catalog-client';
 import { DatabaseQueryClientError } from '@/lib/database-query-client';
 import { useDatabaseRecordHeader } from '@/lib/database-record-header';
+import type {
+  DatabaseCommentRequest,
+  DatabaseCommentSnapshot,
+} from '@/lib/database-comments-client';
 import { emitDatabaseChanged } from '@/lib/documents-events';
 import type { DatabaseRecordPageServices } from './DatabaseRecordPageChrome';
 import { DatabaseRecordPageChrome } from './DatabaseRecordPageChrome';
@@ -74,6 +81,12 @@ const database = DatabaseDefinitionSchema.parse({
 });
 const source = database.sources.at(0);
 if (!source) throw new Error('Expected the test database source');
+const emptyComments = DatabaseRecordCommentsSchema.parse({
+  version: 1,
+  databaseId: database.id,
+  recordId: 'rec_first',
+  threads: [],
+});
 const databaseWithMove = DatabaseDefinitionSchema.parse({
   ...database,
   sources: [
@@ -242,6 +255,13 @@ describe('DatabaseRecordPageChrome', () => {
       },
     };
     const recordProvider = provider();
+    const commentRequests: DatabaseCommentRequest[] = [];
+    const commentsRequest = async (
+      input: DatabaseCommentRequest,
+    ): Promise<DatabaseCommentSnapshot> => {
+      commentRequests.push(input);
+      return { revision: hash, document: emptyComments };
+    };
     const forceSync = mock(() => {});
     recordProvider.forceSync = forceSync;
     recordProvider.unsyncedChanges = 0;
@@ -256,6 +276,7 @@ describe('DatabaseRecordPageChrome', () => {
               fallbackTitle="rec_first"
               body={<div data-testid="record-body-editor">Editable record body</div>}
               services={services}
+              commentsRequest={commentsRequest}
             />
             <DatabaseRecordHeaderProbe docName="records/rec_first" />
           </>
@@ -291,9 +312,20 @@ describe('DatabaseRecordPageChrome', () => {
     expect(recordToolbar?.classList.contains('flex-wrap')).toBe(false);
     expect(recordToolbar?.parentElement?.classList.contains('editor-content-aligned')).toBe(true);
     expect(view.getByRole('button', { name: 'Ask agent' })).toBeDefined();
+    const commentComposer = await view.findByRole('textbox', { name: 'Add comment' });
+    const commentsSection = commentComposer.closest('[data-database-peek-comments]');
+    expect(commentsSection).not.toBeNull();
+    expect(view.queryByRole('dialog', { name: 'Comments' })).toBeNull();
+    expect(commentRequests.at(0)).toMatchObject({ action: 'read', recordId: 'rec_first' });
+    fireEvent.click(view.getByRole('button', { name: 'Comments' }));
+    await waitFor(() => expect(document.activeElement).toBe(commentComposer));
     const bodyHost = view.getByTestId('record-body-editor');
     const bodySurface = bodyHost.closest('[data-database-record-body]');
     expect(bodySurface?.getAttribute('data-record-body-position')).toBe('below-properties');
+    expect(
+      (commentsSection?.compareDocumentPosition(bodySurface ?? bodyHost) ?? 0) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(
       view
         .getAllByTestId('property-row')

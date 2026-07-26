@@ -30,7 +30,6 @@ import {
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { DatabaseAgentScopeMenu } from '@/components/DatabaseAgentScopeMenu';
-import { DatabaseCommentsDialog } from '@/components/DatabaseCommentsDialog';
 import { DatabaseConflictResolutionNotice } from '@/components/DatabaseConflictResolutionNotice';
 import {
   type DatabasePageAppearance,
@@ -42,6 +41,7 @@ import { DatabasePresenceBadges } from '@/components/DatabasePresenceBadges';
 import { DatabaseRecordHistoryDialog } from '@/components/DatabaseRecordHistoryDialog';
 import { DatabaseRecordLayoutOverrideDialog } from '@/components/DatabaseRecordLayoutOverrideDialog';
 import { DatabaseRecordPageSurface } from '@/components/DatabaseRecordPageSurface';
+import { DatabaseRecordPeekComments } from '@/components/DatabaseRecordPeekComments';
 import { DatabaseRelationsDialog } from '@/components/DatabaseRelationsDialog';
 import { PageHeader } from '@/components/PageHeader';
 import { PropertyPanel } from '@/components/PropertyPanel';
@@ -71,6 +71,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { subscribeToDatabaseAgentRunChanged } from '@/lib/database-agent-run-events';
+import type {
+  DatabaseCommentRequest,
+  DatabaseCommentSnapshot,
+} from '@/lib/database-comments-client';
 import { publishDatabaseRecordHeader } from '@/lib/database-record-header';
 import { describeDatabase } from '@/lib/database-catalog-client';
 import {
@@ -126,6 +130,7 @@ interface DatabaseRecordPageChromeProps {
    */
   body?: ReactNode;
   services?: DatabaseRecordPageServices;
+  commentsRequest?: (input: DatabaseCommentRequest) => Promise<DatabaseCommentSnapshot>;
 }
 
 export interface DatabaseRecordPageServices {
@@ -192,6 +197,7 @@ export function DatabaseRecordPageChrome({
   fallbackTitle,
   body,
   services = DEFAULT_SERVICES,
+  commentsRequest,
 }: DatabaseRecordPageChromeProps) {
   'use no memo';
   const [snapshot, setSnapshot] = useState<FrontmatterSnapshot>(() =>
@@ -228,7 +234,7 @@ export function DatabaseRecordPageChrome({
   const [recordActionRunning, setRecordActionRunning] = useState(false);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [moveTargetSourceId, setMoveTargetSourceId] = useState('');
-  const [commentsDialogOpen, setCommentsDialogOpen] = useState(false);
+  const [commentsFocusRequest, setCommentsFocusRequest] = useState(0);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [relationsDialogOpen, setRelationsDialogOpen] = useState(false);
   const [relationTargets, setRelationTargets] = useState<DatabaseRelationNavigationItem[]>([]);
@@ -648,10 +654,6 @@ export function DatabaseRecordPageChrome({
     }
   }
 
-  async function openComments(): Promise<void> {
-    if (await ensureCurrentRecord()) setCommentsDialogOpen(true);
-  }
-
   async function openRelations(): Promise<void> {
     if (await ensureCurrentRecord()) setRelationsDialogOpen(true);
   }
@@ -948,7 +950,7 @@ export function DatabaseRecordPageChrome({
               variant="ghost"
               aria-label="Comments"
               title="Comments"
-              onClick={() => void openComments()}
+              onClick={() => setCommentsFocusRequest((current) => current + 1)}
             >
               <MessageSquare aria-hidden="true" />
             </Button>
@@ -1109,6 +1111,17 @@ export function DatabaseRecordPageChrome({
           />
         )
       ) : null}
+      {source && currentBinding && currentRecord && !recordUnavailable ? (
+        <div className="editor-content-aligned">
+          <DatabaseRecordPeekComments
+            database={currentBinding.database}
+            source={source}
+            record={currentRecord}
+            focusRequest={commentsFocusRequest}
+            request={commentsRequest}
+          />
+        </div>
+      ) : null}
       {mutationPropertyId ? (
         <div className="editor-content-aligned py-2">
           <p className="text-xs text-muted-foreground" role="status">
@@ -1142,15 +1155,6 @@ export function DatabaseRecordPageChrome({
           override={recordPageLayoutOverride}
           onOpenChange={setRecordLayoutDialogOpen}
           onSave={(override) => void commitRecordPageLayoutOverride(override)}
-        />
-      ) : null}
-      {source && currentBinding && !recordUnavailable && currentRecord && commentsDialogOpen ? (
-        <DatabaseCommentsDialog
-          open
-          onOpenChange={setCommentsDialogOpen}
-          database={currentBinding.database}
-          source={source}
-          record={currentRecord}
         />
       ) : null}
       {source && currentBinding && !recordUnavailable && currentRecord && relationsDialogOpen ? (
