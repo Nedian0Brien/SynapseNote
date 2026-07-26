@@ -266,7 +266,19 @@ describe('DatabaseRecordPageChrome', () => {
     expect(recordSurface?.getAttribute('data-record-id')).toBe('rec_first');
     expect(recordSurface?.getAttribute('data-database-machine-ids')).toBe('stable');
     expect(recordSurface?.querySelector('[data-database-machine-ids]')).not.toBeNull();
-    expect(view.getByLabelText('Database breadcrumbs')).toBeDefined();
+    const breadcrumbs = view.getByLabelText('Database breadcrumbs');
+    expect(breadcrumbs.classList.contains('flex')).toBe(true);
+    expect(breadcrumbs.classList.contains('editor-content-aligned')).toBe(false);
+    expect(breadcrumbs.parentElement?.classList.contains('editor-content-aligned')).toBe(true);
+    expect(
+      Array.from(breadcrumbs.children).every((child) => child.parentElement === breadcrumbs),
+    ).toBe(true);
+    const recordToolbar = view.container.querySelector<HTMLElement>(
+      '[data-database-record-toolbar]',
+    );
+    expect(recordToolbar).not.toBeNull();
+    expect(recordToolbar?.classList.contains('flex-wrap')).toBe(true);
+    expect(recordToolbar?.parentElement?.classList.contains('editor-content-aligned')).toBe(true);
     expect(view.getByRole('button', { name: 'Ask agent' })).toBeDefined();
     expect(view.getByRole('link', { name: 'Tasks' }).getAttribute('href')).toBe(
       '#database/db_tasks/ds_tasks',

@@ -148,31 +148,33 @@ function DatabaseRecordPageStateNotice({
   onBack?: () => void;
 }) {
   return (
-    <div
-      className="editor-content-aligned flex flex-wrap items-start justify-between gap-3 py-3 text-sm"
-      role="alert"
-      data-database-record-state={problem.kind}
-    >
-      <div>
-        <p className="font-medium">
-          {problem.kind === 'missing'
-            ? 'Page is unavailable'
-            : problem.kind === 'permission'
-              ? 'Permission required'
-              : 'Page could not be loaded'}
-        </p>
-        <p className="text-muted-foreground">{problem.message}</p>
-        {problem.kind === 'permission' ? (
-          <p className="text-muted-foreground">
-            Request access or use fields available to your current policy.
+    <div className="editor-content-aligned py-3 text-sm">
+      <div
+        className="flex flex-wrap items-start justify-between gap-3"
+        role="alert"
+        data-database-record-state={problem.kind}
+      >
+        <div>
+          <p className="font-medium">
+            {problem.kind === 'missing'
+              ? 'Page is unavailable'
+              : problem.kind === 'permission'
+                ? 'Permission required'
+                : 'Page could not be loaded'}
           </p>
+          <p className="text-muted-foreground">{problem.message}</p>
+          {problem.kind === 'permission' ? (
+            <p className="text-muted-foreground">
+              Request access or use fields available to your current policy.
+            </p>
+          ) : null}
+        </div>
+        {onBack ? (
+          <Button type="button" variant="outline" size="sm" onClick={onBack}>
+            <Trans>Back to database view</Trans>
+          </Button>
         ) : null}
       </div>
-      {onBack ? (
-        <Button type="button" variant="outline" size="sm" onClick={onBack}>
-          <Trans>Back to database view</Trans>
-        </Button>
-      ) : null}
     </div>
   );
 }
@@ -815,28 +817,34 @@ export function DatabaseRecordPageChrome({
       sourceId={metadata.source_id}
       recordId={metadata.record_id}
     >
-      <nav
-        className="editor-content-aligned flex items-center gap-1 truncate py-2 text-muted-foreground text-xs"
-        aria-label="Database breadcrumbs"
-        data-database-breadcrumbs
-      >
-        <a
-          className="truncate underline underline-offset-2"
-          href={
-            recordNavigation
-              ? databaseRecordPageOriginHash(recordNavigation)
-              : databaseRecordPageFallbackHash(metadata.database_id, metadata.source_id)
-          }
+      <div className="editor-content-aligned py-2">
+        <nav
+          className="flex min-w-0 items-center gap-1 overflow-hidden text-muted-foreground text-xs"
+          aria-label="Database breadcrumbs"
+          data-database-breadcrumbs
         >
-          {currentBinding?.database.name ?? metadata.database_id}
-        </a>
-        <span aria-hidden="true">/</span>
-        <span className="truncate">{source?.name ?? metadata.source_id}</span>
-        <span aria-hidden="true">/</span>
-        <span className="truncate" aria-current="page">
-          {databaseTitle ?? fallbackTitle}
-        </span>
-      </nav>
+          <a
+            className="min-w-0 truncate underline underline-offset-2"
+            href={
+              recordNavigation
+                ? databaseRecordPageOriginHash(recordNavigation)
+                : databaseRecordPageFallbackHash(metadata.database_id, metadata.source_id)
+            }
+          >
+            {currentBinding?.database.name ?? metadata.database_id}
+          </a>
+          <span className="shrink-0" aria-hidden="true">
+            /
+          </span>
+          <span className="min-w-0 truncate">{source?.name ?? metadata.source_id}</span>
+          <span className="shrink-0" aria-hidden="true">
+            /
+          </span>
+          <span className="min-w-0 truncate" aria-current="page">
+            {databaseTitle ?? fallbackTitle}
+          </span>
+        </nav>
+      </div>
       <div className="editor-content-aligned py-1">
         <DatabaseMachineIdsDetails
           entries={[
@@ -862,9 +870,11 @@ export function DatabaseRecordPageChrome({
         <DatabasePresenceBadges entries={recordPresence} scope="record" />
       </div>
       {binding.status === 'loading' || binding.key !== metadataKey ? (
-        <p className="editor-content-aligned py-3 text-sm text-muted-foreground" role="status">
-          <Trans>Loading verified database properties</Trans>
-        </p>
+        <div className="editor-content-aligned py-3">
+          <p className="text-sm text-muted-foreground" role="status">
+            <Trans>Loading verified database properties</Trans>
+          </p>
+        </div>
       ) : null}
       {recordUnavailable ? (
         <DatabaseRecordPageStateNotice
@@ -878,13 +888,15 @@ export function DatabaseRecordPageChrome({
         />
       ) : null}
       {!recordUnavailable && currentRecord?.archivedAt ? (
-        <p
-          className="editor-content-aligned py-2 text-sm text-muted-foreground"
-          role="status"
-          data-database-record-state="archived"
-        >
-          <Trans>This page is archived. Restore it from More page actions.</Trans>
-        </p>
+        <div className="editor-content-aligned py-2">
+          <p
+            className="text-sm text-muted-foreground"
+            role="status"
+            data-database-record-state="archived"
+          >
+            <Trans>This page is archived. Restore it from More page actions.</Trans>
+          </p>
+        </div>
       ) : null}
       {!recordUnavailable && mutationConflict ? (
         <div className="editor-content-aligned py-2">
@@ -897,13 +909,18 @@ export function DatabaseRecordPageChrome({
           />
         </div>
       ) : !recordUnavailable && mutationError ? (
-        <p className="editor-content-aligned py-2 text-sm text-destructive" role="alert">
-          {mutationError}
-        </p>
+        <div className="editor-content-aligned py-2">
+          <p className="text-sm text-destructive" role="alert">
+            {mutationError}
+          </p>
+        </div>
       ) : null}
       {source && !recordUnavailable ? (
         <div className="editor-content-aligned py-1">
-          <div className="flex justify-end">
+          <div
+            className="flex min-w-0 flex-wrap items-center justify-end gap-y-1"
+            data-database-record-toolbar
+          >
             {recordNavigation ? (
               <>
                 <Button
@@ -1119,9 +1136,11 @@ export function DatabaseRecordPageChrome({
         )
       ) : null}
       {mutationPropertyId ? (
-        <p className="editor-content-aligned py-2 text-xs text-muted-foreground" role="status">
-          <Trans>Verifying database change</Trans>
-        </p>
+        <div className="editor-content-aligned py-2">
+          <p className="text-xs text-muted-foreground" role="status">
+            <Trans>Verifying database change</Trans>
+          </p>
+        </div>
       ) : null}
       {body && !recordUnavailable ? (
         <div
