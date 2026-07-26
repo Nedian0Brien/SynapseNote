@@ -378,12 +378,18 @@ export function DatabaseRecordPageChrome({
       : undefined;
   useEffect(() => {
     if (!currentBinding || !source) return;
+    const sourceHref = recordNavigation
+      ? databaseRecordPageOriginHash(recordNavigation)
+      : databaseRecordPageFallbackHash(currentBinding.database.id, source.id);
+    const defaultSourceId = currentBinding.database.sources.at(0)?.id ?? source.id;
     return publishDatabaseRecordHeader(docName, {
       databaseName: currentBinding.database.name,
+      databaseHref: databaseRecordPageFallbackHash(currentBinding.database.id, defaultSourceId),
       sourceName: source.name,
+      sourceHref,
       recordTitle: databaseTitle ?? fallbackTitle,
     });
-  }, [currentBinding, databaseTitle, docName, fallbackTitle, source]);
+  }, [currentBinding, databaseTitle, docName, fallbackTitle, recordNavigation, source]);
   const recordIcon = typeof snapshot.map.icon === 'string' ? snapshot.map.icon : undefined;
   const recordCover = typeof snapshot.map.cover === 'string' ? snapshot.map.cover : undefined;
   const reservedKeys = ['_sn', ...(titleProperty ? [titleProperty.key] : [])];

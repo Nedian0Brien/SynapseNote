@@ -302,7 +302,9 @@ describe('DatabaseRecordPageChrome', () => {
       JSON.parse(view.getByTestId('database-record-header-probe').textContent ?? 'null'),
     ).toEqual({
       databaseName: 'Tasks',
+      databaseHref: '#database/db_tasks/ds_tasks',
       sourceName: 'Tasks',
+      sourceHref: '#database/db_tasks/ds_tasks',
       recordTitle: 'Canonical title',
     });
     const recordToolbar = view.container.querySelector<HTMLElement>(

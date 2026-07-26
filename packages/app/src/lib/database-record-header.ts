@@ -2,7 +2,9 @@ import { useSyncExternalStore } from 'react';
 
 export interface DatabaseRecordHeader {
   databaseName: string;
+  databaseHref: string;
   sourceName: string;
+  sourceHref: string;
   recordTitle: string;
 }
 

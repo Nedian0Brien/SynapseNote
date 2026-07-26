@@ -3,14 +3,14 @@ import { ChevronRight, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { EditorBreadcrumb } from './EditorBreadcrumb';
+import { EditorBreadcrumb, type EditorBreadcrumbSegment } from './EditorBreadcrumb';
 
 interface DocumentViewerHeaderProps {
   documentPath: string;
   title: string;
   fileType: 'MD' | 'PDF';
   showBreadcrumb?: boolean;
-  breadcrumbSegments?: readonly string[];
+  breadcrumbSegments?: readonly (string | EditorBreadcrumbSegment)[];
   centerContent?: ReactNode;
   leadingAccessory?: ReactNode;
   actions?: ReactNode;

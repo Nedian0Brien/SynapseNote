@@ -89,6 +89,25 @@ describe('EditorBreadcrumb (Tier-3 mount)', () => {
     expect(Array.from(itemEls).map((item) => item.textContent)).toEqual(['Projects', 'Tasks']);
   });
 
+  test('renders explicit virtual hierarchy targets as navigable links', () => {
+    render(
+      <EditorBreadcrumb
+        docName="untitled_database/rec_internal_id"
+        segments={[
+          { label: 'Projects', href: '#database/db_projects/ds_projects' },
+          { label: 'Tasks', href: '#database/db_projects/ds_tasks/view_board' },
+        ]}
+      />,
+    );
+
+    expect(screen.getByRole('link', { name: 'Projects' }).getAttribute('href')).toBe(
+      '#database/db_projects/ds_projects',
+    );
+    expect(screen.getByRole('link', { name: 'Tasks' }).getAttribute('href')).toBe(
+      '#database/db_projects/ds_tasks/view_board',
+    );
+  });
+
   test('exposes the full segment text via title for truncation reveal', () => {
     render(<EditorBreadcrumb docName="a-very-long-folder-name/another-folder/some-doc" />);
     const nav = screen.getByRole('navigation', { name: /breadcrumb/i });
@@ -139,7 +158,7 @@ describe('EditorBreadcrumb (Tier-3 mount)', () => {
     expect(screen.queryByRole('navigation', { name: /breadcrumb/i })).toBeNull();
   });
 
-  test('emits no click/hover handlers — breadcrumb is pure display', () => {
+  test('keeps filesystem-derived breadcrumb segments as pure display', () => {
     render(<EditorBreadcrumb docName="meetings/notes" />);
     const nav = screen.getByRole('navigation', { name: /breadcrumb/i });
     // The whole component carries no onClick/onMouseEnter via DOM attrs.

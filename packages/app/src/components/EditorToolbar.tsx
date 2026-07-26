@@ -63,6 +63,26 @@ export function EditorToolbar({
     activeSkill?.name ??
     databaseRecordHeader?.recordTitle ??
     viewerTitleFromPath(activeDocName ?? 'Untitled');
+  const databaseBreadcrumbSegments = databaseRecordHeader
+    ? databaseRecordHeader.databaseName.trim().toLowerCase() ===
+      databaseRecordHeader.sourceName.trim().toLowerCase()
+      ? [
+          {
+            label: databaseRecordHeader.sourceName,
+            href: databaseRecordHeader.sourceHref,
+          },
+        ]
+      : [
+          {
+            label: databaseRecordHeader.databaseName,
+            href: databaseRecordHeader.databaseHref,
+          },
+          {
+            label: databaseRecordHeader.sourceName,
+            href: databaseRecordHeader.sourceHref,
+          },
+        ]
+    : undefined;
 
   return (
     <div data-testid="editor-toolbar" className="pointer-events-none absolute inset-x-0 top-0 z-10">
@@ -71,11 +91,7 @@ export function EditorToolbar({
         title={title}
         fileType="MD"
         showBreadcrumb={!activeSkill}
-        breadcrumbSegments={
-          databaseRecordHeader
-            ? [databaseRecordHeader.databaseName, databaseRecordHeader.sourceName]
-            : undefined
-        }
+        breadcrumbSegments={databaseBreadcrumbSegments}
         leadingAccessory={
           activeDocName === null ? null : (
             <NotInSidebarIndicator

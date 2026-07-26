@@ -17,8 +17,14 @@ mock.module('./EditorBreadcrumb', () => ({
     segments,
   }: {
     docName: string | null;
-    segments?: readonly string[];
-  }) => <span data-testid="editor-breadcrumb-probe">{segments?.join(' / ') ?? docName}</span>,
+    segments?: readonly (string | { label: string; href: string })[];
+  }) => (
+    <span data-testid="editor-breadcrumb-probe">
+      {segments
+        ?.map((segment) => (typeof segment === 'string' ? segment : segment.label))
+        .join(' / ') ?? docName}
+    </span>
+  ),
 }));
 
 // The breadcrumb cell's NotInSidebarIndicator reads merged config through the
@@ -85,7 +91,9 @@ describe('EditorToolbar runtime layout', () => {
     headerReleases.push(
       publishDatabaseRecordHeader('untitled_database/rec_internal_id', {
         databaseName: 'Projects',
+        databaseHref: '#database/db_projects/ds_projects',
         sourceName: 'Tasks',
+        sourceHref: '#database/db_projects/ds_tasks',
         recordTitle: 'Ship the editor',
       }),
     );
@@ -100,6 +108,22 @@ describe('EditorToolbar runtime layout', () => {
     expect(screen.getByTestId('document-viewer-header').textContent).not.toContain(
       'rec_internal_id',
     );
+  });
+
+  test('collapses identical database and source names into one breadcrumb segment', async () => {
+    headerReleases.push(
+      publishDatabaseRecordHeader('untitled_database/rec_internal_id', {
+        databaseName: 'Untitled database',
+        databaseHref: '#database/db_untitled/ds_default',
+        sourceName: 'Untitled database',
+        sourceHref: '#database/db_untitled/ds_current',
+        recordTitle: 'Draft',
+      }),
+    );
+
+    await renderToolbar('untitled_database/rec_internal_id');
+
+    expect(screen.getByTestId('editor-breadcrumb-probe').textContent).toBe('Untitled database');
   });
 
   test('mode toggle sits in the Markdown tool row so the identity row keeps its width', async () => {
