@@ -1,0 +1,360 @@
+.ProseMirror {
+  outline: none;
+  min-height: 200px;
+  line-height: 1.7;
+  /* Extend hit area into left margin so the gap between text and the drag handle
+     does not prematurely hide it. padding-left compensates so text is unchanged. */
+  margin-left: -2.5rem;
+  padding-left: 2.5rem;
+  @apply text-gray-800 dark:text-white/80;
+}
+
+.ProseMirror p {
+  margin-bottom: 0.5em;
+}
+
+/* The bottom "Ask AI" composer reuses a ProseMirror view but is a slim prompt
+   field, not a document body: drop the 200px min-height and the drag-handle
+   left margin/padding so it rests at one line and its text origin aligns with
+   the placeholder overlay. Higher specificity (.ProseMirror.composer-prosemirror)
+   beats the unlayered base rule above; a Tailwind `min-h-0` utility would not. */
+.ProseMirror.composer-prosemirror {
+  min-height: 0;
+  line-height: 1.5;
+  margin-left: 0;
+  padding-left: 0;
+}
+
+.ProseMirror.composer-prosemirror p {
+  margin-bottom: 0;
+}
+
+/* Inline `@`-mention chip in the composer — VISUALLY INDISTINGUISHABLE from the
+   host-level ComposerContextChips top-row chip (`FileChip`): a user can't tell an
+   inline chip from a top-row chip by looking, only by where it sits. Each rule
+   below maps token-for-token to a Tailwind class on the top-row chip so the two
+   stay in lockstep. The top-row container is:
+     inline-flex max-w-[14rem] items-center gap-1 rounded-md border bg-muted/40
+     py-0.5 pr-1.5 pl-1 text-muted-foreground text-xs
+   and its leading icon-button is `size-3.5 rounded-sm` holding a `size-3` glyph
+   that cross-fades file-icon → X.
+
+   Like the top-row chip, the LEADING icon doubles as the remove control (Cursor
+   pattern): NO trailing × and no reserved trailing slot — at rest the chip is
+   fully tight (leading `@` marker + label). The reveal is LAYOUT-NEUTRAL: the
+   leading cell is fixed-size and holds two stacked glyphs (`@` and `×`); on
+   hover/`:focus-within` they cross-fade via `opacity` ONLY (the `@` fades to 0,
+   the `×` fades to 1) in the same cell, so the chip's box is identical hovered vs
+   not and the inline prompt text never reflows (a width/margin-changing reveal
+   here flickered: reflow shifted the chip out from under the cursor, toggling
+   :hover off → shrink → reflow back → infinite). Single-line ONLY: `inline-flex`
+   + bounded `max-width` + the label ellipsizes, so a long label truncates with
+   `…` instead of wrapping. `vertical-align: middle` (inline-context-only — the
+   top-row chip is a standalone flex row and doesn't need it) keeps the pill
+   aligned with the surrounding prompt text. */
+.composer-mention-chip {
+  display: inline-flex; /* inline-flex */
+  align-items: center; /* items-center */
+  gap: 0.25rem; /* gap-1 */
+  max-width: 14rem; /* max-w-[14rem] */
+  border-radius: var(--radius-md); /* rounded-md */
+  border: 1px solid var(--border); /* border */
+  background-color: color-mix(in oklab, var(--muted) 40%, transparent); /* bg-muted/40 */
+  padding: 0.125rem 0.375rem 0.125rem 0.25rem; /* py-0.5 pr-1.5 pl-1 */
+  font-size: var(--text-xs); /* text-xs */
+  line-height: 1rem; /* text-xs line-height — matches the top-row chip's pill height */
+  color: var(--muted-foreground); /* text-muted-foreground */
+  vertical-align: middle;
+  white-space: nowrap;
+  user-select: none;
+}
+/* The leading icon-button — the top-row chip's `size-3.5 rounded-sm` ghost
+   icon-button: a fixed-size cell that overlays its two glyphs (so the cell never
+   resizes during the cross-fade). It IS the remove control — focusable real
+   `<button>` (Enter/Space activate natively), clickable cursor, accessible name
+   set in the node view. The `text-muted-foreground/80 → hover:text-foreground`
+   mirrors the top-row icon-button's color treatment. */
+.composer-mention-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 0.875rem; /* size-3.5 */
+  height: 0.875rem; /* size-3.5 */
+  border-radius: var(--radius-sm); /* rounded-sm */
+  line-height: 1;
+  color: color-mix(in oklab, var(--muted-foreground) 80%, transparent);
+  cursor: pointer;
+}
+.composer-mention-icon:hover {
+  color: var(--foreground);
+}
+.composer-mention-icon:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring);
+}
+/* Both glyphs share the SAME `size-3`-equivalent cell (stacked + centered). Only
+   `opacity` toggles — never layout — so the swap is reflow-free. Each glyph holds
+   an inline lucide `<svg>` (injected by the node view), sized to the top-row
+   chip's `size-3` (0.75rem) footprint and inheriting `currentColor` so the cell's
+   `color` (muted-foreground → foreground on hover) drives the glyph — identical
+   to the React-rendered top-row icon. The base rule is the static reduced-motion
+   state (instant swap, no transition); the transition is added only under
+   `prefers-reduced-motion: no-preference` below. */
+.composer-mention-glyph {
+  position: absolute;
+  inset: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.composer-mention-glyph svg {
+  width: 0.75rem; /* size-3 — matches the top-row leading icon */
+  height: 0.75rem;
+}
+.composer-mention-glyph-icon {
+  opacity: 1;
+}
+.composer-mention-glyph-x {
+  opacity: 0;
+}
+.composer-mention-chip:hover .composer-mention-glyph-icon,
+.composer-mention-chip:focus-within .composer-mention-glyph-icon {
+  opacity: 0;
+}
+.composer-mention-chip:hover .composer-mention-glyph-x,
+.composer-mention-chip:focus-within .composer-mention-glyph-x {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .composer-mention-glyph {
+    transition: opacity 140ms ease;
+  }
+}
+.composer-mention-label {
+  min-width: 0; /* min-w-0 */
+  overflow: hidden; /* truncate */
+  white-space: nowrap; /* truncate */
+  text-overflow: ellipsis; /* truncate */
+}
+
+.ProseMirror [data-mark-view-content] {
+  @apply truncate;
+}
+
+.ProseMirror mark {
+  color: inherit;
+  @apply py-0.5 px-1 rounded-sm bg-amber-100 dark:bg-amber-900/50;
+}
+
+.ProseMirror .ok-find-match {
+  border-radius: 0.15rem;
+  background-color: color-mix(in oklab, var(--color-agent) 28%, transparent);
+  color: inherit;
+}
+
+.ProseMirror .ok-find-match-active {
+  background-color: color-mix(in oklab, var(--primary) 34%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 55%, transparent);
+}
+
+/* Saved memo anchors stay clickable across wrapped lines and use the requested
+   lower-half blue stroke. Native document highlights are rendered by `<mark>`
+   above and do not receive an annotation decoration. */
+.ProseMirror .ok-memo-highlight {
+  color: inherit;
+  cursor: pointer;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.ProseMirror .ok-memo-highlight-memo {
+  background-image: linear-gradient(
+    to bottom,
+    transparent 50%,
+    color-mix(in oklab, var(--primary) 24%, transparent) 50%
+  );
+}
+
+.ok-memo-tooltip {
+  position: fixed;
+  z-index: 100;
+  max-width: min(22rem, calc(100vw - 1.5rem));
+  max-height: 12rem;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.625rem;
+  background: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: var(--shadow-lg);
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  white-space: pre-wrap;
+  pointer-events: none;
+}
+
+.ok-memo-tooltip[hidden] {
+  display: none;
+}
+
+.ProseMirror .ok-memo-highlight-active {
+  animation: memo-highlight-pulse 1.6s var(--ease-out-strong);
+}
+
+@keyframes memo-highlight-pulse {
+  0%,
+  100% {
+    filter: none;
+  }
+  35% {
+    filter: drop-shadow(0 0 0.2rem color-mix(in oklab, var(--primary) 55%, transparent));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ProseMirror .ok-memo-highlight-active {
+    animation: none;
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 55%, transparent);
+  }
+}
+
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3 {
+  font-weight: 600;
+  margin-top: 1em;
+  margin-bottom: 0.4em;
+}
+
+.ProseMirror > h1:first-child,
+.ProseMirror > h2:first-child,
+.ProseMirror > h3:first-child {
+  margin-top: 0;
+}
+
+.ProseMirror h1 {
+  font-size: 1.5em;
+  @apply tracking-tighter;
+}
+.ProseMirror h2 {
+  font-size: 1.25em;
+  @apply tracking-tight;
+}
+.ProseMirror h3 {
+  font-size: 1.1em;
+  @apply tracking-tight;
+}
+
+/* Lists */
+.ProseMirror ul {
+  list-style-type: disc;
+  padding-left: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+.ProseMirror ol {
+  list-style-type: decimal;
+  /* Wide enough for 3-digit markers (`100.`). The previous 1.5em fits
+     single-digit items only; 2-digit markers (`20.`/`21.`/`22.`) overflow
+     into the negative inline-start area where the surrounding canvas
+     container's clip horizon truncates the leading digit (PRD-7113). */
+  padding-left: 2.5em;
+  margin-bottom: 0.5em;
+}
+
+.ProseMirror li {
+  margin-bottom: 0.15em;
+}
+
+.ProseMirror li > p {
+  margin-bottom: 0.15em;
+}
+
+/* Nested lists */
+.ProseMirror ul ul {
+  list-style-type: circle;
+  margin-bottom: 0;
+}
+
+.ProseMirror ul ul ul {
+  list-style-type: square;
+}
+
+/* Task lists — unified List extension emits <li data-type="taskItem"> */
+.ProseMirror ul:has(> li[data-type="taskItem"]) {
+  list-style: none;
+  padding-left: 0;
+}
+
+.ProseMirror li[data-type="taskItem"] {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5em;
+  margin-bottom: 0.1em;
+}
+
+.ProseMirror li[data-type="taskItem"] > label {
+  flex-shrink: 0;
+  margin-top: 0.3em;
+}
+
+.ProseMirror li[data-type="taskItem"] > label input[type="checkbox"] {
+  appearance: none;
+  width: 1rem;
+  height: 1rem;
+  border: 1.5px solid var(--color-gray-400);
+  border-radius: calc(var(--radius) * 0.4);
+  background: transparent;
+  cursor: pointer;
+  display: grid;
+  place-content: center;
+  margin: 0;
+  transition:
+    background-color 150ms,
+    border-color 150ms;
+}
+
+.ProseMirror li[data-type="taskItem"] > label input[type="checkbox"]:checked {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.ProseMirror li[data-type="taskItem"] > label input[type="checkbox"]:checked::after {
+  content: "";
+  width: 0.55rem;
+  height: 0.55rem;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  background-color: var(--color-primary-foreground);
+}
+
+.ProseMirror li[data-type="taskItem"] > label input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+.ProseMirror li[data-type="taskItem"] > div {
+  flex: 1;
+}
+
+.ProseMirror li[data-type="taskItem"] > div p {
+  margin-bottom: 0;
+}
+
+.ProseMirror li[data-type="taskItem"][data-checked="true"] > div {
+  text-decoration: line-through;
+  color: var(--color-gray-400);
+}
+
+/* Blockquote */
+.ProseMirror blockquote {
+  border-left: 3px solid var(--color-gray-300);
+  padding-left: 1em;
+  margin-left: 0;
+  margin-bottom: 0.5em;
+  color: var(--color-gray-600);
+}

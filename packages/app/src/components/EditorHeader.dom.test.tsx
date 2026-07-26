@@ -175,6 +175,7 @@ describe('EditorHeader runtime behavior', () => {
   test('renders tabs and action cluster without project or asset-title chrome', async () => {
     await renderHeader();
 
+    expect(screen.getByTestId('editor-navigation-buttons')).toBeTruthy();
     expect(screen.getByTestId('editor-tabs')).toBeTruthy();
     expect(screen.queryByTestId('open-in-agent-menu')).toBeNull();
     expect(screen.queryByText('projectName')).toBeNull();

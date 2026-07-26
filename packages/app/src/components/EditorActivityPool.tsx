@@ -635,6 +635,7 @@ function ScrollPreservingContainer({
     <div
       ref={ref}
       data-testid="editor-scroll-container"
+      data-pdf-export-active={isActive ? 'true' : 'false'}
       // Toolbar exclusion zone = 84px (44px identity row + 40px Markdown
       // context toolbar). Four
       // load-bearing constants must move together if the toolbar height changes:
@@ -645,7 +646,7 @@ function ScrollPreservingContainer({
       //     wiki-link anchor navigation, and editor/extensions/footnote-anchor-scroll.ts.
       //   - TOOLBAR_HEIGHT in editor/extensions/frozen-table-headers.ts: the
       //     plane frozen table header rows pin to (and the occluder block in
-      //     globals.css must stay at least this tall).
+      //     `styles/editor/tables.css` must stay at least this tall).
       //   - TOOLBAR_OVERLAP_PX in editor/SourceEditor.tsx: CM6 ignores ancestor
       //     scroll-padding-top, so full-page source mode restates the inset via
       //     EditorView.scrollMargins. Deliberately scope-limited to source-mode —
@@ -1087,7 +1088,7 @@ function ActivityEntry({
                   shared grid row (earlier grid-based stacking sized rows to
                   the MAX intrinsic size across children, stretching the
                   visible editor to 8000px and creating bottom whitespace on
-                  short docs — see globals.css §.ok-mode-hidden). */
+                  short docs — see `styles/editor/source-mode.css`). */
                     <div className="flex h-full flex-col">
                       {/* Property region (WYSIWYG only — source mode surfaces the
                         raw YAML directly in CodeMirror). Managed-artifact docs

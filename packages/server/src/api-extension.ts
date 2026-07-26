@@ -16640,7 +16640,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     for (const card of catalog.candidates) {
       let described: ReturnType<DatabaseDataPlane['describe']>;
       try {
-        described = databaseDataPlane.describe({ databaseId: card.id });
+        described = databaseDataPlane.describe({ databaseId: card.id, includeViews: true });
       } catch (err) {
         log.warn(
           { err, handler: 'search', databaseId: card.id },
@@ -16697,12 +16697,17 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       }
 
       for (const view of database.views) {
+        const viewSource = database.sources.find((source) => source.id === view.sourceId);
         documents.push(
           createWorkspaceSearchDocument({
             kind: 'view',
             path: `${databasePath}/views/${view.key}`,
             title: view.name,
             content: [
+              database.key,
+              database.name,
+              viewSource?.key ?? '',
+              viewSource?.name ?? '',
               view.key,
               view.description ?? '',
               view.layout.type,

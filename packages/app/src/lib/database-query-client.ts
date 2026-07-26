@@ -10,6 +10,7 @@ import {
   ProjectedDatabaseRecordSchema,
 } from '@nedian0brien/synapsenote-core';
 import { z } from 'zod';
+import { withDatabaseReadRetry } from './database-read-retry.ts';
 
 export interface DatabaseQueryClientInput {
   databaseId: string;
@@ -135,21 +136,21 @@ export function appendDatabaseQueryPage(
     relationRecords: mergeById(current.relationRecords, next.relationRecords),
     fileStates:
       current.fileStates || next.fileStates
-        ? { ...(current.fileStates ?? {}), ...(next.fileStates ?? {}) }
+        ? { ...current.fileStates, ...next.fileStates }
         : undefined,
     conditionalColors:
       current.conditionalColors || next.conditionalColors
         ? {
             rules: next.conditionalColors?.rules ?? current.conditionalColors?.rules ?? [],
             records: {
-              ...(current.conditionalColors?.records ?? {}),
-              ...(next.conditionalColors?.records ?? {}),
+              ...current.conditionalColors?.records,
+              ...next.conditionalColors?.records,
             },
           }
         : undefined,
     groupMemberships:
       current.groupMemberships || next.groupMemberships
-        ? { ...(current.groupMemberships ?? {}), ...(next.groupMemberships ?? {}) }
+        ? { ...current.groupMemberships, ...next.groupMemberships }
         : undefined,
   };
 }
@@ -159,36 +160,41 @@ export async function queryDatabase(
   input: DatabaseQueryClientInput,
   options: DatabaseQueryClientOptions = {},
 ): Promise<DatabaseQueryResult> {
-  const fetchImplementation = options.fetch ?? globalThis.fetch;
-  const response = await fetchImplementation('/api/databases/query', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', accept: 'application/json' },
-    body: JSON.stringify(input),
-    signal: options.signal,
-  });
-  const body: unknown = await response.json().catch(() => null);
-  if (!response.ok) {
-    const detail =
-      body && typeof body === 'object' && 'detail' in body && typeof body.detail === 'string'
-        ? body.detail
-        : `Database query failed with HTTP ${response.status}`;
-    throw new DatabaseQueryClientError(detail, { status: response.status, problem: body });
-  }
+  return withDatabaseReadRetry(
+    async () => {
+      const fetchImplementation = options.fetch ?? globalThis.fetch;
+      const response = await fetchImplementation('/api/databases/query', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify(input),
+        signal: options.signal,
+      });
+      const body: unknown = await response.json().catch(() => null);
+      if (!response.ok) {
+        const detail =
+          body && typeof body === 'object' && 'detail' in body && typeof body.detail === 'string'
+            ? body.detail
+            : `Database query failed with HTTP ${response.status}`;
+        throw new DatabaseQueryClientError(detail, { status: response.status, problem: body });
+      }
 
-  const parsed = DatabaseQueryResultSchema.safeParse(body);
-  if (!parsed.success) {
-    throw new DatabaseQueryClientError('Database query returned an invalid response', {
-      status: response.status,
-      problem: { issues: parsed.error.issues },
-    });
-  }
-  if (parsed.data.sourceId !== input.sourceId) {
-    throw new DatabaseQueryClientError('Database query returned a different source', {
-      status: response.status,
-      problem: { requestedSourceId: input.sourceId, returnedSourceId: parsed.data.sourceId },
-    });
-  }
-  return parsed.data;
+      const parsed = DatabaseQueryResultSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new DatabaseQueryClientError('Database query returned an invalid response', {
+          status: response.status,
+          problem: { issues: parsed.error.issues },
+        });
+      }
+      if (parsed.data.sourceId !== input.sourceId) {
+        throw new DatabaseQueryClientError('Database query returned a different source', {
+          status: response.status,
+          problem: { requestedSourceId: input.sourceId, returnedSourceId: parsed.data.sourceId },
+        });
+      }
+      return parsed.data;
+    },
+    { signal: options.signal },
+  );
 }
 
 /** Fetch one permission-filtered record by its stable ID in O(1) index lookup time. */

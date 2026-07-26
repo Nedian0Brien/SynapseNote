@@ -53,6 +53,10 @@ import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 import { Button } from '@/components/ui/button';
+import {
+  createDatabaseInteractionId,
+  recordDatabaseInteractionTrace,
+} from '@/lib/database-interaction-trace';
 import { hashFromDocName } from '@/lib/doc-hash';
 import {
   Popover,
@@ -83,8 +87,23 @@ import {
 import { ALIGNABLE_DESCRIPTOR_NAMES } from '../utils/alignable-descriptors.ts';
 import { formatContainerAriaLabel } from '../utils/editor-strings.ts';
 import { reconstructSource } from '../utils/reconstruct-source.ts';
-import { sanitizeComponentProps } from '../utils/sanitize-url.ts';
 import { autonomousFragmentEditAllowed } from './autonomous-fragment-edit.ts';
+import {
+  extractPrimitiveProps,
+  getElementJsxAttrs,
+  isJsxInteractiveTarget,
+  stableHash,
+} from './jsx-component-view/jsx-component-view-utils.ts';
+
+// Compatibility exports keep existing extension tests and downstream local
+// integrations stable while the NodeView implementation uses the narrower
+// pure-utils boundary internally.
+export {
+  extractPrimitiveProps,
+  getElementJsxAttrs,
+  isJsxInteractiveTarget,
+  stableHash,
+} from './jsx-component-view/jsx-component-view-utils.ts';
 
 // ── Error Boundary ──────────────────────────────────────────────────────
 //
@@ -167,72 +186,6 @@ function ComponentErrorBoundary(props: ComponentErrorBoundaryProps) {
   );
 }
 
-// ── Prop extraction ─────────────────────────────────────────────────────
-
-/**
- * Extract primitive (non-ReactNode) props from PM node attrs.
- * Passes through ALL keys from attrs.props — undeclared attrs reach the
- * component to prevent crashes on components requiring non-PropDef attrs.
- */
-/**
- * Insertion-order-independent stringification. Sorts keys recursively so
- * `{a:1, b:2}` and `{b:2, a:1}` hash to the same string.
- *
- * Does NOT dedupe circular references — PM attr trees are acyclic by
- * construction, so a cycle here would be a bug worth surfacing.
- */
-export function stableHash(value: unknown): string {
-  if (value === null || typeof value !== 'object') {
-    return JSON.stringify(value);
-  }
-  if (Array.isArray(value)) {
-    return `[${value.map(stableHash).join(',')}]`;
-  }
-  const entries = Object.entries(value as Record<string, unknown>);
-  entries.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
-  return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${stableHash(v)}`).join(',')}}`;
-}
-
-/**
- * Extract primitive (non-reactnode) props from PM node attrs.
- * `reactNodeNames` is the descriptor's pre-computed set of reactnode-typed
- * prop names — stable per descriptor, cached at registry build time so we
- * don't re-allocate per render (see `registry/types.ts`).
- *
- * Every returned object flows through `sanitizeComponentProps`, which:
- *   - Strips javascript:/vbscript:/data: URLs from URL-typed props
- *     (case-insensitive match, covers React camelCase formAction/xlinkHref).
- *   - Drops dangerouslySetInnerHTML / on* event handlers / React internals.
- *   - Filters `url(javascript:…)` / `expression(…)` from style strings and
- *     drops non-string style values (MDX-expression-authored style objects
- *     bypass the string scanner).
- *   - Traverses nested URL-shaped keys in arrays / plain objects (bounded).
- *
- * Storage (Y.Text, XmlFragment, shadow repo) retains the raw bytes per the
- * storage-layer fidelity contract — only the live render is sanitized.
- */
-export function extractPrimitiveProps(
-  attrs: Record<string, unknown>,
-  reactNodeNames: ReadonlySet<string>,
-): Record<string, unknown> {
-  const propsObj = (attrs.props ?? {}) as Record<string, unknown>;
-  const result: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(propsObj)) {
-    if (reactNodeNames.has(key)) continue;
-    result[key] = value;
-  }
-  return sanitizeComponentProps(result);
-}
-
-interface ElementJsxAttrs extends Record<string, unknown> {
-  kind: 'element';
-  props: Record<string, unknown>;
-}
-
-export function getElementJsxAttrs(attrs: Record<string, unknown>): ElementJsxAttrs | null {
-  return attrs.kind === 'element' ? (attrs as ElementJsxAttrs) : null;
-}
-
 // ── Main NodeView ───────────────────────────────────────────────────────
 
 /**
@@ -251,6 +204,17 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
   const [renderError, setRenderError] = useState<Error | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const wasSelected = useRef(false);
+  const nodeViewInteractionId = useRef(createDatabaseInteractionId());
+  const nodeViewComponent = useRef(String(node.attrs.componentName ?? 'unknown'));
+
+  useEffect(() => {
+    const interactionId = nodeViewInteractionId.current;
+    const component = nodeViewComponent.current;
+    recordDatabaseInteractionTrace(interactionId, 'node_view_mounted', { component });
+    return () => {
+      recordDatabaseInteractionTrace(interactionId, 'node_view_unmounted', { component });
+    };
+  }, []);
 
   const pos = typeof getPos === 'function' ? getPos() : undefined;
 
@@ -350,7 +314,8 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
   // needsConfig = at least one required STRING prop has no decision yet
   // (key absent from props). Used as a passive visual hint: the chrome bar
   // surfaces the gear without hover (via `data-needs-config` CSS rule in
-  // globals.css). Clears as soon as every required string prop has a key —
+  // `styles/editor/component-chrome.css`). Clears as soon as every required
+  // string prop has a key —
   // even an explicit empty string counts as a decision (e.g. `alt=""` is
   // WCAG-canonical decorative-image opt-in).
   //
@@ -392,6 +357,8 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
   // no editable content hole" (img / video / audio). Drift between sites silently
   // breaks focus + selection for one descriptor class.
   const isSelfClosingLeaf = !descriptor.hasChildren || !!descriptor.isSelfClosing;
+  const selectOnBodyClick = descriptor.interaction?.selectOnBodyClick ?? true;
+  const usesExplicitDragHandle = descriptor.interaction?.drag === 'handle';
 
   // Two render-time call sites below (data-align default clamp +
   // chrome-bar render condition) gate on whether this descriptor is
@@ -725,7 +692,7 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
   // alongside `openPanel`'s own selection + popover-open.
   const handleBodyClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (showPlaceholder) return;
-    if (!isSelfClosingLeaf) return;
+    if (!isSelfClosingLeaf || !selectOnBodyClick) return;
     const target = e.target as HTMLElement;
     // React events bubble through the React tree including portals, so
     // clicks on inputs inside Radix Popover/Dialog content reach this
@@ -736,12 +703,14 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
     if (!e.currentTarget.contains(target)) return;
     if (target.closest('.jsx-component-chrome')) return;
     if (target.closest('.jsx-add-child-pill, .jsx-empty-child-placeholder')) return;
-    // If the click is on an actual `<a href>` link inside the rendered
-    // body (e.g. File's `<a download>` row), let the browser's default
-    // link behavior run — the user expects clicking the file to open
-    // it, not to NodeSelect the block. NodeSelection remains reachable
-    // via keyboard L2 nav (arrow keys) and via clicking the chrome bar.
-    if (target.closest('a[href]')) return;
+    // Rendered leaf components can contain native controls or composite
+    // widgets. Let those controls own their click/focus behavior. This is a
+    // defense-in-depth guard for descriptors that have not opted into the
+    // explicit interactive mode; interactive descriptors also set
+    // `selectOnBodyClick: false` above.
+    if (isJsxInteractiveTarget(target)) {
+      return;
+    }
     if (typeof pos !== 'number') return;
     const curNode = editor.state.doc.nodeAt(pos);
     if (!curNode) return;
@@ -936,7 +905,7 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
         // Alignment — driven by the `align` prop on the alignable
         // descriptors (`img` + `CommonMarkImage` + `Embed` + `video` —
         // see `ALIGNABLE_DESCRIPTOR_NAMES`). The wrapper-level
-        // `data-align` lets CSS (`globals.css`,
+        // `data-align` lets CSS (`styles/editor/component-chrome.css`,
         // `.jsx-component-wrapper[data-component-type="<name>"]
         // [data-align]` selectors) apply a `text-align` rule for
         // centering / left / right placement. When the user sets a
@@ -994,10 +963,17 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
         // stays a "leave the editor" affordance, not "step through every
         // block." Matches Gutenberg / Lexical block-editor conventions.
         tabIndex={isInnermostSelected ? 0 : -1}
-        {...(!isChildOfComponent
+        {...(!isChildOfComponent && !usesExplicitDragHandle
           ? { 'data-drag-handle': '', draggable: 'true' }
           : { draggable: 'false', onDragStart: (e: React.DragEvent) => e.preventDefault() })}
         data-component-name={descriptor.name}
+        data-jsx-interaction={descriptor.interaction?.mode ?? 'atomic'}
+        data-pdf-math-formula={
+          editableSource?.language === 'latex' &&
+          typeof currentProps[editableSource.propName] === 'string'
+            ? currentProps[editableSource.propName]
+            : undefined
+        }
         onClick={handleBodyClick}
         onKeyDown={handleKeyDown}
       >
@@ -1013,6 +989,13 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
           className="jsx-component-chrome"
           contentEditable={false}
           onMouseDown={(e) => e.stopPropagation()}
+          {...(usesExplicitDragHandle
+            ? {
+                'data-jsx-drag-handle': '',
+                'data-drag-handle': '',
+                draggable: 'true',
+              }
+            : {})}
           {...{ [OPT_OUT_ATTR]: 'true' }}
         >
           {/* Alignment intentionally absent here — the bubble menu's
@@ -1475,8 +1458,8 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
       ) : null}
       {/* z-60 overrides the shadcn popover base (z-50) so the PropPanel
           reliably sits above other z-50 surfaces (wiki-link Dialog overlays,
-          sonner toasts, internal-link Dialogs). The chrome bar in globals.css
-          also uses z-50; a PopoverContent at the same level is ordered by
+          sonner toasts, internal-link Dialogs). The chrome bar in
+          `styles/editor/component-chrome.css` also uses z-50; a PopoverContent at the same level is ordered by
           render-order, which isn't a stable guarantee — explicit bump makes
           it deterministic. */}
       {hasEditableProps && (

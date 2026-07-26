@@ -124,6 +124,21 @@ describe('bindConfigDoc — patch()', () => {
     binding.dispose();
   });
 
+  test('writes editor.sidebarOpenBehavior to user config', () => {
+    const binding = bindConfigDoc(provider, 'user');
+    const result = binding.patch({ editor: { sidebarOpenBehavior: 'current-tab' } });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error('expected ok');
+    expect(result.appliedPaths).toEqual(['editor.sidebarOpenBehavior']);
+    expect(result.effective.editor.sidebarOpenBehavior).toBe('current-tab');
+
+    const ytext = doc.getText('source').toString();
+    expect(ytext).toContain('editor:');
+    expect(ytext).toContain('sidebarOpenBehavior: current-tab');
+    binding.dispose();
+  });
+
   test('writes the sidebar view toggles via a project-local binding + returns effective config', () => {
     const binding = bindConfigDoc(provider, 'project-local');
     const result = binding.patch({

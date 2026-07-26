@@ -766,7 +766,7 @@ const FLASHABLE_LABEL_SELECTOR =
  * text changed too" cue used after a WYSIWYG label edit propagates to LINKED
  * occurrences (a renamed sequence participant renders in BOTH its top and
  * bottom actor boxes, so renaming once changes both). Adds the
- * `mermaid-label-flash` class (globals.css) to each match.
+ * `mermaid-label-flash` class (`styles/shell/editor-layout.css`) to each match.
  *
  * Flashes only when 2+ occurrences match: a lone label edit has no "related"
  * text to signal, so it stays quiet. Mermaid re-renders the whole SVG on every

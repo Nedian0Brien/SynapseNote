@@ -1,0 +1,18 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "test": {
+      "cache": false,
+      "dependsOn": ["^build"],
+      "inputs": [
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "scripts/**/*.ts",
+        "tests/**/*.ts",
+        "../../scripts/test-feedback/**/*.ts",
+        "package.json"
+      ]
+    }
+  }
+}

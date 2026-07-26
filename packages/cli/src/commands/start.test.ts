@@ -1410,6 +1410,10 @@ describe('bootStartServer — no auto git-init from ok start (US-004)', () => {
         skipAutoInit: false,
         skipUiAutoSpawn: true,
       });
+      // `degraded` is populated by the async boot readiness path. Read it
+      // only after that barrier so this assertion does not race a healthy
+      // server that has not finished probing its shadow repository yet.
+      await booted.ready;
       // shadow-repo init fails (no git binary) but server boots in degraded mode
       expect(booted.degraded).toContain('shadow-repo');
     } finally {

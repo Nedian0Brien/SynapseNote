@@ -4,17 +4,17 @@
  * background-color: rgba(255, 255, 255, 1); }`; without an app-side `.dark`
  * counterpart referencing a theme token the lightbox flashes solid white in
  * dark mode. The override convention is the `.dark .activity-panel-diff …`
- * block already in globals.css.
+ * block already in `styles/overrides/third-party.css`.
  */
 
 import { describe, expect, test } from 'bun:test';
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { loadStyleManifest } from './build/style-manifest.ts';
 
-const CSS = readFileSync(join(__dirname, 'globals.css'), 'utf8');
+const CSS = loadStyleManifest(join(__dirname, 'globals.css')).css;
 
 describe('image-zoom modal overlay — dark theme override', () => {
-  test('globals.css contains a .dark-scoped rule targeting the rmiz visible-state overlay', () => {
+  test('third-party.css contains a .dark-scoped rule targeting the rmiz visible-state overlay', () => {
     expect(CSS).toMatch(/\.dark\s+[^{}]*\[data-rmiz-modal-overlay="visible"\][^{]*\{/);
   });
 

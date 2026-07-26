@@ -5,10 +5,10 @@ import { CHROME_BG_DARK, CHROME_BG_LIGHT } from '../../../core/src/constants/chr
 import { chromeTokensVitePlugin } from './chrome-tokens-vite-plugin.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const GLOBALS_CSS = resolve(HERE, '../globals.css');
+const TOKEN_CSS = resolve(HERE, '../styles/foundation/tokens.css');
 
 describe('chromeTokensVitePlugin', () => {
-  const plugin = chromeTokensVitePlugin({ globalsCssPath: GLOBALS_CSS });
+  const plugin = chromeTokensVitePlugin({ tokenCssPath: TOKEN_CSS });
 
   test('plugin name is namespaced', () => {
     expect(plugin.name).toBe('ok:chrome-tokens');

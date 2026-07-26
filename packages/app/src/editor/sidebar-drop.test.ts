@@ -107,6 +107,7 @@ function installFakeWindow(location: {
       history: {
         replaceState: fakeReplaceState,
       },
+      dispatchEvent: mock(() => true),
     },
   });
   return () => {

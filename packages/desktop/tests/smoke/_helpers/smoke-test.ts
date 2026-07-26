@@ -85,7 +85,9 @@
  */
 
 import type { ChildProcess } from 'node:child_process';
-import { rmSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { readFileSync, rmSync } from 'node:fs';
+import { basename, resolve } from 'node:path';
 import { expect as baseExpect, test as baseTest, type ElectronApplication } from '@playwright/test';
 import { captureAppProcess, closeAppBounded } from './electron-cleanup';
 import {
@@ -103,6 +105,15 @@ export interface SmokeRegistrationOpts {
    * `rmSync({ force: true })` no-ops on already-removed paths.
    */
   cleanupDirs?: readonly string[];
+  /**
+   * Project roots whose detached `server.lock` owner should be reaped after
+   * the Electron process group. Packaged project windows deliberately keep
+   * their detached server alive across a normal app quit; a smoke test owns
+   * its temporary project, so leaving that child behind would make the
+   * Playwright worker hang during teardown. The root check in
+   * `stopOwnedServerForRoot` prevents a stale/foreign lock from being killed.
+   */
+  cleanupServerRoots?: readonly string[];
 }
 
 export interface SmokeFixtures {
@@ -140,6 +151,7 @@ export const test = baseTest.extend<SmokeFixtures>({
     const captures: ElectronStderrCapture[] = [];
     const procs: ChildProcess[] = [];
     const cleanupDirs: string[] = [];
+    const cleanupServerRoots: string[] = [];
     await use((app, opts) => {
       captures.push(captureElectronStderr(app));
       // Capture the underlying ChildProcess WHILE the Playwright channel
@@ -152,6 +164,9 @@ export const test = baseTest.extend<SmokeFixtures>({
       procs.push(captureAppProcess(app));
       if (opts?.cleanupDirs) {
         for (const dir of opts.cleanupDirs) cleanupDirs.push(dir);
+      }
+      if (opts?.cleanupServerRoots) {
+        for (const root of opts.cleanupServerRoots) cleanupServerRoots.push(root);
       }
     });
     // Contract (1): stderr-attach. Skip when the predicate says the
@@ -180,8 +195,20 @@ export const test = baseTest.extend<SmokeFixtures>({
     // exceeded" → SIGKILL → exit 1. See
     // `electron-cleanup.ts` for the algorithm + Playwright-source
     // citations.
+    // Snapshot detached server owners before stopping Electron. A server can
+    // unlink its lock during parent-death draining while still flushing
+    // telemetry; retaining the validated pid lets cleanup reap that final
+    // short-lived process too.
+    const serverPids = new Map<string, number>();
+    for (const root of cleanupServerRoots) {
+      const pid = readOwnedServerPid(root);
+      if (pid !== null) serverPids.set(resolve(root), pid);
+    }
     for (const proc of procs) {
       await closeAppBounded(proc, { gracefulMs: 5_000 });
+    }
+    for (const root of cleanupServerRoots) {
+      await stopOwnedServerForRoot(root, serverPids.get(resolve(root)) ?? null);
     }
     // Contract (3): tmp-dir cleanup. Runs after every proc is reaped, so
     // no helper subprocess / utility process is still writing into the
@@ -201,5 +228,90 @@ export const test = baseTest.extend<SmokeFixtures>({
     }
   },
 });
+
+/**
+ * Reap the detached server owned by a temporary packaged-project fixture.
+ *
+ * Production windows intentionally outlive Electron's normal quit, so
+ * killing only the app process group does not include `synapsenote-server`.
+ * Smoke roots are freshly-created and ownership is checked against the lock's
+ * `worktreeRoot` before signalling. This is bounded and best-effort: the
+ * fixture must never turn cleanup noise into a test failure.
+ */
+function readOwnedServerPid(root: string): number | null {
+  const projectRoot = resolve(root);
+  const lockPath = resolve(projectRoot, '.ok', 'local', 'server.lock');
+  let metadata: { pid?: unknown; worktreeRoot?: unknown };
+  try {
+    metadata = JSON.parse(readFileSync(lockPath, 'utf8')) as {
+      pid?: unknown;
+      worktreeRoot?: unknown;
+    };
+  } catch {
+    return findOwnedServerPid(projectRoot);
+  }
+  if (
+    typeof metadata.pid !== 'number' ||
+    !Number.isInteger(metadata.pid) ||
+    metadata.pid <= 0 ||
+    metadata.worktreeRoot !== projectRoot
+  ) {
+    return findOwnedServerPid(projectRoot);
+  }
+  return metadata.pid;
+}
+
+/**
+ * The server removes `server.lock` as the first step of its shutdown drain,
+ * before its final telemetry/file-watcher handles have exited. Fall back to
+ * the unique mkdtemp project basename while that tail is still alive. The
+ * packaged child command is intentionally stable (`synapsenote-server
+ * <project-basename>`), and every smoke root is freshly generated, so this
+ * lookup cannot match a user's unrelated project.
+ */
+function findOwnedServerPid(projectRoot: string): number | null {
+  if (process.platform !== 'darwin') return null;
+  const marker = `synapsenote-server ${basename(projectRoot)}`;
+  try {
+    const output = execFileSync('pgrep', ['-f', marker], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    for (const token of output.trim().split(/\s+/)) {
+      const pid = Number(token);
+      if (Number.isInteger(pid) && pid > 0 && pid !== process.pid) return pid;
+    }
+  } catch {
+    // No matching process (or pgrep is unavailable) — cleanup is complete.
+  }
+  return null;
+}
+
+async function stopOwnedServerForRoot(root: string, pidHint: number | null): Promise<void> {
+  const projectRoot = resolve(root);
+  const pid = pidHint ?? readOwnedServerPid(projectRoot);
+  if (pid === null) return;
+
+  try {
+    process.kill(pid, 'SIGTERM');
+  } catch {
+    return;
+  }
+
+  const deadline = Date.now() + 5_000;
+  while (Date.now() < deadline) {
+    try {
+      process.kill(pid, 0);
+    } catch {
+      return;
+    }
+    await new Promise<void>((resolveSleep) => setTimeout(resolveSleep, 50));
+  }
+  try {
+    process.kill(pid, 'SIGKILL');
+  } catch {
+    // The process exited between the final liveness probe and escalation.
+  }
+}
 
 export const expect = baseExpect;

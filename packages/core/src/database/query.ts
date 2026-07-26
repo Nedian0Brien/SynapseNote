@@ -71,6 +71,8 @@ export {
 
 export const DatabaseQuerySchema = z
   .object({
+    /** Optional server-side full-text search across the source's readable values and path. */
+    search: z.string().trim().max(256).optional(),
     where: DatabaseFilterSchema.optional(),
     sort: z
       .array(
@@ -1450,6 +1452,7 @@ function cursorFingerprint(
     sourceId,
     snapshotRevision,
     where: query.where ?? null,
+    search: query.search ?? null,
     sort: query.sort,
     select: query.select ?? null,
     aggregate: query.aggregate ?? null,
@@ -1501,6 +1504,20 @@ function assertUniquePropertyIds(
     }
     seen.add(propertyId);
   }
+}
+
+function matchesDatabaseSearch(
+  record: DatabaseRecord,
+  source: DatabaseSource,
+  search?: string,
+): boolean {
+  const needle = search?.trim().toLocaleLowerCase();
+  if (!needle) return true;
+  const readableValues = source.properties.map((property) => {
+    const value = record.values[property.id];
+    return `${property.name} ${typeof value === 'string' ? value : JSON.stringify(value ?? '')}`;
+  });
+  return [record.path, ...readableValues].join('\n').toLocaleLowerCase().includes(needle);
 }
 
 /** Execute an exact typed query over one complete source snapshot. */
@@ -1563,7 +1580,8 @@ export function queryDatabaseRecords(input: QueryDatabaseRecordsInput): Database
     if (recordIndex % 256 === 0) input.throwIfCancelled?.();
     if (
       (query.includeArchived || !record.archivedAt) &&
-      (!query.where || matchesFilter(record, input.source, query.where))
+      (!query.where || matchesFilter(record, input.source, query.where)) &&
+      matchesDatabaseSearch(record, input.source, query.search)
     ) {
       matching.push(record);
     }

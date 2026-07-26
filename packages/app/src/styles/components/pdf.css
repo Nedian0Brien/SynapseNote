@@ -1,0 +1,406 @@
+/* 7c-bis. PDF (Obsidian-parity `![[doc.pdf]]` — EmbedPDF/PDFium, no
+ * iframe). The scroll plugin virtualizes page render layers; its selection
+ * plugin draws geometry-backed highlight rectangles instead of mounting a
+ * transparent DOM text layer over every cached page.
+ */
+.ok-pdf {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  margin: 0.5rem 0;
+  background-color: var(--muted);
+  overflow: hidden;
+}
+
+.ok-pdf[data-standalone] {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background-color: color-mix(in oklab, var(--muted) 70%, transparent);
+}
+
+.ok-pdf-content {
+  position: relative;
+}
+
+.ok-pdf-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--background);
+  font-size: 0.8rem;
+  user-select: none;
+}
+
+.ok-pdf-toolbar--standalone {
+  height: 2.5rem;
+  flex: 0 0 2.5rem;
+  gap: 0.25rem;
+  padding: 0 0.75rem;
+  overflow-x: auto;
+}
+
+.ok-pdf-title {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--foreground);
+  font-weight: 500;
+}
+
+.ok-pdf-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.ok-pdf-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
+  height: 1.75rem;
+  padding: 0 0.15rem 0 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  background: var(--background);
+}
+
+.ok-pdf-search:focus-within {
+  border-color: var(--ring, var(--foreground));
+  box-shadow: 0 0 0 1px var(--ring, var(--foreground));
+}
+
+.ok-pdf-search-icon {
+  flex: 0 0 auto;
+  color: var(--muted-foreground);
+}
+
+.ok-pdf-search-input {
+  width: clamp(6rem, 14vw, 11rem);
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 0.78rem;
+}
+
+.ok-pdf-search-input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.ok-pdf-search-count {
+  display: inline-flex;
+  min-width: 3.8rem;
+  align-items: center;
+  justify-content: flex-end;
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ok-pdf-divider {
+  display: inline-block;
+  width: 1px;
+  height: 1.1rem;
+  background: var(--border);
+  margin: 0 0.2rem;
+}
+
+.ok-pdf-page-form {
+  display: inline-flex;
+}
+
+.ok-pdf-page-input {
+  width: 2.4rem;
+  height: 1.5rem;
+  padding: 0 0.25rem;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  background: var(--background);
+  color: var(--foreground);
+}
+.ok-pdf-page-input:focus {
+  outline: 2px solid var(--ring, var(--border));
+  outline-offset: -1px;
+}
+
+.ok-pdf-page-of {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem;
+  color: var(--muted-foreground);
+  margin-right: 0.15rem;
+}
+
+.ok-pdf-zoom-display {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem;
+  color: var(--muted-foreground);
+  min-width: 2.6rem;
+  text-align: center;
+}
+
+.ok-pdf-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: var(--foreground);
+  cursor: pointer;
+  border: 1px solid transparent;
+  padding: 0;
+}
+.ok-pdf-btn:hover:not(:disabled) {
+  background-color: var(--muted);
+  border-color: var(--border);
+}
+.ok-pdf-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.ok-pdf-btn[aria-pressed="true"] {
+  background-color: var(--muted);
+  border-color: var(--border);
+}
+
+.ok-pdf-toolbar--standalone .ok-pdf-btn {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.45rem;
+}
+
+.ok-pdf-toolbar--standalone .ok-pdf-page-input {
+  height: 1.75rem;
+}
+
+.ok-pdf-search .ok-pdf-btn {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+
+/* Layout-dropdown menu — anchored to the chevron button.
+ * Width is determined by content; max set so long labels don't push
+ * the embed sideways. The wrapping `<div>` is the positioning context. */
+.ok-pdf-layout-menu {
+  position: relative;
+}
+
+.ok-pdf-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 10;
+  min-width: 11rem;
+  display: flex;
+  flex-direction: column;
+  padding: 0.25rem;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.ok-pdf-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8rem;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 0.25rem;
+  color: var(--foreground);
+  cursor: pointer;
+}
+.ok-pdf-menu-item:hover {
+  background-color: var(--muted);
+}
+.ok-pdf-menu-check {
+  display: inline-flex;
+  width: 0.9rem;
+  align-items: center;
+  justify-content: center;
+  color: var(--foreground);
+}
+.ok-pdf-menu-divider {
+  margin: 0.25rem 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+/* Body — flex row that hosts the optional thumbnail sidebar and the
+ * main page-stack viewport. Sidebar is a fixed-width column; pages
+ * take the remaining space. */
+.ok-pdf-body {
+  position: relative;
+  flex: 1;
+  display: flex;
+  min-height: 0; /* allow children to shrink below their content size */
+}
+
+.ok-pdf-body--standalone {
+  background-color: color-mix(in oklab, var(--muted) 70%, transparent);
+}
+
+.ok-pdf-sidebar {
+  flex: 0 0 auto;
+  width: 9rem;
+  overflow-x: hidden;
+  padding-inline: 0.5rem;
+  border-right: 1px solid var(--border);
+  background: var(--background);
+}
+
+/* Route-level PDF page previews live in the shared right rail. EmbedPDF keeps
+ * the virtual thumbnail geometry; this class only supplies the full rail
+ * scrollport without recreating the viewer's former in-canvas sidebar. */
+.ok-pdf-panel-thumbnails {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  background: var(--background);
+}
+
+/* The shared PDF Pages rail is container-responsive: it keeps a readable
+ * single column at the minimum rail width and adds a second column once both
+ * 112px previews plus panel padding fit comfortably. */
+.ok-pdf-pages-panel {
+  container-type: inline-size;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.75rem;
+  background: var(--background);
+}
+
+.ok-pdf-pages-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 0.75rem;
+}
+
+@container (min-width: 25rem) {
+  .ok-pdf-pages-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.ok-pdf-panel-thumb {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+
+.ok-pdf-panel-thumb:hover {
+  background-color: var(--muted);
+}
+
+.ok-pdf-panel-thumb[data-active] {
+  border-color: var(--ring, var(--foreground));
+  background-color: var(--muted);
+}
+
+.ok-pdf-thumb {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.25rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.3rem;
+  cursor: pointer;
+}
+.ok-pdf-thumb:hover {
+  background-color: var(--muted);
+}
+.ok-pdf-thumb[data-active] {
+  border-color: var(--ring, var(--foreground));
+  background-color: var(--muted);
+}
+.ok-pdf-thumb-image {
+  display: block;
+  max-width: 100%;
+  object-fit: contain;
+  background: white;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  border-radius: 1px;
+}
+.ok-pdf-thumb-num {
+  font-size: 0.7rem;
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+/* EmbedPDF owns the scrollport and virtual page geometry. This wrapper only
+ * gives the viewport the remaining flex space and clips nested scrollbars. */
+.ok-pdf-pages {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background-color: color-mix(in oklab, var(--muted) 70%, transparent);
+}
+
+.ok-pdf-viewport {
+  overscroll-behavior: contain;
+  background-color: color-mix(in oklab, var(--muted) 70%, transparent);
+}
+
+.ok-pdf-page-container {
+  direction: ltr;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  border-radius: 2px;
+}
+
+.ok-pdf-page {
+  display: block;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+}
+
+.ok-pdf-search-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.ok-pdf-loading,
+.ok-pdf-error {
+  padding: 1rem;
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+}
+.ok-pdf-error {
+  color: var(--destructive, #c33);
+}

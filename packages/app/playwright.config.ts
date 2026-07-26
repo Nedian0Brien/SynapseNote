@@ -1,5 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
+import { testFeedbackPolicy } from '../../scripts/test-feedback/policy.ts';
+
 /**
  * Per-worker server isolation: there is no `webServer` block — instead a
  * worker-scoped fixture at `tests/stress/_helpers/fixtures.ts`. Each
@@ -29,6 +31,7 @@ import { defineConfig } from '@playwright/test';
  * multiplier.
  */
 const isCI = !!process.env.CI;
+const feedbackPolicy = testFeedbackPolicy();
 
 export default defineConfig({
   testDir: './tests/stress',
@@ -52,23 +55,20 @@ export default defineConfig({
   // total damage. Keep inline `timeout:` overrides for genuinely exceptional
   // waits only (cold-start, provider sync) — not as the default idiom.
   expect: { timeout: isCI ? 15_000 : 5_000 },
-  // failOnFlakyTests: false globally — retries absorb infra flake. Setting it
-  // true (so retry-success still fails the PR) promoted infrastructure noise
-  // (WebSocket EPIPE/ECONNRESET, transient CC1 broadcast jitter) to PR-red,
-  // compounding the architectural CRDT fuzz/stress residual into an effective
-  // ~22% PR-tier green rate on correct code. Persistent-flake detection runs
-  // as ad-hoc CI-log audits rather than a nightly sweep.
-  retries: isCI ? 2 : 0,
-  failOnFlakyTests: false,
+  // Required PR tests keep the first failure visible. Nightly repeats each
+  // test with deterministic seeds instead of converting retry success to green.
+  retries: feedbackPolicy.retries,
+  repeatEach: feedbackPolicy.repeatEach,
+  failOnFlakyTests: feedbackPolicy.failOnFlakyTests,
   forbidOnly: isCI,
   // workers=4 on `ubuntu-64gb` (16+ vCPU / 64 GB RAM shared runner). With
   // per-worker server fixtures, each worker spawns its own Vite+Hocuspocus
   // process + content directory, so worker count is bounded by runner CPU +
   // Vite cold-start budget rather than CRDT state contention. On a 2-vCPU
   // runner, workers=4 and workers=2 both oversubscribe and get cancelled at
-  // the 15m timeout; only workers=1 (serial with retries, no CPU contention)
-  // ran clean. ubuntu-64gb has headroom for 4 × (playwright worker + chromium
-  // process + dev server) with retries=2. Per-test docName isolation +
+  // the 15m timeout; only workers=1 (serial with no automatic retry, no CPU
+  // contention) ran clean. ubuntu-64gb has headroom for 4 × (playwright worker
+  // + chromium process + dev server). Per-test docName isolation +
   // per-worker server isolation together make fullyParallel fully safe.
   // If the CI runner tier changes back to 2 vCPU (e.g., ubuntu-64gb quota
   // exhausted), re-downgrade to workers=1.
@@ -83,7 +83,11 @@ export default defineConfig({
     // 1280×720 matches the most common default viewport; the default 800×450
     // crops the sidebar in narrow-viewport tests. Retained only on failure to
     // bound storage growth.
-    video: { mode: 'retain-on-failure', size: { width: 1280, height: 720 } },
+    // Local macOS runs can fail while closing the optional ffmpeg recorder
+    // (system error -88) even after the browser assertions pass. Trace and
+    // screenshots already retain the actionable failure evidence; keep video
+    // for CI where the shared runner's ffmpeg lifecycle is stable.
+    video: isCI ? { mode: 'retain-on-failure', size: { width: 1280, height: 720 } } : 'off',
     // 'on-first-retry' captures trace on retry 1 only; subsequent retries skip
     // to stay under the CI runtime envelope.
     trace: 'on-first-retry',

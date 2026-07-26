@@ -245,7 +245,7 @@ msgid "{0} lines selected"
 msgstr "{0} lines selected"
 
 #. placeholder {0}: mapping.propertyMappings.length
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "{0} mapped properties"
 msgstr "{0} mapped properties"
 
@@ -268,7 +268,7 @@ msgid "{0} records, {1} evidence excerpts, and {2} full bodies omitted."
 msgstr "{0} records, {1} evidence excerpts, and {2} full bodies omitted."
 
 #. placeholder {0}: selectedRecordIds.size
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "{0} selected"
 msgstr "{0} selected"
 
@@ -715,7 +715,7 @@ msgstr "A newer version may have been deployed since this tab opened."
 msgid "A non-empty folder already exists at this path. Pick a different folder."
 msgstr "A non-empty folder already exists at this path. Pick a different folder."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableNewRecordRow.tsx
 msgid "A page title is required"
 msgstr "A page title is required"
 
@@ -731,7 +731,7 @@ msgstr "A pull quote stands out from the surrounding text."
 msgid "A real shell is off for this project. Turning it on runs commands with the full access of your macOS user account."
 msgstr "A real shell is off for this project. Turning it on runs commands with the full access of your macOS user account."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableNewRecordRow.tsx
 msgid "A record title is required"
 msgstr "A record title is required"
 
@@ -800,7 +800,7 @@ msgstr "Accept their deletion"
 msgid "Account"
 msgstr "Account"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableHeader.tsx
 msgid "Actions"
 msgstr "Actions"
 
@@ -878,6 +878,7 @@ msgstr "Add a key"
 msgid "Add a memo"
 msgstr "Add a memo"
 
+#: src/components/DatabaseRecordPeekPropertyPopover.tsx
 #: src/components/FolderPropertiesCard.tsx
 msgid "Add a property"
 msgstr "Add a property"
@@ -894,7 +895,7 @@ msgstr "Add another pattern"
 msgid "Add at least one letter or number."
 msgstr "Add at least one letter or number."
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Add color rule"
 msgstr "Add color rule"
 
@@ -906,10 +907,14 @@ msgstr "Add comment"
 msgid "Add cursors or select matching occurrences through CodeMirror."
 msgstr "Add cursors or select matching occurrences through CodeMirror."
 
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 #: src/components/DatabasePageLayoutDialog.tsx
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
 msgid "Add group"
 msgstr "Add group"
+
+#: src/components/MemoPanel.tsx
+msgid "Add highlight"
+msgstr "Add highlight"
 
 #: src/components/SeedDialog.tsx
 msgid "Add it directly to this project."
@@ -935,7 +940,11 @@ msgstr "Add meaning-based ranking to search so conceptually-related pages surfac
 msgid "Add memo"
 msgstr "Add memo"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/MemoPanel.tsx
+msgid "Add memo to highlight"
+msgstr "Add memo to highlight"
+
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Add page"
 msgstr "Add page"
 
@@ -948,7 +957,8 @@ msgid "Add properties"
 msgstr "Add properties"
 
 #: src/components/DatabasePropertiesDialog.tsx
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabasePropertyInsertPopover.tsx
+#: src/components/DatabaseRecordPeekPropertyPopover.tsx
 #: src/components/PropertyPanel.tsx
 #: src/components/TemplateForm.tsx
 msgid "Add property"
@@ -966,7 +976,7 @@ msgstr "Add reminder"
 msgid "Add section"
 msgstr "Add section"
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Add sort"
 msgstr "Add sort"
 
@@ -1027,6 +1037,10 @@ msgstr "Adds the SynapseNote skill to the <0>Claude Desktop App</0> so it's avai
 msgid "Advanced"
 msgstr "Advanced"
 
+#: src/editor/components/InlineDatabaseToolbar.tsx
+msgid "Advanced filters"
+msgstr "Advanced filters"
+
 #: src/components/DatabaseOnboardingDialog.tsx
 msgid "Advanced migration: assign record identities"
 msgstr "Advanced migration: assign record identities"
@@ -1044,7 +1058,8 @@ msgstr "Advanced settings"
 msgid "Advanced storage details"
 msgstr "Advanced storage details"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/use-database-workspace-controller-runtime.ts
+#: src/components/useDatabaseTableRuntimeState.ts
 msgid "agent"
 msgstr "agent"
 
@@ -1117,11 +1132,11 @@ msgstr "All files are hidden by view filters."
 msgid "All hunks resolved"
 msgstr "All hunks resolved"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
 msgid "All pages"
 msgstr "All pages"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
 msgid "All records"
 msgstr "All records"
 
@@ -1171,6 +1186,7 @@ msgid "and more"
 msgstr "and more"
 
 #: src/components/DocPanel.tsx
+#: src/components/MemoPanel.tsx
 #: src/editor/components/PdfEmbed.tsx
 msgid "Annotations"
 msgstr "Annotations"
@@ -1231,24 +1247,25 @@ msgstr "Approve permission change"
 msgid "Approve revocation"
 msgstr "Approve revocation"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableRowMenu.tsx
 msgid "Archive"
 msgstr "Archive"
 
-#: src/components/DatabaseRecordPageChrome.tsx
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
+#: src/components/DatabaseTableCellMenu.tsx
 msgid "Archive page"
 msgstr "Archive page"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableCellMenu.tsx
 msgid "Archive record"
 msgstr "Archive record"
 
 #: src/components/DatabaseRelationCellEditor.tsx
+#: src/components/DatabaseSelectCellEditor.tsx
 msgid "archived"
 msgstr "archived"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableRowActions.tsx
 msgid "Archived"
 msgstr "Archived"
 
@@ -1286,24 +1303,25 @@ msgstr "Ask {0} CLI"
 msgid "Ask about your current document or project."
 msgstr "Ask about your current document or project."
 
-#: src/components/DatabaseTableDialog.tsx
-#: src/editor/components/DatabaseView.tsx
+#: src/components/DatabaseTableRowMenu.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
+#: src/editor/components/InlineDatabaseToolbar.tsx
 msgid "Ask agent"
 msgstr "Ask agent"
 
-#: src/editor/components/DatabaseView.tsx
+#: src/editor/components/use-inline-database-read-state.ts
 msgid "Ask agent about {inlineDatabaseContext}"
 msgstr "Ask agent about {inlineDatabaseContext}"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableCellMenu.tsx
 msgid "Ask agent about page"
 msgstr "Ask agent about page"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabasePropertyMenu.tsx
 msgid "Ask agent about property"
 msgstr "Ask agent about property"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableCellMenu.tsx
 msgid "Ask agent about record"
 msgstr "Ask agent about record"
 
@@ -1419,7 +1437,7 @@ msgstr "Auto-sync pushes/pulls commits to your git remote on intervals and on sa
 msgid "Automatic"
 msgstr "Automatic"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Automatic default"
 msgstr "Automatic default"
 
@@ -1428,7 +1446,7 @@ msgid "Automation failures"
 msgstr "Automation failures"
 
 #: src/components/DatabaseAutomationsDialog.tsx
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
 msgid "Automations"
 msgstr "Automations"
 
@@ -1457,17 +1475,17 @@ msgstr "Avg commit latency"
 msgid "Avg rebuild time"
 msgstr "Avg rebuild time"
 
+#: src/components/EditorNavigationButtons.tsx
 #: src/components/ReportBugDialogBody.tsx
 #: src/components/SeedDialog.tsx
 msgid "Back"
 msgstr "Back"
 
-#: src/components/DatabaseRecordPageChrome.tsx
-#: src/components/DatabaseRecordPeek.tsx
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 msgid "Back to database view"
 msgstr "Back to database view"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTablePrimitives.tsx
 msgid "Back to databases"
 msgstr "Back to databases"
 
@@ -1521,7 +1539,7 @@ msgstr "Bird wiki"
 msgid "Blank note"
 msgstr "Blank note"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Blank page"
 msgstr "Blank page"
 
@@ -1529,7 +1547,7 @@ msgstr "Blank page"
 msgid "Blank project"
 msgstr "Blank project"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Blank record"
 msgstr "Blank record"
 
@@ -1549,7 +1567,11 @@ msgstr "Blog post"
 msgid "blog-post"
 msgstr "blog-post"
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/editor/components/PdfSelectionMenu.tsx
+msgid "Blue"
+msgstr "Blue"
+
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Board cards and limits"
 msgstr "Board cards and limits"
 
@@ -1616,7 +1638,7 @@ msgstr "Broken link"
 msgid "Browse"
 msgstr "Browse"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceHeader.tsx
 msgid "Browse canonical Markdown records through a snapshot-consistent table."
 msgstr "Browse canonical Markdown records through a snapshot-consistent table."
 
@@ -1669,7 +1691,7 @@ msgstr "Bullet list"
 msgid "Bullet List"
 msgstr "Bullet List"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceStatusPanel.tsx
 msgid "Button plan · not executed"
 msgstr "Button plan · not executed"
 
@@ -1684,11 +1706,11 @@ msgstr "By tag"
 #. placeholder {0}: new Date(offlineCachedAt).toLocaleString()
 #. placeholder {1}: result.snapshotRevision
 #. placeholder {2}: result.indexFreshness
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceSuccessContent.tsx
 msgid "Cached {0} · snapshot {1} · index {2}. Relations and derived values are only as current as this snapshot."
 msgstr "Cached {0} · snapshot {1} · index {2}. Relations and derived values are only as current as this snapshot."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabasePropertyMenu.tsx
 msgid "Calculate"
 msgstr "Calculate"
 
@@ -1696,7 +1718,7 @@ msgstr "Calculate"
 msgid "Calculating the unsaved Rollup against the permission snapshot."
 msgstr "Calculating the unsaved Rollup against the permission snapshot."
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Calendar dates and display"
 msgstr "Calendar dates and display"
 
@@ -1717,6 +1739,8 @@ msgstr "Can't safely edit this tool's config"
 #: src/components/CloneDialog.tsx
 #: src/components/ConsentDialogBody.tsx
 #: src/components/CreateProjectDialog.tsx
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 #: src/components/DatabaseAdvancedFilterDialog.tsx
 #: src/components/DatabaseAutomationsDialog.tsx
 #: src/components/DatabaseComputedPropertyDialog.tsx
@@ -1727,11 +1751,10 @@ msgstr "Can't safely edit this tool's config"
 #: src/components/DatabasePropertyConversionDialog.tsx
 #: src/components/DatabasePropertyDeletionPreviewDialog.tsx
 #: src/components/DatabaseRecordLayoutOverrideDialog.tsx
-#: src/components/DatabaseRecordPageChrome.tsx
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
-#: src/components/DatabaseTableDialog.tsx
 #: src/components/DatabaseTemplatesDialog.tsx
 #: src/components/DatabaseViewRenameDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
+#: src/components/DatabaseWorkspaceStatusPanel.tsx
 #: src/components/DeleteConfirmationDialog.tsx
 #: src/components/EnableSyncConfirmDialog.tsx
 #: src/components/FrontmatterRow.tsx
@@ -1782,17 +1805,13 @@ msgstr "Cannot delete last view"
 msgid "Cannot upload: no document is open"
 msgstr "Cannot upload: no document is open"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableCanvas.tsx
 msgid "Canonical database records"
 msgstr "Canonical database records"
 
 #: src/components/DatabaseCreationDialog.tsx
 msgid "Canonical folder"
 msgstr "Canonical folder"
-
-#: src/components/DatabaseTableDialog.tsx
-msgid "Canonical state changed"
-msgstr "Canonical state changed"
 
 #: src/components/DatabaseFilesCellEditor.tsx
 msgid "Caption"
@@ -1802,7 +1821,7 @@ msgstr "Caption"
 msgid "Captured Context Pack"
 msgstr "Captured Context Pack"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabasePropertyMenu.tsx
 msgid "Change property type"
 msgstr "Change property type"
 
@@ -1810,7 +1829,7 @@ msgstr "Change property type"
 msgid "Chart aggregation is unavailable."
 msgstr "Chart aggregation is unavailable."
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Chart dimensions and measure"
 msgstr "Chart dimensions and measure"
 
@@ -1823,11 +1842,11 @@ msgstr "Chart drill-through"
 msgid "Chat"
 msgstr "Chat"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTablePrimitives.tsx
 msgid "Check again"
 msgstr "Check again"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTablePrimitives.tsx
 msgid "Check index again"
 msgstr "Check index again"
 
@@ -1887,7 +1906,7 @@ msgstr "Checklist with checkboxes."
 msgid "checks"
 msgstr "checks"
 
-#: src/components/DatabaseRecordPageChrome.tsx
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 msgid "Choose a compatible data source. The move will use the same reviewed plan as the database row action."
 msgstr "Choose a compatible data source. The move will use the same reviewed plan as the database row action."
 
@@ -1895,16 +1914,24 @@ msgstr "Choose a compatible data source. The move will use the same reviewed pla
 msgid "Choose a compatible relation, target property, and aggregation."
 msgstr "Choose a compatible relation, target property, and aggregation."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabasePropertyInsertPopover.tsx
 msgid "Choose a name and type for the new column."
 msgstr "Choose a name and type for the new column."
+
+#: src/components/DatabaseRecordPeekPropertyPopover.tsx
+msgid "Choose a name and type for the new property."
+msgstr "Choose a name and type for the new property."
 
 #: src/components/BottomComposer.tsx
 #: src/components/empty-state/CreatePromptComposer.tsx
 msgid "Choose agent"
 msgstr "Choose agent"
 
-#: src/editor/components/DatabaseView.tsx
+#: src/components/DatabaseSelectCellEditor.tsx
+msgid "Choose an option"
+msgstr "Choose an option"
+
+#: src/editor/components/InlineDatabaseToolbar.tsx
 msgid "Choose another view"
 msgstr "Choose another view"
 
@@ -1923,6 +1950,10 @@ msgstr "Choose the page icon and cover shown above the database table."
 #: src/components/DatabasePageAppearanceDialog.tsx
 msgid "Choose the page icon and cover shown above this record."
 msgstr "Choose the page icon and cover shown above this record."
+
+#: src/components/settings/SettingsSchemaRegistry.ts
+msgid "Choose whether selecting a document in the left sidebar opens a new tab or replaces the current tab."
+msgstr "Choose whether selecting a document in the left sidebar opens a new tab or replaces the current tab."
 
 #: src/components/settings/SharingSection.tsx
 msgid "Choose whether this project's SynapseNote setup, including its AI-tool connections, is saved with the project so teammates get it too, or kept only on your computer."
@@ -1970,8 +2001,9 @@ msgstr "Clear"
 msgid "Clear {keyName}"
 msgstr "Clear {keyName}"
 
-#: src/components/DatabaseTableDialog.tsx
 #: src/components/DatabaseViewTabMenu.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
+#: src/editor/components/InlineDatabaseViewManagerPopover.tsx
 msgid "Clear default"
 msgstr "Clear default"
 
@@ -1983,7 +2015,7 @@ msgstr "Clear linked selections"
 msgid "Clear saved filters"
 msgstr "Clear saved filters"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Clear selection"
 msgstr "Clear selection"
 
@@ -2073,6 +2105,7 @@ msgstr "Cloning..."
 #: src/components/SubscribeForm.tsx
 #: src/components/ui/dialog.tsx
 #: src/components/ui/sheet.tsx
+#: src/editor/components/PdfSelectionMenu.tsx
 #: src/editor/find-replace/FindReplaceBar.tsx
 msgid "Close"
 msgstr "Close"
@@ -2105,6 +2138,10 @@ msgstr "Close new tab"
 #: src/components/EditorTabs.tsx
 msgid "Close others"
 msgstr "Close others"
+
+#: src/editor/components/PdfEmbed.tsx
+msgid "Close search"
+msgstr "Close search"
 
 #: src/components/TerminalRefusalNotice.tsx
 msgid "Close terminal"
@@ -2203,11 +2240,12 @@ msgstr "Collapsed"
 msgid "Collapsible section with a clickable summary."
 msgstr "Collapsible section with a clickable summary."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
+#: src/editor/components/PdfSelectionMenu.tsx
 msgid "Color"
 msgstr "Color"
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Color columns"
 msgstr "Color columns"
 
@@ -2231,17 +2269,17 @@ msgstr "Commands run with the full access of your macOS user account on this mac
 msgid "Comment on"
 msgstr "Comment on"
 
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 #: src/components/DatabaseCommentsDialog.tsx
-#: src/components/DatabaseRecordPageChrome.tsx
-#: src/components/DatabaseRecordPeek.tsx
+#: src/components/DatabaseRecordPeekComments.tsx
 msgid "Comments"
 msgstr "Comments"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceStatusPanel.tsx
 msgid "Commit change"
 msgstr "Commit change"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceReadState.tsx
 msgid "Commit creation"
 msgstr "Commit creation"
 
@@ -2257,7 +2295,7 @@ msgstr "Commits"
 msgid "Commits happen automatically"
 msgstr "Commits happen automatically"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceStatusPanel.tsx
 msgid "Committing exact plan"
 msgstr "Committing exact plan"
 
@@ -2298,7 +2336,7 @@ msgstr "Condense my AGENTS.md file to less than 40k characters"
 msgid "Condition"
 msgstr "Condition"
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Conditional colors"
 msgstr "Conditional colors"
 
@@ -2332,7 +2370,7 @@ msgstr "Config sharing unavailable: {0}."
 msgid "Config sharing unchanged — see details below."
 msgstr "Config sharing unchanged — see details below."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabasePropertyMenu.tsx
 msgid "Configure options"
 msgstr "Configure options"
 
@@ -2428,6 +2466,10 @@ msgstr "Connecting"
 msgid "Connecting — waiting for collab server"
 msgstr "Connecting — waiting for collab server"
 
+#: src/components/DatabaseRecordPeekEditor.tsx
+msgid "Connecting editor"
+msgstr "Connecting editor"
+
 #: src/components/DocumentErrorBoundary.tsx
 msgid "Connection dropped"
 msgstr "Connection dropped"
@@ -2509,11 +2551,11 @@ msgstr "Convert selection to footnote"
 msgid "Convert the current block to a paragraph."
 msgstr "Convert the current block to a paragraph."
 
-#: src/editor/components/DatabaseView.tsx
+#: src/editor/components/InlineDatabaseToolbar.tsx
 msgid "Convert to full page"
 msgstr "Convert to full page"
 
-#: src/editor/components/DatabaseView.tsx
+#: src/editor/components/InlineDatabaseToolbar.tsx
 msgid "Convert to inline view"
 msgstr "Convert to inline view"
 
@@ -2600,7 +2642,7 @@ msgstr "Copy Path"
 msgid "Copy report reference"
 msgstr "Copy report reference"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableCellMenu.tsx
 msgid "Copy selected cells"
 msgstr "Copy selected cells"
 
@@ -2624,7 +2666,7 @@ msgstr "Copy the focused file-tree item so Paste can duplicate it."
 msgid "Copy this link now. Its secret cannot be shown again."
 msgstr "Copy this link now. Its secret cannot be shown again."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Copy TSV"
 msgstr "Copy TSV"
 
@@ -2825,6 +2867,10 @@ msgstr "Couldn't disconnect — please try again."
 msgid "Couldn't duplicate \"{0}\": {1}"
 msgstr "Couldn't duplicate \"{0}\": {1}"
 
+#: src/components/ExportPdfButton.tsx
+msgid "Couldn't export the PDF."
+msgstr "Couldn't export the PDF."
+
 #. placeholder {0}: result.error
 #: src/components/skill-actions.tsx
 msgid "Couldn't install skill: {0}"
@@ -2997,6 +3043,10 @@ msgstr "Cover image"
 msgid "Create"
 msgstr "Create"
 
+#: src/components/DatabaseSelectCellEditor.tsx
+msgid "Create “{createName}”"
+msgstr "Create “{createName}”"
+
 #: src/editor/slash-command/component-items.tsx
 msgid "Create a database in this page and edit its rows without leaving the document."
 msgstr "Create a database in this page and edit its rows without leaving the document."
@@ -3048,7 +3098,7 @@ msgid "Create and organize stable saved views. Each change follows the database 
 msgstr "Create and organize stable saved views. Each change follows the database mutation policy; elevated and agent-authored changes remain reviewed before the manifest updates."
 
 #: src/components/DatabaseCreationDialog.tsx
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceHeader.tsx
 msgid "Create database"
 msgstr "Create database"
 
@@ -3183,6 +3233,10 @@ msgstr "Current database source"
 msgid "Current grants"
 msgstr "Current grants"
 
+#: src/components/settings/SettingsSchemaRegistry.ts
+msgid "Current tab"
+msgstr "Current tab"
+
 #: src/components/DatabasePublicSharesSection.tsx
 msgid "Current view"
 msgstr "Current view"
@@ -3204,7 +3258,7 @@ msgstr "Custom HTML with a live preview pane (sandboxed iframe)."
 msgid "Custom synapsenote entry — not managed by SynapseNote"
 msgstr "Custom synapsenote entry — not managed by SynapseNote"
 
-#: src/components/DatabaseRecordPageChrome.tsx
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 msgid "Customize appearance"
 msgstr "Customize appearance"
 
@@ -3216,11 +3270,12 @@ msgstr "Customize database page"
 msgid "Customize how the editor looks and behaves."
 msgstr "Customize how the editor looks and behaves."
 
-#: src/components/DatabaseRecordPageChrome.tsx
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 msgid "Customize layout"
 msgstr "Customize layout"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceHeader.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
 msgid "Customize page"
 msgstr "Customize page"
 
@@ -3232,7 +3287,7 @@ msgstr "Customize record layout"
 msgid "Customize record page"
 msgstr "Customize record page"
 
-#: src/components/DatabaseRecordPageChrome.tsx
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 msgid "Customize this page"
 msgstr "Customize this page"
 
@@ -3244,21 +3299,25 @@ msgstr "Customize this record"
 msgid "Dashboard layout"
 msgstr "Dashboard layout"
 
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 #: src/components/DatabaseContextInspectorDialog.tsx
-#: src/components/DatabaseRecordPageChrome.tsx
-#: src/components/DatabaseRecordPeek.tsx
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceHeader.tsx
 #: src/components/NewItemDialog.tsx
+#: src/components/use-database-workspace-controller-runtime.ts
 msgid "Database"
 msgstr "Database"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
 msgid "Database actions"
 msgstr "Database actions"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceHeader.tsx
 msgid "Database breadcrumbs"
 msgstr "Database breadcrumbs"
+
+#: src/components/DatabaseTablePrimitives.tsx
+msgid "Database changed elsewhere"
+msgstr "Database changed elsewhere"
 
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "Database default"
@@ -3268,15 +3327,15 @@ msgstr "Database default"
 msgid "Database diagnostics"
 msgstr "Database diagnostics"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTablePrimitives.tsx
 msgid "Database index is not current"
 msgstr "Database index is not current"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTablePrimitives.tsx
 msgid "Database is offline"
 msgstr "Database is offline"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTablePrimitives.tsx
 msgid "Database is still updating"
 msgstr "Database is still updating"
 
@@ -3296,15 +3355,15 @@ msgstr "Database page cover"
 msgid "Database page icon"
 msgstr "Database page icon"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTablePrimitives.tsx
 msgid "Database page is unavailable"
 msgstr "Database page is unavailable"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableCanvas.tsx
 msgid "Database pages"
 msgstr "Database pages"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceHeader.tsx
 msgid "Database pages share their content with every linked view."
 msgstr "Database pages share their content with every linked view."
 
@@ -3320,15 +3379,15 @@ msgstr "Database properties are protected in source mode. Use the page propertie
 msgid "Database properties use the verified editor"
 msgstr "Database properties use the verified editor"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTablePrimitives.tsx
 msgid "Database request failed"
 msgstr "Database request failed"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTablePrimitives.tsx
 msgid "Database schema is invalid"
 msgstr "Database schema is invalid"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTablePrimitives.tsx
 msgid "Database setup needs attention"
 msgstr "Database setup needs attention"
 
@@ -3340,17 +3399,17 @@ msgstr "Database sources"
 msgid "Database templates"
 msgstr "Database templates"
 
-#: src/editor/components/DatabaseView.tsx
+#: src/editor/components/use-inline-database-read-state.ts
 msgid "Database view actions"
 msgstr "Database view actions"
 
-#: src/editor/components/DatabaseView.tsx
+#: src/editor/components/use-inline-database-read-state.ts
 msgid "Database view actions for {inlineDatabaseContext}"
 msgstr "Database view actions for {inlineDatabaseContext}"
 
 #: src/components/CommandPalette.tsx
 #: src/components/DatabaseSidebarSection.tsx
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceHeader.tsx
 msgid "Databases"
 msgstr "Databases"
 
@@ -3366,11 +3425,11 @@ msgstr "Day of month"
 msgid "default"
 msgstr "default"
 
-#: src/components/settings/SettingsDialogBody.tsx
+#: src/components/settings/SettingsSchemaRegistry.ts
 msgid "Default Claude chat model"
 msgstr "Default Claude chat model"
 
-#: src/components/settings/SettingsDialogBody.tsx
+#: src/components/settings/SettingsSchemaRegistry.ts
 msgid "Default Codex chat model"
 msgstr "Default Codex chat model"
 
@@ -3394,11 +3453,12 @@ msgstr "Default properties"
 msgid "Definitions"
 msgstr "Definitions"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableRowMenu.tsx
 #: src/components/DatabaseViewTabMenu.tsx
 #: src/components/DeleteConfirmationDialog.tsx
 #: src/components/skill-actions.tsx
 #: src/components/TemplateRow.tsx
+#: src/editor/components/InlineDatabaseViewManagerPopover.tsx
 #: src/editor/extensions/JsxComponentView.tsx
 msgid "Delete"
 msgstr "Delete"
@@ -3427,6 +3487,10 @@ msgstr "Delete adjacent chip"
 msgid "Delete an adjacent wiki-link or tag chip."
 msgstr "Delete an adjacent wiki-link or tag chip."
 
+#: src/components/MemoPanel.tsx
+msgid "Delete annotation"
+msgstr "Delete annotation"
+
 #: src/editor/extensions/RawMdxFallbackCMView.tsx
 msgid "Delete block"
 msgstr "Delete block"
@@ -3439,13 +3503,12 @@ msgstr "Delete code block"
 msgid "Delete highlight"
 msgstr "Delete highlight"
 
-#: src/components/MemoPanel.tsx
 #: src/editor/components/PdfSelectionMenu.tsx
 msgid "Delete memo"
 msgstr "Delete memo"
 
-#: src/components/DatabaseRecordPageChrome.tsx
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
+#: src/components/DatabaseTableCellMenu.tsx
 msgid "Delete page"
 msgstr "Delete page"
 
@@ -3453,11 +3516,11 @@ msgstr "Delete page"
 msgid "Delete Permanently"
 msgstr "Delete Permanently"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabasePropertyMenu.tsx
 msgid "Delete property"
 msgstr "Delete property"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableCellMenu.tsx
 msgid "Delete record"
 msgstr "Delete record"
 
@@ -3474,8 +3537,8 @@ msgid "Delete selected table"
 msgstr "Delete selected table"
 
 #: src/components/MemoPanel.tsx
-msgid "Delete this memo?"
-msgstr "Delete this memo?"
+msgid "Delete this annotation?"
+msgstr "Delete this annotation?"
 
 #: src/components/FolderTimelineCard.tsx
 msgid "deleted template"
@@ -3601,15 +3664,16 @@ msgstr "Disable sync"
 msgid "Disambiguates similarly-named templates in the menu."
 msgstr "Disambiguates similarly-named templates in the menu."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceReadState.tsx
+#: src/components/DatabaseWorkspaceStatusPanel.tsx
 msgid "Discard"
 msgstr "Discard"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Discard preview"
 msgstr "Discard preview"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceReadState.tsx
 msgid "Discard queued writes"
 msgstr "Discard queued writes"
 
@@ -3681,8 +3745,8 @@ msgid "document"
 msgstr "document"
 
 #: src/components/MemoPanel.tsx
-msgid "Document memos"
-msgstr "Document memos"
+msgid "Document annotations"
+msgstr "Document annotations"
 
 #: src/components/DocumentErrorBoundary.tsx
 msgid "Document not found"
@@ -3767,10 +3831,11 @@ msgstr "Drag {patternText} to reorder"
 msgid "Drag item {0} to reorder"
 msgstr "Drag item {0} to reorder"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableRowMenu.tsx
 #: src/components/DatabaseViewTabMenu.tsx
 #: src/components/FileTree.tsx
 #: src/components/skill-actions.tsx
+#: src/editor/components/InlineDatabaseViewManagerPopover.tsx
 msgid "Duplicate"
 msgstr "Duplicate"
 
@@ -3778,16 +3843,16 @@ msgstr "Duplicate"
 msgid "Duplicate name \"{keyName}\""
 msgstr "Duplicate name \"{keyName}\""
 
-#: src/components/DatabaseRecordPageChrome.tsx
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
+#: src/components/DatabaseTableCellMenu.tsx
 msgid "Duplicate page"
 msgstr "Duplicate page"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabasePropertyMenu.tsx
 msgid "Duplicate property"
 msgstr "Duplicate property"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableCellMenu.tsx
 msgid "Duplicate record"
 msgstr "Duplicate record"
 
@@ -3807,7 +3872,7 @@ msgstr "Duplicate the file-tree item copied from the Files sidebar."
 msgid "Duplicate the focused file-tree item when focus is in the Files sidebar."
 msgstr "Duplicate the focused file-tree item when focus is in the Files sidebar."
 
-#: src/editor/components/DatabaseView.tsx
+#: src/editor/components/InlineDatabaseToolbar.tsx
 msgid "Duplicate view configuration"
 msgstr "Duplicate view configuration"
 
@@ -3841,8 +3906,8 @@ msgid "Each selected tool gets an SynapseNote MCP entry."
 msgstr "Each selected tool gets an SynapseNote MCP entry."
 
 #: src/components/MemoPanel.tsx
-msgid "Earlier memo"
-msgstr "Earlier memo"
+msgid "Earlier annotation"
+msgstr "Earlier annotation"
 
 #: src/components/skill-actions.tsx
 #: src/components/TemplateForm.tsx
@@ -3870,11 +3935,11 @@ msgstr "Edit {propertyName}"
 msgid "Edit a read-only computed property with stable references and snapshot preview."
 msgstr "Edit a read-only computed property with stable references and snapshot preview."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableCellMenu.tsx
 msgid "Edit cell"
 msgstr "Edit cell"
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Edit condition"
 msgstr "Edit condition"
 
@@ -3889,6 +3954,10 @@ msgstr "Edit markdown link"
 #: src/components/MemoPanel.tsx
 msgid "Edit memo"
 msgstr "Edit memo"
+
+#: src/editor/components/PdfSelectionMenu.tsx
+msgid "Edit PDF highlight memo"
+msgstr "Edit PDF highlight memo"
 
 #: src/editor/components/PdfSelectionMenu.tsx
 msgid "Edit PDF memo"
@@ -4108,7 +4177,8 @@ msgstr "Every"
 msgid "Exact Context Pack"
 msgstr "Exact Context Pack"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceReadState.tsx
+#: src/components/DatabaseWorkspaceStatusPanel.tsx
 msgid "Exact plan details"
 msgstr "Exact plan details"
 
@@ -4174,11 +4244,15 @@ msgstr "Explain how your codebase works so teammates and AI agents can find thei
 msgid "Explore"
 msgstr "Explore"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
 msgid "Export all CSV"
 msgstr "Export all CSV"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/ExportPdfButton.tsx
+msgid "Export as PDF"
+msgstr "Export as PDF"
+
+#: src/components/DatabaseWorkspaceToolbar.tsx
 msgid "Export current CSV"
 msgstr "Export current CSV"
 
@@ -4186,11 +4260,11 @@ msgstr "Export current CSV"
 msgid "Export diagnostics"
 msgstr "Export diagnostics"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
 msgid "Export JSON"
 msgstr "Export JSON"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceStatusPanel.tsx
 msgid "External actions run after the verified database commit and use durable idempotent delivery with bounded retry."
 msgstr "External actions run after the verified database commit and use durable idempotent delivery with bounded retry."
 
@@ -4465,10 +4539,11 @@ msgid "Fast speed: On"
 msgstr "Fast speed: On"
 
 #: src/components/DatabaseViewTabMenu.tsx
+#: src/editor/components/InlineDatabaseViewManagerPopover.tsx
 msgid "Favorite"
 msgstr "Favorite"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceHeader.tsx
 msgid "Favorite database page"
 msgstr "Favorite database page"
 
@@ -4563,7 +4638,7 @@ msgstr "Files"
 msgid "Files sidebar"
 msgstr "Files sidebar"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabasePropertyMenu.tsx
 msgid "Filter by property"
 msgstr "Filter by property"
 
@@ -4572,9 +4647,9 @@ msgid "Filter languages"
 msgstr "Filter languages"
 
 #: src/components/DatabaseContextInspectorDialog.tsx
-#: src/components/DatabaseTableDialog.tsx
 #: src/components/DatabaseViewTabMenu.tsx
-#: src/editor/components/DatabaseView.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
+#: src/editor/components/InlineDatabaseToolbar.tsx
 msgid "Filters"
 msgstr "Filters"
 
@@ -4590,6 +4665,10 @@ msgstr "Find and replace"
 #: src/lib/keyboard-shortcuts.ts
 msgid "Find field navigation"
 msgstr "Find field navigation"
+
+#: src/editor/components/PdfEmbed.tsx
+msgid "Find in PDF"
+msgstr "Find in PDF"
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Find next match"
@@ -4611,7 +4690,7 @@ msgstr "First item"
 msgid "First page preview"
 msgstr "First page preview"
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Fit cover"
 msgstr "Fit cover"
 
@@ -4619,7 +4698,7 @@ msgstr "Fit cover"
 msgid "Fit height"
 msgstr "Fit height"
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Fit image"
 msgstr "Fit image"
 
@@ -4627,7 +4706,7 @@ msgstr "Fit image"
 msgid "Fit width"
 msgstr "Fit width"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Fix import values before planning"
 msgstr "Fix import values before planning"
 
@@ -4716,6 +4795,10 @@ msgstr "Formula preview · UTC · deterministic null and error semantics · eval
 msgid "Formula source"
 msgstr "Formula source"
 
+#: src/components/EditorNavigationButtons.tsx
+msgid "Forward"
+msgstr "Forward"
+
 #: src/components/LinksPanel.tsx
 msgid "Forward-links response did not match expected shape."
 msgstr "Forward-links response did not match expected shape."
@@ -4760,7 +4843,7 @@ msgstr "Full path"
 msgid "Full Path"
 msgstr "Full Path"
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Gallery cards and media"
 msgstr "Gallery cards and media"
 
@@ -4831,6 +4914,10 @@ msgstr "Global Skill"
 msgid "Go back"
 msgstr "Go back"
 
+#: src/components/MemoPanel.tsx
+msgid "Go to annotation in document"
+msgstr "Go to annotation in document"
+
 #: src/lib/keyboard-shortcuts.ts
 msgid "Go to line"
 msgstr "Go to line"
@@ -4859,6 +4946,10 @@ msgstr "Graph"
 msgid "Graph visualization of document links"
 msgstr "Graph visualization of document links"
 
+#: src/editor/components/PdfSelectionMenu.tsx
+msgid "Green"
+msgstr "Green"
+
 #: src/editor/slash-command/items.tsx
 msgid "Grid of rows and columns with a header row."
 msgstr "Grid of rows and columns with a header row."
@@ -4867,7 +4958,7 @@ msgstr "Grid of rows and columns with a header row."
 msgid "Group"
 msgstr "Group"
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Group and subgroup"
 msgstr "Group and subgroup"
 
@@ -4963,12 +5054,12 @@ msgstr "Hide"
 msgid "Hide advanced"
 msgstr "Hide advanced"
 
-#: src/components/DatabaseTableDialog.tsx
-#: src/editor/components/DatabaseView.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
+#: src/editor/components/InlineDatabaseToolbar.tsx
 msgid "Hide archived"
 msgstr "Hide archived"
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Hide empty"
 msgstr "Hide empty"
 
@@ -5020,18 +5111,30 @@ msgstr "Hide this file"
 msgid "Hide thumbnails"
 msgstr "Hide thumbnails"
 
+#: src/components/MemoPanel.tsx
 #: src/editor/components/PdfEmbed.tsx
 #: src/editor/components/PdfSelectionMenu.tsx
 #: src/lib/keyboard-shortcuts.ts
 msgid "Highlight"
 msgstr "Highlight"
 
+#: src/components/MemoPanel.tsx
+msgid "Highlight a passage or keep a private reading note."
+msgstr "Highlight a passage or keep a private reading note."
+
+#: src/editor/components/PdfSelectionMenu.tsx
+msgid "Highlight color"
+msgstr "Highlight color"
+
+#: src/editor/components/PdfSelectionMenu.tsx
+msgid "Highlight note"
+msgstr "Highlight note"
+
 #: src/editor/slash-command/component-items.tsx
 msgid "Highlight tips, warnings, and notes."
 msgstr "Highlight tips, warnings, and notes."
 
-#: src/components/DatabaseRecordPeek.tsx
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
 msgid "History"
 msgstr "History"
 
@@ -5131,7 +5234,7 @@ msgstr "Ignore patterns (raw text)"
 msgid "Import"
 msgstr "Import"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
 msgid "Import CSV/TSV"
 msgstr "Import CSV/TSV"
 
@@ -5143,7 +5246,8 @@ msgstr "In a subfolder"
 msgid "In the Claude Desktop App"
 msgstr "In the Claude Desktop App"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/use-database-workspace-controller-runtime.ts
+#: src/components/useDatabaseTableRuntimeState.ts
 msgid "inactive"
 msgstr "inactive"
 
@@ -5320,7 +5424,7 @@ msgstr "Insert a footnote reference + matching definition stub."
 msgid "Insert a markdown hard break."
 msgstr "Insert a markdown hard break."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabasePropertyMenu.tsx
 msgid "Insert left"
 msgstr "Insert left"
 
@@ -5328,19 +5432,19 @@ msgstr "Insert left"
 msgid "Insert link"
 msgstr "Insert link"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabasePropertyInsertPopover.tsx
 msgid "Insert property"
 msgstr "Insert property"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabasePropertyInsertPopover.tsx
 msgid "Insert property to the left"
 msgstr "Insert property to the left"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabasePropertyInsertPopover.tsx
 msgid "Insert property to the right"
 msgstr "Insert property to the right"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabasePropertyMenu.tsx
 msgid "Insert right"
 msgstr "Insert right"
 
@@ -5348,8 +5452,8 @@ msgstr "Insert right"
 msgid "Insert, delete, move, copy, and indent source editor lines through CodeMirror's default keymap."
 msgstr "Insert, delete, move, copy, and indent source editor lines through CodeMirror's default keymap."
 
-#: src/components/DatabaseTableDialog.tsx
-#: src/editor/components/DatabaseView.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
+#: src/editor/components/InlineDatabaseToolbar.tsx
 msgid "Inspect agent context"
 msgstr "Inspect agent context"
 
@@ -5358,7 +5462,7 @@ msgid "Inspect agent data context"
 msgstr "Inspect agent data context"
 
 #: src/components/DatabaseGallery.tsx
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableRowMenu.tsx
 msgid "Inspect context"
 msgstr "Inspect context"
 
@@ -5366,20 +5470,20 @@ msgstr "Inspect context"
 msgid "Inspect database intent, scope, diffs, execution, verification, failures, and undo. Recovery refreshes the database view behind this dialog without changing its route or selection."
 msgstr "Inspect database intent, scope, diffs, execution, verification, failures, and undo. Recovery refreshes the database view behind this dialog without changing its route or selection."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableCellMenu.tsx
 msgid "Inspect page context"
 msgstr "Inspect page context"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabasePropertyMenu.tsx
 msgid "Inspect property context"
 msgstr "Inspect property context"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableCellMenu.tsx
 msgid "Inspect record context"
 msgstr "Inspect record context"
 
-#: src/components/DatabaseTableDialog.tsx
-#: src/editor/components/DatabaseView.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
+#: src/editor/components/InlineDatabaseSurface.tsx
 msgid "Inspect selected context"
 msgstr "Inspect selected context"
 
@@ -5391,11 +5495,11 @@ msgstr "Inspect the exact in-memory Context Pack, token estimate, permission red
 msgid "Inspect without editing files"
 msgstr "Inspect without editing files"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Inspecting all pages"
 msgstr "Inspecting all pages"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Inspecting all records"
 msgstr "Inspecting all records"
 
@@ -5496,7 +5600,7 @@ msgid "Invalid patch payload"
 msgstr "Invalid patch payload"
 
 #. placeholder {0}: invalidIssue ? ` · ${invalidIssue.message}` : ''
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableDataCell.tsx
 msgid "Invalid preserved value: {invalidValueText}{0}"
 msgstr "Invalid preserved value: {invalidValueText}{0}"
 
@@ -5548,10 +5652,6 @@ msgstr "Jump to tab 1-8"
 #: src/components/TimelinePanel.tsx
 msgid "just now"
 msgstr "just now"
-
-#: src/components/MemoPanel.tsx
-msgid "Keep a private reading note or attach a passage you want to revisit."
-msgstr "Keep a private reading note or attach a passage you want to revisit."
 
 #: src/components/SeedDialog.tsx
 msgid "Keep a written record of how your product gets built. A home for proposing ideas, recording decisions, writing specs, and capturing what you learned after something broke."
@@ -5621,7 +5721,7 @@ msgstr "Let Tab leave the source editor instead of indenting."
 msgid "Level"
 msgstr "Level"
 
-#: src/components/settings/SettingsDialogBody.tsx
+#: src/components/settings/SettingsSchemaRegistry.ts
 msgid "Light, dark, or follow the OS."
 msgstr "Light, dark, or follow the OS."
 
@@ -5669,11 +5769,11 @@ msgstr "Link URL"
 msgid "Link-graph response did not match expected shape."
 msgstr "Link-graph response did not match expected shape."
 
-#: src/editor/components/DatabaseView.tsx
+#: src/editor/components/use-inline-database-read-state.ts
 msgid "Linked database view"
 msgstr "Linked database view"
 
-#: src/editor/components/DatabaseView.tsx
+#: src/editor/components/use-inline-database-read-state.ts
 msgid "Linked database view: {inlineDatabaseContext}"
 msgstr "Linked database view: {inlineDatabaseContext}"
 
@@ -5693,15 +5793,15 @@ msgstr "Links"
 msgid "List"
 msgstr "List"
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "List hierarchy and display"
 msgstr "List hierarchy and display"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceViewRenderer.tsx
 msgid "Load more pages"
 msgstr "Load more pages"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceViewRenderer.tsx
 msgid "Load more records"
 msgstr "Load more records"
 
@@ -5735,10 +5835,6 @@ msgstr "Loading agent context"
 msgid "Loading Agent Runs"
 msgstr "Loading Agent Runs"
 
-#: src/components/DatabaseRecordPeek.tsx
-msgid "Loading backlinks"
-msgstr "Loading backlinks"
-
 #: src/components/ShareBranchSwitchDialog.tsx
 msgid "Loading branch state"
 msgstr "Loading branch state"
@@ -5756,7 +5852,7 @@ msgid "Loading database diagnostics"
 msgstr "Loading database diagnostics"
 
 #: src/components/DatabaseSidebarSection.tsx
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceSidebar.tsx
 msgid "Loading databases"
 msgstr "Loading databases"
 
@@ -5801,11 +5897,7 @@ msgstr "Loading headings for {pageTarget}"
 msgid "Loading image"
 msgstr "Loading image"
 
-#: src/components/DatabaseRecordPeek.tsx
-msgid "Loading page content"
-msgstr "Loading page content"
-
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceReadState.tsx
 #: src/editor/wiki-link-suggestion/WikiLinkSuggestionMenu.tsx
 msgid "Loading pages"
 msgstr "Loading pages"
@@ -5831,15 +5923,11 @@ msgstr "Loading preview"
 msgid "Loading public links"
 msgstr "Loading public links"
 
-#: src/components/DatabaseRecordPeek.tsx
-msgid "Loading record body"
-msgstr "Loading record body"
-
 #: src/components/DatabaseRecordHistoryDialog.tsx
 msgid "Loading record history"
 msgstr "Loading record history"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceReadState.tsx
 msgid "Loading records"
 msgstr "Loading records"
 
@@ -5879,7 +5967,7 @@ msgstr "Loading templates"
 msgid "Loading timeline history"
 msgstr "Loading timeline history"
 
-#: src/components/DatabaseRecordPageChrome.tsx
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 msgid "Loading verified database properties"
 msgstr "Loading verified database properties"
 
@@ -5928,8 +6016,9 @@ msgstr "Looking for <0>{lookingForUrl}</0>."
 msgid "Lost connection to \"{docName}\"."
 msgstr "Lost connection to \"{docName}\"."
 
-#: src/components/DatabaseTableDialog.tsx
 #: src/components/DatabaseViewTabMenu.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
+#: src/editor/components/InlineDatabaseViewManagerPopover.tsx
 msgid "Make default"
 msgstr "Make default"
 
@@ -5941,21 +6030,22 @@ msgstr "Make this knowledge base available as a Claude Skill."
 msgid "Manage hidden files in Settings → Ignore patterns."
 msgstr "Manage hidden files in Settings → Ignore patterns."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Manage Multi-select options"
 msgstr "Manage Multi-select options"
 
 #: src/components/DatabasePropertiesDialog.tsx
-#: src/components/DatabaseTableDialog.tsx
-#: src/editor/components/DatabaseView.tsx
+#: src/components/DatabaseTableControls.tsx
+#: src/editor/components/InlineDatabaseToolbar.tsx
 msgid "Manage properties"
 msgstr "Manage properties"
 
 #: src/components/DatabaseViewManagerDialog.tsx
+#: src/editor/components/InlineDatabaseViewManagerPopover.tsx
 msgid "Manage saved views"
 msgstr "Manage saved views"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Manage Select options"
 msgstr "Manage Select options"
 
@@ -5963,11 +6053,15 @@ msgstr "Manage Select options"
 msgid "Manage the GitHub account SynapseNote uses to browse and sync your repositories."
 msgstr "Manage the GitHub account SynapseNote uses to browse and sync your repositories."
 
-#: src/components/DatabaseTableDialog.tsx
 #: src/components/DatabaseViewTabMenu.tsx
-#: src/editor/components/DatabaseView.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
+#: src/editor/components/InlineDatabaseToolbar.tsx
 msgid "Manage views"
 msgstr "Manage views"
+
+#: src/editor/components/InlineDatabaseViewManagerPopover.tsx
+msgid "Manage views without leaving the document."
+msgstr "Manage views without leaving the document."
 
 #: src/components/settings/AiToolsSection.tsx
 msgid "Managing AI tools is unavailable in this build."
@@ -5977,7 +6071,7 @@ msgstr "Managing AI tools is unavailable in this build."
 msgid "Managing project AI tools is unavailable in this build."
 msgstr "Managing project AI tools is unavailable in this build."
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Map locations and privacy"
 msgstr "Map locations and privacy"
 
@@ -6027,14 +6121,12 @@ msgstr "MCP connections"
 msgid "Medium section heading."
 msgstr "Medium section heading."
 
-#: src/components/DocPanel.tsx
 #: src/editor/bubble-menu/MemoBubbleButton.tsx
 #: src/editor/components/PdfEmbed.tsx
 #: src/editor/components/PdfSelectionMenu.tsx
 msgid "Memo"
 msgstr "Memo"
 
-#: src/components/MemoPanel.tsx
 #: src/editor/components/PdfEmbed.tsx
 msgid "Memos"
 msgstr "Memos"
@@ -6084,7 +6176,7 @@ msgstr "Mirror source <0>{label}</0>"
 msgid "Mirror source <0>api-spec</0>"
 msgstr "Mirror source <0>api-spec</0>"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/useDatabaseTableRuntimeState.ts
 msgid "missing"
 msgstr "missing"
 
@@ -6133,7 +6225,7 @@ msgstr "More requests were blocked."
 msgid "More than {0} requests were blocked by the preview's security policy"
 msgstr "More than {0} requests were blocked by the preview's security policy"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableRowMenu.tsx
 msgid "Move"
 msgstr "Move"
 
@@ -6149,30 +6241,30 @@ msgstr "Move block"
 msgid "Move down"
 msgstr "Move down"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabasePropertyMenu.tsx
 #: src/components/DatabaseViewTabMenu.tsx
 msgid "Move left"
 msgstr "Move left"
 
-#: src/components/DatabaseRecordPageChrome.tsx
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
+#: src/components/DatabaseTableCellMenu.tsx
 msgid "Move page"
 msgstr "Move page"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableCellMenu.tsx
 msgid "Move record"
 msgstr "Move record"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabasePropertyMenu.tsx
 #: src/components/DatabaseViewTabMenu.tsx
 msgid "Move right"
 msgstr "Move right"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Move selected page to"
 msgstr "Move selected page to"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Move selected record to"
 msgstr "Move selected record to"
 
@@ -6255,8 +6347,8 @@ msgid "name"
 msgstr "name"
 
 #: src/components/AuthModal.tsx
-#: src/components/DatabaseTableDialog.tsx
 #: src/components/DatabaseTemplatesDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 #: src/components/FolderOverview.tsx
 #: src/components/NewSkillDialog.tsx
 #: src/components/SkillRenameDialog.tsx
@@ -6294,6 +6386,10 @@ msgstr "Navigate to {docName}"
 msgid "Navigation and suggestions"
 msgstr "Navigation and suggestions"
 
+#: src/components/EditorNavigationButtons.tsx
+msgid "Navigation history"
+msgstr "Navigation history"
+
 #: src/components/settings/OkignoreSection.tsx
 msgid "Nested .okignore error in {path}"
 msgstr "Nested .okignore error in {path}"
@@ -6329,9 +6425,9 @@ msgid "Never"
 msgstr "Never"
 
 #: src/components/DatabaseAutomationsDialog.tsx
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
 #: src/components/FolderOverview.tsx
-#: src/editor/components/DatabaseView.tsx
+#: src/editor/components/InlineDatabaseToolbar.tsx
 #: src/editor/tag-suggestion/TagSuggestionMenu.tsx
 msgid "New"
 msgstr "New"
@@ -6340,6 +6436,10 @@ msgstr "New"
 #: src/components/TerminalNewChatButton.tsx
 msgid "New {0} chat"
 msgstr "New {0} chat"
+
+#: src/components/MemoPanel.tsx
+msgid "New annotation"
+msgstr "New annotation"
 
 #: src/components/NewWorktreeDialog.tsx
 msgid "New branch <0>{trimmed}</0> will be created from <1>{currentBaseLabel}</1>, in its own worktree under <2>.ok/worktrees/</2>."
@@ -6363,19 +6463,19 @@ msgstr "New Codex chat"
 
 #: src/components/CommandPalette.tsx
 #: src/components/DatabaseCreationDialog.tsx
-#: src/components/DatabaseTableDialog.tsx
 #: src/components/empty-state/CreateView.tsx
 #: src/components/FileSidebar.tsx
 #: src/components/PackCardGrid.tsx
+#: src/components/use-database-workspace-controller-runtime.ts
 #: src/editor/slash-command/component-items.tsx
 msgid "New database"
 msgstr "New database"
 
-#: src/editor/components/DatabaseView.tsx
+#: src/editor/components/use-inline-database-read-state.ts
 msgid "New database view"
 msgstr "New database view"
 
-#: src/editor/components/DatabaseView.tsx
+#: src/editor/components/use-inline-database-read-state.ts
 msgid "New database view for {inlineDatabaseContext}"
 msgstr "New database view for {inlineDatabaseContext}"
 
@@ -6416,7 +6516,8 @@ msgstr "New ignore pattern"
 msgid "New memo"
 msgstr "New memo"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableNewRecordRow.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
 msgid "New page"
 msgstr "New page"
 
@@ -6433,11 +6534,11 @@ msgstr "New project"
 msgid "New property name"
 msgstr "New property name"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
 msgid "New record"
 msgstr "New record"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableNewRecordRow.tsx
 msgid "New record title"
 msgstr "New record title"
 
@@ -6448,6 +6549,7 @@ msgid "New skill"
 msgstr "New skill"
 
 #: src/components/EditorTabs.tsx
+#: src/components/settings/SettingsSchemaRegistry.ts
 #: src/lib/keyboard-shortcuts.ts
 msgid "New tab"
 msgstr "New tab"
@@ -6467,6 +6569,10 @@ msgstr "New terminal"
 msgid "New terminal tab"
 msgstr "New terminal tab"
 
+#: src/editor/components/InlineDatabaseViewManagerPopover.tsx
+msgid "New view"
+msgstr "New view"
+
 #: src/components/NewWorktreeDialog.tsx
 #: src/components/ProjectSwitcher.tsx
 msgid "New worktree"
@@ -6476,13 +6582,9 @@ msgstr "New worktree"
 msgid "Next match"
 msgstr "Next match"
 
-#: src/components/DatabaseRecordPeek.tsx
-msgid "Next page"
-msgstr "Next page"
-
-#: src/components/DatabaseRecordPeek.tsx
-msgid "Next record"
-msgstr "Next record"
+#: src/editor/components/PdfEmbed.tsx
+msgid "Next result"
+msgstr "Next result"
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Next source diagnostic"
@@ -6508,15 +6610,15 @@ msgstr "No annotation text"
 msgid "No annotations"
 msgstr "No annotations"
 
+#: src/components/MemoPanel.tsx
+msgid "No annotations yet"
+msgstr "No annotations yet"
+
 #: src/components/DatabaseAutomationsDialog.tsx
 msgid "No automations yet."
 msgstr "No automations yet."
 
-#: src/components/DatabaseRecordPeek.tsx
-msgid "No backlinks."
-msgstr "No backlinks."
-
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabasePropertyMenu.tsx
 msgid "No calculation"
 msgstr "No calculation"
 
@@ -6557,7 +6659,7 @@ msgid "No database templates yet."
 msgstr "No database templates yet."
 
 #: src/components/DatabaseSidebarSection.tsx
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceSidebar.tsx
 msgid "No databases yet."
 msgstr "No databases yet."
 
@@ -6700,6 +6802,10 @@ msgstr "No matching commands."
 msgid "No matching docs"
 msgstr "No matching docs"
 
+#: src/components/DatabaseSelectCellEditor.tsx
+msgid "No matching options."
+msgstr "No matching options."
+
 #: src/editor/link-path-suggestions.tsx
 msgid "No matching paths"
 msgstr "No matching paths"
@@ -6727,10 +6833,6 @@ msgstr "No memo text"
 #: src/editor/components/PdfEmbed.tsx
 msgid "No memos have been created from this PDF yet."
 msgstr "No memos have been created from this PDF yet."
-
-#: src/components/MemoPanel.tsx
-msgid "No memos yet"
-msgstr "No memos yet"
 
 #: src/components/GraphPanel.tsx
 msgid "No Outgoing"
@@ -6764,7 +6866,8 @@ msgstr "No pages in this list."
 msgid "No pages in this Map view have a location."
 msgstr "No pages in this Map view have a location."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableControls.tsx
+#: src/components/DatabaseWorkspaceViewRenderer.tsx
 msgid "No pages in this source."
 msgstr "No pages in this source."
 
@@ -6776,7 +6879,7 @@ msgstr "No pages link here yet."
 msgid "No pages link to this PDF yet."
 msgstr "No pages link to this PDF yet."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableControls.tsx
 msgid "No pages match “{searchQuery}”."
 msgstr "No pages match “{searchQuery}”."
 
@@ -6832,7 +6935,8 @@ msgstr "No records in this list."
 msgid "No records in this Map view have a location."
 msgstr "No records in this Map view have a location."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableControls.tsx
+#: src/components/DatabaseWorkspaceViewRenderer.tsx
 msgid "No records in this source."
 msgstr "No records in this source."
 
@@ -6848,6 +6952,7 @@ msgstr "No repositories found on your GitHub account."
 msgid "no response"
 msgstr "no response"
 
+#: src/editor/components/PdfEmbed.tsx
 #: src/editor/find-replace/FindReplaceBar.tsx
 #: src/editor/slash-command/SlashCommandMenu.tsx
 msgid "No results"
@@ -7023,7 +7128,7 @@ msgstr "Off — search ranks by keyword only. No content leaves this computer."
 msgid "Offline"
 msgstr "Offline"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceReadState.tsx
 msgid "Offline write queue"
 msgstr "Offline write queue"
 
@@ -7069,7 +7174,7 @@ msgstr "One pattern per line — appended to <0>.okignore</0>."
 msgid "One record means"
 msgstr "One record means"
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "One reviewed view configuration"
 msgstr "One reviewed view configuration"
 
@@ -7087,7 +7192,8 @@ msgid "Only the current document uses <0>#{tag}</0>."
 msgstr "Only the current document uses <0>#{tag}</0>."
 
 #: src/components/DatabaseGallery.tsx
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableRowActions.tsx
+#: src/components/DatabaseTableRowMenu.tsx
 #: src/components/GraphPanel.tsx
 msgid "Open"
 msgstr "Open"
@@ -7231,17 +7337,13 @@ msgstr "Open folder"
 msgid "Open folder on disk"
 msgstr "Open folder on disk"
 
-#: src/editor/components/DatabaseView.tsx
+#: src/editor/components/use-inline-database-read-state.ts
 msgid "Open full database"
 msgstr "Open full database"
 
-#: src/editor/components/DatabaseView.tsx
+#: src/editor/components/use-inline-database-read-state.ts
 msgid "Open full database: {inlineDatabaseContext}"
 msgstr "Open full database: {inlineDatabaseContext}"
-
-#: src/components/DatabaseRecordPeek.tsx
-msgid "Open full page"
-msgstr "Open full page"
 
 #: src/components/ReportBugDialogBody.tsx
 msgid "Open GitHub issue"
@@ -7280,7 +7382,8 @@ msgstr "Open Navigator"
 msgid "Open or close visual-editor find."
 msgstr "Open or close visual-editor find."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableCellMenu.tsx
+#: src/components/DatabaseWorkspaceHeader.tsx
 msgid "Open page"
 msgstr "Open page"
 
@@ -7288,7 +7391,7 @@ msgstr "Open page"
 msgid "Open permission-visible Relation targets without creating Markdown links."
 msgstr "Open permission-visible Relation targets without creating Markdown links."
 
-#: src/components/settings/SettingsDialogBody.tsx
+#: src/components/settings/SettingsSchemaRegistry.ts
 msgid "Open preview when agent edits"
 msgstr "Open preview when agent edits"
 
@@ -7300,7 +7403,7 @@ msgstr "Open project menu"
 msgid "Open recent project"
 msgstr "Open recent project"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableCellMenu.tsx
 msgid "Open record"
 msgstr "Open record"
 
@@ -7308,7 +7411,7 @@ msgstr "Open record"
 msgid "Open record page"
 msgstr "Open record page"
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Open records in"
 msgstr "Open records in"
 
@@ -7316,6 +7419,10 @@ msgstr "Open records in"
 #: src/components/ShareReceiveDialog.tsx
 msgid "Open shared {targetNoun}"
 msgstr "Open shared {targetNoun}"
+
+#: src/components/settings/SettingsSchemaRegistry.ts
+msgid "Open sidebar documents in"
+msgstr "Open sidebar documents in"
 
 #: src/editor/extensions/JsxComponentView.tsx
 msgid "Open source doc: {mirrorSrc}"
@@ -7401,7 +7508,7 @@ msgstr "Open, navigate, accept, or dismiss CodeMirror completion suggestions."
 msgid "Opening {openingLabel}…"
 msgstr "Opening {openingLabel}…"
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Opening behavior, properties, order, sorts, groups, colors, and layout display options save together. Filters stay on the active view's Filters action and use the same canonical view boundary."
 msgstr "Opening behavior, properties, order, sorts, groups, colors, and layout display options save together. Filters stay on the active view's Filters action and use the same canonical view boundary."
 
@@ -7421,7 +7528,7 @@ msgstr "Opens a folder picker to choose where to clone the repository."
 msgid "Opens in a new tab"
 msgstr "Opens in a new tab"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Option"
 msgstr "Option"
 
@@ -7479,7 +7586,7 @@ msgstr "Orphans"
 msgid "Other OK paths are tracked upstream:"
 msgstr "Other OK paths are tracked upstream:"
 
-#: src/components/DatabaseRecordPageChrome.tsx
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 msgid "Other properties"
 msgstr "Other properties"
 
@@ -7523,7 +7630,7 @@ msgstr "Page {0}"
 msgid "Page <0>*</0>"
 msgstr "Page <0>*</0>"
 
-#: src/components/DatabaseRecordPageChrome.tsx
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 msgid "Page actions"
 msgstr "Page actions"
 
@@ -7539,7 +7646,7 @@ msgstr "Page headings response did not match success schema"
 msgid "Page headings response was not JSON"
 msgstr "Page headings response was not JSON"
 
-#: src/components/DatabaseRecordPageChrome.tsx
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 msgid "Page history"
 msgstr "Page history"
 
@@ -7677,6 +7784,10 @@ msgstr "Paused"
 msgid "PDF copy downloaded"
 msgstr "PDF copy downloaded"
 
+#: src/components/ExportPdfButton.tsx
+msgid "PDF exported successfully."
+msgstr "PDF exported successfully."
+
 #: src/editor/components/PdfEmbed.tsx
 msgid "PDF links"
 msgstr "PDF links"
@@ -7717,12 +7828,12 @@ msgstr "Permission denied"
 msgid "Permission redactions"
 msgstr "Permission redactions"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTablePrimitives.tsx
 msgid "Permission required"
 msgstr "Permission required"
 
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 #: src/components/DatabaseContextInspectorDialog.tsx
-#: src/components/DatabaseRecordPageChrome.tsx
 msgid "Permissions"
 msgstr "Permissions"
 
@@ -7730,7 +7841,7 @@ msgstr "Permissions"
 msgid "Permissions: {label}"
 msgstr "Permissions: {label}"
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Persist query order, grouping, projection, and display settings in one reviewed view revision."
 msgstr "Persist query order, grouping, projection, and display settings in one reviewed view revision."
 
@@ -7754,7 +7865,11 @@ msgstr "Pick the folder where you've cloned it."
 msgid "Pin tab"
 msgstr "Pin tab"
 
-#: src/components/DatabaseRecordPageChrome.tsx
+#: src/editor/components/PdfSelectionMenu.tsx
+msgid "Pink"
+msgstr "Pink"
+
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 msgid "Pinned"
 msgstr "Pinned"
 
@@ -7766,24 +7881,24 @@ msgstr "Place stable database properties in pinned, panel, hidden, section, or g
 msgid "Plain"
 msgstr "Plain"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Plan bulk edit"
 msgstr "Plan bulk edit"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Plan exact option change"
 msgstr "Plan exact option change"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Plan import"
 msgstr "Plan import"
 
-#: src/components/DatabaseRecordPageChrome.tsx
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Plan move"
 msgstr "Plan move"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Plan new record"
 msgstr "Plan new record"
 
@@ -7791,11 +7906,11 @@ msgstr "Plan new record"
 msgid "Plan summary"
 msgstr "Plan summary"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceStatusPanel.tsx
 msgid "Planning exact Button actions"
 msgstr "Planning exact Button actions"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceStatusPanel.tsx
 msgid "Planning exact cell change"
 msgstr "Planning exact cell change"
 
@@ -7820,19 +7935,23 @@ msgstr "Preparing search"
 msgid "Preparing share URL..."
 msgstr "Preparing share URL..."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableNewRecordRow.tsx
 msgid "Press Enter to add"
 msgstr "Press Enter to add"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableNewRecordRow.tsx
 msgid "Press Enter to create page"
 msgstr "Press Enter to create page"
+
+#: src/components/DatabaseRecordPeekEditor.tsx
+msgid "Press Enter to start writing on this page."
+msgstr "Press Enter to start writing on this page."
 
 #: src/components/DatabasePageAppearanceDialog.tsx
 msgid "Preview"
 msgstr "Preview"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Preview archive option"
 msgstr "Preview archive option"
 
@@ -7840,7 +7959,7 @@ msgstr "Preview archive option"
 msgid "Preview browsers can't auto-copy. Use Cmd/Ctrl+C on the URL above, or open OK in the desktop app."
 msgstr "Preview browsers can't auto-copy. Use Cmd/Ctrl+C on the URL above, or open OK in the desktop app."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Preview color"
 msgstr "Preview color"
 
@@ -7848,7 +7967,7 @@ msgstr "Preview color"
 msgid "Preview conversion"
 msgstr "Preview conversion"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Preview delete"
 msgstr "Preview delete"
 
@@ -7860,19 +7979,19 @@ msgstr "Preview every file first. Existing records remain unchanged until you ap
 msgid "Preview every indexed record before compiling one revision-bound migration plan."
 msgstr "Preview every indexed record before compiling one revision-bound migration plan."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Preview merge"
 msgstr "Preview merge"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Preview move down"
 msgstr "Preview move down"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Preview move up"
 msgstr "Preview move up"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Preview rename"
 msgstr "Preview rename"
 
@@ -7880,7 +7999,7 @@ msgstr "Preview rename"
 msgid "Preview repair"
 msgstr "Preview repair"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Preview restore option"
 msgstr "Preview restore option"
 
@@ -7905,13 +8024,9 @@ msgstr "Previous chats"
 msgid "Previous match"
 msgstr "Previous match"
 
-#: src/components/DatabaseRecordPeek.tsx
-msgid "Previous page"
-msgstr "Previous page"
-
-#: src/components/DatabaseRecordPeek.tsx
-msgid "Previous record"
-msgstr "Previous record"
+#: src/editor/components/PdfEmbed.tsx
+msgid "Previous result"
+msgstr "Previous result"
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Previous tab"
@@ -8005,19 +8120,19 @@ msgid "properties"
 msgstr "properties"
 
 #: src/components/DatabaseCreationDialog.tsx
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
 #: src/components/PropertyPanel.tsx
 #: src/components/TemplateProperties.tsx
-#: src/editor/components/DatabaseView.tsx
+#: src/editor/components/InlineDatabaseToolbar.tsx
 msgid "Properties"
 msgstr "Properties"
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Properties and order"
 msgstr "Properties and order"
 
 #: src/components/DatabaseContextInspectorDialog.tsx
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Property"
 msgstr "Property"
 
@@ -8055,19 +8170,19 @@ msgstr "Property-level changes derived from durable page versions."
 msgid "Proposal source"
 msgstr "Proposal source"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceStatusPanel.tsx
 msgid "Proposed · not saved"
 msgstr "Proposed · not saved"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableRowActions.tsx
 msgid "Proposed archive"
 msgstr "Proposed archive"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceReadState.tsx
 msgid "Proposed database · not saved"
 msgstr "Proposed database · not saved"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableRowActions.tsx
 msgid "Proposed deletion"
 msgstr "Proposed deletion"
 
@@ -8075,11 +8190,11 @@ msgstr "Proposed deletion"
 msgid "Proposed diff"
 msgstr "Proposed diff"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableRowActions.tsx
 msgid "Proposed move"
 msgstr "Proposed move"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableRowActions.tsx
 msgid "Proposed restore"
 msgstr "Proposed restore"
 
@@ -8139,6 +8254,10 @@ msgstr "Pulling"
 msgid "Pulls may overwrite uncommitted edits in your local files."
 msgstr "Pulls may overwrite uncommitted edits in your local files."
 
+#: src/editor/components/PdfSelectionMenu.tsx
+msgid "Purple"
+msgstr "Purple"
+
 #: src/components/SyncStatusBadge.tsx
 msgid "Push"
 msgstr "Push"
@@ -8184,7 +8303,7 @@ msgstr "Read only"
 msgid "Read through this codebase and draft a technical spec for the most complex module: an overview, the architecture, key files, and open questions, all linked from a specs index page."
 msgstr "Read through this codebase and draft a technical spec for the most complex module: an overview, the architecture, key files, and open questions, all linked from a specs index page."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceSuccessContent.tsx
 msgid "Read-only cached database"
 msgstr "Read-only cached database"
 
@@ -8244,9 +8363,8 @@ msgstr "Reconnecting after server restart"
 msgid "Reconnecting…"
 msgstr "Reconnecting…"
 
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 #: src/components/DatabaseContextInspectorDialog.tsx
-#: src/components/DatabaseRecordPageChrome.tsx
-#: src/components/DatabaseRecordPeek.tsx
 msgid "Record"
 msgstr "Record"
 
@@ -8290,7 +8408,7 @@ msgstr "Recovery receipt"
 msgid "Redactions"
 msgstr "Redactions"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
 msgid "Redo last change"
 msgstr "Redo last change"
 
@@ -8301,10 +8419,15 @@ msgstr "References and functions"
 #: src/components/DatabaseAgentRunsDialog.tsx
 #: src/components/DatabasePermissionsDialog.tsx
 #: src/components/DatabasePublicSharesSection.tsx
-#: src/components/DatabaseTableDialog.tsx
-#: src/editor/components/DatabaseView.tsx
+#: src/components/DatabaseWorkspaceHeader.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
+#: src/editor/components/InlineDatabaseToolbar.tsx
 msgid "Refresh"
 msgstr "Refresh"
+
+#: src/components/DatabaseWorkspaceReadState.tsx
+msgid "Refresh paused. The current database view remains available."
+msgstr "Refresh paused. The current database view remains available."
 
 #: src/components/DatabaseOnboardingDialog.tsx
 msgid "Refresh preview"
@@ -8341,8 +8464,7 @@ msgstr "Related records"
 msgid "Relation"
 msgstr "Relation"
 
-#: src/components/DatabaseRecordPageChrome.tsx
-#: src/components/DatabaseRecordPeek.tsx
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 msgid "Relations"
 msgstr "Relations"
 
@@ -8369,15 +8491,15 @@ msgstr "Release notes"
 msgid "Reload"
 msgstr "Reload"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTablePrimitives.tsx
 msgid "Reload database setup"
 msgstr "Reload database setup"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTablePrimitives.tsx
 msgid "Reload latest"
 msgstr "Reload latest"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTablePrimitives.tsx
 msgid "Reload schema"
 msgstr "Reload schema"
 
@@ -8426,7 +8548,7 @@ msgstr "Remove {tag}"
 msgid "Remove attached selection"
 msgstr "Remove attached selection"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceHeader.tsx
 msgid "Remove database page favorite"
 msgstr "Remove database page favorite"
 
@@ -8451,7 +8573,7 @@ msgstr "Remove item {0}"
 msgid "Remove link"
 msgstr "Remove link"
 
-#: src/editor/components/DatabaseView.tsx
+#: src/editor/components/InlineDatabaseToolbar.tsx
 msgid "Remove linked view"
 msgstr "Remove linked view"
 
@@ -8485,6 +8607,7 @@ msgstr "Removing"
 #: src/components/FileTree.tsx
 #: src/components/skill-actions.tsx
 #: src/components/SkillRenameDialog.tsx
+#: src/editor/components/InlineDatabaseViewManagerPopover.tsx
 msgid "Rename"
 msgstr "Rename"
 
@@ -8501,15 +8624,15 @@ msgstr "Rename {keyName}"
 msgid "Rename {label}"
 msgstr "Rename {label}"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceHeader.tsx
 msgid "Rename database page"
 msgstr "Rename database page"
 
-#: src/editor/components/DatabaseView.tsx
+#: src/editor/components/InlineDatabaseHeader.tsx
 msgid "Rename inline database"
 msgstr "Rename inline database"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabasePropertyMenu.tsx
 msgid "Rename or configure property"
 msgstr "Rename or configure property"
 
@@ -8545,7 +8668,7 @@ msgstr "Renaming"
 msgid "Renaming changes the file on disk and the id agents use to pick this template."
 msgstr "Renaming changes the file on disk and the id agents use to pick this template."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableCellDisplayContent.tsx
 msgid "Renew"
 msgstr "Renew"
 
@@ -8658,7 +8781,7 @@ msgstr "Repository name"
 msgid "Repository not found. It may have been renamed, deleted, or moved."
 msgstr "Repository not found. It may have been renamed, deleted, or moved."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTablePrimitives.tsx
 msgid "Request access or use fields available to your current policy."
 msgstr "Request access or use fields available to your current policy."
 
@@ -8760,7 +8883,7 @@ msgstr "Restarting closes this project's server. Connected agents (Claude Code, 
 msgid "Restarting the server…"
 msgstr "Restarting the server…"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableRowMenu.tsx
 #: src/components/TimelinePanel.tsx
 msgid "Restore"
 msgstr "Restore"
@@ -8773,12 +8896,12 @@ msgstr "Restore failed"
 msgid "Restore failed — document unchanged"
 msgstr "Restore failed — document unchanged"
 
-#: src/components/DatabaseRecordPageChrome.tsx
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
+#: src/components/DatabaseTableCellMenu.tsx
 msgid "Restore page"
 msgstr "Restore page"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableCellMenu.tsx
 msgid "Restore record"
 msgstr "Restore record"
 
@@ -8794,7 +8917,7 @@ msgstr "Restore to this point?"
 msgid "Restore with remote changes"
 msgstr "Restore with remote changes"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceReadState.tsx
 msgid "Resulting page preview"
 msgstr "Resulting page preview"
 
@@ -8822,7 +8945,7 @@ msgstr "Retrieval explainability"
 #: src/components/ConnectingBanner.tsx
 #: src/components/DatabaseContextInspectorDialog.tsx
 #: src/components/DatabaseDiagnosticsDialog.tsx
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTablePrimitives.tsx
 #: src/components/PublishToGitHubDialog.tsx
 #: src/components/SyncStatusBadge.tsx
 #: src/components/TrashFailureModal.tsx
@@ -8849,9 +8972,13 @@ msgstr "Retry or resume the exact approved plan as a new attempt. The failed run
 msgid "Retry push"
 msgstr "Retry push"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceReadState.tsx
 msgid "Retry reconciliation"
 msgstr "Retry reconciliation"
+
+#: src/components/DatabaseWorkspaceReadState.tsx
+msgid "Retry refresh"
+msgstr "Retry refresh"
 
 #: src/components/DatabaseAgentRunsDialog.tsx
 msgid "Retry run"
@@ -8957,11 +9084,11 @@ msgstr "Review record override"
 msgid "Review rename"
 msgstr "Review rename"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceHeader.tsx
 msgid "Review required"
 msgstr "Review required"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceReadState.tsx
 msgid "review the exact plan before canonical creation"
 msgstr "review the exact plan before canonical creation"
 
@@ -8969,7 +9096,7 @@ msgstr "review the exact plan before canonical creation"
 msgid "Review the starting views, property types, and example pages."
 msgstr "Review the starting views, property types, and example pages."
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Review view settings"
 msgstr "Review view settings"
 
@@ -9003,7 +9130,7 @@ msgstr "Root properties"
 msgid "Root records"
 msgstr "Root records"
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Rules are evaluated in order; the first match for each target wins."
 msgstr "Rules are evaluated in order; the first match for each target wins."
 
@@ -9015,7 +9142,7 @@ msgstr "Run a real terminal docked inside SynapseNote, starting in this project'
 msgid "Run an agent database Context Pack request, then reopen this inspector."
 msgstr "Run an agent database Context Pack request, then reopen this inspector."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceStatusPanel.tsx
 msgid "Run Button"
 msgstr "Run Button"
 
@@ -9035,6 +9162,8 @@ msgstr "Sandboxed HTML embed — write HTML, see the rendered preview live."
 #: src/components/MemoPanel.tsx
 #: src/components/settings/EmbeddingsKeySection.tsx
 #: src/editor/components/CodePreviewEditModal.tsx
+#: src/editor/components/InlineDatabaseViewManagerPopover.tsx
+#: src/editor/components/PdfSelectionMenu.tsx
 #: src/editor/extensions/InternalLinkPropPanel.tsx
 #: src/editor/extensions/WikiLinkPropPanel.tsx
 msgid "Save"
@@ -9048,7 +9177,7 @@ msgstr "Save appearance"
 msgid "Save changes"
 msgstr "Save changes"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceHeader.tsx
 msgid "Save failed"
 msgstr "Save failed"
 
@@ -9080,30 +9209,30 @@ msgstr "Save resolution"
 msgid "Save template"
 msgstr "Save template"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceHeader.tsx
 #: src/components/MemoPanel.tsx
 #: src/components/settings/OkignoreSection.tsx
 #: src/components/settings/SettingsDialogBody.tsx
 msgid "Saved"
 msgstr "Saved"
 
+#: src/components/MemoPanel.tsx
+msgid "Saved annotations"
+msgstr "Saved annotations"
+
 #: src/components/TemplateForm.tsx
 msgid "Saved as <0>{slug}.md</0>"
 msgstr "Saved as <0>{slug}.md</0>"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceHeader.tsx
 msgid "Saved locally · queued for reconnect"
 msgstr "Saved locally · queued for reconnect"
-
-#: src/components/MemoPanel.tsx
-msgid "Saved memos"
-msgstr "Saved memos"
 
 #: src/components/MemoPanel.tsx
 msgid "Saved on this device"
 msgstr "Saved on this device"
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Saved view settings"
 msgstr "Saved view settings"
 
@@ -9120,7 +9249,8 @@ msgstr "Saves the file to <0>~/Downloads/synapsenote.skill</0> and opens the Cla
 msgid "Saving"
 msgstr "Saving"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceHeader.tsx
+#: src/components/DatabaseWorkspaceStatusPanel.tsx
 msgid "Saving change"
 msgstr "Saving change"
 
@@ -9160,6 +9290,7 @@ msgstr "Scope: assign stable record identities to files in this source only. Thi
 #: src/components/CommandPalette.tsx
 #: src/components/settings/SettingsDialogShell.tsx
 #: src/components/SidebarSearchBar.tsx
+#: src/editor/components/InlineDatabaseToolbar.tsx
 #: src/lib/keyboard-shortcuts.ts
 msgid "Search"
 msgstr "Search"
@@ -9196,19 +9327,15 @@ msgstr "Search failed."
 msgid "Search files, commands, projects, and AI handoff actions. With text selected in the visual editor, this chord adds a link instead."
 msgstr "Search files, commands, projects, and AI handoff actions. With text selected in the visual editor, this chord adds a link instead."
 
-#: src/editor/components/DatabaseView.tsx
-msgid "Search loaded pages in this view"
-msgstr "Search loaded pages in this view"
-
 #: src/components/CommandPalette.tsx
 msgid "Search matches file names, paths, and folders. Open a file to search its body (⌘F)."
 msgstr "Search matches file names, paths, and folders. Open a file to search its body (⌘F)."
 
-#: src/editor/components/DatabaseView.tsx
+#: src/editor/components/use-inline-database-read-state.ts
 msgid "Search pages"
 msgstr "Search pages"
 
-#: src/editor/components/DatabaseView.tsx
+#: src/editor/components/use-inline-database-read-state.ts
 msgid "Search pages in {inlineDatabaseContext}"
 msgstr "Search pages in {inlineDatabaseContext}"
 
@@ -9219,6 +9346,10 @@ msgstr "Search pages, databases, folders, and commands for the current workspace
 #: src/components/CommandPalette.tsx
 msgid "Search pages, databases, or commands"
 msgstr "Search pages, databases, or commands"
+
+#: src/editor/components/PdfEmbed.tsx
+msgid "Search PDF"
+msgstr "Search PDF"
 
 #: src/components/ProjectSwitcher.tsx
 msgid "Search projects"
@@ -9249,6 +9380,7 @@ msgid "Search worktrees and branches"
 msgstr "Search worktrees and branches"
 
 #: src/components/CommandPalette.tsx
+#: src/editor/components/PdfEmbed.tsx
 msgid "Searching"
 msgstr "Searching"
 
@@ -9317,6 +9449,10 @@ msgstr "Select all source"
 msgid "Select an automation or create a new one."
 msgstr "Select an automation or create a new one."
 
+#: src/components/DatabaseSelectCellEditor.tsx
+msgid "Select an option"
+msgstr "Select an option"
+
 #: src/lib/keyboard-shortcuts.ts
 msgid "Select every visible file-tree row when focus is in the Files sidebar."
 msgstr "Select every visible file-tree row when focus is in the Files sidebar."
@@ -9325,6 +9461,10 @@ msgstr "Select every visible file-tree row when focus is in the Files sidebar."
 msgid "Select next occurrence"
 msgstr "Select next occurrence"
 
+#: src/components/DatabaseSelectCellEditor.tsx
+msgid "Select one or more options"
+msgstr "Select one or more options"
+
 #: src/components/DatabaseRelationCellEditor.tsx
 msgid "Select one or more records. Showing up to 100 permission-visible matches."
 msgstr "Select one or more records. Showing up to 100 permission-visible matches."
@@ -9332,6 +9472,10 @@ msgstr "Select one or more records. Showing up to 100 permission-visible matches
 #: src/components/DatabaseRelationCellEditor.tsx
 msgid "Select one record. Showing up to 100 permission-visible matches."
 msgstr "Select one record. Showing up to 100 permission-visible matches."
+
+#: src/components/DatabaseSelectCellEditor.tsx
+msgid "Select or create an option"
+msgstr "Select or create an option"
 
 #: src/editor/components/PdfEmbed.tsx
 msgid "Select PDF text to add a highlight or memo."
@@ -9424,7 +9568,7 @@ msgstr "Send your report by email"
 msgid "Sending report"
 msgstr "Sending report"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTablePrimitives.tsx
 msgid "Sensitive changes always require review: permission changes, permanent deletion, external actions, broad schema migrations, and bulk edits over the review threshold."
 msgstr "Sensitive changes always require review: permission changes, permanent deletion, external actions, broad schema migrations, and bulk edits over the review threshold."
 
@@ -9522,7 +9666,7 @@ msgid "Setup SynapseNote in this folder?"
 msgstr "Setup SynapseNote in this folder?"
 
 #: src/components/DatabasePermissionsDialog.tsx
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
 #: src/components/FileSidebar.tsx
 #: src/components/FileTree.tsx
 #: src/components/ShareButton.tsx
@@ -9605,12 +9749,12 @@ msgstr "Show {hidden} more"
 msgid "Show advanced"
 msgstr "Show advanced"
 
-#: src/components/DatabaseTableDialog.tsx
-#: src/editor/components/DatabaseView.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
+#: src/editor/components/InlineDatabaseToolbar.tsx
 msgid "Show archived"
 msgstr "Show archived"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabasePropertyMenu.tsx
 msgid "Show column"
 msgstr "Show column"
 
@@ -9715,7 +9859,7 @@ msgstr "Show source details"
 msgid "Show thumbnails"
 msgstr "Show thumbnails"
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Show title"
 msgstr "Show title"
 
@@ -9723,7 +9867,7 @@ msgstr "Show title"
 msgid "Show undo token"
 msgstr "Show undo token"
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Show weekends"
 msgstr "Show weekends"
 
@@ -9845,20 +9989,19 @@ msgstr "Something went wrong starting the terminal."
 msgid "Something went wrong. Please try again."
 msgstr "Something went wrong. Please try again."
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
-#: src/components/DatabaseTableDialog.tsx
-#: src/editor/components/DatabaseView.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
+#: src/editor/components/InlineDatabaseToolbar.tsx
 msgid "Sort"
 msgstr "Sort"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabasePropertyMenu.tsx
 msgid "Sort by property"
 msgstr "Sort by property"
 
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 #: src/components/DatabaseContextInspectorDialog.tsx
-#: src/components/DatabaseRecordPageChrome.tsx
-#: src/components/DatabaseRecordPeek.tsx
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceHeader.tsx
 #: src/components/MermaidFileViewer.tsx
 msgid "Source"
 msgstr "Source"
@@ -10244,7 +10387,7 @@ msgstr "System error"
 msgid "Table"
 msgstr "Table"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableControls.tsx
 msgid "Table layout and calculations"
 msgstr "Table layout and calculations"
 
@@ -10343,7 +10486,7 @@ msgstr "Template renamed"
 msgid "Template saved"
 msgstr "Template saved"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
 #: src/components/settings/SettingsDialogShell.tsx
 msgid "Templates"
 msgstr "Templates"
@@ -10454,6 +10597,10 @@ msgstr "The default branch is protected — pushes need a pull request."
 msgid "The desktop app isn't responding. Refresh and try again."
 msgstr "The desktop app isn't responding. Refresh and try again."
 
+#: src/components/ExportPdfButton.tsx
+msgid "The document is still loading. Try exporting again in a moment."
+msgstr "The document is still loading. Try exporting again in a moment."
+
 #: src/components/DatabaseAgentRunsDialog.tsx
 msgid "The exact diff exceeded the local inspection limit."
 msgstr "The exact diff exceeded the local inspection limit."
@@ -10466,7 +10613,7 @@ msgstr "The file is in your Trash; the file-watcher will reconcile."
 msgid "The file on disk, and the id agents use."
 msgstr "The file on disk, and the id agents use."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceReadState.tsx
 msgid "The first pages will open in the editable database after this plan commits."
 msgstr "The first pages will open in the editable database after this plan commits."
 
@@ -10482,6 +10629,10 @@ msgstr "The folders and templates are already here, so there's nothing to add."
 #: src/editor/slash-command/items.tsx
 msgid "The formula <0>c = √(a² + b²)</0> renders inline."
 msgstr "The formula <0>c = √(a² + b²)</0> renders inline."
+
+#: src/components/DatabaseRecordPeekEditor.tsx
+msgid "The inline editor could not connect. Reopen the page to retry."
+msgstr "The inline editor could not connect. Reopen the page to retry."
 
 #: src/components/TemplateProperties.tsx
 msgid "The menu label agents pick this template by (required)."
@@ -10546,7 +10697,7 @@ msgstr "The terminal stopped unexpectedly."
 msgid "The visible Timeline window is limited to 120 intervals."
 msgstr "The visible Timeline window is limited to 120 intervals."
 
-#: src/components/settings/SettingsDialogBody.tsx
+#: src/components/settings/SettingsSchemaRegistry.ts
 msgid "Theme"
 msgstr "Theme"
 
@@ -10689,7 +10840,7 @@ msgstr "This form is unavailable."
 msgid "This Gallery view has an invalid Files preview."
 msgstr "This Gallery view has an invalid Files preview."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceStatusPanel.tsx
 msgid "This ghost value is not canonical until the exact plan commits and the table refreshes."
 msgstr "This ghost value is not canonical until the exact plan commits and the table refreshes."
 
@@ -10725,7 +10876,7 @@ msgstr "This page doesn't exist yet. Open it to create the page in the editor an
 msgid "This page doesn't link to anything yet."
 msgstr "This page doesn't link to anything yet."
 
-#: src/components/DatabaseRecordPageChrome.tsx
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 msgid "This page is archived. Restore it from More page actions."
 msgstr "This page is archived. Restore it from More page actions."
 
@@ -10797,8 +10948,12 @@ msgid "This proposal is separate from human edits until it is approved."
 msgstr "This proposal is separate from human edits until it is approved."
 
 #: src/components/MemoPanel.tsx
-msgid "This removes the memo from this device and cannot be undone."
-msgstr "This removes the memo from this device and cannot be undone."
+msgid "This removes the annotation from this device and cannot be undone."
+msgstr "This removes the annotation from this device and cannot be undone."
+
+#: src/components/MemoPanel.tsx
+msgid "This removes the highlight from the document and cannot be undone."
+msgstr "This removes the highlight from the document and cannot be undone."
 
 #: src/components/DatabasePropertyDeletionPreviewDialog.tsx
 msgid "This removes the property from the schema and clears its values from canonical records. Review the impact before opening the exact commit plan."
@@ -10823,11 +10978,11 @@ msgstr "This sends content off your machine"
 msgid "This setting is per-machine and isn't shared with collaborators. It needs an API key set with <0>ok embeddings set-key</0>."
 msgstr "This setting is per-machine and isn't shared with collaborators. It needs an API key set with <0>ok embeddings set-key</0>."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceStatusPanel.tsx
 msgid "This snapshot is paginated; not all matching records are shown."
 msgstr "This snapshot is paginated; not all matching records are shown."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableControls.tsx
 msgid "This table shows the first {DATABASE_TABLE_RENDERED_COLUMN_LIMIT} visible properties; hide or reorder properties to view the remaining {omittedColumnCount}."
 msgstr "This table shows the first {DATABASE_TABLE_RENDERED_COLUMN_LIMIT} visible properties; hide or reorder properties to view the remaining {omittedColumnCount}."
 
@@ -10843,13 +10998,13 @@ msgstr "This Timeline view has an invalid Date mapping."
 msgid "This usually means one of:"
 msgstr "This usually means one of:"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceStatusPanel.tsx
 msgid "This view is paginated; not all matching pages are shown."
 msgstr "This view is paginated; not all matching pages are shown."
 
 #. placeholder {0}: loadedRecordLimit.toLocaleString()
 #. placeholder {1}: isPagePresentation ? 'pages' : 'records'
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceViewRenderer.tsx
 msgid "This view keeps at most {0} loaded {1} in memory. Narrow the filters or open another saved view to continue."
 msgstr "This view keeps at most {0} loaded {1} in memory. Narrow the filters or open another saved view to continue."
 
@@ -10862,7 +11017,7 @@ msgstr "This will replace the current document content with the version from <0>
 msgid "Timeline"
 msgstr "Timeline"
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Timeline dates and display"
 msgstr "Timeline dates and display"
 
@@ -10929,7 +11084,7 @@ msgstr "Toggle inline code formatting."
 msgid "Toggle italic formatting."
 msgstr "Toggle italic formatting."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Toggle selected"
 msgstr "Toggle selected"
 
@@ -11038,6 +11193,10 @@ msgstr "Type to edit; <0>⌘ Enter</0> saves, <1>Esc</1> cancels."
 msgid "Type to find a doc"
 msgstr "Type to find a doc"
 
+#: src/components/DatabaseSelectCellEditor.tsx
+msgid "Type to select or create"
+msgstr "Type to select or create"
+
 #. placeholder {0}: selected.retrieval.ranking.sort.length
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "Typed sort · {0} sort keys · record ID tie-breaker"
@@ -11100,7 +11259,7 @@ msgstr "Undo committed changes"
 msgid "Undo failed: {message}"
 msgstr "Undo failed: {message}"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
 msgid "Undo last change"
 msgstr "Undo last change"
 
@@ -11131,6 +11290,10 @@ msgstr "Undoing run"
 #: src/components/ActivityModeContent.tsx
 msgid "Undone all edits on {docName}"
 msgstr "Undone all edits on {docName}"
+
+#: src/editor/components/InlineDatabaseViewManagerPopover.tsx
+msgid "Unfavorite"
+msgstr "Unfavorite"
 
 #: src/components/TimelinePanel.tsx
 msgid "Unified diff"
@@ -11200,7 +11363,7 @@ msgstr "Unsaved Rollup preview · UTC · permission-scoped · evaluated at {0}"
 msgid "Unsupported link"
 msgstr "Unsupported link"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableCellDisplayContent.tsx
 msgid "Unverify"
 msgstr "Unverify"
 
@@ -11381,19 +11544,19 @@ msgstr "Use lowercase letters, digits, and hyphens only."
 msgid "Use the default OpenAI endpoint or override it with an OpenAI-compatible base URL for Azure or a self-hosted provider."
 msgstr "Use the default OpenAI endpoint or override it with an OpenAI-compatible base URL for Azure or a self-hosted provider."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableControls.tsx
 msgid "Use the last row to add one."
 msgstr "Use the last row to add one."
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableControls.tsx
 msgid "Use the row below to add a page."
 msgstr "Use the row below to add a page."
 
-#: src/components/settings/SettingsDialogBody.tsx
+#: src/components/settings/SettingsSchemaRegistry.ts
 msgid "Used when you start a new Claude chat. You can still change the model in the chat composer."
 msgstr "Used when you start a new Claude chat. You can still change the model in the chat composer."
 
-#: src/components/settings/SettingsDialogBody.tsx
+#: src/components/settings/SettingsSchemaRegistry.ts
 msgid "Used when you start a new Codex chat. You can still change the model in the chat composer."
 msgstr "Used when you start a new Codex chat. You can still change the model in the chat composer."
 
@@ -11418,11 +11581,11 @@ msgstr "Values to clear"
 msgid "Verification"
 msgstr "Verification"
 
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseTableCellDisplayContent.tsx
 msgid "Verify"
 msgstr "Verify"
 
-#: src/components/DatabaseRecordPageChrome.tsx
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 msgid "Verifying database change"
 msgstr "Verifying database change"
 
@@ -11431,7 +11594,7 @@ msgid "via {viaTags}"
 msgstr "via {viaTags}"
 
 #: src/components/DatabaseContextInspectorDialog.tsx
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/DatabaseWorkspaceHeader.tsx
 msgid "View"
 msgstr "View"
 
@@ -11443,9 +11606,9 @@ msgstr "View as text"
 msgid "View only"
 msgstr "View only"
 
-#: src/components/DatabaseTableDialog.tsx
 #: src/components/DatabaseViewTabMenu.tsx
-#: src/editor/components/DatabaseView.tsx
+#: src/components/DatabaseWorkspaceToolbar.tsx
+#: src/editor/components/InlineDatabaseToolbar.tsx
 msgid "View settings"
 msgstr "View settings"
 
@@ -11600,7 +11763,7 @@ msgstr "What would you like to create?"
 msgid "What's new"
 msgstr "What's new"
 
-#: src/components/settings/SettingsDialogBody.tsx
+#: src/components/settings/SettingsSchemaRegistry.ts
 msgid "When enabled, the agent opens or refreshes the preview after each edit. Disable if you manage your own preview window (OK Desktop, a browser tab on another display, etc.)."
 msgstr "When enabled, the agent opens or refreshes the preview after each edit. Disable if you manage your own preview window (OK Desktop, a browser tab on another display, etc.)."
 
@@ -11649,7 +11812,7 @@ msgstr "Will be saved as <0>{sanitized}</0>."
 msgid "Will replace existing SynapseNote entry"
 msgstr "Will replace existing SynapseNote entry"
 
-#: src/components/settings/SettingsDialogBody.tsx
+#: src/components/settings/SettingsSchemaRegistry.ts
 msgid "Word wrap"
 msgstr "Word wrap"
 
@@ -11687,12 +11850,12 @@ msgstr "worktree of {worktreeOf}"
 msgid "Worktrees"
 msgstr "Worktrees"
 
-#: src/components/DatabaseSavedViewSettingsDialog.tsx
-#: src/components/DatabaseTableDialog.tsx
+#: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
+#: src/components/DatabaseTableControls.tsx
 msgid "Wrap cells"
 msgstr "Wrap cells"
 
-#: src/components/settings/SettingsDialogBody.tsx
+#: src/components/settings/SettingsSchemaRegistry.ts
 msgid "Wrap long lines in the markdown source editor."
 msgstr "Wrap long lines in the markdown source editor."
 
@@ -11707,6 +11870,10 @@ msgstr "Writes a project-MCP config for each selected tool."
 #: src/components/ActivityPanelFileRow.tsx
 msgid "writing"
 msgstr "writing"
+
+#: src/editor/components/PdfSelectionMenu.tsx
+msgid "Yellow"
+msgstr "Yellow"
 
 #: src/components/DatabaseForm.tsx
 msgid "Yes"

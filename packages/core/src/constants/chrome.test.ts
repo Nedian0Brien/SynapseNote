@@ -10,10 +10,10 @@ import {
 import { CHROME_BG_DARK, CHROME_BG_LIGHT } from './chrome.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const GLOBALS_CSS = resolve(HERE, '../../../app/src/globals.css');
+const TOKEN_CSS = resolve(HERE, '../../../app/src/styles/foundation/tokens.css');
 
 describe('chrome.ts drift-check', () => {
-  const tokens = resolveChromeTokensFromCss(GLOBALS_CSS);
+  const tokens = resolveChromeTokensFromCss(TOKEN_CSS);
 
   test('CHROME_BG_LIGHT matches resolved --sidebar from :root', () => {
     expect(CHROME_BG_LIGHT).toBe(tokens.light);

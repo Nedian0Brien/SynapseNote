@@ -1984,6 +1984,11 @@ Homepage: https://www.embedpdf.com/docs
 
 Copyright (c) 2025 CloudPDF
 
+### `@embedpdf/plugin-search@2.14.4`
+Homepage: https://www.embedpdf.com/docs
+
+Copyright (c) 2025 CloudPDF
+
 ### `@embedpdf/plugin-selection@2.14.4`
 Homepage: https://www.embedpdf.com/docs
 

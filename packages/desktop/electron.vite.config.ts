@@ -104,10 +104,13 @@ export default defineConfig({
     root: appRoot,
     plugins: [
       // Substitutes __OK_CHROME_BG_LIGHT__ / __OK_CHROME_BG_DARK__ placeholders
-      // in app/index.html with sRGB hex resolved from globals.css `--sidebar`.
+      // in app/index.html with sRGB hex resolved from the canonical token
+      // source's `--sidebar` declaration.
       // Same plugin used by packages/app/vite.config.ts so dev (`bun run dev`)
       // and electron renderer build resolve identically.
-      chromeTokensVitePlugin({ globalsCssPath: resolve(appRoot, 'src/globals.css') }),
+      chromeTokensVitePlugin({
+        tokenCssPath: resolve(appRoot, 'src/styles/foundation/tokens.css'),
+      }),
       react(),
       // Lingui macro + React Compiler share one Babel pass, options shared
       // with `packages/app/vite.config.ts` via `RENDERER_BABEL_OPTIONS`.

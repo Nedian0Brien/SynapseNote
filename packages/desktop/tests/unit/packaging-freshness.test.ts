@@ -14,6 +14,7 @@ describe('desktop packaging freshness contract', () => {
     expect(pkg.scripts['build:packaging-inputs']).toContain(
       'build --filter=@nedian0brien/synapsenote-desktop^...',
     );
+    expect(pkg.scripts['build:desktop']).toContain('clean-desktop-output.mjs');
     expect(pkg.scripts['build:desktop']).toContain('bun run build:packaging-inputs');
     expect(pkg.scripts['build:desktop']).toContain('write-packaging-stamp.mjs');
   });
@@ -26,5 +27,23 @@ describe('desktop packaging freshness contract', () => {
     expect(readFileSync(resolve(desktopRoot, config.beforePack), 'utf8')).toContain(
       'verifyPackagingStamp',
     );
+  });
+
+  test('embeds a source revision and exposes a fail-closed local verification command', () => {
+    const pkg = JSON.parse(readFileSync(resolve(desktopRoot, 'package.json'), 'utf8')) as {
+      scripts: Record<string, string>;
+    };
+    const freshness = readFileSync(resolve(desktopRoot, 'scripts/packaging-freshness.mjs'), 'utf8');
+    const verifier = readFileSync(
+      resolve(desktopRoot, 'scripts/verify-local-app-revision.mjs'),
+      'utf8',
+    );
+
+    expect(pkg.scripts['verify:local-revision']).toContain('verify-local-app-revision.mjs');
+    expect(freshness).toContain('APP_REVISION_PATH');
+    expect(freshness).toContain('currentSourceRevision');
+    expect(verifier).toContain('extractFile');
+    expect(verifier).toContain('input digest');
+    expect(verifier).toContain('source revision');
   });
 });

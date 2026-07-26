@@ -227,6 +227,30 @@ describe('commitWip', () => {
     expect(msg).toBe('WIP: intro');
   });
 
+  test('does not race transient database locks during a root snapshot', async () => {
+    const manifestDir = resolve(projectRoot, '.ok', 'databases');
+    mkdirSync(manifestDir, { recursive: true });
+    writeFileSync(resolve(manifestDir, 'tasks.yml'), 'version: 1\n');
+    // DatabaseStore creates and removes this file while a commit is taking
+    // its shadow snapshot. It must never be part of the WIP tree.
+    writeFileSync(resolve(manifestDir, '.store.lock'), 'runtime lock\n');
+    // `.ok/local` is ignored by project git config but exists at runtime. The
+    // root pathspec must prune the directory before Git attempts to add it.
+    writeFileSync(resolve(projectRoot, '.gitignore'), '.ok/local/\n');
+    mkdirSync(resolve(projectRoot, '.ok', 'local'), { recursive: true });
+    writeFileSync(resolve(projectRoot, '.ok', 'local', 'server.lock'), 'runtime lock\n');
+
+    const sha = await commitWip(shadow, writer, '', 'WIP: database snapshot');
+    const entries = (await shadowGit(shadow).raw('ls-tree', '-r', '--name-only', sha))
+      .trim()
+      .split('\n')
+      .filter(Boolean);
+
+    expect(entries).toContain('.ok/databases/tasks.yml');
+    expect(entries).not.toContain('.ok/databases/.store.lock');
+    expect(entries).not.toContain('.ok/local/server.lock');
+  });
+
   test('commit is authored by the writer', async () => {
     writeFileSync(resolve(contentDir, 'intro.md'), '# Hello\n');
 

@@ -13,7 +13,7 @@
  * focused, for keyboard reach) the file glyph cross-fades to an X in the SAME
  * fixed-size cell. The button removes on Enter/Space/click AND on Backspace/Delete
  * (an a11y improvement over Cursor's hover-only ×). Styling mirrors the inline
- * mention chip (`.composer-mention-chip` in globals.css) so the two read as one
+ * mention chip (`.composer-mention-chip` in `styles/editor/prose-base.css`) so the two read as one
  * chip system.
  *
  * Lives at host level (outside the ProseMirror editor subtree) → shadcn

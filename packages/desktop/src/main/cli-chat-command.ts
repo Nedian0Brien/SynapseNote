@@ -1,10 +1,16 @@
-import { shellSingleQuote, TERMINAL_CLIS } from '@nedian0brien/synapsenote-core';
+import {
+  buildClaudeSettingsArg,
+  shellSingleQuote,
+  TERMINAL_CLIS,
+} from '@nedian0brien/synapsenote-core';
+import { SYNAPSENOTE_CHAT_SYSTEM_INSTRUCTIONS } from './cli-chat-system-instructions.ts';
 
 export interface CliChatLaunchInput {
   readonly cli: 'codex' | 'claude';
   readonly prompt: string;
   readonly sessionId: string | null;
   readonly permissionMode: 'read-only' | 'workspace-write' | 'full-access';
+  readonly autoApproveOkTools?: boolean;
   readonly modelSettings: {
     readonly model:
       | 'gpt-5.6-sol'
@@ -28,6 +34,9 @@ export interface CliChatCommandOptions {
   readonly autoApproveOkTools?: boolean;
   /** Force a read-only filesystem; the paired MCP server exposes only Data Plane tools. */
   readonly dataPlaneOnlyWrites?: boolean;
+  /** Trust the project-local Claude MCP entry only after main verifies it is
+   * SynapseNote's own managed configuration. */
+  readonly mcpPreApprove?: boolean;
 }
 
 // Reuse the same registry-fixed SynapseNote MCP approval policy as the
@@ -68,6 +77,20 @@ function claudeModelArgs(settings: CliChatLaunchInput['modelSettings']): string 
 }
 
 /**
+ * Apply the same product guidance at each one-shot invocation. Both CLIs
+ * reconstruct their request context when resuming a saved session, so the
+ * instruction must ride on fresh and resumed commands alike.
+ */
+function systemInstructionArgs(cli: CliChatLaunchInput['cli']): string {
+  const printable = printablePtyArgument(SYNAPSENOTE_CHAT_SYSTEM_INSTRUCTIONS);
+  if (cli === 'codex') {
+    const tomlString = JSON.stringify(printable);
+    return ` -c ${shellSingleQuote(`developer_instructions=${tomlString}`)}`;
+  }
+  return ` --append-system-prompt ${shellSingleQuote(printable)}`;
+}
+
+/**
  * Commands are written through an interactive PTY, where readline handles C0
  * bytes before the shell can apply quoting. Keep the payload printable at that
  * boundary while preserving human-readable line breaks for the model.
@@ -103,14 +126,23 @@ export function buildCliChatCommand(
       options.dataPlaneOnlyWrites === true,
     );
     const model = codexModelArgs(input.modelSettings);
+    const systemInstructions = systemInstructionArgs(input.cli);
     return input.sessionId === null
-      ? `codex exec --json --color never${permissions}${model} ${quotedPrompt}`
-      : `codex exec resume --json${permissions}${model} ${quotedSessionId} ${quotedPrompt}`;
+      ? `codex exec --json --color never${permissions}${model}${systemInstructions} ${quotedPrompt}`
+      : `codex exec resume --json${permissions}${model}${systemInstructions} ${quotedSessionId} ${quotedPrompt}`;
   }
   const permissions = claudePermissionArgs(permissionMode);
+  const claudeSettings = buildClaudeSettingsArg({
+    mcpPreApprove: options.mcpPreApprove === true,
+    // Read-only must never inherit the write-capable MCP allow rule. Full
+    // access already carries Claude's explicit permission bypass.
+    autoApproveOkTools: permissionMode === 'workspace-write' && options.autoApproveOkTools === true,
+  });
+  const settings = claudeSettings === '' ? '' : ` ${claudeSettings}`;
   const model = claudeModelArgs(input.modelSettings);
+  const systemInstructions = systemInstructionArgs(input.cli);
   const resume = quotedSessionId === null ? '' : ` --resume ${quotedSessionId}`;
-  return `claude --print --verbose --output-format stream-json --include-partial-messages${permissions}${model}${resume} ${quotedPrompt}`;
+  return `claude --print --verbose --output-format stream-json --include-partial-messages${permissions}${settings}${model}${systemInstructions}${resume} ${quotedPrompt}`;
 }
 
 /**
@@ -165,6 +197,8 @@ export function isCliChatLaunchInput(value: unknown): value is CliChatLaunchInpu
     (candidate.cli === 'codex' || candidate.cli === 'claude') &&
     typeof candidate.prompt === 'string' &&
     (candidate.sessionId === null || typeof candidate.sessionId === 'string') &&
+    (candidate.autoApproveOkTools === undefined ||
+      typeof candidate.autoApproveOkTools === 'boolean') &&
     hasValidModelSettings(candidate.cli, candidate.modelSettings) &&
     (candidate.permissionMode === 'read-only' ||
       candidate.permissionMode === 'workspace-write' ||

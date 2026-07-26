@@ -1,4 +1,5 @@
 import { MANAGED_ARTIFACT_SCOPES, type SkillScope } from '@nedian0brien/synapsenote-core';
+import { emitAppNavigationReplaced } from '@/lib/app-navigation-events';
 
 /** Emitted when an internal route replaces the hash without native navigation. */
 export const ROUTE_NAVIGATION_CHANGE_EVENT = 'synapsenote:route-navigation-change';
@@ -65,6 +66,7 @@ export function replaceHashWithoutNavigation(hash: string): void {
   const { pathname, search } = window.location;
   window.history.replaceState(null, '', `${pathname}${search}${hash}`);
   window.dispatchEvent(new Event(ROUTE_NAVIGATION_CHANGE_EVENT));
+  emitAppNavigationReplaced(hash);
 }
 
 /**

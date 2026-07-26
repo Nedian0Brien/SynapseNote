@@ -1,0 +1,148 @@
+/* 7f. CodeMirror prop input (PropPanel string-prop control with `language` set,
+ * 2026-05).
+ *
+ * Replaces the plain `<input type="text">` for code-shaped props (Math
+ * formula → LaTeX, Mermaid chart, JSON / HTML / YAML payloads). Sized
+ * to fit the PropPanel popover comfortably — min-height ≈ 5 lines so a
+ * one-line formula doesn't render in a sliver, max-height with overflow
+ * so a 50-line Mermaid diagram doesn't blow out the popover.
+ *
+ * Padding-free wrapper — the inner `.cm-editor` has its own padding from
+ * CM6 defaults. Matches shadcn `<Input>` border + radius tokens so the
+ * editor sits visually consistent with sibling string inputs in the
+ * same panel. */
+/* PRD-6821 — Code preview "Edit source" modal's CodeMirror surface.
+ * Sibling of `.ok-prop-codemirror` below but sized to fill its modal pane
+ * instead of capping at 18rem. The inner editor expands to the host
+ * div's full height (the modal's pane uses `flex-1 min-h-[260px]`), the
+ * scroller takes the remainder via `flex: 1 1 0`, and color tokens flow
+ * from app CSS variables so light / dark tracks the active theme without
+ * a CodeMirror Compartment. The first iteration of this modal tried to
+ * use `nested-cm-extensions`'s `darkTheme`/`lightTheme` exports — those
+ * expect a Compartment + transparent background, which lost the cascade
+ * battle against the dialog's solid surfaces and left the source pane
+ * blank against the dark background. The all-CSS approach below
+ * sidesteps that whole class of bug. */
+.ok-codepreview-cm {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-size: 0.8125rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.ok-codepreview-cm .cm-editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  outline: none;
+}
+
+.ok-codepreview-cm .cm-editor.cm-focused {
+  outline: none;
+}
+
+.ok-codepreview-cm .cm-scroller {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: 1.5;
+  overscroll-behavior: contain;
+}
+
+.ok-codepreview-cm .cm-content {
+  padding: 0.5rem 0;
+  color: var(--foreground);
+  caret-color: var(--foreground);
+}
+
+.ok-codepreview-cm .cm-gutters {
+  background-color: var(--background);
+  border-right: 1px solid var(--border);
+  color: var(--muted-foreground);
+}
+
+.ok-codepreview-cm .cm-activeLineGutter,
+.ok-codepreview-cm .cm-activeLine {
+  background-color: var(--muted);
+}
+
+.ok-codepreview-cm .cm-selectionBackground,
+/* `.cm-focused` lands on `.cm-editor` (CM6's wrapper), not on this
+ * outer host div — so the focused-selection rule must nest through it.
+ * Sibling `.ok-prop-codemirror` uses the same nesting later in this module. */
+  .ok-codepreview-cm .cm-editor.cm-focused
+  .cm-selectionBackground,
+.ok-codepreview-cm ::selection {
+  background-color: var(--accent);
+}
+
+.ok-prop-codemirror {
+  width: 100%;
+  /* Tightened from 6.5rem / 18rem — the PropPanel popover is narrow, so
+   * a tall code surface dominated the visible area (Mermaid's `chart`
+   * prop was the worst offender at ~188px on default content). The
+   * fullscreen "Edit source" pen-icon modal remains the right tool for
+   * heavy editing; the inline panel is for quick tweaks. */
+  min-height: 4rem;
+  max-height: 12rem;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 2px);
+  background-color: var(--background);
+  overflow: hidden;
+  /* Stepped down from 0.8125rem (13px) to 0.75rem (12px) so the
+   * source-string region reads as one of the panel's compact controls
+   * instead of a centerpiece. Still inside the WCAG-2.1 SC 1.4.4
+   * resize-text margin (browser zoom and OS-level font scaling apply
+   * normally to monospace text). */
+  font-size: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  transition: border-color 120ms ease;
+}
+
+.ok-prop-codemirror:focus-within {
+  border-color: var(--ring, var(--border));
+  outline: 2px solid var(--ring, currentColor);
+  outline-offset: -1px;
+}
+
+.ok-prop-codemirror .cm-editor {
+  height: 100%;
+  /* Matches the host's compacted max-height (was 18rem). */
+  max-height: 12rem;
+  outline: none;
+}
+
+.ok-prop-codemirror .cm-editor.cm-focused {
+  outline: none;
+}
+
+.ok-prop-codemirror .cm-scroller {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: 1.45;
+  /*
+    Stop scroll-chaining inside the PropPanel popover — without this,
+    scrolling past the editor's content boundary (e.g. on a long
+    Mermaid diagram) chains to the page behind the popover. `contain`
+    keeps the gesture local to the editor's scrollable region.
+  */
+  overscroll-behavior: contain;
+}
+
+.ok-prop-codemirror .cm-content {
+  padding: 0.4rem 0;
+  caret-color: var(--foreground);
+}
+
+.ok-prop-codemirror .cm-gutters {
+  background-color: var(--muted);
+  border-right: 1px solid var(--border);
+  color: var(--muted-foreground);
+}
+
+.ok-prop-codemirror .cm-activeLineGutter,
+.ok-prop-codemirror .cm-activeLine {
+  background-color: var(--accent);
+}

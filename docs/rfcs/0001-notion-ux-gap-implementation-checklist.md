@@ -1,7 +1,7 @@
 # RFC 0001: Notion UX gap implementation checklist
 
 - Status: Active
-- Re-audit date: 2026-07-23
+- Re-audit date: 2026-07-24
 - Scope: database creation, navigation, editing, inline views, and agent
   handoff in the web and Electron editor
 - UX audit: [Notion UX alignment checklist](./0001-notion-ux-alignment-checklist.md)
@@ -11,6 +11,24 @@ This is the execution checklist produced from the current implementation audit.
 It is intentionally separate from the parity matrix: a capability can be
 complete in the engine while the same action is still hard to discover or
 unlike Notion for a human user.
+
+## Stabilization verification (2026-07-24)
+
+The current database interaction/reliability slice is closed by the detailed
+[inline stabilization and modularization plan](./0001-database-inline-stabilization-and-modularization-plan.md).
+Its evidence includes 5/5 document-native browser cases, 18/18 visual
+snapshots, 2/2 accessibility cases, a verified packaged Electron
+Accessibility-tree/keyboard smoke, the full desktop check (2,495 passed, two
+platform-helper skips by design, zero failures), and the database regression
+budgets. The implementation also records the transient-save/undo model,
+server-backed pagination, one-scroll-owner geometry, and the typed controller
+splits.
+
+This closes the NUI interaction and reliability evidence covered by that plan;
+it does not close every broad Notion-parity item in this checklist. Visual
+language convergence, responsive polish, progressive disclosure, human
+usability, and any explicitly listed product research remain active until they
+have their own evidence.
 
 ## Current finding
 
@@ -48,6 +66,12 @@ largest remaining mismatches are:
    admin dialog, but the complete cross-entrypoint journey, linked-view/record
    journey, and release evidence remain open; these are still blockers for
    NUI-105/NUI-701.
+7. The latest visual review shows that the inline block still reads as a
+   spreadsheet/admin surface in ordinary use: the title/header hierarchy is
+   too tool-like, the table framing and selection treatment are too strong,
+   and row/cell actions remain discoverable as persistent grid controls rather
+   than document-native hover/focus affordances. This is a distinct parity gap,
+   not just a missing screenshot, and is tracked by NUI-106/NUI-107 below.
 
 ## Latest browser audit (2026-07-22)
 
@@ -176,8 +200,10 @@ The inline linked-view shell now uses a compact table icon and a document-like
 title block. Its primary controls are grouped as `Filters`, `Sort`, and
 `Properties`, while the more administrative `View settings` action remains in
 the overflow menu. Inline table headers and rows use a denser, lower-contrast
-grid treatment, and title links expose a value-specific `Open page …` name for
-screen readers and agents.
+grid treatment, title links expose a value-specific `Open page …` name for
+screen readers and agents, and the search icon now opens a temporary
+`Search pages` popover that filters loaded rows without changing the saved
+view.
 
 This is a focused visual/semantic correction backed by the inline-view DOM
 journey, targeted Biome, and app typecheck. It does not close the 1280/1440/768
@@ -330,6 +356,31 @@ treated as visual parity until a browser capture is attached.
   created; persistent conflicts still surface with the existing retry action.
   Focused client evidence covers the 409 → 409 → success recovery.
   Map to UX-112/UX-1101/UX-1102.
+
+## P0 — Make the inline database document-native
+
+- [ ] **NUI-106** Rebuild the primary inline/full-page database shell as one
+  document-native Notion block. The title, database icon, saved-view tabs, and
+  lightweight table toolbar must form a single page/block hierarchy; `New`,
+  `Filters`, `Sort`, and `Properties` are the primary controls, while view
+  settings, inspect/context, agent, import/export, diagnostics, and storage
+  details remain in an overflow or explicit inspector. Remove duplicate source
+  headings, admin-style setup chrome, and UI-only machine terminology from the
+  ordinary surface. Acceptance requires the same hierarchy and spacing in web
+  and Electron captures at 1280, 1440, and 768 CSS pixels, with focused DOM
+  evidence for the visible title/tab/toolbar landmarks; DOM tests alone do not
+  close this item. Map to UX-009/UX-012/UX-1007 and NUI-701/NUI-702.
+- [ ] **NUI-107** Replace the remaining spreadsheet/admin interaction grammar
+  in the inline surface. The primary table must not keep a permanently visible
+  `Actions` rail, seven competing row icons, or a strong spreadsheet-style
+  selected-cell treatment during ordinary browsing. Row actions should appear
+  through one hover/focus/keyboard-reachable ellipsis menu; title links open
+  pages, cell values edit directly in place, and the bottom `New page` row is
+  part of the document flow. Keep the grid and border treatment quiet and
+  consistent with the editor block while preserving every destructive or agent
+  action behind the appropriate menu/review boundary. Acceptance requires a
+  focused DOM interaction slice plus a running web/Electron comparison at
+  desktop and compact widths. Map to UX-012/UX-1003/UX-1007 and NUI-701/NUI-702.
 
 ## P0 — Integrate the workspace with normal navigation
 

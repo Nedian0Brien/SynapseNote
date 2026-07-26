@@ -43,8 +43,6 @@ The macOS app ships as a signed `.dmg` you drag into `/Applications`. On launch 
 
 The app registers the `synapsenote://` URL scheme (for deep links) and checks for updates — on launch and periodically while it runs — against the SynapseNote update service at `synapse.lawdigest.kr/updates`, which redirects to the GitHub release asset and counts the update per version and channel (falling back to GitHub directly if it's unreachable). An update on your channel downloads in the background and installs on the next quit; you can also check on demand from **Check for updates…** in the app and Help menus. The channel (stable or beta) is fixed by the build you installed — switch by reinstalling the other from `synapse.lawdigest.kr/download/stable` or `/download/beta`. Override the feed with `OK_UPDATER_FEED_URL`.
 
-On its first launch the app also opens your default browser once to `synapse.lawdigest.kr/continue`, to check whether you installed from a share link and redeem it if so; the exchange completes over a short-lived local loopback listener.
-
 ### Shell and `PATH`
 
 So `ok` can work in your terminal too, the packaged app manages a `PATH` shim. **This is macOS-only, packaged-build-only, and disabled by `OK_RECLAIM_DISABLE=1`.** It never uses `sudo`, never runs an admin prompt, and never installs a login item.
@@ -265,7 +263,7 @@ In the desktop app you don't need the CLI for finer control. **Settings → AI t
 
 ## What leaves your machine
 
-By default, **nothing.** Everything above is written to your own disk. The only ways data leaves your machine are these — all opt-in or on-demand, except two automatic desktop-app actions (the update check, and a one-time share-link check on first launch):
+By default, **nothing.** Everything above is written to your own disk. The only ways data leaves your machine are these — all opt-in or on-demand, except the automatic desktop-app update check:
 
 | What | When | Where it goes |
 | --- | --- | --- |
@@ -274,7 +272,6 @@ By default, **nothing.** Everything above is written to your own disk. The only 
 | Semantic search embeddings | Only when you enable [semantic search](/docs/reference/configuration#semantic-search) **and** set a key — off by default | Your configured embeddings provider (OpenAI by default) |
 | GitHub sync / share | When you sync, clone, publish, or share | GitHub |
 | Update check | Automatically — on launch and periodically while the desktop app runs | SynapseNote update service (`synapse.lawdigest.kr/updates`), which redirects to GitHub; sends the app version and channel |
-| First-launch share check | Once, automatically, on the desktop app's first launch | `synapse.lawdigest.kr/continue` — redeems a share link if you installed from one |
 | npm/`npx` fetch | During install (CLI) | The npm registry |
 
 Local diagnostic logs and telemetry are scrubbed of credential-bearing attributes and never sent anywhere on their own.

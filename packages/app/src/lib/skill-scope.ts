@@ -18,8 +18,8 @@ export function skillNameSetsByScope(
   };
 }
 
-/** Shared prefix on OK's shipped pack skills (`synapsenote-pack-<pack>`). */
-const PACK_SKILL_DISPLAY_PREFIX = 'synapsenote-pack-';
+/** Current + pre-rebrand prefixes for shipped starter-pack skills. */
+const PACK_SKILL_DISPLAY_PREFIXES = ['synapsenote-pack-', 'open-knowledge-pack-'] as const;
 
 /**
  * Browse-surface display name for a skill: drops the shared
@@ -29,9 +29,8 @@ const PACK_SKILL_DISPLAY_PREFIX = 'synapsenote-pack-';
  * doc path, tooltips); user-authored skills (no prefix) are unchanged.
  */
 export function skillDisplayName(name: string): string {
-  return name.startsWith(PACK_SKILL_DISPLAY_PREFIX)
-    ? name.slice(PACK_SKILL_DISPLAY_PREFIX.length)
-    : name;
+  const prefix = PACK_SKILL_DISPLAY_PREFIXES.find((candidate) => name.startsWith(candidate));
+  return prefix === undefined ? name : name.slice(prefix.length);
 }
 
 /**

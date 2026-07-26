@@ -56,6 +56,10 @@ describe('local desktop build and install workflow', () => {
     expect(rootPackage.scripts['install:desktop:local']).toContain('install:local');
     expect(rootPackage.scripts['check:desktop:local']).toContain('local-desktop-workflow.test.ts');
     expect(rootPackage.scripts['check:desktop:local']).not.toContain('bun run check');
+    expect(rootPackage.scripts['check:database:interaction']).toContain(
+      'database-record-open-command.dom.test.tsx',
+    );
+    expect(rootPackage.scripts['check:desktop:database']).toContain('database-open-page.e2e.ts');
   });
 
   test('defaults to Applications and validates explicit targets', () => {

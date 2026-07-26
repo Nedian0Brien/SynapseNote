@@ -323,7 +323,7 @@ export function OpenInAgentMenu({
     // editor header's `-webkit-app-region: drag` zone, where the
     // outside-pointerdown a modal layer relies on for dismissal doesn't reliably
     // reach Radix (macOS swallows it at the OS chrome level); non-modal + the
-    // `[data-electron-drag]` no-drag rule (globals.css) handle dismissal.
+    // `[data-electron-drag]` no-drag rule (`styles/editor/large-document.css`) handle dismissal.
     <Popover open={menuOpen} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button

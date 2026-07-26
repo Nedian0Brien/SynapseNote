@@ -12,10 +12,17 @@ export interface MemoComposerRequest {
 }
 
 export function memoQuoteFromSelection(selection: SelectionSnapshot): DocumentMemoQuote {
+  const anchor = selection.memoAnchor
+    ? {
+        ...selection.memoAnchor,
+        exact: selection.memoAnchor.exact.slice(0, MAX_DOCUMENT_MEMO_QUOTE_LENGTH),
+      }
+    : undefined;
   return {
     markdown: selection.markdown.trim().slice(0, MAX_DOCUMENT_MEMO_QUOTE_LENGTH),
     sourceLineStart: selection.sourceLineStart,
     sourceLineEnd: selection.sourceLineEnd,
+    anchor,
   };
 }
 

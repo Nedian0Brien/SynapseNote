@@ -1,5 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
+import { testFeedbackPolicy } from '../../scripts/test-feedback/policy.ts';
+
 /**
  * A11y Playwright config — per-worker fixture isolation (same shape as
  * `playwright.config.ts`).
@@ -26,13 +28,15 @@ import { defineConfig } from '@playwright/test';
  */
 
 const isCI = !!process.env.CI;
+const feedbackPolicy = testFeedbackPolicy();
 
 export default defineConfig({
   testDir: './tests/a11y',
   testMatch: /.*\.e2e\.ts$/,
   timeout: 120_000,
-  retries: isCI ? 2 : 0,
-  failOnFlakyTests: false,
+  retries: feedbackPolicy.retries,
+  repeatEach: feedbackPolicy.repeatEach,
+  failOnFlakyTests: feedbackPolicy.failOnFlakyTests,
   forbidOnly: isCI,
   fullyParallel: true,
   workers: isCI ? 4 : undefined,
@@ -42,7 +46,11 @@ export default defineConfig({
     // `tests/stress/_helpers/fixtures.ts`. Leave unset so the fixture's
     // override takes effect per worker.
     headless: true,
-    video: { mode: 'retain-on-failure', size: { width: 1280, height: 720 } },
+    // macOS WebKit/Chromium can return EAI-style `spawn Unknown system error
+    // -88` while finalising a retained video after axe injects its script.
+    // Screenshots and traces still provide failure evidence without making the
+    // accessibility gate itself flaky.
+    video: 'off',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },

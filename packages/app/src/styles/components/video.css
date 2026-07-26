@@ -1,0 +1,83 @@
+/* 7c. Video (5-pack DIY renderer, US-007 — pure HTML5 `<video>` wrapper).
+ *
+ * Minimal styling per D-MF12 "HTML5 native chrome is the UX" — we only own
+ * layout (block-level, max-width, rounded corners) so the video snaps to a
+ * sensible authored size inside the editor without inheriting any
+ * text-editor line-box weirdness. Native controls, poster-frame rendering,
+ * fullscreen button, keyboard shortcuts, and reduced-motion all remain the
+ * browser's responsibility.
+ */
+.ok-video {
+  display: block;
+  max-width: 100%;
+  @apply rounded-lg;
+  margin: 0.5rem 0;
+}
+
+/* YouTube dispatch: wrap a `<div>` containing react-lite-youtube-embed's
+   `.yt-lite` (which uses `aspect-ratio: 16/9` to derive height from width).
+   Native `<video>` is a replaced element with intrinsic dimensions from
+   the file — the JsxComponentView wrapper's `width: fit-content` rule
+   sizes that correctly. The lite-embed's `<div>` has no intrinsic width
+   (the play button is `position: absolute`), so giving it an explicit
+   default lets the same `fit-content` wrapper hug it without needing a
+   `:has()` override that would otherwise expand the chrome bar / halo
+   to the full column. `max-width: 100%` keeps the embed contained when
+   the column is narrower than 720px. Author-supplied `width` (via
+   inline style from the Video descriptor) overrides this default. */
+.ok-video-youtube {
+  width: 720px;
+  max-width: 100%;
+  /* Clip the inner `.yt-lite`'s rectangular thumbnail (and the
+     post-activation iframe) to the wrapper's rounded corners — without
+     this, the lib's background-image bleeds past the `.ok-video`'s
+     border-radius and the video looks like it's leaking on the right.
+     Native `<video>` doesn't need this because the element renders its
+     pixels inside its own box; for a `<div>` wrapper with rounded
+     corners the clip is on us. */
+  overflow: hidden;
+}
+
+/* Vimeo dispatch: parallel to `.ok-video-youtube`. `@u-wave/react-vimeo`
+   in `responsive` mode renders an iframe wrapped in a div that resizes
+   to its parent — give the parent the same 720px default so authors who
+   don't supply explicit width get the same UX as the YouTube path. The
+   iframe itself is rectangular; rounded-corner clipping is on us. */
+.ok-video-vimeo {
+  width: 720px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Loom dispatch: parallel to YouTube + Vimeo. The wrapper supplies the
+   720px default + max-width and clips the iframe to the rounded corner.
+   The Loom iframe itself defaults to no width/height (Loom's embed sizes
+   itself via CSS internals), so we set sensible defaults on the iframe
+   to match the wrapper. Author-supplied width/height override. */
+.ok-video-loom {
+  width: 720px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Video alignment (PRD-6822) — `.ok-video` is `display: block` by default
+   (HTML5 `<video>` is block, and the YouTube / Vimeo / Loom wrapper `<div>`
+   is too). Block elements ignore the parent's `text-align`, breaking the
+   three `[data-component-type="video"][data-align="…"]` rules above (which
+   live with the rest of the wrapper-alignment rules). Override to
+   `inline-block` for every JSX-form video wrapper so the `text-align` can
+   position the media — `JsxComponentView` always emits `data-align` on
+   video wrappers (defaulting to `center` via the `ALIGNABLE_DESCRIPTOR_NAMES`
+   clamp), so the wrapper-component-type selector is the precise scope. The
+   global `display: block` default stays everywhere outside the JSX
+   wrapper. Placed after the `.ok-video-*` width rules so selector
+   specificity stays ascending in document order. */
+.ProseMirror .jsx-component-wrapper[data-component-type="video"] .ok-video {
+  display: inline-block;
+}
+.ok-video-loom-iframe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+}

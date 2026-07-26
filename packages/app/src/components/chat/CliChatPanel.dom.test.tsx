@@ -23,6 +23,7 @@ function makeBridge() {
         prompt: string;
         sessionId: string | null;
         permissionMode: 'read-only' | 'workspace-write' | 'full-access';
+        autoApproveOkTools?: boolean;
         modelSettings: {
           model: string;
           effort: string;
@@ -101,6 +102,7 @@ describe('CliChatPanel', () => {
       prompt: 'Summarize this',
       sessionId: null,
       permissionMode: 'workspace-write',
+      autoApproveOkTools: true,
       modelSettings: { model: 'gpt-5.6-sol', effort: 'medium', speed: 'default' },
     });
 
@@ -118,7 +120,10 @@ describe('CliChatPanel', () => {
   test('uses the configured default model for a new chat', async () => {
     const { bridge, chatSend } = makeBridge();
     const config = ConfigSchema.parse({
-      agents: { chat: { codexModel: 'gpt-5.6-terra', claudeModel: 'opus' } },
+      agents: {
+        autoApproveOkTools: false,
+        chat: { codexModel: 'gpt-5.6-terra', claudeModel: 'opus' },
+      },
     });
     const configContext = {
       userBinding: null,
@@ -149,6 +154,7 @@ describe('CliChatPanel', () => {
       effort: 'medium',
       speed: 'default',
     });
+    expect(chatSend.mock.calls[0]?.[1].autoApproveOkTools).toBe(false);
   });
 
   test('interrupts the active CLI with Ctrl-C', async () => {
@@ -181,7 +187,8 @@ describe('CliChatPanel', () => {
     const completedTool = screen
       .getByRole('log')
       .querySelector('[data-chat-activity-state="completed"]');
-    expect(completedTool?.querySelector('[data-chat-tool-icon="completed"]')).not.toBeNull();
+    expect(completedTool?.querySelector('[data-chat-tool-icon="command"]')).not.toBeNull();
+    expect(completedTool?.querySelector('[data-chat-tool-status="completed"]')).not.toBeNull();
   });
 
   test('shows Codex web search while running and preserves its query when complete', async () => {
@@ -215,6 +222,8 @@ describe('CliChatPanel', () => {
       .getByText(/Web search · official OpenAI homepage/)
       .closest('[data-chat-activity-state]');
     expect(completed?.getAttribute('data-chat-activity-state')).toBe('completed');
+    expect(completed?.querySelector('[data-chat-tool-icon="web_search"]')).not.toBeNull();
+    expect(completed?.querySelector('[data-chat-tool-status="completed"]')).not.toBeNull();
     const preview = screen.getByRole('link', { name: 'Open OpenAI' });
     expect(preview.getAttribute('href')).toBe('https://openai.com/');
     expect(preview.getAttribute('data-chat-web-preview-layout')).toBe('compact');
@@ -245,11 +254,40 @@ describe('CliChatPanel', () => {
     expect(expandable?.open).toBe(false);
     expect(summary?.textContent).toBe('user cancelled MCP tool call');
     expect(expandable?.textContent).toContain('exec · failed');
+    expect(expandable?.querySelector('[data-chat-tool-icon="command"]')).not.toBeNull();
+    const failureStatus = expandable?.querySelector('[data-chat-tool-status="failed"]');
+    expect(failureStatus).not.toBeNull();
+    expect(failureStatus?.previousElementSibling?.textContent).toBe('exec · failed');
 
     await userEvent.click(expandable?.querySelector('summary') as HTMLElement);
     expect(expandable?.open).toBe(true);
     expect(expandable?.querySelector('[data-chat-error-details="true"]')?.textContent).toContain(
       'Server: open-knowledge\nRetry after reconnecting.',
+    );
+  });
+
+  test('shows Claude tool-result permission failures on the matching activity', async () => {
+    const { bridge, pushData } = makeBridge();
+    render(<CliChatPanel bridge={bridge} cli="claude" ptyId="pty-1" initialPrompt={null} />);
+
+    act(() => {
+      pushData(
+        '{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"I will inspect it."}}}\r\n' +
+          '{"type":"stream_event","event":{"type":"content_block_start","content_block":{"type":"tool_use","id":"tool-denied","name":"mcp__synapsenote__current_document"}}}\r\n' +
+          '{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"tool-denied","content":"Claude requested permissions, but they were not granted.","is_error":true}]},"tool_use_result":"Error: permission denied"}\r\n',
+      );
+    });
+
+    const failed = document.querySelector<HTMLDetailsElement>(
+      '[data-chat-error-expandable="true"]',
+    );
+    expect(failed?.textContent).toContain('mcp__synapsenote__current_document · failed');
+    expect(failed?.querySelector('[data-chat-error-summary]')?.textContent).toBe(
+      'Claude requested permissions, but they were not granted.',
+    );
+    await userEvent.click(failed?.querySelector('summary') as HTMLElement);
+    expect(failed?.querySelector('[data-chat-error-details]')?.textContent).toContain(
+      'Error: permission denied',
     );
   });
 
@@ -272,6 +310,13 @@ describe('CliChatPanel', () => {
     expect(
       expandables.map((entry) => entry.querySelector('[data-chat-tool-summary]')?.textContent),
     ).toEqual(['Checks passed', 'Created note/example.md']);
+    expect(expandables[0]?.querySelector('[data-chat-tool-icon="command"]')).not.toBeNull();
+    expect(expandables[1]?.querySelector('[data-chat-tool-icon="file"]')).not.toBeNull();
+    expect(
+      expandables.every(
+        (entry) => entry.querySelector('[data-chat-tool-status="completed"]') !== null,
+      ),
+    ).toBe(true);
 
     await userEvent.click(expandables[1]?.querySelector('summary') as HTMLElement);
     expect(expandables[1]?.open).toBe(true);
@@ -319,7 +364,8 @@ describe('CliChatPanel', () => {
     const workingTool = screen
       .getByRole('log')
       .querySelector('[data-chat-activity-state="working"]');
-    expect(workingTool?.querySelector('[data-chat-tool-icon="working"]')).not.toBeNull();
+    expect(workingTool?.querySelector('[data-chat-tool-icon="command"]')).not.toBeNull();
+    expect(workingTool?.querySelector('[data-chat-tool-status]')).toBeNull();
     expect(workingTool?.className).toContain('animate-chat-activity');
 
     act(() => {
@@ -330,7 +376,10 @@ describe('CliChatPanel', () => {
     const completedTool = screen
       .getByRole('log')
       .querySelector('[data-chat-activity-state="completed"]');
-    expect(completedTool?.querySelector('[data-chat-tool-icon="completed"]')).not.toBeNull();
+    expect(completedTool?.querySelector('[data-chat-tool-icon="command"]')).not.toBeNull();
+    const completionStatus = completedTool?.querySelector('[data-chat-tool-status="completed"]');
+    expect(completionStatus).not.toBeNull();
+    expect(completionStatus?.previousElementSibling?.textContent).toBe('Read file · completed');
 
     act(() => {
       pushData(
@@ -400,6 +449,7 @@ describe('CliChatPanel', () => {
       prompt: 'Make the change',
       sessionId: null,
       permissionMode: 'full-access',
+      autoApproveOkTools: true,
       modelSettings: { model: 'gpt-5.6-sol', effort: 'medium', speed: 'default' },
     });
   });
@@ -506,6 +556,36 @@ describe('CliChatPanel', () => {
     expect(onTitleChange).toHaveBeenCalledWith('Summarize the research notes and id…');
   });
 
+  test('injects the currently open editor document into every user prompt', async () => {
+    const { bridge, chatSend } = makeBridge();
+    render(
+      <CliChatPanel
+        bridge={bridge}
+        cli="codex"
+        ptyId="pty-1"
+        initialPrompt={null}
+        documentContext={{
+          documentTitle: 'Research Notes',
+          documentPath: 'notes/research.md',
+        }}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('Message'), {
+      target: { value: '내가 지금 보고 있는 문서 뭐야?' },
+    });
+    fireEvent.click(screen.getByLabelText('Send'));
+
+    await waitFor(() => expect(chatSend).toHaveBeenCalledTimes(1));
+    const sent = chatSend.mock.calls[0]?.[1];
+    expect(sent?.prompt).toContain('<current_document>');
+    expect(sent?.prompt).toContain('"documentTitle": "Research Notes"');
+    expect(sent?.prompt).toContain('"documentPath": "notes/research.md"');
+    expect(sent?.prompt).toContain('User request:\n내가 지금 보고 있는 문서 뭐야?');
+    expect(screen.getByLabelText('You').textContent).toContain('내가 지금 보고 있는 문서 뭐야?');
+    expect(screen.getByLabelText('You').textContent).not.toContain('<current_document>');
+  });
+
   test('attaches selected lines and document identity to the model prompt', async () => {
     const { bridge, chatSend } = makeBridge();
     render(
@@ -514,6 +594,7 @@ describe('CliChatPanel', () => {
         cli="codex"
         ptyId="pty-1"
         initialPrompt={null}
+        documentContext={{ documentTitle: 'Work Log', documentPath: 'brain/log.md' }}
         selectionContext={{
           documentTitle: 'Work Log',
           documentPath: 'brain/log.md',
@@ -540,6 +621,8 @@ describe('CliChatPanel', () => {
     expect(sent?.prompt).toContain('"documentPath": "brain/log.md"');
     expect(sent?.prompt).toContain('"startLine": 10');
     expect(sent?.prompt).toContain('First selected line\\nSecond selected line');
+    expect(sent?.prompt).toContain('<current_document>');
+    expect(sent?.prompt).toContain('<selected_document>');
     const userMessage = screen.getByLabelText('You');
     expect(within(userMessage).getByText('Explain this')).toBeTruthy();
     const sentContext = screen.getByLabelText('Attached context: Work Log');

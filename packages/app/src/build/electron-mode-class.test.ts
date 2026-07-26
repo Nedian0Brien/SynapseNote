@@ -7,14 +7,15 @@
  * host context. These guards lock the structural choices a future refactor
  * would silently break:
  *
- *   - The class name is exactly `electron-mode` (CSS rules in globals.css
+ *   - The class name is exactly `electron-mode` (CSS rules in
+ *     `styles/foundation/platform-electron.css`
  *     scope to `html.electron-mode`; renaming here without renaming there
  *     is silent regression).
  *   - The detection condition is `window.okDesktop` truthy (the canonical
  *     idiom — matches `OpenInAgentMenu`, `FileTree`, `EditorHeader`,
  *     `EditorTabs`, `FileSidebar`).
  *   - The class is added on `document.documentElement` (the `<html>` element
- *     — globals.css selector is `html.electron-mode`, NOT `body.electron-mode`).
+ *     — the selector is `html.electron-mode`, NOT `body.electron-mode`).
  *   - The addition runs INSIDE the existing FOUC inline `<script>`, NOT in a
  *     React effect or main.tsx. Per FOUC discipline, the class must be on
  *     `<html>` BEFORE first paint so the alpha-aware CSS rules engage from
@@ -45,7 +46,7 @@ describe('index.html FOUC inline script — electron-mode class', () => {
     expect(themeFoucScript?.[0]).toContain('electron-mode');
   });
 
-  test('class is added on documentElement (html), not body — matches globals.css scope', () => {
+  test('class is added on documentElement (html), not body — matches platform scope', () => {
     expect(HTML).toMatch(/document\.documentElement\.classList\.add\(['"]electron-mode['"]\)/);
     expect(HTML).not.toMatch(/document\.body\.classList\.add\(['"]electron-mode['"]\)/);
   });

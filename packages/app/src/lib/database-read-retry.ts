@@ -1,0 +1,71 @@
+import { isDatabaseTransactionInProgress } from './database-ui-problem.ts';
+
+export interface DatabaseReadRetryOptions {
+  signal?: AbortSignal;
+  maxAttempts?: number;
+  initialDelayMs?: number;
+  maxDelayMs?: number;
+  shouldRetry?: (cause: unknown) => boolean;
+}
+
+const DEFAULT_MAX_ATTEMPTS = 3;
+const DEFAULT_INITIAL_DELAY_MS = 50;
+const DEFAULT_MAX_DELAY_MS = 1_000;
+
+function abortReason(signal: AbortSignal): unknown {
+  return signal.reason ?? new DOMException('The operation was aborted', 'AbortError');
+}
+
+function throwIfAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) throw abortReason(signal);
+}
+
+function waitForRetry(delayMs: number, signal?: AbortSignal): Promise<void> {
+  throwIfAborted(signal);
+  return new Promise((resolve, reject) => {
+    let timeoutId: ReturnType<typeof globalThis.setTimeout> | undefined;
+    const onAbort = () => {
+      if (timeoutId !== undefined) globalThis.clearTimeout(timeoutId);
+      signal?.removeEventListener('abort', onAbort);
+      reject(
+        signal ? abortReason(signal) : new DOMException('The operation was aborted', 'AbortError'),
+      );
+    };
+    timeoutId = globalThis.setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, delayMs);
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
+}
+
+/**
+ * Runs a read operation with a small, typed settling retry window.
+ *
+ * A canonical database commit briefly blocks description/query reads with the
+ * machine-readable `transaction_in_progress` problem. That condition is not
+ * a stale-target conflict and should settle silently. All other errors remain
+ * non-retryable unless the caller explicitly opts them in.
+ */
+export async function withDatabaseReadRetry<T>(
+  operation: (attempt: number) => Promise<T>,
+  options: DatabaseReadRetryOptions = {},
+): Promise<T> {
+  const maxAttempts = Math.max(1, Math.floor(options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS));
+  const initialDelayMs = Math.max(0, options.initialDelayMs ?? DEFAULT_INITIAL_DELAY_MS);
+  const maxDelayMs = Math.max(initialDelayMs, options.maxDelayMs ?? DEFAULT_MAX_DELAY_MS);
+  const shouldRetry = options.shouldRetry ?? isDatabaseTransactionInProgress;
+
+  let attempt = 0;
+  while (true) {
+    throwIfAborted(options.signal);
+    try {
+      return await operation(attempt);
+    } catch (cause) {
+      attempt += 1;
+      if (attempt >= maxAttempts || !shouldRetry(cause)) throw cause;
+      const delayMs = Math.min(initialDelayMs * 2 ** (attempt - 1), maxDelayMs);
+      await waitForRetry(delayMs, options.signal);
+    }
+  }
+}

@@ -62,7 +62,7 @@ import {
  *  Radix portal under document.body.
  *
  *  Chrome opacity is 0 by default and only goes to 1 on `:hover` or when
- *  the wrapper has `data-selected="true"` (`globals.css`). For img blocks,
+ *  the wrapper has `data-selected="true"` (`styles/editor/component-chrome.css`). For img blocks,
  *  the inner `<span data-rmiz>` (medium-zoom wrapper) intercepts pointer
  *  events on the image content itself — so we hover the wrapper to surface
  *  the chrome, then click the gear with `force: true` to bypass the

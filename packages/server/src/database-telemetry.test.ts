@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import {
   getDatabaseTelemetry,
   incrementDatabaseAutomationRunFailure,
@@ -13,8 +13,16 @@ afterEach(() => {
   resetDatabaseTelemetry();
 });
 
+beforeEach(() => {
+  // Telemetry is intentionally process-global. Other server suites can
+  // exercise database paths in parallel, so each contract case establishes
+  // its own zero baseline instead of inheriting a sibling's counters.
+  resetDatabaseTelemetry();
+});
+
 describe('database telemetry', () => {
-  test('starts at zero and every field is a number', () => {
+  test('reset baseline starts at zero and every field is a number', () => {
+    resetDatabaseTelemetry();
     const metrics = getDatabaseTelemetry();
     for (const [key, value] of Object.entries(metrics)) {
       expect(typeof value).toBe('number');

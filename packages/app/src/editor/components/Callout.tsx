@@ -25,7 +25,8 @@
  *
  * Zero upstream-docs-lib React imports — all styling flows
  * through Tailwind utility classes + the `[data-component-type="callout"]`
- * selector in globals.css (OK shadcn semantic tokens). An inline
+ * selector in `styles/components/callout-footnotes.css` (OK shadcn semantic
+ * tokens). An inline
  * `--callout-type-color` CSS variable drives the left-border accent +
  * selection-halo; when the user authors a `color` prop, the inline style
  * overrides the per-type default.
@@ -164,7 +165,7 @@ function normalizeType(raw: CalloutType | string | undefined): CalloutType {
  * Note on `color` prop plumbing: we set it on `style['--callout-type-color']`
  * at the root element. The CSS rule for `[data-component-type="callout"]`
  * reads this var both for the left-border tint (this component's own CSS)
- * and the selection-halo (globals.css selection-halo rule inherited from
+ * and the selection-halo (`styles/editor/component-chrome.css` selection-halo rule inherited from
  * the wrapper). When `color` is unset, both fall back to the per-type
  * accent token declared in CSS.
  */

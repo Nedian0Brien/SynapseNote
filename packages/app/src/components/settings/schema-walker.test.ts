@@ -53,6 +53,12 @@ describe('resolveLeafSchema against ConfigSchema', () => {
     expect(getEnumOptions(leaf)).toEqual(['light', 'dark', 'system']);
   });
 
+  test('returns the sidebar document-open behavior options', () => {
+    const leaf = requireLeaf(['editor', 'sidebarOpenBehavior']);
+    expect(getLeafTypeTag(leaf)).toBe('enum');
+    expect(getEnumOptions(leaf)).toEqual(['new-tab', 'current-tab']);
+  });
+
   test('descends to defaulted boolean leaves', () => {
     const leaf = requireLeaf(['editor', 'wordWrap']);
     expect(getLeafTypeTag(leaf)).toBe('boolean');
@@ -74,5 +80,9 @@ describe('getFieldDefault against ConfigSchema', () => {
 
   test('returns defaults for editor.wordWrap', () => {
     expect(getFieldDefault(requireLeaf(['editor', 'wordWrap']))).toBe(true);
+  });
+
+  test('returns the new-tab default for editor.sidebarOpenBehavior', () => {
+    expect(getFieldDefault(requireLeaf(['editor', 'sidebarOpenBehavior']))).toBe('new-tab');
   });
 });

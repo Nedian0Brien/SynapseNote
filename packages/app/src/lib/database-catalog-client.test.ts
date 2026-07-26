@@ -103,7 +103,14 @@ test('retries transient catalog conflicts while the index settles', async () => 
   const fetchImplementation = mock(async () => {
     calls += 1;
     if (calls <= 2) {
-      return Response.json({ detail: 'catalog is still settling' }, { status: 409 });
+      return Response.json(
+        {
+          code: 'transaction_in_progress',
+          detail: 'catalog is still settling',
+          retryable: true,
+        },
+        { status: 409 },
+      );
     }
     return Response.json({
       query: null,

@@ -96,6 +96,20 @@ describe('SettingsDialogBody preferences runtime', () => {
     expect(field).toBeTruthy();
     expect(field?.querySelector('[role="switch"]')?.getAttribute('aria-checked')).toBe('true');
 
+    expect(screen.getByText('Open sidebar documents in')).toBeDefined();
+    expect(
+      screen.getByText(
+        'Choose whether selecting a document in the left sidebar opens a new tab or replaces the current tab.',
+      ),
+    ).toBeDefined();
+    const openBehaviorField = container.querySelector('[data-field="editor.sidebarOpenBehavior"]');
+    expect(openBehaviorField).toBeTruthy();
+    expect(
+      within(openBehaviorField as HTMLElement)
+        .getByRole('radio', { name: 'New tab' })
+        .getAttribute('data-state'),
+    ).toBe('on');
+
     expect(screen.getByText('Open preview when agent edits')).toBeDefined();
     expect(
       screen.getByText(
@@ -121,6 +135,18 @@ describe('SettingsDialogBody preferences runtime', () => {
       expect(patches).toEqual([{ editor: { wordWrap: false } }]);
     });
     expect(wordWrapSwitch.getAttribute('aria-checked')).toBe('false');
+  });
+
+  test('commits editor.sidebarOpenBehavior changes through binding.patch', async () => {
+    const user = userEvent.setup();
+    const { binding, patches } = makeBinding();
+    renderPreferences(binding);
+
+    await user.click(screen.getByRole('radio', { name: 'Current tab' }));
+
+    await waitFor(() => {
+      expect(patches).toEqual([{ editor: { sidebarOpenBehavior: 'current-tab' } }]);
+    });
   });
 
   test('commits appearance.preview.autoOpen changes through binding.patch', async () => {

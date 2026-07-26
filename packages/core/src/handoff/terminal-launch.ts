@@ -144,7 +144,7 @@ const CODEX_OK_AUTO_APPROVE_ARG = `-c ${shellSingleQuote(
  * so nothing is written to disk. Returns '' when neither opt-in is set. Content is
  * registry-fixed and single-quoted — never user input.
  */
-function buildClaudeSettingsArg(opts: BuildCliLaunchOptions): string {
+export function buildClaudeSettingsArg(opts: BuildCliLaunchOptions): string {
   const settings: {
     enabledMcpjsonServers?: string[];
     permissions?: { allow: string[]; deny: string[] };

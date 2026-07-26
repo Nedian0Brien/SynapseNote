@@ -24,6 +24,7 @@ import { shortCliChatTitle } from './cli-chat-title';
 import {
   type ChatContextChip,
   type ChatEvent,
+  type CliChatDocumentContext,
   type CliChatId,
   type CliChatModel,
   type CliChatModelSettings,
@@ -42,6 +43,7 @@ interface CliChatPanelProps {
   readonly initialPrompt: string | null;
   readonly initialDisplayPrompt?: string;
   readonly context?: readonly ChatContextChip[];
+  readonly documentContext?: CliChatDocumentContext | null;
   readonly selectionContext?: CliChatSelectionContext | null;
   readonly initialSessionId?: string | null;
   readonly onSessionId?: (sessionId: string) => void;
@@ -55,6 +57,7 @@ export function CliChatPanel({
   initialPrompt,
   initialDisplayPrompt,
   context = [],
+  documentContext = null,
   selectionContext = null,
   initialSessionId = null,
   onSessionId,
@@ -145,6 +148,7 @@ export function CliChatPanel({
       prompt: trimmed,
       sessionId: state.sessionId,
       permissionMode,
+      autoApproveOkTools: configContext?.userConfig?.agents.autoApproveOkTools ?? true,
       modelSettings,
     });
     return true;
@@ -157,8 +161,11 @@ export function CliChatPanel({
       return;
     }
     initialSentRef.current = true;
-    void sendInitialPrompt(initialPrompt, initialDisplayPrompt ?? initialPrompt);
-  }, [defaultModelReady, initialDisplayPrompt, initialPrompt, ptyId]);
+    void sendInitialPrompt(
+      composeCliChatPrompt(initialPrompt, documentContext, null),
+      initialDisplayPrompt ?? initialPrompt,
+    );
+  }, [defaultModelReady, documentContext, initialDisplayPrompt, initialPrompt, ptyId]);
 
   useEffect(() => {
     if (ptyId === null) return;
@@ -192,7 +199,7 @@ export function CliChatPanel({
     if (draft.trim() === '') return;
     const instruction = draft;
     const selection = attachedSelection;
-    const prompt = composeCliChatPrompt(instruction, selection);
+    const prompt = composeCliChatPrompt(instruction, documentContext, selection);
     void sendPrompt(prompt, instruction, selection).then((sent) => {
       if (!sent) return;
       setDraft('');

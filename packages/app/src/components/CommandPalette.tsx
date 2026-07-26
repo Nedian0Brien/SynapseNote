@@ -34,9 +34,7 @@ import {
   Table2,
 } from 'lucide-react';
 import {
-  type Dispatch,
   type KeyboardEvent as ReactKeyboardEvent,
-  type SetStateAction,
   useDeferredValue,
   useEffect,
   useRef,
@@ -78,7 +76,6 @@ import {
 } from '@/components/database-navigation-entries';
 import { requestDocPanelTab } from '@/components/doc-panel-events';
 import { FileEntryIcon } from '@/components/file-entry-icon';
-import { defaultInitialDir } from '@/components/file-tree-utils';
 import { NewItemDialog } from '@/components/NewItemDialog';
 import { usePageList } from '@/components/PageListContext';
 import { ReportBugDialog } from '@/components/ReportBugDialog';
@@ -92,16 +89,14 @@ import {
   CommandList,
   CommandShortcut,
 } from '@/components/ui/command';
-import { useDocumentContext } from '@/editor/DocumentContext';
+import { useDocumentNavigation } from '@/editor/document-context/useDocumentNavigation';
 import type { TagSummaryEntry } from '@/editor/extensions/tag-suggestion';
 import { useIsEmbedded } from '@/hooks/use-is-embedded';
 import { useSemanticSearchStatus } from '@/hooks/use-semantic-search-status';
 import { useWorktrees } from '@/hooks/use-worktrees';
 import { fetchDatabaseCatalog } from '@/lib/database-catalog-client';
 import { dispatchDatabaseSlashCommand } from '@/lib/database-events';
-import type { OkDesktopBridge, RecentProjectEntry } from '@/lib/desktop-bridge-types';
-import { hashFromDocName } from '@/lib/doc-hash';
-import { runWithToast as runWithToastBase } from '@/lib/error-state';
+import type { RecentProjectEntry } from '@/lib/desktop-bridge-types';
 import { VISIBLE_TARGETS } from '@/lib/handoff/targets';
 import { formatShortcut, matchesKeyboardShortcut } from '@/lib/keyboard-shortcuts';
 import { useSingleFileMode } from '@/lib/single-file-mode';
@@ -109,9 +104,19 @@ import { SETTINGS_OPEN_HASH } from '@/lib/use-settings-route';
 import { useWorkspace } from '@/lib/use-workspace';
 import { cn } from '@/lib/utils.ts';
 import { refreshWorktrees } from '@/lib/worktree-store';
+import type { CommandPaletteProps } from './command-palette/command-palette-types';
+import {
+  computeVisibleSearchResults,
+  navigateToDocHash,
+  resolveCreateInitialDir,
+  runWithToast,
+} from './command-palette/command-palette-utils';
 import { buildHandoffInput, useHandoffDispatch } from './handoff/useHandoffDispatch';
 import { useInstalledAgents } from './handoff/useInstalledAgents';
 import { basenameOf } from './project-switcher-recents';
+
+export type { CommandPaletteProps } from './command-palette/command-palette-types';
+export { computeVisibleSearchResults, runWithToast } from './command-palette/command-palette-utils';
 
 const COMMAND_PALETTE_SEARCH_TIMEOUT_MS = 3000;
 // Re-poll cadence while the server reports the search index is still warming
@@ -123,44 +128,8 @@ const COMMAND_PALETTE_SEARCH_WARMING_POLL_MS = 600;
 // cadence above — far beyond a normal cold start, which flips ready in ~1s.
 const COMMAND_PALETTE_SEARCH_MAX_WARMING_POLLS = 20;
 
-/**
- * CommandPalette-scoped wrapper around the shared `runWithToast` helper. Same
- * surface ProjectSwitcher uses — consistent launcher UX (every rejection
- * surfaces as a sonner toast). Exported for unit-testing with a mockable
- * `toastApi` indirection; the default uses sonner's module-level `toast`.
- */
-export const runWithToast = (
-  fn: () => Promise<void>,
-  fallback: string,
-  toastApi?: { error(msg: string): void },
-): Promise<void> => runWithToastBase(fn, fallback, toastApi, 'CommandPalette');
-
-interface CommandPaletteProps {
-  bridge?: OkDesktopBridge | null;
-  open: boolean;
-  onOpenChange: Dispatch<SetStateAction<boolean>>;
-  onOpenDataInspector?: () => void;
-  onOpenAgentRuns?: () => void;
-  onOpenDatabases?: () => void;
-  onOpenDatabaseDiagnostics?: () => void;
-}
-
-function navigateToDocHash(docName: string): void {
-  window.location.assign(hashFromDocName(docName));
-}
-
 function navigateToDatabaseHash(hash: string): void {
   window.location.assign(hash);
-}
-
-function resolveCreateInitialDir(
-  activeTarget: ReturnType<typeof useDocumentContext>['activeTarget'],
-  activeDocName: string | null,
-): string {
-  if (activeTarget?.kind === 'folder' || activeTarget?.kind === 'folder-index') {
-    return activeTarget.folderPath;
-  }
-  return defaultInitialDir(activeDocName);
 }
 
 export function NavigationItem({
@@ -336,20 +305,6 @@ function HighlightedText({ text, query }: { text: string; query: string }) {
  *     answer has landed, or recovery after error / tag-mode exit),
  *     surface the local-corpus fallback so the user sees something.
  */
-export function computeVisibleSearchResults({
-  searchResults,
-  fallbackSearchResults,
-  searchStatus,
-}: {
-  searchResults: readonly WorkspaceSearchEntry[];
-  fallbackSearchResults: readonly WorkspaceEntry[];
-  searchStatus: 'idle' | 'loading' | 'success' | 'error';
-}): readonly (WorkspaceEntry | WorkspaceSearchEntry)[] {
-  if (searchResults.length > 0) return searchResults;
-  if (searchStatus === 'success') return [];
-  return fallbackSearchResults;
-}
-
 export function CommandPalette({
   bridge = null,
   open,
@@ -431,7 +386,7 @@ export function CommandPalette({
   // cancels the prior request cleanly without clobbering newer state.
   const semanticAbortRef = useRef<AbortController | null>(null);
   const semanticTimerRef = useRef<number | null>(null);
-  const { activeDocName, activeTarget } = useDocumentContext();
+  const { activeDocName, activeTarget } = useDocumentNavigation();
   const {
     pages,
     pageTitles,

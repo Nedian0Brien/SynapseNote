@@ -1,0 +1,441 @@
+/*
+ * Canonical theme source for the app, desktop chrome, and preview token
+ * generators. The public stylesheet manifest owns when this source enters
+ * the cascade; this file owns the theme token declarations and dark-mode
+ * semantic values.
+ */
+/*
+ * Explicit source root for Tailwind v4 content scanning.
+ *
+ * packages/app's own `bun run dev` runs with CWD=packages/app, and Tailwind
+ * v4 auto-detects sources via a package.json walk from there — that default
+ * works for the web distribution. The `@source` below is load-bearing for
+ * the desktop case only:
+ *
+ * When packages/desktop's `electron-vite dev` serves this CSS with
+ * `root: packages/app + configFile: false`, Vite runs with CWD=packages/desktop
+ * so Tailwind's auto-detection scans packages/desktop/** — which has no .tsx
+ * files, so zero utility classes get emitted. The @source directive below
+ * anchors the scan to packages/app/src/** (relative to this CSS file) and is
+ * inert for packages/app's own dev because the same paths are already
+ * auto-covered. (Pre-US-004 a second Tailwind-source directive pointed at
+ * the fumadocs dist tree; removed alongside the per-component CSS-variable
+ * token bridge in D-MF2 / FR-14.)
+ */
+@source "../../**/*.{tsx,ts,jsx,js}";
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  /* Agent terracotta */
+  --color-agent: #d97757;
+  --color-agent-foreground: #ffffff;
+
+  /* Font tokens */
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+
+  /* Strong custom easing curves (Emil / easing.dev) — punchier than default ease-out */
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+
+  --text-2xs: 0.688rem; /* 11px */
+  --text-1sm: 0.813rem; /* 13px */
+  --color-gray-50: oklch(0.985 0.001 106.423);
+  --color-gray-100: oklch(0.97 0.001 106.424);
+  --color-gray-200: oklch(0.923 0.003 48.717);
+  --color-gray-300: oklch(0.869 0.005 56.366);
+  --color-gray-400: oklch(0.709 0.01 56.259);
+  --color-gray-500: oklch(0.553 0.013 58.071);
+  --color-gray-600: oklch(0.444 0.011 73.639);
+  --color-gray-700: oklch(0.374 0.01 67.558);
+  --color-gray-800: oklch(0.268 0.007 34.298);
+  --color-gray-900: oklch(0.216 0.006 56.043);
+  --color-gray-950: oklch(0.147 0.004 49.25);
+
+  /* brand colors */
+  --color-azure-blue: #3784ff;
+  --color-sky-blue: #69a3ff;
+  --color-crystal-blue: #d5e5ff;
+  --color-morning-mist: #fbf9f4;
+  --color-night-sky: #231f20;
+  --color-blue-dark: #29325c;
+  --color-cream: #f7f4ed;
+  --color-white-cream: #fff5e1;
+  --color-orange-light: #fbe1bc;
+  --color-gray-light: #5f5c62;
+
+  /* based on azure blue (#3784ff) */
+  --color-azure-50: oklch(0.9697 0.0148 251.16);
+  --color-azure-100: oklch(0.9308 0.0339 253.71);
+  --color-azure-200: oklch(0.8807 0.0599 252.33);
+  --color-azure-300: oklch(0.8092 0.0999 249.58);
+  --color-azure-400: oklch(0.7135 0.1524 254.03);
+  --color-azure-500: oklch(0.6321 0.1983 259.59);
+  --color-azure-600: oklch(0.5468 0.2329 262.71);
+  --color-azure-700: oklch(0.4895 0.233 263.93);
+  --color-azure-800: oklch(0.4234 0.195 264.97);
+  --color-azure-900: oklch(0.3773 0.1488 264.94);
+  --color-azure-950: oklch(0.2785 0.0961 267.56);
+
+  /* Agent flash keyframes — refined version with accent slide + subtle background pulse.
+     Combines three effects in a single animation:
+     1. Inset box-shadow left accent bar slides in then out
+     2. Subtle background tint pulses once
+     3. Slight scale nudge (barely perceptible, adds "alive" quality)
+
+     Easing rationale: uses --ease-out-strong (cubic-bezier custom curve) —
+     strong custom curves outpunch built-in CSS easing keywords on UI work.
+     Duration 2s is deliberately above the typical UI ceiling (~300ms) because
+     this is a one-shot state-indication flash (rare event), not a frequently-
+     triggered interaction. */
+  @keyframes agent-flash {
+    0% {
+      box-shadow: inset 3px 0 0 transparent;
+      background: transparent;
+      transform: translateX(0);
+    }
+    8% {
+      box-shadow: inset 3px 0 0 var(--color-agent);
+      background: rgba(217, 119, 87, 0.09);
+      transform: translateX(1px);
+    }
+    35% {
+      box-shadow: inset 3px 0 0 var(--color-agent);
+      background: rgba(217, 119, 87, 0.06);
+      transform: translateX(0);
+    }
+    100% {
+      box-shadow: inset 3px 0 0 transparent;
+      background: transparent;
+      transform: translateX(0);
+    }
+  }
+
+  /* Agent badge breathing — subtle pulse when agent is editing */
+  @keyframes agent-breathing {
+    0%,
+    100% {
+      background: rgba(217, 119, 87, 0.04);
+    }
+    50% {
+      background: rgba(217, 119, 87, 0.14);
+    }
+  }
+
+  /* Undo button nudge — scale + glow when transitioning to enabled */
+  @keyframes undo-ready {
+    0% {
+      transform: scale(0.95);
+      box-shadow: 0 0 0 0 rgba(217, 119, 87, 0);
+    }
+    40% {
+      transform: scale(1.02);
+      box-shadow: 0 0 0 4px rgba(217, 119, 87, 0.15);
+    }
+    100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(217, 119, 87, 0);
+    }
+  }
+
+  --animate-agent-flash: agent-flash 2s var(--ease-out-strong) forwards;
+  --animate-agent-breathing: agent-breathing 2.4s ease-in-out infinite;
+  --animate-undo-ready: undo-ready 600ms var(--ease-out-strong) forwards;
+
+  /* Chat motion — entry movement communicates execution order without moving
+     already-settled history. Short one-shot transitions keep streaming text
+     readable; only active work indicators repeat. */
+  @keyframes chat-send-in {
+    0% {
+      opacity: 0.35;
+      transform: translate3d(0, 22px, 0) scale(0.94);
+    }
+    68% {
+      opacity: 1;
+      transform: translate3d(0, -2px, 0) scale(1.01);
+    }
+    100% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+  }
+
+  @keyframes chat-assistant-in {
+    0% {
+      opacity: 0;
+      transform: translate3d(0, 8px, 0) scale(0.985);
+    }
+    100% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+  }
+
+  @keyframes chat-activity-in {
+    0% {
+      opacity: 0;
+      transform: translate3d(-4px, 5px, 0);
+    }
+    100% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @keyframes chat-tool-working {
+    0%,
+    100% {
+      transform: translateY(0) rotate(-7deg);
+    }
+    50% {
+      transform: translateY(-1px) rotate(8deg);
+    }
+  }
+
+  @keyframes chat-tool-complete {
+    0% {
+      opacity: 0.4;
+      transform: scale(0.65);
+    }
+    65% {
+      opacity: 1;
+      transform: scale(1.16);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes chat-generation-dot {
+    0%,
+    60%,
+    100% {
+      opacity: 0.3;
+      transform: translateY(0);
+    }
+    30% {
+      opacity: 1;
+      transform: translateY(-2px);
+    }
+  }
+
+  --animate-chat-send: chat-send-in 320ms var(--ease-out-strong) both;
+  --animate-chat-assistant: chat-assistant-in 220ms var(--ease-out-strong) both;
+  --animate-chat-activity: chat-activity-in 180ms var(--ease-out-strong) both;
+  --animate-chat-tool-working: chat-tool-working 900ms ease-in-out infinite;
+  --animate-chat-tool-complete: chat-tool-complete 260ms var(--ease-out-strong) both;
+  --animate-chat-generation-dot: chat-generation-dot 900ms ease-in-out infinite;
+
+  @keyframes sidebar-push-pulse {
+    0% {
+      box-shadow: inset 4px 0 0 0 hsl(var(--primary) / 0);
+    }
+    25% {
+      box-shadow: inset 4px 0 0 0 hsl(var(--primary) / 0.4);
+    }
+    100% {
+      box-shadow: inset 4px 0 0 0 hsl(var(--primary) / 0);
+    }
+  }
+
+  --animate-sidebar-push-pulse: sidebar-push-pulse 700ms ease-out;
+
+  /* Settings field flash — red briefly to signal a non-pane writer
+     (CLI/MCP/hand-edit) caused L3 validation rejection.
+     Outline-only so the field input itself is untouched. */
+  @keyframes settings-flash {
+    0% {
+      outline: 2px solid hsl(var(--destructive) / 0);
+      outline-offset: 2px;
+    }
+    20% {
+      outline: 2px solid hsl(var(--destructive) / 0.7);
+      outline-offset: 2px;
+    }
+    100% {
+      outline: 2px solid hsl(var(--destructive) / 0);
+      outline-offset: 2px;
+    }
+  }
+
+  --animate-settings-flash: settings-flash 600ms ease-out;
+}
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: "Inter Variable", sans-serif;
+  --font-mono: "JetBrains Mono Variable", monospace;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-hover: var(--sidebar-hover);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* Sidebar inset variant applies m-2 (8px top + 8px bottom) to SidebarInset — offset its height accordingly */
+  --layout-inset-offset: 16px;
+
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.6321 0.1983 259.59);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  /* Soft "this block is in your range" halo for JSX wrappers that the
+   * browser's native text-selection paint can't reach (their chrome is
+   * contentEditable=false). Top-level color token consumed by the soft-
+   * halo paint rule; distinct from the instance-scoped `--selection-halo-*`
+   * family (precedent #33) that lives on `.jsx-component-wrapper` and
+   * gets overridden per `[data-component-type]`. Hue tracks --primary
+   * (~259) so the in-range halo reads as brand-coherent; alpha is
+   * intentionally lower than the focused `--ring` halo so range-encompass
+   * is visibly subordinate to NodeSelection. A future global `::selection`
+   * override would introduce a sibling `--selection` token at higher alpha
+   * for body prose. */
+  --selection-soft: oklch(0.66 0.18 259 / 0.18);
+  /* Categorical chart palette for `html preview` embeds — five
+     perceptually-distinct hues aligned with the callout color system
+     (--chart-1 anchors to the brand azure, the rest track the
+     note/tip/warning/important/caution hues). Light + dark values are
+     contrast-gated against the respective --background. These tokens are
+     injected into every preview iframe via the generated PREVIEW_THEME_TOKENS
+     constant; the .dark block below MUST stay in sync — drift between these
+     blocks and the constant is caught by preview-theme-tokens.test.ts. */
+  --chart-1: oklch(0.62 0.19 259);
+  --chart-2: oklch(0.58 0.14 145);
+  --chart-3: oklch(0.62 0.15 70);
+  --chart-4: oklch(0.55 0.18 290);
+  --chart-5: oklch(0.58 0.21 25);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(
+    0.3773 0.1488 264.94 /
+    4%
+  ); /* based off of azure-900 with lower opacity */
+  --sidebar-accent-foreground: var(--color-azure-600);
+  --sidebar-hover: oklch(0.97 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+
+  /*
+    Syntax-highlight semantic tokens — used by the PropPanel CodeMirror
+    editor (`CodeMirrorPropInput`) and any future code-shaped surface
+    that wants theme-adaptive coloring. Light values are the Tailwind v4
+    `-700`/`-800` saturated palette (good contrast on `--background:
+    oklch(1 0 0)`); the matching `.dark` block below shifts to `-300`/
+    `-400` for WCAG AA on `--background: oklch(0.145 0 0)`. Hex
+    fallbacks are GitHub-light defaults — only used if Tailwind's
+    default theme tokens haven't loaded (SSR / preview-render edge).
+  */
+  --syntax-keyword: var(--color-purple-700, #6f42c1);
+  --syntax-tag: var(--color-red-700, #b31d28);
+  --syntax-attr: var(--color-blue-700, #005cc5);
+  --syntax-string: var(--color-green-800, #22863a);
+  --syntax-number: var(--color-blue-800, #005cc5);
+  --syntax-atom: var(--color-orange-700, #d2691e);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: var(--color-sky-blue);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  /* Dark-mode soft range halo — slightly brighter + higher alpha so the
+   * 18%-on-white equivalent reads cleanly on dark backgrounds. */
+  --selection-soft: oklch(0.72 0.16 259 / 0.32);
+  /* Dark-mode chart palette — same hue family as the :root block above,
+     lightness lifted for legibility on the dark --background. Keep in sync
+     with :root --chart-* and PREVIEW_THEME_TOKENS (preview-theme-tokens.test.ts). */
+  --chart-1: oklch(0.72 0.14 259);
+  --chart-2: oklch(0.73 0.13 145);
+  --chart-3: oklch(0.77 0.14 70);
+  --chart-4: oklch(0.72 0.16 290);
+  --chart-5: oklch(0.72 0.2 25);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.274 0.006 286.033);
+  --sidebar-accent-foreground: var(--color-sky-blue);
+  --sidebar-hover: oklch(0.269 0 0 / 50%);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+
+  /*
+    Syntax-highlight tokens — dark-theme overrides. Lighter shades
+    (`-300` / `-400`) clear WCAG AA on the dark `--background:
+    oklch(0.145 0 0)`. Hex fallbacks are mid-light shades that survive
+    on dark for the SSR / preview-render edge.
+  */
+  --syntax-keyword: var(--color-purple-300, #d2a8ff);
+  --syntax-tag: var(--color-red-300, #ffa198);
+  --syntax-attr: var(--color-blue-300, #79c0ff);
+  --syntax-string: var(--color-green-300, #7ee787);
+  --syntax-number: var(--color-blue-300, #79c0ff);
+  --syntax-atom: var(--color-orange-300, #ffa657);
+}

@@ -12,18 +12,63 @@ Keep changes compatible with the public repository and standalone clone experien
 
 ```bash
 bun install
-bun run check
 bun run build
 ```
+
+`bun run check` is the compatibility alias for the final repository gate. Do
+not use it as the default loop for every local edit.
 
 During development:
 
 ```bash
-bun run format
-bun run lint
-bun run typecheck
-bun run test
+# Use the narrowest command that covers the change.
+bun run test:file -- <test-path>
+bun run check:domain -- <domain>
+bun run check:package -- <app|server|core|cli|desktop>
+bun run check:changed
+bun run check:pr
 ```
+
+Use the broader format/lint/typecheck commands for focused iterations when
+needed. Use `bun run check:repository` (or its compatibility alias
+`bun run check`) for cross-package, PR-final, `main`, and release verification—
+not for every local edit. `check:pr` is the local affected-package PR plan.
+Server test tasks are split into `test:unit`, `test:database`,
+`test:filesystem`, `test:git`, `test:process`, and `test:contract`;
+process-sensitive tasks can be run with deterministic `--shard=INDEX/COUNT`
+arguments.
+
+When adding tests, keep the test boundaries explicit:
+
+- App DOM tests must use the `*.dom.test.tsx` suffix so the unit runner cannot
+  execute them accidentally.
+- Every new server test file must be registered exactly once in
+  `packages/server/scripts/server-test-manifest.ts` under its execution
+  category. Verify the manifest with
+  `bun run --filter @nedian0brien/synapsenote-server test:manifest`.
+- For a database/editor change, prefer `check:domain -- database` or the
+  affected package before escalating to the repository gate.
+
+The PR workflow stores JUnit and slow-test artifacts. Scheduled runs add
+deterministic shuffle seeds, leak checks, and repeated browser suites, while a
+manual `server_shard` input reruns one failed server shard. Use
+`BASELINE_REPEATS=3 bun run measure:test-feedback` when refreshing timing
+evidence; keep the resulting report free of local paths and debug logs.
+For RFC SLO evidence, use `SERVER_SHARD_REPEATS=3 bun run measure:server-shards`
+and `PR_GATE_REPEATS=10 bun run measure:pr-gate -- --scenario=<app-only|server-only|cross-package>`.
+The workflow dispatch has matching benchmark inputs and uploads the resulting
+reports plus operations metrics for retention. Package/repository metrics include
+wall-clock duration and Turbo cache evidence. Aggregate four weeks of retained
+metrics with `bun run measure:operations -- --input=./path/to/operations
+--output=./path/to/weekly-operations.json --require-weeks=4`.
+The nightly workflow also downloads retained artifacts and publishes the
+weekly report; the four-week guard is informational until four weekly buckets
+exist.
+
+These `measure:*` commands are evidence/benchmark commands, not routine
+development checks. In the current RFC scope, E-03/F-02/F-05 operational
+evidence is explicitly waived; run repeated PR-gate, server-shard, or four-week
+operations measurements only when the user explicitly requests new evidence.
 
 Run local apps:
 

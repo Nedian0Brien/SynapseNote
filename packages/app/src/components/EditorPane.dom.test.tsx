@@ -12,6 +12,7 @@ import {
 
 // The doc the mocked DocumentContext reports (see the useDocumentContext mock).
 const TEST_DOC = 'docs/notes';
+const originalInnerWidth = window.innerWidth;
 let mockActiveDocName: string | null = TEST_DOC;
 let mockActiveTarget: Record<string, unknown> | null = {
   kind: 'doc',
@@ -130,11 +131,13 @@ mock.module('./TerminalSessionsHost', () => ({
     visible,
     launch,
     onActiveSessionCliChange,
+    documentContext,
     selectionContext,
   }: {
     visible?: boolean;
     launch?: { nonce: number; stagePaste?: string } | null;
     onActiveSessionCliChange?: (isCli: boolean) => void;
+    documentContext?: { documentTitle: string; documentPath: string } | null;
     selectionContext?: { documentPath: string; markdown: string } | null;
   }) => {
     // Report the test-controlled CLI-active state up, as the real host does from
@@ -148,6 +151,8 @@ mock.module('./TerminalSessionsHost', () => ({
         data-visible={String(visible)}
         data-launch-nonce={launch ? String(launch.nonce) : 'none'}
         data-launch-stage={launch?.stagePaste ?? 'none'}
+        data-document-title={documentContext?.documentTitle ?? 'none'}
+        data-document-path={documentContext?.documentPath ?? 'none'}
         data-selection-path={selectionContext?.documentPath ?? 'none'}
         data-selection-text={selectionContext?.markdown ?? 'none'}
       />
@@ -221,6 +226,9 @@ describe('EditorPane chat selection context', () => {
     expect(screen.getByTestId('terminal-dock').getAttribute('data-selection-path')).toBe(
       'assets/report.pdf',
     );
+    expect(screen.getByTestId('terminal-dock').getAttribute('data-document-path')).toBe(
+      'assets/report.pdf',
+    );
     expect(screen.getByTestId('terminal-dock').getAttribute('data-selection-text')).toBe(
       'Selected annual revenue',
     );
@@ -228,6 +236,17 @@ describe('EditorPane chat selection context', () => {
     act(() => requestActiveTerminalInput('assets/report.pdf:Selected annual revenue'));
     expect(screen.getByTestId('terminal-dock').getAttribute('data-visible')).toBe('true');
     expect(screen.getByTestId('editor-area').getAttribute('data-active-tab')).toBe('chat');
+  });
+
+  test('threads the active editor document identity to chat without a selection', async () => {
+    (window as { okDesktop?: unknown }).okDesktop = makeOkDesktopStub().stub;
+
+    await renderEditorPane();
+
+    const terminal = screen.getByTestId('terminal-dock');
+    expect(terminal.getAttribute('data-document-title')).toBe('Notes');
+    expect(terminal.getAttribute('data-document-path')).toBe('docs/notes.md');
+    expect(terminal.getAttribute('data-selection-path')).toBe('none');
   });
 });
 
@@ -405,6 +424,13 @@ describe('EditorPane terminal dock wiring', () => {
     terminalOpenedCalls.length = 0;
     clearSelection();
     mockActiveIsCli = false;
+    mockActiveDocName = TEST_DOC;
+    mockActiveTarget = { kind: 'doc', docName: TEST_DOC };
+    Object.defineProperty(window, 'innerWidth', {
+      value: originalInnerWidth,
+      writable: true,
+      configurable: true,
+    });
   });
 
   test('web host renders the editor chrome without a terminal dock', async () => {
@@ -425,6 +451,48 @@ describe('EditorPane terminal dock wiring', () => {
     expect(screen.getByTestId('editor-header')).toBeTruthy();
     expect(screen.getByTestId('editor-area')).toBeTruthy();
     expect(screen.queryByTestId('terminal-dock')).not.toBeNull();
+  });
+
+  test('desktop: opening a PDF defaults the right rail to chat', async () => {
+    Object.defineProperty(window, 'innerWidth', {
+      value: 1280,
+      writable: true,
+      configurable: true,
+    });
+    (window as { okDesktop?: unknown }).okDesktop = makeOkDesktopStub().stub;
+    mockActiveDocName = null;
+    mockActiveTarget = {
+      kind: 'asset',
+      assetPath: 'assets/report.pdf',
+      mediaKind: 'pdf',
+    };
+
+    await renderEditorPane();
+
+    expect(screen.getByTestId('editor-area').getAttribute('data-active-tab')).toBe('chat');
+    expect(screen.getByTestId('terminal-dock').getAttribute('data-visible')).toBe('true');
+    expect(screen.getByTestId('terminal-dock').getAttribute('data-launch-nonce')).toBe('1');
+  });
+
+  test('desktop: opening a PDF keeps the right rail closed on a narrow window', async () => {
+    Object.defineProperty(window, 'innerWidth', {
+      value: 1279,
+      writable: true,
+      configurable: true,
+    });
+    (window as { okDesktop?: unknown }).okDesktop = makeOkDesktopStub().stub;
+    mockActiveDocName = null;
+    mockActiveTarget = {
+      kind: 'asset',
+      assetPath: 'assets/report.pdf',
+      mediaKind: 'pdf',
+    };
+
+    await renderEditorPane();
+
+    expect(screen.getByTestId('editor-area').getAttribute('data-active-tab')).toBe('pages');
+    expect(screen.getByTestId('terminal-dock').getAttribute('data-visible')).toBe('false');
+    expect(screen.getByTestId('terminal-dock').getAttribute('data-launch-nonce')).toBe('none');
   });
 
   test('desktop: toggle-terminal menu action flips dock visibility and pushes the view-menu state', async () => {

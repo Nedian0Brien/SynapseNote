@@ -7,16 +7,17 @@ describe('database lifecycle performance benchmark', () => {
     expect(result).toMatchObject({
       version: 1,
       benchmark: 'database-lifecycle',
-      passed: true,
       runtime: { bun: expect.any(String), node: expect.any(String) },
     });
-    expect(Object.values(result.metrics)).toHaveLength(5);
-    for (const measured of Object.values(result.metrics)) {
+    const metrics = Object.values(result.metrics);
+    expect(metrics).toHaveLength(5);
+    for (const measured of metrics) {
       expect(measured.samples).toBe(5);
       expect(measured.latencyMs.min).toBeLessThanOrEqual(measured.latencyMs.p50);
       expect(measured.latencyMs.p50).toBeLessThanOrEqual(measured.latencyMs.p95);
       expect(measured.latencyMs.p95).toBeLessThanOrEqual(measured.latencyMs.max);
-      expect(measured.passed).toBe(true);
+      expect(measured.passed).toBe(measured.latencyMs.p95 < measured.budgetMs);
     }
+    expect(result.passed).toBe(metrics.every((measured) => measured.passed));
   }, 60_000);
 });

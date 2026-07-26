@@ -130,7 +130,8 @@ test('AC11: TextSelection range covering one Callout sets data-range-selected wi
   // soft halo paints — ::after opacity strictly > 0 (the CSS rule
   // resets the halo's --selection-halo-opacity to 1 via the explicit
   // `opacity: 1` declaration on the [data-range-selected] paint rule).
-  // Polled rather than read once: globals.css `.jsx-component-wrapper::after`
+  // Polled rather than read once: `styles/editor/component-chrome.css`
+  // `.jsx-component-wrapper::after`
   // has a 180ms opacity transition (`prefers-reduced-motion: no-preference`),
   // and Playwright can sample computed opacity at exactly t=0 of the
   // transition under parallel-worker CPU contention.
@@ -191,7 +192,8 @@ test('AC13: soft range halo paints a distinct background from the full ring halo
   // The halo gate
   // routes through TipTap's `selected` NodeView prop, which flips via an
   // internal rAF (`ReactNodeViewRenderer.handleSelectionUpdate`). The 180ms
-  // opacity transition (globals.css `.jsx-component-wrapper::after`) starts
+  // opacity transition (`styles/editor/component-chrome.css`
+  // `.jsx-component-wrapper::after`) starts
   // on that rAF, so `data-selected="true"` can be observed in DOM exactly
   // when the transition is at t=0 (opacity computed value still 0). Poll
   // until the transition reads a non-zero opacity — the semantic invariant

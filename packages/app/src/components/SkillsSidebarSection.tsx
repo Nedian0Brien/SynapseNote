@@ -315,10 +315,11 @@ function SkillFolderContents({ skill }: { skill: SkillsListEntry }) {
   const { openTarget } = useDocumentContext();
 
   // Open a project-skill content doc as a PERSISTENT tab. `append` (not
-  // `replace-active`) so opening a second skill keeps the first open — skills are
-  // worked on side-by-side, unlike the file tree's single preview tab. `openTarget`
-  // still activates the newly-opened tab; `replaceHashWithoutNavigation` syncs the
-  // hash (bare `openDocument` bypasses the hash and a later nav effect steals focus).
+  // `replace-active`) so opening a second skill keeps the first open — skill tabs
+  // stay side-by-side regardless of the file tree's configurable open behavior.
+  // `openTarget` still activates the newly-opened tab;
+  // `replaceHashWithoutNavigation` syncs the hash (bare `openDocument` bypasses
+  // the hash and a later nav effect steals focus).
   function openProjectDoc(docName: string) {
     openTarget({ kind: 'doc', target: docName, docName }, { tabBehavior: 'append' });
     replaceHashWithoutNavigation(hashFromDocName(docName));

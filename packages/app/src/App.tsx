@@ -8,6 +8,7 @@ import { CommandPalette } from '@/components/CommandPalette';
 import { ConnectingBanner } from '@/components/ConnectingBanner';
 import { CreateProjectMenuTrigger } from '@/components/CreateProjectMenuTrigger';
 import type { ChatContextChip } from '@/components/chat/cli-chat-types';
+import { DatabaseOverlayHost } from '@/components/DatabaseOverlayHost';
 import { EditorPane } from '@/components/EditorPane';
 import { FileSidebar } from '@/components/FileSidebar';
 import { defaultInitialDir } from '@/components/file-tree-utils';
@@ -47,10 +48,12 @@ import {
   DATABASE_CREATION_HASH,
   DATABASE_NAVIGATION_CHANGE_EVENT,
   databasePageTargetFromHash,
-  databaseRecordPathToHash,
   isDatabaseCreationHash,
   isDatabasePageHash,
+  navigateToDatabaseHash,
+  replaceDatabaseHash,
 } from '@/lib/database-navigation';
+import { DatabaseOverlayProvider } from '@/lib/database-overlay-store';
 import {
   assetPathFromHash,
   docNameFromHash,
@@ -165,11 +168,8 @@ function DatabasePageRoute({
       onOpenAgentRuns={onOpenAgentRuns}
       onOpenChange={(nextOpen) => {
         if (!nextOpen && databasePageTargetFromHash(window.location.hash)) {
-          window.location.hash = '';
+          navigateToDatabaseHash('');
         }
-      }}
-      onOpenRecord={(path) => {
-        window.location.hash = databaseRecordPathToHash(path);
       }}
     />
   );
@@ -534,13 +534,15 @@ function ConfigProviderHost({ children }: { children: ReactNode }) {
 export function App() {
   return (
     <ProfilerBoundary name="app">
-      <DocumentProvider>
-        <ConfigProviderHost>
-          <SingleFileModeProvider>
-            <AppBody />
-          </SingleFileModeProvider>
-        </ConfigProviderHost>
-      </DocumentProvider>
+      <DatabaseOverlayProvider value>
+        <DocumentProvider>
+          <ConfigProviderHost>
+            <SingleFileModeProvider>
+              <AppBody />
+            </SingleFileModeProvider>
+          </ConfigProviderHost>
+        </DocumentProvider>
+      </DatabaseOverlayProvider>
     </ProfilerBoundary>
   );
 }
@@ -663,8 +665,7 @@ function AppBody() {
       return;
     }
     databaseCreationRouteOpenRef.current = false;
-    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
-    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    replaceDatabaseHash('');
   });
 
   useEffect(() => {
@@ -761,6 +762,7 @@ function AppBody() {
   return (
     <>
       <ConnectingBanner />
+      <DatabaseOverlayHost />
       <PageListProvider>
         <SystemDocSubscriber />
         <NavigationHandler />
@@ -832,7 +834,7 @@ function AppBody() {
               if (!nextOpen && isDatabaseCreationHash(window.location.hash)) {
                 closeDatabaseCreationRoute();
               } else if (!nextOpen && isDatabasePageHash(window.location.hash)) {
-                window.location.hash = '';
+                navigateToDatabaseHash('');
               }
               if (nextOpen) {
                 setDatabasesOpen(true);
@@ -843,9 +845,6 @@ function AppBody() {
             onCreationCancelled={() => {
               closeDatabaseCreationRoute();
               resetDatabaseSurface();
-            }}
-            onOpenRecord={(path) => {
-              window.location.hash = databaseRecordPathToHash(path);
             }}
           />
           <LazyDatabaseDiagnosticsDialog

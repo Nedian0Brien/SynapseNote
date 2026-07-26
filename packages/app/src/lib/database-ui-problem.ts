@@ -3,6 +3,7 @@ export type DatabaseUiProblemKind =
   | 'missing'
   | 'invalid_schema'
   | 'stale_index'
+  | 'lock'
   | 'conflict'
   | 'permission'
   | 'error';
@@ -67,6 +68,18 @@ export function classifyDatabaseUiProblem(cause: unknown, fallback: string): Dat
   const type = metadata.type ?? '';
   const action = metadata.recoveryAction ?? '';
 
+  // A canonical commit briefly blocks reads while its transaction is being
+  // verified. The read clients already perform a bounded typed retry; if that
+  // window is exhausted, keep the state recoverable instead of mislabelling it
+  // as a user edit conflict.
+  if (isDatabaseTransactionInProgress(cause)) {
+    return {
+      kind: 'stale_index',
+      message: 'The database is still updating. Try again shortly.',
+      retryable: true,
+    };
+  }
+
   if (
     status === 404 ||
     code === 'not_found' ||
@@ -102,7 +115,24 @@ export function classifyDatabaseUiProblem(cause: unknown, fallback: string): Dat
     action === 'recreate_plan' ||
     action === 'restart_query'
   ) {
-    return { kind: 'conflict', message, retryable: false };
+    return {
+      kind: 'conflict',
+      message: 'The database changed while this action was in progress. Reload the latest state.',
+      retryable: false,
+    };
+  }
+
+  if (
+    status === 423 ||
+    code === 'lock_unavailable' ||
+    code === 'transaction_locked' ||
+    action === 'retry_after_lock'
+  ) {
+    return {
+      kind: 'lock',
+      message: 'The database is busy with another write. Try again shortly.',
+      retryable: metadata.retryable ?? true,
+    };
   }
 
   if (
@@ -140,4 +170,55 @@ export function databaseIndexProblem(
   message: string,
 ): DatabaseUiProblem {
   return { kind: 'stale_index', message, retryable: state === 'error' };
+}
+
+/**
+ * Product copy for a write failure.  Mutation responses can contain transport
+ * details, stable IDs, and server-internal terminology; those details are
+ * useful in logs but are not a safe primary status message.  Keep this mapping
+ * deliberately small so every inline and workspace write exposes the same
+ * recovery action.
+ */
+export function databaseMutationUiMessage(kind: DatabaseUiProblemKind): string {
+  switch (kind) {
+    case 'offline':
+      return 'You are offline. The change will be retried when the connection returns.';
+    case 'missing':
+      return 'This database is no longer available. Reload the document to choose another one.';
+    case 'invalid_schema':
+      return 'The database schema needs attention. Reload the latest database state and try again.';
+    case 'stale_index':
+      return 'The database is still updating. Try again shortly.';
+    case 'lock':
+      return 'The database is busy with another write. Try again shortly.';
+    case 'permission':
+      return 'You do not have permission to make this database change.';
+    case 'conflict':
+      return 'The database changed while this action was in progress. Reload the latest state.';
+    case 'error':
+      return 'Unable to save the database change. Try again.';
+  }
+}
+
+/** Primary copy for read/state notices. Transport details remain available to
+ * diagnostics/logging, but status and alert regions use stable product copy. */
+export function databaseUiProblemMessage(problem: Pick<DatabaseUiProblem, 'kind'>): string {
+  switch (problem.kind) {
+    case 'offline':
+      return 'Database is offline. Cached pages remain available when possible.';
+    case 'missing':
+      return 'This linked database is unavailable. Choose a replacement or reload the document.';
+    case 'invalid_schema':
+      return 'The database setup needs attention. Reload the latest schema and try again.';
+    case 'stale_index':
+      return 'The database is still updating. Try again shortly.';
+    case 'lock':
+      return 'The database is busy with another write. Try again shortly.';
+    case 'conflict':
+      return 'The database changed elsewhere. Reload the latest state before retrying.';
+    case 'permission':
+      return 'You do not have access to this database operation.';
+    case 'error':
+      return 'The database could not be loaded. Try again.';
+  }
 }

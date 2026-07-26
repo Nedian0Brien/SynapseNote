@@ -39,7 +39,9 @@ mock.module('@lingui/react/macro', () => ({
 
 // Single-file signal — flipped per test.
 let singleFileValue = false;
-mock.module('@/lib/single-file-mode', () => ({ useSingleFileMode: () => singleFileValue }));
+mock.module('@/lib/single-file-mode', () => ({
+  useSingleFileMode: () => singleFileValue,
+}));
 
 // Stub the heavy panel children so the test stays focused on tab visibility.
 mock.module('@/components/OutlinePanel', () => ({
@@ -90,14 +92,14 @@ describe('DocPanel — single-file tab gating', () => {
     expect(screen.getByTestId('outline-panel')).toBeTruthy();
   });
 
-  test('single-file mode keeps Outline and Memo while dropping project-only tabs', () => {
+  test('single-file mode keeps Outline and Annotations while dropping project-only tabs', () => {
     singleFileValue = true;
     // Persisted selection is 'graph' — it must coerce back to Outline rather
     // than render a now-hidden panel.
     renderPanel('graph');
     expect(screen.getAllByRole('tab').map((tab) => tab.getAttribute('aria-label'))).toEqual([
       'Outline',
-      'Memo',
+      'Annotations',
     ]);
     expect(screen.getByTestId('outline-panel')).toBeTruthy();
   });
@@ -112,7 +114,7 @@ describe('DocPanel — single-file tab gating', () => {
     expect(screen.getAllByRole('tab').map((tab) => tab.getAttribute('aria-label'))).toEqual([
       'Chat',
       'Outline',
-      'Memo',
+      'Annotations',
       'Links',
       'Graph',
       'Timeline',

@@ -19,15 +19,8 @@ mock.module('../../../../lib/track.ts', () => ({
   isPrefetchRequest: () => _isPrefetch,
 }));
 
-// Flip the decoded-share outcome per test.
-let _viewKind: 'ok' | 'invalid' | 'unsupported-version' = 'ok';
 mock.module('../../../../lib/share-splash.ts', () => ({
-  buildSplashViewModel: () => ({ kind: _viewKind }),
   SPLASH_DOWNLOAD_URL: SPLASH_URL,
-}));
-
-mock.module('../../../../lib/deferred-share.ts', () => ({
-  buildPendingShareCookie: (encoded: string) => ({ name: 'ok-pending-share', value: encoded }),
 }));
 
 const { GET } = await import('./route.ts');
@@ -39,13 +32,12 @@ function call(encoded: string): Promise<Response> {
 }
 
 describe('GET /d/[encoded]/download', () => {
-  test('valid share: 302 to the DMG, sets the pairing cookie, counts share-splash', async () => {
-    _viewKind = 'ok';
+  test('valid share: 302 to the DMG without a pairing cookie', async () => {
     _lastCapture = null;
     const res = await call('valid-share');
     expect(res.status).toBe(302);
     expect(res.headers.get('location')).toBe(SPLASH_URL);
-    expect(res.headers.get('set-cookie')).toContain('ok-pending-share=valid-share');
+    expect(res.headers.get('set-cookie')).toBeNull();
     expect(_lastCapture?.event).toBe('dmg_downloaded');
     expect(_lastCapture?.properties?.channel).toBe('stable');
     // Server-authoritative: overrides the attribution() value.
@@ -53,8 +45,7 @@ describe('GET /d/[encoded]/download', () => {
     expect(_lastCapture?.distinctId).toBe('splash-1');
   });
 
-  test('invalid share: 302 with NO cookie but still counts the download', async () => {
-    _viewKind = 'invalid';
+  test('invalid share: 302 still counts the download', async () => {
     _lastCapture = null;
     const res = await call('bad-share');
     expect(res.status).toBe(302);
@@ -64,8 +55,7 @@ describe('GET /d/[encoded]/download', () => {
     expect(_lastCapture?.properties?.utm_content).toBe('share-splash');
   });
 
-  test('unsupported-version share: no cookie, still counts', async () => {
-    _viewKind = 'unsupported-version';
+  test('unsupported-version share: still counts', async () => {
     _lastCapture = null;
     const res = await call('old-share');
     expect(res.status).toBe(302);
@@ -73,8 +63,7 @@ describe('GET /d/[encoded]/download', () => {
     expect(_lastCapture?.event).toBe('dmg_downloaded');
   });
 
-  test('a prefetch still redirects (with cookie) but is NOT counted', async () => {
-    _viewKind = 'ok';
+  test('a prefetch still redirects but is NOT counted', async () => {
     _lastCapture = null;
     _isPrefetch = true;
     try {

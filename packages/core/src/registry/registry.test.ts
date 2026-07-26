@@ -820,6 +820,15 @@ describe('builtInComponents manifest', () => {
     expect(databaseView.props.some((prop) => prop.name === 'records')).toBe(false);
   });
 
+  test('DatabaseView opts into interactive body and explicit drag semantics', () => {
+    const databaseView = builtInComponents.find((meta) => meta.name === 'DatabaseView');
+    expect(databaseView?.interaction).toEqual({
+      mode: 'interactive',
+      drag: 'handle',
+      selectOnBodyClick: false,
+    });
+  });
+
   test('MirrorSource exposes container shape (id + children slot)', () => {
     const mirrorSource = builtInComponents.find((m) => m.name === 'MirrorSource');
     expect(mirrorSource).toBeDefined();

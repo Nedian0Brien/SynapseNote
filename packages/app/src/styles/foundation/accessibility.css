@@ -1,0 +1,88 @@
+/* Push-mode pulse hint — plays once when an in-sidebar action (file pick,
+   wiki-link follow) lands while the sidebar is open at small width.
+   Honors prefers-reduced-motion. The selector targets the SidebarInset's
+   data-push-pulse attribute set by SidebarProvider. */
+[data-slot="sidebar-inset"][data-push-pulse] {
+  animation: var(--animate-sidebar-push-pulse);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="sidebar-inset"][data-push-pulse] {
+    animation: none;
+  }
+  .animate-settings-flash {
+    animation: none;
+  }
+}
+
+/* Dialog/Sheet overlays carry a viewport-sized `backdrop-filter: blur` over
+   the live editor. The blur is engine-acknowledged expensive (WebKit warns;
+   Chromium + Firefox have documented compositor jank) and, more importantly,
+   is exactly the visual effect prefers-reduced-transparency exists to
+   suppress. Stripping it at the primitive level means every Dialog/Sheet
+   consumer inherits the compliant behavior with no per-call-site opt-in.
+
+   This is a sibling of — not a modification to — the electron outer-canvas
+   reduced-transparency block lower in this file, which intentionally excludes
+   dialog/tooltip surfaces (those are opaque-always there). Unlayered, so it
+   wins over the layered `supports-backdrop-filter:*` utility without
+   `!important` (same cascade discipline as the reduced-motion block above). */
+@media (prefers-reduced-transparency: reduce) {
+  [data-slot="dialog-overlay"],
+  [data-slot="sheet-overlay"] {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Radix Collapsible content height + opacity. Height drives the reflow of
+   surrounding content; opacity hides children early so the eye never lingers
+   on partially-laid-out widgets. Closing easing front-loaded (ease-in) so the
+   fade leads the height collapse — content reads as "gone" before the gap
+   finishes closing. */
+@keyframes collapsible-down {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: var(--radix-collapsible-content-height);
+    opacity: 1;
+  }
+}
+@keyframes collapsible-up {
+  from {
+    height: var(--radix-collapsible-content-height);
+    opacity: 1;
+  }
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
+
+/* Reduced-motion override — keep the opacity crossfade as a comprehension
+   aid (the panel still appears/disappears) but pin the height so the
+   layout-triggering animation doesn't fire. Matches the rest of this
+   file's reduced-motion discipline. */
+@media (prefers-reduced-motion: reduce) {
+  @keyframes collapsible-down {
+    from {
+      height: var(--radix-collapsible-content-height);
+      opacity: 0;
+    }
+    to {
+      height: var(--radix-collapsible-content-height);
+      opacity: 1;
+    }
+  }
+  @keyframes collapsible-up {
+    from {
+      height: var(--radix-collapsible-content-height);
+      opacity: 1;
+    }
+    to {
+      height: var(--radix-collapsible-content-height);
+      opacity: 0;
+    }
+  }
+}

@@ -4,6 +4,7 @@ import {
   DatabaseCommentIdSchema,
   DatabaseCommentThreadIdSchema,
   DatabaseIdSchema,
+  DatabaseLocalFileValueSchema,
   DatabaseRecordActorSchema,
   DatabaseRecordCommentsSchema,
   DatabaseRecordIdSchema,
@@ -29,12 +30,14 @@ export const DatabaseCommentRequestSchema = z.discriminatedUnion('action', [
     action: z.literal('add_thread'),
     anchor: DatabaseCommentAnchorSchema,
     body: z.string().trim().min(1).max(10_000),
+    attachments: z.array(DatabaseLocalFileValueSchema).max(20).optional(),
     mentionedPersonIds: z.array(z.string().startsWith('person_')).max(100).optional(),
   }).strict(),
   MutationBaseSchema.extend({
     action: z.literal('reply'),
     threadId: DatabaseCommentThreadIdSchema,
     body: z.string().trim().min(1).max(10_000),
+    attachments: z.array(DatabaseLocalFileValueSchema).max(20).optional(),
     mentionedPersonIds: z.array(z.string().startsWith('person_')).max(100).optional(),
   }).strict(),
   MutationBaseSchema.extend({
@@ -47,6 +50,7 @@ export const DatabaseCommentRequestSchema = z.discriminatedUnion('action', [
     threadId: DatabaseCommentThreadIdSchema,
     commentId: DatabaseCommentIdSchema,
     body: z.string().trim().min(1).max(10_000),
+    attachments: z.array(DatabaseLocalFileValueSchema).max(20).optional(),
     mentionedPersonIds: z.array(z.string().startsWith('person_')).max(100).optional(),
   }).strict(),
 ]);

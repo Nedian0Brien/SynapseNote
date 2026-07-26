@@ -1,0 +1,59 @@
+/* Block-chunked content-visibility:auto for large-doc render. Applied to
+   top-level direct doc children via PM Decoration.node from
+   `chunk-wrapper-decoration.ts`. Chromium ≥85 / Firefox ≥123 / Safari ≥18
+   skip layout/paint for off-viewport blocks; on intersection, the block
+   re-renders within frame budget. `contain-intrinsic-size` reserves space
+   so the scrollbar position stays accurate across viewport edges
+   (preventing scroll-jump on materialize). The 80px default approximates
+   a single text paragraph; lists / tables / headings reserve more
+   accurately via their own computed style once intersected.
+
+   Composes with `.ok-mode-hidden`: when an ancestor is CV:hidden,
+   descendant CV:auto is moot until the ancestor returns to visible.
+
+   Scoped to `.ProseMirror` so source-mode CodeMirror DOM is untouched
+   (CM6 has its own line-oriented viewport rendering). */
+.ProseMirror .ok-chunk-wrapper {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 var(--ok-cv-h, 80px);
+}
+
+/* Code-block wrapper needs an unclipped paint area — the block's chrome
+   floats above the block edge (see `.ok-codeblock-chrome`). content-visibility
+   auto's paint containment would otherwise clip the chrome to the wrapper's box,
+   hiding it entirely. */
+.ProseMirror .ok-chunk-wrapper.node-codeBlock {
+  content-visibility: visible;
+}
+
+/* Neutralize Electron `-webkit-app-region: drag` regions while a Popper-based
+   floater (Popover / DropdownMenu / ContextMenu) is open so outside-click
+   dismissal works on the macOS title-bar zone.
+
+   macOS hijacks pointer events in drag regions at the OS chrome level — the
+   DOM never sees the `pointerdown`, so Radix's document-level outside-click
+   listener cannot fire. Dialogs are already exempt because `DialogOverlay`
+   renders with `[-webkit-app-region:no-drag]` covering the viewport; Popper-
+   based components do not render an overlay and would otherwise be
+   undismissable by clicking the chrome rows (EditorHeader, EditorTabs,
+   FileSidebar header, the wrapper-strip in `App.tsx`, NavigatorApp's chrome
+   row). Each drag-region site carries a stable `data-electron-drag`
+   attribute that this selector targets. Tooltip / HoverCard are excluded
+   intentionally — they dismiss on `pointerleave`, not pointerdown, and
+   keeping drag live during a hover preserves the window-drag affordance.
+
+   `:has()` ships in Chromium 105+; Electron's bundled Chromium is well past
+   that. The `@supports` gate keeps the rule a no-op on engines without
+   `:has()` rather than risking a stylesheet-parse drop of the whole block. */
+@supports selector(:has(*)) {
+  body:has(
+      [data-slot="popover-content"][data-state="open"],
+      [data-slot="dropdown-menu-content"][data-state="open"],
+      [data-slot="dropdown-menu-sub-content"][data-state="open"],
+      [data-slot="context-menu-content"][data-state="open"],
+      [data-slot="context-menu-sub-content"][data-state="open"]
+    )
+    [data-electron-drag] {
+    -webkit-app-region: no-drag;
+  }
+}

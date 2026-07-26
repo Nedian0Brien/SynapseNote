@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   installedSkillsPath,
+  moveSkillInstall,
   readInstalledSkills,
   recordSkillInstall,
   removeSkillInstall,
@@ -58,6 +59,26 @@ describe('installed-skills marker', () => {
 
     const noop = await removeSkillInstall(projectDir, 'never');
     expect(noop).toBeNull();
+  });
+
+  test('move renames one marker entry atomically and refreshes its hosts', async () => {
+    await recordSkillInstall(projectDir, 'old-name', entry(['claude', 'cursor']));
+    const replacement = entry(['codex']);
+    const moved = await moveSkillInstall(projectDir, 'old-name', 'new-name', replacement);
+    expect(moved).toEqual({ status: 'moved', entry: replacement });
+    const state = readInstalledSkills(projectDir);
+    expect(state.skills['old-name']).toBeUndefined();
+    expect(state.skills['new-name']?.hosts).toEqual(['codex']);
+  });
+
+  test('move refuses to overwrite an existing destination marker', async () => {
+    await recordSkillInstall(projectDir, 'old-name', entry(['claude']));
+    await recordSkillInstall(projectDir, 'new-name', entry(['cursor']));
+    const moved = await moveSkillInstall(projectDir, 'old-name', 'new-name');
+    expect(moved.status).toBe('collision');
+    const state = readInstalledSkills(projectDir);
+    expect(state.skills['old-name']?.hosts).toEqual(['claude']);
+    expect(state.skills['new-name']?.hosts).toEqual(['cursor']);
   });
 
   test('corrupt marker JSON reads as empty (fail-soft), never throws', async () => {

@@ -49,7 +49,6 @@ import {
   type DragEvent as ReactDragEvent,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
-  type Ref,
   startTransition,
   useEffect,
   useImperativeHandle,
@@ -176,7 +175,9 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { asDirectoryHandle, useSelectionMirror } from '@/components/use-selection-mirror';
 import { getEditorForDoc } from '@/editor/active-editor';
-import { useDocumentContext } from '@/editor/DocumentContext';
+import { useDocumentCollaboration } from '@/editor/document-context/useDocumentCollaboration';
+import { useDocumentNavigation } from '@/editor/document-context/useDocumentNavigation';
+import { useDocumentTabs } from '@/editor/document-context/useDocumentTabs';
 import { captureRenameSnapshots } from '@/editor/editor-cache';
 import { assetTabId, docTabId, folderTabId, remapPathForFolderRenames } from '@/editor/editor-tabs';
 import { useConflicts } from '@/hooks/use-conflicts';
@@ -218,6 +219,17 @@ import {
 import { OK_SIDEBAR_DRAG_MIME, serializeSidebarDragPayload } from '@/lib/sidebar-drag';
 import { cn } from '@/lib/utils';
 import { joinWorkspacePath } from '@/lib/workspace-paths';
+import {
+  alternateMarkdownTreePath,
+  collectTabsToCloseForDelete,
+  deleteTargetCoversPendingCreate,
+  hasSameStemMarkdownSiblingTreePath,
+  isEditableKeyboardTarget,
+  resolveDuplicableKeyboardTarget,
+  resolveKeyboardDeleteTargets,
+  selectedTreePathsToDeleteTargets,
+} from './file-tree/file-tree-commands';
+import type { FileTreeProps } from './file-tree/file-tree-types';
 import { mergeRootEntriesAdditive, spliceLazyFolderChildren } from './file-tree-merge';
 import { OpenInAgentContextSubmenu } from './handoff/OpenInAgentContextSubmenu';
 import {
@@ -229,6 +241,8 @@ import {
 import { useInstalledAgents } from './handoff/useInstalledAgents';
 import { cancelHoverPrewarm, scheduleHoverPrewarm } from './sidebar-hover-prewarm';
 import { useSidebar } from './ui/sidebar';
+
+export type { FileTreeHandle } from './file-tree/file-tree-types';
 
 const MARKDOWN_TREE_EXTENSION_PATTERN = /\.(md|mdx)$/i;
 
@@ -365,7 +379,7 @@ const FILE_TREE_ROOT_DROP_CSS = `
   /* Forced-colors (Windows High Contrast) suppresses box-shadow and overrides
      color-mix backgrounds, so the ring above would vanish. Borders survive
      forced-colors — fall back to a system Highlight border (mirrors the JSX
-     in-range halo fallback in globals.css). */
+     in-range halo fallback in styles/editor/component-chrome.css). */
   @media (forced-colors: active) {
     [data-file-tree-virtualized-root][data-file-tree-root-drag-target="true"]::after {
       border: 2px solid Highlight;
@@ -591,161 +605,6 @@ interface FileTreeMenuProps {
   /** Authoritative document list — sourced for `docExt` when Pierre's tree
    *  path has lost its extension after a basename-only commit. See `treeItemToTarget`. */
   documents: readonly FileEntry[];
-}
-
-function treePathToTarget(treePath: string, documents: readonly FileEntry[]): FileTreeTarget {
-  return treeItemToTarget(
-    {
-      kind: treePath.endsWith('/') ? 'directory' : 'file',
-      name: treePath,
-      path: treePath,
-    },
-    documents,
-  );
-}
-
-function alternateMarkdownTreePath(treePath: string): string | null {
-  const match = treePath.match(/\.(md|mdx)$/i);
-  if (!match) return null;
-  const ext = match[0].toLowerCase();
-  const alternateExt = ext === '.md' ? '.mdx' : '.md';
-  return `${treePath.slice(0, -match[0].length)}${alternateExt}`;
-}
-
-function hasSameStemMarkdownSiblingTreePath(
-  treePath: string,
-  treePaths: readonly string[],
-): boolean {
-  const alternate = alternateMarkdownTreePath(treePath);
-  if (!alternate) return false;
-  return treePaths.includes(alternate);
-}
-
-function isTreePathInsideFolder(treePath: string, folderTreePath: string): boolean {
-  return treePath !== folderTreePath && treePath.startsWith(folderTreePath);
-}
-
-function selectedTreePathsToDeleteTargets(
-  selectedTreePaths: readonly string[],
-  documents: readonly FileEntry[],
-): FileTreeTarget[] {
-  // Revealed `.ok` rows are read-only OK-managed state — they never become
-  // delete targets, even when swept into a multi-selection beside deletable
-  // rows (this also keeps the confirm dialog's item count honest).
-  const uniqueDeletablePaths = [...new Set(selectedTreePaths)].filter(
-    (treePath) => !hasOkPathSegment(treePath),
-  );
-  const selectedFolderPaths = uniqueDeletablePaths.filter((treePath) => treePath.endsWith('/'));
-  return uniqueDeletablePaths
-    .filter(
-      (treePath) =>
-        !selectedFolderPaths.some((folderPath) => isTreePathInsideFolder(treePath, folderPath)),
-    )
-    .map((treePath) => treePathToTarget(treePath, documents));
-}
-
-function normalizeTreePathFromModel(model: PierreFileTreeModel, treePath: string): string {
-  const selectedItem =
-    model.getItem(treePath) ?? model.getItem(folderPathToTreeDirectoryPath(treePath));
-  return selectedItem?.isDirectory()
-    ? folderPathToTreeDirectoryPath(treeDirectoryPathToFolderPath(selectedItem.getPath()))
-    : treePath;
-}
-
-function focusedOrFirstSelectedTreePath(model: PierreFileTreeModel): string | null {
-  const selectedPath = model.getFocusedPath() ?? model.getSelectedPaths()[0] ?? null;
-  return selectedPath ? normalizeTreePathFromModel(model, selectedPath) : null;
-}
-
-function resolveDuplicableKeyboardTarget(
-  model: PierreFileTreeModel,
-  documents: readonly FileEntry[],
-  assetTreePaths: ReadonlySet<string>,
-): FileTreeTarget | null {
-  const selectedPath = focusedOrFirstSelectedTreePath(model);
-  // Revealed `.ok` rows are read-only OK-managed state — no keyboard
-  // copy/paste/duplicate, matching their menu's suppressed affordances.
-  if (!selectedPath || assetTreePaths.has(selectedPath) || hasOkPathSegment(selectedPath)) {
-    return null;
-  }
-  return treePathToTarget(selectedPath, documents);
-}
-
-function resolveKeyboardDeleteTargets(
-  model: PierreFileTreeModel,
-  documents: readonly FileEntry[],
-): FileTreeTarget[] {
-  const selectedPaths = model.getSelectedPaths();
-  const focusedPath = focusedOrFirstSelectedTreePath(model);
-  const paths =
-    selectedPaths.length > 0
-      ? selectedPaths.map((treePath) => normalizeTreePathFromModel(model, treePath))
-      : focusedPath
-        ? [focusedPath]
-        : [];
-  return selectedTreePathsToDeleteTargets(paths, documents);
-}
-
-function isPathAtOrInsideFolder(path: string, folderPath: string): boolean {
-  return path === folderPath || path.startsWith(`${folderPath}/`);
-}
-
-function isEditableKeyboardTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false;
-  const tagName = target.tagName;
-  return (
-    tagName === 'INPUT' ||
-    tagName === 'TEXTAREA' ||
-    tagName === 'SELECT' ||
-    target.isContentEditable ||
-    target.closest('[contenteditable="true"]') !== null
-  );
-}
-
-function collectTabsToCloseForDelete(
-  targets: readonly FileTreeTarget[],
-  documents: readonly FileEntry[],
-  folderTreePaths: readonly string[],
-): { docNames: Set<string>; folderPaths: Set<string>; assetPaths: Set<string> } {
-  const docNames = new Set<string>();
-  const folderPaths = new Set<string>();
-  const assetPaths = new Set<string>();
-
-  for (const target of targets) {
-    if (target.kind === 'file') {
-      docNames.add(target.path);
-      continue;
-    }
-    if (target.kind === 'asset') {
-      assetPaths.add(target.path);
-      continue;
-    }
-
-    folderPaths.add(target.path);
-    for (const entry of documents) {
-      if (isDocumentEntry(entry) && entry.docName.startsWith(`${target.path}/`)) {
-        docNames.add(entry.docName);
-      } else if (isAssetEntry(entry) && entry.path.startsWith(`${target.path}/`)) {
-        assetPaths.add(entry.path);
-      }
-    }
-    for (const treePath of folderTreePaths) {
-      const folderPath = treeDirectoryPathToFolderPath(treePath);
-      if (isPathAtOrInsideFolder(folderPath, target.path)) {
-        folderPaths.add(folderPath);
-      }
-    }
-  }
-
-  return { docNames, folderPaths, assetPaths };
-}
-
-function deleteTargetCoversPendingCreate(target: FileTreeTarget, pending: PendingCreate): boolean {
-  if (target.kind === 'file') {
-    return pending.kind === 'file' && target.path === pending.createdPath;
-  }
-  if (target.kind === 'asset') return false;
-  return isPathAtOrInsideFolder(pending.createdPath, target.path);
 }
 
 function FileTreeMenu({
@@ -1206,51 +1065,6 @@ function FileTreeMenu({
   );
 }
 
-export interface FileTreeHandle {
-  startCreating(kind: 'file' | 'folder', parentDir: string): void;
-  /** Open NewItemDialog at the given parentDir so the template picker is
-   *  reachable. Used by the native macOS File menu's "New from Template…"
-   *  item, where an inline hover-submenu of templates isn't expressible. */
-  startCreatingFromTemplate(parentDir: string): void;
-  /** Inline create-from-template: same fast path as `startCreating('file', …)`
-   *  (placeholder + inline rename) but seeds the doc from the named template.
-   *  Drives the in-renderer "New from template" submenus. */
-  createFromTemplate(parentDir: string, templateName: string): void;
-  expandAll(): void;
-  collapseAll(): void;
-  /**
-   * Snapshot of the tree's folder state, cheap to call on every render.
-   * Reads `folderTreePathsRef.current` for `folderCount` and iterates
-   * `model.getItem(path)?.isExpanded()` for `expandedCount`. FileSidebar
-   * subscribes (`subscribe` + this getter) to smart-hide the Expand/
-   * Collapse-all commands across its menu surfaces when their action
-   * would be a no-op.
-   */
-  getFolderState(): { folderCount: number; expandedCount: number };
-  /**
-   * Whether the user has cleared the creation target by clicking the tree's
-   * empty space. When true, FileSidebar routes New file / New folder to the
-   * project root instead of the active item's folder. Re-couples to the active
-   * item on the next navigation.
-   */
-  isCreationTargetCleared(): boolean;
-  /**
-   * Clear the creation target imperatively — the same effect as clicking the
-   * tree's empty space, but driven from outside the tree (the sidebar's empty
-   * area below the sections, now that the tree is sized flush to its rows). New
-   * file / New folder then land at the project root; the focused row's ring is
-   * neutralized via the host attribute. Re-couples on the next navigation.
-   */
-  clearCreationTarget(): void;
-  /**
-   * Subscribe to changes that affect `getFolderState()` — folder list
-   * mutations from `/api/documents` polling AND per-folder expand/
-   * collapse from the Pierre tree model — and to `isCreationTargetCleared()`.
-   * Returns an unsubscribe.
-   */
-  subscribe(listener: () => void): () => void;
-}
-
 type ShowAllDepth1ListingResult =
   | { kind: 'entries'; entries: FileEntry[]; truncated: boolean }
   | { kind: 'http-error'; title: string }
@@ -1316,36 +1130,18 @@ async function fetchShowAllDepth1Listing(
  * Must be mounted inside a `SidebarProvider` — `useSidebar()` throws otherwise.
  * Today only `FileSidebar` mounts it, which is always inside the provider.
  */
-export function FileTree({
-  ref,
-  onContentHeightChange,
-}: {
-  ref?: Ref<FileTreeHandle | null>;
-  /**
-   * Reports the tree's total content height (px) — the virtualized scroller's
-   * scrollHeight, which is the full row count's height regardless of viewport.
-   * Lets a parent size the tree pane to its content (so it doesn't fill / bottom-
-   * dock siblings) while pierre still virtualizes once the pane hits its cap.
-   */
-  onContentHeightChange?: (px: number) => void;
-}) {
+export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
   const { t, i18n } = useLingui();
-  const {
-    activeDocName,
-    activeTarget,
-    closeTabs,
-    closeDocument,
-    closeAndClearForRename,
-    getPoolActiveDocName,
-    poolHas,
-    isNewTabActive,
-    openTarget,
-    prewarm,
-    remapTabsForRename,
-  } = useDocumentContext();
+  const { activeDocName, activeTarget, isNewTabActive, openTarget } = useDocumentNavigation();
+  const { closeTabs, closeDocument, remapTabsForRename } = useDocumentTabs();
+  const { closeAndClearForRename, getPoolActiveDocName, poolHas, prewarm } =
+    useDocumentCollaboration();
   const { notifySidebarFileSelected } = useSidebar();
   const { resolvedTheme } = useTheme();
   const { addPage, pageMeta, pages } = usePageList();
+  const { okignoreBinding, merged } = useConfigContext();
+  const sidebarDocumentTabBehavior =
+    merged?.editor?.sidebarOpenBehavior === 'current-tab' ? 'replace-active' : 'append';
   function navigationTargetForDocument(
     docName: string,
     size: number | null | undefined,
@@ -1361,10 +1157,12 @@ export function FileTree({
   function navigateToWithPulse(
     targetPath: string,
     size?: number,
-    options?: { registerPage?: boolean },
+    options?: { registerPage?: boolean; tabBehavior?: 'append' | 'replace-active' },
   ) {
     if (options?.registerPage) addPage(targetPath);
-    openTarget(navigationTargetForDocument(targetPath, size), { tabBehavior: 'replace-active' });
+    openTarget(navigationTargetForDocument(targetPath, size), {
+      tabBehavior: options?.tabBehavior ?? 'replace-active',
+    });
     replaceHashWithoutNavigation(hashFromDocName(targetPath));
     notifySidebarFileSelected();
   }
@@ -1430,6 +1228,15 @@ export function FileTree({
   // to route the create parent dir to ''.
   const [creationDirCleared, setCreationDirCleared] = useState(false);
   const creationDirClearedRef = useRef(creationDirCleared);
+  // Active-document ancestors expand automatically when navigation reveals a
+  // document, but a later disclosure click is authoritative: the user may
+  // collapse that ancestor without changing the open document. Remember only
+  // collapsed *active* ancestors so refreshes do not immediately reopen them;
+  // navigation clears this set and reveals the next active target normally.
+  const [userCollapsedActiveAncestorPaths, setUserCollapsedActiveAncestorPaths] = useState<
+    ReadonlySet<string>
+  >(() => new Set());
+  const userCollapsedActiveAncestorPathsRef = useRef<ReadonlySet<string>>(new Set());
   // Imperative-handle subscribers (FileSidebar) that need to react to
   // `creationDirCleared` changes — Pierre's `model.subscribe` only fires on
   // tree-model mutations, not React state, so the handle multiplexes both.
@@ -1484,11 +1291,14 @@ export function FileTree({
       return;
     }
     if (okTarget?.kind === 'doc') {
-      navigateToWithPulse(okTarget.docName);
+      navigateToWithPulse(okTarget.docName, undefined, {
+        tabBehavior: sidebarDocumentTabBehavior,
+      });
       return;
     }
     navigateToWithPulse(action.path, docEntry?.size, {
       registerPage: hasSupportedDocumentExtension(action.path),
+      tabBehavior: sidebarDocumentTabBehavior,
     });
   }
   function navigateToAssetWithPulse(assetPath: string, entries?: readonly FileEntry[]) {
@@ -1781,7 +1591,6 @@ export function FileTree({
     isElectronHost: typeof window !== 'undefined' && window.okDesktop != null,
     dispatch: dispatchHandoff,
   };
-  const { okignoreBinding, merged } = useConfigContext();
   const showHiddenFiles = merged?.appearance?.sidebar?.showHiddenFiles ?? false;
   const showOnlyMarkdownFiles = merged?.appearance?.sidebar?.showOnlyMarkdownFiles ?? false;
   const showOkFolders = merged?.appearance?.sidebar?.showOkFolders ?? false;
@@ -1886,6 +1695,9 @@ export function FileTree({
     ? computeTreeAncestorPaths(folderPathToTreeDirectoryPath(selectedFolderPath)).slice(0, -1)
     : computeTreeAncestorPaths(activeTreePath ?? activeNavigationPath);
   const activeAncestorTreePathsSignature = activeAncestorTreePaths.join('\0');
+  const autoRevealActiveAncestorTreePathsSignature = activeAncestorTreePaths
+    .filter((path) => !userCollapsedActiveAncestorPaths.has(path))
+    .join('\0');
 
   const collectExpandedFolderTreePaths = () => {
     const expanded = new Set<string>();
@@ -1906,6 +1718,7 @@ export function FileTree({
     );
     const expanded = collectExpandedFolderTreePaths();
     for (const ancestor of activeAncestorTreePathsRef.current) {
+      if (userCollapsedActiveAncestorPathsRef.current.has(ancestor)) continue;
       expanded.add(ancestor);
     }
     return [...expanded].filter((path) => nextFolderPaths.has(path));
@@ -2519,7 +2332,7 @@ export function FileTree({
   useSelectionMirror(
     model,
     activeTreePath,
-    activeAncestorTreePathsSignature,
+    autoRevealActiveAncestorTreePathsSignature,
     suppressSelectionRef,
     // Re-run trigger: re-assert the active-row selection after the tree is
     // repopulated by `model.resetPaths` (see the reset effect above). Without
@@ -2598,6 +2411,7 @@ export function FileTree({
   // biome-ignore lint/correctness/useExhaustiveDependencies: setCreationDirCleared is a stable state setter; baseActiveTreePath is the sole trigger.
   useEffect(() => {
     setCreationDirCleared(false);
+    setUserCollapsedActiveAncestorPaths(new Set());
   }, [baseActiveTreePath]);
 
   // Bridge `creationDirCleared` (React state) to the imperative handle's
@@ -2625,12 +2439,22 @@ export function FileTree({
   useEffect(() => {
     return model.subscribe(() => {
       if (model.isSearchOpen()) return;
-      for (const ancestor of activeAncestorTreePathsRef.current) {
-        const item = asDirectoryHandle(model.getItem(ancestor));
-        if (item && !item.isExpanded()) {
-          item.expand();
+      if (activeAncestorTreePathsRef.current.length === 0) return;
+      setUserCollapsedActiveAncestorPaths((current) => {
+        const next = new Set(current);
+        let changed = false;
+        for (const ancestor of activeAncestorTreePathsRef.current) {
+          const item = asDirectoryHandle(model.getItem(ancestor));
+          if (!item) continue;
+          if (item.isExpanded()) {
+            if (next.delete(ancestor)) changed = true;
+          } else if (!next.has(ancestor)) {
+            next.add(ancestor);
+            changed = true;
+          }
         }
-      }
+        return changed ? next : current;
+      });
     });
   }, [model]);
 
@@ -3296,13 +3120,9 @@ export function FileTree({
 
   function collapseSubtree(treePath: string) {
     const root = folderPathToTreeDirectoryPath(treePath);
-    const activeAncestors = new Set(activeAncestorTreePathsRef.current);
     startTransition(() => {
       for (const folderPath of [...folderTreePathsRef.current].reverse()) {
-        if (
-          (folderPath === root || folderPath.startsWith(root)) &&
-          !activeAncestors.has(folderPath)
-        ) {
+        if (folderPath === root || folderPath.startsWith(root)) {
           const item = asDirectoryHandle(model.getItem(folderPath));
           if (item) {
             item.collapse();
@@ -3333,6 +3153,7 @@ export function FileTree({
     treePathsRef.current = treePaths;
     folderTreePathsRef.current = folderTreePaths;
     activeAncestorTreePathsRef.current = activeAncestorTreePaths;
+    userCollapsedActiveAncestorPathsRef.current = userCollapsedActiveAncestorPaths;
     detectLazyFolderExpansionsRef.current = detectLazyFolderExpansions;
     revalidateExpandedLazyDirsRef.current = revalidateExpandedLazyDirs;
     cleanupPendingCreateRef.current = cleanupPendingCreate;
@@ -3599,10 +3420,8 @@ export function FileTree({
         });
       },
       collapseAll() {
-        const activeAncestors = new Set(activeAncestorTreePathsRef.current);
         startTransition(() => {
           for (const folderPath of [...folderTreePathsRef.current].reverse()) {
-            if (activeAncestors.has(folderPath)) continue;
             const item = asDirectoryHandle(model.getItem(folderPath));
             if (item) {
               item.collapse();
@@ -4258,13 +4077,13 @@ export function FileTree({
 
   function handleTreeClickCapture(event: ReactMouseEvent<HTMLElement>) {
     if (event.defaultPrevented || event.button !== 0) return;
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
     // Pierre only emits selection changes when the selected path changes.
     // If app navigation lags behind the selected row, a plain click on that
     // already-selected row still needs to activate the row's target.
     const item = findTreeItemElement(event.nativeEvent);
     if (!item) {
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       // Plain click on the tree's empty content area (no row) deselects the
       // active row for creation purposes — New file / New folder then land at
       // the project root. The editor view is untouched. Gated to the scroll
@@ -4285,21 +4104,34 @@ export function FileTree({
     if (item.dataset.itemType === 'folder') {
       const folderPath = treeDirectoryPathToFolderPath(path);
       const folderItem = asDirectoryHandle(model.getItem(path));
-      if (!wasSelected) {
+      // The leading chevron is a disclosure control only. Intercept Pierre's
+      // whole-row toggle before it selects/navigates so expanding or collapsing
+      // a folder leaves the current document and tree selection untouched.
+      if (clickIsInTreeItemSection(event.nativeEvent, 'icon')) {
         event.preventDefault();
         event.stopPropagation();
-        if (folderItem && !folderItem.isExpanded()) folderItem.expand();
+        if (!folderItem) return;
+        if (folderItem.isExpanded()) folderItem.collapse();
+        else folderItem.expand();
+        return;
+      }
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      // Every other part of the folder row is navigation only. Stop Pierre's
+      // default whole-row disclosure toggle, including when this folder is
+      // already selected and navigation itself is a no-op.
+      event.preventDefault();
+      event.stopPropagation();
+      if (!wasSelected) {
         queueMicrotask(() => navigateToFolderWithPulse(folderPath));
         return;
       }
       if (model.getSelectedPaths().length !== 1) return;
       if (window.location.hash === hashFromFolderPath(folderPath)) return;
-      event.preventDefault();
-      event.stopPropagation();
-      if (folderItem && !folderItem.isExpanded()) folderItem.expand();
       queueMicrotask(() => navigateToFolderWithPulse(folderPath));
       return;
     }
+
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
     if (!wasSelected) {
       // Lazy/show-all model state can lag rows that already rendered, so the
@@ -4311,7 +4143,14 @@ export function FileTree({
         pendingExactFileSelectionRef.current = path;
         // Let handleSelectionChange's microtask consume the exact file selection
         // before navigation commits the extension-qualified URL.
-        setTimeout(() => navigateToWithPulse(path, undefined, { registerPage: true }), 0);
+        setTimeout(
+          () =>
+            navigateToWithPulse(path, undefined, {
+              registerPage: true,
+              tabBehavior: sidebarDocumentTabBehavior,
+            }),
+          0,
+        );
         return;
       }
       queueMicrotask(() => activateTreePath(path));
@@ -4585,6 +4424,15 @@ function findTreeItemElement(event: MouseEvent): HTMLElement | null {
     }
   }
   return null;
+}
+
+function clickIsInTreeItemSection(event: MouseEvent, section: string): boolean {
+  for (const entry of event.composedPath()) {
+    if (entry instanceof HTMLElement && entry.dataset.itemSection === section) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function findTreeVirtualizedRootElement(event: MouseEvent): HTMLElement | null {

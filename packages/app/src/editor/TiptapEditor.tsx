@@ -46,6 +46,7 @@ import { useDocumentContext } from './DocumentContext';
 import { setEditorDocName } from './extensions/doc-context.ts';
 import { setEditorSourceMode } from './extensions/editor-mode-context.ts';
 import { FrozenTableHeaders } from './extensions/frozen-table-headers.ts';
+import { MemoHighlights } from './extensions/memo-highlights';
 import { sharedExtensions } from './extensions/shared.ts';
 import { uploadDecorationPlugin } from './image-upload/index.ts';
 import { getMountId } from './mount-id-registry';
@@ -343,6 +344,7 @@ export function buildExtensionList(args: BuildEditorOptionsArgs): AnyExtension[]
       placeholder: placeholder ?? "Type '/' for commands",
       showOnlyCurrent: true,
     }),
+    MemoHighlights.configure({ docName: provider.configuration.name ?? '' }),
     // Collaboration (with `ySyncOptions.mapping` forwarded when a pre-warm
     // mapping is supplied) — paired with its currency guard below via
     // `buildPrewarmBoundCollaboration`.
@@ -552,6 +554,40 @@ export function buildPatternDConstructorOptions(
 }
 
 /**
+ * Create an uncached TipTap surface for short-lived document hosts such as a
+ * database side peek. The primary editor uses the Activity/mount cache, which
+ * is deliberately keyed only by docName and therefore cannot safely host a
+ * second simultaneous DOM surface for the same document. This factory reuses
+ * the exact extension, clipboard, collaboration, and observer-compatible
+ * option set without entering that cache.
+ */
+export function createStandaloneTiptapEditor({
+  element,
+  provider,
+  placeholder,
+  onWedged,
+}: {
+  element: HTMLElement;
+  provider: HocuspocusProvider;
+  placeholder?: string;
+  onWedged?: (detail: WedgeDetail) => void;
+}): Editor {
+  const editor = new Editor({
+    element,
+    ...buildEditorOptions({
+      provider,
+      placeholder,
+      clipboard: buildClipboardState(),
+      ctorStart: performance.now(),
+      onWedged,
+    }),
+  });
+  setEditorDocName(editor, provider.configuration.name ?? null);
+  editor.on('destroy', () => setEditorDocName(editor, null));
+  return editor;
+}
+
+/**
  * TiptapEditor — Pattern D (Suspense + `use(promise)`) mount path. The only
  * editor mount path in the app; precedent #18(d) substrate is the production
  * default since the rollout retirement.
@@ -735,7 +771,8 @@ const TiptapEditorChrome: FC<TiptapEditorChromeProps> = ({
   // `display: contents` so neither contributes a layout box — the
   // `<EditorContent>` refDiv inside acts as the effective grid child of
   // `.tiptap-editor`, carrying `grid-column: content` via its explicit
-  // `.tiptap-editor-portal-content` class (the rule in `globals.css`). This keeps the post-portal scroll
+  // `.tiptap-editor-portal-content` class (the rule in
+  // `styles/shell/editor-layout.css`). This keeps the post-portal scroll
   // geometry byte-identical to the pre-portal inline-render and preserves
   // `docs-open.e2e.ts` F1 warm-nav scrollTop restoration.
   //
@@ -1418,7 +1455,7 @@ const TiptapEditorChrome: FC<TiptapEditorChromeProps> = ({
         // `portalSlot` + `portalTarget` makes the refDiv act as a grid
         // item, but `.tiptap-editor > *` only selects DOM direct children
         // — so explicit class-based `grid-column: content` is required).
-        // See the rule in `globals.css`.
+        // See the rule in `styles/shell/editor-layout.css`.
         // biome-ignore lint/plugin/no-unportaled-editor-content: canonical portaled site — H6 fix per PRECEDENTS.md #44
         <EditorContent
           key={editorContentRevision}

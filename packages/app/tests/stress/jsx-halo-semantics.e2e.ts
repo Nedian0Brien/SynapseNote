@@ -165,11 +165,17 @@ test('AC25: grip-click on a Callout sets data-selected=true and the halo paints 
   await expect(callout).toHaveAttribute('data-selected', 'true', { timeout: 2_000 });
   expect(await selectionType(page)).toBe('NodeSelection');
   // Halo paint asserted as opacity > 0 rather than === 1 because the halo's
-  // CSS transition (`globals.css` `.jsx-component-wrapper::after`) may still
+  // CSS transition (`styles/editor/component-chrome.css`
+  // `.jsx-component-wrapper::after`) may still
   // be mid-flight when the test polls. The semantic invariant is "halo is
   // visible," not "transition complete."
-  const opacityStr = await callout.evaluate((el) => window.getComputedStyle(el, '::after').opacity);
-  expect(Number.parseFloat(opacityStr)).toBeGreaterThan(0);
+  await expect
+    .poll(
+      () =>
+        callout.evaluate((el) => Number.parseFloat(window.getComputedStyle(el, '::after').opacity)),
+      { timeout: 2_000 },
+    )
+    .toBeGreaterThan(0);
 });
 
 // ── non-leaf ancestor still gets data-has-child-selected ──

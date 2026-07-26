@@ -17,6 +17,7 @@ import { useSingleFileMode } from '@/lib/single-file-mode';
 import { cn } from '@/lib/utils';
 import { PresenceBar } from '@/presence/PresenceBar';
 import { BetaBadge } from './BetaBadge';
+import { EditorNavigationButtons } from './EditorNavigationButtons';
 import { EditorTabs } from './EditorTabs';
 import { HelpPopover } from './HelpPopover';
 import { PublishToGitHubDialog } from './PublishToGitHubDialog';
@@ -112,7 +113,7 @@ export function EditorHeader({ onSignIn, onSetIdentity, onOpenSearch }: EditorHe
         element — the right zone's blanket opt-out is intentionally
         scoped to its zone.
       */}
-      {/* The left zone (files toggle, search, tab strip) is project chrome —
+      {/* The left zone (files toggle, navigation, search, tab strip) is project chrome —
           empty in single-file mode. The flex-1 container stays so the right
           zone keeps its position and the window-drag spacer is preserved. */}
       <div className="flex min-w-0 flex-1 items-center gap-1 px-3">
@@ -135,6 +136,7 @@ export function EditorHeader({ onSignIn, onSetIdentity, onOpenSearch }: EditorHe
                 )}
               </TooltipContent>
             </Tooltip>
+            <EditorNavigationButtons isElectronHost={isElectronHost} />
             {isCollapsed && onOpenSearch && (
               <Tooltip>
                 <TooltipTrigger asChild>

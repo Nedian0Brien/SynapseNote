@@ -1,0 +1,98 @@
+{
+  "generatedAt": "2026-07-26T14:23:04.839Z",
+  "measurements": [
+    {
+      "command": ["bun", "packages/server/scripts/run-server-test-task.ts", "all", "--shard=1/4"],
+      "durationMs": 74276.883,
+      "label": "server shard 1/4 1",
+      "status": 0
+    },
+    {
+      "command": ["bun", "packages/server/scripts/run-server-test-task.ts", "all", "--shard=2/4"],
+      "durationMs": 167531.048,
+      "label": "server shard 2/4 1",
+      "status": 0
+    },
+    {
+      "command": ["bun", "packages/server/scripts/run-server-test-task.ts", "all", "--shard=3/4"],
+      "durationMs": 220478.797,
+      "label": "server shard 3/4 1",
+      "status": 0
+    },
+    {
+      "command": ["bun", "packages/server/scripts/run-server-test-task.ts", "all", "--shard=4/4"],
+      "durationMs": 191326.21,
+      "label": "server shard 4/4 1",
+      "status": 1
+    },
+    {
+      "command": ["bun", "packages/server/scripts/run-server-test-task.ts", "all", "--shard=1/4"],
+      "durationMs": 75940.327,
+      "label": "server shard 1/4 2",
+      "status": 0
+    },
+    {
+      "command": ["bun", "packages/server/scripts/run-server-test-task.ts", "all", "--shard=2/4"],
+      "durationMs": 169344.861,
+      "label": "server shard 2/4 2",
+      "status": 0
+    },
+    {
+      "command": ["bun", "packages/server/scripts/run-server-test-task.ts", "all", "--shard=3/4"],
+      "durationMs": 222778.744,
+      "label": "server shard 3/4 2",
+      "status": 0
+    },
+    {
+      "command": ["bun", "packages/server/scripts/run-server-test-task.ts", "all", "--shard=4/4"],
+      "durationMs": 28853.324,
+      "label": "server shard 4/4 2",
+      "status": 1
+    },
+    {
+      "command": ["bun", "packages/server/scripts/run-server-test-task.ts", "all", "--shard=1/4"],
+      "durationMs": 75348.281,
+      "label": "server shard 1/4 3",
+      "status": 0
+    },
+    {
+      "command": ["bun", "packages/server/scripts/run-server-test-task.ts", "all", "--shard=2/4"],
+      "durationMs": 167947.633,
+      "label": "server shard 2/4 3",
+      "status": 0
+    },
+    {
+      "command": ["bun", "packages/server/scripts/run-server-test-task.ts", "all", "--shard=3/4"],
+      "durationMs": 221254.106,
+      "label": "server shard 3/4 3",
+      "status": 0
+    },
+    {
+      "command": ["bun", "packages/server/scripts/run-server-test-task.ts", "all", "--shard=4/4"],
+      "durationMs": 192972.946,
+      "label": "server shard 4/4 3",
+      "status": 0
+    }
+  ],
+  "repeatCount": 3,
+  "runtime": {
+    "bun": "1.3.14",
+    "node": "24.3.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpus": 14
+  },
+  "shardCount": 4,
+  "summary": {
+    "failedCount": 2,
+    "maxShardP95Ms": 222778.744,
+    "p95ByShardMs": {
+      "1": 75940.327,
+      "2": 169344.861,
+      "3": 222778.744,
+      "4": 192972.946
+    },
+    "withinBudget": false,
+    "timingSloMet": true
+  }
+}

@@ -30,7 +30,111 @@
     "test": {
       "dependsOn": ["^build"],
       "cache": true,
-      "inputs": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.json", "tests/contract/**/*.ts"]
+      "env": [
+        "TEST_FEEDBACK_TIER",
+        "TEST_FEEDBACK_LEAK_CHECK",
+        "TEST_RESULTS_DIR",
+        "SYNAPSENOTE_SERVER_TEST_MAX_CONCURRENCY"
+      ],
+      "inputs": [
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "src/**/*.json",
+        "scripts/**/*.ts",
+        "tests/contract/**/*.ts",
+        "../../scripts/test-feedback/**/*.ts",
+        "package.json"
+      ]
+    },
+    "test:unit": {
+      "dependsOn": ["^build"],
+      "cache": true,
+      "env": [
+        "TEST_FEEDBACK_TIER",
+        "TEST_FEEDBACK_LEAK_CHECK",
+        "TEST_RESULTS_DIR",
+        "SYNAPSENOTE_SERVER_TEST_MAX_CONCURRENCY"
+      ],
+      "inputs": [
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "scripts/**/*.ts",
+        "tests/**/*.ts",
+        "../../scripts/test-feedback/**/*.ts",
+        "package.json"
+      ]
+    },
+    "test:database": {
+      "dependsOn": ["^build"],
+      "cache": true,
+      "env": [
+        "TEST_FEEDBACK_TIER",
+        "TEST_FEEDBACK_LEAK_CHECK",
+        "TEST_RESULTS_DIR",
+        "SYNAPSENOTE_SERVER_TEST_MAX_CONCURRENCY"
+      ],
+      "inputs": [
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "scripts/**/*.ts",
+        "tests/**/*.ts",
+        "../../scripts/test-feedback/**/*.ts",
+        "package.json"
+      ]
+    },
+    "test:filesystem": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "inputs": [
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "scripts/**/*.ts",
+        "tests/**/*.ts",
+        "../../scripts/test-feedback/**/*.ts",
+        "package.json"
+      ]
+    },
+    "test:git": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "inputs": [
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "scripts/**/*.ts",
+        "tests/**/*.ts",
+        "../../scripts/test-feedback/**/*.ts",
+        "package.json"
+      ]
+    },
+    "test:process": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "inputs": [
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "scripts/**/*.ts",
+        "tests/**/*.ts",
+        "../../scripts/test-feedback/**/*.ts",
+        "package.json"
+      ]
+    },
+    "test:contract": {
+      "dependsOn": ["^build"],
+      "cache": true,
+      "env": [
+        "TEST_FEEDBACK_TIER",
+        "TEST_FEEDBACK_LEAK_CHECK",
+        "TEST_RESULTS_DIR",
+        "SYNAPSENOTE_SERVER_TEST_MAX_CONCURRENCY"
+      ],
+      "inputs": [
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "scripts/**/*.ts",
+        "tests/**/*.ts",
+        "../../scripts/test-feedback/**/*.ts",
+        "package.json"
+      ]
     },
     "test:dom": {
       "dependsOn": ["^build"],

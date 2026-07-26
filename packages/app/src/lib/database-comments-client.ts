@@ -1,5 +1,6 @@
 import {
   type DatabaseCommentAnchor,
+  type DatabaseCommentAttachment,
   type DatabaseRecordActor,
   type DatabaseRecordComments,
   DatabaseRecordCommentsSchema,
@@ -26,6 +27,7 @@ export type DatabaseCommentRequest =
       expectedRevision: string;
       anchor: DatabaseCommentAnchor;
       body: string;
+      attachments?: DatabaseCommentAttachment[];
       mentionedPersonIds?: string[];
     })
   | (Base & {
@@ -33,6 +35,7 @@ export type DatabaseCommentRequest =
       expectedRevision: string;
       threadId: string;
       body: string;
+      attachments?: DatabaseCommentAttachment[];
       mentionedPersonIds?: string[];
     })
   | (Base & {
@@ -47,6 +50,7 @@ export type DatabaseCommentRequest =
       threadId: string;
       commentId: string;
       body: string;
+      attachments?: DatabaseCommentAttachment[];
       mentionedPersonIds?: string[];
     });
 

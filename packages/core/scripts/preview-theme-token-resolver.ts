@@ -1,6 +1,6 @@
 /**
  * Resolve the preview-iframe theme-token subset from
- * `packages/app/src/globals.css` into a flat `{ name, light, dark }` list.
+ * `packages/app/src/styles/foundation/tokens.css` into a flat `{ name, light, dark }` list.
  *
  * The preview iframe is null-origin and style-isolated — it inherits nothing
  * from the host page. To let embedded `html preview` content (charts, stat
@@ -27,7 +27,8 @@ import { findBlockBodies } from './chrome-resolver.ts';
  * The injected token subset. Order is the wire + injection
  * order — chart palette first, then surface / text / structural tokens. This
  * *selection* (which tokens cross into the sandbox) is the deliberate part;
- * the *values* are always generated from `globals.css`, never hand-written.
+ * the *values* are always generated from the canonical token source, never
+ * hand-written.
  */
 export const PREVIEW_TOKEN_NAMES = [
   '--chart-1',
@@ -123,7 +124,7 @@ function resolveVars(
 }
 
 /**
- * Parse the preview token subset from `globals.css`, resolving `var()`
+ * Parse the preview token subset from the canonical token source, resolving `var()`
  * indirections against the `@theme` / `:root` / `.dark` scopes.
  *
  * `--radius` is declared only in `:root`; like every token, dark falls back to
@@ -139,10 +140,10 @@ export function resolvePreviewThemeTokensFromCss(cssPath: string): ResolvedPrevi
   const darkDecls = mergeDecls(findBlockBodies(css, '.dark'));
   const themeDecls = mergeDecls(findBlockBodies(css, '@theme'));
   if (rootDecls.size === 0) {
-    throw new Error('preview-theme-token-resolver: no :root block found in globals.css');
+    throw new Error('preview-theme-token-resolver: no :root block found in token source');
   }
   if (darkDecls.size === 0) {
-    throw new Error('preview-theme-token-resolver: no .dark block found in globals.css');
+    throw new Error('preview-theme-token-resolver: no .dark block found in token source');
   }
 
   const lightLookup = (n: string): string | undefined => rootDecls.get(n) ?? themeDecls.get(n);
@@ -178,12 +179,12 @@ export function renderPreviewThemeTokensModule(tokens: ResolvedPreviewToken[]): 
  * the reader's light/dark theme.
  *
  * GENERATED FILE — do not hand-edit. Regenerate after changing any listed
- * token in \`packages/app/src/globals.css\`:
+ * token in \`packages/app/src/styles/foundation/tokens.css\`:
  *
  *     bun run packages/core/scripts/generate-preview-theme-tokens.ts
  *
  * Drift between this file and the CSS is caught by
- * \`preview-theme-tokens.test.ts\` (re-resolves from globals.css).
+ * \`preview-theme-tokens.test.ts\` (re-resolves from the token source).
  */
 
 export interface PreviewThemeToken {

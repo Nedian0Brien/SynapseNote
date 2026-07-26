@@ -185,7 +185,7 @@
  * driven by Fumadocs `fd-*` tokens in the components themselves.
  * ------------------------------------------------------------------ */
 .ok-overview {
-  /* Canonical azure — same hex used in packages/app/src/globals.css. */
+  /* Canonical azure — same hex used in packages/app/src/styles/foundation/tokens.css. */
   --ok-accent: #3784ff;
   --ok-accent-ink: #00245d;
   --ok-accent-soft: #e6efff;
@@ -318,7 +318,7 @@
 
 /* ------------------------------------------------------------------
  * .ok-prosemirror — Landing-page editor demo content styles.
- * Mirrors the real .ProseMirror styles from packages/app/src/globals.css
+ * Mirrors the real .ProseMirror styles from packages/app/src/styles/editor/prose-base.css
  * so the demo looks identical to the shipped product.
  * ------------------------------------------------------------------ */
 
@@ -458,7 +458,7 @@
   background: color-mix(in srgb, var(--slide-text) 4%, transparent);
 }
 
-/* Block controls — + button and drag grip (mirrors packages/app/src/globals.css) */
+/* Block controls — + button and drag grip (mirrors packages/app/src/styles/editor/interaction-handles.css) */
 .ok-block-controls {
   position: absolute;
   display: flex;

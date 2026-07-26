@@ -12,6 +12,7 @@
 import type { EditorView } from '@codemirror/view';
 import type { ComposeSelection } from '@nedian0brien/synapsenote-core';
 import type { Editor } from '@tiptap/core';
+import type { DocumentMemoAnchor } from '@/lib/document-memo-store';
 import { serializeWysiwygSelection } from './edit-with-ai-selection';
 import type { EditorSurface } from './selection-stats';
 
@@ -28,6 +29,7 @@ export interface SelectionSnapshot {
   readonly lineCount: number;
   readonly sourceLineStart?: number;
   readonly sourceLineEnd?: number;
+  readonly memoAnchor?: DocumentMemoAnchor;
 }
 
 /** Inline-vs-reference threshold: only a short single-line pick is inlined
@@ -151,9 +153,13 @@ function sameSnapshot(a: SelectionSnapshot, b: SelectionSnapshot): boolean {
   return (
     a.markdown === b.markdown &&
     a.sourceLineStart === b.sourceLineStart &&
-    a.sourceLineEnd === b.sourceLineEnd
+    a.sourceLineEnd === b.sourceLineEnd &&
+    a.memoAnchor?.from === b.memoAnchor?.from &&
+    a.memoAnchor?.to === b.memoAnchor?.to
   );
 }
+
+const MEMO_ANCHOR_CONTEXT_CHARS = 48;
 
 export function publishSelectionContext(
   docName: string,
@@ -197,12 +203,32 @@ export function selectionSnapshotFromWysiwyg(
   if (editor.state.selection.empty) return null;
   const markdown = serializeWysiwygSelection(editor);
   if (!markdown.trim()) return null;
+  const { from, to } = editor.state.selection;
+  const exact = editor.state.doc.textBetween(from, to, '\n', '\uFFFC');
   return {
     surface: 'wysiwyg',
     docName,
     markdown,
     charLen: markdown.trim().length,
     lineCount: (markdown.match(/\n/g)?.length ?? 0) + 1,
+    memoAnchor: {
+      surface: 'wysiwyg',
+      exact,
+      prefix: editor.state.doc.textBetween(
+        Math.max(0, from - MEMO_ANCHOR_CONTEXT_CHARS),
+        from,
+        '\n',
+        '\uFFFC',
+      ),
+      suffix: editor.state.doc.textBetween(
+        to,
+        Math.min(editor.state.doc.content.size, to + MEMO_ANCHOR_CONTEXT_CHARS),
+        '\n',
+        '\uFFFC',
+      ),
+      from,
+      to,
+    },
   };
 }
 
@@ -280,5 +306,16 @@ export function selectionSnapshotFromSource(
     lineCount: sourceLineEnd - sourceLineStart + 1,
     sourceLineStart,
     sourceLineEnd,
+    memoAnchor: {
+      surface: 'source',
+      exact: markdown,
+      prefix: view.state.sliceDoc(Math.max(0, minFrom - MEMO_ANCHOR_CONTEXT_CHARS), minFrom),
+      suffix: view.state.sliceDoc(
+        maxTo,
+        Math.min(view.state.doc.length, maxTo + MEMO_ANCHOR_CONTEXT_CHARS),
+      ),
+      from: minFrom,
+      to: maxTo,
+    },
   };
 }

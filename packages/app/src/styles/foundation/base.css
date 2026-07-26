@@ -1,0 +1,22 @@
+/* Base styles */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    border-color: var(--color-border);
+  }
+
+  body {
+    @apply font-sans bg-sidebar text-foreground;
+  }
+  * {
+    @apply border-border outline-ring/50;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  html {
+    @apply font-sans;
+  }
+}

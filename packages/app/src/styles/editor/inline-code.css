@@ -1,0 +1,3 @@
+.inline-code {
+  @apply font-mono bg-muted text-inherit border border-border rounded-md px-1 py-0.5 text-sm;
+}

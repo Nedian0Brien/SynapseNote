@@ -21,7 +21,10 @@ export function MemoBubbleButton({ editor }: { editor: Editor }): ReactNode {
         if (docName === null) return;
         const selection = selectionSnapshotFromWysiwyg(editor, docName);
         if (selection === null) return;
-        requestMemoComposer({ docName, quote: memoQuoteFromSelection(selection) });
+        requestMemoComposer({
+          docName,
+          quote: memoQuoteFromSelection(selection),
+        });
       }}
     >
       <StickyNote className="size-3.5" aria-hidden="true" />

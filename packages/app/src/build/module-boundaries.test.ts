@@ -1,0 +1,148 @@
+import { describe, expect, test } from 'bun:test';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import {
+  DATABASE_BOUNDARY_CONTRACT,
+  LEGACY_MODULE_EXCEPTIONS,
+  MODULE_SIZE_BUDGETS,
+  missingDatabaseBoundaryModules,
+  moduleLineCount,
+  relativeAppModule,
+  resolveAppModule,
+} from './module-boundaries';
+
+const APP_SRC = join(dirname(fileURLToPath(import.meta.url)), '..');
+const DATABASE_LEAF_BOUNDARIES = [
+  'lib/database-mutations/database-desired-state-base.ts',
+  'lib/database-mutations/database-view-commands.ts',
+  'lib/database-mutations/database-page-commands.ts',
+  'lib/database-mutations/database-property-advanced-commands.ts',
+  'lib/database-mutations/database-property-option-commands.ts',
+  'lib/database-mutations/database-property-commands.ts',
+  'lib/database-mutations/database-record-commands.ts',
+  'lib/database-mutations/database-bulk-commands.ts',
+  'lib/database-mutations/database-cell-commands.ts',
+  'components/database-table/DatabaseTableShell.tsx',
+  'components/database-table/DatabaseTableViewport.tsx',
+  'components/database-table/DatabaseTableHeader.tsx',
+  'components/database-table/DatabaseTableBody.tsx',
+  'components/database-table/DatabaseTableInteractionLayer.tsx',
+  'components/database-saved-view-settings/DatabaseSavedViewSettingsShell.tsx',
+  'components/database-saved-view-settings/DatabaseSavedViewSettingsCommonPanel.tsx',
+  'components/database-saved-view-settings/DatabaseSavedViewSettingsLayoutPanel.tsx',
+  'components/database-saved-view-settings/database-saved-view-settings-draft.ts',
+  'components/database-saved-view-settings/database-saved-view-settings-utils.ts',
+  'components/database-workspace/useDatabaseWorkspaceController.ts',
+  'editor/components/use-inline-database-controller.ts',
+  'editor/components/use-inline-database-controller-state.ts',
+  'editor/components/use-inline-database-read-state.ts',
+  'editor/components/use-inline-database-commands.ts',
+  'editor/components/use-inline-database-option-commands.ts',
+  'editor/components/inline-database-history.ts',
+  'components/use-database-workspace-controller.ts',
+  'components/use-database-workspace-controller-state.ts',
+  'components/DatabaseSavedViewSettingsDialog.tsx',
+  'components/DatabaseRecordPageChrome.tsx',
+  'components/database-record-page/DatabaseRecordPageRouteAdapter.ts',
+] as const;
+
+describe('RFC 0002 module boundary guard', () => {
+  test('every extracted boundary exists and stays below its size budget', () => {
+    for (const budget of MODULE_SIZE_BUDGETS) {
+      const file = resolveAppModule(APP_SRC, budget.path);
+      expect(existsSync(file), `${budget.path} must exist`).toBe(true);
+      expect(
+        moduleLineCount(file),
+        `${budget.path} exceeds ${budget.maxLines} lines`,
+      ).toBeLessThanOrEqual(budget.maxLines);
+    }
+  });
+
+  test('legacy facades are explicit and tied to an RFC phase', () => {
+    for (const exception of LEGACY_MODULE_EXCEPTIONS) {
+      const file = resolveAppModule(APP_SRC, exception.path);
+      expect(existsSync(file), `${exception.path} must remain reviewable`).toBe(true);
+      expect(exception.rfc).toBe('0002');
+      expect(exception.targetBoundary.length).toBeGreaterThan(0);
+      expect(exception.phase.length).toBeGreaterThan(0);
+    }
+  });
+
+  test('database implementation boundaries are present and explicit', () => {
+    const missing = missingDatabaseBoundaryModules(APP_SRC);
+    expect(missing).toEqual([]);
+    expect(DATABASE_BOUNDARY_CONTRACT).toContain(
+      'components/database-table/DatabaseTableInteractionLayer.tsx',
+    );
+  });
+
+  test('new leaves do not import an old giant facade by accident', () => {
+    const forbidden = [
+      'components/FileTree.tsx',
+      'components/CommandPalette.tsx',
+      'components/settings/SettingsDialogBody.tsx',
+      'editor/DocumentContext.tsx',
+    ];
+    for (const budget of MODULE_SIZE_BUDGETS) {
+      const file = resolveAppModule(APP_SRC, budget.path);
+      const source = readFileSync(file, 'utf8');
+      for (const legacyPath of forbidden) {
+        expect(source, `${budget.path} must not import ${legacyPath}`).not.toContain(legacyPath);
+      }
+    }
+  });
+
+  test('database leaves do not own transport, snapshot, or route writes', () => {
+    for (const modulePath of DATABASE_LEAF_BOUNDARIES) {
+      const source = readFileSync(resolveAppModule(APP_SRC, modulePath), 'utf8');
+      expect(source, `${modulePath} must use a coordinator for transport`).not.toMatch(
+        /database-(catalog|query)-client|database-(linked-view|offline)-cache/,
+      );
+      expect(source, `${modulePath} must use the route adapter`).not.toMatch(
+        /window\.location\.hash\s*=/,
+      );
+    }
+  });
+
+  test('database command modules do not regress to the compatibility barrel', () => {
+    for (const modulePath of DATABASE_LEAF_BOUNDARIES.filter((path) =>
+      path.startsWith('lib/database-mutations/'),
+    )) {
+      const source = readFileSync(resolveAppModule(APP_SRC, modulePath), 'utf8');
+      expect(source, `${modulePath} must import its domain peer directly`).not.toContain(
+        'lib/database-cell-mutation',
+      );
+    }
+  });
+
+  test('inline and workspace controllers expose independent state and command ports', () => {
+    const inlineFacade = readFileSync(
+      resolveAppModule(APP_SRC, 'editor/components/use-inline-database-controller.ts'),
+      'utf8',
+    );
+    expect(inlineFacade).toContain("from './use-inline-database-controller-state'");
+    expect(inlineFacade).toContain("from './use-inline-database-commands'");
+    expect(inlineFacade).toContain('useInlineDatabaseControllerState');
+    expect(inlineFacade).toContain('useInlineDatabaseCommands');
+
+    const workspaceRuntime = readFileSync(
+      resolveAppModule(APP_SRC, 'components/use-database-workspace-controller-runtime.ts'),
+      'utf8',
+    );
+    expect(workspaceRuntime).toContain("from './use-database-workspace-controller-state'");
+    expect(workspaceRuntime).toContain("from './useDatabaseWorkspaceViewCommands'");
+    expect(workspaceRuntime).toContain('useDatabaseWorkspaceControllerState');
+    expect(workspaceRuntime).toContain('useDatabaseWorkspaceViewCommands');
+    const workspaceViewCommands = readFileSync(
+      resolveAppModule(APP_SRC, 'components/useDatabaseWorkspaceViewCommands.ts'),
+      'utf8',
+    );
+    expect(workspaceViewCommands).toContain('requestOpenDatabaseRecord');
+  });
+
+  test('paths in diagnostics are app-relative', () => {
+    const file = resolveAppModule(APP_SRC, MODULE_SIZE_BUDGETS[0]?.path ?? '');
+    expect(relativeAppModule(APP_SRC, file)).toBe(MODULE_SIZE_BUDGETS[0]?.path);
+  });
+});

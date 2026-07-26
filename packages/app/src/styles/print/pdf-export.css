@@ -1,0 +1,206 @@
+/* Transient print surface used by Markdown -> PDF export. It remains detached
+   from layout on screen; print media hides the application and lays out only
+   the cloned, already-rendered document. Kept at the end of this file so the
+   print overrides follow the editor and page-header screen rules. */
+#ok-pdf-export-root {
+  display: none;
+}
+
+/* Give sandboxed HTML previews a real A4-width layout while their print clone
+   loads and reports its complete content height. The surface stays invisible
+   and far outside the viewport until Chromium switches to print media. */
+#ok-pdf-export-root.ok-pdf-export-preparing {
+  position: fixed;
+  top: 0;
+  left: -10000px;
+  display: block;
+  visibility: hidden;
+  width: calc(210mm - 34mm);
+  pointer-events: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 18mm 17mm 21mm;
+
+    @bottom-center {
+      content: counter(page);
+      color: #6b7280;
+      font-family: var(--font-sans);
+      font-size: 9pt;
+    }
+  }
+
+  body.ok-pdf-exporting > :not(#ok-pdf-export-root) {
+    display: none;
+  }
+
+  body.ok-pdf-exporting #ok-pdf-export-root {
+    display: block;
+    color: #1f2937;
+    background: #fff;
+    font-family: var(--font-sans);
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .ok-pdf-export-document {
+    width: 100%;
+    max-width: none;
+    background: #fff;
+  }
+
+  .ok-pdf-export-document .page-header,
+  .ok-pdf-export-document .ProseMirror {
+    display: block;
+    width: 100%;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    color: #1f2937;
+    background: #fff;
+  }
+
+  .ok-pdf-export-title {
+    margin: 0 0 1.5rem;
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .ok-pdf-export-document .page-header-cover {
+    break-inside: avoid;
+  }
+
+  .ok-pdf-export-document .page-header-title::after,
+  .ok-pdf-export-document .ProseMirror .jsx-component-wrapper::before,
+  .ok-pdf-export-document .ProseMirror .jsx-component-wrapper::after {
+    display: none;
+  }
+
+  .ok-pdf-export-document .ProseMirror p.is-empty::before {
+    content: none;
+  }
+
+  .ok-pdf-export-document .ProseMirror .ok-chunk-wrapper {
+    content-visibility: visible;
+    contain: none;
+  }
+
+  .ok-pdf-export-document :is(h1, h2, h3, h4, h5, h6) {
+    break-after: avoid-page;
+    page-break-after: avoid;
+  }
+
+  .ok-pdf-export-document :is(pre, blockquote, img) {
+    break-inside: avoid;
+  }
+
+  .ok-pdf-export-document .tableWrapper,
+  .ok-pdf-export-document table {
+    overflow: visible;
+    break-inside: auto;
+  }
+
+  .ok-pdf-export-document thead {
+    display: table-header-group;
+  }
+
+  .ok-pdf-export-document tr,
+  .ok-pdf-export-document th,
+  .ok-pdf-export-document td {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .ok-pdf-export-document details.accordion {
+    /* A fragmented <details> paints its background across every page-sized
+       fragment. Keep the print wrapper transparent so the trailing fragment
+       does not become a large tinted rectangle after its final child. */
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+    break-inside: auto;
+  }
+
+  .ok-pdf-export-document details.accordion > summary {
+    break-after: avoid-page;
+    page-break-after: avoid;
+  }
+
+  .ok-pdf-export-document details.accordion > summary .accordion-chevron {
+    display: none;
+  }
+
+  .ok-pdf-export-document details.accordion > .accordion-body {
+    display: block;
+  }
+
+  .ok-pdf-export-document a {
+    color: #1d4ed8;
+    text-decoration: underline;
+  }
+
+  .ok-pdf-export-document img,
+  .ok-pdf-export-document svg,
+  .ok-pdf-export-document canvas {
+    max-width: 100%;
+  }
+
+  .ok-pdf-export-document [data-testid="image-slot"] {
+    width: auto;
+    max-width: 100%;
+    overflow: visible;
+  }
+
+  .ok-pdf-export-document img {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .ok-pdf-export-document .ok-pdf-mermaid-static {
+    display: flex;
+    width: 100%;
+    min-height: 0;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+    break-inside: avoid;
+  }
+
+  .ok-pdf-export-document .ok-pdf-mermaid-static .ok-mermaid-svg {
+    width: 100%;
+  }
+
+  .ok-pdf-export-document .ok-pdf-mermaid-static svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 245mm;
+  }
+
+  .ok-pdf-export-document .ProseMirror .ok-codeblock[data-preview="true"],
+  .ok-pdf-export-document .ProseMirror .ok-codeblock > .ok-codeblock-preview {
+    break-inside: avoid;
+  }
+
+  .ok-pdf-export-document .ProseMirror .ok-codeblock > .ok-codeblock-preview {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .ok-pdf-export-document
+    :is(
+      .ok-codeblock-chrome,
+      .ok-table-cell-handle-layer,
+      .column-resize-handle,
+      [data-rmiz-btn-zoom],
+      [data-testid="mermaid-actions"],
+      .jsx-component-chrome,
+      .jsx-add-child-pill,
+      .jsx-empty-child-placeholder
+    ) {
+    display: none;
+  }
+}

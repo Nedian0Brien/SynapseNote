@@ -1,0 +1,36 @@
+/* Horizontal rule */
+.ProseMirror hr {
+  border: none;
+  border-top: 1px solid var(--color-gray-200);
+  margin: 1em 0;
+}
+
+/* Images */
+.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  margin: 0.5em 0;
+  @apply rounded-lg;
+}
+
+.ProseMirror img.ProseMirror-selectednode {
+  outline: 2px solid var(--color-azure-blue);
+  outline-offset: 2px;
+}
+
+/* Wiki-link chip icon — the `<img>` inside `[data-wiki-link-icon]`. Lives
+   AFTER `.ProseMirror img` so source order matches the descending-
+   specificity ratchet (biome's noDescendingSpecificity). Overrides
+   the chip-image defaults (`max-width: 100%; height: auto; margin:
+   0.5em 0; rounded-lg`) with the tight inline glyph sizing the chip
+   needs. */
+.ProseMirror [data-wiki-link-icon] img {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  max-width: none;
+  margin: 0;
+  border-radius: 2px;
+  object-fit: cover;
+  vertical-align: baseline;
+}

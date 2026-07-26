@@ -12,6 +12,8 @@ export type DatabaseUiMutationOperation =
   | 'record-create'
   | 'blank-database-create'
   | 'property-create'
+  | 'option-create'
+  | 'option-reorder'
   | 'view'
   | 'schema'
   | 'bulk'
@@ -43,6 +45,10 @@ export const DATABASE_UI_MUTATION_POLICY = {
   // Adding an empty property changes only the schema shape and can be undone;
   // migrations, conversions, and destructive schema edits remain reviewed.
   'property-create': { human: 'automatic', agent: 'required' },
+  // Creating or reordering options is reversible and never rewrites existing
+  // records; assigning a newly created option is committed atomically with it.
+  'option-create': { human: 'automatic', agent: 'required' },
+  'option-reorder': { human: 'automatic', agent: 'required' },
   view: { human: 'automatic', agent: 'required' },
   schema: { human: 'required', agent: 'required' },
   bulk: { human: 'required', agent: 'required' },

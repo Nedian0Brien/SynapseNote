@@ -52,6 +52,7 @@ import {
 } from './git-preflight.ts';
 import { emitPreflightFailureSpan } from './git-preflight-telemetry.ts';
 import { attachIdleShutdown, type IdleShutdownHandle } from './idle-shutdown.ts';
+import { migrateLegacyPackSkills } from './legacy-pack-skill-migration.ts';
 import { resolveLocalSinkConfig } from './local-sink-resolver.ts';
 import { getLogger, loggerFactory, type PinoLogger } from './logger.ts';
 import { createMcpHttpHandler } from './mcp-http.ts';
@@ -606,6 +607,43 @@ async function bootServerInner(opts: BootServerOptions): Promise<BootedServer> {
   if (legacyFound.length > 0) {
     console.warn(
       `[boot] Found legacy runtime files at ${OK_DIR}/${legacyFound.join(', ')}. Delete ${OK_DIR}/ and re-init — these files moved to ${OK_DIR}/${LOCAL_DIR}/.`,
+    );
+  }
+
+  // Rebrand compatibility: move editable starter-pack forks from the retired
+  // `open-knowledge-pack-*` identity to `synapsenote-pack-*` before createServer
+  // can open their CRDT documents. Best-effort and collision-safe: a destination
+  // that already exists is never overwritten.
+  try {
+    const migration = await migrateLegacyPackSkills({
+      projectDir,
+      skillsRoot: resolve(opts.contentDir, OK_DIR, 'skills'),
+    });
+    if (migration.migrated.length > 0) {
+      log.info(
+        { event: 'legacy-pack-skills-migrated', skills: migration.migrated },
+        `Migrated ${migration.migrated.length} legacy starter-pack skill${migration.migrated.length === 1 ? '' : 's'} to SynapseNote identities.`,
+      );
+    }
+    if (
+      migration.collisions.length > 0 ||
+      migration.skipped.length > 0 ||
+      migration.failures.length > 0
+    ) {
+      log.warn(
+        {
+          event: 'legacy-pack-skills-migration-incomplete',
+          collisions: migration.collisions,
+          skipped: migration.skipped,
+          failures: migration.failures,
+        },
+        'Some legacy starter-pack skills need manual migration.',
+      );
+    }
+  } catch (err) {
+    log.warn(
+      { event: 'legacy-pack-skills-migration-failed', error: String(err) },
+      'Legacy starter-pack skill migration failed (non-fatal).',
     );
   }
 

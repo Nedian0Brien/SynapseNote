@@ -1,3 +1,4 @@
+// biome-ignore-all lint/plugin/no-raw-html-interactive-element: native select preserves the compact insertion control and its existing keyboard contract.
 import type {
   ProjectedDatabasePerson,
   ProjectedDatabaseRelationRecord,
@@ -74,7 +75,7 @@ export function DatabaseRichTextCellEditor({
               if (person) insertAtSelection(databasePersonMentionMarkup(person.id, person.name));
             }}
           >
-            <option value="">Mention person…</option>
+            <option value="">Mention person</option>
             {people
               .filter((person) => person.active)
               .map((person) => (
@@ -96,7 +97,7 @@ export function DatabaseRichTextCellEditor({
               if (record) insertAtSelection(databaseRecordReferenceMarkup(record.id, record.title));
             }}
           >
-            <option value="">Reference record…</option>
+            <option value="">Reference record</option>
             {records.map((record) => (
               <option key={record.id} value={record.id}>
                 {record.title}

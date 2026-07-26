@@ -10,6 +10,7 @@ import {
   DATABASE_NAVIGATION_CHANGE_EVENT,
   databasePageTargetFromHash,
   databasePageTargetToHash,
+  navigateToDatabaseHash,
 } from '@/lib/database-navigation';
 import { ROUTE_NAVIGATION_CHANGE_EVENT } from '@/lib/doc-hash';
 import { subscribeToDatabaseChanged } from '@/lib/documents-events';
@@ -127,7 +128,7 @@ export function DatabaseSidebarSection() {
   }, [open]);
 
   function openSource(databaseId: string, sourceId: string) {
-    window.location.hash = databasePageTargetToHash({ databaseId, sourceId });
+    navigateToDatabaseHash(databasePageTargetToHash({ databaseId, sourceId }));
   }
 
   return (

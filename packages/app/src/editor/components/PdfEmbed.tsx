@@ -42,6 +42,7 @@ import {
   ScrollStrategy,
   useScroll,
 } from '@embedpdf/plugin-scroll/react';
+import { SearchLayer, SearchPluginPackage, useSearch } from '@embedpdf/plugin-search/react';
 import {
   SelectionLayer,
   SelectionPluginPackage,
@@ -67,6 +68,7 @@ import {
   ArrowUpRight,
   Check,
   ChevronDown,
+  ChevronUp,
   Download,
   File,
   Highlighter,
@@ -74,7 +76,9 @@ import {
   MessageSquareText,
   PanelLeft,
   Save,
+  Search,
   StickyNote,
+  X,
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
@@ -85,11 +89,23 @@ import { composeTerminalSelectionPaste } from '@/components/handoff/compose-term
 import { requestActiveTerminalInput } from '@/components/handoff/terminal-input-events';
 import { type PanelOutlineItem, PanelOutlineList } from '@/components/PanelOutlineList';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Panel, PanelBody, PanelCount, PanelEmpty, PanelTitle } from '@/components/ui/panel';
+import {
+  Panel,
+  PanelBody,
+  PanelCount,
+  PanelEmpty,
+  PanelHeader,
+  PanelTitle,
+} from '@/components/ui/panel';
 import { Separator } from '@/components/ui/separator';
 import { publishSelectionContext, selectionSnapshotFromPdf } from '@/editor/selection-context';
 import { hashFromDocName } from '@/lib/doc-hash';
-import { PdfAnnotationMenu, PdfSelectionMenu } from './PdfSelectionMenu.tsx';
+import {
+  type PdfReadingPosition,
+  readPdfReadingPosition,
+  writePdfReadingPosition,
+} from '@/lib/pdf-reading-position-store';
+import { PDF_HIGHLIGHT_COLORS, PdfAnnotationMenu, PdfSelectionMenu } from './PdfSelectionMenu.tsx';
 import { useSharedPdfiumEngine } from './pdfium-engine.ts';
 
 export interface PdfEmbedProps {
@@ -148,6 +164,9 @@ export function PdfEmbed(props: PdfEmbedProps) {
       defaultSpreadMode: SpreadMode.None,
     }),
     createPluginRegistration(RenderPluginPackage),
+    createPluginRegistration(SearchPluginPackage, {
+      showAllResults: true,
+    }),
     createPluginRegistration(SelectionPluginPackage, {
       marquee: { enabled: false },
       minSelectionDragDistance: 2,
@@ -218,6 +237,7 @@ export function PdfEmbed(props: PdfEmbedProps) {
                   targetPage={props.targetPage}
                   selectionDocumentName={props.selectionDocumentName}
                   sourceAssetPath={pdfAssetPathFromSource(props.src)}
+                  readingPositionKey={pdfAssetPathFromSource(props.src) ?? props.src}
                   standaloneViewer={props.standaloneViewer}
                   panelContainer={props.panelContainer}
                   activePanelTab={props.activePanelTab}
@@ -240,6 +260,7 @@ interface LoadedPdfProps {
   targetPage: number | null;
   selectionDocumentName?: string;
   sourceAssetPath: string | null;
+  readingPositionKey: string;
   standaloneViewer?: boolean;
   panelContainer?: HTMLElement | null;
   activePanelTab?: PdfPanelTab;
@@ -253,10 +274,24 @@ function LoadedPdf(props: LoadedPdfProps) {
   const { provides: selection } = useSelectionCapability();
   const { state: annotationState, provides: annotation } = useAnnotation(props.documentId);
   const { provides: pdfExport } = useExport(props.documentId);
-  const initialPage = clampPage(props.targetPage ?? 1, props.totalPages);
+  const { state: searchState, provides: search } = useSearch(props.documentId);
+  const [initialReadingPosition] = useState<PdfReadingPosition>(() => {
+    if (props.targetPage !== null) {
+      return { pageNumber: props.targetPage, pageOffsetY: 0 };
+    }
+    return readPdfReadingPosition(props.readingPositionKey) ?? { pageNumber: 1, pageOffsetY: 0 };
+  });
+  const initialPage = clampPage(initialReadingPosition.pageNumber, props.totalPages);
+  const initialPageOffsetY =
+    initialPage === initialReadingPosition.pageNumber ? initialReadingPosition.pageOffsetY : 0;
   const initialPageApplied = useRef(false);
+  const pendingReadingPositionRef = useRef<PdfReadingPosition | null>(null);
+  const readingPositionWriteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const layoutZoomFrame = useRef<number | null>(null);
   const layoutMenuRef = useRef<HTMLDivElement>(null);
+  const pagesRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const lastScrolledSearchResultRef = useRef<string | null>(null);
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
   const saveRevisionRef = useRef(0);
   const mountedRef = useRef(true);
@@ -264,12 +299,34 @@ function LoadedPdf(props: LoadedPdfProps) {
   const [layoutMode, setLayoutMode] = useState<PdfLayoutMode>('fit-width');
   const [showThumbs, setShowThumbs] = useState(false);
   const [layoutMenuOpen, setLayoutMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchDraft, setSearchDraft] = useState('');
   const [selectedText, setSelectedText] = useState('');
+  const [highlightColor, setHighlightColor] = useState<string>(PDF_HIGHLIGHT_COLORS[0]);
   const [pdfSaveState, setPdfSaveState] = useState<PdfSaveState>('clean');
   const [bookmarks, setBookmarks] = useState<PdfBookmarkObject[] | null>(null);
   const currentPage = clampPage(scrollState.currentPage, props.totalPages);
   const pageInputValue = pageInputDraft ?? String(currentPage);
   const canOverwriteSource = Boolean(props.sourceAssetPath && window.okDesktop?.shell.savePdf);
+
+  const openSearch = () => {
+    lastScrolledSearchResultRef.current = null;
+    setSearchOpen(true);
+    search?.startSearch();
+    requestAnimationFrame(() => {
+      searchInputRef.current?.focus();
+      searchInputRef.current?.select();
+    });
+  };
+  const openSearchEvent = useEffectEvent(openSearch);
+
+  const closeSearch = () => {
+    lastScrolledSearchResultRef.current = null;
+    setSearchOpen(false);
+    setSearchDraft('');
+    search?.stopSearch();
+    pagesRef.current?.focus({ preventScroll: true });
+  };
 
   const enqueuePdfSave = (allowDownload: boolean) => {
     const revision = saveRevisionRef.current + 1;
@@ -314,8 +371,44 @@ function LoadedPdf(props: LoadedPdfProps) {
   useEffect(() => {
     if (initialPageApplied.current || !scroll) return;
     initialPageApplied.current = true;
-    scroll.scrollToPage({ pageNumber: initialPage, behavior: 'instant', alignY: 0 });
-  }, [initialPage, scroll]);
+    scroll.scrollToPage({
+      pageNumber: initialPage,
+      ...(initialPageOffsetY > 0 ? { pageCoordinates: { x: 0, y: initialPageOffsetY } } : {}),
+      behavior: 'instant',
+      alignY: 0,
+    });
+  }, [initialPage, initialPageOffsetY, scroll]);
+
+  useEffect(() => {
+    if (!scroll) return;
+    const flushReadingPosition = () => {
+      const position = pendingReadingPositionRef.current;
+      pendingReadingPositionRef.current = null;
+      if (position) writePdfReadingPosition(props.readingPositionKey, position);
+    };
+    const stop = scroll.onScroll((metrics) => {
+      const leadingPage = metrics.pageVisibilityMetrics[0];
+      pendingReadingPositionRef.current = {
+        pageNumber: clampPage(leadingPage?.pageNumber ?? metrics.currentPage, props.totalPages),
+        pageOffsetY: Math.max(0, leadingPage?.original.pageY ?? 0),
+      };
+      if (readingPositionWriteTimerRef.current !== null) {
+        clearTimeout(readingPositionWriteTimerRef.current);
+      }
+      readingPositionWriteTimerRef.current = setTimeout(() => {
+        readingPositionWriteTimerRef.current = null;
+        flushReadingPosition();
+      }, 150);
+    });
+    return () => {
+      stop();
+      if (readingPositionWriteTimerRef.current !== null) {
+        clearTimeout(readingPositionWriteTimerRef.current);
+        readingPositionWriteTimerRef.current = null;
+      }
+      flushReadingPosition();
+    };
+  }, [props.readingPositionKey, props.totalPages, scroll]);
 
   useEffect(() => {
     if (!layoutMenuOpen) return;
@@ -327,6 +420,54 @@ function LoadedPdf(props: LoadedPdfProps) {
     document.addEventListener('pointerdown', closeOnOutsidePointer);
     return () => document.removeEventListener('pointerdown', closeOnOutsidePointer);
   }, [layoutMenuOpen]);
+
+  useEffect(() => {
+    if (!searchOpen || !search) return;
+    const timer = window.setTimeout(
+      () => search.searchAllPages(searchDraft),
+      searchDraft.trim() === '' ? 0 : 150,
+    );
+    return () => window.clearTimeout(timer);
+  }, [search, searchDraft, searchOpen]);
+
+  useEffect(() => {
+    const activeResult = searchState.results[searchState.activeResultIndex];
+    if (!searchOpen || !scroll || !activeResult) return;
+    const resultKey = `${searchState.query}:${searchState.activeResultIndex}:${activeResult.pageIndex}:${activeResult.charIndex}`;
+    if (lastScrolledSearchResultRef.current === resultKey) return;
+    lastScrolledSearchResultRef.current = resultKey;
+    const firstRect = activeResult.rects[0];
+    scroll.scrollToPage({
+      pageNumber: activeResult.pageIndex + 1,
+      ...(firstRect
+        ? {
+            pageCoordinates: {
+              x: firstRect.origin.x + firstRect.size.width / 2,
+              y: firstRect.origin.y + firstRect.size.height / 2,
+            },
+          }
+        : {}),
+      behavior: 'smooth',
+      alignX: 50,
+      alignY: 40,
+    });
+  }, [scroll, searchOpen, searchState.activeResultIndex, searchState.query, searchState.results]);
+
+  useEffect(() => {
+    const handleFindShortcut = (event: KeyboardEvent) => {
+      if (!(event.metaKey || event.ctrlKey) || event.altKey || event.key.toLowerCase() !== 'f') {
+        return;
+      }
+      const viewer = pagesRef.current?.closest('.ok-pdf');
+      const viewerHasFocus = viewer?.contains(document.activeElement);
+      if (!props.standaloneViewer && !viewerHasFocus) return;
+      event.preventDefault();
+      event.stopPropagation();
+      openSearchEvent();
+    };
+    window.addEventListener('keydown', handleFindShortcut, true);
+    return () => window.removeEventListener('keydown', handleFindShortcut, true);
+  }, [props.standaloneViewer]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -416,6 +557,10 @@ function LoadedPdf(props: LoadedPdfProps) {
   const goToPage = (page: number) => {
     const clamped = clampPage(page, props.totalPages);
     setPageInputDraft(null);
+    writePdfReadingPosition(props.readingPositionKey, {
+      pageNumber: clamped,
+      pageOffsetY: 0,
+    });
     scroll?.scrollToPage({ pageNumber: clamped, behavior: 'instant', alignY: 0 });
   };
 
@@ -428,7 +573,7 @@ function LoadedPdf(props: LoadedPdfProps) {
     goToPage(page);
   };
 
-  const createHighlight = () => {
+  const createHighlight = (color: string) => {
     if (!selection || !annotation) return;
     const scope = selection.forDocument(props.documentId);
     for (const selectedRange of scope.getFormattedSelection()) {
@@ -438,11 +583,11 @@ function LoadedPdf(props: LoadedPdfProps) {
         pageIndex: selectedRange.pageIndex,
         rect: selectedRange.rect,
         segmentRects: selectedRange.segmentRects,
-        contents: selectedText || undefined,
-        strokeColor: '#facc15',
+        strokeColor: color,
         opacity: 0.45,
         flags: ['print'],
         created: new Date(),
+        subject: selectedText || undefined,
       };
       annotation.createAnnotation(selectedRange.pageIndex, highlight);
     }
@@ -548,6 +693,22 @@ function LoadedPdf(props: LoadedPdfProps) {
     );
   };
 
+  const selectPanelAnnotation = (entry: PdfPanelEntry) => {
+    setPageInputDraft(null);
+    const rect = entry.object.rect;
+    scroll?.scrollToPage({
+      pageNumber: entry.pageIndex + 1,
+      pageCoordinates: {
+        x: rect.origin.x + rect.size.width / 2,
+        y: rect.origin.y + rect.size.height / 2,
+      },
+      behavior: 'smooth',
+      alignX: 50,
+      alignY: 40,
+    });
+    annotation?.selectAnnotation(entry.pageIndex, entry.id);
+  };
+
   const panelPortal =
     props.panelContainer && props.activePanelTab
       ? createPortal(
@@ -559,13 +720,11 @@ function LoadedPdf(props: LoadedPdfProps) {
             totalPages={props.totalPages}
             currentPage={currentPage}
             annotations={panelAnnotations}
+            selectedAnnotationId={annotationState.selectedUid}
             links={panelLinks}
             bookmarks={bookmarks}
             onGoToPage={goToPage}
-            onSelectAnnotation={(pageIndex, id) => {
-              goToPage(pageIndex + 1);
-              annotation?.selectAnnotation(pageIndex, id);
-            }}
+            onSelectAnnotation={selectPanelAnnotation}
             onNavigateTarget={navigateToTarget}
           />,
           props.panelContainer,
@@ -597,6 +756,103 @@ function LoadedPdf(props: LoadedPdfProps) {
           <span className="ok-pdf-title">{props.title ?? 'PDF'}</span>
         )}
         <div className="ok-pdf-controls">
+          {searchOpen ? (
+            <form
+              className="ok-pdf-search"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const query = searchDraft.trim();
+                if (query === '') return;
+                if (searchState.query !== query) {
+                  search?.searchAllPages(query);
+                } else {
+                  search?.nextResult();
+                }
+              }}
+            >
+              <Search size={14} aria-hidden="true" className="ok-pdf-search-icon" />
+              <input
+                ref={searchInputRef}
+                type="search"
+                value={searchDraft}
+                onChange={(event) => setSearchDraft(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Escape') {
+                    event.preventDefault();
+                    closeSearch();
+                  } else if (event.key === 'Enter') {
+                    event.preventDefault();
+                    const query = searchDraft.trim();
+                    if (query === '') return;
+                    if (searchState.query !== query) {
+                      search?.searchAllPages(query);
+                    } else if (event.shiftKey) {
+                      search?.previousResult();
+                    } else {
+                      search?.nextResult();
+                    }
+                  }
+                }}
+                className="ok-pdf-search-input"
+                aria-label={t`Search PDF`}
+                placeholder={t`Find in PDF`}
+                autoComplete="off"
+                spellCheck={false}
+              />
+              <span className="ok-pdf-search-count" aria-live="polite">
+                {searchState.loading ? (
+                  <LoaderCircle size={13} className="animate-spin" aria-label={t`Searching`} />
+                ) : searchDraft.trim() === '' ? null : searchState.total === 0 ? (
+                  <Trans>No results</Trans>
+                ) : (
+                  `${searchState.activeResultIndex + 1} / ${searchState.total}`
+                )}
+              </span>
+              <button
+                type="button"
+                className="ok-pdf-btn"
+                onClick={() => search?.previousResult()}
+                disabled={searchState.total === 0}
+                aria-label={t`Previous result`}
+                title={t`Previous result`}
+              >
+                <ChevronUp size={14} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className="ok-pdf-btn"
+                onClick={() => search?.nextResult()}
+                disabled={searchState.total === 0}
+                aria-label={t`Next result`}
+                title={t`Next result`}
+              >
+                <ChevronDown size={14} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className="ok-pdf-btn"
+                onClick={closeSearch}
+                aria-label={t`Close search`}
+                title={t`Close search`}
+              >
+                <X size={14} aria-hidden="true" />
+              </button>
+            </form>
+          ) : (
+            <button
+              type="button"
+              onClick={openSearch}
+              aria-label={t`Search PDF`}
+              aria-keyshortcuts="Meta+F Control+F"
+              className="ok-pdf-btn"
+              title={t`Find in PDF`}
+            >
+              <Search size={14} aria-hidden="true" />
+            </button>
+          )}
+
+          <span className="ok-pdf-divider" aria-hidden="true" />
+
           <form
             className="ok-pdf-page-form"
             onSubmit={(event) => {
@@ -754,6 +1010,7 @@ function LoadedPdf(props: LoadedPdfProps) {
         )}
 
         <div
+          ref={pagesRef}
           className="ok-pdf-pages"
           tabIndex={-1}
           onPointerDown={(event) => event.currentTarget.focus({ preventScroll: true })}
@@ -786,6 +1043,13 @@ function LoadedPdf(props: LoadedPdfProps) {
                       draggable={false}
                       style={{ pointerEvents: 'none' }}
                     />
+                    <SearchLayer
+                      documentId={props.documentId}
+                      pageIndex={pageIndex}
+                      className="ok-pdf-search-layer"
+                      highlightColor="rgba(250, 204, 21, 0.55)"
+                      activeHighlightColor="rgba(249, 115, 22, 0.75)"
+                    />
                     <SelectionLayer
                       documentId={props.documentId}
                       pageIndex={pageIndex}
@@ -794,6 +1058,8 @@ function LoadedPdf(props: LoadedPdfProps) {
                         <PdfSelectionMenu
                           {...menuProps}
                           canAskAi={Boolean(props.selectionDocumentName && selectedText.trim())}
+                          highlightColor={highlightColor}
+                          onHighlightColorChange={setHighlightColor}
                           onHighlight={createHighlight}
                           onMemo={(contents) => createMemo(pageIndex, contents)}
                           onAskAi={askAiAboutSelection}
@@ -813,12 +1079,20 @@ function LoadedPdf(props: LoadedPdfProps) {
                               { contents, modified: new Date() },
                             );
                           }}
+                          onUpdateColor={(strokeColor) => {
+                            annotation?.updateAnnotation(
+                              menuProps.context.pageIndex,
+                              menuProps.context.annotation.object.id,
+                              { strokeColor, modified: new Date() },
+                            );
+                          }}
                           onDelete={() => {
                             annotation?.deleteAnnotation(
                               menuProps.context.pageIndex,
                               menuProps.context.annotation.object.id,
                             );
                           }}
+                          onClose={() => annotation?.deselectAnnotation()}
                         />
                       )}
                     />
@@ -847,10 +1121,11 @@ interface PdfRailContentProps {
   totalPages: number;
   currentPage: number;
   annotations: PdfPanelEntry[];
+  selectedAnnotationId: string | null;
   links: PdfPanelEntry<PdfLinkAnnoObject>[];
   bookmarks: PdfBookmarkObject[] | null;
   onGoToPage: (page: number) => void;
-  onSelectAnnotation: (pageIndex: number, id: string) => void;
+  onSelectAnnotation: (entry: PdfPanelEntry) => void;
   onNavigateTarget: (target: PdfLinkTarget) => void;
 }
 
@@ -870,6 +1145,7 @@ function PdfRailContent(props: PdfRailContentProps) {
     return (
       <PdfAnnotationsPanel
         annotations={props.annotations}
+        selectedAnnotationId={props.selectedAnnotationId}
         onSelectAnnotation={props.onSelectAnnotation}
       />
     );
@@ -999,10 +1275,12 @@ function LazyPdfPanelThumbnail({ documentId, meta }: { documentId: string; meta:
 
 function PdfAnnotationsPanel({
   annotations,
+  selectedAnnotationId,
   onSelectAnnotation,
 }: {
   annotations: PdfPanelEntry[];
-  onSelectAnnotation: (pageIndex: number, id: string) => void;
+  selectedAnnotationId: string | null;
+  onSelectAnnotation: (entry: PdfPanelEntry) => void;
 }) {
   const { t } = useLingui();
   if (annotations.length === 0) {
@@ -1016,39 +1294,77 @@ function PdfAnnotationsPanel({
   }
 
   return (
-    <section className="h-full overflow-y-auto p-2" aria-label={t`Annotations`}>
-      <div className="flex flex-col gap-1">
-        {annotations.map((entry) => {
-          const isMemo = entry.object.type === PdfAnnotationSubtype.TEXT;
-          const contents = pdfAnnotationContents(entry.object);
-          const label = isMemo ? t`Memo` : t`Highlight`;
-          const Icon = isMemo ? MessageSquareText : Highlighter;
-          return (
-            <button
-              type="button"
-              key={entry.id}
-              className="flex w-full items-start gap-2.5 rounded-md px-2.5 py-2 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              onClick={() => onSelectAnnotation(entry.pageIndex, entry.id)}
-              aria-label={t`${label} on page ${entry.pageIndex + 1}`}
-            >
-              <Icon
-                className="mt-0.5 size-4 shrink-0"
-                style={{ color: pdfAnnotationColor(entry.object) }}
-                aria-hidden="true"
-              />
-              <span className="min-w-0 flex-1">
-                <span className="block text-xs font-medium text-foreground">
-                  {label} · {t`Page ${entry.pageIndex + 1}`}
+    <Panel aria-label={t`Annotations`}>
+      <PanelHeader className="border-b px-4 py-3">
+        <PanelTitle>
+          <Trans>Annotations</Trans>
+        </PanelTitle>
+        <PanelCount>{annotations.length}</PanelCount>
+      </PanelHeader>
+      <PanelBody className="px-0 py-0">
+        <div className="flex flex-col">
+          {annotations.map((entry) => {
+            const isMemo = entry.object.type === PdfAnnotationSubtype.TEXT;
+            const source = isMemo ? '' : pdfHighlightSource(entry.object);
+            const memo = isMemo
+              ? pdfAnnotationContents(entry.object)
+              : pdfHighlightMemo(entry.object);
+            const label = isMemo ? t`Memo` : t`Highlight`;
+            const Icon = isMemo ? MessageSquareText : Highlighter;
+            const selected = entry.id === selectedAnnotationId;
+            return (
+              <button
+                type="button"
+                key={entry.id}
+                className="relative flex w-full items-start gap-2.5 border-b border-l-2 border-b-border/60 px-3 py-3 text-left transition-colors last:border-b-0 hover:bg-muted/60 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring data-[selected=true]:bg-muted/80"
+                style={{ borderLeftColor: pdfAnnotationColor(entry.object) }}
+                data-selected={selected}
+                onClick={() => onSelectAnnotation(entry)}
+                aria-label={t`${label} on page ${entry.pageIndex + 1}`}
+              >
+                <Icon
+                  className="mt-0.5 size-4 shrink-0"
+                  style={{ color: pdfAnnotationColor(entry.object) }}
+                  aria-hidden="true"
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[11px] font-semibold text-muted-foreground">
+                    {label} · {t`Page ${entry.pageIndex + 1}`}
+                  </span>
+                  {source && (
+                    <span className="mt-1 block line-clamp-3 text-xs leading-5 text-foreground">
+                      “{source}”
+                    </span>
+                  )}
+                  {memo && (
+                    <span
+                      className={
+                        source
+                          ? 'mt-2 flex items-start gap-1.5 border-t border-border/50 pt-2 text-xs leading-5 text-muted-foreground'
+                          : 'mt-1 block line-clamp-3 text-xs leading-5 text-foreground'
+                      }
+                    >
+                      {source && (
+                        <MessageSquareText
+                          className="mt-0.5 size-3.5 shrink-0"
+                          aria-hidden="true"
+                        />
+                      )}
+                      <span className="line-clamp-3">{memo}</span>
+                    </span>
+                  )}
+                  {!source && !memo && (
+                    <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                      <Trans>No annotation text</Trans>
+                    </span>
+                  )}
                 </span>
-                <span className="mt-0.5 line-clamp-3 text-xs leading-5 text-muted-foreground">
-                  {contents || t`No annotation text`}
-                </span>
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </section>
+              </button>
+            );
+          })}
+        </div>
+      </PanelBody>
+    </Panel>
   );
 }
 
@@ -1110,7 +1426,7 @@ function PdfLinksPanel({
   documentName: string | null;
   links: PdfPanelEntry<PdfLinkAnnoObject>[];
   annotations: PdfPanelEntry[];
-  onSelectAnnotation: (pageIndex: number, id: string) => void;
+  onSelectAnnotation: (entry: PdfPanelEntry) => void;
   onNavigateTarget: (target: PdfLinkTarget) => void;
 }) {
   const { t } = useLingui();
@@ -1240,7 +1556,7 @@ function PdfLinksPanel({
                 type="button"
                 key={entry.id}
                 className="flex w-full items-start gap-2.5 rounded-md px-3 py-2.5 text-left transition-colors hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                onClick={() => onSelectAnnotation(entry.pageIndex, entry.id)}
+                onClick={() => onSelectAnnotation(entry)}
               >
                 <StickyNote
                   className="mt-0.5 size-3.5 shrink-0 text-amber-500"
@@ -1324,6 +1640,51 @@ function PdfRailEmptyState({
 }
 
 function pdfAnnotationContents(annotation: PdfAnnotationObject): string {
+  const contents =
+    'contents' in annotation && typeof annotation.contents === 'string'
+      ? annotation.contents.trim()
+      : '';
+  if (contents) return contents;
+  if ('subject' in annotation && typeof annotation.subject === 'string') {
+    const subject = annotation.subject.trim();
+    if (subject) return subject;
+  }
+  if (
+    annotation.custom &&
+    typeof annotation.custom === 'object' &&
+    typeof annotation.custom.synapseNoteSelection === 'string'
+  ) {
+    return annotation.custom.synapseNoteSelection.trim();
+  }
+  return '';
+}
+
+function pdfHighlightSource(annotation: PdfAnnotationObject): string {
+  if ('subject' in annotation && typeof annotation.subject === 'string') {
+    const subject = annotation.subject.trim();
+    if (subject) return subject;
+  }
+  if (
+    annotation.custom &&
+    typeof annotation.custom === 'object' &&
+    typeof annotation.custom.synapseNoteSelection === 'string'
+  ) {
+    const selection = annotation.custom.synapseNoteSelection.trim();
+    if (selection) return selection;
+  }
+  return pdfAnnotationContents(annotation);
+}
+
+function pdfHighlightMemo(annotation: PdfAnnotationObject): string {
+  const sourceIsStoredSeparately =
+    ('subject' in annotation &&
+      typeof annotation.subject === 'string' &&
+      annotation.subject.trim() !== '') ||
+    (annotation.custom &&
+      typeof annotation.custom === 'object' &&
+      typeof annotation.custom.synapseNoteSelection === 'string' &&
+      annotation.custom.synapseNoteSelection.trim() !== '');
+  if (!sourceIsStoredSeparately) return '';
   return 'contents' in annotation && typeof annotation.contents === 'string'
     ? annotation.contents.trim()
     : '';

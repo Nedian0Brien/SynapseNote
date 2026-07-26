@@ -48,7 +48,7 @@
  *
  * First-column freeze is pure CSS — `.tableWrapper` IS the horizontal scroll
  * container, so `position: sticky; left: 0` works natively on first-column
- * cells. See `globals.css` for those rules.
+ * cells. See `styles/editor/tables.css` for those rules.
  */
 
 import { Extension } from '@tiptap/core';
@@ -231,7 +231,7 @@ function buildChromeKeyframes(range: FreezeRange, scrollMax: number, zIndex: str
 }
 
 /** Occluder reveal: the static ::before block above each header cell (see
- *  globals.css) becomes opaque while frozen. It is painted into the cell's
+ *  `styles/editor/tables.css`) becomes opaque while frozen. It is painted into the cell's
  *  composited layer, so it tracks the transform pixel-for-pixel — unlike a
  *  scroll-driven clip-path on the wrapper, which updates off the compositor
  *  and can trail (or, across rebuild cycles, desync from) the header. */

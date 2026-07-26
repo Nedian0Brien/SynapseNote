@@ -39,7 +39,12 @@ function makeEditor(docName: string | null, text: string, collapsed = false): Ed
     state: {
       schema,
       doc,
-      selection: { empty: collapsed, from, to, content: () => doc.slice(from, to) },
+      selection: {
+        empty: collapsed,
+        from,
+        to,
+        content: () => doc.slice(from, to),
+      },
     },
   } as unknown as Editor;
   setEditorDocName(editor, docName);
@@ -52,6 +57,7 @@ let unsubscribeMemo: (() => void) | null = null;
 let unsubscribePanel: (() => void) | null = null;
 
 beforeEach(() => {
+  window.localStorage.clear();
   memoRequests = [];
   panelTabs = [];
   consumePendingMemoComposerRequest('notes/today');
@@ -61,6 +67,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  window.localStorage.clear();
   unsubscribeMemo?.();
   unsubscribePanel?.();
   unsubscribeMemo = null;
@@ -87,6 +94,14 @@ describe('MemoBubbleButton', () => {
         markdown: 'A selected passage.',
         sourceLineStart: undefined,
         sourceLineEnd: undefined,
+        anchor: {
+          surface: 'wysiwyg',
+          exact: 'A selected passage.',
+          prefix: '',
+          suffix: '',
+          from: 1,
+          to: 20,
+        },
       },
     });
     expect(consumePendingMemoComposerRequest('notes/today')).toEqual(memoRequests[0]);
@@ -100,5 +115,10 @@ describe('MemoBubbleButton', () => {
 
     expect(panelTabs).toEqual([]);
     expect(memoRequests).toEqual([]);
+  });
+
+  test('does not add a second Highlight button beside Memo', () => {
+    render(<MemoBubbleButton editor={makeEditor('notes/today', 'Highlight this passage.')} />);
+    expect(screen.queryByRole('button', { name: 'Highlight' })).toBeNull();
   });
 });

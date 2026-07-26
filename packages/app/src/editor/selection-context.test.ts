@@ -106,6 +106,14 @@ describe('selectionSnapshotFromSource', () => {
       lineCount: 1,
       sourceLineStart: 2,
       sourceLineEnd: 2,
+      memoAnchor: {
+        surface: 'source',
+        exact: 'line two',
+        prefix: 'line one\n',
+        suffix: '\nline three',
+        from: 9,
+        to: 17,
+      },
     });
   });
 

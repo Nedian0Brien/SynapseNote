@@ -6,7 +6,7 @@ import {
   type DatabaseRecordIndexRebuildResult,
 } from './database-record-index.ts';
 import { recordDatabaseIndexRebuild } from './database-telemetry.ts';
-import type { DiskEvent } from './file-watcher.ts';
+import { assertNeverDiskEvent, type DiskEvent } from './file-watcher.ts';
 
 export type DatabaseIndexRefreshReason =
   | 'startup'
@@ -195,8 +195,16 @@ export class DatabaseIndexCoordinator {
           return 'record-rename' as const;
         case 'conflict':
           return 'record-conflict' as const;
-        default:
+        case 'asset-create':
+        case 'asset-delete':
+        case 'folder-create':
+        case 'folder-delete':
+        case 'file-create':
+        case 'file-update':
+        case 'file-delete':
           return null;
+        default:
+          return assertNeverDiskEvent(event);
       }
     })();
     if (reason === null) return;

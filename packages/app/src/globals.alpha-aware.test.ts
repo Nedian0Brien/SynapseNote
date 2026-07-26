@@ -23,12 +23,12 @@
  */
 
 import { describe, expect, test } from 'bun:test';
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { loadStyleManifest } from './build/style-manifest.ts';
 
-const CSS = readFileSync(join(__dirname, 'globals.css'), 'utf8');
+const CSS = loadStyleManifest(join(__dirname, 'globals.css')).css;
 
-describe('globals.css alpha-aware retrofit', () => {
+describe('platform-electron.css alpha-aware retrofit', () => {
   test('html.electron-mode renders the html background as transparent so vibrancy is exposed', () => {
     expect(CSS).toMatch(/html\.electron-mode\s*\{[^}]*background-color\s*:\s*transparent[^}]*\}/);
   });
@@ -70,7 +70,7 @@ describe('globals.css alpha-aware retrofit', () => {
   });
 });
 
-describe('globals.css STOP rule — inner editor surfaces stay opaque', () => {
+describe('platform-electron.css STOP rule — inner editor surfaces stay opaque', () => {
   test('[data-slot="sidebar-inset"] is NEVER targeted by an alpha-aware electron-mode rule', () => {
     // STOP rule: the inner main canvas is the visual depth cue — it must
     // remain solid `bg-background` even in Electron mode. An alpha-aware

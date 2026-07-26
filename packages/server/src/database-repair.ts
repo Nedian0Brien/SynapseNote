@@ -165,6 +165,12 @@ interface InternalPlan {
 export interface CreateDatabaseRepairEngineOptions {
   projectDir: string;
   contentDir: string;
+  /**
+   * Permit a deliberately isolated single-file session to write back to the
+   * user's content directory while keeping all `.ok/` state under its
+   * throwaway project root. Normal project servers must leave this disabled.
+   */
+  allowExternalContentDir?: boolean;
   databaseStore: DatabaseStore;
   databaseRecordIndex: DatabaseRecordIndex;
   refreshDatabaseIndex?: () => Promise<unknown>;
@@ -241,7 +247,7 @@ export class DatabaseRepairEngine {
   constructor(options: CreateDatabaseRepairEngineOptions) {
     this.#projectDir = resolve(options.projectDir);
     this.#contentDir = resolve(options.contentDir);
-    if (!isWithin(this.#projectDir, this.#contentDir)) {
+    if (!isWithin(this.#projectDir, this.#contentDir) && !options.allowExternalContentDir) {
       throw new Error('Database repair contentDir must be inside projectDir');
     }
     this.#databaseStore = options.databaseStore;

@@ -446,7 +446,7 @@ test.describe('sidebar-search-pill — visual anatomy and layout', () => {
     });
 
     // rounded-lg maps to --radius-lg which is var(--radius) per
-    // globals.css (search for the `--radius-lg` and `--radius`
+    // `styles/foundation/tokens.css` (search for the `--radius-lg` and `--radius`
     // declarations — line numbers drift; token names are stable). Today
     // it evaluates to 10px. Primary contract: not rounded-full (9999px,
     // would render as a pure pill). The 7-12px band tolerates minor

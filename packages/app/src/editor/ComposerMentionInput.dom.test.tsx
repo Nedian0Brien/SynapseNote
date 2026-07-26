@@ -197,7 +197,7 @@ describe('ComposerMentionInput (component)', () => {
       />,
     );
     // The mention renders via its node view: a compact chip (`.composer-mention-chip`,
-    // styled single-line + ellipsis + max-width in globals.css so a long label never
+    // styled single-line + ellipsis + max-width in styles/editor/prose-base.css so a long label never
     // wraps) whose LEADING icon doubles as an aria-labeled remove control that
     // deletes the node from the prompt — the inline counterpart of the top-row
     // chip's leading-icon remove button.

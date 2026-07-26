@@ -1,5 +1,6 @@
 /**
- * Source-level guard for the globals.css `:has()` rule that neutralizes
+ * Source-level guard for the manifest's `:has()` rule in
+ * `styles/editor/large-document.css` that neutralizes
  * Electron `-webkit-app-region: drag` regions while a Radix Popper-based
  * floater is open.
  *
@@ -17,13 +18,13 @@
  * assert popover closed) is the right follow-up.
  */
 import { describe, expect, test } from 'bun:test';
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { loadStyleManifest } from './build/style-manifest.ts';
 
 const SRC_PATH = join(__dirname, 'globals.css');
-const src = readFileSync(SRC_PATH, 'utf-8');
+const src = loadStyleManifest(SRC_PATH).css;
 
-describe('globals.css drag-region neutralization (Popper outside-click in Electron)', () => {
+describe('manifest drag-region neutralization (Popper outside-click in Electron)', () => {
   test('declares a `:has()`-gated rule targeting `data-electron-drag`', () => {
     // Without `:has()` browser support the rule would fail to parse and
     // silently drop adjacent declarations; the `@supports selector(:has(*))`

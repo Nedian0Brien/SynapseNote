@@ -26,6 +26,39 @@ export function databaseRecordPathToHash(path: string, anchor?: string | null): 
   return hashFromDocName(filePathToDocName(path), anchor);
 }
 
+/**
+ * Canonical route write for database records. Keeping the imperative browser
+ * mutation here prevents table and overlay renderers from inventing subtly
+ * different hash transitions.
+ */
+export function navigateToDatabaseRecordPath(path: string): string {
+  return navigateToDatabaseHash(databaseRecordPathToHash(path));
+}
+
+/** Writes a previously validated database/document hash through one adapter. */
+export function navigateToDatabaseHash(hash: string): string {
+  if (typeof window !== 'undefined' && window.location.hash !== hash) {
+    window.location.hash = hash;
+  }
+  return hash;
+}
+
+/**
+ * Replaces a database hash without adding a browser history entry and emits
+ * the same navigation notifications as a native hash change. Creation and
+ * workspace selection use this when the route is canonicalized in place.
+ */
+export function replaceDatabaseHash(hash: string): string {
+  if (typeof window === 'undefined') return hash;
+  const nextUrl = `${window.location.pathname}${window.location.search}${hash}`;
+  if (window.location.hash !== hash) window.history.replaceState(null, '', nextUrl);
+  window.dispatchEvent(new Event(DATABASE_NAVIGATION_CHANGE_EVENT));
+  if (typeof window.HashChangeEvent === 'function') {
+    window.dispatchEvent(new window.HashChangeEvent('hashchange'));
+  }
+  return hash;
+}
+
 /** Stable, reloadable route for a database workspace page. */
 export function databasePageTargetToHash(target: DatabasePageTarget): string {
   const segments = [target.databaseId, target.sourceId, ...(target.viewId ? [target.viewId] : [])];

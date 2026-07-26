@@ -1,12 +1,12 @@
 /**
  * One-shot regenerator for `src/constants/preview-theme-tokens.ts`. Reads the
- * preview token subset from `packages/app/src/globals.css`, resolves `var()`
+ * preview token subset from `packages/app/src/styles/foundation/tokens.css`, resolves `var()`
  * indirections, and writes the constants module verbatim. Run via:
  *
  *   bun run packages/core/scripts/generate-preview-theme-tokens.ts
  *
  * After running, diff the output — landing it should only flip values when a
- * listed token in `globals.css` actually moved. The drift test in
+ * listed token in the canonical token source actually moved. The drift test in
  * `packages/core/src/constants/preview-theme-tokens.test.ts` enforces parity
  * at CI time (no separate `--check` mode needed — the unit test is the gate).
  */
@@ -19,10 +19,10 @@ import {
 } from './preview-theme-token-resolver.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const GLOBALS_CSS = resolve(HERE, '../../app/src/globals.css');
+const TOKEN_CSS = resolve(HERE, '../../app/src/styles/foundation/tokens.css');
 const OUTPUT = resolve(HERE, '../src/constants/preview-theme-tokens.ts');
 
-const tokens = resolvePreviewThemeTokensFromCss(GLOBALS_CSS);
+const tokens = resolvePreviewThemeTokensFromCss(TOKEN_CSS);
 const moduleBody = renderPreviewThemeTokensModule(tokens);
 writeFileSync(OUTPUT, moduleBody, 'utf8');
 console.log(`preview-theme-tokens: wrote ${OUTPUT} (${tokens.length} tokens)`);

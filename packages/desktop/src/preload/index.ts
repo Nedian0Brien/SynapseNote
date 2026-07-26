@@ -403,6 +403,10 @@ const bridge: OkDesktopBridge = {
 
   dialog: {
     openFolder: (opts) => invoke('ok:dialog:open-folder', opts),
+    exportPdf: async (suggestedName: string) =>
+      (await invoke('ok:shell:open-asset', { kind: 'export-pdf', suggestedName })) as Awaited<
+        ReturnType<NonNullable<OkDesktopBridge['dialog']['exportPdf']>>
+      >,
   },
 
   shell: {

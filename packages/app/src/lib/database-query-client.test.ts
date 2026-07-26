@@ -153,6 +153,46 @@ describe('database query client conformance', () => {
     expect(continuation.query?.page?.cursor).toEqual(expect.any(String));
   });
 
+  test('serializes a complete-view search to the canonical query endpoint', async () => {
+    let request: { query?: { search?: string; page?: { limit?: number } } } | undefined;
+    const fetchImplementation = (async (_url: string | URL | Request, init?: RequestInit) => {
+      request = JSON.parse(String(init?.body)) as typeof request;
+      return Response.json({
+        sourceId: DATABASE_QUERY_CONFORMANCE_SOURCE.id,
+        snapshotRevision: DATABASE_QUERY_CONFORMANCE_SNAPSHOT_REVISION,
+        matched: 1,
+        returned: 1,
+        isComplete: true,
+        nextCursor: null,
+        truncatedBy: null,
+        indexFreshness: 'snapshot',
+        records: [
+          {
+            id: 'rec_a',
+            path: 'tasks/a.md',
+            revision: 'sha256:conformance-a',
+            values: { prop_title: 'Alpha' },
+          },
+        ],
+        aggregation: null,
+      });
+    }) as typeof globalThis.fetch;
+
+    const result = await queryDatabase(
+      {
+        databaseId: 'db_conformance',
+        sourceId: DATABASE_QUERY_CONFORMANCE_SOURCE.id,
+        viewId: 'view_open',
+        query: { search: 'alpha', page: { limit: 1 } },
+      },
+      { fetch: fetchImplementation },
+    );
+
+    expect(request?.query).toMatchObject({ search: 'alpha', page: { limit: 1 } });
+    expect(result.matched).toBe(1);
+    expect(result.records.map((record) => record.id)).toEqual(['rec_a']);
+  });
+
   test('preserves machine-readable HTTP problems', async () => {
     const problem = {
       type: 'https://synapsenote.dev/problems/database-not-found',

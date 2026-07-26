@@ -2,7 +2,8 @@
  * Drift, coverage, and WCAG-contrast guards for the preview-iframe theme
  * tokens.
  *
- * `preview-theme-tokens.ts` is GENERATED from `packages/app/src/globals.css`
+ * `preview-theme-tokens.ts` is GENERATED from
+ * `packages/app/src/styles/foundation/tokens.css`
  * by `scripts/generate-preview-theme-tokens.ts`. These tests re-resolve from
  * the CSS at test time so the committed constant cannot silently drift, assert
  * the constant covers exactly the injected token subset, and gate the
@@ -21,7 +22,7 @@ import {
 import { PREVIEW_THEME_TOKENS } from './preview-theme-tokens.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const GLOBALS_CSS = resolve(HERE, '../../../app/src/globals.css');
+const TOKEN_CSS = resolve(HERE, '../../../app/src/styles/foundation/tokens.css');
 
 /**
  * WCAG 2.x 1.4.11 non-text contrast (3:1) — the relevant bar for chart series
@@ -56,9 +57,9 @@ const BG_LIGHT = tokenByName('--background').light;
 const BG_DARK = tokenByName('--background').dark;
 
 describe('preview-theme-tokens — drift check', () => {
-  const resolved = resolvePreviewThemeTokensFromCss(GLOBALS_CSS);
+  const resolved = resolvePreviewThemeTokensFromCss(TOKEN_CSS);
 
-  test('PREVIEW_THEME_TOKENS values match the resolved globals.css tokens', () => {
+  test('PREVIEW_THEME_TOKENS values match the resolved token-source values', () => {
     // Value-level drift guard (mirrors chrome.test.ts). A byte-exact compare
     // of the committed file is deliberately avoided — it is fragile under the
     // public-mirror transform, which can re-touch file bytes without changing
@@ -111,7 +112,7 @@ describe('chart palette — WCAG-AA non-text contrast', () => {
 });
 
 describe('chart palette — perceptually distinct hues', () => {
-  // Light and dark `--chart-*` are independent declarations in globals.css —
+  // Light and dark `--chart-*` are independent declarations in the token source —
   // assert pairwise distinctness for both themes, not just light.
   function expectPairwiseDistinct(hues: number[]): void {
     for (let i = 0; i < hues.length; i++) {

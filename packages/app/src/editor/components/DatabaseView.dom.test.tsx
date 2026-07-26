@@ -1,5 +1,12 @@
-import { afterEach, describe, expect, mock, test } from 'bun:test';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, jest, mock, test } from 'bun:test';
+import {
+  act,
+  cleanup,
+  fireEvent as rawFireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { StrictMode } from 'react';
 import { DatabaseView, databaseViewTabActionToInitialAction } from './DatabaseView';
 import { JsxComponentHostProvider } from './jsx-host-context';
@@ -7,6 +14,30 @@ import { JsxComponentHostProvider } from './jsx-host-context';
 const originalFetch = globalThis.fetch;
 const originalHash = window.location.hash;
 const hash = `sha256:${'a'.repeat(64)}`;
+
+// This file deliberately exercises many document-native controls in one
+// journey. Keep every synthetic event inside React's act boundary so the
+// suite reports real interaction failures instead of asynchronous test noise.
+const fireEvent = {
+  ...rawFireEvent,
+  click: (...args: Parameters<typeof rawFireEvent.click>) => act(() => rawFireEvent.click(...args)),
+  pointerDown: (...args: Parameters<typeof rawFireEvent.pointerDown>) =>
+    act(() => rawFireEvent.pointerDown(...args)),
+  pointerOver: (...args: Parameters<typeof rawFireEvent.pointerOver>) =>
+    act(() => rawFireEvent.pointerOver(...args)),
+  keyDown: (...args: Parameters<typeof rawFireEvent.keyDown>) =>
+    act(() => rawFireEvent.keyDown(...args)),
+  change: (...args: Parameters<typeof rawFireEvent.change>) =>
+    act(() => rawFireEvent.change(...args)),
+  dragStart: (...args: Parameters<typeof rawFireEvent.dragStart>) =>
+    act(() => rawFireEvent.dragStart(...args)),
+  dragOver: (...args: Parameters<typeof rawFireEvent.dragOver>) =>
+    act(() => rawFireEvent.dragOver(...args)),
+  drop: (...args: Parameters<typeof rawFireEvent.drop>) => act(() => rawFireEvent.drop(...args)),
+  contextMenu: (...args: Parameters<typeof rawFireEvent.contextMenu>) =>
+    act(() => rawFireEvent.contextMenu(...args)),
+  paste: (...args: Parameters<typeof rawFireEvent.paste>) => act(() => rawFireEvent.paste(...args)),
+};
 
 const source = {
   id: 'ds_tasks',
@@ -47,6 +78,23 @@ const database = {
   sources: [source],
   views: [view],
 };
+
+function inlineActionsTrigger(): HTMLElement {
+  const trigger = document.querySelector<HTMLElement>('[data-database-inline-actions-trigger]');
+  if (!trigger) throw new Error('Inline database actions trigger is missing');
+  return trigger;
+}
+
+function clickInlineHistoryAction(name: 'Undo change' | 'Redo change'): void {
+  fireEvent.click(inlineActionsTrigger());
+  fireEvent.click(screen.getByRole('menuitem', { name }));
+}
+
+function expectInlineHistoryAction(name: 'Undo change' | 'Redo change'): void {
+  fireEvent.click(inlineActionsTrigger());
+  expect(screen.getByRole('menuitem', { name })).toBeTruthy();
+  fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
+}
 
 afterEach(() => {
   cleanup();
@@ -89,19 +137,169 @@ describe('DatabaseView', () => {
     });
   });
 
-  test('exposes an accessible loading state while the linked view is unresolved', async () => {
+  test('keeps an inert stable slot instead of showing a linked-view loading screen', async () => {
     globalThis.fetch = mock(() => new Promise<Response>(() => {})) as typeof fetch;
 
     render(
       <DatabaseView databaseId={database.id} sourceId={source.id} viewId={view.id} mode="inline" />,
     );
 
-    expect(await screen.findByTestId('database-view-loading')).toBeTruthy();
+    expect(await screen.findByTestId('database-view-pending')).toBeTruthy();
     expect(document.querySelector('[data-database-view-state="loading"]')).toBeTruthy();
     expect(document.querySelector('[aria-busy="true"]')).toBeTruthy();
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.queryByText(/Loading linked view/i)).toBeNull();
   });
 
-  test('keeps the inline view tab and new-view action visible for a single saved view', async () => {
+  test('keeps a single table view compact and exposes view management from settings', async () => {
+    const queryBodies: Array<Record<string, unknown>> = [];
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input);
+      if (path === '/api/databases/describe') {
+        return Response.json({
+          manifestRevision: hash,
+          schemaRevision: hash,
+          database,
+          source,
+          index: {
+            state: 'idle',
+            revision: hash,
+            manifestRevision: hash,
+            recordCount: 0,
+            issueCount: 0,
+            progress: null,
+            lastRebuiltAt: '2026-07-20T00:00:00.000Z',
+            lastIncrementalAt: null,
+            lastError: null,
+          },
+          allowedOperations: ['describe', 'query'],
+        });
+      }
+      if (path === '/api/databases/query') {
+        queryBodies.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
+        return Response.json({
+          sourceId: source.id,
+          snapshotRevision: hash,
+          matched: 0,
+          returned: 0,
+          isComplete: true,
+          nextCursor: null,
+          truncatedBy: null,
+          indexFreshness: 'snapshot',
+          records: [],
+          aggregation: null,
+        });
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
+      <DatabaseView databaseId={database.id} sourceId={source.id} viewId={view.id} mode="inline" />,
+    );
+
+    expect(await screen.findByRole('heading', { name: source.name })).toBeTruthy();
+    expect(
+      screen.getByRole('region', { name: 'Linked database view: Tasks · Open tasks' }),
+    ).toBeTruthy();
+    const inlineRegion = screen.getByRole('region', {
+      name: 'Linked database view: Tasks · Open tasks',
+    });
+    await screen.findByRole('grid', { name: 'Tasks database pages' });
+    expect(inlineRegion.querySelectorAll('[data-slot="table-container"]')).toHaveLength(1);
+    expect(inlineRegion.querySelector('[data-database-inline-content]')?.className).not.toContain(
+      'overflow-auto',
+    );
+    const titleButton = screen.getByRole('button', { name: source.name, exact: true });
+    expect(titleButton.getAttribute('title')).toBe('Rename inline database');
+    fireEvent.click(titleButton);
+    expect(screen.getByRole('textbox', { name: 'Inline database title' })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole('button', {
+        name: 'Refresh linked database view: Tasks · Open tasks',
+      }),
+    ).toBeNull();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
+    );
+    expect(screen.getByRole('menuitem', { name: 'Refresh' })).toBeTruthy();
+    fireEvent.keyDown(
+      screen.getByRole('menu', { name: 'Database view actions for Tasks · Open tasks' }),
+      {
+        key: 'Escape',
+      },
+    );
+    expect(screen.getByRole('button', { name: 'Search pages in Tasks · Open tasks' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Search pages in Tasks · Open tasks' }));
+    const pageSearch = screen.getByRole('textbox', { name: 'Search pages' });
+    expect(pageSearch).toBeTruthy();
+    fireEvent.change(pageSearch, { target: { value: 'missing' } });
+    expect(screen.getByText('No pages match “missing”.')).toBeTruthy();
+    await waitFor(() =>
+      expect(
+        queryBodies.some(
+          (body) =>
+            body.query &&
+            typeof body.query === 'object' &&
+            (body.query as Record<string, unknown>).search === 'missing',
+        ),
+      ).toBe(true),
+    );
+    expect(
+      screen.getByRole('button', { name: 'Open full database: Tasks · Open tasks' }),
+    ).toBeTruthy();
+    const agentButton = screen.getByTestId('open-in-agent-trigger');
+    expect(agentButton).toBeTruthy();
+    expect(agentButton.className).toContain('sr-only');
+    expect(agentButton.getAttribute('aria-hidden')).toBe('true');
+    expect(agentButton.getAttribute('tabindex')).toBe('-1');
+    expect(screen.queryByRole('button', { name: 'Ask agent about Tasks · Open tasks' })).toBeNull();
+
+    expect(screen.queryByRole('button', { name: view.name })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'New database view for Tasks · Open tasks' }),
+    ).toBeNull();
+    expect(document.querySelector('[data-linked-database-view-tabs]')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Manage saved views' })).toBeTruthy();
+
+    const stableTable = inlineRegion.querySelector('[data-database-inline-table]');
+    fireEvent.click(screen.getByRole('button', { name: 'View settings' }));
+    expect(await screen.findByRole('dialog', { name: 'View settings' })).toBeTruthy();
+    expect(inlineRegion.querySelector('[data-database-inline-table]')).toBe(stableTable);
+    fireEvent.click(screen.getByRole('button', { name: 'Close view settings' }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'View settings' })).toBeNull());
+  });
+
+  test('applies toolbar filters, sort, and properties in place exactly once', async () => {
+    const dispatched: Array<Record<string, unknown>> = [];
+    const node = {
+      type: { name: 'jsxComponent' },
+      attrs: {
+        componentName: 'DatabaseView',
+        props: {
+          databaseId: database.id,
+          sourceId: source.id,
+          viewId: view.id,
+          mode: 'inline',
+        },
+      },
+    };
+    const focusEditor = mock(() => {});
+    const editor = {
+      state: {
+        doc: { nodeAt: () => node },
+        tr: {
+          setNodeMarkup: (_pos: number, _type: unknown, attrs: Record<string, unknown>) => {
+            dispatched.push(attrs);
+            return {};
+          },
+        },
+      },
+      view: { dispatch: () => {}, focus: focusEditor },
+    } as never;
+
     globalThis.fetch = mock(async (input: RequestInfo | URL) => {
       const path = String(input);
       if (path === '/api/databases/describe') {
@@ -142,56 +340,260 @@ describe('DatabaseView', () => {
     }) as typeof fetch;
 
     render(
+      <JsxComponentHostProvider value={{ editor, getPos: () => 0, addChild: null }}>
+        <DatabaseView
+          databaseId={database.id}
+          sourceId={source.id}
+          viewId={view.id}
+          mode="inline"
+        />
+      </JsxComponentHostProvider>,
+    );
+
+    expect(
+      await screen.findByRole('region', { name: 'Linked database view: Tasks · Open tasks' }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Filters' }));
+    expect(await screen.findByRole('heading', { name: 'Filters' })).toBeTruthy();
+    const filtersTrigger = screen.getByRole('button', { name: 'Filters' });
+    const filterInput = screen.getByRole('textbox', { name: 'Filter value for Title' });
+    filterInput.focus();
+    expect(document.activeElement).toBe(filterInput);
+    fireEvent.change(filterInput, {
+      target: { value: 'urgent' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    await waitFor(() => expect(dispatched).toHaveLength(1));
+    expect(dispatched[0]?.props).toMatchObject({
+      viewOverrides: { where: { propertyId: 'prop_title', operator: 'eq', value: 'urgent' } },
+    });
+    expect(document.querySelector('[data-database-workspace]')).toBeNull();
+    fireEvent.click(filtersTrigger);
+    const reopenedFilterInput = screen.getByRole('textbox', { name: 'Filter value for Title' });
+    reopenedFilterInput.focus();
+    fireEvent.keyDown(reopenedFilterInput, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Filters' })).toBeNull());
+    expect(document.activeElement).toBe(filtersTrigger);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sort' }));
+    expect(await screen.findByRole('heading', { name: 'Sort' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Add sort rule' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    await waitFor(() => expect(dispatched).toHaveLength(2));
+    expect(dispatched[1]?.props).toMatchObject({
+      viewOverrides: { sort: [{ propertyId: 'prop_title', direction: 'asc' }] },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Properties' }));
+    expect(await screen.findByRole('heading', { name: 'Properties' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Show Status' }));
+    await waitFor(() => expect(dispatched).toHaveLength(3));
+    expect(dispatched[2]?.props).toMatchObject({
+      viewOverrides: { projection: { propertyIds: ['prop_title', 'prop_status'] } },
+    });
+    expect(screen.getByRole('heading', { name: 'Properties' })).toBeTruthy();
+    expect(focusEditor).not.toHaveBeenCalled();
+    expect(document.querySelector('[data-database-workspace]')).toBeNull();
+  });
+
+  test('debounces search and ignores a late response for an older query', async () => {
+    const searchRequests: string[] = [];
+    let releaseFirstSearch: (() => void) | undefined;
+    const responseFor = (search: string) => ({
+      sourceId: source.id,
+      snapshotRevision: hash,
+      matched: 1,
+      returned: 1,
+      isComplete: true,
+      nextCursor: null,
+      truncatedBy: null,
+      indexFreshness: 'snapshot' as const,
+      records: [
+        {
+          id: search === 'first' ? 'rec_first_search' : 'rec_second_search',
+          path: `tasks/${search || 'initial'}.md`,
+          revision: hash,
+          values: {
+            prop_title:
+              search === 'first'
+                ? 'First match'
+                : search === 'second'
+                  ? 'Second match'
+                  : 'Initial row',
+          },
+        },
+      ],
+      aggregation: null,
+    });
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input);
+      if (path === '/api/databases/describe') {
+        return Response.json({
+          manifestRevision: hash,
+          schemaRevision: hash,
+          database,
+          source,
+          index: {
+            state: 'idle',
+            revision: hash,
+            manifestRevision: hash,
+            recordCount: 1,
+            issueCount: 0,
+            progress: null,
+            lastRebuiltAt: '2026-07-20T00:00:00.000Z',
+            lastIncrementalAt: null,
+            lastError: null,
+          },
+          allowedOperations: ['describe', 'query'],
+        });
+      }
+      if (path === '/api/databases/query') {
+        const body = JSON.parse(String(init?.body)) as {
+          query?: { search?: string };
+        };
+        const search = body.query?.search ?? '';
+        searchRequests.push(search);
+        if (search === 'first') {
+          return new Promise<Response>((resolve) => {
+            releaseFirstSearch = () => resolve(Response.json(responseFor(search)));
+          });
+        }
+        return Response.json(responseFor(search));
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
       <DatabaseView databaseId={database.id} sourceId={source.id} viewId={view.id} mode="inline" />,
     );
-
-    expect(await screen.findByRole('heading', { name: source.name })).toBeTruthy();
-    expect(
-      screen.getByRole('region', { name: 'Linked database view: Tasks · Open tasks' }),
-    ).toBeTruthy();
-    const titleButton = screen.getByRole('button', { name: source.name, exact: true });
-    expect(titleButton.getAttribute('title')).toBe('Rename inline database');
-    fireEvent.click(titleButton);
-    expect(screen.getByRole('textbox', { name: 'Inline database title' })).toBeTruthy();
-    expect(
-      screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
-    ).toBeTruthy();
-    expect(
-      screen.queryByRole('button', {
-        name: 'Refresh linked database view: Tasks · Open tasks',
-      }),
-    ).toBeNull();
-    fireEvent.pointerDown(
-      screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
-    );
-    expect(screen.getByRole('menuitem', { name: 'Refresh' })).toBeTruthy();
-    fireEvent.keyDown(
-      screen.getByRole('menu', { name: 'Database view actions for Tasks · Open tasks' }),
-      {
-        key: 'Escape',
-      },
-    );
-    expect(screen.getByRole('button', { name: 'Search pages in Tasks · Open tasks' })).toBeTruthy();
+    expect(await screen.findByText('Initial row')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Search pages in Tasks · Open tasks' }));
-    const pageSearch = screen.getByRole('textbox', { name: 'Search pages' });
-    expect(pageSearch).toBeTruthy();
-    fireEvent.change(pageSearch, { target: { value: 'missing' } });
-    expect(screen.getByText('No pages match “missing”.')).toBeTruthy();
-    expect(
-      screen.getByRole('button', { name: 'Open full database: Tasks · Open tasks' }),
-    ).toBeTruthy();
-    const agentButton = screen.getByTestId('open-in-agent-trigger');
-    expect(agentButton).toBeTruthy();
-    expect(agentButton.className).toContain('sr-only');
-    expect(agentButton.getAttribute('aria-hidden')).toBe('true');
-    expect(agentButton.getAttribute('tabindex')).toBe('-1');
-    expect(screen.queryByRole('button', { name: 'Ask agent about Tasks · Open tasks' })).toBeNull();
+    const search = screen.getByRole('textbox', { name: 'Search pages' });
+    fireEvent.change(search, { target: { value: 'first' } });
+    await waitFor(() => expect(searchRequests).toContain('first'), { timeout: 1_500 });
+    fireEvent.change(search, { target: { value: 'second' } });
+    await waitFor(() => expect(searchRequests).toContain('second'), { timeout: 1_500 });
+    expect(await screen.findByText('Second match')).toBeTruthy();
+    act(() => releaseFirstSearch?.());
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(screen.getByText('Second match')).toBeTruthy();
+    expect(screen.queryByText('First match')).toBeNull();
+  });
 
-    expect(await screen.findByRole('button', { name: view.name })).toBeTruthy();
+  test('paginates complete server search results and restores the unsearched snapshot', async () => {
+    const queryBodies: Array<Record<string, unknown>> = [];
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input);
+      if (path === '/api/databases/describe') {
+        return Response.json({
+          manifestRevision: hash,
+          schemaRevision: hash,
+          database,
+          source,
+          index: {
+            state: 'idle',
+            revision: hash,
+            manifestRevision: hash,
+            recordCount: 2,
+            issueCount: 0,
+            progress: null,
+            lastRebuiltAt: '2026-07-20T00:00:00.000Z',
+            lastIncrementalAt: null,
+            lastError: null,
+          },
+          allowedOperations: ['describe', 'query'],
+        });
+      }
+      if (path === '/api/databases/query') {
+        const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+        queryBodies.push(body);
+        const query = body.query as { search?: string; page?: { cursor?: string } } | undefined;
+        if (query?.search === 'needle') {
+          if (query.page?.cursor === 'search-cursor-1') {
+            return Response.json({
+              sourceId: source.id,
+              snapshotRevision: hash,
+              matched: 2,
+              returned: 1,
+              isComplete: true,
+              nextCursor: null,
+              truncatedBy: null,
+              indexFreshness: 'snapshot',
+              records: [
+                {
+                  id: 'rec_search_second',
+                  path: 'tasks/second.md',
+                  revision: hash,
+                  values: { prop_title: 'Second server match' },
+                },
+              ],
+              aggregation: null,
+            });
+          }
+          return Response.json({
+            sourceId: source.id,
+            snapshotRevision: hash,
+            matched: 2,
+            returned: 1,
+            isComplete: false,
+            nextCursor: 'search-cursor-1',
+            truncatedBy: 'page_limit',
+            indexFreshness: 'snapshot',
+            records: [
+              {
+                id: 'rec_search_first',
+                path: 'tasks/first.md',
+                revision: hash,
+                values: { prop_title: 'First server match' },
+              },
+            ],
+            aggregation: null,
+          });
+        }
+        return Response.json({
+          sourceId: source.id,
+          snapshotRevision: hash,
+          matched: 1,
+          returned: 1,
+          isComplete: true,
+          nextCursor: null,
+          truncatedBy: null,
+          indexFreshness: 'snapshot',
+          records: [
+            {
+              id: 'rec_initial_search',
+              path: 'tasks/initial.md',
+              revision: hash,
+              values: { prop_title: 'Initial row' },
+            },
+          ],
+          aggregation: null,
+        });
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
+      <DatabaseView databaseId={database.id} sourceId={source.id} viewId={view.id} mode="inline" />,
+    );
+    expect(await screen.findByText('Initial row')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Search pages in Tasks · Open tasks' }));
+    const search = screen.getByRole('textbox', { name: 'Search pages' });
+    fireEvent.change(search, { target: { value: 'needle' } });
+    expect(await screen.findByText('First server match')).toBeTruthy();
+    expect(screen.getByText('2 pages in this view')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Load more' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
+    expect(await screen.findByText('Second server match')).toBeTruthy();
+    expect(screen.getByText('2 pages in this view')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Load more' })).toBeNull();
+    fireEvent.change(search, { target: { value: '' } });
+    expect(await screen.findByText('Initial row')).toBeTruthy();
     expect(
-      screen.getByRole('button', { name: 'New database view for Tasks · Open tasks' }),
-    ).toBeTruthy();
-    expect(document.querySelector('[data-linked-database-view-tabs]')).toBeTruthy();
+      queryBodies.some(
+        (body) => (body.query as { search?: string } | undefined)?.search === 'needle',
+      ),
+    ).toBe(true);
   });
 
   test('keeps linked blocks independent while querying the same canonical rows', async () => {
@@ -272,8 +674,8 @@ describe('DatabaseView', () => {
     expect((await screen.findAllByText('Shared canonical row')).length).toBe(2);
     expect(screen.getAllByLabelText('Open page Shared canonical row')).toHaveLength(2);
     expect(
-      screen.getAllByRole('button', { name: 'More actions for page Shared canonical row' }),
-    ).toHaveLength(2);
+      screen.queryByRole('button', { name: 'More actions for page Shared canonical row' }),
+    ).toBeNull();
     await waitFor(() => expect(requests).toHaveLength(2));
     expect(requests.map((request) => request.viewId)).toEqual([view.id, view.id]);
     expect(requests[0]?.viewOverrides).toMatchObject({
@@ -1111,11 +1513,22 @@ describe('DatabaseView', () => {
           group.querySelector('[data-board-card="rec_first"]'),
       ),
     ).toBe(true);
-    releaseCommit?.();
-    await waitFor(() => expect(screen.getByTestId('inline-save-feedback')).toBeTruthy());
-    fireEvent.click(screen.getByRole('button', { name: 'Undo inline database change' }));
+    jest.useFakeTimers();
+    try {
+      releaseCommit?.();
+      await waitFor(() => expect(screen.getByTestId('inline-save-feedback')).toBeTruthy());
+      act(() => {
+        jest.advanceTimersByTime(3_000);
+      });
+      expect(screen.queryByTestId('inline-save-feedback')).toBeNull();
+      expect(screen.queryByText('One database change can be undone')).toBeNull();
+      expectInlineHistoryAction('Undo change');
+    } finally {
+      jest.useRealTimers();
+    }
+    clickInlineHistoryAction('Undo change');
     await waitFor(() => expect(undoCalls).toBe(2));
-    expect(screen.getByRole('button', { name: 'Redo inline database change' })).toBeTruthy();
+    expectInlineHistoryAction('Redo change');
     expect(document.querySelector('[data-database-workspace]')).toBeNull();
   });
 
@@ -1280,9 +1693,9 @@ describe('DatabaseView', () => {
     expect(targetDay.querySelector('[data-calendar-card="rec_first"]')).toBeTruthy();
     releaseCommit?.();
     await waitFor(() => expect(screen.getByTestId('inline-save-feedback')).toBeTruthy());
-    fireEvent.click(screen.getByRole('button', { name: 'Undo inline database change' }));
+    clickInlineHistoryAction('Undo change');
     await waitFor(() => expect(undoCalls).toBe(2));
-    expect(screen.getByRole('button', { name: 'Redo inline database change' })).toBeTruthy();
+    expectInlineHistoryAction('Redo change');
   });
 
   test('applies an inline Timeline move through the direct-safe path', async () => {
@@ -1441,9 +1854,9 @@ describe('DatabaseView', () => {
     expect(screen.getByText('Saving inline database change')).toBeTruthy();
     releaseCommit?.();
     await waitFor(() => expect(screen.getByTestId('inline-save-feedback')).toBeTruthy());
-    fireEvent.click(screen.getByRole('button', { name: 'Undo inline database change' }));
+    clickInlineHistoryAction('Undo change');
     await waitFor(() => expect(undoCalls).toBe(2));
-    expect(screen.getByRole('button', { name: 'Redo inline database change' })).toBeTruthy();
+    expectInlineHistoryAction('Redo change');
   });
 
   test('renders a live projection from stable references without embedded records', async () => {
@@ -1670,10 +2083,7 @@ describe('DatabaseView', () => {
     await waitFor(() =>
       expect(screen.queryByRole('heading', { name: 'Manage saved views' })).toBeNull(),
     );
-    fireEvent.click(
-      document.querySelector('[data-database-workspace] [data-slot="dialog-close"]') as HTMLElement,
-    );
-    await waitFor(() => expect(document.querySelector('[data-database-workspace]')).toBeNull());
+    expect(document.querySelector('[data-database-workspace]')).toBeNull();
     expect(await screen.findByText('First task')).toBeTruthy();
     expect(document.querySelector('th[data-property-id="prop_status"]')).toBeNull();
     expect(requests.find((request) => request.path === '/api/databases/query')?.body).toMatchObject(
@@ -1692,20 +2102,7 @@ describe('DatabaseView', () => {
     expect(document.querySelector('[data-record-id="rec_first"]')).toBeTruthy();
     expect(screen.getByLabelText('Open page First task')).toBeTruthy();
     expect(screen.getByTestId('database-new-row-title')).toBeTruthy();
-    fireEvent.pointerDown(screen.getByLabelText('More actions for page First task'));
-    fireEvent.click(
-      await screen.findByRole('menuitem', { name: 'Inspect context for page First task' }),
-    );
-    expect(await screen.findByText('What the agent saw')).toBeTruthy();
-    expect(
-      inspectPaths.some((path) =>
-        path.includes(
-          `/api/databases/inspect?databaseId=${database.id}&sourceId=${source.id}&viewId=${view.id}&recordId=rec_first`,
-        ),
-      ),
-    ).toBe(true);
-    fireEvent.click(document.querySelector('[data-slot="dialog-close"]') as HTMLElement);
-    await waitFor(() => expect(screen.queryByText('What the agent saw')).toBeNull());
+    expect(screen.queryByRole('button', { name: 'More actions for page First task' })).toBeNull();
     fireEvent.pointerDown(screen.getByRole('button', { name: 'Property options for Title' }));
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Inspect property context' }));
     expect(await screen.findByText('What the agent saw')).toBeTruthy();
@@ -1723,9 +2120,13 @@ describe('DatabaseView', () => {
     ).toBeTruthy();
     fireEvent.click(document.querySelector('[data-slot="dialog-close"]') as HTMLElement);
     await waitFor(() => expect(screen.queryByText('What the agent saw')).toBeNull());
-    fireEvent.click(screen.getByLabelText('Select page First task'));
-    fireEvent.click(screen.getByLabelText('Select page Second task'));
-    expect(await screen.findByTestId('inline-selection-toolbar')).toBeTruthy();
+    fireEvent.pointerOver(document.querySelector('[data-record-id="rec_first"]') as HTMLElement);
+    fireEvent.click(screen.getByLabelText('Select page checkbox rec_first'));
+    fireEvent.pointerOver(document.querySelector('[data-record-id="rec_second"]') as HTMLElement);
+    fireEvent.click(screen.getByLabelText('Select page checkbox rec_second'));
+    const inlineSelectionToolbar = await screen.findByTestId('inline-selection-toolbar');
+    expect(inlineSelectionToolbar.closest('[data-database-inline-header]')).toBeTruthy();
+    expect(inlineSelectionToolbar.closest('[data-database-inline-primary-slot]')).toBeTruthy();
     expect(screen.getByText('2 selected')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Inspect selected context' }));
     expect(await screen.findByText('What the agent saw')).toBeTruthy();
@@ -1765,15 +2166,24 @@ describe('DatabaseView', () => {
     fireEvent.keyDown(titleInput, { key: 'Enter' });
     await waitFor(() => expect(commitCalls).toBe(2));
     expect(await screen.findByTestId('inline-save-feedback')).toBeTruthy();
+    const inlineSurfaceAfterSave = document.querySelector<HTMLElement>(
+      '[data-database-inline-surface]',
+    );
+    const heightBeforeFeedbackExpiry = inlineSurfaceAfterSave?.getBoundingClientRect().height;
+    await new Promise((resolve) => setTimeout(resolve, 3_050));
+    expect(screen.queryByTestId('inline-save-feedback')).toBeNull();
+    expect(screen.queryByText('One database change can be undone')).toBeNull();
+    expectInlineHistoryAction('Undo change');
+    expect(inlineSurfaceAfterSave?.getBoundingClientRect().height).toBe(heightBeforeFeedbackExpiry);
     const textInput = await screen.findByTestId('database-new-row-title');
     fireEvent.keyDown(textInput, { key: 'z', ctrlKey: true });
     expect(undoCalls).toBe(0);
-    fireEvent.click(screen.getByRole('button', { name: 'Undo inline database change' }));
+    clickInlineHistoryAction('Undo change');
     await waitFor(() => expect(undoCalls).toBe(2));
-    expect(await screen.findByRole('button', { name: 'Redo inline database change' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Redo inline database change' }));
+    expectInlineHistoryAction('Redo change');
+    clickInlineHistoryAction('Redo change');
     await waitFor(() => expect(undoCalls).toBe(4));
-    expect(await screen.findByRole('button', { name: 'Undo inline database change' })).toBeTruthy();
+    expectInlineHistoryAction('Undo change');
     const inlineRoot = document.querySelector('[data-database-view-state="ready"]');
     expect(inlineRoot).toBeTruthy();
     fireEvent.keyDown(inlineRoot as HTMLElement, { key: 'z', ctrlKey: true });
@@ -1785,9 +2195,11 @@ describe('DatabaseView', () => {
     fireEvent.keyDown(newRowTitle, { key: 'Enter' });
     await waitFor(() => expect(commitCalls).toBe(3));
     undoBlocked = true;
-    fireEvent.click(screen.getByRole('button', { name: 'Undo inline database change' }));
+    clickInlineHistoryAction('Undo change');
     await waitFor(() => expect(undoCalls).toBe(9));
-    expect((await screen.findByRole('alert')).textContent).toContain('record revision changed');
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'The database changed while this action was in progress. Reload the latest state.',
+    );
     expect(screen.getByTestId('inline-save-feedback')).toBeTruthy();
     undoBlocked = false;
     const titleCell = document.querySelector(
@@ -1811,18 +2223,8 @@ describe('DatabaseView', () => {
     await waitFor(() => expect(screen.queryByTestId('database-ghost-review')).toBeNull());
     fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0] as HTMLElement);
     await waitFor(() => expect(document.querySelector('[data-database-workspace]')).toBeNull());
-    fireEvent.pointerDown(screen.getByLabelText('More actions for page First task'));
-    expect(await screen.findByRole('menuitem', { name: 'Duplicate page First task' })).toBeTruthy();
-    expect(screen.getByRole('menuitem', { name: 'Archive page First task' })).toBeTruthy();
-    expect(screen.getByRole('menuitem', { name: 'Move page First task' })).toBeTruthy();
-    expect(screen.getByRole('menuitem', { name: 'Delete page First task' })).toBeTruthy();
-    fireEvent.keyDown(screen.getByRole('menu', { name: 'More actions for page First task' }), {
-      key: 'Escape',
-    });
-    await waitFor(() =>
-      expect(screen.queryByRole('menu', { name: 'More actions for page First task' })).toBeNull(),
-    );
-    fireEvent.pointerDown(
+    expect(screen.queryByLabelText('More actions for page First task')).toBeNull();
+    fireEvent.click(
       screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
     );
     expect(screen.getByRole('menuitem', { name: 'Convert to full page' })).toBeTruthy();
@@ -1834,14 +2236,16 @@ describe('DatabaseView', () => {
     expect(screen.getByRole('menuitem', { name: 'View settings' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Remove linked view' })).toBeTruthy();
     fireEvent.click(screen.getByRole('menuitem', { name: 'Convert to full page' }));
-    expect(dispatched.at(-1)?.props).toMatchObject({
-      databaseId: database.id,
-      sourceId: source.id,
-      viewId: view.id,
-      mode: 'full-page',
-    });
+    await waitFor(() =>
+      expect(dispatched.at(-1)?.props).toMatchObject({
+        databaseId: database.id,
+        sourceId: source.id,
+        viewId: view.id,
+        mode: 'full-page',
+      }),
+    );
     expect((dispatched.at(-1)?.props as Record<string, unknown>).records).toBeUndefined();
-    fireEvent.pointerDown(
+    fireEvent.click(
       screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
     );
     fireEvent.click(screen.getByRole('menuitem', { name: 'Manage properties' }));
@@ -1859,7 +2263,7 @@ describe('DatabaseView', () => {
       document.querySelector('[data-database-workspace] [data-slot="dialog-close"]') as HTMLElement,
     );
     await waitFor(() => expect(document.querySelector('[data-database-workspace]')).toBeNull());
-    fireEvent.pointerDown(
+    fireEvent.click(
       screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
     );
     fireEvent.click(screen.getByRole('menuitem', { name: 'Inspect agent context' }));
@@ -1869,7 +2273,7 @@ describe('DatabaseView', () => {
     );
     fireEvent.click(document.querySelector('[data-slot="dialog-close"]') as HTMLElement);
     await waitFor(() => expect(screen.queryByText('What the agent saw')).toBeNull());
-    fireEvent.pointerDown(
+    fireEvent.click(
       screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
     );
     fireEvent.click(screen.getByRole('menuitem', { name: 'View settings' }));
@@ -1878,7 +2282,7 @@ describe('DatabaseView', () => {
     await waitFor(() =>
       expect(screen.queryByRole('heading', { name: 'Saved view settings' })).toBeNull(),
     );
-    fireEvent.pointerDown(
+    fireEvent.click(
       screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
     );
     expect(screen.getByRole('menuitem', { name: 'Manage views' })).toBeTruthy();
@@ -1888,11 +2292,11 @@ describe('DatabaseView', () => {
     await waitFor(() =>
       expect(screen.queryByRole('heading', { name: 'Manage saved views' })).toBeNull(),
     );
-    fireEvent.pointerDown(
+    fireEvent.click(
       screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
     );
-    expect(screen.getByRole('menuitem', { name: 'Filters' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Filters' }));
+    expect(screen.getByRole('menuitem', { name: 'Advanced filters' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Advanced filters' }));
     expect(await screen.findByRole('heading', { name: 'Advanced saved filters' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     await waitFor(() =>
@@ -1909,15 +2313,11 @@ describe('DatabaseView', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open full page' }));
     expect(window.location.hash).not.toBe(originalHash);
 
-    fireEvent.pointerDown(
+    fireEvent.click(
       screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
     );
     fireEvent.click(screen.getByRole('menuitem', { name: 'Show archived' }));
-    fireEvent.pointerDown(await screen.findByLabelText('More actions for page First task'));
-    expect(await screen.findByRole('menuitem', { name: 'Restore page First task' })).toBeTruthy();
-    fireEvent.keyDown(screen.getByRole('menu', { name: 'More actions for page First task' }), {
-      key: 'Escape',
-    });
+    expect(screen.queryByLabelText('More actions for page First task')).toBeNull();
     await waitFor(() =>
       expect(
         requests.filter((request) => request.path === '/api/databases/query').at(-1)?.body,
@@ -2010,12 +2410,91 @@ describe('DatabaseView', () => {
     expect(screen.getByText(/Shared pages/)).toBeTruthy();
 
     offline = true;
-    fireEvent.pointerDown(
+    fireEvent.click(
       screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
     );
     fireEvent.click(screen.getByRole('menuitem', { name: 'Refresh' }));
     expect(await screen.findByTestId('database-view-stale')).toBeTruthy();
     expect(screen.getByText('Cached task')).toBeTruthy();
+  });
+
+  test('keeps the same inline grid mounted when a refresh returns HTTP 409', async () => {
+    let conflict = false;
+    globalThis.fetch = mock(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path === '/api/databases/describe') {
+        if (conflict) {
+          return Response.json(
+            {
+              type: 'https://synapsenote.local/problems/stale-target',
+              title: 'Database changed',
+              status: 409,
+              detail: 'The database changed while refreshing',
+            },
+            { status: 409 },
+          );
+        }
+        return Response.json({
+          manifestRevision: hash,
+          schemaRevision: hash,
+          database,
+          source,
+          index: {
+            state: 'idle',
+            revision: hash,
+            manifestRevision: hash,
+            recordCount: 1,
+            issueCount: 0,
+            progress: null,
+            lastRebuiltAt: '2026-07-20T00:00:00.000Z',
+            lastIncrementalAt: null,
+            lastError: null,
+          },
+          allowedOperations: ['describe', 'query'],
+        });
+      }
+      if (path === '/api/databases/query') {
+        return Response.json({
+          sourceId: source.id,
+          snapshotRevision: hash,
+          matched: 1,
+          returned: 1,
+          isComplete: true,
+          nextCursor: null,
+          truncatedBy: null,
+          indexFreshness: 'snapshot',
+          records: [
+            {
+              id: 'rec_conflict',
+              path: 'tasks/conflict.md',
+              revision: hash,
+              values: { prop_title: 'Still visible task' },
+            },
+          ],
+          aggregation: null,
+        });
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
+      <DatabaseView databaseId={database.id} sourceId={source.id} viewId={view.id} mode="inline" />,
+    );
+    expect(await screen.findByText('Still visible task')).toBeTruthy();
+    const grid = screen.getByRole('grid');
+    grid.setAttribute('data-render-continuity-probe', 'preserved');
+
+    conflict = true;
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
+    );
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Refresh' }));
+
+    expect(await screen.findByTestId('database-view-refresh-problem')).toBeTruthy();
+    expect(screen.getByRole('grid')).toBe(grid);
+    expect(grid.getAttribute('data-render-continuity-probe')).toBe('preserved');
+    expect(screen.getByText('Still visible task')).toBeTruthy();
+    expect(screen.queryByTestId('database-view-error')).toBeNull();
   });
 
   test('does not show a cached inline snapshot after permission denial', async () => {
@@ -2041,7 +2520,7 @@ describe('DatabaseView', () => {
     const error = await screen.findByTestId('database-view-error');
     expect(error.getAttribute('data-database-view-error-kind')).toBe('permission');
     expect(error.getAttribute('data-database-view-retryable')).toBe('false');
-    expect(error.textContent).toContain('Read access denied for this database.');
+    expect(error.textContent).toContain('You do not have access to this database operation.');
     expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Choose replacement' })).toBeNull();
     expect(screen.queryByText(/showing the last verified snapshot/i)).toBeNull();
@@ -2098,7 +2577,7 @@ describe('DatabaseView', () => {
     expect(screen.getByText('Use the row below to add a page.')).toBeTruthy();
   });
 
-  test('starts record creation from a linked view in the canonical review dialog', async () => {
+  test('starts record creation in the inline new-page row', async () => {
     globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = String(input);
       const body = init?.body
@@ -2180,8 +2659,15 @@ describe('DatabaseView', () => {
     render(
       <DatabaseView databaseId={database.id} sourceId={source.id} viewId={view.id} mode="inline" />,
     );
-    fireEvent.click(await screen.findByRole('button', { name: 'New page' }));
-    expect(await screen.findByLabelText('New page title')).toBeTruthy();
+    const newPageButton = await screen.findByRole('button', { name: 'New page' });
+    fireEvent.click(newPageButton);
+    const newPageTitle = await screen.findByLabelText('New page title');
+    await waitFor(() => expect(document.activeElement).toBe(newPageTitle));
+    newPageButton.focus();
+    expect(document.activeElement).toBe(newPageButton);
+    fireEvent.click(newPageButton);
+    await waitFor(() => expect(document.activeElement).toBe(newPageTitle));
+    expect(document.querySelector('[data-database-workspace]')).toBeNull();
   });
 
   test('offers a guided database/source/view picker when stable references are invalid', async () => {

@@ -46,7 +46,8 @@ function contentDom(childRenderers: string): string {
   // The real Tiptap <NodeViewContent> carries both `.component-children` and
   // `data-node-view-content`; PM's contentDOMElement inside it carries
   // `data-node-view-content-react`. Mirror both so the fixture stays faithful
-  // to the stack the CSS comment in globals.css documents.
+  // to the stack the CSS comment in `styles/components/tabs-accordion.css`
+  // documents.
   return `<div class="component-children" data-node-view-content><div data-node-view-content-react>${childRenderers}</div></div>`;
 }
 

@@ -69,6 +69,7 @@ export default {
     'scripts/cluster-strict-gate.test.mjs': ['files'],
     'scripts/comment-recall-sample.mjs': ['files'],
     'scripts/comment-recall-sample.test.mjs': ['files'],
+    'scripts/test-feedback/**': ['exports', 'types'],
     'scripts/harvest-aggregate.mjs': ['files'],
     'scripts/harvest-aggregate.test.mjs': ['files'],
     'scripts/assert-app-built.mjs': ['files'],
@@ -103,6 +104,13 @@ export default {
     'packages/native-config/index.js': ['unlisted', 'unresolved'],
   },
   workspaces: {
+    '.': {
+      entry: [
+        'scripts/test-feedback/**/*.test.ts',
+        'scripts/test-feedback/leak-preload.ts',
+        'scripts/test-feedback/run-server-pr-gate.ts',
+      ],
+    },
     'packages/app': {
       entry: [
         'src/**/*.test.{ts,tsx}',

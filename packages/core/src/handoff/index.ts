@@ -28,7 +28,9 @@ export {
   withSkillPointer,
 } from './prompt-composer.ts';
 export {
+  type BuildCliLaunchOptions,
   buildClaudeLaunchCommand,
+  buildClaudeSettingsArg,
   buildCliLaunchArgString,
   buildCliLaunchCommand,
   OK_GATED_TOOL_NAMES,

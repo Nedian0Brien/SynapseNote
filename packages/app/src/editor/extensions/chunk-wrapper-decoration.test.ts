@@ -229,7 +229,7 @@ describe('chunkWrapperDecorationPlugin — plugin identity', () => {
   });
 
   test('OK_CHUNK_WRAPPER_CLASS export matches the CSS contract', () => {
-    // The CSS rule at globals.css:.ProseMirror .ok-chunk-wrapper requires
+    // The CSS rule at styles/editor/large-document.css:.ProseMirror .ok-chunk-wrapper requires
     // exactly this class name. If this test fails, the CSS rule and the
     // plugin output have drifted.
     expect(OK_CHUNK_WRAPPER_CLASS).toBe('ok-chunk-wrapper');

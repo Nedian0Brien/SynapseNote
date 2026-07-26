@@ -59,6 +59,16 @@ describe('getLeafFieldMeta', () => {
     });
   });
 
+  test('returns metadata for the user-scope editor.sidebarOpenBehavior leaf', () => {
+    const meta = getLeafFieldMeta(ConfigSchema, ['editor', 'sidebarOpenBehavior']);
+    expect(meta).toEqual({
+      scope: 'user',
+      agentSettable: false,
+      defaultScope: 'user',
+      description: expect.any(String),
+    });
+  });
+
   test('returns undefined for an unresolved path', () => {
     const meta = getLeafFieldMeta(ConfigSchema, ['content', 'nonexistent']);
     expect(meta).toBeUndefined();

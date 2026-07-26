@@ -12,8 +12,10 @@
  *
  * Architectural boundaries — three things this handler does NOT do:
  *   1. CSS-side fallback. The matching `@media (prefers-reduced-transparency:
- *      reduce)` block in globals.css reverts the alpha-aware outer canvas
- *      to solid `var(--sidebar)` — the renderer side is purely declarative
+ *      reduce)` block in
+ *      `app/src/styles/foundation/platform-electron.css` reverts the
+ *      alpha-aware outer canvas to solid `var(--sidebar)` — the renderer
+ *      side is purely declarative
  *      and runs whether or not `window.okDesktop` is present.
  *   2. Per-window material differentiation. All open windows share the
  *      Electron one-vibrancy-per-window constraint; the runtime toggle

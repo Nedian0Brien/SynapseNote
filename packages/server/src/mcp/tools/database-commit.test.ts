@@ -86,9 +86,7 @@ describe('data_commit MCP tool', () => {
       actor: { principalId: 'agent:codex', kind: 'agent', sessionId: 'session-1' },
       assertions: { databaseAbsent: true, createdRecords: 1 },
     });
-    expect(requestHeaders?.get('x-synapsenote-agent-id')).toBe(
-      identityRef.current.connectionId,
-    );
+    expect(requestHeaders?.get('x-synapsenote-agent-id')).toBe(identityRef.current.connectionId);
     expect(result.content).toEqual([
       expect.objectContaining({ text: expect.stringContaining('completed') }),
     ]);

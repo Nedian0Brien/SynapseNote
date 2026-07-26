@@ -106,6 +106,8 @@ describe('database JSON export', () => {
       type: 'text',
     } as const;
     const markup = `See ${databaseDocumentReferenceMarkup('plans/Launch.md', 'Launch plan')}\nNext`;
+    const firstRecord = result.records[0];
+    if (!firstRecord) throw new Error('fixture must include a record');
     const json = databaseSnapshotToJson({
       database: {
         ...database,
@@ -119,8 +121,8 @@ describe('database JSON export', () => {
         ...result,
         records: [
           {
-            ...result.records[0]!,
-            values: { ...result.records[0]!.values, prop_notes: markup },
+            ...firstRecord,
+            values: { ...firstRecord.values, prop_notes: markup },
             textProjections: {
               prop_notes: {
                 plainText: 'See Launch plan\nNext',

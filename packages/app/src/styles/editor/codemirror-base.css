@@ -1,0 +1,63 @@
+/* CodeMirror polish */
+.cm-editor {
+  font-size: 14px;
+  font-family: var(--font-mono);
+}
+
+/* SourceEditor (full-page source mode) reserves a usable baseline height;
+   nested CM instances inside PM NodeViews size to their content. */
+.source-editor .cm-editor {
+  min-height: 200px;
+}
+
+.cm-editor .cm-content {
+  padding: 0;
+}
+
+/* Restore the floating Ask AI composer's bottom inset for full-page source mode
+   and the conflict-mode diff view. The `padding: 0` reset above ties on
+   specificity with the shared `.editor-doc-scroll :is(.ProseMirror, .cm-content)`
+   inset rule and, being later, zeroes it — so those surfaces' last lines would
+   sit under the composer while WYSIWYG clears. Scoped to `.source-editor` /
+   `.diff-view` (not `.cm-editor`) so nested code-block CM inside the WYSIWYG
+   body is never padded; declared after the reset so it wins the tie. */
+.source-editor .cm-content,
+.diff-view .cm-content {
+  padding-bottom: var(--ask-composer-height, 0px);
+}
+
+.cm-editor.cm-focused {
+  outline: none;
+}
+
+.cm-scroller {
+  @apply font-mono! scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/30 dark:scrollbar-thumb-muted-foreground/50;
+}
+
+.cm-gutters.cm-gutters-before {
+  @apply border-none!;
+}
+
+.cm-gutters {
+  @apply text-muted-foreground/80!;
+}
+
+.cm-lineNumbers .cm-gutterElement {
+  @apply pr-1! pl-4!;
+}
+
+.cm-line {
+  /* Per-line padding contract: pl-4 baseline + two per-line variables set inline
+     by source-polish view-plugin for the lines it decorates:
+       --list-hang  (set on .cm-list-item lines:  prefix width 2..8ch)
+       --line-indent (set on .cm-fenced-code-line lines: source-indent count)
+     Both fall back to 0 when unset, so non-decorated .cm-line elements render
+     identically to plain pl-4. The Tailwind ! modifier compiles to !important
+     and defeats CodeMirror 6's bundled .cm-line stylesheet; the additive calc
+     form incorporates the variables directly so the !important declaration
+     varies per-line rather than locking every line to a flat 1rem.
+     See .cm-list-item (hanging-indent) and .cm-fenced-code-line (wrap-preserve-
+     indent) rules later in this file for the original author comments. */
+  @apply ps-[calc(1rem+var(--list-hang,0ch)+var(--line-indent,0)*1ch)]!;
+  text-indent: calc(-1 * var(--list-hang, 0ch));
+}

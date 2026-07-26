@@ -226,8 +226,8 @@ async function waitForServerReady(baseURL: string, port: number): Promise<void> 
  * every worker of that group here for the full budget — keep such envs
  * compatible with the seeded fixture entries rendering.
  */
-const APP_WARMUP_GOTO_TIMEOUT_MS = 60_000;
-const APP_WARMUP_TIMEOUT_MS = 60_000;
+const APP_WARMUP_GOTO_TIMEOUT_MS = Number(process.env.OK_E2E_WARMUP_GOTO_TIMEOUT_MS ?? 60_000);
+const APP_WARMUP_TIMEOUT_MS = Number(process.env.OK_E2E_WARMUP_TIMEOUT_MS ?? 60_000);
 
 async function warmupAppFirstLoad(
   browser: import('@playwright/test').Browser,

@@ -36,7 +36,8 @@
  * (covers both editor and pill focus, since the pill is a descendant) plus
  * `:has([data-state="open"])` on the layer (covers menu open while focus is
  * inside the Radix-portaled content). See `.ok-table-cell-handle-layer` in
- * `globals.css`. Pure CSS works because focus moves *within* `.tiptap-editor`
+ * `styles/editor/interaction-handles.css`. Pure CSS works because focus moves
+ * *within* `.tiptap-editor`
  * continuously through the click → pill → menu handoff, so there's no race.
  */
 
@@ -352,7 +353,8 @@ export function TableCellHandles({ editor }: { editor: Editor }) {
   // positioned offsetParent that lives inside the editor's scroll container.
   // Rendering here (NOT a portal into view.dom.parentElement) keeps the DOM out
   // of TipTap's Activity-recycle vacuum.
-  // Visibility (focus + menu-open gating) is CSS-only — see globals.css.
+  // Visibility (focus + menu-open gating) is CSS-only — see
+  // `styles/editor/interaction-handles.css`.
   return (
     <div className="ok-table-cell-handle-layer">
       <CellHandle

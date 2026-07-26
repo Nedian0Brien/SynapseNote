@@ -9,14 +9,18 @@ function Table({
   containerClassName,
   containerRef,
   onContainerScroll,
+  containerProps,
   ...props
 }: React.ComponentProps<'table'> & {
   containerClassName?: string;
   containerRef?: React.Ref<HTMLDivElement>;
   onContainerScroll?: React.UIEventHandler<HTMLDivElement>;
+  containerProps?: Omit<React.ComponentProps<'div'>, 'className' | 'onScroll' | 'ref'> &
+    Record<`data-${string}`, string | undefined>;
 }) {
   return (
     <div
+      {...containerProps}
       ref={containerRef}
       data-slot="table-container"
       className={cn('relative w-full overflow-x-auto subtle-scrollbar', containerClassName)}

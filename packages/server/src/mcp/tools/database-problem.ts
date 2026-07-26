@@ -1,5 +1,5 @@
-import { type DatabaseProblemCode, databaseProblemExtensions } from '../../database-problem.ts';
 import { z } from 'zod';
+import { type DatabaseProblemCode, databaseProblemExtensions } from '../../database-problem.ts';
 import { textPlusStructured } from './shared.ts';
 
 export const DatabaseToolProblemOutputSchema = z.record(z.string(), z.unknown());

@@ -8,6 +8,7 @@ import type { EditorModeValue } from '@/editor/use-editor-mode.ts';
 import { parseProjectSkillContentDocName } from '@/lib/managed-artifact-doc-name';
 import { DocumentViewerHeader, viewerTitleFromPath } from './DocumentViewerHeader';
 import { EditorModeToggle } from './EditorModeToggle';
+import { ExportPdfButton } from './ExportPdfButton';
 import { MarkdownFormatToolbar } from './MarkdownFormatToolbar';
 import { NotInSidebarIndicator } from './NotInSidebarIndicator';
 
@@ -80,6 +81,7 @@ export function EditorToolbar({
                 <SkillEditorActions scope={activeSkill.scope} name={activeSkill.name} />
               </Suspense>
             ) : null}
+            <ExportPdfButton docName={activeDocName && !managed ? activeDocName : null} />
             {showAddPropertyButton ? (
               <Tooltip>
                 <Button

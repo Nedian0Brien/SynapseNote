@@ -307,6 +307,13 @@ export type ConsumeDatabaseCommitAutonomyBudget = (input: {
 export interface CreateDatabaseCommitEngineOptions {
   projectDir: string;
   contentDir: string;
+  /**
+   * Permit a deliberately isolated single-file session to write back to the
+   * user's content directory while keeping transaction journals and locks
+   * under its throwaway project root. Normal project servers must leave this
+   * disabled.
+   */
+  allowExternalContentDir?: boolean;
   databaseStore: DatabaseStore;
   databaseRecordIndex: DatabaseRecordIndex;
   /** Server lifecycle seam that serializes rebuilds with concurrent watcher events. */
@@ -656,6 +663,7 @@ function auditIntentSummary(plan: DatabasePlanArtifact): string {
 export class DatabaseCommitEngine {
   readonly #projectDir: string;
   readonly #contentDir: string;
+  readonly #allowExternalContentDir: boolean;
   readonly #databaseStore: DatabaseStore;
   readonly #databaseRecordIndex: DatabaseRecordIndex;
   readonly #refreshDatabaseIndex: () => Promise<unknown>;
@@ -682,7 +690,8 @@ export class DatabaseCommitEngine {
   constructor(options: CreateDatabaseCommitEngineOptions) {
     this.#projectDir = resolve(options.projectDir);
     this.#contentDir = resolve(options.contentDir);
-    if (!isWithin(this.#projectDir, this.#contentDir)) {
+    this.#allowExternalContentDir = options.allowExternalContentDir ?? false;
+    if (!isWithin(this.#projectDir, this.#contentDir) && !this.#allowExternalContentDir) {
       throw new Error('Database commit contentDir must be inside projectDir');
     }
     this.#databaseStore = options.databaseStore;
@@ -1331,7 +1340,7 @@ export class DatabaseCommitEngine {
     for (const file of receipt.files) {
       const expected = file.after?.sha256 ?? null;
       const absolutePath = resolve(this.#projectDir, file.path);
-      if (!isWithin(this.#projectDir, absolutePath)) {
+      if (!this.#isAllowedContentPath(absolutePath)) {
         conflicts.push({
           path: file.path,
           reason: 'path_changed',
@@ -1886,7 +1895,7 @@ export class DatabaseCommitEngine {
     let baseGitHead = '';
     try {
       for (const target of targets) {
-        if (!isWithin(this.#projectDir, target.absolutePath)) {
+        if (!this.#isAllowedContentPath(target.absolutePath)) {
           throw new DatabaseCommitError('target_changed', 'Commit target escapes project root', {
             path: target.projectPath,
           });
@@ -2343,6 +2352,19 @@ export class DatabaseCommitEngine {
         if (errno(error) !== 'ENOENT') throw error;
       }
     }
+  }
+
+  /**
+   * Project-relative paths are the normal write surface. In ephemeral
+   * single-file mode the content directory is intentionally outside the
+   * throwaway project root, so the only additional writable surface is that
+   * exact content directory. This keeps arbitrary path traversal blocked.
+   */
+  #isAllowedContentPath(absolutePath: string): boolean {
+    return (
+      isWithin(this.#projectDir, absolutePath) ||
+      (this.#allowExternalContentDir && isWithin(this.#contentDir, absolutePath))
+    );
   }
 
   async #hasSymlinkComponent(absolutePath: string): Promise<boolean> {

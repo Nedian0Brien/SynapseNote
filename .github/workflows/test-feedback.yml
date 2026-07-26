@@ -1,0 +1,672 @@
+name: Test feedback tiers
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '15 18 * * *'
+  workflow_dispatch:
+    inputs:
+      server_shard:
+        description: 'Run all server shards or only the failed shard (for example 2/4)'
+        required: false
+        default: all
+        type: choice
+        options:
+          - all
+          - 1/4
+          - 2/4
+          - 3/4
+          - 4/4
+      benchmark_server_shards:
+        description: 'Run the three-round server shard SLO benchmark'
+        required: false
+        default: false
+        type: boolean
+      benchmark_pr_gate:
+        description: 'Run the ten-round app/server/cross-package PR gate benchmark'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: test-feedback-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    name: Calculate affected test plan
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.plan.outputs.packages }}
+      domains: ${{ steps.plan.outputs.domains }}
+      repository: ${{ steps.plan.outputs.repository }}
+      docs_only: ${{ steps.plan.outputs.docs_only }}
+      server_shards: ${{ steps.plan.outputs.server_shards }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+
+      - name: Setup Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: bash scripts/bun-install-ci.sh
+
+      - name: Write affected plan outputs
+        id: plan
+        env:
+          SERVER_SHARD: ${{ inputs.server_shard }}
+        run: |
+          PLAN_JSON="$(bun scripts/check-changed.ts --pr --plan --json)"
+          PLAN_JSON="$PLAN_JSON" SERVER_SHARD="$SERVER_SHARD" bun scripts/test-feedback/ci-plan.ts >> "$GITHUB_OUTPUT"
+
+  static:
+    name: Static and drift checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+
+      - name: Setup Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: bash scripts/bun-install-ci.sh
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Drift checks
+        run: bun run check:drift
+
+      - name: Test feedback policy and quarantine contract
+        run: bun test scripts/test-feedback/policy.test.ts scripts/test-feedback/quarantine.test.ts scripts/test-feedback/leak-detector.test.ts
+
+      - name: Measure first failure feedback
+        env:
+          FIRST_FAILURE_REPORT: first-failure-report.json
+        run: bun run measure:first-failure
+
+      - name: Upload first failure report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: first-failure-report
+          path: first-failure-report.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  affected-packages:
+    name: Package ${{ matrix.package }}
+    needs: plan
+    if: needs.plan.outputs.repository != 'true' && needs.plan.outputs.docs_only != 'true' && needs.plan.outputs.packages != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJSON(needs.plan.outputs.packages) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+
+      - name: Setup Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: bash scripts/bun-install-ci.sh
+
+      - name: Start package timing
+        if: matrix.package != 'server'
+        id: package_timer
+        run: echo "started_ms=$(node -e 'process.stdout.write(String(Date.now()))')" >> "$GITHUB_OUTPUT"
+
+      - name: Run package lint, typecheck, and tests
+        if: matrix.package != 'server'
+        env:
+          TEST_FEEDBACK_TIER: pr
+          TEST_RESULTS_DIR: ${{ github.workspace }}/packages/${{ matrix.package }}/test-feedback-results
+        run: bun run check:package -- ${{ matrix.package }}
+
+      - name: Lint server package
+        if: matrix.package == 'server'
+        run: bunx biome check packages/server package.json biome.jsonc --error-on-warnings
+
+      - name: Oxlint server package
+        if: matrix.package == 'server'
+        run: oxlint --max-warnings 0 packages/server
+
+      - name: Typecheck server package
+        if: matrix.package == 'server'
+        run: bunx turbo run typecheck --filter=@nedian0brien/synapsenote-server --output-logs=errors-only
+
+      - name: Collect package operations metrics
+        if: always() && matrix.package != 'server'
+        env:
+          TEST_FEEDBACK_TIER: pr
+        run: |
+          end_ms=$(node -e 'process.stdout.write(String(Date.now()))')
+          elapsed_ms=$((end_ms - ${{ steps.package_timer.outputs.started_ms }}))
+          cache_hit=$(bun scripts/test-feedback/turbo-cache-evidence.ts)
+          TEST_FEEDBACK_TURBO_CACHE_HIT="$cache_hit" \
+          TEST_FEEDBACK_WALL_CLOCK_MS="$elapsed_ms" \
+            bun scripts/test-feedback/operations-metrics.ts \
+              --input=packages/${{ matrix.package }}/test-feedback-results \
+              --output=package-feedback-metrics.json
+
+      - name: Upload package operations metrics
+        if: always() && matrix.package != 'server'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: package-feedback-metrics-${{ matrix.package }}
+          path: package-feedback-metrics.json
+          if-no-files-found: warn
+          retention-days: 30
+
+  server-shards:
+    name: Server suite shard ${{ matrix.shard }}
+    needs: plan
+    if: >-
+      (github.event_name == 'workflow_dispatch' ||
+      (needs.plan.outputs.repository != 'true' && contains(needs.plan.outputs.packages, '"server"')))
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.plan.outputs.server_shards) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+
+      - name: Setup Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: bash scripts/bun-install-ci.sh
+
+      - name: Start server shard timing
+        id: server_shard_timer
+        run: echo "started_ms=$(node -e 'process.stdout.write(String(Date.now()))')" >> "$GITHUB_OUTPUT"
+
+      - name: Run deterministic server shard
+        env:
+          TEST_RESULTS_DIR: server-test-results
+        run: bun packages/server/scripts/run-server-test-task.ts all --shard=${{ matrix.shard }}
+
+      - name: Collect server shard operations metrics
+        if: always()
+        env:
+          TEST_FEEDBACK_TIER: ${{ github.event_name == 'schedule' && 'nightly' || 'pr' }}
+          TEST_FEEDBACK_TURBO_CACHE_HIT: '0'
+        run: |
+          end_ms=$(node -e 'process.stdout.write(String(Date.now()))')
+          started_ms='${{ steps.server_shard_timer.outputs.started_ms }}'
+          if [ -z "$started_ms" ]; then started_ms="$end_ms"; fi
+          elapsed_ms=$((end_ms - started_ms))
+          TEST_FEEDBACK_WALL_CLOCK_MS="$elapsed_ms" \
+            bun scripts/test-feedback/operations-metrics.ts \
+              --input=packages/server/server-test-results \
+              --output=packages/server/server-test-results/operations-metrics-${{ matrix.shard }}/metrics.json
+
+      - name: Upload server test results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: server-test-results-${{ matrix.shard }}
+          path: packages/server/server-test-results/**
+          if-no-files-found: warn
+          retention-days: 30
+
+  nightly-shuffle:
+    name: Nightly shuffled server unit seed ${{ matrix.seed }}
+    needs: static
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        seed: [101, 202, 303]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+
+      - name: Setup Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: bash scripts/bun-install-ci.sh
+
+      - name: Run deterministic shuffled unit suite
+        env:
+          TEST_FEEDBACK_TIER: nightly
+          TEST_FEEDBACK_LEAK_CHECK: '1'
+          TEST_RESULTS_DIR: nightly-shuffle-results
+        run: bun scripts/test-feedback/run-shuffle-suite.ts --seed=${{ matrix.seed }}
+
+      - name: Upload shuffle results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nightly-shuffle-${{ matrix.seed }}
+          path: packages/server/nightly-shuffle-results/*
+          if-no-files-found: warn
+          retention-days: 30
+
+  server-results:
+    name: Aggregate server test results
+    needs: server-shards
+    if: always() && needs.server-shards.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+
+      - name: Download server JUnit artifacts
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          pattern: server-test-results-*
+          path: server-test-results
+          merge-multiple: true
+
+      - name: Aggregate slow test report
+        run: bun scripts/test-feedback/aggregate-results.ts --input=server-test-results --output=server-test-results-report.json
+
+      - name: Collect operations metrics
+        env:
+          TEST_FEEDBACK_TURBO_CACHE_HIT: '0'
+        run: bun scripts/test-feedback/operations-metrics.ts --input=server-test-results --output=server-test-feedback-metrics.json
+
+      - name: Aggregate operations history sample
+        run: bun scripts/test-feedback/aggregate-operations.ts --input=server-test-results --output=server-operations-weekly-report.json
+
+      - name: Upload slow test report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: server-slow-test-report
+          path: |
+            server-test-results-report.json
+            server-test-results-report-timings.json
+            server-test-results-report.md
+            server-test-feedback-metrics.json
+            server-operations-weekly-report.json
+          if-no-files-found: warn
+          retention-days: 30
+
+  server-shard-benchmark:
+    name: Server shard SLO benchmark
+    if: github.event_name == 'workflow_dispatch' && inputs.benchmark_server_shards
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+
+      - name: Setup Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: bash scripts/bun-install-ci.sh
+
+      - name: Measure three rounds of all server shards
+        env:
+          SERVER_SHARD_REPEATS: '3'
+          SERVER_SHARD_REPORT: server-shard-benchmark-report.json
+          SERVER_SHARD_RESULTS: server-shard-benchmark-results
+        run: bun run measure:server-shards
+
+      - name: Upload shard benchmark
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: server-shard-benchmark
+          path: |
+            server-shard-benchmark-report.json
+            server-shard-benchmark-results/logs/**
+          if-no-files-found: warn
+          retention-days: 30
+
+  pr-gate-benchmark:
+    name: PR gate benchmark (${{ matrix.scenario }})
+    if: github.event_name == 'workflow_dispatch' && inputs.benchmark_pr_gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario:
+          - app-only
+          - server-only
+          - cross-package
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+
+      - name: Setup Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: bash scripts/bun-install-ci.sh
+
+      - name: Measure ten PR gate rounds
+        env:
+          PR_GATE_REPEATS: '10'
+          PR_GATE_REPORT: pr-gate-${{ matrix.scenario }}.json
+          PR_GATE_LOG_DIR: pr-gate-logs/${{ matrix.scenario }}
+          SERVER_PR_GATE_LOG_DIR: pr-gate-logs/${{ matrix.scenario }}/server
+        run: bun run measure:pr-gate -- --scenario=${{ matrix.scenario }}
+
+      - name: Upload PR gate benchmark
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pr-gate-benchmark-${{ matrix.scenario }}
+          path: |
+            pr-gate-${{ matrix.scenario }}.json
+            pr-gate-logs/${{ matrix.scenario }}/**
+          if-no-files-found: warn
+          retention-days: 30
+
+  nightly-long-running:
+    name: Nightly repeated browser suites
+    needs: static
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+
+      - name: Setup Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: bash scripts/bun-install-ci.sh
+
+      - name: Install Chromium
+        run: bun run --cwd packages/app test:e2e:install-browsers
+
+      - name: Run repeated E2E, visual, and accessibility suites
+        env:
+          TEST_FEEDBACK_TIER: nightly
+        run: |
+          bun run --cwd packages/app test:e2e
+          bun run --cwd packages/app test:visual
+          bun run --cwd packages/app test:a11y
+
+      - name: Upload browser results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nightly-browser-results
+          path: |
+            packages/app/playwright-report/**
+            packages/app/test-results/**
+          if-no-files-found: warn
+          retention-days: 30
+
+  affected-domains:
+    name: Domain ${{ matrix.domain }}
+    needs: plan
+    if: needs.plan.outputs.repository != 'true' && needs.plan.outputs.docs_only != 'true' && needs.plan.outputs.domains != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        domain: ${{ fromJSON(needs.plan.outputs.domains) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+
+      - name: Setup Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: bash scripts/bun-install-ci.sh
+
+      - name: Start domain timing
+        id: domain_timer
+        run: echo "started_ms=$(node -e 'process.stdout.write(String(Date.now()))')" >> "$GITHUB_OUTPUT"
+
+      - name: Run domain contract
+        env:
+          TEST_RESULTS_DIR: domain-results
+        run: bun run check:domain -- ${{ matrix.domain }}
+
+      - name: Collect domain operations metrics
+        if: always()
+        env:
+          TEST_FEEDBACK_TURBO_CACHE_HIT: '0'
+        run: |
+          end_ms=$(node -e 'process.stdout.write(String(Date.now()))')
+          started_ms='${{ steps.domain_timer.outputs.started_ms }}'
+          if [ -z "$started_ms" ]; then started_ms="$end_ms"; fi
+          elapsed_ms=$((end_ms - started_ms))
+          TEST_FEEDBACK_WALL_CLOCK_MS="$elapsed_ms" \
+            bun scripts/test-feedback/operations-metrics.ts --input=domain-results --output=domain-feedback-metrics.json
+
+      - name: Upload domain results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: domain-results-${{ matrix.domain }}
+          path: |
+            domain-results/*.xml
+            domain-feedback-metrics.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  docs:
+    name: Documentation checks
+    needs: plan
+    if: needs.plan.outputs.docs_only == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+
+      - name: Setup Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: bash scripts/bun-install-ci.sh
+
+      - name: Validate documentation links
+        run: bun run check:doc-links
+
+      - name: Run documentation tests
+        run: bun run --cwd docs test
+
+  repository:
+    name: Repository gate
+    needs: [plan, static]
+    if: needs.plan.outputs.repository == 'true' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+
+      - name: Setup Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: bash scripts/bun-install-ci.sh
+
+      - name: Start repository timing
+        id: repository_timer
+        run: echo "started_ms=$(node -e 'process.stdout.write(String(Date.now()))')" >> "$GITHUB_OUTPUT"
+
+      - name: Run final repository gate
+        env:
+          TEST_FEEDBACK_TIER: pr
+          TEST_RESULTS_DIR: ${{ github.workspace }}/repository-test-feedback-results
+        run: bun run check:repository
+
+      - name: Collect repository operations metrics
+        if: always()
+        env:
+          TEST_FEEDBACK_TIER: pr
+        run: |
+          end_ms=$(node -e 'process.stdout.write(String(Date.now()))')
+          elapsed_ms=$((end_ms - ${{ steps.repository_timer.outputs.started_ms }}))
+          cache_hit=$(bun scripts/test-feedback/turbo-cache-evidence.ts)
+          TEST_FEEDBACK_TURBO_CACHE_HIT="$cache_hit" \
+          TEST_FEEDBACK_WALL_CLOCK_MS="$elapsed_ms" \
+            bun scripts/test-feedback/operations-metrics.ts \
+              --input=repository-test-feedback-results \
+              --output=repository-feedback-metrics.json
+
+      - name: Upload repository operations metrics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: repository-feedback-metrics
+          path: repository-feedback-metrics.json
+          if-no-files-found: warn
+          retention-days: 30
+
+  operations-weekly:
+    name: Weekly test feedback operations report
+    needs: [affected-packages, affected-domains, repository, server-results]
+    if: always() && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+
+      - name: Download retained operations artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p operations-history
+          while IFS=$'\t' read -r artifact_id artifact_name; do
+            [ -n "$artifact_id" ] || continue
+            archive="$(mktemp -t synapsenote-operations.XXXXXX.zip)"
+            curl --fail --location \
+              --header "Authorization: Bearer $GH_TOKEN" \
+              --header 'Accept: application/vnd.github+json' \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" \
+              --output "$archive"
+            mkdir -p "operations-history/$artifact_id"
+            unzip -q "$archive" -d "operations-history/$artifact_id"
+            rm -f "$archive"
+            echo "Downloaded $artifact_name ($artifact_id)"
+          done < <(
+            gh api --paginate "/repos/${GITHUB_REPOSITORY}/actions/artifacts?per_page=100" \
+              --jq '.artifacts[] | select(.expired == false) | select(.name | test("feedback-metrics|server-slow-test-report|domain-results-")) | [.id, .name] | @tsv'
+          )
+
+      - name: Aggregate weekly operations report
+        run: bun scripts/test-feedback/aggregate-operations.ts --input=operations-history --output=operations-weekly-report.json
+
+      - name: Check four-week operations window
+        continue-on-error: true
+        run: bun scripts/test-feedback/aggregate-operations.ts --input=operations-history --output=operations-four-week-check.json --require-weeks=4
+
+      - name: Upload weekly operations report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: operations-weekly-report
+          path: |
+            operations-weekly-report.json
+            operations-four-week-check.json
+          if-no-files-found: warn
+          retention-days: 30

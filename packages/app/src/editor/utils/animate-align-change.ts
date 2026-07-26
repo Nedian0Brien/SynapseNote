@@ -10,7 +10,7 @@
  * old position to the new one via the Web Animations API.
  *
  * The wrapper itself stays at column width (see the alignment CSS in
- * `globals.css` — `text-align` on the wrapper, `display: inline-block`
+ * `styles/editor/component-chrome.css` — `text-align` on the wrapper, `display: inline-block`
  * on the child) so only the child needs to animate.
  *
  * Respects `prefers-reduced-motion: reduce` — the mutation still runs,
@@ -24,7 +24,7 @@ const ALIGN_TARGET_SELECTOR = 'img, .ok-embed, .ok-video';
 
 const FLIP_DURATION_MS = 220;
 
-/** Matches `--ease-out-strong` in `globals.css`. Web Animations API
+/** Matches `--ease-out-strong` in `styles/foundation/tokens.css`. Web Animations API
  * cannot read CSS custom properties, so this value is duplicated —
  * keep it in lockstep with the token consumed by every other
  * interactive transition in the editor. */

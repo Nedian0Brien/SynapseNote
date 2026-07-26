@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { OkDesktopBridge } from '@/lib/desktop-bridge-types';
 import { ChatMarkdown } from './ChatMarkdown';
 
@@ -24,5 +24,25 @@ describe('ChatMarkdown local file links', () => {
     expect(click).toBe(false);
     await Promise.resolve();
     expect(openAsset).toHaveBeenCalledWith('packages/app/src/main.tsx');
+  });
+
+  test('renders model-style display math with KaTeX', async () => {
+    const bridge = {} as OkDesktopBridge;
+    render(
+      <ChatMarkdown
+        text="[ \\mathrm{nDCG@k}=\\frac{\\mathrm{DCG@k}}{\\mathrm{IDCG@k}} ]"
+        bridge={bridge}
+      />,
+    );
+
+    const math = await waitFor(() => {
+      const element = document.querySelector<HTMLElement>('[data-chat-math="display"]');
+      expect(element).not.toBeNull();
+      return element as HTMLElement;
+    });
+    expect(math.getAttribute('data-chat-math')).toBe('display');
+    expect(math.querySelector('.katex-display')).not.toBeNull();
+    expect(math.closest('pre')).toBeNull();
+    expect(math.textContent).toContain('nDCG@k');
   });
 });

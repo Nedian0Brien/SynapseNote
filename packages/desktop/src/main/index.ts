@@ -39,7 +39,6 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs';
-import { createServer as createHttpServer } from 'node:http';
 import { homedir as osHomedir, hostname as osHostname, release as osRelease } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import {
@@ -262,7 +261,6 @@ import { runOkInit } from './ok-init.ts';
 import {
   type OnboardingFlowKind,
   recordCreateNewBannerShown,
-  recordFirstRunShareHandoff,
   recordOnboardingFlow,
 } from './onboarding-telemetry.ts';
 import {
@@ -274,6 +272,7 @@ import {
   removePathShimFromRcFiles,
 } from './path-install.ts';
 import { savePdfAssetSafely } from './pdf-asset-save.ts';
+import { exportWebContentsToPdf } from './pdf-export.ts';
 import { installStdioBrokenPipeGuard } from './process-safety-net.ts';
 import {
   type ProjectIntegrationsCliSurface,
@@ -295,7 +294,6 @@ import { attachRendererConsoleCapture } from './renderer-console-capture.ts';
 import { resolveDetachedSpawnArgs } from './resolve-detached-spawn-args.ts';
 import { resolveShareTarget as resolveShareTargetMain } from './resolve-share-target.ts';
 import { handleRevealExternal } from './reveal-external.ts';
-import { startFirstRunHandshake } from './share-handoff.ts';
 import { handleShellOpenExternal } from './shell-allowlist.ts';
 import { createShowGateRegistry, type ShowGateRegistry } from './show-gate.ts';
 import { reclaimProjectSkillsOnProjectOpen, reclaimUserSkillsOnLaunch } from './skill-reclaim.ts';
@@ -3225,11 +3223,24 @@ function registerIpcHandlers() {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) {
       if (isCliChatLaunchInput(req.chat)) {
+        const editorCtx = wm
+          ? wm.getContextForBrowserWindow(win as unknown as BrowserWindowLike)
+          : null;
+        const projectRoot = resolvePtyProjectRoot({
+          editorProjectPath: editorCtx?.projectPath ?? null,
+          terminalWindow: getTerminalWindowContext(win.id),
+          homedir: osHomedir(),
+        });
+        const claudeMcpOwn =
+          req.chat.cli === 'claude' && isProjectClaudeMcpOwn(projectRoot ?? undefined);
         const autoApproveOkTools =
-          req.chat.cli === 'codex' &&
-          classifyExistingMcpEntry(EDITOR_TARGETS.codex, '', osHomedir()).kind === 'present';
+          req.chat.autoApproveOkTools !== false &&
+          (claudeMcpOwn ||
+            (req.chat.cli === 'codex' &&
+              classifyExistingMcpEntry(EDITOR_TARGETS.codex, '', osHomedir()).kind === 'present'));
         const command = buildCliChatCommand(req.chat, {
           autoApproveOkTools,
+          mcpPreApprove: claudeMcpOwn,
           dataPlaneOnlyWrites: process.env.SYNAPSENOTE_DATABASE_SANDBOX_MODE === 'data-plane-only',
         });
         terminalManager.input({
@@ -3461,14 +3472,38 @@ function registerIpcHandlers() {
     return undefined;
   });
 
-  // Asset-open dispatch. Threads the caller window's
+  // Asset-open/PDF dispatch. The tagged export request prints its caller;
+  // path requests thread the caller window's
   // ProjectContext.projectPath so containment checks scope to the project
   // that owns the click — different windows (editor + navigator) don't see
   // each other's roots. Windows without a ProjectContext resolve as no-op
   // refusal (`path-escape`): a click from such a window has no legitimate
   // asset scope.
-  handle('ok:shell:open-asset', async (event, relPath, pdfBytes) => {
+  handle('ok:shell:open-asset', async (event, relPathOrRequest, pdfBytes) => {
     const callerWin = BrowserWindow.fromWebContents(event.sender);
+    if (typeof relPathOrRequest !== 'string') {
+      if (relPathOrRequest.kind !== 'export-pdf' || !callerWin) {
+        return { ok: false, reason: 'print-failed' } as const;
+      }
+      const outcome = await exportWebContentsToPdf(
+        {
+          showSaveDialog: (options) => dialog.showSaveDialog(callerWin, options),
+          printToPDF: (options) => event.sender.printToPDF(options),
+          writeFile: (path, bytes) => fsPromises.writeFile(path, bytes),
+        },
+        relPathOrRequest.suggestedName,
+      );
+      if (!outcome.ok) {
+        logIpcError({
+          event: 'ipc.error',
+          channel: 'ok:shell:open-asset',
+          reason: outcome.reason,
+          handler: 'exportPdf',
+        });
+      }
+      return outcome;
+    }
+    const relPath = relPathOrRequest;
     const callerProjectPath =
       callerWin && wm
         ? wm.getContextForBrowserWindow(callerWin as unknown as BrowserWindowLike)?.projectPath
@@ -5192,10 +5227,6 @@ function bootPrimaryInstance(): void {
       // notice (the GUI "Appropriate Legal Notices" surface). Idempotent.
       app.setAboutPanelOptions(buildAboutPanelOptions(app.getVersion()));
 
-      // True-first-run signal for the deferred-share handshake: captured BEFORE
-      // bootstrap, which writes state.json and would otherwise erase the signal.
-      const isTrueFirstRun = !existsSync(join(app.getPath('userData'), 'state.json'));
-
       const result = await runBootstrap({
         loadAppState,
         evaluateSchemaCompatibility,
@@ -5415,46 +5446,6 @@ function bootPrimaryInstance(): void {
         // immediately rather than waiting out the auto-flush's window-ready retry
         // budget.
         protocolControl.drainQueuedUrls();
-      }
-
-      // Deferred-share first-run handshake. Fire-and-forget — it never claims
-      // the launch (redemption is probabilistic) and runs concurrently with the
-      // rest of boot. Gated to the fresh-install Navigator path (`'navigator'`):
-      // a project restore or a single-file/url launch means the user already
-      // arrived somewhere, so opening a `/continue` browser tab would be noise.
-      // Every failure mode degrades to the splash re-click recovery.
-      if (isTrueFirstRun && decision.action === 'navigator') {
-        startFirstRunHandshake({
-          isFirstRun: () => true,
-          createServer: (handler) => {
-            const httpServer = createHttpServer((req, res) => handler(req, res));
-            return {
-              listen: (port, host, cb) => {
-                httpServer.listen(port, host, cb);
-              },
-              on: (event, cb) => {
-                httpServer.on(event, cb);
-              },
-              address: () => httpServer.address(),
-              close: () => {
-                httpServer.close();
-              },
-            };
-          },
-          openExternal: (url) => {
-            void shell.openExternal(url).catch((err) => {
-              console.warn('[main] deferred-share openExternal failed', {
-                err: err instanceof Error ? err.message : String(err),
-              });
-            });
-          },
-          routeShareUrl: (url) => protocolControl.routeUrl(url),
-          recordOutcome: (outcome) => recordFirstRunShareHandoff(outcome),
-          log: {
-            warn: (obj, msg) => console.warn(msg, obj),
-            info: (obj, msg) => console.info(msg, obj),
-          },
-        });
       }
 
       // Fire-and-forget user-global Agent Skill reclaim. Runs on every launch

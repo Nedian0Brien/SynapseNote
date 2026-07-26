@@ -283,14 +283,14 @@ describe('registerProtocolHandler — before-quit Launch Services cleanup', () =
   });
 });
 
-describe('registerProtocolHandler — deferred-share routeUrl + dedup', () => {
+describe('registerProtocolHandler — share routeUrl + dedup', () => {
   let env: TestEnv;
 
   beforeEach(() => {
     env = makeEnv();
   });
 
-  test('routeUrl feeds a redeemed /d/ universal link through the share spine; a near-simultaneous duplicate is deduped', async () => {
+  test('routeUrl feeds a /d/ universal link through the share spine; a near-simultaneous duplicate is deduped', async () => {
     env.readyWindow = { id: 'pre-existing' };
     const resolveShareTarget = mock(async (): Promise<CandidateSelection> => ({ kind: 'miss' }));
     const routeShareToNavigator = mock(() => {});

@@ -43,9 +43,9 @@ export function installedSkillsPath(projectDir: string): string {
 }
 
 /**
- * Serialize read-modify-write of one project's marker. `recordSkillInstall` /
- * `removeSkillInstall` each read the whole marker, merge one entry, and rewrite
- * — two concurrent calls (e.g. parallel MCP installs of different skills) would
+ * Serialize read-modify-write of one project's marker. Record, remove, and move
+ * operations each read the whole marker, merge entries, and rewrite — two
+ * concurrent calls (e.g. parallel MCP installs of different skills) would
  * otherwise read the same snapshot and the second write would clobber the
  * first's entry. The server is single-per-contentDir (server.lock), so an
  * in-process promise chain keyed by marker path is sufficient.
@@ -133,5 +133,42 @@ export async function removeSkillInstall(
     const { [name]: _dropped, ...rest } = state.skills;
     await writeInstalledSkills(projectDir, { ...state, skills: rest });
     return removed;
+  });
+}
+
+export type MoveSkillInstallResult =
+  | { status: 'moved'; entry: InstalledSkillEntry }
+  | { status: 'missing' }
+  | { status: 'collision'; entry: InstalledSkillEntry };
+
+/**
+ * Atomically move one install-marker entry to a new skill identity.
+ *
+ * Skill directory migrations must not implement this as remove-then-record:
+ * a crash between those writes would make an installed skill appear as a
+ * Draft. The optional replacement entry lets a caller refresh the host list
+ * after it has re-projected the renamed source. A pre-existing destination is
+ * never overwritten.
+ */
+export async function moveSkillInstall(
+  projectDir: string,
+  fromName: string,
+  toName: string,
+  replacement?: InstalledSkillEntry,
+): Promise<MoveSkillInstallResult> {
+  return withMarkerLock(projectDir, async () => {
+    const state = readInstalledSkills(projectDir);
+    const source = state.skills[fromName];
+    if (source === undefined) return { status: 'missing' };
+    const destination = state.skills[toName];
+    if (destination !== undefined) return { status: 'collision', entry: destination };
+
+    const { [fromName]: _dropped, ...rest } = state.skills;
+    const entry = replacement ?? source;
+    await writeInstalledSkills(projectDir, {
+      ...state,
+      skills: { ...rest, [toName]: entry },
+    });
+    return { status: 'moved', entry };
   });
 }

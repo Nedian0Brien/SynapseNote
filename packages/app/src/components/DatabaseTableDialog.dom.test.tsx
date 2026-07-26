@@ -4,8 +4,11 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import userEvent from '@testing-library/user-event';
 import { IDBFactory } from 'fake-indexeddb';
 import { emitDatabaseAgentRunChanged } from '@/lib/database-agent-run-events';
+import { resetDatabaseLinkedViewCacheForTests } from '@/lib/database-linked-view-cache';
+import { databaseRecordPathToHash } from '@/lib/database-navigation';
 import { resetDatabaseOfflineCacheForTests } from '@/lib/database-offline-cache';
 import { offlineDatabaseMutationStore } from '@/lib/database-offline-mutation-queue';
+import { resetDatabaseOverlayState } from '@/lib/database-overlay-store';
 import { publishRemoteDatabasePresence } from '@/lib/database-presence';
 import { databaseTableLayoutStorageKey } from '@/lib/database-table-layout';
 import { databaseLastOpenedViewStorageKey } from '@/lib/database-view-state';
@@ -80,6 +83,7 @@ const database = {
 
 afterEach(() => {
   cleanup();
+  resetDatabaseOverlayState();
   globalThis.fetch = originalFetch;
   if (originalClipboard) {
     Object.defineProperty(globalThis.navigator, 'clipboard', originalClipboard);
@@ -95,6 +99,7 @@ afterEach(() => {
   window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
   publishRemoteDatabasePresence([]);
   resetDatabaseOfflineCacheForTests();
+  resetDatabaseLinkedViewCacheForTests();
   emitBranchChanged(null);
   setServerInstanceId(null);
 });
@@ -798,10 +803,14 @@ describe('DatabaseTableDialog', () => {
     const inlineTableContainer = document.querySelector<HTMLElement>(
       '[data-database-inline-table]',
     )?.parentElement;
-    expect(inlineTableContainer?.className).toContain('rounded-md');
-    expect(inlineTableContainer?.className).toContain('border-border/40');
+    expect(inlineTableContainer?.className).toContain('overflow-x-auto');
+    expect(inlineTableContainer?.className).toContain('rounded-none');
+    expect(inlineTableContainer?.className).toContain('border-0');
 
     await user.click(screen.getByRole('button', { name: 'Add property' }));
+    expect(document.querySelector('[data-database-property-type-icon="text"]')).not.toBeNull();
+    expect(document.querySelector('[data-database-property-type-icon="number"]')).not.toBeNull();
+    expect(document.querySelector('[data-database-property-type-icon="select"]')).not.toBeNull();
     const name = screen.getByRole('textbox', { name: 'New property name' });
     await user.clear(name);
     await user.type(name, 'Priority');
@@ -810,6 +819,38 @@ describe('DatabaseTableDialog', () => {
     await user.click(addButtons.at(-1) as HTMLElement);
 
     expect(onAddProperty).toHaveBeenCalledWith({ name: 'Priority', type: 'select' });
+  });
+
+  test('keeps the sticky title track wide enough to reveal the next property header', () => {
+    localStorage.setItem(
+      databaseTableLayoutStorageKey(source.id),
+      JSON.stringify({
+        propertyIds: source.properties.map((property) => property.id),
+        hiddenPropertyIds: [],
+        widths: Object.fromEntries(source.properties.map((property) => [property.id, 120])),
+        wrap: false,
+        rowHeight: 'standard',
+      }),
+    );
+    render(
+      <DatabaseTable
+        databaseId={database.id}
+        source={source}
+        result={queryResult()}
+        notionSurface
+        onCreateRecord={() => {}}
+      />,
+    );
+    expect(
+      document.querySelector<HTMLElement>('col[data-property-id="prop_title"]')?.style.width,
+    ).toBe('224px');
+    expect(
+      document.querySelector<HTMLElement>('col[data-property-id="prop_status"]')?.style.width,
+    ).toBe('120px');
+    expect(
+      document.querySelector<HTMLElement>('[data-new-record-row] [data-property-id="prop_title"]')
+        ?.style.width,
+    ).toBe('');
   });
 
   test('opens a contextual property menu for visibility, order, calculations, and settings', async () => {
@@ -986,6 +1027,57 @@ describe('DatabaseTableDialog', () => {
       type: 'text',
       insertBeforePropertyId: 'prop_budget',
     });
+  });
+
+  test('keeps Add property open until the committed schema projection arrives', async () => {
+    const onAddProperty = mock(() => {});
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <DatabaseTable
+        databaseId={database.id}
+        source={source}
+        result={queryResult()}
+        notionSurface
+        onAddProperty={onAddProperty}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Add property' }));
+    const name = screen.getByRole('textbox', { name: 'New property name' });
+    await user.clear(name);
+    await user.type(name, 'Priority');
+    const addPropertyButtons = screen.getAllByRole('button', {
+      name: 'Add property',
+      exact: true,
+    });
+    await user.click(addPropertyButtons.at(-1) as HTMLElement);
+
+    expect(onAddProperty).toHaveBeenCalledWith({ name: 'Priority', type: 'text' });
+    expect(
+      (screen.getByRole('textbox', { name: 'New property name' }) as HTMLInputElement).value,
+    ).toBe('Priority');
+
+    const committedSource = {
+      ...source,
+      properties: [
+        ...source.properties,
+        { id: 'prop_priority', key: 'priority', name: 'Priority', type: 'text' as const },
+      ],
+    };
+    rerender(
+      <DatabaseTable
+        databaseId={database.id}
+        source={committedSource}
+        result={queryResult()}
+        notionSurface
+        onAddProperty={onAddProperty}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByRole('textbox', { name: 'New property name' })).toBeNull(),
+    );
+    expect(screen.getByRole('columnheader', { name: /Priority/ })).toBeTruthy();
   });
 
   test('exposes Select option configuration from the property header menu', async () => {
@@ -1268,7 +1360,7 @@ describe('DatabaseTableDialog', () => {
     ).toEqual(['prop_title', 'prop_budget', 'prop_status']);
     expect(document.querySelector('table')?.getAttribute('data-row-height')).toBe('compact');
     expect(
-      (document.querySelector('th[data-property-id="prop_budget"]') as HTMLElement).style.width,
+      (document.querySelector('col[data-property-id="prop_budget"]') as HTMLElement).style.width,
     ).toBe('240px');
     expect(
       document
@@ -1450,6 +1542,83 @@ describe('DatabaseTableDialog', () => {
     expect(summary.parentElement?.tagName).toBe('DETAILS');
     expect((summary.parentElement as HTMLDetailsElement).open).toBe(true);
     expect(screen.getByRole('combobox', { name: 'Select property' })).toBeTruthy();
+  });
+
+  test('opens description-only property handoffs for a Form without a query result', async () => {
+    const formView = {
+      id: 'view_workspace_form',
+      key: 'workspace-form',
+      name: 'Task intake',
+      sourceId: source.id,
+      layout: {
+        type: 'form' as const,
+        configuration: {
+          access: 'internal' as const,
+          title: 'Send a task',
+          questions: [
+            {
+              id: 'frmq_workspace_title',
+              propertyId: 'prop_title',
+              label: 'Task title',
+              required: true,
+            },
+          ],
+          defaults: {},
+          confirmation: {
+            title: 'Response submitted',
+            message: 'Your response has been saved.',
+            allowAnotherResponse: true,
+          },
+          closedMessage: 'This form is no longer accepting responses.',
+          fileUploads: { enabled: false, maxFilesPerQuestion: 5 },
+          spamProtection: {
+            honeypot: true,
+            minimumCompletionSeconds: 2,
+            rateLimit: { maxSubmissions: 10, windowSeconds: 60 },
+          },
+          duplicateSubmission: { type: 'allow' as const },
+          retention: { type: 'workspace' as const },
+        },
+      },
+      sort: [],
+      groups: [],
+      projection: { propertyIds: ['prop_title'], body: 'hidden' as const },
+    };
+    const formDatabase = {
+      ...database,
+      sources: [{ ...source, defaultViewId: formView.id }],
+      views: [formView],
+    };
+    let queryCalls = 0;
+    globalThis.fetch = mock(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path.startsWith('/api/databases/catalog')) return Response.json(catalog());
+      if (path === '/api/databases/describe') {
+        return Response.json({
+          ...description(),
+          database: formDatabase,
+          source: formDatabase.sources[0],
+        });
+      }
+      if (path === '/api/databases/query') {
+        queryCalls += 1;
+        return Response.json({ detail: 'Form views do not query rows' }, { status: 500 });
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
+      <DatabaseTableDialog
+        open
+        onOpenChange={() => {}}
+        initialTarget={{ databaseId: database.id, sourceId: source.id, viewId: formView.id }}
+        initialDatabaseSurface="properties"
+      />,
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Manage properties' })).toBeTruthy();
+    expect(screen.getByText('Send a task')).toBeTruthy();
+    expect(queryCalls).toBe(0);
   });
 
   test('keeps Multi-select option configuration labels distinct from Select', async () => {
@@ -2309,9 +2478,9 @@ describe('DatabaseTableDialog', () => {
     fireEvent.click(screen.getByLabelText('Save cell edit'));
 
     fireEvent.click(screen.getByLabelText('Edit Tags for record rec_first'));
-    expect(screen.getByLabelText('Bug for Tags').getAttribute('data-state')).toBe('checked');
-    fireEvent.click(screen.getByLabelText('Feature for Tags'));
-    fireEvent.click(screen.getByLabelText('Save cell edit'));
+    expect(screen.getByRole('option', { name: 'Bug' }).getAttribute('aria-selected')).toBe('true');
+    fireEvent.click(screen.getByRole('option', { name: 'Feature' }));
+    fireEvent.keyDown(screen.getByRole('combobox', { name: 'Edit Tags' }), { key: 'Tab' });
 
     expect(edits).toEqual([false, ['opt_bug', 'opt_feature']]);
   });
@@ -2838,7 +3007,7 @@ describe('DatabaseTableDialog', () => {
 
     expect(
       screen.getByRole('grid', { name: 'Tasks database records' }).getAttribute('aria-colcount'),
-    ).toBe('8');
+    ).toBe('9');
     expect(
       screen
         .getByRole('grid', { name: 'Tasks database records' })
@@ -2891,6 +3060,24 @@ describe('DatabaseTableDialog', () => {
     expect(screen.getByLabelText('Edit Title for record rec_first')).toBeTruthy();
     if (!titleLink) throw new Error('canonical title link is missing');
     fireEvent.click(titleLink);
+    expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'rec_first' }));
+  });
+
+  test('keeps page opening available while another database mutation is pending', () => {
+    const onOpen = mock(() => {});
+    render(
+      <DatabaseTable
+        source={source}
+        result={queryResult()}
+        notionSurface
+        mutationLocked
+        onOpen={onOpen}
+      />,
+    );
+
+    const openButton = screen.getByRole('button', { name: 'Open preview for page First task' });
+    expect((openButton as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(openButton);
     expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'rec_first' }));
   });
 
@@ -2948,6 +3135,32 @@ describe('DatabaseTableDialog', () => {
     expect(statusTag?.getAttribute('data-database-property-tag-option')).toBe('opt_active');
     expect(statusTag?.className).toContain('rounded-full');
     expect(screen.getByRole('gridcell', { name: 'Active' })).toBeTruthy();
+  });
+
+  test('opens the select editor from an empty inline property cell', async () => {
+    const onEdit = mock(() => {});
+    const emptyResult = {
+      ...queryResult(),
+      records: queryResult().records.map((record) => {
+        const { prop_status: _status, ...values } = record.values;
+        return { ...record, values };
+      }),
+    };
+    render(<DatabaseTable source={source} result={emptyResult} notionSurface onEdit={onEdit} />);
+
+    const emptyCell = screen.getByLabelText('Edit Status for page First task: empty');
+    expect(emptyCell.textContent).toBe('—');
+    fireEvent.click(emptyCell);
+
+    expect(screen.getByRole('combobox', { name: 'Edit Status' })).toBeTruthy();
+    expect(await screen.findByText('Active')).not.toBeNull();
+    fireEvent.click(screen.getByRole('option', { name: 'Active' }));
+
+    expect(onEdit).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'rec_first' }),
+      expect.objectContaining({ id: 'prop_status', type: 'select' }),
+      'opt_active',
+    );
   });
 
   test('renders inline relation values as page-like tags', () => {
@@ -3169,7 +3382,7 @@ describe('DatabaseTableDialog', () => {
     expect(screen.getByRole('menuitem', { name: 'Ask agent about page First task' })).toBeTruthy();
   });
 
-  test('collapses inline row actions into one contextual more menu', async () => {
+  test('keeps inline Open on the row and opens actions from the drag handle', async () => {
     const user = userEvent.setup();
     const onOpen = mock(() => {});
     const onOpenContextInspector = mock(() => {});
@@ -3200,11 +3413,21 @@ describe('DatabaseTableDialog', () => {
     );
     expect(rowActions?.className).toContain('opacity-0');
     expect(rowActions?.className).toContain('group-hover/row:opacity-100');
-    expect(screen.getByRole('button', { name: 'More actions for page First task' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Open page First task' })).toBeTruthy();
-    await user.click(screen.getByRole('button', { name: 'More actions for page First task' }));
+    expect(screen.queryByRole('button', { name: 'More actions for page First task' })).toBeNull();
+    const openButton = screen.getByRole('button', {
+      name: 'Open preview for page First task',
+    });
+    await user.click(openButton);
+    expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'rec_first' }));
 
-    expect(screen.getByRole('menu', { name: 'More actions for page First task' })).toBeTruthy();
+    const firstRow = document.querySelector('[data-record-id="rec_first"]') as HTMLElement;
+    fireEvent.pointerOver(firstRow);
+    const handle = screen.getByRole('button', {
+      name: 'Open page actions for First task',
+    });
+    expect(handle.getAttribute('title')).toContain('Click for menu');
+    await user.click(handle);
+    expect(screen.getByRole('menu', { name: 'Page actions for First task' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Open page First task' })).toBeTruthy();
     expect(
       screen.getByRole('menuitem', { name: 'Inspect context for page First task' }),
@@ -3214,9 +3437,6 @@ describe('DatabaseTableDialog', () => {
     expect(screen.getByRole('menuitem', { name: 'Archive page First task' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Move page First task' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Delete page First task' })).toBeTruthy();
-
-    await user.click(screen.getByRole('menuitem', { name: 'Open page First task' }));
-    expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'rec_first' }));
   });
 
   test('offers a row-level agent scope with the canonical record ID', () => {
@@ -3445,9 +3665,7 @@ describe('DatabaseTableDialog', () => {
       target: { value: '320' },
     });
     expect(
-      view.container.querySelector<HTMLElement>(
-        '[data-slot="table-head"][data-property-id="prop_budget"]',
-      )?.style.width,
+      view.container.querySelector<HTMLElement>('col[data-property-id="prop_budget"]')?.style.width,
     ).toBe('320px');
 
     fireEvent.click(screen.getByLabelText('Calculation for Budget'));
@@ -3778,8 +3996,15 @@ describe('DatabaseTableDialog', () => {
       return Response.json({}, { status: 404 });
     }) as unknown as typeof fetch;
 
-    render(<DatabaseTableDialog open onOpenChange={() => {}} />);
-    fireEvent.click(await screen.findByText('Manage Select options'));
+    render(
+      <DatabaseTableDialog
+        open
+        onOpenChange={() => {}}
+        initialDatabaseSurface="options"
+        initialPropertyId="prop_status"
+      />,
+    );
+    expect(await screen.findByText('Manage Select options')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Select option name'), {
       target: { value: 'In progress' },
     });
@@ -3822,7 +4047,6 @@ describe('DatabaseTableDialog', () => {
 
   test('renders stable-ID columns and refreshes the selected snapshot on database changes', async () => {
     let queryCalls = 0;
-    const openedRecords: string[] = [];
     const contextScopes: unknown[] = [];
     const clipboardWrite = mock(async () => {});
     Object.defineProperty(globalThis.navigator, 'clipboard', {
@@ -3867,7 +4091,6 @@ describe('DatabaseTableDialog', () => {
       <DatabaseTableDialog
         open={true}
         onOpenChange={() => {}}
-        onOpenRecord={(path) => openedRecords.push(path)}
         onOpenContextInspector={(scope) => contextScopes.push(scope)}
       />,
     );
@@ -3902,7 +4125,7 @@ describe('DatabaseTableDialog', () => {
     expect(document.querySelector('[data-record-id="rec_first"]')).not.toBeNull();
     expect(document.querySelector('[data-property-id="prop_status"]')).not.toBeNull();
     fireEvent.click(screen.getByLabelText('Open record rec_first'));
-    expect(openedRecords).toEqual(['tasks/first.md']);
+    expect(window.location.hash).toBe(databaseRecordPathToHash('tasks/first.md'));
     fireEvent.click(screen.getByLabelText('Inspect context for record rec_first'));
     expect(contextScopes).toEqual([
       {
@@ -3944,7 +4167,6 @@ describe('DatabaseTableDialog', () => {
       });
     });
     await waitFor(() => expect(queryCalls).toBe(3));
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Select record rec_first' }));
     expect(
       screen
         .getByRole('checkbox', { name: 'Select record rec_first' })
@@ -4162,7 +4384,8 @@ describe('DatabaseTableDialog', () => {
     expect(pageBody?.className).toContain('overflow-x-hidden');
     expect(pageBody?.className).toContain('overflow-y-auto');
     const tableScroll = screen.getByRole('grid').closest('[data-slot="table-container"]');
-    expect(tableScroll?.className).toContain('overflow-auto');
+    expect(tableScroll?.className).toContain('overflow-x-auto');
+    expect(tableScroll?.className).toContain('overflow-y-auto');
     const viewTabs = screen.getByRole('navigation', { name: 'Database views' });
     expect(viewTabs.className).toContain('overflow-x-auto');
     const compactViewSwitcher = workspace?.querySelector('[data-database-compact-view-switcher]');
@@ -5150,7 +5373,8 @@ describe('DatabaseTableDialog', () => {
     ) as typeof fetch;
     render(<DatabaseTableDialog open={true} onOpenChange={() => {}} />);
     expect(await screen.findByText('Database request failed')).not.toBeNull();
-    expect(await screen.findByText('Database service is offline')).not.toBeNull();
+    expect(await screen.findByText('The database could not be loaded. Try again.')).not.toBeNull();
+    expect(screen.queryByText('Database service is offline')).toBeNull();
     expect(document.querySelector('[data-database-state="error"]')).not.toBeNull();
   });
 
@@ -5177,17 +5401,34 @@ describe('DatabaseTableDialog', () => {
     expect(requestedPaths).not.toContain('/api/databases/plan');
   });
 
-  test('saves a direct-safe edited value without a ghost-review interruption', async () => {
+  test('reconciles a Select cell without a save indicator or full database query', async () => {
     let committed = false;
+    let queryCalls = 0;
+    let recordLookupCalls = 0;
     globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = String(input);
       const body = init?.body ? (JSON.parse(String(init.body)) as { action?: string }) : {};
       if (path.startsWith('/api/databases/catalog')) return Response.json(catalog());
       if (path === '/api/databases/describe') return Response.json(description());
       if (path === '/api/databases/query') {
-        const next = queryResult();
-        if (committed && next.records[0]) next.records[0].values.prop_title = 'Changed task';
-        return Response.json(next);
+        queryCalls += 1;
+        return Response.json(queryResult());
+      }
+      if (path === '/api/databases/record') {
+        recordLookupCalls += 1;
+        const next = queryResult().records[0];
+        if (!next) throw new Error('Expected the database fixture to contain a record');
+        return Response.json({
+          databaseId: database.id,
+          sourceId: source.id,
+          manifestRevision: hash,
+          indexRevision: `sha256:${'b'.repeat(64)}`,
+          record: {
+            ...next,
+            revision: `sha256:${'b'.repeat(64)}`,
+            values: { ...next.values, prop_status: 'opt_done' },
+          },
+        });
       }
       if (path === '/api/databases/plan' && body.action === 'create_draft') {
         return Response.json({
@@ -5206,14 +5447,14 @@ describe('DatabaseTableDialog', () => {
             snapshotRevision: hash,
             createdAt: '2026-07-20T00:00:00.000Z',
             expiresAt: '2026-07-20T01:00:00.000Z',
-            immutableTargetSet: ['db_tasks', 'ds_tasks', 'prop_title', 'rec_first'],
+            immutableTargetSet: ['db_tasks', 'ds_tasks', 'prop_status', 'rec_first'],
             writeGuards: { permissions: [], querySnapshots: [] },
             targetResolutions: [],
             normalizedOperations: [],
             affectedObjects: {
               databaseIds: ['db_tasks'],
               sourceIds: ['ds_tasks'],
-              propertyIds: ['prop_title'],
+              propertyIds: ['prop_status'],
               viewIds: [],
               recordIds: ['rec_first'],
             },
@@ -5226,8 +5467,8 @@ describe('DatabaseTableDialog', () => {
                   sourceId: 'ds_tasks',
                   path: 'tasks/first.md',
                   action: 'update',
-                  before: { values: { prop_title: 'First task' }, body: '' },
-                  after: { values: { prop_title: 'Changed task' }, body: '' },
+                  before: { values: { prop_status: 'opt_active' }, body: '' },
+                  after: { values: { prop_status: 'opt_done' }, body: '' },
                 },
               ],
               templates: [],
@@ -5267,22 +5508,46 @@ describe('DatabaseTableDialog', () => {
     }) as typeof fetch;
 
     render(<DatabaseTableDialog open={true} onOpenChange={() => {}} />);
-    fireEvent.click(await screen.findByLabelText('Edit Title for record rec_first'));
-    const input = screen.getByLabelText('Edit Title');
-    fireEvent.change(input, { target: { value: 'Changed task' } });
-    fireEvent.click(screen.getByLabelText('Save cell edit'));
+    expect(await screen.findByLabelText('Edit Status for record rec_first')).toBeTruthy();
+    expect(screen.queryByText('Manage Select options')).toBeNull();
+    fireEvent.click(await screen.findByLabelText('Edit Status for record rec_first'));
+    fireEvent.click(await screen.findByRole('option', { name: 'Done' }));
+    expect(screen.queryByTestId('database-save-indicator')).toBeNull();
+    expect(screen.queryByText('Saving change')).toBeNull();
 
     await waitFor(() => expect(committed).toBe(true));
     await waitFor(() => expect(screen.queryByTestId('database-ghost-review')).toBeNull());
-    await waitFor(() => {
-      expect(
-        screen.getByTestId('database-save-indicator').getAttribute('data-database-save-state'),
-      ).toBe('saved');
-    });
+    await waitFor(() => expect(recordLookupCalls).toBe(1));
+    expect(screen.queryByTestId('database-save-indicator')).toBeNull();
     expect(screen.queryByText('Proposed · not saved')).toBeNull();
     expect(
-      (await screen.findByText('Changed task')).closest('td')?.getAttribute('data-canonical'),
+      (await screen.findByRole('gridcell', { name: 'Done' })).getAttribute('data-canonical'),
     ).toBe('true');
+    expect(queryCalls).toBe(1);
+
+    act(() => {
+      emitDatabaseChanged({
+        v: CC1_CONTRACT_VERSION,
+        ch: CC1_CHANNEL_DATABASE_CHANGED,
+        seq: 1,
+        scope: 'records',
+        reasons: ['record-update'],
+        databaseIds: [database.id],
+        sourceIds: [source.id],
+        recordIds: ['rec_first'],
+        affectedIdsComplete: true,
+        index: {
+          state: 'idle',
+          revision: `sha256:${'b'.repeat(64)}`,
+          manifestRevision: hash,
+          recordCount: 1,
+          issueCount: 0,
+          progress: null,
+        },
+      });
+    });
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 100));
+    expect(queryCalls).toBe(1);
   });
 
   test('creates a new record directly and refreshes the canonical table', async () => {

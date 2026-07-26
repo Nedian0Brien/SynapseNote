@@ -98,7 +98,7 @@ function particleStyle(p: FireworkParticle): CSSProperties {
  * Animated blob mascot — the OK character with blinking eyes that follow the cursor.
  *
  * Uses the actual marketing SVG. Eyes blink via CSS keyframes (`ok-blob-blink`
- * in globals.css). A continuous rAF loop lerps both the eye offset (toward
+ * in `styles/shell/feedback-and-mascot.css`). A continuous rAF loop lerps both the eye offset (toward
  * the cursor) and a 3D head tilt on the wrapper (rotateX/rotateY), with the
  * eyes counter-shifting slightly opposite the tilt for a parallax "looking
  * at you" effect. Respects `prefers-reduced-motion`.

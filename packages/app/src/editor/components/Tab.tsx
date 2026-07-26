@@ -11,7 +11,7 @@
  * pill regardless of whether the author opted into a deep-link id.
  *
  * Active-state visibility is owned by the parent Tabs's CSS rule (in
- * `globals.css`), keyed off `data-active-index` on the Tabs's content
+ * `styles/components/tabs-accordion.css`), keyed off `data-active-index` on the Tabs's content
  * wrapper + `:nth-of-type` of this Tab among its siblings.
  */
 

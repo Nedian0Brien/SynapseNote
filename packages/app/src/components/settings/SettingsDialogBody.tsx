@@ -29,8 +29,6 @@
  * `<InstallInClaudeDesktopDialog>` (its own internal Dialog).
  */
 
-import type { MessageDescriptor } from '@lingui/core';
-import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react/macro';
 import {
   CONFIG_DOC_NAME_PROJECT,
@@ -44,7 +42,6 @@ import {
   humanFormat,
   isKnownConfigError,
   normalizeAttachmentFolderPath,
-  type OkignoreBinding,
   SHOW_INSTALL_SKILL,
 } from '@nedian0brien/synapsenote-core';
 import { ArrowUpRight, Check, ChevronRight, RotateCcw } from 'lucide-react';
@@ -112,6 +109,10 @@ import { OkignoreSection } from './OkignoreSection';
 import { ProjectAiToolsSection } from './ProjectAiToolsSection';
 import { ProjectTemplatesSection } from './ProjectTemplatesSection';
 import { SearchSection } from './SearchSection';
+import {
+  COMMITTED_DEFAULT_SELECTED_CLASS,
+  FIELDS_USER_PREFERENCES,
+} from './SettingsSchemaRegistry';
 import { SkillsManagerSection } from './SkillsManagerSection';
 import {
   getEnumOptions,
@@ -119,6 +120,7 @@ import {
   getLeafTypeTag,
   resolveLeafSchema,
 } from './schema-walker';
+import type { SettingsDialogBodyProps, SettingsFieldDef, SettingsScope } from './settings-types';
 import type { SlotForwardedProps } from './slot-forwarded-props';
 import { TerminalSection } from './TerminalSection';
 import { pickFirstIssueForPath, useConfigForm } from './use-config-form';
@@ -129,75 +131,6 @@ import { pickFirstIssueForPath, useConfigForm } from './use-config-form';
  * new design. Sections under USER use the user binding; sections under
  * THIS PROJECT use the project binding.
  */
-type Scope = 'user' | 'project';
-
-interface FieldDef {
-  path: string[];
-  label: MessageDescriptor;
-  description?: MessageDescriptor;
-  /** Optional override for enum presentation. Short enums default to a ToggleGroup. */
-  control?: 'enum-toggle' | 'enum-select';
-  formatOption?: (value: string) => string;
-}
-
-function chatModelLabel(value: string): string {
-  if (value === 'gpt-5.6-sol') return 'GPT-5.6 Sol';
-  if (value === 'gpt-5.6-terra') return 'GPT-5.6 Terra';
-  if (value === 'gpt-5.6-luna') return 'GPT-5.6 Luna';
-  if (value === 'gpt-5.3-codex-spark') return 'GPT-5.3 Codex Spark';
-  if (value === 'fable') return 'Fable';
-  if (value === 'opus') return 'Opus';
-  if (value === 'sonnet') return 'Sonnet';
-  return value;
-}
-
-const FIELDS_USER_PREFERENCES: FieldDef[] = [
-  {
-    path: ['appearance', 'theme'],
-    label: msg`Theme`,
-    description: msg`Light, dark, or follow the OS.`,
-    control: 'enum-toggle',
-  },
-  {
-    path: ['editor', 'wordWrap'],
-    label: msg`Word wrap`,
-    description: msg`Wrap long lines in the markdown source editor.`,
-  },
-  {
-    path: ['appearance', 'preview', 'autoOpen'],
-    label: msg`Open preview when agent edits`,
-    description: msg`When enabled, the agent opens or refreshes the preview after each edit. Disable if you manage your own preview window (OK Desktop, a browser tab on another display, etc.).`,
-  },
-  {
-    path: ['agents', 'chat', 'codexModel'],
-    label: msg`Default Codex chat model`,
-    description: msg`Used when you start a new Codex chat. You can still change the model in the chat composer.`,
-    control: 'enum-select',
-    formatOption: chatModelLabel,
-  },
-  {
-    path: ['agents', 'chat', 'claudeModel'],
-    label: msg`Default Claude chat model`,
-    description: msg`Used when you start a new Claude chat. You can still change the model in the chat composer.`,
-    control: 'enum-select',
-    formatOption: chatModelLabel,
-  },
-];
-
-// The selected committed-default option uses the app's primary blue (the same
-// token as the Button default variant), not the muted ToggleGroup default, so
-// the active stance reads as clearly chosen and matches the accent used
-// elsewhere in the app.
-const COMMITTED_DEFAULT_SELECTED_CLASS =
-  'data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary/90';
-
-interface SettingsDialogBodyProps {
-  activeId: string;
-  userBinding: ConfigBinding | null;
-  okignoreBinding: OkignoreBinding | null;
-  okignoreSynced: boolean;
-}
-
 export function SettingsDialogBody({
   activeId,
   userBinding,
@@ -425,9 +358,9 @@ function HotkeysSection() {
 interface BoundSchemaSectionProps {
   title: string;
   description: string;
-  scope: Scope;
+  scope: SettingsScope;
   binding: ConfigBinding;
-  fields: FieldDef[];
+  fields: SettingsFieldDef[];
 }
 
 /**
@@ -509,8 +442,8 @@ function BoundSchemaSection({
 interface SchemaSectionProps {
   title: string;
   description: string;
-  scope: Scope;
-  fields: FieldDef[];
+  scope: SettingsScope;
+  fields: SettingsFieldDef[];
   commitField: (name: FieldPath<Config>) => boolean;
   flashedPath: string | null;
 }
@@ -1085,8 +1018,8 @@ function SyncSection() {
 }
 
 interface SettingsFieldProps {
-  field: FieldDef;
-  scope: Scope;
+  field: SettingsFieldDef;
+  scope: SettingsScope;
   commitField: (name: FieldPath<Config>) => boolean;
   isFlashed: boolean;
 }
@@ -1241,7 +1174,7 @@ function SettingsField({ field, scope, commitField, isFlashed }: SettingsFieldPr
 }
 
 interface FieldControlBodyProps {
-  field: FieldDef;
+  field: SettingsFieldDef;
   ctl: ControllerRenderProps<Config, FieldPath<Config>>;
   typeTag: string | undefined;
   enumOptions: readonly string[] | undefined;
@@ -1341,16 +1274,20 @@ function FieldControlBody({
           className="bg-muted dark:bg-background p-0.5 rounded-lg"
           aria-label={t(field.label)}
         >
-          {enumOptions.map((opt, idx) => (
-            <ToggleGroupItem
-              key={opt}
-              value={opt}
-              id={idx === 0 ? forwardedId : undefined}
-              className="text-1sm capitalize"
-            >
-              {field.formatOption?.(opt) ?? opt}
-            </ToggleGroupItem>
-          ))}
+          {enumOptions.map((opt, idx) => {
+            const optionLabel = field.formatOption?.(opt, t) ?? opt;
+            return (
+              <ToggleGroupItem
+                key={opt}
+                value={opt}
+                id={idx === 0 ? forwardedId : undefined}
+                aria-label={optionLabel}
+                className="text-1sm capitalize"
+              >
+                {optionLabel}
+              </ToggleGroupItem>
+            );
+          })}
         </ToggleGroup>
       );
     }
@@ -1368,7 +1305,7 @@ function FieldControlBody({
         <SelectContent>
           {enumOptions.map((opt) => (
             <SelectItem key={opt} value={opt}>
-              {field.formatOption?.(opt) ?? opt}
+              {field.formatOption?.(opt, t) ?? opt}
             </SelectItem>
           ))}
         </SelectContent>

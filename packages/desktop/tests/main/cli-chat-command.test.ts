@@ -25,26 +25,28 @@ describe('CLI chat command boundary', () => {
   });
 
   test('quotes prompts and resumes without accepting a free-form executable', () => {
-    expect(
-      buildCliChatCommand({
-        cli: 'codex',
-        prompt: "don't run $(oops)",
-        sessionId: null,
-        permissionMode: 'workspace-write',
-        modelSettings: codexModelSettings,
-      }),
-    ).toBe(
-      "codex exec --json --color never -c 'approval_policy=\"never\"' -c 'sandbox_mode=\"workspace-write\"' -m 'gpt-5.6-sol' -c 'model_reasoning_effort=\"medium\"' 'don'\\''t run $(oops)'",
+    const codex = buildCliChatCommand({
+      cli: 'codex',
+      prompt: "don't run $(oops)",
+      sessionId: null,
+      permissionMode: 'workspace-write',
+      modelSettings: codexModelSettings,
+    });
+    expect(codex).toStartWith(
+      "codex exec --json --color never -c 'approval_policy=\"never\"' -c 'sandbox_mode=\"workspace-write\"' -m 'gpt-5.6-sol' -c 'model_reasoning_effort=\"medium\"' -c 'developer_instructions=",
     );
-    expect(
-      buildCliChatCommand({
-        cli: 'claude',
-        prompt: 'next',
-        sessionId: 'session-id',
-        permissionMode: 'read-only',
-        modelSettings: claudeModelSettings,
-      }),
-    ).toContain("--permission-mode plan --model 'sonnet' --effort 'medium' --resume 'session-id'");
+    expect(codex).toEndWith(" 'don'\\''t run $(oops)'");
+
+    const claude = buildCliChatCommand({
+      cli: 'claude',
+      prompt: 'next',
+      sessionId: 'session-id',
+      permissionMode: 'read-only',
+      modelSettings: claudeModelSettings,
+    });
+    expect(claude).toContain("--permission-mode plan --model 'sonnet' --effort 'medium'");
+    expect(claude).toContain("--append-system-prompt '");
+    expect(claude).toEndWith(" --resume 'session-id' 'next'");
   });
 
   test('keeps terminal control bytes out of the interactive command', () => {
@@ -114,6 +116,23 @@ describe('CLI chat command boundary', () => {
     expect(command).not.toContain('default_tools_approval_mode');
   });
 
+  test('adds Claude MCP trust and safe auto-approval only when verified', () => {
+    const command = buildCliChatCommand(
+      {
+        cli: 'claude',
+        prompt: 'inspect',
+        sessionId: null,
+        permissionMode: 'workspace-write',
+        modelSettings: claudeModelSettings,
+      },
+      { autoApproveOkTools: true, mcpPreApprove: true },
+    );
+
+    expect(command).toContain('enabledMcpjsonServers');
+    expect(command).toContain('"allow":["mcp__synapsenote","Bash(ok open:*)"]');
+    expect(command).toContain('mcp__synapsenote__delete');
+  });
+
   test('maps model, effort, and speed through fixed CLI-specific arguments', () => {
     expect(
       buildCliChatCommand({
@@ -148,6 +167,7 @@ describe('CLI chat command boundary', () => {
     expect(isCliChatLaunchInput(valid)).toBe(true);
     expect(isCliChatLaunchInput({ ...valid, cli: 'bash' })).toBe(false);
     expect(isCliChatLaunchInput({ ...valid, prompt: 42 })).toBe(false);
+    expect(isCliChatLaunchInput({ ...valid, autoApproveOkTools: 'yes' })).toBe(false);
     expect(isCliChatLaunchInput({ ...valid, permissionMode: 'unrestricted' })).toBe(false);
     expect(
       isCliChatLaunchInput({

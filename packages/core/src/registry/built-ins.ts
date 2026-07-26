@@ -316,7 +316,8 @@ const htmlImgProps: PropDef[] = [
     // Image alignment within the column. Stored at the descriptor level
     // so it serializes as `<img … align="left" />` in MDX and round-trips
     // through the parser. CSS keys off `data-align` on the
-    // `JsxComponentView` wrapper (see `globals.css`). `'center'` is the
+    // `JsxComponentView` wrapper (see
+    // `app/src/styles/editor/component-chrome.css`). `'center'` is the
     // default both visually and at the descriptor — `omitOnDefault: true`
     // keeps the serializer from emitting `align="center"` on every
     // image, so existing docs without an explicit `align` stay byte-
@@ -592,7 +593,8 @@ const htmlVideoProps: PropDef[] = [
     // — descriptor-level `enum` with `center` default and `omitOnDefault`
     // so docs authored before alignment landed stay byte-stable on save.
     // CSS keys off `data-align` on the `JsxComponentView` wrapper (see
-    // `globals.css`); the wrapper-level `text-align` rule positions the
+    // `app/src/styles/editor/component-chrome.css`); the wrapper-level
+    // `text-align` rule positions the
     // inline-block `.ok-video` child within the column.
     //
     // Kept in the COMMON section (no `advanced: true`) — alignment is a
@@ -700,7 +702,8 @@ const htmlAudioProps: PropDef[] = [
 //   - HTML5 `<details>` SUBSTRATE → native browser collapse/expand (no JS
 //     toggle handler, no Radix-style animation state machine). Rotation on
 //     open/close via CSS transform keyed on the `[open]` attribute; styling
-//     flows through OK shadcn tokens in globals.css (no `--color-fd-*`).
+//     flows through OK shadcn tokens in
+//     `app/src/styles/foundation/tokens.css` (no `--color-fd-*`).
 //
 // ── Namespace collision ──────────────────────────────────────────────────────
 //
@@ -1294,6 +1297,11 @@ export const builtInComponents: JsxComponentMeta[] = [
     surface: 'canonical',
     hasChildren: false,
     isSelfClosing: true,
+    interaction: {
+      mode: 'interactive',
+      drag: 'handle',
+      selectOnBodyClick: false,
+    },
     props: databaseViewProps,
     icon: 'Database',
     category: 'data',

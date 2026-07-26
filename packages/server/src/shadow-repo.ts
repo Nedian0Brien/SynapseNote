@@ -66,6 +66,27 @@ export interface WriterIdentity {
   email: string;
 }
 
+/**
+ * Files created and removed by the running server must not be part of a
+ * shadow snapshot.  In particular, DatabaseStore holds
+ * `.ok/databases/.store.lock` only for the duration of a reload.  A broad
+ * `git add .` can observe that lock between its directory scan and stat and
+ * fail with `fatal: unable to stat ...: No such file or directory` when the
+ * reload releases it.  Keep canonical manifests under `.ok/databases` and
+ * user-managed nested `.ok` folders in the snapshot; exclude only runtime
+ * artifacts.
+ */
+const SHADOW_RUNTIME_EXCLUDE_PATHS = [
+  ':!.ok/databases/.store.lock',
+  ':!.ok/databases/.commit.lock',
+  ':!.ok/.database-transactions',
+  ':!.ok/.database-transactions/**',
+] as const;
+
+function shadowAddPathspecs(contentRoot: string): readonly string[] {
+  return [contentRoot || '.', ...SHADOW_RUNTIME_EXCLUDE_PATHS];
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /**
@@ -398,7 +419,7 @@ async function commitWipInner(
   const tmpIndex = resolve(shadow.gitDir, `index-wip-${writer.id}`);
   const ref = `refs/wip/${branch}/${writer.id}`;
   const sg = shadowGit(shadow);
-  const gitPathspec = contentRoot || '.';
+  const gitPathspecs = shadowAddPathspecs(contentRoot);
 
   try {
     // Seed index from current ref state (if exists)
@@ -422,7 +443,7 @@ async function commitWipInner(
         GIT_WORK_TREE: shadow.workTree,
         GIT_INDEX_FILE: tmpIndex,
       })
-      .raw('add', gitPathspec);
+      .raw('add', '--all', '--', ...gitPathspecs);
     const treeSha = (
       await sg.env({ GIT_DIR: shadow.gitDir, GIT_INDEX_FILE: tmpIndex }).raw('write-tree')
     ).trim();
@@ -504,7 +525,7 @@ function sweepOrphanedTmpIndexFiles(shadow: ShadowHandle): number {
 export async function buildWipTree(shadow: ShadowHandle, contentRoot: string): Promise<string> {
   const tmpIndex = resolve(shadow.gitDir, `index-wip-fanout-${randomUUID()}`);
   const sg = shadowGit(shadow);
-  const gitPathspec = contentRoot || '.';
+  const gitPathspecs = shadowAddPathspecs(contentRoot);
 
   try {
     await sg
@@ -513,7 +534,7 @@ export async function buildWipTree(shadow: ShadowHandle, contentRoot: string): P
         GIT_WORK_TREE: shadow.workTree,
         GIT_INDEX_FILE: tmpIndex,
       })
-      .raw('add', gitPathspec);
+      .raw('add', '--all', '--', ...gitPathspecs);
     return (
       await sg.env({ GIT_DIR: shadow.gitDir, GIT_INDEX_FILE: tmpIndex }).raw('write-tree')
     ).trim();

@@ -140,7 +140,7 @@ function resolveLanguageExtension(language: LanguageName): Extension {
 /**
  * Shared highlight style for both LaTeX and Mermaid surfaces. Colors
  * resolve through the `--syntax-*` semantic tokens defined in
- * `globals.css` (`:root` + `.dark` blocks) so the same tags pick
+ * `styles/foundation/tokens.css` (`:root` + `.dark` blocks) so the same tags pick
  * appropriately-contrasted shades in light and dark themes — using the
  * Tailwind v4 `--color-*-NNN` palette directly would land below WCAG AA
  * on the OK dark `--background`. Layered on top of `defaultHighlightStyle`

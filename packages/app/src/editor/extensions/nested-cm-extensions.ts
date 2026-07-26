@@ -148,7 +148,8 @@ export function createNestedCMExtensions(options: NestedCMOptions): Extension[] 
   const wordWrapExtension: Extension = (options.wordWrap ?? true) ? EditorView.lineWrapping : [];
 
   // Shared visuals (font-size, font-family, line padding, focus outline,
-  // scrollbar) are owned by `globals.css` so the factory doesn't compete
+  // scrollbar) are owned by `styles/components/code-editors.css` and
+  // `styles/editor/codemirror-base.css` so the factory doesn't compete
   // with those rules. Keep the factory to behavior (language, decorations,
   // theme, wrapping) only — that way both consumers render identically.
   return [

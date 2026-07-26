@@ -82,7 +82,7 @@ export interface PoolEntrySnapshot {
   poolEventId: string;
 }
 
-interface DocumentContextValue {
+export interface DocumentContextValue {
   /**
    * The resolved principal from `/api/principal`. Null while the fetch is in
    * flight or if it failed/was absent. Consumers use this to prefer real
@@ -382,11 +382,11 @@ interface DocumentContextValue {
   closeActivityPanel: () => void;
 }
 
-interface OpenTargetOptions {
+export interface OpenTargetOptions {
   tabBehavior?: 'append' | 'replace-active';
 }
 
-interface CloseTabsOptions {
+export interface CloseTabsOptions {
   force?: boolean;
 }
 
@@ -1913,6 +1913,16 @@ export function useDocumentContext(): DocumentContextValue {
     throw new Error('useDocumentContext must be used within <DocumentProvider />');
   }
   return ctx;
+}
+
+/**
+ * Read the document context when a component can also render in an isolated
+ * harness. Database side-peek DOM tests intentionally mount the overlay on its
+ * own, while the production overlay lives beneath DocumentProvider and can use
+ * its resolved collaboration URL and principal for inline editing.
+ */
+export function useOptionalDocumentContext(): DocumentContextValue | null {
+  return use(DocumentContext);
 }
 
 /**

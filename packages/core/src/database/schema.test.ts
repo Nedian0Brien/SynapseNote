@@ -950,6 +950,7 @@ describe('database manifest schema', () => {
       where: null,
       sort: [{ propertyId: 'prop_title', direction: 'desc' }],
       projection: { propertyIds: ['prop_title'] },
+      manualRecordIds: ['rec_first', 'rec_second'],
     });
     expect(
       DatabaseLinkedViewReferenceSchema.parse({
@@ -964,6 +965,10 @@ describe('database manifest schema', () => {
       projection: { propertyIds: ['prop_title'] },
     });
     expect(applyDatabaseLinkedViewSettings(canonicalView, overrides).where).toBeUndefined();
+    expect(
+      (applyDatabaseLinkedViewSettings(canonicalView, overrides) as Record<string, unknown>)
+        .manualRecordIds,
+    ).toBeUndefined();
   });
   test('validates canonical Unique ID prefix and monotonic watermark state', () => {
     const property = DatabasePropertySchema.parse({

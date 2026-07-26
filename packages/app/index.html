@@ -29,7 +29,8 @@
     in sync. next-themes stores the value as a plain string, not JSON.
 
     The inline <style> below paints the html background to match the
-    body's resolved background (body uses `bg-sidebar` per globals.css).
+    body's resolved background (body uses `bg-sidebar` per
+    `src/styles/foundation/tokens.css`).
     The placeholders __OK_CHROME_BG_LIGHT__ / __OK_CHROME_BG_DARK__ are
     substituted at build time by chromeTokensVitePlugin (resolves the
     Tailwind v4 `--sidebar` OKLCH values to sRGB hex via culori). Single
@@ -38,7 +39,8 @@
 
     The `electron-mode` class is added when `window.okDesktop` is
     present (preload bridge runs before any inline page script). Paired
-    consumer: globals.css `html.electron-mode` rules — render the outer
+    consumer: `src/styles/foundation/platform-electron.css`'s
+    `html.electron-mode` rules — render the outer
     canvas (html / body / sidebar wrapper / sidebar inner) alpha-aware
     so the BrowserWindow's vibrancy material shows through. Web mode
     (no `window.okDesktop`) skips the class so chrome stays solid.

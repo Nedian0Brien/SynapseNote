@@ -1,5 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
+import { testFeedbackPolicy } from '../../scripts/test-feedback/policy.ts';
+
 /**
  * Visual Playwright config — per-worker fixture isolation (same shape as
  * `playwright.config.ts` + `playwright.a11y.config.ts`).
@@ -22,12 +24,15 @@ import { defineConfig } from '@playwright/test';
  */
 
 const isCI = !!process.env.CI;
+const feedbackPolicy = testFeedbackPolicy();
 
 export default defineConfig({
   testDir: './tests/visual',
   testMatch: /.*\.e2e\.ts$/,
   timeout: 120_000,
-  retries: 0,
+  retries: feedbackPolicy.retries,
+  repeatEach: feedbackPolicy.repeatEach,
+  failOnFlakyTests: feedbackPolicy.failOnFlakyTests,
   // Fail when baselines are missing rather than silently auto-blessing the
   // first run. Baseline updates require the explicit `test:visual:update`
   // script (which passes `--update-snapshots`) — same protocol as

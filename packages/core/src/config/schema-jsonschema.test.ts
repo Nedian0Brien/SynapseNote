@@ -65,6 +65,16 @@ const FIXTURES: Fixture[] = [
     shouldAccept: false,
   },
   {
+    name: 'editor.sidebarOpenBehavior=current-tab accepted',
+    input: { editor: { sidebarOpenBehavior: 'current-tab' } },
+    shouldAccept: true,
+  },
+  {
+    name: 'editor.sidebarOpenBehavior unknown value rejected',
+    input: { editor: { sidebarOpenBehavior: 'window' } },
+    shouldAccept: false,
+  },
+  {
     name: 'appearance.preview.autoOpen=false accepted',
     input: { appearance: { preview: { autoOpen: false } } },
     shouldAccept: true,
@@ -171,6 +181,14 @@ describe('loose-mode forgiveness', () => {
   test('editor.wordWrap defaults to true', () => {
     const config = ConfigSchema.parse({});
     expect(config.editor.wordWrap).toBe(true);
+  });
+
+  test('editor.sidebarOpenBehavior defaults to new-tab and preserves current-tab', () => {
+    expect(ConfigSchema.parse({}).editor.sidebarOpenBehavior).toBe('new-tab');
+    expect(
+      ConfigSchema.parse({ editor: { sidebarOpenBehavior: 'current-tab' } }).editor
+        .sidebarOpenBehavior,
+    ).toBe('current-tab');
   });
 
   test('appearance.preview.autoOpen defaults to true', () => {

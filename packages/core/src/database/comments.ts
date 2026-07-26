@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { DatabaseLocalFileValueSchema } from './files.ts';
 import { DatabasePersonIdSchema } from './person.ts';
 import type { DatabaseValue } from './record.ts';
 import type { DatabaseProperty, DatabaseRecordActor } from './schema.ts';
@@ -24,6 +25,7 @@ export const DatabaseCommentSchema = z
     id: DatabaseCommentIdSchema,
     author: DatabaseRecordActorSchema,
     body: z.string().trim().min(1).max(10_000),
+    attachments: z.array(DatabaseLocalFileValueSchema).max(20).default([]),
     mentionedPersonIds: z.array(DatabasePersonIdSchema).max(100).default([]),
     createdAt: z.string().datetime({ offset: true }),
     editedAt: z.string().datetime({ offset: true }).optional(),
@@ -92,6 +94,7 @@ export const DatabaseRecordCommentsSchema = z
   });
 
 export type DatabaseCommentAnchor = z.infer<typeof DatabaseCommentAnchorSchema>;
+export type DatabaseCommentAttachment = z.infer<typeof DatabaseLocalFileValueSchema>;
 export type DatabaseComment = z.infer<typeof DatabaseCommentSchema>;
 export type DatabaseCommentThread = z.infer<typeof DatabaseCommentThreadSchema>;
 export type DatabaseRecordComments = z.infer<typeof DatabaseRecordCommentsSchema>;

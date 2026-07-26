@@ -1,4 +1,4 @@
-import type { Paragraph, PhrasingContent, Root, RootContent, Text } from 'mdast';
+import type { Heading, Paragraph, PhrasingContent, Root, RootContent, Text } from 'mdast';
 import type { InlineMath } from 'mdast-util-math';
 import type { MdxJsxAttribute, MdxJsxFlowElement } from 'mdast-util-mdx';
 import type { Point, Position } from 'unist';
@@ -17,10 +17,81 @@ import type { VFile } from 'vfile';
 const BRACKET_DISPLAY_MATH_RE =
   /^([ \t]{0,3})(\\?\[)[ \t]*\r?\n([\s\S]*?)\r?\n[ \t]*(\\?\])[ \t]*(?=\r?$)/gm;
 
-/** Parenthesized, single-line candidates. Nested parentheses are deliberately
- * excluded: this compatibility path is for compact symbols such as
- * `({q_i,d_i})`, not an attempt to infer arbitrary prose as LaTeX. */
-const PAREN_CANDIDATE_RE = /\\?\([^()\n]+\\?\)/g;
+interface ParenthesizedCandidate {
+  start: number;
+  end: number;
+  raw: string;
+  escaped: boolean;
+}
+
+interface ParenthesisFrame {
+  start: number;
+  escaped: boolean;
+}
+
+function isBackslashEscaped(value: string, index: number): boolean {
+  let backslashes = 0;
+  for (let cursor = index - 1; cursor >= 0 && value[cursor] === '\\'; cursor--) {
+    backslashes++;
+  }
+  return backslashes % 2 === 1;
+}
+
+/**
+ * Find balanced single-line parenthesized regions, including LaTeX `\\(...\\)`
+ * delimiters. Every nested pair is returned so selection can prefer a smaller
+ * qualifying formula over an ordinary prose wrapper around it.
+ */
+function findParenthesizedCandidates(value: string): ParenthesizedCandidate[] {
+  const frames: ParenthesisFrame[] = [];
+  const candidates: ParenthesizedCandidate[] = [];
+
+  for (let cursor = 0; cursor < value.length; cursor++) {
+    const char = value[cursor];
+    const next = value[cursor + 1];
+
+    if (char === '\\' && next === '(' && !isBackslashEscaped(value, cursor)) {
+      frames.push({ start: cursor, escaped: true });
+      cursor++;
+      continue;
+    }
+    if (char === '(' && !isBackslashEscaped(value, cursor)) {
+      frames.push({ start: cursor, escaped: false });
+      continue;
+    }
+
+    if (char === '\\' && next === ')' && !isBackslashEscaped(value, cursor)) {
+      const frame = frames.at(-1);
+      if (frame?.escaped) {
+        frames.pop();
+        const end = cursor + 2;
+        candidates.push({
+          start: frame.start,
+          end,
+          raw: value.slice(frame.start, end),
+          escaped: true,
+        });
+        cursor++;
+      }
+      continue;
+    }
+    if (char === ')' && !isBackslashEscaped(value, cursor)) {
+      const frame = frames.at(-1);
+      if (frame && !frame.escaped) {
+        frames.pop();
+        const end = cursor + 1;
+        candidates.push({
+          start: frame.start,
+          end,
+          raw: value.slice(frame.start, end),
+          escaped: false,
+        });
+      }
+    }
+  }
+
+  return candidates;
+}
 
 function hasLatexCommand(value: string): boolean {
   return /\\[A-Za-z]+/.test(value);
@@ -31,6 +102,25 @@ function looksLikeBareDisplayMath(value: string): boolean {
   return /[A-Za-z0-9}][_^]/.test(value) || /[=+*/^]/.test(value);
 }
 
+/**
+ * LLM-authored bare bracket blocks often pass through a Markdown escaper
+ * before reaching us. That turns LaTeX subscripts into `\_`, plus operators
+ * into a standalone `\+`, and an ASCII equation separator into a Setext
+ * underline. Normalize only this implicit compatibility form; explicit
+ * `\[...\]` keeps literal LaTeX escapes unchanged.
+ */
+function normalizeBareDisplayMath(value: string): string {
+  return value
+    .replace(/\\_/g, '_')
+    .split(/\r?\n/)
+    .map((line) => {
+      if (/^[ \t]*={3,}[ \t]*$/.test(line)) return '=';
+      if (/^[ \t]*\\\+[ \t]*$/.test(line)) return '+';
+      return line;
+    })
+    .join('\n');
+}
+
 function looksLikeImplicitInlineMath(value: string): boolean {
   if (hasLatexCommand(value)) return true;
 
@@ -38,6 +128,27 @@ function looksLikeImplicitInlineMath(value: string): boolean {
   // both avoids turning ordinary parenthesized snake_case identifiers into
   // math while covering generated notation such as `({q_i,d_i})`.
   return /[{}]/.test(value) && /[A-Za-z0-9}][_^](?:[A-Za-z0-9]|\{)/.test(value);
+}
+
+function selectImplicitInlineMathCandidates(value: string): ParenthesizedCandidate[] {
+  const qualifying = findParenthesizedCandidates(value).filter(
+    (candidate) => candidate.escaped || looksLikeImplicitInlineMath(candidate.raw),
+  );
+
+  // Prefer the smallest qualifying region. This keeps an inner formula such
+  // as `({q_i,d_i})` from turning a surrounding prose parenthesis into math,
+  // while still selecting the outer region in `(\\log_2(i+1))` because the
+  // inner `(i+1)` has no independent math signal.
+  qualifying.sort((a, b) => a.end - a.start - (b.end - b.start) || a.start - b.start);
+  const selected: ParenthesizedCandidate[] = [];
+  for (const candidate of qualifying) {
+    const overlaps = selected.some(
+      (existing) => candidate.start < existing.end && existing.start < candidate.end,
+    );
+    if (!overlaps) selected.push(candidate);
+  }
+  selected.sort((a, b) => a.start - b.start);
+  return selected;
 }
 
 function buildBracketMathElement(formula: string, paragraphNodes: RootContent[]) {
@@ -66,9 +177,10 @@ function promoteBracketDisplayMath(tree: Root, source: string): void {
   let match: RegExpExecArray | null;
   // biome-ignore lint/suspicious/noAssignInExpressions: idiomatic regex iteration
   while ((match = BRACKET_DISPLAY_MATH_RE.exec(source)) !== null) {
-    const formula = match[3].replace(/^(?:\r?\n)+|(?:\r?\n)+$/g, '');
+    let formula = match[3].replace(/^(?:\r?\n)+|(?:\r?\n)+$/g, '');
     const escaped = match[2].startsWith('\\') && match[4].startsWith('\\');
     if (!escaped && !looksLikeBareDisplayMath(formula)) continue;
+    if (!escaped) formula = normalizeBareDisplayMath(formula);
     candidates.push({
       start: match.index + match[1].length,
       end: match.index + match[0].length,
@@ -93,7 +205,17 @@ function promoteBracketDisplayMath(tree: Root, source: string): void {
     if (tree.children[endIndex]?.position?.end.offset !== candidate.end) continue;
 
     const covered = tree.children.slice(startIndex, endIndex + 1);
-    if (!covered.every((node): node is Paragraph => node.type === 'paragraph')) continue;
+    // A line made only of `===` is parsed by CommonMark as a Setext heading
+    // underline before this compatibility pass runs. Accept that parser shape
+    // along with ordinary paragraphs, but keep other block constructs out so
+    // bracketed lists, code, HTML, and blockquotes retain Markdown semantics.
+    if (
+      !covered.every(
+        (node): node is Paragraph | Heading => node.type === 'paragraph' || node.type === 'heading',
+      )
+    ) {
+      continue;
+    }
 
     const element = buildBracketMathElement(candidate.formula, covered);
     tree.children.splice(startIndex, covered.length, element as unknown as RootContent);
@@ -134,19 +256,11 @@ function promoteImplicitInlineMath(tree: Root, source: string): void {
       return;
     }
 
-    PAREN_CANDIDATE_RE.lastIndex = 0;
-    const matches: Array<{ start: number; end: number; raw: string }> = [];
-    let match: RegExpExecArray | null;
-    // biome-ignore lint/suspicious/noAssignInExpressions: idiomatic regex iteration
-    while ((match = PAREN_CANDIDATE_RE.exec(rawParagraph)) !== null) {
-      const escaped = match[0].startsWith('\\(') && match[0].endsWith('\\)');
-      if (!escaped && !looksLikeImplicitInlineMath(match[0])) continue;
-      matches.push({
-        start: paragraphStart + match.index,
-        end: paragraphStart + match.index + match[0].length,
-        raw: match[0],
-      });
-    }
+    const matches = selectImplicitInlineMathCandidates(rawParagraph).map((candidate) => ({
+      ...candidate,
+      start: paragraphStart + candidate.start,
+      end: paragraphStart + candidate.end,
+    }));
 
     // Work right-to-left so child indices for earlier candidates remain
     // stable after each splice.
@@ -192,11 +306,10 @@ function promoteImplicitInlineMath(tree: Root, source: string): void {
         replacements.push(lead);
       }
 
-      const escaped = candidate.raw.startsWith('\\(') && candidate.raw.endsWith('\\)');
       const mathNode: InlineMath = {
         type: 'inlineMath',
-        value: escaped ? candidate.raw.slice(2, -2) : candidate.raw,
-        data: { sourceDelimiter: escaped ? '\\(' : 'implicit-parens' },
+        value: candidate.escaped ? candidate.raw.slice(2, -2) : candidate.raw,
+        data: { sourceDelimiter: candidate.escaped ? '\\(' : 'implicit-parens' },
         position: sourcePosition(source, candidate.start, candidate.end),
       };
       replacements.push(mathNode as unknown as PhrasingContent);

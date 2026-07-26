@@ -1281,6 +1281,26 @@ describe('queryDatabaseRecords', () => {
     expect(ids.at(-1)).toBe('rec_large_10004');
   });
 
+  test('searches the complete source snapshot before applying pagination', () => {
+    const firstPage = queryDatabaseRecords({
+      source: source(),
+      records,
+      snapshotRevision: 'snapshot:search',
+      query: { search: 'incident', page: { limit: 1 } },
+    });
+    expect(firstPage.matched).toBe(1);
+    expect(firstPage.records.map((entry) => entry.id)).toEqual(['rec_c']);
+    expect(firstPage.isComplete).toBe(true);
+    expect(
+      queryDatabaseRecords({
+        source: source(),
+        records,
+        snapshotRevision: 'snapshot:search',
+        query: { search: 'does-not-exist', page: { limit: 1 } },
+      }).records,
+    ).toEqual([]);
+  });
+
   test('cooperatively cancels bounded query stages before producing a partial result', () => {
     const largeRecords = Array.from({ length: 2_000 }, (_, index) =>
       record(`rec_cancel_${String(index).padStart(4, '0')}`, {

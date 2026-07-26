@@ -315,7 +315,8 @@ mock.module('@pierre/trees/react', () => ({
             aria-selected={model.selectedPaths.includes(item.path) ? 'true' : 'false'}
             tabIndex={-1}
           >
-            {item.path}
+            {item.isDirectory() ? <span data-item-section="icon" aria-hidden="true" /> : null}
+            <span data-item-section="content">{item.path}</span>
           </div>
         ))}
       </div>
@@ -497,13 +498,42 @@ describe('FileTree showAll lazy root seed', () => {
           target: 'README',
           docName: 'README',
         },
-        { tabBehavior: 'replace-active' },
+        { tabBehavior: 'append' },
       ),
     );
     expect(window.location.hash).toBe('#/README');
   });
 
-  test('first click from a document row to a folder opens the folder', async () => {
+  test('sidebar preference can replace the current tab when opening a document', async () => {
+    mergedConfig = {
+      appearance: { sidebar: {} },
+      editor: { sidebarOpenBehavior: 'current-tab' },
+    };
+    showAllResponseFactory = () =>
+      jsonResponse({
+        documents: [docEntry('foo'), docEntry('README')],
+        truncated: false,
+      });
+    const view = render(<FileTree />);
+
+    await waitFor(() => expect(model.items.has('README.md')).toBe(true));
+    model.selectedPaths = ['foo.md'];
+    view.rerender(<FileTree />);
+    fireEvent.click(screen.getByRole('treeitem', { name: 'README.md' }));
+
+    await waitFor(() =>
+      expect(openTargetMock).toHaveBeenCalledWith(
+        {
+          kind: 'doc',
+          target: 'README',
+          docName: 'README',
+        },
+        { tabBehavior: 'replace-active' },
+      ),
+    );
+  });
+
+  test('clicking a folder label opens the folder without changing expansion', async () => {
     showAllResponseFactory = () =>
       jsonResponse({
         documents: [docEntry('foo'), folderEntry('docs', true), docEntry('docs/nested')],
@@ -529,7 +559,36 @@ describe('FileTree showAll lazy root seed', () => {
       ),
     );
     expect(window.location.hash).toBe('#/docs/');
+    expect(model.getItem('docs/')?.isExpanded()).toBe(false);
+  });
+
+  test('clicking a folder disclosure toggles expansion without navigating', async () => {
+    showAllResponseFactory = () =>
+      jsonResponse({
+        documents: [docEntry('foo'), folderEntry('docs', false)],
+        truncated: false,
+      });
+    const view = render(<FileTree />);
+
+    await waitFor(() => expect(model.items.has('docs/')).toBe(true));
+    model.selectedPaths = ['foo.md'];
+    window.location.hash = '#/foo';
+    view.rerender(<FileTree />);
+
+    const row = screen.getByRole('treeitem', { name: 'docs/' });
+    const disclosure = row.querySelector<HTMLElement>('[data-item-section="icon"]');
+    expect(disclosure).not.toBeNull();
+    fireEvent.click(disclosure as HTMLElement);
+
     expect(model.getItem('docs/')?.isExpanded()).toBe(true);
+    expect(model.selectedPaths).toEqual(['foo.md']);
+    expect(window.location.hash).toBe('#/foo');
+    expect(openTargetMock).not.toHaveBeenCalled();
+
+    fireEvent.click(disclosure as HTMLElement);
+    expect(model.getItem('docs/')?.isExpanded()).toBe(false);
+    expect(window.location.hash).toBe('#/foo');
+    expect(openTargetMock).not.toHaveBeenCalled();
   });
 
   test('a truncated depth-1 level still drives the truncation notice (QA-002 wiring)', async () => {

@@ -14,6 +14,7 @@ import { useWorktreeAutoSyncNotice } from '@/hooks/use-worktree-autosync-notice'
 import { useConfigContext } from '@/lib/config-provider';
 import { resolveDefaultCli } from '@/lib/default-cli-resolver';
 import { matchesKeyboardShortcut } from '@/lib/keyboard-shortcuts';
+import { RIGHT_COLLAPSE_THRESHOLD } from '@/lib/sidebar-partition';
 import {
   getInitialTerminalDock,
   type TerminalDockPosition,
@@ -25,7 +26,11 @@ import { loadStickyAgent } from '@/lib/unified-agent-store';
 import { AuthModal } from './AuthModal';
 import { AutoSyncOnboardingDialog } from './AutoSyncOnboardingDialog';
 import { shouldShowAutoSyncOnboarding } from './auto-sync-onboarding-gate';
-import type { ChatContextChip, CliChatSelectionContext } from './chat/cli-chat-types';
+import type {
+  ChatContextChip,
+  CliChatDocumentContext,
+  CliChatSelectionContext,
+} from './chat/cli-chat-types';
 import type { DocumentPanelTab, PanelTab, PdfPanelTab } from './DocPanel';
 import { EditorArea, type TerminalPlacement } from './EditorArea';
 import { EditorHeader } from './EditorHeader';
@@ -97,6 +102,7 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
   // affordance on this so a control that can't launch never renders.
   const terminalAvailable = desktopBridge != null && desktopBridge.terminal != null;
   const [terminalVisible, setTerminalVisible] = useState(false);
+  const previousTerminalVisibleRef = useRef(terminalVisible);
   // Which launchable CLIs are on PATH (desktop probe, cached ~60s in main).
   // Feeds the New-chat default-CLI auto-pick. Starts empty, so resolveDefaultCli
   // degrades to claude until the probe resolves. Shared with the Ask-X bubble.
@@ -201,10 +207,17 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
     if (!hasSessions && !readPreferBareTerminal()) launchNewChat();
   }
 
+  // Chat is the primary companion surface for standalone PDFs. Normalize the
+  // dock first so opening a PDF always reveals Chat in the shared right rail,
+  // even when the user last left the terminal at the bottom.
+  function revealRightChat() {
+    if (terminalDockRef.current !== 'right') setTerminalDock('right');
+    revealTerminal();
+  }
+
   function handleActiveTabChange(tab: PanelTab) {
     if (tab === 'chat') {
-      if (terminalDockRef.current !== 'right') setTerminalDock('right');
-      else revealTerminal();
+      revealRightChat();
       return;
     }
     if (activeTarget?.kind === 'asset' && activeTarget.mediaKind === 'pdf') {
@@ -231,20 +244,47 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
     useConfigContext();
 
   const { activeDocName, activeTarget } = useDocumentContext();
-  const panelSurface =
+  const activePdfAssetPath =
     activeTarget?.kind === 'asset' && activeTarget.mediaKind === 'pdf'
+      ? activeTarget.assetPath
+      : null;
+  const panelSurface =
+    activePdfAssetPath !== null
       ? 'pdf'
       : activeTarget?.kind === 'doc' || activeTarget?.kind === 'missing'
         ? 'document'
         : null;
   const previousPanelSurfaceRef = useRef<'document' | 'pdf' | null>(null);
+  const previousPdfAssetPathRef = useRef<string | null>(null);
+  const revealRightChatEvent = useEffectEvent(revealRightChat);
   useEffect(() => {
+    const openedPdf =
+      activePdfAssetPath !== null && previousPdfAssetPathRef.current !== activePdfAssetPath;
+    previousPdfAssetPathRef.current = activePdfAssetPath;
+
+    if (openedPdf && terminalAvailable && window.innerWidth >= RIGHT_COLLAPSE_THRESHOLD) {
+      previousPanelSurfaceRef.current = 'pdf';
+      revealRightChatEvent();
+      return;
+    }
     if (panelSurface === null || previousPanelSurfaceRef.current === panelSurface) return;
     previousPanelSurfaceRef.current = panelSurface;
     if (activeTab === 'chat') return;
     setActiveTab(panelSurface === 'pdf' ? lastPdfTabRef.current : lastDocumentTabRef.current);
-  }, [activeTab, panelSurface]);
+  }, [activePdfAssetPath, activeTab, panelSurface, terminalAvailable]);
   const { pageMeta, pageTitles } = usePageList();
+  const chatDocumentContext: CliChatDocumentContext | null = (() => {
+    const activePath =
+      activeTarget?.kind === 'asset' ? activeTarget.assetPath : (activeDocName ?? null);
+    if (activePath === null) return null;
+    const basename = activePath.split('/').at(-1) ?? activePath;
+    const documentTitle = pageTitles.get(activePath) ?? basename;
+    const documentPath =
+      activeTarget?.kind === 'asset' || /\.(md|mdx)$/i.test(activePath)
+        ? activePath
+        : `${activePath}${pageMeta.get(activePath)?.docExt ?? '.md'}`;
+    return { documentTitle, documentPath };
+  })();
   const activeBodySelection = useSelectionContext(activeDocName, editorMode);
   // Inline PDFs publish under their owning doc name; a standalone PDF asset
   // publishes under its asset path. Both feed the same chat attachment model.
@@ -439,15 +479,21 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
     });
   }, []);
 
-  // Clear the one-shot launch intent whenever the terminal hides. The
-  // exactly-once-per-nonce guard lives inside the session, which is destroyed
+  // Clear the one-shot launch intent when the terminal transitions from visible
+  // to hidden. Restricting this to the actual transition also prevents the
+  // mount-time hidden effect from clearing a PDF-triggered chat launch queued by
+  // an earlier effect in the same commit.
+  //
+  // The exactly-once-per-nonce guard lives inside the session, which is destroyed
   // when a kill drops the dock's mount latch — so without clearing here, the
   // next fresh mount (New Terminal / reopen after a kill) would re-apply the
   // stale intent and relaunch the previous "Open in terminal" prompt instead
   // of starting blank. Collapse keeps the session mounted, so clearing the
   // already-consumed intent is a no-op there.
   useEffect(() => {
-    if (!terminalVisible) setTerminalLaunch(null);
+    const wasVisible = previousTerminalVisibleRef.current;
+    previousTerminalVisibleRef.current = terminalVisible;
+    if (wasVisible && !terminalVisible) setTerminalLaunch(null);
   }, [terminalVisible]);
 
   // Reflect terminal visibility to main so the View menu label flips between
@@ -587,6 +633,7 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
           onActiveSessionCliChange={(isCli) => {
             activeSessionIsCliRef.current = isCli;
           }}
+          documentContext={chatDocumentContext}
           selectionContext={chatSelectionContext}
         />
       ) : null}

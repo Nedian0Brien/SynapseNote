@@ -179,7 +179,8 @@ export const sharedExtensions = [
   // Block-chunked content-visibility:auto. Applies the
   // `ok-chunk-wrapper` class to every top-level direct child of the doc
   // via PM Decoration.node. Off-viewport blocks skip layout/paint per the
-  // CSS rule at `globals.css:.ProseMirror .ok-chunk-wrapper`. No state,
+  // CSS rule at `styles/editor/large-document.css:.ProseMirror .ok-chunk-wrapper`.
+  // No state,
   // no documentName keying — safe to register universally.
   Extension.create({
     name: 'chunkWrapperDecoration',

@@ -1,5 +1,16 @@
 import { Trans, useLingui } from '@lingui/react/macro';
-import { Check, ChevronDown, Pencil, Plus, Quote, StickyNote, Trash2, X } from 'lucide-react';
+import {
+  Check,
+  ChevronDown,
+  Highlighter,
+  LocateFixed,
+  Pencil,
+  Plus,
+  Quote,
+  StickyNote,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import {
   consumePendingMemoComposerRequest,
@@ -18,13 +29,26 @@ import {
 import { Panel, PanelBody, PanelCount, PanelHeader, PanelTitle } from '@/components/ui/panel';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  consumePendingMemoReveal,
+  requestMemoNavigation,
+  subscribeMemoReveal,
+} from '@/editor/memo-navigation';
+import {
+  type NativeDocumentHighlight,
+  readNativeDocumentHighlights,
+  requestNativeHighlightMutation,
+  subscribeNativeDocumentHighlights,
+} from '@/editor/native-document-highlights';
 import { lightRenderMarkdownPreview } from '@/editor/selection-context';
 import { useSelectionContext } from '@/hooks/use-selection-context';
 import {
   type DocumentMemoEntry,
   type DocumentMemoQuote,
   type DocumentMemoState,
+  isDocumentHighlight,
   readDocumentMemoState,
+  subscribeDocumentMemoState,
   writeDocumentMemoState,
 } from '@/lib/document-memo-store';
 import { cn } from '@/lib/utils';
@@ -61,12 +85,13 @@ function memoQuoteNeedsCollapse(quote: DocumentMemoQuote, preview: string): bool
 }
 
 interface MemoQuoteCardProps {
+  highlight?: boolean;
   quote: DocumentMemoQuote;
   onRemove?: () => void;
   variant: 'composer' | 'saved';
 }
 
-function MemoQuoteCard({ quote, onRemove, variant }: MemoQuoteCardProps) {
+function MemoQuoteCard({ highlight = false, quote, onRemove, variant }: MemoQuoteCardProps) {
   const { t } = useLingui();
   const [expanded, setExpanded] = useState(false);
   const preview = quotePreview(quote);
@@ -76,10 +101,17 @@ function MemoQuoteCard({ quote, onRemove, variant }: MemoQuoteCardProps) {
     <aside
       aria-label={t`Original text`}
       data-memo-original-text={variant}
-      className={cn('border-primary/40 border-l-2 pl-3', variant === 'composer' ? 'mt-3' : 'mb-3')}
+      className={cn(
+        'border-l-2 pl-3',
+        highlight ? 'border-amber-400/70' : 'border-primary/40',
+        variant === 'composer' ? 'mt-3' : 'mb-3',
+      )}
     >
       <header className="flex min-h-7 items-center gap-1.5">
-        <Quote className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
+        <Quote
+          className={cn('size-3.5 shrink-0', highlight ? 'text-amber-600' : 'text-primary')}
+          aria-hidden="true"
+        />
         <p className="shrink-0 text-2xs font-semibold uppercase tracking-[0.1em] text-foreground/80">
           <Trans>Original text</Trans>
         </p>
@@ -153,13 +185,19 @@ export function MemoPanel({ docName, isSourceMode }: MemoPanelProps) {
   const { t } = useLingui();
   const selection = useSelectionContext(docName, isSourceMode ? 'source' : 'wysiwyg');
   const composerRef = useRef<HTMLTextAreaElement>(null);
+  const memoListRef = useRef<HTMLUListElement>(null);
   const [memoState, setMemoState] = useState<DocumentMemoState>(() =>
     readDocumentMemoState(docName),
+  );
+  const [nativeHighlights, setNativeHighlights] = useState<readonly NativeDocumentHighlight[]>(() =>
+    readNativeDocumentHighlights(docName),
   );
   const [saveFailed, setSaveFailed] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editBody, setEditBody] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [revealedId, setRevealedId] = useState<string | null>(null);
+  const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function persist(next: DocumentMemoState) {
     setMemoState(next);
@@ -186,6 +224,74 @@ export function MemoPanel({ docName, isSourceMode }: MemoPanelProps) {
     });
   }, [docName]);
 
+  useEffect(() => subscribeDocumentMemoState(docName, setMemoState), [docName]);
+  useEffect(() => {
+    setNativeHighlights(readNativeDocumentHighlights(docName));
+    return subscribeNativeDocumentHighlights(docName, setNativeHighlights);
+  }, [docName]);
+
+  const nativeHighlightIds = new Set(nativeHighlights.map((entry) => entry.id));
+  const highlightMemoIds = new Map<string, string>();
+  const annotations: DocumentMemoEntry[] = [
+    ...nativeHighlights.map((entry) => {
+      const anchor = entry.quote.anchor;
+      const attachedMemo = memoState.items.find((memo) => {
+        const memoAnchor = memo.quote?.anchor;
+        return (
+          memo.target === 'highlight' &&
+          anchor !== undefined &&
+          memoAnchor !== undefined &&
+          anchor.exact === memoAnchor.exact &&
+          anchor.prefix === memoAnchor.prefix &&
+          anchor.suffix === memoAnchor.suffix
+        );
+      });
+      if (attachedMemo) highlightMemoIds.set(entry.id, attachedMemo.id);
+      return {
+        id: entry.id,
+        body: attachedMemo?.body ?? '',
+        quote: entry.quote,
+        createdAt: attachedMemo?.createdAt ?? 0,
+        updatedAt: attachedMemo?.updatedAt ?? 0,
+      };
+    }),
+    ...memoState.items.filter(
+      (entry) => !isDocumentHighlight(entry) && entry.target !== 'highlight',
+    ),
+  ];
+
+  const revealAnnotation = useEffectEvent((memoId: string) => {
+    setRevealedId(memoId);
+    const reveal = () => {
+      const card = Array.from(
+        memoListRef.current?.querySelectorAll<HTMLElement>('[data-memo-card-id]') ?? [],
+      ).find((element) => element.dataset.memoCardId === memoId);
+      card?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest',
+      });
+    };
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(reveal);
+    else queueMicrotask(reveal);
+    if (revealTimerRef.current !== null) clearTimeout(revealTimerRef.current);
+    revealTimerRef.current = setTimeout(() => setRevealedId(null), 1_600);
+  });
+
+  useEffect(() => {
+    const pending = consumePendingMemoReveal(docName);
+    if (pending) revealAnnotation(pending.memoId);
+    const unsubscribe = subscribeMemoReveal((request) => {
+      if (request.docName !== docName) return;
+      consumePendingMemoReveal(docName);
+      revealAnnotation(request.memoId);
+    });
+    return () => {
+      unsubscribe();
+      if (revealTimerRef.current !== null) clearTimeout(revealTimerRef.current);
+    };
+  }, [docName]);
+
   function attachSelection() {
     if (!selection) return;
     persist({
@@ -205,7 +311,18 @@ export function MemoPanel({ docName, isSourceMode }: MemoPanelProps) {
       createdAt: now,
       updatedAt: now,
     };
-    persist({ draft: '', draftQuote: null, items: [entry, ...memoState.items] });
+    persist({
+      draft: '',
+      draftQuote: null,
+      items: [entry, ...memoState.items],
+    });
+  }
+
+  function addHighlight() {
+    const anchor = memoState.draftQuote?.anchor;
+    if (!anchor || anchor.surface !== 'wysiwyg') return;
+    requestNativeHighlightMutation({ docName, action: 'add', anchor });
+    persist({ ...memoState, draftQuote: null });
   }
 
   function startEditing(entry: DocumentMemoEntry) {
@@ -216,6 +333,30 @@ export function MemoPanel({ docName, isSourceMode }: MemoPanelProps) {
   function saveEdit() {
     const body = editBody.trim();
     if (!editingId || body === '') return;
+    const nativeHighlight = nativeHighlights.find((entry) => entry.id === editingId);
+    if (nativeHighlight) {
+      const attachedMemoId = highlightMemoIds.get(editingId);
+      const now = Date.now();
+      const items = attachedMemoId
+        ? memoState.items.map((entry) =>
+            entry.id === attachedMemoId ? { ...entry, body, updatedAt: now } : entry,
+          )
+        : [
+            {
+              id: createMemoId(),
+              body,
+              quote: nativeHighlight.quote,
+              target: 'highlight' as const,
+              createdAt: now,
+              updatedAt: now,
+            },
+            ...memoState.items,
+          ];
+      persist({ ...memoState, items });
+      setEditingId(null);
+      setEditBody('');
+      return;
+    }
     persist({
       ...memoState,
       items: memoState.items.map((entry) =>
@@ -228,7 +369,27 @@ export function MemoPanel({ docName, isSourceMode }: MemoPanelProps) {
 
   function deleteMemo() {
     if (!deleteId) return;
-    persist({ ...memoState, items: memoState.items.filter((entry) => entry.id !== deleteId) });
+    const nativeHighlight = nativeHighlights.find((entry) => entry.id === deleteId);
+    if (nativeHighlight?.quote.anchor) {
+      requestNativeHighlightMutation({
+        docName,
+        action: 'remove',
+        anchor: nativeHighlight.quote.anchor,
+      });
+      const attachedMemoId = highlightMemoIds.get(deleteId);
+      if (attachedMemoId) {
+        persist({
+          ...memoState,
+          items: memoState.items.filter((entry) => entry.id !== attachedMemoId),
+        });
+      }
+      setDeleteId(null);
+      return;
+    }
+    persist({
+      ...memoState,
+      items: memoState.items.filter((entry) => entry.id !== deleteId),
+    });
     if (editingId === deleteId) {
       setEditingId(null);
       setEditBody('');
@@ -236,20 +397,20 @@ export function MemoPanel({ docName, isSourceMode }: MemoPanelProps) {
     setDeleteId(null);
   }
 
-  const deleteEntry = memoState.items.find((entry) => entry.id === deleteId) ?? null;
+  const deleteEntry = annotations.find((entry) => entry.id === deleteId) ?? null;
 
   return (
-    <Panel aria-label={t`Document memos`}>
+    <Panel aria-label={t`Document annotations`}>
       <PanelHeader className="border-b border-border/70 py-2.5">
         <PanelTitle>
-          <Trans>Memos</Trans>
+          <Trans>Annotations</Trans>
         </PanelTitle>
-        <PanelCount>{memoState.items.length}</PanelCount>
+        <PanelCount>{annotations.length}</PanelCount>
       </PanelHeader>
 
       <PanelBody className="px-3 py-3">
         <section
-          aria-label={t`New memo`}
+          aria-label={t`New annotation`}
           className="group/composer rounded-2xl border border-border/80 bg-card p-3 shadow-sm transition-[border-color,box-shadow] focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/30"
         >
           <header className="flex items-center gap-2.5">
@@ -258,7 +419,7 @@ export function MemoPanel({ docName, isSourceMode }: MemoPanelProps) {
             </span>
             <div className="min-w-0 flex-1">
               <h3 className="text-sm font-semibold leading-5 text-foreground">
-                <Trans>New memo</Trans>
+                <Trans>New annotation</Trans>
               </h3>
               <p className="text-2xs leading-4 text-muted-foreground">
                 <Trans>Private to this device</Trans>
@@ -326,32 +487,85 @@ export function MemoPanel({ docName, isSourceMode }: MemoPanelProps) {
               <Plus className="size-3.5" />
               <Trans>Add memo</Trans>
             </Button>
+            {memoState.draftQuote ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 px-3"
+                onClick={addHighlight}
+              >
+                <Highlighter className="size-3.5" />
+                <Trans>Add highlight</Trans>
+              </Button>
+            ) : null}
           </footer>
         </section>
 
-        {memoState.items.length === 0 ? (
+        {annotations.length === 0 ? (
           <div className="flex min-h-48 flex-col items-center justify-center px-5 text-center">
             <span className="mb-3 flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
               <StickyNote className="size-4.5" aria-hidden="true" />
             </span>
             <p className="text-sm font-medium text-foreground">
-              <Trans>No memos yet</Trans>
+              <Trans>No annotations yet</Trans>
             </p>
             <p className="mt-1 max-w-52 text-xs leading-5 text-muted-foreground">
-              <Trans>Keep a private reading note or attach a passage you want to revisit.</Trans>
+              <Trans>Highlight a passage or keep a private reading note.</Trans>
             </p>
           </div>
         ) : (
-          <ul className="mt-3 flex list-none flex-col gap-2" aria-label={t`Saved memos`}>
-            {memoState.items.map((entry) => {
+          <ul
+            ref={memoListRef}
+            className="mt-3 flex list-none flex-col gap-2"
+            aria-label={t`Saved annotations`}
+          >
+            {annotations.map((entry) => {
               const editing = editingId === entry.id;
+              const highlight = nativeHighlightIds.has(entry.id);
+              const navigable =
+                !isSourceMode &&
+                entry.quote !== null &&
+                (entry.quote.anchor?.surface !== 'source' ||
+                  entry.quote.sourceLineStart === undefined);
               const date = formatMemoDate(entry.updatedAt);
               return (
                 <li
                   key={entry.id}
-                  className="group rounded-2xl border border-border/80 bg-card p-3 shadow-xs transition-[border-color,box-shadow] hover:border-border hover:shadow-sm"
+                  data-memo-card-id={entry.id}
+                  onClick={(event) => {
+                    if (!navigable || editing) return;
+                    const target = event.target;
+                    if (
+                      target instanceof Element &&
+                      target.closest('button, a, input, textarea, select, [contenteditable="true"]')
+                    ) {
+                      return;
+                    }
+                    requestMemoNavigation({ docName, memoId: entry.id });
+                  }}
+                  // Keyboard users have the explicit locate button in the
+                  // footer. This parity handler also covers a host that makes
+                  // the card itself focusable through platform navigation.
+                  onKeyDown={(event) => {
+                    if (!navigable || editing || event.target !== event.currentTarget) return;
+                    if (event.key !== 'Enter' && event.key !== ' ') return;
+                    event.preventDefault();
+                    requestMemoNavigation({ docName, memoId: entry.id });
+                  }}
+                  className={cn(
+                    'group rounded-2xl border border-border/80 bg-card p-3 shadow-xs transition-[border-color,box-shadow] hover:border-border hover:shadow-sm',
+                    navigable && !editing && 'cursor-pointer',
+                    highlight && 'border-amber-300/80 hover:border-amber-400 dark:border-amber-700',
+                    revealedId === entry.id &&
+                      (highlight
+                        ? 'border-amber-500 ring-2 ring-amber-400/25'
+                        : 'border-primary ring-2 ring-primary/25'),
+                  )}
                 >
-                  {entry.quote ? <MemoQuoteCard quote={entry.quote} variant="saved" /> : null}
+                  {entry.quote ? (
+                    <MemoQuoteCard highlight={highlight} quote={entry.quote} variant="saved" />
+                  ) : null}
 
                   {editing ? (
                     <div>
@@ -383,6 +597,18 @@ export function MemoPanel({ docName, isSourceMode }: MemoPanelProps) {
                         </Button>
                       </div>
                     </div>
+                  ) : highlight ? (
+                    <div>
+                      <p className="flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-300">
+                        <Highlighter className="size-3.5" aria-hidden="true" />
+                        <Trans>Highlight</Trans>
+                      </p>
+                      {entry.body ? (
+                        <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-foreground">
+                          {entry.body}
+                        </p>
+                      ) : null}
+                    </div>
                   ) : (
                     <p className="whitespace-pre-wrap break-words text-sm leading-6 text-foreground">
                       {entry.body}
@@ -391,16 +617,44 @@ export function MemoPanel({ docName, isSourceMode }: MemoPanelProps) {
 
                   {!editing ? (
                     <footer className="mt-2 flex h-6 items-center">
-                      <time
-                        dateTime={
-                          entry.updatedAt > 0 ? new Date(entry.updatedAt).toISOString() : undefined
-                        }
-                        className="text-2xs text-muted-foreground"
-                        title={date}
-                      >
-                        {date || t`Earlier memo`}
-                      </time>
+                      {!highlight ? (
+                        <time
+                          dateTime={
+                            entry.updatedAt > 0
+                              ? new Date(entry.updatedAt).toISOString()
+                              : undefined
+                          }
+                          className="text-2xs text-muted-foreground"
+                          title={date}
+                        >
+                          {date || t`Earlier annotation`}
+                        </time>
+                      ) : null}
                       <div className="ml-auto flex opacity-60 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                        {navigable ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="size-6"
+                                onClick={() =>
+                                  requestMemoNavigation({
+                                    docName,
+                                    memoId: entry.id,
+                                  })
+                                }
+                                aria-label={t`Go to annotation in document`}
+                              >
+                                <LocateFixed className="size-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom">
+                              <Trans>Go to annotation in document</Trans>
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : null}
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
@@ -409,13 +663,19 @@ export function MemoPanel({ docName, isSourceMode }: MemoPanelProps) {
                               size="icon"
                               className="size-6"
                               onClick={() => startEditing(entry)}
-                              aria-label={t`Edit memo`}
+                              aria-label={
+                                highlight && !entry.body ? t`Add memo to highlight` : t`Edit memo`
+                              }
                             >
                               <Pencil className="size-3.5" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent side="bottom">
-                            <Trans>Edit memo</Trans>
+                            {highlight && !entry.body ? (
+                              <Trans>Add memo</Trans>
+                            ) : (
+                              <Trans>Edit memo</Trans>
+                            )}
                           </TooltipContent>
                         </Tooltip>
                         <Tooltip>
@@ -426,13 +686,13 @@ export function MemoPanel({ docName, isSourceMode }: MemoPanelProps) {
                               size="icon"
                               className="size-6 text-muted-foreground hover:text-destructive"
                               onClick={() => setDeleteId(entry.id)}
-                              aria-label={t`Delete memo`}
+                              aria-label={t`Delete annotation`}
                             >
                               <Trash2 className="size-3.5" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent side="bottom">
-                            <Trans>Delete memo</Trans>
+                            <Trans>Delete annotation</Trans>
                           </TooltipContent>
                         </Tooltip>
                       </div>
@@ -449,10 +709,14 @@ export function MemoPanel({ docName, isSourceMode }: MemoPanelProps) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              <Trans>Delete this memo?</Trans>
+              <Trans>Delete this annotation?</Trans>
             </DialogTitle>
             <DialogDescription>
-              <Trans>This removes the memo from this device and cannot be undone.</Trans>
+              {deleteId && nativeHighlightIds.has(deleteId) ? (
+                <Trans>This removes the highlight from the document and cannot be undone.</Trans>
+              ) : (
+                <Trans>This removes the annotation from this device and cannot be undone.</Trans>
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -460,7 +724,7 @@ export function MemoPanel({ docName, isSourceMode }: MemoPanelProps) {
               <Trans>Cancel</Trans>
             </Button>
             <Button type="button" variant="destructive" onClick={deleteMemo}>
-              <Trans>Delete memo</Trans>
+              <Trans>Delete annotation</Trans>
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -5,12 +5,12 @@
  * the reader's light/dark theme.
  *
  * GENERATED FILE — do not hand-edit. Regenerate after changing any listed
- * token in `packages/app/src/globals.css`:
+ * token in `packages/app/src/styles/foundation/tokens.css`:
  *
  *     bun run packages/core/scripts/generate-preview-theme-tokens.ts
  *
  * Drift between this file and the CSS is caught by
- * `preview-theme-tokens.test.ts` (re-resolves from globals.css).
+ * `preview-theme-tokens.test.ts` (re-resolves from the token source).
  */
 
 export interface PreviewThemeToken {

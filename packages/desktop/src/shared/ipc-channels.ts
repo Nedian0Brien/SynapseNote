@@ -709,13 +709,20 @@ export interface RequestChannels {
    * against `ProjectContext.projectPath + realpath + isPathWithinProject`,
    * enforces the `EXECUTABLE_BLOCKLIST_EXTENSIONS` gate, and dispatches to
    * `shell.openPath(canonical)`. When `pdfBytes` is present, the same channel
-   * dispatches to the contained, atomic PDF-save path instead. Folding the
-   * additive payload here keeps the hand-rolled IPC channel ratchet flat.
+   * dispatches to the contained, atomic PDF-save path instead. The tagged
+   * `export-pdf` request prints the caller window and opens a native Save
+   * dialog. Folding these additive payloads here keeps the hand-rolled IPC
+   * channel ratchet flat.
    */
   'ok:shell:open-asset': {
-    args: [relPath: string, pdfBytes?: Uint8Array];
+    args: [
+      relPathOrRequest: string | { readonly kind: 'export-pdf'; readonly suggestedName: string },
+      pdfBytes?: Uint8Array,
+    ];
     result:
       | { ok: true }
+      | { ok: true; canceled: true }
+      | { ok: true; canceled: false; path: string }
       | {
           ok: false;
           reason:
@@ -728,7 +735,9 @@ export interface RequestChannels {
             | 'invalid-pdf'
             | 'too-large'
             | 'permission-denied'
-            | 'write-error';
+            | 'write-error'
+            | 'print-failed'
+            | 'write-failed';
         };
   };
   /**

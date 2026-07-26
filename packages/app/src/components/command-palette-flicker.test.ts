@@ -15,10 +15,8 @@
  */
 
 import { describe, expect, test } from 'bun:test';
+import { computeVisibleSearchResults } from './command-palette/command-palette-utils';
 import type { WorkspaceEntry, WorkspaceSearchEntry } from './command-palette-search';
-
-// Dynamic import so a missing export surfaces as an assertion error in the
-// first test, not as a collection-time error that aborts the whole file.
 
 interface VisibleSearchResultsHelperArgs {
   searchResults: readonly WorkspaceSearchEntry[];
@@ -30,10 +28,8 @@ type VisibleSearchResultsHelper = (
   args: VisibleSearchResultsHelperArgs,
 ) => readonly (WorkspaceEntry | WorkspaceSearchEntry)[];
 
-async function loadHelper(): Promise<VisibleSearchResultsHelper | undefined> {
-  const mod = (await import('./CommandPalette')) as Record<string, unknown>;
-  const candidate = mod.computeVisibleSearchResults;
-  return typeof candidate === 'function' ? (candidate as VisibleSearchResultsHelper) : undefined;
+async function loadHelper(): Promise<VisibleSearchResultsHelper> {
+  return computeVisibleSearchResults;
 }
 
 const apiResultsForPriorQuery: readonly WorkspaceSearchEntry[] = [

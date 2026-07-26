@@ -448,8 +448,10 @@ function settlesSplitBrain(settledText: string, md: string, normMdPre?: string):
   return settledText !== md && normalizeBridge(settledText) !== (normMdPre ?? normalizeBridge(md));
 }
 
-/** Node-shape discriminant for a top-level fragment child. */
-function carrierKind(child: Y.XmlElement | Y.XmlText | Y.XmlHook): string {
+type XmlCarrier = Y.XmlElement | Y.XmlText | Y.XmlHook;
+
+/** Node-shape discriminant for a fragment carrier. */
+function carrierKind(child: XmlCarrier): string {
   if (child instanceof Y.XmlElement) return child.nodeName;
   if (child instanceof Y.XmlText) return '#text';
   return '#hook';
@@ -464,7 +466,7 @@ function carrierKind(child: Y.XmlElement | Y.XmlText | Y.XmlHook): string {
  * `undefined` (unintegrated child or shape change) means "cannot attribute"
  * and callers must fail safe toward no destructive recovery.
  */
-function mintingClientId(child: Y.XmlElement | Y.XmlText | Y.XmlHook): number | undefined {
+function mintingClientId(child: XmlCarrier): number | undefined {
   return (child as { _item?: { id?: { client: number } } | null })._item?.id?.client;
 }
 
@@ -503,11 +505,100 @@ function xmlBareText(s: string): string {
 
 /** Markdown body line reduced to bare text: link/image syntax keeps its label, escapes unwrap, inline-marker chars drop (shared reduction). */
 function markdownBareText(line: string): string {
+  let body = line.trimStart();
+  // Peel structural prefixes repeatedly because nested shapes serialize as
+  // combinations such as `- ## heading` or `> 1. item`. The fragment carrier
+  // holds only the authored text, so leaving these prefixes attached prevents
+  // the provenance matcher from finding the corresponding paragraph/heading.
+  for (;;) {
+    const withoutPrefix = body
+      .replace(/^>\s?/, '')
+      .replace(/^(?:(?:[-+*])(?:\s+\[[ xX]\])?|\d+[.)])\s+/, '')
+      .replace(/^#{1,6}\s+/, '');
+    if (withoutPrefix === body) break;
+    body = withoutPrefix;
+  }
   return collapseSpaces(
     stripInlineMarkerChars(
-      line.replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/\\([\\`*_{}[\]()#+\-.!><])/g, '$1'),
+      body.replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/\\([\\`*_{}[\]()#+\-.!><])/g, '$1'),
     ),
   );
+}
+
+const DUPLICATION_GATE_MIN_EMBEDDED_SPAN_LENGTH = 32;
+
+function countNonOverlapping(haystack: string, needle: string): number {
+  let count = 0;
+  let from = 0;
+  for (;;) {
+    const index = haystack.indexOf(needle, from);
+    if (index < 0) return count;
+    count += 1;
+    from = index + needle.length;
+  }
+}
+
+function markdownBareDocument(markdown: string): string {
+  return markdown
+    .split('\n')
+    .map((line) => markdownBareText(line))
+    .join('\n');
+}
+
+/**
+ * Growth pre-filter used by the duplication gate.
+ *
+ * The shared exact-line detector catches ordinary doubled blocks. A CRDT
+ * reshape can instead concatenate the foreign copy into a heading line
+ * (`- ## sentence sentence ...`), so the candidate contains one markdown line
+ * but multiple copies of the reference sentence. Detect those embedded spans
+ * too, using a longer minimum to avoid treating short repeated labels as a
+ * destructive-recovery signal. The provenance + shape gate remains the final
+ * adjudicator.
+ */
+export function overMultipliedBridgeBodyLines(candidate: string, reference: string): string[] {
+  const exact = overMultipliedBodyLines(candidate, reference, DUPLICATION_GATE_MIN_LINE_LENGTH);
+  const candidateBare = markdownBareDocument(candidate);
+  const referenceBare = markdownBareDocument(reference);
+  const anchors = new Map<string, string>();
+
+  for (const rawLine of reference.split('\n')) {
+    const bareLine = markdownBareText(rawLine);
+    if (bareLine.length < DUPLICATION_GATE_MIN_EMBEDDED_SPAN_LENGTH) continue;
+    if (
+      countNonOverlapping(candidateBare, bareLine) >= 2 &&
+      countNonOverlapping(candidateBare, bareLine) > countNonOverlapping(referenceBare, bareLine)
+    ) {
+      anchors.set(bareLine, bareLine);
+    }
+  }
+  for (const line of exact) anchors.set(markdownBareText(line), line);
+  return [...anchors.values()];
+}
+
+/**
+ * Find the deepest fragment nodes that each carry the whole substantive line.
+ *
+ * A top-level-only walk misses list-local races: the stable `list` wrapper can
+ * contain a server-minted paragraph and a foreign-minted heading with the same
+ * text after an Enter/Tab reshape. Returning every matching ancestor would be
+ * too broad because wrapper kinds (`list`, `listItem`) would disagree with a
+ * leaf paragraph during an ordinary same-shape paste. The deepest carriers
+ * make the comparison land on the authored block shapes in either location.
+ */
+function deepestLineCarriers(node: XmlCarrier, bareLine: string): XmlCarrier[] {
+  if (!xmlBareText(node.toString()).includes(bareLine)) return [];
+  if (!(node instanceof Y.XmlElement)) return [node];
+
+  const nested: XmlCarrier[] = [];
+  for (const child of node.toArray()) {
+    // XmlText carries the block's inline content, not an independent node
+    // shape. Descend only through element wrappers so the terminal carrier is
+    // the paragraph/heading/component element rather than a generic #text.
+    if (!(child instanceof Y.XmlElement)) continue;
+    nested.push(...deepestLineCarriers(child, bareLine));
+  }
+  return nested.length > 0 ? nested : [node];
 }
 
 /**
@@ -518,9 +609,9 @@ function markdownBareText(line: string): string {
  * the paste).
  *
  * Given the substantive body lines the growth pre-filter found over-multiplied
- * in the fragment relative to Y.Text, walk the top-level fragment children and
- * confirm the race by TWO joint signatures on the carriers of an over-multiplied
- * line:
+ * in the fragment relative to Y.Text, walk the fragment's deepest whole-line
+ * carriers and confirm the race by TWO joint signatures on the carriers of an
+ * over-multiplied line:
  *
  *   1. Provenance split — the carriers span BOTH the server's own `doc.clientID`
  *      (Observer B's re-derivation under `OBSERVER_SYNC_ORIGIN`) AND at least
@@ -551,7 +642,6 @@ export function findRaceDuplicatedSpans(
 ): boolean {
   if (overMultipliedLines.length === 0) return false;
   const children = xmlFragment.toArray();
-  const childBareTexts = children.map((child) => xmlBareText(child.toString()));
   for (const line of overMultipliedLines) {
     // Both sides reduced to bare text so inline formatting (bold, code,
     // links) cannot hide a carrier. Stripping can shorten a line below the
@@ -562,13 +652,12 @@ export function findRaceDuplicatedSpans(
     if (bareLine.length < DUPLICATION_GATE_MIN_LINE_LENGTH) continue;
     const serverKinds = new Set<string>();
     const foreignKinds = new Set<string>();
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      if (child === undefined || !childBareTexts[i]?.includes(bareLine)) continue;
-      const client = mintingClientId(child);
+    const carriers = children.flatMap((child) => deepestLineCarriers(child, bareLine));
+    for (const carrier of carriers) {
+      const client = mintingClientId(carrier);
       if (client === undefined) continue;
-      if (client === serverClientId) serverKinds.add(carrierKind(child));
-      else foreignKinds.add(carrierKind(child));
+      if (client === serverClientId) serverKinds.add(carrierKind(carrier));
+      else foreignKinds.add(carrierKind(carrier));
     }
     // Race iff a server carrier and a foreign carrier DISAGREE on node shape.
     for (const s of serverKinds) {
@@ -1203,11 +1292,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
       // it raises and catches no `BridgeMergeContentLossError`; its
       // observability is the `duplication-guard` split-brain site + the
       // dedicated counter + the `observer-a-duplication` checkpoint.
-      const overMultiplied = overMultipliedBodyLines(
-        md,
-        currentText,
-        DUPLICATION_GATE_MIN_LINE_LENGTH,
-      );
+      const overMultiplied = overMultipliedBridgeBodyLines(md, currentText);
       if (
         overMultiplied.length > 0 &&
         findRaceDuplicatedSpans(xmlFragment, doc.clientID, overMultiplied)

@@ -19,6 +19,7 @@ import './mdast-augmentation.ts';
 import { protectFromMdx, restoreFromMdx } from './autolink-void-html-guard.ts';
 import { encodeBackslashEscapes, restoreBackslashEscapesPlugin } from './backslash-escape-guard.ts';
 import { calloutTransformerPlugin, REMARK_GITHUB_ALERTS_OPTIONS } from './callout-transformer.ts';
+import { cjkAdjacentStrongPromoterPlugin } from './cjk-adjacent-strong-promoter.ts';
 import { commentPromoterPlugin } from './comment-promoter.ts';
 import { dedentBlockJsxClose } from './dedent-block-jsx-close.ts';
 import { detailsAccordionPromoterPlugin } from './details-accordion-promoter.ts';
@@ -83,12 +84,16 @@ export const ACTIVE_MDAST_PLUGINS = [
   { name: 'void-br-promoter', plugin: voidBrPromoterPlugin },
   { name: 'restore-entity-refs', plugin: restoreEntityRefsPlugin },
   { name: 'restore-backslash-escapes', plugin: restoreBackslashEscapesPlugin },
+  { name: 'cjk-adjacent-strong-promoter', plugin: cjkAdjacentStrongPromoterPlugin },
   { name: 'details-accordion-promoter', plugin: detailsAccordionPromoterPlugin },
   { name: 'image-promoter', plugin: imagePromoterPlugin },
   { name: 'indented-code-promoter', plugin: indentedCodePromoterPlugin },
   { name: 'math-promoter', plugin: mathPromoterPlugin },
-  { name: 'implicit-math-promoter', plugin: implicitMathPromoterPlugin },
+  // Explicit dollar delimiters must be claimed before the parenthesis
+  // heuristic so prose such as `($r_{leaf}$)` does not feed nested dollar
+  // delimiters to KaTeX as one inferred formula.
   { name: 'single-dollar-math-promoter', plugin: singleDollarMathPromoterPlugin },
+  { name: 'implicit-math-promoter', plugin: implicitMathPromoterPlugin },
   { name: 'highlight-promoter', plugin: highlightPromoterPlugin },
   { name: 'mermaid-promoter', plugin: mermaidPromoterPlugin },
   { name: 'comment-promoter', plugin: commentPromoterPlugin },

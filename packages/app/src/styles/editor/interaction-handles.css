@@ -1,0 +1,224 @@
+.ProseMirror p.is-empty::before {
+  content: attr(data-placeholder);
+  pointer-events: none;
+  float: left;
+  height: 0;
+  @apply text-muted-foreground/60;
+}
+
+/* When any JSX prop panel is open in this editor, suppress the slash-command
+ * placeholder on empty paragraphs — the placeholder competes for attention
+ * with the focused panel. Scope is narrow on purpose: the trigger must live
+ * inside `.jsx-component-chrome` so other open popovers (BubbleMenu, color
+ * picker, future link panels routed through InteractionLayerStore) keep the
+ * placeholder visible. `:has()` is supported on Chrome 105+, Safari 15.4+,
+ * Firefox 121+; older Firefox sees the pre-fix behavior (placeholder still
+ * visible behind the panel) as graceful degradation. */
+.tiptap-editor:has(
+    .jsx-component-chrome button[data-slot="popover-trigger"][data-state="open"]
+  ) .ProseMirror
+  p.is-empty::before {
+  content: none;
+}
+
+/* DragHandlePlugin container — absolutely positioned flex row of grip + "+"
+   created imperatively by `BlockDragHandle` (see
+   `packages/app/src/editor/extensions/drag-handle.ts`). Per FR-15 / FR-16. */
+.ok-block-controls {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 1;
+  transition: opacity 100ms var(--ease-out-strong);
+  user-select: none;
+}
+
+/* + button */
+.ok-add-block-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  color: oklch(0.72 0 0);
+  border-radius: 3px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  transition: background-color 100ms var(--ease-out-strong);
+}
+.ok-add-block-btn:hover {
+  background-color: oklch(0 0 0 / 6%);
+}
+
+/* Drag grip — rendered as a <button> for a11y (click handler binds to a
+   semantic interactive element discoverable by screen readers). Default
+   <button> chrome (border, padding, system background) is reset so the
+   visual is unchanged from when this was a <div>. */
+.ok-drag-grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  cursor: grab;
+  color: oklch(0.72 0 0);
+  border-radius: 3px;
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+.ok-drag-grip:hover {
+  background-color: oklch(0 0 0 / 6%);
+}
+.ok-drag-grip:active {
+  cursor: grabbing;
+}
+
+/* Keyboard focus indicator — mirrors the editor-wide pattern used by
+   .tag, [data-link], a.ok-file-attachment, and task-list checkboxes.
+   The grip carries tabindex="-1" today, so the indicator only fires on
+   explicit `.focus()` calls; the add button is reachable via Tab while
+   its hover-only chrome is visible. */
+.ok-add-block-btn:focus-visible,
+.ok-drag-grip:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+/* Visibility fade — DragHandlePlugin sets inline visibility: hidden */
+.ok-block-controls[style*="visibility: hidden"],
+.ok-block-controls[style*="visibility:hidden"] {
+  opacity: 0;
+}
+
+/* Dark mode */
+.dark .ok-add-block-btn {
+  color: oklch(0.5 0 0);
+}
+.dark .ok-add-block-btn:hover {
+  background-color: oklch(1 0 0 / 8%);
+}
+.dark .ok-drag-grip {
+  color: oklch(0.5 0 0);
+}
+.dark .ok-drag-grip:hover {
+  background-color: oklch(1 0 0 / 8%);
+}
+
+/* Positioned host for the per-column / per-row cell-handle dropdowns
+   (`TableCellHandles`). The handles are `position: absolute` + floating-ui
+   placed, so they need a positioned offsetParent. This host is a React-rendered
+   direct child of `.tiptap-editor`, so it inherits `grid-column: content;
+   position: relative` from `.tiptap-editor > *` — content-aligned, inside the
+   scroll container (handles track scroll), and crucially NOT
+   `view.dom.parentElement`, which TipTap vacuums on `<Activity>` recycle. A
+   portal into that node desyncs React and throws `removeChild` on navigation
+   (see TableCellHandles.tsx). The host is pinned into the content's grid row
+   (`grid-row: 1` here + on `.tiptap-editor-portal-content`) instead of
+   generating its own: `.tiptap-editor` is taller than short documents, and the
+   default `align-content: stretch` hands every in-flow auto row an equal share
+   of the leftover height — an own row for this host would balloon into a blank
+   band ABOVE the document the moment the cursor enters a table. `align-self:
+   start` keeps the host zero-height inside the shared row, so the absolute
+   handles position exactly as they would from an own top row.
+
+   Visibility is gated here, not in JS: the layer is rendered whenever the
+   cursor is in a cell (TableCellHandles owns that), but the pills only paint
+   when the user is actively touching the table — editor focused (covers
+   typing, click-to-place-caret, and the post-dismiss pill-focused state, all
+   under `.tiptap-editor:focus-within`), or a handle's Radix dropdown is open
+   (the trigger inside the layer carries `data-state="open"` while focus has
+   moved to the body-portaled menu content). `visibility: hidden` (not
+   `display: none`) keeps floating-ui's positioning math live and drops the
+   pills out of tab order. */
+.ok-table-cell-handle-layer {
+  position: relative;
+  grid-row: 1;
+  align-self: start;
+  visibility: hidden;
+  /* Delay the falling edge (visible -> hidden) so Radix's focus-restoration on
+     Escape / dismiss lands on the (still-focusable) pill BEFORE the layer goes
+     visibility:hidden. The rising edge stays immediate because the visible
+     selectors below override transition-delay to 0s. */
+  transition: visibility 0s 150ms;
+}
+.tiptap-editor:focus-within .ok-table-cell-handle-layer,
+.ok-table-cell-handle-layer:has([data-state="open"]) {
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+/* Table edge "+" bars — Notion-style append-column / append-row affordance.
+   The TableInsertControls extension mounts one container per table on
+   `editor.view.dom.parentElement` and floating-ui sets each bar's `left`/`top`
+   plus the stretched cross-axis size inline. Each bar is a persistent but
+   transparent hit zone at the table edge; hovering it (the mouse landing inside
+   the bar) reveals the "+", so reveal is pure CSS — no JS hover tracking. */
+.ok-table-insert-controls {
+  position: absolute;
+  top: 0;
+  left: 0;
+  /* The container is just a positioning anchor — only the bars take pointer
+     events, so the overlay never shadows editor content. */
+  pointer-events: none;
+  z-index: 5;
+}
+
+.ok-table-insert-bar {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  /* Invisible until hovered: transparent background + `currentColor`-stroked
+     icon hidden via a transparent text color. The element still occupies its
+     strip, so it's hoverable. */
+  color: transparent;
+  background: transparent;
+  /* The bar sits flush against the table edge (no floating-ui offset). The
+     gutter toward the table is transparent padding — `content-box` keeps the
+     visible highlight off it, preserving the visual gap while making the gutter
+     itself part of the (hoverable) button, so there's no dead zone between the
+     table and the bar. One shared var so the column/row gutters can't drift. */
+  --ok-table-bar-gap: 6px;
+  --ok-table-bar-thickness: 16px;
+  background-clip: content-box;
+  transition:
+    background-color 100ms var(--ease-out-strong),
+    color 100ms var(--ease-out-strong);
+}
+/* width/height = transparent gutter (toward the table) + visible strip. */
+.ok-table-insert-column {
+  width: calc(var(--ok-table-bar-thickness) + var(--ok-table-bar-gap));
+  padding-left: var(--ok-table-bar-gap);
+}
+.ok-table-insert-row {
+  height: calc(var(--ok-table-bar-thickness) + var(--ok-table-bar-gap));
+  padding-top: var(--ok-table-bar-gap);
+}
+/* Revealed when hovered directly, focused, or when the pointer is in the
+   table's last column / last row (`.is-active`, toggled by TableInsertControls). */
+.ok-table-insert-bar:hover,
+.ok-table-insert-bar:focus-visible,
+.ok-table-insert-bar.is-active {
+  background-color: oklch(0 0 0 / 6%);
+  /* ~3:1 against the page (WCAG 1.4.11 non-text contrast); 0.72 was too faint. */
+  color: oklch(0.55 0 0);
+}
+.dark .ok-table-insert-bar:hover,
+.dark .ok-table-insert-bar:focus-visible,
+.dark .ok-table-insert-bar.is-active {
+  background-color: oklch(1 0 0 / 8%);
+  color: oklch(0.5 0 0);
+}
+.ok-table-insert-bar:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}

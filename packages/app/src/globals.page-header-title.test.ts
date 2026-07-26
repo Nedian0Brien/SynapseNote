@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test';
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { loadStyleManifest } from './build/style-manifest.ts';
 
-const CSS = readFileSync(join(__dirname, 'globals.css'), 'utf8');
+const CSS = loadStyleManifest(join(__dirname, 'globals.css')).css;
 
-describe('page header title layout', () => {
+describe('shell/page-header.css title layout', () => {
   test('long clickable filenames wrap inside the content column', () => {
     const titleRule = CSS.match(/\.page-header-title\s*\{(?<body>[^}]*)\}/)?.groups?.body;
 

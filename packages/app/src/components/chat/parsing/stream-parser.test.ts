@@ -39,6 +39,7 @@ describe('structured chat stream parser', () => {
     const input = [
       '{"type":"system","subtype":"init","session_id":"claude-id"}',
       '{"type":"stream_event","event":{"type":"content_block_start","content_block":{"type":"tool_use","name":"Read"}}}',
+      '{"type":"stream_event","event":{"type":"content_block_start","content_block":{"type":"tool_use","name":"WebSearch"}}}',
       '{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"Hi"}}}',
       '{"type":"assistant","message":{"content":[{"type":"text","text":"Hi"}]}}',
       '{"type":"result","subtype":"success","is_error":false,"result":"Hi"}',
@@ -46,9 +47,44 @@ describe('structured chat stream parser', () => {
     const parsed = parseStructuredChatChunk('claude', `${input}\n`, createParserState());
     expect(parsed.events).toEqual([
       { type: 'session', sessionId: 'claude-id' },
-      { type: 'tool', name: 'Read' },
+      { type: 'tool', category: 'file', name: 'Read' },
+      { type: 'tool', category: 'web_search', name: 'WebSearch' },
       { type: 'assistant_delta', text: 'Hi' },
       { type: 'done', exitCode: 0 },
+    ]);
+  });
+
+  test('matches Claude tool results to their started activity', () => {
+    const input = [
+      '{"type":"stream_event","event":{"type":"content_block_start","content_block":{"type":"tool_use","id":"tool-ok","name":"Bash"}}}',
+      '{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"tool-ok","content":"/workspace","is_error":false}]},"tool_use_result":{"stdout":"/workspace","stderr":""}}',
+      '{"type":"stream_event","event":{"type":"content_block_start","content_block":{"type":"tool_use","id":"tool-denied","name":"mcp__synapsenote__current_document"}}}',
+      '{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"tool-denied","content":"Permission was not granted.","is_error":true}]},"tool_use_result":"Error: permission denied"}',
+    ].join('\n');
+
+    const parsed = parseStructuredChatChunk('claude', `${input}\n`, createParserState());
+    expect(parsed.events).toEqual([
+      { type: 'tool', sourceId: 'tool-ok', category: 'command', name: 'Bash' },
+      {
+        type: 'tool',
+        sourceId: 'tool-ok',
+        detail: 'completed',
+        summary: '/workspace',
+        fullDetail: 'Result\n{\n  "stdout": "/workspace",\n  "stderr": ""\n}',
+      },
+      {
+        type: 'tool',
+        sourceId: 'tool-denied',
+        category: 'tool',
+        name: 'mcp__synapsenote__current_document',
+      },
+      {
+        type: 'tool',
+        sourceId: 'tool-denied',
+        detail: 'failed',
+        summary: 'Permission was not granted.',
+        fullDetail: 'Error\nError: permission denied',
+      },
     ]);
   });
 
@@ -112,10 +148,11 @@ describe('structured chat stream parser', () => {
 
     const parsed = parseStructuredChatChunk('codex', `${input}\n`, createParserState());
     expect(parsed.events).toEqual([
-      { type: 'tool', sourceId: 'tool-1', name: 'exec' },
+      { type: 'tool', sourceId: 'tool-1', category: 'command', name: 'exec' },
       {
         type: 'tool',
         sourceId: 'tool-1',
+        category: 'command',
         name: 'exec',
         detail: 'failed',
         summary: 'user cancelled MCP tool call',
@@ -124,6 +161,7 @@ describe('structured chat stream parser', () => {
       {
         type: 'tool',
         sourceId: 'tool-2',
+        category: 'command',
         name: 'bun test',
         detail: 'failed',
         summary: 'Assertion failed',
@@ -144,6 +182,7 @@ describe('structured chat stream parser', () => {
       {
         type: 'tool',
         sourceId: 'tool-1',
+        category: 'command',
         name: 'bun run build',
         detail: 'completed',
         summary: 'Build complete',
@@ -153,6 +192,7 @@ describe('structured chat stream parser', () => {
       {
         type: 'tool',
         sourceId: 'tool-2',
+        category: 'file',
         name: 'write',
         detail: 'completed',
         summary: 'Created note/example.md',

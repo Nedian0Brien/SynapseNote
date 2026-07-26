@@ -1,15 +1,6 @@
 import { t } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react/macro';
-import {
-  Clock,
-  Files,
-  Highlighter,
-  Link2,
-  ListTree,
-  MessageSquare,
-  Network,
-  StickyNote,
-} from 'lucide-react';
+import { Clock, Files, Highlighter, Link2, ListTree, MessageSquare, Network } from 'lucide-react';
 import { lazy, type ReactNode, Suspense, useState } from 'react';
 import type { DiffLayout } from '@/components/DiffView';
 import { LinksPanel } from '@/components/LinksPanel';
@@ -28,7 +19,7 @@ export type PanelSurface = 'document' | 'pdf';
 export const DOCUMENT_TABS: { id: PanelTab; icon: typeof ListTree }[] = [
   { id: 'chat', icon: MessageSquare },
   { id: 'outline', icon: ListTree },
-  { id: 'memo', icon: StickyNote },
+  { id: 'memo', icon: Highlighter },
   { id: 'links', icon: Link2 },
   { id: 'graph', icon: Network },
   { id: 'timeline', icon: Clock },
@@ -48,7 +39,7 @@ function tabLabel(id: PanelTab): string {
   if (id === 'pages') return t`Pages`;
   if (id === 'annotations') return t`Annotations`;
   if (id === 'outline') return t`Outline`;
-  if (id === 'memo') return t`Memo`;
+  if (id === 'memo') return t`Annotations`;
   if (id === 'links') return t`Links`;
   if (id === 'graph') return t`Graph`;
   return t`Timeline`;
@@ -112,7 +103,7 @@ export function DocPanel({
   // TimelineContent unmounts when activeTab leaves 'timeline'.
   const { t } = useLingui();
   const [diffLayout, setDiffLayout] = useState<DiffLayout>('unified');
-  // Single-file `ok <file>` keeps Outline and the device-local Memo. Links/Graph need a
+  // Single-file `ok <file>` keeps Outline and device-local Annotations. Links/Graph need a
   // multi-doc knowledge base, and Timeline is git history — all empty or inert
   // for a lone git-off file. Coerce a persisted links/graph/timeline selection
   // back to outline so the rail never renders a now-hidden panel, and drop the

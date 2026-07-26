@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { CSSProperties, ReactNode } from 'react';
 import { renderLinguiTemplate } from '@/test-utils/lingui-mock';
 
@@ -15,10 +15,16 @@ const zoomIn = mock(() => {});
 const zoomOut = mock(() => {});
 const requestZoom = mock(() => {});
 const setSpreadMode = mock(() => {});
+const startSearch = mock(() => {});
+const stopSearch = mock(() => {});
+const searchAllPages = mock(() => ({}));
+const nextSearchResult = mock(() => 1);
+const previousSearchResult = mock(() => 0);
 const createAnnotation = mock(() => {});
 const selectAnnotation = mock(() => {});
 const updateAnnotation = mock(() => {});
 const deleteAnnotation = mock(() => {});
+const deselectAnnotation = mock(() => {});
 const navigateTarget = mock(() => ({ wait: (resolve: () => void) => resolve() }));
 const getBookmarks = mock(() => ({
   wait: (resolve: (value: { bookmarks: unknown[] }) => void) =>
@@ -47,6 +53,21 @@ const getSelectedText = mock(() => ({
 let endSelectionListener: (() => void) | null = null;
 let selectionChangeListener: ((selection: unknown | null) => void) | null = null;
 let annotationEventListener: ((event: { type: string; committed?: boolean }) => void) | null = null;
+let scrollListener:
+  | ((metrics: {
+      currentPage: number;
+      pageVisibilityMetrics: Array<{
+        pageNumber: number;
+        original: { pageY: number };
+      }>;
+    }) => void)
+  | null = null;
+let selectedAnnotationMenuObject: Record<string, unknown> | null = null;
+
+const annotationRect = {
+  origin: { x: 30, y: 40 },
+  size: { width: 80, height: 16 },
+};
 
 const selectionScope = {
   getSelectedText,
@@ -136,7 +157,15 @@ mock.module('@embedpdf/plugin-scroll/react', () => ({
   ScrollStrategy: { Vertical: 'vertical', Horizontal: 'horizontal' },
   useScroll: () => ({
     state: { currentPage: 1, totalPages: 20 },
-    provides: { scrollToPage },
+    provides: {
+      scrollToPage,
+      onScroll: (listener: typeof scrollListener) => {
+        scrollListener = listener;
+        return () => {
+          if (scrollListener === listener) scrollListener = null;
+        };
+      },
+    },
   }),
   Scroller: ({
     renderPage,
@@ -149,6 +178,59 @@ mock.module('@embedpdf/plugin-scroll/react', () => ({
       {renderPage({ pageIndex: 0 })}
       {renderPage({ pageIndex: 1 })}
     </div>
+  ),
+}));
+
+mock.module('@embedpdf/plugin-search/react', () => ({
+  SearchPluginPackage: packageToken('search'),
+  useSearch: () => ({
+    state: {
+      flags: [],
+      results: [
+        {
+          pageIndex: 4,
+          charIndex: 10,
+          charCount: 6,
+          rects: [{ origin: { x: 20, y: 30 }, size: { width: 60, height: 12 } }],
+          context: {
+            before: '',
+            match: 'needle',
+            after: '',
+            truncatedLeft: false,
+            truncatedRight: false,
+          },
+        },
+        {
+          pageIndex: 7,
+          charIndex: 20,
+          charCount: 6,
+          rects: [{ origin: { x: 40, y: 50 }, size: { width: 70, height: 14 } }],
+          context: {
+            before: '',
+            match: 'needle',
+            after: '',
+            truncatedLeft: false,
+            truncatedRight: false,
+          },
+        },
+      ],
+      total: 2,
+      activeResultIndex: 0,
+      showAllResults: true,
+      query: 'needle',
+      loading: false,
+      active: true,
+    },
+    provides: {
+      startSearch,
+      stopSearch,
+      searchAllPages,
+      nextResult: nextSearchResult,
+      previousResult: previousSearchResult,
+    },
+  }),
+  SearchLayer: ({ pageIndex, className }: { pageIndex: number; className?: string }) => (
+    <div className={className} data-testid={`search-page-${pageIndex + 1}`} />
   ),
 }));
 
@@ -216,17 +298,29 @@ mock.module('@embedpdf/plugin-annotation/react', () => ({
           object: {
             id: 'highlight-1',
             type: 9,
-            contents: 'Important passage',
+            pageIndex: 0,
+            rect: annotationRect,
+            subject: 'Highlighted source sentence',
+            contents: 'Attached research note',
             strokeColor: '#facc15',
           },
         },
         'memo-1': {
-          object: { id: 'memo-1', type: 1, contents: 'Research note', strokeColor: '#facc15' },
+          object: {
+            id: 'memo-1',
+            type: 1,
+            pageIndex: 0,
+            rect: annotationRect,
+            contents: 'Research note',
+            strokeColor: '#facc15',
+          },
         },
         'link-1': {
           object: {
             id: 'link-1',
             type: 2,
+            pageIndex: 0,
+            rect: annotationRect,
             target: { type: 'action', action: { type: 3, uri: 'https://example.com' } },
           },
         },
@@ -237,6 +331,7 @@ mock.module('@embedpdf/plugin-annotation/react', () => ({
       selectAnnotation,
       updateAnnotation,
       deleteAnnotation,
+      deselectAnnotation,
       navigateTarget,
       onAnnotationEvent: (listener: (event: { type: string; committed?: boolean }) => void) => {
         annotationEventListener = listener;
@@ -255,18 +350,27 @@ mock.module('@embedpdf/plugin-annotation/react', () => ({
   }) => (
     <div data-testid={`annotation-page-${pageIndex + 1}`}>
       {selectionMenu?.({
-        rect: { origin: { x: 30, y: 40 }, size: { width: 80, height: 16 } },
+        rect: annotationRect,
         menuWrapperProps: {
           style: { position: 'absolute', width: 80, height: 16, pointerEvents: 'none' },
           ref: () => {},
         },
-        selected: false,
+        selected: pageIndex === 0 && selectedAnnotationMenuObject !== null,
         placement: { suggestTop: false },
         context: {
           type: 'annotation',
           pageIndex,
           annotation: {
-            object: { id: `annotation-${pageIndex}`, type: 9, contents: '' },
+            object:
+              pageIndex === 0 && selectedAnnotationMenuObject
+                ? selectedAnnotationMenuObject
+                : {
+                    id: `annotation-${pageIndex}`,
+                    type: 9,
+                    pageIndex,
+                    rect: annotationRect,
+                    contents: '',
+                  },
           },
           structurallyLocked: false,
           contentLocked: false,
@@ -336,10 +440,16 @@ describe('EmbedPDF viewer integration', () => {
     zoomOut.mockClear();
     requestZoom.mockClear();
     setSpreadMode.mockClear();
+    startSearch.mockClear();
+    stopSearch.mockClear();
+    searchAllPages.mockClear();
+    nextSearchResult.mockClear();
+    previousSearchResult.mockClear();
     createAnnotation.mockClear();
     selectAnnotation.mockClear();
     updateAnnotation.mockClear();
     deleteAnnotation.mockClear();
+    deselectAnnotation.mockClear();
     navigateTarget.mockClear();
     getBookmarks.mockClear();
     requestActiveTerminalInput.mockClear();
@@ -349,6 +459,9 @@ describe('EmbedPDF viewer integration', () => {
     endSelectionListener = null;
     selectionChangeListener = null;
     annotationEventListener = null;
+    scrollListener = null;
+    selectedAnnotationMenuObject = null;
+    window.localStorage.clear();
     globalThis.fetch = originalFetch;
     Object.defineProperty(window, 'okDesktop', {
       value: undefined,
@@ -360,6 +473,7 @@ describe('EmbedPDF viewer integration', () => {
   afterEach(() => {
     cleanup();
     publishSelectionContext('assets/report.pdf', 'pdf', null);
+    window.localStorage.clear();
     globalThis.fetch = originalFetch;
     Object.defineProperty(window, 'okDesktop', {
       value: undefined,
@@ -387,11 +501,14 @@ describe('EmbedPDF viewer integration', () => {
     const selectionRegistration = registrations.find(
       ({ packageName }) => packageName === 'selection',
     );
+    const searchRegistration = registrations.find(({ packageName }) => packageName === 'search');
     expect(scrollRegistration?.config).toMatchObject({ defaultBufferSize: 2 });
+    expect(searchRegistration?.config).toMatchObject({ showAllResults: true });
     expect(selectionRegistration?.config).toMatchObject({
       maxCachedGeometries: 12,
       marquee: { enabled: false },
     });
+    expect(screen.getByTestId('search-page-1')).not.toBeNull();
 
     act(() => endSelectionListener?.());
     await waitFor(() =>
@@ -426,6 +543,37 @@ describe('EmbedPDF viewer integration', () => {
 
     fireEvent.copy(pages as HTMLElement, { clipboardData: { setData } });
     expect(setData).toHaveBeenCalledWith('text/plain', 'Selectable PDF text\nSecond line');
+  });
+
+  test('opens PDF search with Cmd+F and wires query and result navigation', async () => {
+    render(<Pdf src="/api/asset?path=assets%2Freport.pdf" title="report.pdf" fillContainer />);
+
+    await screen.findByTestId('virtual-scroller');
+    fireEvent.keyDown(window, { key: 'f', metaKey: true });
+
+    const searchInput = await screen.findByRole('searchbox', { name: 'Search PDF' });
+    expect(document.activeElement).toBe(searchInput);
+    expect(startSearch).toHaveBeenCalledTimes(1);
+
+    fireEvent.change(searchInput, { target: { value: 'needle' } });
+    await waitFor(() => expect(searchAllPages).toHaveBeenCalledWith('needle'));
+    expect(screen.getByText('1 / 2')).not.toBeNull();
+    expect(scrollToPage).toHaveBeenLastCalledWith({
+      pageNumber: 5,
+      pageCoordinates: { x: 50, y: 36 },
+      behavior: 'smooth',
+      alignX: 50,
+      alignY: 40,
+    });
+
+    fireEvent.keyDown(searchInput, { key: 'Enter' });
+    expect(nextSearchResult).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(searchInput, { key: 'Enter', shiftKey: true });
+    expect(previousSearchResult).toHaveBeenCalledTimes(1);
+
+    fireEvent.keyDown(searchInput, { key: 'Escape' });
+    expect(stopSearch).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('searchbox', { name: 'Search PDF' })).toBeNull();
   });
 
   test('shows PDF-only selection actions and wires highlight, memo, and Ask AI', async () => {
@@ -465,10 +613,16 @@ describe('EmbedPDF viewer integration', () => {
       ),
     );
 
+    fireEvent.click(screen.getByRole('radio', { name: 'Blue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Highlight' }));
     expect(createAnnotation).toHaveBeenCalledWith(
       0,
-      expect.objectContaining({ type: 9, pageIndex: 0, strokeColor: '#facc15' }),
+      expect.objectContaining({
+        type: 9,
+        pageIndex: 0,
+        strokeColor: '#60a5fa',
+        subject: 'Selectable PDF text\nSecond line',
+      }),
     );
     act(() => annotationEventListener?.({ type: 'create', committed: true }));
     await waitFor(() => expect(savePdf).toHaveBeenCalledTimes(1));
@@ -483,6 +637,44 @@ describe('EmbedPDF viewer integration', () => {
       expect.objectContaining({ type: 1, pageIndex: 0, contents: 'Key finding' }),
     );
     expect(selectAnnotation).toHaveBeenCalledTimes(1);
+  });
+
+  test('adds a memo to a clicked highlight and lets its color be changed', async () => {
+    selectedAnnotationMenuObject = {
+      id: 'selected-highlight',
+      type: 9,
+      pageIndex: 0,
+      rect: annotationRect,
+      segmentRects: [annotationRect],
+      contents: '',
+      strokeColor: '#facc15',
+      opacity: 0.45,
+    };
+
+    render(<Pdf src="/api/asset?path=assets%2Freport.pdf" title="report.pdf" />);
+
+    const memoInput = await screen.findByLabelText('Edit PDF highlight memo');
+    expect(screen.getByText('Highlight note')).not.toBeNull();
+    expect(screen.getByText('Color')).not.toBeNull();
+    fireEvent.change(memoInput, { target: { value: 'Follow up on this result' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save memo' }));
+    expect(updateAnnotation).toHaveBeenCalledWith(
+      0,
+      'selected-highlight',
+      expect.objectContaining({ contents: 'Follow up on this result' }),
+    );
+
+    fireEvent.click(
+      within(screen.getByTestId('pdf-annotation-menu')).getByRole('radio', { name: 'Green' }),
+    );
+    expect(updateAnnotation).toHaveBeenCalledWith(
+      0,
+      'selected-highlight',
+      expect.objectContaining({ strokeColor: '#4ade80' }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(deselectAnnotation).toHaveBeenCalledTimes(1);
   });
 
   test('keeps page, zoom, layout, and thumbnail controls wired to viewer plugins', async () => {
@@ -522,6 +714,61 @@ describe('EmbedPDF viewer integration', () => {
       behavior: 'instant',
       alignY: 0,
     });
+  });
+
+  test('restores the last page-relative reading position when a PDF is reopened', async () => {
+    const firstView = render(
+      <Pdf
+        src="/api/asset?path=assets%2Freport.pdf"
+        title="report.pdf"
+        selectionDocumentName="assets/report.pdf"
+      />,
+    );
+    await screen.findByTestId('virtual-scroller');
+
+    act(() => {
+      scrollListener?.({
+        currentPage: 8,
+        pageVisibilityMetrics: [{ pageNumber: 8, original: { pageY: 216.5 } }],
+      });
+    });
+    firstView.unmount();
+    scrollToPage.mockClear();
+
+    const restoredView = render(
+      <Pdf
+        src="/api/asset?path=assets%2Freport.pdf"
+        title="report.pdf"
+        selectionDocumentName="assets/report.pdf"
+      />,
+    );
+
+    await waitFor(() =>
+      expect(scrollToPage).toHaveBeenCalledWith({
+        pageNumber: 8,
+        pageCoordinates: { x: 0, y: 216.5 },
+        behavior: 'instant',
+        alignY: 0,
+      }),
+    );
+
+    restoredView.unmount();
+    scrollToPage.mockClear();
+    render(
+      <Pdf
+        src="/api/asset?path=assets%2Freport.pdf"
+        title="report.pdf"
+        anchor="page=3"
+        selectionDocumentName="assets/report.pdf"
+      />,
+    );
+    await waitFor(() =>
+      expect(scrollToPage).toHaveBeenCalledWith({
+        pageNumber: 3,
+        behavior: 'instant',
+        alignY: 0,
+      }),
+    );
   });
 
   test('exposes the shared right-panel toggle in the route-level PDF toolbar', async () => {
@@ -573,8 +820,27 @@ describe('EmbedPDF viewer integration', () => {
     });
 
     view.rerender(<Pdf {...commonProps} activePanelTab="annotations" />);
+    expect(await screen.findByText(/Highlighted source sentence/)).not.toBeNull();
+    expect(screen.getByText('Attached research note')).not.toBeNull();
+    expect(screen.getByText('2')).not.toBeNull();
     fireEvent.click(await screen.findByRole('button', { name: 'Highlight on page 1' }));
     expect(selectAnnotation).toHaveBeenCalledWith(0, 'highlight-1');
+    expect(scrollToPage).toHaveBeenLastCalledWith({
+      pageNumber: 1,
+      pageCoordinates: { x: 70, y: 48 },
+      behavior: 'smooth',
+      alignX: 50,
+      alignY: 40,
+    });
+    fireEvent.click(await screen.findByRole('button', { name: 'Memo on page 1' }));
+    expect(selectAnnotation).toHaveBeenLastCalledWith(0, 'memo-1');
+    expect(scrollToPage).toHaveBeenLastCalledWith({
+      pageNumber: 1,
+      pageCoordinates: { x: 70, y: 48 },
+      behavior: 'smooth',
+      alignX: 50,
+      alignY: 40,
+    });
 
     view.rerender(<Pdf {...commonProps} activePanelTab="outline" />);
     expect(await screen.findByText('Outline')).not.toBeNull();

@@ -17,6 +17,7 @@ describe('database comments', () => {
               id: 'cmt_first',
               author: { kind: 'human', principal_id: 'user:local' },
               body: 'Please verify this.',
+              attachments: [{ kind: 'local', path: 'attachments/review.pdf', name: 'review.pdf' }],
               mentionedPersonIds: ['person_reviewer'],
               createdAt: '2026-07-21T10:00:00.000Z',
             },
@@ -27,10 +28,54 @@ describe('database comments', () => {
       ],
     });
     expect(parsed.threads[0]).toMatchObject({ id: 'cth_review', resolvedBy: { kind: 'agent' } });
+    expect(parsed.threads[0]?.comments[0]?.attachments).toEqual([
+      { kind: 'local', path: 'attachments/review.pdf', name: 'review.pdf' },
+    ]);
     expect(
       DatabaseRecordCommentsSchema.safeParse({
         ...parsed,
         threads: [{ ...parsed.threads[0], resolvedBy: undefined }],
+      }).success,
+    ).toBe(false);
+  });
+
+  test('defaults old comments to no attachments and rejects unsafe attachment paths', () => {
+    const base = {
+      version: 1 as const,
+      databaseId: 'db_tasks',
+      recordId: 'rec_first',
+      threads: [
+        {
+          id: 'cth_review',
+          anchor: { type: 'page' as const },
+          comments: [
+            {
+              id: 'cmt_first',
+              author: { kind: 'human' as const, principal_id: 'user:local' },
+              body: 'Attached.',
+              createdAt: '2026-07-21T10:00:00.000Z',
+            },
+          ],
+        },
+      ],
+    };
+    expect(DatabaseRecordCommentsSchema.parse(base).threads[0]?.comments[0]?.attachments).toEqual(
+      [],
+    );
+    expect(
+      DatabaseRecordCommentsSchema.safeParse({
+        ...base,
+        threads: [
+          {
+            ...base.threads[0],
+            comments: [
+              {
+                ...base.threads[0]?.comments[0],
+                attachments: [{ kind: 'local', path: '../secret.txt', name: 'secret.txt' }],
+              },
+            ],
+          },
+        ],
       }).success,
     ).toBe(false);
   });

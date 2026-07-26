@@ -832,9 +832,9 @@ describe('DatabasePlanEngine ephemeral desired state', () => {
     });
     expect(draft.normalized.uniquePropertyId).toMatch(/^prop_/);
     expect(sampleValues).toContain('Review evidence');
-    expect(sampleValues.some((value) => typeof value === 'string' && /^opt_/.test(value))).toBe(
-      true,
-    );
+    expect(
+      sampleValues.some((value) => typeof value === 'string' && value.startsWith('opt_')),
+    ).toBe(true);
 
     draft.normalized.definition.name = 'Mutated caller copy';
     expect(engine.getDraft(draftId).normalized.definition.name).toBe('Agent tasks');

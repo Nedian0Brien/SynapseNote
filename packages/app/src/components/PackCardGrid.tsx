@@ -195,7 +195,7 @@ export function PackCardGrid({
         {hasHidden ? (
           // Height + opacity animate via the shared `collapsible-down/up`
           // keyframes (reduced-motion pins height, keeps the crossfade —
-          // globals.css). `overflow-hidden` clips the cards during the slide;
+          // `styles/shell/interaction-motion.css`). `overflow-hidden` clips the cards during the slide;
           // the inner grid's `pt-4` puts the inter-grid gap INSIDE the measured
           // height so it grows/shrinks with the panel instead of popping in.
           // `-mx-1 px-1 -mb-1 pb-1` widens the clip box by the card focus-ring

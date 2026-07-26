@@ -156,6 +156,7 @@ describe('ConfigSchema coverage (NR3 — every leaf has fieldRegistry metadata)'
       'agents.chat.codexModel',
       'appearance.preview.autoOpen',
       'appearance.theme',
+      'editor.sidebarOpenBehavior',
       'editor.wordWrap',
     ]);
   });

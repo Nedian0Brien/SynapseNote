@@ -572,7 +572,7 @@ describe('E2E STOP rule — zero allowlist', () => {
     // `--selection-halo`. Other `:has()` usages (chrome hover innermost-
     // wins, slot hover, etc.) are out of scope — they don't govern
     // selection state.
-    const cssPath = join(APP_SRC_DIR, 'globals.css');
+    const cssPath = join(APP_SRC_DIR, 'styles', 'editor', 'component-chrome.css');
     const css = readFileSync(cssPath, 'utf-8');
     const lines = css.split('\n');
 
@@ -592,7 +592,9 @@ describe('E2E STOP rule — zero allowlist', () => {
       const selectorContext = lines.slice(windowStart, windowEnd).join('\n');
 
       if (selectionMarker.test(selectorContext)) {
-        violations.push(`  packages/app/src/globals.css:${i + 1}    ${line.trim()}`);
+        violations.push(
+          `  packages/app/src/styles/editor/component-chrome.css:${i + 1}    ${line.trim()}`,
+        );
       }
     }
 
@@ -606,9 +608,9 @@ describe('E2E STOP rule — zero allowlist', () => {
   test('selection-halo transition uses `var(--ease-out-strong)`, not bare `ease-out` (round-2 review fix)', () => {
     // the halo opacity
     // transition originally used bare `ease-out` but every other transition
-    // in globals.css (7 of them) uses `var(--ease-out-strong)`. Silent
+    // in styles/editor/component-chrome.css (7 of them) uses `var(--ease-out-strong)`. Silent
     // inconsistency regression is easy to re-introduce; guard statically.
-    const cssPath = join(APP_SRC_DIR, 'globals.css');
+    const cssPath = join(APP_SRC_DIR, 'styles', 'editor', 'component-chrome.css');
     const css = readFileSync(cssPath, 'utf-8');
     const lines = css.split('\n');
 
@@ -617,7 +619,7 @@ describe('E2E STOP rule — zero allowlist', () => {
     const haloStart = lines.findIndex((l) => /\/\*\s*7a\..*selection/i.test(l));
     if (haloStart === -1) {
       throw new Error(
-        `globals.css: expected "7a. Selection halo" section anchor not found — same rename/removal case as the :has() rule above.`,
+        `component-chrome.css: expected "7a. Selection halo" section anchor not found — same rename/removal case as the :has() rule above.`,
       );
     }
     const sectionHeaderPattern = /\/\*\s*(?:7b|8|9)\./i;
@@ -640,7 +642,9 @@ describe('E2E STOP rule — zero allowlist', () => {
       // bare-`ease-out` detector doesn't false-positive on the correct form.
       const stripped = line.replace(/var\([^)]*\)/g, '');
       if (/\bease-out\b/.test(stripped)) {
-        violations.push(`  packages/app/src/globals.css:${i + 1}    ${line.trim()}`);
+        violations.push(
+          `  packages/app/src/styles/editor/component-chrome.css:${i + 1}    ${line.trim()}`,
+        );
       }
     }
 

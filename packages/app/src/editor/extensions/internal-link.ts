@@ -87,7 +87,7 @@ export const InternalLink = LinkFidelity.extend<InternalLinkOptions>({
     //
     // The decoration plugins add data-mark-id (mark-identity-decoration)
     // and data-resolution-state (link-resolution-decoration) at render
-    // time; CSS in globals.css styles the chip based on the latter. The
+    // time; CSS in styles/editor/links.css styles the chip based on the latter. The
     // original href stays in the link mark's attrs (read by PropPanel +
     // handlePrimary for navigate/edit) — it's just not rendered as a
     // navigable element.

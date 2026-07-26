@@ -79,6 +79,15 @@ describe('EditorToolbar runtime layout', () => {
     expect(screen.getByTestId('document-viewer-header').contains(sourceButton)).toBe(false);
   });
 
+  test('places PDF export immediately before Add properties in the identity row', async () => {
+    await renderToolbar();
+
+    const exportButton = screen.getByTestId('export-pdf-button');
+    const addPropertiesButton = screen.getByTestId('add-properties-button');
+    expect(exportButton.nextElementSibling).toBe(addPropertiesButton);
+    expect(screen.getByTestId('document-viewer-header').contains(exportButton)).toBe(true);
+  });
+
   test('a tree-hidden doc gets the not-in-sidebar indicator beside the breadcrumb', async () => {
     await renderToolbar('.scratch/hidden-note');
 

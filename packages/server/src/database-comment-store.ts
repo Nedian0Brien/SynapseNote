@@ -3,6 +3,7 @@ import { lstat, mkdir, readFile, rename, unlink, writeFile } from 'node:fs/promi
 import { resolve } from 'node:path';
 import {
   type DatabaseCommentAnchor,
+  type DatabaseCommentAttachment,
   type DatabaseDefinition,
   DatabaseIdSchema,
   type DatabasePerson,
@@ -283,6 +284,7 @@ export class DatabaseCommentStore {
     expectedRevision: string;
     anchor: DatabaseCommentAnchor;
     body: string;
+    attachments?: readonly DatabaseCommentAttachment[];
     mentionedPersonIds?: readonly string[];
   }): Promise<DatabaseCommentSnapshot> {
     return this.#mutate({
@@ -308,6 +310,7 @@ export class DatabaseCommentStore {
               id: `cmt_${compactUuid(this.#generateUuid)}`,
               author: structuredClone(input.actor),
               body: input.body,
+              attachments: structuredClone([...(input.attachments ?? [])]),
               mentionedPersonIds: this.#mentions(context, input.mentionedPersonIds ?? []),
               createdAt: now,
             },
@@ -325,6 +328,7 @@ export class DatabaseCommentStore {
     expectedRevision: string;
     threadId: string;
     body: string;
+    attachments?: readonly DatabaseCommentAttachment[];
     mentionedPersonIds?: readonly string[];
   }): Promise<DatabaseCommentSnapshot> {
     return this.#mutate({
@@ -343,6 +347,7 @@ export class DatabaseCommentStore {
           id: `cmt_${compactUuid(this.#generateUuid)}`,
           author: structuredClone(input.actor),
           body: input.body,
+          attachments: structuredClone([...(input.attachments ?? [])]),
           mentionedPersonIds: this.#mentions(context, input.mentionedPersonIds ?? []),
           createdAt: this.#now().toISOString(),
         });
@@ -385,6 +390,7 @@ export class DatabaseCommentStore {
     threadId: string;
     commentId: string;
     body: string;
+    attachments?: readonly DatabaseCommentAttachment[];
     mentionedPersonIds?: readonly string[];
   }): Promise<DatabaseCommentSnapshot> {
     return this.#mutate({
@@ -401,6 +407,7 @@ export class DatabaseCommentStore {
           );
         }
         comment.body = input.body;
+        comment.attachments = structuredClone([...(input.attachments ?? comment.attachments)]);
         comment.mentionedPersonIds = this.#mentions(context, input.mentionedPersonIds ?? []);
         comment.editedAt = this.#now().toISOString();
         return DatabaseRecordCommentsSchema.parse(document);

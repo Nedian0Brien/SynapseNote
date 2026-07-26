@@ -142,7 +142,7 @@ afterEach(() => {
 });
 
 describe('DatabaseRecordPageChrome', () => {
-  test('keeps the normal document body below the property panel', () => {
+  test('keeps the normal document body below the property panel', async () => {
     const view = render(
       <TooltipProvider>
         <PropertyProvider>
@@ -158,6 +158,9 @@ describe('DatabaseRecordPageChrome', () => {
     );
 
     const bodyHost = view.getByTestId('record-body-editor');
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
     const bodySurface = bodyHost.closest('[data-database-record-body]');
     expect(bodySurface?.getAttribute('data-record-body-position')).toBe('below-properties');
 
@@ -281,24 +284,26 @@ describe('DatabaseRecordPageChrome', () => {
             0,
         ),
     ).toBe(true);
-    emitDatabaseChanged({
-      v: 1,
-      ch: 'database-changed',
-      seq: 1,
-      scope: 'records',
-      reasons: ['record-update'],
-      databaseIds: ['db_tasks'],
-      sourceIds: ['ds_tasks'],
-      recordIds: ['rec_first'],
-      affectedIdsComplete: true,
-      index: {
-        state: 'idle',
-        revision: hash,
-        manifestRevision: hash,
-        recordCount: 1,
-        issueCount: 0,
-        progress: null,
-      },
+    act(() => {
+      emitDatabaseChanged({
+        v: 1,
+        ch: 'database-changed',
+        seq: 1,
+        scope: 'records',
+        reasons: ['record-update'],
+        databaseIds: ['db_tasks'],
+        sourceIds: ['ds_tasks'],
+        recordIds: ['rec_first'],
+        affectedIdsComplete: true,
+        index: {
+          state: 'idle',
+          revision: hash,
+          manifestRevision: hash,
+          recordCount: 1,
+          issueCount: 0,
+          progress: null,
+        },
+      });
     });
     expect(forceSync).toHaveBeenCalledTimes(1);
     expect(view.getAllByTestId('property-row').map((row) => row.getAttribute('data-key'))).toEqual([

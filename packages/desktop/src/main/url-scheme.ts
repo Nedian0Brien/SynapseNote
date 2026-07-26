@@ -733,10 +733,8 @@ interface ProtocolHandlerControl {
   drainQueuedUrls(): void;
   /**
    * Route a URL through the same queue-then-flush + parse + resolve spine as an
-   * inbound Apple Event. Used by the first-run deferred-share handshake to feed
-   * a redeemed `https://synapse.lawdigest.kr/d/<token>` universal-link URL into the
-   * existing validated receive path — no new trust, no parallel routing.
-   * Subject to the same near-simultaneous-duplicate dedup as every other share.
+   * inbound Apple Event. Subject to the same near-simultaneous-duplicate dedup
+   * as every other share.
    */
   routeUrl(url: string): void;
   /**

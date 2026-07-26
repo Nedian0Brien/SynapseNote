@@ -1,7 +1,7 @@
 /**
  * JSX prop-panel + placeholder UX.
  *
- * Pins the CSS `:has()` rule in `globals.css` that hides the slash-command
+ * Pins the CSS `:has()` rule in `styles/editor/component-chrome.css` that hides the slash-command
  * placeholder while a JSX prop panel is open. Three observable invariants:
  *
  *   P1. Placeholder paints by default on an empty paragraph in the editor.

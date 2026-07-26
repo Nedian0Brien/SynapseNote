@@ -45,8 +45,9 @@ function countLeadingIndent(text: string): number {
  * Decorations inside the FM region are skipped — markdown-list and
  * markdown-table parsing fires on YAML lines like `  - characters` and
  * `| col |`, but those aren't markdown constructs. The list-item decoration's
- * negative `text-indent` (`.cm-list-item` in globals.css) clips the leading
- * YAML indent into negative-x and makes `  - foo` render flush-left.
+ * negative `text-indent` (`.cm-list-item` in `styles/editor/source-mode.css`)
+ * clips the leading YAML indent into negative-x and makes `  - foo` render
+ * flush-left.
  */
 
 // Line-scoped shape of the fence contract, sourced from core so the FM

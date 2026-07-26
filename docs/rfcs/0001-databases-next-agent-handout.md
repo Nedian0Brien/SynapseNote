@@ -1,7 +1,7 @@
 # RFC 0001 databases: next-agent handout
 
-- Prepared: 2026-07-23 (re-audited)
-- Worktree: `/Users/minjaepark/code/SynapseNote-agent-databases`
+- Prepared: 2026-07-24 (re-audited)
+- Worktree: dedicated database implementation worktree
 - Branch: `codex/agent-native-databases`
 - Authoritative checklist: [0001-databases-implementation-checklist.md](./0001-databases-implementation-checklist.md)
 - Main design: [0001-databases-and-agent-data-plane.md](./0001-databases-and-agent-data-plane.md)
@@ -113,6 +113,33 @@ tests, failure states, public documentation, changeset, stable-ID behavior, and
 completeness/truncation semantics first. The checklist's **How to use this
 checklist** section is the acceptance rule.
 
+## Latest stabilization evidence (2026-07-24)
+
+The completed implementation and verification record is the [database inline
+stabilization and modularization plan](./0001-database-inline-stabilization-and-modularization-plan.md).
+The final evidence is:
+
+- 5/5 document-native Playwright journeys, 18/18 visual snapshots, and 2/2
+  accessibility cases passed;
+- packaged Electron AX/keyboard smoke passed for named toolbar actions,
+  focus restoration, inline row creation, drag semantics, and scroll/layout;
+- `bun run check:desktop` passed with 2,495 tests passed, two intentional
+  platform-helper skips, and zero failures;
+- `bun run check:database:regression` passed query/lifecycle/resource/table
+  budgets and bundle limits; combined gzip is 3.69/3.75 MB after the intentional
+  lazy-chunk split, while the main/CSS/workspace budgets remain unchanged;
+- the ephemeral single-file lifecycle passed 1/1 with 11 assertions after the
+  server path guard was scoped to ephemeral sessions; normal project guards
+  remain strict;
+- the inline surface no longer emits the legacy permanent save banner or
+  routine HTTP 409/canonical-workspace error during the verified path.
+
+The root repository check still reports the pre-existing
+`typescript/no-deprecated` backlog; the database slice adds no diagnostics and
+does not weaken that rule. This handout therefore closes the stabilization
+evidence, while broad Notion-parity and human-usability work remains governed by
+the active UX checklists.
+
 The user asked for speed without lowering quality. Prefer one evidence-oriented
 implementation pass and one focused verification pass per item. The complete
 server suite takes roughly ten minutes and should be avoided during iteration;
@@ -171,7 +198,7 @@ current direct table-first creation slice. The remaining visual/cross-host
 gates still must prove the new surface in a running app.
 
 The earlier 101/128 snapshot is structural evidence only. The current
-structural count is **115/129**; do not close
+structural count is **115/130**; do not close
 the remaining UX gates or describe the feature as Notion-parity complete until
 the following first-use flow is visually and interactively true:
 
@@ -513,7 +540,7 @@ and the remaining release gates stay open. Feature changeset:
 - Numbered A-S items still open: **5**.
 - Total unchecked Markdown boxes: **25**. The extra 20 are M1-M4 milestone
   release gates, all intentionally still open.
-- Notion UX gap implementation checklist: **37/43 complete**. NUI-016,
+- Notion UX gap implementation checklist: **37/45 complete**. NUI-016,
   NUI-201,
   NUI-202, NUI-203, NUI-204, NUI-302, NUI-304, and NUI-401 are closed with
   focused implementation evidence; NUI-301, NUI-303, and NUI-403 are now
@@ -522,14 +549,14 @@ and the remaining release gates stay open. Feature changeset:
   now closed for stable-ID view reorder and active-view settings/menu evidence;
   NUI-402 is now closed for the inline title/tab/shared-record/cache/state
   contract; NUI-503, NUI-602, and NUI-603 are now closed for focused
-  implementation evidence; NUI-105 and the P1/P2 agent, linked-view,
+  implementation evidence; NUI-105–NUI-107 and the P1/P2 agent, linked-view,
   responsive, and browser-journey gates remain open.
 - Notion parity matrix agent-native foundation rows: **8 moved from
   Foundation to Done (2026-07-23)** after focused server/HTTP/MCP evidence for
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **115/129 complete**. The page-first and normal
+- Notion UX alignment checklist: **115/130 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
@@ -596,8 +623,8 @@ and the remaining release gates stay open. Feature changeset:
   v1 manifest/migration corpus, saved-view and typed Markdown/MDX record
   fixtures, a real MDX `DatabaseView` stable-reference block, descriptor dirty
   serialization, live block projection/reference writes, and database
-  last-opened route persistence. The structural UX count is **115/129**;
-  UX-009 and UX-1101–UX-1114 visual/manual/release gates remain open.
+  last-opened route persistence. The structural UX count is **115/130**;
+  UX-009, UX-012, and UX-1101–UX-1114 visual/manual/release gates remain open.
 - The Context Inspector description was corrected to a block-level semantic
   container so expanded machine-ID details do not create invalid nested
   `<p>/<details>/<dl>` markup. Its focused DOM suite passes; manual keyboard and
@@ -2988,8 +3015,8 @@ their broad evidence is actually assembled:
   view surface rather than an admin-only path.
 - Playwright discovery lists all 4 cases and targeted Biome/app typecheck pass.
   A bounded execution was attempted on 2026-07-23 but stopped before the first
-  test because `/Users/minjaepark/Library/Caches/ms-playwright/chromium_headless_shell-1217/`
-  is missing. This is an environment gate, not a product failure; do not
+  test because the local Playwright Chromium headless-shell cache was missing.
+  This is an environment gate, not a product failure; do not
   install or repeatedly rerun it during iteration. Do not close UX-1106/NUI-701
   or R-005 until a bounded system-Chrome/hosted run and the remaining
   visual/accessibility gates are attached.
@@ -3198,6 +3225,10 @@ their broad evidence is actually assembled:
   title block. The view tabs stay attached to the title while the primary
   toolbar exposes `Filters`, `Sort`, and `Properties`; `View settings` remains
   available from the overflow menu for advanced configuration.
+- The toolbar search affordance now opens a compact `Search pages` popover and
+  filters the currently loaded view locally without mutating the saved-view
+  definition; changing tabs clears the temporary search state and an empty
+  result reports the search term instead of pretending the source has no pages.
 - The inline table header/cell rules now use the same low-contrast, dense grid
   treatment across the embedded surface, while canonical/admin tables keep
   their existing chrome. Title links also expose an explicit `Open page …`
@@ -3209,20 +3240,47 @@ their broad evidence is actually assembled:
   cross-host, contrast, manual accessibility, usability, browser, hosted, or
   real-model gates.
 
+### 2026-07-24 Newly formalized visual-parity gaps
+
+The screenshot review identified two gaps that were described in prose but did
+not have their own implementation checkboxes. They are now explicit in the
+checklists:
+
+- **NUI-106 / UX-012 — document-native shell hierarchy:** the inline block must
+  read as an editor block/page, with one title/icon/view-tab hierarchy and a
+  quiet `New`/`Filters`/`Sort`/`Properties` toolbar. Advanced settings,
+  inspection, agent actions, import/export, diagnostics, and storage details
+  stay progressively disclosed. Duplicate headings and admin setup chrome are
+  not acceptable on the ordinary surface.
+- **NUI-107 / UX-012 — interaction grammar:** the primary table must not feel
+  like a spreadsheet or admin grid. Persistent action rails, competing row
+  icons, heavy framing, and strong selected-cell styling are replaced by one
+  hover/focus/keyboard-reachable row menu; title links open pages, cells edit
+  in place, and the bottom `New page` row remains in document flow.
+
+Both items are intentionally still open. Closing them requires focused DOM
+interaction evidence plus matched web/Electron screenshots at 1280, 1440, and
+768 CSS pixels; the existing targeted checks and prior hierarchy pass are not
+visual-parity sign-off. Do not repeat the slow full server suite or broad E2E
+while implementing this slice.
+
 ## Recommended execution order
 
-1. When a browser-enabled runner is available, run only the new primary-journey
+1. Implement NUI-106/NUI-107 as one focused inline-surface pass, then capture
+   the three required widths in web and Electron. Run only the affected DOM,
+   Biome, and typecheck checks while iterating.
+2. When a browser-enabled runner is available, run only the new primary-journey
    Playwright file and attach the first hosted R-019 workflow result. Do not
    repeat the managed-browser install/test loop locally; the bounded
    system-Chrome document-native evidence is already recorded. This should
    identify missing tests instead of duplicating the existing 124 app DOM tests
    and many focused recovery/race suites.
-2. Replay real model/agent outputs through the existing prompt-to-valid-database
+3. Replay real model/agent outputs through the existing prompt-to-valid-database
    evaluator for R-017; attach the threshold and held-out baseline in
    machine-readable output.
-3. Attach the first hosted run of the focused R-019 workflow, then perform the
+4. Attach the first hosted run of the focused R-019 workflow, then perform the
    S-010/S-011 platform and upgrade/restore rehearsals.
-4. Schedule Q-012 user sessions and obtain the L-017 named approvals. These are
+5. Schedule Q-012 user sessions and obtain the L-017 named approvals. These are
    legitimate external gates, not reasons to stop the engineering work above.
 
 ## Worktree cautions

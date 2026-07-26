@@ -1173,6 +1173,15 @@ export interface OkDesktopBridge {
 
   dialog: {
     openFolder(opts?: { defaultPath?: string }): Promise<string | null>;
+    /** Export the renderer's transient print surface through Electron's native PDF engine. */
+    exportPdf?(suggestedName: string): Promise<
+      | { readonly ok: true; readonly canceled: true }
+      | { readonly ok: true; readonly canceled: false; readonly path: string }
+      | {
+          readonly ok: false;
+          readonly reason: 'print-failed' | 'write-failed' | 'invalid-pdf';
+        }
+    >;
   };
 
   shell: {
@@ -1986,6 +1995,7 @@ export interface OkDesktopBridge {
         prompt: string;
         sessionId: string | null;
         permissionMode: 'read-only' | 'workspace-write' | 'full-access';
+        autoApproveOkTools?: boolean;
         modelSettings: {
           model:
             | 'gpt-5.6-sol'

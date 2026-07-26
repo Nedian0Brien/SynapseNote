@@ -62,7 +62,7 @@ test('A11Y01: Tab key cycles through PropPanel controls in visual DOM order', as
   // here we click the settings gear explicitly.
   //
   // The chrome rests at pointer-events:none and is revealed by wrapper
-  // :hover (globals.css). Playwright's click-time hit-target check does not
+  // :hover (styles/editor/component-chrome.css). Playwright's click-time hit-target check does not
   // benefit from the hover the click itself would cause, so without a prior
   // hover the underlying callout "intercepts pointer events" on every retry.
   // Hover the wrapper FIRST — the same gesture a real user makes. Never

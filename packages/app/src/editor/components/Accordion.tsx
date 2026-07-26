@@ -28,7 +28,8 @@
  * stay live per Precedent #30 (all user content visible / editable).
  *
  * Zero upstream-docs-lib React imports — all styling flows
- * through the `[data-component-type="accordion"]` selector in globals.css
+ * through the `[data-component-type="accordion"]` selector in
+ * `styles/editor/component-chrome.css`
  * with OK shadcn semantic tokens.
  */
 

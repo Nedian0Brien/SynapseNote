@@ -51,7 +51,9 @@ import {
   InputGroupText,
 } from '@/components/ui/input-group';
 import { Kbd } from '@/components/ui/kbd';
-import { useDocumentContext } from '@/editor/DocumentContext';
+import { useDocumentCollaboration } from '@/editor/document-context/useDocumentCollaboration';
+import { useDocumentNavigation } from '@/editor/document-context/useDocumentNavigation';
+import { useDocumentTabs } from '@/editor/document-context/useDocumentTabs';
 import { captureRenameSnapshots } from '@/editor/editor-cache';
 import {
   docTabId,
@@ -456,15 +458,14 @@ export function EditorTabs() {
     activeTabId: activeContextTabId,
     activeNewTabId,
     activeTarget,
+    isNewTabActive,
+  } = useDocumentNavigation();
+  const {
     activateTab,
     activateNewTab,
-    closeAndClearForRename,
     closeNewTab,
     closeTab,
     closeTabs,
-    getPoolActiveDocName,
-    poolHas,
-    isNewTabActive,
     newTabIds,
     openNewTab,
     openTabs,
@@ -475,7 +476,8 @@ export function EditorTabs() {
     reorderTabs,
     unpinTab,
     visibleTabIds,
-  } = useDocumentContext();
+  } = useDocumentTabs();
+  const { closeAndClearForRename, getPoolActiveDocName, poolHas } = useDocumentCollaboration();
   const { t } = useLingui();
   const { pageMeta } = usePageList();
   const tabListRef = useRef<HTMLDivElement>(null);
@@ -700,7 +702,7 @@ export function EditorTabs() {
   //
   // Why the split: macOS hijacks pointer/wheel events in drag regions at the OS
   // chrome level (the DOM never sees them; see the `[data-electron-drag]`
-  // neutralization rule in globals.css). A draggable inter-tab gap therefore
+  // neutralization rule in `styles/editor/large-document.css`). A draggable inter-tab gap therefore
   // killed wheel-scroll whenever the cursor sat between two tabs. Scoping
   // `no-drag` to the content-hugging wrapper keeps wheel-scroll alive over the
   // tabs and gaps while preserving the drag affordance on the genuinely-empty

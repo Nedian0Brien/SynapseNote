@@ -2,6 +2,16 @@ import type {
   DatabaseProperty,
   DatabaseTableViewConfiguration,
 } from '@nedian0brien/synapsenote-core';
+import {
+  clampDatabaseTableColumnWidth,
+  DATABASE_TABLE_DEFAULT_PROPERTY_WIDTH,
+  DATABASE_TABLE_DEFAULT_TITLE_WIDTH,
+} from './database-table-geometry';
+
+export {
+  DATABASE_TABLE_COLUMN_MAX_WIDTH,
+  DATABASE_TABLE_COLUMN_MIN_WIDTH,
+} from './database-table-geometry';
 
 export type DatabaseTableRowHeight = 'compact' | 'standard' | 'tall';
 
@@ -13,16 +23,7 @@ export interface DatabaseTableLayoutState {
   rowHeight: DatabaseTableRowHeight;
 }
 
-export const DATABASE_TABLE_COLUMN_MIN_WIDTH = 120;
-export const DATABASE_TABLE_COLUMN_MAX_WIDTH = 480;
-
-function boundedWidth(value: unknown): number | null {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
-  return Math.min(
-    DATABASE_TABLE_COLUMN_MAX_WIDTH,
-    Math.max(DATABASE_TABLE_COLUMN_MIN_WIDTH, value),
-  );
-}
+const boundedWidth = clampDatabaseTableColumnWidth;
 
 export function reconcileDatabaseTableLayout(
   properties: readonly DatabaseProperty[],
@@ -48,7 +49,11 @@ export function reconcileDatabaseTableLayout(
   const widths: Record<string, number> = {};
   for (const propertyId of propertyIds) {
     const width = boundedWidth(saved?.widths?.[propertyId]);
-    widths[propertyId] = width ?? (propertyId === titleId ? 280 : 180);
+    widths[propertyId] =
+      width ??
+      (propertyId === titleId
+        ? DATABASE_TABLE_DEFAULT_TITLE_WIDTH
+        : DATABASE_TABLE_DEFAULT_PROPERTY_WIDTH);
   }
   return {
     propertyIds,

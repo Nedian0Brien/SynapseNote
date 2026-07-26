@@ -247,7 +247,8 @@ export function CodePreviewEditModal({
     // (sibling PropPanel component, used by Math / Mermaid prop editing).
     // NO `basicSetup` — its bundled theme + base styling fights with the
     // modal's surface tokens. NO `EditorView.theme` — visuals come
-    // entirely from the `.ok-codepreview-cm` CSS class in `globals.css`,
+    // entirely from the `.ok-codepreview-cm` CSS class in
+    // `styles/components/code-editors.css`,
     // which uses app CSS variables so light / dark tracks the host theme
     // automatically (no Compartment needed).
     const langExt = resolveLanguageExtension(languageRef.current);

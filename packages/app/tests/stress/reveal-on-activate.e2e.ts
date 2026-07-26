@@ -49,6 +49,7 @@ const fileRow = (page: Page, fileName: string) =>
   sidebar(page).getByRole('treeitem', { name: fileName, exact: true });
 const folderRow = (page: Page) =>
   sidebar(page).getByRole('treeitem', { name: 'sidebar-folder', exact: true });
+const folderDisclosure = (page: Page) => folderRow(page).locator('[data-item-section="icon"]');
 const selectedRow = (page: Page) => sidebar(page).locator('[aria-selected="true"]');
 
 /**
@@ -101,23 +102,15 @@ test('hash navigation reveals nested doc (simulates graph/wikilink click)', asyn
   await expect(selectedRow(page)).toHaveAttribute('aria-label', 'nested-doc.md');
 });
 
-test('active-doc ancestor stays expanded despite chevron clicks (Model A ancestor priority)', async ({
-  page,
-}) => {
-  // Contract: ancestors of the active doc are UNCONDITIONALLY
-  // expanded. Clicking the collapse chevron on an active-doc-ancestor is a
-  // no-op for the derived expansion state — userCollapsed is set but the
-  // derivation (`ancestors ∪ (userExpanded \ userCollapsed)`) re-adds the
-  // ancestor. This matches VS Code / Finder: active file's context is
-  // always visible.
+test('active-doc ancestor can collapse without changing the open document', async ({ page }) => {
+  // Navigation initially reveals the active document, but disclosure remains
+  // independent afterward: collapsing its ancestor hides only the tree row.
   await gotoAndAwaitTree(page, `/#/sidebar-folder/nested-doc`);
   await fileRow(page, 'nested-doc.md').waitFor({ state: 'visible', timeout: 15_000 });
 
   await expect(folderRow(page)).toHaveAttribute('aria-expanded', 'true');
 
-  // Collapse the row. Under Model A ancestor priority, the folder stays
-  // expanded because it's the active doc's ancestor.
-  await collapseFolder(page);
+  await folderDisclosure(page).click();
   // Yield a few frames so any state flip would have committed.
   await page.evaluate(
     () =>
@@ -130,9 +123,9 @@ test('active-doc ancestor stays expanded despite chevron clicks (Model A ancesto
         requestAnimationFrame(tick);
       }),
   );
-  // Folder remains expanded; nested-doc.md still visible in sidebar.
-  await expect(folderRow(page)).toHaveAttribute('aria-expanded', 'true');
-  await expect(fileRow(page, 'nested-doc.md')).toBeVisible();
+  await expect(folderRow(page)).toHaveAttribute('aria-expanded', 'false');
+  await expect(fileRow(page, 'nested-doc.md')).toHaveCount(0);
+  await expect(page).toHaveURL(/#\/sidebar-folder\/nested-doc$/);
 });
 
 declare global {
@@ -143,10 +136,8 @@ declare global {
 }
 
 test('activation auto-expands prior-collapsed non-ancestor folder (D1)', async ({ page }) => {
-  // Under Model A ancestor priority, user-collapse is only honored for
-  // non-ancestor folders. This test verifies: user collapses folder while
-  // it's NOT an active-doc ancestor, then navigates INTO the folder —
-  // activation wins, folder expands automatically.
+  // A folder collapsed before navigation expands when a document inside it
+  // becomes active, so navigation still reveals the new active row.
   await gotoAndAwaitTree(page, `/#/test-doc`);
   await fileRow(page, 'test-doc.md').waitFor({ state: 'visible', timeout: 15_000 });
 
@@ -159,8 +150,7 @@ test('activation auto-expands prior-collapsed non-ancestor folder (D1)', async (
   await collapseFolder(page);
   await expect(folderRow(page)).toHaveAttribute('aria-expanded', 'false');
 
-  // Now navigate INTO sidebar-folder. It becomes an ancestor — should
-  // auto-expand via ancestor priority, overriding the userCollapsed entry.
+  // Now navigate into sidebar-folder; activation reveals the nested row.
   await page.evaluate(() => {
     window.location.hash = '#/sidebar-folder/nested-doc';
   });

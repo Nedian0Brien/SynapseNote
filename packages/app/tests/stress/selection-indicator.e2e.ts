@@ -992,7 +992,8 @@ for (const { type } of CALLOUT_TYPES) {
 
 // NOTE on per-type color uniqueness: the CSS rule
 // `[data-component-type="callout"] { --selection-halo-color:
-// var(--callout-type-color, var(--ring)) }` in globals.css is designed
+// var(--callout-type-color, var(--ring)) }` in
+// `styles/editor/component-chrome.css` is designed
 // to make each callout type produce a distinct halo color (info=blue,
 // warning=yellow, etc.). In practice this requires the Callout component
 // itself to set `--callout-type-color` on its rendered DOM, which the

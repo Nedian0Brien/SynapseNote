@@ -13,7 +13,11 @@ import {
 import { loadStickyAgent, saveStickyAgent, terminalCliId } from '@/lib/unified-agent-store';
 import { cn } from '@/lib/utils';
 import { type CliChatHeaderSession, CliChatSession } from './chat/CliChatSession';
-import { type CliChatSelectionContext, isCliChatId } from './chat/cli-chat-types';
+import {
+  type CliChatDocumentContext,
+  type CliChatSelectionContext,
+  isCliChatId,
+} from './chat/cli-chat-types';
 import type { TerminalLaunchIntent } from './EditorPane';
 import { visibleTerminalClis } from './handoff/terminal-cli-display';
 import { subscribeToActiveTerminalInput } from './handoff/terminal-input-events';
@@ -145,6 +149,9 @@ interface TerminalSessionsHostProps {
    *  session's launch descriptor — a bare shell the user manually `claude`'d into
    *  reads as non-CLI, which is fine (it just starts a fresh CLI tab). */
   readonly onActiveSessionCliChange?: (isCli: boolean) => void;
+  /** Identity of the document currently open in the editor. Injected into each
+   *  chat turn so deictic questions do not need screen-history inference. */
+  readonly documentContext?: CliChatDocumentContext | null;
   /** Live editor passage offered to chat composers as a removable attachment. */
   readonly selectionContext?: CliChatSelectionContext | null;
 }
@@ -171,6 +178,7 @@ export function TerminalSessionsHost({
   onToggleDock,
   onHasSessionsChange,
   onActiveSessionCliChange,
+  documentContext = null,
   selectionContext = null,
 }: TerminalSessionsHostProps) {
   const { t } = useLingui();
@@ -901,6 +909,7 @@ export function TerminalSessionsHost({
                 adoptPtyId={session.adoptPtyId}
                 onPtyId={(ptyId) => setSessionPtyId(session.id, ptyId)}
                 onClose={() => closeSession(session.id)}
+                documentContext={documentContext}
                 selectionContext={selectionContext}
                 sessionId={session.id}
                 title={sessionLabel(session)}

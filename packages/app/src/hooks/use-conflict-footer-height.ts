@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
  * Publishes the measured height of a conflict-resolution footer as
  * `--conflict-footer-height` on the document root while `enabled` is true.
  *
- * Cross-file contract with BottomComposer + globals.css: the floating Ask AI
+ * Cross-file contract with BottomComposer + `styles/shell/editor-layout.css`: the floating Ask AI
  * composer anchors its bottom to this var (the counterpart of the composer's
  * own `--ask-composer-height`) so it stacks ABOVE the conflict controls —
  * the both-modified footer inside DiffView and the delete-vs-modify footers

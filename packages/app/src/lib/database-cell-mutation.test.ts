@@ -25,6 +25,7 @@ import {
   createDatabaseRecordMoveDesiredState,
   createDatabaseRenamePropertyDesiredState,
   createDatabaseSelectOptionChangeDesiredState,
+  createDatabaseSelectOptionCreateDesiredState,
   createDatabaseTablePasteDesiredState,
   createDatabaseTemplateLifecycleDesiredState,
   createDatabaseUniqueIdPrefixChangeDesiredState,
@@ -1556,5 +1557,46 @@ describe('database cell mutation compiler', () => {
       (candidate) => candidate.id === property.id,
     );
     expect(mergedProperty?.semantics.defaultValue).toEqual(['blue']);
+  });
+
+  test('creates and assigns a new Multi-select option in one desired-state mutation', () => {
+    const source = database.sources[0];
+    const property = source?.properties.find((candidate) => candidate.id === 'prop_tags');
+    if (!source || !property || property.type !== 'multi_select') {
+      throw new Error('invalid multi-select fixture');
+    }
+    const result = createDatabaseSelectOptionCreateDesiredState({
+      database,
+      source,
+      property,
+      record: {
+        id: 'rec_new_option',
+        path: 'tasks/new-option.md',
+        revision: `sha256:${'f'.repeat(64)}`,
+        values: { prop_title: 'New option', prop_tags: ['opt_red'] },
+      },
+      selectedOptionIds: ['opt_red'],
+      name: 'Blocked',
+    });
+
+    expect(result.optionKey).toBe('blocked');
+    expect(
+      result.desiredState.sources[0]?.properties.find((candidate) => candidate.id === property.id),
+    ).toMatchObject({
+      options: [
+        expect.objectContaining({ id: 'opt_red' }),
+        expect.objectContaining({ id: 'opt_blue' }),
+        { key: 'blocked', name: 'Blocked', color: 'yellow' },
+      ],
+    });
+    expect(result.desiredState.recordMutations).toEqual([
+      {
+        id: 'rec_new_option',
+        expectedRevision: `sha256:${'f'.repeat(64)}`,
+        sourceKey: 'tasks',
+        operations: [{ op: 'set', propertyKey: 'tags', value: ['red', 'blocked'] }],
+      },
+    ]);
+    expect(DatabaseDesiredStateDraftSchema.safeParse(result.desiredState).success).toBe(true);
   });
 });

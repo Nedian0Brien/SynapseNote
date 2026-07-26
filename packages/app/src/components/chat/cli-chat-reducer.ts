@@ -160,7 +160,7 @@ export function cliChatReducer(state: CliChatState, action: CliChatAction): CliC
               ? {
                   ...existing,
                   ...(event.category === undefined ? {} : { category: event.category }),
-                  label: event.name,
+                  ...(event.name === undefined ? {} : { label: event.name }),
                   ...(event.detail === undefined ? {} : { detail: event.detail }),
                   ...(event.summary === undefined ? {} : { summary: event.summary }),
                   ...(event.fullDetail === undefined ? {} : { fullDetail: event.fullDetail }),
@@ -180,7 +180,7 @@ export function cliChatReducer(state: CliChatState, action: CliChatAction): CliC
             kind: 'tool',
             ...(event.sourceId === undefined ? {} : { sourceId: event.sourceId }),
             ...(event.category === undefined ? {} : { category: event.category }),
-            label: event.name,
+            label: event.name ?? 'Tool',
             ...(event.detail === undefined ? {} : { detail: event.detail }),
             ...(event.summary === undefined ? {} : { summary: event.summary }),
             ...(event.fullDetail === undefined ? {} : { fullDetail: event.fullDetail }),

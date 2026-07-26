@@ -94,10 +94,12 @@ describe('DatabaseCommentStore', () => {
       expectedRevision: empty.revision,
       anchor: { type: 'page' },
       body: 'Please review this.',
+      attachments: [{ kind: 'local', path: 'attachments/review.pdf', name: 'review.pdf' }],
       mentionedPersonIds: ['person_reviewer'],
     });
     expect(added.document.threads[0]?.comments[0]).toMatchObject({
       body: 'Please review this.',
+      attachments: [{ kind: 'local', path: 'attachments/review.pdf', name: 'review.pdf' }],
       mentionedPersonIds: ['person_reviewer'],
     });
     await expect(

@@ -23,7 +23,7 @@ import type { ReactNode } from 'react';
  * Preview clone of the app's `Callout` render for the docs. Same 15-type
  * enum, same title/icon/color/collapsible surface. Visual shape mirrors
  * `packages/app/src/editor/components/Callout.tsx` — the app's live version
- * is styled through `packages/app/src/globals.css` (`.callout-*` classes
+ * is styled through `packages/app/src/styles/components/callout-footnotes.css` (`.callout-*` classes
  * + `--callout-type-color` accent variables); this preview inlines the
  * same accent + layout using Tailwind so the docs render standalone and
  * don't have to ship the editor CSS bundle.
@@ -64,7 +64,8 @@ const TYPE_ICON: Record<CalloutType, LucideIcon> = {
 };
 
 // Accent hex per type — kept in sync with the `--callout-*-color` custom
-// props defined in `packages/app/src/globals.css`. Sync manually on refresh.
+// props defined in `packages/app/src/styles/components/callout-footnotes.css`.
+// Sync manually on refresh.
 const TYPE_COLOR: Record<CalloutType, string> = {
   note: '#3b82f6',
   tip: '#22c55e',

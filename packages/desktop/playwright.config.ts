@@ -1,5 +1,9 @@
 import { defineConfig } from '@playwright/test';
 
+import { testFeedbackPolicy } from '../../scripts/test-feedback/policy.ts';
+
+const feedbackPolicy = testFeedbackPolicy();
+
 /**
  * Desktop-package Playwright config.
  *
@@ -35,26 +39,13 @@ export default defineConfig({
   // structural reason is local to the test that needs it. Local dev keeps
   // 60s so real regressions surface immediately. Same CI-vs-local
   // 60s so real regressions surface immediately. Same CI-vs-local
-  // divergence shape as `retries: process.env.CI ? 2 : 0` below.
+  // divergence is controlled by the shared test feedback policy below.
   timeout: process.env.CI ? 150_000 : 60_000,
-  // Retries for CI macOS runner flake. Tests that hang or time out from
-  // runner-load contention (Electron Helper XPC delays, slow loadFile
-  // resolution, slow window show under vibrancy + transparent: true) get
-  // retried up to twice. Local dev runs (CI=undefined) get 0 retries to
-  // surface real regressions immediately. This mirrors the precedent set
-  // by `SynapseNote Validation`'s playwright job — CLAUDE.md
-  // documents `failOnFlakyTests: false` for it explicitly because Electron
-  // smoke on macos-latest has inherent latency variance the Playwright
-  // engine itself can't eliminate. Retries are a structural acknowledgment
-  // of CI runner-class behavior, NOT a substitute for fixing real bugs.
-  retries: process.env.CI ? 2 : 0,
-  // Per CLAUDE.md root policy ("PR-tier has failOnFlakyTests: false — retry-
-  // success does NOT promote to red"), a smoke that flakes once and passes on
-  // retry must not red the job. Persistent-flake detection is the nightly's
-  // job. Without this, a single transient timeout (Electron Helper XPC delay,
-  // slow vibrancy compositor under load, etc.) reds the gate even though the
-  // retry surfaces no real regression.
-  failOnFlakyTests: false,
+  // Required smoke keeps the first failure visible. Nightly uses repeatEach=3
+  // through the shared policy instead of retrying a failed assertion.
+  retries: feedbackPolicy.retries,
+  repeatEach: feedbackPolicy.repeatEach,
+  failOnFlakyTests: feedbackPolicy.failOnFlakyTests,
   // Fail-fast diagnostic when src/ is newer than out/. The smoke harness
   // launches `out/main/index.js` directly; if out/ is stale, tests run
   // against a phantom version of the app and produce failures unrelated to

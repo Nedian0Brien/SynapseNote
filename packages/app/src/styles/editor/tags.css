@@ -1,0 +1,46 @@
+/* ── Tags ─────────────────────────────────────────────────────────────────
+ *
+ * `#tagname` Obsidian-parity inline atom. The TipTap atom renders as
+ * `<a class="tag" data-tag="{value}" href="#tag/{value}">#{value}</a>`.
+ * Pill-style chrome — small rounded background, primary-tinted color,
+ * sits inline with the surrounding prose. Cursor + hover + focus give
+ * the affordances of a clickable token without the underline-link look.
+ */
+.tag {
+  display: inline-block;
+  padding: 0.05rem 0.4rem;
+  margin: 0 0.05em;
+  border-radius: 0.625rem;
+  font-size: 0.85em;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--primary);
+  background-color: color-mix(in oklab, var(--primary) 10%, transparent);
+  text-decoration: none;
+  cursor: pointer;
+  /* Long-tag containment: no max-width or wrap rules would let a single
+   * unbroken tag string (`#xxxxxxx...`) blow past the editor's content
+   * column, the TagDialog body, or the Properties panel value cell —
+   * PRD-7112's reported "background overflows in weird ways". Cap the
+   * pill's width at the parent's content box and allow the text to break
+   * mid-string when (and only when) it would otherwise overflow. Normal-
+   * length tags don't trigger `overflow-wrap: anywhere` so the single-
+   * line pill shape is preserved. */
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  vertical-align: baseline;
+  transition:
+    background-color 90ms ease,
+    filter 90ms ease;
+}
+.tag:hover {
+  background-color: color-mix(in oklab, var(--primary) 22%, transparent);
+  filter: brightness(1.05);
+}
+.tag:active {
+  filter: brightness(0.95);
+}
+.tag:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 1px;
+}

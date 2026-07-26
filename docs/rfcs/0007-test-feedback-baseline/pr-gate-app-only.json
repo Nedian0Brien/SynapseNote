@@ -1,0 +1,30 @@
+{
+  "generatedAt": "2026-07-26T15:52:48.905Z",
+  "repeatCount": 10,
+  "runtime": {
+    "bun": "1.3.14",
+    "node": "24.3.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpus": 14
+  },
+  "scenario": "app-only",
+  "summary": {
+    "failedCount": 10,
+    "p50Ms": 2592.427,
+    "p95Ms": 2691.583,
+    "withinBudget": false
+  },
+  "measurements": [
+    { "label": "PR gate app-only 1/10", "durationMs": 2499.46, "status": 1 },
+    { "label": "PR gate app-only 2/10", "durationMs": 2577.672, "status": 1 },
+    { "label": "PR gate app-only 3/10", "durationMs": 2545.049, "status": 1 },
+    { "label": "PR gate app-only 4/10", "durationMs": 2546.216, "status": 1 },
+    { "label": "PR gate app-only 5/10", "durationMs": 2592.427, "status": 1 },
+    { "label": "PR gate app-only 6/10", "durationMs": 2691.583, "status": 1 },
+    { "label": "PR gate app-only 7/10", "durationMs": 2610.523, "status": 1 },
+    { "label": "PR gate app-only 8/10", "durationMs": 2639.729, "status": 1 },
+    { "label": "PR gate app-only 9/10", "durationMs": 2627.103, "status": 1 },
+    { "label": "PR gate app-only 10/10", "durationMs": 2650.338, "status": 1 }
+  ]
+}

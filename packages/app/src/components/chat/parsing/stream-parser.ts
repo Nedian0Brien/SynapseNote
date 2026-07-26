@@ -1,4 +1,10 @@
-import type { ChatEvent, CliChatId, ParsedChunk, ParserState } from '../cli-chat-types';
+import type {
+  ChatEvent,
+  ChatToolCategory,
+  CliChatId,
+  ParsedChunk,
+  ParserState,
+} from '../cli-chat-types';
 
 // CSI, OSC and single-character escapes. PTY output may wrap JSONL in terminal
 // control sequences even when the CLI itself has color disabled.
@@ -47,6 +53,21 @@ function recordAt(value: unknown, key: string): Record<string, unknown> | undefi
 function valueAt(value: unknown, key: string): unknown {
   if (typeof value !== 'object' || value === null) return undefined;
   return (value as Record<string, unknown>)[key];
+}
+
+function toolCategory(name: string): ChatToolCategory {
+  const normalized = name.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+  const matches = (...values: readonly string[]) =>
+    values.some((value) => normalized === value || normalized.endsWith(`_${value}`));
+  if (matches('bash', 'command', 'exec', 'exec_command', 'execcommand', 'shell', 'terminal')) {
+    return 'command';
+  }
+  if (matches('apply_patch', 'applypatch', 'edit', 'read', 'write')) {
+    return 'file';
+  }
+  if (matches('workflow')) return 'workflow';
+  if (matches('web_fetch', 'web_search', 'webfetch', 'websearch')) return 'web_search';
+  return 'tool';
 }
 
 function formatToolValue(value: unknown): string | undefined {
@@ -181,12 +202,14 @@ function codexEvents(value: unknown): ChatEvent[] {
       itemType === 'mcp_tool_call'
         ? (stringAt(item, 'tool') ?? stringAt(item, 'name') ?? 'Tool')
         : (stringAt(item, 'command') ?? 'Command');
+    const category = itemType === 'command_execution' ? 'command' : toolCategory(name);
     const detail = type === 'item.completed' ? stringAt(item, 'status') : undefined;
     const presentation = toolPresentation(item, itemType, detail);
     return [
       {
         type: 'tool',
         ...(sourceId === undefined ? {} : { sourceId }),
+        category,
         name,
         ...(detail === undefined ? {} : { detail }),
         ...presentation,
@@ -239,6 +262,34 @@ function claudeEvents(value: unknown): ChatEvent[] {
     const status = stringAt(value, 'status');
     return status ? [{ type: 'status', label: status === 'requesting' ? 'Thinking' : status }] : [];
   }
+  if (type === 'user') {
+    const message = recordAt(value, 'message');
+    const content = valueAt(message, 'content');
+    if (!Array.isArray(content)) return [];
+    const events: ChatEvent[] = [];
+    for (const candidate of content) {
+      if (typeof candidate !== 'object' || candidate === null) continue;
+      const block = candidate as Record<string, unknown>;
+      if (stringAt(block, 'type') !== 'tool_result') continue;
+      const sourceId = stringAt(block, 'tool_use_id');
+      if (sourceId === undefined) continue;
+      const failed = valueAt(block, 'is_error') === true;
+      const contentValue = valueAt(block, 'content');
+      const detailValue = valueAt(value, 'tool_use_result') ?? contentValue;
+      const summary = firstToolText(contentValue) ?? firstToolText(detailValue);
+      const formatted = formatToolValue(detailValue);
+      events.push({
+        type: 'tool',
+        sourceId,
+        detail: failed ? 'failed' : 'completed',
+        ...(summary === undefined ? {} : { summary }),
+        ...(formatted === undefined
+          ? {}
+          : { fullDetail: `${failed ? 'Error' : 'Result'}\n${formatted}` }),
+      });
+    }
+    return events;
+  }
   if (type === 'stream_event') {
     const event = recordAt(value, 'event');
     const eventType = stringAt(event, 'type');
@@ -251,11 +302,13 @@ function claudeEvents(value: unknown): ChatEvent[] {
       const block = recordAt(event, 'content_block');
       if (stringAt(block, 'type') === 'tool_use') {
         const sourceId = stringAt(block, 'id');
+        const name = stringAt(block, 'name') ?? 'Tool';
         return [
           {
             type: 'tool',
             ...(sourceId === undefined ? {} : { sourceId }),
-            name: stringAt(block, 'name') ?? 'Tool',
+            category: toolCategory(name),
+            name,
           },
         ];
       }

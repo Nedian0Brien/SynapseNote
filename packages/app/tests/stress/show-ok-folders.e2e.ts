@@ -23,6 +23,8 @@ const fileRow = (page: Page, fileName: string) =>
   sidebar(page).getByRole('treeitem', { name: fileName, exact: true });
 const folderRow = (page: Page, folderName: string) =>
   sidebar(page).getByRole('treeitem', { name: folderName, exact: true });
+const folderDisclosure = (page: Page, folderName: string) =>
+  folderRow(page, folderName).locator('[data-item-section="icon"]');
 const treeScroller = (page: Page) => sidebar(page).locator('[data-file-tree-virtualized-scroll]');
 const textViewer = (page: Page) => page.locator('[data-text-viewer]');
 
@@ -64,7 +66,7 @@ test('toggle reveals .ok rows, routes clicks to sanctioned surfaces, and keeps r
 
   // Expand `.ok`: templates + the raw doc appear; the server never lists
   // `worktrees/` or `local/` (excluded at every depth even while revealed).
-  await folderRow(page, '.ok').click();
+  await folderDisclosure(page, '.ok').click();
   await folderRow(page, 'templates').waitFor({ state: 'visible', timeout: 15_000 });
   await fileRow(page, `${rawDocBase}.md`).waitFor({ state: 'visible', timeout: 15_000 });
   await expect(folderRow(page, 'worktrees')).toHaveCount(0);
@@ -106,7 +108,7 @@ test('toggle reveals .ok rows, routes clicks to sanctioned surfaces, and keeps r
   await expect(page.getByText(`Raw probe ${stamp}`)).toBeVisible();
 
   // A template file row routes to the managed-artifact template editor.
-  await folderRow(page, 'templates').click();
+  await folderDisclosure(page, 'templates').click();
   await fileRow(page, `${templateName}.md`).waitFor({ state: 'visible', timeout: 15_000 });
   await fileRow(page, `${templateName}.md`).click();
   await expect
@@ -190,9 +192,10 @@ test('an activated .ok folder row never becomes a mutation target — create fal
   });
   await folderRow(page, '.ok').waitFor({ state: 'visible', timeout: 15_000 });
 
-  // Activate the revealed `.ok` folder row; the expansion (probe file
-  // appearing) proves the click landed and `.ok` is the active folder.
+  // Navigation and disclosure are independent: activate the revealed `.ok`
+  // folder row, then expand it to expose the probe file.
   await folderRow(page, '.ok').click();
+  await folderDisclosure(page, '.ok').click();
   await fileRow(page, `${probeDocBase}.md`).waitFor({ state: 'visible', timeout: 15_000 });
 
   // Toolbar New file with `.ok` active: the create target falls back to the

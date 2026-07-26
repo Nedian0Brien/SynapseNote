@@ -5,6 +5,7 @@ import {
   documentMemoStorageKey,
   EMPTY_DOCUMENT_MEMO_STATE,
   readDocumentMemoState,
+  subscribeDocumentMemoState,
   writeDocumentMemoState,
 } from './document-memo-store';
 
@@ -96,5 +97,16 @@ describe('document memo store', () => {
       EMPTY_DOCUMENT_MEMO_STATE,
     );
     expect(writeDocumentMemoState('notes', STATE, throwingStorage, '/project')).toBe(false);
+  });
+
+  test('notifies the live editor layer even when durable storage fails', () => {
+    const seen: DocumentMemoState[] = [];
+    const unsubscribe = subscribeDocumentMemoState('notes/live', (state) => seen.push(state));
+    try {
+      expect(writeDocumentMemoState('notes/live', STATE, null, '/project')).toBe(false);
+      expect(seen).toEqual([STATE]);
+    } finally {
+      unsubscribe();
+    }
   });
 });

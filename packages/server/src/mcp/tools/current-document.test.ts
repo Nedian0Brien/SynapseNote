@@ -17,6 +17,18 @@ interface ToolResult {
 
 type Handler = (args: { cwd?: string }) => Promise<ToolResult>;
 
+function captureDescription(): string {
+  let description: string | undefined;
+  const server = {
+    registerTool(_name: string, config: { description?: string }, _next: Handler) {
+      description = config.description;
+    },
+  } as unknown as ServerInstance;
+  register(server, { serverUrl: undefined, config: BASE_CONFIG, resolveCwd: async () => cwd });
+  if (description === undefined) throw new Error('description not registered');
+  return description;
+}
+
 function capture(serverUrl: string | undefined): Handler {
   let handler: Handler | undefined;
   const server = {
@@ -59,6 +71,15 @@ beforeAll(() => {
 afterAll(() => testServer.stop());
 
 describe('current_document tool', () => {
+  test('routes current-document language to live SynapseNote state, not screen history', () => {
+    const description = captureDescription();
+    expect(description).toContain('Use this tool FIRST');
+    expect(description).toContain('host has not already supplied authoritative live SynapseNote');
+    expect(description).toContain('내가 지금 보고 있는 문서 뭐야?');
+    expect(description).toContain('Do not substitute Chronicle');
+    expect(description).toContain('instead of guessing');
+  });
+
   test('returns the focused document and all viewers', async () => {
     responseMode = 'document';
     const result = await capture(baseUrl)({});

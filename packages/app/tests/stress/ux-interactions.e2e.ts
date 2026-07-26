@@ -70,7 +70,7 @@ const visualToggle = (page: Page) => page.getByRole('radio', { name: 'Visual edi
 // coordinate inside the visible editor's bounding box + `keyboard.type`.
 //
 // Fix: `.ok-mode-hidden` sets `position:absolute; inset:0; pointer-events:none`
-// in `globals.css`, and `EditorActivityPool` wraps the dual-editor pair in
+// in `styles/editor/source-mode.css`, and `EditorActivityPool` wraps the dual-editor pair in
 // `position:relative` so the hidden editor goes out-of-flow instead of
 // sizing a shared grid row to its 8000px intrinsic.
 // --------------------------------------------------------------------------
@@ -153,7 +153,8 @@ test('hidden-editor wrapper does not intercept pointer events (both modes)', asy
 test('table cell-handle layer does not shift document content', async ({ page, api }) => {
   // Regression: `.ok-table-cell-handle-layer` mounts as a direct grid child of
   // `.tiptap-editor` when the cursor enters a table cell. Without explicit
-  // `grid-row: 1` pinning (globals.css), the layer generated its own in-flow
+  // `grid-row: 1` pinning (`styles/editor/interaction-handles.css`), the layer
+  // generated its own in-flow
   // auto row, and grid's default `align-content: stretch` handed that empty
   // row an equal share of the container's leftover height — a blank band above
   // the document the moment a cell was focused.
@@ -364,22 +365,14 @@ test('concurrent agent write: user + agent content coexist', async ({ page, api,
   expect(sourceContent).toContain('Agent content here');
 });
 
-test('sidebar folder: row click navigates to folder overview; treeitem toggles expand/collapse', async ({
+test('sidebar folder: label navigation and disclosure expansion are independent', async ({
   api,
   page,
   workerServer,
 }) => {
-  // Contract: the folder treeitem navigates to the folder's resolved target
-  // (#/<folderPath>) on click, and exposes the `aria-expanded` disclosure
-  // affordance for keyboard expand/collapse.
-  //
-  // Ancestor-priority UX: while a doc inside sidebar-folder is active, the
-  // folder is unconditionally expanded — collapsing the treeitem is a no-op
-  // for the derived state because `ancestors` takes
-  // priority over `userCollapsed`. The test exercises the toggle BEFORE
-  // navigating into the folder (where toggle IS honored) and asserts the
-  // ancestor-priority behavior after navigation. See reveal-on-activate.e2e.ts
-  // for Model A semantics coverage.
+  // Contract: the folder label navigates to the folder's resolved target
+  // (#/<folderPath>) without changing expansion. The leading chevron changes
+  // expansion without navigating or replacing the current document.
   //
   // Recreate the shared sidebar-folder fixture in case an earlier test in
   // this worker deleted it while exercising bulk delete.
@@ -395,6 +388,7 @@ test('sidebar folder: row click navigates to folder overview; treeitem toggles e
 
   await page.goto('/');
   const folderRow = page.getByRole('treeitem', { name: 'sidebar-folder', exact: true });
+  const disclosure = folderRow.locator('[data-item-section="icon"]');
   const nestedFile = page.getByRole('treeitem', { name: 'nested-doc.md', exact: true });
 
   // Starts collapsed — treeitem reflects state, nested child not visible.
@@ -402,41 +396,37 @@ test('sidebar folder: row click navigates to folder overview; treeitem toggles e
   await expect(folderRow).toHaveAttribute('aria-expanded', 'false');
   await expect(nestedFile).toHaveCount(0);
 
-  // Keyboard disclosure toggles expand/collapse when folder is NOT an
-  // active-doc ancestor (pre-nav state).
-  await folderRow.focus();
-  await folderRow.press('ArrowRight');
-  await expect(folderRow).toHaveAttribute('aria-expanded', 'true');
-  await expect(nestedFile).toBeVisible();
-
-  // Pre-nav toggle: clicking collapse BEFORE navigating into the folder IS
-  // honored (not an active-doc ancestor yet).
-  await folderRow.press('ArrowLeft');
+  // Label click opens the folder but leaves the collapsed tree unchanged.
+  await folderRow.click();
+  await expect(page).toHaveURL(/#\/sidebar-folder\/$/);
   await expect(folderRow).toHaveAttribute('aria-expanded', 'false');
   await expect(nestedFile).toHaveCount(0);
 
-  // Row click opens the folder too: it navigates to the folder's resolved
-  // target and expands the row so the child is visible.
-  await folderRow.click();
-  await expect(page).toHaveURL(/#\/sidebar-folder\/$/);
+  // Disclosure click expands in place without changing the folder route.
+  await disclosure.click();
   await expect(folderRow).toHaveAttribute('aria-expanded', 'true');
   await expect(nestedFile).toBeVisible();
+  await expect(page).toHaveURL(/#\/sidebar-folder\/$/);
 
-  // Nested file click navigates to the doc — the folder becomes an ancestor.
+  // Nested file click navigates to the document.
   await nestedFile.click();
   await expect(page).toHaveURL(/#\/sidebar-folder\/nested-doc$/);
 
-  // Ancestor priority: collapsing the treeitem does NOT hide the folder
-  // because it's an active-doc ancestor. aria-expanded stays true;
-  // nested-doc.md stays visible.
-  await folderRow.focus();
-  await folderRow.press('ArrowLeft');
+  // The active document's ancestor may be collapsed. The editor route and
+  // current document stay put while the selected row becomes hidden.
+  await disclosure.click();
+  await expect(folderRow).toHaveAttribute('aria-expanded', 'false');
+  await expect(nestedFile).toHaveCount(0);
+  await expect(page).toHaveURL(/#\/sidebar-folder\/nested-doc$/);
+
+  // Expanding again reveals the active row without navigating.
+  await disclosure.click();
   await expect(folderRow).toHaveAttribute('aria-expanded', 'true');
   await expect(nestedFile).toBeVisible();
+  await expect(page).toHaveURL(/#\/sidebar-folder\/nested-doc$/);
 
-  // Row click navigates back to the folder target. Folder routes keep a
-  // trailing slash so a folder and same-basename document remain distinct, and
-  // the navigation click must not also collapse the already-open folder.
+  // Label click navigates back to the folder target without changing the
+  // already-expanded disclosure state.
   await folderRow.click();
   await expect(page).toHaveURL(/#\/sidebar-folder\/$/);
   await expect(folderRow).toHaveAttribute('aria-expanded', 'true');

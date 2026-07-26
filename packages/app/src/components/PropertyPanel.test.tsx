@@ -56,10 +56,16 @@ function seedYTextFm(provider: HocuspocusProvider, fenced: string): void {
 }
 
 describe('PropertyPanel', () => {
-  test('renders nothing when the doc has no frontmatter', () => {
+  test('renders an empty properties surface when the doc has no frontmatter', () => {
     const provider = makeProvider('empty-doc');
     const html = renderPanel(provider);
-    expect(html).toBe('');
+    // The production panel deliberately remains discoverable for an empty
+    // document: the virtual tags row and Add affordance are the entry points
+    // for creating the first property. Keeping this assertion aligned with
+    // that contract prevents a stale test from forcing the UI to disappear.
+    expect(html).toContain('data-testid="property-panel"');
+    expect(html).toContain('data-testid="property-placeholder-name"');
+    expect(html).toContain('data-testid="add-property-trigger"');
   });
 
   test('renders Properties header + one row per FM property', () => {
@@ -288,10 +294,11 @@ describe('PropertyPanel add-property trigger', () => {
     expect(triggerTagMatch?.[0]).toMatch(/aria-label="Add property"/);
   });
 
-  test('panel is hidden when there are no rows AND no add-row open', () => {
+  test('panel stays visible when there are no rows so Add remains discoverable', () => {
     const provider = makeProvider('add-trigger-empty-doc');
     const html = renderPanel(provider);
-    expect(html).toBe('');
+    expect(html).toContain('data-testid="property-panel"');
+    expect(html).toContain('data-testid="add-property-trigger"');
   });
 });
 

@@ -15,7 +15,7 @@ import type { TerminalLaunchIntent } from '../EditorPane';
 import { cliIconTargetId } from '../handoff/terminal-cli-display';
 import { TerminalGate } from '../TerminalGate';
 import { CliChatPanel } from './CliChatPanel';
-import type { CliChatId, CliChatSelectionContext } from './cli-chat-types';
+import type { CliChatDocumentContext, CliChatId, CliChatSelectionContext } from './cli-chat-types';
 
 export interface CliChatHeaderSession {
   readonly id: string;
@@ -33,6 +33,7 @@ interface CliChatSessionProps {
   readonly onPtyId?: (ptyId: string | null) => void;
   readonly onTitleChange?: (title: string) => void;
   readonly onClose?: () => void;
+  readonly documentContext?: CliChatDocumentContext | null;
   readonly selectionContext?: CliChatSelectionContext | null;
   readonly sessionId?: string;
   readonly title?: string;
@@ -51,6 +52,7 @@ export function CliChatSession({
   onPtyId,
   onTitleChange,
   onClose,
+  documentContext = null,
   selectionContext = null,
   sessionId,
   title,
@@ -120,6 +122,7 @@ export function CliChatSession({
             initialPrompt={launch.prompt}
             initialDisplayPrompt={launch.displayPrompt}
             context={launch.context}
+            documentContext={documentContext}
             selectionContext={selectionContext}
             initialSessionId={launch.resumeSessionId}
             onSessionId={(sessionId) => {

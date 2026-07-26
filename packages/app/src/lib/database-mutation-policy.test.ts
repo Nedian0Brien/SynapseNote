@@ -16,7 +16,7 @@ describe('database UI mutation policy', () => {
     const operations = Object.keys(DATABASE_UI_MUTATION_POLICY) as Array<
       keyof typeof DATABASE_UI_MUTATION_POLICY
     >;
-    expect(operations).toHaveLength(14);
+    expect(operations).toHaveLength(16);
     for (const operation of operations) {
       const policy = DATABASE_UI_MUTATION_POLICY[operation];
       expect(policy.agent).toBe('required');
@@ -44,6 +44,8 @@ describe('database UI mutation policy', () => {
       'record-create',
       'blank-database-create',
       'property-create',
+      'option-create',
+      'option-reorder',
       'view',
     ] as const) {
       expect(databaseUiMutationReviewMode(human(operation))).toBe('automatic');

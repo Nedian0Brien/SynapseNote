@@ -1,0 +1,30 @@
+{
+  "generatedAt": "2026-07-26T15:53:43.382Z",
+  "repeatCount": 10,
+  "runtime": {
+    "bun": "1.3.14",
+    "node": "24.3.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpus": 14
+  },
+  "scenario": "cross-package",
+  "summary": {
+    "failedCount": 10,
+    "p50Ms": 4854.092,
+    "p95Ms": 5844.944,
+    "withinBudget": false
+  },
+  "measurements": [
+    { "label": "PR gate cross-package 1/10", "durationMs": 4834.401, "status": 1 },
+    { "label": "PR gate cross-package 2/10", "durationMs": 4642.475, "status": 1 },
+    { "label": "PR gate cross-package 3/10", "durationMs": 5531.631, "status": 1 },
+    { "label": "PR gate cross-package 4/10", "durationMs": 5844.944, "status": 1 },
+    { "label": "PR gate cross-package 5/10", "durationMs": 4743.11, "status": 1 },
+    { "label": "PR gate cross-package 6/10", "durationMs": 4751.105, "status": 1 },
+    { "label": "PR gate cross-package 7/10", "durationMs": 5037.566, "status": 1 },
+    { "label": "PR gate cross-package 8/10", "durationMs": 4885.051, "status": 1 },
+    { "label": "PR gate cross-package 9/10", "durationMs": 4994.459, "status": 1 },
+    { "label": "PR gate cross-package 10/10", "durationMs": 4854.092, "status": 1 }
+  ]
+}

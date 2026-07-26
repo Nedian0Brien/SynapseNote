@@ -3,7 +3,7 @@
  *
  * Applies `class="ok-chunk-wrapper"` to every top-level direct child of the
  * doc via PM `Decoration.node`. The CSS rule at
- * `globals.css:.ProseMirror .ok-chunk-wrapper` carries
+ * `styles/editor/large-document.css:.ProseMirror .ok-chunk-wrapper` carries
  * `content-visibility: auto` + `contain-intrinsic-size: 0 var(--ok-cv-h, 80px)`,
  * which makes off-viewport blocks structurally skipped by Chromium's
  * containment optimizations.
@@ -31,7 +31,7 @@
  * TipTap renders for `jsxComponent`) paints visual chrome OUTSIDE its own
  * border box in three places — the `::before` hover hit-zone at `top:-12px`,
  * the `::after` selection halo at `inset:-4px`, and the `.jsx-component-chrome`
- * toolbar child at `top:-11px` (all in `globals.css` §7/§7a). Decorating these
+ * toolbar child at `top:-11px` (all in `styles/editor/component-chrome.css`). Decorating these
  * with `.ok-chunk-wrapper` would clip the halo (left/right) and the chrome
  * bar (top), so we skip them. JsxComponent blocks are a small fraction of
  * typical doc content; the layout-work win on the remaining 95%+ of top-level
@@ -93,7 +93,7 @@ import { mark } from '@/lib/perf';
 
 export const chunkWrapperDecorationKey = new PluginKey('chunkWrapperDecoration');
 
-/** CSS class consumed by `.ProseMirror .ok-chunk-wrapper` in globals.css. */
+/** CSS class consumed by `.ProseMirror .ok-chunk-wrapper` in `styles/editor/large-document.css`. */
 export const OK_CHUNK_WRAPPER_CLASS = 'ok-chunk-wrapper';
 
 let firstEmitFired = false;

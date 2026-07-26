@@ -113,4 +113,24 @@ describe('Sheet runtime class contracts', () => {
       'FORKED FROM radix-nova',
     ]);
   });
+
+  test('allows document-like sheets to opt out of compact width constraints', async () => {
+    const { Sheet, SheetContent, SheetDescription, SheetTitle } = await import('./sheet');
+
+    render(
+      <Sheet open={true}>
+        <SheetContent forceMount side="right" sizeMode="unconstrained" showCloseButton={false}>
+          <SheetTitle>Document sheet</SheetTitle>
+          <SheetDescription>Document-like side peek</SheetDescription>
+        </SheetContent>
+      </Sheet>,
+    );
+
+    const content = document.querySelector('[data-slot="sheet-content"]');
+    expect(content?.getAttribute('data-size-mode')).toBe('unconstrained');
+    expectVisualClassTokensAbsent(content?.getAttribute('class') ?? '', [
+      'data-[side=right]:w-3/4',
+      'data-[side=right]:sm:max-w-sm',
+    ]);
+  });
 });

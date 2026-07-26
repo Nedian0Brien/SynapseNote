@@ -984,7 +984,7 @@ export class DatabaseDataPlane {
   readonly #accessPrincipal = new AsyncLocalStorage<DatabaseAccessPrincipal>();
   readonly #publicShare = new AsyncLocalStorage<DatabasePublicSharePolicy>();
   readonly #trustedFormMutation = new AsyncLocalStorage<boolean>();
-  readonly #defaultAccessPrincipal: DatabaseAccessPrincipal;
+  #defaultAccessPrincipal: DatabaseAccessPrincipal;
   readonly #bindMutationActorToAccessPrincipal: boolean;
   readonly #isCanonicalTransitionActive: () => boolean;
   readonly #now: () => Date;
@@ -1046,6 +1046,18 @@ export class DatabaseDataPlane {
   /** Bind trusted transport identity to every nested read in one request. */
   withAccessPrincipal<T>(principal: DatabaseAccessPrincipal, operation: () => T): T {
     return this.#accessPrincipal.run(DatabaseAccessPrincipalSchema.parse(principal), operation);
+  }
+
+  /**
+   * Update the local fallback principal after the server has loaded its durable
+   * project identity. HTTP requests always bind a principal explicitly, while
+   * direct in-process consumers (startup jobs, previews, and tests) use this
+   * fallback. Keeping both paths on the same owner identity prevents the
+   * default policy resolver from treating an in-process read as an ungranted
+   * guest after principal bootstrap.
+   */
+  setDefaultAccessPrincipal(principal: DatabaseAccessPrincipal): void {
+    this.#defaultAccessPrincipal = DatabaseAccessPrincipalSchema.parse(principal);
   }
 
   /** Bind a server-resolved share. Request JSON must never call this with an unverified policy. */
@@ -1483,6 +1495,7 @@ export class DatabaseDataPlane {
     databaseId?: string;
     databaseKey?: string;
     sourceId?: string;
+    includeViews?: boolean;
   }): DatabaseDescribeResult {
     this.#assertReadable();
     const snapshot = this.#databaseStore.snapshot();
@@ -1609,16 +1622,46 @@ export class DatabaseDataPlane {
       views: (() => {
         const policy = this.#publicShare.getStore();
         if (
-          !policy ||
-          (policy.target.kind !== 'view' &&
-            policy.target.kind !== 'form' &&
-            policy.target.kind !== 'chart')
+          policy &&
+          (policy.target.kind === 'view' ||
+            policy.target.kind === 'form' ||
+            policy.target.kind === 'chart')
         ) {
-          return [];
+          const viewId = policy.target.viewId;
+          return database.views
+            .filter((view) => view.id === viewId && projectedSourceIds.has(view.sourceId))
+            .map((view) => structuredClone(view));
         }
-        const viewId = policy.target.viewId;
+        if (input.includeViews !== true) return [];
+        const visiblePropertyIdsBySource = new Map(
+          projectedSources.map((source) => [
+            source.id,
+            new Set(source.properties.map((property) => property.id)),
+          ]),
+        );
         return database.views
-          .filter((view) => view.id === viewId && projectedSourceIds.has(view.sourceId))
+          .filter((view) => projectedSourceIds.has(view.sourceId))
+          .filter((view) => {
+            const visiblePropertyIds = visiblePropertyIdsBySource.get(view.sourceId);
+            const source = database.sources.find((candidate) => candidate.id === view.sourceId);
+            if (!visiblePropertyIds || !source) return false;
+            const access = this.#resolveQueryAccess({
+              action: 'describe',
+              database: cloneDefinition(database),
+              source: structuredClone(source),
+              query: structuredClone(query),
+              view: structuredClone(view),
+              principal: this.#currentAccessPrincipal(),
+            });
+            if (access.allowed === false) return false;
+            const allowedPropertyIds =
+              access.allowedPropertyIds === null
+                ? visiblePropertyIds
+                : new Set(access.allowedPropertyIds);
+            return view.projection.propertyIds.every((propertyId) =>
+              allowedPropertyIds.has(propertyId),
+            );
+          })
           .map((view) => structuredClone(view));
       })(),
       templates: [],
@@ -4297,7 +4340,7 @@ export class DatabaseDataPlane {
       }
       const before = change.before?.values ?? {};
       const after = change.after?.values ?? {};
-      for (const propertyId of [...new Set([...Object.keys(before), ...Object.keys(after)])]) {
+      for (const propertyId of new Set(Object.keys(before).concat(Object.keys(after)))) {
         if (stableJson(before[propertyId]) === stableJson(after[propertyId])) continue;
         await this.#publishAutomationEvent({
           deduplicationKey: `commit:${result.mutationId}:record:${record.id}:property:${propertyId}`,

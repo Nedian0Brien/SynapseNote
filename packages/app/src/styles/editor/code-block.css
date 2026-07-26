@@ -1,0 +1,388 @@
+/* Code blocks — fallback for any <pre> not wrapped by the .ok-codeblock NodeView */
+.ProseMirror pre {
+  background: var(--color-gray-100);
+  padding: 0.75em 1em;
+  margin-bottom: 0.5em;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  line-height: 1.6;
+  @apply scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/30 dark:scrollbar-thumb-muted-foreground/50 rounded-lg;
+}
+
+/* .ok-codeblock — zero permanent chrome (precedent #30). Single rounded
+   container, generous padding, no border. Hover/selection reveals a chrome
+   bar floating above the block edge. Dark theme inverts the surface so
+   the block reads as a code surface in either color mode. */
+.ProseMirror .ok-codeblock {
+  position: relative;
+}
+
+.ProseMirror .ok-codeblock-pre {
+  background: oklch(0.97 0 0);
+  color: var(--foreground);
+  border: 0;
+  @apply scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/30 dark:scrollbar-thumb-muted-foreground/50;
+}
+
+.dark .ProseMirror .ok-codeblock-pre {
+  background: oklch(0.18 0.005 285);
+  color: oklch(0.92 0 0);
+}
+
+/* Strip the outer-pre fallback chrome — the NodeView's own .ok-codeblock-pre
+   carries the box. */
+.ProseMirror .ok-codeblock pre.ok-codeblock-pre {
+  margin: 0;
+  border-radius: 0.5rem;
+}
+
+/* Title strip above the code body when the fence carries `title="…"`
+   (PRD-6819). Display-only — the editable surface is the title input
+   inside the chrome's settings popover. The strip and the `<pre>` below
+   it form one visual card by squaring the pre's top corners (rule below). */
+.ok-codeblock-title {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 1rem;
+  background: oklch(0.94 0 0);
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  border-radius: 0.5rem 0.5rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  user-select: none;
+}
+
+.dark .ok-codeblock-title {
+  background: oklch(0.22 0.005 285);
+  color: oklch(0.78 0 0);
+}
+
+.ok-codeblock-title-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* Square the pre's top corners when a title strip is rendered above it
+   so the two surfaces share a single visual edge. */
+.ProseMirror .ok-codeblock:has(> .ok-codeblock-title) pre.ok-codeblock-pre {
+  border-radius: 0 0 0.5rem 0.5rem;
+}
+
+/* Hover-revealed chrome bar hosting the language picker, edit-source,
+   preview toggle, settings, Ask AI, copy, and delete affordances. Floats
+   above the block edge (opacity-toggled) so the surface stays clean and
+   the chrome does not overlap a preview iframe's content. */
+.ok-codeblock-chrome {
+  position: absolute;
+  /* Float above the block edge (same visual pattern as the text-selection
+     bubble menu) rather than inside the top-right corner, where the chrome
+     was intrusive over an html preview iframe's content. Flush with the
+     block edge (no gap) so the wrapper's mouseleave doesn't fire while the
+     user's pointer travels from the block up into the chrome buttons. */
+  bottom: 100%;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.1875rem;
+  /* Preserve the visual gap between block and chrome via padding-bottom on
+     the chrome itself, which stays inside the hover-tracked box. Must sit
+     AFTER the `padding` shorthand or biome flags a shorthand-override. */
+  padding-bottom: calc(0.1875rem + 0.375rem);
+  border-radius: 0.375rem;
+  background: var(--popover);
+  border: 1px solid var(--border);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  z-index: 50;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.ProseMirror .ok-codeblock:hover > .ok-codeblock-chrome,
+.ProseMirror .ok-codeblock:focus-within > .ok-codeblock-chrome,
+.ProseMirror .ok-codeblock[data-cursor-inside="true"] > .ok-codeblock-chrome,
+.ProseMirror .ok-codeblock[data-selected="true"] > .ok-codeblock-chrome {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* HTML preview blocks: the iframe fills the block area with its own
+   pointer-events, so the native `:hover` selector never fires on the
+   wrapper. `CodeBlockView` mirrors hover state onto `data-hovered="true"`
+   via native mouseenter/mouseleave listeners so the chrome still reveals
+   on interaction. */
+.ProseMirror .ok-codeblock[data-hovered="true"] > .ok-codeblock-chrome {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ok-codeblock-chrome-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  height: 1.5rem;
+  min-width: 1.5rem;
+  padding: 0 0.375rem;
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 0.6875rem;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition:
+    background-color 0.1s,
+    color 0.1s;
+}
+
+.ok-codeblock-chrome-btn:hover:not(:disabled),
+.ok-codeblock-chrome-btn[data-state="open"] {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+/* Persistent pressed indicator for toggle buttons: preview-shown
+   (`Eye`/`EyeOff`) and settings-carrying-title (`Settings2`) both emit
+   `data-active="true"` when their underlying state is on. Mirrors the
+   sibling `.jsx-chrome-btn[data-active="true"]` treatment so the two
+   chrome surfaces read the same to a user. */
+.ok-codeblock-chrome-btn[data-active="true"] {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.ok-codeblock-chrome-btn:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+.ok-codeblock-chrome-btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.ok-codeblock-chrome-lang {
+  color: var(--foreground);
+  font-weight: 500;
+}
+
+.ok-codeblock-chrome-btn--delete:hover {
+  background: transparent;
+  color: var(--destructive, #ef4444);
+}
+
+/* HTML preview pane — primary surface when language=html + meta has `preview`.
+   Iframe is `sandbox="allow-scripts"` only (null origin) so embedded JS can't
+   reach the parent doc / cookies / auth-bearing fetch surface. The code body
+   is hidden by default in preview mode (see [data-code-visible] selectors
+   below) and toggled visible via the code-icon chrome button. Resize is
+   driven by the shared `ok-resize-overlay` handles (8 corners + edges), not
+   native CSS `resize` — replaces the bottom-only grip with full-axis control
+   and unifies the affordance with `.ok-embed`. */
+.ProseMirror .ok-codeblock > .ok-codeblock-preview {
+  position: relative;
+  /* Track the editor theme so a dark-mode preview does not flash white
+     before / while the iframe document paints (the iframe's own srcDoc sets
+     a themed `body` background once loaded). */
+  background: var(--background);
+  height: 26rem;
+  min-height: 8rem;
+  max-height: 80vh;
+  max-width: 100%;
+  overflow: hidden;
+  @apply scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/30 dark:scrollbar-thumb-muted-foreground/50;
+}
+
+.ok-codeblock-preview--solo {
+  border-radius: 0.5rem;
+}
+
+.ok-codeblock-preview--with-code {
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+}
+
+.ok-codeblock-preview-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  /* Themed so the pre-load iframe surface matches light/dark (see the
+     .ok-codeblock-preview rule above). */
+  background: var(--background);
+}
+
+/* Collapse the code body (PM contentDOM) when preview is active and the
+   user hasn't opted to view source. We keep the <pre> mounted (precedent
+   #30 — never literally `display:none` PM content) and instead clip it
+   to zero height; PM still owns the contentDOM, undo history is stable,
+   caret can re-enter when toggled back on. */
+.ProseMirror .ok-codeblock[data-preview="true"][data-code-visible="false"] > .ok-codeblock-pre {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+  border: 0;
+  pointer-events: none;
+}
+
+/* Inline code */
+.ProseMirror code {
+  background: var(--color-gray-100);
+  border-radius: 0.25em;
+  padding: 0.15em 0.35em;
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+}
+
+.ProseMirror pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* ----------------------------------------------------------------------
+ * Syntax highlighting tokens — highlight.js class names emitted by lowlight
+ * via ProseMirror Decoration.inline. Light & dark palettes mirror the
+ * `github` / `github-dark` hljs themes, tuned to our color tokens.
+ * ---------------------------------------------------------------------- */
+.ProseMirror .ok-codeblock code .hljs-comment,
+.ProseMirror .ok-codeblock code .hljs-quote {
+  color: #6a737d;
+  font-style: italic;
+}
+
+.ProseMirror .ok-codeblock code .hljs-keyword,
+.ProseMirror .ok-codeblock code .hljs-selector-tag,
+.ProseMirror .ok-codeblock code .hljs-doctag,
+.ProseMirror .ok-codeblock code .hljs-formula {
+  color: #d73a49;
+}
+
+.ProseMirror .ok-codeblock code .hljs-name,
+.ProseMirror .ok-codeblock code .hljs-section,
+.ProseMirror .ok-codeblock code .hljs-tag,
+.ProseMirror .ok-codeblock code .hljs-attr,
+.ProseMirror .ok-codeblock code .hljs-template-variable,
+.ProseMirror .ok-codeblock code .hljs-variable {
+  color: #22863a;
+}
+
+.ProseMirror .ok-codeblock code .hljs-string,
+.ProseMirror .ok-codeblock code .hljs-regexp,
+.ProseMirror .ok-codeblock code .hljs-literal,
+.ProseMirror .ok-codeblock code .hljs-meta-string,
+.ProseMirror .ok-codeblock code .hljs-symbol,
+.ProseMirror .ok-codeblock code .hljs-bullet,
+.ProseMirror .ok-codeblock code .hljs-addition {
+  color: #032f62;
+}
+
+.ProseMirror .ok-codeblock code .hljs-number,
+.ProseMirror .ok-codeblock code .hljs-built_in,
+.ProseMirror .ok-codeblock code .hljs-type,
+.ProseMirror .ok-codeblock code .hljs-link {
+  color: #005cc5;
+}
+
+.ProseMirror .ok-codeblock code .hljs-title,
+.ProseMirror .ok-codeblock code .hljs-attribute,
+.ProseMirror .ok-codeblock code .hljs-meta {
+  color: #6f42c1;
+}
+
+/* Descendant-combinator selectors come AFTER the simple-class rules so
+   document order matches specificity order (biome's noDescendingSpecificity).
+   `.hljs-class .hljs-title` paints class names in number-blue;
+   `.hljs-function .hljs-title` keeps function names in title-purple. */
+.ProseMirror .ok-codeblock code .hljs-class .hljs-title {
+  color: #005cc5;
+}
+
+.ProseMirror .ok-codeblock code .hljs-function .hljs-title {
+  color: #6f42c1;
+}
+
+.ProseMirror .ok-codeblock code .hljs-deletion {
+  color: #b31d28;
+  background: #ffeef0;
+}
+
+.ProseMirror .ok-codeblock code .hljs-emphasis {
+  font-style: italic;
+}
+
+.ProseMirror .ok-codeblock code .hljs-strong {
+  font-weight: 600;
+}
+
+/* Dark mode */
+.dark .ProseMirror .ok-codeblock code .hljs-comment,
+.dark .ProseMirror .ok-codeblock code .hljs-quote {
+  color: #8b949e;
+}
+
+.dark .ProseMirror .ok-codeblock code .hljs-keyword,
+.dark .ProseMirror .ok-codeblock code .hljs-selector-tag,
+.dark .ProseMirror .ok-codeblock code .hljs-doctag,
+.dark .ProseMirror .ok-codeblock code .hljs-formula {
+  color: #ff7b72;
+}
+
+.dark .ProseMirror .ok-codeblock code .hljs-name,
+.dark .ProseMirror .ok-codeblock code .hljs-section,
+.dark .ProseMirror .ok-codeblock code .hljs-tag,
+.dark .ProseMirror .ok-codeblock code .hljs-attr,
+.dark .ProseMirror .ok-codeblock code .hljs-template-variable,
+.dark .ProseMirror .ok-codeblock code .hljs-variable {
+  color: #7ee787;
+}
+
+.dark .ProseMirror .ok-codeblock code .hljs-string,
+.dark .ProseMirror .ok-codeblock code .hljs-regexp,
+.dark .ProseMirror .ok-codeblock code .hljs-literal,
+.dark .ProseMirror .ok-codeblock code .hljs-meta-string,
+.dark .ProseMirror .ok-codeblock code .hljs-symbol,
+.dark .ProseMirror .ok-codeblock code .hljs-bullet,
+.dark .ProseMirror .ok-codeblock code .hljs-addition {
+  color: #a5d6ff;
+}
+
+.dark .ProseMirror .ok-codeblock code .hljs-number,
+.dark .ProseMirror .ok-codeblock code .hljs-built_in,
+.dark .ProseMirror .ok-codeblock code .hljs-type,
+.dark .ProseMirror .ok-codeblock code .hljs-link {
+  color: #79c0ff;
+}
+
+.dark .ProseMirror .ok-codeblock code .hljs-title,
+.dark .ProseMirror .ok-codeblock code .hljs-attribute,
+.dark .ProseMirror .ok-codeblock code .hljs-meta {
+  color: #d2a8ff;
+}
+
+/* Descendant-combinator selectors come AFTER the simple-class rules so
+   document order matches specificity order (biome's noDescendingSpecificity). */
+.dark .ProseMirror .ok-codeblock code .hljs-class .hljs-title {
+  color: #79c0ff;
+}
+
+.dark .ProseMirror .ok-codeblock code .hljs-function .hljs-title {
+  color: #d2a8ff;
+}
+
+.dark .ProseMirror .ok-codeblock code .hljs-deletion {
+  color: #ffa198;
+  background: rgba(248, 81, 73, 0.15);
+}

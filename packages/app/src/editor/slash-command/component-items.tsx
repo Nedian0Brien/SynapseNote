@@ -494,7 +494,7 @@ function createInsertCommand(
     const inserted = createChildNode(descriptor.name);
     const insertedAttrs = (inserted.attrs ?? {}) as Record<string, unknown>;
     insertedAttrs.props = {
-      ...((insertedAttrs.props as Record<string, unknown> | undefined) ?? {}),
+      ...(insertedAttrs.props as Record<string, unknown> | undefined),
       ...propOverrides,
     };
     if (descriptor.name === 'Tabs') {

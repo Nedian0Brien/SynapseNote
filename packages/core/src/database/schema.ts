@@ -2426,6 +2426,12 @@ export const DatabaseLinkedViewSettingsSchema = z
       })
       .strict()
       .optional(),
+    /**
+     * Linked-table-only manual order. Query execution intentionally ignores
+     * this list; the inline client applies it after projection so canonical
+     * source order and saved-view sorting remain unchanged.
+     */
+    manualRecordIds: z.array(DatabaseRecordIdSchema).max(100_000).optional(),
     openBehavior: DatabaseViewOpenBehaviorSchema.optional(),
   })
   .strict();

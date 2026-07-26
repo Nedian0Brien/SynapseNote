@@ -29,7 +29,10 @@ import { ShareReceiveMissPanel } from '@/components/ShareReceiveMissPanel';
 import { SkillFileViewer } from '@/components/SkillFileViewer';
 import { SettingsDialogShell } from '@/components/settings/SettingsDialogShell';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { useDocumentContext, useDocumentTransition } from '@/editor/DocumentContext';
+import { useDocumentTransition } from '@/editor/DocumentContext';
+import { useDocumentCollaboration } from '@/editor/document-context/useDocumentCollaboration';
+import { useDocumentNavigation } from '@/editor/document-context/useDocumentNavigation';
+import { useDocumentPanels } from '@/editor/document-context/useDocumentPanels';
 import { FindReplaceController } from '@/editor/find-replace/FindReplaceController';
 import { mountPromiseHasResolved } from '@/editor/mount-promise';
 import { syncPromiseHasResolved } from '@/editor/sync-promise';
@@ -190,15 +193,9 @@ function EditorAreaInner({
   // bottom dock (TerminalDock applies the same fill). Without it the strip shows
   // the app background and reads as a black seam above the terminal.
   const xtermBackground = xtermThemeForMode(resolvedTheme).background;
-  const {
-    activeDocName,
-    activeProvider,
-    activeTarget,
-    recycleDocument,
-    docPanelMode,
-    docPanelAgentId,
-    docPanelExpandSignal,
-  } = useDocumentContext();
+  const { activeDocName, activeTarget } = useDocumentNavigation();
+  const { activeProvider, recycleDocument } = useDocumentCollaboration();
+  const { docPanelMode, docPanelAgentId, docPanelExpandSignal } = useDocumentPanels();
   const activePdfAsset =
     activeTarget?.kind === 'asset' && activeTarget.mediaKind === 'pdf' ? activeTarget : null;
   const [pdfPanelContainer, setPdfPanelContainer] = useState<HTMLElement | null>(null);
@@ -1098,7 +1095,7 @@ function EditorAreaInner({
           {/* Floats over the bottom of the scroll area (an absolute overlay, like
               the toolbar at the top) so content scrolls under its faded top edge.
               BottomComposer publishes its measured height as `--ask-composer-height`
-              and globals.css pads the editor content by it so the last lines clear
+              and `styles/shell/editor-layout.css` pads the editor content by it so the last lines clear
               the card; the var clears on collapse, reclaiming the space. */}
           {showBottomComposer ? (
             <BottomComposer

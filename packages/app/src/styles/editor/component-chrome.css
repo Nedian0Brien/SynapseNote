@@ -1,0 +1,460 @@
+/* 7. Component block chrome — all overlays, zero permanent layout shift.
+ * Principle: components render exactly like production. Editor affordances
+ * are hover-revealed overlays (badge+gear, add-child pill, subtle hover tint). */
+
+.ProseMirror .jsx-component-wrapper {
+  position: relative;
+  border-radius: 0.375rem;
+  /* Reserve vertical space above each component wrapper for the chrome
+   * bar (`.jsx-component-chrome` floats at `top: -11px`, ~28px tall, so
+   * it extends ~11-39px above the wrapper). Without this gap, the bar
+   * visually overlaps the previous block's bottom AND gets clipped at
+   * the editor's scroll-top edge when the wrapper is the first block.
+   * The Tailwind class on the element (`my-2` = 0.5rem each side) is
+   * insufficient for the bar's 11px above-wrapper extension; this rule
+   * overrides via descendant-selector specificity (0,2,0 vs 0,1,0).
+   * Symmetric block spacing — both top and bottom — keeps the visual
+   * weight consistent block-to-block. */
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
+  /* Establishes a stacking context for the behind-content halo (§7a).
+   * `position: relative` alone is NOT sufficient: with `z-index: auto`
+   * the wrapper doesn't open its own stacking context, so the `::after`
+   * at `z-index: -1` escapes to the viewport root and paints BEHIND
+   * `body { background-color: ... }` — the halo becomes invisible.
+   * `isolation: isolate` creates a stacking context without affecting
+   * z-index cascade for siblings, trapping the halo at -1 behind the
+   * wrapper's own content but above the body background. SPEC §3.3
+   * T10 evidence assumed `position: relative` was enough; it's not. */
+  isolation: isolate;
+}
+/* Child component drag prevention is handled via onDragStart={preventDefault}
+   on the NodeViewWrapper in JsxComponentView.tsx. CSS-level -webkit-user-drag
+   was removed due to Biome lint incompatibility. */
+/* Invisible hover zone above the component — allows reaching the parent's
+   chrome bar even when children fill the entire block. Does NOT affect
+   layout (position:absolute + negative top, zero height in flow). */
+.ProseMirror .jsx-component-wrapper::before {
+  content: "";
+  position: absolute;
+  top: -12px;
+  left: 0;
+  right: 0;
+  height: 12px;
+  z-index: 9;
+}
+
+/* 7a. Selection halo — per-block-type tokens, behind-content (T10),
+ * transparent-outline placeholder (T3), forced-colors compliant,
+ * reduced-motion gated, compositor-safe opacity transition.
+ *
+ * Consumes data-* attrs emitted by JsxComponentView from SelectionStatePlugin
+ * (see selection-state-plugin.ts). The pseudo-element is `::after` because
+ * `::before` is already used above as an invisible hover hit-zone; the
+ * T10 (behind-content) + T3 (transparent-outline) architecture is identical
+ * either way — only the name differs from the reference SPEC.
+ *
+ * Per-type tuning is opt-in via --selection-halo-* custom properties scoped
+ * under [data-component-type="..."]. Pre-US-004 this pattern was described
+ * as "extends the fumadocs token bridge"; the bridge itself was removed
+ * alongside the fumadocs-ui React deps in D-MF2 / FR-13, leaving only the
+ * per-type custom-property overlay shape. */
+.ProseMirror .jsx-component-wrapper {
+  /* Default halo tokens (overridden per component type below). */
+  --selection-halo-inset: -4px;
+  --selection-halo-radius: calc(0.375rem + 4px);
+  --selection-halo-color: var(--ring);
+  --selection-halo-opacity: 0;
+  --selection-halo-width: 2px;
+}
+
+.ProseMirror .jsx-component-wrapper::after {
+  content: "";
+  position: absolute;
+  inset: var(--selection-halo-inset);
+  /* T3: transparent-outline placeholder — forced-colors mode forces
+     border-color, making the element visible in Windows High Contrast
+     even when the browser strips box-shadow. */
+  border: var(--selection-halo-width) solid transparent;
+  border-radius: var(--selection-halo-radius);
+  opacity: var(--selection-halo-opacity);
+  pointer-events: none;
+  /* T10: behind-content — halo paints below the wrapper's chrome and its
+     own content, so Card/Accordion/Callout borders don't stack a second
+     ring. Requires position:relative on the wrapper (set above) + the
+     wrapper having a transparent default background (it does). */
+  z-index: -1;
+  box-sizing: border-box;
+}
+
+/* Compositor-safe fade — only animate when motion is welcome. */
+@media (prefers-reduced-motion: no-preference) {
+  .ProseMirror .jsx-component-wrapper::after {
+    /* Use the repo's custom easing token (defined in foundation/tokens.css) — matches the
+       Emil Kowalski "strong ease-out" used by every other interactive
+       transition in this file (7 usages incl. Popover, Callout). */
+    transition: opacity 180ms var(--ease-out-strong);
+  }
+}
+
+/* Paint the halo for the innermost selected wrapper. */
+.ProseMirror .jsx-component-wrapper[data-selected="true"]::after {
+  --selection-halo-opacity: 1;
+  border-color: var(--selection-halo-color);
+}
+
+/* Innermost-wins defense-in-depth: the plugin never sets both attrs on the
+ * same wrapper (store-enforced), but if a future refactor were to regress
+ * that invariant, this rule keeps only the innermost halo visible. */
+.ProseMirror .jsx-component-wrapper[data-has-child-selected="true"][data-selected="true"]::after {
+  --selection-halo-opacity: 0;
+}
+
+/* Drag suppresses the halo + transition (Vaul pattern — halo re-appears
+ * cleanly on drop rather than fading during the gesture). */
+.ProseMirror .jsx-component-wrapper[data-dragging="true"]::after {
+  --selection-halo-opacity: 0;
+  transition: none;
+}
+
+/* Forced-colors (Windows High Contrast): CanvasText is the current system
+ * foreground color, guaranteed visible regardless of WHCM theme. */
+@media (forced-colors: active) {
+  .ProseMirror .jsx-component-wrapper[data-selected="true"]::after {
+    border-color: CanvasText;
+  }
+}
+
+/* Soft "in your range" halo for JSX wrappers covered by a TextSelection /
+ * AllSelection. The wrapper's chrome is contentEditable=false, so the
+ * browser-native text highlight never reaches it; this rule paints a
+ * subtle filled treatment so range-encompass is visually legible.
+ *
+ * Painted via `background` on the ::after pseudo-element (not the wrapper)
+ * so it composes with the existing inset / radius / z-index:-1 tokens —
+ * the soft tone tucks behind the wrapper content the same way the full
+ * halo does. Specificity-wise, when both attributes happen to be set the
+ * full halo wins (selectedness > range-encompass); the `:not()` guard
+ * makes the intent explicit at the CSS layer in case a future code path
+ * sets both attrs simultaneously. */
+.ProseMirror .jsx-component-wrapper[data-range-selected="true"]:not([data-selected="true"])::after {
+  background: var(--selection-soft);
+  opacity: 1;
+}
+
+/* Forced-colors (Windows High Contrast): use the system Highlight color so
+ * the in-range halo remains visible when the user's OS forces a high-
+ * contrast palette. The `:not()` guard mirrors the standard rule above:
+ * keeps the soft in-range tint from compositing with the full-halo
+ * selection paint if a future code path were to set both attributes. */
+@media (forced-colors: active) {
+  .ProseMirror
+    .jsx-component-wrapper[data-range-selected="true"]:not([data-selected="true"])::after {
+    background: Highlight;
+    opacity: 0.5;
+  }
+}
+
+/* Per-block-type tuning. Media blocks (Image, Video) keep a tighter
+ * border-radius that matches their inner element's corner geometry; the
+ * halo inset itself is uniform across all substrates (set on the wrapper
+ * default at the top of this block). Callouts read --callout-type-color
+ * (set inline by the DIY Callout renderer) so the halo matches the
+ * callout's chroma; the fallback to var(--ring) covers unregistered /
+ * wildcard paths. Other substrates fall through to the wildpath defaults. */
+.ProseMirror .jsx-component-wrapper[data-component-type="img"] {
+  --selection-halo-radius: calc(0.625rem + 2px);
+}
+
+.ProseMirror .jsx-component-wrapper[data-component-type="video"] {
+  --selection-halo-radius: calc(0.625rem + 2px);
+}
+
+/* Math block — KaTeX's default `.math-display` has zero vertical
+ * padding, so a block formula sits flush against the surrounding
+ * prose (the parent `.jsx-component-wrapper`'s `my-2` covers the
+ * outer gap, but the formula's *content box* still touches the
+ * wrapper's top + bottom edges, reading as cramped — especially when
+ * two `$$…$$` blocks land back-to-back). 0.75rem of vertical padding
+ * gives the formula breathing room without changing the block's
+ * horizontal centering or the wrapper's selection-halo radius. */
+.ProseMirror [data-component-type="math"].math-display {
+  padding: 0.75rem 0;
+}
+
+/* Audio shrinks the wrapper to the rendered media's actual width so
+   the selection halo and chrome bar (positioned at right: 0) hug the
+   audio element instead of the full editor column. Text-heavy types
+   (Callout, Accordion, etc.) intentionally fill the column and are
+   not listed here.
+
+   Image and video are excluded from fit-content for two different
+   reasons:
+   - Image: arbitrarily small (down to 1px decorative PNGs); a
+     fit-content wrapper collapses to those dimensions, causing the
+     right-anchored chrome bar (~120px wide) to overlap the image's
+     click area.
+   - Video: PropPanel anchors to the wrapper; a fit-content wrapper
+     shrinks/grows as the author edits the video's `width` prop,
+     causing the floating PropPanel to jump on every keystroke
+     (PRD-6822). Column-width wrapper keeps the panel anchor stable.
+
+   Both img and video use the text-align-on-wrapper alignment shape
+   (see the `[data-align]` rules below) so the chrome bar sits at the
+   column's right edge while the media moves left / center / right
+   within the column. */
+.ProseMirror .jsx-component-wrapper[data-component-type="audio"] {
+  width: fit-content;
+  max-width: 100%;
+}
+
+/* Image alignment within the column. Driven by `data-align` on the
+ * `JsxComponentView` wrapper, which is set from the descriptor's `align`
+ * prop (`htmlImgProps`, default `center`). Both descriptors that render
+ * as an image — the `img` canonical AND the `CommonMarkImage` compat
+ * (`![alt](src)` form) — get the alignment surface; the chrome-bar click
+ * handler upgrades a CommonMarkImage to `img` on first non-default
+ * alignment so the value persists through serialization.
+ *
+ * Implemented via `text-align` on the wrapper (the inline `<img>` inside
+ * is centered/left/right via inline-content alignment). This is
+ * deliberately DIFFERENT from the `width: fit-content + margin: auto`
+ * approach — that would shrink the wrapper to the image's natural
+ * dimensions, causing the right-anchored chrome bar (~120px wide,
+ * `top: -11px`) to overlap the image's click region for small images.
+ * The decorative-PNG comment on the `data-component-type="video|audio"`
+ * fit-content rule above was written to protect against exactly this
+ * overlap; `text-align` keeps the wrapper at its natural column width
+ * so the chrome bar stays at the column's right edge while the image
+ * sits left/center/right inside. */
+.ProseMirror .jsx-component-wrapper[data-component-type="img"][data-align="left"],
+.ProseMirror .jsx-component-wrapper[data-component-type="commonmarkimage"][data-align="left"] {
+  text-align: left;
+}
+.ProseMirror .jsx-component-wrapper[data-component-type="img"][data-align="center"],
+.ProseMirror .jsx-component-wrapper[data-component-type="commonmarkimage"][data-align="center"] {
+  text-align: center;
+}
+.ProseMirror .jsx-component-wrapper[data-component-type="img"][data-align="right"],
+.ProseMirror .jsx-component-wrapper[data-component-type="commonmarkimage"][data-align="right"] {
+  text-align: right;
+}
+/* Tailwind v4 preflight sets `img { display: block }` (to fix the
+ * baseline-descender gap when img sits next to text). Block elements
+ * ignore the parent's `text-align`, which silently breaks the three
+ * alignment rules above. Override to `inline-block` ONLY inside an
+ * alignment-bearing image wrapper so the `text-align` can center /
+ * left / right the img — Tailwind's block default stays in place for
+ * every other img on the page. */
+.ProseMirror .jsx-component-wrapper[data-component-type="img"][data-align] img,
+.ProseMirror .jsx-component-wrapper[data-component-type="commonmarkimage"][data-align] img {
+  display: inline-block;
+}
+
+/* Embed alignment — text-align on the wrapper centers/lefts/rights the
+   inline-block embed pane inside the column. Mirrors the img/CommonMarkImage
+   rules above. */
+.ProseMirror .jsx-component-wrapper[data-component-type="embed"][data-align="left"] {
+  text-align: left;
+}
+.ProseMirror .jsx-component-wrapper[data-component-type="embed"][data-align="center"] {
+  text-align: center;
+}
+.ProseMirror .jsx-component-wrapper[data-component-type="embed"][data-align="right"] {
+  text-align: right;
+}
+
+/* Video alignment — parity with img + embed (PRD-6822). `text-align` on the
+   wrapper centers / lefts / rights the inline-block `.ok-video` child inside
+   the column. The wrapper stays at column width (no fit-content) so the
+   right-anchored chrome bar and the floating PropPanel stay column-stable
+   while the author tweaks the video's `width` prop. */
+.ProseMirror .jsx-component-wrapper[data-component-type="video"][data-align="left"] {
+  text-align: left;
+}
+.ProseMirror .jsx-component-wrapper[data-component-type="video"][data-align="center"] {
+  text-align: center;
+}
+.ProseMirror .jsx-component-wrapper[data-component-type="video"][data-align="right"] {
+  text-align: right;
+}
+
+/* Embed pane — `display: inline-block` so the `text-align` alignment rules
+   above can center / left / right the pane within the column. Resize is
+   driven by the `ok-resize-overlay` handles (see below), not native CSS
+   `resize` — the handles work on all 4 sides + 4 corners and don't
+   require the user to find the bottom-right grip. */
+.ProseMirror .ok-embed {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 12rem;
+  min-height: 8rem;
+  max-height: 80vh;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+
+.ProseMirror .ok-embed-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  /* Match the wrapper background while the cross-origin page loads —
+     hardcoded `white` flashes a light rectangle in dark mode. The
+     embedded page renders its own background on load and covers this. */
+  background: var(--background);
+}
+
+/* Placeholder shown for a fresh `<Embed />` with no src yet. Kept in a
+   single matched-color box so the slash-insert UX is recognisable. */
+.ProseMirror .ok-embed--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 8rem;
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+/* -----------------------------------------------------------------------
+ * Resize handles — shared 8-grip overlay for rich blocks (Embed, codeblock
+ * preview, …). Inactive until the host wrapper is hovered / cursor-inside /
+ * NodeSelected; the handles fade in via opacity so resting state stays
+ * uncluttered. Each handle is a small absolutely-positioned hit target.
+ *
+ * Corners render as L-shaped brackets (matching the visual mock); edges
+ * render as thin lines centred on each side. All 8 share the same hover
+ * tint so the affordance reads consistently.
+ * --------------------------------------------------------------------- */
+.ok-resize-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.ok-resize-handle {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--border);
+  opacity: 0;
+  transition:
+    opacity 0.15s,
+    color 0.1s;
+  pointer-events: none;
+}
+
+/* Honor the user's reduced-motion preference. Matches the codebase
+   pattern applied to every other transition in this file. */
+@media (prefers-reduced-motion: reduce) {
+  .ok-resize-handle {
+    transition: none;
+  }
+}
+
+/* Edge handles — thin centred lines spanning ~40% of the side. Larger
+   invisible hit-target padding makes them grabbable without precision. */
+.ok-resize-handle--t,
+.ok-resize-handle--b {
+  left: 30%;
+  right: 30%;
+  height: 8px;
+  background: currentColor;
+  border-radius: 4px;
+}
+.ok-resize-handle--t {
+  top: -4px;
+}
+.ok-resize-handle--b {
+  bottom: -4px;
+}
+
+.ok-resize-handle--l,
+.ok-resize-handle--r {
+  top: 30%;
+  bottom: 30%;
+  width: 8px;
+  background: currentColor;
+  border-radius: 4px;
+}
+.ok-resize-handle--l {
+  left: -4px;
+}
+.ok-resize-handle--r {
+  right: -4px;
+}
+
+/* Corner handles — L-shaped brackets. Drawn with a 14×14 box whose two
+   visible borders form the bracket; the inside is transparent. */
+.ok-resize-handle--tl,
+.ok-resize-handle--tr,
+.ok-resize-handle--bl,
+.ok-resize-handle--br {
+  width: 14px;
+  height: 14px;
+  background: transparent;
+  border: 0;
+}
+
+.ok-resize-handle--tl {
+  top: -1px;
+  left: -1px;
+  border-top: 2px solid currentColor;
+  border-left: 2px solid currentColor;
+  border-top-left-radius: 4px;
+}
+.ok-resize-handle--tr {
+  top: -1px;
+  right: -1px;
+  border-top: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  border-top-right-radius: 4px;
+}
+.ok-resize-handle--bl {
+  bottom: -1px;
+  left: -1px;
+  border-bottom: 2px solid currentColor;
+  border-left: 2px solid currentColor;
+  border-bottom-left-radius: 4px;
+}
+.ok-resize-handle--br {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  border-bottom-right-radius: 4px;
+}
+
+/* Hover-on-host reveal. Host is the resizable component's wrapper
+   (`.ok-embed`, `.ok-codeblock-preview`, etc.). The handle pointer-events
+   only enable while visible so the wrapper's normal interactions
+   (iframe clicks, text selection) work in resting state. */
+.ProseMirror .ok-embed:hover .ok-resize-handle,
+.ProseMirror .ok-embed:focus-within .ok-resize-handle,
+.ProseMirror .ok-codeblock-preview:hover .ok-resize-handle,
+.ProseMirror .ok-codeblock[data-cursor-inside="true"] .ok-codeblock-preview .ok-resize-handle,
+.ProseMirror .jsx-component-wrapper[data-selected="true"] .ok-resize-handle {
+  opacity: 1;
+  pointer-events: auto;
+  color: var(--ring, oklch(0.55 0.18 250));
+}
+
+.ok-resize-handle:hover {
+  color: var(--ring, oklch(0.55 0.18 250));
+}
+
+.ProseMirror .jsx-component-wrapper[data-component-type="callout"],
+.ProseMirror .jsx-component-wrapper[data-component-type="gfmcallout"] {
+  --selection-halo-color: var(--callout-type-color, var(--ring));
+  --selection-halo-radius: calc(0.625rem + 4px);
+}
+
+.ProseMirror .jsx-component-wrapper[data-component-type="accordion"] {
+  --selection-halo-radius: calc(0.625rem + 4px);
+}

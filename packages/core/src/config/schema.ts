@@ -246,9 +246,10 @@ export const ConfigSchema = z.looseObject({
         .optional(),
     })
     .default({ preview: { autoOpen: true } }),
-  // USER-scope: source-editor word wrap is a personal reading/editing
-  // preference, not project content. Default true preserves the historical
-  // CodeMirror behavior until a user explicitly disables it.
+  // USER-scope: source-editor word wrap and sidebar document-open behavior are
+  // personal navigation/editing preferences, not project content. New sidebar
+  // document selections default to their own tab; users who prefer the prior
+  // single-tab workflow can opt back into replacing the current tab.
   editor: z
     .looseObject({
       wordWrap: z
@@ -261,8 +262,18 @@ export const ConfigSchema = z.looseObject({
             'Soft-wrap long lines in the source (CodeMirror) editor. A personal preference (user scope).',
         })
         .default(true),
+      sidebarOpenBehavior: z
+        .enum(['new-tab', 'current-tab'])
+        .register(fieldRegistry, {
+          scope: 'user',
+          agentSettable: false,
+          defaultScope: 'user',
+          description:
+            "How documents selected in the left sidebar open: 'new-tab' keeps the current tab and opens the document in another tab, while 'current-tab' replaces the active tab. A personal preference (user scope).",
+        })
+        .default('new-tab'),
     })
-    .default({ wordWrap: true }),
+    .default({ wordWrap: true, sidebarOpenBehavior: 'new-tab' }),
   // USER-scope: auto-approve SynapseNote's OWN MCP tools (and, on Claude, the
   // `ok open` verb) for agents launched from the docked terminal, so the KB
   // read/write loop runs without a per-call approval wall. Destructive/exfil OK

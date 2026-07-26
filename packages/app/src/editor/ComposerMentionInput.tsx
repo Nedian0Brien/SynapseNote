@@ -116,7 +116,7 @@ export function ComposerMentionInput({
         'aria-multiline': 'true',
         // `composer-prosemirror` resets the document-editor `.ProseMirror`
         // sizing (200px min-height, the drag-handle margin/padding) so the
-        // composer rests at a single slim line — see globals.css.
+        // composer rests at a single slim line — see `styles/editor/prose-base.css`.
         class: cn('composer-prosemirror py-1 outline-none'),
       },
       handleKeyDown: (view, event) => {

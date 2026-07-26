@@ -92,6 +92,7 @@
         "@embedpdf/plugin-interaction-manager": "2.14.4",
         "@embedpdf/plugin-render": "2.14.4",
         "@embedpdf/plugin-scroll": "2.14.4",
+        "@embedpdf/plugin-search": "2.14.4",
         "@embedpdf/plugin-selection": "2.14.4",
         "@embedpdf/plugin-spread": "2.14.4",
         "@embedpdf/plugin-thumbnail": "2.14.4",
@@ -166,6 +167,7 @@
         "react-medium-image-zoom": "^5.4.3",
         "react-resizable-panels": "^4.9.0",
         "remark-gfm": "^4.0.1",
+        "remark-math": "^6.0.0",
         "scheduler-polyfill": "^1.3.0",
         "shadcn": "^4.2.0",
         "sonner": "^2.0.7",
@@ -721,6 +723,8 @@
     "@embedpdf/plugin-render": ["@embedpdf/plugin-render@2.14.4", "", { "dependencies": { "@embedpdf/models": "2.14.4" }, "peerDependencies": { "@embedpdf/core": "2.14.4", "preact": "^10.26.4", "react": ">=16.8.0", "react-dom": ">=16.8.0", "svelte": ">=5 <6", "vue": ">=3.2.0" } }, "sha512-KNY3EGYf9SRqtDBOEO9mR3Hyv9mN8TaC3ztERj0BX8zra7mkjkQnhGQlMxif1dGOoTD9XIcPqJvaw8o7PWDJDw=="],
 
     "@embedpdf/plugin-scroll": ["@embedpdf/plugin-scroll@2.14.4", "", { "dependencies": { "@embedpdf/models": "2.14.4" }, "peerDependencies": { "@embedpdf/core": "2.14.4", "@embedpdf/plugin-viewport": "2.14.4", "preact": "^10.26.4", "react": ">=16.8.0", "react-dom": ">=16.8.0", "svelte": ">=5 <6", "vue": ">=3.2.0" } }, "sha512-0JgPwnQqB9THKJt/mOubgFkiTcCkOI6kFCZz8zlwl88DAJcUbdhJoTwCJZ2STYSfECTLB4ZFjb5fZ9AXyfkf0g=="],
+
+    "@embedpdf/plugin-search": ["@embedpdf/plugin-search@2.14.4", "", { "dependencies": { "@embedpdf/models": "2.14.4" }, "peerDependencies": { "@embedpdf/core": "2.14.4", "preact": "^10.26.4", "react": ">=16.8.0", "react-dom": ">=16.8.0", "svelte": ">=5 <6", "vue": ">=3.2.0" } }, "sha512-ErRlg0MKLxZ0c4OKk5RjPOV8f8yCaqFi6zqUxBI49/3yN6wDINKvm8dxt5Q2QGUa740n/XylT5BTbjH6lAjCzQ=="],
 
     "@embedpdf/plugin-selection": ["@embedpdf/plugin-selection@2.14.4", "", { "dependencies": { "@embedpdf/models": "2.14.4", "@embedpdf/utils": "2.14.4" }, "peerDependencies": { "@embedpdf/core": "2.14.4", "@embedpdf/plugin-interaction-manager": "2.14.4", "preact": "^10.26.4", "react": ">=16.8.0", "react-dom": ">=16.8.0", "svelte": ">=5 <6", "vue": ">=3.2.0" } }, "sha512-8w6ZUdwRcBhNCQjlS8mFvsMXI/wr1Q7DljwlFmKaEQyM9vXm2rI9WGN0z9ffjKHlsYn0yg98pqyPLtTevH1P7Q=="],
 

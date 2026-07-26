@@ -142,7 +142,8 @@ test.describe('chrome-modernization theme-sync smoke', () => {
 
     // FOUC ran with `window.okDesktop` present — proves the inline script
     // in `packages/app/index.html` engaged the alpha-aware retrofit.
-    // Without this class, the `html.electron-mode` rules in globals.css
+    // Without this class, the `html.electron-mode` rules in
+    // `packages/app/src/styles/foundation/platform-electron.css`
     // never apply and the chrome reverts to the solid web-mode treatment.
     const electronModeOnHtml = await editorPage.evaluate(() =>
       document.documentElement.classList.contains('electron-mode'),

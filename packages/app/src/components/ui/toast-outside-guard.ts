@@ -10,7 +10,7 @@ type InteractOutsideHandler = NonNullable<
  * sonner toaster don't dismiss the surrounding modal layer.
  *
  * Sonner renders its toaster in a portal on <body>, outside any dialog/sheet.
- * globals.css keeps toasts interactive under a modal layer
+ * `styles/overrides/third-party.css` keeps toasts interactive under a modal layer
  * (`[data-sonner-toast] { pointer-events: auto }`) so their close / action
  * buttons work even while `body { pointer-events: none }` is set — but that
  * also makes a click or focus on a toast an "outside" interaction that Radix

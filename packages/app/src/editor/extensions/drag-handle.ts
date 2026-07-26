@@ -36,17 +36,16 @@ import { type Editor, Extension } from '@tiptap/core';
 import { DragHandlePlugin, normalizeNestedOptions } from '@tiptap/extension-drag-handle';
 import type { Node as PmNode } from '@tiptap/pm/model';
 import { TextSelection } from '@tiptap/pm/state';
+import {
+  INTERACTION_HANDLE_BODY_LINE_HEIGHT,
+  INTERACTION_HANDLE_EDITOR_GAP,
+  INTERACTION_HANDLE_HEIGHT,
+  INTERACTION_HANDLE_MAX_SINGLE_LINE_HEIGHT,
+} from '@/lib/interaction-handle-geometry';
 import { OPT_OUT_ATTR } from '../clipboard/index.ts';
+import { createInteractionHandleElement } from '../interaction-handle/create-interaction-handle-element';
 import { getDescriptor } from '../registry/index.ts';
 import { createChildNode, focusInsertedComponent } from '../slash-command/component-items.tsx';
-
-// Height of the handle element (matches .ok-block-controls button height: 20px in globals.css).
-const HANDLE_HEIGHT = 20;
-// Approximate height of a single line at the largest heading size (h1: 1.5em × line-height 1.7 ≈ 41px).
-// Blocks taller than this are multiline — use BODY_LINE_HEIGHT instead to stay on the first line.
-const MAX_SINGLE_LINE_HEIGHT = 44;
-// Body text line height: 16px base × line-height: 1.7 ≈ 27px. Used for multiline blocks.
-const BODY_LINE_HEIGHT = 28;
 
 /**
  * Build the grip's `aria-label` for the currently-hovered block. For
@@ -79,46 +78,17 @@ function createBlockControlsElement(): {
   addBtn: HTMLButtonElement;
   grip: HTMLButtonElement;
 } {
-  const container = document.createElement('div');
-  container.className = 'ok-block-controls';
+  const {
+    container,
+    addButton: addBtn,
+    grip,
+  } = createInteractionHandleElement({
+    optOutAttribute: OPT_OUT_ATTR,
+  });
   // Defensive: if floating-ui ever positions the handle inside the editor
   // doc tree (today it's mounted on `editor.view.dom.parentElement`, so the
   // walker's slice iteration won't traverse it), the opt-out attribute
   // closes the leak by construction.
-  container.setAttribute(OPT_OUT_ATTR, 'true');
-  // Start hidden so the element isn't visible at position 0,0 before floating-ui
-  // has a reference block to position against on initial mount.
-  container.style.visibility = 'hidden';
-
-  const addBtn = document.createElement('button');
-  addBtn.className = 'ok-add-block-btn';
-  addBtn.setAttribute('aria-label', 'Add block below');
-  addBtn.setAttribute('type', 'button');
-  addBtn.innerHTML = `<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`;
-
-  // Prevent mousedown from initiating a drag operation on the container
-  addBtn.addEventListener('mousedown', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  });
-
-  // <button> (not <div>) so the interactive grip is discoverable to assistive
-  // tech and reachable via standard button semantics. `tabindex="-1"` keeps it
-  // out of the global Tab order — the canonical keyboard path to NodeSelect
-  // a block is the L2 arrow-key navigation; the grip is a mouse affordance.
-  // The wrapping container has `draggable=true`, so HTML5 drag on the grip
-  // still initiates a drag at the container layer — no `mousedown.preventDefault`
-  // here (that pattern on `addBtn` is what suppresses drag for the + button).
-  const grip = document.createElement('button');
-  grip.className = 'ok-drag-grip';
-  grip.setAttribute('type', 'button');
-  grip.setAttribute('aria-label', 'Select block');
-  grip.setAttribute('tabindex', '-1');
-  grip.innerHTML = `<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grip-vertical-icon lucide-grip-vertical"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>`;
-
-  container.appendChild(addBtn);
-  container.appendChild(grip);
-
   return { container, addBtn, grip };
 }
 
@@ -250,12 +220,12 @@ export const BlockDragHandle = Extension.create({
           middleware: [
             offset(({ rects }) => {
               const firstLineHeight =
-                rects.reference.height <= MAX_SINGLE_LINE_HEIGHT
+                rects.reference.height <= INTERACTION_HANDLE_MAX_SINGLE_LINE_HEIGHT
                   ? rects.reference.height
-                  : BODY_LINE_HEIGHT;
+                  : INTERACTION_HANDLE_BODY_LINE_HEIGHT;
               return {
-                mainAxis: 10,
-                crossAxis: (firstLineHeight - HANDLE_HEIGHT) / 2,
+                mainAxis: INTERACTION_HANDLE_EDITOR_GAP,
+                crossAxis: (firstLineHeight - INTERACTION_HANDLE_HEIGHT) / 2,
               };
             }),
           ],

@@ -65,7 +65,14 @@
     "build": "tsdown && bun run build:skill-bundles",
     "build:skill-bundles": "bun scripts/build-skill-bundles.ts",
     "typecheck": "tsc --noEmit",
-    "test": "bun test --timeout 30000"
+    "test": "bun scripts/run-server-test-task.ts all",
+    "test:manifest": "bun scripts/run-server-test-task.ts --list",
+    "test:unit": "bun scripts/run-server-test-task.ts unit",
+    "test:database": "bun scripts/run-server-test-task.ts database",
+    "test:filesystem": "bun scripts/run-server-test-task.ts filesystem",
+    "test:git": "bun scripts/run-server-test-task.ts git",
+    "test:process": "bun scripts/run-server-test-task.ts process",
+    "test:contract": "bun scripts/run-server-test-task.ts contract"
   },
   "devDependencies": {
     "@types/mdast": "^4.0.4",

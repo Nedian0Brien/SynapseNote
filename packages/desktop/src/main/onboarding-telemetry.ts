@@ -11,7 +11,6 @@
 import type { CreateNewBannerKind } from '@nedian0brien/synapsenote-core';
 import { withSpanSync } from '@nedian0brien/synapsenote-server';
 import type { EntryPoint } from '../shared/entry-point.ts';
-import type { HandoffOutcome } from './share-handoff.ts';
 
 export type OnboardingFlowKind =
   | 'managed-promote'
@@ -54,27 +53,6 @@ export function recordCreateNewBannerShown(banner: CreateNewBannerKind): void {
     {
       attributes: {
         'ok.desktop.banner': banner,
-      },
-    },
-    () => undefined,
-  );
-}
-
-/** Outcome of the first-run deferred-share handshake — re-exported from the handshake module. */
-export type FirstRunHandoffOutcome = HandoffOutcome;
-
-/**
- * Emit one `ok.desktop.firstRunShareHandoff` span recording the outcome of the
- * deferred-share first-run handshake. Bounded-cardinality: `outcome` is a
- * closed literal union; no share payload, URL, or token is ever attached. SDK
- * disabled → no-op.
- */
-export function recordFirstRunShareHandoff(outcome: FirstRunHandoffOutcome): void {
-  withSpanSync(
-    'ok.desktop.firstRunShareHandoff',
-    {
-      attributes: {
-        'ok.desktop.handoff_outcome': outcome,
       },
     },
     () => undefined,

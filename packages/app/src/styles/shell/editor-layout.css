@@ -1,0 +1,183 @@
+/* Editor layout — grid on wrapper; content column max 1024px (lg), side rails minmax(gutter, 1fr) */
+.tiptap-editor {
+  --content-max-width: 1024px;
+  --margin-width: 4rem;
+  display: grid;
+  width: 100%;
+  grid-template-columns:
+    [full-start] minmax(var(--margin-left-width, var(--margin-width)), 1fr)
+    [content-start] minmax(0, min(var(--content-max-width), 100%))
+    [content-end] minmax(var(--margin-right-width, var(--margin-width)), 1fr)
+    [full-end];
+}
+
+/* Same content-column grid as .tiptap-editor — applied to siblings (e.g., the
+   property panel) so they horizontally align with the editor body. Variables
+   redeclared here so this class doesn't depend on living inside .tiptap-editor. */
+.editor-content-aligned {
+  --content-max-width: 1024px;
+  --margin-width: 4rem;
+  display: grid;
+  width: 100%;
+  grid-template-columns:
+    [full-start] minmax(var(--margin-left-width, var(--margin-width)), 1fr)
+    [content-start] minmax(0, min(var(--content-max-width), 100%))
+    [content-end] minmax(var(--margin-right-width, var(--margin-width)), 1fr)
+    [full-end];
+}
+
+.editor-content-aligned > * {
+  grid-column: content;
+}
+
+/* The floating Ask AI composer reserves scroll room at the bottom of the doc by
+   padding the editor CONTENT (.ProseMirror / .cm-content) — padding the scroll
+   container alone creates no overflow because the content's own min-height fills
+   it. The inset tracks the live composer via `--ask-composer-height` (card height
+   + gap, published by BottomComposer); the var is the single source of truth and
+   is absent when the composer is collapsed or hidden, so the padding collapses to
+   0 and the space is reclaimed — no class to fall out of sync. Scoped inside
+   `.editor-doc-scroll` so the floating composer's own ProseMirror (a sibling of
+   the scroll container) is never padded. */
+.editor-doc-scroll {
+  scroll-padding-bottom: var(--ask-composer-height, 0px);
+}
+.editor-doc-scroll :is(.ProseMirror, .cm-content) {
+  padding-bottom: var(--ask-composer-height, 0px);
+}
+
+/* Standalone Mermaid docs render OUTSIDE `.editor-doc-scroll` — a diagram +
+   source pane, not a ProseMirror/CM scroll surface — so the inset above never
+   reaches them. Reserve the composer height on the whole editor so a full-page
+   panzoom diagram (which does not scroll) and the source pane's last lines clear
+   the floating card. The var is 0 when the composer is collapsed/hidden, so the
+   space is reclaimed with no class to fall out of sync. */
+[data-mermaid-doc-editor] {
+  padding-bottom: var(--ask-composer-height, 0px);
+}
+
+/* Mermaid label flash — the "this text just changed too" cue when a WYSIWYG
+   label edit propagates to linked occurrences (e.g. a renamed sequence
+   participant appears in its top AND bottom actor boxes). Same accent family
+   as the agent flash (`--color-agent`), but a `filter` glow rather than the
+   box-shadow/background agent-flash keyframes use — filter renders on SVG
+   `<text>` (sequence actors/messages) as well as HTML label spans (flowchart
+   nodes), where box-shadow/background do not. */
+@keyframes mermaid-label-flash {
+  0%,
+  100% {
+    /* Unset paint at the ends so the element returns to its own base
+       fill/color when the animation finishes. */
+    filter: none;
+  }
+  25% {
+    /* Pulse the glyph paint itself to the agent accent — `fill` colors SVG
+       `<tspan>` glyphs, `color` colors HTML labels (`.nodeLabel`/`.edgeLabel`).
+       This is the loud, UNCLIPPED cue: an SVG `filter` drop-shadow on small
+       `<text>` gets clipped by the default filter region and reads as nothing.
+       The small glow is a bonus for HTML labels, where `filter` isn't clipped. */
+    fill: var(--color-agent);
+    color: var(--color-agent);
+    filter: drop-shadow(0 0 4px var(--color-agent));
+  }
+}
+.mermaid-label-flash {
+  /* Two quick pulses (~1s total) read unmistakably as "this changed too",
+     where a single slow fade went unnoticed. No `forwards` — the animation
+     ends on its natural 100% (base paint), restoring the label. */
+  animation: mermaid-label-flash 0.5s var(--ease-out-strong) 2;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mermaid-label-flash {
+    /* Reduced cue: one slower color pulse — no repeated flashing, but
+       reduce-motion users still get the "this changed too" signal (a color
+       fade, not vestibular motion). */
+    animation: mermaid-label-flash 0.9s var(--ease-out-strong) 1;
+  }
+}
+
+/* Conflict-mode DiffView scroller: same composer inset so the last hunks (and
+   their inline Accept/Reject controls) can scroll clear of the floating
+   composer. The content-side padding rule lives next to the
+   `.source-editor .cm-content` restore rule AFTER the `.cm-editor .cm-content`
+   padding reset (equal specificity — source order decides; see the comment
+   there). The conflict footer itself needs no inset — the composer anchors
+   above it via `--conflict-footer-height` (see use-conflict-footer-height.ts). */
+.diff-view {
+  scroll-padding-bottom: var(--ask-composer-height, 0px);
+}
+
+/* Ease the inset + composer entrance so collapsing/expanding glides instead of a
+   hard jump cut. The per-frame scroll re-clamp in BottomComposer keeps the bottom
+   pinned while the padding transition plays. `bottom` is included because the
+   composer's anchor tracks `--conflict-footer-height`, which flips between 0 and
+   the conflict footer's height when conflict mode mounts/unmounts. Reduced-motion
+   users get the instant change. */
+@media (prefers-reduced-motion: no-preference) {
+  .editor-doc-scroll :is(.ProseMirror, .cm-content),
+  .diff-view .cm-content {
+    transition: padding-bottom 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  [data-testid="bottom-composer"] {
+    transition:
+      opacity 200ms ease,
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      bottom 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @starting-style {
+    [data-testid="bottom-composer"] {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+}
+
+/* Content-column children. The `.tiptap-editor` wrapper is a 3-column named
+ * grid ([full-start] margin [content-start] content [content-end] margin
+ * [full-end]). Direct children default to `grid-column: content` so editor
+ * chrome — EditorContent, future <nav>/<header>/<footer>
+ * — lands in the content column. An earlier version of this rule targeted
+ * `> div` specifically, which worked while every child was a <div> but
+ * silently broke semantic elements: a direct <nav> child auto-placed into
+ * the right-margin track (width = --margin-width = 4rem), truncating its
+ * content into a ~64px vertical sliver. Widened to `> *` so the rule's
+ * intent ("content-column children") matches the CSS. Edge-to-edge
+ * elements that want a different track can explicit-override with
+ * `grid-column: full`.
+ */
+.tiptap-editor > * {
+  grid-column: content;
+  position: relative;
+}
+
+/* H6 cross-doc-bleed structural fix: `<EditorContent>`'s refDiv is rendered
+ * via `React.createPortal` into a per-Activity `data-ok-editor-portal` div,
+ * which itself is appended into a JSX `portalSlot` placeholder (`display:
+ * contents`) inside `.tiptap-editor`. Both wrappers use `display: contents`
+ * so the refDiv remains the effective grid item of `.tiptap-editor` — same
+ * grid placement, scroll geometry, and box model as the pre-portal inline
+ * `<EditorContent>` mount.
+ *
+ * The `.tiptap-editor > *` rule above selects DOM DIRECT children only.
+ * Two layers of `display: contents` (portalSlot + portalTarget) make the
+ * refDiv a DOM great-grandchild of `.tiptap-editor` even though, for grid
+ * layout purposes, it acts as a direct grid item. The descendant selector
+ * `.tiptap-editor .tiptap-editor-portal-content` matches it explicitly and
+ * applies the same `grid-column: content; position: relative` that the
+ * inline refDiv used to inherit via `.tiptap-editor > *`. Without this
+ * rule, the refDiv falls into the first grid track (the left margin) at
+ * intrinsic-min width and collapses ProseMirror to a ~104px column —
+ * surfaced via the slash-menu's `onMouseEnter` racing the cursor's now-
+ * overlapping popup.
+ */
+.tiptap-editor .tiptap-editor-portal-content {
+  grid-column: content;
+  /* Explicit row: `.ok-table-cell-handle-layer` is pinned to row 1 to share
+     this row (see that rule for why); without an explicit row here,
+     auto-placement would skip the occupied content-column cell and bump the
+     editor body to row 2 whenever the cursor is in a table. */
+  grid-row: 1;
+  position: relative;
+}
+
+/* Editor polish */

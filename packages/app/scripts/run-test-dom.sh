@@ -23,7 +23,20 @@ set -euo pipefail
 # substrate hit on Linux CI (where filesystem-order puts `lib/` before
 # `hooks/`). `--isolate` was added in Bun 1.3.x specifically to address
 # this class of cross-file mock contamination.
-PRELOAD_FLAGS=(--timeout 30000 --isolate --preload ./tests/dom/jsdom-preload.ts --conditions development)
+# Database/table suites mount Radix portals and focus guards at document.body.
+# Bun's default test concurrency can interleave teardown from one test with the
+# next test's portal open, leaving a stale body lock and making an otherwise
+# deterministic query fail (or hide the next popover). File isolation alone
+# does not prevent that intra-file interleaving, so the DOM tier deliberately
+# runs one test at a time. This is a reliability gate, not a product runtime
+# constraint; unit and browser suites retain their normal parallelism.
+PRELOAD_FLAGS=(
+  --timeout 30000
+  --isolate
+  --max-concurrency 1
+  --preload ./tests/dom/jsdom-preload.ts
+  --conditions development
+)
 
 if [ "$#" -gt 0 ]; then
   exec bun test "${PRELOAD_FLAGS[@]}" "$@"

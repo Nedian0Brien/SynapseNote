@@ -1,0 +1,23 @@
+/* Sonner toast interactivity under a modal Radix layer.
+   sonner@2 renders its toaster via appendChild onto <body> and never sets
+   pointer-events: auto on the toaster/toasts (its only pointer-events rule
+   is `none` on hidden toasts). When a modal Radix layer is open (Dialog /
+   Sheet / any DismissableLayer with disableOutsidePointerEvents) it
+   sets `body { pointer-events: none }`, which the toast then inherits — so a
+   toast paints on top (z-index 999999999) but its close/action buttons are
+   click-dead. Re-enable pointer events on each toast, and keep the toaster
+   gutter click-through so it doesn't swallow clicks meant for UI beneath it. */
+[data-sonner-toaster] {
+  pointer-events: none;
+}
+[data-sonner-toast] {
+  pointer-events: auto;
+}
+
+/* react-medium-image-zoom hardcodes rgba(255,255,255,1) for the visible
+   overlay — the lightbox flashes white in dark mode without this override.
+   The unprefixed library rule remains correct for light mode (white ≈ the
+   light-mode --background by construction). */
+.dark [data-rmiz-modal-overlay="visible"] {
+  background-color: var(--background);
+}

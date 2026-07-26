@@ -3,8 +3,12 @@ import {
   CheckIcon,
   ChevronDownIcon,
   CircleAlertIcon,
+  FileCode2Icon,
+  Globe2Icon,
   LoaderCircleIcon,
+  SquareTerminalIcon,
   TextQuoteIcon,
+  WorkflowIcon,
   WrenchIcon,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -56,35 +60,44 @@ function GenerationDots() {
   );
 }
 
-function ActivityIcon({
+function ToolTypeIcon({
   entry,
   visualState,
 }: {
   entry: ChatActivity;
   visualState: ActivityVisualState;
 }) {
-  if (entry.kind === 'tool') {
-    if (visualState === 'completed') {
-      return (
-        <CheckIcon
-          data-chat-tool-icon="completed"
-          className="mt-0.5 size-3 shrink-0 animate-chat-tool-complete text-primary motion-reduce:animate-none"
-        />
-      );
-    }
-    if (visualState === 'failed') {
-      return <CircleAlertIcon data-chat-tool-icon="failed" className="mt-0.5 size-3 shrink-0" />;
-    }
-    return (
-      <WrenchIcon
-        data-chat-tool-icon={visualState}
-        className={cn(
-          'mt-0.5 size-3 shrink-0',
-          visualState === 'working' && 'animate-chat-tool-working motion-reduce:animate-none',
-        )}
-      />
-    );
-  }
+  const category = entry.category ?? 'tool';
+  const Icon =
+    category === 'command'
+      ? SquareTerminalIcon
+      : category === 'file'
+        ? FileCode2Icon
+        : category === 'web_search'
+          ? Globe2Icon
+          : category === 'workflow'
+            ? WorkflowIcon
+            : WrenchIcon;
+  return (
+    <Icon
+      aria-hidden="true"
+      data-chat-tool-icon={category}
+      className={cn(
+        'mt-0.5 size-3 shrink-0',
+        visualState === 'working' && 'animate-chat-tool-working motion-reduce:animate-none',
+      )}
+    />
+  );
+}
+
+function ActivityLeadingIcon({
+  entry,
+  visualState,
+}: {
+  entry: ChatActivity;
+  visualState: ActivityVisualState;
+}) {
+  if (entry.kind === 'tool') return <ToolTypeIcon entry={entry} visualState={visualState} />;
   if (entry.kind === 'error') {
     return <CircleAlertIcon className="mt-0.5 size-3 shrink-0" />;
   }
@@ -98,6 +111,28 @@ function ActivityIcon({
   );
 }
 
+function ToolStatusIcon({ visualState }: { visualState: ActivityVisualState }) {
+  if (visualState === 'completed') {
+    return (
+      <CheckIcon
+        aria-hidden="true"
+        data-chat-tool-status="completed"
+        className="size-3 shrink-0 animate-chat-tool-complete text-primary motion-reduce:animate-none"
+      />
+    );
+  }
+  if (visualState === 'failed') {
+    return (
+      <CircleAlertIcon
+        aria-hidden="true"
+        data-chat-tool-status="failed"
+        className="size-3 shrink-0"
+      />
+    );
+  }
+  return null;
+}
+
 function ActivityLabel({
   entry,
   visualState,
@@ -107,8 +142,9 @@ function ActivityLabel({
 }) {
   const label = `${entry.label}${entry.detail ? ` · ${entry.detail}` : ''}`;
   return (
-    <span className="block min-w-0 truncate" title={label}>
-      {label}
+    <span className="flex min-w-0 items-center gap-1" title={label}>
+      <span className="min-w-0 truncate">{label}</span>
+      {entry.kind === 'tool' ? <ToolStatusIcon visualState={visualState} /> : null}
       {entry.kind === 'status' && visualState === 'working' ? (
         <span className="ml-1.5 text-primary/70">
           <GenerationDots />
@@ -143,7 +179,7 @@ function ChatActivityEntry({
         className={cn(activityClassName, 'group w-full')}
       >
         <summary className="flex cursor-pointer list-none items-start gap-1.5 pr-1 outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
-          <ActivityIcon entry={entry} visualState={visualState} />
+          <ActivityLeadingIcon entry={entry} visualState={visualState} />
           <span className="min-w-0 flex-1">
             <ActivityLabel entry={entry} visualState={visualState} />
             {entry.summary !== undefined ? (
@@ -187,7 +223,7 @@ function ChatActivityEntry({
       data-chat-activity-state={visualState}
       className={cn(activityClassName, 'flex items-start gap-1.5')}
     >
-      <ActivityIcon entry={entry} visualState={visualState} />
+      <ActivityLeadingIcon entry={entry} visualState={visualState} />
       <ActivityLabel entry={entry} visualState={visualState} />
     </div>
   );

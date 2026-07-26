@@ -1,0 +1,118 @@
+/*
+  Electron-mode outer-canvas alpha-aware retrofit.
+
+  Triggered by the `electron-mode` class added to <html> by the FOUC inline
+  script in index.html when `window.okDesktop` is present (preload bridge
+  runs before any inline page script). Web mode (no class) leaves the
+  outer canvas solid — visually unchanged from baseline.
+
+  Scope is narrow: ONLY the outer canvas surfaces become alpha-aware
+  so the BrowserWindow's `vibrancy: 'sidebar'` material shows through.
+  Inner editor surfaces (sidebar-inset, card, popover, dialog, tooltip-card,
+  --background) STAY OPAQUE — the visual depth cue. Vibrancy is exposed only
+  through the outer canvas; the inner main island floats opaquely above it.
+
+  The relative-color syntax `oklch(from var(--sidebar) l c h / <alpha>)`
+  reads --sidebar's cascaded value (set in :root for light, .dark for dark)
+  and produces the alpha-aware tint without duplicating OKLCH literals.
+  Single source of truth — when --sidebar moves, the alpha-aware tint moves
+  with it. No drift, no cycle (we override background-color, NOT --sidebar).
+
+  Browser support: relative-color syntax is Chromium 119+ / WebKit 16.4+ /
+  Firefox 128+. Electron 41 ships Chromium 134+ — fully supported.
+
+  prefers-reduced-transparency has its own dedicated fallback path below
+  (the @media (prefers-reduced-transparency: reduce) block) and is
+  intentionally NOT handled here.
+*/
+html.electron-mode {
+  background-color: transparent;
+  /*
+    macOS traffic-light safe-area reserve. The Electron main process spreads
+    `trafficLightPosition: { x: 22, y: 24 }` on darwin (see
+    `packages/desktop/src/main/index.ts`), placing OS-drawn close/min/zoom
+    buttons in the renderer's top-left at x=22..~100. Any full-viewport
+    overlay must reserve enough left padding to clear that footprint.
+    78px = trafficLightPosition.x (22) + 3 buttons × ~18px + margin. This
+    token is the single source for that reserve — EditorHeader, FileSidebar's
+    SidebarHeader, GraphPanel, and ConnectingBanner all consume it rather than
+    re-declaring the literal.
+    Web hosts (no `window.okDesktop`) never gain the `electron-mode` class,
+    so the variable is undefined there. Consumers MUST use the fallback
+    form `pl-[var(--ok-titlebar-reserve-left,1rem)]` — `,1rem` matches the
+    base `px-4` so web layout is unchanged. A bare no-fallback
+    `pl-[var(--ok-titlebar-reserve-left)]` is invalid-at-computed-value-time
+    on web and collapses `padding-left` to `0`, discarding the consumer's
+    base padding — a regression, not intended behavior. See precedent #49.
+  */
+  --ok-titlebar-reserve-left: 78px;
+}
+
+html.electron-mode body {
+  background-color: oklch(from var(--sidebar) l c h / 0.85);
+}
+
+html.electron-mode [data-slot="sidebar-wrapper"] {
+  background-color: oklch(from var(--sidebar) l c h / 0.85);
+}
+
+html.electron-mode [data-slot="sidebar-inner"] {
+  background-color: oklch(from var(--sidebar) l c h / 0.85);
+}
+
+/*
+  prefers-reduced-transparency revert.
+
+  When the user has enabled macOS System Settings → Accessibility → Display →
+  Reduce transparency, the alpha-aware outer canvas above is rolled back to
+  solid `var(--sidebar)`. Pairs with the main-side runtime path
+  (reduced-transparency-handler.ts) which calls `setVibrancy(null)` on every
+  BrowserWindow — both sides converge on solid surfaces, so the user sees
+  neither vibrancy material nor alpha-aware tints. Accessibility compliance
+  with no degraded readability.
+
+  Inner editor surfaces (sidebar-inset, card, popover, dialog, tooltip-card,
+  --background) are opaque always — the @media block has no business
+  redeclaring them. The cascade only touches what the cascade above touched.
+
+  Specificity: the un-mediaed alpha-aware rules above and these solid
+  reverts have identical (0,1,2) specificity; @media-takes-precedence is
+  what ranks them when the user-agent supports the media query. Browsers
+  without prefers-reduced-transparency (older WebKit / Gecko) ignore the
+  @media block entirely and fall through to the alpha-aware rules — same
+  result as a user who hasn't toggled the OS preference.
+*/
+@media (prefers-reduced-transparency: reduce) {
+  html.electron-mode {
+    background-color: var(--sidebar);
+  }
+
+  html.electron-mode body {
+    background-color: var(--sidebar);
+  }
+
+  html.electron-mode [data-slot="sidebar-wrapper"] {
+    background-color: var(--sidebar);
+  }
+
+  html.electron-mode [data-slot="sidebar-inner"] {
+    background-color: var(--sidebar);
+  }
+}
+
+/* prose-no-margin — margin reset for first/last children inside wrappers.
+   Applied to the jsx-component-wrapper's nested editable region so block
+   children don't carry their natural top/bottom prose margins into the
+   component chrome. Surviving consumer: the wildcard UnregisteredBadgeRender
+   in componentMap.tsx wraps children in <div className="prose-no-margin">,
+   and this file's rawMdxFallback chrome + future DIY Callout/Accordion chrome
+   rely on the same selector shape. Pre-US-004 the fumadocs cherry-pick section
+   (Steps utility classes + Accordion/Collapsible animation keyframes) sat above
+   this block; removed alongside the per-component CSS-variable token bridge
+   in D-MF2. */
+.prose-no-margin > :first-child {
+  margin-top: 0;
+}
+.prose-no-margin > :last-child {
+  margin-bottom: 0;
+}

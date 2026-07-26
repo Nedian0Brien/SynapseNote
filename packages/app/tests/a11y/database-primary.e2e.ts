@@ -18,17 +18,6 @@ import {
   waitForSlashMenuOpen,
 } from '../stress/_helpers';
 
-async function openDatabasesDialog(page: Page) {
-  await page.keyboard.press('ControlOrMeta+k');
-  const paletteInput = page.getByPlaceholder('Search files, folders, or commands');
-  await expect(paletteInput).toBeVisible({ timeout: 2_000 });
-  await paletteInput.fill('databases');
-  await page.getByRole('option', { name: 'Open databases' }).click();
-  await expect(page.getByRole('heading', { name: 'Databases' })).toBeVisible({
-    timeout: 5_000,
-  });
-}
-
 function taskDatabase(name: string, key: string) {
   return {
     database: {
@@ -83,7 +72,7 @@ test('DB-A11Y-01: canonical Table workspace has no serious or critical axe viola
   api,
 }) => {
   const name = `A11y database ${randomUUID().slice(0, 8)}`;
-  await api.createDatabase({
+  const target = await api.createDatabase({
     ...taskDatabase(name, `a11y-${randomUUID().slice(0, 8)}`),
     sampleRecords: [
       {
@@ -93,20 +82,29 @@ test('DB-A11Y-01: canonical Table workspace has no serious or critical axe viola
     ],
   });
 
-  await page.goto('/');
-  await openDatabasesDialog(page);
-  await page.getByText(name, { exact: true }).click();
+  await page.goto(
+    `/#database/${encodeURIComponent(target.databaseId)}/${encodeURIComponent(target.sourceId)}`,
+  );
 
-  const workspace = page.locator('[data-database-workspace]');
+  // The route-level canvas is a real semantic <main>; Radix's non-modal
+  // canvas composition does not guarantee that data markers or an explicit
+  // aria-label are forwarded through the primitive wrapper. Scope the audit
+  // to the main that owns the database grid instead of depending on either
+  // implementation detail.
+  const workspace = page
+    .locator('main')
+    .filter({ has: page.locator('[role="grid"]') })
+    .first();
   await expect(workspace).toBeVisible({ timeout: 10_000 });
   await expect(workspace.getByRole('grid')).toBeVisible({ timeout: 10_000 });
-  await expect(workspace.getByRole('gridcell', { name: 'Accessible task' })).toBeVisible({
+  await expect(workspace.getByRole('button', { name: 'Open page Accessible task' })).toBeVisible({
     timeout: 10_000,
   });
 
   const axeResults = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-    .include('[data-database-workspace]')
+    .include('main:has([role="grid"])')
+    .setLegacyMode(true)
     .disableRules(['color-contrast'])
     .analyze();
 
@@ -137,13 +135,16 @@ test('DB-A11Y-02: inline linked Table has no serious or critical axe violations'
   await expect(title).toBeVisible({ timeout: 10_000 });
   await title.fill('Inline accessible task');
   await title.press('Enter');
-  await expect(inline.getByRole('gridcell', { name: 'Inline accessible task' })).toBeVisible({
+  await expect(
+    inline.getByRole('button', { name: 'Open page Inline accessible task' }),
+  ).toBeVisible({
     timeout: 15_000,
   });
 
   const axeResults = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
     .include('[data-view-mode="inline"][data-database-view-state="ready"]')
+    .setLegacyMode(true)
     .disableRules(['color-contrast'])
     .analyze();
 

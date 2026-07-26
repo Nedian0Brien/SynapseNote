@@ -11,7 +11,7 @@
  * 'right')` prop with a default of `'center'` and `omitOnDefault: true`.
  * These three buttons mutate that prop via `setNodeMarkup` on the active
  * jsxComponent — `JsxComponentView` then mirrors the new value into
- * `data-align` on the wrapper, and CSS (`globals.css`
+ * `data-align` on the wrapper, and CSS (`styles/editor/component-chrome.css`
  * `.jsx-component-wrapper[data-component-type="img"][data-align]` +
  * matching `commonmarkimage` / `embed` selectors) applies the
  * corresponding `text-align` rule (the inline child takes its horizontal

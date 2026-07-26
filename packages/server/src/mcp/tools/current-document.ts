@@ -19,7 +19,11 @@ import {
 const DESCRIPTION = [
   '[Requires: a running SynapseNote editor] Read the document the user is currently viewing in SynapseNote.',
   '',
-  'Use this when the user refers to “this document”, “the note I am viewing”, or otherwise points at their current SynapseNote window without naming a path. With multiple windows, the focused visible window wins; the response also includes every connected viewer for transparency.',
+  'Use this tool FIRST whenever the host has not already supplied authoritative live SynapseNote current-document context and the user asks which document, note, or file is currently open, active, selected, visible, on screen, or being viewed in SynapseNote, or refers to “this document” without naming a path. Examples: “What document am I looking at?”, “What is open?”, “내가 지금 보고 있는 문서 뭐야?”, “현재 열린 노트가 뭐야?”.',
+  '',
+  'This is live SynapseNote editor state. Do not substitute Chronicle, screen or activity history, browser inspection, filesystem recency, or inference from recent files. If this tool is unavailable, say the live SynapseNote selection cannot be determined instead of guessing. Use screen-history tools only when the user explicitly asks about screen or activity history.',
+  '',
+  'With multiple windows, the focused visible window wins; the response also includes every connected viewer for transparency.',
   '',
   '**Parameters:**',
   '- `cwd` (optional) — Project root (see `cwd` description below).',

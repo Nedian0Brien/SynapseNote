@@ -12,7 +12,7 @@
  * `activeIndex` lives in this component's `useState`, defaults to 0. Not in
  * the PM doc — selection is ephemeral, same as Notion / Mintlify / fumadocs.
  * The wrapper element carries `data-active-index={N}`; CSS rules in
- * `globals.css` hide all `.react-renderer` siblings under
+ * `styles/components/tabs-accordion.css` hide all `.react-renderer` siblings under
  * `.component-children > [data-node-view-content-react]` and re-show the
  * N+1-th one. The chain hops twice because Tiptap renders each child
  * NodeView inside a `.react-renderer.node-jsxComponent` div (from
@@ -25,7 +25,8 @@
  *
  * The strip needs each Tab's `label` and a stable `id` (for ARIA pairing). We
  * read this Tabs's OWN direct Tab renderers — scoped with `:scope >` to mirror
- * the CSS `:nth-of-type` reveal chain in `globals.css` exactly — and extract
+ * the CSS `:nth-of-type` reveal chain in `styles/components/tabs-accordion.css`
+ * exactly — and extract
  * the inline `data-tab-label` / `data-tab-id` set by Tab.tsx's render (no
  * setAttribute mutations). The direct-child scoping is load-bearing: a Tab is
  * itself a PM container with its own contentDOM, so a recursive `.react-renderer`
@@ -92,7 +93,7 @@ interface TabSummary {
   panelId: string | null;
 }
 
-// Mirror the CSS active-panel reveal chain in `globals.css`
+// Mirror the CSS active-panel reveal chain in `styles/components/tabs-accordion.css`
 // (`.tabs-content > .component-children > [data-node-view-content-react] >
 // .react-renderer:nth-of-type(N)`) EXACTLY. `:scope` anchors at this Tabs's own
 // contentRef and the all-`>` chain selects only its direct Tab renderers. A

@@ -45,9 +45,9 @@ import type { Plugin } from 'vite';
 // `?raw` would be the natural import, but rolldown — used to bundle
 // `vite.config.ts` itself before Vite starts — does not resolve `?raw`
 // in the config-load path and exits with `UNLOADABLE_DEPENDENCY`.
-// `readFileSync` at module load is the same shape `chrome-tokens-vite-plugin.ts`
-// uses (it reads `globals.css`) and is the established workaround in this
-// build/ directory.
+// `readFileSync` at module load is the same shape as the token build plugin's
+// explicit source-file read and is the established workaround in this build/
+// directory.
 const GUARD_SCRIPT_PATH = resolve(
   import.meta.dirname ?? new URL('.', import.meta.url).pathname,
   './rejection-loop-guard-script.js',

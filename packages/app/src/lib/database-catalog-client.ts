@@ -4,10 +4,9 @@ import {
   type DatabaseSource,
 } from '@nedian0brien/synapsenote-core';
 import { z } from 'zod';
+import { withDatabaseReadRetry } from './database-read-retry.ts';
 
 const RevisionSchema = z.string().regex(/^sha256:[a-f0-9]{64}$/);
-const CATALOG_RETRY_DELAY_MS = 50;
-const CATALOG_MAX_ATTEMPTS = 3;
 
 export const DatabaseCatalogCandidateSchema = z
   .object({
@@ -134,39 +133,22 @@ async function responseBody(response: Response, operation: string): Promise<unkn
   return body;
 }
 
-function waitForCatalogRetry(signal?: AbortSignal): Promise<void> {
-  if (signal?.aborted) {
-    return Promise.reject(
-      signal.reason ?? new DOMException('The operation was aborted', 'AbortError'),
-    );
-  }
-  return new Promise((resolve, reject) => {
-    const timeoutId = globalThis.setTimeout(() => {
-      signal?.removeEventListener('abort', onAbort);
-      resolve();
-    }, CATALOG_RETRY_DELAY_MS);
-    const onAbort = () => {
-      globalThis.clearTimeout(timeoutId);
-      signal?.removeEventListener('abort', onAbort);
-      reject(signal?.reason ?? new DOMException('The operation was aborted', 'AbortError'));
-    };
-    signal?.addEventListener('abort', onAbort, { once: true });
-  });
-}
-
 export async function fetchDatabaseCatalog(
   options: { fetch?: typeof globalThis.fetch; signal?: AbortSignal; query?: string } = {},
 ): Promise<DatabaseCatalogResult> {
   const parameters = new URLSearchParams();
   if (options.query?.trim()) parameters.set('q', options.query.trim());
   const suffix = parameters.size > 0 ? `?${parameters}` : '';
-  for (let attempt = 0; ; attempt += 1) {
-    const response = await (options.fetch ?? globalThis.fetch)(`/api/databases/catalog${suffix}`, {
-      method: 'GET',
-      headers: { accept: 'application/json' },
-      signal: options.signal,
-    });
-    try {
+  return withDatabaseReadRetry(
+    async () => {
+      const response = await (options.fetch ?? globalThis.fetch)(
+        `/api/databases/catalog${suffix}`,
+        {
+          method: 'GET',
+          headers: { accept: 'application/json' },
+          signal: options.signal,
+        },
+      );
       const parsed = DatabaseCatalogResponseSchema.safeParse(
         await responseBody(response, 'catalog'),
       );
@@ -176,38 +158,37 @@ export async function fetchDatabaseCatalog(
         });
       }
       return parsed.data;
-    } catch (error) {
-      // A catalog read can overlap the short manifest/index transaction window
-      // immediately after creating a database. Give that transient 409 a small
-      // bounded settling window so a usable sidebar does not flash a destructive
-      // error while the index catches up.
-      if (
-        !(error instanceof DatabaseCatalogClientError) ||
-        error.status !== 409 ||
-        attempt >= CATALOG_MAX_ATTEMPTS - 1
-      ) {
-        throw error;
-      }
-      await waitForCatalogRetry(options.signal);
-    }
-  }
+    },
+    { signal: options.signal },
+  );
 }
 
 export async function describeDatabase(
   input: { databaseId: string; sourceId?: string },
   options: { fetch?: typeof globalThis.fetch; signal?: AbortSignal } = {},
 ): Promise<DatabaseDescription> {
-  const response = await (options.fetch ?? globalThis.fetch)('/api/databases/describe', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', accept: 'application/json' },
-    body: JSON.stringify(input),
-    signal: options.signal,
-  });
-  const parsed = DatabaseDescriptionSchema.safeParse(await responseBody(response, 'description'));
-  if (!parsed.success) {
-    throw new DatabaseCatalogClientError('Database description returned an invalid response', 502, {
-      issues: parsed.error.issues,
-    });
-  }
-  return parsed.data as DatabaseDescription;
+  return withDatabaseReadRetry(
+    async () => {
+      const response = await (options.fetch ?? globalThis.fetch)('/api/databases/describe', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify(input),
+        signal: options.signal,
+      });
+      const parsed = DatabaseDescriptionSchema.safeParse(
+        await responseBody(response, 'description'),
+      );
+      if (!parsed.success) {
+        throw new DatabaseCatalogClientError(
+          'Database description returned an invalid response',
+          502,
+          {
+            issues: parsed.error.issues,
+          },
+        );
+      }
+      return parsed.data as DatabaseDescription;
+    },
+    { signal: options.signal },
+  );
 }

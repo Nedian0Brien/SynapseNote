@@ -705,6 +705,7 @@ export function createServer(options: ServerOptions): ServerInstance {
   const databaseRepairEngine = createDatabaseRepairEngine({
     projectDir,
     contentDir,
+    allowExternalContentDir: ephemeral,
     databaseStore,
     databaseRecordIndex,
     refreshDatabaseIndex: () => databaseIndexCoordinator.refresh('transaction'),
@@ -1300,6 +1301,7 @@ export function createServer(options: ServerOptions): ServerInstance {
     const databaseCommitEngine = createDatabaseCommitEngine({
       projectDir,
       contentDir,
+      allowExternalContentDir: ephemeral,
       databaseStore,
       databaseRecordIndex,
       refreshDatabaseIndex: () => databaseIndexCoordinator.refresh('transaction'),
@@ -3156,6 +3158,10 @@ export function createServer(options: ServerOptions): ServerInstance {
     // Load (or create) the principal record — non-blocking best-effort.
     try {
       loadedPrincipal = await loadPrincipal(projectDir);
+      databaseDataPlane.setDefaultAccessPrincipal({
+        kind: 'user',
+        id: loadedPrincipal.id,
+      });
       log.info({ principalId: loadedPrincipal.id }, '[server] principal loaded');
     } catch (e) {
       log.warn(

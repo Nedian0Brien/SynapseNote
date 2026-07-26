@@ -1,5 +1,6 @@
 /**
- * globals.css `prefers-reduced-transparency` revert guard.
+ * `styles/foundation/platform-electron.css` `prefers-reduced-transparency`
+ * revert guard.
  *
  * Locks the structural shape of the @media block that reverts the
  * alpha-aware outer canvas to solid backgrounds when the user has
@@ -19,13 +20,12 @@
  */
 
 import { describe, expect, test } from 'bun:test';
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { loadStyleManifest } from './build/style-manifest.ts';
 
-const CSS_PATH = join(__dirname, 'globals.css');
-const CSS = readFileSync(CSS_PATH, 'utf-8');
+const CSS = loadStyleManifest(join(__dirname, 'globals.css')).css;
 
-describe('globals.css — prefers-reduced-transparency revert', () => {
+describe('platform-electron.css — prefers-reduced-transparency revert', () => {
   test('declares a @media (prefers-reduced-transparency: reduce) block', () => {
     expect(CSS).toMatch(/@media\s*\(\s*prefers-reduced-transparency:\s*reduce\s*\)\s*\{/);
   });
@@ -67,7 +67,7 @@ describe('globals.css — prefers-reduced-transparency revert', () => {
   });
 });
 
-describe('globals.css — STOP rule preserved (inner surfaces stay opaque)', () => {
+describe('platform-electron.css — STOP rule preserved (inner surfaces stay opaque)', () => {
   // Extract the @media block body so STOP-rule assertions only consider
   // text inside the prefers-reduced-transparency block — they're not
   // global "no inner surface ever appears" assertions.
@@ -98,7 +98,7 @@ describe('globals.css — STOP rule preserved (inner surfaces stay opaque)', () 
   });
 });
 
-describe('globals.css — revert applies only to electron-mode', () => {
+describe('platform-electron.css — revert applies only to electron-mode', () => {
   test('@media block does not declare bare html or body rules without electron-mode', () => {
     // Web mode never went alpha-aware (the alpha-aware retrofit scopes to
     // .electron-mode); emitting a bare `html { ... }` rule inside the
