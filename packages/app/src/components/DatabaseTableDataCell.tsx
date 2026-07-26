@@ -245,6 +245,7 @@ export function DatabaseTableDataCell({
       data-database-cell-selected={
         cellIsInRange(cellRange, rowIndex, propertyIndex) ? 'true' : undefined
       }
+      data-database-cell-editing={cellEditing ? 'true' : undefined}
       onFocus={() => {
         setEditError(null);
         const selectedCount = cellRange
@@ -271,6 +272,7 @@ export function DatabaseTableDataCell({
         );
       }}
       onClick={(event) => {
+        event.stopPropagation();
         setCellMenu(null);
         const next = {
           anchorRow: event.shiftKey && cellRange ? cellRange.anchorRow : rowIndex,
@@ -286,11 +288,14 @@ export function DatabaseTableDataCell({
         setGridAnnouncement(
           `Row ${rowIndex + 1}, ${property.name}. ${selectedCount} cell${selectedCount === 1 ? '' : 's'} selected.`,
         );
+        const interactiveElement =
+          event.target instanceof Element
+            ? event.target.closest(
+                'a, button, input, textarea, select, [contenteditable="true"], [role="button"], [role="checkbox"], [role="combobox"], [role="link"]',
+              )
+            : null;
         const interactiveTarget =
-          event.target instanceof Element &&
-          event.target.closest(
-            'a, button, input, textarea, select, [contenteditable="true"], [role="button"], [role="checkbox"], [role="combobox"], [role="link"]',
-          );
+          interactiveElement !== null && event.currentTarget.contains(interactiveElement);
         if (!event.shiftKey && !cellEditing && !ghostCreated && !proposed && !interactiveTarget) {
           beginEdit(record, property);
         }

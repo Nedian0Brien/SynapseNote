@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { isJsxInteractiveTarget } from './JsxComponentView.tsx';
+import { shouldStopJsxComponentEvent } from './jsx-component';
 
 describe('isJsxInteractiveTarget', () => {
   test('recognizes native and ARIA controls inside a leaf component', () => {
@@ -27,5 +28,17 @@ describe('isJsxInteractiveTarget', () => {
     const paragraph = document.createElement('p');
     expect(isJsxInteractiveTarget(paragraph)).toBe(false);
     expect(isJsxInteractiveTarget(null)).toBe(false);
+  });
+});
+
+describe('shouldStopJsxComponentEvent', () => {
+  test('keeps database cell events inside the interactive NodeView', () => {
+    const database = document.createElement('section');
+    database.setAttribute('data-database-inline-surface', '');
+    const cell = document.createElement('td');
+    database.append(cell);
+
+    expect(shouldStopJsxComponentEvent({ target: cell })).toBe(true);
+    expect(shouldStopJsxComponentEvent({ target: document.createElement('p') })).toBe(false);
   });
 });

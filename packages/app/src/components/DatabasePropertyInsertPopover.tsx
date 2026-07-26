@@ -1,5 +1,5 @@
 import { Trans } from '@lingui/react/macro';
-import type { DatabasePropertyType } from '@nedian0brien/synapsenote-core';
+import type { DatabaseProperty, DatabasePropertyType } from '@nedian0brien/synapsenote-core';
 import { Plus } from 'lucide-react';
 import type { Dispatch, SetStateAction } from 'react';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,20 @@ const NOTION_PROPERTY_TYPES: readonly { type: DatabasePropertyType; label: strin
   { type: 'place', label: 'Place' },
 ];
 
+export function nextDatabasePropertyName(
+  type: DatabasePropertyType,
+  properties: readonly Pick<DatabaseProperty, 'name'>[],
+): string {
+  const label = NOTION_PROPERTY_TYPES.find((candidate) => candidate.type === type)?.label ?? type;
+  const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const numberedName = new RegExp(`^${escapedLabel} (\\d+)$`, 'i');
+  const highestNumber = properties.reduce((highest, property) => {
+    const match = property.name.trim().match(numberedName);
+    return match ? Math.max(highest, Number(match[1])) : highest;
+  }, 0);
+  return `${label} ${highestNumber + 1}`;
+}
+
 export function DatabasePropertyInsertPopover({
   open,
   setOpen,
@@ -31,6 +45,7 @@ export function DatabasePropertyInsertPopover({
   setNewPropertyName,
   newPropertyType,
   setNewPropertyType,
+  properties = [],
   submitAddProperty,
   showLabel = false,
 }: {
@@ -45,6 +60,7 @@ export function DatabasePropertyInsertPopover({
   setNewPropertyName: Dispatch<SetStateAction<string>>;
   newPropertyType: DatabasePropertyType;
   setNewPropertyType: Dispatch<SetStateAction<DatabasePropertyType>>;
+  properties?: readonly Pick<DatabaseProperty, 'name'>[];
   submitAddProperty: () => void;
   showLabel?: boolean;
 }) {
@@ -52,6 +68,9 @@ export function DatabasePropertyInsertPopover({
     <Popover
       open={open}
       onOpenChange={(nextOpen) => {
+        if (nextOpen) {
+          setNewPropertyName(nextDatabasePropertyName(newPropertyType, properties));
+        }
         setOpen(nextOpen);
         if (!nextOpen) setPropertyInsertTarget(null);
       }}
@@ -110,7 +129,20 @@ export function DatabasePropertyInsertPopover({
                 variant={newPropertyType === candidate.type ? 'secondary' : 'ghost'}
                 aria-pressed={newPropertyType === candidate.type}
                 className="justify-start gap-2"
-                onClick={() => setNewPropertyType(candidate.type)}
+                onClick={() => {
+                  const currentAutomaticName = nextDatabasePropertyName(
+                    newPropertyType,
+                    properties,
+                  );
+                  setNewPropertyType(candidate.type);
+                  if (
+                    !newPropertyName.trim() ||
+                    newPropertyName === 'New property' ||
+                    newPropertyName === currentAutomaticName
+                  ) {
+                    setNewPropertyName(nextDatabasePropertyName(candidate.type, properties));
+                  }
+                }}
               >
                 <DatabasePropertyTypeIcon type={candidate.type} className="size-4" />
                 {candidate.label}
