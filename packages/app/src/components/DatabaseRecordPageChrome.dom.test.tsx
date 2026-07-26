@@ -317,8 +317,7 @@ describe('DatabaseRecordPageChrome', () => {
     expect(commentsSection).not.toBeNull();
     expect(view.queryByRole('dialog', { name: 'Comments' })).toBeNull();
     expect(commentRequests.at(0)).toMatchObject({ action: 'read', recordId: 'rec_first' });
-    fireEvent.click(view.getByRole('button', { name: 'Comments' }));
-    await waitFor(() => expect(document.activeElement).toBe(commentComposer));
+    expect(view.queryByRole('button', { name: 'Comments' })).toBeNull();
     const bodyHost = view.getByTestId('record-body-editor');
     const bodySurface = bodyHost.closest('[data-database-record-body]');
     expect(bodySurface?.getAttribute('data-record-body-position')).toBe('below-properties');
@@ -370,7 +369,7 @@ describe('DatabaseRecordPageChrome', () => {
     expect(view.queryByText('Hidden value')).toBeNull();
     expect(view.container.querySelector('[data-full-width-content="true"]')).not.toBeNull();
     expect(view.queryByText('_sn')).toBeNull();
-    expect(view.getByRole('button', { name: 'Comments' })).toBeDefined();
+    expect(view.queryByRole('button', { name: 'Comments' })).toBeNull();
     expect(view.queryByRole('button', { name: 'Page history' })).toBeNull();
     expect(view.queryByRole('button', { name: 'Permissions' })).toBeNull();
     expect(view.queryByRole('button', { name: 'Customize appearance' })).toBeNull();

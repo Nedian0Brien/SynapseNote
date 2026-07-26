@@ -17,7 +17,6 @@ import {
   Copy,
   History,
   Link2,
-  MessageSquare,
   MoreHorizontal,
   MoveRight,
   Palette,
@@ -234,7 +233,6 @@ export function DatabaseRecordPageChrome({
   const [recordActionRunning, setRecordActionRunning] = useState(false);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [moveTargetSourceId, setMoveTargetSourceId] = useState('');
-  const [commentsFocusRequest, setCommentsFocusRequest] = useState(0);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [relationsDialogOpen, setRelationsDialogOpen] = useState(false);
   const [relationTargets, setRelationTargets] = useState<DatabaseRelationNavigationItem[]>([]);
@@ -944,16 +942,6 @@ export function DatabaseRecordPageChrome({
                 recordId: metadata.record_id,
               }}
             />
-            <Button
-              type="button"
-              size="icon-sm"
-              variant="ghost"
-              aria-label="Comments"
-              title="Comments"
-              onClick={() => setCommentsFocusRequest((current) => current + 1)}
-            >
-              <MessageSquare aria-hidden="true" />
-            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -1117,7 +1105,6 @@ export function DatabaseRecordPageChrome({
             database={currentBinding.database}
             source={source}
             record={currentRecord}
-            focusRequest={commentsFocusRequest}
             request={commentsRequest}
           />
         </div>
