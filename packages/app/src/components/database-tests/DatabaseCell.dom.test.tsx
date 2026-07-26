@@ -70,4 +70,54 @@ describe('database focused cell suite', () => {
     fireEvent.click(screen.getByRole('option', { name: 'Active' }));
     expect(edits).toEqual(['active']);
   });
+
+  test('renders a number editor as the inline cell surface instead of a nested field', () => {
+    const fixture = createDatabaseTestFixture();
+    const numberProperty = {
+      id: 'estimate',
+      key: 'estimate',
+      name: 'Estimate',
+      type: 'number' as const,
+    };
+    render(
+      <div contentEditable suppressContentEditableWarning>
+        <DatabaseTable
+          source={
+            {
+              ...fixture.source,
+              properties: [...fixture.source.properties, numberProperty],
+            } as never
+          }
+          result={
+            {
+              ...fixture.result,
+              records: [
+                {
+                  ...fixture.record,
+                  values: { ...fixture.record.values, estimate: 123 },
+                },
+              ],
+            } as never
+          }
+          notionSurface
+          onEdit={() => {}}
+        />
+      </div>,
+    );
+    const numberCell = document.querySelector<HTMLElement>(
+      '[data-database-cell-row="0"][data-property-id="estimate"]',
+    );
+    if (!numberCell) throw new Error('number cell was not rendered');
+
+    fireEvent.click(numberCell);
+
+    const editor = screen.getByRole('spinbutton', { name: 'Edit Estimate' });
+    expect(numberCell.getAttribute('data-database-cell-editing')).toBe('true');
+    expect(editor.getAttribute('data-database-cell-editor-control')).toBe('true');
+    expect(editor.className).toContain('rounded-none');
+    expect(editor.className).toContain('border-0');
+    expect(editor.className).toContain('focus-visible:ring-0');
+    expect(screen.getByLabelText('Save cell edit').className).toContain('sr-only');
+    expect(screen.getByLabelText('Cancel cell edit').className).toContain('sr-only');
+  });
 });

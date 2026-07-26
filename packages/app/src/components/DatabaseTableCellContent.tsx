@@ -103,6 +103,7 @@ export function DatabaseTableCellContent({
         <DatabaseTableCellEditingContent
           property={property}
           record={record}
+          notionSurface={notionSurface}
           people={people}
           relationRecords={relationRecords}
           fileStates={fileStates}

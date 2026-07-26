@@ -245,6 +245,7 @@ export function DatabaseTableDataCell({
       data-database-cell-selected={
         cellIsInRange(cellRange, rowIndex, propertyIndex) ? 'true' : undefined
       }
+      data-database-cell-editing={cellEditing ? 'true' : undefined}
       onFocus={() => {
         setEditError(null);
         const selectedCount = cellRange

@@ -11,6 +11,12 @@ describe('database row selection control styles', () => {
     );
   });
 
+  test('uses the inline cell boundary as the editing surface', () => {
+    expect(css).toMatch(
+      /\[data-database-inline-table\]\s+\[data-database-cell-editing="true"\]\s*\{[^}]*box-shadow:\s*inset\s+0\s+0\s+0\s+1px/,
+    );
+  });
+
   test('reveals the selection control as soon as its row interaction layer is active', () => {
     expect(css).toMatch(
       /\[data-database-table-interaction-layer\]\[data-state\]\s+\.ok-row-selection-btn\s*\{[^}]*opacity:\s*1;/,

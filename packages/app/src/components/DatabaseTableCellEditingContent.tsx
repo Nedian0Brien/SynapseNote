@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 import type { DatabaseTableCellEditing } from './database-table-cell-types';
 import type { DatabaseTableProps } from './database-table-types';
 import { multiSelectDraftValues } from './database-table-utils';
@@ -34,6 +35,7 @@ interface DatabaseTableCellEditingContentProps
   > {
   property: DatabaseProperty;
   record: ProjectedDatabaseRecord;
+  notionSurface: boolean;
   people: readonly ProjectedDatabasePerson[];
   relationRecords: readonly ProjectedDatabaseRelationRecord[];
   fileStates: DatabaseQueryResult['fileStates'];
@@ -52,6 +54,7 @@ interface DatabaseTableCellEditingContentProps
 export function DatabaseTableCellEditingContent({
   property,
   record,
+  notionSurface,
   people,
   relationRecords,
   fileStates,
@@ -64,6 +67,9 @@ export function DatabaseTableCellEditingContent({
   onCancelEdit,
   setEditing,
 }: DatabaseTableCellEditingContentProps) {
+  const inlineScalarEditor =
+    notionSurface && ['title', 'number', 'url', 'email', 'phone'].includes(property.type);
+
   if (property.type === 'select' || property.type === 'multi_select') {
     return (
       <DatabaseSelectCellEditor
@@ -88,7 +94,7 @@ export function DatabaseTableCellEditingContent({
   }
 
   return (
-    <div className="flex min-w-56 items-center gap-1">
+    <div className={cn('flex min-w-56 items-center gap-1', notionSurface && 'w-full min-w-0')}>
       {property.type === 'checkbox' ? (
         <Checkbox
           autoFocus
@@ -227,13 +233,18 @@ export function DatabaseTableCellEditingContent({
                     : undefined
           }
           aria-label={`Edit ${property.name}`}
+          data-database-cell-editor-control="true"
           onChange={(event) => setEditing({ ...editing, draft: event.currentTarget.value })}
           onKeyDown={(event) => {
             if (event.nativeEvent.isComposing) return;
             if (event.key === 'Enter') onSaveEdit(record, property);
             if (event.key === 'Escape') onCancelEdit(record, property);
           }}
-          className="h-8"
+          className={cn(
+            'h-8',
+            notionSurface &&
+              'rounded-none border-0 bg-transparent px-0 shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent',
+          )}
         />
       )}
       {property.type !== 'text' ? (
@@ -241,6 +252,7 @@ export function DatabaseTableCellEditingContent({
           <Button
             size="icon-sm"
             variant="ghost"
+            className={inlineScalarEditor ? 'sr-only' : undefined}
             aria-label="Save cell edit"
             onClick={() => onSaveEdit(record, property)}
           >
@@ -249,6 +261,7 @@ export function DatabaseTableCellEditingContent({
           <Button
             size="icon-sm"
             variant="ghost"
+            className={inlineScalarEditor ? 'sr-only' : undefined}
             aria-label="Cancel cell edit"
             onClick={() => onCancelEdit(record, property)}
           >

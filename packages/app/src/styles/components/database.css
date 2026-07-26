@@ -87,6 +87,10 @@
   outline: none;
 }
 
+[data-database-inline-table] [data-database-cell-editing="true"] {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ring) 72%, transparent);
+}
+
 [data-database-inline-table] [data-new-record-row] {
   color: var(--muted-foreground);
 }
