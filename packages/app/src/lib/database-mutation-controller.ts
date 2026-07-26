@@ -1,5 +1,5 @@
 import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-server';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useDatabaseMutationHistory } from './database-mutation-history';
 import { databaseUiMutationReviewMode } from './database-mutation-policy';
 import { executeDatabaseMutation } from './database-mutations/database-mutation-gateway';
@@ -34,7 +34,14 @@ export function useDatabaseMutationController({
   clearOptimisticValues,
 }: DatabaseMutationControllerOptions) {
   const [status, setStatus] = useState<'idle' | 'saving'>('idle');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setErrorState] = useState<string | null>(null);
+  const [errorKind, setErrorKind] =
+    useState<ReturnType<typeof classifyDatabaseUiProblem>['kind']>();
+  const activeMutationRef = useRef(false);
+  const setError = (value: string | null) => {
+    setErrorState(value);
+    if (value === null) setErrorKind(undefined);
+  };
   const {
     undoToken,
     undoStatus,
@@ -51,7 +58,14 @@ export function useDatabaseMutationController({
   });
 
   const run = (desiredState: DatabaseDesiredStateDraftInput, policy: DatabaseMutationPolicy) => {
-    if (status !== 'idle' || undoStatus !== 'idle' || redoStatus !== 'idle') return;
+    if (
+      activeMutationRef.current ||
+      status !== 'idle' ||
+      undoStatus !== 'idle' ||
+      redoStatus !== 'idle'
+    )
+      return;
+    activeMutationRef.current = true;
     setError(null);
     resetForForwardMutation();
     setStatus('saving');
@@ -74,7 +88,9 @@ export function useDatabaseMutationController({
       .then((outcome) => {
         if (outcome.status !== 'committed') {
           clearOptimistic();
+          setErrorKind('conflict');
           setError(databaseMutationUiMessage('conflict'));
+          onRefresh();
           policy.onFailed?.();
           return;
         }
@@ -90,15 +106,21 @@ export function useDatabaseMutationController({
       .catch((cause: unknown) => {
         clearOptimistic();
         const problem = classifyDatabaseUiProblem(cause, 'Unable to save the database change.');
+        setErrorKind(problem.kind);
         setError(databaseMutationUiMessage(problem.kind));
+        if (problem.kind === 'conflict') onRefresh();
         policy.onFailed?.();
       })
-      .finally(() => setStatus('idle'));
+      .finally(() => {
+        activeMutationRef.current = false;
+        setStatus('idle');
+      });
   };
 
   return {
     status,
     error,
+    errorKind,
     setError,
     undoToken,
     undoStatus,

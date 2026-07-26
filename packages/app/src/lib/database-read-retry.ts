@@ -1,4 +1,7 @@
-import { isDatabaseTransactionInProgress } from './database-ui-problem.ts';
+import {
+  classifyDatabaseUiProblem,
+  isDatabaseTransactionInProgress,
+} from './database-ui-problem.ts';
 
 export interface DatabaseReadRetryOptions {
   signal?: AbortSignal;
@@ -8,7 +11,7 @@ export interface DatabaseReadRetryOptions {
   shouldRetry?: (cause: unknown) => boolean;
 }
 
-const DEFAULT_MAX_ATTEMPTS = 3;
+const DEFAULT_MAX_ATTEMPTS = 5;
 const DEFAULT_INITIAL_DELAY_MS = 50;
 const DEFAULT_MAX_DELAY_MS = 1_000;
 
@@ -42,10 +45,11 @@ function waitForRetry(delayMs: number, signal?: AbortSignal): Promise<void> {
 /**
  * Runs a read operation with a small, typed settling retry window.
  *
- * A canonical database commit briefly blocks description/query reads with the
- * machine-readable `transaction_in_progress` problem. That condition is not
- * a stale-target conflict and should settle silently. All other errors remain
- * non-retryable unless the caller explicitly opts them in.
+ * A canonical database commit can briefly block description/query reads or
+ * leave the record index rebuilding after the commit response is returned.
+ * The local server can also miss one fetch while its database surface settles.
+ * Those transient conditions should settle silently instead of flashing an
+ * offline/stale banner over an otherwise verified view.
  */
 export async function withDatabaseReadRetry<T>(
   operation: (attempt: number) => Promise<T>,
@@ -54,7 +58,13 @@ export async function withDatabaseReadRetry<T>(
   const maxAttempts = Math.max(1, Math.floor(options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS));
   const initialDelayMs = Math.max(0, options.initialDelayMs ?? DEFAULT_INITIAL_DELAY_MS);
   const maxDelayMs = Math.max(initialDelayMs, options.maxDelayMs ?? DEFAULT_MAX_DELAY_MS);
-  const shouldRetry = options.shouldRetry ?? isDatabaseTransactionInProgress;
+  const shouldRetry =
+    options.shouldRetry ??
+    ((cause: unknown) => {
+      if (isDatabaseTransactionInProgress(cause)) return true;
+      const problem = classifyDatabaseUiProblem(cause, 'Database read temporarily unavailable');
+      return problem.kind === 'stale_index' || problem.kind === 'offline';
+    });
 
   let attempt = 0;
   while (true) {

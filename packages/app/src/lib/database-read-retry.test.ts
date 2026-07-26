@@ -7,6 +7,16 @@ function transactionError(): Error {
   return error;
 }
 
+function staleIndexError(): Error {
+  const error = new Error('database index is rebuilding') as Error & {
+    status?: number;
+    problem?: unknown;
+  };
+  error.status = 503;
+  error.problem = { code: 'stale_index', retryable: true };
+  return error;
+}
+
 describe('withDatabaseReadRetry', () => {
   test('retries a transaction settling barrier and returns the eventual value', async () => {
     let attempts = 0;
@@ -36,6 +46,34 @@ describe('withDatabaseReadRetry', () => {
       ),
     ).rejects.toBe(conflict);
     expect(attempts).toBe(1);
+  });
+
+  test('retries a post-commit index rebuild and a brief local fetch failure', async () => {
+    let staleAttempts = 0;
+    await expect(
+      withDatabaseReadRetry(
+        async () => {
+          staleAttempts += 1;
+          if (staleAttempts < 3) throw staleIndexError();
+          return 'indexed';
+        },
+        { initialDelayMs: 0 },
+      ),
+    ).resolves.toBe('indexed');
+    expect(staleAttempts).toBe(3);
+
+    let offlineAttempts = 0;
+    await expect(
+      withDatabaseReadRetry(
+        async () => {
+          offlineAttempts += 1;
+          if (offlineAttempts === 1) throw new TypeError('Failed to fetch');
+          return 'connected';
+        },
+        { initialDelayMs: 0 },
+      ),
+    ).resolves.toBe('connected');
+    expect(offlineAttempts).toBe(2);
   });
 
   test('honors an explicit retry predicate for typed retryable errors', async () => {
