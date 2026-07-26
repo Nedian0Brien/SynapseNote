@@ -5415,6 +5415,105 @@ describe('DatabaseTableDialog', () => {
     expect(document.querySelector('[data-database-conflict-resolution]')).toBeNull();
   });
 
+  test('keeps the database interactive while a cell edit saves in the background', async () => {
+    let releaseDraft: (() => void) | undefined;
+    const draftGate = new Promise<void>((resolve) => {
+      releaseDraft = resolve;
+    });
+    let committed = false;
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input);
+      const body = init?.body ? (JSON.parse(String(init.body)) as { action?: string }) : {};
+      if (path.startsWith('/api/databases/catalog')) return Response.json(catalog());
+      if (path === '/api/databases/describe') return Response.json(description());
+      if (path === '/api/databases/query') return Response.json(queryResult());
+      if (path === '/api/databases/plan' && body.action === 'create_draft') {
+        await draftGate;
+        return Response.json({
+          action: 'create_draft',
+          draft: { id: 'draft_background_cell', revision: hash },
+        });
+      }
+      if (path === '/api/databases/plan' && body.action === 'create_plan') {
+        return Response.json({
+          action: 'create_plan',
+          plan: {
+            id: 'plan_background_cell',
+            hash,
+            draftId: 'draft_background_cell',
+            draftRevision: hash,
+            snapshotRevision: hash,
+            createdAt: '2026-07-20T00:00:00.000Z',
+            expiresAt: '2026-07-20T01:00:00.000Z',
+            immutableTargetSet: ['db_tasks', 'ds_tasks', 'prop_title', 'rec_first'],
+            writeGuards: { permissions: [], querySnapshots: [] },
+            targetResolutions: [],
+            normalizedOperations: [],
+            affectedObjects: {
+              databaseIds: ['db_tasks'],
+              sourceIds: ['ds_tasks'],
+              propertyIds: ['prop_title'],
+              viewIds: [],
+              recordIds: ['rec_first'],
+            },
+            diff: {
+              mode: 'exact',
+              manifests: [],
+              records: [
+                {
+                  recordId: 'rec_first',
+                  sourceId: 'ds_tasks',
+                  path: 'tasks/first.md',
+                  action: 'update',
+                  before: { values: { prop_title: 'First task' }, body: '' },
+                  after: { values: { prop_title: 'Changed task' }, body: '' },
+                },
+              ],
+              templates: [],
+              policy: { mode: 'review', allowedOperations: [], maxRecordsPerCommit: 1 },
+            },
+            risk: { level: 'low', reasons: [] },
+            conflicts: [],
+            approvals: [],
+            postconditions: [],
+            committable: true,
+            requiresCommit: true,
+          },
+        });
+      }
+      if (path === '/api/databases/commit') {
+        committed = true;
+        return Response.json({
+          mutationId: 'mut_background_cell',
+          planId: 'plan_background_cell',
+          planHash: hash,
+          idempotentReplay: false,
+          actualDiff: [],
+          verification: { status: 'passed' },
+          revisions: { gitHead: `sha1:${'b'.repeat(40)}`, snapshotRevision: hash },
+          auditReceipt: {},
+          undoToken: 'undo_background_cell.secret',
+        });
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(<DatabaseTableDialog open={true} onOpenChange={() => {}} />);
+    fireEvent.click(await screen.findByLabelText('Edit Title for record rec_first'));
+    fireEvent.change(screen.getByLabelText('Edit Title'), { target: { value: 'Changed task' } });
+    fireEvent.click(screen.getByLabelText('Save cell edit'));
+
+    expect(await screen.findByText('Changed task')).not.toBeNull();
+    expect(
+      (screen.getByLabelText('Edit Budget for record rec_first') as HTMLButtonElement).disabled,
+    ).toBe(false);
+    expect(screen.queryByTestId('database-save-indicator')).toBeNull();
+    expect(document.querySelector('[data-database-state="loading"]')).toBeNull();
+
+    releaseDraft?.();
+    await waitFor(() => expect(committed).toBe(true));
+  });
+
   test('shows recoverable service failures without calling them offline', async () => {
     globalThis.fetch = mock(async () =>
       Response.json({ detail: 'Database service is offline' }, { status: 503 }),

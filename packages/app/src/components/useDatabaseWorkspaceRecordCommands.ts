@@ -113,9 +113,10 @@ export function useDatabaseWorkspaceRecordCommands(context: DatabaseWorkspaceCon
         {
           policy: { operation: 'cell', actor: 'human', principalId: 'user:local' },
           optimisticCellKey: cellKey,
+          background: true,
+          presentation: 'silent',
           ...(property.type === 'select' || property.type === 'multi_select'
             ? {
-                presentation: 'silent' as const,
                 ...(canPatchSelectRecordLocally(selectedView, property.id, tableCalculations)
                   ? {
                       recordRefresh: {

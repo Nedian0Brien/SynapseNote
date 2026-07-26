@@ -2,4 +2,4 @@
 '@nedian0brien/synapsenote': patch
 ---
 
-Prevent database mutation conflict banners from flashing during recoverable snapshot refresh races.
+Keep database cell edits responsive with immediate optimistic values and background persistence, while preventing conflict banners from flashing during recoverable snapshot refresh races.
