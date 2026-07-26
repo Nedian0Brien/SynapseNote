@@ -10,6 +10,7 @@ interface DocumentViewerHeaderProps {
   title: string;
   fileType: 'MD' | 'PDF';
   showBreadcrumb?: boolean;
+  breadcrumbSegments?: readonly string[];
   centerContent?: ReactNode;
   leadingAccessory?: ReactNode;
   actions?: ReactNode;
@@ -34,6 +35,7 @@ export function DocumentViewerHeader({
   title,
   fileType,
   showBreadcrumb = true,
+  breadcrumbSegments,
   centerContent,
   leadingAccessory,
   actions,
@@ -41,7 +43,9 @@ export function DocumentViewerHeader({
   className,
 }: DocumentViewerHeaderProps) {
   const { t } = useLingui();
-  const hasBreadcrumb = showBreadcrumb && documentPath.includes('/');
+  const hasBreadcrumb =
+    showBreadcrumb &&
+    (breadcrumbSegments ? breadcrumbSegments.length > 0 : documentPath.includes('/'));
 
   return (
     <div
@@ -56,7 +60,9 @@ export function DocumentViewerHeader({
       )}
     >
       <div className="flex min-w-0 items-center gap-1.5">
-        {showBreadcrumb ? <EditorBreadcrumb docName={documentPath} /> : null}
+        {showBreadcrumb ? (
+          <EditorBreadcrumb docName={documentPath} segments={breadcrumbSegments} />
+        ) : null}
         {hasBreadcrumb ? (
           <ChevronRight className="size-3 shrink-0 text-muted-foreground/60" aria-hidden="true" />
         ) : null}

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, mock, test } from 'bun:test';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { publishDatabaseRecordHeader } from '@/lib/database-record-header';
 import { renderLinguiTemplate } from '@/test-utils/lingui-mock';
 import { expectVisualClassTokens } from '@/test-utils/visual-contract';
 
@@ -11,9 +12,13 @@ mock.module('@lingui/react/macro', () => ({
 }));
 
 mock.module('./EditorBreadcrumb', () => ({
-  EditorBreadcrumb: ({ docName }: { docName: string | null }) => (
-    <span data-testid="editor-breadcrumb-probe">{docName}</span>
-  ),
+  EditorBreadcrumb: ({
+    docName,
+    segments,
+  }: {
+    docName: string | null;
+    segments?: readonly string[];
+  }) => <span data-testid="editor-breadcrumb-probe">{segments?.join(' / ') ?? docName}</span>,
 }));
 
 // The breadcrumb cell's NotInSidebarIndicator reads merged config through the
@@ -27,7 +32,12 @@ mock.module('@/lib/config-provider', () => ({
 }));
 
 describe('EditorToolbar runtime layout', () => {
-  afterEach(() => cleanup());
+  const headerReleases: Array<() => void> = [];
+
+  afterEach(() => {
+    cleanup();
+    while (headerReleases.length > 0) headerReleases.pop()?.();
+  });
 
   async function renderToolbar(activeDocName = 'docs/Page.md') {
     const { EditorToolbar } = await import('./EditorToolbar');
@@ -69,6 +79,27 @@ describe('EditorToolbar runtime layout', () => {
     expect(header.textContent).toContain('Page');
     expect(header.textContent).toContain('MD');
     expect(screen.getByRole('toolbar', { name: 'Markdown formatting' })).toBeTruthy();
+  });
+
+  test('shows database record identity in the header instead of its storage path', async () => {
+    headerReleases.push(
+      publishDatabaseRecordHeader('untitled_database/rec_internal_id', {
+        databaseName: 'Projects',
+        sourceName: 'Tasks',
+        recordTitle: 'Ship the editor',
+      }),
+    );
+
+    await renderToolbar('untitled_database/rec_internal_id');
+
+    expect(screen.getByTestId('editor-breadcrumb-probe').textContent).toBe('Projects / Tasks');
+    expect(screen.getByTestId('document-viewer-header').textContent).toContain('Ship the editor');
+    expect(screen.getByTestId('document-viewer-header').textContent).not.toContain(
+      'untitled_database',
+    );
+    expect(screen.getByTestId('document-viewer-header').textContent).not.toContain(
+      'rec_internal_id',
+    );
   });
 
   test('mode toggle sits in the Markdown tool row so the identity row keeps its width', async () => {

@@ -7,6 +7,7 @@ import { PropertyProvider } from '@/components/PropertyContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { DatabaseCatalogClientError } from '@/lib/database-catalog-client';
 import { DatabaseQueryClientError } from '@/lib/database-query-client';
+import { useDatabaseRecordHeader } from '@/lib/database-record-header';
 import { emitDatabaseChanged } from '@/lib/documents-events';
 import type { DatabaseRecordPageServices } from './DatabaseRecordPageChrome';
 import { DatabaseRecordPageChrome } from './DatabaseRecordPageChrome';
@@ -14,6 +15,11 @@ import { DatabaseRecordPageChrome } from './DatabaseRecordPageChrome';
 const DUMMY_WS = 'ws://localhost:1/collab';
 const hash = `sha256:${'a'.repeat(64)}`;
 const providers: HocuspocusProvider[] = [];
+
+function DatabaseRecordHeaderProbe({ docName }: { docName: string }) {
+  const header = useDatabaseRecordHeader(docName);
+  return <div data-testid="database-record-header-probe">{JSON.stringify(header)}</div>;
+}
 
 const database = DatabaseDefinitionSchema.parse({
   version: 1,
@@ -242,14 +248,17 @@ describe('DatabaseRecordPageChrome', () => {
     const view = render(
       <TooltipProvider>
         <PropertyProvider>
-          <DatabaseRecordPageChrome
-            provider={recordProvider}
-            docName="records/rec_first"
-            docExt=".md"
-            fallbackTitle="rec_first"
-            body={<div data-testid="record-body-editor">Editable record body</div>}
-            services={services}
-          />
+          <>
+            <DatabaseRecordPageChrome
+              provider={recordProvider}
+              docName="records/rec_first"
+              docExt=".md"
+              fallbackTitle="rec_first"
+              body={<div data-testid="record-body-editor">Editable record body</div>}
+              services={services}
+            />
+            <DatabaseRecordHeaderProbe docName="records/rec_first" />
+          </>
         </PropertyProvider>
       </TooltipProvider>,
     );
@@ -264,25 +273,24 @@ describe('DatabaseRecordPageChrome', () => {
     expect(recordSurface?.getAttribute('data-database-id')).toBe('db_tasks');
     expect(recordSurface?.getAttribute('data-source-id')).toBe('ds_tasks');
     expect(recordSurface?.getAttribute('data-record-id')).toBe('rec_first');
-    expect(recordSurface?.getAttribute('data-database-machine-ids')).toBe('stable');
-    expect(recordSurface?.querySelector('[data-database-machine-ids]')).not.toBeNull();
-    const breadcrumbs = view.getByLabelText('Database breadcrumbs');
-    expect(breadcrumbs.classList.contains('flex')).toBe(true);
-    expect(breadcrumbs.classList.contains('editor-content-aligned')).toBe(false);
-    expect(breadcrumbs.parentElement?.classList.contains('editor-content-aligned')).toBe(true);
+    expect(recordSurface?.hasAttribute('data-database-machine-ids')).toBe(false);
+    expect(recordSurface?.querySelector('[data-database-machine-ids]')).toBeNull();
+    expect(view.queryByLabelText('Database breadcrumbs')).toBeNull();
+    expect(view.queryByText('Advanced machine IDs')).toBeNull();
     expect(
-      Array.from(breadcrumbs.children).every((child) => child.parentElement === breadcrumbs),
-    ).toBe(true);
+      JSON.parse(view.getByTestId('database-record-header-probe').textContent ?? 'null'),
+    ).toEqual({
+      databaseName: 'Tasks',
+      sourceName: 'Tasks',
+      recordTitle: 'Canonical title',
+    });
     const recordToolbar = view.container.querySelector<HTMLElement>(
       '[data-database-record-toolbar]',
     );
     expect(recordToolbar).not.toBeNull();
-    expect(recordToolbar?.classList.contains('flex-wrap')).toBe(true);
+    expect(recordToolbar?.classList.contains('flex-wrap')).toBe(false);
     expect(recordToolbar?.parentElement?.classList.contains('editor-content-aligned')).toBe(true);
     expect(view.getByRole('button', { name: 'Ask agent' })).toBeDefined();
-    expect(view.getByRole('link', { name: 'Tasks' }).getAttribute('href')).toBe(
-      '#database/db_tasks/ds_tasks',
-    );
     const bodyHost = view.getByTestId('record-body-editor');
     const bodySurface = bodyHost.closest('[data-database-record-body]');
     expect(bodySurface?.getAttribute('data-record-body-position')).toBe('below-properties');
@@ -331,13 +339,23 @@ describe('DatabaseRecordPageChrome', () => {
     expect(view.container.querySelector('[data-full-width-content="true"]')).not.toBeNull();
     expect(view.queryByText('_sn')).toBeNull();
     expect(view.getByRole('button', { name: 'Comments' })).toBeDefined();
-    expect(view.getByRole('button', { name: 'Page history' })).toBeDefined();
-    expect(view.getByRole('button', { name: 'Permissions' })).toBeDefined();
-    expect(view.getByRole('button', { name: 'Customize appearance' })).toBeDefined();
-    expect(view.getByRole('button', { name: 'Customize this page' })).toBeDefined();
-    expect(view.getByRole('button', { name: 'Customize layout' })).toBeDefined();
+    expect(view.queryByRole('button', { name: 'Page history' })).toBeNull();
+    expect(view.queryByRole('button', { name: 'Permissions' })).toBeNull();
+    expect(view.queryByRole('button', { name: 'Customize appearance' })).toBeNull();
+    expect(view.queryByRole('button', { name: 'Customize this page' })).toBeNull();
+    expect(view.queryByRole('button', { name: 'Customize layout' })).toBeNull();
 
-    fireEvent.click(view.getByRole('button', { name: 'Customize appearance' }));
+    const openPageMenu = () => {
+      const trigger = view.getByRole('button', { name: 'More page actions' });
+      fireEvent.pointerDown(trigger, { button: 0 });
+      fireEvent.click(trigger);
+    };
+    openPageMenu();
+    expect(view.getByRole('menuitem', { name: 'Page history' })).toBeDefined();
+    expect(view.getByRole('menuitem', { name: 'Permissions' })).toBeDefined();
+    expect(view.getByRole('menuitem', { name: 'Customize this page' })).toBeDefined();
+    expect(view.getByRole('menuitem', { name: 'Customize layout' })).toBeDefined();
+    fireEvent.click(view.getByRole('menuitem', { name: 'Customize appearance' }));
     expect(view.getByRole('heading', { name: 'Customize record page' })).toBeDefined();
     fireEvent.change(view.getByRole('textbox', { name: 'Record page icon' }), {
       target: { value: '🧭' },
@@ -374,7 +392,8 @@ describe('DatabaseRecordPageChrome', () => {
     expect(confirmations).toHaveLength(2);
     expect(confirmations[0]).toContain('Exact plan: plan_page_title');
 
-    fireEvent.click(view.getByRole('button', { name: 'Customize layout' }));
+    openPageMenu();
+    fireEvent.click(view.getByRole('menuitem', { name: 'Customize layout' }));
     fireEvent.click(view.getByRole('combobox', { name: 'Owner placement' }));
     fireEvent.click(await view.findByRole('option', { name: 'Hidden' }));
     fireEvent.click(view.getByLabelText('Use full-width page content'));
@@ -387,7 +406,8 @@ describe('DatabaseRecordPageChrome', () => {
     });
     expect(confirmations[2]).toContain('Apply this page layout');
 
-    fireEvent.click(view.getByRole('button', { name: 'Customize this page' }));
+    openPageMenu();
+    fireEvent.click(view.getByRole('menuitem', { name: 'Customize this page' }));
     fireEvent.click(view.getByRole('combobox', { name: 'Owner record placement' }));
     fireEvent.click(await view.findByRole('option', { name: 'Panel' }));
     fireEvent.click(view.getByRole('combobox', { name: 'Notes group record state' }));

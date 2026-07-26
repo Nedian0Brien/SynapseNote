@@ -11,14 +11,20 @@ import {
 } from '@nedian0brien/synapsenote-core';
 import {
   Archive,
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
   Copy,
   History,
   Link2,
   MessageSquare,
   MoreHorizontal,
   MoveRight,
+  Palette,
   RotateCcw,
   Settings2,
+  Shield,
+  SlidersHorizontal,
   Trash2,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -26,7 +32,6 @@ import { useEffect, useState } from 'react';
 import { DatabaseAgentScopeMenu } from '@/components/DatabaseAgentScopeMenu';
 import { DatabaseCommentsDialog } from '@/components/DatabaseCommentsDialog';
 import { DatabaseConflictResolutionNotice } from '@/components/DatabaseConflictResolutionNotice';
-import { DatabaseMachineIdsDetails } from '@/components/DatabaseMachineIdsDetails';
 import {
   type DatabasePageAppearance,
   DatabasePageAppearanceDialog,
@@ -66,6 +71,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { subscribeToDatabaseAgentRunChanged } from '@/lib/database-agent-run-events';
+import { publishDatabaseRecordHeader } from '@/lib/database-record-header';
 import { describeDatabase } from '@/lib/database-catalog-client';
 import {
   createDatabaseCellMutationDesiredState,
@@ -366,6 +372,14 @@ export function DatabaseRecordPageChrome({
     titleProperty && typeof snapshot.map[titleProperty.key] === 'string'
       ? (snapshot.map[titleProperty.key] as string)
       : undefined;
+  useEffect(() => {
+    if (!currentBinding || !source) return;
+    return publishDatabaseRecordHeader(docName, {
+      databaseName: currentBinding.database.name,
+      sourceName: source.name,
+      recordTitle: databaseTitle ?? fallbackTitle,
+    });
+  }, [currentBinding, databaseTitle, docName, fallbackTitle, source]);
   const recordIcon = typeof snapshot.map.icon === 'string' ? snapshot.map.icon : undefined;
   const recordCover = typeof snapshot.map.cover === 'string' ? snapshot.map.cover : undefined;
   const reservedKeys = ['_sn', ...(titleProperty ? [titleProperty.key] : [])];
@@ -817,43 +831,6 @@ export function DatabaseRecordPageChrome({
       sourceId={metadata.source_id}
       recordId={metadata.record_id}
     >
-      <div className="editor-content-aligned py-2">
-        <nav
-          className="flex min-w-0 items-center gap-1 overflow-hidden text-muted-foreground text-xs"
-          aria-label="Database breadcrumbs"
-          data-database-breadcrumbs
-        >
-          <a
-            className="min-w-0 truncate underline underline-offset-2"
-            href={
-              recordNavigation
-                ? databaseRecordPageOriginHash(recordNavigation)
-                : databaseRecordPageFallbackHash(metadata.database_id, metadata.source_id)
-            }
-          >
-            {currentBinding?.database.name ?? metadata.database_id}
-          </a>
-          <span className="shrink-0" aria-hidden="true">
-            /
-          </span>
-          <span className="min-w-0 truncate">{source?.name ?? metadata.source_id}</span>
-          <span className="shrink-0" aria-hidden="true">
-            /
-          </span>
-          <span className="min-w-0 truncate" aria-current="page">
-            {databaseTitle ?? fallbackTitle}
-          </span>
-        </nav>
-      </div>
-      <div className="editor-content-aligned py-1">
-        <DatabaseMachineIdsDetails
-          entries={[
-            { kind: 'database', label: <Trans>Database</Trans>, value: metadata.database_id },
-            { kind: 'source', label: <Trans>Source</Trans>, value: metadata.source_id },
-            { kind: 'record', label: <Trans>Record</Trans>, value: metadata.record_id },
-          ]}
-        />
-      </div>
       <PageHeader
         provider={provider}
         docName={docName}
@@ -917,41 +894,44 @@ export function DatabaseRecordPageChrome({
       ) : null}
       {source && !recordUnavailable ? (
         <div className="editor-content-aligned py-1">
-          <div
-            className="flex min-w-0 flex-wrap items-center justify-end gap-y-1"
-            data-database-record-toolbar
-          >
+          <div className="flex min-w-0 items-center justify-end gap-1" data-database-record-toolbar>
             {recordNavigation ? (
               <>
                 <Button
                   type="button"
-                  size="sm"
+                  size="icon-sm"
                   variant="ghost"
+                  aria-label="Previous page"
+                  title="Previous page"
                   disabled={recordNavigation.index === 0}
                   onClick={() => navigateToRecord(recordNavigation.index - 1)}
                 >
-                  Previous page
+                  <ChevronLeft aria-hidden="true" />
                 </Button>
                 <Button
                   type="button"
-                  size="sm"
+                  size="icon-sm"
                   variant="ghost"
+                  aria-label="Next page"
+                  title="Next page"
                   disabled={recordNavigation.index === recordNavigation.paths.length - 1}
                   onClick={() => navigateToRecord(recordNavigation.index + 1)}
                 >
-                  Next page
+                  <ChevronRight aria-hidden="true" />
                 </Button>
                 <Button
                   type="button"
-                  size="sm"
+                  size="icon-sm"
                   variant="ghost"
+                  aria-label="Back to database view"
+                  title="Back to database view"
                   onClick={() => {
                     navigateToDatabaseRecordPageHash(
                       databaseRecordPageOriginHash(recordNavigation),
                     );
                   }}
                 >
-                  Back to database view
+                  <ArrowLeft aria-hidden="true" />
                 </Button>
               </>
             ) : null}
@@ -962,58 +942,15 @@ export function DatabaseRecordPageChrome({
                 recordId: metadata.record_id,
               }}
             />
-            <Button type="button" size="sm" variant="ghost" onClick={() => void openComments()}>
-              <MessageSquare /> <Trans>Comments</Trans>
-            </Button>
             <Button
               type="button"
-              size="sm"
+              size="icon-sm"
               variant="ghost"
-              onClick={() => setHistoryDialogOpen(true)}
+              aria-label="Comments"
+              title="Comments"
+              onClick={() => void openComments()}
             >
-              <History /> <Trans>Page history</Trans>
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={() => setPermissionsDialogOpen(true)}
-              data-database-record-permissions
-            >
-              <Trans>Permissions</Trans>
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              disabled={appearanceSaving || mutationPropertyId !== null}
-              onClick={() => setAppearanceDialogOpen(true)}
-              data-database-record-appearance
-            >
-              <Trans>Customize appearance</Trans>
-            </Button>
-            {source.properties.some((property) => property.type === 'relation') ? (
-              <Button type="button" size="sm" variant="ghost" onClick={() => void openRelations()}>
-                <Link2 /> <Trans>Relations</Trans>
-              </Button>
-            ) : null}
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              disabled={layoutMutationRunning || mutationPropertyId !== null}
-              onClick={() => setRecordLayoutDialogOpen(true)}
-            >
-              <Settings2 /> <Trans>Customize this page</Trans>
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              disabled={layoutMutationRunning || mutationPropertyId !== null}
-              onClick={() => setLayoutDialogOpen(true)}
-            >
-              <Settings2 /> <Trans>Customize layout</Trans>
+              <MessageSquare aria-hidden="true" />
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -1029,6 +966,43 @@ export function DatabaseRecordPageChrome({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <Trans>Page options</Trans>
+                </DropdownMenuLabel>
+                <DropdownMenuItem onSelect={() => setHistoryDialogOpen(true)}>
+                  <History aria-hidden="true" /> <Trans>Page history</Trans>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => setPermissionsDialogOpen(true)}
+                  data-database-record-permissions
+                >
+                  <Shield aria-hidden="true" /> <Trans>Permissions</Trans>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={appearanceSaving || mutationPropertyId !== null}
+                  onSelect={() => setAppearanceDialogOpen(true)}
+                  data-database-record-appearance
+                >
+                  <Palette aria-hidden="true" /> <Trans>Customize appearance</Trans>
+                </DropdownMenuItem>
+                {source.properties.some((property) => property.type === 'relation') ? (
+                  <DropdownMenuItem onSelect={() => void openRelations()}>
+                    <Link2 aria-hidden="true" /> <Trans>Relations</Trans>
+                  </DropdownMenuItem>
+                ) : null}
+                <DropdownMenuItem
+                  disabled={layoutMutationRunning || mutationPropertyId !== null}
+                  onSelect={() => setRecordLayoutDialogOpen(true)}
+                >
+                  <Settings2 aria-hidden="true" /> <Trans>Customize this page</Trans>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={layoutMutationRunning || mutationPropertyId !== null}
+                  onSelect={() => setLayoutDialogOpen(true)}
+                >
+                  <SlidersHorizontal aria-hidden="true" /> <Trans>Customize layout</Trans>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuLabel>
                   <Trans>Page actions</Trans>
                 </DropdownMenuLabel>

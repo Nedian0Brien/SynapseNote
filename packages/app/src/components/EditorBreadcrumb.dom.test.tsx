@@ -76,6 +76,19 @@ describe('EditorBreadcrumb (Tier-3 mount)', () => {
     expect(separatorEls.length).toBe(0);
   });
 
+  test('renders an explicit virtual hierarchy instead of filesystem folders', () => {
+    render(
+      <EditorBreadcrumb
+        docName="untitled_database/rec_internal_id"
+        segments={['Projects', 'Tasks']}
+      />,
+    );
+
+    const nav = screen.getByRole('navigation', { name: /breadcrumb/i });
+    const itemEls = nav.querySelectorAll('li[data-slot="breadcrumb-item"]');
+    expect(Array.from(itemEls).map((item) => item.textContent)).toEqual(['Projects', 'Tasks']);
+  });
+
   test('exposes the full segment text via title for truncation reveal', () => {
     render(<EditorBreadcrumb docName="a-very-long-folder-name/another-folder/some-doc" />);
     const nav = screen.getByRole('navigation', { name: /breadcrumb/i });

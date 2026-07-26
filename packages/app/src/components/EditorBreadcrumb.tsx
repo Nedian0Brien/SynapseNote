@@ -13,6 +13,8 @@ import { cn } from '@/lib/utils';
 
 interface EditorBreadcrumbProps {
   docName: string | null;
+  /** Explicit hierarchy labels for virtual documents such as database records. */
+  segments?: readonly string[];
   /** Optional extra classes for the outer breadcrumb nav (e.g. layout overrides). */
   className?: string;
 }
@@ -61,18 +63,24 @@ type BreadcrumbNode =
  * spread-props (BreadcrumbPage forwards every attr to its inner span), so the
  * native truncation tooltip continues to reveal the full segment on hover.
  */
-export function EditorBreadcrumb({ docName, className }: EditorBreadcrumbProps) {
+export function EditorBreadcrumb({
+  docName,
+  segments: explicitSegments,
+  className,
+}: EditorBreadcrumbProps) {
   if (!docName) return null;
   // Managed-artifact tabs derive their breadcrumb from the parsed artifact, not
   // the raw `__skill__`/`__template__` doc-name prefix: a template shows its
   // owning folder path; a skill has no folder hierarchy (its identity lives in
   // the property panel + tab badge), so it renders no breadcrumb.
   const managed = parseManagedArtifactName(docName);
-  const segments = managed
-    ? managed.kind === 'template'
-      ? managed.folder.split('/').filter(Boolean)
-      : []
-    : tabParts(docName, '').prefix.replace(/\/$/, '').split('/').filter(Boolean);
+  const segments =
+    explicitSegments ??
+    (managed
+      ? managed.kind === 'template'
+        ? managed.folder.split('/').filter(Boolean)
+        : []
+      : tabParts(docName, '').prefix.replace(/\/$/, '').split('/').filter(Boolean));
   if (segments.length === 0) return null;
 
   // Stable per-segment key: full prefix slice up to that segment.
