@@ -9,12 +9,14 @@ describe('database focused cell suite', () => {
   test('opens the editor when the cell surface is clicked outside its value', () => {
     const fixture = createDatabaseTestFixture();
     render(
-      <DatabaseTable
-        source={fixture.source as never}
-        result={fixture.result as never}
-        notionSurface
-        onEdit={() => {}}
-      />,
+      <div contentEditable suppressContentEditableWarning>
+        <DatabaseTable
+          source={fixture.source as never}
+          result={fixture.result as never}
+          notionSurface
+          onEdit={() => {}}
+        />
+      </div>,
     );
     const statusCell = document.querySelector<HTMLElement>(
       '[data-database-cell-row="0"][data-property-id="status"]',
