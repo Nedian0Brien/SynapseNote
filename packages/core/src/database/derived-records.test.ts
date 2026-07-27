@@ -180,7 +180,6 @@ describe('permission-scoped derived record materialization', () => {
     expect(records[0]?.values).not.toHaveProperty('prop_double_score');
     expect(task?.values).toMatchObject({
       prop_double_score: 8,
-      prop_visible_budget: 10,
     });
     expect(task?.computedResults?.prop_created_formula).toEqual(
       formulaValueResult('date', { kind: 'date', value: '2026-07-18T08:00:00.000Z' }),
@@ -194,7 +193,10 @@ describe('permission-scoped derived record materialization', () => {
       kind: 'error',
       problem: { code: 'divide_by_zero' },
     });
-    expect(task?.computedResults?.prop_visible_budget).toEqual(formulaValueResult('number', 10));
+    expect(task?.computedResults?.prop_visible_budget).toMatchObject({
+      kind: 'error',
+      problem: { code: 'permission_denied' },
+    });
   });
 
   test('does not fabricate a query value for nulls, errors, nested, or mixed lists', () => {

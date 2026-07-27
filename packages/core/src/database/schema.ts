@@ -2946,6 +2946,46 @@ export const DatabaseMigrationMetadataSchema = z
 export type DatabaseMigrationLegacyRecordAlias = z.infer<typeof DatabaseMigrationLegacyRecordAliasSchema>;
 export type DatabaseMigrationMetadata = z.infer<typeof DatabaseMigrationMetadataSchema>;
 
+/**
+ * Database-membership metadata for native v2 rows.  It lives in the manifest
+ * metadata area rather than in the linked document, so a normal document can
+ * participate in multiple databases without inheriting database-specific
+ * archive/layout state.  Stored scalar values remain exclusively in the owner
+ * Markdown table.
+ */
+export const DatabaseRecordLifecycleMetadataSchema = z
+  .object({
+    archivedAt: z.string().datetime({ offset: true }).nullable().optional(),
+    createdAt: z.string().datetime({ offset: true }).optional(),
+    lastEditedAt: z.string().datetime({ offset: true }).optional(),
+    createdBy: DatabaseRecordActorSchema.optional(),
+    lastEditedBy: DatabaseRecordActorSchema.optional(),
+    pageLayoutOverride: DatabaseRecordPageLayoutOverrideSchema.optional(),
+  })
+  .strict();
+
+export type DatabaseRecordLifecycleMetadata = z.infer<
+  typeof DatabaseRecordLifecycleMetadataSchema
+>;
+
+export const DatabaseStorageMetadataSchema = z
+  .object({
+    recordLifecycle: z
+      .record(DatabaseRecordIdSchema, DatabaseRecordLifecycleMetadataSchema)
+      .default({})
+      .superRefine((metadata, context) => {
+        if (Object.keys(metadata).length > 100_000) {
+          context.addIssue({
+            code: 'custom',
+            message: 'Native v2 record lifecycle metadata cannot exceed 100000 rows',
+          });
+        }
+      }),
+  })
+  .strict();
+
+export type DatabaseStorageMetadata = z.infer<typeof DatabaseStorageMetadataSchema>;
+
 export const DatabaseDefinitionSchema = z
   .object({
     version: z.union([z.literal(1), z.literal(2)]),
@@ -2962,6 +3002,7 @@ export const DatabaseDefinitionSchema = z
     sources: z.array(DatabaseSourceSchema).min(1),
     sourceMappings: z.array(DatabaseSourceMappingSchema).optional(),
     migration: DatabaseMigrationMetadataSchema.optional(),
+    storageMetadata: DatabaseStorageMetadataSchema.optional(),
     views: z.array(DatabaseViewSchema).default([]),
     templates: z.array(DatabaseTemplateSchema).default([]),
     buttons: z.array(DatabaseActionButtonSchema).default([]),
@@ -3007,6 +3048,13 @@ export const DatabaseDefinitionSchema = z
         code: 'custom',
         path: ['migration'],
         message: 'Migration compatibility metadata is only valid on a v2 manifest',
+      });
+    }
+    if (database.storageMetadata && database.version !== 2) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['storageMetadata'],
+        message: 'Native v2 storage metadata requires a version 2 manifest',
       });
     }
 

@@ -1123,4 +1123,179 @@ describe('DatabaseRecordIndex incremental rematerialization', () => {
     expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toBe(owner);
     expect(index.list()).toHaveLength(0);
   });
+
+  test('v2 title mutation updates the linked document and wikilink alias atomically', async () => {
+    const { projectDir, contentDir } = tempProject();
+    mkdirSync(join(contentDir, 'orders'), { recursive: true });
+    const store = createDatabaseStore({ projectDir, contentDir });
+    await store.create(v2Definition());
+    const owner = [
+      '<!-- synapsenote:database', 'version=2', 'database=db_tasks', 'source=ds_tasks',
+      'block=dbb_orders_primary', 'columns=prop_title,prop_notes,prop_status', '-->', '',
+      '| Document | Notes | Status |', '| --- | --- | --- |', '| [[orders/alpha]] | First order | todo |', '',
+    ].join('\n');
+    const document = '---\n_sn:\n  document_id: doc_alpha\n---\n# Alpha order\n\nAlpha body\n';
+    writeFileSync(join(contentDir, 'orders.md'), owner);
+    writeFileSync(join(contentDir, 'orders/alpha.md'), document);
+    const index = createDatabaseRecordIndex({ contentDir, databaseStore: store });
+    await index.rebuild();
+    const writer = createDatabaseMarkdownTableWriter({ projectDir, contentDir, databaseStore: store, databaseRecordIndex: index });
+    const recordId = index.list()[0]!.id;
+    const ownerRevision = `sha256:${createHash('sha256').update(owner).digest('hex')}`;
+    const changed = await writer.updateTitle({ databaseId: 'db_tasks', sourceId: 'ds_tasks', recordId, title: 'Renamed order', expectedOwnerRevision: ownerRevision });
+    expect(changed.receipt.operation).toBe('update_title');
+    expect(readFileSync(join(contentDir, 'orders/alpha.md'), 'utf8')).toContain('title: "Renamed order"');
+    expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toContain('[[orders/alpha\\|Renamed order]]');
+    expect(index.getById(recordId)).toMatchObject({ values: { prop_title: 'Renamed order' } });
+    await writer.undo({ receipt: changed.receipt });
+    expect(readFileSync(join(contentDir, 'orders/alpha.md'), 'utf8')).toBe(document);
+    expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toBe(owner);
+  });
+
+  test('v2 writer resolves a unique document-title alias instead of guessing a path', async () => {
+    const { projectDir, contentDir } = tempProject();
+    mkdirSync(join(contentDir, 'orders'), { recursive: true });
+    const store = createDatabaseStore({ projectDir, contentDir });
+    await store.create(v2Definition());
+    const owner = [
+      '<!-- synapsenote:database',
+      'version=2',
+      'database=db_tasks',
+      'source=ds_tasks',
+      'block=dbb_orders_primary',
+      'columns=prop_title,prop_notes,prop_status',
+      '-->',
+      '',
+      '| Document | Notes | Status |',
+      '| --- | --- | --- |',
+      '| [[Alpha alias]] | First order | todo |',
+      '',
+    ].join('\n');
+    writeFileSync(join(contentDir, 'orders.md'), owner);
+    writeFileSync(
+      join(contentDir, 'orders/alpha.md'),
+      '---\n_sn:\n  document_id: doc_alpha_alias\ntitle: Alpha alias\n---\nAlpha body\n',
+    );
+    const index = createDatabaseRecordIndex({ contentDir, databaseStore: store });
+    await index.rebuild();
+    const writer = createDatabaseMarkdownTableWriter({
+      projectDir,
+      contentDir,
+      databaseStore: store,
+      databaseRecordIndex: index,
+    });
+    const record = index.list()[0]!;
+    const ownerRevision = `sha256:${createHash('sha256').update(owner).digest('hex')}`;
+    const changed = await writer.updateCell({
+      databaseId: 'db_tasks',
+      sourceId: 'ds_tasks',
+      recordId: record.id,
+      propertyId: 'prop_notes',
+      value: 'Edited through alias',
+      expectedOwnerRevision: ownerRevision,
+    });
+    expect(changed.changed).toBe(true);
+    expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toContain('Edited through alias');
+    expect(index.getById(record.id)).toMatchObject({
+      path: 'orders/alpha.md',
+      values: { prop_notes: 'Edited through alias' },
+    });
+  });
+
+  test('v2 document move preserves document and record identity and undoes both paths', async () => {
+    const { projectDir, contentDir } = tempProject();
+    mkdirSync(join(contentDir, 'orders'), { recursive: true });
+    const store = createDatabaseStore({ projectDir, contentDir });
+    await store.create(v2Definition());
+    const owner = [
+      '<!-- synapsenote:database', 'version=2', 'database=db_tasks', 'source=ds_tasks',
+      'block=dbb_orders_primary', 'columns=prop_title,prop_notes,prop_status', '-->', '',
+      '| Document | Notes | Status |', '| --- | --- | --- |', '| [[orders/alpha]] | First order | todo |', '',
+    ].join('\n');
+    const document = '---\n_sn:\n  document_id: doc_alpha\n---\n# Alpha order\n';
+    writeFileSync(join(contentDir, 'orders.md'), owner);
+    writeFileSync(join(contentDir, 'orders/alpha.md'), document);
+    const index = createDatabaseRecordIndex({ contentDir, databaseStore: store });
+    await index.rebuild();
+    const writer = createDatabaseMarkdownTableWriter({ projectDir, contentDir, databaseStore: store, databaseRecordIndex: index });
+    const record = index.list()[0]!;
+    const ownerRevision = `sha256:${createHash('sha256').update(owner).digest('hex')}`;
+    const moved = await writer.moveDocument({ databaseId: 'db_tasks', sourceId: 'ds_tasks', recordId: record.id, newDocumentPath: 'orders/renamed.md', expectedOwnerRevision: ownerRevision });
+    expect(moved.receipt.operation).toBe('move_document');
+    expect(index.getById(record.id)).toMatchObject({ id: record.id, path: 'orders/renamed.md' });
+    expect(readFileSync(join(contentDir, 'orders/renamed.md'), 'utf8')).toContain('document_id: doc_alpha');
+    expect(() => readFileSync(join(contentDir, 'orders/alpha.md'))).toThrow();
+    expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toContain('[[orders/renamed]]');
+    await writer.undo({ receipt: moved.receipt });
+    expect(index.getById(record.id)).toMatchObject({ id: record.id, path: 'orders/alpha.md' });
+    expect(readFileSync(join(contentDir, 'orders/alpha.md'), 'utf8')).toBe(document);
+    expect(() => readFileSync(join(contentDir, 'orders/renamed.md'))).toThrow();
+    expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toBe(owner);
+  });
+
+  test('v2 lifecycle mutation stores archive/layout/audit metadata in the manifest and undoes exactly', async () => {
+    const { projectDir, contentDir } = tempProject();
+    mkdirSync(join(contentDir, 'orders'), { recursive: true });
+    const store = createDatabaseStore({ projectDir, contentDir });
+    await store.create(v2Definition());
+    const owner = [
+      '<!-- synapsenote:database', 'version=2', 'database=db_tasks', 'source=ds_tasks',
+      'block=dbb_orders_primary', 'columns=prop_title,prop_notes,prop_status', '-->', '',
+      '| Document | Notes | Status |', '| --- | --- | --- |', '| [[orders/alpha]] | First order | todo |', '',
+    ].join('\n');
+    writeFileSync(join(contentDir, 'orders.md'), owner);
+    writeFileSync(
+      join(contentDir, 'orders/alpha.md'),
+      '---\n_sn:\n  document_id: doc_alpha\n---\n# Alpha order\n',
+    );
+    const index = createDatabaseRecordIndex({ contentDir, databaseStore: store });
+    await index.rebuild();
+    const writer = createDatabaseMarkdownTableWriter({ projectDir, contentDir, databaseStore: store, databaseRecordIndex: index });
+    const record = index.list()[0]!;
+    const manifestPath = join(projectDir, '.ok/databases/tasks.yml');
+    const manifestBefore = readFileSync(manifestPath, 'utf8');
+    const ownerRevision = `sha256:${createHash('sha256').update(owner).digest('hex')}`;
+    const changed = await writer.updateLifecycle({
+      databaseId: 'db_tasks',
+      sourceId: 'ds_tasks',
+      recordId: record.id,
+      archived: true,
+      pageLayoutOverride: {
+        pinnedPropertyIds: [],
+        panelPropertyIds: ['prop_notes'],
+        hiddenPropertyIds: [],
+        groupOverrides: [],
+        fullWidthContent: true,
+      },
+      actor: { kind: 'human', principal_id: 'tester' },
+      now: '2026-07-27T01:02:03.000Z',
+      expectedOwnerRevision: ownerRevision,
+    });
+    expect(changed.receipt.operation).toBe('update_lifecycle');
+    expect(index.getById(record.id)).toMatchObject({
+      archivedAt: '2026-07-27T01:02:03.000Z',
+      pageLayoutOverride: { panelPropertyIds: ['prop_notes'], fullWidthContent: true },
+    });
+    expect(readFileSync(manifestPath, 'utf8')).toContain('storageMetadata:');
+
+    const deleted = await writer.deleteRow({
+      databaseId: 'db_tasks',
+      sourceId: 'ds_tasks',
+      recordId: record.id,
+      expectedOwnerRevision: ownerRevision,
+    });
+    expect(deleted.receipt.manifestPath).toBe('.ok/databases/tasks.yml');
+    expect(index.getById(record.id)).toBeNull();
+    expect(store.getById('db_tasks')?.storageMetadata?.recordLifecycle).toEqual({});
+    await writer.undo({ receipt: deleted.receipt });
+    expect(index.getById(record.id)).toMatchObject({
+      id: record.id,
+      archivedAt: '2026-07-27T01:02:03.000Z',
+    });
+    expect(store.getById('db_tasks')?.storageMetadata?.recordLifecycle).toHaveProperty(record.id);
+    await writer.undo({ receipt: changed.receipt });
+    expect(readFileSync(manifestPath, 'utf8')).toBe(manifestBefore);
+    expect(index.getById(record.id)).toMatchObject({ archivedAt: null });
+    expect(index.getById(record.id)).not.toHaveProperty('pageLayoutOverride');
+  });
 });

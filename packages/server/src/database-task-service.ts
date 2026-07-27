@@ -287,6 +287,12 @@ function migrationPlanHash(files: readonly { path: string; after: string | null 
   return sha256(stableJson(files.map((file) => ({ path: file.path, after: file.after === null ? null : sha256(file.after) }))));
 }
 
+interface VerifiedMigrationBackup {
+  path: string;
+  revision: string;
+  fileCount: number;
+}
+
 function defaultOwnerPath(databaseKey: string, sourceKey: string): string {
   return `${databaseKey}/${sourceKey}.md`;
 }
@@ -1324,6 +1330,57 @@ export class DatabaseTaskService {
     return { verifiedRows, verifiedOwners };
   }
 
+  /** Persist and read back the complete before-image before staging begins. */
+  async #writeVerifiedMigrationBackup(
+    taskId: string,
+    files: readonly { path: string; before: string | null; after: string | null }[],
+  ): Promise<VerifiedMigrationBackup> {
+    const relativeBackupPath = `.ok/local/database-migrations/${taskId}/backup.json`;
+    const backupPath = resolve(this.#projectDir, relativeBackupPath);
+    const payload = {
+      version: 1,
+      taskId,
+      createdAt: new Date().toISOString(),
+      files: files.map((file) => ({
+        path: safeProjectRelativePath(file.path),
+        before: file.before,
+        beforeSha256: file.before === null ? null : sha256(file.before),
+        afterSha256: file.after === null ? null : sha256(file.after),
+      })),
+    };
+    const encoded = `${JSON.stringify(payload)}\n`;
+    await mkdir(dirname(backupPath), { recursive: true });
+    await atomicWriteFile(backupPath, encoded, { fs: tracedAtomicFs });
+    const readBack = await readFile(backupPath, 'utf8');
+    let parsed: typeof payload;
+    try {
+      parsed = JSON.parse(readBack) as typeof payload;
+    } catch {
+      throw executionProblem(
+        'task_backup_verification_failed',
+        'Migration backup verification failed',
+        'The durable before-image could not be parsed after it was written.',
+        false,
+        500,
+      );
+    }
+    if (
+      parsed.taskId !== taskId ||
+      parsed.files.length !== payload.files.length ||
+      sha256(readBack) !== sha256(encoded) ||
+      stableJson(parsed.files) !== stableJson(payload.files)
+    ) {
+      throw executionProblem(
+        'task_backup_verification_failed',
+        'Migration backup verification failed',
+        'The durable before-image did not match the approved target set.',
+        false,
+        500,
+      );
+    }
+    return { path: relativeBackupPath, revision: sha256(readBack), fileCount: payload.files.length };
+  }
+
   async #runMigration(context: DatabaseTaskExecutionContext): Promise<Record<string, unknown>> {
     const input = MigrationTaskInputSchema.parse(context.input);
     const checkpoint = context.checkpoint
@@ -1490,6 +1547,7 @@ export class DatabaseTaskService {
         );
       }
     }
+    const backup = await this.#writeVerifiedMigrationBackup(context.task.id, files);
     await this.#migrationJournal.prepare({ taskId: context.task.id, files });
     const stagingRoot = resolve(this.#projectDir, '.ok', 'local', 'database-migrations', context.task.id, 'staging');
     try {
@@ -1550,6 +1608,7 @@ export class DatabaseTaskService {
         journalState: 'activated',
         planHashes: contentPlans.map((plan) => plan.planHash),
         verification,
+        backup,
       };
     } catch (error) {
       try {

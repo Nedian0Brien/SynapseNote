@@ -36,6 +36,7 @@ import { classifyDatabaseUiProblem, databaseMutationUiMessage } from '@/lib/data
 import {
   createMarkdownTableCellMutation,
   createMarkdownTableRowCreateMutation,
+  createMarkdownTableTitleMutation,
   markdownTableDefaultValues,
   markdownTableDocumentMarkdown,
   markdownTableDocumentPath,
@@ -236,23 +237,31 @@ export function useInlineDatabaseCommands({
     if (state.status !== 'ready' || !linkedSource || !linkedDatabase) return;
     const cellKey = optimisticCellKey(record.id, property.id);
     try {
-      if (linkedSource.storage?.kind === 'markdown_table' && property.type === 'title') {
-        throw new Error('Edit the linked Markdown document title; the owner table stores only its wikilink');
-      }
       setInlineOptimisticCellValues((current) => setOptimisticCellValue(current, cellKey, value));
       if (linkedSource.storage?.kind === 'markdown_table') {
         if (!record.storageRevision) {
           throw new Error('The current Markdown owner-table revision is unavailable');
         }
+        const mutation = property.type === 'title'
+          ? typeof value === 'string'
+            ? createMarkdownTableTitleMutation({
+                databaseId: linkedDatabase.id,
+                sourceId: linkedSource.id,
+                recordId: record.id,
+                title: value,
+                expectedOwnerRevision: record.storageRevision,
+              })
+            : (() => { throw new Error('A Markdown document title must be text'); })()
+          : createMarkdownTableCellMutation({
+              databaseId: linkedDatabase.id,
+              sourceId: linkedSource.id,
+              recordId: record.id,
+              propertyId: property.id,
+              value,
+              expectedOwnerRevision: record.storageRevision,
+            });
         runInlineMarkdownTableMutation(
-          createMarkdownTableCellMutation({
-            databaseId: linkedDatabase.id,
-            sourceId: linkedSource.id,
-            recordId: record.id,
-            propertyId: property.id,
-            value,
-            expectedOwnerRevision: record.storageRevision,
-          }),
+          mutation,
           { operation: 'cell', optimisticCellKey: cellKey },
         );
         return;

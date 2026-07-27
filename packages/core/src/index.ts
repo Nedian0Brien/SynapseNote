@@ -86,6 +86,13 @@ export {
   materializeDatabaseDerivedRecords,
 } from './database/derived-records.ts';
 export {
+  type DatabaseDerivedContract,
+  type DatabaseDerivedContractDiagnostic,
+  type DatabaseDerivedContractDiagnosticCode,
+  assertDatabaseDerivedContract,
+  compileDatabaseDerivedContract,
+} from './database/derived-contract.ts';
+export {
   type DatabaseExternalFileValue,
   DatabaseExternalFileValueSchema,
   type DatabaseFileAvailability,
@@ -314,6 +321,32 @@ export {
   serializeDatabaseMarkdownOwnerMarker,
 } from './database/markdown-table.ts';
 export {
+  type DatabaseMarkdownDocumentCandidate,
+  type DatabaseMarkdownDocumentLinkResolution,
+  type DatabaseMarkdownDocumentLinkResolutionCode,
+  type ResolveDatabaseMarkdownDocumentLinkInput,
+  resolveDatabaseMarkdownDocumentLink,
+} from './database/markdown-table-links.ts';
+export {
+  type CreateDatabaseMarkdownRevisionSetInput,
+  type DatabaseMarkdownRevisionSet,
+  createDatabaseMarkdownRevisionSet,
+  databaseMarkdownDocumentRevision,
+  databaseMarkdownOwnerRevision,
+  databaseMarkdownTableCellRevision,
+  databaseMarkdownTableRowRevision,
+  databaseMarkdownTableStructureRevision,
+} from './database/markdown-table-revision.ts';
+export {
+  type DatabaseStorageCapability,
+  type DatabaseStorageReadMode,
+  type DatabaseStorageWriteMode,
+  DATABASE_STORAGE_CAPABILITY_MATRIX,
+  DATABASE_STORAGE_CAPABILITY_UNKNOWN,
+  databaseStorageCapabilityFor,
+  assertDatabaseStorageCapabilityContract,
+} from './database/storage-capability.ts';
+export {
   type DatabaseMarkdownSemanticDiff,
   type DatabaseMarkdownSemanticMergeConflict,
   type DatabaseMarkdownSemanticMergeInput,
@@ -323,6 +356,13 @@ export {
   diffDatabaseMarkdownTables,
   mergeDatabaseMarkdownTables,
 } from './database/markdown-table-diff.ts';
+export {
+  type DatabaseMarkdownCanonicalExportEntry,
+  type DatabaseMarkdownComputedSnapshotRecord,
+  type DatabaseMarkdownTableExport,
+  type DatabaseMarkdownTableExportMode,
+  createDatabaseMarkdownTableExport,
+} from './database/markdown-table-export.ts';
 export { type DatabaseDocumentId, DatabaseDocumentIdSchema } from './database/stable-ids.ts';
 export {
   createDatabaseDocumentId,
@@ -580,6 +620,10 @@ export {
   DatabaseMigrationLegacyRecordAliasSchema,
   type DatabaseMigrationMetadata,
   DatabaseMigrationMetadataSchema,
+  type DatabaseRecordLifecycleMetadata,
+  DatabaseRecordLifecycleMetadataSchema,
+  type DatabaseStorageMetadata,
+  DatabaseStorageMetadataSchema,
   type DatabaseFeedViewConfiguration,
   DatabaseFeedViewConfigurationSchema,
   type DatabaseFormQuestion,

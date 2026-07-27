@@ -281,6 +281,8 @@ export interface DatabaseQueryResult {
   snapshotRevision: string;
   /** Full canonical owner-document revision for storage-aware v2 writes. */
   storageRevision?: string | null;
+  /** Permission/evaluation/dependency-bound revision for Formula/Rollup snapshots. */
+  derivedRevision?: string | null;
   matched: number;
   returned: number;
   isComplete: boolean;
@@ -462,6 +464,7 @@ export const DatabaseQueryResultSchema = z
     snapshotRevision: z.string().min(1),
     /** Full canonical owner-document revision for storage-aware v2 writes. */
     storageRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).nullable().optional(),
+    derivedRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).nullable().optional(),
     matched: z.number().int().nonnegative(),
     returned: z.number().int().nonnegative(),
     isComplete: z.boolean(),
@@ -485,6 +488,7 @@ export interface QueryDatabaseRecordsInput {
   snapshotRevision: string;
   /** Optional canonical owner-document revision for storage-aware mutation clients. */
   storageRevision?: string | null;
+  derivedRevision?: string | null;
   /** One frozen read instant for deterministic expiry projection across this result. */
   verificationTime?: Date;
   people?: readonly DatabasePerson[];
@@ -1784,6 +1788,7 @@ export function queryDatabaseRecords(input: QueryDatabaseRecordsInput): Database
     sourceId: input.source.id,
     snapshotRevision: input.snapshotRevision,
     ...(input.storageRevision === undefined ? {} : { storageRevision: input.storageRevision }),
+    ...(input.derivedRevision === undefined ? {} : { derivedRevision: input.derivedRevision }),
     matched: sorted.length,
     returned: page.length,
     isComplete: nextCursor === null,

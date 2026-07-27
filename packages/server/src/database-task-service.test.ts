@@ -197,7 +197,10 @@ describe('DatabaseTaskService product handlers', () => {
     const migrated = await service.wait(task.id);
     expect(migrated).toMatchObject({
       state: 'succeeded',
-      result: { verification: { verifiedRows: 2, verifiedOwners: 1 } },
+      result: {
+        verification: { verifiedRows: 2, verifiedOwners: 1 },
+        backup: { fileCount: 4, revision: expect.stringMatching(/^sha256:/) },
+      },
     });
     expect(readFileSync(join(projectDir, '.ok', 'databases', 'task-service.yml'), 'utf8')).toContain('version: 2');
     expect(readFileSync(join(contentDir, 'task-service', 'tasks.md'), 'utf8')).toContain(

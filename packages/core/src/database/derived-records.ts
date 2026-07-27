@@ -336,13 +336,20 @@ export function materializeDatabaseDerivedRecords(
               : [relationValue]
         ) as string[];
         let unavailable = false;
+        let deniedTarget = false;
         const targets = recordIds.flatMap((recordId) => {
           const target = recordsById.get(recordId);
           if (!target || target.sourceId !== relation.targetSourceId) {
             unavailable = true;
             return [];
           }
-          if (!canReadRecord(target)) return [];
+          if (!canReadRecord(target)) {
+            // A permission-filtered target is not an empty aggregate.  It is a
+            // derived error so callers cannot infer a count/sum from hidden
+            // rows and every transport shares the same redaction semantics.
+            deniedTarget = true;
+            return [];
+          }
           return [
             {
               recordId: target.id,
@@ -353,7 +360,13 @@ export function materializeDatabaseDerivedRecords(
           ];
         });
         try {
-          if (unavailable) {
+          if (deniedTarget) {
+            result = formulaErrorResult({
+              code: 'permission_denied',
+              message: `One or more Rollup relation targets for "${rollup.id}" are not readable`,
+              propertyId: rollup.id,
+            });
+          } else if (unavailable) {
             result = formulaErrorResult({
               code: 'missing_record',
               message: `One or more Rollup relation targets for "${rollup.id}" are missing`,

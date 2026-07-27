@@ -2279,12 +2279,16 @@ External edit remains canonical.
     expect(result.records).toHaveLength(1);
     expect(result.records[0]?.values).toMatchObject({
       prop_computed_double: 8,
-      prop_computed_budget: 10,
     });
+    expect(result.records[0]?.values).not.toHaveProperty('prop_computed_budget');
     expect(result.records[0]?.values).not.toHaveProperty('prop_computed_broken');
     expect(result.records[0]?.computedResults?.prop_computed_broken).toMatchObject({
       kind: 'error',
       problem: { code: 'divide_by_zero' },
+    });
+    expect(result.records[0]?.computedResults?.prop_computed_budget).toMatchObject({
+      kind: 'error',
+      problem: { code: 'permission_denied' },
     });
     expect(result.trace.derivedIndex.permissionRevision).toMatch(/^sha256:/);
     expect(result.trace.derivedIndex).toMatchObject({
@@ -2304,10 +2308,9 @@ External edit remains canonical.
       recordId: 'rec_computed_task',
       property: { ...rollup, function: 'count_all' },
     });
-    expect(preview.result).toEqual({
-      kind: 'value',
-      valueType: 'number',
-      value: 1,
+    expect(preview.result).toMatchObject({
+      kind: 'error',
+      problem: { code: 'permission_denied' },
     });
     expect(preview.permissionRevision).toMatch(/^sha256:/);
     expect(DatabaseComputedPropertyPreviewResponseSchema.safeParse(preview).success).toBe(true);
@@ -2358,9 +2361,13 @@ External edit remains canonical.
         isComplete: cached.isComplete,
       },
     });
-    expect(changed.records[0]?.values.prop_computed_budget).toBe(20);
+    expect(changed.records[0]?.values).not.toHaveProperty('prop_computed_budget');
+    expect(changed.records[0]?.computedResults?.prop_computed_budget).toMatchObject({
+      kind: 'error',
+      problem: { code: 'permission_denied' },
+    });
     expect(changed.trace.derivedIndex.cache).toBe('miss');
-    expect(changed.delta?.addedOrChangedRecordIds).toEqual(['rec_computed_task']);
+    expect(changed.delta?.addedOrChangedRecordIds).toEqual([]);
   });
 
   test('applies a saved Agent View filter, projection, budgeted row scope, and policy receipt', async () => {

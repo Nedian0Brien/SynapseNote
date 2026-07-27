@@ -32,6 +32,8 @@ import {
   type DatabaseRecordActor,
   type DatabaseRecordIssue,
   type DatabaseSource,
+  type DatabaseStorageCapability,
+  DATABASE_STORAGE_CAPABILITY_MATRIX,
   type DatabaseValue,
   DatabaseVerificationValueSchema,
   type DatabaseView,
@@ -127,6 +129,9 @@ import {
   type DatabaseMarkdownTableBulkCellMutationInput,
   type DatabaseMarkdownTableRowMutationInput,
   type DatabaseMarkdownTableRowCreateInput,
+  type DatabaseMarkdownTableTitleMutationInput,
+  type DatabaseMarkdownTableDocumentMoveInput,
+  type DatabaseMarkdownTableLifecycleMutationInput,
   type DatabaseMarkdownTableUndoInput,
 } from './database-markdown-table-writer.ts';
 
@@ -238,6 +243,7 @@ export interface DatabaseDescribeResult {
   database: DatabaseDefinition;
   source: DatabaseSource | null;
   index: DatabaseRecordIndexStatus;
+  storageCapabilities: readonly DatabaseStorageCapability[];
   allowedOperations: readonly ['catalog', 'describe', 'find', 'query', 'pack'];
 }
 
@@ -501,10 +507,22 @@ export type DatabaseMarkdownTableMutationInput =
   | DatabaseMarkdownTableRowMutationInput
   | Omit<DatabaseMarkdownTableRowMutationInput, 'values'>
   | DatabaseMarkdownTableRowCreateInput
+  | DatabaseMarkdownTableTitleMutationInput
+  | DatabaseMarkdownTableDocumentMoveInput
+  | DatabaseMarkdownTableLifecycleMutationInput
   | DatabaseMarkdownTableUndoInput;
 
 export interface DatabaseMarkdownTableMutationRequest {
-  operation: 'update_cell' | 'update_cells' | 'replace_row' | 'delete_row' | 'create_row' | 'undo';
+  operation:
+    | 'update_cell'
+    | 'update_cells'
+    | 'replace_row'
+    | 'delete_row'
+    | 'create_row'
+    | 'update_title'
+    | 'move_document'
+    | 'update_lifecycle'
+    | 'undo';
   input: DatabaseMarkdownTableMutationInput;
 }
 
@@ -1523,6 +1541,7 @@ export class DatabaseDataPlane {
       database: cloneDefinition(database),
       source: source ? structuredClone(source) : null,
       index: this.#databaseRecordIndex.status(),
+      storageCapabilities: DATABASE_STORAGE_CAPABILITY_MATRIX,
       allowedOperations: ['catalog', 'describe', 'find', 'query', 'pack'],
     };
   }
@@ -1725,6 +1744,7 @@ export class DatabaseDataPlane {
       database: projected.data,
       source,
       index: this.#databaseRecordIndex.status(),
+      storageCapabilities: DATABASE_STORAGE_CAPABILITY_MATRIX,
       allowedOperations: ['catalog', 'describe', 'find', 'query', 'pack'],
     };
   }
@@ -2941,6 +2961,7 @@ export class DatabaseDataPlane {
         source.storage?.kind === 'markdown_table'
           ? this.#databaseRecordIndex.getStorageRevision(database.id, source.id)
           : undefined,
+      ...(derivedRevision !== null ? { derivedRevision } : { derivedRevision: null }),
       people: database.people,
       resolveFileAvailability: (path) => this.#databaseRecordIndex.fileAvailability(path),
       resolveRelationRecord,
@@ -4423,6 +4444,12 @@ export class DatabaseDataPlane {
           );
         case 'create_row':
           return await writer.createRow(input.input as DatabaseMarkdownTableRowCreateInput);
+        case 'update_title':
+          return await writer.updateTitle(input.input as DatabaseMarkdownTableTitleMutationInput);
+        case 'move_document':
+          return await writer.moveDocument(input.input as DatabaseMarkdownTableDocumentMoveInput);
+        case 'update_lifecycle':
+          return await writer.updateLifecycle(input.input as DatabaseMarkdownTableLifecycleMutationInput);
         case 'undo':
           return await writer.undo(input.input as DatabaseMarkdownTableUndoInput);
       }

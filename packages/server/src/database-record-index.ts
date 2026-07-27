@@ -10,6 +10,7 @@ import {
   type DatabaseFileValue,
   type DatabaseMarkdownCellValue,
   type DatabaseMarkdownDocumentLink,
+  type DatabaseMarkdownDocumentCandidate,
   type DatabaseMarkdownOwnerRow,
   type DatabaseProperty,
   type DatabaseRecord,
@@ -30,6 +31,7 @@ import {
   materializeDatabaseRecord,
   parseDatabaseDocumentIdentity,
   parseDatabaseMarkdownOwner,
+  resolveDatabaseMarkdownDocumentLink,
   parseFrontmatterYaml,
   projectDatabaseRichText,
   serializeDatabaseDateValue,
@@ -1128,6 +1130,40 @@ export class DatabaseRecordIndex {
   async #rebuildV2Sources(
     sources: readonly { database: DatabaseDefinition; source: DatabaseSource }[],
   ): Promise<void> {
+    // Discover all standalone Markdown documents once so path-qualified,
+    // basename, and title-alias wikilinks share the same deterministic core
+    // resolver.  A linked document is still indexed only after an owner binds
+    // it; merely existing in the content tree never makes it a database row.
+    const allMarkdownPaths = new Set<string>();
+    await this.#collectSourcePaths(this.#contentDir, allMarkdownPaths);
+    const documentCandidates: DatabaseMarkdownDocumentCandidate[] = [];
+    for (const path of [...allMarkdownPaths].sort((left, right) => left.localeCompare(right))) {
+      let markdown: string;
+      try {
+        markdown = await readFile(resolve(this.#contentDir, path), 'utf-8');
+      } catch {
+        continue;
+      }
+      const identity = parseDatabaseDocumentIdentity(markdown);
+      if (!identity.ok) continue;
+      const { body } = stripFrontmatter(markdown);
+      const fallback = path.split('/').at(-1)?.replace(/\.(?:md|mdx)$/i, '') ?? path;
+      const title = v2DocumentTitle(markdown, fallback);
+      const candidate: DatabaseMarkdownDocumentCandidate = {
+        path,
+        documentId: identity.documentId,
+        aliases: [title, fallback],
+      };
+      documentCandidates.push(candidate);
+      this.#v2DocumentsByPath.set(path, {
+        path,
+        documentId: identity.documentId,
+        markdown,
+        body,
+        title,
+        revision: `sha256:${createHash('sha256').update(markdown).digest('hex')}`,
+      });
+    }
     const owners: Array<{
       database: DatabaseDefinition;
       source: DatabaseSource;
@@ -1262,15 +1298,31 @@ export class DatabaseRecordIndex {
     }
 
     for (const { database, source, ownerPath, markdown } of owners) {
+      const resolveOwnerLink = (link: DatabaseMarkdownDocumentLink) => {
+        const resolution = resolveDatabaseMarkdownDocumentLink({
+          link,
+          documents: documentCandidates,
+          fromPath: ownerPath,
+        });
+        if (resolution.ok && resolution.candidate) {
+          const bindingKey = `${database.id}\0${source.id}`;
+          const bindings = this.#v2SourcesByDocumentPath.get(resolution.candidate.path) ?? new Set<string>();
+          bindings.add(bindingKey);
+          this.#v2SourcesByDocumentPath.set(resolution.candidate.path, bindings);
+        }
+        return resolution;
+      };
       const materialized = materializeDatabaseMarkdownOwner({
         databaseId: database.id,
         source,
         markdown,
         resolveDocument: (link) => {
-          const path = safeV2DocumentPath(link.target);
+          const resolution = resolveOwnerLink(link);
+          const path = resolution.ok ? resolution.candidate?.path : undefined;
           const document = path ? this.#v2DocumentsByPath.get(path) : undefined;
           return document ? { path: document.path, documentId: document.documentId } : null;
         },
+        resolveDocumentLink: resolveOwnerLink,
       });
       for (const error of materialized.errors) {
         this.#baseIssuesByPath.set(ownerPath, {
@@ -1308,6 +1360,15 @@ export class DatabaseRecordIndex {
     const storage = source.storage;
     if (!storage || storage.kind !== 'markdown_table') return null;
     const migrationAlias = v2MigrationAlias(database, row.recordId);
+    const nativeLifecycle = database.storageMetadata?.recordLifecycle[row.recordId];
+    const lifecycle = {
+      archivedAt: nativeLifecycle?.archivedAt ?? migrationAlias?.archivedAt ?? null,
+      createdAt: nativeLifecycle?.createdAt ?? migrationAlias?.createdAt,
+      lastEditedAt: nativeLifecycle?.lastEditedAt ?? migrationAlias?.lastEditedAt,
+      createdBy: nativeLifecycle?.createdBy ?? migrationAlias?.createdBy,
+      lastEditedBy: nativeLifecycle?.lastEditedBy ?? migrationAlias?.lastEditedBy,
+      pageLayoutOverride: nativeLifecycle?.pageLayoutOverride ?? migrationAlias?.pageLayoutOverride,
+    };
     const propertyById = new Map(source.properties.map((property) => [property.id, property]));
 
     for (const property of source.properties) {
@@ -1383,14 +1444,23 @@ export class DatabaseRecordIndex {
               issues.push(v2Issue(property, `Property "${property.key}" contains an invalid relation link`));
               continue;
             }
-            const targetPath = safeV2DocumentPath(item.target);
+            const resolution = resolveDatabaseMarkdownDocumentLink({
+              link: item,
+              documents: [...this.#v2DocumentsByPath.values()].map((candidate) => ({
+                path: candidate.path,
+                documentId: candidate.documentId,
+                aliases: [candidate.title],
+              })),
+              fromPath: storage.owner.path,
+            });
+            const targetPath = resolution.ok ? resolution.candidate?.path : undefined;
             const target = targetPath ? this.#v2DocumentsByPath.get(targetPath) : undefined;
             const targetBindings = targetPath ? this.#v2SourcesByDocumentPath.get(targetPath) : undefined;
             const targetBinding = [...(targetBindings ?? [])]
               .map((binding) => binding.split('\0'))
               .find(([databaseId, sourceId]) => databaseId === database.id && sourceId === property.targetSourceId);
             if (!target || !targetBinding) {
-              issues.push(v2Issue(property, `Relation target "${item.target}" could not be resolved in source "${property.targetSourceId}"`));
+              issues.push(v2Issue(property, `Relation target "${item.target}" could not be resolved (${resolution.code}) in source "${property.targetSourceId}"`));
               continue;
             }
             ids.push(createDatabaseMarkdownRecordId(property.targetSourceId, target.documentId));
@@ -1410,16 +1480,16 @@ export class DatabaseRecordIndex {
         case 'formula':
         case 'rollup':
         case 'created_time':
-          if (migrationAlias?.createdAt) values[property.id] = migrationAlias.createdAt;
+          if (lifecycle.createdAt) values[property.id] = lifecycle.createdAt;
           break;
         case 'last_edited_time':
-          if (migrationAlias?.lastEditedAt) values[property.id] = migrationAlias.lastEditedAt;
+          if (lifecycle.lastEditedAt) values[property.id] = lifecycle.lastEditedAt;
           break;
         case 'created_by':
-          if (migrationAlias?.createdBy) values[property.id] = databaseRecordActorKey(migrationAlias.createdBy);
+          if (lifecycle.createdBy) values[property.id] = databaseRecordActorKey(lifecycle.createdBy);
           break;
         case 'last_edited_by':
-          if (migrationAlias?.lastEditedBy) values[property.id] = databaseRecordActorKey(migrationAlias.lastEditedBy);
+          if (lifecycle.lastEditedBy) values[property.id] = databaseRecordActorKey(lifecycle.lastEditedBy);
           break;
         case 'verification':
         case 'button':
@@ -1449,9 +1519,9 @@ export class DatabaseRecordIndex {
       ...(Object.keys(invalidValues).length > 0 ? { invalidValues } : {}),
       ...(issues.length > 0 ? { issues } : {}),
       body: document.body,
-      archivedAt: migrationAlias?.archivedAt ?? null,
-      ...(migrationAlias?.pageLayoutOverride
-        ? { pageLayoutOverride: structuredClone(migrationAlias.pageLayoutOverride) }
+      archivedAt: lifecycle.archivedAt,
+      ...(lifecycle.pageLayoutOverride
+        ? { pageLayoutOverride: structuredClone(lifecycle.pageLayoutOverride) }
         : {}),
     };
     const evidenceValues = Object.fromEntries(

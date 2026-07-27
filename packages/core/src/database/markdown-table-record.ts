@@ -6,6 +6,7 @@ import {
   type ParsedDatabaseMarkdownOwner,
   parseDatabaseMarkdownOwner,
 } from './markdown-table.ts';
+import type { DatabaseMarkdownDocumentLinkResolution } from './markdown-table-links.ts';
 import {
   createDatabaseMarkdownRecordId,
 } from './document-identity.ts';
@@ -61,6 +62,8 @@ export interface MaterializeDatabaseMarkdownOwnerInput {
   source: DatabaseSource;
   markdown: string;
   resolveDocument: (link: DatabaseMarkdownDocumentLink) => DatabaseMarkdownDocumentResolution | null;
+  /** Optional shared resolver. When supplied, its diagnostic code is preserved. */
+  resolveDocumentLink?: (link: DatabaseMarkdownDocumentLink) => DatabaseMarkdownDocumentLinkResolution;
 }
 
 export interface MaterializedDatabaseMarkdownOwner {
@@ -207,7 +210,19 @@ export function materializeDatabaseMarkdownOwner(
           continue;
         }
         documentLink = decoded.value as DatabaseMarkdownDocumentLink;
-        const resolved = documentResolution(input, documentLink);
+        const linkResolution = input.resolveDocumentLink?.(documentLink);
+        if (linkResolution && !linkResolution.ok) {
+          errors.push({
+            code: 'broken_document_link',
+            rowIndex: row.rowIndex,
+            columnIndex: cell.columnIndex,
+            message: `${linkResolution.code}: ${linkResolution.message}`,
+          });
+          continue;
+        }
+        const resolved = linkResolution?.ok && linkResolution.candidate
+          ? { path: linkResolution.candidate.path, documentId: linkResolution.candidate.documentId as DatabaseDocumentId }
+          : documentResolution(input, documentLink);
         if (!resolved) {
           errors.push({
             code: 'broken_document_link',

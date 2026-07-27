@@ -90,6 +90,40 @@ export function createMarkdownTableRowDeleteMutation(input: {
   return { operation: 'delete_row', input } as DatabaseMarkdownTableMutationRequest;
 }
 
+export function createMarkdownTableTitleMutation(input: {
+  databaseId: string;
+  sourceId: string;
+  recordId: string;
+  title: string;
+  expectedOwnerRevision: string;
+  expectedDocumentRevision?: string;
+}): DatabaseMarkdownTableMutationRequest {
+  return { operation: 'update_title', input } as DatabaseMarkdownTableMutationRequest;
+}
+
+export function createMarkdownTableDocumentMoveMutation(input: {
+  databaseId: string;
+  sourceId: string;
+  recordId: string;
+  newDocumentPath: string;
+  expectedOwnerRevision: string;
+  expectedDocumentRevision?: string;
+}): DatabaseMarkdownTableMutationRequest {
+  return { operation: 'move_document', input } as DatabaseMarkdownTableMutationRequest;
+}
+
+export function createMarkdownTableLifecycleMutation(input: {
+  databaseId: string;
+  sourceId: string;
+  recordId: string;
+  archived?: boolean;
+  pageLayoutOverride?: Record<string, unknown> | null;
+  expectedOwnerRevision: string;
+  expectedManifestRevision?: string;
+}): DatabaseMarkdownTableMutationRequest {
+  return { operation: 'update_lifecycle', input } as DatabaseMarkdownTableMutationRequest;
+}
+
 /** Build the user-visible document path without introducing a generated folder. */
 export function markdownTableDocumentPath(sourceFolder: string, title: string): string {
   const slug = title

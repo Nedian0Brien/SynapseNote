@@ -30,14 +30,14 @@ interface Dependencies {
 }
 
 type Args = {
-  operation: 'update_cell' | 'update_cells' | 'replace_row' | 'delete_row' | 'create_row' | 'undo';
+  operation: 'update_cell' | 'update_cells' | 'replace_row' | 'delete_row' | 'create_row' | 'update_title' | 'move_document' | 'update_lifecycle' | 'undo';
   input: unknown;
   cwd?: string;
 };
 
 const OutputSchema = outputSchemaWithText({
   cwd: z.string(),
-  operation: z.enum(['update_cell', 'update_cells', 'replace_row', 'delete_row', 'create_row', 'undo']),
+  operation: z.enum(['update_cell', 'update_cells', 'replace_row', 'delete_row', 'create_row', 'update_title', 'move_document', 'update_lifecycle', 'undo']),
   changed: z.boolean().optional(),
   receipt: z.record(z.string(), z.unknown()).optional(),
   problem: DatabaseToolProblemOutputSchema.optional(),
@@ -60,6 +60,9 @@ export function register(server: ServerInstance, deps: Dependencies): void {
           'replace_row',
           'delete_row',
           'create_row',
+          'update_title',
+          'move_document',
+          'update_lifecycle',
           'undo',
         ]),
         input: z.unknown().describe('Exact operation input, including expected revisions.'),

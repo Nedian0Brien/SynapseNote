@@ -13,6 +13,8 @@ import {
   DatabaseLinkedViewSettingsSchema,
   DatabasePlaceValueSchema,
   DatabasePropertySchema,
+  DatabaseRecordActorSchema,
+  DatabaseRecordPageLayoutOverrideSchema,
   type DatabasePublicSharePolicy,
   DatabasePublicShareTargetSchema,
   DatabaseQueryError,
@@ -601,6 +603,54 @@ export const DatabaseMarkdownTableMutationRequestSchema = z.discriminatedUnion('
     .strict(),
   z
     .object({
+      operation: z.literal('update_title'),
+      input: DatabaseMarkdownTableMutationBaseSchema
+        .extend({
+          recordId: z.string().startsWith('rec_'),
+          title: z.string().trim().min(1).max(200),
+          expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+          expectedDocumentRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
+        })
+        .strict(),
+    })
+    .strict(),
+  z
+    .object({
+      operation: z.literal('move_document'),
+      input: DatabaseMarkdownTableMutationBaseSchema
+        .extend({
+          recordId: z.string().startsWith('rec_'),
+          newDocumentPath: z.string().min(1).max(2_000),
+          expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+          expectedDocumentRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
+        })
+        .strict(),
+    })
+    .strict(),
+  z
+    .object({
+      operation: z.literal('update_lifecycle'),
+      input: DatabaseMarkdownTableMutationBaseSchema
+        .extend({
+          recordId: z.string().startsWith('rec_'),
+          archived: z.boolean().optional(),
+          pageLayoutOverride: DatabaseRecordPageLayoutOverrideSchema.nullable().optional(),
+          actor: DatabaseRecordActorSchema.optional(),
+          now: z.string().datetime({ offset: true }).optional(),
+          expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+          // The precondition is the exact database manifest file hash; the
+          // aggregate store snapshot revision is a separate read-model value.
+          expectedManifestRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
+        })
+        .strict()
+        .refine(
+          (value) => value.archived !== undefined || value.pageLayoutOverride !== undefined,
+          'archived or pageLayoutOverride is required',
+        ),
+    })
+    .strict(),
+  z
+    .object({
       operation: z.literal('undo'),
       input: z
         .object({
@@ -613,7 +663,7 @@ export const DatabaseMarkdownTableMutationRequestSchema = z.discriminatedUnion('
 ]);
 export const DatabaseMarkdownTableMutationResponseSchema = z
   .object({
-    operation: z.enum(['update_cell', 'update_cells', 'replace_row', 'delete_row', 'create_row', 'undo']),
+    operation: z.enum(['update_cell', 'update_cells', 'replace_row', 'delete_row', 'create_row', 'update_title', 'move_document', 'update_lifecycle', 'undo']),
     changed: z.boolean(),
     receipt: z.record(z.string(), z.unknown()),
   })
@@ -1074,6 +1124,17 @@ const DatabaseIndexStatusSchema = z
   })
   .strict();
 
+const DatabaseStorageCapabilitySchema = z
+  .object({
+    appProtocolVersion: z.literal(1),
+    manifestVersion: z.number().int(),
+    tableFormatVersion: z.number().int().nullable(),
+    read: z.enum(['full', 'read_only', 'unsupported']),
+    write: z.enum(['v1_record_files', 'v2_markdown_table', 'migration_required', 'unsupported']),
+    reason: z.string().min(1),
+  })
+  .strict();
+
 const DatabaseDescribeFullResponseSchema = z
   .object({
     manifestRevision: z.string().min(1),
@@ -1081,6 +1142,7 @@ const DatabaseDescribeFullResponseSchema = z
     database: DatabaseDefinitionSchema,
     source: DatabaseSourceSchema.nullable(),
     index: DatabaseIndexStatusSchema,
+    storageCapabilities: z.array(DatabaseStorageCapabilitySchema),
     allowedOperations: z.tuple([
       z.literal('catalog'),
       z.literal('describe'),
@@ -1319,6 +1381,7 @@ export const DatabaseQueryResponseSchema = z
     indexState: z.enum(['idle', 'rebuilding', 'error']),
     snapshotRevision: z.string().min(1),
     storageRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).nullable().optional(),
+    derivedRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).nullable().optional(),
     matched: z.number().int().nonnegative(),
     returned: z.number().int().nonnegative(),
     isComplete: z.boolean(),

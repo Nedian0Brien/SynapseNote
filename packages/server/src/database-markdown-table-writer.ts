@@ -8,21 +8,27 @@
  */
 
 import { createHash, randomUUID } from 'node:crypto';
-import { lstat, mkdir, readFile, unlink } from 'node:fs/promises';
-import type { Stats } from 'node:fs';
+import { lstat, mkdir, readFile, readdir, rename, unlink } from 'node:fs/promises';
+import type { Dirent, Stats } from 'node:fs';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 import {
   type DatabaseDefinition,
+  DatabaseDefinitionSchema,
   type DatabaseDocumentId,
   type DatabaseMarkdownCellPropertyType,
   type DatabaseMarkdownDocumentLink,
+  resolveDatabaseMarkdownDocumentLink,
   type DatabaseMarkdownOwnerMarker,
   type DatabaseMarkdownTableCell,
   type DatabaseProperty,
+  type DatabaseRecordActor,
+  type DatabaseRecordPageLayoutOverride,
   type DatabaseSource,
   createDatabaseDocumentId,
   createDatabaseMarkdownRecordId,
   DATABASE_MARKDOWN_LIMITS,
+  databaseMarkdownTableCellRevision,
+  databaseMarkdownTableRowRevision,
   decodeDatabaseMarkdownCell,
   deleteDatabaseMarkdownTableRow,
   encodeDatabaseMarkdownCell,
@@ -30,6 +36,7 @@ import {
   insertDatabaseMarkdownTableRow,
   parseDatabaseDocumentIdentity,
   parseDatabaseMarkdownOwner,
+  updateDatabaseManifestYaml,
   replaceDatabaseMarkdownTableCell,
   replaceDatabaseMarkdownTableRow,
   type ParsedDatabaseMarkdownOwner,
@@ -58,6 +65,8 @@ export type DatabaseMarkdownTableWriterErrorCode =
   | 'document_not_found'
   | 'document_identity_invalid'
   | 'document_path_conflict'
+  | 'document_title_invalid'
+  | 'document_move_invalid'
   | 'duplicate_record'
   | 'transaction_failed'
   | 'rollback_failed'
@@ -86,6 +95,8 @@ export interface DatabaseMarkdownTableWriterFs {
   readFile(path: string): Promise<string>;
   mkdir(path: string): Promise<void>;
   unlink(path: string): Promise<void>;
+  rename(from: string, to: string): Promise<void>;
+  readdir(path: string): Promise<Dirent[]>;
 }
 
 const DEFAULT_FS: DatabaseMarkdownTableWriterFs = {
@@ -95,6 +106,8 @@ const DEFAULT_FS: DatabaseMarkdownTableWriterFs = {
     await mkdir(path, { recursive: true });
   },
   unlink,
+  rename,
+  readdir: (path) => readdir(path, { withFileTypes: true }),
 };
 
 export interface CreateDatabaseMarkdownTableWriterOptions {
@@ -124,7 +137,15 @@ export interface DatabaseMarkdownTableFileDelta {
 export interface DatabaseMarkdownTableMutationReceipt {
   version: 1;
   mutationId: string;
-  operation: 'update_cell' | 'update_cells' | 'replace_row' | 'delete_row' | 'create_row';
+  operation:
+    | 'update_cell'
+    | 'update_cells'
+    | 'replace_row'
+    | 'delete_row'
+    | 'create_row'
+    | 'update_title'
+    | 'move_document'
+    | 'update_lifecycle';
   databaseId: string;
   sourceId: string;
   ownerPath: string;
@@ -139,6 +160,20 @@ export interface DatabaseMarkdownTableMutationReceipt {
   afterOwnerContent?: string;
   /** Present only for create-row transactions. */
   createdDocumentContent?: string;
+  /** Present only for title transactions that update the linked document. */
+  documentPath?: string;
+  beforeDocumentRevision?: string;
+  afterDocumentRevision?: string;
+  beforeDocumentContent?: string;
+  afterDocumentContent?: string;
+  /** Present only for document move transactions. */
+  previousDocumentPath?: string;
+  /** Present for lifecycle or membership transactions that also update the manifest. */
+  manifestPath?: string;
+  beforeManifestRevision?: string;
+  afterManifestRevision?: string;
+  beforeManifestContent?: string;
+  afterManifestContent?: string;
   committedAt: string;
 }
 
@@ -185,6 +220,39 @@ export interface DatabaseMarkdownTableRowCreateInput {
   expectedOwnerRevision: string;
 }
 
+export interface DatabaseMarkdownTableTitleMutationInput {
+  databaseId: string;
+  sourceId: string;
+  recordId: string;
+  title: string;
+  expectedOwnerRevision: string;
+  expectedDocumentRevision?: string;
+}
+
+export interface DatabaseMarkdownTableDocumentMoveInput {
+  databaseId: string;
+  sourceId: string;
+  recordId: string;
+  newDocumentPath: string;
+  expectedOwnerRevision: string;
+  expectedDocumentRevision?: string;
+}
+
+export interface DatabaseMarkdownTableLifecycleMutationInput {
+  databaseId: string;
+  sourceId: string;
+  recordId: string;
+  /** Set true/false to archive/restore; omit to leave archive state unchanged. */
+  archived?: boolean;
+  /** Explicit null clears the row layout override. */
+  pageLayoutOverride?: DatabaseRecordPageLayoutOverride | null;
+  actor?: DatabaseRecordActor;
+  now?: string;
+  expectedOwnerRevision: string;
+  /** SHA-256 of the database manifest file, not the aggregate store snapshot revision. */
+  expectedManifestRevision?: string;
+}
+
 export interface DatabaseMarkdownTableUndoInput {
   receipt: DatabaseMarkdownTableMutationReceipt;
   expectedAfterOwnerRevision?: string;
@@ -209,6 +277,12 @@ interface ResolvedRow {
   recordId: string;
   documentPath: string;
   documentId: DatabaseDocumentId;
+}
+
+interface ManifestMutation {
+  path: string;
+  before: string;
+  after: string;
 }
 
 function sha256(value: string): string {
@@ -332,6 +406,57 @@ function decodedTitleLink(owner: ParsedDatabaseMarkdownOwner, source: DatabaseSo
   return decoded.value as DatabaseMarkdownDocumentLink;
 }
 
+/** Replace only the user-facing title declaration while preserving Markdown body bytes. */
+function replaceMarkdownDocumentTitle(markdown: string, title: string): string {
+  const normalized = title.trim();
+  if (!normalized || normalized.includes('\0') || /[\r\n]/u.test(normalized) || normalized.length > 200) {
+    throw new DatabaseMarkdownTableWriterError(
+      'document_title_invalid',
+      'A linked Markdown document title must be 1-200 characters on one line',
+      { title },
+    );
+  }
+  const eol = markdown.includes('\r\n') ? '\r\n' : '\n';
+  const frontmatterMatch = /^(---\r?\n)([\s\S]*?)(\r?\n---(?:\r?\n|$))/u.exec(markdown);
+  if (frontmatterMatch) {
+    const body = frontmatterMatch[2] ?? '';
+    const lines = body.split(/\r?\n/);
+    const titleIndex = lines.findIndex((line) => /^title\s*:/u.test(line));
+    if (titleIndex >= 0) {
+      lines[titleIndex] = `title: ${JSON.stringify(normalized)}`;
+      return `${frontmatterMatch[1]}${lines.join(eol)}${frontmatterMatch[3]}${markdown.slice(frontmatterMatch[0].length)}`;
+    }
+    const inserted = `${body}${body.endsWith(eol) || body === '' ? '' : eol}title: ${JSON.stringify(normalized)}`;
+    return `${frontmatterMatch[1]}${inserted}${frontmatterMatch[3]}${markdown.slice(frontmatterMatch[0].length)}`;
+  }
+  // Only consider an H1 outside a leading fenced block. This avoids changing
+  // an example heading in a code fence when a plain document has no title.
+  let cursor = 0;
+  let fence: string | null = null;
+  while (cursor < markdown.length) {
+    const end = markdown.indexOf('\n', cursor) < 0 ? markdown.length : markdown.indexOf('\n', cursor) + 1;
+    const line = markdown.slice(cursor, end).replace(/\r?\n$/u, '');
+    const opening = line.match(/^\s*(`{3,}|~{3,})/u);
+    if (fence) {
+      if (new RegExp(`^\\s*${fence}{3,}\\s*$`, 'u').test(line)) fence = null;
+      cursor = end;
+      continue;
+    }
+    if (opening) {
+      fence = opening[1]![0]!;
+      cursor = end;
+      continue;
+    }
+    const heading = /^(\s{0,3}#\s+)(.*?)(\s*#?\s*)$/u.exec(line);
+    if (heading) {
+      const replacement = `${heading[1]}${normalized}${heading[3] ?? ''}`;
+      return markdown.slice(0, cursor) + replacement + markdown.slice(end);
+    }
+    cursor = end;
+  }
+  return `# ${normalized}${eol}${eol}${markdown}`;
+}
+
 export class DatabaseMarkdownTableWriter {
   readonly #projectDir: string;
   readonly #contentDir: string;
@@ -384,6 +509,18 @@ export class DatabaseMarkdownTableWriter {
     return this.#withLock(() => this.#createRowLocked(input));
   }
 
+  async updateTitle(input: DatabaseMarkdownTableTitleMutationInput): Promise<DatabaseMarkdownTableMutationResult> {
+    return this.#withLock(() => this.#updateTitleLocked(input));
+  }
+
+  async moveDocument(input: DatabaseMarkdownTableDocumentMoveInput): Promise<DatabaseMarkdownTableMutationResult> {
+    return this.#withLock(() => this.#moveDocumentLocked(input));
+  }
+
+  async updateLifecycle(input: DatabaseMarkdownTableLifecycleMutationInput): Promise<DatabaseMarkdownTableMutationResult> {
+    return this.#withLock(() => this.#updateLifecycleLocked(input));
+  }
+
   async undo(input: DatabaseMarkdownTableUndoInput): Promise<{ changed: boolean; receipt: DatabaseMarkdownTableMutationReceipt }> {
     return this.#withLock(() => this.#undoLocked(input));
   }
@@ -396,7 +533,7 @@ export class DatabaseMarkdownTableWriter {
       let allBefore = true;
       let allAfter = true;
       for (const file of entry.files) {
-        const current = await this.#fs.readFile(this.#safeAbsolutePath(file.path)).catch(() => null);
+        const current = await this.#fs.readFile(this.#safeJournalAbsolutePath(file.path)).catch(() => null);
         const currentRevision = current === null ? null : sha256(current);
         allBefore &&= currentRevision === file.beforeSha256;
         allAfter &&= currentRevision === file.afterSha256;
@@ -487,14 +624,22 @@ export class DatabaseMarkdownTableWriter {
 
   async #resolveRow(resolved: ResolvedSource, recordId: string): Promise<ResolvedRow> {
     const seen = new Map<string, number>();
+    const documents = await this.#listDocumentCandidates();
     for (const row of resolved.owner.rows) {
       const link = decodedTitleLink(resolved.owner, resolved.source, row.rowIndex);
-      const documentPath = normalizeDocumentPath(link.target);
-      if (!documentPath) {
-        throw new DatabaseMarkdownTableWriterError('owner_invalid', `Owner row ${row.rowIndex} has an unsafe document target`, {
-          rowIndex: row.rowIndex,
-        });
+      const resolution = resolveDatabaseMarkdownDocumentLink({
+        link,
+        documents,
+        fromPath: sourceStorage(resolved.source).owner.path,
+      });
+      if (!resolution.ok || !resolution.candidate) {
+        throw new DatabaseMarkdownTableWriterError(
+          'document_not_found',
+          `Owner row ${row.rowIndex} document link could not be resolved (${resolution.code})`,
+          { rowIndex: row.rowIndex, target: link.target, resolverCode: resolution.code },
+        );
       }
+      const documentPath = resolution.candidate.path;
       const absolute = this.#safeAbsolutePath(documentPath);
       let markdown: string;
       try {
@@ -535,6 +680,39 @@ export class DatabaseMarkdownTableWriter {
     throw new DatabaseMarkdownTableWriterError('record_not_found', `Record "${recordId}" is not present in the v2 owner table`, {
       recordId,
     });
+  }
+
+  async #listDocumentCandidates(): Promise<readonly {
+    path: string;
+    documentId: string;
+    aliases?: readonly string[];
+  }[]> {
+    const candidates: Array<{ path: string; documentId: string; aliases?: readonly string[] }> = [];
+    const visit = async (directory: string, prefix: string): Promise<void> => {
+      const entries = await this.#fs.readdir(directory).catch(() => [] as Dirent[]);
+      for (const entry of entries) {
+        const path = prefix ? `${prefix}/${entry.name}` : entry.name;
+        const absolute = resolve(directory, entry.name);
+        if (entry.isSymbolicLink()) continue;
+        if (entry.isDirectory()) {
+          await visit(absolute, path);
+          continue;
+        }
+        if (!entry.isFile() || !/\.(?:md|mdx)$/iu.test(path)) continue;
+        const markdown = await this.#fs.readFile(absolute).catch(() => null);
+        if (markdown === null) continue;
+        const identity = parseDatabaseDocumentIdentity(markdown);
+        if (!identity.ok) continue;
+        const title = /^title:\s*["']?(.+?)["']?\s*$/mu.exec(markdown)?.[1]?.trim();
+        candidates.push({
+          path,
+          documentId: identity.documentId,
+          ...(title ? { aliases: [title] } : {}),
+        });
+      }
+    };
+    await visit(this.#contentDir, '');
+    return candidates.sort((left, right) => left.path.localeCompare(right.path));
   }
 
   async #updateCellLocked(input: DatabaseMarkdownTableCellMutationInput): Promise<DatabaseMarkdownTableMutationResult> {
@@ -631,13 +809,392 @@ export class DatabaseMarkdownTableWriter {
     return this.#commitOwnerOnly('replace_row', resolved, row, after);
   }
 
+  async #updateTitleLocked(input: DatabaseMarkdownTableTitleMutationInput): Promise<DatabaseMarkdownTableMutationResult> {
+    const resolved = await this.#loadSource(input.databaseId, input.sourceId);
+    this.#assertExpectedRevision(resolved, input.expectedOwnerRevision);
+    const row = await this.#resolveRow(resolved, input.recordId);
+    const storage = sourceStorage(resolved.source);
+    const titleColumn = storage.storedPropertyIds.indexOf(storage.titlePropertyId);
+    if (titleColumn < 0) {
+      throw new DatabaseMarkdownTableWriterError('owner_invalid', 'The v2 source does not store its Title property');
+    }
+    const titleCell = resolved.owner.rows[row.rowIndex]?.cells[titleColumn];
+    if (!titleCell) throw new DatabaseMarkdownTableWriterError('owner_invalid', 'The v2 row Title cell is missing');
+    const link = decodedTitleLink(resolved.owner, resolved.source, row.rowIndex);
+    const documentAbsolutePath = this.#safeAbsolutePath(row.documentPath);
+    const beforeDocument = await this.#fs.readFile(documentAbsolutePath).catch((error) => {
+      throw new DatabaseMarkdownTableWriterError('document_not_found', `Linked document "${row.documentPath}" could not be read`, { documentPath: row.documentPath }, error);
+    });
+    const beforeDocumentRevision = sha256(beforeDocument);
+    if (input.expectedDocumentRevision !== undefined && input.expectedDocumentRevision !== beforeDocumentRevision) {
+      throw new DatabaseMarkdownTableWriterError('target_changed', 'Linked Markdown document changed after the title mutation was planned', {
+        documentPath: row.documentPath,
+        expectedRevision: input.expectedDocumentRevision,
+        observedRevision: beforeDocumentRevision,
+      });
+    }
+    const afterDocument = replaceMarkdownDocumentTitle(beforeDocument, input.title);
+    const nextLink: DatabaseMarkdownDocumentLink = { kind: 'wikilink', target: link.target, alias: input.title.trim() };
+    const encodedLink = encodedCell(resolved.source.properties.find((property) => property.id === storage.titlePropertyId)!, nextLink);
+    const afterOwner = replaceDatabaseMarkdownTableCell(resolved.markdown, resolved.owner, row.rowIndex, titleColumn, encodedLink);
+    if (afterOwner === resolved.markdown && afterDocument === beforeDocument) {
+      return { changed: false, receipt: this.#titleReceipt(resolved, row, resolved.markdown, resolved.markdown, row.documentPath, beforeDocument, beforeDocument) };
+    }
+    const ownerBefore = resolved.markdown;
+    const ownerRevision = revision(ownerBefore);
+    const afterOwnerRevision = revision(afterOwner);
+    const documentAfterRevision = revision(afterDocument);
+    const mutationId = `mut_${this.#generateUuid().replaceAll('-', '')}`;
+    await this.#assertOwnerStillCurrent(resolved);
+    await this.#assertNoSymlinkComponents(storage.owner.path);
+    await this.#assertNoSymlinkComponents(row.documentPath);
+    try {
+      await this.#journal.prepare({
+        mutationId,
+        files: [
+          {
+            path: storage.owner.path,
+            beforeSha256: ownerRevision.sha256,
+            afterSha256: afterOwnerRevision.sha256,
+            before: ownerBefore,
+            after: afterOwner,
+          },
+          {
+            path: row.documentPath,
+            beforeSha256: beforeDocumentRevision,
+            afterSha256: documentAfterRevision.sha256,
+            before: beforeDocument,
+            after: afterDocument,
+          },
+        ],
+      });
+      await this.#journal.checkpoint(mutationId, 'writing');
+      await this.#atomicWrite(documentAbsolutePath, afterDocument);
+      await this.#assertOwnerStillCurrent(resolved);
+      await this.#atomicWrite(resolved.ownerAbsolutePath, afterOwner);
+      await this.#journal.checkpoint(mutationId, 'committed');
+      await this.#refreshDatabaseIndex();
+    } catch (error) {
+      try {
+        const ownerCurrent = await this.#fs.readFile(resolved.ownerAbsolutePath).catch(() => null);
+        if (ownerCurrent !== null && sha256(ownerCurrent) === afterOwnerRevision.sha256) {
+          await this.#atomicWrite(resolved.ownerAbsolutePath, ownerBefore);
+        }
+        const documentCurrent = await this.#fs.readFile(documentAbsolutePath).catch(() => null);
+        if (documentCurrent !== null && sha256(documentCurrent) === documentAfterRevision.sha256) {
+          await this.#atomicWrite(documentAbsolutePath, beforeDocument);
+        }
+        await this.#journal.checkpoint(mutationId, 'rolled_back');
+      } catch (rollbackError) {
+        await this.#journal.checkpoint(mutationId, 'recovery_required').catch(() => undefined);
+        throw new DatabaseMarkdownTableWriterError('rollback_failed', 'V2 title transaction failed and compensation was incomplete', {
+          ownerPath: storage.owner.path,
+          documentPath: row.documentPath,
+        }, rollbackError);
+      }
+      if (error instanceof DatabaseMarkdownTableWriterError && error.code === 'target_changed') throw error;
+      throw new DatabaseMarkdownTableWriterError('transaction_failed', 'V2 title transaction failed and was rolled back', {
+        ownerPath: storage.owner.path,
+        documentPath: row.documentPath,
+      }, error);
+    }
+    return {
+      changed: true,
+      receipt: this.#titleReceipt(resolved, row, ownerBefore, afterOwner, row.documentPath, beforeDocument, afterDocument, mutationId),
+    };
+  }
+
+  async #updateLifecycleLocked(
+    input: DatabaseMarkdownTableLifecycleMutationInput,
+  ): Promise<DatabaseMarkdownTableMutationResult> {
+    if (input.archived === undefined && input.pageLayoutOverride === undefined) {
+      throw new DatabaseMarkdownTableWriterError(
+        'invalid_request',
+        'A lifecycle mutation must change archive state or page layout metadata',
+      );
+    }
+    const resolved = await this.#loadSource(input.databaseId, input.sourceId);
+    this.#assertExpectedRevision(resolved, input.expectedOwnerRevision);
+    const row = await this.#resolveRow(resolved, input.recordId);
+    const manifestPath = `.ok/databases/${resolved.database.key}.yml`;
+    const manifestAbsolutePath = this.#safeProjectAbsolutePath(manifestPath);
+    await this.#assertNoProjectSymlinkComponents(manifestPath);
+    const beforeManifest = await this.#fs.readFile(manifestAbsolutePath).catch((error) => {
+      throw new DatabaseMarkdownTableWriterError(
+        'transaction_failed',
+        `Database manifest "${manifestPath}" could not be read`,
+        { manifestPath },
+        error,
+      );
+    });
+    if (
+      input.expectedManifestRevision !== undefined &&
+      input.expectedManifestRevision !== sha256(beforeManifest)
+    ) {
+      throw new DatabaseMarkdownTableWriterError(
+        'target_changed',
+        'Database manifest changed after the lifecycle mutation was planned',
+        {
+          manifestPath,
+          expectedRevision: input.expectedManifestRevision,
+          observedRevision: sha256(beforeManifest),
+        },
+      );
+    }
+    const now = input.now ?? new Date().toISOString();
+    if (Number.isNaN(Date.parse(now))) {
+      throw new DatabaseMarkdownTableWriterError('invalid_request', 'Lifecycle timestamp must be an ISO date-time');
+    }
+    const existing = resolved.database.storageMetadata?.recordLifecycle ?? {};
+    const previous = existing[input.recordId] ?? {};
+    const next = {
+      ...previous,
+      ...(input.archived === undefined
+        ? {}
+        : { archivedAt: input.archived ? now : null }),
+      ...(input.pageLayoutOverride === undefined
+        ? {}
+        : { pageLayoutOverride: input.pageLayoutOverride ?? undefined }),
+      lastEditedAt: now,
+      lastEditedBy: input.actor ?? { kind: 'system', principal_id: 'synapsenote' },
+    };
+    if (next.pageLayoutOverride === undefined) delete (next as { pageLayoutOverride?: unknown }).pageLayoutOverride;
+    let nextDatabase: DatabaseDefinition;
+    try {
+      nextDatabase = DatabaseDefinitionSchema.parse({
+        ...resolved.database,
+        storageMetadata: {
+          ...(resolved.database.storageMetadata ?? {}),
+          recordLifecycle: {
+            ...existing,
+            [input.recordId]: next,
+          },
+        },
+      });
+    } catch (error) {
+      throw new DatabaseMarkdownTableWriterError(
+        'invalid_request',
+        'Lifecycle metadata does not satisfy the v2 schema',
+        { recordId: input.recordId },
+        error,
+      );
+    }
+    const afterManifest = updateDatabaseManifestYaml(beforeManifest, nextDatabase);
+    const ownerRevision = sha256(resolved.markdown);
+    const beforeManifestRevision = sha256(beforeManifest);
+    const afterManifestRevision = sha256(afterManifest);
+    if (afterManifest === beforeManifest) {
+      return {
+        changed: false,
+        receipt: this.#lifecycleReceipt(
+          resolved,
+          row,
+          manifestPath,
+          beforeManifest,
+          beforeManifest,
+          ownerRevision,
+          ownerRevision,
+        ),
+      };
+    }
+    const mutationId = `mut_${this.#generateUuid().replaceAll('-', '')}`;
+    await this.#assertOwnerStillCurrent(resolved);
+    try {
+      await this.#journal.prepare({
+        mutationId,
+        files: [
+          {
+            path: manifestPath,
+            beforeSha256: beforeManifestRevision,
+            afterSha256: afterManifestRevision,
+            before: beforeManifest,
+            after: afterManifest,
+          },
+        ],
+      });
+      await this.#journal.checkpoint(mutationId, 'writing');
+      const currentManifest = await this.#fs.readFile(manifestAbsolutePath);
+      if (sha256(currentManifest) !== beforeManifestRevision) {
+        throw new DatabaseMarkdownTableWriterError(
+          'target_changed',
+          'Database manifest changed during the lifecycle mutation',
+          { manifestPath, observedRevision: sha256(currentManifest) },
+        );
+      }
+      await this.#atomicWrite(manifestAbsolutePath, afterManifest);
+      await this.#journal.checkpoint(mutationId, 'committed');
+      await this.#databaseStore.reload();
+      await this.#refreshDatabaseIndex();
+    } catch (error) {
+      try {
+        const current = await this.#fs.readFile(manifestAbsolutePath).catch(() => null);
+        if (current !== null && sha256(current) === afterManifestRevision) {
+          await this.#atomicWrite(manifestAbsolutePath, beforeManifest);
+        }
+        await this.#databaseStore.reload();
+        await this.#journal.checkpoint(mutationId, 'rolled_back');
+      } catch (rollbackError) {
+        await this.#journal.checkpoint(mutationId, 'recovery_required').catch(() => undefined);
+        throw new DatabaseMarkdownTableWriterError(
+          'rollback_failed',
+          'V2 lifecycle metadata transaction failed and compensation was incomplete',
+          { manifestPath },
+          rollbackError,
+        );
+      }
+      if (error instanceof DatabaseMarkdownTableWriterError) throw error;
+      throw new DatabaseMarkdownTableWriterError(
+        'transaction_failed',
+        'V2 lifecycle metadata transaction failed and was rolled back',
+        { manifestPath },
+        error,
+      );
+    }
+    return {
+      changed: true,
+      receipt: this.#lifecycleReceipt(
+        resolved,
+        row,
+        manifestPath,
+        beforeManifest,
+        afterManifest,
+        ownerRevision,
+        ownerRevision,
+        mutationId,
+        beforeManifestRevision,
+        afterManifestRevision,
+      ),
+    };
+  }
+
+  async #moveDocumentLocked(input: DatabaseMarkdownTableDocumentMoveInput): Promise<DatabaseMarkdownTableMutationResult> {
+    const resolved = await this.#loadSource(input.databaseId, input.sourceId);
+    this.#assertExpectedRevision(resolved, input.expectedOwnerRevision);
+    const row = await this.#resolveRow(resolved, input.recordId);
+    if (!safeRelativePath(input.newDocumentPath, null) || !/\.(?:md|mdx)$/iu.test(input.newDocumentPath)) {
+      throw new DatabaseMarkdownTableWriterError('document_move_invalid', 'A moved document path must be a normalized relative Markdown path', { newDocumentPath: input.newDocumentPath });
+    }
+    if (input.newDocumentPath === row.documentPath) return { changed: false, receipt: this.#moveReceipt(resolved, row, resolved.markdown, resolved.markdown, row.documentPath, row.documentPath, '', '') };
+    await this.#assertNoSymlinkComponents(row.documentPath);
+    await this.#assertNoSymlinkComponents(input.newDocumentPath);
+    const oldAbsolute = this.#safeAbsolutePath(row.documentPath);
+    const newAbsolute = this.#safeAbsolutePath(input.newDocumentPath);
+    try {
+      const existing = await this.#fs.lstat(newAbsolute);
+      if (existing.isFile() || existing.isDirectory() || existing.isSymbolicLink()) {
+        throw new DatabaseMarkdownTableWriterError('document_path_conflict', `Document path "${input.newDocumentPath}" is already occupied`, { newDocumentPath: input.newDocumentPath });
+      }
+    } catch (error) {
+      if (error instanceof DatabaseMarkdownTableWriterError) throw error;
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    }
+    const beforeDocument = await this.#fs.readFile(oldAbsolute).catch((error) => {
+      throw new DatabaseMarkdownTableWriterError('document_not_found', `Linked document "${row.documentPath}" could not be read`, { documentPath: row.documentPath }, error);
+    });
+    const beforeDocumentRevision = sha256(beforeDocument);
+    if (input.expectedDocumentRevision !== undefined && input.expectedDocumentRevision !== beforeDocumentRevision) {
+      throw new DatabaseMarkdownTableWriterError('target_changed', 'Linked Markdown document changed after the move was planned', { expectedRevision: input.expectedDocumentRevision, observedRevision: beforeDocumentRevision });
+    }
+    const titleColumn = sourceStorage(resolved.source).storedPropertyIds.indexOf(sourceStorage(resolved.source).titlePropertyId);
+    const titleCell = resolved.owner.rows[row.rowIndex]?.cells[titleColumn];
+    if (!titleCell) throw new DatabaseMarkdownTableWriterError('owner_invalid', 'The v2 row Title cell is missing');
+    const oldLink = decodedTitleLink(resolved.owner, resolved.source, row.rowIndex);
+    const nextLink: DatabaseMarkdownDocumentLink = {
+      kind: 'wikilink',
+      target: documentLinkTarget(input.newDocumentPath),
+      ...(oldLink.alias ? { alias: oldLink.alias } : {}),
+    };
+    const titleProperty = resolved.source.properties.find((property) => property.id === sourceStorage(resolved.source).titlePropertyId);
+    if (!titleProperty) throw new DatabaseMarkdownTableWriterError('owner_invalid', 'The v2 source Title property is missing');
+    const afterOwner = replaceDatabaseMarkdownTableCell(resolved.markdown, resolved.owner, row.rowIndex, titleColumn, encodedCell(titleProperty, nextLink));
+    const ownerRevision = revision(resolved.markdown);
+    const afterOwnerRevision = revision(afterOwner);
+    const mutationId = `mut_${this.#generateUuid().replaceAll('-', '')}`;
+    await this.#assertOwnerStillCurrent(resolved);
+    try {
+      await this.#journal.prepare({
+        mutationId,
+        files: [
+          { path: row.documentPath, beforeSha256: beforeDocumentRevision, afterSha256: null, before: beforeDocument, after: null },
+          { path: input.newDocumentPath, beforeSha256: null, afterSha256: beforeDocumentRevision, before: null, after: beforeDocument },
+          { path: sourceStorage(resolved.source).owner.path, beforeSha256: ownerRevision.sha256, afterSha256: afterOwnerRevision.sha256, before: resolved.markdown, after: afterOwner },
+        ],
+      });
+      await this.#journal.checkpoint(mutationId, 'writing');
+      await this.#fs.mkdir(resolve(newAbsolute, '..'));
+      await this.#fs.rename(oldAbsolute, newAbsolute);
+      await this.#assertOwnerStillCurrent(resolved);
+      await this.#atomicWrite(resolved.ownerAbsolutePath, afterOwner);
+      await this.#journal.checkpoint(mutationId, 'committed');
+      await this.#refreshDatabaseIndex();
+    } catch (error) {
+      try {
+        const ownerCurrent = await this.#fs.readFile(resolved.ownerAbsolutePath).catch(() => null);
+        if (ownerCurrent !== null && sha256(ownerCurrent) === afterOwnerRevision.sha256) await this.#atomicWrite(resolved.ownerAbsolutePath, resolved.markdown);
+        const newCurrent = await this.#fs.readFile(newAbsolute).catch(() => null);
+        if (newCurrent !== null && sha256(newCurrent) === beforeDocumentRevision) await this.#fs.rename(newAbsolute, oldAbsolute);
+        await this.#journal.checkpoint(mutationId, 'rolled_back');
+      } catch (rollbackError) {
+        await this.#journal.checkpoint(mutationId, 'recovery_required').catch(() => undefined);
+        throw new DatabaseMarkdownTableWriterError('rollback_failed', 'V2 document move failed and compensation was incomplete', { oldPath: row.documentPath, newPath: input.newDocumentPath }, rollbackError);
+      }
+      if (error instanceof DatabaseMarkdownTableWriterError && error.code === 'target_changed') throw error;
+      throw new DatabaseMarkdownTableWriterError('transaction_failed', 'V2 document move failed and was rolled back', { oldPath: row.documentPath, newPath: input.newDocumentPath }, error);
+    }
+    return { changed: true, receipt: this.#moveReceipt(resolved, row, resolved.markdown, afterOwner, row.documentPath, input.newDocumentPath, beforeDocument, beforeDocument, mutationId) };
+  }
+
   async #deleteRowLocked(input: Omit<DatabaseMarkdownTableRowMutationInput, 'values'>): Promise<DatabaseMarkdownTableMutationResult> {
     const resolved = await this.#loadSource(input.databaseId, input.sourceId);
     this.#assertExpectedRevision(resolved, input.expectedOwnerRevision, input.expectedRowRevision);
     const row = await this.#resolveRow(resolved, input.recordId);
     this.#assertRowAndCellRevisions(resolved, row.rowIndex, resolved.owner.rows[row.rowIndex]!.cells[0]!, input.expectedRowRevision, undefined);
     const after = deleteDatabaseMarkdownTableRow(resolved.markdown, resolved.owner, row.rowIndex);
-    return this.#commitOwnerOnly('delete_row', resolved, row, after);
+    const lifecycle = resolved.database.storageMetadata?.recordLifecycle;
+    if (!lifecycle || lifecycle[input.recordId] === undefined) {
+      return this.#commitOwnerOnly('delete_row', resolved, row, after);
+    }
+    const manifestPath = `.ok/databases/${resolved.database.key}.yml`;
+    const manifestAbsolutePath = this.#safeProjectAbsolutePath(manifestPath);
+    await this.#assertNoProjectSymlinkComponents(manifestPath);
+    const beforeManifest = await this.#fs.readFile(manifestAbsolutePath).catch((error) => {
+      throw new DatabaseMarkdownTableWriterError(
+        'transaction_failed',
+        `Database manifest "${manifestPath}" could not be read`,
+        { manifestPath },
+        error,
+      );
+    });
+    const remainingLifecycle = { ...lifecycle };
+    delete remainingLifecycle[input.recordId];
+    let afterManifest: string;
+    try {
+      afterManifest = updateDatabaseManifestYaml(
+        beforeManifest,
+        DatabaseDefinitionSchema.parse({
+          ...resolved.database,
+          storageMetadata: {
+            ...(resolved.database.storageMetadata ?? {}),
+            recordLifecycle: remainingLifecycle,
+          },
+        }),
+      );
+    } catch (error) {
+      throw new DatabaseMarkdownTableWriterError(
+        'transaction_failed',
+        'The database manifest could not be updated while removing lifecycle metadata',
+        { manifestPath, recordId: input.recordId },
+        error,
+      );
+    }
+    if (afterManifest === beforeManifest) {
+      return this.#commitOwnerOnly('delete_row', resolved, row, after);
+    }
+    return this.#commitOwnerOnly('delete_row', resolved, row, after, undefined, {
+      path: manifestPath,
+      before: beforeManifest,
+      after: afterManifest,
+    });
   }
 
   async #createRowLocked(input: DatabaseMarkdownTableRowCreateInput): Promise<DatabaseMarkdownTableMutationResult> {
@@ -809,6 +1366,7 @@ export class DatabaseMarkdownTableWriter {
     row: ResolvedRow,
     after: string,
     propertyId?: string,
+    manifest?: ManifestMutation,
   ): Promise<DatabaseMarkdownTableMutationResult> {
     const before = resolved.markdown;
     const ownerRevision = revision(before);
@@ -820,31 +1378,74 @@ export class DatabaseMarkdownTableWriter {
         { limit: DATABASE_MARKDOWN_LIMITS.ownerDocumentBytes },
       );
     }
-    const receipt = this.#receipt(operation, resolved, row, before, after, propertyId);
-    if (before === after) return { changed: false, receipt };
+    const receipt = this.#receipt(operation, resolved, row, before, after, propertyId, manifest);
+    if (before === after && manifest === undefined) return { changed: false, receipt };
     try {
       await this.#assertOwnerStillCurrent(resolved);
       await this.#assertNoSymlinkComponents(sourceStorage(resolved.source).owner.path);
+      if (manifest) {
+        await this.#assertNoProjectSymlinkComponents(manifest.path);
+        const currentManifest = await this.#fs.readFile(this.#safeProjectAbsolutePath(manifest.path));
+        if (sha256(currentManifest) !== sha256(manifest.before)) {
+          throw new DatabaseMarkdownTableWriterError(
+            'target_changed',
+            'Database manifest changed after the v2 membership mutation was planned',
+            { manifestPath: manifest.path, observedRevision: sha256(currentManifest) },
+          );
+        }
+      }
       await this.#journal.prepare({
         mutationId: receipt.mutationId,
-        files: [{
-          path: sourceStorage(resolved.source).owner.path,
-          beforeSha256: ownerRevision.sha256,
-          afterSha256: afterRevision.sha256,
-          before,
-          after,
-        }],
+        files: [
+          {
+            path: sourceStorage(resolved.source).owner.path,
+            beforeSha256: ownerRevision.sha256,
+            afterSha256: afterRevision.sha256,
+            before,
+            after,
+          },
+          ...(manifest
+            ? [{
+                path: manifest.path,
+                beforeSha256: sha256(manifest.before),
+                afterSha256: sha256(manifest.after),
+                before: manifest.before,
+                after: manifest.after,
+              }]
+            : []),
+        ],
       });
       await this.#journal.checkpoint(receipt.mutationId, 'writing');
       await this.#assertNoSymlinkComponents(sourceStorage(resolved.source).owner.path);
       await this.#atomicWrite(resolved.ownerAbsolutePath, after);
+      if (manifest) {
+        const manifestAbsolutePath = this.#safeProjectAbsolutePath(manifest.path);
+        const currentManifest = await this.#fs.readFile(manifestAbsolutePath);
+        if (sha256(currentManifest) !== sha256(manifest.before)) {
+          throw new DatabaseMarkdownTableWriterError(
+            'target_changed',
+            'Database manifest changed during the v2 membership mutation',
+            { manifestPath: manifest.path, observedRevision: sha256(currentManifest) },
+          );
+        }
+        await this.#atomicWrite(manifestAbsolutePath, manifest.after);
+      }
       await this.#journal.checkpoint(receipt.mutationId, 'committed');
+      if (manifest) await this.#databaseStore.reload();
       await this.#refreshDatabaseIndex();
     } catch (error) {
       try {
         const current = await this.#fs.readFile(resolved.ownerAbsolutePath);
         if (sha256(current) === afterRevision.sha256) {
           await this.#atomicWrite(resolved.ownerAbsolutePath, before);
+        }
+        if (manifest) {
+          const manifestAbsolutePath = this.#safeProjectAbsolutePath(manifest.path);
+          const currentManifest = await this.#fs.readFile(manifestAbsolutePath).catch(() => null);
+          if (currentManifest !== null && sha256(currentManifest) === sha256(manifest.after)) {
+            await this.#atomicWrite(manifestAbsolutePath, manifest.before);
+          }
+          await this.#databaseStore.reload();
         }
         await this.#journal.checkpoint(receipt.mutationId, 'rolled_back');
       } catch (rollbackError) {
@@ -887,7 +1488,78 @@ export class DatabaseMarkdownTableWriter {
         observedRevision: sha256(current),
       });
     }
-    if (sha256(current) === receipt.beforeOwnerRevision) return { changed: false, receipt };
+    const titleDocumentPath = receipt.operation === 'update_title' ? receipt.documentPath : undefined;
+    const moveDocumentPath = receipt.operation === 'move_document' ? receipt.documentPath : undefined;
+    const movePreviousPath = receipt.operation === 'move_document' ? receipt.previousDocumentPath : undefined;
+    const lifecycleManifestPath = receipt.manifestPath;
+    const titleDocumentAbsolute = titleDocumentPath ? this.#safeAbsolutePath(titleDocumentPath) : null;
+    const moveDocumentAbsolute = moveDocumentPath ? this.#safeAbsolutePath(moveDocumentPath) : null;
+    const lifecycleManifestAbsolute = lifecycleManifestPath
+      ? this.#safeProjectAbsolutePath(lifecycleManifestPath)
+      : null;
+    const titleDocumentCurrent = titleDocumentAbsolute
+      ? await this.#fs.readFile(titleDocumentAbsolute).catch((error) => {
+          throw new DatabaseMarkdownTableWriterError('document_not_found', 'Undo refused because the linked title document disappeared', { documentPath: titleDocumentPath }, error);
+        })
+      : null;
+    if (receipt.operation === 'update_title') {
+      if (!receipt.beforeDocumentContent || !receipt.afterDocumentRevision || !receipt.beforeDocumentRevision || !titleDocumentPath) {
+        throw new DatabaseMarkdownTableWriterError('invalid_request', 'Title receipt does not carry recoverable linked-document bytes');
+      }
+      if (sha256(titleDocumentCurrent!) !== receipt.afterDocumentRevision && sha256(titleDocumentCurrent!) !== receipt.beforeDocumentRevision) {
+        throw new DatabaseMarkdownTableWriterError('target_changed', 'Undo refused because the linked title document changed after the mutation', {
+          documentPath: titleDocumentPath,
+          expectedAfterRevision: receipt.afterDocumentRevision,
+          observedRevision: sha256(titleDocumentCurrent!),
+        });
+      }
+    }
+    const movedDocumentCurrent = moveDocumentAbsolute
+      ? await this.#fs.readFile(moveDocumentAbsolute).catch((error) => {
+          throw new DatabaseMarkdownTableWriterError('document_not_found', 'Undo refused because the moved document disappeared', { documentPath: moveDocumentPath }, error);
+        })
+      : null;
+    if (receipt.operation === 'move_document') {
+      if (!receipt.beforeDocumentContent || !receipt.afterDocumentRevision || !receipt.beforeDocumentRevision || !moveDocumentPath || !movePreviousPath) {
+        throw new DatabaseMarkdownTableWriterError('invalid_request', 'Move receipt does not carry recoverable document paths/bytes');
+      }
+      if (sha256(movedDocumentCurrent!) !== receipt.afterDocumentRevision) {
+        throw new DatabaseMarkdownTableWriterError('target_changed', 'Undo refused because the moved document changed after the mutation', { documentPath: moveDocumentPath, expectedAfterRevision: receipt.afterDocumentRevision, observedRevision: sha256(movedDocumentCurrent!) });
+      }
+      const previousAbsolute = this.#safeAbsolutePath(movePreviousPath);
+      const previousExists = await this.#fs.lstat(previousAbsolute).then(() => true).catch(() => false);
+      if (previousExists) throw new DatabaseMarkdownTableWriterError('document_path_conflict', 'Undo refused because the previous document path is occupied', { documentPath: movePreviousPath });
+    }
+    let lifecycleManifestCurrent: string | null = null;
+    if (lifecycleManifestPath) {
+      if (
+        !lifecycleManifestPath ||
+        !lifecycleManifestAbsolute ||
+        !receipt.beforeManifestContent ||
+        !receipt.afterManifestRevision ||
+        !receipt.beforeManifestRevision
+      ) {
+        throw new DatabaseMarkdownTableWriterError('invalid_request', 'Manifest mutation receipt does not carry recoverable bytes');
+      }
+      lifecycleManifestCurrent = await this.#fs.readFile(lifecycleManifestAbsolute).catch((error) => {
+        throw new DatabaseMarkdownTableWriterError('target_changed', 'Undo refused because the database manifest disappeared', { manifestPath: lifecycleManifestPath }, error);
+      });
+      if (
+        sha256(lifecycleManifestCurrent) !== receipt.afterManifestRevision &&
+        sha256(lifecycleManifestCurrent) !== receipt.beforeManifestRevision
+      ) {
+        throw new DatabaseMarkdownTableWriterError('target_changed', 'Undo refused because the database manifest changed after the mutation', {
+          manifestPath: lifecycleManifestPath,
+          expectedAfterRevision: receipt.afterManifestRevision,
+          observedRevision: sha256(lifecycleManifestCurrent),
+        });
+      }
+    }
+    if (
+      sha256(current) === receipt.beforeOwnerRevision &&
+      (receipt.operation !== 'update_title' || sha256(titleDocumentCurrent!) === receipt.beforeDocumentRevision) &&
+      (!lifecycleManifestPath || sha256(lifecycleManifestCurrent!) === receipt.beforeManifestRevision)
+    ) return { changed: false, receipt };
     const undoMutationId = `mut_${randomUUID().replaceAll('-', '')}`;
     const beforeOwner = receipt.operation === 'create_row'
       ? this.#ownerBefore(receipt, resolved.markdown)
@@ -925,27 +1597,94 @@ export class DatabaseMarkdownTableWriter {
         before: documentBefore,
         after: null,
       });
+    } else if (receipt.operation === 'update_title') {
+      documentAbsolute = titleDocumentAbsolute;
+      documentBefore = titleDocumentCurrent;
+      undoFiles.push({
+        path: titleDocumentPath!,
+        beforeSha256: sha256(documentBefore!),
+        afterSha256: sha256(receipt.beforeDocumentContent!),
+        before: documentBefore,
+        after: receipt.beforeDocumentContent!,
+      });
+    } else if (receipt.operation === 'move_document') {
+      documentAbsolute = moveDocumentAbsolute;
+      documentBefore = movedDocumentCurrent;
+      undoFiles.push({
+        path: moveDocumentPath!,
+        beforeSha256: sha256(documentBefore!),
+        afterSha256: null,
+        before: documentBefore,
+        after: null,
+      });
+      undoFiles.push({
+        path: movePreviousPath!,
+        beforeSha256: null,
+        afterSha256: sha256(receipt.beforeDocumentContent!),
+        before: null,
+        after: receipt.beforeDocumentContent!,
+      });
+    } else if (lifecycleManifestPath) {
+      undoFiles.push({
+        path: lifecycleManifestPath!,
+        beforeSha256: sha256(lifecycleManifestCurrent!),
+        afterSha256: sha256(receipt.beforeManifestContent!),
+        before: lifecycleManifestCurrent,
+        after: receipt.beforeManifestContent!,
+      });
     }
     await this.#assertOwnerStillCurrent({ ...resolved, markdown: current });
     await this.#assertNoSymlinkComponents(receipt.ownerPath);
-    if (documentAbsolute) await this.#assertNoSymlinkComponents(undoFiles[1]!.path);
+    for (const file of undoFiles.slice(1)) {
+      if (file.path.startsWith('.ok/')) await this.#assertNoProjectSymlinkComponents(file.path);
+      else await this.#assertNoSymlinkComponents(file.path);
+    }
     await this.#journal.prepare({ mutationId: undoMutationId, files: undoFiles });
     await this.#journal.checkpoint(undoMutationId, 'writing');
     let ownerWritten = false;
+    let documentWritten = false;
+    let lifecycleManifestWritten = false;
     try {
       await this.#atomicWrite(resolved.ownerAbsolutePath, beforeOwner);
       ownerWritten = true;
-      if (documentAbsolute && documentBefore !== null) await this.#fs.unlink(documentAbsolute);
+      if (receipt.operation === 'update_title' && documentAbsolute && receipt.beforeDocumentContent !== undefined) {
+        await this.#atomicWrite(documentAbsolute, receipt.beforeDocumentContent);
+        documentWritten = true;
+      } else if (receipt.operation === 'move_document' && documentAbsolute && receipt.beforeDocumentContent !== undefined && movePreviousPath) {
+        await this.#fs.unlink(documentAbsolute);
+        const previousAbsolute = this.#safeAbsolutePath(movePreviousPath);
+        await this.#fs.mkdir(resolve(previousAbsolute, '..'));
+        await this.#atomicWrite(previousAbsolute, receipt.beforeDocumentContent);
+        documentWritten = true;
+      } else if (lifecycleManifestPath && lifecycleManifestAbsolute && receipt.beforeManifestContent !== undefined) {
+        await this.#atomicWrite(lifecycleManifestAbsolute, receipt.beforeManifestContent);
+        lifecycleManifestWritten = true;
+      } else if (documentAbsolute && documentBefore !== null) {
+        await this.#fs.unlink(documentAbsolute);
+      }
       await this.#journal.checkpoint(undoMutationId, 'committed');
     } catch (error) {
       try {
         if (ownerWritten) await this.#atomicWrite(resolved.ownerAbsolutePath, current);
-        if (documentAbsolute && documentBefore !== null) {
+        if (receipt.operation === 'move_document' && documentWritten && documentAbsolute && movePreviousPath && documentBefore !== null) {
+          const previousAbsolute = this.#safeAbsolutePath(movePreviousPath);
+          const previousCurrent = await this.#fs.readFile(previousAbsolute).catch(() => null);
+          if (previousCurrent !== null && sha256(previousCurrent) === sha256(receipt.beforeDocumentContent!)) {
+            await this.#fs.unlink(previousAbsolute);
+          }
+          await this.#fs.mkdir(resolve(documentAbsolute, '..'));
+          await this.#atomicWrite(documentAbsolute, documentBefore);
+        } else if (documentWritten && documentAbsolute && documentBefore !== null) {
+          await this.#atomicWrite(documentAbsolute, documentBefore);
+        } else if (documentAbsolute && documentBefore !== null) {
           const documentCurrent = await this.#fs.readFile(documentAbsolute).catch(() => null);
           if (documentCurrent === null) {
             await this.#fs.mkdir(resolve(documentAbsolute, '..'));
             await this.#atomicWrite(documentAbsolute, documentBefore);
           }
+        }
+        if (lifecycleManifestWritten && lifecycleManifestAbsolute && lifecycleManifestCurrent !== null) {
+          await this.#atomicWrite(lifecycleManifestAbsolute, lifecycleManifestCurrent);
         }
         await this.#journal.checkpoint(undoMutationId, 'rolled_back');
       } catch (rollbackError) {
@@ -965,6 +1704,7 @@ export class DatabaseMarkdownTableWriter {
       );
     }
     try {
+      if (lifecycleManifestPath) await this.#databaseStore.reload();
       await this.#refreshDatabaseIndex();
     } catch (error) {
       throw new DatabaseMarkdownTableWriterError('transaction_failed', 'V2 undo completed bytes but index refresh failed', {
@@ -975,15 +1715,18 @@ export class DatabaseMarkdownTableWriter {
   }
 
   #receipt(
-    operation: DatabaseMarkdownTableMutationReceipt['operation'],
+    operation: Exclude<DatabaseMarkdownTableMutationReceipt['operation'], 'update_title' | 'update_lifecycle'>,
     resolved: ResolvedSource,
     row: ResolvedRow,
     before: string,
     after: string,
     propertyId?: string,
+    manifest?: ManifestMutation,
   ): DatabaseMarkdownTableMutationReceipt {
     const beforeRevision = revision(before);
     const afterRevision = revision(after);
+    const manifestBeforeRevision = manifest ? revision(manifest.before) : null;
+    const manifestAfterRevision = manifest ? revision(manifest.after) : null;
     return {
       version: 1,
       mutationId: `mut_${this.#generateUuid().replaceAll('-', '')}`,
@@ -994,11 +1737,151 @@ export class DatabaseMarkdownTableWriter {
       recordId: row.recordId,
       ...(propertyId ? { propertyId } : {}),
       rowIndex: row.rowIndex,
-      files: [{ path: sourceStorage(resolved.source).owner.path, operation: 'update', before: beforeRevision, after: afterRevision }],
+      files: [
+        { path: sourceStorage(resolved.source).owner.path, operation: 'update', before: beforeRevision, after: afterRevision },
+        ...(manifest && manifestBeforeRevision && manifestAfterRevision
+          ? [{ path: manifest.path, operation: 'update' as const, before: manifestBeforeRevision, after: manifestAfterRevision }]
+          : []),
+      ],
       beforeOwnerRevision: beforeRevision.sha256,
       afterOwnerRevision: afterRevision.sha256,
       beforeOwnerContent: before,
       afterOwnerContent: after,
+      ...(manifest
+        ? {
+            manifestPath: manifest.path,
+            beforeManifestRevision: manifestBeforeRevision!.sha256,
+            afterManifestRevision: manifestAfterRevision!.sha256,
+            beforeManifestContent: manifest.before,
+            afterManifestContent: manifest.after,
+          }
+        : {}),
+      committedAt: new Date().toISOString(),
+    };
+  }
+
+  #titleReceipt(
+    resolved: ResolvedSource,
+    row: ResolvedRow,
+    beforeOwner: string,
+    afterOwner: string,
+    documentPath: string,
+    beforeDocument: string,
+    afterDocument: string,
+    mutationId = `mut_${this.#generateUuid().replaceAll('-', '')}`,
+  ): DatabaseMarkdownTableMutationReceipt {
+    const beforeOwnerRevision = revision(beforeOwner);
+    const afterOwnerRevision = revision(afterOwner);
+    const beforeDocumentRevision = revision(beforeDocument);
+    const afterDocumentRevision = revision(afterDocument);
+    return {
+      version: 1,
+      mutationId,
+      operation: 'update_title',
+      databaseId: resolved.database.id,
+      sourceId: resolved.source.id,
+      ownerPath: sourceStorage(resolved.source).owner.path,
+      recordId: row.recordId,
+      propertyId: sourceStorage(resolved.source).titlePropertyId,
+      rowIndex: row.rowIndex,
+      files: [
+        { path: sourceStorage(resolved.source).owner.path, operation: 'update', before: beforeOwnerRevision, after: afterOwnerRevision },
+        { path: documentPath, operation: 'update', before: beforeDocumentRevision, after: afterDocumentRevision },
+      ],
+      beforeOwnerRevision: beforeOwnerRevision.sha256,
+      afterOwnerRevision: afterOwnerRevision.sha256,
+      beforeOwnerContent: beforeOwner,
+      afterOwnerContent: afterOwner,
+      documentPath,
+      beforeDocumentRevision: beforeDocumentRevision.sha256,
+      afterDocumentRevision: afterDocumentRevision.sha256,
+      beforeDocumentContent: beforeDocument,
+      afterDocumentContent: afterDocument,
+      committedAt: new Date().toISOString(),
+    };
+  }
+
+  #moveReceipt(
+    resolved: ResolvedSource,
+    row: ResolvedRow,
+    beforeOwner: string,
+    afterOwner: string,
+    previousDocumentPath: string,
+    documentPath: string,
+    beforeDocument: string,
+    afterDocument: string,
+    mutationId = `mut_${this.#generateUuid().replaceAll('-', '')}`,
+  ): DatabaseMarkdownTableMutationReceipt {
+    const beforeOwnerRevision = revision(beforeOwner);
+    const afterOwnerRevision = revision(afterOwner);
+    const beforeDocumentRevision = revision(beforeDocument);
+    const afterDocumentRevision = revision(afterDocument);
+    return {
+      version: 1,
+      mutationId,
+      operation: 'move_document',
+      databaseId: resolved.database.id,
+      sourceId: resolved.source.id,
+      ownerPath: sourceStorage(resolved.source).owner.path,
+      recordId: row.recordId,
+      propertyId: sourceStorage(resolved.source).titlePropertyId,
+      rowIndex: row.rowIndex,
+      files: [
+        { path: previousDocumentPath, operation: 'delete', before: beforeDocumentRevision, after: null },
+        { path: documentPath, operation: 'create', before: null, after: afterDocumentRevision },
+        { path: sourceStorage(resolved.source).owner.path, operation: 'update', before: beforeOwnerRevision, after: afterOwnerRevision },
+      ],
+      beforeOwnerRevision: beforeOwnerRevision.sha256,
+      afterOwnerRevision: afterOwnerRevision.sha256,
+      beforeOwnerContent: beforeOwner,
+      afterOwnerContent: afterOwner,
+      documentPath,
+      previousDocumentPath,
+      beforeDocumentRevision: beforeDocumentRevision.sha256,
+      afterDocumentRevision: afterDocumentRevision.sha256,
+      beforeDocumentContent: beforeDocument,
+      afterDocumentContent: afterDocument,
+      committedAt: new Date().toISOString(),
+    };
+  }
+
+  #lifecycleReceipt(
+    resolved: ResolvedSource,
+    row: ResolvedRow,
+    manifestPath: string,
+    beforeManifest: string,
+    afterManifest: string,
+    beforeOwnerRevision: string,
+    afterOwnerRevision: string,
+    mutationId = `mut_${this.#generateUuid().replaceAll('-', '')}`,
+    beforeManifestRevision = sha256(beforeManifest),
+    afterManifestRevision = sha256(afterManifest),
+  ): DatabaseMarkdownTableMutationReceipt {
+    return {
+      version: 1,
+      mutationId,
+      operation: 'update_lifecycle',
+      databaseId: resolved.database.id,
+      sourceId: resolved.source.id,
+      ownerPath: sourceStorage(resolved.source).owner.path,
+      recordId: row.recordId,
+      rowIndex: row.rowIndex,
+      files: [
+        {
+          path: manifestPath,
+          operation: 'update',
+          before: { sha256: beforeManifestRevision, bytes: Buffer.byteLength(beforeManifest, 'utf8') },
+          after: { sha256: afterManifestRevision, bytes: Buffer.byteLength(afterManifest, 'utf8') },
+        },
+      ],
+      beforeOwnerRevision,
+      afterOwnerRevision,
+      beforeOwnerContent: resolved.markdown,
+      manifestPath,
+      beforeManifestRevision,
+      afterManifestRevision,
+      beforeManifestContent: beforeManifest,
+      afterManifestContent: afterManifest,
       committedAt: new Date().toISOString(),
     };
   }
@@ -1060,7 +1943,7 @@ export class DatabaseMarkdownTableWriter {
   ): void {
     const row = resolved.owner.rows[rowIndex];
     if (!row) throw new DatabaseMarkdownTableWriterError('owner_invalid', `Owner row ${rowIndex} is missing`);
-    const observedRow = sha256(resolved.markdown.slice(row.range.start, row.range.end));
+    const observedRow = databaseMarkdownTableRowRevision(row);
     if (expectedRowRevision !== undefined && expectedRowRevision !== observedRow) {
       throw new DatabaseMarkdownTableWriterError('target_changed', 'Owner table row changed after the v2 mutation was planned', {
         rowIndex,
@@ -1068,7 +1951,7 @@ export class DatabaseMarkdownTableWriter {
         observedRevision: observedRow,
       });
     }
-    const observedCell = sha256(cell.value);
+    const observedCell = databaseMarkdownTableCellRevision(cell);
     if (expectedCellRevision !== undefined && expectedCellRevision !== observedCell) {
       throw new DatabaseMarkdownTableWriterError('target_changed', 'Owner table cell changed after the v2 mutation was planned', {
         rowIndex,
@@ -1085,6 +1968,47 @@ export class DatabaseMarkdownTableWriter {
       throw new DatabaseMarkdownTableWriterError('invalid_request', 'V2 writer target escapes the content directory', { path });
     }
     return absolute;
+  }
+
+  #safeProjectAbsolutePath(path: string): string {
+    const absolute = resolve(this.#projectDir, path);
+    if (!isWithin(this.#projectDir, absolute)) {
+      throw new DatabaseMarkdownTableWriterError(
+        'invalid_request',
+        'V2 writer target escapes the project directory',
+        { path },
+      );
+    }
+    return absolute;
+  }
+
+  #safeJournalAbsolutePath(path: string): string {
+    return path.startsWith('.ok/') || path === '.ok'
+      ? this.#safeProjectAbsolutePath(path)
+      : this.#safeAbsolutePath(path);
+  }
+
+  async #assertNoProjectSymlinkComponents(path: string): Promise<void> {
+    const absolute = this.#safeProjectAbsolutePath(path);
+    const relativePath = relative(this.#projectDir, absolute);
+    let cursor = this.#projectDir;
+    for (const segment of relativePath.split(sep)) {
+      cursor = resolve(cursor, segment);
+      try {
+        const stats = await this.#fs.lstat(cursor);
+        if (stats.isSymbolicLink()) {
+          throw new DatabaseMarkdownTableWriterError(
+            'invalid_request',
+            'V2 writer refuses symbolic-link path components',
+            { path },
+          );
+        }
+      } catch (error) {
+        if (error instanceof DatabaseMarkdownTableWriterError) throw error;
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') continue;
+        throw error;
+      }
+    }
   }
 
   async #assertNoSymlinkComponents(path: string): Promise<void> {

@@ -1,7 +1,7 @@
 # RFC 0008: Markdown table canonical database storage
 
-- 상태: 방향 승인, core/read contract 및 storage-aware writer/API/MCP/CLI/app cell·기본 row path 구현 중
-  (new-default·native title/lifecycle write·full migration release는 gated)
+- 상태: 방향 승인, core/read contract 및 storage-aware writer/API/MCP/CLI/app cell·row·title·move·native lifecycle path 구현 중
+  (new-default·full migration release·collaboration/performance evidence는 gated)
 - 작성일: 2026-07-27
 - 대상: `packages/core`, `packages/server`, `packages/app`, `packages/cli`, 데이터베이스 저장·인덱스·Git merge·마이그레이션 경계
 - 성격: canonical 저장 형식 변경, 단일 데이터베이스 엔진 결정
@@ -74,6 +74,24 @@ untitled_database_<generated-suffix>/
 - 외부 Markdown 편집을 byte-preserving validation과 명시적 diagnostics로 수용한다.
 - Git clone만으로 canonical schema, owner table, linked documents를 복구할 수 있다.
 - 현재의 exact plan, approval, verification, undo, permission, Agent Data Plane 계약을 유지한다.
+
+구현 상태를 혼동하지 않도록 저장 위치별 계약을 다음처럼 고정한다.
+
+| 영역 | v2 canonical 위치 | v2에서 금지하는 위치 |
+| --- | --- | --- |
+| Scalar 값 | owner Markdown table의 typed cell | linked document frontmatter/body의 동일 값 복제, hidden record file |
+| 문서 entity | 일반 `.md`/`.mdx`의 범용 `_sn.document_id`, title, body | database 전용 `rec_*` 파일명·폴더, database별 document identity |
+| Database membership/lifecycle | manifest의 `storageMetadata.recordLifecycle[recordId]` | linked document에 database별 archive/layout/audit frontmatter를 추가하는 것 |
+| Formula/Rollup 정의 | manifest property schema의 stable-ID AST/definition | owner table의 결과 cell, linked document, 별도 derived cache |
+| Formula/Rollup 결과 | revision-bound in-memory derived snapshot | canonical Markdown, migration alias의 두 번째 값 원본 |
+| View/filter/sort | manifest/view 또는 linked-view 설정 | owner table row/value 복제 |
+
+`storageMetadata`는 값 저장소를 다시 만드는 예외가 아니다. 사용자가 편집하는 scalar는
+항상 table cell 하나에만 존재하고, metadata 영역은 table row가 어떤 database에 속해
+있는지와 archive/audit/layout 같은 database membership 상태만 보관한다. 하나의 문서가
+여러 source에 참여할 수 있으므로 이 분리는 문서 portability와 source별 lifecycle을
+동시에 보장한다. metadata가 커지면 row-file로 조용히 전환하지 않고 bounded manifest,
+compaction 또는 source split/export를 안내한다.
 
 ### 3.2 비목표
 
@@ -239,10 +257,53 @@ v1 Title 값은 migration 중 linked document의 ordinary title contract로 옮�
 
 | 동작 | 결과 |
 | --- | --- |
-| 행 삭제 | database membership과 scalar cell values만 삭제, 문서는 유지 |
+| 행 삭제 | database membership/scalar cell values와 active lifecycle metadata를 함께 삭제, 문서는 유지 |
 | 문서 삭제 | 행은 broken-link 상태로 유지, 자동 행 삭제 금지 |
 | Delete record and document | 별도 고위험 plan으로 행과 문서를 함께 삭제 |
 | Database 삭제 | owner marker/table과 manifest 삭제, linked documents는 기본적으로 유지 |
+
+### 6.5 Database metadata 영역과 lifecycle
+
+문서 entity와 database membership을 같은 frontmatter에 섞지 않는다. v2 manifest에는
+다음과 같은 bounded metadata 영역을 둘 수 있다.
+
+```yaml
+storageMetadata:
+  recordLifecycle:
+    rec_order_001:
+      archivedAt: null
+      createdAt: 2026-07-27T00:00:00Z
+      lastEditedAt: 2026-07-27T00:05:00Z
+      lastEditedBy:
+        kind: human
+        principal_id: user_123
+      pageLayoutOverride:
+        pinnedPropertyIds: [prop_status]
+        panelPropertyIds: [prop_notes]
+```
+
+이 영역의 규칙은 다음과 같다.
+
+1. key는 canonical v2 `recordId`이고, row가 owner table에서 제거되면 orphan metadata를
+   만들지 않는다. legacy alias는 migration provenance에서만 resolve하고 native lifecycle
+   write의 key로 사용하지 않는다.
+2. `archivedAt`, audit actor/time, page layout은 database membership 상태다. 일반 문서의
+   `_sn.document_id`, title, body와 독립적이므로 같은 문서를 다른 source에 연결할 때
+   archive 상태나 layout이 따라가지 않는다.
+3. lifecycle mutation은 owner cell과 문서 body를 수정하지 않는다. manifest file revision과
+   owner revision을 함께 precondition으로 받고, manifest before/after bytes를 journal과
+   undo receipt에 기록한다.
+4. metadata와 owner table이 불일치하면 row를 추측해 복구하지 않는다. missing row,
+   duplicate key, invalid timestamp/layout은 explicit diagnostic이며 read-only 상태다.
+5. metadata는 scalar 값의 보조 원본이 아니다. 예를 들어 `status`, `price`, `notes`를
+   metadata에 복사하지 않으며, Formula/Rollup 결과도 metadata에 저장하지 않는다.
+6. manifest의 row 수/byte limit을 초과하면 migration/apply를 막고 source split 또는
+   computed export를 제안한다. 숨은 record 파일로 자동 우회하지 않는다.
+
+따라서 사용자가 파일 탐색기에서 보는 것은 owner table과 정상적인 linked Markdown 문서이고,
+앱이 database를 복원할 때만 manifest metadata를 함께 읽어 lifecycle projection을 만든다.
+문서 파일을 다른 source에서 재사용하거나 독립적으로 편집해도 database-specific metadata가
+문서에 남지 않는다.
 
 ## 7. Stored property cell codec
 
@@ -512,6 +573,23 @@ Page-like row creation은 한 transaction에서 다음을 수행한다.
 
 행 삭제와 문서 삭제는 서로 다른 action이다. 결합 삭제는 frozen owner row revision과 document revision을 모두 요구하는 별도 high-risk plan이다. Undo는 owner table cell/row bytes와 document bytes를 독립 target으로 기록한다.
 
+### 13.4 Title, move, archive, and layout mutation
+
+v2의 document-facing mutation도 같은 storage-aware writer를 사용한다.
+
+| 동작 | 쓰는 파일 | 반드시 검증할 precondition | undo target |
+| --- | --- | --- | --- |
+| Title edit | linked document title declaration + owner Title wikilink alias | owner byte revision, document byte revision | 두 파일의 before/after bytes |
+| Document move/rename | 새 문서 경로 + owner Title wikilink target | owner/document revision, destination non-existence, symlink/path guard | 이전 경로, 새 경로, owner bytes |
+| Archive/restore | manifest `storageMetadata.recordLifecycle[recordId].archivedAt` | owner byte revision, manifest byte revision, record still present | manifest before/after bytes |
+| Page layout override | 같은 lifecycle metadata entry | owner/manifest revision, schema-valid property IDs | manifest before/after bytes |
+
+Title edit는 문서 body를 재작성하거나 경로를 자동 rename하지 않는다. Move는
+`document_id`/record ID를 유지하고 owner link target만 바꾼다. Archive/restore와 layout 변경은
+문서 frontmatter에 database 전용 key를 추가하지 않는다. 각 mutation receipt는 operation,
+stable IDs, exact touched paths, before/after revision, actor, verification 결과를 포함하며
+중간 외부 변경이 있으면 덮어쓰지 않고 `target_changed`/`recovery_required`로 중단한다.
+
 ## 14. 동시 편집과 Git merge
 
 한 owner table이 여러 행을 소유하므로 row-file 모델보다 파일 단위 Git 충돌 가능성이 높다. 이를 두 번째 저장 엔진으로 회피하지 않고 table-aware semantic merge로 해결한다.
@@ -656,18 +734,19 @@ migration 전체를 막는다. 별도 alias artifact를 추가하려면 이 RFC�
 | Relation record ID | Target document wikilink | Target source에서 legacy ID를 stable document ID/path로 해석할 수 있어야 한다. |
 | Formula/Rollup definition | v2 manifest definition | Stable property-ID AST와 definition revision을 보존한다. 결과 cell은 만들지 않는다. |
 | Formula/Rollup cached result | 없음 | 같은 frozen evaluation context에서 재계산한 결과만 비교한다. |
-| `_sn.archived_at` | Bounded `migration.legacyRecordIds[canonicalRecordId].archivedAt` metadata | 값은 migration alias manifest에만 보존하고 owner cell/linked-document frontmatter의 두 번째 원본으로 만들지 않는다. Native v2 lifecycle writer는 별도 contract가 고정되기 전 활성화하지 않는다. |
-| `_sn.created_at/by`, `_sn.last_edited_at/by` | Bounded migration alias audit baseline | v1 값을 alias에 보존하고 v2 derived property projection에서 읽지만 owner table cell에는 쓰지 않는다. |
-| `_sn.page_layout_override` | Bounded migration alias record layout override | Canonical record ID alias로 key를 바꾸고 orphan reference를 거부한다. |
+| `_sn.archived_at` | Native v2 `storageMetadata.recordLifecycle[canonicalRecordId].archivedAt`; migration 중에는 bounded alias baseline도 기록 | 값은 owner cell/linked-document frontmatter에 복제하지 않는다. Native archive/restore는 manifest lifecycle writer로만 수행한다. |
+| `_sn.created_at/by`, `_sn.last_edited_at/by` | Native v2 lifecycle metadata의 audit fields; migration alias는 verification baseline | v1 값을 native metadata로 옮긴 뒤 cold rebuild에서 projection을 확인한다. owner table cell에는 쓰지 않는다. |
+| `_sn.page_layout_override` | Native v2 `recordLifecycle[canonicalRecordId].pageLayoutOverride`; migration alias는 pre-cutover provenance | Canonical record ID로 key를 바꾸고 orphan/invalid layout을 blocker 또는 explicit diagnostic으로 반환한다. |
 | Unrelated frontmatter/body | 같은 linked document | Document ID/title에 필요한 승인 변경 외에는 byte-for-byte 보존한다. |
 | v1 record path | Linked document path | Existing-folder 문서는 유지하고 generated path rename은 별도 선택으로 처리한다. |
 | Inline/full-page `DatabaseView` | Owner block 또는 linked view | Source마다 정확히 하나만 owner가 되고 나머지는 reference-only linked view가 된다. |
 
-Lifecycle/audit/layout의 migration baseline은 strict `migration.legacyRecordIds`
-schema와 alias/manifest byte budget을 사용한다. 이 metadata는 migration provenance와
-read projection을 위한 bounded compatibility layer이며 writable v2 cell이 아니다.
-Native v2 archive/audit/layout mutation은 이 RFC의 후속 contract가 확정되기 전에는
-지원하지 않고, UI/API는 명시적인 read-only diagnostic을 반환한다.
+Lifecycle/audit/layout의 migration baseline은 strict `migration.legacyRecordIds`와
+native `storageMetadata.recordLifecycle` schema를 함께 사용한다. Cutover 전 alias는
+rollback/equivalence를 위한 provenance이고, cutover 후 writable canonical target은
+native lifecycle metadata다. 두 영역의 값이 모두 존재하면 native 값을 projection하고
+alias는 audit/rollback 비교에만 사용한다. Native mutation은 owner/manifest revision과
+journal/undo receipt를 요구하며, metadata limit을 넘으면 migration/apply를 막는다.
 
 ### 17.4 Migration eligibility와 blockers
 
@@ -761,14 +840,16 @@ task를 반환한다. 같은 key로 다른 plan을 제출하면 거부한다.
 
 1. Manifest v2 schema, owner marker grammar, property cell codec을 versioned core
    contract로 고정한다.
-2. Title/document, lifecycle, audit, layout override의 canonical 위치를 결정한다.
+2. Title/document, lifecycle, audit, layout override의 canonical 위치를 결정하고
+   `storageMetadata.recordLifecycle` schema와 mutation receipt를 고정한다.
 3. Parser/serializer limits와 semantic revision 알고리즘을 고정한다.
 4. v1 reader와 v2 reader가 동일한 logical `DatabaseRecord` projection을
    반환하는 adapter boundary를 만든다.
 5. v2 writer가 없는 상태에서 fixtures를 읽고 equivalence report를 생성한다.
 
 이 phase는 파일 mutation이 전혀 없고, 모든 codec conformance fixture와 manifest
-schema test가 통과해야 끝난다.
+schema/lifecycle/capability test가 통과해야 끝난다. Native lifecycle writer가 이미
+존재하더라도 이 phase의 완료는 new-default 활성화를 의미하지 않는다.
 
 #### Phase 1 — Read-only inventory와 preflight
 
@@ -968,8 +1049,9 @@ v1 manifest parse, record index rebuild, logical before snapshot equality까지 
 ### 17.11 Rollout과 compatibility 제거
 
 1. **Read-only foundation**: v2 core schema/parser/codec과 equivalence harness를
-   ship하고 storage-aware writer/API는 explicit v2 route로만 제공한다. New-default와 native
-   lifecycle mutation, migration apply release는 비활성화한다. Supported read
+   ship하고 storage-aware writer/API는 explicit v2 route로만 제공한다. Native cell/row/title/
+   move/lifecycle code path는 구현되어 있어도 new-default와 migration apply release는
+   feature gate 뒤에 둔다. Supported read
    versions와 default write version을 별도 상수/capability로 분리하여 이 단계에서
    database creation default를 실수로 v2로 올리지 않는다.
 2. **Internal fixtures**: generated blank, existing folder, inline, full-page,
@@ -1016,6 +1098,14 @@ Public API의 logical database model은 유지한다.
 - plan diff는 `manifest`, `ownerTable`, `document` target을 구분한다.
 - commit/undo receipt는 exact Markdown source ranges 또는 verified whole-file before/after bytes를 기록한다.
 - Agent는 raw owner table을 직접 patch하지 않고 기존 desired-state plan/commit 경계를 사용한다.
+- `describe`는 manifest/table 조합의 `storageCapabilities`를 반환한다. Unknown/newer
+  version은 추측해서 downgrade하지 않고 `read_only` 또는 `unsupported`와 이유를 반환한다.
+- Archive/restore/layout은 `update_lifecycle`, Title은 `update_title`, 경로 변경은
+  `move_document` operation으로만 수행한다. 이 operation들은 generic v1 record-file
+  mutation과 섞이지 않는다.
+- Export는 `canonical_markdown`과 `computed_snapshot`을 별도 mode로 반환한다. Snapshot은
+  owner marker/parsed canonical bytes를 포함하지 않고 `evaluatedAt`과 `derivedRevision`을
+  함께 갖는다.
 
 Agent context pack은 table 원본을 통째로 복사하지 않는다. Permission-scoped materialized rows와 requested document body만 포함한다.
 
@@ -1023,7 +1113,11 @@ Agent context pack은 table 원본을 통째로 복사하지 않는다. Permissi
 
 - 일반 Markdown page 검색은 marker-owned table range의 typed values를 중복 색인하지 않는다.
 - Database record 검색과 Formula/Rollup은 기존 row/property permission을 적용한다.
-- Rollup 대상 값이 보이지 않으면 aggregate에서 조용히 제외하지 않고 permission policy가 정한 redacted/error semantics를 따른다.
+- Rollup 대상 row/property가 보이지 않으면 aggregate에서 조용히 제외하지 않는다. 현재
+  v2 policy는 relation snapshot 전체를 `#PERMISSION!` derived error로 만들고, visible
+  target 수를 값처럼 반환하지 않는다. Function별 redacted semantics를 추가할 때도
+  permission revision과 completeness를 함께 receipt에 묶고 noninterference fixture를
+  통과해야 한다.
 - HTML comment marker와 compact JSON cell은 strict bounded parser를 사용한다.
 - Wikilink resolution은 content root 밖으로 나가는 path, symlink escape, ambiguous basename을 거부한다.
 - Linked document body와 table scalar sensitivity는 각각의 disclosure level에서 독립적으로 검사한다.
