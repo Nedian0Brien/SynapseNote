@@ -890,8 +890,10 @@ budget을 수치로 기록하고,
 `database-lifecycle-benchmark.test.ts`가 cold startup/index, incremental index,
 Formula/Rollup propagation, 50k context packing, 100-row cell commit, 1k migration planning의
 5-sample p95와 process-relative peak RSS를 실제 수치로 기록한다
-(2026-07-27 run: 23.181/3780.305/5.084/54.106/68.104/193.405/943.034ms,
-peak RSS delta 874,233,856/2,147,483,648 bytes, 각 budget 통과). Baseline policy는
+(2026-07-27 run: 17.234/3896.143/4.564/48.271/44.862/126.840/714.965ms,
+peak RSS delta 1,140,916,224/2,147,483,648 bytes, 각 budget 통과; seed
+1511464998, corpus digest `sha256:58f5fc9d7191a141130daf8b0f5811b34f39d7fba491f27024fe56175af19caa`,
+Bun 1.3.14/Node 24.3.0/macOS 27 arm64). Baseline policy는
 deterministic seed/corpus digest와 reference runtime을 evidence에 고정하고, p95 또는 RSS가
 budget을 넘으면 regression으로 실패시키며 승인된 baseline 갱신 없이는 threshold를 올리지
 않는다.
