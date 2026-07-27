@@ -71,6 +71,18 @@ describe('database problem recovery contract', () => {
     });
   });
 
+  test('routes legacy writer guards to the shared migration recovery action', () => {
+    for (const code of ['storage_read_only', 'v2_storage_read_only'] as const) {
+      expect(databaseProblemExtensions(code)).toMatchObject({
+        retryable: false,
+        recovery: {
+          action: 'start_migration',
+          endpoint: '/api/databases/task',
+        },
+      });
+    }
+  });
+
   test('routes permission denials to an explicit access request with schema recovery', () => {
     expect(
       databaseProblemExtensions('permission_denied', {

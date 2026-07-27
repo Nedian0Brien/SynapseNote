@@ -63,6 +63,8 @@ export function DatabaseStateNotice({
               <Trans>Database changed elsewhere</Trans>
             ) : problem.kind === 'permission' ? (
               <Trans>Permission required</Trans>
+            ) : problem.kind === 'migration_required' ? (
+              <Trans>Migration required before editing</Trans>
             ) : (
               <Trans>Database request failed</Trans>
             )}

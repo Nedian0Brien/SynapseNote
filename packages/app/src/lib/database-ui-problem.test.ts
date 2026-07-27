@@ -80,6 +80,47 @@ describe('classifyDatabaseUiProblem', () => {
     ).toEqual({ kind: 'missing', message: 'Database source not found', retryable: false });
   });
 
+  test('maps the v1 writer guard to one migration CTA without exposing transport details', () => {
+    expect(
+      classifyDatabaseUiProblem(
+        new DatabaseMutationClientError('Legacy writer is disabled', {
+          status: 409,
+          problem: {
+            code: 'source_record_migration_required',
+            recovery: { action: 'start_migration' },
+            retryable: false,
+          },
+        }),
+        'fallback',
+      ),
+    ).toEqual({
+      kind: 'migration_required',
+      message: 'Migrate this database to Markdown table storage before editing it.',
+      retryable: false,
+    });
+    expect(databaseUiProblemMessage({ kind: 'migration_required' })).toBe(
+      'This database needs migration before it can be edited.',
+    );
+  });
+
+  test('maps a blocked plan conflict to the same migration CTA as the writer guard', () => {
+    expect(
+      classifyDatabaseUiProblem(
+        new DatabaseMutationClientError('The plan is blocked', {
+          status: 409,
+          problem: {
+            conflicts: [{ code: 'source_record_migration_required' }],
+          },
+        }),
+        'fallback',
+      ),
+    ).toEqual({
+      kind: 'migration_required',
+      message: 'Migrate this database to Markdown table storage before editing it.',
+      retryable: false,
+    });
+  });
+
   test('distinguishes validation, lock conflicts, and unknown server failures', () => {
     expect(
       classifyDatabaseUiProblem(

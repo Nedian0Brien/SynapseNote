@@ -2,6 +2,7 @@
 import { Trans } from '@lingui/react/macro';
 import { Loader2 } from 'lucide-react';
 import { DatabaseConflictResolutionNotice } from '@/components/DatabaseConflictResolutionNotice';
+import { DatabaseMigrationRecoveryPanel } from '@/components/DatabaseMigrationDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { databaseIndexProblem } from '@/lib/database-ui-problem';
@@ -26,6 +27,7 @@ export function DatabaseWorkspaceStatusPanel({
     mutationConflict,
     setMutationError,
     mutationError,
+    selection,
     pageError,
     result,
     setButtonPlan,
@@ -251,19 +253,29 @@ export function DatabaseWorkspaceStatusPanel({
           onReplan={mutationConflict.replan}
         />
       ) : mutationError ? (
-        <DatabaseStateNotice
-          problem={mutationError}
-          actionKind="reload"
-          onAction={
-            mutationError.kind === 'permission'
-              ? undefined
-              : () => {
-                  setMutationError(null);
-                  refreshNow();
-                }
-          }
-          notionSurface={isPagePresentation}
-        />
+        <>
+          <DatabaseStateNotice
+            problem={mutationError}
+            actionKind="reload"
+            onAction={
+              mutationError.kind === 'permission' || mutationError.kind === 'migration_required'
+                ? undefined
+                : () => {
+                    setMutationError(null);
+                    refreshNow();
+                  }
+            }
+            notionSurface={isPagePresentation}
+          />
+          {mutationError.kind === 'migration_required' &&
+          selection?.databaseId &&
+          description?.index?.manifestRevision ? (
+            <DatabaseMigrationRecoveryPanel
+              databaseId={selection.databaseId}
+              expectedManifestRevision={description.index.manifestRevision}
+            />
+          ) : null}
+        </>
       ) : null}
       {pageError ? (
         <DatabaseStateNotice

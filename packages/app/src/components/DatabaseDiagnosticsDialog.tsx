@@ -3,10 +3,12 @@ import type {
   DatabaseDiagnosticsResult,
   DatabaseRepairPlan,
   DatabaseRepairResult,
+  DatabaseRepairUndoResult,
 } from '@nedian0brien/synapsenote-server';
 import { AlertCircle, Download, Loader2, RefreshCw, ShieldAlert, Wrench } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogBody,
@@ -17,7 +19,7 @@ import {
 } from '@/components/ui/dialog';
 
 type DiagnosticsStatus = 'idle' | 'loading' | 'success' | 'error';
-type RepairStatus = 'idle' | 'previewing' | 'applying' | 'applied' | 'error';
+type RepairStatus = 'idle' | 'previewing' | 'applying' | 'undoing' | 'applied' | 'undone' | 'error';
 
 async function responseJson(response: Response): Promise<unknown> {
   const value: unknown = await response.json();
@@ -109,12 +111,42 @@ async function postRepair(body: Record<string, unknown>, signal?: AbortSignal): 
   );
 }
 
-export async function previewDatabaseRepair(signal?: AbortSignal): Promise<DatabaseRepairPlan> {
-  const value = await postRepair({ action: 'preview' }, signal);
+export async function previewDatabaseRepair(
+  documentIds?: Record<string, string>,
+  signal?: AbortSignal,
+): Promise<DatabaseRepairPlan> {
+  const value = await postRepair(
+    {
+      action: 'preview',
+      ...(documentIds && Object.keys(documentIds).length > 0 ? { documentIds } : {}),
+    },
+    signal,
+  );
   if (!value || typeof value !== 'object' || !('plan' in value)) {
     throw new Error('Invalid database repair preview response');
   }
   return (value as { plan: DatabaseRepairPlan }).plan;
+}
+
+export async function undoDatabaseRepair(
+  result: DatabaseRepairResult,
+  signal?: AbortSignal,
+): Promise<DatabaseRepairUndoResult> {
+  const value = await postRepair(
+    {
+      action: 'undo',
+      repairId: result.receipt.repairId,
+      planHash: result.receipt.planHash,
+      undoToken: result.receipt.undoToken,
+      idempotencyKey: `ui-repair-undo-${crypto.randomUUID()}`,
+      principalId: 'user:local',
+    },
+    signal,
+  );
+  if (!value || typeof value !== 'object' || !('result' in value)) {
+    throw new Error('Invalid database repair undo response');
+  }
+  return (value as { result: DatabaseRepairUndoResult }).result;
 }
 
 export async function applyDatabaseRepair(
@@ -161,6 +193,10 @@ export function DatabaseDiagnosticsBody({
   repairError,
   onPreviewRepair,
   onApplyRepair,
+  onUndoRepair,
+  repairResult,
+  documentIdChoices,
+  onDocumentIdChoice,
   onExport,
 }: {
   data: DatabaseDiagnosticsResult | null;
@@ -172,6 +208,10 @@ export function DatabaseDiagnosticsBody({
   repairError: string | null;
   onPreviewRepair: () => void;
   onApplyRepair: () => void;
+  onUndoRepair: () => void;
+  repairResult: DatabaseRepairResult | null;
+  documentIdChoices: Readonly<Record<string, string>>;
+  onDocumentIdChoice: (path: string, value: string) => void;
   onExport?: () => void;
 }): React.JSX.Element {
   if (status === 'loading' && !data) {
@@ -366,6 +406,27 @@ export function DatabaseDiagnosticsBody({
             </Button>
           ) : null}
         </div>
+        {repairPlan?.blockers.some((blocker) => blocker.code === 'missing_document_id') ? (
+          <div className="mt-3 space-y-2 rounded-lg border border-dashed p-3 text-xs">
+            <p className="font-medium">
+              <Trans>Choose IDs for linked documents</Trans>
+            </p>
+            {repairPlan.blockers
+              .filter((blocker) => blocker.code === 'missing_document_id')
+              .map((blocker) => (
+                <label key={blocker.path} className="flex items-center gap-2">
+                  <span className="min-w-0 flex-1 truncate font-mono">{blocker.path}</span>
+                  <Input
+                    className="w-64 rounded border bg-background px-2 py-1 font-mono"
+                    aria-label={`Document ID for ${blocker.path}`}
+                    placeholder="doc_"
+                    value={documentIdChoices[blocker.path] ?? ''}
+                    onChange={(event) => onDocumentIdChoice(blocker.path, event.target.value)}
+                  />
+                </label>
+              ))}
+          </div>
+        ) : null}
         {repairStatus === 'error' && repairError ? (
           <p className="mt-2 flex items-center gap-1 text-xs text-destructive">
             <ShieldAlert className="size-3.5" aria-hidden="true" />
@@ -377,8 +438,28 @@ export function DatabaseDiagnosticsBody({
             <Trans>Repair applied. Reopen this panel to see the refreshed state.</Trans>
           </p>
         ) : null}
+        {repairResult ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-2"
+            onClick={onUndoRepair}
+            disabled={repairStatus === 'undoing'}
+          >
+            {repairStatus === 'undoing' ? (
+              <Loader2 className="animate-spin" aria-hidden="true" />
+            ) : null}
+            <Trans>Undo exact repair</Trans>
+          </Button>
+        ) : null}
+        {repairStatus === 'undone' ? (
+          <p className="mt-2 text-xs text-muted-foreground">
+            <Trans>Repair bytes restored exactly.</Trans>
+          </p>
+        ) : null}
         {repairPlan ? (
-          <dl className="mt-2 grid grid-cols-2 gap-2 lg:grid-cols-4">
+          <dl className="mt-2 grid grid-cols-2 gap-2 lg:grid-cols-6">
             <Metric
               label={<Trans>Stale identities</Trans>}
               value={repairPlan.summary.staleIdentities}
@@ -394,6 +475,14 @@ export function DatabaseDiagnosticsBody({
             <Metric
               label={<Trans>Blocked</Trans>}
               value={<Plural value={repairPlan.summary.blocked} one="# record" other="# records" />}
+            />
+            <Metric
+              label={<Trans>Markdown rewrites</Trans>}
+              value={repairPlan.summary.markdownRewrites}
+            />
+            <Metric
+              label={<Trans>Identity issues</Trans>}
+              value={repairPlan.summary.identityIssues}
             />
           </dl>
         ) : null}
@@ -416,6 +505,8 @@ export function DatabaseDiagnosticsDialog({
   const [repairPlan, setRepairPlan] = useState<DatabaseRepairPlan | null>(null);
   const [repairStatus, setRepairStatus] = useState<RepairStatus>('idle');
   const [repairError, setRepairError] = useState<string | null>(null);
+  const [repairResult, setRepairResult] = useState<DatabaseRepairResult | null>(null);
+  const [documentIdChoices, setDocumentIdChoices] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!open) return;
@@ -426,6 +517,8 @@ export function DatabaseDiagnosticsDialog({
     setRepairPlan(null);
     setRepairStatus('idle');
     setRepairError(null);
+    setRepairResult(null);
+    setDocumentIdChoices({});
     void fetchDatabaseDiagnostics(controller.signal)
       .then((next) => {
         setData(next);
@@ -442,7 +535,7 @@ export function DatabaseDiagnosticsDialog({
   const handlePreviewRepair = (): void => {
     setRepairStatus('previewing');
     setRepairError(null);
-    void previewDatabaseRepair()
+    void previewDatabaseRepair(documentIdChoices)
       .then((plan) => {
         setRepairPlan(plan);
         setRepairStatus('idle');
@@ -458,10 +551,23 @@ export function DatabaseDiagnosticsDialog({
     setRepairStatus('applying');
     setRepairError(null);
     void applyDatabaseRepair(repairPlan)
-      .then(() => {
+      .then((result) => {
         setRepairStatus('applied');
+        setRepairResult(result);
         setRepairPlan(null);
       })
+      .catch((cause: unknown) => {
+        setRepairError(cause instanceof Error ? cause.message : String(cause));
+        setRepairStatus('error');
+      });
+  };
+
+  const handleUndoRepair = (): void => {
+    if (!repairResult) return;
+    setRepairStatus('undoing');
+    setRepairError(null);
+    void undoDatabaseRepair(repairResult)
+      .then(() => setRepairStatus('undone'))
       .catch((cause: unknown) => {
         setRepairError(cause instanceof Error ? cause.message : String(cause));
         setRepairStatus('error');
@@ -493,6 +599,12 @@ export function DatabaseDiagnosticsDialog({
             repairError={repairError}
             onPreviewRepair={handlePreviewRepair}
             onApplyRepair={handleApplyRepair}
+            onUndoRepair={handleUndoRepair}
+            repairResult={repairResult}
+            documentIdChoices={documentIdChoices}
+            onDocumentIdChoice={(path, value) =>
+              setDocumentIdChoices((current) => ({ ...current, [path]: value }))
+            }
             onExport={() => {
               if (data) downloadDatabaseDiagnostics(data);
             }}

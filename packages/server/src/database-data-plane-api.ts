@@ -14,12 +14,12 @@ import {
   DatabaseMarkdownRecordRevisionSetSchema,
   DatabasePlaceValueSchema,
   DatabasePropertySchema,
-  DatabaseRecordActorSchema,
-  DatabaseRecordPageLayoutOverrideSchema,
   type DatabasePublicSharePolicy,
   DatabasePublicShareTargetSchema,
   DatabaseQueryError,
   DatabaseQuerySchema,
+  DatabaseRecordActorSchema,
+  DatabaseRecordPageLayoutOverrideSchema,
   DatabaseSourceSchema,
   DatabaseVerificationLifecycleInputSchema,
   DatabaseVerificationProjectionSchema,
@@ -529,143 +529,159 @@ export const DatabaseCommitRequestSchema = DatabaseCommitInputSchema;
 const DatabaseMarkdownTableMutationBaseSchema = z.object({
   databaseId: z.string().startsWith('db_'),
   sourceId: z.string().startsWith('ds_'),
+  actor: DatabaseRecordActorSchema.optional(),
 });
 const DatabaseMarkdownTableCellValueSchema = z.unknown();
 export const DatabaseMarkdownTableMutationRequestSchema = z.discriminatedUnion('operation', [
   z
     .object({
       operation: z.literal('update_cell'),
-      input: DatabaseMarkdownTableMutationBaseSchema
-        .extend({
-          recordId: z.string().startsWith('rec_'),
-          propertyId: z.string().startsWith('prop_'),
-          value: DatabaseMarkdownTableCellValueSchema,
-          expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
-          expectedRowRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
-          expectedCellRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
-        })
-        .strict(),
+      input: DatabaseMarkdownTableMutationBaseSchema.extend({
+        recordId: z.string().startsWith('rec_'),
+        propertyId: z.string().startsWith('prop_'),
+        value: DatabaseMarkdownTableCellValueSchema,
+        expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+        expectedRowRevision: z
+          .string()
+          .regex(/^sha256:[a-f0-9]{64}$/)
+          .optional(),
+        expectedCellRevision: z
+          .string()
+          .regex(/^sha256:[a-f0-9]{64}$/)
+          .optional(),
+      }).strict(),
     })
     .strict(),
   z
     .object({
       operation: z.literal('update_cells'),
-      input: DatabaseMarkdownTableMutationBaseSchema
-        .extend({
-          cells: z
-            .array(
-              z
-                .object({
-                  recordId: z.string().startsWith('rec_'),
-                  propertyId: z.string().startsWith('prop_'),
-                  value: DatabaseMarkdownTableCellValueSchema,
-                  expectedRowRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
-                  expectedCellRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
-                })
-                .strict(),
-            )
-            .min(1)
-            .max(10_000),
-          expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
-        })
-        .strict(),
+      input: DatabaseMarkdownTableMutationBaseSchema.extend({
+        cells: z
+          .array(
+            z
+              .object({
+                recordId: z.string().startsWith('rec_'),
+                propertyId: z.string().startsWith('prop_'),
+                value: DatabaseMarkdownTableCellValueSchema,
+                expectedRowRevision: z
+                  .string()
+                  .regex(/^sha256:[a-f0-9]{64}$/)
+                  .optional(),
+                expectedCellRevision: z
+                  .string()
+                  .regex(/^sha256:[a-f0-9]{64}$/)
+                  .optional(),
+              })
+              .strict(),
+          )
+          .min(1)
+          .max(10_000),
+        expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+      }).strict(),
     })
     .strict(),
   z
     .object({
       operation: z.literal('replace_row'),
-      input: DatabaseMarkdownTableMutationBaseSchema
-        .extend({
-          recordId: z.string().startsWith('rec_'),
-          values: z.record(z.string().startsWith('prop_'), DatabaseMarkdownTableCellValueSchema),
-          expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
-          expectedRowRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
-        })
-        .strict(),
+      input: DatabaseMarkdownTableMutationBaseSchema.extend({
+        recordId: z.string().startsWith('rec_'),
+        values: z.record(z.string().startsWith('prop_'), DatabaseMarkdownTableCellValueSchema),
+        expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+        expectedRowRevision: z
+          .string()
+          .regex(/^sha256:[a-f0-9]{64}$/)
+          .optional(),
+      }).strict(),
     })
     .strict(),
   z
     .object({
       operation: z.literal('delete_row'),
-      input: DatabaseMarkdownTableMutationBaseSchema
-        .extend({
-          recordId: z.string().startsWith('rec_'),
-          expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
-          expectedRowRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
-        })
-        .strict(),
+      input: DatabaseMarkdownTableMutationBaseSchema.extend({
+        recordId: z.string().startsWith('rec_'),
+        expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+        expectedRowRevision: z
+          .string()
+          .regex(/^sha256:[a-f0-9]{64}$/)
+          .optional(),
+      }).strict(),
     })
     .strict(),
   z
     .object({
       operation: z.literal('create_row'),
-      input: DatabaseMarkdownTableMutationBaseSchema
-        .extend({
-          documentPath: z.string().min(1).max(2_000),
-          documentMarkdown: z.string().max(4 * 1024 * 1024),
-          documentId: z.string().min(1).max(256).optional(),
-          values: z.record(z.string().startsWith('prop_'), DatabaseMarkdownTableCellValueSchema).optional(),
-          expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
-        })
-        .strict(),
+      input: DatabaseMarkdownTableMutationBaseSchema.extend({
+        documentPath: z.string().min(1).max(2_000),
+        documentMarkdown: z.string().max(4 * 1024 * 1024),
+        documentId: z.string().min(1).max(256).optional(),
+        values: z
+          .record(z.string().startsWith('prop_'), DatabaseMarkdownTableCellValueSchema)
+          .optional(),
+        expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+      }).strict(),
     })
     .strict(),
   z
     .object({
       operation: z.literal('copy_row'),
-      input: DatabaseMarkdownTableMutationBaseSchema
-        .extend({
-          recordId: z.string().startsWith('rec_'),
-          mode: z.enum(['duplicate_document', 'linked_view']),
-          documentPath: z.string().min(1).max(2_000),
-          documentId: z.string().startsWith('doc_').max(256).optional(),
-          expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
-          expectedRowRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
-        })
-        .strict(),
+      input: DatabaseMarkdownTableMutationBaseSchema.extend({
+        recordId: z.string().startsWith('rec_'),
+        mode: z.enum(['duplicate_document', 'linked_view']),
+        documentPath: z.string().min(1).max(2_000),
+        documentId: z.string().startsWith('doc_').max(256).optional(),
+        expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+        expectedRowRevision: z
+          .string()
+          .regex(/^sha256:[a-f0-9]{64}$/)
+          .optional(),
+      }).strict(),
     })
     .strict(),
   z
     .object({
       operation: z.literal('update_title'),
-      input: DatabaseMarkdownTableMutationBaseSchema
-        .extend({
-          recordId: z.string().startsWith('rec_'),
-          title: z.string().trim().min(1).max(200),
-          expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
-          expectedDocumentRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
-        })
-        .strict(),
+      input: DatabaseMarkdownTableMutationBaseSchema.extend({
+        recordId: z.string().startsWith('rec_'),
+        title: z.string().trim().min(1).max(200),
+        expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+        expectedDocumentRevision: z
+          .string()
+          .regex(/^sha256:[a-f0-9]{64}$/)
+          .optional(),
+      }).strict(),
     })
     .strict(),
   z
     .object({
       operation: z.literal('move_document'),
-      input: DatabaseMarkdownTableMutationBaseSchema
-        .extend({
-          recordId: z.string().startsWith('rec_'),
-          newDocumentPath: z.string().min(1).max(2_000),
-          expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
-          expectedDocumentRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
-        })
-        .strict(),
+      input: DatabaseMarkdownTableMutationBaseSchema.extend({
+        recordId: z.string().startsWith('rec_'),
+        newDocumentPath: z.string().min(1).max(2_000),
+        expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+        expectedDocumentRevision: z
+          .string()
+          .regex(/^sha256:[a-f0-9]{64}$/)
+          .optional(),
+      }).strict(),
     })
     .strict(),
   z
     .object({
       operation: z.literal('update_lifecycle'),
-      input: DatabaseMarkdownTableMutationBaseSchema
-        .extend({
-          recordId: z.string().startsWith('rec_'),
-          archived: z.boolean().optional(),
-          pageLayoutOverride: DatabaseRecordPageLayoutOverrideSchema.nullable().optional(),
-          actor: DatabaseRecordActorSchema.optional(),
-          now: z.string().datetime({ offset: true }).optional(),
-          expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
-          // The precondition is the exact database manifest file hash; the
-          // aggregate store snapshot revision is a separate read-model value.
-          expectedManifestRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
-        })
+      input: DatabaseMarkdownTableMutationBaseSchema.extend({
+        recordId: z.string().startsWith('rec_'),
+        archived: z.boolean().optional(),
+        pageLayoutOverride: DatabaseRecordPageLayoutOverrideSchema.nullable().optional(),
+        actor: DatabaseRecordActorSchema.optional(),
+        now: z.string().datetime({ offset: true }).optional(),
+        expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+        // The precondition is the exact database manifest file hash; the
+        // aggregate store snapshot revision is a separate read-model value.
+        expectedManifestRevision: z
+          .string()
+          .regex(/^sha256:[a-f0-9]{64}$/)
+          .optional(),
+      })
         .strict()
         .refine(
           (value) => value.archived !== undefined || value.pageLayoutOverride !== undefined,
@@ -679,7 +695,11 @@ export const DatabaseMarkdownTableMutationRequestSchema = z.discriminatedUnion('
       input: z
         .object({
           receipt: z.record(z.string(), z.unknown()),
-          expectedAfterOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
+          expectedAfterOwnerRevision: z
+            .string()
+            .regex(/^sha256:[a-f0-9]{64}$/)
+            .optional(),
+          actor: DatabaseRecordActorSchema.optional(),
         })
         .strict(),
     })
@@ -687,7 +707,18 @@ export const DatabaseMarkdownTableMutationRequestSchema = z.discriminatedUnion('
 ]);
 export const DatabaseMarkdownTableMutationResponseSchema = z
   .object({
-    operation: z.enum(['update_cell', 'update_cells', 'replace_row', 'delete_row', 'create_row', 'copy_row', 'update_title', 'move_document', 'update_lifecycle', 'undo']),
+    operation: z.enum([
+      'update_cell',
+      'update_cells',
+      'replace_row',
+      'delete_row',
+      'create_row',
+      'copy_row',
+      'update_title',
+      'move_document',
+      'update_lifecycle',
+      'undo',
+    ]),
     changed: z.boolean(),
     receipt: z.record(z.string(), z.unknown()),
   })
@@ -1069,6 +1100,9 @@ export const DatabaseRepairRequestSchema = z.discriminatedUnion('action', [
     .object({
       action: z.literal('preview'),
       ttlSeconds: z.number().int().min(30).max(3_600).optional(),
+      documentIds: z
+        .record(z.string().min(1).max(2_000), z.string().startsWith('doc_').max(256))
+        .optional(),
     })
     .strict(),
   z
@@ -1077,6 +1111,16 @@ export const DatabaseRepairRequestSchema = z.discriminatedUnion('action', [
       planId: z.string().startsWith('repair_plan_'),
       planHash: z.string().regex(/^sha256:[a-f0-9]{64}$/),
       approvalToken: z.string().startsWith('approve:sha256:'),
+      idempotencyKey: z.string().min(8).max(256),
+      principalId: z.string().trim().min(1).max(256),
+    })
+    .strict(),
+  z
+    .object({
+      action: z.literal('undo'),
+      repairId: z.string().startsWith('repair_'),
+      planHash: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+      undoToken: z.string().startsWith('repair_undo_'),
       idempotencyKey: z.string().min(8).max(256),
       principalId: z.string().trim().min(1).max(256),
     })
@@ -1232,7 +1276,11 @@ export const DatabaseRecordResponseSchema = z
   })
   .strict();
 const DatabaseMarkdownTableExportCanonicalSchema = z
-  .object({ path: z.string().min(1), content: z.string(), sha256: z.string().regex(/^sha256:[a-f0-9]{64}$/) })
+  .object({
+    path: z.string().min(1),
+    content: z.string(),
+    sha256: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+  })
   .strict();
 const DatabaseMarkdownTableExportSnapshotSchema = z
   .object({
@@ -1246,7 +1294,10 @@ export const DatabaseMarkdownTableExportResponseSchema = z
   .object({
     mode: z.enum(['canonical_markdown', 'computed_snapshot']),
     manifestRevision: z.string().min(1),
-    derivedRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).nullable(),
+    derivedRevision: z
+      .string()
+      .regex(/^sha256:[a-f0-9]{64}$/)
+      .nullable(),
     evaluatedAt: z.string().datetime().nullable(),
     canonical: z.array(DatabaseMarkdownTableExportCanonicalSchema).max(100_000),
     snapshot: z.array(DatabaseMarkdownTableExportSnapshotSchema).max(100_000),
@@ -1426,8 +1477,16 @@ export const DatabaseQueryResponseSchema = z
     indexRevision: z.string().min(1),
     indexState: z.enum(['idle', 'rebuilding', 'error']),
     snapshotRevision: z.string().min(1),
-    storageRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).nullable().optional(),
-    derivedRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).nullable().optional(),
+    storageRevision: z
+      .string()
+      .regex(/^sha256:[a-f0-9]{64}$/)
+      .nullable()
+      .optional(),
+    derivedRevision: z
+      .string()
+      .regex(/^sha256:[a-f0-9]{64}$/)
+      .nullable()
+      .optional(),
     matched: z.number().int().nonnegative(),
     returned: z.number().int().nonnegative(),
     isComplete: z.boolean(),
@@ -2529,6 +2588,19 @@ const DatabaseRepairActionSchema = z.discriminatedUnion('kind', [
     .strict(),
   z
     .object({
+      kind: z.literal('rewrite_markdown'),
+      path: z.string().min(1),
+      databaseId: z.string().startsWith('db_'),
+      sourceId: z.string().startsWith('ds_'),
+      operation: z.enum(['assign_document_id', 'rewrite_title_alias']),
+      documentId: z.string().startsWith('doc_').optional(),
+      rowIndex: z.number().int().nonnegative().optional(),
+      beforeSha256: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+      afterSha256: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+    })
+    .strict(),
+  z
+    .object({
       kind: z.literal('rebuild_index'),
       missingRecordIds: z.array(z.string().min(1)),
       orphanedRecordIds: z.array(z.string().min(1)),
@@ -2563,10 +2635,19 @@ const DatabaseRepairPlanSchema = z
             'external_conflict',
             'required_value_needs_input',
             'unrepairable_record',
+            'malformed_owner',
+            'duplicate_owner',
+            'missing_document_id',
+            'invalid_document_id',
+            'duplicate_document_id',
+            'duplicate_row_identity',
+            'broken_document_link',
           ]),
           message: z.string().min(1),
           propertyId: z.string().min(1).optional(),
           propertyKey: z.string().min(1).optional(),
+          rowIndex: z.number().int().nonnegative().optional(),
+          relatedPath: z.string().min(1).optional(),
         })
         .strict(),
     ),
@@ -2577,6 +2658,8 @@ const DatabaseRepairPlanSchema = z
         missingRecords: z.number().int().nonnegative(),
         orphanedIndexEntries: z.number().int().nonnegative(),
         recordRewrites: z.number().int().nonnegative(),
+        markdownRewrites: z.number().int().nonnegative(),
+        identityIssues: z.number().int().nonnegative(),
         uniqueIdAllocations: z.number().int().nonnegative(),
         blocked: z.number().int().nonnegative(),
       })
@@ -2609,6 +2692,7 @@ const DatabaseRepairResultSchema = z
         rewrittenPaths: z.array(z.string().min(1)),
         rebuiltIndex: z.boolean(),
         rewrittenDatabaseIds: z.array(z.string().min(1)),
+        undoToken: z.string().startsWith('repair_undo_'),
       })
       .strict(),
   })
@@ -2616,6 +2700,28 @@ const DatabaseRepairResultSchema = z
 export const DatabaseRepairResponseSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('preview'), plan: DatabaseRepairPlanSchema }).strict(),
   z.object({ action: z.literal('apply'), result: DatabaseRepairResultSchema }).strict(),
+  z
+    .object({
+      action: z.literal('undo'),
+      result: z
+        .object({
+          idempotentReplay: z.boolean(),
+          receipt: z
+            .object({
+              version: z.literal(1),
+              undoId: z.string().startsWith('repair_undo_result_'),
+              repairId: z.string().startsWith('repair_'),
+              planHash: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+              principalId: z.string().min(1),
+              undoneAt: z.string().datetime(),
+              restoredPaths: z.array(z.string().min(1)),
+              restoredDatabaseIds: z.array(z.string().min(1)),
+            })
+            .strict(),
+        })
+        .strict(),
+    })
+    .strict(),
 ]);
 
 export const DatabaseOnboardingPreviewSchema = z
@@ -2698,10 +2804,27 @@ export const DatabaseManifestMigrationPreviewSchema = z
           migrationIds: z.array(z.string().min(1)),
           lossless: z.boolean(),
           changed: z.boolean(),
-          planHash: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
+          planHash: z
+            .string()
+            .regex(/^sha256:[a-f0-9]{64}$/)
+            .optional(),
           migrationCommittedAt: z.string().datetime({ offset: true }).optional(),
           ownerPaths: z.array(z.string().min(1)).optional(),
           linkedDocumentPaths: z.array(z.string().min(1)).optional(),
+          blockers: z
+            .array(
+              z
+                .object({
+                  code: z.string().min(1),
+                  sourceId: z.string().min(1).optional(),
+                  recordId: z.string().startsWith('rec_').optional(),
+                  path: z.string().min(1).optional(),
+                  propertyId: z.string().min(1).optional(),
+                  message: z.string().min(1),
+                })
+                .strict(),
+            )
+            .optional(),
           blockerCount: z.number().int().nonnegative().optional(),
           code: z.string().min(1).optional(),
           message: z.string().min(1).optional(),
@@ -2962,8 +3085,14 @@ export const DatabaseTaskResponseSchema = z.discriminatedUnion('action', [
             z
               .object({
                 path: z.string().min(1),
-                beforeSha256: z.string().regex(/^sha256:[a-f0-9]{64}$/).nullable(),
-                afterSha256: z.string().regex(/^sha256:[a-f0-9]{64}$/).nullable(),
+                beforeSha256: z
+                  .string()
+                  .regex(/^sha256:[a-f0-9]{64}$/)
+                  .nullable(),
+                afterSha256: z
+                  .string()
+                  .regex(/^sha256:[a-f0-9]{64}$/)
+                  .nullable(),
               })
               .strict(),
           ),
@@ -2983,9 +3112,7 @@ export const DatabaseTaskResponseSchema = z.discriminatedUnion('action', [
   z
     .object({
       action: z.literal('cleanup_migration'),
-      cleanup: z
-        .object({ taskId: z.string().startsWith('task_'), removed: z.boolean() })
-        .strict(),
+      cleanup: z.object({ taskId: z.string().startsWith('task_'), removed: z.boolean() }).strict(),
     })
     .strict(),
 ]);
@@ -3561,9 +3688,13 @@ function respondDataPlaneError(response: ServerResponse, handler: string, error:
               error.code === 'repair_snapshot_changed' ||
               error.code === 'repair_idempotency_conflict' ||
               error.code === 'repair_file_changed' ||
+              error.code === 'repair_undo_intervening_edit' ||
+              error.code === 'repair_undo_idempotency_conflict' ||
               error.code === 'repair_blocked'
             ? 409
-            : error.code === 'repair_nothing_to_repair'
+            : error.code === 'repair_nothing_to_repair' ||
+                error.code === 'repair_undo_not_found' ||
+                error.code === 'repair_undo_token_mismatch'
               ? 400
               : 500;
     errorResponse(
@@ -5053,12 +5184,21 @@ export function createDatabaseDataPlaneApiHandlers(
           body.action === 'preview'
             ? {
                 action: body.action,
-                plan: await dataPlane.previewRepair(body.ttlSeconds),
+                plan: await dataPlane.previewRepair(body.ttlSeconds, {
+                  ...(body.documentIds
+                    ? { documentIds: body.documentIds as Record<string, `doc_${string}`> }
+                    : {}),
+                }),
               }
-            : {
-                action: body.action,
-                result: await dataPlane.applyRepair(body),
-              };
+            : body.action === 'apply'
+              ? {
+                  action: body.action,
+                  result: await dataPlane.applyRepair(body),
+                }
+              : {
+                  action: body.action,
+                  result: await dataPlane.undoRepair(body),
+                };
         successResponse(response, 200, DatabaseRepairResponseSchema, result, {
           handler: 'database-repair',
           extraHeaders: noStoreHeaders(),
@@ -5083,7 +5223,13 @@ export function createDatabaseDataPlaneApiHandlers(
         return;
       }
       try {
-        if (body.action === 'list' || body.action === 'get' || body.action === 'cancel' || body.action === 'inspect_migration' || body.action === 'preview_cleanup_migration') {
+        if (
+          body.action === 'list' ||
+          body.action === 'get' ||
+          body.action === 'cancel' ||
+          body.action === 'inspect_migration' ||
+          body.action === 'preview_cleanup_migration'
+        ) {
           dataPlane?.authorizeOperation({ action: 'read_audit' });
         } else if (body.action === 'preview_import') {
           dataPlane?.authorizeOperation({
@@ -5241,13 +5387,13 @@ export function createDatabaseDataPlaneApiHandlers(
               ? { action: body.action, preview: resolved }
               : body.action === 'rollback'
                 ? { action: body.action, rollback: resolved }
-              : body.action === 'inspect_migration'
-                ? { action: body.action, inspection: resolved }
-                : body.action === 'preview_cleanup_migration'
-                  ? { action: body.action, cleanupPlan: resolved }
-                : body.action === 'cleanup_migration'
-                    ? { action: body.action, cleanup: resolved }
-                    : { action: body.action, task: resolved };
+                : body.action === 'inspect_migration'
+                  ? { action: body.action, inspection: resolved }
+                  : body.action === 'preview_cleanup_migration'
+                    ? { action: body.action, cleanupPlan: resolved }
+                    : body.action === 'cleanup_migration'
+                      ? { action: body.action, cleanup: resolved }
+                      : { action: body.action, task: resolved };
         successResponse(response, 200, DatabaseTaskResponseSchema, payload, {
           handler: 'database-task',
           extraHeaders: noStoreHeaders(),

@@ -251,11 +251,11 @@ export {
   type DatabaseDataPlanePackInput,
   type DatabaseDataPlaneQueryResult,
   type DatabaseDataPlaneRetrievalResult,
-  type DatabaseMarkdownTableMutationInput,
-  type DatabaseMarkdownTableMutationRequest,
   type DatabaseDescribeNotModifiedResult,
   type DatabaseDescribeResult,
   type DatabaseFindResult,
+  type DatabaseMarkdownTableMutationInput,
+  type DatabaseMarkdownTableMutationRequest,
   type DatabasePropertyConversionPlanPreview,
   type DatabasePublicShareTargetResolution,
   type DatabaseQueryAccessDecision,
@@ -283,8 +283,6 @@ export {
   DatabaseCatalogResponseSchema,
   DatabaseCommitRequestSchema,
   DatabaseCommitResponseSchema,
-  DatabaseMarkdownTableMutationRequestSchema,
-  DatabaseMarkdownTableMutationResponseSchema,
   DatabaseComputedPropertyPreviewRequestSchema,
   DatabaseComputedPropertyPreviewResponseSchema,
   DatabaseContextInspectionRequestSchema,
@@ -299,6 +297,8 @@ export {
   DatabaseFindRequestSchema,
   DatabaseFindResponseSchema,
   DatabaseManifestMigrationPreviewSchema,
+  DatabaseMarkdownTableMutationRequestSchema,
+  DatabaseMarkdownTableMutationResponseSchema,
   DatabaseMigrationCleanupPlanSchema,
   DatabaseOnboardingPreviewSchema,
   DatabasePlanRequestSchema,
@@ -348,6 +348,42 @@ export {
   type PreviewMarkdownFolderDatabaseInput,
   previewMarkdownFolderDatabase,
 } from './database-markdown-import.ts';
+export {
+  createDatabaseMarkdownTableJournal,
+  DatabaseMarkdownTableJournal,
+  type DatabaseMarkdownTableJournalEntry,
+} from './database-markdown-table-journal.ts';
+export {
+  type CreateDatabaseMarkdownTableWriterOptions,
+  createDatabaseMarkdownTableWriter,
+  type DatabaseMarkdownTableBulkCellMutationInput,
+  type DatabaseMarkdownTableCellMutationInput,
+  type DatabaseMarkdownTableDocumentMoveInput,
+  type DatabaseMarkdownTableFileDelta,
+  type DatabaseMarkdownTableLifecycleMutationInput,
+  type DatabaseMarkdownTableMutationReceipt,
+  type DatabaseMarkdownTableMutationResult,
+  type DatabaseMarkdownTableRevision,
+  type DatabaseMarkdownTableRowCopyInput,
+  type DatabaseMarkdownTableRowCreateInput,
+  type DatabaseMarkdownTableRowMutationInput,
+  type DatabaseMarkdownTableTitleMutationInput,
+  type DatabaseMarkdownTableUndoInput,
+  DatabaseMarkdownTableWriter,
+  DatabaseMarkdownTableWriterError,
+  type DatabaseMarkdownTableWriterErrorCode,
+  type DatabaseMarkdownTableWriterFs,
+} from './database-markdown-table-writer.ts';
+export {
+  createDatabaseMigrationGate,
+  DatabaseMigrationGate,
+  type DatabaseMigrationGateOwner,
+} from './database-migration-gate.ts';
+export {
+  createDatabaseMigrationJournal,
+  DatabaseMigrationJournal,
+  type DatabaseMigrationJournalEntry,
+} from './database-migration-journal.ts';
 export * from './database-performance-benchmark.ts';
 export {
   createDatabasePermissionStore,
@@ -419,42 +455,6 @@ export {
   type DatabaseRecordIndexStatus,
 } from './database-record-index.ts';
 export {
-  createDatabaseMarkdownTableWriter,
-  DatabaseMarkdownTableWriter,
-  DatabaseMarkdownTableWriterError,
-  type CreateDatabaseMarkdownTableWriterOptions,
-  type DatabaseMarkdownTableCellMutationInput,
-  type DatabaseMarkdownTableBulkCellMutationInput,
-  type DatabaseMarkdownTableFileDelta,
-  type DatabaseMarkdownTableMutationReceipt,
-  type DatabaseMarkdownTableMutationResult,
-  type DatabaseMarkdownTableRevision,
-  type DatabaseMarkdownTableRowCreateInput,
-  type DatabaseMarkdownTableRowCopyInput,
-  type DatabaseMarkdownTableRowMutationInput,
-  type DatabaseMarkdownTableTitleMutationInput,
-  type DatabaseMarkdownTableDocumentMoveInput,
-  type DatabaseMarkdownTableLifecycleMutationInput,
-  type DatabaseMarkdownTableUndoInput,
-  type DatabaseMarkdownTableWriterFs,
-  type DatabaseMarkdownTableWriterErrorCode,
-} from './database-markdown-table-writer.ts';
-export {
-  createDatabaseMigrationJournal,
-  DatabaseMigrationJournal,
-  type DatabaseMigrationJournalEntry,
-} from './database-migration-journal.ts';
-export {
-  createDatabaseMigrationGate,
-  DatabaseMigrationGate,
-  type DatabaseMigrationGateOwner,
-} from './database-migration-gate.ts';
-export {
-  createDatabaseMarkdownTableJournal,
-  DatabaseMarkdownTableJournal,
-  type DatabaseMarkdownTableJournalEntry,
-} from './database-markdown-table-journal.ts';
-export {
   type CreateDatabaseRepairEngineOptions,
   createDatabaseRepairEngine,
   type DatabaseRepairAction,
@@ -467,8 +467,12 @@ export {
   type DatabaseRepairFileAction,
   type DatabaseRepairIndexAction,
   type DatabaseRepairPlan,
+  type DatabaseRepairPreviewOptions,
   type DatabaseRepairReceipt,
   type DatabaseRepairResult,
+  type DatabaseRepairUndoInput,
+  type DatabaseRepairUndoReceipt,
+  type DatabaseRepairUndoResult,
   type DatabaseRepairUniqueIdManifestAction,
 } from './database-repair.ts';
 export {

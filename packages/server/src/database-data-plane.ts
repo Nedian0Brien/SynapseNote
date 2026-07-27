@@ -3,9 +3,13 @@ import { createHash } from 'node:crypto';
 import type { FrontmatterValue } from '@nedian0brien/synapsenote-core';
 import {
   applyDatabaseLinkedViewSettings,
+  buildDatabaseReverseRelationIndex,
   compileDatabaseFind,
   compileFormulaSource,
+  createDatabaseDerivedRevision,
+  createDatabaseMarkdownTableExport,
   DATABASE_QUERY_SORT_SEMANTICS,
+  DATABASE_STORAGE_CAPABILITY_MATRIX,
   type DatabaseAccessPrincipal,
   DatabaseAccessPrincipalSchema,
   type DatabaseConditionalColorResult,
@@ -17,6 +21,7 @@ import {
   type DatabaseFormValue,
   type DatabaseFormViewConfiguration,
   type DatabaseLinkedViewSettings,
+  type DatabaseMarkdownTableExport,
   type DatabasePermissionAction,
   type DatabaseProperty,
   type DatabasePropertyConversionPreview,
@@ -33,16 +38,11 @@ import {
   type DatabaseRecordIssue,
   type DatabaseSource,
   type DatabaseStorageCapability,
-  DATABASE_STORAGE_CAPABILITY_MATRIX,
   type DatabaseValue,
   DatabaseVerificationValueSchema,
   type DatabaseView,
   databasePublicShareIsActive,
   evaluateDatabaseFilter,
-  buildDatabaseReverseRelationIndex,
-  createDatabaseDerivedRevision,
-  createDatabaseMarkdownTableExport,
-  type DatabaseMarkdownTableExport,
   type FormulaComputedResult,
   formulaErrorResult,
   isDatabaseValueValidForProperty,
@@ -94,6 +94,19 @@ import {
   databaseFormPrivateKey,
 } from './database-form-state-store.ts';
 import {
+  type DatabaseMarkdownTableBulkCellMutationInput,
+  type DatabaseMarkdownTableCellMutationInput,
+  type DatabaseMarkdownTableDocumentMoveInput,
+  type DatabaseMarkdownTableLifecycleMutationInput,
+  type DatabaseMarkdownTableRowCopyInput,
+  type DatabaseMarkdownTableRowCreateInput,
+  type DatabaseMarkdownTableRowMutationInput,
+  type DatabaseMarkdownTableTitleMutationInput,
+  type DatabaseMarkdownTableUndoInput,
+  type DatabaseMarkdownTableWriter,
+  DatabaseMarkdownTableWriterError,
+} from './database-markdown-table-writer.ts';
+import {
   createDatabasePlanEngine,
   type DatabaseDesiredStateDraftInput,
   type DatabaseDraftArtifact,
@@ -114,7 +127,10 @@ import type {
   DatabaseRepairApplyInput,
   DatabaseRepairEngine,
   DatabaseRepairPlan,
+  DatabaseRepairPreviewOptions,
   DatabaseRepairResult,
+  DatabaseRepairUndoInput,
+  DatabaseRepairUndoResult,
 } from './database-repair.ts';
 import {
   DatabaseSemanticIndex,
@@ -124,19 +140,6 @@ import {
 } from './database-semantic-index.ts';
 import type { DatabaseStore } from './database-store.ts';
 import { recordDatabaseContextPackCapture } from './database-telemetry.ts';
-import {
-  DatabaseMarkdownTableWriterError,
-  type DatabaseMarkdownTableWriter,
-  type DatabaseMarkdownTableCellMutationInput,
-  type DatabaseMarkdownTableBulkCellMutationInput,
-  type DatabaseMarkdownTableRowMutationInput,
-  type DatabaseMarkdownTableRowCreateInput,
-  type DatabaseMarkdownTableRowCopyInput,
-  type DatabaseMarkdownTableTitleMutationInput,
-  type DatabaseMarkdownTableDocumentMoveInput,
-  type DatabaseMarkdownTableLifecycleMutationInput,
-  type DatabaseMarkdownTableUndoInput,
-} from './database-markdown-table-writer.ts';
 
 export type DatabaseDataPlaneErrorCode =
   | 'database_not_found'
@@ -2266,7 +2269,11 @@ export class DatabaseDataPlane {
       query: {
         ...(input.query && typeof input.query === 'object' ? input.query : {}),
         page: {
-          ...((input.query && typeof input.query === 'object' && 'page' in input.query && input.query.page && typeof input.query.page === 'object')
+          ...(input.query &&
+          typeof input.query === 'object' &&
+          'page' in input.query &&
+          input.query.page &&
+          typeof input.query.page === 'object'
             ? input.query.page
             : {}),
           limit: 500,
@@ -2977,7 +2984,8 @@ export class DatabaseDataPlane {
             tableRevisions: { [database.id]: index.revision },
             dependencyRevision: relationIndex?.revision ?? 'sha256:empty',
             permissionRevision: derivedPermissionRevision ?? 'sha256:empty',
-            evaluationRevision: index.lastIncrementalAt ?? index.lastRebuiltAt ?? '1970-01-01T00:00:00.000Z',
+            evaluationRevision:
+              index.lastIncrementalAt ?? index.lastRebuiltAt ?? '1970-01-01T00:00:00.000Z',
           });
     const derivedCacheKey =
       derivedPermissionRevision === null
@@ -4406,12 +4414,15 @@ export class DatabaseDataPlane {
     this.#databaseRepairEngine = engine;
   }
 
-  async previewRepair(ttlSeconds?: number): Promise<DatabaseRepairPlan> {
+  async previewRepair(
+    ttlSeconds?: number,
+    options?: DatabaseRepairPreviewOptions,
+  ): Promise<DatabaseRepairPlan> {
     this.#assertReadable();
     if (!this.#databaseRepairEngine) {
       throw new DatabaseDataPlaneError('repair_unavailable', 'Database repair is unavailable');
     }
-    return this.#databaseRepairEngine.preview(ttlSeconds);
+    return this.#databaseRepairEngine.preview(ttlSeconds, options);
   }
 
   async applyRepair(input: DatabaseRepairApplyInput): Promise<DatabaseRepairResult> {
@@ -4426,6 +4437,21 @@ export class DatabaseDataPlane {
       });
     }
     return this.#databaseRepairEngine.apply(
+      this.#bindMutationActorToAccessPrincipal
+        ? { ...input, principalId: this.#trustedMutationActor().principalId }
+        : input,
+    );
+  }
+
+  async undoRepair(input: DatabaseRepairUndoInput): Promise<DatabaseRepairUndoResult> {
+    this.#assertMutationAllowed();
+    if (!this.#databaseRepairEngine) {
+      throw new DatabaseDataPlaneError('repair_unavailable', 'Database repair is unavailable');
+    }
+    for (const database of this.#databaseStore.snapshot().databases) {
+      this.authorizeOperation({ action: 'alter_schema', databaseId: database.id });
+    }
+    return this.#databaseRepairEngine.undo(
       this.#bindMutationActorToAccessPrincipal
         ? { ...input, principalId: this.#trustedMutationActor().principalId }
         : input,
@@ -4503,7 +4529,8 @@ export class DatabaseDataPlane {
         : null;
     this.authorizeOperation({
       action:
-        undoAction ?? (input.operation === 'create_row' || input.operation === 'copy_row'
+        undoAction ??
+        (input.operation === 'create_row' || input.operation === 'copy_row'
           ? 'create_record'
           : input.operation === 'delete_row'
             ? 'delete_record'
@@ -4513,30 +4540,37 @@ export class DatabaseDataPlane {
       ...(recordId ? { recordIds: [recordId] } : {}),
       ...(propertyIds ? { propertyIds } : {}),
     });
+    const mutationInput = this.#bindMutationActorToAccessPrincipal
+      ? { ...input.input, actor: this.#trustedRecordActor() }
+      : input.input;
     try {
       switch (input.operation) {
         case 'update_cell':
-          return await writer.updateCell(input.input as DatabaseMarkdownTableCellMutationInput);
+          return await writer.updateCell(mutationInput as DatabaseMarkdownTableCellMutationInput);
         case 'update_cells':
-          return await writer.updateCells(input.input as DatabaseMarkdownTableBulkCellMutationInput);
+          return await writer.updateCells(
+            mutationInput as DatabaseMarkdownTableBulkCellMutationInput,
+          );
         case 'replace_row':
-          return await writer.replaceRow(input.input as DatabaseMarkdownTableRowMutationInput);
+          return await writer.replaceRow(mutationInput as DatabaseMarkdownTableRowMutationInput);
         case 'delete_row':
           return await writer.deleteRow(
-            input.input as Omit<DatabaseMarkdownTableRowMutationInput, 'values'>,
+            mutationInput as Omit<DatabaseMarkdownTableRowMutationInput, 'values'>,
           );
         case 'create_row':
-          return await writer.createRow(input.input as DatabaseMarkdownTableRowCreateInput);
+          return await writer.createRow(mutationInput as DatabaseMarkdownTableRowCreateInput);
         case 'copy_row':
-          return await writer.copyRow(input.input as DatabaseMarkdownTableRowCopyInput);
+          return await writer.copyRow(mutationInput as DatabaseMarkdownTableRowCopyInput);
         case 'update_title':
-          return await writer.updateTitle(input.input as DatabaseMarkdownTableTitleMutationInput);
+          return await writer.updateTitle(mutationInput as DatabaseMarkdownTableTitleMutationInput);
         case 'move_document':
-          return await writer.moveDocument(input.input as DatabaseMarkdownTableDocumentMoveInput);
+          return await writer.moveDocument(mutationInput as DatabaseMarkdownTableDocumentMoveInput);
         case 'update_lifecycle':
-          return await writer.updateLifecycle(input.input as DatabaseMarkdownTableLifecycleMutationInput);
+          return await writer.updateLifecycle(
+            mutationInput as DatabaseMarkdownTableLifecycleMutationInput,
+          );
         case 'undo':
-          return await writer.undo(input.input as DatabaseMarkdownTableUndoInput);
+          return await writer.undo(mutationInput as DatabaseMarkdownTableUndoInput);
       }
     } catch (error) {
       if (error instanceof DatabaseMarkdownTableWriterError) {
@@ -4551,9 +4585,9 @@ export class DatabaseDataPlane {
                   ? 'property_not_found'
                   : error.code === 'resource_limit'
                     ? 'resource_limit'
-                  : error.code === 'v2_storage_required'
-                    ? 'storage_read_only'
-                    : 'mutation_failed';
+                    : error.code === 'v2_storage_required'
+                      ? 'storage_read_only'
+                      : 'mutation_failed';
         throw new DatabaseDataPlaneError(code, error.message, {
           ...error.details,
           writerCode: error.code,

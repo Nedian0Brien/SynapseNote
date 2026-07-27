@@ -1,4 +1,4 @@
-/** `data_repair` MCP tool — preview and apply bounded canonical database repairs. */
+/** `data_repair` MCP tool — preview, apply, and undo bounded canonical repairs. */
 
 import { z } from 'zod';
 import { databaseAccessHeaders } from '../../database-access-policy.ts';
@@ -24,7 +24,7 @@ export const DESCRIPTION = [
   '',
   'Always call action=preview first. The immutable plan reports every exact file rewrite, Unique ID allocation and watermark advance, before/after hash, lossy value change, derived-index rebuild, blocker, snapshot revision, expiry, and plan hash. Required values without a safe default remain blocked for explicit input.',
   '',
-  'Call action=apply only after a user approves the unchanged plan hash. Apply is snapshot-bound, idempotent, refuses intervening file changes, rolls back failed rewrites, and returns an attributed receipt.',
+  'Call action=apply only after a user approves the unchanged plan hash. Apply is snapshot-bound, idempotent, refuses intervening file changes, rolls back failed rewrites, and returns an attributed receipt with an undo token. Call action=undo with that exact token to restore the byte ranges when no intervening edit exists.',
 ].join('\n');
 
 interface Dependencies {
@@ -35,19 +35,22 @@ interface Dependencies {
 }
 
 interface Args {
-  action: 'preview' | 'apply';
+  action: 'preview' | 'apply' | 'undo';
   ttlSeconds?: number;
   planId?: string;
   planHash?: string;
   approvalToken?: string;
   idempotencyKey?: string;
   principalId?: string;
+  repairId?: string;
+  undoToken?: string;
+  documentIds?: Record<string, string>;
   cwd?: string;
 }
 
 const OutputSchema = outputSchemaWithText({
   cwd: z.string(),
-  action: z.enum(['preview', 'apply']),
+  action: z.enum(['preview', 'apply', 'undo']),
   plan: z.record(z.string(), z.unknown()).optional(),
   result: z.record(z.string(), z.unknown()).optional(),
   problem: DatabaseToolProblemOutputSchema.optional(),
@@ -64,7 +67,7 @@ export function register(server: ServerInstance, deps: Dependencies): void {
     {
       description: DESCRIPTION,
       inputSchema: {
-        action: z.enum(['preview', 'apply']),
+        action: z.enum(['preview', 'apply', 'undo']),
         ttlSeconds: z
           .number()
           .int()
@@ -95,6 +98,16 @@ export function register(server: ServerInstance, deps: Dependencies): void {
           .max(256)
           .optional()
           .describe('Required for apply; human or agent principal receiving attribution.'),
+        repairId: z.string().startsWith('repair_').optional().describe('Required for undo.'),
+        undoToken: z
+          .string()
+          .startsWith('repair_undo_')
+          .optional()
+          .describe('Required for undo; copy exactly from the apply receipt.'),
+        documentIds: z
+          .record(z.string(), z.string().startsWith('doc_'))
+          .optional()
+          .describe('Preview choices for linked documents missing an ID.'),
         cwd: z.string().optional().describe(ROUTED_CWD_DESCRIPTION),
       },
       outputSchema: OutputSchema,
@@ -119,6 +132,20 @@ export function register(server: ServerInstance, deps: Dependencies): void {
           { action: args.action, cwd: args.cwd ?? '' },
         );
       }
+      if (
+        args.action === 'undo' &&
+        (!args.repairId ||
+          !args.planHash ||
+          !args.undoToken ||
+          !args.idempotencyKey ||
+          !args.principalId)
+      ) {
+        return databaseToolInputError(
+          'invalid_request',
+          'action=undo requires repairId, planHash, undoToken, idempotencyKey, and principalId.',
+          { action: args.action, cwd: args.cwd ?? '' },
+        );
+      }
       const context = await resolveProjectServerContext(
         deps.resolveCwd,
         deps.config,
@@ -133,15 +160,28 @@ export function register(server: ServerInstance, deps: Dependencies): void {
         url,
         '/api/databases/repair',
         args.action === 'preview'
-          ? { action: args.action, ...(args.ttlSeconds ? { ttlSeconds: args.ttlSeconds } : {}) }
-          : {
+          ? {
               action: args.action,
-              planId: args.planId,
-              planHash: args.planHash,
-              approvalToken: args.approvalToken,
-              idempotencyKey: args.idempotencyKey,
-              principalId: args.principalId,
-            },
+              ...(args.ttlSeconds ? { ttlSeconds: args.ttlSeconds } : {}),
+              ...(args.documentIds ? { documentIds: args.documentIds } : {}),
+            }
+          : args.action === 'apply'
+            ? {
+                action: args.action,
+                planId: args.planId,
+                planHash: args.planHash,
+                approvalToken: args.approvalToken,
+                idempotencyKey: args.idempotencyKey,
+                principalId: args.principalId,
+              }
+            : {
+                action: args.action,
+                repairId: args.repairId,
+                planHash: args.planHash,
+                undoToken: args.undoToken,
+                idempotencyKey: args.idempotencyKey,
+                principalId: args.principalId,
+              },
         databaseAccessHeaders(deps.identityRef?.current),
       );
       if (!response.ok) return databaseToolHttpError(response, { action: args.action, cwd });
@@ -156,6 +196,17 @@ export function register(server: ServerInstance, deps: Dependencies): void {
             ? `Repair plan ${String(plan.id)} is committable. Review every rewrite and request user approval before apply.`
             : `Repair preview is blocked by ${blocked} issue${blocked === 1 ? '' : 's'} that require explicit input.`,
           { action: args.action, cwd, plan: data.plan as Record<string, unknown> },
+        );
+      }
+      if (args.action === 'undo') {
+        const result = data.result as
+          | { idempotentReplay?: unknown; receipt?: { undoId?: unknown } }
+          | undefined;
+        return textPlusStructured(
+          result?.idempotentReplay === true
+            ? `Repair undo ${String(result.receipt?.undoId)} replayed without another mutation.`
+            : `Repair undo ${String(result?.receipt?.undoId)} restored the exact pre-repair bytes.`,
+          { action: args.action, cwd, result: data.result as Record<string, unknown> },
         );
       }
       const result = data.result as

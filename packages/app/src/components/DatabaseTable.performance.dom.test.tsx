@@ -117,4 +117,31 @@ describe('database table render performance', () => {
     ).toContain('remaining 150');
     expect(view.container.querySelectorAll('[data-record-id]').length).toBeLessThan(40);
   });
+
+  test('keeps the DOM bounded for the supported 50k-row v2 projection', () => {
+    const supportedMaxRecords: ProjectedDatabaseRecord[] = Array.from(
+      { length: 50_000 },
+      (_, row) => ({
+        id: `rec_v2_max_${String(row).padStart(5, '0')}`,
+        path: `benchmark-view/${String(row).padStart(5, '0')}.md`,
+        revision: `sha256:${String(row).padStart(64, '0')}`,
+        values: {
+          prop_view_00: `row ${row}`,
+          prop_view_01: row,
+        },
+      }),
+    );
+    const supportedMaxResult: DatabaseQueryResult = {
+      ...result,
+      matched: supportedMaxRecords.length,
+      returned: supportedMaxRecords.length,
+      records: supportedMaxRecords,
+    };
+    const started = performance.now();
+    const view = render(<DatabaseTable source={source} result={supportedMaxResult} />);
+    const elapsedMs = performance.now() - started;
+    expect(view.container.querySelectorAll('[data-record-id]').length).toBeLessThan(40);
+    expect(view.container.querySelector('[data-record-id="rec_v2_max_49999"]')).toBeNull();
+    expect(elapsedMs).toBeLessThan(DATABASE_UX_LATENCY_BUDGETS_MS.viewSwitch);
+  });
 });

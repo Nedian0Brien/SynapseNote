@@ -66,6 +66,39 @@ function record(
   return `---\n_sn:\n  database_id: ${options.databaseId ?? 'db_tasks'}\n  source_id: ${options.sourceId ?? 'ds_tasks'}\n  record_id: ${id}\ntitle: ${title}\nstatus: ${options.status ?? 'todo'}${options.due ? `\ndue: ${options.due}` : ''}\n---\nBody\n`;
 }
 
+function v2Definition() {
+  return DatabaseDefinitionSchema.parse({
+    version: 2,
+    id: 'db_tasks',
+    key: 'tasks',
+    name: 'Tasks',
+    contract: {
+      purpose: 'Track tasks',
+      canonicality: 'canonical',
+      vocabulary: ['task'],
+      freshness: { expectation: 'realtime', maxAgeSeconds: 60 },
+      sensitivity: 'internal',
+    },
+    sources: [
+      {
+        id: 'ds_tasks',
+        key: 'tasks',
+        name: 'Tasks',
+        recordMeaning: 'One task',
+        folder: 'tasks',
+        storage: {
+          kind: 'markdown_table',
+          formatVersion: 2,
+          owner: { path: 'tasks.md', blockId: 'dbb_tasks' },
+          titlePropertyId: 'prop_title',
+          storedPropertyIds: ['prop_title'],
+        },
+        properties: [{ id: 'prop_title', key: 'title', name: 'Title', type: 'title' }],
+      },
+    ],
+  });
+}
+
 async function fixture() {
   const projectDir = mkdtempSync(join(tmpdir(), 'synapsenote-database-repair-'));
   const contentDir = join(projectDir, 'content');
@@ -326,5 +359,149 @@ describe('DatabaseRepairEngine', () => {
     expect(readFileSync(path, 'utf-8')).toBe(before);
     expect(index.snapshot().issues).toHaveLength(1);
     expect(failing.isTransactionActive()).toBe(false);
+  });
+
+  test('repairs v2 linked-document identity and aliases, then restores exact bytes on undo', async () => {
+    const { projectDir, contentDir, store, index } = await fixture();
+    await store.update('db_tasks', v2Definition());
+    const owner = [
+      '---',
+      'title: Tasks',
+      '---',
+      '',
+      '<!-- synapsenote:database',
+      'version=2',
+      'database=db_tasks',
+      'source=ds_tasks',
+      'block=dbb_tasks',
+      'columns=prop_title',
+      '-->',
+      '',
+      '| Title |',
+      '| --- |',
+      '| [[tasks/alpha\\|Old title]] |',
+      '',
+    ].join('\n');
+    const document = '---\ntitle: Alpha\n---\n\n# Alpha\n\nBody\n';
+    writeFileSync(join(contentDir, 'tasks.md'), owner);
+    mkdirSync(join(contentDir, 'tasks'), { recursive: true });
+    writeFileSync(join(contentDir, 'tasks', 'alpha.md'), document);
+    await index.rebuild();
+    const engine = createDatabaseRepairEngine({
+      projectDir,
+      contentDir,
+      databaseStore: store,
+      databaseRecordIndex: index,
+    });
+    const plan = await engine.preview(600, {
+      documentIds: { 'tasks/alpha.md': 'doc_alpha123456789012345678901234' },
+    });
+    expect(plan).toMatchObject({
+      committable: true,
+      summary: { markdownRewrites: 2, identityIssues: 0 },
+      blockers: [],
+    });
+    expect(plan.actions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: 'rewrite_markdown',
+          path: 'tasks/alpha.md',
+          operation: 'assign_document_id',
+        }),
+        expect.objectContaining({
+          kind: 'rewrite_markdown',
+          path: 'tasks.md',
+          operation: 'rewrite_title_alias',
+        }),
+      ]),
+    );
+    const applied = await engine.apply(applyInput(engine, plan));
+    expect(readFileSync(join(contentDir, 'tasks', 'alpha.md'), 'utf8')).toContain(
+      'document_id: doc_alpha123456789012345678901234',
+    );
+    expect(readFileSync(join(contentDir, 'tasks.md'), 'utf8')).toContain('[[tasks/alpha\\|Alpha]]');
+    const restarted = createDatabaseRepairEngine({
+      projectDir,
+      contentDir,
+      databaseStore: store,
+      databaseRecordIndex: index,
+    });
+    const undone = await restarted.undo({
+      repairId: applied.receipt.repairId,
+      planHash: applied.receipt.planHash,
+      undoToken: applied.receipt.undoToken,
+      idempotencyKey: 'repair-undo-request-001',
+      principalId: 'agent_database_steward',
+    });
+    expect(undone.receipt.restoredPaths.sort()).toEqual(['tasks.md', 'tasks/alpha.md'].sort());
+    expect(readFileSync(join(contentDir, 'tasks.md'), 'utf8')).toBe(owner);
+    expect(readFileSync(join(contentDir, 'tasks', 'alpha.md'), 'utf8')).toBe(document);
+    expect(
+      await restarted.undo({
+        repairId: applied.receipt.repairId,
+        planHash: applied.receipt.planHash,
+        undoToken: applied.receipt.undoToken,
+        idempotencyKey: 'repair-undo-request-001',
+        principalId: 'agent_database_steward',
+      }),
+    ).toMatchObject({ idempotentReplay: true, receipt: { undoId: undone.receipt.undoId } });
+    await expect(
+      restarted.undo({
+        repairId: applied.receipt.repairId,
+        planHash: applied.receipt.planHash,
+        undoToken: applied.receipt.undoToken,
+        idempotencyKey: 'repair-undo-request-002',
+        principalId: 'agent_database_steward',
+      }),
+    ).rejects.toMatchObject({ code: 'repair_undo_not_found' });
+  });
+
+  test('blocks identity undo after an intervening edit', async () => {
+    const { projectDir, contentDir, store, index } = await fixture();
+    await store.update('db_tasks', v2Definition());
+    const owner = [
+      '---',
+      'title: Tasks',
+      '---',
+      '',
+      '<!-- synapsenote:database',
+      'version=2',
+      'database=db_tasks',
+      'source=ds_tasks',
+      'block=dbb_tasks',
+      'columns=prop_title',
+      '-->',
+      '',
+      '| Title |',
+      '| --- |',
+      '| [[tasks/alpha\\|Old title]] |',
+      '',
+    ].join('\n');
+    const document = '---\ntitle: Alpha\n---\n\n# Alpha\n\nBody\n';
+    writeFileSync(join(contentDir, 'tasks.md'), owner);
+    writeFileSync(join(contentDir, 'tasks', 'alpha.md'), document);
+    await index.rebuild();
+    const engine = createDatabaseRepairEngine({
+      projectDir,
+      contentDir,
+      databaseStore: store,
+      databaseRecordIndex: index,
+    });
+    const plan = await engine.preview(600, {
+      documentIds: { 'tasks/alpha.md': 'doc_alpha123456789012345678901234' },
+    });
+    const applied = await engine.apply(applyInput(engine, plan));
+    const editedOwner = `${readFileSync(join(contentDir, 'tasks.md'), 'utf8')}\nExternal edit\n`;
+    writeFileSync(join(contentDir, 'tasks.md'), editedOwner);
+    await expect(
+      engine.undo({
+        repairId: applied.receipt.repairId,
+        planHash: applied.receipt.planHash,
+        undoToken: applied.receipt.undoToken,
+        idempotencyKey: 'repair-undo-intervening-001',
+        principalId: 'agent_database_steward',
+      }),
+    ).rejects.toMatchObject({ code: 'repair_undo_intervening_edit' });
+    expect(readFileSync(join(contentDir, 'tasks.md'), 'utf8')).toBe(editedOwner);
   });
 });

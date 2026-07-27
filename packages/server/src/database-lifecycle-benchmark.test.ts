@@ -2,15 +2,18 @@ import { describe, expect, test } from 'bun:test';
 import { runDatabaseLifecycleBenchmark } from './database-lifecycle-benchmark.ts';
 
 describe('database lifecycle performance benchmark', () => {
-  test('measures real canonical startup, indexing, formulas, and context packing', async () => {
+  test('measures real canonical startup, indexing, derived work, commits, and migration planning', async () => {
     const result = await runDatabaseLifecycleBenchmark({ samples: 5 });
     expect(result).toMatchObject({
       version: 1,
       benchmark: 'database-lifecycle',
       runtime: { bun: expect.any(String), node: expect.any(String) },
+      peakRssBytes: expect.any(Number),
+      memoryBudgetBytes: expect.any(Number),
+      memoryPassed: true,
     });
     const metrics = Object.values(result.metrics);
-    expect(metrics).toHaveLength(5);
+    expect(metrics).toHaveLength(7);
     for (const measured of metrics) {
       expect(measured.samples).toBe(5);
       expect(measured.latencyMs.min).toBeLessThanOrEqual(measured.latencyMs.p50);
@@ -18,6 +21,7 @@ describe('database lifecycle performance benchmark', () => {
       expect(measured.latencyMs.p95).toBeLessThanOrEqual(measured.latencyMs.max);
       expect(measured.passed).toBe(measured.latencyMs.p95 < measured.budgetMs);
     }
+    expect(result.peakRssBytes <= result.memoryBudgetBytes).toBe(true);
     expect(result.passed).toBe(metrics.every((measured) => measured.passed));
   }, 60_000);
 });

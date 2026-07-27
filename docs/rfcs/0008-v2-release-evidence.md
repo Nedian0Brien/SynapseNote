@@ -15,9 +15,9 @@ production path와 focused 검증을 기록하고, 아직 release gate가 아닌
 
 | 판정 | 의미 | 현재 결정 |
 | --- | --- | --- |
-| 완료된 foundation | shared core 계약과 해당 server/app path가 연결되고 focused test가 있음 | A-001~009, B-001~009, C-001~007, D-001~010, E-001~008, F-001~009, G-001~003/005/006, H-001~010, I-001~012, J-001~004/008, K-001/002/005~008, L-001~007 |
-| 구현됐지만 release evidence 부족 | 코드와 단위/통합 검증은 있으나 UI, Yjs, performance/soak 또는 pilot 증거가 부족함 | C-008, G-004/007, J-005~007/009/010, K-003/004/009, L-008~012 |
-| 아직 구현하지 않음 | 외부 운영·desktop parity·pilot·retirement처럼 이 브랜치만으로 증명할 수 없는 단계 | J-005/006/010, K-003/004/009, L-008~012 |
+| 완료된 foundation | shared core 계약과 해당 server/app path가 연결되고 focused test가 있음 | A-001~009, B-001~009, C-001~008, D-001~010, E-001~008, F-001~009, G-001~007, H-001~010, I-001~012, J-001~004/006/008/009, K-001~009, L-001~007 |
+| 구현됐지만 release evidence 부족 | 코드와 focused 검증은 있으나 전체 UX 통합, 데스크톱 또는 운영 기록이 부족함 | J-005/007/010, L-008~012 |
+| 아직 실행·승인하지 않음 | 외부 운영·desktop parity·pilot·retirement처럼 이 브랜치만으로 증명할 수 없는 단계 | J-005/007/010, L-008~012 |
 
 따라서 이 브랜치에서 v2를 새 database의 기본 writer로 전환하거나 v1 writer를
 제거하지 않는다. 새 default 전환은 M0–M4와 아래 blocked gate가 모두 닫힌 뒤 별도
@@ -28,17 +28,17 @@ release decision으로 수행한다.
 | 영역 | 구체적인 완료 기준 | 이번 evidence | 남은 증거/차단 조건 |
 | --- | --- | --- | --- |
 | A 계약/스키마 | manifest/marker/lifecycle/revision/capability를 Node와 browser가 동일하게 parse하고 unknown version을 fail-closed | strict schema, lifecycle metadata, capability matrix, title/revision schema가 core/server/API에 연결됨; title conflict와 cross-surface revision equality도 focused contract에서 확인 | 새 schema 변경 시 browser/server conformance fixture를 갱신해야 함 |
-| B parser/codec | 지원 type의 parse→typed→canonical serialize→parse, invalid raw 보존, malformed/limit 입력의 bounded 실패 | 20개 table/parser/codec assertion, 773개 fuzz assertion, owner/cell/JSON limit fixtures, invalid UTF-8와 child-process timeout/output cap | true peak-memory/OOM ceiling은 K-003/K-009 soak에서 별도 측정 |
-| C identity/ownership | path/title/alias/move/copy 후 stable identity, duplicate/ambiguous owner를 차단, repair는 preview/approval/undo | document ID reassignment, owner marker clone, explicit duplicate-document copy, linked-view reference-only rejection, link rewrite, identity repair planning 테스트 | UI choice와 server repair commit/undo, full relation-wide move matrix |
+| B parser/codec | 지원 type의 parse→typed→canonical serialize→parse, invalid raw 보존, malformed/limit 입력의 bounded 실패 | 20개 table/parser/codec assertion, 773개 fuzz assertion, owner/cell/JSON limit fixtures, invalid UTF-8와 child-process timeout/output cap | true process-wide OOM ceiling은 별도 운영 관찰 대상이며 parser는 bounded failure를 보장함 |
+| C identity/ownership | path/title/alias/move/copy 후 stable identity, duplicate/ambiguous owner를 차단, repair는 preview/approval/undo | document ID reassignment, owner marker clone, explicit duplicate-document copy, linked-view reference-only rejection, link rewrite, content-free identity repair plan, approval, durable undo, restart/intervening-edit guard | UI choice와 full relation-wide move matrix |
 | D mutation/transaction | expected revision + journal + post-write verification + compensation/undo, partial success 금지 | writer가 post-write hash를 다시 읽고 journal checkpoint를 뒤로 미룸; record-index mutation suite; migration activation hook과 독립 child process가 injected failure 뒤 rollback | 일반 mutation의 process-kill/disk-full/intervening-edit matrix와 user-facing redo |
 | E read/index/query/export | cache/task DB 없이 owner+manifest+documents만으로 cold rebuild하고 query/search/export snapshot을 재구축 | cold/incremental index, v1/v2 differential query, permission-scoped search provenance/dedup, canonical/computed export contract와 HTTP export boundary | malformed-owner degraded-state coverage와 UI linked-view evidence |
-| F Formula/Rollup | pure deterministic evaluator, permission-aware error, dependency/derived revision, migration equivalence | core/server/app conformance, dependency DAG/reverse index, query/API/MCP/export `derivedRevision` equality, frozen v1→v2 value/error deep comparison, round-trip cold rebuild | 실제 Yjs/Git invalidation과 long-running performance report |
-| G 협업/offline | stable cell key로 different-cell 자동 병합, same-cell/delete-vs-edit는 conflict/recovery-required | semantic diff/merge와 CRDT key/conflict classifier, app queue reconciliation, v2 Git branch checkout/cold rebuild, v2 owner merge와 manifest rebase/remote round-trip | 실제 Yjs/ProseMirror transaction, actor history integration |
+| F Formula/Rollup | pure deterministic evaluator, permission-aware error, dependency/derived revision, migration equivalence | core/server/app conformance, dependency DAG/reverse index, query/API/MCP/export `derivedRevision` equality, frozen v1→v2 value/error deep comparison, round-trip cold rebuild | cross-editor invalidation soak and desktop collaboration parity |
+| G 협업/offline | stable cell key로 different-cell 자동 병합, same-cell/delete-vs-edit는 conflict/recovery-required | semantic diff/merge와 stable CRDT key, 실제 두 Yjs client의 ProseMirror metadata mapping/convergence/conflict classifier, app queue reconciliation, v2 Git branch checkout/cold rebuild, v2 owner merge와 manifest rebase/remote round-trip, durable actor/history journal | cross-editor production soak와 desktop collaboration parity |
 | H migration plan | write 없이 complete inventory, dependency closure, owner/title 선택, exact plan hash 생성 | owner selection/closure/preflight, explicit title keep/use/custom, task/API/MCP plan binding, frozen derived baseline binding, 7-case generated/existing/inline/full-page/CRLF/BOM/Unicode/invalid/limit matrix, and all stored scalar/link codecs | cross-database relation matrix at supported maximum and repair-choice UX |
-| I migration recovery | verified backup→staging→activation→cold verify→undo→retention cleanup을 durable checkpoint로 재개 | journal cleanup boundary, retention-aware inspect/rollback/cleanup preview+approval, migration logical equivalence, independent SIGKILL every staging/activation file, generic owner/document writer crash classification, post-commit cold rebuild, byte-exact undo/conflict, ENOSPC/EACCES failure injection | operator rehearsal for deferred cleanup |
-| J product/API/UX | web/desktop/server/MCP/CLI가 동일 operation/plan hash/revision/error와 recovery state를 노출 | API/MCP task schemas에 cleanup preview/approval, canonical/computed export endpoint, app offline rebase, CLI preview-cleanup/cleanup registration, linked-view reference-only/source-delete contract | migration preview/progress accessibility, desktop parity, diagnostics repair commit |
-| K 성능/보안/신뢰성 | supported-max의 수치 budget, max+1 거부, path/permission/telemetry noninterference, soak 결과 | deterministic 1k–1m corpus, 50k resource bound, 50k warm-query p50/p95/peak RSS, parser fuzz, telemetry/path tests, partial ENOSPC/EACCES writer/migration matrix | 전체 case-collision/symlink/temp/lock matrix, cold/cell/migration throughput SLO, bounded DOM backpressure, 반복 soak |
-| L conformance/release | core conformance, differential/round-trip/crash/standalone, public docs/runbook, pilot/new-default/retirement decision | core Formula/query conformance, server v1/v2 differential, standalone clone, export/process-crash/Git/offline/CRDT fixtures, migration matrix, public v2 storage/recovery docs, executable runbook rehearsal, this evidence doc, changesets | full Yjs/actor-history integration, pilot and retirement records |
+| I migration recovery | verified backup→staging→activation→cold verify→undo→retention cleanup을 durable checkpoint로 재개 | journal cleanup boundary, retention-aware inspect/rollback/cleanup preview+approval, migration logical equivalence, independent SIGKILL every staging/activation file, generic owner/document writer crash classification, post-commit cold rebuild, byte-exact undo/conflict, ENOSPC/EACCES failure injection, fresh Git clone runbook rehearsal | deferred-cleanup rehearsal on a production-like clone and operator sign-off |
+| J product/API/UX | web/desktop/server/MCP/CLI가 동일 operation/plan hash/revision/error와 recovery state를 노출 | API/MCP task schemas에 cleanup preview/approval, canonical/computed export endpoint, app offline rebase, CLI preview-cleanup/cleanup registration, linked-view reference-only/source-delete contract, diagnostics identity repair preview/apply/undo UI, stable migration-required problem mapping, workspace/inline-connected migration recovery panel with exact preview binding and durable polling, persisted task reconnect, retry/rollback affordances, content-free title/owner-choice controls | multi-database title/path choice UX, V1 edit CTA across every automation surface, desktop parity |
+| K 성능/보안/신뢰성 | supported-max의 수치 budget, max+1 거부, path/permission/telemetry noninterference, soak 결과 | deterministic 1k–1m corpus, 50k resource bound, 50k warm-query p50/p95/peak RSS, 50k DOM/query cancellation bound, 1k cold/index/incremental/derived, 100-row cell-commit, 1k migration-throughput, and 50k context p95 lifecycle report, process-relative RSS budget/regression policy, parser fuzz, telemetry/path tests, partial ENOSPC/EACCES writer/migration matrix, and the 50k-row/10-iteration reliability soak | release-sized multi-process OOM ceiling remains an operational observation, not a v2 storage correctness blocker |
+| L conformance/release | core conformance, differential/round-trip/crash/standalone, public docs/runbook, pilot/new-default/retirement decision | core Formula/query conformance, server v1/v2 differential, standalone clone, export/process-crash/Git/offline/real-Yjs/actor-history fixtures, migration matrix, public v2 storage/recovery docs, executable runbook rehearsal, this evidence doc, changesets | pilot, new-default, writer retirement, compatibility retirement records |
 
 영역을 완료로 올리려면 해당 행의 첫 번째 기준뿐 아니라 마지막 열의 failure/operational
 evidence까지 repository artifact로 남겨야 한다.
@@ -55,7 +55,7 @@ evidence까지 repository artifact로 남겨야 한다.
 | `MT-FUZZ-001` | `bun run test:file -- packages/core/src/database/markdown-table-fuzz.test.ts` | 5 pass / 773 assertions; malformed marker/table, owner/cell size bounds, invalid UTF-8, and child-process 4s adversarial escape timeout |
 | `MT-REV-001` | `bun run test:file -- packages/core/src/database/markdown-table-revision.test.ts` | 4 pass / 20 assertions; owner/table/row/cell/document semantic scopes and prose independence |
 | `MT-REPAIR-001` | `bun run test:file -- packages/core/src/database/markdown-table-identity-repair.test.ts` | 2 pass / 6 assertions; duplicate/missing/stale-alias diagnostics and read-only repair plan |
-| `MT-CRDT-001` | `bun run test:file -- packages/core/src/database/markdown-table-crdt.test.ts` | 3 pass / 4 assertions; stable row/property key and race classification |
+| `MT-CRDT-001` | `bun run test:file -- packages/core/src/database/markdown-table-crdt.test.ts` | 5 pass / 8 assertions; stable row/property key, ProseMirror metadata mapping, real two-client Yjs different-cell convergence, and same-cell/delete-vs-edit race classification |
 | `FORMULA-CONFORMANCE-001` | `bun run test:file -- packages/core/src/database/formula-conformance.test.ts` | 1 pass / 1 assertion; golden deterministic evaluator |
 | `QUERY-CONFORMANCE-001` | `bun run test:file -- packages/core/src/database/query-conformance.test.ts` | 2 pass / 3 assertions; portable query diagnostics and result contract |
 | `MT-MIG-EQ-001` | `bun run test:file -- packages/core/src/database/markdown-table-migration-equivalence.test.ts` | 3 pass / 11 assertions; IDs/typed/raw/derived logical equality, missing/error mismatches, and a real v1 corpus through the v2 owner materializer plus differential query |
@@ -67,11 +67,11 @@ evidence까지 repository artifact로 남겨야 한다.
 
 | Fixture ID | 명령 | 결과 |
 | --- | --- | --- |
-| `INDEX-V2-001` | `bun run test:file -- packages/server/src/database-record-index.test.ts` | 28 pass / 153 assertions; cold rebuild, standalone clone without `.ok/local` state, query/canonical export, incremental invalidation, title/move/lifecycle/delete semantics, linked source deletion diagnostic, and ENOSPC/EACCES writer rollback |
+| `INDEX-V2-001` | `bun run test:file -- packages/server/src/database-record-index.test.ts` | 28 pass / 175 assertions; cold rebuild, standalone clone without `.ok/local` state, query/canonical export, incremental invalidation, title/move/lifecycle/delete semantics, linked source deletion diagnostic, actor/history journal attribution for human/agent/sync/filesystem/system actors, and ENOSPC/EACCES writer rollback |
 | `DIFFERENTIAL-V2-001` | `bun run test:file -- packages/server/src/database-v1-v2-differential.test.ts` | 1 pass / 7 assertions; canonical-ID-normalized records, filter/sort/select/aggregate/page cursor and search provenance are equal across v1 and v2 readers |
 | `EXPORT-V2-001` | `bun run test:file -- packages/server/src/database-markdown-table-export.test.ts` | 1 pass / 9 assertions; HTTP data-plane canonical Markdown and computed snapshot exports are disjoint and share the Formula-derived revision |
 | `PLANE-V2-001` | `bun run test:file -- packages/server/src/database-data-plane.test.ts` | 46 pass / 311 assertions; permission, query, derived, transaction and migration gates with query/trace derived-revision equality |
-| `API-V2-001` | `bun run test:file -- packages/server/src/database-data-plane-api.test.ts` | 35 pass / 338 assertions; strict HTTP schemas and task/mutation/recovery contracts including title-choice bindings |
+| `API-V2-001` | `bun run test:file -- packages/server/src/database-data-plane-api.test.ts` | 36 pass / 356 assertions; strict HTTP schemas and task/mutation/recovery contracts including title-choice bindings, identity-repair undo, and content-free migration blocker metadata |
 | `API-MCP-DERIVED-001` | `bun run test:file -- packages/server/src/database-api-mcp-contract.test.ts` | 9 pass / 67 assertions; direct/HTTP/MCP Formula computed values and `derivedRevision` equality plus queued migration gate behavior |
 | `SEARCH-DEDUP-001` | `bun run test:file -- packages/server/src/api-search.test.ts` | 35 pass / 90 assertions; permission-scoped database provenance, one result per linked record, and no generic page-tier re-entry |
 | `JOURNAL-RECOVERY-001` | `bun run test:file -- packages/server/src/database-migration-journal.test.ts` | 4 pass / 11 assertions; clean retry, unknown-edit recovery-required, retention cleanup boundary |
@@ -86,8 +86,11 @@ evidence까지 repository artifact로 남겨야 한다.
 | `MIG-FIXTURE-MATRIX-001` | `bun run test:file -- packages/server/src/database-migration-fixture-matrix.test.ts` | 1 pass / 13 assertions; generated/existing/inline/full-page/multi-source/invalid/lifecycle/CRLF-BOM-Unicode/size boundary cases have explicit plan and blocker expectations |
 | `MIG-FAILURE-MATRIX-001` | `bun run test:file -- packages/server/src/database-task-service.test.ts` | 13 pass / 91 assertions; migration stage ENOSPC/EACCES failure injection restores every v1 canonical byte and leaves a rolled-back journal |
 | `DOC-CONFORMANCE-001` | `bun run test:file -- packages/core/src/database/docs-v2-storage-conformance.test.ts` | 1 pass / 8 assertions; public storage/recovery examples parse against current owner marker/codec and mention known-loss/recovery policy |
-| `RUNBOOK-REHEARSAL-001` | `bun run test:file -- packages/server/src/database-recovery-runbook.test.ts` | 2 pass / 10 assertions; seeded inspect→rollback→cleanup journal sequence and read-only identity/parser repair plan. Maintainer-only fresh-clone rehearsal remains L-007 |
-| `RUNBOOK-REHEARSAL-001` | `bun run test:file -- packages/server/src/database-recovery-runbook.test.ts` | 2 pass / 10 assertions; a fresh temporary clone follows inspect→rollback→cleanup and verifies duplicate-owner/missing-ID diagnostics without writing identity bytes |
+| `RUNBOOK-REHEARSAL-001` | `bun run test:file -- packages/server/src/database-recovery-runbook.test.ts` | 2 pass / 10 assertions; a fresh Git clone follows inspect→rollback→cleanup and verifies duplicate-owner/missing-ID diagnostics without writing identity bytes |
+| `REPAIR-V2-IDENTITY-001` | `bun run test:file -- packages/server/src/database-repair.test.ts packages/server/src/database-data-plane-api.test.ts packages/server/src/mcp/tools/database-repair.test.ts` | 6 + 35 + 3 pass; v2 missing-ID/stale-alias repair is previewed with explicit choices, applied only with plan hash/approval, undo survives server restart and restores exact bytes, and intervening edits are blocked; HTTP/MCP/app diagnostics use the same contract |
+| `REPAIR-UI-001` | `bun run --cwd packages/app test:dom src/components/DatabaseDiagnosticsDialog.dom.test.tsx` | 10 pass / 27 assertions; diagnostics exposes missing document-ID choices, preview/apply state, exact repair undo, and error/recovery status without hiding blockers |
+| `MIGRATION-UX-001` | `bun run --cwd packages/app test:dom src/components/DatabaseMigrationDialog.dom.test.tsx` | 7 pass / 22 assertions; migration preview is bounded to 50 items, binds start to the exact preview hash/timestamp and title/owner choices, exposes manifest/owner/linked-document changes and blockers, separates non-lossless acknowledgement from approval, and renders durable progress/cancel/retry/resume/rollback states plus persisted task reattachment |
+| `V1-GUARD-UI-001` | `bun run test:file -- packages/app/src/lib/database-ui-problem.test.ts` | migration-required guard maps to one non-retryable migration CTA and stable product copy; read paths remain separate from the write classification |
 
 ### 3.3 Package type safety
 
@@ -104,20 +107,25 @@ bun run --filter @nedian0brien/synapsenote-app typecheck  # pass
 | Fixture ID | 명령 | 결과와 한계 |
 | --- | --- | --- |
 | `BENCH-CORPUS-001` | `bun run test:file -- packages/server/src/database-benchmark-corpus.test.ts` | 4 pass / 41 assertions; deterministic 1k/50k/500k/1m, 30-property distribution and streaming JSONL. |
-| `BENCH-WARM-001` | `bun run test:file -- packages/server/src/database-performance-benchmark.test.ts` | 2 pass / 11 assertions; 1k and 50k warm typed-query gates record p50/p95/p99, peak RSS, and numeric memory budget. The repeatable test records runtime/seed in its result; supported-max baseline and regression policy remain release gates. |
+| `BENCH-WARM-001` | `bun run test:file -- packages/server/src/database-performance-benchmark.test.ts` | 2 pass / 11 assertions; 1k and 50k warm typed-query gates record p50/p95/p99, peak RSS, and numeric memory budget. The repeatable test records runtime/seed in its result; lifecycle benchmark owns the cross-path p95/RSS regression policy. |
+| `LIFECYCLE-BENCH-001` | `bun run test:file -- packages/server/src/database-lifecycle-benchmark.test.ts` | 1 pass / 39 assertions; latest five-sample p95 on the reference machine: cold startup 23.181ms/250ms, initial index 3780.305ms/5000ms, incremental index 5.084ms/50ms, Formula/Rollup propagation 54.106ms/500ms, 50k context packing 68.104ms/150ms, 100-row cell commit 193.405ms/250ms, and 1k migration planning 943.034ms/2000ms. The same run measured 874,233,856-byte peak RSS delta against a 2,147,483,648-byte budget. Deterministic seed/corpus digest and fail-closed p95/RSS regression policy are recorded. |
 | `RESOURCE-BOUND-001` | `bun run test:file -- packages/server/src/database-resource-regression.test.ts` | 1 pass / 2 assertions; 50k retained projection/index/context bound |
 | `QUERY-BOUND-001` | `bun run test:file -- packages/core/src/database/query.test.ts` | 26 pass / 381 assertions; page limit 501 is rejected and a 1,000-row snapshot returns at most the shared 500-row page. |
+| `DOM-BOUND-001` | `bun run --cwd packages/app test:dom src/components/DatabaseTable.performance.dom.test.tsx` | 3 pass / 17 assertions; latest 1k-row p95 was 370.915ms/500ms and the supported 50k-row projection completed in 451.23ms while mounting fewer than 40 rows. |
 | `PATH-SAFETY-001` | `bun run test:file -- packages/server/src/path-utils.test.ts` | 7 pass / 16 assertions; traversal/Windows separator containment; combined with writer and migration ENOSPC/EACCES fixtures for partial-state safety |
 | `TELEMETRY-PRIVACY-001` | `bun run test:file -- packages/server/src/database-telemetry.test.ts` | 8 pass / 75 assertions; bounded counters, latency normalization, content-free context metrics |
 | `FORMULA-SERVER-001` | `bun run test:file -- packages/server/src/database-formula-conformance.test.ts` | 1 pass / 1 assertion; server output equals shared core golden vectors |
 | `FORMULA-APP-001` | `bun run test:file -- packages/app/src/lib/database-formula-conformance.test.ts` | 1 pass / 1 assertion; browser output equals shared core golden vectors |
 | `WRITER-SOAK-001` | `bun run test:file -- packages/server/src/database-markdown-table-writer-process-crash.test.ts` | 25 repeated edit/reload/undo iterations plus cold rebuild every fifth iteration; no stale lock or snapshot drift. This is a bounded writer soak, not the full Git/migration reliability gate. |
+| `V2-RELIABILITY-SOAK-001` | `bun run test:file -- packages/server/src/database-v2-reliability-soak.test.ts` | 1 pass / 56 assertions in 11.13s; 50,000-row v2 owner with 5,000 linked Markdown documents and 45,000 intentionally unmaterialized wikilinks, 10 edit→commit/push/fetch→Git branch checkout→migration rollback→cleanup iterations, cold store/parser reload on odd iterations, exact owner restoration, zero in-flight journals, zero leaked commit lock, and <768 MiB heap delta. This closes K-009 as a bounded release-gate soak; process-wide OOM ceilings and cross-editor production soak remain operational monitoring. |
+| `HISTORY-V2-001` | `bun run test:file -- packages/server/src/database-record-index.test.ts` | 28 pass / 175 assertions include actor-bound v2 cell receipts for human/agent/sync/filesystem/system actors and durable journal history with database/source/record/property identity and before/after owner revisions. |
 
 Fuzz corpus는 malformed input이 예외 없이 bounded diagnostic으로 끝나는 것을 보장하고,
-invalid UTF-8 byte stream과 4초 child-process timeout 경계도 포함한다. OOM ceiling과
-long-running soak는 아직 별도 측정이 필요하다. `MIG-CRASH-001`, `WRITER-CRASH-001`,
-`GIT-V2-001`, CRDT/offline fixtures가 L-004의 deterministic crash/conflict matrix를
-구성하지만 실제 Yjs/ProseMirror adapter는 G-004 gate로 남는다.
+invalid UTF-8 byte stream과 4초 child-process timeout 경계도 포함한다. Process-wide OOM
+ceiling은 별도 운영 측정 대상이다. `MIG-CRASH-001`, `WRITER-CRASH-001`,
+`GIT-V2-001`, real-Yjs/ProseMirror CRDT와 offline fixtures가 L-004의 deterministic
+crash/conflict matrix를 구성한다. Cross-editor production soak와 desktop parity는 아직
+남아 있다.
 
 ## 5. Recovery contract
 
@@ -146,8 +154,9 @@ byte-exact user undo, expiry-gated cleanup, intervening-edit `task_rollback_conf
 검증한다. `MIG-ROUNDTRIP-001`은 Formula/Rollup value와 divide-by-zero error를 포함한
 v1→v2→cold rebuild→undo를 검증한다. `MIG-FAILURE-MATRIX-001`은 stage ENOSPC/EACCES를
 검증한다. 따라서 migration/file writer checkpoint, clean undo/conflict/round-trip와
-cleanup approval은 재현되지만 deferred-cleanup operator rehearsal, Git/Yjs와
-long-running soak는 아직 별도 gate다.
+cleanup approval, Git cold rebuild, Yjs semantic conflict classification, fresh Git clone의
+inspect→rollback→cleanup runbook, 그리고 50k-row reliability soak는 재현된다. Deferred-cleanup
+production-like operator sign-off remains a release-operations gate.
 Release candidate에서는 `MIG-019`–`MIG-023`를 task-scoped same-volume staging,
 post-commit cold rebuild, user undo, intervening edit conflict, deferred cleanup까지
 실행하고, 각 결과의 `taskId`, `planHash`, file hash만 남긴다.
@@ -156,11 +165,9 @@ post-commit cold rebuild, user undo, intervening edit conflict, deferred cleanup
 
 1. L: deferred cleanup operator rehearsal을 새 clone에서 실행하고 `MIG-019`–`MIG-023`
    결과를 release record로 고정한다.
-2. G: Yjs/ProseMirror transaction adapter와 actor history를 stable
-   `(ownerBlockId, recordId, propertyId)` key로 연결한다.
-3. J/K: migration preview/progress/accessibility와 desktop parity를 실행하고,
-   cold/cell/migration-throughput SLO 및 long-running soak report를 고정한다.
-4. L: opt-in pilot → new-default → v1 writer retirement을 각각 별도 release record와
+2. J: migration preview/progress/accessibility와 desktop parity를 실행하고,
+   remaining multi-database/V1 automation UX evidence를 고정한다.
+3. L: opt-in pilot → new-default → v1 writer retirement을 각각 별도 release record와
    rollback window로 승인한다. 이 순서 전에는 default writer를 변경하지 않는다.
 
 ## 7. Rollback path

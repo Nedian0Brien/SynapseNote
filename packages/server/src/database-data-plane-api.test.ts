@@ -491,7 +491,13 @@ describe('database data plane HTTP handlers', () => {
           taskId: 'task_recovery',
           state: 'activated',
           updatedAt: '2026-07-27T00:00:00.000Z',
-          files: [{ path: '.ok/databases/tasks.yml', beforeSha256: null, afterSha256: `sha256:${'c'.repeat(64)}` }],
+          files: [
+            {
+              path: '.ok/databases/tasks.yml',
+              beforeSha256: null,
+              afterSha256: `sha256:${'c'.repeat(64)}`,
+            },
+          ],
           taskMaterialPresent: true,
           undoAvailable: true,
           undoExpiresAt: '2026-08-03T00:00:00.000Z',
@@ -3487,6 +3493,7 @@ describe('database data plane HTTP handlers', () => {
       recordPath,
       '---\n_sn:\n  database_id: db_tasks\n  source_id: ds_tasks\n  record_id: rec_first\ntitle: First\nscore: invalid\n---\nCheckout latency evidence\n',
     );
+    const beforeRepair = readFileSync(recordPath, 'utf8');
     await index.rebuild();
 
     const previewed = await call(
@@ -3526,10 +3533,11 @@ describe('database data plane HTTP handlers', () => {
       '/api/databases/repair',
       JSON.stringify(apply),
     );
-    expect({
+    const appliedBody = {
       status: applied.status,
       body: JSON.parse(applied.body),
-    }).toMatchObject({
+    };
+    expect(appliedBody).toMatchObject({
       status: 200,
       body: {
         action: 'apply',
@@ -3546,6 +3554,9 @@ describe('database data plane HTTP handlers', () => {
     expect(index.getById('rec_first')?.values).toEqual({
       prop_tasks_title: 'First',
     });
+    const repairReceipt = (
+      appliedBody.body as { result: { receipt: { repairId: string; undoToken: string } } }
+    ).result.receipt;
 
     const replay = await call(
       handlers.repair,
@@ -3557,6 +3568,26 @@ describe('database data plane HTTP handlers', () => {
       action: 'apply',
       result: { idempotentReplay: true },
     });
+
+    const undone = await call(
+      handlers.repair,
+      'POST',
+      '/api/databases/repair',
+      JSON.stringify({
+        action: 'undo',
+        repairId: repairReceipt.repairId,
+        planHash: plan.hash,
+        undoToken: repairReceipt.undoToken,
+        idempotencyKey: 'http-repair-undo-0001',
+        principalId: 'agent:repair-test',
+      }),
+    );
+    expect(undone.status, undone.body).toBe(200);
+    expect(JSON.parse(undone.body)).toMatchObject({
+      action: 'undo',
+      result: { idempotentReplay: false, receipt: { repairId: repairReceipt.repairId } },
+    });
+    expect(readFileSync(recordPath, 'utf8')).toBe(beforeRepair);
   });
 
   test('commits only an exactly approved plan and replays an idempotent HTTP request', async () => {

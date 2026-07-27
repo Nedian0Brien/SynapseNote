@@ -51,6 +51,35 @@ const RepairEntrySchema = z
     kind: z.literal('repair'),
     idempotencyKeyHash: Sha256Schema,
     requestFingerprint: Sha256Schema,
+    undoToken: z
+      .string()
+      .regex(/^repair_undo_[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/)
+      .optional(),
+    undoFiles: z
+      .array(UndoFileSchema.extend({ after: z.string() }))
+      .max(100_000)
+      .optional(),
+    undoDefinitions: z
+      .array(
+        z
+          .object({
+            databaseId: z.string().min(1).max(256),
+            before: z.unknown(),
+            after: z.unknown(),
+          })
+          .strict(),
+      )
+      .max(10_000)
+      .optional(),
+    result: z.unknown(),
+  })
+  .strict();
+const RepairUndoEntrySchema = z
+  .object({
+    version: z.literal(1),
+    kind: z.literal('repair_undo'),
+    idempotencyKeyHash: Sha256Schema,
+    requestFingerprint: Sha256Schema,
     result: z.unknown(),
   })
   .strict();
@@ -59,12 +88,14 @@ export type DurableDatabaseCommitEntry = z.infer<typeof CommitEntrySchema>;
 export type DurableDatabaseRedoEntry = z.infer<typeof RedoEntrySchema>;
 export type DurableDatabaseUndoEntry = z.infer<typeof UndoEntrySchema>;
 export type DurableDatabaseRepairEntry = z.infer<typeof RepairEntrySchema>;
+export type DurableDatabaseRepairUndoEntry = z.infer<typeof RepairUndoEntrySchema>;
 
 export interface DatabaseTransactionJournalSnapshot {
   commits: DurableDatabaseCommitEntry[];
   redos: DurableDatabaseRedoEntry[];
   undos: DurableDatabaseUndoEntry[];
   repairs: DurableDatabaseRepairEntry[];
+  repairUndos: DurableDatabaseRepairUndoEntry[];
 }
 
 function stableJson(value: unknown): string {
@@ -147,11 +178,16 @@ export class DatabaseTransactionJournal {
     const redos = await readEntries(resolve(this.#root, 'redos'), RedoEntrySchema);
     const undos = await readEntries(resolve(this.#root, 'undos'), UndoEntrySchema);
     const repairs = await readEntries(resolve(this.#root, 'repairs'), RepairEntrySchema);
+    const repairUndos = await readEntries(
+      resolve(this.#root, 'repair-undos'),
+      RepairUndoEntrySchema,
+    );
     return {
       commits: commits.map((entry) => entry.value),
       redos: redos.map((entry) => entry.value),
       undos: undos.map((entry) => entry.value),
       repairs: repairs.map((entry) => entry.value),
+      repairUndos: repairUndos.map((entry) => entry.value),
     };
   }
 
@@ -181,6 +217,14 @@ export class DatabaseTransactionJournal {
     const value = RepairEntrySchema.parse({ version: 1, kind: 'repair', ...entry });
     const file = entry.idempotencyKeyHash.replace(':', '_');
     await writeExclusive(resolve(this.#root, 'repairs', `${file}.json`), value);
+  }
+
+  async persistRepairUndo(
+    entry: Omit<DurableDatabaseRepairUndoEntry, 'version' | 'kind'>,
+  ): Promise<void> {
+    const value = RepairUndoEntrySchema.parse({ version: 1, kind: 'repair_undo', ...entry });
+    const file = entry.idempotencyKeyHash.replace(':', '_');
+    await writeExclusive(resolve(this.#root, 'repair-undos', `${file}.json`), value);
   }
 }
 

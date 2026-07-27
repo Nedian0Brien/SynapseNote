@@ -6,7 +6,11 @@ import { useRef, useState } from 'react';
 import { useDatabaseMutationHistory } from './database-mutation-history';
 import { databaseUiMutationReviewMode } from './database-mutation-policy';
 import { executeDatabaseMutation } from './database-mutations/database-mutation-gateway';
-import { classifyDatabaseUiProblem, databaseMutationUiMessage } from './database-ui-problem';
+import {
+  classifyDatabaseUiProblem,
+  type DatabaseUiProblemKind,
+  databaseMutationUiMessage,
+} from './database-ui-problem';
 
 export type DatabaseMutationOperation =
   | 'cell'
@@ -41,9 +45,9 @@ export function useDatabaseMutationController({
   const [errorKind, setErrorKind] =
     useState<ReturnType<typeof classifyDatabaseUiProblem>['kind']>();
   const activeMutationRef = useRef(false);
-  const setError = (value: string | null) => {
+  const setError = (value: string | null, kind?: DatabaseUiProblemKind) => {
     setErrorState(value);
-    if (value === null) setErrorKind(undefined);
+    setErrorKind(value === null ? undefined : kind);
   };
   const {
     undoToken,
@@ -92,7 +96,7 @@ export function useDatabaseMutationController({
         if (outcome.status !== 'committed') {
           clearOptimistic();
           setErrorKind('conflict');
-          setError(databaseMutationUiMessage('conflict'));
+          setError(databaseMutationUiMessage('conflict'), 'conflict');
           onRefresh();
           policy.onFailed?.();
           return;
@@ -110,7 +114,7 @@ export function useDatabaseMutationController({
         clearOptimistic();
         const problem = classifyDatabaseUiProblem(cause, 'Unable to save the database change.');
         setErrorKind(problem.kind);
-        setError(databaseMutationUiMessage(problem.kind));
+        setError(databaseMutationUiMessage(problem.kind), problem.kind);
         if (problem.kind === 'conflict') onRefresh();
         policy.onFailed?.();
       })
@@ -163,7 +167,7 @@ export function useDatabaseMutationController({
         clearOptimistic();
         const problem = classifyDatabaseUiProblem(cause, 'Unable to save the database change.');
         setErrorKind(problem.kind);
-        setError(databaseMutationUiMessage(problem.kind));
+        setError(databaseMutationUiMessage(problem.kind), problem.kind);
         if (problem.kind === 'conflict') onRefresh();
         policy.onFailed?.();
       })

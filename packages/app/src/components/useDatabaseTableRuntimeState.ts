@@ -82,18 +82,22 @@ export function useDatabaseTableRuntimeState({
   const titleProperty = allProperties.find((property) => property.type === 'title');
   const omittedColumnCount = visibleProperties.length - properties.length;
   const computedErrorSummaries = new Map<string, { count: number; codes: ReadonlySet<string> }>();
-  for (const record of result.records) {
-    for (const property of allProperties) {
-      if (property.type !== 'formula' && property.type !== 'rollup') continue;
-      const computedResult = record.computedResults?.[property.id];
-      if (computedResult?.kind !== 'error') continue;
-      const current = computedErrorSummaries.get(property.id);
-      const codes = new Set(current?.codes ?? []);
-      codes.add(computedResult.problem.code);
-      computedErrorSummaries.set(property.id, {
-        count: (current?.count ?? 0) + 1,
-        codes,
-      });
+  const computedProperties = allProperties.filter(
+    (property) => property.type === 'formula' || property.type === 'rollup',
+  );
+  if (computedProperties.length > 0) {
+    for (const record of result.records) {
+      for (const property of computedProperties) {
+        const computedResult = record.computedResults?.[property.id];
+        if (computedResult?.kind !== 'error') continue;
+        const current = computedErrorSummaries.get(property.id);
+        const codes = new Set(current?.codes ?? []);
+        codes.add(computedResult.problem.code);
+        computedErrorSummaries.set(property.id, {
+          count: (current?.count ?? 0) + 1,
+          codes,
+        });
+      }
     }
   }
   const canonicalIds = new Set(result.records.map((record) => record.id));

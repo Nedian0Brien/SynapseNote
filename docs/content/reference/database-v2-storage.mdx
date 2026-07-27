@@ -57,14 +57,18 @@ owner marker so that importing the snapshot cannot create a second owner.
 
 Cell, row, title, move, and lifecycle changes go through the storage-aware
 writer. Each mutation carries the current owner/row/cell/document revision,
-records before/after hashes in a durable journal, verifies the written bytes and
-cold index, and returns an exact receipt. A stale revision is a conflict, not a
+records the actor plus logical database/source/record/property identity and
+before/after hashes in a durable journal, verifies the written bytes and cold
+index, and returns an exact receipt. A stale revision is a conflict, not a
 blind overwrite. Row deletion removes table membership but keeps the linked
 document; deleting a document is a separate destructive intent.
 
 Copying an owner block requires a new database/source/block identity. Duplicate
 owners, duplicate document IDs, broken links, unsafe paths, and ambiguous
-aliases are blocked with a repair preview rather than guessed.
+aliases are blocked with a content-free repair preview rather than guessed. The
+diagnostics surface accepts explicit document-ID choices, applies only the
+unchanged plan hash, and exposes an exact undo token; an intervening edit blocks
+undo instead of overwriting it.
 
 ## Limits and failure behavior
 

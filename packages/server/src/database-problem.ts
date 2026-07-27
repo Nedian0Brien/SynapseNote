@@ -29,6 +29,7 @@ export const DatabaseRecoveryActionSchema = z.enum([
   'recreate_plan',
   'restart_task',
   'review_plan',
+  'start_migration',
   'request_approval',
   'request_access',
   'use_new_idempotency_key',
@@ -161,17 +162,20 @@ function recoveryFor(code: DatabaseProblemCode): {
         retryable: true,
         recovery: {
           action: 'retry',
-          instruction: 'The v2 Markdown mutation boundary is not ready on this server; retry after it is configured.',
+          instruction:
+            'The v2 Markdown mutation boundary is not ready on this server; retry after it is configured.',
           endpoint: '/api/databases/markdown-table/mutate',
           retryAfterMs: 1_000,
         },
       };
+    case 'v2_storage_read_only':
     case 'storage_read_only':
       return {
         retryable: false,
         recovery: {
-          action: 'review_plan',
-          instruction: 'This source is still v1/read-only. Preview and approve the v1→v2 migration before editing it.',
+          action: 'start_migration',
+          instruction:
+            'This source is still v1/read-only. Preview and approve the v1→v2 migration before editing it.',
           endpoint: '/api/databases/task',
         },
       };
@@ -180,7 +184,8 @@ function recoveryFor(code: DatabaseProblemCode): {
         retryable: false,
         recovery: {
           action: 'manual_recovery',
-          instruction: 'The v2 owner-table transaction did not complete. Inspect its durable journal and retry only after the state is explicit.',
+          instruction:
+            'The v2 owner-table transaction did not complete. Inspect its durable journal and retry only after the state is explicit.',
           endpoint: '/api/databases/diagnostics',
         },
       };
@@ -350,6 +355,7 @@ function recoveryFor(code: DatabaseProblemCode): {
     case 'repair_plan_hash_mismatch':
     case 'repair_snapshot_changed':
     case 'repair_file_changed':
+    case 'repair_undo_intervening_edit':
       return {
         retryable: false,
         recovery: {
@@ -541,6 +547,26 @@ function recoveryFor(code: DatabaseProblemCode): {
           endpoint: '/api/databases/repair',
         },
       };
+    case 'repair_undo_not_found':
+    case 'repair_undo_token_mismatch':
+      return {
+        retryable: false,
+        recovery: {
+          action: 'manual_recovery',
+          instruction:
+            'Use the exact durable repair receipt and undo token, or follow the recovery runbook.',
+          endpoint: '/api/databases/repair',
+        },
+      };
+    case 'repair_undo_idempotency_conflict':
+      return {
+        retryable: false,
+        recovery: {
+          action: 'use_new_idempotency_key',
+          instruction: 'Use a new idempotency key only for a different repair undo request.',
+          endpoint: '/api/databases/repair',
+        },
+      };
     case 'undo_not_found':
       return {
         retryable: false,
@@ -670,7 +696,6 @@ function recoveryFor(code: DatabaseProblemCode): {
     case 'agent_view_budget_exceeded':
     case 'invalid_desired_state':
     case 'invalid_commit_request':
-    case 'v2_storage_read_only':
     case 'undo_invalid_request':
     case 'invalid_task':
     case 'invalid_task_cursor':
@@ -683,6 +708,16 @@ function recoveryFor(code: DatabaseProblemCode): {
           action: 'fix_request',
           instruction:
             'Correct the request using the error details and current schema, then retry.',
+        },
+      };
+    default:
+      return {
+        retryable: false,
+        recovery: {
+          action: 'manual_recovery',
+          instruction:
+            'The database returned an unclassified problem. Preserve the canonical files and follow the recovery runbook.',
+          endpoint: '/api/databases/repair',
         },
       };
   }

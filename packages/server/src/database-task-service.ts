@@ -4,23 +4,23 @@ import { createHash } from 'node:crypto';
 import { lstat, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import {
+  compareDatabaseMigrationLogicalSnapshots,
   createDatabaseRecordId,
   type DatabaseDefinition,
-  type DatabaseValue,
-  compareDatabaseMigrationLogicalSnapshots,
-  ensureDatabaseRecordIdentity,
-  isRecordPathInSource,
-  materializeDatabaseRecord,
-  planDatabaseMarkdownV2Migration,
-  planDatabaseManifestMigration,
-  serializeDatabaseManifestYaml,
-  parseDatabaseMarkdownOwner,
-  planDatabaseMigrationDependencyClosure,
-  freezeDatabaseMigrationDerivedBaseline,
-  materializeDatabaseDerivedRecords,
-  type DatabaseMigrationDerivedBaseline,
-  type DatabaseMarkdownV2MigrationTitleChoice,
   type DatabaseMarkdownV2MigrationPlan,
+  type DatabaseMarkdownV2MigrationTitleChoice,
+  type DatabaseMigrationDerivedBaseline,
+  type DatabaseValue,
+  ensureDatabaseRecordIdentity,
+  freezeDatabaseMigrationDerivedBaseline,
+  isRecordPathInSource,
+  materializeDatabaseDerivedRecords,
+  materializeDatabaseRecord,
+  parseDatabaseMarkdownOwner,
+  planDatabaseManifestMigration,
+  planDatabaseMarkdownV2Migration,
+  planDatabaseMigrationDependencyClosure,
+  serializeDatabaseManifestYaml,
 } from '@nedian0brien/synapsenote-core';
 import { atomicWriteFile } from '@nedian0brien/synapsenote-core/server';
 import { z } from 'zod';
@@ -30,6 +30,12 @@ import {
   type DatabaseCommitInput,
   DatabaseCommitInputSchema,
 } from './database-commit.ts';
+import { DatabaseMigrationGate } from './database-migration-gate.ts';
+import {
+  createDatabaseMigrationJournal,
+  type DatabaseMigrationJournal,
+  type DatabaseMigrationJournalEntry,
+} from './database-migration-journal.ts';
 import type { DatabasePlanEngine } from './database-plan.ts';
 import type { DatabaseRecordIndex } from './database-record-index.ts';
 import type { DatabaseOnboardingPreview, DatabaseStore } from './database-store.ts';
@@ -47,12 +53,6 @@ import {
   type DatabaseTaskRunner,
 } from './database-task-runner.ts';
 import type { DatabaseTaskStore } from './database-task-store.ts';
-import {
-  createDatabaseMigrationJournal,
-  type DatabaseMigrationJournal,
-  type DatabaseMigrationJournalEntry,
-} from './database-migration-journal.ts';
-import { DatabaseMigrationGate } from './database-migration-gate.ts';
 import { tracedAtomicFs } from './fs-traced.ts';
 
 const RevisionSchema = z.union([
@@ -113,8 +113,17 @@ const MigrationTaskInputSchema = z
           expectedRevision: FileRevisionSchema,
           planHash: FileRevisionSchema.optional(),
           migrationCommittedAt: z.string().datetime({ offset: true }).optional(),
-          ownerChoices: z.record(z.string().startsWith('ds_'), z.object({ path: z.string().min(1), blockId: z.string().startsWith('dbb_') }).strict()).optional(),
-          titleChoices: z.record(z.string().startsWith('rec_'), MigrationTitleChoiceSchema).optional(),
+          ownerChoices: z
+            .record(
+              z.string().startsWith('ds_'),
+              z
+                .object({ path: z.string().min(1), blockId: z.string().startsWith('dbb_') })
+                .strict(),
+            )
+            .optional(),
+          titleChoices: z
+            .record(z.string().startsWith('rec_'), MigrationTitleChoiceSchema)
+            .optional(),
           derivedBaseline: MigrationDerivedBaselineSchema.optional(),
         })
         .strict(),
@@ -153,8 +162,12 @@ export interface StartDatabaseMigrationTaskInput {
   /** Plan hashes and timestamps returned by the exact preview being approved. */
   planHashes?: Readonly<Record<string, string>>;
   migrationCommittedAt?: Readonly<Record<string, string>>;
-  ownerChoices?: Readonly<Record<string, Readonly<Record<string, { path: string; blockId: string }>>>>;
-  titleChoices?: Readonly<Record<string, Readonly<Record<string, DatabaseMarkdownV2MigrationTitleChoice>>>>;
+  ownerChoices?: Readonly<
+    Record<string, Readonly<Record<string, { path: string; blockId: string }>>>
+  >;
+  titleChoices?: Readonly<
+    Record<string, Readonly<Record<string, DatabaseMarkdownV2MigrationTitleChoice>>>
+  >;
   derivedBaselines?: Readonly<Record<string, DatabaseMigrationDerivedBaseline>>;
 }
 
@@ -172,6 +185,14 @@ export interface DatabaseManifestMigrationPreviewItem {
   planHash?: string;
   ownerPaths?: readonly string[];
   linkedDocumentPaths?: readonly string[];
+  blockers?: readonly {
+    code: string;
+    sourceId?: string;
+    recordId?: string;
+    path?: string;
+    propertyId?: string;
+    message: string;
+  }[];
   blockerCount?: number;
   migrationCommittedAt?: string;
   code?: string;
@@ -343,15 +364,23 @@ function stableJson(value: unknown): string {
  * error codes, messages, scalar values, and permission metadata remain
  * byte-for-byte comparable.
  */
-function canonicalizeDerivedResult(value: unknown, canonicalByLegacyId: ReadonlyMap<string, string>): unknown {
-  if (Array.isArray(value)) return value.map((entry) => canonicalizeDerivedResult(entry, canonicalByLegacyId));
+function canonicalizeDerivedResult(
+  value: unknown,
+  canonicalByLegacyId: ReadonlyMap<string, string>,
+): unknown {
+  if (Array.isArray(value))
+    return value.map((entry) => canonicalizeDerivedResult(entry, canonicalByLegacyId));
   if (value === null || typeof value !== 'object') return value;
   const object = value as Record<string, unknown>;
   const next = Object.fromEntries(
-    Object.entries(object).map(([key, entry]) => [key, canonicalizeDerivedResult(entry, canonicalByLegacyId)]),
+    Object.entries(object).map(([key, entry]) => [
+      key,
+      canonicalizeDerivedResult(entry, canonicalByLegacyId),
+    ]),
   );
   if (typeof next.id === 'string') next.id = canonicalByLegacyId.get(next.id) ?? next.id;
-  if (typeof next.recordId === 'string') next.recordId = canonicalByLegacyId.get(next.recordId) ?? next.recordId;
+  if (typeof next.recordId === 'string')
+    next.recordId = canonicalByLegacyId.get(next.recordId) ?? next.recordId;
   return next;
 }
 
@@ -465,7 +494,9 @@ export class DatabaseTaskService {
       this.#migrationUndoRetentionSeconds < 60 ||
       this.#migrationUndoRetentionSeconds > 365 * 24 * 60 * 60
     ) {
-      throw new RangeError('Migration undo retention must be an integer between 60 seconds and 365 days');
+      throw new RangeError(
+        'Migration undo retention must be an integer between 60 seconds and 365 days',
+      );
     }
     this.#runner = createDatabaseTaskRunner({
       store: this.#taskStore,
@@ -523,12 +554,15 @@ export class DatabaseTaskService {
     derivedBaseline?: DatabaseMigrationDerivedBaseline,
   ): Promise<DatabaseV2ContentPlan> {
     const frozenDerivedBaseline = derivedBaseline
-      ? freezeDatabaseMigrationDerivedBaseline(MigrationDerivedBaselineSchema.parse(derivedBaseline))
+      ? freezeDatabaseMigrationDerivedBaseline(
+          MigrationDerivedBaselineSchema.parse(derivedBaseline),
+        )
       : undefined;
     const manifestPath = `.ok/databases/${database.key}.yml`;
     const manifestBefore = await readFile(resolve(this.#projectDir, manifestPath), 'utf8');
     const recordPaths = new Set<string>();
-    const records: Array<{ databaseId: string; sourceId: string; path: string; markdown: string }> = [];
+    const records: Array<{ databaseId: string; sourceId: string; path: string; markdown: string }> =
+      [];
     for (const source of database.sources) {
       for (const record of this.#databaseRecordIndex.list(database.id, source.id)) {
         recordPaths.add(record.path);
@@ -543,7 +577,12 @@ export class DatabaseTaskService {
     const owners = database.sources.map((source) => ({
       sourceId: source.id,
       path: ownerChoices?.[source.id]?.path ?? defaultOwnerPath(database.key, source.key),
-      blockId: ownerChoices?.[source.id]?.blockId ?? `dbb_${source.id.replace(/^ds_/, '').replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 110)}_primary`,
+      blockId:
+        ownerChoices?.[source.id]?.blockId ??
+        `dbb_${source.id
+          .replace(/^ds_/, '')
+          .replace(/[^A-Za-z0-9_-]/g, '_')
+          .slice(0, 110)}_primary`,
     }));
     const migration = planDatabaseMarkdownV2Migration({
       definition: database,
@@ -554,7 +593,9 @@ export class DatabaseTaskService {
     });
     const blockers = [...migration.blockers];
     const hasDerivedProperties = database.sources.some((source) =>
-      source.properties.some((property) => property.type === 'formula' || property.type === 'rollup'),
+      source.properties.some(
+        (property) => property.type === 'formula' || property.type === 'rollup',
+      ),
     );
     if (hasDerivedProperties && !frozenDerivedBaseline) {
       blockers.push({
@@ -590,7 +631,9 @@ export class DatabaseTaskService {
         });
         continue;
       }
-      const existing = await readFile(safeContentPath(this.#contentDir, owner.path), 'utf8').catch(() => null);
+      const existing = await readFile(safeContentPath(this.#contentDir, owner.path), 'utf8').catch(
+        () => null,
+      );
       ownerBefore.set(owner.path, existing);
       if (existing !== null && existing !== migration.ownerDocuments[owner.path]) {
         blockers.push({
@@ -616,7 +659,11 @@ export class DatabaseTaskService {
         manifestBefore,
         manifestAfter: manifestBefore,
         files: [],
-        planHash: migrationPlanHash([], { ownerChoices, titleChoices, derivedBaseline: frozenDerivedBaseline }),
+        planHash: migrationPlanHash([], {
+          ownerChoices,
+          titleChoices,
+          derivedBaseline: frozenDerivedBaseline,
+        }),
         ...(frozenDerivedBaseline ? { derivedBaseline: frozenDerivedBaseline } : {}),
         expectedRecords: [],
       };
@@ -655,7 +702,9 @@ export class DatabaseTaskService {
           if (property.type !== 'relation') continue;
           const value = values[property.id];
           if (Array.isArray(value)) {
-            values[property.id] = value.map((target) => canonicalByLegacyId.get(String(target)) ?? String(target));
+            values[property.id] = value.map(
+              (target) => canonicalByLegacyId.get(String(target)) ?? String(target),
+            );
           } else if (value !== undefined) {
             values[property.id] = canonicalByLegacyId.get(String(value)) ?? value;
           }
@@ -671,20 +720,23 @@ export class DatabaseTaskService {
       })
       .filter((record): record is NonNullable<typeof record> => record !== null)
       .sort((left, right) => left.canonicalRecordId.localeCompare(right.canonicalRecordId));
-    const expectedComputedByLegacyId = hasDerivedProperties && frozenDerivedBaseline
-      ? new Map(
-          materializeDatabaseDerivedRecords({
-            definition: database,
-            records: database.sources.flatMap((source) => this.#databaseRecordIndex.list(database.id, source.id)),
-            context: {
-              now: frozenDerivedBaseline.evaluatedAt,
-              timeZone: frozenDerivedBaseline.timeZone,
-              locale: frozenDerivedBaseline.locale,
-            },
-            permissionRevision: frozenDerivedBaseline.permissionRevision,
-          }).map((record) => [record.id, record.computedResults ?? null]),
-        )
-      : null;
+    const expectedComputedByLegacyId =
+      hasDerivedProperties && frozenDerivedBaseline
+        ? new Map(
+            materializeDatabaseDerivedRecords({
+              definition: database,
+              records: database.sources.flatMap((source) =>
+                this.#databaseRecordIndex.list(database.id, source.id),
+              ),
+              context: {
+                now: frozenDerivedBaseline.evaluatedAt,
+                timeZone: frozenDerivedBaseline.timeZone,
+                locale: frozenDerivedBaseline.locale,
+              },
+              permissionRevision: frozenDerivedBaseline.permissionRevision,
+            }).map((record) => [record.id, record.computedResults ?? null]),
+          )
+        : null;
     const expectedRecordsWithDerived = expectedRecords.map((record) => ({
       ...record,
       ...(expectedComputedByLegacyId
@@ -707,7 +759,11 @@ export class DatabaseTaskService {
       manifestBefore,
       manifestAfter,
       files,
-      planHash: migrationPlanHash(files, { ownerChoices, titleChoices, derivedBaseline: frozenDerivedBaseline }),
+      planHash: migrationPlanHash(files, {
+        ownerChoices,
+        titleChoices,
+        derivedBaseline: frozenDerivedBaseline,
+      }),
       ...(frozenDerivedBaseline ? { derivedBaseline: frozenDerivedBaseline } : {}),
       expectedRecords: expectedRecordsWithDerived,
     };
@@ -792,6 +848,14 @@ export class DatabaseTaskService {
             planHash: contentPlan.planHash,
             ownerPaths: Object.keys(contentPlan.plan.ownerDocuments).sort(),
             linkedDocumentPaths: Object.keys(contentPlan.plan.linkedDocuments).sort(),
+            blockers: contentPlan.plan.blockers.map((blocker) => ({
+              code: blocker.code,
+              ...(blocker.sourceId ? { sourceId: blocker.sourceId } : {}),
+              ...(blocker.recordId ? { recordId: blocker.recordId } : {}),
+              ...(blocker.path ? { path: blocker.path } : {}),
+              ...(blocker.propertyId ? { propertyId: blocker.propertyId } : {}),
+              message: blocker.message,
+            })),
             blockerCount: contentPlan.plan.blockers.length,
             migrationCommittedAt,
             ...(blocked
@@ -861,9 +925,13 @@ export class DatabaseTaskService {
     const current = this.#migrationGate.current();
     const existing = await this.#taskStore.get(taskId);
     if (current && existing.operation !== 'migration') {
-      throw launchError('task_invalid_request', 'A migration currently owns the database mutation freeze.', {
-        taskId: current.taskId,
-      });
+      throw launchError(
+        'task_invalid_request',
+        'A migration currently owns the database mutation freeze.',
+        {
+          taskId: current.taskId,
+        },
+      );
     }
     const queued = await this.#runner.queueRetry(taskId, expectedRevision);
     if (queued.operation === 'import' || queued.operation === 'migration') {
@@ -879,9 +947,13 @@ export class DatabaseTaskService {
     const current = this.#migrationGate.current();
     const existing = await this.#taskStore.get(taskId);
     if (current && existing.operation !== 'migration') {
-      throw launchError('task_invalid_request', 'A migration currently owns the database mutation freeze.', {
-        taskId: current.taskId,
-      });
+      throw launchError(
+        'task_invalid_request',
+        'A migration currently owns the database mutation freeze.',
+        {
+          taskId: current.taskId,
+        },
+      );
     }
     if (await this.#rollbackJournal.isRolledBack(taskId)) {
       throw launchError(
@@ -923,7 +995,11 @@ export class DatabaseTaskService {
     if (task.operation === 'migration') {
       const finishedAt = task.finishedAt ? Date.parse(task.finishedAt) : Number.NaN;
       if (!Number.isFinite(finishedAt)) {
-        throw launchError('task_rollback_unavailable', 'Migration undo requires a durable completion timestamp.', { taskId });
+        throw launchError(
+          'task_rollback_unavailable',
+          'Migration undo requires a durable completion timestamp.',
+          { taskId },
+        );
       }
       const ageSeconds = Math.max(0, (Date.now() - finishedAt) / 1_000);
       if (ageSeconds > this.#migrationUndoRetentionSeconds) {
@@ -978,7 +1054,11 @@ export class DatabaseTaskService {
   }> {
     const task = await this.#taskStore.get(taskId);
     if (task.operation !== 'migration') {
-      throw launchError('task_invalid_request', 'Only migration tasks have migration recovery state.', { taskId });
+      throw launchError(
+        'task_invalid_request',
+        'Only migration tasks have migration recovery state.',
+        { taskId },
+      );
     }
     const journal = await this.#migrationJournal.get(taskId);
     const finishedAt = task.finishedAt ? Date.parse(task.finishedAt) : Number.NaN;
@@ -1019,23 +1099,39 @@ export class DatabaseTaskService {
       ? new Date(finishedAt + this.#migrationUndoRetentionSeconds * 1_000).toISOString()
       : null;
     const retentionExpired =
-      Number.isFinite(finishedAt) && Date.now() > finishedAt + this.#migrationUndoRetentionSeconds * 1_000;
+      Number.isFinite(finishedAt) &&
+      Date.now() > finishedAt + this.#migrationUndoRetentionSeconds * 1_000;
     const taskMaterialPresent = await this.#migrationJournal.hasTaskMaterial(taskId);
     const blockers: Array<{ code: string; message: string }> = [];
     if (task.operation !== 'migration') {
-      blockers.push({ code: 'not_migration', message: 'Only migration task material can be cleaned up.' });
+      blockers.push({
+        code: 'not_migration',
+        message: 'Only migration task material can be cleaned up.',
+      });
     }
     if (task.state !== 'succeeded') {
-      blockers.push({ code: 'task_not_succeeded', message: 'Cleanup requires a succeeded migration task.' });
+      blockers.push({
+        code: 'task_not_succeeded',
+        message: 'Cleanup requires a succeeded migration task.',
+      });
     }
     if (journal.state !== 'activated' && journal.state !== 'rolled_back') {
-      blockers.push({ code: 'journal_not_terminal', message: 'Cleanup requires an activated or rolled-back migration journal.' });
+      blockers.push({
+        code: 'journal_not_terminal',
+        message: 'Cleanup requires an activated or rolled-back migration journal.',
+      });
     }
     if (!retentionExpired) {
-      blockers.push({ code: 'retention_active', message: 'The migration undo retention window has not expired.' });
+      blockers.push({
+        code: 'retention_active',
+        message: 'The migration undo retention window has not expired.',
+      });
     }
     if (!taskMaterialPresent) {
-      blockers.push({ code: 'material_missing', message: 'Migration staging and backup material is already absent.' });
+      blockers.push({
+        code: 'material_missing',
+        message: 'Migration staging and backup material is already absent.',
+      });
     }
     const withoutHash = {
       version: 1 as const,
@@ -1069,23 +1165,39 @@ export class DatabaseTaskService {
       });
     }
     if (!plan.committable) {
-      throw launchError('task_rollback_unavailable', 'Migration cleanup is blocked by its recovery policy.', {
-        taskId,
-        blockers: plan.blockers,
-      });
+      throw launchError(
+        'task_rollback_unavailable',
+        'Migration cleanup is blocked by its recovery policy.',
+        {
+          taskId,
+          blockers: plan.blockers,
+        },
+      );
     }
     if (!planHash) {
-      throw launchError('task_plan_hash_required', 'Cleanup requires an approval-bound cleanup plan hash.', { taskId });
+      throw launchError(
+        'task_plan_hash_required',
+        'Cleanup requires an approval-bound cleanup plan hash.',
+        { taskId },
+      );
     }
     if (planHash !== plan.hash) {
-      throw launchError('task_plan_hash_mismatch', 'The cleanup plan no longer matches the durable migration state.', {
-        taskId,
-        expectedPlanHash: plan.hash,
-        observedPlanHash: planHash,
-      });
+      throw launchError(
+        'task_plan_hash_mismatch',
+        'The cleanup plan no longer matches the durable migration state.',
+        {
+          taskId,
+          expectedPlanHash: plan.hash,
+          observedPlanHash: planHash,
+        },
+      );
     }
     if (approvalToken !== `approve:${plan.hash}`) {
-      throw launchError('task_plan_hash_mismatch', 'Cleanup approval must bind to the cleanup plan hash.', { taskId });
+      throw launchError(
+        'task_plan_hash_mismatch',
+        'Cleanup approval must bind to the cleanup plan hash.',
+        { taskId },
+      );
     }
     try {
       return await this.#migrationJournal.cleanup(taskId);
@@ -1194,7 +1306,9 @@ export class DatabaseTaskService {
     // There is only one workspace-wide migration gate. Multiple inflight
     // journals indicate an already-degraded state; keep the first stable
     // owner so every other mutation fails closed until recovery is resolved.
-    for (const entry of [...entries].sort((left, right) => left.taskId.localeCompare(right.taskId))) {
+    for (const entry of [...entries].sort((left, right) =>
+      left.taskId.localeCompare(right.taskId),
+    )) {
       this.#migrationGate.restore(entry.taskId);
       break;
     }
@@ -1331,8 +1445,7 @@ export class DatabaseTaskService {
     );
     const missingBinding = v2Items.find(
       (item) =>
-        !input.planHashes?.[item.databaseId] ||
-        !input.migrationCommittedAt?.[item.databaseId],
+        !input.planHashes?.[item.databaseId] || !input.migrationCommittedAt?.[item.databaseId],
     );
     if (missingBinding) {
       throw launchError(
@@ -1347,9 +1460,15 @@ export class DatabaseTaskService {
       expectedRevision: item.expectedRevision,
       ...(item.planHash ? { planHash: item.planHash } : {}),
       ...(item.migrationCommittedAt ? { migrationCommittedAt: item.migrationCommittedAt } : {}),
-      ...(input.ownerChoices?.[item.databaseId] ? { ownerChoices: input.ownerChoices[item.databaseId] } : {}),
-      ...(input.titleChoices?.[item.databaseId] ? { titleChoices: input.titleChoices[item.databaseId] } : {}),
-      ...(input.derivedBaselines?.[item.databaseId] ? { derivedBaseline: input.derivedBaselines[item.databaseId] } : {}),
+      ...(input.ownerChoices?.[item.databaseId]
+        ? { ownerChoices: input.ownerChoices[item.databaseId] }
+        : {}),
+      ...(input.titleChoices?.[item.databaseId]
+        ? { titleChoices: input.titleChoices[item.databaseId] }
+        : {}),
+      ...(input.derivedBaselines?.[item.databaseId]
+        ? { derivedBaseline: input.derivedBaselines[item.databaseId] }
+        : {}),
     }));
     const queued = await this.#runner.enqueue({
       operation: 'migration',
@@ -1568,7 +1687,10 @@ export class DatabaseTaskService {
             500,
           );
         }
-        const ownerMarkdown = await readFile(safeContentPath(this.#contentDir, storage.owner.path), 'utf8');
+        const ownerMarkdown = await readFile(
+          safeContentPath(this.#contentDir, storage.owner.path),
+          'utf8',
+        );
         const parsed = parseDatabaseMarkdownOwner(ownerMarkdown);
         if (!parsed.ok) {
           throw executionProblem(
@@ -1593,7 +1715,9 @@ export class DatabaseTaskService {
             500,
           );
         }
-        const expected = contentPlan.expectedRecords.filter((record) => record.sourceId === source.id);
+        const expected = contentPlan.expectedRecords.filter(
+          (record) => record.sourceId === source.id,
+        );
         const actual = this.#databaseRecordIndex.list(database.id, source.id);
         const derivedById = contentPlan.derivedBaseline
           ? new Map(
@@ -1617,7 +1741,7 @@ export class DatabaseTaskService {
           path: record.path,
           values: record.values,
           invalidValues: record.invalidValues ?? null,
-          computedResults: derivedById ? derivedById.get(record.id) ?? null : null,
+          computedResults: derivedById ? (derivedById.get(record.id) ?? null) : null,
         }));
         if (actual.length !== expected.length || parsed.owner.rows.length !== expected.length) {
           throw executionProblem(
@@ -1652,7 +1776,9 @@ export class DatabaseTaskService {
             500,
           );
         }
-        const actualById = new Map(actualLogical.map((record) => [record.canonicalRecordId, record]));
+        const actualById = new Map(
+          actualLogical.map((record) => [record.canonicalRecordId, record]),
+        );
         for (const planned of expected) {
           const migrated = actualById.get(planned.canonicalRecordId);
           if (
@@ -1661,7 +1787,8 @@ export class DatabaseTaskService {
             stableJson(migrated.values) !== stableJson(planned.values) ||
             stableJson(migrated.invalidValues ?? null) !== stableJson(planned.invalidValues) ||
             (planned.computedResults !== undefined &&
-              stableJson(migrated.computedResults ?? null) !== stableJson(planned.computedResults ?? null))
+              stableJson(migrated.computedResults ?? null) !==
+                stableJson(planned.computedResults ?? null))
           ) {
             throw executionProblem(
               'task_post_commit_verification_failed',
@@ -1709,9 +1836,16 @@ export class DatabaseTaskService {
             500,
           );
         }
-        const ownerMarkdown = await readFile(safeContentPath(this.#contentDir, storage.owner.path), 'utf8');
+        const ownerMarkdown = await readFile(
+          safeContentPath(this.#contentDir, storage.owner.path),
+          'utf8',
+        );
         const parsed = parseDatabaseMarkdownOwner(ownerMarkdown);
-        if (!parsed.ok || parsed.owner.marker.databaseId !== database.id || parsed.owner.marker.sourceId !== source.id) {
+        if (
+          !parsed.ok ||
+          parsed.owner.marker.databaseId !== database.id ||
+          parsed.owner.marker.sourceId !== source.id
+        ) {
           throw executionProblem(
             'task_post_commit_verification_failed',
             'Migration cold verification failed',
@@ -1825,7 +1959,11 @@ export class DatabaseTaskService {
         500,
       );
     }
-    return { path: relativeBackupPath, revision: sha256(readBack), fileCount: payload.files.length };
+    return {
+      path: relativeBackupPath,
+      revision: sha256(readBack),
+      fileCount: payload.files.length,
+    };
   }
 
   async #runMigration(context: DatabaseTaskExecutionContext): Promise<Record<string, unknown>> {
@@ -1923,7 +2061,12 @@ export class DatabaseTaskService {
       }
       const database = snapshot.databases.find((candidate) => candidate.id === manifest.databaseId);
       if (!database) {
-        throw executionProblem('task_schema_changed', 'Migration schema changed', 'A selected database no longer exists.', false);
+        throw executionProblem(
+          'task_schema_changed',
+          'Migration schema changed',
+          'A selected database no longer exists.',
+          false,
+        );
       }
       if (database.version === 2) {
         alreadyCurrent += 1;
@@ -1932,7 +2075,12 @@ export class DatabaseTaskService {
       if (input.targetVersion !== 2) {
         const manifestPlan = planDatabaseManifestMigration(yaml, input.targetVersion);
         if (manifestPlan.status === 'blocked') {
-          throw executionProblem(`task_${manifestPlan.code}`, 'Database manifest migration is blocked', manifestPlan.message, false);
+          throw executionProblem(
+            `task_${manifestPlan.code}`,
+            'Database manifest migration is blocked',
+            manifestPlan.message,
+            false,
+          );
         }
         alreadyCurrent += 1;
         continue;
@@ -1948,7 +2096,8 @@ export class DatabaseTaskService {
         throw executionProblem(
           `task_${contentPlan.plan.blockers[0]?.code ?? 'content_migration_blocked'}`,
           'Database Markdown content migration is blocked',
-          contentPlan.plan.blockers[0]?.message ?? 'Resolve the migration preview blockers before applying.',
+          contentPlan.plan.blockers[0]?.message ??
+            'Resolve the migration preview blockers before applying.',
           false,
         );
       }
@@ -1999,7 +2148,14 @@ export class DatabaseTaskService {
     }
     const backup = await this.#writeVerifiedMigrationBackup(context.task.id, files);
     await this.#migrationJournal.prepare({ taskId: context.task.id, files });
-    const stagingRoot = resolve(this.#projectDir, '.ok', 'local', 'database-migrations', context.task.id, 'staging');
+    const stagingRoot = resolve(
+      this.#projectDir,
+      '.ok',
+      'local',
+      'database-migrations',
+      context.task.id,
+      'staging',
+    );
     try {
       for (const [index, file] of files.entries()) {
         context.throwIfCancelled();
@@ -2008,7 +2164,13 @@ export class DatabaseTaskService {
         await mkdir(dirname(staged), { recursive: true });
         await writeFile(staged, file.after, { encoding: 'utf8', mode: 0o600 });
         if (sha256(await readFile(staged, 'utf8')) !== sha256(file.after)) {
-          throw executionProblem('task_staging_verification_failed', 'Migration staging verification failed', `Staged file "${file.path}" did not match its approved hash.`, false, 500);
+          throw executionProblem(
+            'task_staging_verification_failed',
+            'Migration staging verification failed',
+            `Staged file "${file.path}" did not match its approved hash.`,
+            false,
+            500,
+          );
         }
         await this.#migrationFileOperationHook?.({ phase: 'stage', path: file.path, index });
       }
@@ -2020,19 +2182,27 @@ export class DatabaseTaskService {
       });
       context.throwIfCancelled();
       const linkedPaths = new Set(
-        contentPlans.flatMap((plan) => Object.keys(plan.plan.linkedDocuments).map((path) =>
-          projectRelativeContentPath(this.#projectDir, this.#contentDir, path),
-        )),
+        contentPlans.flatMap((plan) =>
+          Object.keys(plan.plan.linkedDocuments).map((path) =>
+            projectRelativeContentPath(this.#projectDir, this.#contentDir, path),
+          ),
+        ),
       );
-      for (const [index, file] of [...files].sort((left, right) => {
-        const leftManifest = left.path.startsWith('.ok/databases/') ? 1 : 0;
-        const rightManifest = right.path.startsWith('.ok/databases/') ? 1 : 0;
-        const leftLinked = linkedPaths.has(left.path) ? 1 : 0;
-        const rightLinked = linkedPaths.has(right.path) ? 1 : 0;
-        // Owner/additive files first, manifest activation second, and removal
-        // of v1 database-owned frontmatter only after the v2 boundary.
-        return leftLinked - rightLinked || leftManifest - rightManifest || left.path.localeCompare(right.path);
-      }).entries()) {
+      for (const [index, file] of [...files]
+        .sort((left, right) => {
+          const leftManifest = left.path.startsWith('.ok/databases/') ? 1 : 0;
+          const rightManifest = right.path.startsWith('.ok/databases/') ? 1 : 0;
+          const leftLinked = linkedPaths.has(left.path) ? 1 : 0;
+          const rightLinked = linkedPaths.has(right.path) ? 1 : 0;
+          // Owner/additive files first, manifest activation second, and removal
+          // of v1 database-owned frontmatter only after the v2 boundary.
+          return (
+            leftLinked - rightLinked ||
+            leftManifest - rightManifest ||
+            left.path.localeCompare(right.path)
+          );
+        })
+        .entries()) {
         await assertNoSymlinkComponents(this.#projectDir, file.path);
         const absolute = resolve(this.#projectDir, safeProjectRelativePath(file.path));
         if (file.after === null) await rm(absolute, { force: true });

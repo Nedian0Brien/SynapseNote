@@ -1,9 +1,12 @@
-import { readFile, rm } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { arch, platform, release, tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import {
+  DatabaseDefinitionSchema,
   materializeDatabaseDerivedRecords,
+  planDatabaseMarkdownV2Migration,
   queryDatabaseRecords,
 } from '@nedian0brien/synapsenote-core';
 import {
@@ -13,6 +16,7 @@ import {
   materializeDatabaseBenchmarkCorpus,
 } from './database-benchmark-corpus.ts';
 import { createDatabaseContextPack } from './database-context-pack.ts';
+import { createDatabaseMarkdownTableWriter } from './database-markdown-table-writer.ts';
 import { DatabaseRecordIndex } from './database-record-index.ts';
 import { DatabaseStore } from './database-store.ts';
 
@@ -22,10 +26,14 @@ export const DATABASE_LIFECYCLE_BUDGETS_MS = Object.freeze({
   incrementalIndex: 50,
   formulaPropagation: 500,
   contextPacking: 150,
+  cellCommit: 250,
+  migrationThroughput: 2_000,
 });
+/** Reference-machine RSS delta budget for the combined 50k context fixture. */
+export const DATABASE_LIFECYCLE_MEMORY_BUDGET_BYTES = 2_048 * 1024 * 1024;
 
 export interface DatabaseLifecycleBenchmarkMetric {
-  scale: '1k' | '50k';
+  scale: '100' | '1k' | '50k';
   samples: number;
   budgetMs: number;
   latencyMs: { min: number; p50: number; p95: number; max: number; mean: number };
@@ -43,7 +51,12 @@ export interface DatabaseLifecycleBenchmarkResult {
     incrementalIndex: DatabaseLifecycleBenchmarkMetric;
     formulaPropagation: DatabaseLifecycleBenchmarkMetric;
     contextPacking: DatabaseLifecycleBenchmarkMetric;
+    cellCommit: DatabaseLifecycleBenchmarkMetric;
+    migrationThroughput: DatabaseLifecycleBenchmarkMetric;
   };
+  peakRssBytes: number;
+  memoryBudgetBytes: number;
+  memoryPassed: boolean;
   passed: boolean;
   runtime: { bun: string; node: string; platform: string; release: string; arch: string };
 }
@@ -55,6 +68,86 @@ function percentile(values: readonly number[], fraction: number): number {
 
 function rounded(value: number): number {
   return Math.round(value * 1_000) / 1_000;
+}
+
+function v2BenchmarkDefinition() {
+  return DatabaseDefinitionSchema.parse({
+    version: 2,
+    id: 'db_lifecycle_bench',
+    key: 'lifecycle_bench',
+    name: 'Lifecycle benchmark',
+    contract: {
+      purpose: 'Measure canonical v2 cell commits',
+      canonicality: 'canonical',
+      vocabulary: ['benchmark'],
+      freshness: { expectation: 'realtime', maxAgeSeconds: 60 },
+      sensitivity: 'internal',
+    },
+    sources: [
+      {
+        id: 'ds_lifecycle_bench',
+        key: 'bench',
+        name: 'Benchmark rows',
+        recordMeaning: 'One benchmark row',
+        folder: 'bench',
+        includeSubfolders: true,
+        storage: {
+          kind: 'markdown_table',
+          formatVersion: 2,
+          owner: { path: 'bench.md', blockId: 'dbb_lifecycle_primary' },
+          titlePropertyId: 'prop_title',
+          storedPropertyIds: ['prop_title', 'prop_notes'],
+        },
+        properties: [
+          { id: 'prop_title', key: 'title', name: 'Title', type: 'title', required: true },
+          { id: 'prop_notes', key: 'notes', name: 'Notes', type: 'text' },
+        ],
+      },
+    ],
+  });
+}
+
+function v2BenchmarkOwner(rowCount: number): string {
+  const rows = Array.from({ length: rowCount }, (_, index) => {
+    const id = String(index).padStart(4, '0');
+    return `| [[bench/row-${id}]] | note-${id} |`;
+  });
+  return [
+    '<!-- synapsenote:database',
+    'version=2',
+    'database=db_lifecycle_bench',
+    'source=ds_lifecycle_bench',
+    'block=dbb_lifecycle_primary',
+    'columns=prop_title,prop_notes',
+    '-->',
+    '',
+    '| Title | Notes |',
+    '| --- | --- |',
+    ...rows,
+    '',
+  ].join('\n');
+}
+
+async function seedV2CellBenchmark(root: string, rowCount = 100): Promise<void> {
+  const contentDir = resolve(root, 'v2-content');
+  const definition = v2BenchmarkDefinition();
+  await mkdir(resolve(root, '.ok', 'databases'), { recursive: true });
+  await mkdir(resolve(contentDir, 'bench'), { recursive: true });
+  // Use the product manifest writer so this fixture cannot drift from the
+  // store's key-derived filename and load rules.
+  const store = new DatabaseStore({ projectDir: root, contentDir });
+  await store.create(definition);
+  await writeFile(resolve(contentDir, 'bench.md'), v2BenchmarkOwner(rowCount), 'utf8');
+  await Promise.all(
+    Array.from({ length: rowCount }, (_, index) => {
+      const id = String(index).padStart(4, '0');
+      return writeFile(
+        resolve(contentDir, 'bench', `row-${id}.md`),
+        `---\n_sn:\n  document_id: doc_lifecycle_${id}\n---\n# Row ${id}\n\nBenchmark row ${id}.\n`,
+        'utf8',
+      );
+    }),
+  );
 }
 
 function metric(
@@ -91,7 +184,7 @@ async function timed<T>(operation: () => T | Promise<T>): Promise<{ value: T; el
  * is intentionally excluded from the timings.
  */
 export async function runDatabaseLifecycleBenchmark(
-  options: { samples?: number; root?: string } = {},
+  options: { samples?: number; root?: string; memoryBudgetBytes?: number } = {},
 ): Promise<DatabaseLifecycleBenchmarkResult> {
   const samples = options.samples ?? 5;
   if (!Number.isInteger(samples) || samples < 5 || samples > 30) {
@@ -106,6 +199,10 @@ export async function runDatabaseLifecycleBenchmark(
   const spec50k = databaseBenchmarkCorpusSpec('50k');
   const source50k = spec50k.definition.sources[0];
   if (!source50k) throw new Error('Benchmark source is missing');
+  const memoryBudgetBytes = options.memoryBudgetBytes ?? DATABASE_LIFECYCLE_MEMORY_BUDGET_BYTES;
+  if (!Number.isSafeInteger(memoryBudgetBytes) || memoryBudgetBytes <= 0) {
+    throw new RangeError('Database lifecycle memory budget must be a positive integer');
+  }
 
   try {
     const corpus = await materializeDatabaseBenchmarkCorpus({
@@ -113,12 +210,20 @@ export async function runDatabaseLifecycleBenchmark(
       scale: '1k',
       format: 'markdown',
     });
+    // Corpus materialization is setup work. Measure the product paths as a
+    // process-relative RSS delta so results are comparable across runs.
+    const baselineRssBytes = process.memoryUsage().rss;
+    let peakRssBytes = 0;
+    const observeMemory = () => {
+      peakRssBytes = Math.max(peakRssBytes, process.memoryUsage().rss - baselineRssBytes);
+    };
     const coldStartupTimings: number[] = [];
     for (let index = 0; index < samples; index += 1) {
       const store = new DatabaseStore({ projectDir: root, contentDir });
       const result = await timed(() => store.reload());
       if (result.value.databases.length !== 1) throw new Error('Cold startup lost the manifest');
       coldStartupTimings.push(result.elapsed);
+      observeMemory();
     }
 
     const initialIndexTimings: number[] = [];
@@ -130,6 +235,7 @@ export async function runDatabaseLifecycleBenchmark(
         throw new Error('Initial index did not consume the canonical 1k corpus');
       }
       initialIndexTimings.push(result.elapsed);
+      observeMemory();
     }
 
     const store = new DatabaseStore({ projectDir: root, contentDir });
@@ -145,6 +251,7 @@ export async function runDatabaseLifecycleBenchmark(
       if (!recordIndex.getById(changedRecord.id))
         throw new Error('Incremental upsert lost its row');
       incrementalIndexTimings.push(result.elapsed);
+      observeMemory();
     }
 
     const formulaRecords = [...iterateDatabaseBenchmarkRecords(spec1k)];
@@ -166,6 +273,7 @@ export async function runDatabaseLifecycleBenchmark(
       );
       if (result.value.length !== 1_000) throw new Error('Formula projection lost records');
       formulaPropagationTimings.push(result.elapsed);
+      observeMemory();
     }
 
     const contextRecords = [...iterateDatabaseBenchmarkRecords(spec50k)];
@@ -238,6 +346,86 @@ export async function runDatabaseLifecycleBenchmark(
         throw new Error('Context pack violated its result or token contract');
       }
       contextPackingTimings.push(result.elapsed);
+      observeMemory();
+    }
+
+    const cellCommitRoot = resolve(root, 'v2-cell-commit');
+    await seedV2CellBenchmark(cellCommitRoot);
+    const cellContentDir = resolve(cellCommitRoot, 'v2-content');
+    const cellStore = new DatabaseStore({ projectDir: cellCommitRoot, contentDir: cellContentDir });
+    await cellStore.reload();
+    const cellIndex = new DatabaseRecordIndex({
+      contentDir: cellContentDir,
+      databaseStore: cellStore,
+    });
+    await cellIndex.rebuild();
+    const cellWriter = createDatabaseMarkdownTableWriter({
+      projectDir: cellCommitRoot,
+      contentDir: cellContentDir,
+      databaseStore: cellStore,
+      databaseRecordIndex: cellIndex,
+    });
+    const cellRecord = cellIndex.list()[0];
+    if (!cellRecord) throw new Error('Cell-commit benchmark row is missing');
+    if (!cellRecord.id.startsWith('rec_'))
+      throw new Error(`Cell-commit benchmark identity is invalid: ${cellRecord.id}`);
+    const cellCommitTimings: number[] = [];
+    for (let index = 0; index < samples; index += 1) {
+      const ownerPath = resolve(cellContentDir, 'bench.md');
+      const owner = await readFile(ownerPath, 'utf8');
+      const ownerRevision = `sha256:${createHash('sha256').update(owner).digest('hex')}`;
+      const result = await timed(() =>
+        cellWriter.updateCell({
+          databaseId: 'db_lifecycle_bench',
+          sourceId: 'ds_lifecycle_bench',
+          recordId: cellRecord.id,
+          propertyId: 'prop_notes',
+          value: `commit-${index}`,
+          expectedOwnerRevision: ownerRevision,
+        }),
+      );
+      if (!result.value.changed) throw new Error('Cell-commit benchmark did not change the owner');
+      cellCommitTimings.push(result.elapsed);
+      observeMemory();
+    }
+
+    const migrationRecords = await Promise.all(
+      [...iterateDatabaseBenchmarkRecords(spec1k)].map(async (record) => ({
+        recordId: record.id,
+        databaseId: record.databaseId,
+        sourceId: record.sourceId,
+        path: record.path,
+        markdown: await readFile(resolve(contentDir, record.path), 'utf8'),
+      })),
+    );
+    const titleChoices = Object.fromEntries(
+      migrationRecords.map((record) => [record.recordId, { kind: 'use_record_title' as const }]),
+    );
+    const migrationThroughputTimings: number[] = [];
+    for (let index = 0; index < samples; index += 1) {
+      const result = await timed(() =>
+        planDatabaseMarkdownV2Migration({
+          definition: spec1k.definition,
+          records: migrationRecords,
+          owners: [
+            {
+              sourceId: 'ds_benchmark_records',
+              path: 'benchmark-owner.md',
+              blockId: 'dbb_benchmark_primary',
+            },
+          ],
+          preserveLegacyMetadata: true,
+          migrationCommittedAt: '2026-07-27T00:00:00.000Z',
+          titleChoices,
+        }),
+      );
+      if (result.value.status !== 'ready') {
+        throw new Error(
+          `Migration benchmark produced blockers: ${result.value.blockers[0]?.code ?? 'unknown'}`,
+        );
+      }
+      migrationThroughputTimings.push(result.elapsed);
+      observeMemory();
     }
 
     const metrics = {
@@ -258,14 +446,24 @@ export async function runDatabaseLifecycleBenchmark(
         contextPackingTimings,
         DATABASE_LIFECYCLE_BUDGETS_MS.contextPacking,
       ),
+      cellCommit: metric('100', cellCommitTimings, DATABASE_LIFECYCLE_BUDGETS_MS.cellCommit),
+      migrationThroughput: metric(
+        '1k',
+        migrationThroughputTimings,
+        DATABASE_LIFECYCLE_BUDGETS_MS.migrationThroughput,
+      ),
     };
+    const memoryPassed = peakRssBytes <= memoryBudgetBytes;
     return {
       version: 1,
       benchmark: 'database-lifecycle',
       seed: spec1k.seed,
       corpusDigest: corpus.digest,
       metrics,
-      passed: Object.values(metrics).every((entry) => entry.passed),
+      peakRssBytes,
+      memoryBudgetBytes,
+      memoryPassed,
+      passed: memoryPassed && Object.values(metrics).every((entry) => entry.passed),
       runtime: {
         bun: process.versions.bun ?? 'unknown',
         node: process.versions.node,

@@ -97,6 +97,8 @@ function repairPlan(): DatabaseRepairPlan {
       orphanedIndexEntries: 0,
       recordRewrites: 1,
       uniqueIdAllocations: 0,
+      markdownRewrites: 0,
+      identityIssues: 0,
       blocked: 0,
     },
   };
@@ -131,6 +133,10 @@ describe('DatabaseDiagnosticsDialog', () => {
         repairError={null}
         onPreviewRepair={() => {}}
         onApplyRepair={() => {}}
+        onUndoRepair={() => {}}
+        repairResult={null}
+        documentIdChoices={{}}
+        onDocumentIdChoice={() => {}}
       />,
     );
 
@@ -157,6 +163,10 @@ describe('DatabaseDiagnosticsDialog', () => {
         repairError={null}
         onPreviewRepair={() => {}}
         onApplyRepair={() => {}}
+        onUndoRepair={() => {}}
+        repairResult={null}
+        documentIdChoices={{}}
+        onDocumentIdChoice={() => {}}
       />,
     );
 
@@ -181,6 +191,10 @@ describe('DatabaseDiagnosticsDialog', () => {
         repairError={null}
         onPreviewRepair={() => {}}
         onApplyRepair={() => {}}
+        onUndoRepair={() => {}}
+        repairResult={null}
+        documentIdChoices={{}}
+        onDocumentIdChoice={() => {}}
       />,
     );
 
@@ -203,6 +217,10 @@ describe('DatabaseDiagnosticsDialog', () => {
         repairError="Rollback refused because imported files changed after the task"
         onPreviewRepair={() => {}}
         onApplyRepair={() => {}}
+        onUndoRepair={() => {}}
+        repairResult={null}
+        documentIdChoices={{}}
+        onDocumentIdChoice={() => {}}
       />,
     );
 
@@ -221,6 +239,10 @@ describe('DatabaseDiagnosticsDialog', () => {
         repairError={null}
         onPreviewRepair={() => {}}
         onApplyRepair={() => {}}
+        onUndoRepair={() => {}}
+        repairResult={null}
+        documentIdChoices={{}}
+        onDocumentIdChoice={() => {}}
       />,
     );
 
@@ -283,6 +305,7 @@ describe('DatabaseDiagnosticsDialog', () => {
             rewrittenPaths: [],
             rebuiltIndex: false,
             rewrittenDatabaseIds: [],
+            undoToken: 'repair_undo_1',
           },
         },
       });

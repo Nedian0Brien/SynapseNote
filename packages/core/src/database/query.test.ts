@@ -4,8 +4,8 @@ import {
   DATABASE_QUERY_OPERATORS,
   DATABASE_QUERY_SORT_SEMANTICS,
   DatabaseQueryError,
-  DatabaseQuerySchema,
   DatabaseQueryResultSchema,
+  DatabaseQuerySchema,
   databaseQueryOperatorsForProperty,
   evaluateDatabaseFilter,
   queryDatabaseRecords,
@@ -1324,10 +1324,10 @@ describe('queryDatabaseRecords', () => {
   });
 
   test('cooperatively cancels bounded query stages before producing a partial result', () => {
-    const largeRecords = Array.from({ length: 2_000 }, (_, index) =>
+    const largeRecords = Array.from({ length: 50_000 }, (_, index) =>
       record(`rec_cancel_${String(index).padStart(4, '0')}`, {
         prop_title: `Task ${index}`,
-        prop_priority: 2_000 - index,
+        prop_priority: 50_000 - index,
       }),
     );
     let checkpoints = 0;

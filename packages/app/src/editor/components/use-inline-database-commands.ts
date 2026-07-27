@@ -6,6 +6,14 @@ import type {
 import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-server';
 import type { DatabaseViewManagerInitialAction } from '@/components/DatabaseViewManagerDialog';
 import type { DatabaseViewTabAction } from '@/components/DatabaseViewTabMenu';
+import {
+  createMarkdownTableCellMutation,
+  createMarkdownTableRowCreateMutation,
+  createMarkdownTableTitleMutation,
+  markdownTableDefaultValues,
+  markdownTableDocumentMarkdown,
+  markdownTableDocumentPath,
+} from '@/lib/database-markdown-table-client';
 import type { DatabaseMutationPolicy } from '@/lib/database-mutation-controller';
 import {
   createDatabaseCellMutationDesiredState,
@@ -32,15 +40,11 @@ import { navigateToDatabaseRecordPath } from '@/lib/database-navigation';
 import { updateDatabaseRecordPeek } from '@/lib/database-overlay-store';
 import { requestOpenDatabaseRecord } from '@/lib/database-record-open-command';
 import type { DatabasePasteChange } from '@/lib/database-tsv';
-import { classifyDatabaseUiProblem, databaseMutationUiMessage } from '@/lib/database-ui-problem';
 import {
-  createMarkdownTableCellMutation,
-  createMarkdownTableRowCreateMutation,
-  createMarkdownTableTitleMutation,
-  markdownTableDefaultValues,
-  markdownTableDocumentMarkdown,
-  markdownTableDocumentPath,
-} from '@/lib/database-markdown-table-client';
+  classifyDatabaseUiProblem,
+  type DatabaseUiProblemKind,
+  databaseMutationUiMessage,
+} from '@/lib/database-ui-problem';
 import { createInlineHistoryKeyDown } from './inline-database-history';
 import type { InlineDatabaseReferenceData } from './inline-database-types';
 import {
@@ -67,7 +71,7 @@ export interface UseInlineDatabaseCommandsOptions {
     mutation: import('@nedian0brien/synapsenote-server').DatabaseMarkdownTableMutationRequest,
     policy: DatabaseMutationPolicy,
   ) => void;
-  setInlineMutationError: (value: string | null) => void;
+  setInlineMutationError: (value: string | null, kind?: DatabaseUiProblemKind) => void;
   inlineUndoToken: string | null;
   inlineRedoToken: string | null;
   undoInlineMutation: () => void;
@@ -110,7 +114,7 @@ export function useInlineDatabaseCommands({
 
   const setInlineMutationErrorFromCause = (cause: unknown, fallback: string) => {
     const problem = classifyDatabaseUiProblem(cause, fallback);
-    setInlineMutationError(databaseMutationUiMessage(problem.kind));
+    setInlineMutationError(databaseMutationUiMessage(problem.kind), problem.kind);
   };
 
   const openInlineDatabaseSurface = (
@@ -242,28 +246,28 @@ export function useInlineDatabaseCommands({
         if (!record.storageRevision) {
           throw new Error('The current Markdown owner-table revision is unavailable');
         }
-        const mutation = property.type === 'title'
-          ? typeof value === 'string'
-            ? createMarkdownTableTitleMutation({
+        const mutation =
+          property.type === 'title'
+            ? typeof value === 'string'
+              ? createMarkdownTableTitleMutation({
+                  databaseId: linkedDatabase.id,
+                  sourceId: linkedSource.id,
+                  recordId: record.id,
+                  title: value,
+                  expectedOwnerRevision: record.storageRevision,
+                })
+              : (() => {
+                  throw new Error('A Markdown document title must be text');
+                })()
+            : createMarkdownTableCellMutation({
                 databaseId: linkedDatabase.id,
                 sourceId: linkedSource.id,
                 recordId: record.id,
-                title: value,
+                propertyId: property.id,
+                value,
                 expectedOwnerRevision: record.storageRevision,
-              })
-            : (() => { throw new Error('A Markdown document title must be text'); })()
-          : createMarkdownTableCellMutation({
-              databaseId: linkedDatabase.id,
-              sourceId: linkedSource.id,
-              recordId: record.id,
-              propertyId: property.id,
-              value,
-              expectedOwnerRevision: record.storageRevision,
-            });
-        runInlineMarkdownTableMutation(
-          mutation,
-          { operation: 'cell', optimisticCellKey: cellKey },
-        );
+              });
+        runInlineMarkdownTableMutation(mutation, { operation: 'cell', optimisticCellKey: cellKey });
         return;
       }
       runInlineMutation(

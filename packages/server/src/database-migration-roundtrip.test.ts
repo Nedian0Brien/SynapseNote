@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, test } from 'bun:test';
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
+  type DatabaseDefinition,
   DatabaseDefinitionSchema,
   serializeDatabaseManifestYaml,
-  type DatabaseDefinition,
 } from '@nedian0brien/synapsenote-core';
 import { createDatabaseCommitEngine } from './database-commit.ts';
 import { createDatabaseDataPlane } from './database-data-plane.ts';
@@ -223,7 +223,9 @@ function snapshotFiles(projectDir: string, contentDir: string): Record<string, s
     ),
   };
   for (const source of ['orders', 'projects']) {
-    for (const name of readdirSync(join(contentDir, source)).filter((entry) => entry.endsWith('.md'))) {
+    for (const name of readdirSync(join(contentDir, source)).filter((entry) =>
+      entry.endsWith('.md'),
+    )) {
       result[`content/${source}/${name}`] = readFileSync(join(contentDir, source, name), 'utf8');
     }
   }
@@ -277,6 +279,7 @@ describe('v1 to v2 migration round-trip', () => {
       targetVersion: 2,
       planHashes: { [database.id]: item.planHash },
       migrationCommittedAt: { [database.id]: item.migrationCommittedAt },
+      derivedBaselines: { [database.id]: baseline },
     });
     const migrated = await service.wait(task.id);
     expect(migrated).toMatchObject({
@@ -289,7 +292,12 @@ describe('v1 to v2 migration round-trip', () => {
       databaseId: database.id,
       sourceId: 'ds_orders',
       query: {
-        select: ['prop_order_title', 'prop_double_amount', 'prop_broken_amount', 'prop_project_total'],
+        select: [
+          'prop_order_title',
+          'prop_double_amount',
+          'prop_broken_amount',
+          'prop_project_total',
+        ],
       },
     });
     expect(v2Query.records[0]?.computedResults).toMatchObject({
@@ -314,7 +322,12 @@ describe('v1 to v2 migration round-trip', () => {
       databaseId: database.id,
       sourceId: 'ds_orders',
       query: {
-        select: ['prop_order_title', 'prop_double_amount', 'prop_broken_amount', 'prop_project_total'],
+        select: [
+          'prop_order_title',
+          'prop_double_amount',
+          'prop_broken_amount',
+          'prop_project_total',
+        ],
       },
     });
     expect(v1Query.records[0]?.computedResults).toMatchObject({

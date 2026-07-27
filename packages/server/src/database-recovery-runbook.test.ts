@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { mkdtemp } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { planDatabaseMarkdownIdentityRepair } from '@nedian0brien/synapsenote-core';
@@ -8,15 +8,29 @@ import { createDatabaseMigrationJournal } from './database-migration-journal.ts'
 
 describe('v2 recovery runbook rehearsal', () => {
   test('follows inspect → rollback → cleanup on a seeded mixed migration', async () => {
-    const runbook = await readFile(join(import.meta.dir, '../../../docs/content/reference/database-recovery.mdx'), 'utf8');
+    const runbook = await readFile(
+      join(import.meta.dir, '../../../docs/content/reference/database-recovery.mdx'),
+      'utf8',
+    );
     expect(runbook).toContain('preview-cleanup');
     expect(runbook).toContain('recovery_required');
-    const projectDir = await mkdtemp(join(tmpdir(), 'synapsenote-v2-runbook-'));
+    const seedDir = await mkdtemp(join(tmpdir(), 'synapsenote-v2-runbook-seed-'));
+    const cloneParent = await mkdtemp(join(tmpdir(), 'synapsenote-v2-runbook-clone-'));
+    const projectDir = join(cloneParent, 'workspace');
     try {
       const target = 'content/tasks.md';
       const before = 'v1 owner bytes\n';
       const after = 'v2 owner bytes\n';
-      await mkdir(join(projectDir, 'content'), { recursive: true });
+      await mkdir(join(seedDir, 'content'), { recursive: true });
+      await writeFile(join(seedDir, target), before);
+      const git = (args: readonly string[], cwd = seedDir) =>
+        execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+      git(['init', '-q', '-b', 'main']);
+      git(['config', 'user.email', 'runbook@example.invalid']);
+      git(['config', 'user.name', 'SynapseNote runbook']);
+      git(['add', '.']);
+      git(['commit', '-qm', 'seed runbook workspace']);
+      git(['clone', '--quiet', seedDir, projectDir], cloneParent);
       await writeFile(join(projectDir, target), after);
       const journal = createDatabaseMigrationJournal(projectDir);
       await journal.prepare({ taskId: 'task_runbook', files: [{ path: target, before, after }] });
@@ -24,18 +38,28 @@ describe('v2 recovery runbook rehearsal', () => {
 
       const inspected = await journal.get('task_runbook');
       expect(inspected.state).toBe('activated');
-      expect(inspected.files).toMatchObject([{ path: target, beforeSha256: expect.stringMatching(/^sha256:/) }]);
-      await expect(journal.rollback('task_runbook')).resolves.toMatchObject({ status: 'applied', restored: 1 });
+      expect(inspected.files).toMatchObject([
+        { path: target, beforeSha256: expect.stringMatching(/^sha256:/) },
+      ]);
+      await expect(journal.rollback('task_runbook')).resolves.toMatchObject({
+        status: 'applied',
+        restored: 1,
+      });
       expect(await readFile(join(projectDir, target), 'utf8')).toBe(before);
-      await expect(journal.cleanup('task_runbook')).resolves.toEqual({ taskId: 'task_runbook', removed: true });
+      await expect(journal.cleanup('task_runbook')).resolves.toEqual({
+        taskId: 'task_runbook',
+        removed: true,
+      });
       expect(await journal.hasTaskMaterial('task_runbook')).toBe(false);
     } finally {
-      await rm(projectDir, { recursive: true, force: true });
+      await rm(seedDir, { recursive: true, force: true });
+      await rm(cloneParent, { recursive: true, force: true });
     }
   });
 
   test('keeps identity/parser procedures read-only and explicit', () => {
-    const owner = '<!-- synapsenote:database\nversion=2\ndatabase=db_tasks\nsource=ds_tasks\nblock=dbb_tasks\ncolumns=prop_title\n-->\n\n| Document |\n| --- |\n| [[missing]] |\n';
+    const owner =
+      '<!-- synapsenote:database\nversion=2\ndatabase=db_tasks\nsource=ds_tasks\nblock=dbb_tasks\ncolumns=prop_title\n-->\n\n| Document |\n| --- |\n| [[missing]] |\n';
     const plan = planDatabaseMarkdownIdentityRepair({
       databaseId: 'db_tasks',
       sourceId: 'ds_tasks',

@@ -4,6 +4,7 @@ import {
   type DatabaseLinkedViewSettings,
 } from '@nedian0brien/synapsenote-core';
 import { Braces, ListChecks, X } from 'lucide-react';
+import { DatabaseMigrationRecoveryPanel } from '@/components/DatabaseMigrationDialog';
 import { Button } from '@/components/ui/button';
 import { databaseUiProblemMessage } from '@/lib/database-ui-problem';
 import { cn } from '@/lib/utils';
@@ -121,6 +122,7 @@ export function InlineDatabaseSurface({
     inlineSortTargetId: inlineOverlaySortTargetId,
     inlineMutationStatus,
     inlineMutationError,
+    errorKind: inlineMutationErrorKind,
     inlineUndoToken,
     inlineUndoStatus,
     inlineRedoToken,
@@ -448,12 +450,24 @@ export function InlineDatabaseSurface({
         </div>
       ) : null}
       {inlineMutationError ? (
-        <div
-          className="border-b border-destructive/30 bg-destructive/5 px-4 py-2 text-destructive text-xs"
-          role="alert"
-        >
-          {inlineMutationError}
-        </div>
+        <>
+          <div
+            className="border-b border-destructive/30 bg-destructive/5 px-4 py-2 text-destructive text-xs"
+            role="alert"
+          >
+            {inlineMutationError}
+          </div>
+          {inlineMutationErrorKind === 'migration_required' &&
+          reference.success &&
+          state.status === 'ready' ? (
+            <div className="px-4 py-2">
+              <DatabaseMigrationRecoveryPanel
+                databaseId={reference.data.databaseId}
+                expectedManifestRevision={state.description.manifestRevision}
+              />
+            </div>
+          ) : null}
+        </>
       ) : null}
       {replacementPickerOpen ? (
         <div className="p-3">

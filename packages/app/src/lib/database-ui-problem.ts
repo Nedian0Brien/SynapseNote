@@ -6,6 +6,7 @@ export type DatabaseUiProblemKind =
   | 'lock'
   | 'conflict'
   | 'permission'
+  | 'migration_required'
   | 'error';
 
 export interface DatabaseUiProblem {
@@ -31,15 +32,20 @@ function problemMetadata(value: unknown): {
   recoveryAction: string | null;
   retryable: boolean | null;
   hasSchemaIssues: boolean;
+  hasMigrationConflict: boolean;
 } {
   const problem = record(value);
   const recovery = record(problem?.recovery);
+  const conflicts = Array.isArray(problem?.conflicts) ? problem.conflicts : [];
   return {
     code: typeof problem?.code === 'string' ? problem.code : null,
     type: typeof problem?.type === 'string' ? problem.type : null,
     recoveryAction: typeof recovery?.action === 'string' ? recovery.action : null,
     retryable: typeof problem?.retryable === 'boolean' ? problem.retryable : null,
     hasSchemaIssues: Array.isArray(problem?.issues),
+    hasMigrationConflict: conflicts.some(
+      (conflict) => record(conflict)?.code === 'source_record_migration_required',
+    ),
   };
 }
 
@@ -77,6 +83,20 @@ export function classifyDatabaseUiProblem(cause: unknown, fallback: string): Dat
       kind: 'stale_index',
       message: 'The database is still updating. Try again shortly.',
       retryable: true,
+    };
+  }
+
+  if (
+    code === 'v2_storage_read_only' ||
+    code === 'storage_read_only' ||
+    code === 'source_record_migration_required' ||
+    metadata.hasMigrationConflict ||
+    action === 'start_migration'
+  ) {
+    return {
+      kind: 'migration_required',
+      message: 'Migrate this database to Markdown table storage before editing it.',
+      retryable: false,
     };
   }
 
@@ -193,6 +213,8 @@ export function databaseMutationUiMessage(kind: DatabaseUiProblemKind): string {
       return 'The database is busy with another write. Try again shortly.';
     case 'permission':
       return 'You do not have permission to make this database change.';
+    case 'migration_required':
+      return 'Migrate this database to Markdown table storage before editing it.';
     case 'conflict':
       return 'The database changed while this action was in progress. Reload the latest state.';
     case 'error':
@@ -218,6 +240,8 @@ export function databaseUiProblemMessage(problem: Pick<DatabaseUiProblem, 'kind'
       return 'The database changed elsewhere. Reload the latest state before retrying.';
     case 'permission':
       return 'You do not have access to this database operation.';
+    case 'migration_required':
+      return 'This database needs migration before it can be edited.';
     case 'error':
       return 'The database could not be loaded. Try again.';
   }

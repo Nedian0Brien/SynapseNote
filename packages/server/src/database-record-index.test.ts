@@ -1,5 +1,15 @@
 import { afterEach, describe, expect, test } from 'bun:test';
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import {
+  cpSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -7,7 +17,11 @@ import {
   DatabaseDefinitionSchema,
   queryDatabaseRecords,
 } from '@nedian0brien/synapsenote-core';
-import { createHash } from 'node:crypto';
+import { createDatabaseMarkdownTableJournal } from './database-markdown-table-journal.ts';
+import {
+  createDatabaseMarkdownTableWriter,
+  type DatabaseMarkdownTableWriterError,
+} from './database-markdown-table-writer.ts';
 import {
   applyDatabaseRecordDiskEvent,
   createDatabaseRecordIndex,
@@ -17,10 +31,6 @@ import {
   DatabaseLexicalSearchLimitError,
 } from './database-record-index.ts';
 import { createDatabaseStore } from './database-store.ts';
-import {
-  createDatabaseMarkdownTableWriter,
-  DatabaseMarkdownTableWriterError,
-} from './database-markdown-table-writer.ts';
 
 const tempDirs: string[] = [];
 
@@ -140,15 +150,27 @@ describe('DatabaseRecordIndex rebuild', () => {
     expect(rebuilt.indexed).toBe(2);
     expect(index.list('db_tasks', 'ds_tasks')).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ values: { prop_title: 'Alpha order', prop_notes: 'First order', prop_status: 'opt_todo' }, path: 'orders/alpha.md', body: 'Alpha body\n' }),
-        expect.objectContaining({ values: { prop_title: 'Beta order', prop_notes: 'Second order', prop_status: 'opt_done' }, path: 'orders/beta.md', body: 'Beta body\n' }),
+        expect.objectContaining({
+          values: { prop_title: 'Alpha order', prop_notes: 'First order', prop_status: 'opt_todo' },
+          path: 'orders/alpha.md',
+          body: 'Alpha body\n',
+        }),
+        expect.objectContaining({
+          values: { prop_title: 'Beta order', prop_notes: 'Second order', prop_status: 'opt_done' },
+          path: 'orders/beta.md',
+          body: 'Beta body\n',
+        }),
       ]),
     );
     expect(index.list('db_tasks', 'ds_tasks')[0]?.storageRevision).toBe(
-      `sha256:${createHash('sha256').update(readFileSync(join(contentDir, 'orders.md'), 'utf8')).digest('hex')}`,
+      `sha256:${createHash('sha256')
+        .update(readFileSync(join(contentDir, 'orders.md'), 'utf8'))
+        .digest('hex')}`,
     );
     expect(index.getStorageRevision('db_tasks', 'ds_tasks')).toBe(
-      `sha256:${createHash('sha256').update(readFileSync(join(contentDir, 'orders.md'), 'utf8')).digest('hex')}`,
+      `sha256:${createHash('sha256')
+        .update(readFileSync(join(contentDir, 'orders.md'), 'utf8'))
+        .digest('hex')}`,
     );
     expect(index.snapshot().issues).toEqual([]);
     expect(index.inspectPath('orders.md')).toMatchObject({
@@ -167,8 +189,14 @@ describe('DatabaseRecordIndex rebuild', () => {
       join(contentDir, 'orders.md'),
       '<!-- synapsenote:database\nversion=2\ndatabase=db_tasks\nsource=ds_tasks\nblock=dbb_orders_primary\ncolumns=prop_title,prop_notes,prop_status\n-->\n\n| Document | Notes | Status |\n| --- | --- | --- |\n| [[orders/alpha]] | First order | todo |\n| [[orders/beta]] | Second order | done |\n',
     );
-    writeFileSync(join(contentDir, 'orders/alpha.md'), '---\n_sn:\n  document_id: doc_alpha\ntitle: Alpha order\n---\nAlpha body\n');
-    writeFileSync(join(contentDir, 'orders/beta.md'), '---\n_sn:\n  document_id: doc_beta\ntitle: Beta order\n---\nBeta body\n');
+    writeFileSync(
+      join(contentDir, 'orders/alpha.md'),
+      '---\n_sn:\n  document_id: doc_alpha\ntitle: Alpha order\n---\nAlpha body\n',
+    );
+    writeFileSync(
+      join(contentDir, 'orders/beta.md'),
+      '---\n_sn:\n  document_id: doc_beta\ntitle: Beta order\n---\nBeta body\n',
+    );
 
     const index = createDatabaseRecordIndex({ contentDir, databaseStore: store });
     await index.rebuild();
@@ -196,12 +224,22 @@ describe('DatabaseRecordIndex rebuild', () => {
   test('rebuilds a standalone v2 clone with only manifest, owner table, and linked documents', async () => {
     const source = tempProject();
     mkdirSync(join(source.contentDir, 'orders'), { recursive: true });
-    const sourceStore = createDatabaseStore({ projectDir: source.projectDir, contentDir: source.contentDir });
+    const sourceStore = createDatabaseStore({
+      projectDir: source.projectDir,
+      contentDir: source.contentDir,
+    });
     await sourceStore.create(v2Definition());
-    const owner = '<!-- synapsenote:database\nversion=2\ndatabase=db_tasks\nsource=ds_tasks\nblock=dbb_orders_primary\ncolumns=prop_title,prop_notes,prop_status\n-->\n\n| Document | Notes | Status |\n| --- | --- | --- |\n| [[orders/alpha]] | First order | todo |\n';
+    const owner =
+      '<!-- synapsenote:database\nversion=2\ndatabase=db_tasks\nsource=ds_tasks\nblock=dbb_orders_primary\ncolumns=prop_title,prop_notes,prop_status\n-->\n\n| Document | Notes | Status |\n| --- | --- | --- |\n| [[orders/alpha]] | First order | todo |\n';
     writeFileSync(join(source.contentDir, 'orders.md'), owner);
-    writeFileSync(join(source.contentDir, 'orders/alpha.md'), '---\n_sn:\n  document_id: doc_alpha\n---\n# Alpha order\n');
-    const sourceIndex = createDatabaseRecordIndex({ contentDir: source.contentDir, databaseStore: sourceStore });
+    writeFileSync(
+      join(source.contentDir, 'orders/alpha.md'),
+      '---\n_sn:\n  document_id: doc_alpha\n---\n# Alpha order\n',
+    );
+    const sourceIndex = createDatabaseRecordIndex({
+      contentDir: source.contentDir,
+      databaseStore: sourceStore,
+    });
     await sourceIndex.rebuild();
     const expected = sourceIndex.list('db_tasks', 'ds_tasks');
 
@@ -212,14 +250,22 @@ describe('DatabaseRecordIndex rebuild', () => {
     const cloneContentDir = join(cloneDir, 'content');
     const cloneStore = createDatabaseStore({ projectDir: cloneDir, contentDir: cloneContentDir });
     await cloneStore.reload();
-    const cloneIndex = createDatabaseRecordIndex({ contentDir: cloneContentDir, databaseStore: cloneStore });
+    const cloneIndex = createDatabaseRecordIndex({
+      contentDir: cloneContentDir,
+      databaseStore: cloneStore,
+    });
     await cloneIndex.rebuild();
 
     expect(cloneIndex.list('db_tasks', 'ds_tasks')).toEqual(expected);
     expect(cloneIndex.snapshot().issues).toEqual([]);
     expect(cloneIndex.getV2CanonicalDocuments('db_tasks', 'ds_tasks')).toMatchObject({
       ownerPath: 'orders.md',
-      linkedDocuments: [expect.objectContaining({ path: 'orders/alpha.md', markdown: expect.stringContaining('document_id: doc_alpha') })],
+      linkedDocuments: [
+        expect.objectContaining({
+          path: 'orders/alpha.md',
+          markdown: expect.stringContaining('document_id: doc_alpha'),
+        }),
+      ],
     });
     const cloneDatabase = cloneStore.getById('db_tasks');
     const cloneSource = cloneDatabase?.sources.find((source) => source.id === 'ds_tasks');
@@ -254,7 +300,10 @@ describe('DatabaseRecordIndex rebuild', () => {
 
     expect(index.list()).toEqual([]);
     expect(index.snapshot().issues).toContainEqual(
-      expect.objectContaining({ path: 'orders/alpha.md', materializationCode: 'missing_frontmatter' }),
+      expect.objectContaining({
+        path: 'orders/alpha.md',
+        materializationCode: 'missing_frontmatter',
+      }),
     );
   });
 
@@ -386,15 +435,23 @@ describe('DatabaseRecordIndex rebuild', () => {
       docName: 'orders/alpha',
       content: '---\n_sn:\n  document_id: doc_alpha\ntitle: Renamed order\n---\nEdited body\n',
     });
-    expect(index.getById(id!)).toMatchObject({ values: { prop_title: 'Renamed order' }, body: 'Edited body\n' });
+    expect(index.getById(id!)).toMatchObject({
+      values: { prop_title: 'Renamed order' },
+      body: 'Edited body\n',
+    });
 
     applyDatabaseRecordDiskEvent(index, contentDir, {
       kind: 'update',
       path: join(contentDir, 'orders.md'),
       docName: 'orders',
-      content: owner.replace('| [[orders/alpha]] | First order | todo |', '| [[orders/alpha]] | Edited note | done |'),
+      content: owner.replace(
+        '| [[orders/alpha]] | First order | todo |',
+        '| [[orders/alpha]] | Edited note | done |',
+      ),
     });
-    expect(index.getById(id!)).toMatchObject({ values: { prop_notes: 'Edited note', prop_status: 'opt_done' } });
+    expect(index.getById(id!)).toMatchObject({
+      values: { prop_notes: 'Edited note', prop_status: 'opt_done' },
+    });
 
     applyDatabaseRecordDiskEvent(index, contentDir, {
       kind: 'update',
@@ -402,7 +459,10 @@ describe('DatabaseRecordIndex rebuild', () => {
       docName: 'orders/alpha',
       content: '---\n_sn:\n  document_id: doc_alpha\ntitle: Final order\n---\nFinal body\n',
     });
-    expect(index.getById(id!)).toMatchObject({ values: { prop_title: 'Final order' }, body: 'Final body\n' });
+    expect(index.getById(id!)).toMatchObject({
+      values: { prop_title: 'Final order' },
+      body: 'Final body\n',
+    });
 
     applyDatabaseRecordDiskEvent(index, contentDir, {
       kind: 'delete',
@@ -411,7 +471,10 @@ describe('DatabaseRecordIndex rebuild', () => {
     });
     expect(index.getById(id!)).toBeNull();
     expect(index.snapshot().issues).toContainEqual(
-      expect.objectContaining({ path: 'orders.md', materializationCode: expect.stringContaining('broken_document_link') }),
+      expect.objectContaining({
+        path: 'orders.md',
+        materializationCode: expect.stringContaining('broken_document_link'),
+      }),
     );
 
     applyDatabaseRecordDiskEvent(index, contentDir, {
@@ -1134,8 +1197,24 @@ describe('DatabaseRecordIndex incremental rematerialization', () => {
       propertyId: 'prop_notes',
       value: 'Edited | note',
       expectedOwnerRevision: ownerRevision,
+      actor: { kind: 'agent', principal_id: 'agent:writer-test' },
     });
     expect(edited.changed).toBe(true);
+    expect(edited.receipt.actor).toEqual({ kind: 'agent', principal_id: 'agent:writer-test' });
+    const journalEntry = await createDatabaseMarkdownTableJournal(projectDir).get(
+      edited.receipt.mutationId,
+    );
+    expect(journalEntry).toMatchObject({
+      actor: { kind: 'agent', principal_id: 'agent:writer-test' },
+      history: {
+        operation: 'update_cell',
+        databaseId: 'db_tasks',
+        sourceId: 'ds_tasks',
+        recordId,
+        propertyId: 'prop_notes',
+        beforeRevision: ownerRevision,
+      },
+    });
     expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toContain('Edited \\| note');
     expect(index.getById(recordId)).toMatchObject({ values: { prop_notes: 'Edited | note' } });
 
@@ -1153,6 +1232,45 @@ describe('DatabaseRecordIndex incremental rematerialization', () => {
     await writer.undo({ receipt: edited.receipt });
     expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toBe(owner);
     expect(index.getById(recordId)).toMatchObject({ values: { prop_notes: 'First order' } });
+
+    for (const actor of [
+      { kind: 'human', principal_id: 'user:writer-test' },
+      { kind: 'sync', principal_id: 'sync:writer-test' },
+      { kind: 'filesystem', principal_id: 'fs:writer-test' },
+      { kind: 'system', principal_id: 'system:writer-test' },
+    ] as const) {
+      const before = readFileSync(join(contentDir, 'orders.md'), 'utf8');
+      const result = await writer.updateCell({
+        databaseId: 'db_tasks',
+        sourceId: 'ds_tasks',
+        recordId,
+        propertyId: 'prop_notes',
+        value: `${actor.kind} edit`,
+        expectedOwnerRevision: `sha256:${createHash('sha256').update(before).digest('hex')}`,
+        actor,
+      });
+      expect(result.receipt.actor).toEqual(actor);
+      await expect(
+        createDatabaseMarkdownTableJournal(projectDir).get(result.receipt.mutationId),
+      ).resolves.toMatchObject({
+        actor,
+        history: {
+          operation: 'update_cell',
+          databaseId: 'db_tasks',
+          sourceId: 'ds_tasks',
+          recordId,
+          propertyId: 'prop_notes',
+          beforeRevision: `sha256:${createHash('sha256').update(before).digest('hex')}`,
+          afterRevision: expect.stringMatching(/^sha256:/),
+        },
+      });
+      expect(index.getById(recordId)).toMatchObject({
+        values: { prop_notes: `${actor.kind} edit` },
+      });
+      await writer.undo({ receipt: result.receipt, actor });
+      expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toBe(before);
+      expect(index.getById(recordId)).toMatchObject({ values: { prop_notes: 'First order' } });
+    }
   });
 
   test('v2 cell mutation fails closed on a disk-full style write error and leaves no inflight journal', async () => {
@@ -1273,9 +1391,13 @@ describe('DatabaseRecordIndex incremental rematerialization', () => {
       expectedOwnerRevision: ownerRevision,
     });
     expect(created.changed).toBe(true);
-    expect(readFileSync(join(contentDir, 'orders/beta.md'), 'utf8')).toContain('document_id: doc_beta');
+    expect(readFileSync(join(contentDir, 'orders/beta.md'), 'utf8')).toContain(
+      'document_id: doc_beta',
+    );
     const beta = index.list().find((record) => record.path === 'orders/beta.md');
-    expect(beta).toMatchObject({ values: { prop_title: 'Beta order', prop_notes: 'Second order', prop_status: 'opt_done' } });
+    expect(beta).toMatchObject({
+      values: { prop_title: 'Beta order', prop_notes: 'Second order', prop_status: 'opt_done' },
+    });
     expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toContain('[[orders/beta]]');
 
     await writer.undo({ receipt: created.receipt });
@@ -1290,22 +1412,46 @@ describe('DatabaseRecordIndex incremental rematerialization', () => {
     const store = createDatabaseStore({ projectDir, contentDir });
     await store.create(v2Definition());
     const owner = [
-      '<!-- synapsenote:database', 'version=2', 'database=db_tasks', 'source=ds_tasks',
-      'block=dbb_orders_primary', 'columns=prop_title,prop_notes,prop_status', '-->', '',
-      '| Document | Notes | Status |', '| --- | --- | --- |', '| [[orders/alpha]] | First order | todo |', '',
+      '<!-- synapsenote:database',
+      'version=2',
+      'database=db_tasks',
+      'source=ds_tasks',
+      'block=dbb_orders_primary',
+      'columns=prop_title,prop_notes,prop_status',
+      '-->',
+      '',
+      '| Document | Notes | Status |',
+      '| --- | --- | --- |',
+      '| [[orders/alpha]] | First order | todo |',
+      '',
     ].join('\n');
     const document = '---\n_sn:\n  document_id: doc_alpha\n---\n# Alpha order\n\nAlpha body\n';
     writeFileSync(join(contentDir, 'orders.md'), owner);
     writeFileSync(join(contentDir, 'orders/alpha.md'), document);
     const index = createDatabaseRecordIndex({ contentDir, databaseStore: store });
     await index.rebuild();
-    const writer = createDatabaseMarkdownTableWriter({ projectDir, contentDir, databaseStore: store, databaseRecordIndex: index });
+    const writer = createDatabaseMarkdownTableWriter({
+      projectDir,
+      contentDir,
+      databaseStore: store,
+      databaseRecordIndex: index,
+    });
     const recordId = index.list()[0]!.id;
     const ownerRevision = `sha256:${createHash('sha256').update(owner).digest('hex')}`;
-    const changed = await writer.updateTitle({ databaseId: 'db_tasks', sourceId: 'ds_tasks', recordId, title: 'Renamed order', expectedOwnerRevision: ownerRevision });
+    const changed = await writer.updateTitle({
+      databaseId: 'db_tasks',
+      sourceId: 'ds_tasks',
+      recordId,
+      title: 'Renamed order',
+      expectedOwnerRevision: ownerRevision,
+    });
     expect(changed.receipt.operation).toBe('update_title');
-    expect(readFileSync(join(contentDir, 'orders/alpha.md'), 'utf8')).toContain('title: "Renamed order"');
-    expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toContain('[[orders/alpha\\|Renamed order]]');
+    expect(readFileSync(join(contentDir, 'orders/alpha.md'), 'utf8')).toContain(
+      'title: "Renamed order"',
+    );
+    expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toContain(
+      '[[orders/alpha\\|Renamed order]]',
+    );
     expect(index.getById(recordId)).toMatchObject({ values: { prop_title: 'Renamed order' } });
     await writer.undo({ receipt: changed.receipt });
     expect(readFileSync(join(contentDir, 'orders/alpha.md'), 'utf8')).toBe(document);
@@ -1383,22 +1529,44 @@ describe('DatabaseRecordIndex incremental rematerialization', () => {
     const store = createDatabaseStore({ projectDir, contentDir });
     await store.create(v2Definition());
     const owner = [
-      '<!-- synapsenote:database', 'version=2', 'database=db_tasks', 'source=ds_tasks',
-      'block=dbb_orders_primary', 'columns=prop_title,prop_notes,prop_status', '-->', '',
-      '| Document | Notes | Status |', '| --- | --- | --- |', '| [[orders/alpha]] | First order | todo |', '',
+      '<!-- synapsenote:database',
+      'version=2',
+      'database=db_tasks',
+      'source=ds_tasks',
+      'block=dbb_orders_primary',
+      'columns=prop_title,prop_notes,prop_status',
+      '-->',
+      '',
+      '| Document | Notes | Status |',
+      '| --- | --- | --- |',
+      '| [[orders/alpha]] | First order | todo |',
+      '',
     ].join('\n');
     const document = '---\n_sn:\n  document_id: doc_alpha\n---\n# Alpha order\n';
     writeFileSync(join(contentDir, 'orders.md'), owner);
     writeFileSync(join(contentDir, 'orders/alpha.md'), document);
     const index = createDatabaseRecordIndex({ contentDir, databaseStore: store });
     await index.rebuild();
-    const writer = createDatabaseMarkdownTableWriter({ projectDir, contentDir, databaseStore: store, databaseRecordIndex: index });
+    const writer = createDatabaseMarkdownTableWriter({
+      projectDir,
+      contentDir,
+      databaseStore: store,
+      databaseRecordIndex: index,
+    });
     const record = index.list()[0]!;
     const ownerRevision = `sha256:${createHash('sha256').update(owner).digest('hex')}`;
-    const moved = await writer.moveDocument({ databaseId: 'db_tasks', sourceId: 'ds_tasks', recordId: record.id, newDocumentPath: 'orders/renamed.md', expectedOwnerRevision: ownerRevision });
+    const moved = await writer.moveDocument({
+      databaseId: 'db_tasks',
+      sourceId: 'ds_tasks',
+      recordId: record.id,
+      newDocumentPath: 'orders/renamed.md',
+      expectedOwnerRevision: ownerRevision,
+    });
     expect(moved.receipt.operation).toBe('move_document');
     expect(index.getById(record.id)).toMatchObject({ id: record.id, path: 'orders/renamed.md' });
-    expect(readFileSync(join(contentDir, 'orders/renamed.md'), 'utf8')).toContain('document_id: doc_alpha');
+    expect(readFileSync(join(contentDir, 'orders/renamed.md'), 'utf8')).toContain(
+      'document_id: doc_alpha',
+    );
     expect(() => readFileSync(join(contentDir, 'orders/alpha.md'))).toThrow();
     expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toContain('[[orders/renamed]]');
     await writer.undo({ receipt: moved.receipt });
@@ -1465,9 +1633,18 @@ describe('DatabaseRecordIndex incremental rematerialization', () => {
     const store = createDatabaseStore({ projectDir, contentDir });
     await store.create(v2Definition());
     const owner = [
-      '<!-- synapsenote:database', 'version=2', 'database=db_tasks', 'source=ds_tasks',
-      'block=dbb_orders_primary', 'columns=prop_title,prop_notes,prop_status', '-->', '',
-      '| Document | Notes | Status |', '| --- | --- | --- |', '| [[orders/alpha]] | First order | todo |', '',
+      '<!-- synapsenote:database',
+      'version=2',
+      'database=db_tasks',
+      'source=ds_tasks',
+      'block=dbb_orders_primary',
+      'columns=prop_title,prop_notes,prop_status',
+      '-->',
+      '',
+      '| Document | Notes | Status |',
+      '| --- | --- | --- |',
+      '| [[orders/alpha]] | First order | todo |',
+      '',
     ].join('\n');
     writeFileSync(join(contentDir, 'orders.md'), owner);
     writeFileSync(
@@ -1476,7 +1653,12 @@ describe('DatabaseRecordIndex incremental rematerialization', () => {
     );
     const index = createDatabaseRecordIndex({ contentDir, databaseStore: store });
     await index.rebuild();
-    const writer = createDatabaseMarkdownTableWriter({ projectDir, contentDir, databaseStore: store, databaseRecordIndex: index });
+    const writer = createDatabaseMarkdownTableWriter({
+      projectDir,
+      contentDir,
+      databaseStore: store,
+      databaseRecordIndex: index,
+    });
     const record = index.list()[0]!;
     const manifestPath = join(projectDir, '.ok/databases/tasks.yml');
     const manifestBefore = readFileSync(manifestPath, 'utf8');

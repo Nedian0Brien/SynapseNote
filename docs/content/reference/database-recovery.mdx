@@ -68,9 +68,11 @@ Use **Database diagnostics → Preview repair** for the supported duplicate-owne
 invalid-value, stale-index, and record-identity cases. Missing or duplicate v2
 document IDs, broken links, and stale aliases are diagnosed as explicit
 blockers; do not repair them by hand until an identity-repair plan lists the
-exact source ranges, potential loss, and required identity choices. Every repair
-preview is read-only, and apply requires approval bound to the preview hash. If
-the current snapshot changes, create a new preview.
+exact source ranges, impact, and required identity choices. Every repair preview
+is read-only, apply requires approval bound to the preview hash, and the receipt
+contains a durable undo token. Undo restores the exact pre-repair bytes only if
+no intervening edit is detected; otherwise it reports a recovery conflict.
+If the current snapshot changes, create a new preview.
 
 ## Verification checklist
 
