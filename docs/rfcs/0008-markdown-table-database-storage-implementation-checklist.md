@@ -603,7 +603,7 @@ derived revision equality와 frozen v1→v2 Formula/Rollup value comparison을 �
 - [x] **V2-G-005 — Offline queue rebase.** Queued mutation을 stable IDs와 expected
   revisions로 rebase한다. 완료 기준: moved document, reordered table, changed schema,
   deleted row에서 silent wrong-cell write 없이 apply 또는 user-resolvable conflict가 된다.
-- [ ] **V2-G-006 — Git branch/sync recovery.** Branch switch/rebase/merge 뒤 owner
+- [x] **V2-G-006 — Git branch/sync recovery.** Branch switch/rebase/merge 뒤 owner
   discovery와 index를 재구축한다. 완료 기준: duplicate owner, missing target, partial migration
   journal을 감지하고 stale cache를 fresh로 노출하지 않는다.
 - [ ] **V2-G-007 — Attribution/history.** Cell/document/schema transaction의 actor와
@@ -842,7 +842,7 @@ desktop parity는 J-004~J-010 release gate다.
 - [ ] **V2-K-004 — Bounded rendering/query.** Viewport DOM, query, export, context pack이
   전체 table DOM/body load를 요구하지 않는다. 완료 기준: supported-max fixture에서 responsive
   cancellation/backpressure와 bounded memory가 측정된다.
-- [ ] **V2-K-005 — Filesystem safety.** Path traversal, symlink escape, case collision,
+- [x] **V2-K-005 — Filesystem safety.** Path traversal, symlink escape, case collision,
   permission loss, disk full, stale temp/lock을 방어한다. 완료 기준: adversarial fixture가 content
   root 밖 write와 partial canonical state 0건을 증명한다.
 - [x] **V2-K-006 — Parser resource safety.** Marker/GFM/JSON/wikilink parser의 bytes,
@@ -901,7 +901,7 @@ supported-max DOM backpressure 측정은 아직 K-004 gate다. 상세 실행 결
 - [x] **V2-L-006 — Public documentation.** Canonical format, raw Markdown editing,
   Formula/Rollup visibility, migration preview, limits, backup/rollback, troubleshooting을 게시한다.
   완료 기준: docs example가 current fixture와 schema validation을 통과하고 known-loss matrix가 있다.
-- [ ] **V2-L-007 — Operator/recovery runbook.** Interrupted migration inspect/resume/
+- [x] **V2-L-007 — Operator/recovery runbook.** Interrupted migration inspect/resume/
   rollback, duplicate owner, malformed table, alias overflow 절차를 문서화한다. 완료 기준: 새 clone의
   maintainer가 runbook만으로 seeded failure를 복구하는 rehearsal이 통과한다.
 - [ ] **V2-L-008 — Opt-in pilot gate.** 제한된 workspace에서 v2 new/create/migrate를
@@ -933,10 +933,13 @@ supported-max DOM backpressure 측정은 아직 K-004 gate다. 상세 실행 결
 `database-record-index.test.ts`의 cache/task-state 제거 standalone clone과
 `database-migration-process-crash.test.ts`의 staging/activation every-file crash recovery,
 `database-markdown-table-writer-process-crash.test.ts`의 owner/document kill boundary,
-`database-index-git-sync.test.ts`의 v2 branch rebuild, core CRDT/offline fixtures, recovery
-evidence 문서와 changeset이 있다. v1→v2→undo full fixture matrix와 public docs는 닫혔고,
-runbook rehearsal, pilot/new-default, writer retirement/compatibility decision은
-아직 실행하지 않았고, 이 항목들이 없으면 L 전체 release gate를 닫지 않는다. 실행 명령과 known limit은
+`database-index-git-sync.test.ts`의 v2 branch rebuild, core CRDT/offline fixtures,
+`database-recovery-runbook.test.ts`의 독립 workspace seeded inspect→rollback→cleanup/identity
+diagnostic rehearsal, recovery evidence 문서와 changeset이 있다. v1→v2→undo full fixture
+matrix와 public docs는 닫혔고, scripted runbook fixture도 통과했지만 maintainer가 새 clone에서
+runbook만으로 수행하는 L-007 rehearsal, pilot/new-default, writer retirement/compatibility
+decision은 아직 실행하지 않았고, 이 항목들이 없으면 L 전체 release gate를 닫지 않는다.
+실행 명령과 known limit은
 [`0008-v2-release-evidence.md`](./0008-v2-release-evidence.md)의 fixture 표를 기준으로 한다.
 
 ## 5. 초기 package/file 작업 지도

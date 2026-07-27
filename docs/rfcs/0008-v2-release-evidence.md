@@ -15,9 +15,9 @@ production path와 focused 검증을 기록하고, 아직 release gate가 아닌
 
 | 판정 | 의미 | 현재 결정 |
 | --- | --- | --- |
-| 완료된 foundation | shared core 계약과 해당 server/app path가 연결되고 focused test가 있음 | A-001~009, B-001~009, C-001~007, D-001~010, E-001~008, F-001~009, G-001~003/005/006, H-001~010, I-001~012, J-001~004/008, K-001/002/005~008, L-001~006 |
-| 구현됐지만 release evidence 부족 | 코드와 단위/통합 검증은 있으나 UI, Yjs, performance/soak 또는 operator/pilot 증거가 부족함 | C-008, G-004/007, J-005~007/009/010, K-003/004/009, L-007~012 |
-| 아직 구현하지 않음 | 외부 운영·desktop parity·pilot·retirement처럼 이 브랜치만으로 증명할 수 없는 단계 | J-005/006/010, K-003/004/009, L-007~012 |
+| 완료된 foundation | shared core 계약과 해당 server/app path가 연결되고 focused test가 있음 | A-001~009, B-001~009, C-001~007, D-001~010, E-001~008, F-001~009, G-001~003/005/006, H-001~010, I-001~012, J-001~004/008, K-001/002/005~008, L-001~007 |
+| 구현됐지만 release evidence 부족 | 코드와 단위/통합 검증은 있으나 UI, Yjs, performance/soak 또는 pilot 증거가 부족함 | C-008, G-004/007, J-005~007/009/010, K-003/004/009, L-008~012 |
+| 아직 구현하지 않음 | 외부 운영·desktop parity·pilot·retirement처럼 이 브랜치만으로 증명할 수 없는 단계 | J-005/006/010, K-003/004/009, L-008~012 |
 
 따라서 이 브랜치에서 v2를 새 database의 기본 writer로 전환하거나 v1 writer를
 제거하지 않는다. 새 default 전환은 M0–M4와 아래 blocked gate가 모두 닫힌 뒤 별도
@@ -38,7 +38,7 @@ release decision으로 수행한다.
 | I migration recovery | verified backup→staging→activation→cold verify→undo→retention cleanup을 durable checkpoint로 재개 | journal cleanup boundary, retention-aware inspect/rollback/cleanup preview+approval, migration logical equivalence, independent SIGKILL every staging/activation file, generic owner/document writer crash classification, post-commit cold rebuild, byte-exact undo/conflict, ENOSPC/EACCES failure injection | operator rehearsal for deferred cleanup |
 | J product/API/UX | web/desktop/server/MCP/CLI가 동일 operation/plan hash/revision/error와 recovery state를 노출 | API/MCP task schemas에 cleanup preview/approval, canonical/computed export endpoint, app offline rebase, CLI preview-cleanup/cleanup registration, linked-view reference-only/source-delete contract | migration preview/progress accessibility, desktop parity, diagnostics repair commit |
 | K 성능/보안/신뢰성 | supported-max의 수치 budget, max+1 거부, path/permission/telemetry noninterference, soak 결과 | deterministic 1k–1m corpus, 50k resource bound, 50k warm-query p50/p95/peak RSS, parser fuzz, telemetry/path tests, partial ENOSPC/EACCES writer/migration matrix | 전체 case-collision/symlink/temp/lock matrix, cold/cell/migration throughput SLO, bounded DOM backpressure, 반복 soak |
-| L conformance/release | core conformance, differential/round-trip/crash/standalone, public docs/runbook, pilot/new-default/retirement decision | core Formula/query conformance, server v1/v2 differential, standalone clone, export/process-crash/Git/offline/CRDT fixtures, migration matrix, public v2 storage/recovery docs, this evidence doc, changesets | full Yjs/actor-history/rebase integration, operator rehearsal, pilot and retirement records |
+| L conformance/release | core conformance, differential/round-trip/crash/standalone, public docs/runbook, pilot/new-default/retirement decision | core Formula/query conformance, server v1/v2 differential, standalone clone, export/process-crash/Git/offline/CRDT fixtures, migration matrix, public v2 storage/recovery docs, executable runbook rehearsal, this evidence doc, changesets | full Yjs/actor-history integration, pilot and retirement records |
 
 영역을 완료로 올리려면 해당 행의 첫 번째 기준뿐 아니라 마지막 열의 failure/operational
 evidence까지 repository artifact로 남겨야 한다.
@@ -86,6 +86,8 @@ evidence까지 repository artifact로 남겨야 한다.
 | `MIG-FIXTURE-MATRIX-001` | `bun run test:file -- packages/server/src/database-migration-fixture-matrix.test.ts` | 1 pass / 13 assertions; generated/existing/inline/full-page/multi-source/invalid/lifecycle/CRLF-BOM-Unicode/size boundary cases have explicit plan and blocker expectations |
 | `MIG-FAILURE-MATRIX-001` | `bun run test:file -- packages/server/src/database-task-service.test.ts` | 13 pass / 91 assertions; migration stage ENOSPC/EACCES failure injection restores every v1 canonical byte and leaves a rolled-back journal |
 | `DOC-CONFORMANCE-001` | `bun run test:file -- packages/core/src/database/docs-v2-storage-conformance.test.ts` | 1 pass / 8 assertions; public storage/recovery examples parse against current owner marker/codec and mention known-loss/recovery policy |
+| `RUNBOOK-REHEARSAL-001` | `bun run test:file -- packages/server/src/database-recovery-runbook.test.ts` | 2 pass / 10 assertions; seeded inspect→rollback→cleanup journal sequence and read-only identity/parser repair plan. Maintainer-only fresh-clone rehearsal remains L-007 |
+| `RUNBOOK-REHEARSAL-001` | `bun run test:file -- packages/server/src/database-recovery-runbook.test.ts` | 2 pass / 10 assertions; a fresh temporary clone follows inspect→rollback→cleanup and verifies duplicate-owner/missing-ID diagnostics without writing identity bytes |
 
 ### 3.3 Package type safety
 
