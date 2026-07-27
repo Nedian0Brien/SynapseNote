@@ -119,7 +119,8 @@ checkbox를 체크한다.
   logical equivalence, post-write hash verification, retention-aware inspection과 cleanup
   boundary도 연결되어 있다. 독립 child process의 staging/activation crash-at-every-file와
   generic owner/document writer crash fixture가 있고, clean user undo는 byte-exact 복구와
-  content-free conflict paths를 검증한다. Deferred cleanup rehearsal은 여전히 gate다.
+  content-free conflict paths를 검증한다. Cleanup은 retention 만료 후 preview hash와
+  approval token을 요구하며, deferred cleanup operator rehearsal은 여전히 gate다.
 - Formula/Rollup은 owner table에 저장하지 않도록 schema가 보장하고, stable-ID compile/
   cross-source dependency contract, permission-denied derived error, derived revision
   transport, canonical/computed export contract가 core/server boundary에 있다. Relation
@@ -531,7 +532,7 @@ logical record, filter/sort/select/aggregate/page cursor와 search provenance를
 `database-markdown-table-export.test.ts`는 HTTP data-plane 경계에서 canonical owner/document
 bytes와 marker 없는 revision-bound computed snapshot을 분리한다. `api-search.test.ts`의
 database entity fixture는 linked Markdown page가 generic page tier에 재입장하지 않고
-`provenance: database` record 한 건만 반환되는 것을 확인한다(35 pass / 87 assertions).
+`provenance: database` record 한 건만 반환되는 것을 확인한다(35 pass / 90 assertions).
 
 ## F. Formula, Rollup, relation graph, and derived snapshots
 
@@ -750,7 +751,9 @@ binding, rollback/retry/resume를 연결한다. `markdown-table-migration-equiva
 storage path/byte revision을 제외하고 canonical ID, typed/raw values, invalid values와
 computed result를 logical snapshot으로 비교하며 migration verification에 연결됐다.
 `database-task-service.inspectMigration`은 content-redacted file hash/undo state를 반환하고,
-`cleanupMigration`은 retention expiry와 expected revision 뒤에만 task material을 지운다.
+`previewMigrationCleanup`은 retention/terminal-journal/material 상태와 content-free plan hash를
+반환하고, `cleanupMigration`은 retention expiry, expected revision, plan hash, `approve:<hash>`
+approval 뒤에만 task material을 지운다.
 `database-migration-journal.test.ts`, `database-migration-gate.test.ts`,
 `database-task-service.test.ts`, `database-data-plane.test.ts`가 clean retry, unknown-edit
 recovery-required, active write/read freeze, cold v2 verification, cleanup-before-expiry를
@@ -864,14 +867,15 @@ desktop parity는 J-004~J-010 release gate다.
 
 현재 evidence: `packages/server/src/database-benchmark-corpus.test.ts`가 deterministic
 1k/50k/500k/1m corpus와 streaming JSONL을 생성하고,
-`database-performance-benchmark.test.ts`가 warm 1k query의 p50/p95/p99와 peak RSS/memory
+`database-performance-benchmark.test.ts`가 warm 1k/50k query의 p50/p95/p99와 peak RSS/memory
 budget을 수치로 기록하고,
 `database-resource-regression.test.ts`가 50k retained projection/index/context bound를,
 `database-telemetry.test.ts`가 content-free bounded counters를, `markdown-table-fuzz.test.ts`
 가 malformed/oversized/invalid-UTF8 parser input과 child-process timeout/output cap을
 검증한다. `path-utils.test.ts`와 writer symlink/path guards도 통과한다. Writer와 migration의
-ENOSPC/EACCES failure injection은 부분적으로 검증됐지만 case-collision, symlink, stale
-temp/lock을 포함한 전체 K-005 matrix는 아직 닫히지 않았다. 또한 cold/warm/cell-commit/
+ENOSPC/EACCES failure injection, symlink/path guards, stale lock recovery가 K-005의 일부
+경계를 검증한다. Case-collision, outside-root symlink, stale temp/lock과 전체 migration
+matrix를 포함한 K-005 기준은 아직 닫히지 않았다. 또한 cold/warm/cell-commit/
 migration-throughput 전체 SLO와 long-running soak가 없으므로 K-003/K-009도 닫히지 않았다.
 query/export/context pack은 500-row/500-record bound와 50k resource fixture가 있지만
 supported-max DOM backpressure 측정은 아직 K-004 gate다. 상세 실행 결과는
