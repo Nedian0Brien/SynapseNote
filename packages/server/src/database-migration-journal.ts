@@ -6,6 +6,7 @@ import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { atomicWriteFile } from '@nedian0brien/synapsenote-core/server';
 import { z } from 'zod';
 import { tracedAtomicFs } from './fs-traced.ts';
+import { DatabaseTaskRollbackError } from './database-task-rollback.ts';
 
 const Sha256Schema = z.string().regex(/^sha256:[a-f0-9]{64}$/);
 const FileSchema = z
@@ -184,7 +185,14 @@ export class DatabaseMigrationJournal {
     const conflicts = observed.filter(({ file, hash }) => hash !== file.beforeSha256 && hash !== file.afterSha256);
     if (conflicts.length > 0) {
       await this.checkpoint(taskId, 'recovery_required');
-      throw new Error(`Migration rollback blocked by external edits: ${conflicts.map(({ file }) => file.path).join(', ')}`);
+      throw new DatabaseTaskRollbackError(
+        'rollback_conflict',
+        'Migration rollback blocked by external edits.',
+        {
+          paths: conflicts.map(({ file }) => file.path),
+          count: conflicts.length,
+        },
+      );
     }
     const applied: typeof observed = [];
     try {

@@ -448,6 +448,29 @@ describe('database data plane HTTP handlers', () => {
     ).toEqual({ action: 'inspect_migration', taskId: 'task_recovery' });
     expect(
       DatabaseTaskRequestSchema.parse({
+        action: 'preview_migration',
+        expectedManifestRevision: `sha256:${'d'.repeat(64)}`,
+        targetVersion: 2,
+        titleChoices: {
+          db_tasks: {
+            rec_alpha: { kind: 'custom_title', title: 'Chosen title' },
+          },
+        },
+        derivedBaselines: {
+          db_tasks: {
+            evaluatedAt: '2026-07-27T00:00:00.000Z',
+            timeZone: 'UTC',
+            locale: 'en',
+            permissionRevision: `sha256:${'e'.repeat(64)}`,
+          },
+        },
+      }),
+    ).toMatchObject({
+      titleChoices: { db_tasks: { rec_alpha: { kind: 'custom_title' } } },
+      derivedBaselines: { db_tasks: { timeZone: 'UTC' } },
+    });
+    expect(
+      DatabaseTaskRequestSchema.parse({
         action: 'cleanup_migration',
         taskId: 'task_recovery',
         expectedRevision: `sha256:${'b'.repeat(64)}`,

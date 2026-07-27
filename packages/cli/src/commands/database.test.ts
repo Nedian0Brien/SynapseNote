@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseDatabaseManifestYaml } from '@nedian0brien/synapsenote-core';
-import { installDatabaseGitDrivers, runDatabaseMergeDriver } from './database.ts';
+import { databaseCommand, installDatabaseGitDrivers, runDatabaseMergeDriver } from './database.ts';
 
 const temporaryDirectories: string[] = [];
 
@@ -90,6 +90,16 @@ Body
 }
 
 describe('database Git driver CLI', () => {
+  test('exposes inspect and retention cleanup recovery commands', () => {
+    const migration = databaseCommand().commands.find((command) => command.name() === 'migration');
+    expect(migration?.commands.map((command) => command.name())).toEqual(
+      expect.arrayContaining(['inspect', 'cleanup', 'preview', 'apply', 'status']),
+    );
+    expect(migration?.commands.find((command) => command.name() === 'inspect')?.description()).toContain(
+      'content-free recovery hashes',
+    );
+  });
+
   test('semantically merges independent v2 owner-table cells', () => {
     const directory = temporaryDirectory();
     const owner = `<!-- synapsenote:database\nversion=2\ndatabase=db_tasks\nsource=ds_tasks\nblock=dbb_tasks_primary\ncolumns=prop_title,prop_status\n-->\n\n| Title | Status |\n| --- | --- |\n| [[tasks/one]] | todo |\n`;

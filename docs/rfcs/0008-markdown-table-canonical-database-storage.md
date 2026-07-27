@@ -984,8 +984,10 @@ Cleanup은 별도 destructive plan이다. Generated v1 폴더가 비었더라도
   existing link rewrite, Git rename detection을 보여주고 사용자가 승인해야 한다.
 - 같은 record body를 여러 v1 source가 소유한 것으로 발견하면 자동 병합하지 않는다.
 - 문서 body가 비어 있어도 `.md` document entity와 document ID를 유지한다.
-- v1 Title과 문서 title conflict는 bulk default를 허용할 수 있지만 각 conflict를
-  개별 inspect할 수 있어야 하며 선택이 plan hash에 포함된다.
+- v1 Title과 문서 title이 다르면 bulk default로 덮어쓰지 않는다. 각 conflict는
+  `keep_document_title`, `use_record_title`, `custom_title` 중 하나를 개별 선택해야
+  하며, 선택과 결과 title/first-wikilink alias가 plan hash에 포함된다. 선택이 없거나
+  custom title이 document title 규칙을 통과하지 못하면 migration은 blocked다.
 
 ### 17.8 Relation, Formula, Rollup 순서
 
@@ -998,7 +1000,8 @@ Relation을 path로 변환하려면 target record mapping이 먼저 필요하므
 4. owner table 전체 strict parse 및 relation resolution
 5. Formula AST stable property ID resolution/typecheck
 6. source 간 Formula/Rollup DAG와 reverse relation index 생성
-7. frozen v1/v2 derived result 비교
+7. 같은 `evaluatedAt`, `timeZone`, `locale`, `permissionRevision`을 가진 frozen
+   v1/v2 derived baseline과 Formula/Rollup value 또는 explicit error code 비교
 
 Target source가 다른 database manifest에 있고 migration 대상이 아니라면 closure에서
 version-pinned read dependency로 고정할 수 있다. Target이 v1이면 dependency document에
@@ -1007,6 +1010,11 @@ version-pinned read dependency로 고정할 수 있다. Target이 v1이면 depen
 아니다. Cross-version relation/Rollup adapter는 compatibility 기간에만 유지하며 target
 revision invalidation과 후속 target migration을 지원해야 한다. 이 조건을 충족하지 못하면
 관련 database manifest를 같은 batch에 포함하거나 migration을 막는다.
+
+Derived baseline은 owner table이나 linked document에 저장하지 않는다. Preview가
+database별 baseline을 plan input/hash에 묶고, apply/verification은 같은 baseline을 다시
+검증한다. Permission revision이 바뀌거나 Formula/Rollup 결과/error code가 다르면 기존
+approval을 재사용하지 않고 새 preview를 요구한다.
 
 ### 17.9 Verification equivalence matrix
 

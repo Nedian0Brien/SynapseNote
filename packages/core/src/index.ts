@@ -414,6 +414,7 @@ export {
   type DatabaseMarkdownV2MigrationBlocker,
   type DatabaseMarkdownV2MigrationOwnerInput,
   type DatabaseMarkdownV2MigrationPlan,
+  type DatabaseMarkdownV2MigrationTitleChoice,
   planDatabaseMarkdownV2Migration,
 } from './database/markdown-table-migration.ts';
 export {

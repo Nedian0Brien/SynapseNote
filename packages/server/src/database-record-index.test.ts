@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, test } from 'bun:test';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   createDatabaseMarkdownRecordId,
   DatabaseDefinitionSchema,
+  queryDatabaseRecords,
 } from '@nedian0brien/synapsenote-core';
 import { createHash } from 'node:crypto';
 import {
@@ -190,6 +191,51 @@ describe('DatabaseRecordIndex rebuild', () => {
         expect.objectContaining({ path: 'orders/beta.md' }),
       ]),
     });
+  });
+
+  test('rebuilds a standalone v2 clone with only manifest, owner table, and linked documents', async () => {
+    const source = tempProject();
+    mkdirSync(join(source.contentDir, 'orders'), { recursive: true });
+    const sourceStore = createDatabaseStore({ projectDir: source.projectDir, contentDir: source.contentDir });
+    await sourceStore.create(v2Definition());
+    const owner = '<!-- synapsenote:database\nversion=2\ndatabase=db_tasks\nsource=ds_tasks\nblock=dbb_orders_primary\ncolumns=prop_title,prop_notes,prop_status\n-->\n\n| Document | Notes | Status |\n| --- | --- | --- |\n| [[orders/alpha]] | First order | todo |\n';
+    writeFileSync(join(source.contentDir, 'orders.md'), owner);
+    writeFileSync(join(source.contentDir, 'orders/alpha.md'), '---\n_sn:\n  document_id: doc_alpha\n---\n# Alpha order\n');
+    const sourceIndex = createDatabaseRecordIndex({ contentDir: source.contentDir, databaseStore: sourceStore });
+    await sourceIndex.rebuild();
+    const expected = sourceIndex.list('db_tasks', 'ds_tasks');
+
+    const cloneDir = mkdtempSync(join(tmpdir(), 'synapsenote-database-standalone-clone-'));
+    tempDirs.push(cloneDir);
+    cpSync(source.projectDir, cloneDir, { recursive: true });
+    rmSync(join(cloneDir, '.ok', 'local'), { recursive: true, force: true });
+    const cloneContentDir = join(cloneDir, 'content');
+    const cloneStore = createDatabaseStore({ projectDir: cloneDir, contentDir: cloneContentDir });
+    await cloneStore.reload();
+    const cloneIndex = createDatabaseRecordIndex({ contentDir: cloneContentDir, databaseStore: cloneStore });
+    await cloneIndex.rebuild();
+
+    expect(cloneIndex.list('db_tasks', 'ds_tasks')).toEqual(expected);
+    expect(cloneIndex.snapshot().issues).toEqual([]);
+    expect(cloneIndex.getV2CanonicalDocuments('db_tasks', 'ds_tasks')).toMatchObject({
+      ownerPath: 'orders.md',
+      linkedDocuments: [expect.objectContaining({ path: 'orders/alpha.md', markdown: expect.stringContaining('document_id: doc_alpha') })],
+    });
+    const cloneDatabase = cloneStore.getById('db_tasks');
+    const cloneSource = cloneDatabase?.sources.find((source) => source.id === 'ds_tasks');
+    if (!cloneDatabase || !cloneSource) throw new Error('standalone clone lost database source');
+    const query = queryDatabaseRecords({
+      source: cloneSource,
+      records: cloneIndex.list('db_tasks', 'ds_tasks'),
+      query: { search: 'Alpha', page: { limit: 10 } },
+      snapshotRevision: cloneIndex.snapshot().revision,
+    });
+    expect(query).toMatchObject({ matched: 1, returned: 1, isComplete: true });
+    expect(query.records[0]).toMatchObject({
+      path: 'orders/alpha.md',
+      values: { prop_title: 'Alpha order' },
+    });
+    expect(readFileSync(join(cloneContentDir, 'orders.md'), 'utf8')).toBe(owner);
   });
 
   test('does not infer a v2 identity from a linked document path', async () => {

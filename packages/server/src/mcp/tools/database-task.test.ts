@@ -161,6 +161,14 @@ describe('data_task MCP tool', () => {
       databaseIds: ['db_tasks'],
       expectedManifestRevision: revision,
       targetVersion: 1,
+      derivedBaselines: {
+        db_tasks: {
+          evaluatedAt: '2026-07-27T00:00:00.000Z',
+          timeZone: 'UTC',
+          locale: 'en',
+          permissionRevision: `sha256:${'b'.repeat(64)}`,
+        },
+      },
     });
     expect(migrationPreview).toMatchObject({
       structuredContent: {
@@ -174,6 +182,14 @@ describe('data_task MCP tool', () => {
       expectedManifestRevision: revision,
       targetVersion: 1,
       databaseIds: ['db_tasks'],
+      derivedBaselines: {
+        db_tasks: {
+          evaluatedAt: '2026-07-27T00:00:00.000Z',
+          timeZone: 'UTC',
+          locale: 'en',
+          permissionRevision: `sha256:${'b'.repeat(64)}`,
+        },
+      },
     });
     await handler({ action: 'retry', taskId: 'task_1', expectedRevision: revision });
     await handler({ action: 'resume', taskId: 'task_1', expectedRevision: revision });
@@ -192,6 +208,14 @@ describe('data_task MCP tool', () => {
         databaseIds: ['db_tasks'],
         expectedManifestRevision: revision,
         targetVersion: 1,
+        derivedBaselines: {
+          db_tasks: {
+            evaluatedAt: '2026-07-27T00:00:00.000Z',
+            timeZone: 'UTC',
+            locale: 'en',
+            permissionRevision: `sha256:${'b'.repeat(64)}`,
+          },
+        },
       },
       {
         action: 'start',
@@ -200,6 +224,14 @@ describe('data_task MCP tool', () => {
           expectedManifestRevision: revision,
           targetVersion: 1,
           databaseIds: ['db_tasks'],
+          derivedBaselines: {
+            db_tasks: {
+              evaluatedAt: '2026-07-27T00:00:00.000Z',
+              timeZone: 'UTC',
+              locale: 'en',
+              permissionRevision: `sha256:${'b'.repeat(64)}`,
+            },
+          },
         },
       },
       { action: 'retry', taskId: 'task_1', expectedRevision: revision },

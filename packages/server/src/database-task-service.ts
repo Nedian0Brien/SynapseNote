@@ -16,6 +16,9 @@ import {
   serializeDatabaseManifestYaml,
   parseDatabaseMarkdownOwner,
   planDatabaseMigrationDependencyClosure,
+  freezeDatabaseMigrationDerivedBaseline,
+  type DatabaseMigrationDerivedBaseline,
+  type DatabaseMarkdownV2MigrationTitleChoice,
   type DatabaseMarkdownV2MigrationPlan,
 } from '@nedian0brien/synapsenote-core';
 import { atomicWriteFile } from '@nedian0brien/synapsenote-core/server';
@@ -56,6 +59,19 @@ const RevisionSchema = z.union([
   z.literal('sha256:empty'),
 ]);
 const FileRevisionSchema = z.string().regex(/^sha256:[a-f0-9]{64}$/);
+const MigrationDerivedBaselineSchema = z
+  .object({
+    evaluatedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/),
+    timeZone: z.string().min(1),
+    locale: z.string().min(1),
+    permissionRevision: FileRevisionSchema,
+  })
+  .strict();
+const MigrationTitleChoiceSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('keep_document_title') }).strict(),
+  z.object({ kind: z.literal('use_record_title') }).strict(),
+  z.object({ kind: z.literal('custom_title'), title: z.string().min(1).max(200) }).strict(),
+]);
 
 const BulkTaskInputSchema = z
   .object({
@@ -97,6 +113,8 @@ const MigrationTaskInputSchema = z
           planHash: FileRevisionSchema.optional(),
           migrationCommittedAt: z.string().datetime({ offset: true }).optional(),
           ownerChoices: z.record(z.string().startsWith('ds_'), z.object({ path: z.string().min(1), blockId: z.string().startsWith('dbb_') }).strict()).optional(),
+          titleChoices: z.record(z.string().startsWith('rec_'), MigrationTitleChoiceSchema).optional(),
+          derivedBaseline: MigrationDerivedBaselineSchema.optional(),
         })
         .strict(),
     ),
@@ -135,6 +153,8 @@ export interface StartDatabaseMigrationTaskInput {
   planHashes?: Readonly<Record<string, string>>;
   migrationCommittedAt?: Readonly<Record<string, string>>;
   ownerChoices?: Readonly<Record<string, Readonly<Record<string, { path: string; blockId: string }>>>>;
+  titleChoices?: Readonly<Record<string, Readonly<Record<string, DatabaseMarkdownV2MigrationTitleChoice>>>>;
+  derivedBaselines?: Readonly<Record<string, DatabaseMigrationDerivedBaseline>>;
 }
 
 export interface DatabaseManifestMigrationPreviewItem {
@@ -297,8 +317,19 @@ function stableJson(value: unknown): string {
   return JSON.stringify(value);
 }
 
-function migrationPlanHash(files: readonly { path: string; after: string | null }[]): string {
-  return sha256(stableJson(files.map((file) => ({ path: file.path, after: file.after === null ? null : sha256(file.after) }))));
+function migrationPlanHash(
+  files: readonly { path: string; after: string | null }[],
+  bindings: { ownerChoices?: unknown; titleChoices?: unknown; derivedBaseline?: unknown } = {},
+): string {
+  return sha256(
+    stableJson({
+      files: files.map((file) => ({
+        path: file.path,
+        after: file.after === null ? null : sha256(file.after),
+      })),
+      bindings,
+    }),
+  );
 }
 
 interface VerifiedMigrationBackup {
@@ -450,7 +481,12 @@ export class DatabaseTaskService {
     database: DatabaseDefinition,
     migrationCommittedAt?: string,
     ownerChoices?: Readonly<Record<string, { path: string; blockId: string }>>,
+    titleChoices?: Readonly<Record<string, DatabaseMarkdownV2MigrationTitleChoice>>,
+    derivedBaseline?: DatabaseMigrationDerivedBaseline,
   ): Promise<DatabaseV2ContentPlan> {
+    const frozenDerivedBaseline = derivedBaseline
+      ? freezeDatabaseMigrationDerivedBaseline(MigrationDerivedBaselineSchema.parse(derivedBaseline))
+      : undefined;
     const manifestPath = `.ok/databases/${database.key}.yml`;
     const manifestBefore = await readFile(resolve(this.#projectDir, manifestPath), 'utf8');
     const recordPaths = new Set<string>();
@@ -476,6 +512,7 @@ export class DatabaseTaskService {
       records,
       owners,
       ...(migrationCommittedAt ? { migrationCommittedAt } : {}),
+      ...(titleChoices ? { titleChoices } : {}),
     });
     const blockers = [...migration.blockers];
     // The migration must be based on a complete, frozen v1 inventory. An
@@ -532,7 +569,7 @@ export class DatabaseTaskService {
         manifestBefore,
         manifestAfter: manifestBefore,
         files: [],
-        planHash: migrationPlanHash([]),
+        planHash: migrationPlanHash([], { ownerChoices, titleChoices, derivedBaseline: frozenDerivedBaseline }),
         expectedRecords: [],
       };
     }
@@ -592,7 +629,7 @@ export class DatabaseTaskService {
       manifestBefore,
       manifestAfter,
       files,
-      planHash: migrationPlanHash(files),
+      planHash: migrationPlanHash(files, { ownerChoices, titleChoices, derivedBaseline: frozenDerivedBaseline }),
       expectedRecords,
     };
   }
@@ -654,7 +691,13 @@ export class DatabaseTaskService {
         if (targetVersion === 2 && database.version === 1) {
           const migrationCommittedAt =
             input.migrationCommittedAt?.[database.id] ?? new Date().toISOString();
-          const contentPlan = await this.#buildV2ContentPlan(database, migrationCommittedAt, input.ownerChoices?.[database.id]);
+          const contentPlan = await this.#buildV2ContentPlan(
+            database,
+            migrationCommittedAt,
+            input.ownerChoices?.[database.id],
+            input.titleChoices?.[database.id],
+            input.derivedBaselines?.[database.id],
+          );
           const blocked = contentPlan.plan.status === 'blocked';
           return {
             databaseId: database.id,
@@ -829,6 +872,16 @@ export class DatabaseTaskService {
           error.message,
           error.details,
         );
+      }
+      if (task.operation === 'migration') {
+        const journal = await this.#migrationJournal.get(taskId).catch(() => null);
+        if (journal?.state === 'recovery_required') {
+          throw launchError(
+            'task_rollback_conflict',
+            'Migration rollback was blocked because canonical files changed after activation.',
+            { taskId, state: journal.state },
+          );
+        }
       }
       throw error;
     }
@@ -1130,6 +1183,8 @@ export class DatabaseTaskService {
       ...(item.planHash ? { planHash: item.planHash } : {}),
       ...(item.migrationCommittedAt ? { migrationCommittedAt: item.migrationCommittedAt } : {}),
       ...(input.ownerChoices?.[item.databaseId] ? { ownerChoices: input.ownerChoices[item.databaseId] } : {}),
+      ...(input.titleChoices?.[item.databaseId] ? { titleChoices: input.titleChoices[item.databaseId] } : {}),
+      ...(input.derivedBaselines?.[item.databaseId] ? { derivedBaseline: input.derivedBaselines[item.databaseId] } : {}),
     }));
     const queued = await this.#runner.enqueue({
       operation: 'migration',
@@ -1649,6 +1704,8 @@ export class DatabaseTaskService {
         database,
         manifest.migrationCommittedAt,
         manifest.ownerChoices,
+        manifest.titleChoices,
+        manifest.derivedBaseline,
       );
       if (contentPlan.plan.status === 'blocked') {
         throw executionProblem(

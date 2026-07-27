@@ -1,11 +1,12 @@
 import { describe, expect, test } from 'bun:test';
 import { DatabaseDefinitionSchema } from './schema.ts';
-import { materializeDatabaseRecord } from './record.ts';
+import { materializeDatabaseRecord, type DatabaseValue } from './record.ts';
 import { materializeDatabaseMarkdownOwner } from './markdown-table-record.ts';
 import { parseDatabaseDocumentIdentity } from './document-identity.ts';
 import { resolveDatabaseDocumentTitle } from './markdown-table-document.ts';
 import { planDatabaseMarkdownV2Migration } from './markdown-table-migration.ts';
 import { compareDatabaseMigrationLogicalSnapshots } from './markdown-table-migration-equivalence.ts';
+import { queryDatabaseRecords } from './query.ts';
 
 describe('v1 to v2 migration logical equivalence', () => {
   test('ignores storage paths but compares stable IDs, typed values, invalid raw, and derived results', () => {
@@ -158,5 +159,60 @@ describe('v1 to v2 migration logical equivalence', () => {
     const report = compareDatabaseMigrationLogicalSnapshots({ expected, actual });
     expect(report).toMatchObject({ passed: true, expectedCount: 2, actualCount: 2 });
     expect(report.expectedRevision).toBe(report.actualRevision);
+
+    const v1Records = v1.flatMap((result) => (result.ok ? [result.record] : []));
+    const v2Records = materialized.rows.map((row) => {
+      const values = { ...row.values } as Record<string, DatabaseValue>;
+      const document = linked.find((candidate) => candidate.documentId === row.documentId);
+      if (
+        document &&
+        values.prop_title &&
+        typeof values.prop_title === 'object' &&
+        !Array.isArray(values.prop_title) &&
+        'kind' in values.prop_title
+      ) {
+        values.prop_title = resolveDatabaseDocumentTitle(document.markdown, document.path).value;
+      }
+      return {
+        id: row.recordId!,
+        databaseId: 'db_tasks',
+        sourceId: 'ds_tasks',
+        path: row.documentPath!,
+        revision: null,
+        values,
+        body: document?.markdown ?? '',
+      };
+    });
+    const differentialQuery = {
+      where: { propertyId: 'prop_score', operator: 'gte', value: 3 },
+      sort: [{ propertyId: 'prop_score', direction: 'desc' as const }],
+      select: ['prop_title', 'prop_score'],
+      page: { limit: 1 },
+    };
+    const v1Query = queryDatabaseRecords({
+      source: definition.sources[0]!,
+      records: v1Records,
+      query: differentialQuery,
+      snapshotRevision: 'migration-differential-fixture',
+    });
+    const v2Query = queryDatabaseRecords({
+      source: plan.definition.sources[0]!,
+      records: v2Records,
+      query: differentialQuery,
+      snapshotRevision: 'migration-differential-fixture',
+    });
+    expect({
+      matched: v2Query.matched,
+      returned: v2Query.returned,
+      isComplete: v2Query.isComplete,
+      nextCursor: v2Query.nextCursor?.split(':').at(-1) ?? null,
+      rows: v2Query.records.map((record) => record.values),
+    }).toEqual({
+      matched: v1Query.matched,
+      returned: v1Query.returned,
+      isComplete: v1Query.isComplete,
+      nextCursor: v1Query.nextCursor?.split(':').at(-1) ?? null,
+      rows: v1Query.records.map((record) => record.values),
+    });
   });
 });

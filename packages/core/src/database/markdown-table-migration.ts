@@ -4,7 +4,11 @@ import {
   ensureDatabaseDocumentIdentity,
 } from './document-identity.ts';
 import { stripFrontmatter, unwrapFrontmatterFences } from '../extensions/frontmatter.ts';
-import { resolveDatabaseDocumentTitle } from './markdown-table-document.ts';
+import {
+  normalizeDatabaseDocumentTitle,
+  replaceDatabaseDocumentTitle,
+  resolveDatabaseDocumentTitle,
+} from './markdown-table-document.ts';
 import {
   encodeDatabaseMarkdownCell,
   encodeDatabaseMarkdownCellText,
@@ -37,6 +41,12 @@ export interface DatabaseMarkdownV2MigrationOwnerInput {
   blockId: string;
 }
 
+/** Explicit resolution for a v1 record title/document title conflict. */
+export type DatabaseMarkdownV2MigrationTitleChoice =
+  | { kind: 'keep_document_title' }
+  | { kind: 'use_record_title' }
+  | { kind: 'custom_title'; title: string };
+
 export interface DatabaseMarkdownV2MigrationAlias {
   legacyRecordId: DatabaseRecordId;
   sourceId: string;
@@ -57,6 +67,7 @@ export type DatabaseMarkdownV2MigrationBlockCode =
   | 'record_materialization_failed'
   | 'invalid_document_identity'
   | 'title_conflict'
+  | 'title_choice_invalid'
   | 'owner_path_collision'
   | 'unsafe_owner_path'
   | 'relation_target_missing'
@@ -165,8 +176,9 @@ function propertyCellValue(
   record: DatabaseRecord,
   recordsById: ReadonlyMap<string, DatabaseMarkdownV1MigrationRecordInput>,
   people: DatabaseDefinition['people'],
+  titleOverride?: string,
 ): { ok: true; value: unknown } | { ok: false; message: string } {
-  if (property.type === 'title') return { ok: true, value: link(record.path, String(value ?? '')) };
+  if (property.type === 'title') return { ok: true, value: link(record.path, titleOverride ?? String(value ?? '')) };
   if (property.type === 'select' || property.type === 'status') {
     const option = property.options.find((candidate) => candidate.id === value);
     return option
@@ -209,6 +221,7 @@ function encodeRow(
   record: DatabaseRecord,
   recordsById: ReadonlyMap<string, DatabaseMarkdownV1MigrationRecordInput>,
   people: DatabaseDefinition['people'],
+  titleOverrides?: ReadonlyMap<string, string>,
 ): { ok: true; values: string[] } | { ok: false; propertyId: string; message: string } {
   const values: string[] = [];
   for (const propertyId of source.storage?.storedPropertyIds ?? []) {
@@ -223,7 +236,14 @@ function encodeRow(
       values.push('');
       continue;
     }
-    const projected = propertyCellValue(property, raw, record, recordsById, people);
+    const projected = propertyCellValue(
+      property,
+      raw,
+      record,
+      recordsById,
+      people,
+      property.type === 'title' ? titleOverrides?.get(record.id) : undefined,
+    );
     if (!projected.ok) return { ok: false, propertyId, message: projected.message };
     const encoded = encodeDatabaseMarkdownCell(property.type as Parameters<typeof encodeDatabaseMarkdownCell>[0], projected.value);
     if (!encoded.ok) return { ok: false, propertyId, message: encoded.message };
@@ -266,6 +286,8 @@ export function planDatabaseMarkdownV2Migration(input: {
   preserveLegacyMetadata?: boolean;
   /** Bind the compatibility metadata to the approved migration plan. */
   migrationCommittedAt?: string;
+  /** Explicitly resolve each v1 record/document title conflict by record ID. */
+  titleChoices?: Readonly<Record<string, DatabaseMarkdownV2MigrationTitleChoice>>;
 }): DatabaseMarkdownV2MigrationPlan {
   const blockers: DatabaseMarkdownV2MigrationBlocker[] = [];
   if (input.definition.version !== 1) {
@@ -282,6 +304,7 @@ export function planDatabaseMarkdownV2Migration(input: {
   const recordsById = new Map<string, DatabaseMarkdownV1MigrationRecordInput>();
   const materialized = new Map<string, DatabaseRecord>();
   const documentIds = new Map<string, string>();
+  const titleOverrides = new Map<string, string>();
   const linkedDocuments: Record<string, string> = {};
   for (const record of input.records) {
     const source = input.definition.sources.find((candidate) => candidate.id === record.sourceId);
@@ -306,13 +329,34 @@ export function planDatabaseMarkdownV2Migration(input: {
     if (typeof recordTitle === 'string') {
       const documentTitle = resolveDatabaseDocumentTitle(record.markdown, record.path).value;
       if (documentTitle !== recordTitle) {
-        blockers.push({
-          code: 'title_conflict',
-          sourceId: source.id,
-          path: record.path,
-          propertyId: titleProperty?.id,
-          message: `V1 Title "${recordTitle}" conflicts with document title "${documentTitle}"; choose which title to keep before migration`,
-        });
+        const choice = input.titleChoices?.[recordId];
+        if (!choice) {
+          blockers.push({
+            code: 'title_conflict',
+            sourceId: source.id,
+            path: record.path,
+            propertyId: titleProperty?.id,
+            message: `V1 Title "${recordTitle}" conflicts with document title "${documentTitle}"; choose which title to keep before migration`,
+          });
+        } else if (choice.kind === 'keep_document_title') {
+          titleOverrides.set(recordId, documentTitle);
+        } else {
+          const selectedTitle = choice.kind === 'use_record_title' ? recordTitle : choice.title;
+          const normalized = normalizeDatabaseDocumentTitle(selectedTitle);
+          if (!normalized.ok) {
+            blockers.push({
+              code: 'title_choice_invalid',
+              sourceId: source.id,
+              path: record.path,
+              propertyId: titleProperty?.id,
+              message: `Selected migration title is invalid: ${normalized.message}`,
+            });
+          } else {
+            titleOverrides.set(recordId, normalized.value);
+          }
+        }
+      } else {
+        titleOverrides.set(recordId, documentTitle);
       }
     }
     const documentId = createDatabaseDocumentIdFromLegacyRecordId(recordId);
@@ -331,9 +375,24 @@ export function planDatabaseMarkdownV2Migration(input: {
       });
       continue;
     }
+    let linkedMarkdown = ensured.markdown;
+    const selectedTitle = titleOverrides.get(recordId);
+    if (selectedTitle && selectedTitle !== resolveDatabaseDocumentTitle(linkedMarkdown, record.path).value) {
+      const replaced = replaceDatabaseDocumentTitle(linkedMarkdown, selectedTitle);
+      if (!replaced.ok) {
+        blockers.push({
+          code: 'title_choice_invalid',
+          sourceId: source.id,
+          path: record.path,
+          message: `Unable to apply the selected document title: ${replaced.message}`,
+        });
+      } else {
+        linkedMarkdown = replaced.markdown;
+      }
+    }
     linkedDocuments[record.path] = input.preserveLegacyMetadata
-      ? ensured.markdown
-      : removeLegacyDatabaseMetadata(ensured.markdown);
+      ? linkedMarkdown
+      : removeLegacyDatabaseMetadata(linkedMarkdown);
   }
 
   const ownerDocuments: Record<string, string> = {};
@@ -361,7 +420,13 @@ export function planDatabaseMarkdownV2Migration(input: {
     for (const recordInput of input.records.filter((record) => record.sourceId === source.id).sort((left, right) => left.path.localeCompare(right.path))) {
       const materializedRecord = [...materialized.values()].find((candidate) => candidate.path === recordInput.path);
       if (!materializedRecord) continue;
-      const encoded = encodeRow(migrationSource, materializedRecord, recordsById, input.definition.people);
+      const encoded = encodeRow(
+        migrationSource,
+        materializedRecord,
+        recordsById,
+        input.definition.people,
+        titleOverrides,
+      );
       if (!encoded.ok) {
         blockers.push({ code: 'unsupported_property_value', sourceId: source.id, path: recordInput.path, propertyId: encoded.propertyId, message: encoded.message });
         continue;

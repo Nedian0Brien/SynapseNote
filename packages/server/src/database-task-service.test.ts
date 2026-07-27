@@ -170,6 +170,12 @@ describe('DatabaseTaskService product handlers', () => {
     );
     const database = store.list()[0];
     if (!database) throw new Error('expected committed database');
+    const beforeCanonical = new Map<string, string>();
+    const manifestPath = join(projectDir, '.ok', 'databases', 'task-service.yml');
+    beforeCanonical.set('.ok/databases/task-service.yml', readFileSync(manifestPath, 'utf8'));
+    for (const name of readdirSync(join(contentDir, 'tasks'))) {
+      if (name.endsWith('.md')) beforeCanonical.set(`content/tasks/${name}`, readFileSync(join(contentDir, 'tasks', name), 'utf8'));
+    }
     const expectedManifestRevision = store.snapshot().revision;
     const ownerChoices = {
       [database.id]: {
@@ -179,16 +185,39 @@ describe('DatabaseTaskService product handlers', () => {
         },
       },
     };
+    const derivedBaselines = {
+      [database.id]: {
+        evaluatedAt: '2026-07-27T00:00:00.000Z',
+        timeZone: 'UTC',
+        locale: 'en',
+        permissionRevision: `sha256:${'b'.repeat(64)}`,
+      },
+    };
     const preview = await service.previewMigration({
       operation: 'migration',
       databaseIds: [database.id],
       expectedManifestRevision,
       targetVersion: 2,
       ownerChoices,
+      derivedBaselines,
     });
     const item = preview.items[0];
     if (!item?.planHash || !item.migrationCommittedAt) throw new Error('expected v2 migration plan');
     expect(preview).toMatchObject({ committable: true, summary: { ready: 1, blocked: 0 } });
+    const changedBaselinePreview = await service.previewMigration({
+      operation: 'migration',
+      databaseIds: [database.id],
+      expectedManifestRevision,
+      targetVersion: 2,
+      ownerChoices,
+      derivedBaselines: {
+        [database.id]: {
+          ...derivedBaselines[database.id],
+          permissionRevision: `sha256:${'c'.repeat(64)}`,
+        },
+      },
+    });
+    expect(changedBaselinePreview.items[0]?.planHash).not.toBe(item.planHash);
 
     await expect(
       service.start({
@@ -207,6 +236,7 @@ describe('DatabaseTaskService product handlers', () => {
       planHashes: { [database.id]: item.planHash },
       migrationCommittedAt: { [database.id]: item.migrationCommittedAt },
       ownerChoices,
+      derivedBaselines,
     });
     const migrated = await service.wait(task.id);
     expect(migrated).toMatchObject({
@@ -240,6 +270,64 @@ describe('DatabaseTaskService product handlers', () => {
     await expect(service.cleanupMigration(task.id, migrated.revision)).rejects.toMatchObject({
       code: 'task_rollback_unavailable',
     });
+    await expect(service.rollback(task.id, migrated.revision)).resolves.toMatchObject({
+      taskId: task.id,
+      status: 'applied',
+      restored: 4,
+    });
+    expect(readFileSync(join(projectDir, '.ok', 'databases', 'task-service.yml'), 'utf8')).toContain(
+      'version: 1',
+    );
+    expect(index.list()).toHaveLength(2);
+    for (const [path, markdown] of beforeCanonical) {
+      expect(readFileSync(join(projectDir, path), 'utf8')).toBe(markdown);
+    }
+  });
+
+  test('maps migration undo after an intervening edit to a typed conflict', async () => {
+    const { projectDir, contentDir, store, plan, commit, service } = await fixture();
+    const seeded = await service.start({
+      operation: 'bulk',
+      commit: {
+        planId: plan.id,
+        planHash: plan.hash,
+        expectedSnapshotRevision: plan.snapshotRevision,
+        idempotencyKey: 'durable-v2-migration-undo-conflict-seed',
+        approvalToken: commit.expectedApprovalToken(plan.hash),
+        actor: { principalId: 'agent:v2-migration-undo-conflict-seed', kind: 'agent' },
+      },
+    });
+    await service.wait(seeded.id);
+    const database = store.list()[0];
+    if (!database) throw new Error('expected v1 database source');
+    const preview = await service.previewMigration({
+      operation: 'migration',
+      databaseIds: [database.id],
+      expectedManifestRevision: store.snapshot().revision,
+      targetVersion: 2,
+    });
+    const item = preview.items[0];
+    if (!item?.planHash || !item.migrationCommittedAt) throw new Error('expected migration preview');
+    const task = await service.start({
+      operation: 'migration',
+      databaseIds: [database.id],
+      expectedManifestRevision: store.snapshot().revision,
+      targetVersion: 2,
+      planHashes: { [database.id]: item.planHash },
+      migrationCommittedAt: { [database.id]: item.migrationCommittedAt },
+    });
+    const migrated = await service.wait(task.id);
+    expect(migrated.state).toBe('succeeded');
+    const ownerPath = join(contentDir, 'task-service', 'tasks.md');
+    writeFileSync(ownerPath, `${readFileSync(ownerPath, 'utf8')}\nExternal edit\n`);
+    await expect(service.rollback(migrated.id, migrated.revision)).rejects.toMatchObject({
+      code: 'task_rollback_conflict',
+      details: {
+        paths: expect.arrayContaining([expect.stringContaining('tasks.md')]),
+        count: 1,
+      },
+    });
+    expect((await service.inspectMigration(migrated.id)).state).toBe('recovery_required');
   });
 
   test('rolls back every canonical file when activation fails at an injected file checkpoint', async () => {

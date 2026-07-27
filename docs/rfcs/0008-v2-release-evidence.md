@@ -15,9 +15,9 @@ production path와 focused 검증을 기록하고, 아직 release gate가 아닌
 
 | 판정 | 의미 | 현재 결정 |
 | --- | --- | --- |
-| 완료된 foundation | shared core 계약과 해당 server/app path가 연결되고 focused test가 있음 | A-001/002/004/005/006/008/009, B-001~008, C-001~003/005/006, D-001/002/004/008~010, E-001~004/007, F-001/002/003~006/008, G-001~003/005, H-001~004/006/008/009, I-001~003/005/008/010, J-001~003/008 |
-| 구현됐지만 release evidence 부족 | 코드와 단위/통합 검증은 있으나 failure-injection, all-surface, UI 또는 standalone 증거가 부족함 | A-003/007, B-009, C-004/007/008, D-003/005/006/007, E-005/006/008, F-007/009, G-004/006/007, H-005/007/010, I-004/006/007/009/011/012, J-004/007/009 |
-| 아직 구현하지 않음 | 외부 운영·desktop parity·pilot·retirement처럼 이 브랜치만으로 증명할 수 없는 단계 | J-005/006/010, K-003/009, L-002~004/006~012 |
+| 완료된 foundation | shared core 계약과 해당 server/app path가 연결되고 focused test가 있음 | A-001/002/004/005/006/008/009, B-001~008, C-001~003/005/006, D-001/002/004/008~010, E-001~005/007/008, F-001/002/003~006/008, G-001~003/005, H-001~006/008/009, I-001~010/012, J-001~003/008, L-002/L-005 |
+| 구현됐지만 release evidence 부족 | 코드와 단위/통합 검증은 있으나 failure-injection, all-surface, UI 또는 standalone 증거가 부족함 | A-003/007, B-009, C-004/007/008, D-003/005/006/007, E-006, F-007/009, G-004/006/007, H-007/010, I-011, J-004/007/009, L-003/004 |
+| 아직 구현하지 않음 | 외부 운영·desktop parity·pilot·retirement처럼 이 브랜치만으로 증명할 수 없는 단계 | J-005/006/010, K-003/009, L-006~012 |
 
 따라서 이 브랜치에서 v2를 새 database의 기본 writer로 전환하거나 v1 writer를
 제거하지 않는다. 새 default 전환은 M0–M4와 아래 blocked gate가 모두 닫힌 뒤 별도
@@ -30,15 +30,15 @@ release decision으로 수행한다.
 | A 계약/스키마 | manifest/marker/lifecycle/revision/capability를 Node와 browser가 동일하게 parse하고 unknown version을 fail-closed | strict schema, lifecycle metadata, capability matrix, title/revision schema가 core/server/API에 연결됨 | A-003 title UI contract와 A-007 cross-surface revision equality |
 | B parser/codec | 지원 type의 parse→typed→canonical serialize→parse, invalid raw 보존, malformed/limit 입력의 bounded 실패 | 20개 table/parser/codec assertion, 770개 fuzz assertion, owner/cell/JSON limit fixtures | invalid UTF-8/timeout/OOM을 포함한 dedicated process fuzz |
 | C identity/ownership | path/title/alias/move/copy 후 stable identity, duplicate/ambiguous owner를 차단, repair는 preview/approval/undo | document ID reassignment, owner clone, link rewrite, identity repair planning 테스트 | UI choice와 server repair commit/undo, full relation-wide move matrix |
-| D mutation/transaction | expected revision + journal + post-write verification + compensation/undo, partial success 금지 | writer가 post-write hash를 다시 읽고 journal checkpoint를 뒤로 미룸; record-index mutation suite 130 assertions; migration activation hook이 injected failure 뒤 모든 파일을 rollback | 실제 process kill을 매 file/checkpoint에 주입하고 activation boundary를 재시작 검증 |
-| E read/index/query/export | cache/task DB 없이 owner+manifest+documents만으로 cold rebuild하고 query/search/export snapshot을 재구축 | 24개 cold/incremental index assertion, canonical/computed export contract, semantic revision transport | v1/v2 differential query/search suite와 HTTP export fixture |
+| D mutation/transaction | expected revision + journal + post-write verification + compensation/undo, partial success 금지 | writer가 post-write hash를 다시 읽고 journal checkpoint를 뒤로 미룸; record-index mutation suite; migration activation hook과 독립 child process가 injected failure 뒤 rollback | 일반 mutation의 process-kill/disk-full/intervening-edit matrix와 user-facing redo |
+| E read/index/query/export | cache/task DB 없이 owner+manifest+documents만으로 cold rebuild하고 query/search/export snapshot을 재구축 | cold/incremental index, v1/v2 differential query/search provenance, canonical/computed export contract와 HTTP export boundary | generic document/database projection deduplication |
 | F Formula/Rollup | pure deterministic evaluator, permission-aware error, dependency/derived revision, migration equivalence | core/server conformance, dependency DAG/reverse index, logical migration equivalence helper | all-surface derived revision equality와 frozen v1/v2 Formula/Rollup corpus |
 | G 협업/offline | stable cell key로 different-cell 자동 병합, same-cell/delete-vs-edit는 conflict/recovery-required | semantic diff/merge와 CRDT key/conflict classifier, app queue reconciliation이 canonical record를 fetch해 stable-ID rebase/convergence 후에만 execute | 실제 Yjs/ProseMirror transaction, Git branch recovery, actor history integration |
-| H migration plan | write 없이 complete inventory, dependency closure, owner/title 선택, exact plan hash 생성 | owner selection/closure/preflight와 task preview ownerChoices 연결 | cross-database relation fixture matrix와 모든 property/limit fixture |
-| I migration recovery | verified backup→staging→activation→cold verify→undo→retention cleanup을 durable checkpoint로 재개 | journal cleanup boundary, retention-aware inspect/rollback/cleanup, migration logical equivalence | isolated same-volume staging, every-file crash suite, post-commit cold rebuild/standalone recovery rehearsal |
-| J product/API/UX | web/desktop/server/MCP/CLI가 동일 operation/plan hash/revision/error와 recovery state를 노출 | API/MCP task schemas에 inspect/cleanup, canonical/computed export endpoint, app offline rebase | migration preview/progress accessibility, desktop parity, diagnostics repair commit |
+| H migration plan | write 없이 complete inventory, dependency closure, owner/title 선택, exact plan hash 생성 | owner selection/closure/preflight, explicit title keep/use/custom, task/API/MCP plan binding, frozen derived baseline binding | relation target mapping·Formula/Rollup value/error differential, cross-database relation fixture matrix와 모든 property/limit fixture |
+| I migration recovery | verified backup→staging→activation→cold verify→undo→retention cleanup을 durable checkpoint로 재개 | journal cleanup boundary, retention-aware inspect/rollback/cleanup, migration logical equivalence, independent SIGKILL every staging/activation file, post-commit cold rebuild, byte-exact undo/conflict | deferred cleanup rehearsal, disk-full/permission-loss matrix |
+| J product/API/UX | web/desktop/server/MCP/CLI가 동일 operation/plan hash/revision/error와 recovery state를 노출 | API/MCP task schemas에 inspect/cleanup, canonical/computed export endpoint, app offline rebase, CLI inspect/cleanup registration | migration preview/progress accessibility, desktop parity, diagnostics repair commit |
 | K 성능/보안/신뢰성 | supported-max의 수치 budget, max+1 거부, path/permission/telemetry noninterference, soak 결과 | deterministic 1k–1m corpus, 50k resource bound, parser fuzz, telemetry/path/permission tests | p50/p95/peak-memory report와 반복 soak |
-| L conformance/release | core conformance, differential/round-trip/crash/standalone, public docs/runbook, pilot/new-default/retirement decision | core Formula/query conformance와 migration equivalence primitive, this evidence doc, changesets | executable v1↔v2 harness, round-trip/crash/clone rehearsal, pilot and retirement records |
+| L conformance/release | core conformance, differential/round-trip/crash/standalone, public docs/runbook, pilot/new-default/retirement decision | core Formula/query conformance, server v1/v2 differential, standalone clone, export and process-crash fixtures, this evidence doc, changesets | full round-trip fixture matrix, public docs/runbook rehearsal, pilot and retirement records |
 
 영역을 완료로 올리려면 해당 행의 첫 번째 기준뿐 아니라 마지막 열의 failure/operational
 evidence까지 repository artifact로 남겨야 한다.
@@ -58,19 +58,24 @@ evidence까지 repository artifact로 남겨야 한다.
 | `MT-CRDT-001` | `bun run test:file -- packages/core/src/database/markdown-table-crdt.test.ts` | 3 pass / 4 assertions; stable row/property key and race classification |
 | `FORMULA-CONFORMANCE-001` | `bun run test:file -- packages/core/src/database/formula-conformance.test.ts` | 1 pass / 1 assertion; golden deterministic evaluator |
 | `QUERY-CONFORMANCE-001` | `bun run test:file -- packages/core/src/database/query-conformance.test.ts` | 2 pass / 3 assertions; portable query diagnostics and result contract |
-| `MT-MIG-EQ-001` | `bun run test:file -- packages/core/src/database/markdown-table-migration-equivalence.test.ts` | 3 pass / 10 assertions; IDs/typed/raw/derived logical equality, missing/error mismatches, and a real v1 corpus through the v2 owner materializer |
+| `MT-MIG-EQ-001` | `bun run test:file -- packages/core/src/database/markdown-table-migration-equivalence.test.ts` | 3 pass / 11 assertions; IDs/typed/raw/derived logical equality, missing/error mismatches, and a real v1 corpus through the v2 owner materializer plus differential query |
+| `MT-TITLE-CHOICE-001` | `bun run test:file -- packages/core/src/database/markdown-table-migration.test.ts` | 7 pass / 31 assertions; explicit keep/use/custom title conflict choices update document title and first wikilink alias, invalid custom title blocks |
 | `MT-MIG-PREFLIGHT-001` | `bun run test:file -- packages/core/src/database/markdown-table-migration-preflight.test.ts` | 3 pass / 9 assertions; explicit owner selection, dependency closure, frozen baseline |
 
 ### 3.2 Server, API, MCP, migration, and offline
 
 | Fixture ID | 명령 | 결과 |
 | --- | --- | --- |
-| `INDEX-V2-001` | `bun run test:file -- packages/server/src/database-record-index.test.ts` | 25 pass / 130 assertions; cold rebuild, local-state removal rebuild, incremental invalidation, title/move/lifecycle writer paths |
+| `INDEX-V2-001` | `bun run test:file -- packages/server/src/database-record-index.test.ts` | 26 pass / 136 assertions; cold rebuild, standalone clone without `.ok/local` state, query/canonical export, incremental invalidation, title/move/lifecycle writer paths |
+| `DIFFERENTIAL-V2-001` | `bun run test:file -- packages/server/src/database-v1-v2-differential.test.ts` | 1 pass / 7 assertions; canonical-ID-normalized records, filter/sort/select/aggregate/page cursor and search provenance are equal across v1 and v2 readers |
+| `EXPORT-V2-001` | `bun run test:file -- packages/server/src/database-markdown-table-export.test.ts` | 1 pass / 8 assertions; HTTP data-plane canonical Markdown and computed snapshot exports are disjoint and revision-bound |
 | `PLANE-V2-001` | `bun run test:file -- packages/server/src/database-data-plane.test.ts` | 46 pass / 309 assertions; permission, query, derived, transaction and migration gates |
-| `API-V2-001` | `bun run test:file -- packages/server/src/database-data-plane-api.test.ts` | 35 pass / 337 assertions; strict HTTP schemas and task/mutation/recovery contracts |
+| `API-V2-001` | `bun run test:file -- packages/server/src/database-data-plane-api.test.ts` | 35 pass / 338 assertions; strict HTTP schemas and task/mutation/recovery contracts including title-choice bindings |
 | `JOURNAL-RECOVERY-001` | `bun run test:file -- packages/server/src/database-migration-journal.test.ts` | 4 pass / 11 assertions; clean retry, unknown-edit recovery-required, retention cleanup boundary |
-| `TASK-RECOVERY-001` | `bun run test:file -- packages/server/src/database-task-service.test.ts` | 10 pass / 64 assertions; preview/apply/cold verification/retry/resume/inspection/retention refusal and injected activation rollback |
+| `TASK-RECOVERY-001` | `bun run test:file -- packages/server/src/database-task-service.test.ts` | 11 pass / 74 assertions; preview/apply/cold verification/rollback/retry/resume/inspection/retention refusal, derived-baseline hash binding, exact v1 byte restoration, and typed intervening-edit conflict |
+| `MIG-CRASH-001` | `bun run test:file -- packages/server/src/database-migration-process-crash.test.ts` | 1 pass / 96 assertions; independent SIGKILL at every staging and canonical activation file index, fresh recovery, v2 cold rebuild and journal activation |
 | `MCP-RECOVERY-001` | `bun run test:file -- packages/server/src/mcp/tools/database-task.test.ts` | 3 pass / 19 assertions; task action validation and HTTP forwarding |
+| `CLI-RECOVERY-001` | `bun run test:file -- packages/cli/src/commands/database.test.ts` | 12 pass / 43 assertions; machine-readable migration inspect/cleanup command registration and recovery action descriptions |
 | `OFFLINE-REBASE-001` | `bun run test:file -- packages/app/src/lib/database-offline-mutation-queue.test.ts` | 12 pass / 27 assertions; environment epoch, stable IDs, wrong-cell conflict, convergence, and production reconcile rebase boundary |
 
 ### 3.3 Package type safety
@@ -95,8 +100,9 @@ bun run --filter @nedian0brien/synapsenote-app typecheck  # pass
 | `FORMULA-APP-001` | `bun run test:file -- packages/app/src/lib/database-formula-conformance.test.ts` | 1 pass / 1 assertion; browser output equals shared core golden vectors |
 
 Fuzz corpus는 malformed input이 예외 없이 bounded diagnostic으로 끝나는 것을 보장하지만,
-invalid UTF-8 byte stream, OS-level timeout/OOM, process-kill-at-every-file를 아직 증명하지
-않는다. 따라서 B-009/K-006/D-005/I-006/L-004는 이 evidence만으로 닫지 않는다.
+invalid UTF-8 byte stream과 OS-level timeout/OOM은 아직 증명하지 않는다. `MIG-CRASH-001`은
+migration process-kill 경계를 닫지만 일반 mutation의 D-005와 Git/Yjs를 포함한 L-004는 이
+evidence만으로 닫지 않는다.
 
 ## 5. Recovery contract
 
@@ -114,19 +120,25 @@ invalid UTF-8 byte stream, OS-level timeout/OOM, process-kill-at-every-file를 �
 ### 5.2 복구 전제와 미완료 경계
 
 복구 material은 retention window 동안 유지되며 cleanup은 별도 action이다. `MIG-029`는
-activation hook failure를 주입해 journal rollback과 exact before bytes를 검증한다. 이는
-`MIG-019` process-checkpoint matrix의 부분 증거다. 그러나 현재
-evidence는 process를 각 file write 직후 강제 종료하는 독립 harness가 아니므로 “모든
-checkpoint에서 자동 복구”를 보장한다고 해석하면 안 된다. Release candidate에서는
-`MIG-019`–`MIG-022`를 task-scoped same-volume staging, post-commit cold rebuild, user undo,
-intervening edit conflict까지 실행하고, 각 결과의 `taskId`, `planHash`, file hash만 남긴다.
+activation hook failure를 주입해 journal rollback과 exact before bytes를 검증하고,
+`MIG-CRASH-001`은 독립 child process에서 staging과 canonical activation의 모든 file index에
+SIGKILL을 주입한 뒤 fresh task/store/index가 recovery하고 v2 cold rebuild를 완료하는 것을
+검증한다. `TASK-RECOVERY-001`은 clean migration의 byte-exact user undo와 intervening-edit
+`task_rollback_conflict`를 검증한다. 따라서 migration의 file-boundary checkpoint와 clean
+undo/conflict contract는 재현되지만 deferred cleanup, 일반 mutation의
+disk-full/permission/process-kill, 그리고 full fixture round-trip은 아직 별도 gate다.
+Release candidate에서는 `MIG-019`–`MIG-023`를 task-scoped same-volume staging,
+post-commit cold rebuild, user undo, intervening edit conflict, deferred cleanup까지
+실행하고, 각 결과의 `taskId`, `planHash`, file hash만 남긴다.
 
 ## 6. 다음 implementation order
 
-1. D/I: same-volume isolated staging과 file-operation checkpoint failure injection을
-   추가하고 `MIG-019`, `MIG-020`을 자동화한다.
-2. E/F/L: HTTP/MCP export, query/search provenance, Formula/Rollup derived revision을
-   같은 fixture에서 비교하는 differential/round-trip harness를 만든다.
+1. D/I/L: 일반 mutation의 disk-full/permission/process-kill과 full fixture의
+   v1→v2→undo cold round-trip, deferred cleanup rehearsal을 자동화하고
+   `MIG-019`–`MIG-023` 결과를 release record로 고정한다.
+2. E/F/L: generic document/database projection deduplication과 all-surface
+   Formula/Rollup derived revision을 같은 fixture에서 비교하고, export/query/search
+   결과를 round-trip fixture에 포함한다.
 3. G: Yjs/ProseMirror transaction adapter와 Git branch/rebase recovery를 stable
    `(ownerBlockId, recordId, propertyId)` key로 연결한다.
 4. J/K: migration preview/progress/accessibility와 desktop parity를 실행하고,

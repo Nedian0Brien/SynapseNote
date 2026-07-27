@@ -309,6 +309,15 @@ export function databaseCommand(): Command {
       printDatabaseTask(result, options.json === true);
     });
   migration
+    .command('inspect <task-id>')
+    .description('Inspect a migration task and content-free recovery hashes')
+    .requiredOption('--server-url <url>', 'running server URL')
+    .option('--json', 'print machine-readable JSON')
+    .action(async (taskId: string, options: { serverUrl: string; json?: boolean }) => {
+      const result = await postDatabaseTask(process.cwd(), { action: 'inspect_migration', taskId }, options);
+      printDatabaseTask(result, options.json === true);
+    });
+  migration
     .command('apply')
     .description('Start a migration only with an explicitly approved preview hash')
     .requiredOption('--manifest-revision <revision>')
@@ -364,6 +373,20 @@ export function databaseCommand(): Command {
         printDatabaseTask(result, options.json === true);
       });
   }
+  migration
+    .command('cleanup <task-id>')
+    .description('Delete retention-expired migration staging and backup material')
+    .requiredOption('--expected-revision <revision>')
+    .requiredOption('--server-url <url>', 'running server URL')
+    .option('--json', 'print machine-readable JSON')
+    .action(async (taskId: string, options: { expectedRevision: string; serverUrl: string; json?: boolean }) => {
+      const result = await postDatabaseTask(process.cwd(), {
+        action: 'cleanup_migration',
+        taskId,
+        expectedRevision: options.expectedRevision,
+      }, options);
+      printDatabaseTask(result, options.json === true);
+    });
   database
     .command('merge-driver <kind> <base> <current> <other>', { hidden: true })
     .action((kind: string, base: string, current: string, other: string) => {

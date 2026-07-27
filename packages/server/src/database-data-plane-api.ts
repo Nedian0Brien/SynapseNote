@@ -2715,6 +2715,31 @@ const DatabaseMigrationOwnerChoicesSchema = z.record(
     .strict(),
 );
 
+const DatabaseMigrationTitleChoiceSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('keep_document_title') }).strict(),
+  z.object({ kind: z.literal('use_record_title') }).strict(),
+  z.object({ kind: z.literal('custom_title'), title: z.string().min(1).max(200) }).strict(),
+]);
+
+const DatabaseMigrationTitleChoicesSchema = z.record(
+  z.string().startsWith('rec_'),
+  DatabaseMigrationTitleChoiceSchema,
+);
+
+const DatabaseMigrationDerivedBaselineSchema = z
+  .object({
+    evaluatedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/),
+    timeZone: z.string().min(1),
+    locale: z.string().min(1),
+    permissionRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+  })
+  .strict();
+
+const DatabaseMigrationDerivedBaselinesSchema = z.record(
+  z.string().startsWith('db_'),
+  DatabaseMigrationDerivedBaselineSchema,
+);
+
 export const DatabaseTaskRequestSchema = z.discriminatedUnion('action', [
   z
     .object({
@@ -2763,6 +2788,10 @@ export const DatabaseTaskRequestSchema = z.discriminatedUnion('action', [
       ownerChoices: z
         .record(z.string().startsWith('db_'), DatabaseMigrationOwnerChoicesSchema)
         .optional(),
+      titleChoices: z
+        .record(z.string().startsWith('db_'), DatabaseMigrationTitleChoicesSchema)
+        .optional(),
+      derivedBaselines: DatabaseMigrationDerivedBaselinesSchema.optional(),
     })
     .strict(),
   z
@@ -2804,6 +2833,10 @@ export const DatabaseTaskRequestSchema = z.discriminatedUnion('action', [
             ownerChoices: z
               .record(z.string().startsWith('db_'), DatabaseMigrationOwnerChoicesSchema)
               .optional(),
+            titleChoices: z
+              .record(z.string().startsWith('db_'), DatabaseMigrationTitleChoicesSchema)
+              .optional(),
+            derivedBaselines: DatabaseMigrationDerivedBaselinesSchema.optional(),
           })
           .strict(),
       ]),
@@ -5088,6 +5121,8 @@ export function createDatabaseDataPlaneApiHandlers(
                   ? { migrationCommittedAt: body.migrationCommittedAt }
                   : {}),
                 ...(body.ownerChoices ? { ownerChoices: body.ownerChoices } : {}),
+                ...(body.titleChoices ? { titleChoices: body.titleChoices } : {}),
+                ...(body.derivedBaselines ? { derivedBaselines: body.derivedBaselines } : {}),
               });
             case 'start':
               if (!taskService) {

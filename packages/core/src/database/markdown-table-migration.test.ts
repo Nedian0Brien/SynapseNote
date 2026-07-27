@@ -218,4 +218,72 @@ describe('planDatabaseMarkdownV2Migration', () => {
     );
     expect(result.ownerDocuments).toEqual({});
   });
+
+  test('applies an explicit title choice to both the document title and first wikilink alias', () => {
+    const conflictDefinition = definition();
+    const conflictSource = conflictDefinition.sources[0]!;
+    const conflictTitle = conflictSource.properties[0]!;
+    conflictSource.properties[0] = { ...conflictTitle, key: 'record_title' } as typeof conflictTitle;
+    const input = {
+      definition: conflictDefinition,
+      owners: [{ sourceId: 'ds_tasks', path: 'tasks.md', blockId: 'dbb_tasks_primary' }],
+      records: [
+        {
+          databaseId: 'db_tasks',
+          sourceId: 'ds_tasks',
+          path: 'tasks/alpha.md',
+          markdown:
+            '---\n_sn:\n  database_id: db_tasks\n  source_id: ds_tasks\n  record_id: rec_alpha\nrecord_title: Record title\ntitle: Document title\nstatus: todo\n---\n# Document title\n',
+        },
+      ],
+    } as const;
+
+    const keepDocument = planDatabaseMarkdownV2Migration({
+      ...input,
+      titleChoices: { rec_alpha: { kind: 'keep_document_title' } },
+    });
+    expect(keepDocument.status).toBe('ready');
+    expect(keepDocument.ownerDocuments['tasks.md']).toContain('| [[tasks/alpha\\|Document title]] |');
+    expect(keepDocument.linkedDocuments['tasks/alpha.md']).toContain('# Document title');
+
+    const useRecord = planDatabaseMarkdownV2Migration({
+      ...input,
+      titleChoices: { rec_alpha: { kind: 'use_record_title' } },
+    });
+    expect(useRecord.status).toBe('ready');
+    expect(useRecord.ownerDocuments['tasks.md']).toContain('| [[tasks/alpha\\|Record title]] |');
+    expect(useRecord.linkedDocuments['tasks/alpha.md']).toContain('title: "Record title"');
+
+    const custom = planDatabaseMarkdownV2Migration({
+      ...input,
+      titleChoices: { rec_alpha: { kind: 'custom_title', title: 'Custom title' } },
+    });
+    expect(custom.status).toBe('ready');
+    expect(custom.ownerDocuments['tasks.md']).toContain('| [[tasks/alpha\\|Custom title]] |');
+    expect(custom.linkedDocuments['tasks/alpha.md']).toContain('title: "Custom title"');
+  });
+
+  test('blocks an invalid custom title choice before generating any files', () => {
+    const conflictDefinition = definition();
+    const conflictSource = conflictDefinition.sources[0]!;
+    const conflictTitle = conflictSource.properties[0]!;
+    conflictSource.properties[0] = { ...conflictTitle, key: 'record_title' } as typeof conflictTitle;
+    const result = planDatabaseMarkdownV2Migration({
+      definition: conflictDefinition,
+      owners: [{ sourceId: 'ds_tasks', path: 'tasks.md', blockId: 'dbb_tasks_primary' }],
+      titleChoices: { rec_alpha: { kind: 'custom_title', title: 'bad\ntitle' } },
+      records: [
+        {
+          databaseId: 'db_tasks',
+          sourceId: 'ds_tasks',
+          path: 'tasks/alpha.md',
+          markdown:
+            '---\n_sn:\n  database_id: db_tasks\n  source_id: ds_tasks\n  record_id: rec_alpha\nrecord_title: Record title\ntitle: Document title\nstatus: todo\n---\n# Document title\n',
+        },
+      ],
+    });
+    expect(result.status).toBe('blocked');
+    expect(result.blockers).toContainEqual(expect.objectContaining({ code: 'title_choice_invalid' }));
+    expect(result.ownerDocuments).toEqual({});
+  });
 });

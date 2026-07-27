@@ -67,6 +67,14 @@ interface Args {
   planHashes?: Record<string, string>;
   migrationCommittedAt?: Record<string, string>;
   ownerChoices?: Record<string, Record<string, { path: string; blockId: string }>>;
+  titleChoices?: Record<
+    string,
+    Record<string, { kind: 'keep_document_title' } | { kind: 'use_record_title' } | { kind: 'custom_title'; title: string }>
+  >;
+  derivedBaselines?: Record<
+    string,
+    { evaluatedAt: string; timeZone: string; locale: string; permissionRevision: string }
+  >;
   cwd?: string;
 }
 
@@ -168,6 +176,32 @@ export function register(server: ServerInstance, deps: Dependencies): void {
               z.string().startsWith('ds_'),
               z.object({ path: z.string().min(1), blockId: z.string().startsWith('dbb_') }).strict(),
             ),
+          )
+          .optional(),
+        titleChoices: z
+          .record(
+            z.string().startsWith('db_'),
+            z.record(
+              z.string().startsWith('rec_'),
+              z.discriminatedUnion('kind', [
+                z.object({ kind: z.literal('keep_document_title') }).strict(),
+                z.object({ kind: z.literal('use_record_title') }).strict(),
+                z.object({ kind: z.literal('custom_title'), title: z.string().min(1).max(200) }).strict(),
+              ]),
+            ),
+          )
+          .optional(),
+        derivedBaselines: z
+          .record(
+            z.string().startsWith('db_'),
+            z
+              .object({
+                evaluatedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/),
+                timeZone: z.string().min(1),
+                locale: z.string().min(1),
+                permissionRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+              })
+              .strict(),
           )
           .optional(),
         cwd: z.string().optional().describe(ROUTED_CWD_DESCRIPTION),
@@ -297,6 +331,8 @@ export function register(server: ServerInstance, deps: Dependencies): void {
                       ? { migrationCommittedAt: args.migrationCommittedAt }
                       : {}),
                     ...(args.ownerChoices ? { ownerChoices: args.ownerChoices } : {}),
+                    ...(args.titleChoices ? { titleChoices: args.titleChoices } : {}),
+                    ...(args.derivedBaselines ? { derivedBaselines: args.derivedBaselines } : {}),
                   }
                 : args.action === 'inspect_migration'
                   ? { action: args.action, taskId: args.taskId }
@@ -328,6 +364,8 @@ export function register(server: ServerInstance, deps: Dependencies): void {
                                   ? { migrationCommittedAt: args.migrationCommittedAt }
                                   : {}),
                                 ...(args.ownerChoices ? { ownerChoices: args.ownerChoices } : {}),
+                                ...(args.titleChoices ? { titleChoices: args.titleChoices } : {}),
+                                ...(args.derivedBaselines ? { derivedBaselines: args.derivedBaselines } : {}),
                               },
                     },
         databaseAccessHeaders(deps.identityRef?.current),
