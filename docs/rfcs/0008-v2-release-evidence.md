@@ -13,7 +13,9 @@ production path와 focused 검증을 기록하고, 아직 release gate가 아닌
 
 현재 구현은 `v2 new/default creation + v1 read/export/migration compatibility` 단계다. 새
 blank/template/inline/delimited database 생성과 일반 v2 row 생성은 v2 owner-table storage를
-사용하고, existing-folder onboarding은 명시적인 v1 compatibility source를 유지한다. 실제
+사용하고, existing-folder onboarding은 명시적인 v1 compatibility source를 유지한다. Production
+Data Plane, automation, and common commit callers reject existing-v1 writes before filesystem
+mutation. 실제
 public rollout은 별도 operator sign-off, bounded pilot, release record 승인 전까지 staged로
 취급한다.
 
