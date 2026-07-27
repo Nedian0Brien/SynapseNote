@@ -38,7 +38,9 @@ import {
   parseDatabaseMarkdownOwner,
   updateDatabaseManifestYaml,
   replaceDatabaseMarkdownTableCell,
+  rewriteDatabaseMarkdownDocumentLinks,
   replaceDatabaseMarkdownTableRow,
+  replaceDatabaseDocumentTitle,
   type ParsedDatabaseMarkdownOwner,
 } from '@nedian0brien/synapsenote-core';
 import { atomicWriteFile, withFileLock } from '@nedian0brien/synapsenote-core/server';
@@ -408,53 +410,15 @@ function decodedTitleLink(owner: ParsedDatabaseMarkdownOwner, source: DatabaseSo
 
 /** Replace only the user-facing title declaration while preserving Markdown body bytes. */
 function replaceMarkdownDocumentTitle(markdown: string, title: string): string {
-  const normalized = title.trim();
-  if (!normalized || normalized.includes('\0') || /[\r\n]/u.test(normalized) || normalized.length > 200) {
+  const result = replaceDatabaseDocumentTitle(markdown, title);
+  if (!result.ok) {
     throw new DatabaseMarkdownTableWriterError(
       'document_title_invalid',
-      'A linked Markdown document title must be 1-200 characters on one line',
-      { title },
+      result.message,
+      { title, validationCode: result.code },
     );
   }
-  const eol = markdown.includes('\r\n') ? '\r\n' : '\n';
-  const frontmatterMatch = /^(---\r?\n)([\s\S]*?)(\r?\n---(?:\r?\n|$))/u.exec(markdown);
-  if (frontmatterMatch) {
-    const body = frontmatterMatch[2] ?? '';
-    const lines = body.split(/\r?\n/);
-    const titleIndex = lines.findIndex((line) => /^title\s*:/u.test(line));
-    if (titleIndex >= 0) {
-      lines[titleIndex] = `title: ${JSON.stringify(normalized)}`;
-      return `${frontmatterMatch[1]}${lines.join(eol)}${frontmatterMatch[3]}${markdown.slice(frontmatterMatch[0].length)}`;
-    }
-    const inserted = `${body}${body.endsWith(eol) || body === '' ? '' : eol}title: ${JSON.stringify(normalized)}`;
-    return `${frontmatterMatch[1]}${inserted}${frontmatterMatch[3]}${markdown.slice(frontmatterMatch[0].length)}`;
-  }
-  // Only consider an H1 outside a leading fenced block. This avoids changing
-  // an example heading in a code fence when a plain document has no title.
-  let cursor = 0;
-  let fence: string | null = null;
-  while (cursor < markdown.length) {
-    const end = markdown.indexOf('\n', cursor) < 0 ? markdown.length : markdown.indexOf('\n', cursor) + 1;
-    const line = markdown.slice(cursor, end).replace(/\r?\n$/u, '');
-    const opening = line.match(/^\s*(`{3,}|~{3,})/u);
-    if (fence) {
-      if (new RegExp(`^\\s*${fence}{3,}\\s*$`, 'u').test(line)) fence = null;
-      cursor = end;
-      continue;
-    }
-    if (opening) {
-      fence = opening[1]![0]!;
-      cursor = end;
-      continue;
-    }
-    const heading = /^(\s{0,3}#\s+)(.*?)(\s*#?\s*)$/u.exec(line);
-    if (heading) {
-      const replacement = `${heading[1]}${normalized}${heading[3] ?? ''}`;
-      return markdown.slice(0, cursor) + replacement + markdown.slice(end);
-    }
-    cursor = end;
-  }
-  return `# ${normalized}${eol}${eol}${markdown}`;
+  return result.markdown;
 }
 
 export class DatabaseMarkdownTableWriter {
@@ -872,8 +836,12 @@ export class DatabaseMarkdownTableWriter {
       await this.#atomicWrite(documentAbsolutePath, afterDocument);
       await this.#assertOwnerStillCurrent(resolved);
       await this.#atomicWrite(resolved.ownerAbsolutePath, afterOwner);
-      await this.#journal.checkpoint(mutationId, 'committed');
       await this.#refreshDatabaseIndex();
+      await this.#verifyCommittedFiles([
+        { path: storage.owner.path, afterSha256: afterOwnerRevision.sha256 },
+        { path: row.documentPath, afterSha256: documentAfterRevision.sha256 },
+      ]);
+      await this.#journal.checkpoint(mutationId, 'committed');
     } catch (error) {
       try {
         const ownerCurrent = await this.#fs.readFile(resolved.ownerAbsolutePath).catch(() => null);
@@ -1022,9 +990,10 @@ export class DatabaseMarkdownTableWriter {
         );
       }
       await this.#atomicWrite(manifestAbsolutePath, afterManifest);
-      await this.#journal.checkpoint(mutationId, 'committed');
       await this.#databaseStore.reload();
       await this.#refreshDatabaseIndex();
+      await this.#verifyCommittedFiles([{ path: manifestPath, afterSha256: afterManifestRevision }]);
+      await this.#journal.checkpoint(mutationId, 'committed');
     } catch (error) {
       try {
         const current = await this.#fs.readFile(manifestAbsolutePath).catch(() => null);
@@ -1106,7 +1075,26 @@ export class DatabaseMarkdownTableWriter {
     };
     const titleProperty = resolved.source.properties.find((property) => property.id === sourceStorage(resolved.source).titlePropertyId);
     if (!titleProperty) throw new DatabaseMarkdownTableWriterError('owner_invalid', 'The v2 source Title property is missing');
-    const afterOwner = replaceDatabaseMarkdownTableCell(resolved.markdown, resolved.owner, row.rowIndex, titleColumn, encodedCell(titleProperty, nextLink));
+    const rewrittenLinks = rewriteDatabaseMarkdownDocumentLinks({
+      markdown: resolved.markdown,
+      oldPath: row.documentPath,
+      newPath: input.newDocumentPath,
+    });
+    const afterOwnerWithLinks = rewrittenLinks.markdown;
+    const afterOwnerParsed = parseDatabaseMarkdownOwner(afterOwnerWithLinks);
+    if (!afterOwnerParsed.ok) {
+      throw new DatabaseMarkdownTableWriterError(
+        'owner_invalid',
+        `Moved document link rewrite produced an invalid owner: ${afterOwnerParsed.message}`,
+      );
+    }
+    const afterOwner = replaceDatabaseMarkdownTableCell(
+      afterOwnerWithLinks,
+      afterOwnerParsed.owner,
+      row.rowIndex,
+      titleColumn,
+      encodedCell(titleProperty, nextLink),
+    );
     const ownerRevision = revision(resolved.markdown);
     const afterOwnerRevision = revision(afterOwner);
     const mutationId = `mut_${this.#generateUuid().replaceAll('-', '')}`;
@@ -1125,8 +1113,12 @@ export class DatabaseMarkdownTableWriter {
       await this.#fs.rename(oldAbsolute, newAbsolute);
       await this.#assertOwnerStillCurrent(resolved);
       await this.#atomicWrite(resolved.ownerAbsolutePath, afterOwner);
-      await this.#journal.checkpoint(mutationId, 'committed');
       await this.#refreshDatabaseIndex();
+      await this.#verifyCommittedFiles([
+        { path: sourceStorage(resolved.source).owner.path, afterSha256: afterOwnerRevision.sha256 },
+        { path: input.newDocumentPath, afterSha256: beforeDocumentRevision },
+      ]);
+      await this.#journal.checkpoint(mutationId, 'committed');
     } catch (error) {
       try {
         const ownerCurrent = await this.#fs.readFile(resolved.ownerAbsolutePath).catch(() => null);
@@ -1305,8 +1297,12 @@ export class DatabaseMarkdownTableWriter {
       await this.#atomicWrite(documentAbsolutePath, ensured.markdown);
       await this.#assertOwnerStillCurrent(resolved);
       await this.#atomicWrite(resolved.ownerAbsolutePath, afterOwner);
-      await this.#journal.checkpoint(mutationId, 'committed');
       await this.#refreshDatabaseIndex();
+      await this.#verifyCommittedFiles([
+        { path: input.documentPath, afterSha256: documentRevision.sha256 },
+        { path: sourceStorage(resolved.source).owner.path, afterSha256: sha256(afterOwner) },
+      ]);
+      await this.#journal.checkpoint(mutationId, 'committed');
     } catch (error) {
       try {
         const ownerCurrent = await this.#fs.readFile(resolved.ownerAbsolutePath).catch(() => null);
@@ -1430,9 +1426,16 @@ export class DatabaseMarkdownTableWriter {
         }
         await this.#atomicWrite(manifestAbsolutePath, manifest.after);
       }
-      await this.#journal.checkpoint(receipt.mutationId, 'committed');
       if (manifest) await this.#databaseStore.reload();
       await this.#refreshDatabaseIndex();
+      await this.#verifyCommittedFiles([
+        {
+          path: sourceStorage(resolved.source).owner.path,
+          afterSha256: afterRevision.sha256,
+        },
+        ...(manifest ? [{ path: manifest.path, afterSha256: sha256(manifest.after) }] : []),
+      ]);
+      await this.#journal.checkpoint(receipt.mutationId, 'committed');
     } catch (error) {
       try {
         const current = await this.#fs.readFile(resolved.ownerAbsolutePath);
@@ -1931,6 +1934,23 @@ export class DatabaseMarkdownTableWriter {
         expectedRevision: expected,
         observedRevision: observed,
       });
+    }
+  }
+
+  async #verifyCommittedFiles(
+    files: readonly { path: string; afterSha256: string | null }[],
+  ): Promise<void> {
+    for (const file of files) {
+      const absolute = this.#safeJournalAbsolutePath(file.path);
+      const current = await this.#fs.readFile(absolute).catch(() => null);
+      const observed = current === null ? null : sha256(current);
+      if (observed !== file.afterSha256) {
+        throw new DatabaseMarkdownTableWriterError(
+          'transaction_failed',
+          'V2 commit verification failed after the index refresh',
+          { path: file.path, expectedRevision: file.afterSha256, observedRevision: observed },
+        );
+      }
     }
   }
 

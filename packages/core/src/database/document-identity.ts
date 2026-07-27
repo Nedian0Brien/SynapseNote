@@ -31,6 +31,24 @@ export type EnsureDatabaseDocumentIdentityResult =
       message: string;
     };
 
+export type ReassignDatabaseDocumentIdentityResult =
+  | {
+      ok: true;
+      changed: boolean;
+      previousDocumentId: DatabaseDocumentId;
+      documentId: DatabaseDocumentId;
+      markdown: string;
+    }
+  | {
+      ok: false;
+      code:
+        | 'malformed_frontmatter'
+        | 'missing_document_id'
+        | 'invalid_existing_document_id'
+        | 'invalid_document_id';
+      message: string;
+    };
+
 /** Read the generic document identity without requiring database-specific metadata. */
 export function parseDatabaseDocumentIdentity(
   markdown: string,
@@ -202,5 +220,128 @@ export function ensureDatabaseDocumentIdentity(input: {
     changed: true,
     documentId: input.documentId,
     markdown: nextFrontmatter + input.markdown.slice(frontmatter.length),
+  };
+}
+
+/**
+ * Reassign only `_sn.document_id` for an already identified document.
+ *
+ * Copy/paste must not silently retain the source identity. This helper requires
+ * a valid existing identity and a valid new identity, and performs a byte-local
+ * replacement so comments, ordering, quoting, and body bytes are preserved.
+ */
+export function reassignDatabaseDocumentIdentity(input: {
+  markdown: string;
+  documentId: DatabaseDocumentId;
+}): ReassignDatabaseDocumentIdentityResult {
+  if (!DatabaseDocumentIdSchema.safeParse(input.documentId).success) {
+    return {
+      ok: false,
+      code: 'invalid_document_id',
+      message: `Document identity "${input.documentId}" is invalid`,
+    };
+  }
+  const { frontmatter } = stripFrontmatter(input.markdown);
+  if (frontmatter === '') {
+    return {
+      ok: false,
+      code: 'missing_document_id',
+      message: 'Cannot reassign identity on a document without frontmatter',
+    };
+  }
+  const parsed = parseFrontmatterYaml(unwrapFrontmatterFences(frontmatter));
+  if (parsed.map === null) {
+    return {
+      ok: false,
+      code: 'malformed_frontmatter',
+      message: `Document frontmatter is malformed: ${parsed.parseError}`,
+    };
+  }
+  const existing = parseDatabaseDocumentIdentity(input.markdown);
+  if (!existing.ok) {
+    return {
+      ok: false,
+      code:
+        existing.code === 'invalid_document_id'
+          ? 'invalid_existing_document_id'
+          : existing.code === 'missing_frontmatter'
+            ? 'missing_document_id'
+            : existing.code,
+      message: existing.message,
+    };
+  }
+  if (existing.documentId === input.documentId) {
+    return {
+      ok: true,
+      changed: false,
+      previousDocumentId: existing.documentId,
+      documentId: input.documentId,
+      markdown: input.markdown,
+    };
+  }
+
+  const body = unwrapFrontmatterFences(frontmatter);
+  const snLine = /^_sn:[ \t]*(?:\r?\n|$)/m.exec(body);
+  if (!snLine) {
+    return {
+      ok: false,
+      code: 'missing_document_id',
+      message: 'Document frontmatter does not contain an _sn mapping',
+    };
+  }
+  const sectionStart = snLine.index + snLine[0].length;
+  const remainder = body.slice(sectionStart);
+  const nextTopLevel = remainder.search(/^[^ \t\r\n][^\r\n]*$/m);
+  const section = body.slice(sectionStart, nextTopLevel < 0 ? body.length : sectionStart + nextTopLevel);
+  const idLine = /^(?<indent>[ \t]+)document_id:[ \t]*(?<value>[^\r\n#]+)(?<tail>[ \t]*(?:#.*)?)$/m.exec(section);
+  if (!idLine?.groups?.value) {
+    return {
+      ok: false,
+      code: 'missing_document_id',
+      message: 'Document frontmatter does not contain _sn.document_id',
+    };
+  }
+  const rawValue = idLine.groups.value.trim();
+  const quote =
+    (rawValue.startsWith('"') && rawValue.endsWith('"')) ||
+    (rawValue.startsWith("'") && rawValue.endsWith("'"))
+      ? rawValue[0]
+      : '';
+  const replacement = `${quote}${input.documentId}${quote}`;
+  const valueOffsetInLine = idLine[0].indexOf(rawValue);
+  if (valueOffsetInLine < 0) {
+    return {
+      ok: false,
+      code: 'malformed_frontmatter',
+      message: 'Cannot locate the existing document identity bytes',
+    };
+  }
+  const bodyOffset = frontmatter.indexOf(body);
+  if (bodyOffset < 0) {
+    return {
+      ok: false,
+      code: 'malformed_frontmatter',
+      message: 'Cannot locate the frontmatter body',
+    };
+  }
+  const absoluteStart = bodyOffset + sectionStart + (idLine.index ?? 0) + valueOffsetInLine;
+  const absoluteEnd = absoluteStart + rawValue.length;
+  const nextFrontmatter =
+    frontmatter.slice(0, absoluteStart) + replacement + frontmatter.slice(absoluteEnd);
+  const markdown = nextFrontmatter + input.markdown.slice(frontmatter.length);
+  const verified = parseDatabaseDocumentIdentity(markdown);
+  if (!verified.ok || verified.documentId !== input.documentId) {
+    return {
+      ok: false,
+      code: 'malformed_frontmatter',
+      message: 'Reassigned document identity could not be verified',
+    };
+  }
+  return {
+    ok: true,
+    changed: true,
+    previousDocumentId: existing.documentId,
+    documentId: input.documentId,
+    markdown,
   };
 }

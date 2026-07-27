@@ -5,6 +5,7 @@ import {
   createIndexedDbOfflineDatabaseMutationStore,
   createOfflineDatabaseMutation,
   enqueueOfflineDatabaseMutation,
+  rebaseOfflineDatabaseMutation,
   type OfflineDatabaseMutation,
   type OfflineDatabaseMutationStore,
   reconcileOfflineDatabaseMutations,
@@ -130,6 +131,33 @@ describe('offline database mutation queue', () => {
     });
   });
 
+  test('reconciles through the stable-ID rebase boundary before executing a queued write', async () => {
+    const store = new MemoryStore();
+    await enqueueOfflineDatabaseMutation(store, item('offline_1'));
+    let observedRevision: string | undefined;
+    const result = await reconcileOfflineDatabaseMutations({
+      store,
+      branch: 'main',
+      serverInstanceId: 'server-one',
+      rebase: (queued) =>
+        rebaseOfflineDatabaseMutation({
+          item: queued,
+          branch: 'main',
+          serverInstanceId: 'server-one',
+          records: new Map([
+            ['rec_one', { revision: `sha256:${'b'.repeat(64)}`, values: { status: 'todo' } }],
+          ]),
+        }),
+      execute: async (queued) => {
+        observedRevision = queued.recordMutations[0]?.expectedRevision;
+        return 'committed';
+      },
+      isOfflineError: () => false,
+    });
+    expect(observedRevision).toBe(`sha256:${'b'.repeat(64)}`);
+    expect(result).toMatchObject({ committed: ['offline_1'], blocked: [], remaining: 0 });
+  });
+
   test('blocks a different workspace epoch without executing its write', async () => {
     const store = new MemoryStore();
     await store.put(item('offline_1'));
@@ -242,5 +270,59 @@ describe('offline database mutation queue', () => {
     });
     expect(executions).toBe(1);
     expect(second).toMatchObject({ committed: [], converged: [], blocked: [], remaining: 1 });
+  });
+
+  test('rebases stable record IDs after unrelated edits and reports wrong-cell conflicts', () => {
+    const queued = item('offline_1');
+    const rebased = rebaseOfflineDatabaseMutation({
+      item: queued,
+      branch: 'main',
+      serverInstanceId: 'server-one',
+      records: new Map([
+        ['rec_one', { revision: `sha256:${'b'.repeat(64)}`, values: { status: 'todo', title: 'Task' } }],
+      ]),
+    });
+    expect(rebased).toMatchObject({ status: 'ready', rebasedRecordIds: ['rec_one'] });
+    if (rebased.status === 'ready') {
+      expect(rebased.item.recordMutations[0]?.expectedRevision).toBe(`sha256:${'b'.repeat(64)}`);
+    }
+    const conflict = rebaseOfflineDatabaseMutation({
+      item: queued,
+      branch: 'main',
+      serverInstanceId: 'server-one',
+      records: new Map([
+        ['rec_one', { revision: `sha256:${'b'.repeat(64)}`, values: { status: 'in_progress' } }],
+      ]),
+    });
+    expect(conflict).toMatchObject({ status: 'conflict', conflicts: [{ code: 'precondition_changed', recordId: 'rec_one' }] });
+  });
+
+  test('converges when a queued set already landed and blocks unstable targets', () => {
+    const queued = item('offline_1');
+    const converged = rebaseOfflineDatabaseMutation({
+      item: queued,
+      branch: 'main',
+      serverInstanceId: 'server-one',
+      records: new Map([
+        ['rec_one', { revision: `sha256:${'b'.repeat(64)}`, values: { status: 'done' } }],
+      ]),
+    });
+    expect(converged).toMatchObject({ status: 'converged', convergedRecordIds: ['rec_one'] });
+    const uniqueTarget = createOfflineDatabaseMutation({
+      databaseId: 'db_tasks',
+      sourceId: 'ds_tasks',
+      branch: 'main',
+      serverInstanceId: 'server-one',
+      recordMutations: [{ ...mutation, id: undefined, expectedRevision: undefined, uniqueValue: 'Task' }],
+      actor: { principalId: 'user:local' },
+      idempotencyKey: 'offline-request-unique',
+      label: 'Unstable target',
+    });
+    expect(rebaseOfflineDatabaseMutation({
+      item: uniqueTarget,
+      branch: 'main',
+      serverInstanceId: 'server-one',
+      records: new Map(),
+    })).toMatchObject({ status: 'conflict', conflicts: [{ code: 'unstable_target' }] });
   });
 });

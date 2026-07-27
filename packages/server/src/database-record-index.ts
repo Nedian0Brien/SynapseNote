@@ -12,6 +12,7 @@ import {
   type DatabaseMarkdownDocumentLink,
   type DatabaseMarkdownDocumentCandidate,
   type DatabaseMarkdownOwnerRow,
+  type ParsedDatabaseMarkdownOwner,
   type DatabaseProperty,
   type DatabaseRecord,
   type DatabaseRecordActor,
@@ -32,6 +33,8 @@ import {
   parseDatabaseDocumentIdentity,
   parseDatabaseMarkdownOwner,
   resolveDatabaseMarkdownDocumentLink,
+  resolveDatabaseDocumentTitle,
+  createDatabaseMarkdownRecordRevisionSet,
   parseFrontmatterYaml,
   projectDatabaseRichText,
   serializeDatabaseDateValue,
@@ -312,17 +315,6 @@ function safeV2DocumentPath(target: string): string | null {
   return segments.join('/');
 }
 
-function v2DocumentTitle(markdown: string, fallback: string): string {
-  const { frontmatter, body } = stripFrontmatter(markdown);
-  if (frontmatter !== '') {
-    const parsed = parseFrontmatterYaml(unwrapFrontmatterFences(frontmatter));
-    const title = parsed.map?.title;
-    if (typeof title === 'string' && title.trim() !== '') return title;
-  }
-  const heading = body.match(/^#\s+(.+?)\s*#?\s*$/m)?.[1]?.trim();
-  return heading || fallback;
-}
-
 function v2FallbackTitle(link: DatabaseMarkdownDocumentLink, path: string): string {
   if (link.alias?.trim()) return link.alias.trim();
   const basename = path.split('/').at(-1) ?? path;
@@ -474,6 +466,28 @@ export class DatabaseRecordIndex {
     return ownerMarkdown === undefined
       ? null
       : `sha256:${createHash('sha256').update(ownerMarkdown).digest('hex')}`;
+  }
+
+  /** Return canonical v2 Markdown files for explicit export only. */
+  getV2CanonicalDocuments(
+    databaseId: string,
+    sourceId: string,
+  ): { ownerPath: string; ownerMarkdown: string; linkedDocuments: readonly { path: string; markdown: string }[] } | null {
+    const database = this.#databaseStore.getById(databaseId);
+    const source = database?.sources.find((candidate) => candidate.id === sourceId);
+    const storage = source?.storage;
+    if (!storage || storage.kind !== 'markdown_table') return null;
+    const ownerMarkdown = this.#v2OwnerMarkdownByPath.get(storage.owner.path);
+    if (ownerMarkdown === undefined) return null;
+    const sourceKey = this.#v2SourceKey(databaseId, sourceId);
+    const linkedDocuments = [...this.#v2SourcesByDocumentPath.entries()]
+      .filter(([, bindings]) => bindings.has(sourceKey))
+      .map(([path]) => this.#v2DocumentsByPath.get(path))
+      .filter((document): document is V2Document => document !== undefined)
+      .filter((document) => document.path !== storage.owner.path)
+      .sort((left, right) => left.path.localeCompare(right.path))
+      .map((document) => ({ path: document.path, markdown: document.markdown }));
+    return { ownerPath: storage.owner.path, ownerMarkdown, linkedDocuments };
   }
 
   /** Content-free lookup used to scope realtime invalidations to database paths. */
@@ -1148,7 +1162,7 @@ export class DatabaseRecordIndex {
       if (!identity.ok) continue;
       const { body } = stripFrontmatter(markdown);
       const fallback = path.split('/').at(-1)?.replace(/\.(?:md|mdx)$/i, '') ?? path;
-      const title = v2DocumentTitle(markdown, fallback);
+      const title = resolveDatabaseDocumentTitle(markdown, fallback).value;
       const candidate: DatabaseMarkdownDocumentCandidate = {
         path,
         documentId: identity.documentId,
@@ -1290,7 +1304,7 @@ export class DatabaseRecordIndex {
           documentId: identity.documentId,
           markdown,
           body,
-          title: v2DocumentTitle(markdown, path.split('/').at(-1)?.replace(/\.(?:md|mdx)$/i, '') ?? path),
+          title: resolveDatabaseDocumentTitle(markdown, path.split('/').at(-1)?.replace(/\.(?:md|mdx)$/i, '') ?? path).value,
           revision: `sha256:${createHash('sha256').update(markdown).digest('hex')}`,
         });
       }
@@ -1339,7 +1353,7 @@ export class DatabaseRecordIndex {
         if (row.recordId === null || row.documentPath === null || row.documentLink === null) continue;
         const document = this.#v2DocumentsByPath.get(row.documentPath);
         if (!document) continue;
-        const projected = this.#projectV2Row(database, source, row, document, markdown);
+        const projected = this.#projectV2Row(database, source, row, document, markdown, materialized.owner);
         if (!projected) continue;
         this.#addCandidate(row.documentPath, projected);
       }
@@ -1352,6 +1366,7 @@ export class DatabaseRecordIndex {
     row: DatabaseMarkdownOwnerRow,
     document: V2Document,
     ownerMarkdown: string,
+    parsedOwner?: ParsedDatabaseMarkdownOwner,
   ): DatabaseRecord | null {
     if (row.recordId === null) return null;
     const values: Record<string, DatabaseValue> = {};
@@ -1384,7 +1399,7 @@ export class DatabaseRecordIndex {
         continue;
       }
       if (property.type === 'title') {
-        values[property.id] = v2DocumentTitle(document.markdown, v2FallbackTitle(row.documentLink!, document.path));
+        values[property.id] = resolveDatabaseDocumentTitle(document.markdown, v2FallbackTitle(row.documentLink!, document.path)).value;
         continue;
       }
       switch (property.type) {
@@ -1515,6 +1530,16 @@ export class DatabaseRecordIndex {
         .update(ownerMarkdown.slice(row.range.start, row.range.end))
         .digest('hex')}`,
       storageRevision: `sha256:${createHash('sha256').update(ownerMarkdown).digest('hex')}`,
+      semanticRevisions: createDatabaseMarkdownRecordRevisionSet({
+        ownerMarkdown,
+        owner: parsedOwner ?? (() => {
+          const parsed = parseDatabaseMarkdownOwner(ownerMarkdown);
+          if (!parsed.ok) throw new Error('Owner markdown unexpectedly failed to parse during v2 projection');
+          return parsed.owner;
+        })(),
+        rowIndex: row.rowIndex,
+        documentMarkdown: document.markdown,
+      }),
       values,
       ...(Object.keys(invalidValues).length > 0 ? { invalidValues } : {}),
       ...(issues.length > 0 ? { issues } : {}),
@@ -1616,7 +1641,7 @@ export class DatabaseRecordIndex {
       documentId: identity.documentId,
       markdown,
       body,
-      title: v2DocumentTitle(markdown, path.split('/').at(-1)?.replace(/\.(?:md|mdx)$/i, '') ?? path),
+      title: resolveDatabaseDocumentTitle(markdown, path).value,
       revision: `sha256:${createHash('sha256').update(markdown).digest('hex')}`,
     };
     this.#v2DocumentsByPath.set(path, document);
@@ -1655,7 +1680,7 @@ export class DatabaseRecordIndex {
       if (row.recordId === null || row.documentPath === null || row.documentLink === null) continue;
       const document = this.#v2DocumentsByPath.get(row.documentPath);
       if (!document) continue;
-      const record = this.#projectV2Row(database, source, row, document, markdown);
+      const record = this.#projectV2Row(database, source, row, document, markdown, materialized.owner);
       if (record) this.#addCandidate(row.documentPath, record);
     }
   }
@@ -1736,7 +1761,7 @@ export class DatabaseRecordIndex {
         documentId: identity.documentId,
         markdown,
         body,
-        title: v2DocumentTitle(markdown, path.split('/').at(-1)?.replace(/\.(?:md|mdx)$/i, '') ?? path),
+      title: resolveDatabaseDocumentTitle(markdown, path.split('/').at(-1)?.replace(/\.(?:md|mdx)$/i, '') ?? path).value,
         revision: `sha256:${createHash('sha256').update(markdown).digest('hex')}`,
       });
       const ownerMarkdown = this.#v2OwnerMarkdownByPath.get(ownerPath);

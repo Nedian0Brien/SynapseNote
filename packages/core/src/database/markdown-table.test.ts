@@ -7,11 +7,13 @@ import {
   encodeDatabaseMarkdownCellText,
   insertDatabaseMarkdownTableRow,
   parseDatabaseMarkdownOwner,
+  cloneDatabaseMarkdownOwnerIdentity,
   replaceDatabaseMarkdownTableRow,
   replaceDatabaseMarkdownTableCell,
   serializeDatabaseMarkdownOwnerMarker,
 } from './markdown-table.ts';
 import { diffDatabaseMarkdownTables, mergeDatabaseMarkdownTables } from './markdown-table-diff.ts';
+import { rewriteDatabaseMarkdownDocumentLinks } from './markdown-table-link-rewrite.ts';
 
 const marker = {
   version: 2 as const,
@@ -165,6 +167,56 @@ describe('parseDatabaseMarkdownOwner', () => {
       `- ${serializeDatabaseMarkdownOwnerMarker(marker).replaceAll('\n', '\n  ')}`,
     ].join('\n');
     expect(parseDatabaseMarkdownOwner(fenced)).toMatchObject({ ok: false, code: 'marker_missing' });
+  });
+
+  test('requires an explicit new owner identity for copy/paste and preserves table bytes', () => {
+    const source = sourceWithTable();
+    const result = cloneDatabaseMarkdownOwnerIdentity({
+      source,
+      databaseId: 'db_copy',
+      sourceId: 'ds_copy',
+      blockId: 'dbb_copy_primary',
+    });
+    expect(result.owner.marker).toEqual({ ...marker, databaseId: 'db_copy', sourceId: 'ds_copy', blockId: 'dbb_copy_primary' });
+    expect(result.markdown).toContain('| [[orders/one\\|One]] | A \\| B | 2 |');
+    expect(result.markdown).toContain('Unrelated prose stays here.');
+    expect(() =>
+      cloneDatabaseMarkdownOwnerIdentity({
+        source,
+        databaseId: marker.databaseId,
+        sourceId: marker.sourceId,
+        blockId: marker.blockId,
+      }),
+    ).toThrow('must differ');
+    const duplicate = `${source}\n${serializeDatabaseMarkdownOwnerMarker(marker)}\n\n| A | B | C |\n| --- | --- | --- |\n| 1 | 2 | 3 |`;
+    expect(() =>
+      cloneDatabaseMarkdownOwnerIdentity({
+        source: duplicate,
+        databaseId: 'db_copy',
+        sourceId: 'ds_copy',
+        blockId: 'dbb_copy_primary',
+      }),
+    ).toThrow('duplicate');
+  });
+
+  test('rewrites moved document links only inside owner-table cells', () => {
+    const source = [
+      '```markdown',
+      '[[tasks/old]]',
+      '```',
+      '',
+      sourceWithTable().replace('[[orders/one\\|One]]', '[[tasks/old\\|Old]]'),
+    ].join('\n');
+    const result = rewriteDatabaseMarkdownDocumentLinks({
+      markdown: source,
+      oldPath: 'tasks/old.md',
+      newPath: 'tasks/new.md',
+    });
+    expect(result.changed).toBe(true);
+    expect(result.rewrites).toHaveLength(1);
+    expect(result.markdown).toContain('| [[tasks/new\\|Old]] |');
+    expect(result.markdown).toContain('```markdown\n[[tasks/old]]\n```');
+    expect(result.markdown).toContain('Unrelated prose stays here.');
   });
 });
 

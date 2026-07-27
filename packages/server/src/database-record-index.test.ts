@@ -157,6 +157,41 @@ describe('DatabaseRecordIndex rebuild', () => {
     });
   });
 
+  test('rebuilds the same v2 snapshot from manifest/table/documents after local state removal', async () => {
+    const { projectDir, contentDir } = tempProject();
+    mkdirSync(join(contentDir, 'orders'), { recursive: true });
+    const store = createDatabaseStore({ projectDir, contentDir });
+    await store.create(v2Definition());
+    writeFileSync(
+      join(contentDir, 'orders.md'),
+      '<!-- synapsenote:database\nversion=2\ndatabase=db_tasks\nsource=ds_tasks\nblock=dbb_orders_primary\ncolumns=prop_title,prop_notes,prop_status\n-->\n\n| Document | Notes | Status |\n| --- | --- | --- |\n| [[orders/alpha]] | First order | todo |\n| [[orders/beta]] | Second order | done |\n',
+    );
+    writeFileSync(join(contentDir, 'orders/alpha.md'), '---\n_sn:\n  document_id: doc_alpha\ntitle: Alpha order\n---\nAlpha body\n');
+    writeFileSync(join(contentDir, 'orders/beta.md'), '---\n_sn:\n  document_id: doc_beta\ntitle: Beta order\n---\nBeta body\n');
+
+    const index = createDatabaseRecordIndex({ contentDir, databaseStore: store });
+    await index.rebuild();
+    const canonicalRows = index.list();
+    const canonicalIssues = index.snapshot().issues;
+
+    rmSync(join(projectDir, '.ok', 'local'), { recursive: true, force: true });
+    const coldStore = createDatabaseStore({ projectDir, contentDir });
+    await coldStore.reload();
+    const coldIndex = createDatabaseRecordIndex({ contentDir, databaseStore: coldStore });
+    await coldIndex.rebuild();
+
+    expect(coldStore.list()).toEqual(store.list());
+    expect(coldIndex.list()).toEqual(canonicalRows);
+    expect(coldIndex.snapshot().issues).toEqual(canonicalIssues);
+    expect(coldIndex.getV2CanonicalDocuments('db_tasks', 'ds_tasks')).toMatchObject({
+      ownerPath: 'orders.md',
+      linkedDocuments: expect.arrayContaining([
+        expect.objectContaining({ path: 'orders/alpha.md' }),
+        expect.objectContaining({ path: 'orders/beta.md' }),
+      ]),
+    });
+  });
+
   test('does not infer a v2 identity from a linked document path', async () => {
     const { projectDir, contentDir } = tempProject();
     mkdirSync(join(contentDir, 'orders'), { recursive: true });

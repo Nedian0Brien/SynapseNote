@@ -11,6 +11,7 @@ import {
   DatabaseFormValueSchema,
   DatabaseGroupMembershipsSchema,
   DatabaseLinkedViewSettingsSchema,
+  DatabaseMarkdownRecordRevisionSetSchema,
   DatabasePlaceValueSchema,
   DatabasePropertySchema,
   DatabaseRecordActorSchema,
@@ -312,6 +313,14 @@ export const DatabaseRecordRequestSchema = z
     databaseId: z.string().startsWith('db_'),
     sourceId: z.string().startsWith('ds_'),
     recordId: z.string().startsWith('rec_'),
+  })
+  .strict();
+export const DatabaseMarkdownTableExportRequestSchema = z
+  .object({
+    databaseId: z.string().startsWith('db_'),
+    sourceId: z.string().startsWith('ds_'),
+    mode: z.enum(['canonical_markdown', 'computed_snapshot']),
+    query: DatabaseQuerySchema.optional(),
   })
   .strict();
 const DatabaseComputedPropertySchema = DatabasePropertySchema.refine(
@@ -1181,6 +1190,7 @@ export const DatabaseRecordResponseSchema = z
           .string()
           .regex(/^sha256:[a-f0-9]{64}$/)
           .nullable(),
+        semanticRevisions: DatabaseMarkdownRecordRevisionSetSchema.optional(),
         values: z.record(z.string(), DatabaseValueSchema),
         invalidValues: z.record(z.string(), FrontmatterValueSchema).optional(),
         issues: z
@@ -1204,6 +1214,27 @@ export const DatabaseRecordResponseSchema = z
         archivedAt: z.string().datetime({ offset: true }).optional(),
       })
       .strict(),
+  })
+  .strict();
+const DatabaseMarkdownTableExportCanonicalSchema = z
+  .object({ path: z.string().min(1), content: z.string(), sha256: z.string().regex(/^sha256:[a-f0-9]{64}$/) })
+  .strict();
+const DatabaseMarkdownTableExportSnapshotSchema = z
+  .object({
+    recordId: z.string().startsWith('rec_'),
+    path: z.string().min(1),
+    values: z.record(z.string(), CoreDatabaseValueSchema),
+    computed: z.record(z.string(), FormulaComputedResultSchema).optional(),
+  })
+  .strict();
+export const DatabaseMarkdownTableExportResponseSchema = z
+  .object({
+    mode: z.enum(['canonical_markdown', 'computed_snapshot']),
+    manifestRevision: z.string().min(1),
+    derivedRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).nullable(),
+    evaluatedAt: z.string().datetime().nullable(),
+    canonical: z.array(DatabaseMarkdownTableExportCanonicalSchema).max(100_000),
+    snapshot: z.array(DatabaseMarkdownTableExportSnapshotSchema).max(100_000),
   })
   .strict();
 export const DatabaseComputedPropertyPreviewResponseSchema = z
@@ -2674,6 +2705,16 @@ export const DatabaseManifestMigrationPreviewSchema = z
   })
   .strict();
 
+const DatabaseMigrationOwnerChoicesSchema = z.record(
+  z.string().startsWith('ds_'),
+  z
+    .object({
+      path: z.string().min(1),
+      blockId: z.string().startsWith('dbb_'),
+    })
+    .strict(),
+);
+
 export const DatabaseTaskRequestSchema = z.discriminatedUnion('action', [
   z
     .object({
@@ -2719,6 +2760,9 @@ export const DatabaseTaskRequestSchema = z.discriminatedUnion('action', [
       migrationCommittedAt: z
         .record(z.string().min(1), z.string().datetime({ offset: true }))
         .optional(),
+      ownerChoices: z
+        .record(z.string().startsWith('db_'), DatabaseMigrationOwnerChoicesSchema)
+        .optional(),
     })
     .strict(),
   z
@@ -2757,6 +2801,9 @@ export const DatabaseTaskRequestSchema = z.discriminatedUnion('action', [
             migrationCommittedAt: z
               .record(z.string().min(1), z.string().datetime({ offset: true }))
               .optional(),
+            ownerChoices: z
+              .record(z.string().startsWith('db_'), DatabaseMigrationOwnerChoicesSchema)
+              .optional(),
           })
           .strict(),
       ]),
@@ -2772,6 +2819,19 @@ export const DatabaseTaskRequestSchema = z.discriminatedUnion('action', [
   z
     .object({
       action: z.literal('rollback'),
+      taskId: z.string().startsWith('task_'),
+      expectedRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+    })
+    .strict(),
+  z
+    .object({
+      action: z.literal('inspect_migration'),
+      taskId: z.string().startsWith('task_'),
+    })
+    .strict(),
+  z
+    .object({
+      action: z.literal('cleanup_migration'),
       taskId: z.string().startsWith('task_'),
       expectedRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
     })
@@ -2814,6 +2874,38 @@ export const DatabaseTaskResponseSchema = z.discriminatedUnion('action', [
           status: z.enum(['applied', 'already_applied']),
           restored: z.number().int().nonnegative(),
         })
+        .strict(),
+    })
+    .strict(),
+  z
+    .object({
+      action: z.literal('inspect_migration'),
+      inspection: z
+        .object({
+          taskId: z.string().startsWith('task_'),
+          state: z.enum(['prepared', 'staged', 'activated', 'rolled_back', 'recovery_required']),
+          updatedAt: z.string().datetime(),
+          files: z.array(
+            z
+              .object({
+                path: z.string().min(1),
+                beforeSha256: z.string().regex(/^sha256:[a-f0-9]{64}$/).nullable(),
+                afterSha256: z.string().regex(/^sha256:[a-f0-9]{64}$/).nullable(),
+              })
+              .strict(),
+          ),
+          taskMaterialPresent: z.boolean(),
+          undoAvailable: z.boolean(),
+          undoExpiresAt: z.string().datetime().nullable(),
+        })
+        .strict(),
+    })
+    .strict(),
+  z
+    .object({
+      action: z.literal('cleanup_migration'),
+      cleanup: z
+        .object({ taskId: z.string().startsWith('task_'), removed: z.boolean() })
         .strict(),
     })
     .strict(),
@@ -2938,6 +3030,7 @@ export interface DatabaseDataPlaneApiHandlers {
   catalog: (request: IncomingMessage, response: ServerResponse) => Promise<void>;
   describe: (request: IncomingMessage, response: ServerResponse) => Promise<void>;
   record: (request: IncomingMessage, response: ServerResponse) => Promise<void>;
+  markdownTableExport: (request: IncomingMessage, response: ServerResponse) => Promise<void>;
   computedPropertyPreview: (request: IncomingMessage, response: ServerResponse) => Promise<void>;
   propertyConversion: (request: IncomingMessage, response: ServerResponse) => Promise<void>;
   find: (request: IncomingMessage, response: ServerResponse) => Promise<void>;
@@ -3582,6 +3675,31 @@ export function createDatabaseDataPlaneApiHandlers(
     },
     {
       handler: 'database-record',
+      method: 'POST',
+      errorExtensions: DATABASE_REQUEST_ERROR_EXTENSIONS,
+    },
+  );
+
+  const markdownTableExport = withValidation(
+    DatabaseMarkdownTableExportRequestSchema,
+    async (_request, response, body) => {
+      if (!dataPlane) {
+        respondUnavailable(response, 'database-markdown-table-export');
+        return;
+      }
+      try {
+        const result = dataPlane.exportMarkdownTable(body);
+        successResponse(response, 200, DatabaseMarkdownTableExportResponseSchema, result, {
+          handler: 'database-markdown-table-export',
+          extraHeaders: noStoreHeaders(),
+          errorExtensions: DATABASE_INTERNAL_ERROR_EXTENSIONS,
+        });
+      } catch (error) {
+        respondDataPlaneError(response, 'database-markdown-table-export', error);
+      }
+    },
+    {
+      handler: 'database-markdown-table-export',
       method: 'POST',
       errorExtensions: DATABASE_REQUEST_ERROR_EXTENSIONS,
     },
@@ -4886,7 +5004,7 @@ export function createDatabaseDataPlaneApiHandlers(
         return;
       }
       try {
-        if (body.action === 'list' || body.action === 'get' || body.action === 'cancel') {
+        if (body.action === 'list' || body.action === 'get' || body.action === 'cancel' || body.action === 'inspect_migration') {
           dataPlane?.authorizeOperation({ action: 'read_audit' });
         } else if (body.action === 'preview_import') {
           dataPlane?.authorizeOperation({
@@ -4969,6 +5087,7 @@ export function createDatabaseDataPlaneApiHandlers(
                 ...(body.migrationCommittedAt
                   ? { migrationCommittedAt: body.migrationCommittedAt }
                   : {}),
+                ...(body.ownerChoices ? { ownerChoices: body.ownerChoices } : {}),
               });
             case 'start':
               if (!taskService) {
@@ -5002,6 +5121,22 @@ export function createDatabaseDataPlaneApiHandlers(
                 );
               }
               return taskService.rollback(body.taskId, body.expectedRevision);
+            case 'inspect_migration':
+              if (!taskService) {
+                throw new DatabaseTaskServiceError(
+                  'task_snapshot_changed',
+                  'Database migration recovery inspection is unavailable for this server.',
+                );
+              }
+              return taskService.inspectMigration(body.taskId);
+            case 'cleanup_migration':
+              if (!taskService) {
+                throw new DatabaseTaskServiceError(
+                  'task_rollback_unavailable',
+                  'Database migration cleanup is unavailable for this server.',
+                );
+              }
+              return taskService.cleanupMigration(body.taskId, body.expectedRevision);
           }
         })();
         const resolved = await result;
@@ -5012,7 +5147,11 @@ export function createDatabaseDataPlaneApiHandlers(
               ? { action: body.action, preview: resolved }
               : body.action === 'rollback'
                 ? { action: body.action, rollback: resolved }
-                : { action: body.action, task: resolved };
+                : body.action === 'inspect_migration'
+                  ? { action: body.action, inspection: resolved }
+                  : body.action === 'cleanup_migration'
+                    ? { action: body.action, cleanup: resolved }
+                    : { action: body.action, task: resolved };
         successResponse(response, 200, DatabaseTaskResponseSchema, payload, {
           handler: 'database-task',
           extraHeaders: noStoreHeaders(),
@@ -5076,6 +5215,7 @@ export function createDatabaseDataPlaneApiHandlers(
     catalog,
     describe,
     record,
+    markdownTableExport,
     computedPropertyPreview,
     propertyConversion,
     find,

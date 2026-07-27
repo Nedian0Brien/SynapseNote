@@ -26,7 +26,7 @@ import {
 } from './shared.ts';
 
 export const DESCRIPTION = [
-  '[Requires: Hocuspocus server] Preview source onboarding and manifest migration, or launch, list, inspect, cancel, retry, and resume durable database import, migration, and bulk jobs.',
+  '[Requires: Hocuspocus server] Preview source onboarding and manifest migration, or launch, list, inspect, cancel, retry, resume, undo, and cleanup durable database import, migration, and bulk jobs.',
   '',
   'Use action=preview_import before import to inspect every included, excluded, modified, or rejected path without changing files. Use action=preview_migration with a current manifest revision and target version before migration; it reports every selected manifest, canonical migration IDs, loss classification, and blocker. Then use action=start with operation=bulk and an exact approved data_commit request, operation=import with that database/source and current manifest revision, or operation=migration with the same current manifest revision and target version. Start, retry, and resume may mutate canonical database files and require user approval. Use action=list to discover stable task IDs and current revisions, action=get for exact progress, and cancel/retry/resume with the latest expectedRevision.',
   '',
@@ -49,7 +49,9 @@ interface Args {
     | 'preview_migration'
     | 'start'
     | 'retry'
-    | 'resume';
+    | 'resume'
+    | 'inspect_migration'
+    | 'cleanup_migration';
   operation?: 'bulk' | 'import' | 'migration';
   state?: 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
   limit?: number;
@@ -64,6 +66,7 @@ interface Args {
   targetVersion?: number;
   planHashes?: Record<string, string>;
   migrationCommittedAt?: Record<string, string>;
+  ownerChoices?: Record<string, Record<string, { path: string; blockId: string }>>;
   cwd?: string;
 }
 
@@ -78,6 +81,8 @@ const OutputSchema = outputSchemaWithText({
     'start',
     'retry',
     'resume',
+    'inspect_migration',
+    'cleanup_migration',
   ]),
   tasks: z.array(DatabaseTaskSchema).optional(),
   task: DatabaseTaskSchema.optional(),
@@ -85,6 +90,18 @@ const OutputSchema = outputSchemaWithText({
     .union([DatabaseOnboardingPreviewSchema, DatabaseManifestMigrationPreviewSchema])
     .optional(),
   nextCursor: z.string().nullable().optional(),
+  inspection: z
+    .object({
+      taskId: z.string().startsWith('task_'),
+      state: z.enum(['prepared', 'staged', 'activated', 'rolled_back', 'recovery_required']),
+      updatedAt: z.string().datetime(),
+      files: z.array(z.object({ path: z.string(), beforeSha256: z.string().nullable(), afterSha256: z.string().nullable() }).strict()),
+      taskMaterialPresent: z.boolean(),
+      undoAvailable: z.boolean(),
+      undoExpiresAt: z.string().datetime().nullable(),
+    })
+    .optional(),
+  cleanup: z.object({ taskId: z.string().startsWith('task_'), removed: z.boolean() }).strict().optional(),
   problem: DatabaseToolProblemOutputSchema.optional(),
 });
 
@@ -108,6 +125,8 @@ export function register(server: ServerInstance, deps: Dependencies): void {
           'start',
           'retry',
           'resume',
+          'inspect_migration',
+          'cleanup_migration',
         ]),
         operation: z.enum(['bulk', 'import', 'migration']).optional(),
         state: z
@@ -142,6 +161,15 @@ export function register(server: ServerInstance, deps: Dependencies): void {
         migrationCommittedAt: z
           .record(z.string().min(1), z.string().datetime({ offset: true }))
           .optional(),
+        ownerChoices: z
+          .record(
+            z.string().startsWith('db_'),
+            z.record(
+              z.string().startsWith('ds_'),
+              z.object({ path: z.string().min(1), blockId: z.string().startsWith('dbb_') }).strict(),
+            ),
+          )
+          .optional(),
         cwd: z.string().optional().describe(ROUTED_CWD_DESCRIPTION),
       },
       outputSchema: OutputSchema,
@@ -175,6 +203,8 @@ export function register(server: ServerInstance, deps: Dependencies): void {
       if (
         (args.action === 'get' ||
           args.action === 'cancel' ||
+          args.action === 'inspect_migration' ||
+          args.action === 'cleanup_migration' ||
           args.action === 'retry' ||
           args.action === 'resume') &&
         !args.taskId
@@ -185,7 +215,7 @@ export function register(server: ServerInstance, deps: Dependencies): void {
         });
       }
       if (
-        (args.action === 'cancel' || args.action === 'retry' || args.action === 'resume') &&
+        (args.action === 'cancel' || args.action === 'cleanup_migration' || args.action === 'retry' || args.action === 'resume') &&
         !args.expectedRevision
       ) {
         return databaseToolInputError(
@@ -266,8 +296,11 @@ export function register(server: ServerInstance, deps: Dependencies): void {
                     ...(args.migrationCommittedAt
                       ? { migrationCommittedAt: args.migrationCommittedAt }
                       : {}),
+                    ...(args.ownerChoices ? { ownerChoices: args.ownerChoices } : {}),
                   }
-                : args.action === 'cancel' || args.action === 'retry' || args.action === 'resume'
+                : args.action === 'inspect_migration'
+                  ? { action: args.action, taskId: args.taskId }
+                  : args.action === 'cleanup_migration' || args.action === 'cancel' || args.action === 'retry' || args.action === 'resume'
                   ? {
                       action: args.action,
                       taskId: args.taskId,
@@ -294,6 +327,7 @@ export function register(server: ServerInstance, deps: Dependencies): void {
                                 ...(args.migrationCommittedAt
                                   ? { migrationCommittedAt: args.migrationCommittedAt }
                                   : {}),
+                                ...(args.ownerChoices ? { ownerChoices: args.ownerChoices } : {}),
                               },
                     },
         databaseAccessHeaders(deps.identityRef?.current),
@@ -328,6 +362,18 @@ export function register(server: ServerInstance, deps: Dependencies): void {
         return textPlusStructured(
           `Manifest migration preview returned ${preview?.items?.length ?? 0} targets; ${String(preview?.summary?.blocked ?? 0)} blocked and ${preview?.committable === true ? 'ready to start' : 'not committable'}.`,
           { cwd, action: args.action, preview: data.preview },
+        );
+      }
+      if (args.action === 'inspect_migration') {
+        return textPlusStructured(
+          `Migration ${String((data.inspection as { taskId?: unknown } | undefined)?.taskId)} is ${String((data.inspection as { state?: unknown } | undefined)?.state)}; undo is ${((data.inspection as { undoAvailable?: unknown } | undefined)?.undoAvailable === true) ? 'available' : 'not available'}.`,
+          { cwd, action: args.action, inspection: data.inspection },
+        );
+      }
+      if (args.action === 'cleanup_migration') {
+        return textPlusStructured(
+          `Migration recovery material for ${String((data.cleanup as { taskId?: unknown } | undefined)?.taskId)} was ${((data.cleanup as { removed?: unknown } | undefined)?.removed === true) ? 'removed' : 'retained'}.`,
+          { cwd, action: args.action, cleanup: data.cleanup },
         );
       }
       const task = data.task as { id?: unknown; state?: unknown } | undefined;

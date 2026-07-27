@@ -134,6 +134,31 @@ export class DatabaseMigrationJournal {
     await rm(resolve(this.#root, taskId), { recursive: true, force: true });
   }
 
+  /**
+   * Remove task-scoped staging/backup material only after the caller has
+   * enforced its retention and undo policy. The journal itself is retained so
+   * recovery history and before/after hashes remain inspectable without
+   * retaining user content bytes.
+   */
+  async cleanup(taskId: string): Promise<{ taskId: string; removed: boolean }> {
+    const journal = await this.#read(taskId, false);
+    if (journal.state !== 'activated' && journal.state !== 'rolled_back') {
+      throw new Error(`Migration task ${taskId} is not at a cleanup boundary`);
+    }
+    await rm(resolve(this.#root, taskId), { recursive: true, force: true });
+    return { taskId, removed: true };
+  }
+
+  async hasTaskMaterial(taskId: string): Promise<boolean> {
+    try {
+      const stats = await lstat(resolve(this.#root, taskId));
+      return stats.isDirectory();
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false;
+      throw error;
+    }
+  }
+
   async rollback(taskId: string): Promise<{ taskId: string; restored: number; status: 'applied' | 'already_applied' }> {
     const journal = await this.#read(taskId, false);
     if (journal.state === 'rolled_back') return { taskId, restored: journal.files.length, status: 'already_applied' };

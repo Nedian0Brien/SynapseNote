@@ -463,6 +463,50 @@ export function serializeDatabaseMarkdownOwnerMarker(marker: DatabaseMarkdownOwn
   return serialized;
 }
 
+/**
+ * Copy an owner block with an explicitly selected identity.
+ *
+ * Only the marker is rewritten; the table/prose bytes remain identical. A
+ * source containing more than one owner marker is rejected because selecting
+ * the first block would make copy/paste silently ambiguous.
+ */
+export function cloneDatabaseMarkdownOwnerIdentity(input: {
+  source: string;
+  databaseId: string;
+  sourceId: string;
+  blockId: string;
+  columns?: readonly string[];
+}): { markdown: string; owner: ParsedDatabaseMarkdownOwner } {
+  const parsed = parseDatabaseMarkdownOwner(input.source);
+  if (!parsed.ok) throw new Error(`Cannot clone invalid database owner: ${parsed.message}`);
+  const remainder = input.source.slice(parsed.owner.markerRange.end);
+  if (findOwnerMarker(remainder)) {
+    throw new Error('Cannot clone a Markdown document containing duplicate database owner markers');
+  }
+  if (
+    input.databaseId === parsed.owner.marker.databaseId &&
+    input.sourceId === parsed.owner.marker.sourceId &&
+    input.blockId === parsed.owner.marker.blockId
+  ) {
+    throw new Error('Cloned database owner identity must differ from the source identity');
+  }
+  const marker = {
+    version: DATABASE_MARKDOWN_OWNER_MARKER_VERSION,
+    databaseId: input.databaseId,
+    sourceId: input.sourceId,
+    blockId: input.blockId,
+    columns: input.columns ?? parsed.owner.marker.columns,
+  } satisfies DatabaseMarkdownOwnerMarker;
+  const serialized = serializeDatabaseMarkdownOwnerMarker(marker);
+  const markdown =
+    input.source.slice(0, parsed.owner.markerRange.start) +
+    serialized +
+    input.source.slice(parsed.owner.markerRange.end);
+  const reparsed = parseDatabaseMarkdownOwner(markdown);
+  if (!reparsed.ok) throw new Error(`Cloned database owner failed verification: ${reparsed.message}`);
+  return { markdown, owner: reparsed.owner };
+}
+
 export function replaceDatabaseMarkdownTableCell(
   source: string,
   owner: ParsedDatabaseMarkdownOwner,

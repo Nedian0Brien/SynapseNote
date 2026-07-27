@@ -41,6 +41,8 @@ import {
   evaluateDatabaseFilter,
   buildDatabaseReverseRelationIndex,
   createDatabaseDerivedRevision,
+  createDatabaseMarkdownTableExport,
+  type DatabaseMarkdownTableExport,
   type FormulaComputedResult,
   formulaErrorResult,
   isDatabaseValueValidForProperty,
@@ -269,6 +271,13 @@ export interface DatabaseRecordLookupResult {
     issues?: DatabaseRecordIssue[];
     archivedAt?: string;
   };
+}
+
+export interface DatabaseMarkdownTableExportInput {
+  databaseId: string;
+  sourceId: string;
+  mode: 'canonical_markdown' | 'computed_snapshot';
+  query?: unknown;
 }
 
 export interface DatabaseComputedPropertyPreviewResult {
@@ -2198,12 +2207,83 @@ export class DatabaseDataPlane {
         id: record.id,
         path: record.path,
         revision: record.revision,
+        ...(record.semanticRevisions
+          ? { semanticRevisions: structuredClone(record.semanticRevisions) }
+          : {}),
         values: structuredClone(record.values),
         ...(record.invalidValues ? { invalidValues: structuredClone(record.invalidValues) } : {}),
         ...(record.issues ? { issues: structuredClone(record.issues) } : {}),
         ...(record.archivedAt ? { archivedAt: record.archivedAt } : {}),
       },
     };
+  }
+
+  /**
+   * Export either canonical Markdown files or a revision-stamped computed
+   * snapshot. Computed exports are assembled from the same permission-scoped
+   * query path as the UI/API and contain no owner marker, so they cannot be
+   * mistaken for an importable database source.
+   */
+  exportMarkdownTable(input: DatabaseMarkdownTableExportInput): DatabaseMarkdownTableExport {
+    const described = this.#describeCanonical({
+      databaseId: input.databaseId,
+      sourceId: input.sourceId,
+    });
+    const source = described.source;
+    if (!source || source.storage?.kind !== 'markdown_table') {
+      throw new DatabaseDataPlaneError(
+        'source_not_found',
+        'The requested source does not use v2 Markdown owner-table storage',
+        { databaseId: input.databaseId, sourceId: input.sourceId },
+      );
+    }
+    const canonical = this.#databaseRecordIndex.getV2CanonicalDocuments(
+      input.databaseId,
+      input.sourceId,
+    );
+    if (!canonical) {
+      throw new DatabaseDataPlaneError(
+        'index_unavailable',
+        'Canonical v2 Markdown files are not available from the current index snapshot',
+        { databaseId: input.databaseId, sourceId: input.sourceId },
+      );
+    }
+    if (input.mode === 'canonical_markdown') {
+      return createDatabaseMarkdownTableExport({
+        mode: input.mode,
+        manifestRevision: described.manifestRevision,
+        ownerPath: canonical.ownerPath,
+        ownerMarkdown: canonical.ownerMarkdown,
+        linkedDocuments: canonical.linkedDocuments,
+      });
+    }
+    const query = this.query({
+      databaseId: input.databaseId,
+      sourceId: input.sourceId,
+      query: {
+        ...(input.query && typeof input.query === 'object' ? input.query : {}),
+        page: {
+          ...((input.query && typeof input.query === 'object' && 'page' in input.query && input.query.page && typeof input.query.page === 'object')
+            ? input.query.page
+            : {}),
+          limit: 500,
+        },
+      },
+    });
+    return createDatabaseMarkdownTableExport({
+      mode: input.mode,
+      manifestRevision: query.manifestRevision,
+      ownerPath: canonical.ownerPath,
+      ownerMarkdown: canonical.ownerMarkdown,
+      evaluatedAt: this.#now().toISOString(),
+      derivedRevision: query.derivedRevision ?? query.snapshotRevision,
+      records: query.records.map((record) => ({
+        recordId: record.id,
+        path: record.path,
+        values: structuredClone(record.values),
+        ...(record.computedResults ? { computed: structuredClone(record.computedResults) } : {}),
+      })),
+    });
   }
 
   /**

@@ -5,6 +5,7 @@ import {
   createDatabaseMarkdownRecordId,
   ensureDatabaseDocumentIdentity,
   parseDatabaseDocumentIdentity,
+  reassignDatabaseDocumentIdentity,
 } from './document-identity.ts';
 
 describe('database document identity', () => {
@@ -60,5 +61,52 @@ describe('database document identity', () => {
 
   test('derives migration document IDs from legacy record IDs', () => {
     expect(createDatabaseDocumentIdFromLegacyRecordId('rec_legacy_order')).toBe('doc_legacy_order');
+  });
+
+  test('reassigns only the existing identity during copy/paste', () => {
+    const source = [
+      '---',
+      '# keep comment',
+      '_sn:',
+      '  document_id: "doc_original" # identity',
+      '  custom: keep',
+      '---',
+      '# Body',
+      '',
+      'same bytes',
+      '',
+    ].join('\n');
+    const result = reassignDatabaseDocumentIdentity({ markdown: source, documentId: 'doc_copy' });
+    expect(result).toMatchObject({
+      ok: true,
+      changed: true,
+      previousDocumentId: 'doc_original',
+      documentId: 'doc_copy',
+    });
+    if (!result.ok) return;
+    expect(result.markdown).toContain('document_id: "doc_copy" # identity');
+    expect(result.markdown).toContain('  custom: keep');
+    expect(result.markdown.slice(result.markdown.indexOf('---', 4))).toBe(
+      source.slice(source.indexOf('---', 4)),
+    );
+    expect(parseDatabaseDocumentIdentity(result.markdown)).toEqual({
+      ok: true,
+      documentId: 'doc_copy',
+    });
+    expect(
+      reassignDatabaseDocumentIdentity({ markdown: result.markdown, documentId: 'doc_copy' }),
+    ).toMatchObject({ ok: true, changed: false });
+  });
+
+  test('refuses identity reassignment for missing or malformed source metadata', () => {
+    expect(
+      reassignDatabaseDocumentIdentity({ markdown: '# no id', documentId: 'doc_copy' }),
+    ).toMatchObject({ ok: false, code: 'missing_document_id' });
+    expect(
+      reassignDatabaseDocumentIdentity({ markdown: '---\n_sn: [broken\n---\n', documentId: 'doc_copy' }),
+    ).toMatchObject({ ok: false, code: 'malformed_frontmatter' });
+    expect(
+      reassignDatabaseDocumentIdentity({ markdown: '---\n_sn:\n  document_id: nope\n---\n', documentId: 'doc_copy' }),
+    ).toMatchObject({ ok: false, code: 'invalid_existing_document_id' });
   });
 });

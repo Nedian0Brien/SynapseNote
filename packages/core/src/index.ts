@@ -318,6 +318,7 @@ export {
   parseDatabaseMarkdownOwner,
   replaceDatabaseMarkdownTableRow,
   replaceDatabaseMarkdownTableCell,
+  cloneDatabaseMarkdownOwnerIdentity,
   serializeDatabaseMarkdownOwnerMarker,
 } from './database/markdown-table.ts';
 export {
@@ -329,7 +330,10 @@ export {
 } from './database/markdown-table-links.ts';
 export {
   type CreateDatabaseMarkdownRevisionSetInput,
+  type DatabaseMarkdownRecordRevisionSet,
+  DatabaseMarkdownRecordRevisionSetSchema,
   type DatabaseMarkdownRevisionSet,
+  createDatabaseMarkdownRecordRevisionSet,
   createDatabaseMarkdownRevisionSet,
   databaseMarkdownDocumentRevision,
   databaseMarkdownOwnerRevision,
@@ -357,12 +361,29 @@ export {
   mergeDatabaseMarkdownTables,
 } from './database/markdown-table-diff.ts';
 export {
+  type DatabaseMarkdownLinkRewrite,
+  type DatabaseMarkdownLinkRewriteResult,
+  rewriteDatabaseMarkdownDocumentLinks,
+} from './database/markdown-table-link-rewrite.ts';
+export {
   type DatabaseMarkdownCanonicalExportEntry,
   type DatabaseMarkdownComputedSnapshotRecord,
   type DatabaseMarkdownTableExport,
   type DatabaseMarkdownTableExportMode,
   createDatabaseMarkdownTableExport,
 } from './database/markdown-table-export.ts';
+export {
+  DATABASE_DOCUMENT_TITLE_MAX_LENGTH,
+  type DatabaseDocumentTitle,
+  type DatabaseDocumentTitleError,
+  type DatabaseDocumentTitleErrorCode,
+  type DatabaseDocumentTitleOrigin,
+  type NormalizeDatabaseDocumentTitleResult,
+  normalizeDatabaseDocumentTitle,
+  replaceDatabaseDocumentTitle,
+  resolveDatabaseDocumentTitle,
+  titleLinkWithDocumentTitle,
+} from './database/markdown-table-document.ts';
 export { type DatabaseDocumentId, DatabaseDocumentIdSchema } from './database/stable-ids.ts';
 export {
   createDatabaseDocumentId,
@@ -371,8 +392,10 @@ export {
   DATABASE_DOCUMENT_ID_KEY,
   type EnsureDatabaseDocumentIdentityResult,
   type ParseDatabaseDocumentIdentityResult,
+  type ReassignDatabaseDocumentIdentityResult,
   ensureDatabaseDocumentIdentity,
   parseDatabaseDocumentIdentity,
+  reassignDatabaseDocumentIdentity,
 } from './database/document-identity.ts';
 export {
   type DatabaseMarkdownDocumentResolution,
@@ -393,6 +416,41 @@ export {
   type DatabaseMarkdownV2MigrationPlan,
   planDatabaseMarkdownV2Migration,
 } from './database/markdown-table-migration.ts';
+export {
+  type DatabaseMigrationEquivalenceMismatch,
+  type DatabaseMigrationEquivalenceReport,
+  type DatabaseMigrationLogicalSnapshotRecord,
+  compareDatabaseMigrationLogicalSnapshots,
+} from './database/markdown-table-migration-equivalence.ts';
+export {
+  type DatabaseMarkdownIdentityRepairAction,
+  type DatabaseMarkdownIdentityRepairDocument,
+  type DatabaseMarkdownIdentityRepairIssue,
+  type DatabaseMarkdownIdentityRepairIssueCode,
+  type DatabaseMarkdownIdentityRepairPlan,
+  planDatabaseMarkdownIdentityRepair,
+} from './database/markdown-table-identity-repair.ts';
+export {
+  type DatabaseMarkdownCrdtConflict,
+  type DatabaseMarkdownCrdtConflictCode,
+  type DatabaseMarkdownCrdtMutation,
+  type DatabaseMarkdownCrdtOperation,
+  classifyDatabaseMarkdownCrdtConflict,
+  createDatabaseMarkdownCrdtMutation,
+} from './database/markdown-table-crdt.ts';
+export {
+  type DatabaseMigrationDependencyClosureResult,
+  type DatabaseMigrationDependencyEdge,
+  type DatabaseMigrationDerivedBaseline,
+  type DatabaseMigrationOwnerCandidate,
+  type DatabaseMigrationOwnerCandidateKind,
+  type DatabaseMigrationOwnerSelection,
+  type DatabaseMigrationOwnerSelectionResult,
+  freezeDatabaseMigrationDerivedBaseline,
+  migrationSources,
+  planDatabaseMigrationDependencyClosure,
+  resolveDatabaseMigrationOwnerSelection,
+} from './database/markdown-table-migration-preflight.ts';
 export {
   type DatabaseDerivedRevisionInput,
   type DatabaseReverseRelationEdge,

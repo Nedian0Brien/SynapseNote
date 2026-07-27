@@ -35,6 +35,7 @@ import {
   enqueueOfflineDatabaseMutation,
   offlineDatabaseMutationStore,
   offlineQueueableRecordMutations,
+  rebaseOfflineDatabaseMutation,
   reconcileOfflineDatabaseMutations,
 } from '@/lib/database-offline-mutation-queue';
 import { fetchDatabaseRecord } from '@/lib/database-query-client';
@@ -382,6 +383,27 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
         serverInstanceId,
         shouldProcess: (item) =>
           item.databaseId === selection.databaseId && item.sourceId === selection.sourceId,
+        rebase: async (item) => {
+          const records = new Map<string, { revision: string | null; values: Readonly<Record<string, unknown>> }>();
+          for (const mutation of item.recordMutations) {
+            if (!mutation.id) continue;
+            const current = await fetchDatabaseRecord({
+              databaseId: item.databaseId,
+              sourceId: item.sourceId,
+              recordId: mutation.id,
+            });
+            records.set(mutation.id, {
+              revision: current.record.revision,
+              values: current.record.values,
+            });
+          }
+          return rebaseOfflineDatabaseMutation({
+            item,
+            branch,
+            serverInstanceId,
+            records,
+          });
+        },
         execute: async (item) => {
           setMutationStatus('planning');
           const current = await describeDatabase({

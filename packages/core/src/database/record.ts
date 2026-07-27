@@ -33,6 +33,7 @@ import {
   validateDatabasePropertyConstraints,
 } from './schema.ts';
 import { type DatabaseVerificationValue, DatabaseVerificationValueSchema } from './verification.ts';
+import type { DatabaseMarkdownRecordRevisionSet } from './markdown-table-revision.ts';
 
 export type DatabaseValue =
   | string
@@ -57,6 +58,8 @@ export interface DatabaseRecord {
    * v2 UI mutations use it as the optimistic owner-table precondition.
    */
   storageRevision?: string | null;
+  /** Full semantic revision set for v2 owner/document transports. */
+  semanticRevisions?: DatabaseMarkdownRecordRevisionSet;
   /** Semantic revision of body and non-Verification values; stable across badge-only changes. */
   evidenceRevision?: string | null;
   values: Record<string, DatabaseValue>;

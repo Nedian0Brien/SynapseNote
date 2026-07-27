@@ -22,7 +22,13 @@ import {
   type DatabaseDataPlane,
   type ResolveDatabaseQueryAccess,
 } from './database-data-plane.ts';
-import { createDatabaseDataPlaneApiHandlers } from './database-data-plane-api.ts';
+import {
+  createDatabaseDataPlaneApiHandlers,
+  DatabaseMarkdownTableExportRequestSchema,
+  DatabaseMarkdownTableExportResponseSchema,
+  DatabaseTaskRequestSchema,
+  DatabaseTaskResponseSchema,
+} from './database-data-plane-api.ts';
 import { createDatabasePermissionStore } from './database-permission-store.ts';
 import { createDatabasePlaceSearchService } from './database-place-search.ts';
 import { createDatabasePlanEngine } from './database-plan.ts';
@@ -418,6 +424,51 @@ async function call(
 }
 
 describe('database data plane HTTP handlers', () => {
+  test('pins v2 export and migration recovery actions to strict content-free schemas', () => {
+    expect(
+      DatabaseMarkdownTableExportRequestSchema.parse({
+        databaseId: 'db_tasks',
+        sourceId: 'ds_tasks',
+        mode: 'computed_snapshot',
+        query: { page: { limit: 10 } },
+      }),
+    ).toMatchObject({ mode: 'computed_snapshot' });
+    expect(
+      DatabaseMarkdownTableExportResponseSchema.parse({
+        mode: 'computed_snapshot',
+        manifestRevision: 'sha256:manifest',
+        derivedRevision: `sha256:${'a'.repeat(64)}`,
+        evaluatedAt: '2026-07-27T00:00:00.000Z',
+        canonical: [],
+        snapshot: [],
+      }),
+    ).toMatchObject({ canonical: [], snapshot: [] });
+    expect(
+      DatabaseTaskRequestSchema.parse({ action: 'inspect_migration', taskId: 'task_recovery' }),
+    ).toEqual({ action: 'inspect_migration', taskId: 'task_recovery' });
+    expect(
+      DatabaseTaskRequestSchema.parse({
+        action: 'cleanup_migration',
+        taskId: 'task_recovery',
+        expectedRevision: `sha256:${'b'.repeat(64)}`,
+      }),
+    ).toMatchObject({ action: 'cleanup_migration' });
+    expect(
+      DatabaseTaskResponseSchema.parse({
+        action: 'inspect_migration',
+        inspection: {
+          taskId: 'task_recovery',
+          state: 'activated',
+          updatedAt: '2026-07-27T00:00:00.000Z',
+          files: [{ path: '.ok/databases/tasks.yml', beforeSha256: null, afterSha256: `sha256:${'c'.repeat(64)}` }],
+          taskMaterialPresent: true,
+          undoAvailable: true,
+          undoExpiresAt: '2026-08-03T00:00:00.000Z',
+        },
+      }),
+    ).toMatchObject({ action: 'inspect_migration' });
+  });
+
   test('binds a trusted transport principal to the whole asynchronous handler call', async () => {
     let observedPrincipal: DatabaseAccessPrincipal | undefined;
     const resolveQueryAccess: ResolveDatabaseQueryAccess = (input) => {

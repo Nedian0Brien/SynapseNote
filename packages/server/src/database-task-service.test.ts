@@ -7,6 +7,7 @@ import { createDatabaseCommitEngine } from './database-commit.ts';
 import { createDatabasePlanEngine } from './database-plan.ts';
 import { createDatabaseRecordIndex } from './database-record-index.ts';
 import { createDatabaseStore } from './database-store.ts';
+import { createDatabaseMigrationJournal } from './database-migration-journal.ts';
 import { createDatabaseTaskService } from './database-task-service.ts';
 import { createDatabaseTaskStore } from './database-task-store.ts';
 
@@ -66,7 +67,9 @@ function desiredState() {
   };
 }
 
-async function fixture() {
+async function fixture(options: {
+  migrationFileOperationHook?: (input: { phase: 'stage' | 'activate'; path: string; index: number }) => void | Promise<void>;
+} = {}) {
   const projectDir = mkdtempSync(join(tmpdir(), 'synapsenote-database-task-service-'));
   const contentDir = join(projectDir, 'content');
   mkdirSync(contentDir, { recursive: true });
@@ -108,6 +111,7 @@ async function fixture() {
     databaseRecordIndex: index,
     databasePlanEngine: plans,
     databaseCommitEngine: commit,
+    ...options,
   });
   return { projectDir, contentDir, store, index, plans, draft, plan, commit, taskStore, service };
 }
@@ -167,11 +171,20 @@ describe('DatabaseTaskService product handlers', () => {
     const database = store.list()[0];
     if (!database) throw new Error('expected committed database');
     const expectedManifestRevision = store.snapshot().revision;
+    const ownerChoices = {
+      [database.id]: {
+        [database.sources[0]?.id ?? '']: {
+          path: 'custom/task-owner.md',
+          blockId: 'dbb_custom_task_owner',
+        },
+      },
+    };
     const preview = await service.previewMigration({
       operation: 'migration',
       databaseIds: [database.id],
       expectedManifestRevision,
       targetVersion: 2,
+      ownerChoices,
     });
     const item = preview.items[0];
     if (!item?.planHash || !item.migrationCommittedAt) throw new Error('expected v2 migration plan');
@@ -193,6 +206,7 @@ describe('DatabaseTaskService product handlers', () => {
       targetVersion: 2,
       planHashes: { [database.id]: item.planHash },
       migrationCommittedAt: { [database.id]: item.migrationCommittedAt },
+      ownerChoices,
     });
     const migrated = await service.wait(task.id);
     expect(migrated).toMatchObject({
@@ -203,7 +217,7 @@ describe('DatabaseTaskService product handlers', () => {
       },
     });
     expect(readFileSync(join(projectDir, '.ok', 'databases', 'task-service.yml'), 'utf8')).toContain('version: 2');
-    expect(readFileSync(join(contentDir, 'task-service', 'tasks.md'), 'utf8')).toContain(
+    expect(readFileSync(join(contentDir, 'custom', 'task-owner.md'), 'utf8')).toContain(
       'synapsenote:database',
     );
     for (const path of readdirSync(join(contentDir, 'tasks'))) {
@@ -212,6 +226,75 @@ describe('DatabaseTaskService product handlers', () => {
       }
     }
     expect(index.list()).toHaveLength(2);
+
+    const inspection = await service.inspectMigration(task.id);
+    expect(inspection).toMatchObject({
+      taskId: task.id,
+      state: 'activated',
+      taskMaterialPresent: true,
+      undoAvailable: true,
+      files: expect.arrayContaining([
+        expect.objectContaining({ path: `.ok/databases/${database.key}.yml` }),
+      ]),
+    });
+    await expect(service.cleanupMigration(task.id, migrated.revision)).rejects.toMatchObject({
+      code: 'task_rollback_unavailable',
+    });
+  });
+
+  test('rolls back every canonical file when activation fails at an injected file checkpoint', async () => {
+    const { projectDir, contentDir, store, plan, commit, service } = await fixture({
+      migrationFileOperationHook: ({ phase, index }) => {
+        if (phase === 'activate' && index === 0) throw new Error('injected activation failure');
+      },
+    });
+    const seeded = await service.start({
+      operation: 'bulk',
+      commit: {
+        planId: plan.id,
+        planHash: plan.hash,
+        expectedSnapshotRevision: plan.snapshotRevision,
+        idempotencyKey: 'durable-v2-migration-failure-fixture',
+        approvalToken: commit.expectedApprovalToken(plan.hash),
+        actor: { principalId: 'agent:v2-migration-failure', kind: 'agent' },
+      },
+    });
+    await service.wait(seeded.id);
+    const database = store.list()[0];
+    const source = database?.sources[0];
+    if (!database || !source) throw new Error('expected v1 database source');
+    const before = new Map<string, string>();
+    const manifestPath = join(projectDir, '.ok', 'databases', `${database.key}.yml`);
+    before.set('.ok/databases/task-service.yml', readFileSync(manifestPath, 'utf8'));
+    for (const path of readdirSync(join(contentDir, 'tasks'))) {
+      before.set(`content/tasks/${path}`, readFileSync(join(contentDir, 'tasks', path), 'utf8'));
+    }
+    const expectedManifestRevision = store.snapshot().revision;
+    const preview = await service.previewMigration({
+      operation: 'migration',
+      databaseIds: [database.id],
+      expectedManifestRevision,
+      targetVersion: 2,
+    });
+    const item = preview.items[0];
+    if (!item?.planHash || !item.migrationCommittedAt) throw new Error('expected migration preview');
+    const task = await service.start({
+      operation: 'migration',
+      databaseIds: [database.id],
+      expectedManifestRevision,
+      targetVersion: 2,
+      planHashes: { [database.id]: item.planHash },
+      migrationCommittedAt: { [database.id]: item.migrationCommittedAt },
+    });
+    const failed = await service.wait(task.id);
+    expect(failed).toMatchObject({ state: 'failed', problem: { code: 'task_execution_failed' } });
+    const journal = await createDatabaseMigrationJournal(projectDir).get(task.id);
+    expect(journal.state).toBe('rolled_back');
+    expect(readFileSync(manifestPath, 'utf8')).toBe(before.get('.ok/databases/task-service.yml'));
+    for (const [path, markdown] of before) {
+      if (path.startsWith('.ok/')) continue;
+      expect(readFileSync(join(projectDir, path), 'utf8')).toBe(markdown);
+    }
   });
 
   test('runs approved bulk commit, frozen source import, and manifest migration tasks', async () => {

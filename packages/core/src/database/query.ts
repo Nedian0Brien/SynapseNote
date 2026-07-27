@@ -35,6 +35,7 @@ import {
   databasePlaceSearchText,
 } from './place.ts';
 import type { DatabaseRecord, DatabaseRecordIssue, DatabaseValue } from './record.ts';
+import { DatabaseMarkdownRecordRevisionSetSchema } from './markdown-table-revision.ts';
 import {
   type ProjectedDatabaseRelationRecord,
   ProjectedDatabaseRelationRecordSchema,
@@ -216,6 +217,7 @@ export const ProjectedDatabaseRecordSchema = z
       .regex(/^sha256:[a-f0-9]{64}$/)
       .nullable()
       .optional(),
+    semanticRevisions: DatabaseMarkdownRecordRevisionSetSchema.optional(),
     evidenceRevision: z
       .string()
       .regex(/^sha256:[a-f0-9]{64}$/)
@@ -263,6 +265,7 @@ export interface ProjectedDatabaseRecord {
   path: string;
   revision: string | null;
   storageRevision?: string | null;
+  semanticRevisions?: z.infer<typeof DatabaseMarkdownRecordRevisionSetSchema>;
   evidenceRevision?: string | null;
   values: Record<string, DatabaseValue>;
   textProjections?: Record<
@@ -1681,6 +1684,9 @@ export function queryDatabaseRecords(input: QueryDatabaseRecordsInput): Database
       ...(record.storageRevision === undefined
         ? {}
         : { storageRevision: record.storageRevision }),
+      ...(record.semanticRevisions === undefined
+        ? {}
+        : { semanticRevisions: structuredClone(record.semanticRevisions) }),
       ...(record.evidenceRevision === undefined
         ? {}
         : { evidenceRevision: record.evidenceRevision }),

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createDatabaseMigrationJournal } from './database-migration-journal.ts';
@@ -53,5 +53,22 @@ describe('DatabaseMigrationJournal', () => {
       files: [{ path: 'notes.md', before: 'before\n', after: 'after\n' }],
     });
     expect(retried.state).toBe('prepared');
+  });
+
+  test('cleans task-scoped recovery material only at an activated terminal boundary', async () => {
+    const projectDir = await mkdtemp(join(tmpdir(), 'synapsenote-migration-journal-'));
+    const journal = createDatabaseMigrationJournal(projectDir);
+    await journal.prepare({
+      taskId: 'task_cleanup',
+      files: [{ path: 'notes.md', before: 'before\n', after: 'after\n' }],
+    });
+    await expect(journal.cleanup('task_cleanup')).rejects.toThrow('cleanup boundary');
+    await journal.checkpoint('task_cleanup', 'activated');
+    await mkdir(join(projectDir, '.ok', 'local', 'database-migrations', 'task_cleanup'), { recursive: true });
+    await writeFile(join(projectDir, '.ok', 'local', 'database-migrations', 'task_cleanup', 'backup.json'), '{}');
+    expect(await journal.hasTaskMaterial('task_cleanup')).toBe(true);
+    await expect(journal.cleanup('task_cleanup')).resolves.toEqual({ taskId: 'task_cleanup', removed: true });
+    expect(await journal.hasTaskMaterial('task_cleanup')).toBe(false);
+    expect((await journal.get('task_cleanup')).state).toBe('activated');
   });
 });

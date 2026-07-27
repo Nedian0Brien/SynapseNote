@@ -4,7 +4,7 @@ import {
   ensureDatabaseDocumentIdentity,
 } from './document-identity.ts';
 import { stripFrontmatter, unwrapFrontmatterFences } from '../extensions/frontmatter.ts';
-import { parseFrontmatterYaml } from '../frontmatter/yaml-codec.ts';
+import { resolveDatabaseDocumentTitle } from './markdown-table-document.ts';
 import {
   encodeDatabaseMarkdownCell,
   encodeDatabaseMarkdownCellText,
@@ -153,18 +153,6 @@ function removeLegacyDatabaseMetadata(markdown: string): string {
 
 function withoutExtension(path: string): string {
   return path.replace(/\.(?:md|mdx)$/i, '');
-}
-
-function ordinaryDocumentTitle(markdown: string, path: string): string {
-  const { frontmatter, body } = stripFrontmatter(markdown);
-  if (frontmatter !== '') {
-    const parsed = parseFrontmatterYaml(unwrapFrontmatterFences(frontmatter));
-    const generic = parsed.map?.title;
-    if (typeof generic === 'string' && generic.trim() !== '') return generic.trim();
-  }
-  const heading = body.match(/^#\s+(.+?)\s*#?\s*$/m)?.[1]?.trim();
-  if (heading) return heading;
-  return path.split('/').at(-1)?.replace(/\.(?:md|mdx)$/i, '') ?? path;
 }
 
 function link(target: string, alias?: string): DatabaseMarkdownDocumentLink {
@@ -316,7 +304,7 @@ export function planDatabaseMarkdownV2Migration(input: {
     const titleProperty = source.properties.find((property) => property.type === 'title');
     const recordTitle = titleProperty ? result.record.values[titleProperty.id] : undefined;
     if (typeof recordTitle === 'string') {
-      const documentTitle = ordinaryDocumentTitle(record.markdown, record.path);
+      const documentTitle = resolveDatabaseDocumentTitle(record.markdown, record.path).value;
       if (documentTitle !== recordTitle) {
         blockers.push({
           code: 'title_conflict',

@@ -208,10 +208,111 @@ export interface OfflineDatabaseReconcileResult {
   stoppedOffline: boolean;
 }
 
+export interface OfflineDatabaseRebaseConflict {
+  mutationId: string;
+  recordId: string | null;
+  code: 'branch_changed' | 'server_instance_changed' | 'record_deleted' | 'precondition_changed' | 'unstable_target';
+  propertyKeys: readonly string[];
+}
+
+export type OfflineDatabaseRebaseResult =
+  | { status: 'ready'; item: OfflineDatabaseMutation; rebasedRecordIds: readonly string[] }
+  | { status: 'converged'; item: OfflineDatabaseMutation; convergedRecordIds: readonly string[] }
+  | { status: 'conflict'; item: OfflineDatabaseMutation; conflicts: readonly OfflineDatabaseRebaseConflict[] };
+
+function equalValue(left: unknown, right: unknown): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function applyOperation(value: unknown, operation: DatabaseRecordMutation['operations'][number]): unknown {
+  switch (operation.op) {
+    case 'set': return operation.value;
+    case 'unset': return undefined;
+    case 'increment': return typeof value === 'number' ? value + operation.by : value;
+    case 'append': return `${typeof value === 'string' ? value : ''}${operation.value}`;
+    case 'add': {
+      const current = Array.isArray(value) ? [...value] : [];
+      return current.some((entry) => equalValue(entry, operation.value)) ? current : [...current, operation.value];
+    }
+    case 'remove': return Array.isArray(value) ? value.filter((entry) => !equalValue(entry, operation.value)) : value;
+    case 'link': {
+      const current = Array.isArray(value) ? [...value] : [];
+      return current.includes(operation.recordId) ? current : [...current, operation.recordId];
+    }
+    case 'unlink': return Array.isArray(value) ? value.filter((entry) => entry !== operation.recordId) : value;
+  }
+}
+
+function operationPropertyKeys(mutation: DatabaseRecordMutation): readonly string[] {
+  return [...new Set(mutation.operations
+    .map((operation) => ('propertyKey' in operation ? operation.propertyKey : null))
+    .filter((propertyKey): propertyKey is string => propertyKey !== null))].sort();
+}
+
+/** Rebase an offline queue item against the current stable-ID snapshot. */
+export function rebaseOfflineDatabaseMutation(input: {
+  item: OfflineDatabaseMutation;
+  branch: string;
+  serverInstanceId: string;
+  records: ReadonlyMap<string, { revision: string | null; values: Readonly<Record<string, unknown>> }>;
+}): OfflineDatabaseRebaseResult {
+  const { item } = input;
+  if (item.branch !== input.branch) {
+    return { status: 'conflict', item, conflicts: [{ mutationId: item.id, recordId: null, code: 'branch_changed', propertyKeys: [] }] };
+  }
+  if (item.serverInstanceId !== input.serverInstanceId) {
+    return { status: 'conflict', item, conflicts: [{ mutationId: item.id, recordId: null, code: 'server_instance_changed', propertyKeys: [] }] };
+  }
+  const rebasedRecordIds: string[] = [];
+  const convergedRecordIds: string[] = [];
+  const conflicts: OfflineDatabaseRebaseConflict[] = [];
+  const recordMutations: DatabaseRecordMutation[] = [];
+  for (const mutation of item.recordMutations) {
+    if (!mutation.id) {
+      conflicts.push({ mutationId: item.id, recordId: null, code: 'unstable_target', propertyKeys: operationPropertyKeys(mutation) });
+      continue;
+    }
+    const record = input.records.get(mutation.id);
+    if (!record) {
+      conflicts.push({ mutationId: item.id, recordId: mutation.id, code: 'record_deleted', propertyKeys: operationPropertyKeys(mutation) });
+      continue;
+    }
+    if (record.revision === null) {
+      conflicts.push({ mutationId: item.id, recordId: mutation.id, code: 'unstable_target', propertyKeys: operationPropertyKeys(mutation) });
+      continue;
+    }
+    const preconditionsMatch = mutation.preconditions.every((precondition) => {
+      const present = Object.hasOwn(record.values, precondition.propertyKey);
+      return present === precondition.present && (!present || equalValue(record.values[precondition.propertyKey], precondition.value));
+    });
+    const alreadyApplied = mutation.operations.every((operation) => {
+      const propertyKey = 'propertyKey' in operation ? operation.propertyKey : null;
+      if (!propertyKey) return false;
+      const next = applyOperation(record.values[propertyKey], operation);
+      return equalValue(next, record.values[propertyKey]);
+    });
+    if (!preconditionsMatch && alreadyApplied) {
+      convergedRecordIds.push(mutation.id);
+      continue;
+    }
+    if (!preconditionsMatch) {
+      conflicts.push({ mutationId: item.id, recordId: mutation.id, code: 'precondition_changed', propertyKeys: operationPropertyKeys(mutation) });
+      continue;
+    }
+    recordMutations.push({ ...mutation, expectedRevision: record.revision });
+    if (mutation.expectedRevision !== record.revision) rebasedRecordIds.push(mutation.id);
+  }
+  if (conflicts.length > 0) return { status: 'conflict', item, conflicts };
+  const nextItem = { ...item, recordMutations, updatedAt: Date.now() };
+  if (recordMutations.length === 0) return { status: 'converged', item: nextItem, convergedRecordIds };
+  return { status: 'ready', item: nextItem, rebasedRecordIds };
+}
+
 export async function reconcileOfflineDatabaseMutations(input: {
   store: OfflineDatabaseMutationStore;
   branch: string | null;
   serverInstanceId: string | null;
+  rebase?: (item: OfflineDatabaseMutation) => Promise<OfflineDatabaseRebaseResult> | OfflineDatabaseRebaseResult;
   execute: (
     item: OfflineDatabaseMutation,
   ) => Promise<'committed' | 'converged' | 'blocked' | 'review_declined'>;
@@ -246,7 +347,26 @@ export async function reconcileOfflineDatabaseMutations(input: {
       continue;
     }
     try {
-      const outcome = await input.execute(item);
+      const rebased = input.rebase
+        ? await input.rebase(item)
+        : ({ status: 'ready', item, rebasedRecordIds: [] } satisfies OfflineDatabaseRebaseResult);
+      if (rebased.status === 'conflict') {
+        await input.store.put({
+          ...item,
+          state: 'blocked',
+          attempts: Math.min(item.attempts + 1, OFFLINE_DATABASE_QUEUE_MAX_ATTEMPTS),
+          updatedAt: input.now?.() ?? Date.now(),
+          lastError: `Offline rebase conflict: ${rebased.conflicts.map((conflict) => conflict.code).join(', ')}`.slice(0, 2_000),
+        });
+        result.blocked.push(item.id);
+        continue;
+      }
+      if (rebased.status === 'converged') {
+        await input.store.delete(item.id);
+        result.converged.push(item.id);
+        continue;
+      }
+      const outcome = await input.execute(rebased.item);
       if (outcome === 'committed' || outcome === 'converged') {
         await input.store.delete(item.id);
         result[outcome].push(item.id);

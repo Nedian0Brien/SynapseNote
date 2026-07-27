@@ -18351,6 +18351,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     '/api/databases/catalog': databaseApi.catalog,
     '/api/databases/describe': databaseApi.describe,
     '/api/databases/record': databaseApi.record,
+    '/api/databases/markdown-table/export': databaseApi.markdownTableExport,
     '/api/databases/comments': databaseComments,
     '/api/databases/computed-preview': databaseApi.computedPropertyPreview,
     '/api/databases/property-conversion': databaseApi.propertyConversion,

@@ -1,5 +1,6 @@
 import { sha256 } from '@noble/hashes/sha256';
 import { bytesToHex } from '@noble/hashes/utils';
+import { z } from 'zod';
 import type { ParsedDatabaseMarkdownOwner, DatabaseMarkdownTableCell, DatabaseMarkdownTableRow } from './markdown-table.ts';
 
 function hash(value: string): string {
@@ -52,6 +53,47 @@ export interface DatabaseMarkdownRevisionSet {
   cells: Readonly<Record<string, string>>;
   documents: Readonly<Record<string, string>>;
   derived: string | null;
+}
+
+/** Revisions that a v2 record transport must carry together. */
+export interface DatabaseMarkdownRecordRevisionSet {
+  owner: string;
+  table: string;
+  row: string;
+  cells: Readonly<Record<string, string>>;
+  document: string;
+}
+
+export const DatabaseMarkdownRecordRevisionSetSchema = z
+  .object({
+    owner: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+    table: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+    row: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+    cells: z.record(z.string(), z.string().regex(/^sha256:[a-f0-9]{64}$/)),
+    document: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+  })
+  .strict();
+
+export function createDatabaseMarkdownRecordRevisionSet(input: {
+  ownerMarkdown: string;
+  owner: ParsedDatabaseMarkdownOwner;
+  rowIndex: number;
+  documentMarkdown: string;
+}): DatabaseMarkdownRecordRevisionSet {
+  const row = input.owner.rows[input.rowIndex];
+  if (!row) throw new Error(`Database table row ${input.rowIndex} was not found`);
+  return {
+    owner: databaseMarkdownOwnerRevision(input.ownerMarkdown),
+    table: databaseMarkdownTableStructureRevision(input.owner),
+    row: databaseMarkdownTableRowRevision(row),
+    cells: Object.fromEntries(
+      row.cells.map((cell) => [
+        input.owner.marker.columns[cell.columnIndex] ?? String(cell.columnIndex),
+        databaseMarkdownTableCellRevision(cell),
+      ]),
+    ),
+    document: databaseMarkdownDocumentRevision(input.documentMarkdown),
+  };
 }
 
 export interface CreateDatabaseMarkdownRevisionSetInput {
