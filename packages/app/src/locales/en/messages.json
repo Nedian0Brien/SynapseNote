@@ -140,6 +140,7 @@
     "1YJ4Yg": ["Update available", ["0"]],
     "1YpxV5": ["No grouped values are available for this Chart."],
     "1Z9rdS": ["Bug reporting needs the SynapseNote desktop app."],
+    "1ZZV44": ["Repair bytes restored exactly."],
     "1ZpfyB": ["Open with AI ", ["displayName"], ", ", ["hint"]],
     "1bDVu5": ["Workspace Command Palette"],
     "1d1F11": ["Select all files and folders"],
@@ -434,6 +435,7 @@
     "6MBQXo": ["PDF links"],
     "6MnZEC": ["Terminal failed to load"],
     "6O626z": ["No headings match \"", ["trimmedAnchorQuery"], "\""],
+    "6PT3IH": ["Undo exact repair"],
     "6Pxqwv": [
       "No project templates yet. Create one to make it available everywhere in this project. Folder-scoped templates live on each folder's overview page."
     ],
@@ -536,6 +538,7 @@
       ]
     ],
     "8Gzz2G": ["worktree of ", ["worktreeOf"]],
+    "8J-j1N": ["Identity issues"],
     "8Jm2EP": ["Toggle heading levels 1 through 6."],
     "8OGgNM": ["Open or close visual-editor find."],
     "8OxKZy": ["Move succeeded but the sidebar may be out of date — refresh to resync"],
@@ -584,6 +587,7 @@
     "9OIqw4": ["You don't have write access to this repo."],
     "9PQysm": ["Hide advanced"],
     "9R7pRC": ["No tags match \"", ["trimmed"], "\". Continue typing to create one."],
+    "9RpoAz": ["Retry migration"],
     "9TCWZH": ["Claude Code is installed, but SynapseNote tools aren't connected to it yet."],
     "9UQ730": ["Clone"],
     "9YOINV": ["Day of month"],
@@ -906,6 +910,7 @@
     "EbE5fX": ["Selected passage"],
     "EbZT7P": ["Toggle the left file sidebar."],
     "EbjWsS": ["Current commit"],
+    "Ec5H8V": ["Choose IDs for linked documents"],
     "EcM3k7": ["Failed to clean up pending ", ["kind"]],
     "EcMWTE": ["Move page"],
     "EcR0fl": ["Checking for installed agents"],
@@ -1164,6 +1169,9 @@
     "JiLsSJ": ["Database templates"],
     "JkCD2u": ["Sync paused — you don't have permission to push to this repo"],
     "JlFcis": ["Send"],
+    "Jmbh-z": [
+      "I understand that this migration contains a non-lossless conversion and have reviewed each affected item."
+    ],
     "JmfgFc": ["(a worktree of ", ["0"], ")"],
     "Jqqevv": ["System error"],
     "JrpKb8": ["Formula source"],
@@ -1737,6 +1745,7 @@
       "Adds telemetry, server state, and runtime info when available. Document names are anonymized."
     ],
     "UMrOy2": ["Skill \"", ["trimmedName"], "\" created"],
+    "UPJq3O": ["Load a migration preview to continue."],
     "UPjaXD": ["Couldn't duplicate \"", ["0"], "\": ", ["1"]],
     "UQAp48": ["Search templates"],
     "UQMMvx": ["Moved \"", ["name"], "\" to ", ["0"]],
@@ -1911,6 +1920,7 @@
     "XAb5o5": ["Claude chat"],
     "XAyxsa": ["Check out remote branch"],
     "XByYym": ["Go to annotation in document"],
+    "XDkYLZ": ["Migration required before editing"],
     "XDzAnp": ["Opens in a new tab"],
     "XH30C4": ["document"],
     "XJOV1Y": ["Activity"],
@@ -2085,6 +2095,7 @@
     "_qD6mn": ["Pick the folder where you've cloned it."],
     "_qoMyY": ["Page actions"],
     "_rP3HI": [["minutes"], "m ago"],
+    "_skQoF": ["Database migration"],
     "_tekeB": ["updated folder properties"],
     "_tjopj": ["Paste duplicate"],
     "_wUERt": ["Redactions"],
@@ -2204,6 +2215,7 @@
     "cF9DyA": ["Reconnecting after server restart"],
     "cICGv0": ["Saved annotations"],
     "cIptmH": ["In the Claude Desktop App"],
+    "cK9kfM": ["Markdown rewrites"],
     "cKjLuT": ["(project + user)"],
     "cN1Gcp": ["A worktree folder for ", ["shareBranch"], " already exists."],
     "cOSAfL": ["No repositories found on your GitHub account."],
@@ -2224,6 +2236,7 @@
     "cdm00A": ["No Incoming"],
     "cdmk8A": ["Uncommitted changes"],
     "chL5IG": ["Community"],
+    "ckH3fT": ["Ready"],
     "cklVjM": ["Timeline"],
     "cnGeoo": ["Delete"],
     "co4atP": ["Default Claude chat model"],
@@ -2461,6 +2474,7 @@
     "gympwh": ["Edit condition"],
     "h-AdvS": ["The folders and templates are already here, so there's nothing to add."],
     "h06R3C": ["No pages are missing outgoing graph links."],
+    "h1fEj9": ["Migration is blocked"],
     "h3QZcB": [
       "A branch named ",
       ["shareBranch"],
@@ -2648,6 +2662,7 @@
       " ready. Results may be incomplete."
     ],
     "kCqCyf": ["Open CodeMirror's lint diagnostics panel."],
+    "kEWzl5": ["Roll back migration"],
     "kFLlsI": ["Insert a footnote reference + matching definition stub."],
     "kFT0E0": ["Add a memo"],
     "kGgFzF": [
@@ -2945,6 +2960,7 @@
       "\" could not be cleared. Reload to retry."
     ],
     "ow3G5y": ["Run Button"],
+    "oxKOri": ["Inspect and resume"],
     "ozCH_H": ["Index state"],
     "p0Iq25": ["Insert link"],
     "p7_fS2": ["Selection"],
@@ -2973,6 +2989,7 @@
     "pWbsW6": ["Loading docs"],
     "pZAs1T": ["Failed to load outgoing links"],
     "p_scyU": ["Commit creation"],
+    "paC4R8": ["Review the exact manifest, owner, and linked-document changes before approval."],
     "pajIrl": ["Could not turn off the terminal: ", ["0"]],
     "pbwTg6": [["seconds"], "s ago"],
     "pckX1A": [["0", "plural", { "one": ["#", " use"], "other": ["#", " uses"] }]],
@@ -3251,6 +3268,7 @@
     "uFtOB_": ["Create a new SynapseNote project in the folder of your choice."],
     "uGaIIS": ["Check out worktree"],
     "uGfOFe": ["Related records"],
+    "uGrC6k": ["Unchanged"],
     "uH_S-u": [["loadErrorTitle"], ": ", ["message"]],
     "uKRYiW": ["Sync status unavailable — server error."],
     "uL_Wx8": ["The terminal stopped unexpectedly."],
@@ -3346,6 +3364,7 @@
     "vwnzXv": [
       "Place stable database properties in pinned, panel, hidden, section, or group regions."
     ],
+    "vzpCrP": ["Show all changes"],
     "w1-ktC": ["Page history"],
     "w3tVpc": ["No links yet. Add wiki links or markdown links to build a graph."],
     "w3vFfL": ["Hide Files"],
@@ -3395,6 +3414,7 @@
     "wvbc1r": ["Couldn't open document"],
     "wvcMAX": ["Show archived"],
     "wxwCkU": ["Inspect record context"],
+    "wyIY2F": ["Approve migration"],
     "wzq9Rv": [
       "A branch with that name already exists. Open its worktree from the switcher instead."
     ],
@@ -3501,6 +3521,7 @@
     "yOhwgv": ["Review permission change"],
     "yQE2r9": ["Loading"],
     "yQyglE": ["No matching docs"],
+    "yU4Kkc": ["Plan revision"],
     "yUxR-Q": ["Expand ", ["keyName"]],
     "yWSvcf": ["Content root"],
     "yWWThY": ["Asset reference"],

@@ -727,10 +727,31 @@ export function databaseProblemExtensions(
   code: DatabaseProblemCode,
   details: Readonly<Record<string, unknown>> = {},
 ): DatabaseProblemExtensions {
+  const migrationConflict =
+    code === 'plan_not_committable' &&
+    Array.isArray(details.conflicts) &&
+    details.conflicts.some(
+      (conflict) =>
+        conflict !== null &&
+        typeof conflict === 'object' &&
+        'code' in conflict &&
+        conflict.code === 'source_record_migration_required',
+    );
+  const recovery = migrationConflict
+    ? {
+        retryable: false,
+        recovery: {
+          action: 'start_migration' as const,
+          instruction:
+            'This source is still v1/read-only. Preview and approve the v1→v2 migration before editing it.',
+          endpoint: '/api/databases/task',
+        },
+      }
+    : recoveryFor(code);
   return DatabaseProblemExtensionsSchema.parse({
     ...details,
     code,
-    ...recoveryFor(code),
+    ...recovery,
   });
 }
 

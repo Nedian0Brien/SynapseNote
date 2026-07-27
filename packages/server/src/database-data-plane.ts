@@ -140,6 +140,7 @@ import {
 } from './database-semantic-index.ts';
 import type { DatabaseStore } from './database-store.ts';
 import { recordDatabaseContextPackCapture } from './database-telemetry.ts';
+import { isV1Database, v1MigrationRequiredMessage } from './database-v1-compatibility.ts';
 
 export type DatabaseDataPlaneErrorCode =
   | 'database_not_found'
@@ -510,6 +511,11 @@ export interface CreateDatabaseDataPlaneOptions {
   isCanonicalTransitionActive?: () => boolean;
   /** The sole v2 owner-table mutation boundary. */
   databaseMarkdownTableWriter?: DatabaseMarkdownTableWriter;
+  /**
+   * Compatibility seam for embedded/import callers. Production sets this to
+   * false so product/API/form mutations cannot invoke the v1 record writer.
+   */
+  allowLegacyV1Mutation?: boolean;
   /** Blocks mutations while a durable v1→v2 task owns the canonical transition. */
   isDatabaseMigrationActive?: () => { taskId: string } | null;
 }
@@ -1054,6 +1060,7 @@ export class DatabaseDataPlane {
   readonly #isCanonicalTransitionActive: () => boolean;
   readonly #isDatabaseMigrationActive: () => { taskId: string } | null;
   readonly #databaseMarkdownTableWriter: DatabaseMarkdownTableWriter | null;
+  readonly #allowLegacyV1Mutation: boolean;
   readonly #now: () => Date;
   readonly #formStateStore: DatabaseFormStateStore;
   #publishAutomationEvent:
@@ -1083,6 +1090,7 @@ export class DatabaseDataPlane {
     this.#isCanonicalTransitionActive = options.isCanonicalTransitionActive ?? (() => false);
     this.#isDatabaseMigrationActive = options.isDatabaseMigrationActive ?? (() => null);
     this.#databaseMarkdownTableWriter = options.databaseMarkdownTableWriter ?? null;
+    this.#allowLegacyV1Mutation = options.allowLegacyV1Mutation ?? true;
     const resolveConfiguredQueryAccess =
       options.resolveQueryAccess ??
       (() => ({
@@ -4790,6 +4798,21 @@ export class DatabaseDataPlane {
   }
 
   #assertPlanMutationAccess(plan: DatabasePlanArtifact): void {
+    if (!this.#allowLegacyV1Mutation) {
+      const snapshot = this.#databaseStore.snapshot();
+      const blocked = this.#v1MutationSources(plan, snapshot.databases);
+      if (blocked.length > 0) {
+        throw new DatabaseDataPlaneError(
+          'storage_read_only',
+          v1MigrationRequiredMessage('The selected source'),
+          {
+            databaseIds: [...new Set(blocked.map(({ databaseId }) => databaseId))],
+            sourceIds: [...new Set(blocked.map(({ sourceId }) => sourceId))],
+            migrationRequired: true,
+          },
+        );
+      }
+    }
     if (this.#trustedFormMutation.getStore() === true) return;
     const snapshot = this.#databaseStore.snapshot();
     const principal = this.#currentAccessPrincipal();
@@ -4873,6 +4896,48 @@ export class DatabaseDataPlane {
         }
       }
     }
+  }
+
+  #v1MutationSources(
+    plan: DatabasePlanArtifact,
+    databases: readonly DatabaseDefinition[],
+  ): Array<{ databaseId: string; sourceId: string }> {
+    const mutatesCanonicalState = plan.normalizedOperations.some((operation) => {
+      switch (operation.kind) {
+        case 'ensure_database':
+          return operation.action !== 'noop';
+        case 'ensure_property':
+        case 'ensure_relation':
+        case 'ensure_view':
+          return operation.action !== 'noop';
+        case 'alter_schema':
+          return operation.action !== 'noop';
+        case 'upsert_records':
+          return operation.created > 0 || operation.updated > 0;
+        case 'mutate_record':
+        case 'delete_records':
+        case 'duplicate_records':
+        case 'archive_records':
+        case 'move_records':
+        case 'delete_database':
+          return true;
+        default:
+          return false;
+      }
+    });
+    if (!mutatesCanonicalState) return [];
+    const databaseIds =
+      plan.affectedObjects.databaseIds.length > 0
+        ? plan.affectedObjects.databaseIds
+        : databases.map((database) => database.id);
+    const sourceIds = new Set(plan.affectedObjects.sourceIds);
+    return databases
+      .filter((database) => databaseIds.includes(database.id) && isV1Database(database))
+      .flatMap((database) =>
+        database.sources
+          .filter((source) => sourceIds.size === 0 || sourceIds.has(source.id))
+          .map((source) => ({ databaseId: database.id, sourceId: source.id })),
+      );
   }
 
   #assertReadable(): void {

@@ -367,6 +367,8 @@ export {
   type DatabaseMarkdownTableRowCopyInput,
   type DatabaseMarkdownTableRowCreateInput,
   type DatabaseMarkdownTableRowMutationInput,
+  type DatabaseMarkdownTableRowsCreateInput,
+  type DatabaseMarkdownTableRowsCreateResult,
   type DatabaseMarkdownTableTitleMutationInput,
   type DatabaseMarkdownTableUndoInput,
   DatabaseMarkdownTableWriter,
@@ -570,6 +572,19 @@ export {
   type ExecuteDatabaseTemplateInput,
   latestDatabaseTemplateOccurrence,
 } from './database-template-scheduler.ts';
+export {
+  DATABASE_V1_COMPATIBILITY_POLICY,
+  type DatabaseV1WriteContext,
+  isV1Database,
+  v1MigrationRequiredMessage,
+  v1MutationIsBlocked,
+} from './database-v1-compatibility.ts';
+export {
+  type DatabaseV2PilotInput,
+  type DatabaseV2PilotReport,
+  DatabaseV2PilotReportSchema,
+  runDatabaseV2Pilot,
+} from './database-v2-pilot.ts';
 export {
   type DetectClaudeDesktopOptions,
   detectClaudeDesktopPresence,

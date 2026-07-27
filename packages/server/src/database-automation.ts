@@ -21,6 +21,7 @@ import type { DatabaseRecordIndex } from './database-record-index.ts';
 import type { DatabaseStore } from './database-store.ts';
 import { incrementDatabaseAutomationRunFailure } from './database-telemetry.ts';
 import { latestDatabaseTemplateOccurrence } from './database-template-scheduler.ts';
+import { isV1Database, v1MigrationRequiredMessage } from './database-v1-compatibility.ts';
 
 const MAX_EVENTS = 1_000;
 const MAX_RUNS = 1_000;
@@ -132,6 +133,7 @@ export const DatabaseAutomationRunSchema = z
         'loop_prevented',
         'fanout_exceeded',
         'permission_denied',
+        'migration_required',
         'plan_blocked',
         'external_unavailable',
         'execution_failed',
@@ -142,6 +144,15 @@ export const DatabaseAutomationRunSchema = z
   .strict();
 
 export type DatabaseAutomationRun = z.infer<typeof DatabaseAutomationRunSchema>;
+
+class DatabaseAutomationMigrationRequiredError extends Error {
+  readonly code = 'migration_required' as const;
+
+  constructor(message: string) {
+    super(message);
+    this.name = 'DatabaseAutomationMigrationRequiredError';
+  }
+}
 
 const DatabaseAutomationOutboxItemSchema = z
   .object({
@@ -207,6 +218,8 @@ export interface DatabaseAutomationPlan {
   automationId: string;
   automationVersion: number;
   internalPlan: DatabasePlanArtifact | null;
+  /** True when a production policy must route the internal write through migration first. */
+  migrationRequired: boolean;
   notifications: readonly {
     actionId: string;
     recipientIds: readonly string[];
@@ -264,6 +277,8 @@ export interface CreateDatabaseAutomationServiceOptions {
   }) => Promise<{ receiptId: string }>;
   now?: () => Date;
   generateUuid?: () => string;
+  /** Production disables legacy v1 record-file mutations; tests/import callers may opt in. */
+  allowLegacyV1Mutation?: boolean;
 }
 
 export interface EnqueueDatabaseAutomationEventInput {
@@ -395,6 +410,7 @@ export class DatabaseAutomationService {
   readonly #deliverNotification: CreateDatabaseAutomationServiceOptions['deliverNotification'];
   readonly #now: () => Date;
   readonly #generateUuid: () => string;
+  readonly #allowLegacyV1Mutation: boolean;
   #running = false;
 
   constructor(options: CreateDatabaseAutomationServiceOptions) {
@@ -410,6 +426,7 @@ export class DatabaseAutomationService {
     this.#deliverNotification = options.deliverNotification;
     this.#now = options.now ?? (() => new Date());
     this.#generateUuid = options.generateUuid ?? randomUUID;
+    this.#allowLegacyV1Mutation = options.allowLegacyV1Mutation ?? true;
   }
 
   async listRuns(filter: { databaseId?: string; automationId?: string; limit?: number } = {}) {
@@ -603,6 +620,22 @@ export class DatabaseAutomationService {
           throw new Error('Automation or database schema changed after the event was captured');
         }
         plan = this.#compile(definition, automation, event);
+      }
+      if (
+        plan?.internalPlan &&
+        !plan.internalPlan.committable &&
+        plan.internalPlan.conflicts.some(
+          (conflict) => conflict.code === 'source_record_migration_required',
+        )
+      ) {
+        throw new DatabaseAutomationMigrationRequiredError(
+          'This automation targets a v1/read-only database; preview and approve its v1→v2 migration before editing it.',
+        );
+      }
+      if (plan?.migrationRequired) {
+        throw new DatabaseAutomationMigrationRequiredError(
+          v1MigrationRequiredMessage('This automation target'),
+        );
       }
       if (outbox.length === 0 && !(commit && running.internalRequired)) {
         plan ??= this.#compile(definition, automation, event);
@@ -837,7 +870,8 @@ export class DatabaseAutomationService {
         error: null,
       };
     } catch (error) {
-      const exhausted = attempt >= automation.retry.maxAttempts;
+      const migrationRequired = error instanceof DatabaseAutomationMigrationRequiredError;
+      const exhausted = migrationRequired || attempt >= automation.retry.maxAttempts;
       if (exhausted) incrementDatabaseAutomationRunFailure();
       const delay =
         automation.retry.initialBackoffSeconds *
@@ -847,11 +881,13 @@ export class DatabaseAutomationService {
         state: exhausted ? 'failed' : 'retry_wait',
         finishedAt: exhausted ? this.#now().toISOString() : null,
         nextAttemptAt: exhausted ? null : new Date(now.getTime() + delay * 1_000).toISOString(),
-        errorCode: errorText(error).includes('permission')
-          ? 'permission_denied'
-          : errorText(error).includes('External')
-            ? 'external_unavailable'
-            : 'execution_failed',
+        errorCode: migrationRequired
+          ? 'migration_required'
+          : errorText(error).includes('permission')
+            ? 'permission_denied'
+            : errorText(error).includes('External')
+              ? 'external_unavailable'
+              : 'execution_failed',
         error: errorText(error),
       };
     }
@@ -1024,11 +1060,16 @@ export class DatabaseAutomationService {
       });
       internalPlan = this.#databasePlanEngine.createPlan(draft.id);
     }
+    const migrationRequired =
+      !this.#allowLegacyV1Mutation &&
+      isV1Database(definition) &&
+      (sampleRecords.length > 0 || recordMutations.length > 0);
     return {
       event,
       automationId: automation.id,
       automationVersion: automation.version,
       internalPlan,
+      migrationRequired,
       notifications,
       external,
       permissionGuards: guards,

@@ -83,6 +83,26 @@ describe('database problem recovery contract', () => {
     }
   });
 
+  test('routes a blocked v1 plan conflict to the same migration CTA', () => {
+    expect(
+      databaseProblemExtensions('plan_not_committable', {
+        conflicts: [
+          {
+            code: 'source_record_migration_required',
+            targetId: 'db_tasks',
+          },
+        ],
+      }),
+    ).toMatchObject({
+      code: 'plan_not_committable',
+      retryable: false,
+      recovery: {
+        action: 'start_migration',
+        endpoint: '/api/databases/task',
+      },
+    });
+  });
+
   test('routes permission denials to an explicit access request with schema recovery', () => {
     expect(
       databaseProblemExtensions('permission_denied', {

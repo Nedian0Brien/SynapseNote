@@ -56,9 +56,11 @@ export {
   DataSourceIdSchema,
 } from './stable-ids.ts';
 
-/** Default writer remains v1 until the V2-M5 new-default gate is complete. */
+/** Legacy manifest migration helper target; content-aware v1→v2 tasks own cutover. */
 export const DATABASE_MANIFEST_CURRENT_VERSION = 1 as const;
 export const DATABASE_MANIFEST_LATEST_SUPPORTED_VERSION = 2 as const;
+/** New database creation and record writes use the canonical v2 owner-table contract. */
+export const DATABASE_MANIFEST_DEFAULT_WRITE_VERSION = 2 as const;
 /** Read compatibility is intentionally broader than the active writer version. */
 export const DATABASE_MANIFEST_SUPPORTED_VERSIONS = [1, 2] as const;
 export type DatabaseManifestVersion = (typeof DATABASE_MANIFEST_SUPPORTED_VERSIONS)[number];
@@ -2937,13 +2939,18 @@ export const DatabaseMigrationMetadataSchema = z
       .default({})
       .superRefine((aliases, context) => {
         if (Object.keys(aliases).length > 10_000) {
-          context.addIssue({ code: 'custom', message: 'Migration legacyRecordIds cannot exceed 10000 aliases' });
+          context.addIssue({
+            code: 'custom',
+            message: 'Migration legacyRecordIds cannot exceed 10000 aliases',
+          });
         }
       }),
   })
   .strict();
 
-export type DatabaseMigrationLegacyRecordAlias = z.infer<typeof DatabaseMigrationLegacyRecordAliasSchema>;
+export type DatabaseMigrationLegacyRecordAlias = z.infer<
+  typeof DatabaseMigrationLegacyRecordAliasSchema
+>;
 export type DatabaseMigrationMetadata = z.infer<typeof DatabaseMigrationMetadataSchema>;
 
 /**
@@ -2964,9 +2971,7 @@ export const DatabaseRecordLifecycleMetadataSchema = z
   })
   .strict();
 
-export type DatabaseRecordLifecycleMetadata = z.infer<
-  typeof DatabaseRecordLifecycleMetadataSchema
->;
+export type DatabaseRecordLifecycleMetadata = z.infer<typeof DatabaseRecordLifecycleMetadataSchema>;
 
 export const DatabaseStorageMetadataSchema = z
   .object({

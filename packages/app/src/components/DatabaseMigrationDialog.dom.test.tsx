@@ -82,6 +82,13 @@ describe('DatabaseMigrationDialog', () => {
       },
       titleChoices: { db_tasks_0: { rec_alpha: { kind: 'use_record_title' } } },
     });
+    expect(databaseMigrationStartInput(['db_tasks_0', 'db_tasks_1'], preview)).toMatchObject({
+      databaseIds: ['db_tasks_0', 'db_tasks_1'],
+      planHashes: {
+        db_tasks_0: preview.items[0]?.planHash,
+        db_tasks_1: preview.items[1]?.planHash,
+      },
+    });
   });
 
   test('shows bounded preview diff and exposes approval', () => {
@@ -219,13 +226,15 @@ describe('DatabaseMigrationDialog', () => {
 
   test('renders title and owner-path choices from content-free blockers', async () => {
     const choices: Array<unknown> = [];
+    const blockedItem = preview.items[0];
+    if (!blockedItem) throw new Error('expected a migration preview item');
     const blockedPreview: DatabaseManifestMigrationPreview = {
       ...preview,
       committable: false,
       summary: { notNeeded: 0, ready: 0, blocked: 1 },
       items: [
         {
-          ...preview.items[0]!,
+          ...blockedItem,
           action: 'blocked',
           planHash: undefined,
           migrationCommittedAt: undefined,
@@ -314,7 +323,9 @@ describe('DatabaseMigrationDialog', () => {
       cancellable: false,
       progress: { completed: 4, total: 4, unit: 'files', message: 'Complete' },
     };
-    const persistedPreview = { ...preview, items: [preview.items[0]!] };
+    const persistedItem = preview.items[0];
+    if (!persistedItem) throw new Error('expected a migration preview item');
+    const persistedPreview = { ...preview, items: [persistedItem] };
     window.localStorage.setItem(databaseMigrationTaskStorageKey('db_reconnect'), taskId);
     const fetchMock = mock(async (_input: RequestInfo | URL, init?: RequestInit) => {
       const body = JSON.parse(String(init?.body ?? '{}')) as { action?: string };
@@ -337,5 +348,51 @@ describe('DatabaseMigrationDialog', () => {
     expect(
       fetchMock.mock.calls.some(([, init]) => String(init?.body).includes('"action":"get"')),
     ).toBe(true);
+  });
+
+  test('scopes a batch preview to the selected database IDs and exposes accessible selection controls', async () => {
+    const firstItem = preview.items[0];
+    const secondItem = preview.items[1];
+    if (!firstItem || !secondItem) throw new Error('expected two migration preview items');
+    const batchPreview: DatabaseManifestMigrationPreview = {
+      ...preview,
+      items: [firstItem, secondItem],
+      summary: { notNeeded: 0, ready: 2, blocked: 0 },
+    };
+    const previewRequests: Array<{ databaseIds?: string[] }> = [];
+    const fetchMock = mock(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body ?? '{}')) as {
+        action?: string;
+        databaseIds?: string[];
+      };
+      if (body.action === 'preview_migration') {
+        previewRequests.push({ databaseIds: body.databaseIds });
+        return new Response(JSON.stringify({ preview: batchPreview }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ task }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    render(
+      <DatabaseMigrationRecoveryPanel
+        databaseIds={['db_tasks_0', 'db_tasks_1']}
+        databaseLabels={{ db_tasks_0: 'Tasks', db_tasks_1: 'Projects' }}
+        expectedManifestRevision={preview.expectedManifestRevision}
+      />,
+    );
+    await waitFor(() => expect(previewRequests.length).toBeGreaterThan(0));
+    expect(screen.getByRole('checkbox', { name: 'Select database Tasks' })).toBeDefined();
+    const projects = screen.getByRole('checkbox', { name: 'Select database Projects' });
+    expect((projects as HTMLButtonElement).getAttribute('aria-checked')).toBe('false');
+    fireEvent.click(projects);
+    await waitFor(() =>
+      expect(previewRequests.at(-1)?.databaseIds).toEqual(['db_tasks_0', 'db_tasks_1']),
+    );
+    expect(screen.getByText('Projects')).toBeDefined();
   });
 });

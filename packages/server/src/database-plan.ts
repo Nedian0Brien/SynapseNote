@@ -4,11 +4,14 @@ import { relative, resolve, sep } from 'node:path';
 import {
   canonicalizeDatabaseDateValue,
   canonicalizeDatabasePlaceValue,
+  createDatabaseDocumentId,
+  createDatabaseMarkdownRecordId,
   DATABASE_DEFAULT_STATUS_BLUEPRINT,
   DatabaseAutomationScheduleSchema,
   DatabaseAutomationSchema,
   type DatabaseDefinition,
   DatabaseDefinitionSchema,
+  type DatabaseDocumentId,
   DatabaseFilesValueSchema,
   type DatabaseFileValue,
   type DatabaseFilter,
@@ -27,16 +30,17 @@ import {
   DatabaseVerificationValueSchema,
   databaseFileIdentity,
   databaseRecordPageLayoutOverrideIssues,
+  encodeDatabaseMarkdownCellText,
   findDatabasePersonByReference,
   isSafeDatabaseAssetPath,
   isSafeDatabaseExternalFileUrl,
-  encodeDatabaseMarkdownCellText,
   serializeDatabaseManifestYaml,
   serializeDatabaseMarkdownOwnerMarker,
   updateDatabaseManifestYaml,
   validateDatabasePropertyConstraints,
 } from '@nedian0brien/synapsenote-core';
 import { z } from 'zod';
+import { databaseMarkdownTableDocumentPath } from './database-markdown-table-creation.ts';
 import type { DatabaseRecordIndex } from './database-record-index.ts';
 import type { DatabaseStore } from './database-store.ts';
 
@@ -479,6 +483,10 @@ export const DatabaseDesiredStateDraftSchema = z
               .string()
               .regex(/^rec_[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/)
               .optional(),
+            documentId: z
+              .string()
+              .regex(/^doc_[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/)
+              .optional(),
             expectedRevision: z
               .string()
               .regex(/^sha256:[a-f0-9]{64}$/)
@@ -677,6 +685,7 @@ export interface DatabaseDraftArtifact {
       values: Readonly<Record<string, unknown>>;
       body: string;
       expectedRevision: string | null;
+      documentId?: DatabaseDocumentId;
       archivedAt?: string | null;
       pageLayoutOverride?: DatabaseRecordPageLayoutOverride | null;
     }[];
@@ -776,6 +785,7 @@ export interface DatabasePlanConflict {
     | 'record_scope_mismatch'
     | 'record_revision_required'
     | 'record_revision_changed'
+    | 'record_identity_required'
     | 'record_path_occupied'
     | 'duplicate_record_target'
     | 'record_limit_exceeded'
@@ -1066,7 +1076,8 @@ function emptyMarkdownOwnerTable(
     columns: storage.storedPropertyIds,
   });
   const headers = storage.storedPropertyIds.map((propertyId) => {
-    const name = source.properties.find((property) => property.id === propertyId)?.name ?? propertyId;
+    const name =
+      source.properties.find((property) => property.id === propertyId)?.name ?? propertyId;
     return encodeDatabaseMarkdownCellText(name.replace(/[\r\n]+/gu, ' '));
   });
   const row = (values: readonly string[]) => `| ${values.join(' | ')} |`;
@@ -1701,6 +1712,7 @@ interface MutableNormalizedSampleRecord {
   values: Record<string, unknown>;
   body: string;
   expectedRevision: string | null;
+  documentId?: DatabaseDocumentId;
   archivedAt?: string | null;
   pageLayoutOverride?: DatabaseRecordPageLayoutOverride | null;
 }
@@ -2556,7 +2568,9 @@ export class DatabasePlanEngine {
             contentPath === '..' ||
             contentPath.startsWith('../') ||
             contentPath.includes('\\') ||
-            contentPath.split('/').some((segment) => segment === '' || segment === '.' || segment === '..')
+            contentPath
+              .split('/')
+              .some((segment) => segment === '' || segment === '.' || segment === '..')
           ) {
             conflicts.push({
               code: 'unsafe_owner_path',
@@ -2591,14 +2605,6 @@ export class DatabasePlanEngine {
           }
         }
       }
-    }
-    if (definition.version === 2 && draft.normalized.sampleRecords.length > 0) {
-      conflicts.push({
-        code: 'source_record_migration_required',
-        message:
-          'V2 database creation cannot write sample records through the v1 record-file commit engine; create the owner table first and add rows through the Markdown table writer',
-        targetId: definition.id,
-      });
     }
 
     const currentObjects = databaseObjectMap(byId);
@@ -2728,6 +2734,7 @@ export class DatabasePlanEngine {
         }
       }
     }
+    const plannedV2DocumentPaths = new Set<string>();
     const recordPlans = draft.normalized.sampleRecords.map((sample) => {
       const source = definition.sources.find((candidate) => candidate.id === sample.sourceId);
       if (!source) throw new Error('Normalized sample source is missing');
@@ -2774,6 +2781,21 @@ export class DatabasePlanEngine {
             : 'update';
         return { sample, source, existing, path: existing.path, action };
       }
+      if (
+        definition.version === 2 &&
+        source.storage?.kind === 'markdown_table' &&
+        sample.id &&
+        !sample.documentId &&
+        this.#databaseRecordIndex &&
+        !existing
+      ) {
+        conflicts.push({
+          code: 'record_identity_required',
+          message: `New v2 record "${sample.id}" must provide its stable documentId; generated IDs cannot be inferred from a caller-supplied record ID`,
+          targetId: sample.id,
+          sampleRecordId: sample.id,
+        });
+      }
       if (sample.expectedRevision) {
         conflicts.push({
           code: 'record_not_found',
@@ -2782,7 +2804,21 @@ export class DatabasePlanEngine {
           sampleRecordId: sample.id,
         });
       }
-      const path = `${source.folder === '.' ? '' : `${source.folder}/`}${sample.id}.md`;
+      const path =
+        definition.version === 2 && source.storage?.kind === 'markdown_table'
+          ? databaseMarkdownTableDocumentPath(definition, source, sample)
+          : `${source.folder === '.' ? '' : `${source.folder}/`}${sample.id}.md`;
+      if (definition.version === 2 && source.storage?.kind === 'markdown_table') {
+        if (plannedV2DocumentPaths.has(path) || path === source.storage.owner.path) {
+          conflicts.push({
+            code: 'record_path_occupied',
+            message: `V2 linked document path "${path}" is claimed by another canonical target`,
+            targetId: sample.id,
+            sampleRecordId: sample.id,
+          });
+        }
+        plannedV2DocumentPaths.add(path);
+      }
       if (this.#contentDir) {
         try {
           this.#readFile(resolve(this.#contentDir, path));
@@ -4328,22 +4364,31 @@ export class DatabasePlanEngine {
               const rawOwner = raw && typeof raw === 'object' ? raw : undefined;
               const ownerPath =
                 (rawOwner && 'ownerPath' in rawOwner ? rawOwner.ownerPath : undefined) ??
-                (rawOwner && 'owner' in rawOwner && rawOwner.owner && typeof rawOwner.owner === 'object'
+                (rawOwner &&
+                'owner' in rawOwner &&
+                rawOwner.owner &&
+                typeof rawOwner.owner === 'object'
                   ? rawOwner.owner.path
                   : undefined) ??
                 currentOwner?.path ??
-                `${desiredState.database.key}/${source.key}.md`;
+                `${desiredState.database.key}${source.key === desiredState.database.key ? '' : `-${source.key}`}.md`;
               const sourceId = sourceIdByKey.get(source.key) ?? '';
               const blockId =
                 (rawOwner && 'blockId' in rawOwner ? rawOwner.blockId : undefined) ??
-                (rawOwner && 'owner' in rawOwner && rawOwner.owner && typeof rawOwner.owner === 'object'
+                (rawOwner &&
+                'owner' in rawOwner &&
+                rawOwner.owner &&
+                typeof rawOwner.owner === 'object'
                   ? rawOwner.owner.blockId
                   : undefined) ??
                 currentOwner?.blockId ??
-                `dbb_${sourceId.replace(/^ds_/, '').replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 110)}_primary`;
-              const titlePropertyId = propertyIdsBySource.get(source.key)?.get(
-                source.properties.find((property) => property.type === 'title')?.key ?? '',
-              );
+                `dbb_${sourceId
+                  .replace(/^ds_/, '')
+                  .replace(/[^A-Za-z0-9_-]/g, '_')
+                  .slice(0, 110)}_primary`;
+              const titlePropertyId = propertyIdsBySource
+                .get(source.key)
+                ?.get(source.properties.find((property) => property.type === 'title')?.key ?? '');
               if (!titlePropertyId) throw new Error(`Source "${source.key}" has no Title property`);
               const storedPropertyIds = source.properties
                 .filter((property) => storedProperty(property))
@@ -5087,6 +5132,7 @@ export class DatabasePlanEngine {
         }
       }
       let recordId = sample.id;
+      let documentId = sample.documentId as DatabaseDocumentId | undefined;
       let expectedRevision = sample.expectedRevision ?? null;
       let resolutionVia: DatabaseTargetResolution['via'] = sample.id ? 'explicit_id' : 'generated';
       if (!recordId && uniquePropertyId && values[uniquePropertyId] !== undefined) {
@@ -5106,7 +5152,19 @@ export class DatabasePlanEngine {
           resolutionVia = 'unique_property';
         }
       }
+      if (source.storage?.kind === 'markdown_table' && !recordId) {
+        documentId ??= createDatabaseDocumentId(this.#generateUuid);
+        recordId = createDatabaseMarkdownRecordId(source.id, documentId);
+      }
       recordId ??= `rec_${compactUuid(this.#generateUuid)}`;
+      if (source.storage?.kind === 'markdown_table' && documentId) {
+        const canonicalRecordId = createDatabaseMarkdownRecordId(source.id, documentId);
+        if (recordId !== canonicalRecordId) {
+          throw new Error(
+            `V2 sample record "${recordId}" does not match document identity "${documentId}" for source "${source.id}"`,
+          );
+        }
+      }
       if (sample.pageLayoutOverride) {
         const layoutIssues = databaseRecordPageLayoutOverrideIssues(
           source,
@@ -5134,6 +5192,7 @@ export class DatabasePlanEngine {
         values,
         body: sample.body,
         expectedRevision,
+        ...(documentId ? { documentId } : {}),
         ...(sample.pageLayoutOverride !== undefined
           ? {
               pageLayoutOverride: sample.pageLayoutOverride

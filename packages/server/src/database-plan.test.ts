@@ -1541,6 +1541,28 @@ describe('DatabasePlanEngine ephemeral desired state', () => {
     );
   });
 
+  test('requires a stable document identity for explicit v2 create IDs', async () => {
+    const { engine } = fixture();
+    const state = desiredState() as ReturnType<typeof desiredState> & {
+      sampleRecords: Array<{ id?: string; documentId?: string }>;
+    };
+    const source = state.sources[0];
+    const sample = state.sampleRecords[0];
+    if (!source || !sample) throw new Error('expected v2 identity fixtures');
+    source.storage = 'markdown_table';
+    sample.id = 'rec_caller_supplied';
+    delete sample.documentId;
+
+    const plan = engine.createPlan(engine.createDraft(state).id);
+    expect(plan.committable).toBe(false);
+    expect(plan.conflicts).toContainEqual(
+      expect.objectContaining({
+        code: 'record_identity_required',
+        targetId: 'rec_caller_supplied',
+      }),
+    );
+  });
+
   test('plans revision-bound record deletion as an exact high-risk diff', async () => {
     const { contentDir, engine, store, recordIndex } = fixture();
     const initial = desiredState();

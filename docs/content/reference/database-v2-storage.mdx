@@ -4,11 +4,20 @@ icon: LuTableProperties
 description: The canonical Markdown contract used by SynapseNote database sources.
 ---
 
-SynapseNote v2 keeps the database's durable data in ordinary Markdown. A source
+SynapseNote v2 keeps the database's durable data in ordinary Markdown. New
+databases and new inline databases select this format by default; binding an
+existing folder remains an explicit v1 compatibility/import choice until its
+migration is approved. A source
 has one owner document containing a SynapseNote marker and one GFM table. Each
 row's first (Title) cell is a `[[wikilink]]` to a normal Markdown document.
 There is no generated `rec_*` document or hidden record folder in the v2
 content tree.
+
+For a single-source database named `Tasks`, the default owner is the readable
+root-level `tasks.md`. A newly created row such as “Ship v2” becomes a normal
+`ship-v-2.md` document beside it (the title cell keeps the exact wikilink
+target). Filenames are presentation paths only; `_sn.document_id` is the
+stable identity.
 
 ## What is canonical
 
@@ -26,7 +35,7 @@ columns=prop_title,prop_status
 
 | Title | Status |
 | --- | --- |
-| [[tasks/ship-v2]] | in_progress |
+| [[ship-v-2]] | in_progress |
 ```
 
 Scalar values, select keys, checkboxes, dates, and relation links stay in the

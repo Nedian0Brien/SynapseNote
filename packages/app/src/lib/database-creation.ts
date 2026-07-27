@@ -136,7 +136,7 @@ interface CreationProperty {
   options?: Array<{ key: string; name: string }>;
 }
 
-/** Storage choice exposed by creation preview; v1 remains the default until M5. */
+/** Storage choice exposed by creation preview. New databases use v2 by default. */
 export type DatabaseCreationStorage = 'record_files' | 'markdown_table';
 
 type CreationView = NonNullable<DatabaseDesiredStateDraftInput['views']>[number];
@@ -267,7 +267,7 @@ function baseDesiredState(input: {
         recordMeaning: `One ${name} record`,
         folder,
         includeSubfolders: input.includeSubfolders ?? true,
-        ...(input.storage ? { storage: input.storage } : {}),
+        storage: input.storage ?? 'markdown_table',
         properties: input.properties.map((property) => ({ ...property })),
       },
     ],
@@ -317,6 +317,9 @@ export function createExistingFolderDatabaseDesiredState(input: {
   if (!input.folder.trim()) throw new Error('Existing folder is required');
   return baseDesiredState({
     ...input,
+    // Binding an existing folder is an explicit compatibility/import path:
+    // preserve the v1 record-file reader until the user approves migration.
+    storage: input.storage ?? 'record_files',
     properties: [{ key: 'title', name: 'Title', type: 'title', required: true }],
   });
 }

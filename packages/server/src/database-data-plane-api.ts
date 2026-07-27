@@ -188,6 +188,7 @@ const DatabaseAutomationPlanSummarySchema = z
         id: z.string().startsWith('plan_'),
         hash: z.string().regex(/^sha256:[a-f0-9]{64}$/),
         committable: z.boolean(),
+        migrationRequired: z.boolean(),
         risk: z.object({
           level: z.enum(['low', 'medium', 'high']),
           reasons: z.array(z.string()),
@@ -5087,7 +5088,12 @@ export function createDatabaseDataPlaneApiHandlers(
                 ? {
                     id: planned.internalPlan.id,
                     hash: planned.internalPlan.hash,
-                    committable: planned.internalPlan.committable,
+                    committable: planned.internalPlan.committable && !planned.migrationRequired,
+                    migrationRequired:
+                      planned.migrationRequired ||
+                      planned.internalPlan.conflicts.some(
+                        (conflict) => conflict.code === 'source_record_migration_required',
+                      ),
                     risk: planned.internalPlan.risk,
                     records: {
                       creates: records.filter((record) => record.action === 'create').length,

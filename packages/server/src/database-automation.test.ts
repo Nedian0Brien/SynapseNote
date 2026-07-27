@@ -15,7 +15,11 @@ afterEach(() => {
   for (const dir of tempDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
-async function fixture(actions: unknown[], additionalAutomations: unknown[] = []) {
+async function fixture(
+  actions: unknown[],
+  additionalAutomations: unknown[] = [],
+  databaseVersion: 1 | 2 = 1,
+) {
   const projectDir = mkdtempSync(join(tmpdir(), 'synapsenote-automation-'));
   const contentDir = join(projectDir, 'content');
   mkdirSync(contentDir, { recursive: true });
@@ -23,7 +27,7 @@ async function fixture(actions: unknown[], additionalAutomations: unknown[] = []
   const store = createDatabaseStore({ projectDir, contentDir });
   await store.create(
     DatabaseDefinitionSchema.parse({
-      version: 1,
+      version: databaseVersion,
       id: 'db_tasks',
       key: 'tasks',
       name: 'Tasks',
@@ -50,7 +54,19 @@ async function fixture(actions: unknown[], additionalAutomations: unknown[] = []
           key: 'tasks',
           name: 'Tasks',
           recordMeaning: 'One task',
-          folder: 'tasks',
+          folder: databaseVersion === 2 ? '.' : 'tasks',
+          ...(databaseVersion === 2 ? { includeSubfolders: true } : {}),
+          ...(databaseVersion === 2
+            ? {
+                storage: {
+                  kind: 'markdown_table',
+                  formatVersion: 2,
+                  owner: { path: 'tasks.md', blockId: 'dbb_tasks_primary' },
+                  titlePropertyId: 'prop_title',
+                  storedPropertyIds: ['prop_title'],
+                },
+              }
+            : {}),
           properties: [{ id: 'prop_title', key: 'title', name: 'Title', type: 'title' }],
         },
       ],
@@ -99,10 +115,63 @@ async function fixture(actions: unknown[], additionalAutomations: unknown[] = []
       hashBlob: async () => `sha1:${'a'.repeat(40)}`,
     },
   });
-  return { projectDir, contentDir, store, index, plans, commits, generateUuid };
+  return {
+    projectDir,
+    contentDir,
+    store,
+    index,
+    plans,
+    commits,
+    generateUuid,
+    databaseStore: store,
+    databaseRecordIndex: index,
+    databasePlanEngine: plans,
+    databaseCommitEngine: commits,
+  };
 }
 
 describe('DatabaseAutomationService', () => {
+  test('blocks v1 automation mutations with the shared migration-required policy', async () => {
+    const setup = await fixture(
+      [
+        {
+          id: 'create_task',
+          kind: 'create_record',
+          sourceId: 'ds_tasks',
+          values: { prop_title: 'Migration-gated task' },
+        },
+      ],
+      [],
+      1,
+    );
+    const service = createDatabaseAutomationService({
+      ...setup,
+      resolvePermission: () => ({
+        allowed: true,
+        policyId: 'policy_automation',
+        policyRevision: 'rev_1',
+      }),
+      allowLegacyV1Mutation: false,
+    });
+    const event = {
+      deduplicationKey: 'migration-gated-event',
+      databaseId: 'db_tasks',
+      kind: 'schedule' as const,
+      scheduledFor: '2026-07-21T00:00:00.000Z',
+    };
+    const plan = await service.dryRun({
+      databaseId: 'db_tasks',
+      automationId: 'auto_daily',
+      event,
+    });
+    expect(plan).toMatchObject({ migrationRequired: true });
+    expect(plan.internalPlan).toMatchObject({ committable: true });
+    const queued = await service.enqueue(event);
+    const [run] = await service.tick();
+    expect(queued.databaseId).toBe('db_tasks');
+    expect(run).toMatchObject({ state: 'failed', errorCode: 'migration_required' });
+  });
+
   test('targets an explicit schedule test event to only the requested automation', async () => {
     const action = {
       id: 'notify_owner',

@@ -1234,6 +1234,10 @@ msgstr ""
 msgid "Approve identity assignment"
 msgstr ""
 
+#: src/components/DatabaseMigrationDialog.tsx
+msgid "Approve migration"
+msgstr ""
+
 #: src/components/DatabasePermissionsDialog.tsx
 msgid "Approve permission change"
 msgstr ""
@@ -1551,6 +1555,7 @@ msgid "Block math equation rendered with KaTeX from a LaTeX source string."
 msgstr ""
 
 #: src/components/DatabaseDiagnosticsDialog.tsx
+#: src/components/DatabaseMigrationDialog.tsx
 msgid "Blocked"
 msgstr ""
 
@@ -1740,6 +1745,7 @@ msgstr ""
 #: src/components/DatabaseAutomationsDialog.tsx
 #: src/components/DatabaseComputedPropertyDialog.tsx
 #: src/components/DatabaseCreationDialog.tsx
+#: src/components/DatabaseMigrationDialog.tsx
 #: src/components/DatabasePageAppearanceDialog.tsx
 #: src/components/DatabasePageLayoutDialog.tsx
 #: src/components/DatabasePermissionsDialog.tsx
@@ -1932,6 +1938,10 @@ msgstr ""
 
 #: src/components/TerminalNewChatButton.tsx
 msgid "Choose CLI for new chat"
+msgstr ""
+
+#: src/components/DatabaseDiagnosticsDialog.tsx
+msgid "Choose IDs for linked documents"
 msgstr ""
 
 #: src/components/DatabaseContextInspectorDialog.tsx
@@ -3332,6 +3342,10 @@ msgstr ""
 
 #: src/components/DatabaseTablePrimitives.tsx
 msgid "Database is still updating"
+msgstr ""
+
+#: src/components/DatabaseMigrationDialog.tsx
+msgid "Database migration"
 msgstr ""
 
 #: src/components/DatabaseCreationDialog.tsx
@@ -5211,8 +5225,16 @@ msgstr ""
 msgid "I approve the listed lossy conversion."
 msgstr ""
 
+#: src/components/DatabaseMigrationDialog.tsx
+msgid "I understand that this migration contains a non-lossless conversion and have reviewed each affected item."
+msgstr ""
+
 #: src/components/DatabaseOnboardingDialog.tsx
 msgid "Identity assignment task queued"
+msgstr ""
+
+#: src/components/DatabaseDiagnosticsDialog.tsx
+msgid "Identity issues"
 msgstr ""
 
 #: src/components/ConsentDialogBody.tsx
@@ -5454,6 +5476,10 @@ msgstr ""
 
 #: src/components/CommandPalette.tsx
 msgid "Inspect agent data context"
+msgstr ""
+
+#: src/components/DatabaseMigrationDialog.tsx
+msgid "Inspect and resume"
 msgstr ""
 
 #: src/components/DatabaseGallery.tsx
@@ -5792,6 +5818,10 @@ msgstr ""
 msgid "List hierarchy and display"
 msgstr ""
 
+#: src/components/DatabaseMigrationDialog.tsx
+msgid "Load a migration preview to continue."
+msgstr ""
+
 #: src/components/DatabaseWorkspaceViewRenderer.tsx
 msgid "Load more pages"
 msgstr ""
@@ -6090,6 +6120,10 @@ msgstr ""
 msgid "Markdown formatting"
 msgstr ""
 
+#: src/components/DatabaseDiagnosticsDialog.tsx
+msgid "Markdown rewrites"
+msgstr ""
+
 #: src/components/EditorModeToggle.tsx
 #: src/components/MarkdownFormatToolbar.tsx
 msgid "Markdown source"
@@ -6145,6 +6179,14 @@ msgstr ""
 #. placeholder {0}: cli === 'codex' ? 'Codex' : 'Claude'
 #: src/components/chat/CliChatPanel.tsx
 msgid "Message {0}"
+msgstr ""
+
+#: src/components/DatabaseMigrationDialog.tsx
+msgid "Migration is blocked"
+msgstr ""
+
+#: src/components/DatabaseTablePrimitives.tsx
+msgid "Migration required before editing"
 msgstr ""
 
 #: src/components/DatabaseDateCellEditor.tsx
@@ -7897,6 +7939,10 @@ msgstr ""
 msgid "Plan new record"
 msgstr ""
 
+#: src/components/DatabaseMigrationDialog.tsx
+msgid "Plan revision"
+msgstr ""
+
 #: src/components/DatabaseAgentRunsDialog.tsx
 msgid "Plan summary"
 msgstr ""
@@ -8306,6 +8352,10 @@ msgstr ""
 msgid "Read-only copy of a MirrorSource block from another doc. Edit at the source and it updates live."
 msgstr ""
 
+#: src/components/DatabaseMigrationDialog.tsx
+msgid "Ready"
+msgstr ""
+
 #: src/components/SeedDialog.tsx
 msgid "Ready-made folders and templates to get you started quickly."
 msgstr ""
@@ -8691,6 +8741,10 @@ msgstr ""
 msgid "Repair applied. Reopen this panel to see the refreshed state."
 msgstr ""
 
+#: src/components/DatabaseDiagnosticsDialog.tsx
+msgid "Repair bytes restored exactly."
+msgstr ""
+
 #: src/components/DatabaseTemplatesDialog.tsx
 msgid "Repeat schedule"
 msgstr ""
@@ -8955,6 +9009,10 @@ msgstr ""
 msgid "Retry loading databases"
 msgstr ""
 
+#: src/components/DatabaseMigrationDialog.tsx
+msgid "Retry migration"
+msgstr ""
+
 #: src/components/DatabaseTemplatesDialog.tsx
 msgid "Retry multiplier"
 msgstr ""
@@ -9083,6 +9141,10 @@ msgstr ""
 msgid "Review required"
 msgstr ""
 
+#: src/components/DatabaseMigrationDialog.tsx
+msgid "Review the exact manifest, owner, and linked-document changes before approval."
+msgstr ""
+
 #: src/components/DatabaseWorkspaceReadState.tsx
 msgid "review the exact plan before canonical creation"
 msgstr ""
@@ -9107,6 +9169,10 @@ msgstr ""
 
 #: src/editor/slash-command/items.tsx
 msgid "Role"
+msgstr ""
+
+#: src/components/DatabaseMigrationDialog.tsx
+msgid "Roll back migration"
 msgstr ""
 
 #: src/components/DatabaseDiagnosticsDialog.tsx
@@ -9744,6 +9810,10 @@ msgstr ""
 msgid "Show advanced"
 msgstr ""
 
+#: src/components/DatabaseMigrationDialog.tsx
+msgid "Show all changes"
+msgstr ""
+
 #: src/components/DatabaseWorkspaceToolbar.tsx
 #: src/editor/components/InlineDatabaseToolbar.tsx
 msgid "Show archived"
@@ -9765,6 +9835,7 @@ msgstr ""
 msgid "Show external URL nodes"
 msgstr ""
 
+#: src/components/DatabaseMigrationDialog.tsx
 #: src/components/LinksPanel.tsx
 msgid "Show fewer"
 msgstr ""
@@ -11210,6 +11281,10 @@ msgstr ""
 msgid "unavailable on this platform"
 msgstr ""
 
+#: src/components/DatabaseMigrationDialog.tsx
+msgid "Unchanged"
+msgstr ""
+
 #: src/components/AutoSyncEnableWarning.tsx
 msgid "Uncommitted changes"
 msgstr ""
@@ -11248,6 +11323,10 @@ msgstr ""
 
 #: src/components/DatabaseAgentRunsDialog.tsx
 msgid "Undo committed changes"
+msgstr ""
+
+#: src/components/DatabaseDiagnosticsDialog.tsx
+msgid "Undo exact repair"
 msgstr ""
 
 #: src/components/ActivityModeContent.tsx

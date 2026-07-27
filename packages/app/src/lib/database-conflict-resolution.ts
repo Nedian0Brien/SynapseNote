@@ -59,6 +59,7 @@ function domainForConflict(conflict: DatabasePlanConflict): DatabaseConflictDoma
     conflict.code === 'record_revision_required' ||
     conflict.code === 'record_not_found' ||
     conflict.code === 'record_scope_mismatch' ||
+    conflict.code === 'record_identity_required' ||
     conflict.code === 'record_path_occupied' ||
     conflict.code === 'duplicate_record_target' ||
     conflict.code === 'record_limit_exceeded' ||

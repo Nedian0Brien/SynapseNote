@@ -132,4 +132,40 @@ describe('data_commit MCP tool', () => {
       },
     });
   });
+
+  test('maps a legacy-writer migration conflict to the shared migration action', async () => {
+    globalThis.fetch = mock(async () =>
+      Response.json(
+        {
+          type: 'urn:ok:error:stale-target',
+          title: 'Plan has unresolved conflicts',
+          status: 409,
+          instance: 'urn:uuid:00000000-0000-4000-8000-000000000000',
+          code: 'plan_not_committable',
+          conflicts: [{ code: 'source_record_migration_required' }],
+        },
+        { status: 409 },
+      ),
+    ) as unknown as typeof fetch;
+    const { handler } = capture();
+    const result = await handler({
+      planId: 'plan_1',
+      planHash: `sha256:${'a'.repeat(64)}`,
+      expectedSnapshotRevision: `sha256:${'b'.repeat(64)}`,
+      idempotencyKey: 'mcp-migration-gate-0001',
+      approvalToken: `approve:sha256:${'a'.repeat(64)}`,
+      actor: { principalId: 'agent:codex', kind: 'agent' },
+    });
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent).toMatchObject({
+      problem: {
+        code: 'plan_not_committable',
+        retryable: false,
+        recovery: {
+          action: 'start_migration',
+          endpoint: '/api/databases/task',
+        },
+      },
+    });
+  });
 });

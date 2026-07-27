@@ -32,6 +32,7 @@ import {
   type DatabaseCommitInput,
   type ResolveDatabaseCommitAutonomyPolicy,
 } from './database-commit.ts';
+import { createDatabaseMarkdownTableWriter } from './database-markdown-table-writer.ts';
 import {
   createDatabasePlanEngine,
   DatabasePlanError,
@@ -136,6 +137,7 @@ async function fixture(input?: {
   createResolveAutonomyPolicy?: (projectDir: string) => ResolveDatabaseCommitAutonomyPolicy;
   createAgentRunStore?: (projectDir: string) => DatabaseAgentRunStore;
   commitNow?: () => Date;
+  allowLegacyV1Mutation?: boolean;
 }) {
   const projectDir = mkdtempSync(join(tmpdir(), 'synapsenote-database-commit-'));
   const contentDir = join(projectDir, 'content');
@@ -159,6 +161,14 @@ async function fixture(input?: {
   });
   const draft = plans.createDraft(input?.desiredState ?? desiredState());
   const plan = plans.createPlan(draft.id);
+  const markdownTableWriter = createDatabaseMarkdownTableWriter({
+    projectDir,
+    contentDir,
+    databaseStore: store,
+    databaseRecordIndex: index,
+    refreshDatabaseIndex: () => index.rebuild(),
+    generateUuid,
+  });
   let snapshotCount = 0;
   const snapshotMessages: string[] = [];
   let renameCount = 0;
@@ -168,6 +178,8 @@ async function fixture(input?: {
     databaseStore: store,
     databaseRecordIndex: index,
     databasePlanEngine: plans,
+    databaseMarkdownTableWriter: markdownTableWriter,
+    allowLegacyV1Mutation: input?.allowLegacyV1Mutation,
     now: input?.commitNow ?? (() => new Date('2026-07-19T10:05:00.000Z')),
     generateUuid,
     git: {
@@ -231,6 +243,166 @@ async function fixture(input?: {
 }
 
 describe('DatabaseCommitEngine', () => {
+  test('creates v2 rows as normal linked Markdown documents', async () => {
+    const state = structuredClone(desiredState());
+    const desiredSource = state.sources[0];
+    if (!desiredSource) throw new Error('expected a source');
+    desiredSource.storage = 'markdown_table';
+    const fixtureState = await fixture({ desiredState: state });
+
+    expect(fixtureState.plan.committable).toBe(true);
+    expect(
+      fixtureState.plan.conflicts.some(
+        (conflict) => conflict.code === 'source_record_migration_required',
+      ),
+    ).toBe(false);
+
+    const result = await fixtureState.engine.commit(fixtureState.commitInput());
+    expect(result.verification.status).toBe('passed');
+    const definition = fixtureState.store.getById(fixtureState.draft.normalized.definition.id);
+    const source = definition?.sources[0];
+    expect(definition?.version).toBe(2);
+    expect(source?.storage?.kind).toBe('markdown_table');
+    const ownerPath = source?.storage?.kind === 'markdown_table' ? source.storage.owner.path : null;
+    if (!ownerPath) throw new Error('expected a Markdown owner path');
+    const owner = readFileSync(join(fixtureState.contentDir, ownerPath), 'utf8');
+    expect(owner).toContain('[[');
+    expect(owner).not.toContain('rec_');
+
+    const records = fixtureState.index.list(fixtureState.draft.normalized.definition.id);
+    expect(records).toHaveLength(1);
+    const firstRecord = records[0];
+    if (!firstRecord) throw new Error('expected one indexed v2 record');
+    expect(firstRecord.path).toMatch(/\.md$/u);
+    expect(firstRecord.path).not.toMatch(/(?:^|\/)rec_[^/]+\.md$/u);
+    expect(existsSync(join(fixtureState.contentDir, firstRecord.path))).toBe(true);
+  });
+
+  test('blocks direct production commit paths from mutating an existing v1 database', async () => {
+    const fixtureState = await fixture({ allowLegacyV1Mutation: false });
+    await fixtureState.engine.commit(fixtureState.commitInput());
+    const record = fixtureState.index.list(fixtureState.draft.normalized.definition.id)[0];
+    if (!record?.revision) throw new Error('expected an indexed v1 record');
+    const updateState = stableDesiredState(fixtureState.draft);
+    updateState.sampleRecords = [
+      {
+        sourceKey: 'tasks',
+        id: record.id,
+        expectedRevision: record.revision,
+        values: { title: 'Blocked v1 edit', status: 'done' },
+        body: record.body,
+      },
+    ];
+    const updateDraft = fixtureState.plans.createDraft(updateState);
+    const updatePlan = fixtureState.plans.createPlan(updateDraft.id);
+    await expect(
+      fixtureState.engine.commit({
+        planId: updatePlan.id,
+        planHash: updatePlan.hash,
+        expectedSnapshotRevision: updatePlan.snapshotRevision,
+        idempotencyKey: 'v1-production-guard-0001',
+        approvalToken: fixtureState.engine.expectedApprovalToken(updatePlan.hash),
+        actor: { principalId: 'system:template', kind: 'system' },
+      }),
+    ).rejects.toMatchObject({
+      code: 'storage_read_only',
+      details: { databaseId: fixtureState.draft.normalized.definition.id, migrationRequired: true },
+    });
+    expect(readFileSync(join(fixtureState.contentDir, record.path), 'utf8')).toContain(
+      'Atomic commit',
+    );
+  });
+
+  test('routes v2 property updates and deletes through the owner-table writer', async () => {
+    const state = structuredClone(desiredState());
+    const source = state.sources[0];
+    if (!source) throw new Error('expected a source');
+    source.storage = 'markdown_table';
+    const fixtureState = await fixture({ desiredState: state });
+    await fixtureState.engine.commit(fixtureState.commitInput());
+
+    const record = fixtureState.index.list(fixtureState.draft.normalized.definition.id)[0];
+    if (!record) throw new Error('expected one indexed v2 record');
+    if (!record.revision) throw new Error('expected a revision for the indexed v2 record');
+    const updateState = stableDesiredState(fixtureState.draft);
+    const updateSource = updateState.sources[0];
+    if (!updateSource) throw new Error('expected an update source');
+    updateSource.folder = '.';
+    updateState.sampleRecords = [
+      {
+        sourceKey: 'tasks',
+        id: record.id,
+        expectedRevision: record.revision,
+        values: { title: 'Atomic commit renamed', status: 'done' },
+        body: record.body,
+      },
+    ];
+    const updateDraft = fixtureState.plans.createDraft(updateState);
+    const updatePlan = fixtureState.plans.createPlan(updateDraft.id);
+    expect(updatePlan.committable).toBe(true);
+    const updateResult = await fixtureState.engine.commit({
+      planId: updatePlan.id,
+      planHash: updatePlan.hash,
+      expectedSnapshotRevision: updatePlan.snapshotRevision,
+      idempotencyKey: 'v2-update-request-0001',
+      approvalToken: fixtureState.engine.expectedApprovalToken(updatePlan.hash),
+      actor: { principalId: 'agent:codex', kind: 'agent', sessionId: 'session-1' },
+      assertions: { createdRecords: 1 },
+    });
+    expect(updateResult.verification.status).toBe('passed');
+    const updated = fixtureState.index.getById(record.id);
+    if (!updated) throw new Error('expected the updated record');
+    if (!updated.revision) throw new Error('expected a revision for the updated record');
+    const statusProperty = fixtureState.store
+      .getById(fixtureState.draft.normalized.definition.id)
+      ?.sources[0]?.properties.find((property) => property.key === 'status');
+    if (!statusProperty || !('options' in statusProperty)) {
+      throw new Error('expected a status property with options');
+    }
+    const doneOption = statusProperty.options.find((option) => option.key === 'done');
+    if (!doneOption) throw new Error('expected the done status option');
+    expect(updated.values[statusProperty.id]).toBe(doneOption.id);
+    expect(readFileSync(join(fixtureState.contentDir, updated.path), 'utf8')).toContain(
+      'Atomic commit renamed',
+    );
+
+    const deleteState = stableDesiredState(updateDraft);
+    deleteState.sampleRecords = [];
+    deleteState.recordDeletions = [
+      {
+        sourceKey: 'tasks',
+        id: record.id,
+        expectedRevision: updated.revision,
+      },
+    ];
+    const deleteDraft = fixtureState.plans.createDraft(deleteState);
+    const deletePlan = fixtureState.plans.createPlan(deleteDraft.id);
+    expect(deletePlan.committable).toBe(true);
+    const deleteResult = await fixtureState.engine.commit({
+      planId: deletePlan.id,
+      planHash: deletePlan.hash,
+      expectedSnapshotRevision: deletePlan.snapshotRevision,
+      idempotencyKey: 'v2-delete-request-0001',
+      approvalToken: fixtureState.engine.expectedApprovalToken(deletePlan.hash),
+      actor: { principalId: 'agent:codex', kind: 'agent', sessionId: 'session-1' },
+      assertions: { createdRecords: 0 },
+    });
+    expect(fixtureState.index.getById(record.id)).toBeNull();
+    const undoPreview = await fixtureState.engine.undo({
+      action: 'preview',
+      undoToken: deleteResult.undoToken,
+    });
+    expect(undoPreview).toMatchObject({ canApply: true, conflicts: [] });
+    const undoResult = await fixtureState.engine.undo({
+      action: 'apply',
+      undoToken: deleteResult.undoToken,
+      idempotencyKey: 'v2-delete-undo-0001',
+      actor: { principalId: 'agent:codex', kind: 'agent', sessionId: 'session-1' },
+    });
+    expect(undoResult).toMatchObject({ canApply: true, receipt: { status: 'applied' } });
+    expect(fixtureState.index.getById(record.id)).toMatchObject({ id: record.id });
+  });
+
   test('holds a read barrier for the complete commit transaction lifecycle', async () => {
     let releaseSnapshot!: () => void;
     let enteredSnapshot!: () => void;

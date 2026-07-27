@@ -19,7 +19,10 @@ export function databaseToolProblemPayload(
   let inferred = databaseProblemExtensions('transport_error');
   if (typeof problem.code === 'string') {
     try {
-      inferred = databaseProblemExtensions(problem.code as DatabaseProblemCode);
+      const details = Array.isArray(problem.conflicts)
+        ? { conflicts: problem.conflicts }
+        : undefined;
+      inferred = databaseProblemExtensions(problem.code as DatabaseProblemCode, details);
     } catch {
       // Older or non-SynapseNote servers may return an unknown code. Treat it
       // as a transport contract mismatch while preserving the raw fields.

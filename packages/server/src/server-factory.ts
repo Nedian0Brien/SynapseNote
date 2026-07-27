@@ -95,8 +95,6 @@ import { createDatabaseCommentStore, type DatabaseCommentStore } from './databas
 import { createDatabaseCommitEngine } from './database-commit.ts';
 import { createDatabaseConnectionExecutor } from './database-connection-executor.ts';
 import { createDatabaseDataPlane, type DatabaseDataPlane } from './database-data-plane.ts';
-import { createDatabaseMarkdownTableWriter } from './database-markdown-table-writer.ts';
-import { createDatabaseMigrationGate } from './database-migration-gate.ts';
 import { createDatabaseFormRetentionService } from './database-form-retention.ts';
 import { createDatabaseFormStateStore } from './database-form-state-store.ts';
 import {
@@ -107,6 +105,8 @@ import {
   createDatabaseIndexCoordinator,
   type DatabaseIndexCoordinator,
 } from './database-index-coordinator.ts';
+import { createDatabaseMarkdownTableWriter } from './database-markdown-table-writer.ts';
+import { createDatabaseMigrationGate } from './database-migration-gate.ts';
 import {
   createDatabasePermissionStore,
   type DatabasePermissionStore,
@@ -713,6 +713,7 @@ export function createServer(options: ServerOptions): ServerInstance {
     isCanonicalTransitionActive: () => databaseGitRecovery.isBlocked(),
     isDatabaseMigrationActive: () => databaseMigrationGate.current(),
     databaseMarkdownTableWriter,
+    allowLegacyV1Mutation: false,
   });
   const databaseRepairEngine = createDatabaseRepairEngine({
     projectDir,
@@ -1318,6 +1319,8 @@ export function createServer(options: ServerOptions): ServerInstance {
       databaseRecordIndex,
       refreshDatabaseIndex: () => databaseIndexCoordinator.refresh('transaction'),
       databasePlanEngine,
+      databaseMarkdownTableWriter,
+      allowLegacyV1Mutation: false,
       getShadow: () => shadowRef.current ?? null,
       branch: () => headWatcher?.getLastKnownBranch() ?? 'main',
       resolveAutonomyPolicy: ({ databaseId, sessionId, sessionToken }) =>
@@ -1420,6 +1423,7 @@ export function createServer(options: ServerOptions): ServerInstance {
       resolveExternalPolicy: ({ action, egressBytes }) =>
         databaseConnectionExecutor.resolvePolicy({ action, egressBytes }),
       deliverExternal: (input) => databaseConnectionExecutor.deliver(input),
+      allowLegacyV1Mutation: false,
     });
     databaseDataPlane.configureAutomationEventPublisher((event) =>
       databaseAutomationService.enqueue(event),

@@ -230,6 +230,17 @@ export interface DatabaseMarkdownTableRowCreateInput {
   actor?: DatabaseRecordActor;
 }
 
+export interface DatabaseMarkdownTableRowsCreateInput {
+  databaseId: string;
+  sourceId: string;
+  rows: readonly Omit<
+    DatabaseMarkdownTableRowCreateInput,
+    'databaseId' | 'sourceId' | 'expectedOwnerRevision'
+  >[];
+  expectedOwnerRevision: string;
+  actor?: DatabaseRecordActor;
+}
+
 export interface DatabaseMarkdownTableRowCopyInput {
   databaseId: string;
   sourceId: string;
@@ -287,6 +298,11 @@ export interface DatabaseMarkdownTableUndoInput {
 export interface DatabaseMarkdownTableMutationResult {
   receipt: DatabaseMarkdownTableMutationReceipt;
   changed: boolean;
+}
+
+export interface DatabaseMarkdownTableRowsCreateResult {
+  changed: boolean;
+  receipts: readonly DatabaseMarkdownTableMutationReceipt[];
 }
 
 interface ResolvedSource {
@@ -505,6 +521,13 @@ export class DatabaseMarkdownTableWriter {
     return this.#withLock(() => this.#updateCellsLocked(input));
   }
 
+  /** Commit-engine seam; the caller already owns `.commit.lock`. */
+  async updateCellsWithinCommit(
+    input: DatabaseMarkdownTableBulkCellMutationInput,
+  ): Promise<DatabaseMarkdownTableMutationResult> {
+    return this.#updateCellsLocked(input);
+  }
+
   async replaceRow(
     input: DatabaseMarkdownTableRowMutationInput,
   ): Promise<DatabaseMarkdownTableMutationResult> {
@@ -517,10 +540,42 @@ export class DatabaseMarkdownTableWriter {
     return this.#withLock(() => this.#deleteRowLocked(input));
   }
 
+  /** Commit-engine seam; the caller already owns `.commit.lock`. */
+  async deleteRowWithinCommit(
+    input: Omit<DatabaseMarkdownTableRowMutationInput, 'values'>,
+  ): Promise<DatabaseMarkdownTableMutationResult> {
+    return this.#deleteRowLocked(input);
+  }
+
   async createRow(
     input: DatabaseMarkdownTableRowCreateInput,
   ): Promise<DatabaseMarkdownTableMutationResult> {
     return this.#withLock(() => this.#createRowLocked(input));
+  }
+
+  /** Commit-engine seam; the caller already owns `.commit.lock`. */
+  async createRowWithinCommit(
+    input: DatabaseMarkdownTableRowCreateInput,
+  ): Promise<DatabaseMarkdownTableMutationResult> {
+    return this.#createRowLocked(input);
+  }
+
+  /** Create several initial rows while holding the writer lock once. */
+  async createRows(
+    input: DatabaseMarkdownTableRowsCreateInput,
+  ): Promise<DatabaseMarkdownTableRowsCreateResult> {
+    return this.#withLock(() => this.#createRowsLocked(input));
+  }
+
+  /**
+   * Commit-engine seam. The database commit engine already owns the shared
+   * `.commit.lock`, so acquiring it a second time would deadlock. Callers
+   * must invoke this only while that outer transaction lock is held.
+   */
+  async createRowsWithinCommit(
+    input: DatabaseMarkdownTableRowsCreateInput,
+  ): Promise<DatabaseMarkdownTableRowsCreateResult> {
+    return this.#createRowsLocked(input);
   }
 
   async copyRow(
@@ -533,6 +588,13 @@ export class DatabaseMarkdownTableWriter {
     input: DatabaseMarkdownTableTitleMutationInput,
   ): Promise<DatabaseMarkdownTableMutationResult> {
     return this.#withLock(() => this.#updateTitleLocked(input));
+  }
+
+  /** Commit-engine seam; the caller already owns `.commit.lock`. */
+  async updateTitleWithinCommit(
+    input: DatabaseMarkdownTableTitleMutationInput,
+  ): Promise<DatabaseMarkdownTableMutationResult> {
+    return this.#updateTitleLocked(input);
   }
 
   async moveDocument(
@@ -551,6 +613,13 @@ export class DatabaseMarkdownTableWriter {
     input: DatabaseMarkdownTableUndoInput,
   ): Promise<{ changed: boolean; receipt: DatabaseMarkdownTableMutationReceipt }> {
     return this.#withLock(() => this.#undoLocked(input));
+  }
+
+  /** Commit-engine seam; the caller already owns `.commit.lock`. */
+  async undoWithinCommit(
+    input: DatabaseMarkdownTableUndoInput,
+  ): Promise<{ changed: boolean; receipt: DatabaseMarkdownTableMutationReceipt }> {
+    return this.#undoLocked(input);
   }
 
   /** Reconcile transactions left on disk after a process kill without guessing. */
@@ -1938,6 +2007,52 @@ export class DatabaseMarkdownTableWriter {
       ...(input.actor ? { actor: input.actor } : {}),
     };
     return { changed: true, receipt };
+  }
+
+  async #createRowsLocked(
+    input: DatabaseMarkdownTableRowsCreateInput,
+  ): Promise<DatabaseMarkdownTableRowsCreateResult> {
+    const receipts: DatabaseMarkdownTableMutationReceipt[] = [];
+    let expectedOwnerRevision = input.expectedOwnerRevision;
+    try {
+      for (const row of input.rows) {
+        const result = await this.#createRowLocked({
+          ...row,
+          databaseId: input.databaseId,
+          sourceId: input.sourceId,
+          expectedOwnerRevision,
+          ...(input.actor ? { actor: input.actor } : {}),
+        });
+        if (!result.changed) continue;
+        receipts.push(result.receipt);
+        expectedOwnerRevision = result.receipt.afterOwnerRevision;
+      }
+    } catch (error) {
+      const rollbackErrors: string[] = [];
+      for (const receipt of [...receipts].reverse()) {
+        try {
+          await this.#undoLocked({
+            receipt,
+            expectedAfterOwnerRevision: receipt.afterOwnerRevision,
+            ...(input.actor ? { actor: input.actor } : {}),
+          });
+        } catch (rollbackError) {
+          rollbackErrors.push(
+            rollbackError instanceof Error ? rollbackError.message : String(rollbackError),
+          );
+        }
+      }
+      if (rollbackErrors.length > 0) {
+        throw new DatabaseMarkdownTableWriterError(
+          'rollback_failed',
+          'V2 batch row creation failed and compensation was incomplete',
+          { rollbackErrors },
+          error,
+        );
+      }
+      throw error;
+    }
+    return { changed: receipts.length > 0, receipts };
   }
 
   async #copyRowLocked(

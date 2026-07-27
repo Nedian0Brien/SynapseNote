@@ -9,6 +9,16 @@ import type {
 } from '@nedian0brien/synapsenote-core';
 import { useEffect, useEffectEvent } from 'react';
 import {
+  createMarkdownTableCellMutation,
+  createMarkdownTableLifecycleMutation,
+  createMarkdownTableRowCreateMutation,
+  createMarkdownTableRowDeleteMutation,
+  createMarkdownTableTitleMutation,
+  markdownTableDefaultValues,
+  markdownTableDocumentMarkdown,
+  markdownTableDocumentPath,
+} from '@/lib/database-markdown-table-client';
+import {
   createDatabaseVerificationPlan,
   executeReviewedDatabasePlan,
 } from '@/lib/database-mutation-client';
@@ -20,16 +30,6 @@ import {
   optimisticCellKey,
   setOptimisticCellValue,
 } from '@/lib/database-mutations/database-mutation-gateway';
-import {
-  createMarkdownTableCellMutation,
-  createMarkdownTableLifecycleMutation,
-  createMarkdownTableRowCreateMutation,
-  createMarkdownTableRowDeleteMutation,
-  createMarkdownTableTitleMutation,
-  markdownTableDefaultValues,
-  markdownTableDocumentMarkdown,
-  markdownTableDocumentPath,
-} from '@/lib/database-markdown-table-client';
 import {
   createDatabaseSelectOptionChangeDesiredState,
   createDatabaseSelectOptionCreateDesiredState,
@@ -106,37 +106,50 @@ export function useDatabaseWorkspaceRecordCommands(context: DatabaseWorkspaceCon
     value: DatabaseValue | undefined,
   ) => {
     if (!description?.source || mutationStatus !== 'idle') return;
+    if (description.source.storage?.kind === 'markdown_table') {
+      if (!record.storageRevision) {
+        setMutationError(
+          classifyDatabaseUiProblem(
+            new Error('The current Markdown owner-table revision is unavailable'),
+            'Unable to prepare the cell edit',
+          ),
+        );
+        return;
+      }
+      if (property.type === 'title' && typeof value !== 'string') {
+        setMutationError(
+          classifyDatabaseUiProblem(
+            new Error('A Markdown document title must be text'),
+            'Unable to prepare the cell edit',
+          ),
+        );
+        return;
+      }
+    }
     try {
       const cellKey = optimisticCellKey(record.id, property.id);
       setOptimisticCellValues((current: ReadonlyMap<string, DatabaseValue | undefined>) =>
         setOptimisticCellValue(current, cellKey, value),
       );
       if (description.source.storage?.kind === 'markdown_table') {
-        if (!record.storageRevision) {
-          throw new Error('The current Markdown owner-table revision is unavailable');
-        }
-        const mutation = property.type === 'title'
-          ? typeof value === 'string'
+        const mutation =
+          property.type === 'title'
             ? createMarkdownTableTitleMutation({
                 databaseId: description.database.id,
                 sourceId: description.source.id,
                 recordId: record.id,
-                title: value,
-                expectedOwnerRevision: record.storageRevision,
+                title: value as string,
+                expectedOwnerRevision: record.storageRevision as string,
               })
-            : (() => { throw new Error('A Markdown document title must be text'); })()
-          : createMarkdownTableCellMutation({
-              databaseId: description.database.id,
-              sourceId: description.source.id,
-              recordId: record.id,
-              propertyId: property.id,
-              value,
-              expectedOwnerRevision: record.storageRevision,
-            });
-        runMarkdownTable(
-          mutation,
-          { optimisticCellKey: cellKey },
-        );
+            : createMarkdownTableCellMutation({
+                databaseId: description.database.id,
+                sourceId: description.source.id,
+                recordId: record.id,
+                propertyId: property.id,
+                value,
+                expectedOwnerRevision: record.storageRevision as string,
+              });
+        runMarkdownTable(mutation, { optimisticCellKey: cellKey });
         return;
       }
       runMutation(
@@ -302,16 +315,36 @@ export function useDatabaseWorkspaceRecordCommands(context: DatabaseWorkspaceCon
 
   const createRecord = (title = newRecordTitle, options: { focusAfterCreate?: boolean } = {}) => {
     if (!description?.source || mutationStatus !== 'idle') return;
-    try {
-      if (description.source.storage?.kind === 'markdown_table') {
-        const normalizedTitle = title.trim();
-        if (!normalizedTitle) throw new Error('Title cannot be empty');
-        if (!result?.storageRevision) {
-          throw new Error('The current Markdown owner-table revision is unavailable');
-        }
-        if (newRecordTemplateId !== '__auto__' && newRecordTemplateId !== '__blank__') {
-          throw new Error('Templates are not yet supported by the v2 owner-table row writer');
-        }
+    if (description.source.storage?.kind === 'markdown_table') {
+      const normalizedTitle = title.trim();
+      if (!normalizedTitle) {
+        setMutationError(
+          classifyDatabaseUiProblem(
+            new Error('Title cannot be empty'),
+            `Unable to prepare the new ${itemNoun}`,
+          ),
+        );
+        return;
+      }
+      if (!result?.storageRevision) {
+        setMutationError(
+          classifyDatabaseUiProblem(
+            new Error('The current Markdown owner-table revision is unavailable'),
+            `Unable to prepare the new ${itemNoun}`,
+          ),
+        );
+        return;
+      }
+      if (newRecordTemplateId !== '__auto__' && newRecordTemplateId !== '__blank__') {
+        setMutationError(
+          classifyDatabaseUiProblem(
+            new Error('Templates are not yet supported by the v2 owner-table row writer'),
+            `Unable to prepare the new ${itemNoun}`,
+          ),
+        );
+        return;
+      }
+      try {
         const documentPath = markdownTableDocumentPath(description.source.folder, normalizedTitle);
         runMarkdownTable(
           createMarkdownTableRowCreateMutation({
@@ -330,8 +363,12 @@ export function useDatabaseWorkspaceRecordCommands(context: DatabaseWorkspaceCon
         );
         setNewRecordOpen(false);
         setNewRecordTitle('');
-        return;
+      } catch (cause) {
+        setMutationError(classifyDatabaseUiProblem(cause, `Unable to prepare the new ${itemNoun}`));
       }
+      return;
+    }
+    try {
       const desiredState = createDatabaseRecordDesiredState({
         database: description.database,
         source: description.source,
@@ -357,17 +394,23 @@ export function useDatabaseWorkspaceRecordCommands(context: DatabaseWorkspaceCon
 
   const deleteRecord = (record: ProjectedDatabaseRecord) => {
     if (!description?.source || mutationStatus !== 'idle') return;
+    if (description.source.storage?.kind === 'markdown_table' && !record.storageRevision) {
+      setMutationError(
+        classifyDatabaseUiProblem(
+          new Error('The current Markdown owner-table revision is unavailable'),
+          `Unable to prepare the ${itemNoun} deletion`,
+        ),
+      );
+      return;
+    }
     try {
       if (description.source.storage?.kind === 'markdown_table') {
-        if (!record.storageRevision) {
-          throw new Error('The current Markdown owner-table revision is unavailable');
-        }
         runMarkdownTable(
           createMarkdownTableRowDeleteMutation({
             databaseId: description.database.id,
             sourceId: description.source.id,
             recordId: record.id,
-            expectedOwnerRevision: record.storageRevision,
+            expectedOwnerRevision: record.storageRevision as string,
           }),
         );
         return;
@@ -409,16 +452,24 @@ export function useDatabaseWorkspaceRecordCommands(context: DatabaseWorkspaceCon
 
   const changeArchiveState = (record: ProjectedDatabaseRecord, action: 'archive' | 'restore') => {
     if (!description?.source || mutationStatus !== 'idle') return;
+    if (description.source.storage?.kind === 'markdown_table' && !record.storageRevision) {
+      setMutationError(
+        classifyDatabaseUiProblem(
+          new Error('The current Markdown owner-table revision is unavailable'),
+          `Unable to prepare the ${itemNoun} ${action}`,
+        ),
+      );
+      return;
+    }
     try {
       if (description.source.storage?.kind === 'markdown_table') {
-        if (!record.storageRevision) throw new Error('The current Markdown owner-table revision is unavailable');
         runMarkdownTable(
           createMarkdownTableLifecycleMutation({
             databaseId: description.database.id,
             sourceId: description.source.id,
             recordId: record.id,
             archived: action === 'archive',
-            expectedOwnerRevision: record.storageRevision,
+            expectedOwnerRevision: record.storageRevision as string,
           }),
         );
         return;

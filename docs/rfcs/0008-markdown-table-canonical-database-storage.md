@@ -1,10 +1,12 @@
 # RFC 0008: Markdown table canonical database storage
 
 - 상태: 방향 승인, core/read contract 및 storage-aware writer/API/MCP/CLI/app cell·row·title·move·native lifecycle path 구현 중
-  (new-default·full migration release·collaboration/performance evidence는 gated)
+  (새 blank/template database의 v2 default routing은 branch에 구현됐고, public new-default·full
+  migration release·collaboration/performance evidence는 gated)
 - 작성일: 2026-07-27
 - 대상: `packages/core`, `packages/server`, `packages/app`, `packages/cli`, 데이터베이스 저장·인덱스·Git merge·마이그레이션 경계
 - 성격: canonical 저장 형식 변경, 단일 데이터베이스 엔진 결정
+- Compatibility retirement decision: [RFC 0009](./0009-database-v1-compatibility-retirement.md)
 - 구현 체크리스트: [RFC 0008 implementation checklist](./0008-markdown-table-database-storage-implementation-checklist.md)
 - 선행 문서:
   - [RFC 0001: File-native databases and the Agent Data Plane](./0001-databases-and-agent-data-plane.md)
@@ -1057,11 +1059,10 @@ v1 manifest parse, record index rebuild, logical before snapshot equality까지 
 ### 17.11 Rollout과 compatibility 제거
 
 1. **Read-only foundation**: v2 core schema/parser/codec과 equivalence harness를
-   ship하고 storage-aware writer/API는 explicit v2 route로만 제공한다. Native cell/row/title/
-   move/lifecycle code path는 구현되어 있어도 new-default와 migration apply release는
-   feature gate 뒤에 둔다. Supported read
-   versions와 default write version을 별도 상수/capability로 분리하여 이 단계에서
-   database creation default를 실수로 v2로 올리지 않는다.
+   ship하고 storage-aware writer/API는 explicit v2 route로 제공한다. Branch의 blank/template
+   database creation은 v2 owner-table을 기본으로 선택하고, existing-folder onboarding은
+   v1 compatibility source로 남긴다. Native cell/row/title/move/lifecycle path와 default write
+   version은 별도 상수/capability로 분리하며 public rollout은 feature/release gate 뒤에 둔다.
 2. **Internal fixtures**: generated blank, existing folder, inline, full-page,
    multi-source relation, Formula/Rollup corpus를 CI에서 반복 migration/rollback한다.
 3. **Opt-in pilot**: 새 v2 database와 수동 migration을 feature flag 아래 제한된

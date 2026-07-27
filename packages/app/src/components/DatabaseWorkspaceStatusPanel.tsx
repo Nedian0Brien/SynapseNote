@@ -30,6 +30,7 @@ export function DatabaseWorkspaceStatusPanel({
     selection,
     pageError,
     result,
+    candidates,
     setButtonPlan,
     commitButton,
     mutationReviewMode,
@@ -271,7 +272,16 @@ export function DatabaseWorkspaceStatusPanel({
           selection?.databaseId &&
           description?.index?.manifestRevision ? (
             <DatabaseMigrationRecoveryPanel
-              databaseId={selection.databaseId}
+              databaseIds={[
+                selection.databaseId,
+                ...(candidates ?? []).map((candidate: { id: string }) => candidate.id),
+              ]}
+              databaseLabels={Object.fromEntries(
+                (candidates ?? []).map((candidate: { id: string; name: string }) => [
+                  candidate.id,
+                  candidate.name,
+                ]),
+              )}
               expectedManifestRevision={description.index.manifestRevision}
             />
           ) : null}

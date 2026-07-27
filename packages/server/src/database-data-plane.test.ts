@@ -7,6 +7,7 @@ import {
   type DatabasePublicSharePolicy,
 } from '@nedian0brien/synapsenote-core';
 import { createDefaultDatabaseQueryAccessResolver } from './database-access-policy.ts';
+import { databaseDesiredStateBase } from './database-button.ts';
 import type { DatabaseCommitEngine } from './database-commit.ts';
 import { createDatabaseCommitEngine } from './database-commit.ts';
 import { createDatabaseDataPlane, DatabaseDataPlaneError } from './database-data-plane.ts';
@@ -1672,7 +1673,10 @@ Body
     try {
       dataPlane.catalog();
     } catch (error) {
-      expect(error).toMatchObject({ code: 'transaction_in_progress', details: { taskId: 'task_migration_freeze' } });
+      expect(error).toMatchObject({
+        code: 'transaction_in_progress',
+        details: { taskId: 'task_migration_freeze' },
+      });
     }
     await expect(dataPlane.commit({} as never)).rejects.toMatchObject({
       code: 'transaction_in_progress',
@@ -1680,7 +1684,44 @@ Body
     });
     await expect(
       dataPlane.mutateMarkdownTable({ operation: 'update_cell', input: {} } as never),
-    ).rejects.toMatchObject({ code: 'transaction_in_progress', details: { taskId: 'task_migration_freeze' } });
+    ).rejects.toMatchObject({
+      code: 'transaction_in_progress',
+      details: { taskId: 'task_migration_freeze' },
+    });
+  });
+
+  test('returns one migration-required policy for v1 product edits when compatibility is disabled', async () => {
+    const { store, index, plans } = await fixture();
+    const database = store.getById('db_feedback');
+    if (!database) throw new Error('expected feedback database');
+    const guarded = createDatabaseDataPlane({
+      databaseStore: store,
+      databaseRecordIndex: index,
+      databasePlanEngine: plans,
+      allowLegacyV1Mutation: false,
+    });
+    const source = database.sources[0];
+    if (!source) throw new Error('expected source');
+    const draft = guarded.createDraft({
+      ...databaseDesiredStateBase(database),
+      sampleRecords: [
+        {
+          sourceKey: source.key,
+          values: { title: 'Blocked legacy edit', score: 10, code: '10' },
+          body: '',
+        },
+      ],
+      recordMutations: [],
+    });
+    expect(() => guarded.createPlan(draft.id)).toThrow(DatabaseDataPlaneError);
+    try {
+      guarded.createPlan(draft.id);
+    } catch (error) {
+      expect(error).toMatchObject({
+        code: 'storage_read_only',
+        details: { migrationRequired: true, databaseIds: ['db_feedback'] },
+      });
+    }
   });
 
   test('returns compact ranked catalog candidates without silently resolving ambiguity', async () => {

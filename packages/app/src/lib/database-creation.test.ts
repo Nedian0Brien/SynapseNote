@@ -40,13 +40,23 @@ describe('database creation desired state', () => {
     });
   });
 
-  test('keeps v1 as the default and preserves an explicit v2 storage choice', () => {
-    const legacy = createBlankDatabaseDesiredState({ name: 'Legacy' });
-    expect(legacy.sources[0]?.storage).toBeUndefined();
+  test('uses v2 as the default and preserves an explicit v1 compatibility choice', () => {
+    const modern = createBlankDatabaseDesiredState({ name: 'Modern' });
+    expect(modern.sources[0]?.storage).toBe('markdown_table');
 
-    const v2 = createBlankDatabaseDesiredState({ name: 'Inline', storage: 'markdown_table' });
-    expect(v2.sources[0]?.storage).toBe('markdown_table');
-    expect(DatabaseDesiredStateDraftSchema.safeParse(v2).success).toBe(true);
+    const template = createTemplateDatabaseDesiredState({ name: 'Launch', template: 'tasks' });
+    expect(template.sources[0]?.storage).toBe('markdown_table');
+
+    const imported = createDelimitedDatabaseDesiredState({
+      name: 'Imported',
+      delimiter: ',',
+      contents: 'Title,Status\nOne,Open',
+    });
+    expect(imported.sources[0]?.storage).toBe('markdown_table');
+
+    const legacy = createBlankDatabaseDesiredState({ name: 'Legacy', storage: 'record_files' });
+    expect(legacy.sources[0]?.storage).toBe('record_files');
+    expect(DatabaseDesiredStateDraftSchema.safeParse(modern).success).toBe(true);
   });
 
   test('creates reviewed starter-template schemas without using non-committable record templates', () => {
@@ -109,6 +119,7 @@ describe('database creation desired state', () => {
     expect(desired.sources[0]).toMatchObject({
       folder: 'research/notes',
       includeSubfolders: false,
+      storage: 'record_files',
     });
     expect(desired.sampleRecords).toEqual([]);
   });

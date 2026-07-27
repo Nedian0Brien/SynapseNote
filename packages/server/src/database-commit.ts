@@ -29,6 +29,15 @@ import { Document } from 'yaml';
 import { z } from 'zod';
 import type { DatabaseAgentRunStore } from './database-agent-run-store.ts';
 import {
+  databaseMarkdownTableDocumentId,
+  databaseMarkdownTableDocumentMarkdown,
+  databaseMarkdownTableDocumentPath,
+} from './database-markdown-table-creation.ts';
+import type {
+  DatabaseMarkdownTableMutationReceipt,
+  DatabaseMarkdownTableWriter,
+} from './database-markdown-table-writer.ts';
+import {
   type DatabasePlanApprovalCode,
   DatabasePlanApprovalCodeSchema,
   type DatabasePlanArtifact,
@@ -41,6 +50,7 @@ import {
   createDatabaseTransactionJournal,
   type DatabaseTransactionJournal,
 } from './database-transaction-journal.ts';
+import { isV1Database, v1MigrationRequiredMessage } from './database-v1-compatibility.ts';
 import { commitWip, type ShadowHandle, shadowGit, type WriterIdentity } from './shadow-repo.ts';
 import { RUNTIME_VERSION } from './version-constants.ts';
 
@@ -205,6 +215,7 @@ export type DatabaseCommitErrorCode =
   | 'query_snapshot_changed'
   | 'write_guard_unavailable'
   | 'assertion_failed'
+  | 'storage_read_only'
   | 'target_changed'
   | 'v2_storage_read_only'
   | 'transaction_failed'
@@ -320,6 +331,10 @@ export interface CreateDatabaseCommitEngineOptions {
   /** Server lifecycle seam that serializes rebuilds with concurrent watcher events. */
   refreshDatabaseIndex?: () => Promise<unknown>;
   databasePlanEngine: DatabasePlanEngine;
+  /** v2 owner-table writer used for initial row creation. */
+  databaseMarkdownTableWriter?: DatabaseMarkdownTableWriter;
+  /** Production blocks mutations of existing v1 sources; migration/import tests may opt in. */
+  allowLegacyV1Mutation?: boolean;
   getShadow?: () => ShadowHandle | null;
   branch?: () => string;
   now?: () => Date;
@@ -661,6 +676,31 @@ function auditIntentSummary(plan: DatabasePlanArtifact): string {
   return `Apply reviewed ${operationKinds.join(', ')} plan across ${databaseCount} database(s) and ${sourceCount} data source(s), changing ${plan.diff.manifests.length} manifest(s) and ${plan.diff.records.length} record file(s).`;
 }
 
+function planMutatesCanonicalState(plan: DatabasePlanArtifact): boolean {
+  return plan.normalizedOperations.some((operation) => {
+    switch (operation.kind) {
+      case 'ensure_database':
+        return operation.action !== 'noop';
+      case 'ensure_property':
+      case 'ensure_relation':
+      case 'ensure_view':
+      case 'alter_schema':
+        return operation.action !== 'noop';
+      case 'upsert_records':
+        return operation.created > 0 || operation.updated > 0;
+      case 'mutate_record':
+      case 'delete_records':
+      case 'duplicate_records':
+      case 'archive_records':
+      case 'move_records':
+      case 'delete_database':
+        return true;
+      default:
+        return false;
+    }
+  });
+}
+
 export class DatabaseCommitEngine {
   readonly #projectDir: string;
   readonly #contentDir: string;
@@ -669,6 +709,8 @@ export class DatabaseCommitEngine {
   readonly #databaseRecordIndex: DatabaseRecordIndex;
   readonly #refreshDatabaseIndex: () => Promise<unknown>;
   readonly #databasePlanEngine: DatabasePlanEngine;
+  readonly #databaseMarkdownTableWriter?: DatabaseMarkdownTableWriter;
+  readonly #allowLegacyV1Mutation: boolean;
   readonly #getShadow: () => ShadowHandle | null;
   readonly #branch: () => string;
   readonly #now: () => Date;
@@ -700,6 +742,8 @@ export class DatabaseCommitEngine {
     this.#refreshDatabaseIndex =
       options.refreshDatabaseIndex ?? (() => this.#databaseRecordIndex.rebuild());
     this.#databasePlanEngine = options.databasePlanEngine;
+    this.#databaseMarkdownTableWriter = options.databaseMarkdownTableWriter;
+    this.#allowLegacyV1Mutation = options.allowLegacyV1Mutation ?? true;
     this.#getShadow = options.getShadow ?? (() => null);
     this.#branch = options.branch ?? (() => 'main');
     this.#now = options.now ?? (() => new Date());
@@ -847,6 +891,20 @@ export class DatabaseCommitEngine {
           throw new DatabaseCommitError('plan_not_committable', 'Plan has unresolved conflicts', {
             conflicts: plan.conflicts,
           });
+        }
+        if (!this.#allowLegacyV1Mutation) {
+          const currentDatabase = this.#databaseStore.getById(draft.normalized.definition.id);
+          if (currentDatabase && isV1Database(currentDatabase) && planMutatesCanonicalState(plan)) {
+            throw new DatabaseCommitError(
+              'storage_read_only',
+              v1MigrationRequiredMessage('The selected database'),
+              {
+                databaseId: currentDatabase.id,
+                sourceIds: plan.affectedObjects.sourceIds,
+                migrationRequired: true,
+              },
+            );
+          }
         }
         const current = this.#databaseStore.snapshot();
         if (
@@ -1705,13 +1763,18 @@ export class DatabaseCommitEngine {
       operation: manifest.action,
     }));
     const currentDefinition = this.#databaseStore.getById(draft.normalized.definition.id);
+    const isNewDatabase =
+      currentDefinition === null &&
+      plan.normalizedOperations.some(
+        (operation) => operation.kind === 'ensure_database' && operation.action === 'create',
+      );
     const v2SourceIds = new Set(
       draft.normalized.definition.sources
         .filter((source) => source.storage?.kind === 'markdown_table')
         .map((source) => source.id),
     );
     const v2RecordMutation = plan.diff.records.find((record) => v2SourceIds.has(record.sourceId));
-    if (v2RecordMutation) {
+    if (v2RecordMutation && !this.#databaseMarkdownTableWriter) {
       throw new DatabaseCommitError(
         'v2_storage_read_only',
         `Database source "${v2RecordMutation.sourceId}" uses v2 Markdown owner-table storage; the v1 record writer is disabled`,
@@ -1772,6 +1835,20 @@ export class DatabaseCommitEngine {
         );
       }
     }
+    const v2InitialSamplesBySource = new Map<
+      string,
+      ReturnType<DatabasePlanEngine['getDraft']>['normalized']['sampleRecords']
+    >();
+    const useV2RecordWriter = v2RecordMutation !== undefined && !isNewDatabase;
+    if (isNewDatabase && this.#databaseMarkdownTableWriter) {
+      for (const source of draft.normalized.definition.sources) {
+        if (source.storage?.kind !== 'markdown_table') continue;
+        const samples = draft.normalized.sampleRecords.filter(
+          (sample) => sample.sourceId === source.id,
+        );
+        if (samples.length > 0) v2InitialSamplesBySource.set(source.id, samples);
+      }
+    }
     for (const recordDiff of plan.diff.records) {
       const source = draft.normalized.definition.sources.find(
         (candidate) => candidate.id === recordDiff.sourceId,
@@ -1783,6 +1860,8 @@ export class DatabaseCommitEngine {
           { recordId: recordDiff.recordId },
         );
       }
+      if ((isNewDatabase || useV2RecordWriter) && source.storage?.kind === 'markdown_table')
+        continue;
       const projectPath = `${
         contentRelative === '' ? '' : `${contentRelative}/`
       }${recordDiff.path}`;
@@ -1917,6 +1996,7 @@ export class DatabaseCommitEngine {
       });
     }
     const moved: Array<{ target: CommitTarget; backupPath: string | null }> = [];
+    const v2MutationReceipts: DatabaseMarkdownTableMutationReceipt[] = [];
     let baseGitHead = '';
     try {
       for (const target of targets) {
@@ -2000,8 +2080,164 @@ export class DatabaseCommitEngine {
         await this.#fs.rename(stagePath, target.absolutePath);
         if (target.operation === 'create') moved.push({ target, backupPath: null });
       }
+      if (useV2RecordWriter) {
+        const receipts = await this.#applyV2RecordPlanWithinCommit({
+          plan,
+          draft,
+          actor: commitActor,
+        });
+        v2MutationReceipts.push(...receipts);
+      }
+      await this.#databaseStore.reload();
+      if (v2InitialSamplesBySource.size > 0) {
+        if (!this.#databaseMarkdownTableWriter) {
+          throw new DatabaseCommitError(
+            'v2_storage_read_only',
+            'V2 database creation requires the Markdown owner-table writer',
+            { databaseId: draft.normalized.definition.id },
+          );
+        }
+        for (const [sourceId, samples] of v2InitialSamplesBySource) {
+          const source = draft.normalized.definition.sources.find(
+            (candidate) => candidate.id === sourceId,
+          );
+          const storage = source?.storage;
+          if (!source || !storage || storage.kind !== 'markdown_table') {
+            throw new DatabaseCommitError(
+              'transaction_failed',
+              'V2 initial row source no longer resolves to owner-table storage',
+              { sourceId },
+            );
+          }
+          const ownerAbsolutePath = resolve(this.#contentDir, storage.owner.path);
+          const ownerBefore = (await this.#fs.readFile(ownerAbsolutePath)).toString('utf8');
+          const rows = samples.map((sample) => ({
+            documentPath: databaseMarkdownTableDocumentPath(
+              draft.normalized.definition,
+              source,
+              sample,
+            ),
+            documentMarkdown: databaseMarkdownTableDocumentMarkdown(source, sample),
+            documentId: databaseMarkdownTableDocumentId(sample, this.#generateUuid),
+            values: sample.values,
+          }));
+          const batch = await this.#databaseMarkdownTableWriter.createRowsWithinCommit({
+            databaseId: draft.normalized.definition.id,
+            sourceId,
+            rows,
+            expectedOwnerRevision: sha256(ownerBefore),
+            actor: commitActor,
+          });
+          v2MutationReceipts.push(...batch.receipts);
+        }
+      }
       const storeSnapshot = await this.#databaseStore.reload();
       await this.#refreshDatabaseIndex();
+      if (v2MutationReceipts.length > 0) {
+        const ownerFinalContent = new Map<string, string>();
+        const ownerBeforeContent = new Map<string, string>();
+        for (const receipt of v2MutationReceipts) {
+          if (!ownerBeforeContent.has(receipt.ownerPath)) {
+            ownerBeforeContent.set(receipt.ownerPath, receipt.beforeOwnerContent);
+          }
+          if (receipt.afterOwnerContent !== undefined) {
+            ownerFinalContent.set(receipt.ownerPath, receipt.afterOwnerContent);
+          }
+          const documentFile = receipt.files.find((file) => file.path !== receipt.ownerPath);
+          const documentAfter =
+            receipt.operation === 'create_row' || receipt.operation === 'copy_row'
+              ? receipt.createdDocumentContent
+              : receipt.afterDocumentContent;
+          const documentBefore =
+            receipt.operation === 'create_row' || receipt.operation === 'copy_row'
+              ? null
+              : receipt.beforeDocumentContent;
+          if (!documentFile || documentAfter === undefined) continue;
+          const afterDocument = documentAfter;
+          const beforeDocument = documentBefore ?? null;
+          const projectPath = `${contentRelative === '' ? '' : `${contentRelative}/`}${documentFile.path}`;
+          const target: CommitTarget = {
+            projectPath,
+            absolutePath: resolve(this.#contentDir, documentFile.path),
+            content: afterDocument,
+            beforeContent: beforeDocument ?? null,
+            operation: beforeDocument === null ? 'create' : 'update',
+          };
+          targets.push(target);
+          const stagePath = resolve(stagingRoot, 'after', projectPath);
+          await this.#fs.mkdir(resolve(stagePath, '..'));
+          await this.#fs.writeFile(stagePath, afterDocument);
+          const existingDelta = fileDeltas.find((file) => file.path === projectPath);
+          const after = {
+            sha256: sha256(afterDocument),
+            gitBlob: await git.hashBlob(stagePath),
+            bytes: Buffer.byteLength(afterDocument, 'utf8'),
+          };
+          if (!existingDelta) {
+            let beforeFile: DatabaseTransactionFileDelta['before'] = null;
+            if (beforeDocument !== null) {
+              const beforeStagePath = resolve(stagingRoot, 'before-v2', projectPath);
+              await this.#fs.mkdir(resolve(beforeStagePath, '..'));
+              await this.#fs.writeFile(beforeStagePath, beforeDocument);
+              beforeFile = {
+                sha256: sha256(beforeDocument),
+                gitBlob: await git.hashBlob(beforeStagePath),
+                bytes: Buffer.byteLength(beforeDocument, 'utf8'),
+              };
+            }
+            if (beforeDocument === null) {
+              fileDeltas.push({ operation: 'create', path: projectPath, before: null, after });
+            } else if (beforeFile) {
+              fileDeltas.push({
+                operation: 'update',
+                path: projectPath,
+                before: beforeFile,
+                after,
+              });
+            }
+          }
+        }
+        for (const [ownerPath, content] of ownerFinalContent) {
+          const projectPath = `${contentRelative === '' ? '' : `${contentRelative}/`}${ownerPath}`;
+          const target = targets.find((candidate) => candidate.projectPath === projectPath);
+          if (target) target.content = content;
+          const stagePath = resolve(stagingRoot, 'after', projectPath);
+          await this.#fs.mkdir(resolve(stagePath, '..'));
+          await this.#fs.writeFile(stagePath, content);
+          const after = {
+            sha256: sha256(content),
+            gitBlob: await git.hashBlob(stagePath),
+            bytes: Buffer.byteLength(content, 'utf8'),
+          };
+          const delta = fileDeltas.find((file) => file.path === projectPath);
+          if (delta) {
+            delta.after = after;
+          } else {
+            const before = ownerBeforeContent.get(ownerPath);
+            if (before === undefined) continue;
+            const beforeStagePath = resolve(stagingRoot, 'before-v2', projectPath);
+            await this.#fs.mkdir(resolve(beforeStagePath, '..'));
+            await this.#fs.writeFile(beforeStagePath, before);
+            fileDeltas.push({
+              operation: 'update',
+              path: projectPath,
+              before: {
+                sha256: sha256(before),
+                gitBlob: await git.hashBlob(beforeStagePath),
+                bytes: Buffer.byteLength(before, 'utf8'),
+              },
+              after,
+            });
+            targets.push({
+              projectPath,
+              absolutePath: resolve(this.#contentDir, ownerPath),
+              content,
+              beforeContent: before,
+              operation: 'update',
+            });
+          }
+        }
+      }
       const checks = this.#verify(plan, draft, input.assertions);
       if (checks.some((check) => check.status === 'failed')) {
         throw new DatabaseCommitError('transaction_failed', 'Database postcondition failed', {
@@ -2091,6 +2327,30 @@ export class DatabaseCommitEngine {
       await this.#fs.rm(stagingRoot).catch(() => undefined);
       return clone(result);
     } catch (error) {
+      if (v2MutationReceipts.length > 0 && this.#databaseMarkdownTableWriter) {
+        const rollbackErrors: string[] = [];
+        for (const receipt of [...v2MutationReceipts].reverse()) {
+          try {
+            await this.#databaseMarkdownTableWriter.undoWithinCommit({
+              receipt,
+              expectedAfterOwnerRevision: receipt.afterOwnerRevision,
+              actor: commitActor,
+            });
+          } catch (rollbackError) {
+            rollbackErrors.push(
+              rollbackError instanceof Error ? rollbackError.message : String(rollbackError),
+            );
+          }
+        }
+        if (rollbackErrors.length > 0) {
+          throw new DatabaseCommitError(
+            'rollback_failed',
+            'Database transaction failed and v2 row compensation was incomplete',
+            { mutationId, rollbackErrors, baseGitHead: baseGitHead || null },
+            error,
+          );
+        }
+      }
       if (moved.length > 0) {
         const rollbackErrors: Array<{ path: string; errno?: string }> = [];
         for (const movedTarget of [...moved].reverse()) {
@@ -2138,6 +2398,180 @@ export class DatabaseCommitEngine {
         error,
       );
     }
+  }
+
+  async #applyV2RecordPlanWithinCommit(context: {
+    plan: DatabasePlanArtifact;
+    draft: ReturnType<DatabasePlanEngine['getDraft']>;
+    actor: DatabaseRecordActor;
+  }): Promise<DatabaseMarkdownTableMutationReceipt[]> {
+    const writer = this.#databaseMarkdownTableWriter;
+    if (!writer) {
+      throw new DatabaseCommitError(
+        'v2_storage_read_only',
+        'V2 record mutations require the Markdown owner-table writer',
+      );
+    }
+    const { plan, draft, actor } = context;
+    const definition = draft.normalized.definition;
+    const receipts: DatabaseMarkdownTableMutationReceipt[] = [];
+    const ownerRevisions = new Map<string, string>();
+    const currentRecord = (recordId: string) => this.#databaseRecordIndex.getById(recordId);
+    const ownerRevision = (sourceId: string): string => {
+      const cached = ownerRevisions.get(sourceId);
+      if (cached) return cached;
+      const source = definition.sources.find((candidate) => candidate.id === sourceId);
+      const revision = source
+        ? this.#databaseRecordIndex.getStorageRevision(definition.id, source.id)
+        : null;
+      if (!revision) {
+        throw new DatabaseCommitError(
+          'target_changed',
+          'V2 owner revision is unavailable for the reviewed mutation',
+          { databaseId: definition.id, sourceId },
+        );
+      }
+      ownerRevisions.set(sourceId, revision);
+      return revision;
+    };
+    const remember = (sourceId: string, receipt: DatabaseMarkdownTableMutationReceipt): void => {
+      if (receipt.afterOwnerRevision) ownerRevisions.set(sourceId, receipt.afterOwnerRevision);
+      receipts.push(receipt);
+    };
+    for (const change of plan.diff.records) {
+      const source = definition.sources.find((candidate) => candidate.id === change.sourceId);
+      if (!source || source.storage?.kind !== 'markdown_table') continue;
+      const plannedSample = draft.normalized.sampleRecords.find(
+        (candidate) => candidate.id === change.recordId,
+      );
+      const sample =
+        plannedSample ??
+        (change.after
+          ? {
+              id: change.recordId,
+              sourceId: change.sourceId,
+              values: change.after.values,
+              body: change.after.body,
+              expectedRevision: change.before?.revision ?? null,
+            }
+          : undefined);
+      const before = currentRecord(change.recordId);
+      const expectedOwnerRevision = ownerRevision(source.id);
+      if (change.action === 'move') {
+        throw new DatabaseCommitError(
+          'v2_storage_read_only',
+          'Moving a v2 row requires an explicit document move mutation with a chosen target path',
+          { recordId: change.recordId, sourceId: source.id },
+        );
+      }
+      if (change.action === 'create') {
+        if (!sample) {
+          throw new DatabaseCommitError('transaction_failed', 'V2 create sample is missing', {
+            recordId: change.recordId,
+          });
+        }
+        const result = await writer.createRowWithinCommit({
+          databaseId: definition.id,
+          sourceId: source.id,
+          documentPath: change.path,
+          documentMarkdown: databaseMarkdownTableDocumentMarkdown(source, sample),
+          documentId: databaseMarkdownTableDocumentId(sample, this.#generateUuid),
+          values: sample.values,
+          expectedOwnerRevision,
+          actor,
+        });
+        if (result.changed) remember(source.id, result.receipt);
+        continue;
+      }
+      if (change.action === 'delete') {
+        const current = currentRecord(change.recordId);
+        if (!current) {
+          throw new DatabaseCommitError('target_changed', 'V2 delete target is unavailable', {
+            recordId: change.recordId,
+          });
+        }
+        const result = await writer.deleteRowWithinCommit({
+          databaseId: definition.id,
+          sourceId: source.id,
+          recordId: change.recordId,
+          expectedOwnerRevision,
+          expectedRowRevision: current.semanticRevisions?.row,
+          actor,
+        });
+        if (result.changed) remember(source.id, result.receipt);
+        continue;
+      }
+      if (!sample || !before) {
+        throw new DatabaseCommitError('target_changed', 'V2 record update target is unavailable', {
+          recordId: change.recordId,
+        });
+      }
+      if (before.body !== sample.body) {
+        throw new DatabaseCommitError(
+          'v2_storage_read_only',
+          'V2 body edits require a linked-document mutation; the generic record plan is property-only',
+          { recordId: change.recordId },
+        );
+      }
+      const titleProperty = source.properties.find((property) => property.type === 'title');
+      let currentOwnerRevision = expectedOwnerRevision;
+      if (titleProperty && before.values[titleProperty.id] !== sample.values[titleProperty.id]) {
+        const title = sample.values[titleProperty.id];
+        if (typeof title !== 'string' || title.trim() === '') {
+          throw new DatabaseCommitError(
+            'transaction_failed',
+            'V2 Title updates require a non-empty string',
+            { recordId: change.recordId, propertyId: titleProperty.id },
+          );
+        }
+        const result = await writer.updateTitleWithinCommit({
+          databaseId: definition.id,
+          sourceId: source.id,
+          recordId: change.recordId,
+          title,
+          expectedOwnerRevision: currentOwnerRevision,
+          expectedDocumentRevision: before.semanticRevisions?.document,
+          actor,
+        });
+        if (result.changed) {
+          remember(source.id, result.receipt);
+          currentOwnerRevision = result.receipt.afterOwnerRevision;
+        }
+      }
+      const cells = source.properties
+        .filter(
+          (property) =>
+            property.type !== 'title' &&
+            source.storage?.storedPropertyIds.includes(property.id) &&
+            stable(before.values[property.id]) !== stable(sample.values[property.id]),
+        )
+        .map((property) => ({
+          recordId: change.recordId,
+          propertyId: property.id,
+          value: sample.values[property.id] ?? null,
+        }));
+      if (cells.length > 0) {
+        const result = await writer.updateCellsWithinCommit({
+          databaseId: definition.id,
+          sourceId: source.id,
+          cells,
+          expectedOwnerRevision: currentOwnerRevision,
+          actor,
+        });
+        if (result.changed) remember(source.id, result.receipt);
+      }
+      if (
+        sample.archivedAt !== undefined &&
+        (before.archivedAt ?? null) !== (sample.archivedAt ?? null)
+      ) {
+        throw new DatabaseCommitError(
+          'v2_storage_read_only',
+          'V2 archive/restore must use the lifecycle writer, not a generic record replacement',
+          { recordId: change.recordId },
+        );
+      }
+    }
+    return receipts;
   }
 
   #verify(

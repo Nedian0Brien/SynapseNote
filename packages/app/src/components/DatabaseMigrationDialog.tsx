@@ -5,7 +5,7 @@ import type {
   DatabaseTask,
 } from '@nedian0brien/synapsenote-server';
 import { Loader2, Pause, Play, RotateCcw, ShieldAlert } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -177,8 +177,12 @@ export async function rollbackDatabaseMigration(
 }
 
 /** Stable browser-only key used to reconnect a durable migration after reload. */
-export function databaseMigrationTaskStorageKey(databaseId: string): string {
-  return `synapsenote:database:migration-task:${databaseId}`;
+export function databaseMigrationTaskStorageKey(
+  databaseIdOrIds: string | readonly string[],
+): string {
+  const ids = typeof databaseIdOrIds === 'string' ? [databaseIdOrIds] : [...databaseIdOrIds];
+  const scope = [...new Set(ids)].sort().join(',');
+  return `synapsenote:database:migration-task:${scope}`;
 }
 
 function readPersistedMigrationTaskId(databaseId: string): string | null {
@@ -275,11 +279,22 @@ export function databaseMigrationStartInput(
  */
 export function DatabaseMigrationRecoveryPanel({
   databaseId,
+  databaseIds,
+  databaseLabels,
   expectedManifestRevision,
 }: {
-  databaseId: string;
+  databaseId?: string;
+  databaseIds?: readonly string[];
+  databaseLabels?: Readonly<Record<string, string>>;
   expectedManifestRevision: string;
 }): React.JSX.Element {
+  const availableDatabaseIds = [
+    ...new Set(databaseIds?.length ? databaseIds : databaseId ? [databaseId] : []),
+  ];
+  const availableDatabaseKey = availableDatabaseIds.join(',');
+  const [selectedDatabaseIds, setSelectedDatabaseIds] = useState<string[]>(() =>
+    availableDatabaseIds.slice(0, 1),
+  );
   const [preview, setPreview] = useState<DatabaseManifestMigrationPreview | null>(null);
   const [task, setTask] = useState<DatabaseTask | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -291,7 +306,20 @@ export function DatabaseMigrationRecoveryPanel({
   );
 
   useEffect(() => {
-    const persistedTaskId = readPersistedMigrationTaskId(databaseId);
+    setSelectedDatabaseIds((current) => {
+      const allowed = new Set(availableDatabaseKey.split(',').filter(Boolean));
+      const retained = current.filter((id) => allowed.has(id));
+      return retained.length > 0
+        ? retained
+        : availableDatabaseKey.split(',').filter(Boolean).slice(0, 1);
+    });
+  }, [availableDatabaseKey]);
+
+  const selectedDatabaseKey = selectedDatabaseIds.slice().sort().join(',');
+
+  useEffect(() => {
+    const persistedTaskId = readPersistedMigrationTaskId(selectedDatabaseKey);
+    setTask(null);
     if (!persistedTaskId) return;
     const controller = new AbortController();
     void inspectDatabaseMigration(persistedTaskId, { signal: controller.signal }).then(
@@ -300,18 +328,18 @@ export function DatabaseMigrationRecoveryPanel({
         if (controller.signal.aborted) return;
         // A task may have been removed after retention cleanup. Do not leave a
         // permanently stale task ID blocking the migration CTA.
-        persistMigrationTaskId(databaseId, null);
+        persistMigrationTaskId(selectedDatabaseKey, null);
         setError(cause instanceof Error ? cause.message : 'Unable to reconnect migration task');
       },
     );
     return () => controller.abort();
-  }, [databaseId]);
+  }, [selectedDatabaseKey]);
 
   useEffect(() => {
-    persistMigrationTaskId(databaseId, task?.id ?? null);
-  }, [databaseId, task?.id]);
+    persistMigrationTaskId(selectedDatabaseKey, task?.id ?? null);
+  }, [selectedDatabaseKey, task?.id]);
 
-  const loadPreview = useCallback(
+  const loadPreview = useEffectEvent(
     async (
       signal?: AbortSignal,
       choices: DatabaseMigrationChoiceState = { ownerChoices: {}, titleChoices: {} },
@@ -320,7 +348,7 @@ export function DatabaseMigrationRecoveryPanel({
       try {
         const next = await previewDatabaseMigration(
           {
-            databaseIds: [databaseId],
+            databaseIds: selectedDatabaseIds,
             expectedManifestRevision,
             targetVersion: 2,
             ...(Object.keys(choices.ownerChoices).length > 0
@@ -339,14 +367,14 @@ export function DatabaseMigrationRecoveryPanel({
         setError(cause instanceof Error ? cause.message : 'Unable to preview migration');
       }
     },
-    [databaseId, expectedManifestRevision],
   );
 
   useEffect(() => {
+    if (!selectedDatabaseKey || !expectedManifestRevision) return;
     const controller = new AbortController();
     void loadPreview(controller.signal, { ownerChoices: {}, titleChoices: {} });
     return () => controller.abort();
-  }, [loadPreview]);
+  }, [expectedManifestRevision, selectedDatabaseKey]);
 
   useEffect(() => {
     if (!task || (task.state !== 'queued' && task.state !== 'running')) return;
@@ -369,7 +397,10 @@ export function DatabaseMigrationRecoveryPanel({
 
   const approve = async () => {
     if (!preview?.committable || task) return;
-    const input = databaseMigrationStartInput(databaseId, preview, { ownerChoices, titleChoices });
+    const input = databaseMigrationStartInput(selectedDatabaseIds, preview, {
+      ownerChoices,
+      titleChoices,
+    });
     if (!input) {
       setError('Migration preview did not return an approved plan hash. Refresh the preview.');
       return;
@@ -383,7 +414,11 @@ export function DatabaseMigrationRecoveryPanel({
     }
   };
 
-  const updateTitleChoice = (recordId: string, choice: DatabaseMarkdownV2MigrationTitleChoice) => {
+  const updateTitleChoice = (
+    databaseId: string,
+    recordId: string,
+    choice: DatabaseMarkdownV2MigrationTitleChoice,
+  ) => {
     const next = {
       ...titleChoices,
       [databaseId]: { ...(titleChoices[databaseId] ?? {}), [recordId]: choice },
@@ -392,7 +427,12 @@ export function DatabaseMigrationRecoveryPanel({
     void loadPreview(undefined, { ownerChoices, titleChoices: next });
   };
 
-  const updateOwnerChoice = (sourceId: string, path: string, blockId: string) => {
+  const updateOwnerChoice = (
+    databaseId: string,
+    sourceId: string,
+    path: string,
+    blockId: string,
+  ) => {
     const next = {
       ...ownerChoices,
       [databaseId]: { ...(ownerChoices[databaseId] ?? {}), [sourceId]: { path, blockId } },
@@ -427,7 +467,7 @@ export function DatabaseMigrationRecoveryPanel({
     try {
       await rollbackDatabaseMigration(task.id, task.revision);
       setTask(null);
-      persistMigrationTaskId(databaseId, null);
+      persistMigrationTaskId(selectedDatabaseKey, null);
       await loadPreview();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to roll back migration');
@@ -451,6 +491,49 @@ export function DatabaseMigrationRecoveryPanel({
           {error}
         </p>
       ) : null}
+      {availableDatabaseIds.length > 1 ? (
+        <fieldset className="space-y-2 rounded-lg border p-3 text-xs">
+          <legend className="px-1 font-medium">Databases to migrate</legend>
+          <p id="database-migration-selection-help" className="text-muted-foreground">
+            Select one or more v1 databases. The preview and approval hash will cover exactly this
+            selection.
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {availableDatabaseIds.map((candidateId) => {
+              const checked = selectedDatabaseIds.includes(candidateId);
+              return (
+                <label
+                  key={candidateId}
+                  htmlFor={`database-migration-select-${candidateId}`}
+                  className="flex items-center gap-2"
+                >
+                  <Checkbox
+                    id={`database-migration-select-${candidateId}`}
+                    checked={checked}
+                    disabled={checked && selectedDatabaseIds.length === 1}
+                    aria-label={`Select database ${databaseLabels?.[candidateId] ?? candidateId}`}
+                    aria-describedby="database-migration-selection-help"
+                    onCheckedChange={(nextChecked) => {
+                      setSelectedDatabaseIds((current) => {
+                        if (nextChecked === true) {
+                          return current.includes(candidateId)
+                            ? current
+                            : [...current, candidateId];
+                        }
+                        if (current.length === 1) return current;
+                        return current.filter((id) => id !== candidateId);
+                      });
+                    }}
+                  />
+                  <span className="truncate" title={candidateId}>
+                    {databaseLabels?.[candidateId] ?? candidateId}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+      ) : null}
       <DatabaseMigrationDialog
         preview={preview}
         task={task}
@@ -459,10 +542,10 @@ export function DatabaseMigrationRecoveryPanel({
         onResume={() => void resume()}
         onRollback={() => void rollback()}
         onRetry={() => void retry()}
-        ownerChoices={ownerChoices[databaseId] ?? {}}
-        titleChoices={titleChoices[databaseId] ?? {}}
-        onTitleChoice={updateTitleChoice}
-        onOwnerChoice={updateOwnerChoice}
+        ownerChoicesByDatabase={ownerChoices}
+        titleChoicesByDatabase={titleChoices}
+        onTitleChoiceForDatabase={updateTitleChoice}
+        onOwnerChoiceForDatabase={updateOwnerChoice}
       />
     </div>
   );
@@ -478,8 +561,12 @@ export function DatabaseMigrationDialog({
   onRetry,
   ownerChoices = {},
   titleChoices = {},
+  ownerChoicesByDatabase = {},
+  titleChoicesByDatabase = {},
   onTitleChoice,
   onOwnerChoice,
+  onTitleChoiceForDatabase,
+  onOwnerChoiceForDatabase,
 }: {
   preview: DatabaseManifestMigrationPreview | null;
   task: DatabaseTask | null;
@@ -490,8 +577,21 @@ export function DatabaseMigrationDialog({
   onRetry: () => void;
   ownerChoices?: Readonly<Record<string, { path: string; blockId: string }>>;
   titleChoices?: Readonly<Record<string, DatabaseMarkdownV2MigrationTitleChoice>>;
+  ownerChoicesByDatabase?: DatabaseMigrationChoiceState['ownerChoices'];
+  titleChoicesByDatabase?: DatabaseMigrationChoiceState['titleChoices'];
   onTitleChoice?: (recordId: string, choice: DatabaseMarkdownV2MigrationTitleChoice) => void;
   onOwnerChoice?: (sourceId: string, path: string, blockId: string) => void;
+  onTitleChoiceForDatabase?: (
+    databaseId: string,
+    recordId: string,
+    choice: DatabaseMarkdownV2MigrationTitleChoice,
+  ) => void;
+  onOwnerChoiceForDatabase?: (
+    databaseId: string,
+    sourceId: string,
+    path: string,
+    blockId: string,
+  ) => void;
 }): React.JSX.Element {
   const [showAllItems, setShowAllItems] = useState(false);
   const [lossAcknowledged, setLossAcknowledged] = useState(false);
@@ -515,9 +615,10 @@ export function DatabaseMigrationDialog({
       .filter((blocker) => blocker.code === 'owner_path_collision' && blocker.sourceId)
       .map((blocker) => ({ databaseId: item.databaseId, ...blocker })),
   );
+  const previewRevision = preview?.expectedManifestRevision;
   useEffect(() => {
-    setLossAcknowledged(false);
-  }, [preview?.expectedManifestRevision]);
+    if (previewRevision) setLossAcknowledged(false);
+  }, [previewRevision]);
   return (
     <section
       aria-labelledby="database-migration-heading"
@@ -613,7 +714,13 @@ export function DatabaseMigrationDialog({
               <legend className="px-1 font-medium">Title choices</legend>
               {titleBlockers.slice(0, 50).map((blocker) => {
                 const recordId = blocker.recordId as string;
-                const selected = titleChoices[recordId]?.kind ?? 'keep_document_title';
+                const choiceKey = `${blocker.databaseId}:${recordId}`;
+                const selected =
+                  customTitles[choiceKey] !== undefined
+                    ? 'custom_title'
+                    : (titleChoicesByDatabase[blocker.databaseId]?.[recordId]?.kind ??
+                      titleChoices[recordId]?.kind ??
+                      'keep_document_title');
                 return (
                   <div key={`${blocker.databaseId}:${recordId}`} className="space-y-1">
                     <label htmlFor={`title-choice-${recordId}`} className="flex items-center gap-2">
@@ -624,10 +731,28 @@ export function DatabaseMigrationDialog({
                         value={selected}
                         onValueChange={(value) => {
                           if (value === 'keep_document_title' || value === 'use_record_title') {
-                            onTitleChoice?.(recordId, { kind: value });
+                            setCustomTitles((current) => {
+                              if (current[choiceKey] === undefined) return current;
+                              const next = { ...current };
+                              delete next[choiceKey];
+                              return next;
+                            });
+                            const choice = {
+                              kind: value,
+                            } as DatabaseMarkdownV2MigrationTitleChoice;
+                            onTitleChoiceForDatabase?.(blocker.databaseId, recordId, choice);
+                            onTitleChoice?.(recordId, choice);
                           } else if (value === 'custom_title') {
-                            const title = customTitles[recordId]?.trim();
-                            if (title) onTitleChoice?.(recordId, { kind: 'custom_title', title });
+                            setCustomTitles((current) => ({
+                              ...current,
+                              [choiceKey]: current[choiceKey] ?? '',
+                            }));
+                            const title = customTitles[choiceKey]?.trim();
+                            if (title) {
+                              const choice = { kind: 'custom_title', title } as const;
+                              onTitleChoiceForDatabase?.(blocker.databaseId, recordId, choice);
+                              onTitleChoice?.(recordId, choice);
+                            }
                           }
                         }}
                       >
@@ -649,15 +774,18 @@ export function DatabaseMigrationDialog({
                       <Input
                         className="w-full rounded border bg-background px-2 py-1"
                         aria-label={`Custom title ${recordId}`}
-                        value={customTitles[recordId] ?? ''}
+                        value={customTitles[choiceKey] ?? ''}
                         onChange={(event) => {
                           const title = event.target.value;
-                          setCustomTitles((current) => ({ ...current, [recordId]: title }));
-                          if (title.trim())
-                            onTitleChoice?.(recordId, {
+                          setCustomTitles((current) => ({ ...current, [choiceKey]: title }));
+                          if (title.trim()) {
+                            const choice = {
                               kind: 'custom_title',
                               title: title.trim(),
-                            });
+                            } as const;
+                            onTitleChoiceForDatabase?.(blocker.databaseId, recordId, choice);
+                            onTitleChoice?.(recordId, choice);
+                          }
                         }}
                       />
                     ) : null}
@@ -671,9 +799,12 @@ export function DatabaseMigrationDialog({
               <legend className="px-1 font-medium">Owner path choices</legend>
               {ownerBlockers.slice(0, 50).map((blocker) => {
                 const sourceId = blocker.sourceId as string;
-                const path = ownerPathDrafts[sourceId] ?? blocker.path ?? '';
+                const choiceKey = `${blocker.databaseId}:${sourceId}`;
+                const path = ownerPathDrafts[choiceKey] ?? blocker.path ?? '';
                 const blockId =
-                  ownerChoices[sourceId]?.blockId ?? `dbb_${sourceId.replace(/^ds_/, '')}_primary`;
+                  ownerChoicesByDatabase[blocker.databaseId]?.[sourceId]?.blockId ??
+                  ownerChoices[sourceId]?.blockId ??
+                  `dbb_${sourceId.replace(/^ds_/, '')}_primary`;
                 return (
                   <label
                     key={`${blocker.databaseId}:${sourceId}`}
@@ -688,8 +819,16 @@ export function DatabaseMigrationDialog({
                       value={path}
                       onChange={(event) => {
                         const nextPath = event.target.value;
-                        setOwnerPathDrafts((current) => ({ ...current, [sourceId]: nextPath }));
-                        if (nextPath.trim()) onOwnerChoice?.(sourceId, nextPath.trim(), blockId);
+                        setOwnerPathDrafts((current) => ({ ...current, [choiceKey]: nextPath }));
+                        if (nextPath.trim()) {
+                          onOwnerChoiceForDatabase?.(
+                            blocker.databaseId,
+                            sourceId,
+                            nextPath.trim(),
+                            blockId,
+                          );
+                          onOwnerChoice?.(sourceId, nextPath.trim(), blockId);
+                        }
                       }}
                     />
                   </label>
@@ -703,12 +842,62 @@ export function DatabaseMigrationDialog({
           >
             {visibleItems.map((item) => (
               <li key={item.databaseId} className="border-b px-2 py-1 last:border-b-0">
-                <span className="font-mono">{item.action}</span> · {item.databaseKey} ·{' '}
-                <span className="font-mono">{item.manifestPath}</span>
-                {item.ownerPaths?.length ? ` · ${item.ownerPaths.length} owner` : ''}
-                {item.linkedDocumentPaths?.length
-                  ? ` · ${item.linkedDocumentPaths.length} linked`
-                  : ''}
+                <details open={visibleItems.length === 1}>
+                  <summary className="cursor-pointer list-inside">
+                    <span className="font-mono">{item.action}</span> · {item.databaseKey} ·{' '}
+                    <span className="font-mono">{item.manifestPath}</span>
+                    {item.ownerPaths?.length ? ` · ${item.ownerPaths.length} owner` : ''}
+                    {item.linkedDocumentPaths?.length
+                      ? ` · ${item.linkedDocumentPaths.length} linked`
+                      : ''}
+                  </summary>
+                  <dl className="mt-2 grid gap-1 border-l pl-4 text-muted-foreground">
+                    <div>
+                      <dt className="inline font-medium">Database ID: </dt>
+                      <dd className="inline font-mono">{item.databaseId}</dd>
+                    </div>
+                    <div>
+                      <dt className="inline font-medium">Property/record changes: </dt>
+                      <dd className="inline">
+                        {item.blockers?.filter((blocker) => blocker.propertyId || blocker.recordId)
+                          .length ?? 0}{' '}
+                        blocker references
+                      </dd>
+                    </div>
+                    {item.ownerPaths?.length ? (
+                      <div>
+                        <dt className="font-medium">Owner paths</dt>
+                        <dd>{item.ownerPaths.slice(0, 50).join(', ')}</dd>
+                      </div>
+                    ) : null}
+                    {item.linkedDocumentPaths?.length ? (
+                      <div>
+                        <dt className="font-medium">Linked document paths</dt>
+                        <dd>{item.linkedDocumentPaths.slice(0, 50).join(', ')}</dd>
+                      </div>
+                    ) : null}
+                    {item.blockers?.length ? (
+                      <div>
+                        <dt className="font-medium">Blockers and warnings</dt>
+                        <dd>
+                          <ul className="list-disc pl-4">
+                            {item.blockers.slice(0, 50).map((blocker) => (
+                              <li
+                                key={`${item.databaseId}:${blocker.code}:${blocker.recordId ?? ''}:${blocker.propertyId ?? ''}:${blocker.path ?? ''}:${blocker.message}`}
+                              >
+                                <span className="font-mono">{blocker.code}</span> ·{' '}
+                                {blocker.message}
+                                {blocker.recordId ? ` · record ${blocker.recordId}` : ''}
+                                {blocker.propertyId ? ` · property ${blocker.propertyId}` : ''}
+                                {blocker.path ? ` · ${blocker.path}` : ''}
+                              </li>
+                            ))}
+                          </ul>
+                        </dd>
+                      </div>
+                    ) : null}
+                  </dl>
+                </details>
               </li>
             ))}
           </ul>
@@ -734,6 +923,10 @@ export function DatabaseMigrationDialog({
             <Play aria-hidden="true" />
             <Trans>Approve migration</Trans>
           </Button>
+          <p className="text-muted-foreground text-xs" role="status">
+            Backup hashes are verified before activation. After a successful commit, rollback is
+            available from the durable task until its retention window expires.
+          </p>
         </div>
       ) : (
         <p className="text-xs text-muted-foreground">

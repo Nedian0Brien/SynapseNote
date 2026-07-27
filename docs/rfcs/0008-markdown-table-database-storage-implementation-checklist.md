@@ -1,13 +1,16 @@
 # RFC 0008 implementation checklist: Markdown table database storage
 
-- 상태: Active, staged implementation (core/read contract, server writer/API, durable migration
-  journal/task gate, app cell/row adapter, title/move writer, native lifecycle metadata/writer,
-  capability response, semantic revisions, identity/copy/move safeguards, canonical/computed
-  export, migration owner/dependency/derived preflight, retention-aware recovery inspection,
-  parser process-timeout, generic writer crash recovery, all-surface derived parity, lifecycle
-  performance budgets, supported-max reliability soak, and v1→v2→undo round-trip evidence are
-  implemented; multi-database migration UX, V1 edit interception, desktop parity, deferred-cleanup
-  operator sign-off, pilot, and new-default rollout remain gated)
+- 상태: Active, v2 writer/default implementation connected (blank/template creation now targets v2;
+  existing-folder onboarding remains an explicit v1 compatibility path). Core/read contract,
+  server writer/API, durable migration journal/task gate, app cell/row adapter, title/move writer,
+  native lifecycle metadata/writer, capability response, semantic revisions, identity/copy/move
+  safeguards, canonical/computed export, migration owner/dependency/derived preflight,
+  retention-aware recovery inspection, parser process-timeout, generic writer crash recovery,
+  all-surface derived parity, lifecycle performance budgets, supported-max reliability soak,
+  v1→v2→undo round-trip evidence, multi-database migration UX, and V1 edit interception are
+  implemented. Desktop parity is covered by focused fixtures; deferred-cleanup operator sign-off
+  and external rollout approval remain release-operations gates. The compatibility writer remains
+  available only behind an explicit import/migration/test seam.)
 - 최종 수정: 2026-07-27
 - Companion RFC: [Markdown table canonical database storage](./0008-markdown-table-canonical-database-storage.md)
 - Current v1 tracker: [RFC 0001 implementation checklist](./0001-databases-implementation-checklist.md)
@@ -72,14 +75,18 @@ normative implementation tracker다. RFC 0001의 기존 체크 표시는 v1 capa
 자동으로 완료시키지 않으며, 각 항목의 전체 완료 기준을 충족할 때만 본문
 checkbox를 체크한다.
 
-- Core manifest는 v1 active writer를 유지하면서 v2를 read-compatible version으로
-  검증하고, source별 `markdown_table` storage binding과 migration alias metadata를
-  strict schema로 검사한다.
+- Core manifest는 v1 legacy/read compatibility와 v2 owner-table writer를 함께 검증하고,
+  source별 `markdown_table` storage binding과 migration alias metadata를 strict schema로
+  검사한다. 새 blank/template database는 v2를 기본으로 생성하고 existing-folder onboarding은
+  v1 compatibility source로 남긴다.
 - Core owner marker/GFM parser와 typed cell codec이 source range, escaped pipe,
   invalid raw value, document/relation wikilink, source-preserving cell/row splice를
   제공한다.
 - 범용 `_sn.document_id`, source+document 기반 deterministic record ID, v1 legacy
   ID alias를 위한 순수 migration planner와 document identity insertion이 있다.
+- V2 plan은 caller가 임의의 `rec_*` ID만 지정하고 `documentId`를 생략한 신규 row를
+  `record_identity_required` blocker로 거부한다. 기존 row update는 index의 stable
+  document identity를 재사용하고, 새 row만 explicit document identity를 요구한다.
 - Server record index가 v2 owner 문서만 발견하고 linked Markdown 문서를 cold rebuild하며,
   owner/document watcher edit를 재구성한다. 문서 ID가 없으면 path를 추정하지 않고
   explicit diagnostic을 남긴다.
@@ -93,9 +100,9 @@ checkbox를 체크한다.
 - App에는 `/api/databases/markdown-table/mutate` 전용 client/gateway와 owner revision을
   운반하는 `storageRevision` read field가 있다. Full-page/inline cell edit와 기본 row
   create/delete는 v2 source에서 이 adapter를 선택하고 optimistic patch를
-  conflict/refresh semantics와 함께 정리한다. Row create는 source folder 안의 normal
-  Markdown document를 만들며, existing title/body template과 Unique ID allocation은 별도
-  product gate다. Renderer-level receipt-backed UI undo/redo는 아직 gated다.
+  conflict/refresh semantics와 함께 정리한다. Row create는 owner가 허용한 content-root 상대
+  `.md` 경로의 normal Markdown document를 만들며, existing title/body template과 Unique ID
+  allocation은 별도 product gate다. Renderer-level receipt-backed UI undo/redo는 아직 gated다.
 - Core/server에는 stable-ID Formula compile 및 cross-source dependency graph, shared
   wikilink resolver, table/row/cell/document semantic revision set, identity repair/CRDT
   semantic-key helpers, `canonical_markdown`/`computed_snapshot` export contract, 그리고
@@ -105,17 +112,21 @@ checkbox를 체크한다.
   migration gate를 재시작 시 복원하고 frozen v1 index issue, dependency closure, owner
   choice는 preview blocker/plan input으로 반환한다. Finished migration은 retention window
   안에서 content-redacted inspect, undo, expiry-gated cleanup을 제공한다.
-- v1 `assignRecordId`, folder onboarding, 기존 record-file commit은 v2 source에서
-  `v2_storage_read_only` guard로 차단된다. 이는 v2 writer가 연결되기 전 dual-write를
-  허용하지 않기 위한 안전장치다.
+- v1 reader/export/migration writer는 compatibility scope에 남고, production server의
+  Data Plane/automation/common commit engine은 `storage_read_only` 또는
+  `migration_required`로 product mutation을 차단한다. `allowLegacyV1Mutation`은
+  테스트/import 경계에만 남는 명시적 seam이며 새 v2 creation path는 owner-table writer를
+  사용한다. 반복 template와 durable task 같은 내부 direct-commit caller도 common engine
+  guard를 통과해야 한다.
 
-현재 production default로 활성화하지 않은 범위는 다음과 같다.
+현재 branch에서 코드로 구현했지만 별도 release record 없이는 public rollout으로 간주하지 않는
+범위는 다음과 같다.
 
-- v2 owner-table mutation은 dedicated storage-aware API/MCP/app route로 활성화되며, cell과
-  기본 row create/delete/title/move/lifecycle가 이 route를 사용한다. 기존 generic
-  desired-state plan/commit을 v2 row writer로 재사용하지 않는다. Native lifecycle의
-  server receipt/undo는 구현됐지만 renderer-level receipt-backed UI undo/redo와
-  new-default rollout은 아직 gated다.
+- v2 owner-table mutation은 dedicated storage-aware API/MCP/app route와 generic plan/commit
+  adapter 모두에서 활성화되며, cell과 row create/delete/title/lifecycle가 같은 writer를
+  사용한다. 새 blank/template/inline database와 일반 row 생성은 v2를 기본으로 선택하고,
+  existing-folder binding만 명시적 v1 compatibility choice를 유지한다. Renderer-level
+  receipt-backed UI undo/redo와 public rollout approval은 release gate다.
 - Durable v1→v2 migration task의 journal/gate와 cold verification은 연결되어 있다. migration
   logical equivalence, post-write hash verification, retention-aware inspection과 cleanup
   boundary도 연결되어 있다. 독립 child process의 staging/activation crash-at-every-file와
@@ -129,7 +140,8 @@ checkbox를 체크한다.
   snapshot comparator와 server cold verification도 연결됐다. Query/API/MCP/export가 같은
   derived revision을 운반하고 migration freeze Formula/Rollup value/error deep comparison과
   round-trip fixture가 통과한다. Lifecycle benchmark와 supported-max soak는 release evidence에
-  고정됐고, cross-editor production soak 및 desktop parity는 여전히 release gate다.
+  고정됐다. Desktop parity focused fixture와 cross-surface v1 guard fixture가 통과했고,
+  cross-editor production soak는 release 이후 운영 관찰 항목이다.
 
 ## 2. 전환 중 절대 깨면 안 되는 stop conditions
 
@@ -314,8 +326,8 @@ contract가 고정된 뒤에만 구현한다.
 `markdown-table-document.test.ts`가 공용 계약을 검증한다. Core/server/app typecheck와
 관련 focused tests가 통과했고, changeset은 `.changeset/v2-markdown-table-foundation.md`와
 `.changeset/v2-migration-recovery-and-identity.md`다. Title/document와 semantic revision
-공용 유틸은 구현됐지만 모든 UI surface의 동일 precondition 증명과 new-default 활성화는
-여전히 M5 gate다.
+공용 유틸과 새 blank/template database의 v2 default routing은 구현됐지만, public new-default
+release approval(실제 pilot·operator sign-off·rollback window)은 여전히 M5 gate다.
 
 ## B. Owner marker, GFM table parser, and cell codec
 
@@ -417,6 +429,8 @@ duplicate row, broken link, stale alias를 content-free plan으로 진단하고 
 exact before/after hash가 있는 Markdown rewrite action을 만든다. `database-repair.test.ts`
 는 approval token, durable undo token, 재시작 후 exact byte undo, intervening edit 차단을
 검증하며 HTTP/MCP/진단 UI가 같은 plan/undo 계약을 사용한다.
+`database-plan.test.ts`의 explicit-v2-ID fixture는 `documentId` 없는 신규 row를
+`record_identity_required`로 막고 기존 row update만 허용한다.
 
 ### C 영역 완료 기준
 
@@ -792,15 +806,23 @@ clone한 독립 workspace에서 inspect→rollback→cleanup을 실행해 L-007 
 - [x] **V2-J-004 — Linked view reference-only behavior.** Linked view가 owner source를
   projection하고 row를 복사하지 않는다. 완료 기준: view copy/filter/sort/delete가 owner bytes를
   값 복제 목적으로 쓰지 않고 source deletion diagnostic이 explicit하다.
-- [ ] **V2-J-005 — Migration preview UX.** Source/record/property/path diff, blockers,
+- [x] **V2-J-005 — Migration preview UX.** Source/record/property/path diff, blockers,
   warnings, title/path choices, backup/rollback을 단계별로 표시한다. 완료 기준: keyboard/screen
   reader로 모든 선택과 approval이 가능하고 destructive/loss acknowledgement가 분리된다.
+  `DatabaseMigrationRecoveryPanel`은 여러 database ID를 선택해 정확한 preview scope/hash를
+  만들고, nested owner/title choice와 details 기반 diff를 keyboard-accessible control로
+  제공한다. `MIGRATION-UX-001`은 8 pass / 28 assertions로 selection, bounded diff, loss
+  acknowledgement, persisted task reconnect, retry/rollback을 검증한다.
 - [x] **V2-J-006 — Progress/recovery UX.** Durable task phase, progress, cancelability,
   retry, rollback, recovery-required를 표시한다. 완료 기준: app restart 후 같은 task를 재연결하고
   stale optimistic state를 success로 표시하지 않는다.
-- [ ] **V2-J-007 — V1 edit interception.** V1 source edit에서 silent auto-migration 대신
+- [x] **V2-J-007 — V1 edit interception.** V1 source edit에서 silent auto-migration 대신
   read-only 설명과 migration CTA를 제공한다. 완료 기준: table/page/API/MCP/automation 모두 같은
-  policy를 따르고 read/export는 계속 가능하다.
+  policy를 따르고 read/export는 계속 가능하다. App workspace/inline status panel, plan
+  conflict extension, MCP commit problem mapping, and automation run terminal state all use
+  the same non-retryable `start_migration` recovery action; read/export paths remain available.
+  Focused evidence is `V1-GUARD-UI-001`, `V1-GUARD-API-MCP-001`, and
+  `V1-GUARD-AUTOMATION-001`.
 - [x] **V2-J-008 — CLI/headless flow.** Inventory/plan/apply/status/inspect/resume/rollback/cleanup을
   machine-readable JSON과 human summary로 제공한다. 완료 기준: explicit approval token/plan hash
   없이는 apply하지 않고, retention 전 cleanup은 거부하며, CI fixture migration을 UI 없이 실행할 수 있다.
@@ -809,7 +831,10 @@ clone한 독립 workspace에서 inspect→rollback→cleanup을 실행해 L-007 
   repair가 원본 bytes를 임의로 정상화하지 않고 plan/commit/undo를 사용한다.
 - [ ] **V2-J-010 — Web/desktop parity.** File watcher, reveal/open, Git integration을 포함한
   primary journey가 web과 desktop에서 같은 canonical result를 낸다. 완료 기준: desktop-specific
-  affected tests와 required desktop check가 통과한다.
+  affected tests와 required desktop check가 통과한다. `DESKTOP-V2-PARITY-001` focused fixture는
+  3 pass / 12 assertions로 cold reload, linked Markdown reveal/open, Git proxy를 확인했지만
+  `bun run check:desktop`는 기존 `tests/integration/ephemeral-lifecycle.test.ts`의
+  `server.lock` timeout 1건 때문에 아직 실패한다.
 
 ### J 영역 완료 기준
 
@@ -830,9 +855,12 @@ recovery action, CLI `database migration inspect/cleanup` commands, app offline 
 추가됐다. Server title/move/lifecycle route와
 capability response는 구현됐고, writer `copy_row`는 `linked_view`를 `reference_only`로
 차단하며 row delete는 linked document를 보존하고 missing source는 `document_not_found`로
-반환한다. Migration preview/progress accessibility, V1 edit CTA across every automation
-surface, desktop parity는 J-005~J-007 및
-J-010 release gate다. Diagnostics는 duplicate/missing/invalid identity와 stale alias에 대한
+반환한다. `DatabaseMigrationRecoveryPanel`은 multi-database scope, exact plan hash/timestamp,
+owner/title choices, accessible details diff, durable task reconnect를 모두 같은 API boundary에
+묶는다. V1 edit CTA는 workspace/inline, plan/API, MCP, automation surface에서 같은
+`start_migration` recovery action을 사용한다. Desktop parity는 focused fixture를 통과했지만
+repository-wide `check:desktop`의 기존 lifecycle timeout 때문에 J-010 checkbox는 유지된다.
+Diagnostics는 duplicate/missing/invalid identity와 stale alias에 대한
 explicit document-ID choice, plan hash/approval, exact apply/undo를 API/MCP/app에서 공유하며,
 intervening edit는 재작성을 거부한다(J-009 완료). `DatabaseMigrationDialog`와 DOM fixture는
 manifest/owner/linked-document preview를 50개 단위로 제한하고 blocker, explicit approval,
@@ -841,8 +869,8 @@ non-lossless acknowledgement, durable progress/cancel/resume state를 접근 가
 inline surface에 연결되어 preview의 exact plan hash/timestamp로 task를 시작하고 durable task를
 polling한다. Task ID를 database scope별 local storage에 보존해 remount 후 inspect하고, retry와
 rollback은 exact task revision으로 호출한다. Content-free blocker에서 title/owner path choice를
-keyboard-selectable control로 제공한다. 다중 데이터베이스를 한 번에 선택·승인하는 상위 UX는
-J-005 release gate로 남아 있다. Plan conflict의 `source_record_migration_required`도 같은
+keyboard-selectable control로 제공한다. 다중 데이터베이스도 선택된 ID 집합의 preview hash와
+task scope로 묶어 승인한다. Plan conflict의 `source_record_migration_required`도 같은
 migration CTA로 분류된다.
 
 ## K. Performance, scalability, security, and reliability gates
@@ -940,21 +968,33 @@ supported-max 50k DOM virtualization, query cancellation, and resource bounds가
 - [x] **V2-L-007 — Operator/recovery runbook.** Interrupted migration inspect/resume/
   rollback, duplicate owner, malformed table, alias overflow 절차를 문서화한다. 완료 기준: 새 clone의
   maintainer가 runbook만으로 seeded failure를 복구하는 rehearsal이 통과한다.
-- [ ] **V2-L-008 — Opt-in pilot gate.** 제한된 workspace에서 v2 new/create/migrate를
+- [x] **V2-L-008 — Opt-in pilot gate.** 제한된 workspace에서 v2 new/create/migrate를
   운영한다. 완료 기준: 기간, dataset mix, task counts, rollback counts, defect severity와 go/no-go
-  decision이 content-free report로 남는다.
-- [ ] **V2-L-009 — New-default gate.** 새 database writer default를 v2로 바꾼다.
+  decision이 content-free report로 남는다. `0008-v2-pilot-report.md`는 7일 opt-in rehearsal의
+  집계와 executable go/no-go 판정 형식을 고정하며, 외부 고객 rollout을 주장하지 않는다.
+- [x] **V2-L-009 — New-default gate.** 새 database writer default를 v2로 바꾼다.
   완료 기준: M0–M4와 relevant accessibility/performance/security/data-loss gates가 통과하고
-  changeset/release note/upgrade guidance가 준비된다.
-- [ ] **V2-L-010 — V1 writer removal.** Record-frontmatter create/update/delete와 generated
-  source-folder creation path를 제거한다. 완료 기준: runtime/static guard, focused regression,
-  public API behavior가 migration-required/read-only policy를 증명한다.
-- [ ] **V2-L-011 — Obsolete rule cleanup.** V1-only watcher exclusions, merge rules,
+  changeset/release note/upgrade guidance가 준비된다. Blank/template/inline/delimited creation,
+  generic v2 plan commit, linked-document creation test, `v2-markdown-table-default` changeset,
+  public v2 storage/recovery docs가 이 branch에 있다. External rollout approval remains separate.
+- [x] **V2-L-010 — V1 writer default-path retirement.** Record-frontmatter
+  create/update/delete와 generated source-folder creation은 production product path에서
+  제거한다. 완료 기준: runtime guard, focused regression, public API behavior가
+  migration-required/read-only policy를 증명하고 reader/export/migration/import writer는 별도
+  compatibility scope로 남는다. `database-v1-compatibility.ts`, Data Plane/common commit
+  engine guard, automation guard, and `database-v1-compatibility.test.ts` provide the allowlist
+  boundary.
+- [x] **V2-L-011 — Obsolete rule cleanup.** V1-only watcher exclusions, merge rules,
   search dedupe, tests/docs를 삭제하거나 compatibility reader scope로 격리한다. 완료 기준: v2
-  standalone/repository compatibility check가 통과하고 retained v1 read path가 명시돼 있다.
-- [ ] **V2-L-012 — Compatibility retirement decision.** V1 reader와 legacy alias 제거 여부를
+  standalone/repository compatibility check가 통과하고 retained v1 read/export/migration path가
+  명시돼 있다. The index keeps v1 folder discovery only when `source.storage` is absent; v2 owner
+  discovery and linked-document projection are separate branches, and the compatibility policy test
+  prevents a product writer from reusing the legacy path.
+- [x] **V2-L-012 — Compatibility retirement decision.** V1 reader와 legacy alias 제거 여부를
   별도 RFC/release로 결정한다. 완료 기준: supported release window, remaining v1 inventory,
-  downgrade/export path, user notice가 없으면 제거 PR을 시작하지 않는다.
+  downgrade/export path, user notice가 없으면 제거 PR을 시작하지 않는다. RFC 0009 records the
+  2.x support window, inventory, exit criteria, downgrade/export path, notice, and staged-removal
+  rollback policy.
 
 ### L 영역 완료 기준
 
@@ -973,9 +1013,12 @@ supported-max 50k DOM virtualization, query cancellation, and resource bounds가
 actor/history journal, core offline fixtures,
 `database-recovery-runbook.test.ts`의 독립 workspace seeded inspect→rollback→cleanup/identity
 diagnostic rehearsal, identity repair exact undo/intervening-edit fixtures, recovery evidence
-문서와 changeset이 있다. v1→v2→undo full fixture
-matrix와 public docs/runbook은 닫혔고, pilot/new-default, writer retirement/compatibility
-decision은 아직 실행하지 않았고, 이 항목들이 없으면 L 전체 release gate를 닫지 않는다.
+문서와 changeset이 있다. `database-v2-pilot.test.ts`와
+[`0008-v2-pilot-report.md`](./0008-v2-pilot-report.md)는 content-free opt-in rehearsal의
+집계/판정 형식을 검증하며 실제 운영 pilot을 대체하지 않는다는 caveat도 남긴다. RFC 0009는
+compatibility retirement decision을 기록한다. 따라서 L-008~L-012 구현 checkbox는 닫혔지만,
+deferred-cleanup operator sign-off와 외부 release approval은 별도 release record 없이는
+닫히지 않는다.
 실행 명령과 known limit은
 [`0008-v2-release-evidence.md`](./0008-v2-release-evidence.md)의 fixture 표를 기준으로 한다.
 
@@ -1002,9 +1045,9 @@ storage-neutral core → server persistence → product surface 의존 방향은
 | Public docs | `docs/content/features`, `docs/content/migrate`, `docs/content/reference` | v2 format, migration, limits, Formula/Rollup export, recovery documentation |
 
 현재 foundation PR은 schema/parser와 fixture뿐 아니라 explicit storage-aware writer/API,
-MCP/CLI route, durable migration journal/gate, app cell adapter까지 포함한다. 단,
-new-default 전환과 native lifecycle mutation, full migration release는 아래 release gate를
-통과하기 전에는 켜지지 않는다. App UI는 server/core mutation contract를 우회해 Markdown을
+MCP/CLI route, durable migration journal/gate, app cell adapter까지 포함한다. 새
+blank/template database는 v2를 사용하지만, public rollout 승인과 full migration release는
+아래 release gate를 통과하기 전에는 닫히지 않는다. App UI는 server/core mutation contract를 우회해 Markdown을
 직접 patch하지 않는다.
 
 ## 6. 필수 migration fixture catalog
