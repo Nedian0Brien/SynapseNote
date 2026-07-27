@@ -14,7 +14,10 @@
  * recognition (partition invariance).
  */
 
-export const FRONTMATTER_RE = /^---[ \t]*\r?\n([\s\S]*?\r?\n)?---[ \t]*(\r?\n|$)/;
+// UTF-8 BOM is legal at the beginning of a Markdown file. Keep it inside the
+// matched frontmatter range so source-preserving callers retain the byte while
+// the YAML/database readers still recognize the opening fence.
+export const FRONTMATTER_RE = /^\uFEFF?---[ \t]*\r?\n([\s\S]*?\r?\n)?---[ \t]*(\r?\n|$)/;
 
 /**
  * Line-scoped shape of the same fence contract, for code that walks lines

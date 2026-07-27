@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test';
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -1155,6 +1155,85 @@ describe('DatabaseRecordIndex incremental rematerialization', () => {
     expect(index.getById(recordId)).toMatchObject({ values: { prop_notes: 'First order' } });
   });
 
+  test('v2 cell mutation fails closed on a disk-full style write error and leaves no inflight journal', async () => {
+    const { projectDir, contentDir } = tempProject();
+    mkdirSync(join(contentDir, 'orders'), { recursive: true });
+    const store = createDatabaseStore({ projectDir, contentDir });
+    await store.create(v2Definition());
+    const owner = [
+      '<!-- synapsenote:database',
+      'version=2',
+      'database=db_tasks',
+      'source=ds_tasks',
+      'block=dbb_orders_primary',
+      'columns=prop_title,prop_notes,prop_status',
+      '-->',
+      '',
+      '| Document | Notes | Status |',
+      '| --- | --- | --- |',
+      '| [[orders/alpha]] | First order | todo |',
+      '',
+    ].join('\n');
+    writeFileSync(join(contentDir, 'orders.md'), owner);
+    writeFileSync(
+      join(contentDir, 'orders/alpha.md'),
+      '---\n_sn:\n  document_id: doc_alpha\n---\n# Alpha order\n',
+    );
+    const index = createDatabaseRecordIndex({ contentDir, databaseStore: store });
+    await index.rebuild();
+    let writes = 0;
+    const writer = createDatabaseMarkdownTableWriter({
+      projectDir,
+      contentDir,
+      databaseStore: store,
+      databaseRecordIndex: index,
+      atomicWrite: async (path, content) => {
+        writes += 1;
+        if (writes === 1) throw new Error('ENOSPC: simulated disk full');
+        writeFileSync(path, content);
+      },
+    });
+    const recordId = index.list()[0]!.id;
+    const ownerRevision = `sha256:${createHash('sha256').update(owner).digest('hex')}`;
+
+    await expect(
+      writer.updateCell({
+        databaseId: 'db_tasks',
+        sourceId: 'ds_tasks',
+        recordId,
+        propertyId: 'prop_notes',
+        value: 'Write blocked',
+        expectedOwnerRevision: ownerRevision,
+      }),
+    ).rejects.toMatchObject<DatabaseMarkdownTableWriterError>({ code: 'transaction_failed' });
+    expect(writes).toBe(1);
+    expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toBe(owner);
+    expect(index.getById(recordId)).toMatchObject({ values: { prop_notes: 'First order' } });
+    expect(await writer.recover()).toEqual([]);
+
+    const permissionWriter = createDatabaseMarkdownTableWriter({
+      projectDir,
+      contentDir,
+      databaseStore: store,
+      databaseRecordIndex: index,
+      atomicWrite: async () => {
+        throw new Error('EACCES: simulated permission loss');
+      },
+    });
+    await expect(
+      permissionWriter.updateCell({
+        databaseId: 'db_tasks',
+        sourceId: 'ds_tasks',
+        recordId,
+        propertyId: 'prop_notes',
+        value: 'Permission blocked',
+        expectedOwnerRevision: ownerRevision,
+      }),
+    ).rejects.toMatchObject<DatabaseMarkdownTableWriterError>({ code: 'transaction_failed' });
+    expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toBe(owner);
+    expect(await permissionWriter.recover()).toEqual([]);
+  });
+
   test('v2 writer creates and undoes a document-backed row without a record file', async () => {
     const { projectDir, contentDir } = tempProject();
     mkdirSync(join(contentDir, 'orders'), { recursive: true });
@@ -1230,6 +1309,21 @@ describe('DatabaseRecordIndex incremental rematerialization', () => {
     expect(index.getById(recordId)).toMatchObject({ values: { prop_title: 'Renamed order' } });
     await writer.undo({ receipt: changed.receipt });
     expect(readFileSync(join(contentDir, 'orders/alpha.md'), 'utf8')).toBe(document);
+    expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toBe(owner);
+
+    // A linked view/source deletion is explicit: a missing target is surfaced
+    // as a broken-link diagnostic and never silently removes the owner row.
+    unlinkSync(join(contentDir, 'orders/alpha.md'));
+    await expect(
+      writer.updateCell({
+        databaseId: 'db_tasks',
+        sourceId: 'ds_tasks',
+        recordId,
+        propertyId: 'prop_notes',
+        value: 'must not resurrect or delete',
+        expectedOwnerRevision: ownerRevision,
+      }),
+    ).rejects.toMatchObject<DatabaseMarkdownTableWriterError>({ code: 'document_not_found' });
     expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toBe(owner);
   });
 
@@ -1311,6 +1405,57 @@ describe('DatabaseRecordIndex incremental rematerialization', () => {
     expect(index.getById(record.id)).toMatchObject({ id: record.id, path: 'orders/alpha.md' });
     expect(readFileSync(join(contentDir, 'orders/alpha.md'), 'utf8')).toBe(document);
     expect(() => readFileSync(join(contentDir, 'orders/renamed.md'))).toThrow();
+    expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toBe(owner);
+  });
+
+  test('v2 row deletion removes membership but preserves the linked document until an explicit document delete', async () => {
+    const { projectDir, contentDir } = tempProject();
+    mkdirSync(join(contentDir, 'orders'), { recursive: true });
+    const store = createDatabaseStore({ projectDir, contentDir });
+    await store.create(v2Definition());
+    const owner = [
+      '<!-- synapsenote:database',
+      'version=2',
+      'database=db_tasks',
+      'source=ds_tasks',
+      'block=dbb_orders_primary',
+      'columns=prop_title,prop_notes,prop_status',
+      '-->',
+      '',
+      '| Document | Notes | Status |',
+      '| --- | --- | --- |',
+      '| [[orders/alpha]] | First order | todo |',
+      '',
+    ].join('\n');
+    const document = '---\n_sn:\n  document_id: doc_alpha\n---\n# Alpha order\n\nAlpha body\n';
+    writeFileSync(join(contentDir, 'orders.md'), owner);
+    writeFileSync(join(contentDir, 'orders/alpha.md'), document);
+    const index = createDatabaseRecordIndex({ contentDir, databaseStore: store });
+    await index.rebuild();
+    const writer = createDatabaseMarkdownTableWriter({
+      projectDir,
+      contentDir,
+      databaseStore: store,
+      databaseRecordIndex: index,
+    });
+    const record = index.list()[0]!;
+    const ownerRevision = `sha256:${createHash('sha256').update(owner).digest('hex')}`;
+
+    const deleted = await writer.deleteRow({
+      databaseId: 'db_tasks',
+      sourceId: 'ds_tasks',
+      recordId: record.id,
+      expectedOwnerRevision: ownerRevision,
+    });
+
+    expect(deleted.receipt.operation).toBe('delete_row');
+    expect(index.getById(record.id)).toBeNull();
+    expect(readFileSync(join(contentDir, 'orders/alpha.md'), 'utf8')).toBe(document);
+    expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).not.toContain('orders/alpha');
+
+    await writer.undo({ receipt: deleted.receipt });
+    expect(index.getById(record.id)).toMatchObject({ path: 'orders/alpha.md' });
+    expect(readFileSync(join(contentDir, 'orders/alpha.md'), 'utf8')).toBe(document);
     expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toBe(owner);
   });
 

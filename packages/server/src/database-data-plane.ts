@@ -131,6 +131,7 @@ import {
   type DatabaseMarkdownTableBulkCellMutationInput,
   type DatabaseMarkdownTableRowMutationInput,
   type DatabaseMarkdownTableRowCreateInput,
+  type DatabaseMarkdownTableRowCopyInput,
   type DatabaseMarkdownTableTitleMutationInput,
   type DatabaseMarkdownTableDocumentMoveInput,
   type DatabaseMarkdownTableLifecycleMutationInput,
@@ -516,6 +517,7 @@ export type DatabaseMarkdownTableMutationInput =
   | DatabaseMarkdownTableRowMutationInput
   | Omit<DatabaseMarkdownTableRowMutationInput, 'values'>
   | DatabaseMarkdownTableRowCreateInput
+  | DatabaseMarkdownTableRowCopyInput
   | DatabaseMarkdownTableTitleMutationInput
   | DatabaseMarkdownTableDocumentMoveInput
   | DatabaseMarkdownTableLifecycleMutationInput
@@ -528,6 +530,7 @@ export interface DatabaseMarkdownTableMutationRequest {
     | 'replace_row'
     | 'delete_row'
     | 'create_row'
+    | 'copy_row'
     | 'update_title'
     | 'move_document'
     | 'update_lifecycle'
@@ -4492,7 +4495,7 @@ export class DatabaseDataPlane {
     const propertyIds = typeof scope.propertyId === 'string' ? [scope.propertyId] : undefined;
     const undoAction =
       input.operation === 'undo'
-        ? scope.operation === 'create_row'
+        ? scope.operation === 'create_row' || scope.operation === 'copy_row'
           ? 'delete_record'
           : scope.operation === 'delete_row'
             ? 'create_record'
@@ -4500,7 +4503,7 @@ export class DatabaseDataPlane {
         : null;
     this.authorizeOperation({
       action:
-        undoAction ?? (input.operation === 'create_row'
+        undoAction ?? (input.operation === 'create_row' || input.operation === 'copy_row'
           ? 'create_record'
           : input.operation === 'delete_row'
             ? 'delete_record'
@@ -4524,6 +4527,8 @@ export class DatabaseDataPlane {
           );
         case 'create_row':
           return await writer.createRow(input.input as DatabaseMarkdownTableRowCreateInput);
+        case 'copy_row':
+          return await writer.copyRow(input.input as DatabaseMarkdownTableRowCopyInput);
         case 'update_title':
           return await writer.updateTitle(input.input as DatabaseMarkdownTableTitleMutationInput);
         case 'move_document':

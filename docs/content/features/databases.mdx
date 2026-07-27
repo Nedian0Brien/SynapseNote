@@ -38,11 +38,11 @@ written into the owner table or linked-document frontmatter. The current v2
 writer requires an exact owner revision and edits only the affected source
 range. Cell edits and basic row create/delete use the same storage-aware route;
 row creation adds a normal Markdown document in the source folder. Title,
-archive/restore, move, duplicate, schema, and receipt-backed UI undo/redo
-remain gated until their multi-file lifecycle contracts are complete. During
-migration, archived/audit/layout values are retained in the bounded manifest
-compatibility alias; native v2 lifecycle editing is not yet a new-default
-capability.
+archive/restore, move, and lifecycle metadata use the same multi-file journal;
+renderer-level receipt-backed UI undo/redo and the new-default rollout remain
+gated. During migration, archived/audit/layout values are retained in the
+bounded manifest compatibility alias; native v2 lifecycle editing is not yet a
+new-default capability.
 
 The parser rejects malformed markers, invalid cells, unsafe links, and hard
 resource limits instead of silently coercing values. Current limits are 16 KiB
@@ -197,4 +197,6 @@ for the release decision record.
 
 See also [Editor database details](/docs/features/editor#embedded-and-linked-database-views),
 [agent database operations](/docs/reference/database-agent), and
+[Markdown table storage (v2)](/docs/reference/database-v2-storage),
+[the recovery runbook](/docs/reference/database-recovery), and
 [Notion migration](/docs/migrate/notion).

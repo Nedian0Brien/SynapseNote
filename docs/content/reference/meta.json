@@ -4,6 +4,8 @@
   "pages": [
     "core-concepts",
     "agentic-search",
+    "database-v2-storage",
+    "database-recovery",
     "cli",
     "configuration",
     "mcp",

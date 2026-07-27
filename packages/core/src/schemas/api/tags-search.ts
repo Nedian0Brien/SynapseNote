@@ -827,6 +827,8 @@ export const SearchResultEntrySchema = z
       'view',
       'record',
     ]),
+    /** Whether the hit is the canonical document projection or a database projection. */
+    provenance: z.enum(['document', 'database']),
     path: z.string().min(1),
     title: z.string(),
     score: z.number(),

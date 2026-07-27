@@ -74,6 +74,7 @@ export type DatabaseMarkdownV2MigrationBlockCode =
   | 'unsupported_property_value'
   | 'invalid_generated_manifest'
   | 'alias_limit_exceeded'
+  | 'derived_baseline_required'
   | 'resource_limit';
 
 export interface DatabaseMarkdownV2MigrationBlocker {

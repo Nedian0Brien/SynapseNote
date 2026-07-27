@@ -1,0 +1,111 @@
+---
+title: Markdown table storage (v2)
+icon: LuTableProperties
+description: The canonical Markdown contract used by SynapseNote database sources.
+---
+
+SynapseNote v2 keeps the database's durable data in ordinary Markdown. A source
+has one owner document containing a SynapseNote marker and one GFM table. Each
+row's first (Title) cell is a `[[wikilink]]` to a normal Markdown document.
+There is no generated `rec_*` document or hidden record folder in the v2
+content tree.
+
+## What is canonical
+
+The manifest under `.ok/databases/` stores schema, views, and the owner-table
+binding. The owner document stores only the marker-owned table range:
+
+```md
+<!-- synapsenote:database
+version=2
+database=db_tasks
+source=ds_tasks
+block=dbb_tasks_primary
+columns=prop_title,prop_status
+-->
+
+| Title | Status |
+| --- | --- |
+| [[tasks/ship-v2]] | in_progress |
+```
+
+Scalar values, select keys, checkboxes, dates, and relation links stay in the
+table. The linked Markdown document stays the user's page: its title, body,
+frontmatter unrelated to the database, backlinks, and history remain there.
+The document's `_sn.document_id` is its stable identity; paths, basenames, and
+display aliases are not identity.
+
+Raw Markdown editing is supported. Edits outside the marker-owned table range
+are preserved byte-for-byte. A malformed table or invalid cell is surfaced as
+an explicit diagnostic with the original raw value; it is never converted to
+`null`, an empty string, or a last-known-good cache value.
+
+## Formula and Rollup
+
+Formula and Rollup properties are derived. Their stable-ID AST, dependency
+graph, permission scope, evaluation timestamp, timezone, locale, and permission
+revision produce a `derivedRevision`. The result is read-only and is computed
+on every read surface (table query, API, MCP, search projection, and computed
+export). It is never written to the owner table, manifest, or linked document.
+
+Permission failures remain explicit `#PERMISSION!`/derived error results; they
+are not treated as an empty relation or zero-valued aggregate. Computed exports
+include the evaluation timestamp and derived revision and deliberately omit the
+owner marker so that importing the snapshot cannot create a second owner.
+
+## Safe changes
+
+Cell, row, title, move, and lifecycle changes go through the storage-aware
+writer. Each mutation carries the current owner/row/cell/document revision,
+records before/after hashes in a durable journal, verifies the written bytes and
+cold index, and returns an exact receipt. A stale revision is a conflict, not a
+blind overwrite. Row deletion removes table membership but keeps the linked
+document; deleting a document is a separate destructive intent.
+
+Copying an owner block requires a new database/source/block identity. Duplicate
+owners, duplicate document IDs, broken links, unsafe paths, and ambiguous
+aliases are blocked with a repair preview rather than guessed.
+
+## Limits and failure behavior
+
+| Resource | Limit |
+| --- | ---: |
+| Marker | 16 KiB |
+| Owner document | 4 MiB |
+| Rows | 100,000 |
+| Columns | 200 |
+| Cell | 64 KiB |
+| Compact JSON cell | 128 KiB, depth 16 |
+| Relation targets | 100 |
+| Migration aliases | 10,000 |
+
+The parser rejects invalid UTF-8, malformed markers/tables, oversized values,
+unsafe wikilinks, and adversarial row/escape input within bounded resource
+budgets. A process interruption leaves a journal state of committed,
+rolled-back, or recovery-required; a recovery-required transaction must be
+resolved before another write.
+
+## v1 migration
+
+v1 record-per-file sources remain readable and are not dual-written. Migration
+is an explicit preview/approval task that binds the selected owner path, title
+choice, dependency closure, frozen Formula/Rollup baseline, source snapshot,
+and exact plan hash. It creates a verified before-image, stages v2 files on the
+same volume, cold-verifies IDs/typed values/raw invalid values/relations/derived
+results, and only then activates v2. Unknown external edits block rollback
+instead of being overwritten.
+
+Use the migration recovery commands when a task is interrupted:
+
+```bash
+ok database migration inspect <task-id> --json
+ok database migration rollback <task-id> --json
+ok database migration preview-cleanup <task-id> --json
+ok database migration cleanup <task-id> --expected-revision <revision> --plan-hash <hash> --approval-token approve:<hash> --json
+```
+
+Cleanup is refused until the configured undo-retention window has expired and
+the content-free preview hash is explicitly approved. Linked documents are
+retained by default. See [Database migration](/docs/migrate/databases)
+for the loss matrix and [What SynapseNote writes](/docs/reference/what-synapsenote-writes)
+for the local, gitignored recovery material.

@@ -93,7 +93,7 @@ describe('database Git driver CLI', () => {
   test('exposes inspect and retention cleanup recovery commands', () => {
     const migration = databaseCommand().commands.find((command) => command.name() === 'migration');
     expect(migration?.commands.map((command) => command.name())).toEqual(
-      expect.arrayContaining(['inspect', 'cleanup', 'preview', 'apply', 'status']),
+      expect.arrayContaining(['inspect', 'preview-cleanup', 'cleanup', 'preview', 'apply', 'status']),
     );
     expect(migration?.commands.find((command) => command.name() === 'inspect')?.description()).toContain(
       'content-free recovery hashes',

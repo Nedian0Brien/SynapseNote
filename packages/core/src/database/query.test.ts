@@ -4,6 +4,7 @@ import {
   DATABASE_QUERY_OPERATORS,
   DATABASE_QUERY_SORT_SEMANTICS,
   DatabaseQueryError,
+  DatabaseQuerySchema,
   DatabaseQueryResultSchema,
   databaseQueryOperatorsForProperty,
   evaluateDatabaseFilter,
@@ -838,6 +839,27 @@ describe('queryDatabaseRecords', () => {
       },
     });
     expect(finalPage).toMatchObject({ returned: 1, isComplete: true, nextCursor: null });
+  });
+
+  test('keeps query pages bounded at the shared 500-row limit', () => {
+    expect(DatabaseQuerySchema.safeParse({ page: { limit: 500 } }).success).toBe(true);
+    expect(DatabaseQuerySchema.safeParse({ page: { limit: 501 } }).success).toBe(false);
+    const result = queryDatabaseRecords({
+      source: source(),
+      records: Array.from({ length: 1_000 }, (_, index) => ({
+        id: `rec_bound_${index}`,
+        sourceId: 'ds_tasks',
+        path: `tasks/${index}.md`,
+        revision: `rev:${index}`,
+        values: { prop_title: `Task ${index}`, prop_priority: index },
+        body: '',
+      })),
+      snapshotRevision: 'snapshot:bounded-page',
+      query: { page: { limit: 500 } },
+    });
+    expect(result.returned).toBe(500);
+    expect(result.records).toHaveLength(500);
+    expect(result.truncatedBy).toBe('page_limit');
   });
 
   test('calculates totals, groups, and subgroups over the full filtered snapshot before record paging', () => {

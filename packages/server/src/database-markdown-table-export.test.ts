@@ -35,6 +35,28 @@ function definition() {
         properties: [
           { id: 'prop_title', key: 'title', name: 'Title', type: 'title' },
           { id: 'prop_status', key: 'status', name: 'Status', type: 'text' },
+          {
+            id: 'prop_double_status_length',
+            key: 'double_status_length',
+            name: 'Double status length',
+            type: 'formula',
+            source: 'length(prop("prop_status")) * 2',
+            ast: {
+              language: 'synapse-formula-1',
+              version: 1,
+              resultType: 'number',
+              expression: {
+                type: 'binary',
+                operator: 'multiply',
+                left: {
+                  type: 'call',
+                  function: 'length',
+                  arguments: [{ type: 'property', propertyId: 'prop_status' }],
+                },
+                right: { type: 'literal', valueType: 'number', value: 2 },
+              },
+            },
+          },
         ],
         storage: {
           kind: 'markdown_table',
@@ -84,8 +106,20 @@ describe('server Markdown-table export', () => {
     expect(canonical.snapshot).toEqual([]);
     expect(canonical.derivedRevision).toBeNull();
 
-    const snapshot = dataPlane.exportMarkdownTable({ databaseId: 'db_tasks', sourceId: 'ds_tasks', mode: 'computed_snapshot', query: { page: { limit: 10 } } });
+    const query = dataPlane.query({
+      databaseId: 'db_tasks',
+      sourceId: 'ds_tasks',
+      query: { select: ['prop_double_status_length'] },
+    });
+    const snapshot = dataPlane.exportMarkdownTable({
+      databaseId: 'db_tasks',
+      sourceId: 'ds_tasks',
+      mode: 'computed_snapshot',
+      query: { select: ['prop_double_status_length'], page: { limit: 10 } },
+    });
+    const exportedDerivedRevision = snapshot.derivedRevision;
     expect(snapshot).toMatchObject({ mode: 'computed_snapshot', canonical: [], evaluatedAt: expect.any(String), derivedRevision: expect.stringMatching(/^sha256:/) });
+    expect(exportedDerivedRevision).toBe(query.derivedRevision);
     expect(snapshot.snapshot).toEqual([expect.objectContaining({ recordId: expect.stringMatching(/^rec_/), path: 'tasks/alpha.md' })]);
     expect(JSON.stringify(snapshot.snapshot)).not.toContain('synapsenote:database');
   });

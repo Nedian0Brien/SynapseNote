@@ -35,6 +35,7 @@ import {
   ensureDatabaseDocumentIdentity,
   insertDatabaseMarkdownTableRow,
   parseDatabaseDocumentIdentity,
+  reassignDatabaseDocumentIdentity,
   parseDatabaseMarkdownOwner,
   updateDatabaseManifestYaml,
   replaceDatabaseMarkdownTableCell,
@@ -73,7 +74,8 @@ export type DatabaseMarkdownTableWriterErrorCode =
   | 'transaction_failed'
   | 'rollback_failed'
   | 'resource_limit'
-  | 'recovery_required';
+  | 'recovery_required'
+  | 'reference_only';
 
 export class DatabaseMarkdownTableWriterError extends Error {
   readonly code: DatabaseMarkdownTableWriterErrorCode;
@@ -145,6 +147,7 @@ export interface DatabaseMarkdownTableMutationReceipt {
     | 'replace_row'
     | 'delete_row'
     | 'create_row'
+    | 'copy_row'
     | 'update_title'
     | 'move_document'
     | 'update_lifecycle';
@@ -220,6 +223,18 @@ export interface DatabaseMarkdownTableRowCreateInput {
   documentId?: DatabaseDocumentId;
   values?: Readonly<Record<string, unknown>>;
   expectedOwnerRevision: string;
+}
+
+export interface DatabaseMarkdownTableRowCopyInput {
+  databaseId: string;
+  sourceId: string;
+  recordId: string;
+  /** A linked view is a projection, never a second canonical row. */
+  mode: 'duplicate_document' | 'linked_view';
+  documentPath: string;
+  documentId?: DatabaseDocumentId;
+  expectedOwnerRevision: string;
+  expectedRowRevision?: string;
 }
 
 export interface DatabaseMarkdownTableTitleMutationInput {
@@ -471,6 +486,10 @@ export class DatabaseMarkdownTableWriter {
 
   async createRow(input: DatabaseMarkdownTableRowCreateInput): Promise<DatabaseMarkdownTableMutationResult> {
     return this.#withLock(() => this.#createRowLocked(input));
+  }
+
+  async copyRow(input: DatabaseMarkdownTableRowCopyInput): Promise<DatabaseMarkdownTableMutationResult> {
+    return this.#withLock(() => this.#copyRowLocked(input));
   }
 
   async updateTitle(input: DatabaseMarkdownTableTitleMutationInput): Promise<DatabaseMarkdownTableMutationResult> {
@@ -1356,6 +1375,80 @@ export class DatabaseMarkdownTableWriter {
     return { changed: true, receipt };
   }
 
+  async #copyRowLocked(input: DatabaseMarkdownTableRowCopyInput): Promise<DatabaseMarkdownTableMutationResult> {
+    if (input.mode === 'linked_view') {
+      throw new DatabaseMarkdownTableWriterError(
+        'reference_only',
+        'A linked view is reference-only and cannot copy a canonical row',
+        { databaseId: input.databaseId, sourceId: input.sourceId, recordId: input.recordId },
+      );
+    }
+    const resolved = await this.#loadSource(input.databaseId, input.sourceId);
+    this.#assertExpectedRevision(resolved, input.expectedOwnerRevision, input.expectedRowRevision);
+    const row = await this.#resolveRow(resolved, input.recordId);
+    if (!safeRelativePath(input.documentPath, null) || !/\.(?:md|mdx)$/iu.test(input.documentPath)) {
+      throw new DatabaseMarkdownTableWriterError(
+        'invalid_request',
+        'A copied v2 row document path must be a normalized relative Markdown path',
+        { documentPath: input.documentPath },
+      );
+    }
+    const sourceMarkdown = await this.#fs.readFile(this.#safeAbsolutePath(row.documentPath)).catch((error) => {
+      throw new DatabaseMarkdownTableWriterError(
+        'document_not_found',
+        `Linked Markdown document "${row.documentPath}" could not be read`,
+        { documentPath: row.documentPath },
+        error,
+      );
+    });
+    const sourceIdentity = parseDatabaseDocumentIdentity(sourceMarkdown);
+    if (!sourceIdentity.ok) {
+      throw new DatabaseMarkdownTableWriterError(
+        'document_identity_invalid',
+        `Linked Markdown document "${row.documentPath}" has no valid identity`,
+        { documentPath: row.documentPath, identityCode: sourceIdentity.code },
+      );
+    }
+    const documentId = input.documentId ?? createDatabaseDocumentId(this.#generateUuid);
+    const reassigned = reassignDatabaseDocumentIdentity({ markdown: sourceMarkdown, documentId });
+    if (!reassigned.ok) {
+      throw new DatabaseMarkdownTableWriterError('document_identity_invalid', reassigned.message, {
+        documentPath: row.documentPath,
+        identityCode: reassigned.code,
+      });
+    }
+    const storage = sourceStorage(resolved.source);
+    const sourceRow = resolved.owner.rows[row.rowIndex];
+    if (!sourceRow) throw new DatabaseMarkdownTableWriterError('owner_invalid', 'The source row is missing');
+    const values: Record<string, unknown> = {};
+    for (const [columnIndex, propertyId] of storage.storedPropertyIds.entries()) {
+      const property = resolved.source.properties.find((candidate) => candidate.id === propertyId);
+      const cell = sourceRow.cells[columnIndex];
+      if (!property || !cell) throw new DatabaseMarkdownTableWriterError('owner_invalid', 'The source row schema is incomplete');
+      if (property.type === 'title') continue;
+      const decoded = decodeDatabaseMarkdownCell(propertyType(property), cell.raw);
+      if (!decoded.ok) {
+        throw new DatabaseMarkdownTableWriterError('invalid_cell_value', decoded.message, {
+          propertyId,
+          codecCode: decoded.code,
+        });
+      }
+      values[propertyId] = decoded.value;
+    }
+    const result = await this.#createRowLocked({
+      databaseId: input.databaseId,
+      sourceId: input.sourceId,
+      documentPath: input.documentPath,
+      documentMarkdown: reassigned.markdown,
+      documentId,
+      values,
+      expectedOwnerRevision: input.expectedOwnerRevision,
+    });
+    return result.changed
+      ? { changed: true, receipt: { ...result.receipt, operation: 'copy_row' } }
+      : result;
+  }
+
   async #commitOwnerOnly(
     operation: 'update_cell' | 'update_cells' | 'replace_row' | 'delete_row',
     resolved: ResolvedSource,
@@ -1564,7 +1657,7 @@ export class DatabaseMarkdownTableWriter {
       (!lifecycleManifestPath || sha256(lifecycleManifestCurrent!) === receipt.beforeManifestRevision)
     ) return { changed: false, receipt };
     const undoMutationId = `mut_${randomUUID().replaceAll('-', '')}`;
-    const beforeOwner = receipt.operation === 'create_row'
+    const beforeOwner = receipt.operation === 'create_row' || receipt.operation === 'copy_row'
       ? this.#ownerBefore(receipt, resolved.markdown)
       : await this.#beforeOwnerBytes(receipt);
     const ownerFilePath = receipt.ownerPath;
@@ -1583,7 +1676,7 @@ export class DatabaseMarkdownTableWriter {
     }];
     let documentAbsolute: string | null = null;
     let documentBefore: string | null = null;
-    if (receipt.operation === 'create_row') {
+    if (receipt.operation === 'create_row' || receipt.operation === 'copy_row') {
       const documentFile = receipt.files.find((file) => file.path !== receipt.ownerPath && file.operation === 'create');
       if (!documentFile) throw new DatabaseMarkdownTableWriterError('invalid_request', 'Create-row receipt has no document file delta');
       documentAbsolute = this.#safeAbsolutePath(documentFile.path);

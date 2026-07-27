@@ -16344,6 +16344,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     query: string,
   ): {
     kind: WorkspaceSearchDocument['kind'];
+    provenance: 'document' | 'database';
     path: string;
     title: string;
     score: number;
@@ -16357,6 +16358,13 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
   } {
     return {
       kind: result.document.kind,
+      provenance:
+        result.document.kind === 'database' ||
+        result.document.kind === 'data_source' ||
+        result.document.kind === 'view' ||
+        result.document.kind === 'record'
+          ? 'database'
+          : 'document',
       path: result.document.path,
       title: result.document.title,
       score: result.score,

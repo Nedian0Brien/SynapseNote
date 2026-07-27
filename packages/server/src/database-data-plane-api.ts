@@ -612,6 +612,21 @@ export const DatabaseMarkdownTableMutationRequestSchema = z.discriminatedUnion('
     .strict(),
   z
     .object({
+      operation: z.literal('copy_row'),
+      input: DatabaseMarkdownTableMutationBaseSchema
+        .extend({
+          recordId: z.string().startsWith('rec_'),
+          mode: z.enum(['duplicate_document', 'linked_view']),
+          documentPath: z.string().min(1).max(2_000),
+          documentId: z.string().startsWith('doc_').max(256).optional(),
+          expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+          expectedRowRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
+        })
+        .strict(),
+    })
+    .strict(),
+  z
+    .object({
       operation: z.literal('update_title'),
       input: DatabaseMarkdownTableMutationBaseSchema
         .extend({
@@ -672,7 +687,7 @@ export const DatabaseMarkdownTableMutationRequestSchema = z.discriminatedUnion('
 ]);
 export const DatabaseMarkdownTableMutationResponseSchema = z
   .object({
-    operation: z.enum(['update_cell', 'update_cells', 'replace_row', 'delete_row', 'create_row', 'update_title', 'move_document', 'update_lifecycle', 'undo']),
+    operation: z.enum(['update_cell', 'update_cells', 'replace_row', 'delete_row', 'create_row', 'copy_row', 'update_title', 'move_document', 'update_lifecycle', 'undo']),
     changed: z.boolean(),
     receipt: z.record(z.string(), z.unknown()),
   })
@@ -2740,6 +2755,23 @@ const DatabaseMigrationDerivedBaselinesSchema = z.record(
   DatabaseMigrationDerivedBaselineSchema,
 );
 
+export const DatabaseMigrationCleanupPlanSchema = z
+  .object({
+    version: z.literal(1),
+    taskId: z.string().startsWith('task_'),
+    expectedRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+    journalState: z.enum(['prepared', 'staged', 'activated', 'rolled_back', 'recovery_required']),
+    updatedAt: z.string().datetime(),
+    fileCount: z.number().int().nonnegative(),
+    taskMaterialPresent: z.boolean(),
+    undoExpiresAt: z.string().datetime().nullable(),
+    retentionExpired: z.boolean(),
+    committable: z.boolean(),
+    blockers: z.array(z.object({ code: z.string().min(1), message: z.string().min(1) }).strict()),
+    hash: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+  })
+  .strict();
+
 export const DatabaseTaskRequestSchema = z.discriminatedUnion('action', [
   z
     .object({
@@ -2864,9 +2896,17 @@ export const DatabaseTaskRequestSchema = z.discriminatedUnion('action', [
     .strict(),
   z
     .object({
+      action: z.literal('preview_cleanup_migration'),
+      taskId: z.string().startsWith('task_'),
+    })
+    .strict(),
+  z
+    .object({
       action: z.literal('cleanup_migration'),
       taskId: z.string().startsWith('task_'),
       expectedRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+      planHash: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+      approvalToken: z.string().min(1),
     })
     .strict(),
 ]);
@@ -2932,6 +2972,12 @@ export const DatabaseTaskResponseSchema = z.discriminatedUnion('action', [
           undoExpiresAt: z.string().datetime().nullable(),
         })
         .strict(),
+    })
+    .strict(),
+  z
+    .object({
+      action: z.literal('preview_cleanup_migration'),
+      cleanupPlan: DatabaseMigrationCleanupPlanSchema,
     })
     .strict(),
   z
@@ -5037,7 +5083,7 @@ export function createDatabaseDataPlaneApiHandlers(
         return;
       }
       try {
-        if (body.action === 'list' || body.action === 'get' || body.action === 'cancel' || body.action === 'inspect_migration') {
+        if (body.action === 'list' || body.action === 'get' || body.action === 'cancel' || body.action === 'inspect_migration' || body.action === 'preview_cleanup_migration') {
           dataPlane?.authorizeOperation({ action: 'read_audit' });
         } else if (body.action === 'preview_import') {
           dataPlane?.authorizeOperation({
@@ -5164,6 +5210,14 @@ export function createDatabaseDataPlaneApiHandlers(
                 );
               }
               return taskService.inspectMigration(body.taskId);
+            case 'preview_cleanup_migration':
+              if (!taskService) {
+                throw new DatabaseTaskServiceError(
+                  'task_rollback_unavailable',
+                  'Database migration cleanup preview is unavailable for this server.',
+                );
+              }
+              return taskService.previewMigrationCleanup(body.taskId);
             case 'cleanup_migration':
               if (!taskService) {
                 throw new DatabaseTaskServiceError(
@@ -5171,7 +5225,12 @@ export function createDatabaseDataPlaneApiHandlers(
                   'Database migration cleanup is unavailable for this server.',
                 );
               }
-              return taskService.cleanupMigration(body.taskId, body.expectedRevision);
+              return taskService.cleanupMigration(
+                body.taskId,
+                body.expectedRevision,
+                body.planHash,
+                body.approvalToken,
+              );
           }
         })();
         const resolved = await result;
@@ -5182,9 +5241,11 @@ export function createDatabaseDataPlaneApiHandlers(
               ? { action: body.action, preview: resolved }
               : body.action === 'rollback'
                 ? { action: body.action, rollback: resolved }
-                : body.action === 'inspect_migration'
-                  ? { action: body.action, inspection: resolved }
-                  : body.action === 'cleanup_migration'
+              : body.action === 'inspect_migration'
+                ? { action: body.action, inspection: resolved }
+                : body.action === 'preview_cleanup_migration'
+                  ? { action: body.action, cleanupPlan: resolved }
+                : body.action === 'cleanup_migration'
                     ? { action: body.action, cleanup: resolved }
                     : { action: body.action, task: resolved };
         successResponse(response, 200, DatabaseTaskResponseSchema, payload, {

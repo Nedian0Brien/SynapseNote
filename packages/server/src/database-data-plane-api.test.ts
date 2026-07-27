@@ -471,9 +471,17 @@ describe('database data plane HTTP handlers', () => {
     });
     expect(
       DatabaseTaskRequestSchema.parse({
+        action: 'preview_cleanup_migration',
+        taskId: 'task_recovery',
+      }),
+    ).toEqual({ action: 'preview_cleanup_migration', taskId: 'task_recovery' });
+    expect(
+      DatabaseTaskRequestSchema.parse({
         action: 'cleanup_migration',
         taskId: 'task_recovery',
         expectedRevision: `sha256:${'b'.repeat(64)}`,
+        planHash: `sha256:${'f'.repeat(64)}`,
+        approvalToken: `approve:sha256:${'f'.repeat(64)}`,
       }),
     ).toMatchObject({ action: 'cleanup_migration' });
     expect(
@@ -490,6 +498,25 @@ describe('database data plane HTTP handlers', () => {
         },
       }),
     ).toMatchObject({ action: 'inspect_migration' });
+    expect(
+      DatabaseTaskResponseSchema.parse({
+        action: 'preview_cleanup_migration',
+        cleanupPlan: {
+          version: 1,
+          taskId: 'task_recovery',
+          expectedRevision: `sha256:${'b'.repeat(64)}`,
+          journalState: 'activated',
+          updatedAt: '2026-07-27T00:00:00.000Z',
+          fileCount: 1,
+          taskMaterialPresent: true,
+          undoExpiresAt: '2026-08-03T00:00:00.000Z',
+          retentionExpired: true,
+          committable: true,
+          blockers: [],
+          hash: `sha256:${'f'.repeat(64)}`,
+        },
+      }),
+    ).toMatchObject({ action: 'preview_cleanup_migration' });
   });
 
   test('binds a trusted transport principal to the whole asynchronous handler call', async () => {

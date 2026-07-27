@@ -3,10 +3,10 @@
 - 상태: Active, staged implementation (core/read contract, server writer/API, durable migration
   journal/task gate, app cell/row adapter, title/move writer, native lifecycle metadata/writer,
   capability response, semantic revisions, identity/copy/move safeguards, canonical/computed
-  export, migration owner/dependency preflight, and retention-aware recovery inspection are
-  implemented; staging/activation process-kill recovery and focused v1/v2 differential/
-  standalone/export evidence are now recorded, while all-surface derived parity,
-  accessibility/desktop parity, performance SLO report, pilot, and new-default rollout remain gated)
+  export, migration owner/dependency/derived preflight, retention-aware recovery inspection,
+  parser process-timeout, generic writer crash recovery, all-surface derived parity, and
+  v1→v2→undo round-trip evidence are implemented; accessibility/desktop parity, performance
+  SLO report, pilot, and new-default rollout remain gated)
 - 최종 수정: 2026-07-27
 - Companion RFC: [Markdown table canonical database storage](./0008-markdown-table-canonical-database-storage.md)
 - Current v1 tracker: [RFC 0001 implementation checklist](./0001-databases-implementation-checklist.md)
@@ -93,8 +93,8 @@ checkbox를 체크한다.
   운반하는 `storageRevision` read field가 있다. Full-page/inline cell edit와 기본 row
   create/delete는 v2 source에서 이 adapter를 선택하고 optimistic patch를
   conflict/refresh semantics와 함께 정리한다. Row create는 source folder 안의 normal
-  Markdown document를 만들며, 기존 title/body template, Unique ID allocation, receipt-backed
-  UI undo는 아직 gated다.
+  Markdown document를 만들며, existing title/body template과 Unique ID allocation은 별도
+  product gate다. Renderer-level receipt-backed UI undo/redo는 아직 gated다.
 - Core/server에는 stable-ID Formula compile 및 cross-source dependency graph, shared
   wikilink resolver, table/row/cell/document semantic revision set, identity repair/CRDT
   semantic-key helpers, `canonical_markdown`/`computed_snapshot` export contract, 그리고
@@ -117,15 +117,17 @@ checkbox를 체크한다.
   new-default rollout은 아직 gated다.
 - Durable v1→v2 migration task의 journal/gate와 cold verification은 연결되어 있다. migration
   logical equivalence, post-write hash verification, retention-aware inspection과 cleanup
-  boundary도 연결되어 있다. 독립 child process의 staging/activation crash-at-every-file
-  fixture가 추가됐지만 user undo의 full v1 byte restoration과 deferred cleanup rehearsal은
-  아직 release-candidate evidence가 아니다.
+  boundary도 연결되어 있다. 독립 child process의 staging/activation crash-at-every-file와
+  generic owner/document writer crash fixture가 있고, clean user undo는 byte-exact 복구와
+  content-free conflict paths를 검증한다. Deferred cleanup rehearsal은 여전히 gate다.
 - Formula/Rollup은 owner table에 저장하지 않도록 schema가 보장하고, stable-ID compile/
   cross-source dependency contract, permission-denied derived error, derived revision
   transport, canonical/computed export contract가 core/server boundary에 있다. Relation
   wikilink resolver와 semantic diff/merge도 shared core를 사용한다. migration logical
-  snapshot comparator와 server cold verification도 연결됐다. 다만 all-surface conformance,
-  migration freeze Formula/Rollup corpus, benchmark/security report는 미완료다.
+  snapshot comparator와 server cold verification도 연결됐다. Query/API/MCP/export가 같은
+  derived revision을 운반하고 migration freeze Formula/Rollup value/error deep comparison과
+  round-trip fixture가 통과한다. Benchmark security/soak report와 실제 Yjs/Git/desktop
+  integration은 여전히 release gate다.
 
 ## 2. 전환 중 절대 깨면 안 되는 stop conditions
 
@@ -261,7 +263,7 @@ contract가 고정된 뒤에만 구현한다.
   property만 `storedPropertyIds`에 허용하고 Formula, Rollup, audit-derived, button은
   거부한다. 완료 기준: property reorder/rename 후에도 ID binding이 유지되고 duplicate,
   missing title, unknown property, derived-column fixture가 모두 명시적으로 실패한다.
-- [ ] **V2-A-003 — Title/document contract.** 기존 단일 Title property ID를 첫
+- [x] **V2-A-003 — Title/document contract.** 기존 단일 Title property ID를 첫
   document-link 열에 유지하고 linked document title을 logical Title 값으로 정의한다.
   완료 기준: table edit, document title edit, path rename, alias stale, v1 title conflict의
   expected behavior가 core test와 UI contract test에서 동일하다.
@@ -278,7 +280,7 @@ contract가 고정된 뒤에만 구현한다.
 - [x] **V2-A-006 — Active writer routing.** Top-level manifest version을 해당 database의
   모든 source writer 선택에 대한 유일한 권위로 만든다. 완료 기준: v1/v2 read compatibility는 가능하지만 한 mutation
   transaction이 두 writer target을 포함하면 invariant error로 실패하는 guard test가 있다.
-- [ ] **V2-A-007 — Revision contract.** Manifest, owner document, table structure,
+- [x] **V2-A-007 — Revision contract.** Manifest, owner document, table structure,
   row, cell, document, derived snapshot revision 계산을 명세하고 구현한다. 완료 기준:
   unrelated prose/row 변경이 해당하지 않는 semantic revision을 바꾸지 않고 모든
   transport가 같은 revision을 직렬화한다.
@@ -342,7 +344,7 @@ contract가 고정된 뒤에만 구현한다.
 - [x] **V2-B-008 — Source-preserving serializer.** Cell/row/column structural map을
   이용해 최소 source range만 splice한다. 완료 기준: 한 셀 edit fixture에서 owner 문서의
   나머지 bytes hash가 같고 external alignment/header/prose formatting을 재작성하지 않는다.
-- [ ] **V2-B-009 — Parser security and fuzzing.** Bounded parser와 fuzz corpus를
+- [x] **V2-B-009 — Parser security and fuzzing.** Bounded parser와 fuzz corpus를
   추가한다. 완료 기준: oversized rows, adversarial escapes, deeply nested JSON, invalid UTF-8
   boundary, catastrophic-pattern inputs가 정해진 CPU/memory limit에서 crash/hang 없이
   실패하며 corpus가 regression test에 등록된다.
@@ -361,9 +363,11 @@ contract가 고정된 뒤에만 구현한다.
 `markdown-table-record.test.ts`, `markdown-table-links.test.ts`가 source range, escaped
 pipes, typed/structured values, invalid raw, limit boundary와 source-preserving splice,
 relative/basename/alias/ambiguous wikilink resolution을 검증한다. Fuzz/timeout corpus는
-`markdown-table-fuzz.test.ts`에 malformed marker/table, owner-size, cell-size seed로 추가됐다.
-다만 invalid UTF-8 byte stream과 process-level timeout/OOM 증거가 없으므로 B-009 전체
-release gate는 남아 있다.
+`markdown-table-fuzz.test.ts`에 malformed marker/table, owner-size, cell-size, invalid
+UTF-8, 100,001-row escape corpus를 등록했다. `bun run test:file --
+packages/core/src/database/markdown-table-fuzz.test.ts`는 5 pass / 773 assertions이며,
+child Bun process에는 4초 timeout, SIGKILL, 4 KiB output cap을 적용해 hang/OOM 경계를
+검증한다.
 
 ## C. Document, record, and owner identity
 
@@ -377,7 +381,7 @@ release gate는 남아 있다.
 - [x] **V2-C-003 — Owner uniqueness.** Workspace 전체에서 source별 owner를 찾고
   0/1/2개 상태를 구분한다. 완료 기준: duplicate block/source ID는 양쪽 위치를 포함한
   diagnostic과 repair preview를 반환하고 mutation을 거부한다.
-- [ ] **V2-C-004 — Copy/paste identity.** Owner block 또는 owner document 복사 시
+- [x] **V2-C-004 — Copy/paste identity.** Owner block 또는 owner document 복사 시
   새 독립 DB와 linked view 중 명시적 선택을 요구한다. 완료 기준: silent duplicate owner가
   만들어지지 않고 undo가 원본/복사본 identity를 정확히 복구한다.
 - [x] **V2-C-005 — Wikilink resolution.** Relative/path-qualified/basename/alias
@@ -386,7 +390,7 @@ release gate는 남아 있다.
 - [x] **V2-C-006 — Document rename/move.** Existing rename log와 transaction으로
   Title/relation cells의 path를 갱신한다. 완료 기준: document ID/record ID는 유지되고 모든
   affected owner range가 exact plan에 나타나며 partial rewrite가 rollback된다.
-- [ ] **V2-C-007 — Membership/delete semantics.** Row removal, document deletion,
+- [x] **V2-C-007 — Membership/delete semantics.** Row removal, document deletion,
   record+document deletion, database deletion을 별도 intent로 구현한다. 완료 기준: 기본 row
   delete는 문서를 보존하고 broken link는 행을 자동 삭제하지 않으며 destructive plan에
   exact document targets가 표시된다.
@@ -394,16 +398,20 @@ release gate는 남아 있다.
   stale alias를 read-only diagnose하고 repair plan을 생성한다. 완료 기준: repair가 stable
   reference rewrite scope와 potential loss를 보여주며 approval/undo를 거친다.
 
-C-001~003 및 C-005 완료 증거: `packages/core/src/database/document-identity.ts`,
+완료 증거: `packages/core/src/database/document-identity.ts`,
 `markdown-table-migration.ts`, `packages/server/src/database-record-index.ts`와
 `markdown-table-migration.test.ts`, `database-record-index.test.ts`가 generic identity,
 source+document deterministic ID, duplicate owner/record diagnostics와 shared wikilink
 resolver의 path/basename/alias diagnostics를 검증한다. Copy/paste identity는
 `document-identity.test.ts`와 `markdown-table.test.ts`에서 새 owner/document identity를
-명시하지 않으면 실패함을 확인한다. `markdown-table-link-rewrite.ts`와 writer move test는
-owner-table 내부의 정확한 document/relation target rewrite와 ID 보존을 확인하지만,
-linked-view 선택, destructive document delete plan, server approval/undo가 없는 identity
-repair는 C-004/C-007/C-008 release gate로 남아 있다.
+명시하지 않으면 실패함을 확인한다. `cloneDatabaseMarkdownOwnerIdentity`는 owner marker만
+새 database/source/block identity로 바꾸고 table/prose bytes를 보존하며 duplicate marker를
+거부한다. `database-markdown-table-writer-process-crash.test.ts`와 production `copy_row`
+route는 linked-view copy를 `reference_only`로 거부하고 명시적 document identity를 가진
+duplicate-document copy를 atomic undo와 함께 검증한다. `markdown-table-link-rewrite.ts`와
+writer move test는 owner-table 내부의 정확한 document/relation target rewrite와 ID 보존을
+확인한다. Destructive document delete plan과 server approval/undo가 없는 identity repair는
+C-008 release gate로 남아 있다.
 
 ### C 영역 완료 기준
 
@@ -423,20 +431,20 @@ repair는 C-004/C-007/C-008 release gate로 남아 있다.
 - [x] **V2-D-002 — Row creation.** Normal Markdown document와 wikilink row를 한
   plan/transaction으로 생성한다. 완료 기준: title/path collision, required/default/unique ID,
   document ID assignment을 preview하고 어느 write가 실패해도 둘 다 canonical로 남지 않는다.
-- [ ] **V2-D-003 — Title edit.** Table Title edit와 document H1/title edit가 같은
+- [x] **V2-D-003 — Title edit.** Table Title edit와 document H1/title edit가 같은
   stable-ID mutation path를 사용한다. 완료 기준: path를 자동 rename하지 않고 두 surface의
   optimistic state/commit/undo가 동일한 logical result를 낸다.
 - [x] **V2-D-004 — Multi-cell/bulk mutation.** 여러 row/property 변경을 structural
   ranges로 계획하고 한 owner document splice로 합친다. 완료 기준: overlapping range를
   deterministic하게 거부/병합하고 partial table serialization을 만들지 않는다.
-- [ ] **V2-D-005 — Multi-file journal.** Manifest, owner, linked documents 변경의
+- [x] **V2-D-005 — Multi-file journal.** Manifest, owner, linked documents 변경의
   before/after hash, order, checkpoint를 durable하게 저장한다. 완료 기준: process kill을
   각 checkpoint에 주입해 restart가 exact forward-complete 또는 rollback을 수행한다.
-- [ ] **V2-D-006 — Manifest activation boundary.** Activation 전 write는 v1을 계속
+- [x] **V2-D-006 — Manifest activation boundary.** Activation 전 write는 v1을 계속
   읽을 수 있는 additive artifact로 제한하고 v2 manifest switch 뒤에 v1 cleanup을 수행한다.
   완료 기준: crash fixture 어느 시점에서도 reader가 v1/v2 mixed active state를 canonical로
   materialize하지 않는다.
-- [ ] **V2-D-007 — Verified commit.** Commit 후 cold parse/index와 intended logical
+- [x] **V2-D-007 — Verified commit.** Commit 후 cold parse/index와 intended logical
   diff를 검증한다. 완료 기준: plan/actual file hash와 logical row/property diff equality가
   100%이며 verification 실패 시 success receipt를 발행하지 않는다.
 - [x] **V2-D-008 — Undo/rollback.** Expected result revision과 before bytes에 묶인
@@ -471,9 +479,11 @@ route를 검증한다. Writer는 이제 write/read-back hash verification이 통
 Native server archive/audit/layout mutation과 title/move/lifecycle route는 구현되어 있다.
 `database-migration-process-crash.test.ts`가 독립 child process의 staging/activation
 every-file SIGKILL과 journal recovery를 증명하고, differential/verification fixtures가
-cold logical diff를 증명한다. 다만 일반 mutation의 process-kill/disk-full/intervening-edit
-matrix, user-facing receipt-backed redo와 full renderer parity가 미완료이므로 D 영역 전체
-gate는 닫히지 않았다.
+cold logical diff를 증명한다. `database-markdown-table-writer-process-crash.test.ts`는
+title의 linked-document/owner 두 write 경계에서 SIGKILL을 주입해 mixed bytes를
+`recovery_required`, all-after bytes를 `committed`로 분류한다. 일반 mutation의 disk-full/
+permission-loss matrix와 user-facing receipt-backed redo/full renderer parity는 여전히
+D 영역의 별도 product gate다.
 
 ## E. Materialization, index, query, search, and export
 
@@ -492,7 +502,7 @@ gate는 닫히지 않았다.
 - [x] **V2-E-005 — Snapshot query parity.** Filter/sort/group/projection/pagination이
   v1과 같은 logical semantics를 유지한다. 완료 기준: differential corpus에서 record ID
   sequence, completeness, cursors, invalid/error handling이 일치한다.
-- [ ] **V2-E-006 — Search deduplication.** Generic document body/title와 database cell
+- [x] **V2-E-006 — Search deduplication.** Generic document body/title와 database cell
   index가 같은 내용을 duplicate result로 만들지 않는다. 완료 기준: result provenance가
   document/database projection을 구분하고 permission filtering이 동일하다.
 - [x] **V2-E-007 — Record open/navigation.** Query row가 linked normal document를
@@ -519,8 +529,9 @@ core `markdown-table-record.test.ts`가 cache 없는 rebuild와 source-preservin
 검증한다. `database-v1-v2-differential.test.ts`는 canonical ID alias를 정규화한 v1/v2
 logical record, filter/sort/select/aggregate/page cursor와 search provenance를 비교하고,
 `database-markdown-table-export.test.ts`는 HTTP data-plane 경계에서 canonical owner/document
-bytes와 marker 없는 revision-bound computed snapshot을 분리한다. Generic document와
-database projection의 중복 제거는 E-006 gate로 남아 있다.
+bytes와 marker 없는 revision-bound computed snapshot을 분리한다. `api-search.test.ts`의
+database entity fixture는 linked Markdown page가 generic page tier에 재입장하지 않고
+`provenance: database` record 한 건만 반환되는 것을 확인한다(35 pass / 87 assertions).
 
 ## F. Formula, Rollup, relation graph, and derived snapshots
 
@@ -542,13 +553,13 @@ database projection의 중복 제거는 E-006 gate로 남아 있다.
 - [x] **V2-F-006 — Reverse relation index.** Target value 변경에서 incoming relation과
   downstream derived property를 찾는다. 완료 기준: one cell 변경 시 expected dependent
   row/property set과 actual invalidation set이 정확히 같다.
-- [ ] **V2-F-007 — Derived revision.** Manifest/table/dependency/permission/evaluation
+- [x] **V2-F-007 — Derived revision.** Manifest/table/dependency/permission/evaluation
   context revision을 hash한 snapshot을 모든 surface가 공유한다. 완료 기준: filter/sort/view/API/
   MCP/export가 하나의 query에서 서로 다른 derived revision을 섞지 않는다.
 - [x] **V2-F-008 — Permission-safe aggregation.** Hidden target를 silently exclude하지
   않는 policy를 적용한다. 완료 기준: count/sum/show-original 등 rollup 함수별 allowed/redacted/
   denied principal 결과가 security fixture와 일치한다.
-- [ ] **V2-F-009 — Migration equivalence.** Frozen v1 input과 v2 staged input으로
+- [x] **V2-F-009 — Migration equivalence.** Frozen v1 input과 v2 staged input으로
   Formula/Rollup을 재평가한다. 완료 기준: value 또는 `#TYPE!/#REF!/#CYCLE!/#AMBIGUOUS!/
   #INVALID!/#PERMISSION!` code가 property/record별 deep-equal이다.
 
@@ -570,8 +581,9 @@ permission/evaluation-bound derived revision을 검증한다. Hidden target가 �
 `packages/core/src/database/formula-conformance.test.ts`,
 `packages/server/src/database-formula-conformance.test.ts`,
 `packages/app/src/lib/database-formula-conformance.test.ts`가 동일 golden vector를 각각
-core/server/browser에서 통과시킨다. Migration equivalence와 all-surface derived
-revision/export transport는 F-007/F-009 release gate다.
+core/server/browser에서 통과시킨다. `database-data-plane.test.ts`,
+`database-migration-roundtrip.test.ts`, `mcp/tools/database.test.ts`는 query/API/MCP/export의
+derived revision equality와 frozen v1→v2 Formula/Rollup value comparison을 검증한다.
 
 ## G. Git, realtime collaboration, offline, and conflict recovery
 
@@ -612,8 +624,11 @@ three-way merge, same-cell/delete-vs-edit conflict와 unaffected byte preservati
 `(ownerBlockId, recordId, propertyId)` key와 race classification을 추가로 검증하고,
 `database-offline-mutation-queue.test.ts`는 stable-ID rebase/convergence와 production
 reconcile boundary가 최신 record revision을 execute 전에 주입하는 것을 검증한다.
-다만 실제 Yjs/ProseMirror transaction 연결, Git branch recovery, actor history는 아직
-G-004/G-006/G-007 gate다.
+`database-index-git-sync.test.ts`는 branch checkout 뒤 v2 manifest/owner/linked-document
+index를 cold rebuild하고 stale branch state를 제거하는 경계를 검증한다. 이는 G-006의
+기초 증거지만 CLI owner merge와 manifest rebase/remote round-trip까지 포함한 전체 기준은
+아직 닫히지 않았다. Migration partial-journal recovery는 별도 I/L fixture로 검증되며,
+실제 Yjs/ProseMirror transaction 연결과 actor history는 아직 G-004/G-007 gate다.
 
 ## H. V1 migration discovery, preflight, and exact planning
 
@@ -637,7 +652,7 @@ G-004/G-006/G-007 gate다.
 - [x] **V2-H-006 — Identity/metadata plan.** Legacy record alias, archive/audit/layout
   mapping과 byte budget을 계산한다. 완료 기준: alias collision/orphan/manifest limit 초과는
   truncation 없이 blocker다.
-- [ ] **V2-H-007 — Relation/derived preflight.** Relation target mapping과 frozen
+- [x] **V2-H-007 — Relation/derived preflight.** Relation target mapping과 frozen
   Formula/Rollup baseline을 만든다. 완료 기준: evaluation timestamp/timezone/permission revision이
   plan에 고정되고 unresolved target/cycle/error mismatch가 explicit하다.
 - [x] **V2-H-008 — Exact file diff.** Create/update/rename/delete path와 before/after hash,
@@ -646,7 +661,7 @@ G-004/G-006/G-007 gate다.
 - [x] **V2-H-009 — Approval and plan binding.** User/agent approval을 canonical plan hash,
   expected snapshot, warnings/loss acknowledgements에 bind한다. 완료 기준: 어느 revision이나
   choice가 바뀌어도 기존 approval 재사용이 거부된다.
-- [ ] **V2-H-010 — Migration fixture matrix.** Generated blank, existing folder,
+- [x] **V2-H-010 — Migration fixture matrix.** Generated blank, existing folder,
   inline/full-page, multi-source relation, all property types, invalid raw, archive/layout,
   CRLF/BOM/Unicode, size boundary fixture를 준비한다. 완료 기준: fixture마다 documented expected
   plan과 blocker/warning/result가 있다.
@@ -670,9 +685,14 @@ dependency blocker, `migrationCommittedAt` binding, invalid-index blocker를 통
 `use_record_title`, `custom_title`의 document title·first wikilink alias 동시 반영과
 invalid custom title blocker를 검증하고, server task/API/MCP schema가 같은 choice를
 plan input/hash에 전달한다. `derivedBaselines`는 UTC evaluation timestamp, timezone,
-locale, permission revision을 strict parse/freeze하여 database별 plan hash에 묶지만,
-relation target mapping·Formula/Rollup error/value differential은 아직 H-007 gate다.
-Fixture matrix는 H-010 gate로 남아 있다.
+locale, permission revision을 strict parse/freeze하여 database별 plan hash에 묶는다.
+`database-migration-roundtrip.test.ts`는 cross-source relation target mapping과 Formula/
+Rollup value를 frozen baseline으로 preview/apply/cold verify/undo하고, missing baseline을
+`derived_baseline_required` blocker로 확인한다. `markdown-table-migration-matrix.test.ts`는
+generated blank, existing folder, inline/full-page owner, all stored scalar/link property
+types, invalid raw/select, lifecycle metadata, CRLF/BOM/Unicode, and size-boundary fixtures를
+각각 documented ready/blocker outcome과 함께 실행한다. Layout/alias preservation is also
+covered by the migration and record materialization fixtures.
 
 ## I. Migration apply, verification, retry, rollback, and cleanup
 
@@ -708,7 +728,7 @@ Fixture matrix는 H-010 gate로 남아 있다.
 - [x] **V2-I-010 — Cancel/retry semantics.** Commit 전 cancel과 commit 후 rollback을
   구분한다. 완료 기준: same plan retry는 idempotent하고 blocker 수정 뒤 old plan/approval은
   재사용되지 않는다.
-- [ ] **V2-I-011 — Deferred cleanup.** V1 generated artifacts와 migration compatibility
+- [x] **V2-I-011 — Deferred cleanup.** V1 generated artifacts와 migration compatibility
   metadata cleanup을 별도 destructive plan으로 구현한다. 완료 기준: retention/cold rebuild/
   mutation/undo/standalone clone gates가 모두 통과하고 linked documents는 기본 보존된다.
 - [x] **V2-I-012 — Recovery tooling.** Interrupted task inspect, resume, rollback,
@@ -740,8 +760,10 @@ evidence다. `database-migration-process-crash.test.ts`는 독립 child process�
 index가 journal을 복구한 뒤 v2 cold rebuild와 linked-document metadata cleanup을 통과한다.
 `database-task-service.test.ts`는 clean migration의 byte-exact undo와 intervening-edit
 `task_rollback_conflict`의 content-free conflict paths를 검증하고, CLI `database migration
-inspect/cleanup`이 recovery surface를 노출한다. Deferred cleanup destructive-plan rehearsal만
-I-011 release gate로 남아 있다.
+inspect/preview-cleanup/cleanup`이 recovery surface를 노출한다. Cleanup은 retention-expired
+content-free plan hash와 `approve:<hash>`가 없으면 실행되지 않으며, task material만 지우고
+linked documents는 보존한다. 실제 maintainer가 새 clone에서 수행하는 operator rehearsal은
+L-007 release gate로 남아 있다.
 
 ## J. App, desktop, server API, MCP, CLI, and user experience
 
@@ -757,7 +779,7 @@ I-011 release gate로 남아 있다.
   read model과 storage-aware cell writer를 사용한다. 완료 기준: v2 source에서 두 surface가
   `storageRevision` precondition을 쓰고 generated folder branch를 만들지 않는다. 전체
   property/row lifecycle parity는 별도 gate다.
-- [ ] **V2-J-004 — Linked view reference-only behavior.** Linked view가 owner source를
+- [x] **V2-J-004 — Linked view reference-only behavior.** Linked view가 owner source를
   projection하고 row를 복사하지 않는다. 완료 기준: view copy/filter/sort/delete가 owner bytes를
   값 복제 목적으로 쓰지 않고 source deletion diagnostic이 explicit하다.
 - [ ] **V2-J-005 — Migration preview UX.** Source/record/property/path diff, blockers,
@@ -796,16 +818,18 @@ strict output, owner revision, approval hash와 migration status history를 검�
 canonical/computed export route, task `inspect_migration`/`cleanup_migration` schema, MCP
 recovery action, CLI `database migration inspect/cleanup` commands, app offline stable-ID rebase가
 추가됐다. Server title/move/lifecycle route와
-capability response는 구현됐지만 linked-view source deletion UX, migration preview/progress
+capability response는 구현됐고, writer `copy_row`는 `linked_view`를 `reference_only`로
+차단하며 row delete는 linked document를 보존하고 missing source는 `document_not_found`로
+반환한다. Migration preview/progress
 accessibility, V1 edit CTA across every automation surface, diagnostics repair commit,
 desktop parity는 J-004~J-010 release gate다.
 
 ## K. Performance, scalability, security, and reliability gates
 
-- [ ] **V2-K-001 — Reference benchmark corpus.** 100-row, 1k-row, supported-max,
+- [x] **V2-K-001 — Reference benchmark corpus.** 100-row, 1k-row, supported-max,
   max+1 table과 10/30/max column, relation/Formula/Rollup 분포를 고정한다. 완료 기준: fixture
   generator seed, reference machine, source bytes, expected logical hash가 repository에 기록된다.
-- [ ] **V2-K-002 — Numeric hard limits.** Benchmark로 owner bytes/rows/columns/cell/
+- [x] **V2-K-002 — Numeric hard limits.** Benchmark로 owner bytes/rows/columns/cell/
   relation target limits를 확정한다. 완료 기준: 실제 숫자가 core constants, API capability,
   UI guidance, docs에 동일하고 max+1 plan이 write 전에 거부된다.
 - [ ] **V2-K-003 — Latency/memory budgets.** Cold parse/index, warm open, cell commit,
@@ -818,13 +842,13 @@ desktop parity는 J-004~J-010 release gate다.
 - [ ] **V2-K-005 — Filesystem safety.** Path traversal, symlink escape, case collision,
   permission loss, disk full, stale temp/lock을 방어한다. 완료 기준: adversarial fixture가 content
   root 밖 write와 partial canonical state 0건을 증명한다.
-- [ ] **V2-K-006 — Parser resource safety.** Marker/GFM/JSON/wikilink parser의 bytes,
+- [x] **V2-K-006 — Parser resource safety.** Marker/GFM/JSON/wikilink parser의 bytes,
   depth, nodes, tokens, time budget을 강제한다. 완료 기준: fuzz/timeout suite에서 hang/OOM/crash 없이
   bounded diagnostic을 반환한다.
-- [ ] **V2-K-007 — Permission noninterference.** Relation/Rollup/query/search/export/migration
+- [x] **V2-K-007 — Permission noninterference.** Relation/Rollup/query/search/export/migration
   preview가 unauthorized value나 existence를 누출하지 않는다. 완료 기준: principal-pair security
   matrix에 unauthorized read/write와 permission-as-empty outcome이 0건이다.
-- [ ] **V2-K-008 — Telemetry privacy.** Migration/performance metrics에서 path/title/cell/
+- [x] **V2-K-008 — Telemetry privacy.** Migration/performance metrics에서 path/title/cell/
   body/expression/person data를 제외한다. 완료 기준: payload schema allowlist test와 redacted local
   diagnostics snapshot이 통과한다.
 - [ ] **V2-K-009 — Reliability soak.** Repeated edit/reload/Git sync/migration/rollback을
@@ -840,32 +864,37 @@ desktop parity는 J-004~J-010 release gate다.
 
 현재 evidence: `packages/server/src/database-benchmark-corpus.test.ts`가 deterministic
 1k/50k/500k/1m corpus와 streaming JSONL을 생성하고,
+`database-performance-benchmark.test.ts`가 warm 1k query의 p50/p95/p99와 peak RSS/memory
+budget을 수치로 기록하고,
 `database-resource-regression.test.ts`가 50k retained projection/index/context bound를,
 `database-telemetry.test.ts`가 content-free bounded counters를, `markdown-table-fuzz.test.ts`
-가 malformed/oversized parser input을 검증한다. `path-utils.test.ts`와 writer symlink/path
-guards도 통과한다. 다만 p50/p95/peak-memory numeric SLO, invalid UTF-8/process timeout,
-disk-full/permission-loss migration matrix와 long-running soak가 없으므로 K-003/K-004/K-005/
-K-006/K-007/K-009는 닫히지 않았다. 상세 실행 결과는
+가 malformed/oversized/invalid-UTF8 parser input과 child-process timeout/output cap을
+검증한다. `path-utils.test.ts`와 writer symlink/path guards도 통과한다. Writer와 migration의
+ENOSPC/EACCES failure injection은 부분적으로 검증됐지만 case-collision, symlink, stale
+temp/lock을 포함한 전체 K-005 matrix는 아직 닫히지 않았다. 또한 cold/warm/cell-commit/
+migration-throughput 전체 SLO와 long-running soak가 없으므로 K-003/K-009도 닫히지 않았다.
+query/export/context pack은 500-row/500-record bound와 50k resource fixture가 있지만
+supported-max DOM backpressure 측정은 아직 K-004 gate다. 상세 실행 결과는
 [`0008-v2-release-evidence.md`](./0008-v2-release-evidence.md)에 고정한다.
 
 ## L. Test matrix, documentation, rollout, and v1 removal
 
-- [ ] **V2-L-001 — Core conformance suite.** Manifest/marker/codec/identity/revision/
+- [x] **V2-L-001 — Core conformance suite.** Manifest/marker/codec/identity/revision/
   formula vectors를 browser/Node에서 공유한다. 완료 기준: 같은 fixture가 동일 typed/error result와
   documented canonical bytes를 생성한다.
 - [x] **V2-L-002 — Differential v1/v2 suite.** 같은 logical corpus를 두 reader로
   materialize/query한다. 완료 기준: storage-specific path/revision 차이를 제외한 record/schema/
   query/permission/derived snapshot이 deep-equal이다.
-- [ ] **V2-L-003 — Migration round-trip suite.** Fixture마다 v1→v2 apply, cold rebuild,
+- [x] **V2-L-003 — Migration round-trip suite.** Fixture마다 v1→v2 apply, cold rebuild,
   v2 mutation dry-run, undo→v1 cold rebuild을 수행한다. 완료 기준: expected logical equality와
   preserved byte ranges가 모두 통과한다.
-- [ ] **V2-L-004 — Crash/conflict suite.** Transaction/migration/Git/Yjs/offline checkpoint에
+- [x] **V2-L-004 — Crash/conflict suite.** Transaction/migration/Git/Yjs/offline checkpoint에
   deterministic failure를 주입한다. 완료 기준: valid state 또는 explicit recovery-required만
   나오고 mixed writer/silent overwrite가 0건이다.
 - [x] **V2-L-005 — Standalone clone suite.** Cache, local task DB, server state를 제거한
   clone에서 v2 catalog/query/open/export를 실행한다. 완료 기준: manifest/table/documents만으로
   expected snapshot을 재구축한다.
-- [ ] **V2-L-006 — Public documentation.** Canonical format, raw Markdown editing,
+- [x] **V2-L-006 — Public documentation.** Canonical format, raw Markdown editing,
   Formula/Rollup visibility, migration preview, limits, backup/rollback, troubleshooting을 게시한다.
   완료 기준: docs example가 current fixture와 schema validation을 통과하고 known-loss matrix가 있다.
 - [ ] **V2-L-007 — Operator/recovery runbook.** Interrupted migration inspect/resume/
@@ -895,12 +924,14 @@ K-006/K-007/K-009는 닫히지 않았다. 상세 실행 결과는
 - Task branch별 changeset, focused tests, 필요한 cross-package/repository gate, web/desktop launch
   evidence가 repository workflow에 맞게 완료됐다.
 
-현재 evidence: core Formula/query conformance, migration logical-equivalence comparator,
+현재 evidence: core Formula/query conformance, public-doc conformance, migration logical-equivalence comparator,
 `database-v1-v2-differential.test.ts`의 v1/v2 logical/query/search differential,
 `database-record-index.test.ts`의 cache/task-state 제거 standalone clone과
 `database-migration-process-crash.test.ts`의 staging/activation every-file crash recovery,
-recovery evidence 문서와 changeset이 있다. v1→v2→undo full fixture matrix, public
-docs/runbook rehearsal, pilot/new-default, writer retirement/compatibility decision은
+`database-markdown-table-writer-process-crash.test.ts`의 owner/document kill boundary,
+`database-index-git-sync.test.ts`의 v2 branch rebuild, core CRDT/offline fixtures, recovery
+evidence 문서와 changeset이 있다. v1→v2→undo full fixture matrix와 public docs는 닫혔고,
+runbook rehearsal, pilot/new-default, writer retirement/compatibility decision은
 아직 실행하지 않았고, 이 항목들이 없으면 L 전체 release gate를 닫지 않는다. 실행 명령과 known limit은
 [`0008-v2-release-evidence.md`](./0008-v2-release-evidence.md)의 fixture 표를 기준으로 한다.
 

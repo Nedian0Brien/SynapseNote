@@ -2295,6 +2295,8 @@ External edit remains canonical.
       propertyIds: ['prop_computed_broken', 'prop_computed_budget', 'prop_computed_double'],
       cache: 'miss',
     });
+    expect(result.derivedRevision).toMatch(/^sha256:/);
+    expect(result.derivedRevision).toBe(result.trace.derivedIndex.revision);
     const responseContract = DatabaseQueryResponseSchema.safeParse(result);
     expect(responseContract.success ? [] : responseContract.error.issues).toEqual([]);
 

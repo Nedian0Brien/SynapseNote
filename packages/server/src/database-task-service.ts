@@ -17,6 +17,7 @@ import {
   parseDatabaseMarkdownOwner,
   planDatabaseMigrationDependencyClosure,
   freezeDatabaseMigrationDerivedBaseline,
+  materializeDatabaseDerivedRecords,
   type DatabaseMigrationDerivedBaseline,
   type DatabaseMarkdownV2MigrationTitleChoice,
   type DatabaseMarkdownV2MigrationPlan,
@@ -190,6 +191,21 @@ export interface DatabaseManifestMigrationPreview {
   committable: boolean;
 }
 
+export interface DatabaseMigrationCleanupPlan {
+  version: 1;
+  taskId: string;
+  expectedRevision: string;
+  journalState: DatabaseMigrationJournalEntry['state'];
+  updatedAt: string;
+  fileCount: number;
+  taskMaterialPresent: boolean;
+  undoExpiresAt: string | null;
+  retentionExpired: boolean;
+  committable: boolean;
+  blockers: readonly { code: string; message: string }[];
+  hash: string;
+}
+
 interface DatabaseV2ContentPlan {
   plan: DatabaseMarkdownV2MigrationPlan;
   manifestPath: string;
@@ -197,6 +213,7 @@ interface DatabaseV2ContentPlan {
   manifestAfter: string;
   files: readonly { path: string; before: string | null; after: string | null }[];
   planHash: string;
+  derivedBaseline?: DatabaseMigrationDerivedBaseline;
   expectedRecords: readonly {
     sourceId: string;
     legacyRecordId: string;
@@ -204,6 +221,7 @@ interface DatabaseV2ContentPlan {
     path: string;
     values: Readonly<Record<string, DatabaseValue>>;
     invalidValues: Readonly<Record<string, unknown>> | null;
+    computedResults?: Readonly<Record<string, unknown>> | null;
   }[];
 }
 
@@ -315,6 +333,26 @@ function stableJson(value: unknown): string {
       .join(',')}}`;
   }
   return JSON.stringify(value);
+}
+
+/**
+ * Formula/Rollup results may contain page runtime values whose ids are the
+ * legacy v1 record ids while the migration is being planned.  The v2 reader
+ * quite correctly returns the canonical `(source, document)` id instead.  A
+ * logical migration comparison must normalize only those stable references;
+ * error codes, messages, scalar values, and permission metadata remain
+ * byte-for-byte comparable.
+ */
+function canonicalizeDerivedResult(value: unknown, canonicalByLegacyId: ReadonlyMap<string, string>): unknown {
+  if (Array.isArray(value)) return value.map((entry) => canonicalizeDerivedResult(entry, canonicalByLegacyId));
+  if (value === null || typeof value !== 'object') return value;
+  const object = value as Record<string, unknown>;
+  const next = Object.fromEntries(
+    Object.entries(object).map(([key, entry]) => [key, canonicalizeDerivedResult(entry, canonicalByLegacyId)]),
+  );
+  if (typeof next.id === 'string') next.id = canonicalByLegacyId.get(next.id) ?? next.id;
+  if (typeof next.recordId === 'string') next.recordId = canonicalByLegacyId.get(next.recordId) ?? next.recordId;
+  return next;
 }
 
 function migrationPlanHash(
@@ -515,6 +553,15 @@ export class DatabaseTaskService {
       ...(titleChoices ? { titleChoices } : {}),
     });
     const blockers = [...migration.blockers];
+    const hasDerivedProperties = database.sources.some((source) =>
+      source.properties.some((property) => property.type === 'formula' || property.type === 'rollup'),
+    );
+    if (hasDerivedProperties && !frozenDerivedBaseline) {
+      blockers.push({
+        code: 'derived_baseline_required',
+        message: 'Formula/Rollup migration requires an explicit frozen evaluation baseline.',
+      });
+    }
     // The migration must be based on a complete, frozen v1 inventory. An
     // index issue means that at least one source file could not be included
     // deterministically; allowing the plan to proceed would silently drop
@@ -570,6 +617,7 @@ export class DatabaseTaskService {
         manifestAfter: manifestBefore,
         files: [],
         planHash: migrationPlanHash([], { ownerChoices, titleChoices, derivedBaseline: frozenDerivedBaseline }),
+        ...(frozenDerivedBaseline ? { derivedBaseline: frozenDerivedBaseline } : {}),
         expectedRecords: [],
       };
     }
@@ -623,6 +671,36 @@ export class DatabaseTaskService {
       })
       .filter((record): record is NonNullable<typeof record> => record !== null)
       .sort((left, right) => left.canonicalRecordId.localeCompare(right.canonicalRecordId));
+    const expectedComputedByLegacyId = hasDerivedProperties && frozenDerivedBaseline
+      ? new Map(
+          materializeDatabaseDerivedRecords({
+            definition: database,
+            records: database.sources.flatMap((source) => this.#databaseRecordIndex.list(database.id, source.id)),
+            context: {
+              now: frozenDerivedBaseline.evaluatedAt,
+              timeZone: frozenDerivedBaseline.timeZone,
+              locale: frozenDerivedBaseline.locale,
+            },
+            permissionRevision: frozenDerivedBaseline.permissionRevision,
+          }).map((record) => [record.id, record.computedResults ?? null]),
+        )
+      : null;
+    const expectedRecordsWithDerived = expectedRecords.map((record) => ({
+      ...record,
+      ...(expectedComputedByLegacyId
+        ? (() => {
+            const computed = expectedComputedByLegacyId.get(record.legacyRecordId);
+            return computed && Object.keys(computed).length > 0
+              ? {
+                  computedResults: canonicalizeDerivedResult(
+                    computed,
+                    canonicalByLegacyId,
+                  ) as Readonly<Record<string, unknown>>,
+                }
+              : {};
+          })()
+        : {}),
+    }));
     return {
       plan: migration,
       manifestPath,
@@ -630,7 +708,8 @@ export class DatabaseTaskService {
       manifestAfter,
       files,
       planHash: migrationPlanHash(files, { ownerChoices, titleChoices, derivedBaseline: frozenDerivedBaseline }),
-      expectedRecords,
+      ...(frozenDerivedBaseline ? { derivedBaseline: frozenDerivedBaseline } : {}),
+      expectedRecords: expectedRecordsWithDerived,
     };
   }
 
@@ -926,31 +1005,87 @@ export class DatabaseTaskService {
     };
   }
 
-  /** Remove staged bytes/verified before-images after the undo window closes. */
-  async cleanupMigration(taskId: string, expectedRevision: string): Promise<{ taskId: string; removed: boolean }> {
+  /**
+   * Build a content-free, approval-ready cleanup plan. The hash is derived
+   * from the task revision, journal hashes, retention boundary, and material
+   * state so a cleanup cannot silently target a different migration.
+   */
+  async previewMigrationCleanup(taskId: string): Promise<DatabaseMigrationCleanupPlan> {
     await this.#ensureMigrationGateHydrated();
     const task = await this.#taskStore.get(taskId);
-    if (task.revision !== expectedRevision) {
+    const journal = await this.#migrationJournal.get(taskId);
+    const finishedAt = task.finishedAt ? Date.parse(task.finishedAt) : Number.NaN;
+    const undoExpiresAt = Number.isFinite(finishedAt)
+      ? new Date(finishedAt + this.#migrationUndoRetentionSeconds * 1_000).toISOString()
+      : null;
+    const retentionExpired =
+      Number.isFinite(finishedAt) && Date.now() > finishedAt + this.#migrationUndoRetentionSeconds * 1_000;
+    const taskMaterialPresent = await this.#migrationJournal.hasTaskMaterial(taskId);
+    const blockers: Array<{ code: string; message: string }> = [];
+    if (task.operation !== 'migration') {
+      blockers.push({ code: 'not_migration', message: 'Only migration task material can be cleaned up.' });
+    }
+    if (task.state !== 'succeeded') {
+      blockers.push({ code: 'task_not_succeeded', message: 'Cleanup requires a succeeded migration task.' });
+    }
+    if (journal.state !== 'activated' && journal.state !== 'rolled_back') {
+      blockers.push({ code: 'journal_not_terminal', message: 'Cleanup requires an activated or rolled-back migration journal.' });
+    }
+    if (!retentionExpired) {
+      blockers.push({ code: 'retention_active', message: 'The migration undo retention window has not expired.' });
+    }
+    if (!taskMaterialPresent) {
+      blockers.push({ code: 'material_missing', message: 'Migration staging and backup material is already absent.' });
+    }
+    const withoutHash = {
+      version: 1 as const,
+      taskId,
+      expectedRevision: task.revision,
+      journalState: journal.state,
+      updatedAt: journal.updatedAt,
+      fileCount: journal.files.length,
+      taskMaterialPresent,
+      undoExpiresAt,
+      retentionExpired,
+      committable: blockers.length === 0,
+      blockers: blockers.sort((left, right) => left.code.localeCompare(right.code)),
+    };
+    return { ...withoutHash, hash: sha256(stableJson(withoutHash)) };
+  }
+
+  /** Remove staged bytes/verified before-images after an approved plan. */
+  async cleanupMigration(
+    taskId: string,
+    expectedRevision: string,
+    planHash: string,
+    approvalToken: string,
+  ): Promise<{ taskId: string; removed: boolean }> {
+    const plan = await this.previewMigrationCleanup(taskId);
+    if (plan.expectedRevision !== expectedRevision) {
       throw launchError('task_snapshot_changed', 'The database task changed before cleanup.', {
         taskId,
         expectedRevision,
-        observedRevision: task.revision,
+        observedRevision: plan.expectedRevision,
       });
     }
-    if (task.operation !== 'migration' || task.state !== 'succeeded') {
-      throw launchError('task_rollback_unavailable', 'Only a succeeded migration can be cleaned up.', {
+    if (!plan.committable) {
+      throw launchError('task_rollback_unavailable', 'Migration cleanup is blocked by its recovery policy.', {
         taskId,
-        operation: task.operation,
-        state: task.state,
+        blockers: plan.blockers,
       });
     }
-    const finishedAt = task.finishedAt ? Date.parse(task.finishedAt) : Number.NaN;
-    if (!Number.isFinite(finishedAt) || Date.now() <= finishedAt + this.#migrationUndoRetentionSeconds * 1_000) {
-      throw launchError(
-        'task_rollback_unavailable',
-        'Migration cleanup is deferred until the user undo retention window expires.',
-        { taskId, retentionSeconds: this.#migrationUndoRetentionSeconds },
-      );
+    if (!planHash) {
+      throw launchError('task_plan_hash_required', 'Cleanup requires an approval-bound cleanup plan hash.', { taskId });
+    }
+    if (planHash !== plan.hash) {
+      throw launchError('task_plan_hash_mismatch', 'The cleanup plan no longer matches the durable migration state.', {
+        taskId,
+        expectedPlanHash: plan.hash,
+        observedPlanHash: planHash,
+      });
+    }
+    if (approvalToken !== `approve:${plan.hash}`) {
+      throw launchError('task_plan_hash_mismatch', 'Cleanup approval must bind to the cleanup plan hash.', { taskId });
     }
     try {
       return await this.#migrationJournal.cleanup(taskId);
@@ -967,15 +1102,45 @@ export class DatabaseTaskService {
     await this.#ensureMigrationGateHydrated();
     for (;;) {
       const active = this.#active.get(taskId);
-      if (active) return active;
+      if (active) {
+        // A migration queued behind the workspace gate has an active promise
+        // for the gate-acquisition attempt. That promise intentionally resolves
+        // with the still-queued task; wait must follow the task through the
+        // subsequent pump rather than exposing that transient state as the
+        // terminal result.
+        const completed = await active;
+        if (completed.state !== 'queued') return completed;
+        continue;
+      }
       const task = await this.#taskStore.get(taskId);
       if (task.state !== 'queued') return task;
       if (!this.#drainQueued) this.#dispatch(taskId);
       else await this.#pumpQueued();
       const dispatched = this.#active.get(taskId);
-      if (dispatched) return dispatched;
+      if (dispatched) {
+        const completed = await dispatched;
+        if (completed.state !== 'queued') return completed;
+        continue;
+      }
       const running = [...this.#active.values()];
-      if (running.length === 0) return this.#taskStore.get(taskId);
+      if (running.length === 0) {
+        const latest = await this.#taskStore.get(taskId);
+        if (latest.state !== 'queued') return latest;
+        const owner = this.#migrationGate.current();
+        if (owner) {
+          const ownerTask = await this.#taskStore.get(owner.taskId).catch(() => null);
+          if (ownerTask?.state === 'queued' || ownerTask?.state === 'running') {
+            await new Promise<void>((resolve) => setTimeout(resolve, 0));
+            continue;
+          }
+          // The owner has already reached a terminal state; allow its
+          // completion callback to release the in-memory gate before giving up
+          // on a task that is still queued behind it.
+          await new Promise<void>((resolve) => setTimeout(resolve, 0));
+          if (this.#migrationGate.current()) continue;
+        }
+        return latest;
+      }
       await Promise.race(running.map((completion) => completion.catch(() => undefined)));
     }
   }
@@ -1366,9 +1531,10 @@ export class DatabaseTaskService {
 
   async #verifyV2ContentPlans(
     contentPlans: readonly DatabaseV2ContentPlan[],
-  ): Promise<{ verifiedRows: number; verifiedOwners: number }> {
+  ): Promise<{ verifiedRows: number; verifiedOwners: number; verifiedDerived: number }> {
     let verifiedRows = 0;
     let verifiedOwners = 0;
+    let verifiedDerived = 0;
     const snapshot = this.#databaseStore.snapshot();
     for (const contentPlan of contentPlans) {
       const definition = contentPlan.plan.definition;
@@ -1429,6 +1595,30 @@ export class DatabaseTaskService {
         }
         const expected = contentPlan.expectedRecords.filter((record) => record.sourceId === source.id);
         const actual = this.#databaseRecordIndex.list(database.id, source.id);
+        const derivedById = contentPlan.derivedBaseline
+          ? new Map(
+              materializeDatabaseDerivedRecords({
+                definition: database,
+                records: database.sources.flatMap((candidate) =>
+                  this.#databaseRecordIndex.list(database.id, candidate.id),
+                ),
+                context: {
+                  now: contentPlan.derivedBaseline.evaluatedAt,
+                  timeZone: contentPlan.derivedBaseline.timeZone,
+                  locale: contentPlan.derivedBaseline.locale,
+                },
+                permissionRevision: contentPlan.derivedBaseline.permissionRevision,
+              }).map((record) => [record.id, record.computedResults ?? null]),
+            )
+          : null;
+        const actualLogical = actual.map((record) => ({
+          canonicalRecordId: record.id,
+          sourceId: record.sourceId,
+          path: record.path,
+          values: record.values,
+          invalidValues: record.invalidValues ?? null,
+          computedResults: derivedById ? derivedById.get(record.id) ?? null : null,
+        }));
         if (actual.length !== expected.length || parsed.owner.rows.length !== expected.length) {
           throw executionProblem(
             'task_post_commit_verification_failed',
@@ -1444,8 +1634,11 @@ export class DatabaseTaskService {
             sourceId: record.sourceId,
             values: record.values,
             invalidValues: record.invalidValues,
+            ...(record.computedResults !== undefined
+              ? { computedResults: record.computedResults }
+              : {}),
           })),
-          actual,
+          actual: actualLogical,
         });
         if (!equivalence.passed) {
           throw executionProblem(
@@ -1459,14 +1652,16 @@ export class DatabaseTaskService {
             500,
           );
         }
-        const actualById = new Map(actual.map((record) => [record.id, record]));
+        const actualById = new Map(actualLogical.map((record) => [record.canonicalRecordId, record]));
         for (const planned of expected) {
           const migrated = actualById.get(planned.canonicalRecordId);
           if (
             !migrated ||
             migrated.path !== planned.path ||
             stableJson(migrated.values) !== stableJson(planned.values) ||
-            stableJson(migrated.invalidValues ?? null) !== stableJson(planned.invalidValues)
+            stableJson(migrated.invalidValues ?? null) !== stableJson(planned.invalidValues) ||
+            (planned.computedResults !== undefined &&
+              stableJson(migrated.computedResults ?? null) !== stableJson(planned.computedResults ?? null))
           ) {
             throw executionProblem(
               'task_post_commit_verification_failed',
@@ -1476,20 +1671,22 @@ export class DatabaseTaskService {
               500,
             );
           }
+          if (planned.computedResults !== undefined) verifiedDerived += 1;
           verifiedRows += 1;
         }
         verifiedOwners += 1;
       }
     }
-    return { verifiedRows, verifiedOwners };
+    return { verifiedRows, verifiedOwners, verifiedDerived };
   }
 
   async #verifyActivatedMigration(
     input: z.infer<typeof MigrationTaskInputSchema>,
-  ): Promise<{ verifiedRows: number; verifiedOwners: number }> {
+  ): Promise<{ verifiedRows: number; verifiedOwners: number; verifiedDerived: number }> {
     const snapshot = this.#databaseStore.snapshot();
     let verifiedRows = 0;
     let verifiedOwners = 0;
+    let verifiedDerived = 0;
     for (const manifest of input.manifests) {
       const database = snapshot.databases.find((candidate) => candidate.id === manifest.databaseId);
       if (!database || database.version !== 2) {
@@ -1533,11 +1730,51 @@ export class DatabaseTaskService {
             500,
           );
         }
+        const derivedProperties = source.properties.filter(
+          (property) => property.type === 'formula' || property.type === 'rollup',
+        );
+        if (derivedProperties.length > 0) {
+          if (!manifest.derivedBaseline) {
+            throw executionProblem(
+              'task_post_commit_verification_failed',
+              'Migration cold verification failed',
+              'The activated Formula/Rollup source has no frozen evaluation baseline.',
+              false,
+              500,
+            );
+          }
+          const derived = materializeDatabaseDerivedRecords({
+            definition: database,
+            records: database.sources.flatMap((candidate) =>
+              this.#databaseRecordIndex.list(database.id, candidate.id),
+            ),
+            context: {
+              now: manifest.derivedBaseline.evaluatedAt,
+              timeZone: manifest.derivedBaseline.timeZone,
+              locale: manifest.derivedBaseline.locale,
+            },
+            permissionRevision: manifest.derivedBaseline.permissionRevision,
+          });
+          const derivedById = new Map(derived.map((record) => [record.id, record]));
+          for (const row of rows) {
+            const projected = derivedById.get(row.id)?.computedResults;
+            if (!projected || derivedProperties.some((property) => !(property.id in projected))) {
+              throw executionProblem(
+                'task_post_commit_verification_failed',
+                'Migration cold verification failed',
+                `The activated Formula/Rollup snapshot is incomplete for record "${row.id}".`,
+                false,
+                500,
+              );
+            }
+            verifiedDerived += 1;
+          }
+        }
         verifiedRows += rows.length;
         verifiedOwners += 1;
       }
     }
-    return { verifiedRows, verifiedOwners };
+    return { verifiedRows, verifiedOwners, verifiedDerived };
   }
 
   /** Persist and read back the complete before-image before staging begins. */

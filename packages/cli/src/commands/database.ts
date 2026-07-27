@@ -318,6 +318,15 @@ export function databaseCommand(): Command {
       printDatabaseTask(result, options.json === true);
     });
   migration
+    .command('preview-cleanup <task-id>')
+    .description('Preview retention-expired migration staging and backup cleanup')
+    .requiredOption('--server-url <url>', 'running server URL')
+    .option('--json', 'print machine-readable JSON')
+    .action(async (taskId: string, options: { serverUrl: string; json?: boolean }) => {
+      const result = await postDatabaseTask(process.cwd(), { action: 'preview_cleanup_migration', taskId }, options);
+      printDatabaseTask(result, options.json === true);
+    });
+  migration
     .command('apply')
     .description('Start a migration only with an explicitly approved preview hash')
     .requiredOption('--manifest-revision <revision>')
@@ -375,15 +384,19 @@ export function databaseCommand(): Command {
   }
   migration
     .command('cleanup <task-id>')
-    .description('Delete retention-expired migration staging and backup material')
+    .description('Delete retention-expired migration staging and backup material with approval')
     .requiredOption('--expected-revision <revision>')
+    .requiredOption('--plan-hash <hash>', 'hash returned by preview-cleanup')
+    .requiredOption('--approval-token <token>', 'must equal approve:<cleanup plan hash>')
     .requiredOption('--server-url <url>', 'running server URL')
     .option('--json', 'print machine-readable JSON')
-    .action(async (taskId: string, options: { expectedRevision: string; serverUrl: string; json?: boolean }) => {
+    .action(async (taskId: string, options: { expectedRevision: string; planHash: string; approvalToken: string; serverUrl: string; json?: boolean }) => {
       const result = await postDatabaseTask(process.cwd(), {
         action: 'cleanup_migration',
         taskId,
         expectedRevision: options.expectedRevision,
+        planHash: options.planHash,
+        approvalToken: options.approvalToken,
       }, options);
       printDatabaseTask(result, options.json === true);
     });

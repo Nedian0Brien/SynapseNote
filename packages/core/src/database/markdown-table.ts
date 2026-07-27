@@ -76,6 +76,7 @@ export interface ParsedDatabaseMarkdownOwner {
 }
 
 export type DatabaseMarkdownOwnerParseErrorCode =
+  | 'invalid_utf8'
   | 'marker_missing'
   | 'marker_malformed'
   | 'marker_unknown_field'
@@ -431,6 +432,27 @@ export function parseDatabaseMarkdownOwner(source: string): ParseDatabaseMarkdow
       rows,
     },
   };
+}
+
+/**
+ * Decode bytes at the filesystem boundary without replacing malformed UTF-8.
+ * Replacement decoding would turn an invalid canonical cell into a different
+ * value and make a later source-preserving write lossy.  Callers can therefore
+ * use this helper for both Node and browser byte readers and keep the same
+ * fail-closed diagnostic contract as the string parser.
+ */
+export function parseDatabaseMarkdownOwnerBytes(bytes: Uint8Array): ParseDatabaseMarkdownOwnerResult {
+  if (bytes.byteLength > DATABASE_MARKDOWN_LIMITS.ownerDocumentBytes) {
+    return invalid(
+      'resource_limit',
+      `Database owner document exceeds ${DATABASE_MARKDOWN_LIMITS.ownerDocumentBytes}-byte limit`,
+    );
+  }
+  try {
+    return parseDatabaseMarkdownOwner(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+  } catch {
+    return invalid('invalid_utf8', 'Database owner document contains invalid UTF-8 bytes');
+  }
 }
 
 export function serializeDatabaseMarkdownOwnerMarker(marker: DatabaseMarkdownOwnerMarker): string {

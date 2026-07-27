@@ -316,6 +316,7 @@ export {
   encodeDatabaseMarkdownCellText,
   insertDatabaseMarkdownTableRow,
   parseDatabaseMarkdownOwner,
+  parseDatabaseMarkdownOwnerBytes,
   replaceDatabaseMarkdownTableRow,
   replaceDatabaseMarkdownTableCell,
   cloneDatabaseMarkdownOwnerIdentity,

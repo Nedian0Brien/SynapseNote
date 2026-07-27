@@ -154,7 +154,7 @@ function captureTools(): Record<string, ToolHandler> {
   return tools;
 }
 
-async function fixture(): Promise<{
+async function fixture(options: { withDerived?: boolean } = {}): Promise<{
   dataPlane: DatabaseDataPlane;
   handlers: DatabaseDataPlaneApiHandlers;
   contentDir: string;
@@ -189,6 +189,28 @@ async function fixture(): Promise<{
           properties: [
             { id: 'prop_title', key: 'title', name: 'Title', type: 'title' },
             { id: 'prop_score', key: 'score', name: 'Score', type: 'number' },
+            ...(options.withDerived
+              ? [
+                  {
+                    id: 'prop_double_score',
+                    key: 'double_score',
+                    name: 'Double score',
+                    type: 'formula' as const,
+                    source: 'prop("prop_score") * 2',
+                    ast: {
+                      language: 'synapse-formula-1' as const,
+                      version: 1 as const,
+                      resultType: 'number' as const,
+                      expression: {
+                        type: 'binary' as const,
+                        operator: 'multiply' as const,
+                        left: { type: 'property' as const, propertyId: 'prop_score' },
+                        right: { type: 'literal' as const, valueType: 'number' as const, value: 2 },
+                      },
+                    },
+                  },
+                ]
+              : []),
             {
               id: 'prop_status',
               key: 'status',
@@ -430,6 +452,34 @@ describe('database server/API/MCP contract conformance', () => {
     expect(mcp).toEqual(direct);
   });
 
+  test('keeps the Formula derived revision and computed value identical across HTTP and MCP', async () => {
+    const { dataPlane, handlers } = await fixture({ withDerived: true });
+    installFetchBridge(handlers);
+    const tools = captureTools();
+    const input = {
+      databaseId: 'db_tasks',
+      sourceId: 'ds_tasks',
+      query: { select: ['prop_title', 'prop_double_score'] },
+    };
+    const direct = dataPlane.query(input);
+    const apiResponse = await call(handlers.query, 'POST', '/api/databases/query', input);
+    const api = JSON.parse(apiResponse.body) as typeof direct;
+    const mcp = await tools.data?.({ kind: 'query', ...input });
+    const mcpQuery = mcp?.structuredContent?.queryResult as typeof direct | undefined;
+
+    expect(direct.derivedRevision).toMatch(/^sha256:/);
+    expect(api.derivedRevision).toBe(direct.derivedRevision);
+    expect(mcpQuery?.derivedRevision).toBe(direct.derivedRevision);
+    expect(api.records).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        computedResults: expect.objectContaining({
+          prop_double_score: expect.objectContaining({ kind: 'value', value: 4 }),
+        }),
+      }),
+    ]));
+    expect(mcpQuery?.records).toEqual(direct.records);
+  });
+
   test('preserves exact query, pagination, and recovery semantics across transports', async () => {
     const { dataPlane, handlers } = await fixture();
     installFetchBridge(handlers);
@@ -489,7 +539,6 @@ describe('database server/API/MCP contract conformance', () => {
         groupsComplete: true,
       },
     });
-
     const continuationInput = {
       databaseId: input.databaseId,
       sourceId: input.sourceId,

@@ -5,6 +5,7 @@ import { databaseAccessHeaders } from '../../database-access-policy.ts';
 import {
   DatabaseCommitRequestSchema,
   DatabaseManifestMigrationPreviewSchema,
+  DatabaseMigrationCleanupPlanSchema,
   DatabaseOnboardingPreviewSchema,
   DatabaseTaskSchema,
 } from '../../database-data-plane-api.ts';
@@ -51,6 +52,7 @@ interface Args {
     | 'retry'
     | 'resume'
     | 'inspect_migration'
+    | 'preview_cleanup_migration'
     | 'cleanup_migration';
   operation?: 'bulk' | 'import' | 'migration';
   state?: 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
@@ -58,6 +60,8 @@ interface Args {
   cursor?: string;
   taskId?: string;
   expectedRevision?: string;
+  planHash?: string;
+  approvalToken?: string;
   commit?: z.input<typeof DatabaseCommitRequestSchema>;
   databaseId?: string;
   sourceId?: string;
@@ -90,6 +94,7 @@ const OutputSchema = outputSchemaWithText({
     'retry',
     'resume',
     'inspect_migration',
+    'preview_cleanup_migration',
     'cleanup_migration',
   ]),
   tasks: z.array(DatabaseTaskSchema).optional(),
@@ -109,6 +114,7 @@ const OutputSchema = outputSchemaWithText({
       undoExpiresAt: z.string().datetime().nullable(),
     })
     .optional(),
+  cleanupPlan: DatabaseMigrationCleanupPlanSchema.optional(),
   cleanup: z.object({ taskId: z.string().startsWith('task_'), removed: z.boolean() }).strict().optional(),
   problem: DatabaseToolProblemOutputSchema.optional(),
 });
@@ -134,6 +140,7 @@ export function register(server: ServerInstance, deps: Dependencies): void {
           'retry',
           'resume',
           'inspect_migration',
+          'preview_cleanup_migration',
           'cleanup_migration',
         ]),
         operation: z.enum(['bulk', 'import', 'migration']).optional(),
@@ -155,6 +162,16 @@ export function register(server: ServerInstance, deps: Dependencies): void {
           .regex(/^sha256:[a-f0-9]{64}$/)
           .optional()
           .describe('Required for cancel, retry, and resume; copy from the latest response.'),
+        planHash: z
+          .string()
+          .regex(/^sha256:[a-f0-9]{64}$/)
+          .optional()
+          .describe('action=cleanup_migration: hash returned by preview_cleanup_migration.'),
+        approvalToken: z
+          .string()
+          .min(1)
+          .optional()
+          .describe('action=cleanup_migration: approve:<cleanup plan hash>.'),
         commit: DatabaseCommitRequestSchema.optional().describe(
           'action=start, operation=bulk: exact approved data_commit request.',
         ),
@@ -238,6 +255,7 @@ export function register(server: ServerInstance, deps: Dependencies): void {
         (args.action === 'get' ||
           args.action === 'cancel' ||
           args.action === 'inspect_migration' ||
+          args.action === 'preview_cleanup_migration' ||
           args.action === 'cleanup_migration' ||
           args.action === 'retry' ||
           args.action === 'resume') &&
@@ -255,6 +273,13 @@ export function register(server: ServerInstance, deps: Dependencies): void {
         return databaseToolInputError(
           'invalid_request',
           `${args.action} requires expectedRevision from the latest list/get response.`,
+          { action: args.action, cwd: args.cwd ?? '' },
+        );
+      }
+      if (args.action === 'cleanup_migration' && (!args.planHash || !args.approvalToken)) {
+        return databaseToolInputError(
+          'invalid_request',
+          'cleanup_migration requires planHash and approvalToken from preview_cleanup_migration.',
           { action: args.action, cwd: args.cwd ?? '' },
         );
       }
@@ -336,11 +361,15 @@ export function register(server: ServerInstance, deps: Dependencies): void {
                   }
                 : args.action === 'inspect_migration'
                   ? { action: args.action, taskId: args.taskId }
+                  : args.action === 'preview_cleanup_migration'
+                    ? { action: args.action, taskId: args.taskId }
                   : args.action === 'cleanup_migration' || args.action === 'cancel' || args.action === 'retry' || args.action === 'resume'
                   ? {
                       action: args.action,
                       taskId: args.taskId,
                       expectedRevision: args.expectedRevision,
+                      ...(args.planHash ? { planHash: args.planHash } : {}),
+                      ...(args.approvalToken ? { approvalToken: args.approvalToken } : {}),
                     }
                   : {
                       action: args.action,
@@ -406,6 +435,13 @@ export function register(server: ServerInstance, deps: Dependencies): void {
         return textPlusStructured(
           `Migration ${String((data.inspection as { taskId?: unknown } | undefined)?.taskId)} is ${String((data.inspection as { state?: unknown } | undefined)?.state)}; undo is ${((data.inspection as { undoAvailable?: unknown } | undefined)?.undoAvailable === true) ? 'available' : 'not available'}.`,
           { cwd, action: args.action, inspection: data.inspection },
+        );
+      }
+      if (args.action === 'preview_cleanup_migration') {
+        const cleanupPlan = data.cleanupPlan as { taskId?: unknown; committable?: unknown } | undefined;
+        return textPlusStructured(
+          `Cleanup preview for ${String(cleanupPlan?.taskId)} is ${cleanupPlan?.committable === true ? 'ready for approval' : 'blocked'}.`,
+          { cwd, action: args.action, cleanupPlan: data.cleanupPlan },
         );
       }
       if (args.action === 'cleanup_migration') {

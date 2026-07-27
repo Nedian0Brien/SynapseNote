@@ -104,6 +104,28 @@ describe('data_task MCP tool', () => {
           },
         });
       }
+      if (body.action === 'preview_cleanup_migration') {
+        return Response.json({
+          action: 'preview_cleanup_migration',
+          cleanupPlan: {
+            version: 1,
+            taskId: 'task_1',
+            expectedRevision: revision,
+            journalState: 'activated',
+            updatedAt: '2026-07-19T00:00:02.000Z',
+            fileCount: 2,
+            taskMaterialPresent: true,
+            undoExpiresAt: '2026-07-20T00:00:00.000Z',
+            retentionExpired: true,
+            committable: true,
+            blockers: [],
+            hash: `sha256:${'c'.repeat(64)}`,
+          },
+        });
+      }
+      if (body.action === 'cleanup_migration') {
+        return Response.json({ action: 'cleanup_migration', cleanup: { taskId: 'task_1', removed: true } });
+      }
       return Response.json({
         action: body.action,
         task:
@@ -176,6 +198,23 @@ describe('data_task MCP tool', () => {
         preview: { summary: { notNeeded: 1, blocked: 0 }, committable: true },
       },
     });
+    const cleanupPreview = await handler({ action: 'preview_cleanup_migration', taskId: 'task_1' });
+    expect(cleanupPreview).toMatchObject({
+      structuredContent: {
+        action: 'preview_cleanup_migration',
+        cleanupPlan: { taskId: 'task_1', committable: true },
+      },
+    });
+    const cleaned = await handler({
+      action: 'cleanup_migration',
+      taskId: 'task_1',
+      expectedRevision: revision,
+      planHash: `sha256:${'c'.repeat(64)}`,
+      approvalToken: `approve:sha256:${'c'.repeat(64)}`,
+    });
+    expect(cleaned).toMatchObject({
+      structuredContent: { action: 'cleanup_migration', cleanup: { removed: true } },
+    });
     await handler({
       action: 'start',
       operation: 'migration',
@@ -216,6 +255,14 @@ describe('data_task MCP tool', () => {
             permissionRevision: `sha256:${'b'.repeat(64)}`,
           },
         },
+      },
+      { action: 'preview_cleanup_migration', taskId: 'task_1' },
+      {
+        action: 'cleanup_migration',
+        taskId: 'task_1',
+        expectedRevision: revision,
+        planHash: `sha256:${'c'.repeat(64)}`,
+        approvalToken: `approve:sha256:${'c'.repeat(64)}`,
       },
       {
         action: 'start',

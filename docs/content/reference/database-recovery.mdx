@@ -1,0 +1,90 @@
+---
+title: Database recovery runbook
+icon: LuLifeBuoy
+description: Inspect and recover interrupted v2 mutations and v1 to v2 migrations.
+---
+
+This runbook is intentionally content-free: diagnostics identify paths and
+hashes, while the Markdown bytes remain in the project and its Git history.
+Never delete `.ok/local/database-migrations/` or
+`.ok/local/database-markdown-table-transactions/` while an undo or recovery
+window is active.
+
+## Interrupted migration
+
+1. List the task and inspect its redacted file hashes.
+
+   ```bash
+   ok database migration status --json
+   ok database migration inspect <task-id> --json
+   ```
+
+2. If the journal says `prepared` or `staged`, resume only after confirming
+   that the task's plan hash and target snapshot are still the intended ones.
+
+   ```bash
+   ok database migration resume <task-id> --json
+   ```
+
+3. If the journal says `activated`, inspect the current hashes. A clean task
+   can be undone during the retention window:
+
+   ```bash
+   ok database migration rollback <task-id> --json
+   ```
+
+4. If any canonical file changed after activation, rollback returns a
+   content-free per-path conflict and leaves the task `recovery_required`.
+   Preserve the files, resolve the conflict manually or create a new migration
+   plan, and do not force a byte overwrite.
+
+5. After retention expires, remove staged material only through the explicit
+   preview/approval/cleanup sequence. The command refuses early cleanup and
+   never removes linked user documents:
+
+   ```bash
+   ok database migration preview-cleanup <task-id> --json
+   ok database migration cleanup <task-id> --expected-revision <revision> \
+     --plan-hash <hash> --approval-token approve:<hash> --json
+   ```
+
+## Interrupted owner-table mutation
+
+The v2 writer journal records before/after hashes for every owner, linked
+document, and manifest path. On server restart the writer calls recovery before
+accepting a new mutation:
+
+- all before hashes → `rolled_back`;
+- all after hashes → `committed`;
+- any mixed or unknown hash → `recovery_required`.
+
+Clear a stale process lock only after confirming that no SynapseNote process is
+still running. Do not edit the journal entry by hand. A recovery-required entry
+is a hard write freeze until an operator has reconciled the exact bytes.
+
+## Identity and parser problems
+
+Use **Database diagnostics → Preview repair** for the supported duplicate-owner,
+invalid-value, stale-index, and record-identity cases. Missing or duplicate v2
+document IDs, broken links, and stale aliases are diagnosed as explicit
+blockers; do not repair them by hand until an identity-repair plan lists the
+exact source ranges, potential loss, and required identity choices. Every repair
+preview is read-only, and apply requires approval bound to the preview hash. If
+the current snapshot changes, create a new preview.
+
+## Verification checklist
+
+Before declaring recovery complete, verify all of the following from a fresh
+process:
+
+- the manifest version and owner marker agree;
+- a cold index rebuild finds the expected rows and no generated record folder;
+- linked documents retain their `_sn.document_id`, title, and body bytes;
+- Formula/Rollup values or explicit error codes match the frozen baseline;
+- `derivedRevision`, storage revisions, and query/export receipts are internally
+  consistent;
+- no `.tmp`, staging, or backup artifact is visible under the content root.
+
+Export the content-redacted inspection response with the support ticket. It
+contains task IDs, phases, paths, hashes, and expiry only—not titles, bodies,
+cell values, formulas, or person data.

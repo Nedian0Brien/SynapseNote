@@ -90,6 +90,20 @@ export function createMarkdownTableRowDeleteMutation(input: {
   return { operation: 'delete_row', input } as DatabaseMarkdownTableMutationRequest;
 }
 
+/** Copy a row only when the caller explicitly selects a new document identity. */
+export function createMarkdownTableRowCopyMutation(input: {
+  databaseId: string;
+  sourceId: string;
+  recordId: string;
+  mode: 'duplicate_document' | 'linked_view';
+  documentPath: string;
+  documentId?: string;
+  expectedOwnerRevision: string;
+  expectedRowRevision?: string;
+}): DatabaseMarkdownTableMutationRequest {
+  return { operation: 'copy_row', input } as DatabaseMarkdownTableMutationRequest;
+}
+
 export function createMarkdownTableTitleMutation(input: {
   databaseId: string;
   sourceId: string;

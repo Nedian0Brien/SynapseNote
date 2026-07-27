@@ -240,6 +240,7 @@ describe('data MCP tool', () => {
         sourceId: 'ds_tasks',
         matched: 3,
         returned: 1,
+        derivedRevision: `sha256:${'d'.repeat(64)}`,
         isComplete: false,
         nextCursor: 'cursor:next',
         records: [{ id: 'rec_1', values: { prop_title: 'First' } }],
@@ -274,6 +275,9 @@ describe('data MCP tool', () => {
     });
     expect(queried.content[0]?.text).toContain('1 of 3');
     expect(queried.content[0]?.text).toContain('nextCursor');
+    expect(queried.structuredContent?.queryResult).toMatchObject({
+      derivedRevision: `sha256:${'d'.repeat(64)}`,
+    });
     expect(requests).toEqual([
       {
         url: 'http://localhost:7777/api/databases/describe',

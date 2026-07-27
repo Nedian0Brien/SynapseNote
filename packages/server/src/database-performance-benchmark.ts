@@ -17,6 +17,8 @@ export interface DatabaseTypedQueryBenchmarkResult {
   warmups: number;
   samples: number;
   budgetMs: number;
+  memoryBudgetBytes: number;
+  peakRssBytes: number;
   latencyMs: { min: number; p50: number; p95: number; p99: number; max: number; mean: number };
   matched: number;
   returned: number;
@@ -39,12 +41,14 @@ export function runWarmTypedQueryBenchmark(
     warmups?: number;
     samples?: number;
     budgetMs?: number;
+    memoryBudgetBytes?: number;
   } = {},
 ): DatabaseTypedQueryBenchmarkResult {
   const scale = options.scale ?? '50k';
   const warmups = options.warmups ?? 5;
   const samples = options.samples ?? 30;
   const budgetMs = options.budgetMs ?? 150;
+  const memoryBudgetBytes = options.memoryBudgetBytes ?? 256 * 1024 * 1024;
   if (!Number.isInteger(warmups) || warmups < 1 || warmups > 100) {
     throw new RangeError('Warm typed-query benchmark requires 1..100 warmups');
   }
@@ -54,7 +58,9 @@ export function runWarmTypedQueryBenchmark(
   const spec = databaseBenchmarkCorpusSpec(scale);
   const source = spec.definition.sources[0];
   if (!source) throw new Error('Benchmark source is missing');
+  const baselineRssBytes = process.memoryUsage().rss;
   const records = [...iterateDatabaseBenchmarkRecords(spec)];
+  let peakRssBytes = Math.max(0, process.memoryUsage().rss - baselineRssBytes);
   const query = {
     where: {
       and: [
@@ -88,6 +94,7 @@ export function runWarmTypedQueryBenchmark(
     });
     matched = result.matched;
     returned = result.returned;
+    peakRssBytes = Math.max(peakRssBytes, process.memoryUsage().rss - baselineRssBytes);
   };
   for (let index = 0; index < warmups; index += 1) execute();
   const timings: number[] = [];
@@ -118,7 +125,9 @@ export function runWarmTypedQueryBenchmark(
     latencyMs,
     matched,
     returned,
-    passed: latencyMs.p95 < budgetMs,
+    memoryBudgetBytes,
+    peakRssBytes,
+    passed: latencyMs.p95 < budgetMs && peakRssBytes <= memoryBudgetBytes,
     runtime: {
       bun: process.versions.bun ?? 'unknown',
       node: process.versions.node,

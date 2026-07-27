@@ -423,6 +423,7 @@ describe('GET /api/search — database entity kinds', () => {
       );
       expect(support.results.find((row) => row.kind === 'database')).toMatchObject({
         databaseId: 'db_support',
+        provenance: 'database',
         revision: expect.stringMatching(/^sha256:/),
       });
       expect(support.results.find((row) => row.kind === 'data_source')).toMatchObject({
@@ -438,8 +439,17 @@ describe('GET /api/search — database entity kinds', () => {
         databaseId: 'db_support',
         sourceId: 'ds_support_issues',
         recordId: 'rec_visible',
+        provenance: 'database',
         revision: expect.stringMatching(/^sha256:/),
       });
+      const visibleRecordResults = support.results.filter(
+        (row) => row.recordId === 'rec_visible',
+      );
+      expect(visibleRecordResults).toHaveLength(1);
+      expect(visibleRecordResults[0]?.kind).toBe('record');
+      expect(new Set(support.results.map((row) => `${row.kind}:${row.path}`)).size).toBe(
+        support.results.length,
+      );
 
       const denied = await search('Secret Needle');
       expect(denied.results).toEqual([]);

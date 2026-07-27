@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { materializeDatabaseDerivedRecords } from '@nedian0brien/synapsenote-core';
 import { createDatabaseCommitEngine } from './database-commit.ts';
 import { createDatabasePlanEngine } from './database-plan.ts';
 import { createDatabaseRecordIndex } from './database-record-index.ts';
@@ -17,7 +18,7 @@ afterEach(() => {
   for (const dir of tempDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
-function desiredState() {
+function desiredState(withDerived = false) {
   return {
     database: {
       key: 'task-service',
@@ -37,8 +38,9 @@ function desiredState() {
         recordMeaning: 'One task',
         folder: 'tasks',
         properties: [
-          { key: 'title', name: 'Title', type: 'title', required: true },
+          { id: 'prop_title', key: 'title', name: 'Title', type: 'title', required: true },
           {
+            id: 'prop_status',
             key: 'status',
             name: 'Status',
             type: 'select',
@@ -47,6 +49,29 @@ function desiredState() {
               { key: 'done', name: 'Done' },
             ],
           },
+          ...(withDerived
+            ? [
+                { id: 'prop_estimate', key: 'estimate', name: 'Estimate', type: 'number' },
+                {
+                  id: 'prop_double_estimate',
+                  key: 'double-estimate',
+                  name: 'Double estimate',
+                  type: 'formula',
+                  source: 'prop("estimate") * 2',
+                  ast: {
+                    language: 'synapse-formula-1',
+                    version: 1,
+                    resultType: 'number',
+                    expression: {
+                      type: 'binary',
+                      operator: 'multiply',
+                      left: { type: 'property', propertyId: 'prop_estimate' },
+                      right: { type: 'literal', valueType: 'number', value: 2 },
+                    },
+                  },
+                },
+              ]
+            : []),
         ],
       },
     ],
@@ -55,12 +80,12 @@ function desiredState() {
     sampleRecords: [
       {
         sourceKey: 'tasks',
-        values: { title: 'Bulk one', status: 'todo' },
+        values: { title: 'Bulk one', status: 'todo', ...(withDerived ? { estimate: 3 } : {}) },
         body: '',
       },
       {
         sourceKey: 'tasks',
-        values: { title: 'Bulk two', status: 'done' },
+        values: { title: 'Bulk two', status: 'done', ...(withDerived ? { estimate: 5 } : {}) },
         body: '',
       },
     ],
@@ -69,6 +94,8 @@ function desiredState() {
 
 async function fixture(options: {
   migrationFileOperationHook?: (input: { phase: 'stage' | 'activate'; path: string; index: number }) => void | Promise<void>;
+  withDerived?: boolean;
+  taskNow?: () => Date;
 } = {}) {
   const projectDir = mkdtempSync(join(tmpdir(), 'synapsenote-database-task-service-'));
   const contentDir = join(projectDir, 'content');
@@ -87,7 +114,7 @@ async function fixture(options: {
     contentDir,
     generateUuid,
   });
-  const draft = plans.createDraft(desiredState());
+  const draft = plans.createDraft(desiredState(options.withDerived === true));
   const plan = plans.createPlan(draft.id);
   let checkpoint = 0;
   const commit = createDatabaseCommitEngine({
@@ -102,7 +129,7 @@ async function fixture(options: {
       hashBlob: async () => `sha1:${'a'.repeat(40)}`,
     },
   });
-  const taskStore = createDatabaseTaskStore({ projectDir, generateUuid });
+  const taskStore = createDatabaseTaskStore({ projectDir, generateUuid, now: options.taskNow });
   const service = createDatabaseTaskService({
     projectDir,
     contentDir,
@@ -151,7 +178,7 @@ describe('DatabaseTaskService product handlers', () => {
   });
 
   test('migrates a v1 record-file database into owner-table v2 with cold verification', async () => {
-    const { projectDir, contentDir, store, index, plan, commit, service } = await fixture();
+    const { projectDir, contentDir, store, index, plan, commit, service } = await fixture({ withDerived: true });
     await service.wait(
       await (async () => {
         const task = await service.start({
@@ -225,6 +252,7 @@ describe('DatabaseTaskService product handlers', () => {
         databaseIds: [database.id],
         expectedManifestRevision,
         targetVersion: 2,
+        derivedBaselines,
       }),
     ).rejects.toMatchObject({ code: 'task_plan_hash_required' });
 
@@ -256,6 +284,24 @@ describe('DatabaseTaskService product handlers', () => {
       }
     }
     expect(index.list()).toHaveLength(2);
+    const migratedDefinition = store.list()[0];
+    if (!migratedDefinition) throw new Error('expected migrated definition');
+    const derived = materializeDatabaseDerivedRecords({
+      definition: migratedDefinition,
+      records: index.list(),
+      context: {
+        now: derivedBaselines[database.id]!.evaluatedAt,
+        timeZone: derivedBaselines[database.id]!.timeZone,
+        locale: derivedBaselines[database.id]!.locale,
+      },
+      permissionRevision: derivedBaselines[database.id]!.permissionRevision,
+    });
+    expect(
+      derived
+        .filter((record) => record.sourceId === database.sources[0]!.id)
+        .map((record) => record.computedResults?.[migratedDefinition.sources[0]!.properties.find((property) => property.key === 'double-estimate')!.id])
+        .map((result) => (result?.kind === 'value' ? result.value : result?.problem.code)),
+    ).toEqual([6, 10]);
 
     const inspection = await service.inspectMigration(task.id);
     expect(inspection).toMatchObject({
@@ -330,6 +376,66 @@ describe('DatabaseTaskService product handlers', () => {
     expect((await service.inspectMigration(migrated.id)).state).toBe('recovery_required');
   });
 
+  test('cleans migration backup material only after the retention window expires', async () => {
+    const { contentDir, store, plan, commit, service } = await fixture({
+      taskNow: () => new Date('2020-01-01T00:00:00.000Z'),
+    });
+    const bulk = await service.start({
+      operation: 'bulk',
+      commit: {
+        planId: plan.id,
+        planHash: plan.hash,
+        expectedSnapshotRevision: plan.snapshotRevision,
+        idempotencyKey: 'durable-v2-cleanup-bulk-0001',
+        approvalToken: commit.expectedApprovalToken(plan.hash),
+        actor: { principalId: 'agent:v2-cleanup', kind: 'agent' },
+      },
+    });
+    await service.wait(bulk.id);
+    const database = store.list()[0];
+    if (!database) throw new Error('expected committed database');
+    const expectedManifestRevision = store.snapshot().revision;
+    const preview = await service.previewMigration({
+      operation: 'migration',
+      databaseIds: [database.id],
+      expectedManifestRevision,
+      targetVersion: 2,
+    });
+    const item = preview.items[0];
+    if (!item?.planHash || !item.migrationCommittedAt) throw new Error('expected cleanup migration plan');
+    const migration = await service.start({
+      operation: 'migration',
+      databaseIds: [database.id],
+      expectedManifestRevision,
+      targetVersion: 2,
+      planHashes: { [database.id]: item.planHash },
+      migrationCommittedAt: { [database.id]: item.migrationCommittedAt },
+    });
+    const completed = await service.wait(migration.id);
+    const inspectionBefore = await service.inspectMigration(completed.id);
+    expect(inspectionBefore).toMatchObject({ taskMaterialPresent: true, undoAvailable: false });
+    const cleanupPlan = await service.previewMigrationCleanup(completed.id);
+    expect(cleanupPlan).toMatchObject({
+      taskId: completed.id,
+      expectedRevision: completed.revision,
+      committable: true,
+      retentionExpired: true,
+      taskMaterialPresent: true,
+    });
+    await expect(service.cleanupMigration(completed.id, completed.revision, '', '')).rejects.toMatchObject({
+      code: 'task_plan_hash_required',
+    });
+    await expect(service.cleanupMigration(completed.id, completed.revision, cleanupPlan.hash, `approve:${cleanupPlan.hash}`)).resolves.toEqual({
+      taskId: completed.id,
+      removed: true,
+    });
+    await expect(service.inspectMigration(completed.id)).resolves.toMatchObject({
+      taskMaterialPresent: false,
+      undoAvailable: false,
+    });
+    expect(readdirSync(join(contentDir, 'tasks')).some((name) => name.endsWith('.md'))).toBe(true);
+  });
+
   test('rolls back every canonical file when activation fails at an injected file checkpoint', async () => {
     const { projectDir, contentDir, store, plan, commit, service } = await fixture({
       migrationFileOperationHook: ({ phase, index }) => {
@@ -384,6 +490,58 @@ describe('DatabaseTaskService product handlers', () => {
       expect(readFileSync(join(projectDir, path), 'utf8')).toBe(markdown);
     }
   });
+
+  test('fails closed on migration disk-full and permission loss before canonical staging', async () => {
+    for (const failureCode of ['ENOSPC', 'EACCES'] as const) {
+      const { projectDir, contentDir, store, plan, commit, service } = await fixture({
+        migrationFileOperationHook: ({ phase, index }) => {
+          if (phase === 'stage' && index === 0) throw new Error(`${failureCode}: injected write failure`);
+        },
+      });
+      const seeded = await service.start({
+        operation: 'bulk',
+        commit: {
+          planId: plan.id,
+          planHash: plan.hash,
+          expectedSnapshotRevision: plan.snapshotRevision,
+          idempotencyKey: `migration-${failureCode.toLowerCase()}-seed-0001`,
+          approvalToken: commit.expectedApprovalToken(plan.hash),
+          actor: { principalId: `agent:${failureCode.toLowerCase()}`, kind: 'agent' },
+        },
+      });
+      await service.wait(seeded.id);
+      const before = new Map<string, string>();
+      const manifestPath = join(projectDir, '.ok', 'databases', 'task-service.yml');
+      before.set(manifestPath, readFileSync(manifestPath, 'utf8'));
+      for (const name of readdirSync(join(contentDir, 'tasks'))) {
+        if (name.endsWith('.md')) {
+          before.set(join(contentDir, 'tasks', name), readFileSync(join(contentDir, 'tasks', name), 'utf8'));
+        }
+      }
+      const database = store.list()[0];
+      if (!database) throw new Error('expected seeded database');
+      const preview = await service.previewMigration({
+        operation: 'migration',
+        databaseIds: [database.id],
+        expectedManifestRevision: store.snapshot().revision,
+        targetVersion: 2,
+      });
+      const item = preview.items[0];
+      if (!item?.planHash || !item.migrationCommittedAt) throw new Error('expected migration preview');
+      const migration = await service.start({
+        operation: 'migration',
+        databaseIds: [database.id],
+        expectedManifestRevision: store.snapshot().revision,
+        targetVersion: 2,
+        planHashes: { [database.id]: item.planHash },
+        migrationCommittedAt: { [database.id]: item.migrationCommittedAt },
+      });
+      const failed = await service.wait(migration.id);
+      expect(failed).toMatchObject({ state: 'failed' });
+      expect((await createDatabaseMigrationJournal(projectDir).get(migration.id)).state).toBe('rolled_back');
+      for (const [path, markdown] of before) expect(readFileSync(path, 'utf8')).toBe(markdown);
+    }
+  }, 30_000);
 
   test('runs approved bulk commit, frozen source import, and manifest migration tasks', async () => {
     const { projectDir, contentDir, store, index, plan, commit, taskStore, service } =
