@@ -73,6 +73,26 @@ function definition(
   });
 }
 
+function v2Definition(): DatabaseDefinition {
+  const base = definition('orders', 'db_orders', '.');
+  return DatabaseDefinitionSchema.parse({
+    ...base,
+    version: 2,
+    sources: [
+      {
+        ...base.sources[0],
+        storage: {
+          kind: 'markdown_table',
+          formatVersion: 2,
+          owner: { path: 'orders.md', blockId: 'dbb_orders_primary' },
+          titlePropertyId: 'prop_orders_title',
+          storedPropertyIds: ['prop_orders_title'],
+        },
+      },
+    ],
+  });
+}
+
 function writeManifest(projectDir: string, file: string, value: DatabaseDefinition | string): void {
   const databaseDir = join(projectDir, '.ok', 'databases');
   mkdirSync(databaseDir, { recursive: true });
@@ -423,6 +443,26 @@ describe('DatabaseStore source onboarding preview', () => {
 });
 
 describe('DatabaseStore record identity assignment', () => {
+  test('does not route v2 owner-table sources through v1 record identity writes', async () => {
+    const { projectDir, contentDir } = tempProject();
+    const store = createDatabaseStore({ projectDir, contentDir });
+    await store.create(v2Definition());
+    mkdirSync(join(contentDir, 'orders'), { recursive: true });
+    writeFileSync(join(contentDir, 'orders', 'alpha.md'), '---\n_sn:\n  document_id: doc_alpha\n---\n');
+
+    await expect(
+      store.assignRecordId({
+        databaseId: 'db_orders',
+        sourceId: 'ds_orders',
+        recordPath: 'orders/alpha.md',
+      }),
+    ).rejects.toMatchObject({ code: 'v2_storage_read_only' });
+    await expect(
+      store.previewSourceOnboarding({ databaseId: 'db_orders', sourceId: 'ds_orders' }),
+    ).rejects.toMatchObject({ code: 'v2_storage_read_only' });
+    expect(readFileSync(join(contentDir, 'orders', 'alpha.md'), 'utf-8')).not.toContain('record_id:');
+  });
+
   test('assigns once, preserves bytes and file mode, and is idempotent', async () => {
     const { projectDir, contentDir } = tempProject();
     const store = createDatabaseStore({

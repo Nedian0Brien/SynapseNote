@@ -206,6 +206,7 @@ export type DatabaseCommitErrorCode =
   | 'write_guard_unavailable'
   | 'assertion_failed'
   | 'target_changed'
+  | 'v2_storage_read_only'
   | 'transaction_failed'
   | 'rollback_failed'
   | 'idempotency_conflict'
@@ -1704,6 +1705,30 @@ export class DatabaseCommitEngine {
       operation: manifest.action,
     }));
     const currentDefinition = this.#databaseStore.getById(draft.normalized.definition.id);
+    const v2SourceIds = new Set(
+      draft.normalized.definition.sources
+        .filter((source) => source.storage?.kind === 'markdown_table')
+        .map((source) => source.id),
+    );
+    const v2RecordMutation = plan.diff.records.find((record) => v2SourceIds.has(record.sourceId));
+    if (v2RecordMutation) {
+      throw new DatabaseCommitError(
+        'v2_storage_read_only',
+        `Database source "${v2RecordMutation.sourceId}" uses v2 Markdown owner-table storage; the v1 record writer is disabled`,
+        { databaseId: draft.normalized.definition.id, sourceId: v2RecordMutation.sourceId },
+      );
+    }
+    const v2RecordCopy = draft.normalized.recordCopies.find((copy) => {
+      const record = this.#databaseRecordIndex.getById(copy.sourceRecordId);
+      return record ? v2SourceIds.has(record.sourceId) : false;
+    });
+    if (v2RecordCopy) {
+      throw new DatabaseCommitError(
+        'v2_storage_read_only',
+        'Record copies from v2 Markdown owner-table sources require the v2 writer',
+        { databaseId: draft.normalized.definition.id, sourceRecordId: v2RecordCopy.sourceRecordId },
+      );
+    }
     for (const copy of draft.normalized.recordCopies) {
       const projectPath = `${
         contentRelative === '' ? '' : `${contentRelative}/`

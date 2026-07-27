@@ -18,6 +18,7 @@ import { projectDatabaseRichText } from './rich-text.ts';
 import {
   DatabaseActionButtonIdSchema,
   DatabaseAutomationIdSchema,
+  DatabaseDocumentIdSchema,
   DatabaseIdSchema,
   DatabaseOptionIdSchema,
   DatabasePropertyIdSchema,
@@ -34,6 +35,8 @@ export {
   DatabaseActionButtonIdSchema,
   type DatabaseAutomationId,
   DatabaseAutomationIdSchema,
+  type DatabaseDocumentId,
+  DatabaseDocumentIdSchema,
   type DatabaseId,
   DatabaseIdSchema,
   type DatabaseOptionId,
@@ -53,8 +56,11 @@ export {
   DataSourceIdSchema,
 } from './stable-ids.ts';
 
+/** Default writer remains v1 until the V2-M5 new-default gate is complete. */
 export const DATABASE_MANIFEST_CURRENT_VERSION = 1 as const;
-export const DATABASE_MANIFEST_SUPPORTED_VERSIONS = [DATABASE_MANIFEST_CURRENT_VERSION] as const;
+export const DATABASE_MANIFEST_LATEST_SUPPORTED_VERSION = 2 as const;
+/** Read compatibility is intentionally broader than the active writer version. */
+export const DATABASE_MANIFEST_SUPPORTED_VERSIONS = [1, 2] as const;
 export type DatabaseManifestVersion = (typeof DATABASE_MANIFEST_SUPPORTED_VERSIONS)[number];
 
 export const DATABASE_QUERY_OPERATORS = [
@@ -1029,6 +1035,40 @@ function isSafeSourceFolder(value: string): boolean {
   return value.split('/').every((segment) => segment !== '' && segment !== '..');
 }
 
+function isSafeMarkdownOwnerPath(value: string): boolean {
+  if (value.includes('\0') || value.includes('\\')) return false;
+  if (value.startsWith('/') || /^[A-Za-z]:/.test(value)) return false;
+  if (!value.endsWith('.md')) return false;
+  return value.split('/').every((segment) => segment !== '' && segment !== '.' && segment !== '..');
+}
+
+export const DatabaseMarkdownOwnerStorageSchema = z
+  .object({
+    kind: z.literal('markdown_table'),
+    formatVersion: z.literal(2),
+    owner: z
+      .object({
+        path: z.string().max(2_000).refine(isSafeMarkdownOwnerPath, {
+          message: 'Markdown owner path must be a normalized content-root-relative .md path',
+        }),
+        blockId: z.string().regex(/^dbb_[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/),
+      })
+      .strict(),
+    titlePropertyId: DatabasePropertyIdSchema,
+    storedPropertyIds: z
+      .array(DatabasePropertyIdSchema)
+      .min(1)
+      .max(200)
+      .superRefine((propertyIds, context) => {
+        if (new Set(propertyIds).size !== propertyIds.length) {
+          context.addIssue({ code: 'custom', message: 'Stored property IDs must be unique' });
+        }
+      }),
+  })
+  .strict();
+
+export type DatabaseMarkdownOwnerStorage = z.infer<typeof DatabaseMarkdownOwnerStorageSchema>;
+
 function isValidPropertyDefault(property: DatabaseProperty): boolean {
   const value = property.semantics.defaultValue;
   if (value === undefined) return true;
@@ -1295,12 +1335,14 @@ export const DatabaseSourceSchema = z
     name: z.string().trim().min(1).max(200),
     description: z.string().trim().max(2_000).optional(),
     recordMeaning: z.string().trim().min(1).max(2_000),
-    folder: z.string().max(1_024).refine(isSafeSourceFolder, {
+    folder: z.string().max(1_024).default('.').refine(isSafeSourceFolder, {
       message: 'Source folder must be relative and must not contain empty or parent segments',
     }),
     includeSubfolders: z.boolean().default(true),
     defaultViewId: DatabaseViewIdSchema.optional(),
     pageLayout: DatabasePageLayoutSchema.optional(),
+    /** V2 storage contract. V1 sources omit this field and use folder records. */
+    storage: DatabaseMarkdownOwnerStorageSchema.optional(),
     properties: z.array(DatabasePropertySchema).min(1),
   })
   .strict()
@@ -1405,6 +1447,54 @@ export const DatabaseSourceSchema = z
         code: 'custom',
         path: ['properties'],
         message: `A data source must define exactly one title property; found ${titleCount}`,
+      });
+    }
+
+    if (source.storage) {
+      const propertyIds = new Set(source.properties.map((property) => property.id));
+      const titlePropertyId = source.properties.find((property) => property.type === 'title')?.id;
+      if (source.storage.titlePropertyId !== titlePropertyId) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['storage', 'titlePropertyId'],
+          message: 'V2 storage titlePropertyId must reference the source Title property',
+        });
+      }
+      if (source.storage.storedPropertyIds[0] !== source.storage.titlePropertyId) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['storage', 'storedPropertyIds', 0],
+          message: 'V2 storedPropertyIds must put the Title property first',
+        });
+      }
+      source.storage.storedPropertyIds.forEach((propertyId, index) => {
+        if (!propertyIds.has(propertyId)) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['storage', 'storedPropertyIds', index],
+            message: `V2 stored property "${propertyId}" is not defined by this source`,
+          });
+        }
+        const property = source.properties.find((candidate) => candidate.id === propertyId);
+        if (
+          property &&
+          [
+            'formula',
+            'rollup',
+            'created_time',
+            'last_edited_time',
+            'created_by',
+            'last_edited_by',
+            'verification',
+            'button',
+          ].includes(property.type)
+        ) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['storage', 'storedPropertyIds', index],
+            message: `Derived or action property "${propertyId}" cannot be stored in a v2 owner table`,
+          });
+        }
       });
     }
 
@@ -2806,9 +2896,43 @@ export type DatabaseAutomationTrigger = z.infer<typeof DatabaseAutomationTrigger
 export type DatabaseAutomationAction = z.infer<typeof DatabaseAutomationActionSchema>;
 export type DatabaseAutomation = z.infer<typeof DatabaseAutomationSchema>;
 
+export const DatabaseMigrationLegacyRecordAliasSchema = z
+  .object({
+    sourceId: DataSourceIdSchema,
+    documentId: DatabaseDocumentIdSchema,
+    canonicalRecordId: DatabaseRecordIdSchema,
+  })
+  .strict();
+
+export const DatabaseMigrationMetadataSchema = z
+  .object({
+    fromVersion: z.literal(1),
+    committedAt: z.string().datetime({ offset: true }),
+    sourceFolders: z
+      .record(
+        DataSourceIdSchema,
+        z.string().max(2_000).refine(isSafeSourceFolder, {
+          message: 'Migration source folder must be a normalized content-relative path',
+        }),
+      )
+      .default({}),
+    legacyRecordIds: z
+      .record(DatabaseRecordIdSchema, DatabaseMigrationLegacyRecordAliasSchema)
+      .default({})
+      .superRefine((aliases, context) => {
+        if (Object.keys(aliases).length > 10_000) {
+          context.addIssue({ code: 'custom', message: 'Migration legacyRecordIds cannot exceed 10000 aliases' });
+        }
+      }),
+  })
+  .strict();
+
+export type DatabaseMigrationLegacyRecordAlias = z.infer<typeof DatabaseMigrationLegacyRecordAliasSchema>;
+export type DatabaseMigrationMetadata = z.infer<typeof DatabaseMigrationMetadataSchema>;
+
 export const DatabaseDefinitionSchema = z
   .object({
-    version: z.literal(DATABASE_MANIFEST_CURRENT_VERSION),
+    version: z.union([z.literal(1), z.literal(2)]),
     id: DatabaseIdSchema,
     key: DatabaseStableKeySchema,
     name: z.string().trim().min(1).max(200),
@@ -2821,6 +2945,7 @@ export const DatabaseDefinitionSchema = z
     contract: DatabaseMachineContractSchema,
     sources: z.array(DatabaseSourceSchema).min(1),
     sourceMappings: z.array(DatabaseSourceMappingSchema).optional(),
+    migration: DatabaseMigrationMetadataSchema.optional(),
     views: z.array(DatabaseViewSchema).default([]),
     templates: z.array(DatabaseTemplateSchema).default([]),
     buttons: z.array(DatabaseActionButtonSchema).default([]),
@@ -2844,6 +2969,30 @@ export const DatabaseDefinitionSchema = z
     const buttonKeys = new Set<string>();
     const automationIds = new Set<string>();
     const automationKeys = new Set<string>();
+
+    for (const [sourceIndex, source] of database.sources.entries()) {
+      if (database.version === 2 && !source.storage) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['sources', sourceIndex, 'storage'],
+          message: 'Manifest version 2 sources must declare Markdown owner-table storage',
+        });
+      }
+      if (database.version === 1 && source.storage) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['sources', sourceIndex, 'storage'],
+          message: 'Manifest version 1 cannot activate v2 owner-table storage',
+        });
+      }
+    }
+    if (database.migration && database.version !== 2) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['migration'],
+        message: 'Migration compatibility metadata is only valid on a v2 manifest',
+      });
+    }
 
     for (const [personIndex, person] of database.people.entries()) {
       if (personIds.has(person.id)) {

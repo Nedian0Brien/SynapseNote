@@ -62,6 +62,41 @@ function validDefinition() {
 }
 
 describe('database manifest schema', () => {
+  test('accepts bounded v2 migration aliases and rejects them on v1 manifests', () => {
+    const v2 = DatabaseDefinitionSchema.parse({
+      ...validDefinition(),
+      version: 2,
+      migration: {
+        fromVersion: 1,
+        committedAt: '2026-07-27T00:00:00.000Z',
+        sourceFolders: { ds_feedback: 'feedback' },
+        legacyRecordIds: {
+          rec_legacy: {
+            sourceId: 'ds_feedback',
+            documentId: 'doc_legacy',
+            canonicalRecordId: 'rec_canonical',
+          },
+        },
+      },
+      sources: [
+        {
+          ...validDefinition().sources[0],
+          storage: {
+            kind: 'markdown_table',
+            formatVersion: 2,
+            owner: { path: 'feedback.md', blockId: 'dbb_feedback_primary' },
+            titlePropertyId: 'prop_title',
+            storedPropertyIds: ['prop_title', 'prop_status'],
+          },
+        },
+      ],
+    });
+    expect(v2.migration?.legacyRecordIds.rec_legacy?.canonicalRecordId).toBe('rec_canonical');
+    expect(
+      DatabaseDefinitionSchema.safeParse({ ...validDefinition(), migration: v2.migration }).success,
+    ).toBe(false);
+  });
+
   test('round-trips optional database page icon and cover metadata', () => {
     const parsed = DatabaseDefinitionSchema.parse({
       ...validDefinition(),
@@ -1946,7 +1981,7 @@ describe('database manifest schema', () => {
     }
 
     const unknownVersion = parseDatabaseManifestYaml(
-      serializeDatabaseManifestYaml(validDefinition()).replace('version: 1', 'version: 2'),
+      serializeDatabaseManifestYaml(validDefinition()).replace('version: 1', 'version: 3'),
     );
     expect(unknownVersion).toMatchObject({
       ok: false,

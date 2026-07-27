@@ -37,9 +37,18 @@ function manifest(): string {
   );
 }
 
+function v2Manifest(): string {
+  return manifest()
+    .replace('version: 1\n', 'version: 2\n')
+    .replace(
+      '    folder: migrations\n',
+      '    folder: .\n    storage:\n      kind: markdown_table\n      formatVersion: 2\n      owner:\n        path: migrations.md\n        blockId: dbb_migrations_primary\n      titlePropertyId: prop_title\n      storedPropertyIds:\n        - prop_title\n',
+    );
+}
+
 describe('database manifest migration contract', () => {
   test('defines a canonical identity migration for every currently supported version', () => {
-    expect(DATABASE_MANIFEST_CURRENT_VERSION).toBe(DATABASE_MANIFEST_SUPPORTED_VERSIONS.at(-1));
+    expect(DATABASE_MANIFEST_CURRENT_VERSION).toBe(1);
     for (const version of DATABASE_MANIFEST_SUPPORTED_VERSIONS) {
       expect(DATABASE_MANIFEST_MIGRATIONS).toContainEqual({
         id: `database-manifest-v${version}-identity`,
@@ -61,8 +70,32 @@ describe('database manifest migration contract', () => {
           }
         }
       }
-      expect(reachable.has(DATABASE_MANIFEST_CURRENT_VERSION)).toBe(true);
+      expect(reachable.has(version)).toBe(true);
     }
+  });
+
+  test('reads a v2 owner-table manifest without treating it as a content migration', () => {
+    const yaml = v2Manifest();
+    const parsed = parseDatabaseManifestYaml(yaml);
+    if (!parsed.ok) throw new Error(parsed.error);
+    const canonical = serializeDatabaseManifestYaml(parsed.definition);
+    expect(canonical).not.toContain('folder: .');
+    expect(canonical).not.toContain('includeSubfolders:');
+    expect(planDatabaseManifestMigration(canonical, 2)).toEqual({
+      status: 'not_needed',
+      sourceVersion: 2,
+      targetVersion: 2,
+      migrationIds: ['database-manifest-v2-identity'],
+      lossless: true,
+      changed: false,
+      outputYaml: canonical,
+    });
+    expect(planDatabaseManifestMigration(canonical)).toMatchObject({
+      status: 'blocked',
+      sourceVersion: 2,
+      targetVersion: 1,
+      code: 'migration_path_missing',
+    });
   });
 
   test('plans the v1 identity byte-for-byte without rewriting comments', () => {
@@ -91,16 +124,16 @@ describe('database manifest migration contract', () => {
       outputYaml: null,
     });
     expect(
-      planDatabaseManifestMigration(manifest().replace('version: 1', 'version: 2')),
+      planDatabaseManifestMigration(manifest().replace('version: 1', 'version: 3')),
     ).toMatchObject({
       status: 'blocked',
-      sourceVersion: 2,
+      sourceVersion: 3,
       code: 'unsupported_source_version',
       outputYaml: null,
     });
-    expect(planDatabaseManifestMigration(manifest(), 2)).toMatchObject({
+    expect(planDatabaseManifestMigration(manifest(), 3)).toMatchObject({
       status: 'blocked',
-      targetVersion: 2,
+      targetVersion: 3,
       code: 'unsupported_target_version',
       outputYaml: null,
     });

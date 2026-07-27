@@ -14,6 +14,7 @@ import {
 } from 'yaml';
 import {
   DATABASE_PROPERTY_TYPES,
+  DATABASE_MANIFEST_SUPPORTED_VERSIONS,
   type DatabaseDefinition,
   DatabaseDefinitionSchema,
 } from './schema.ts';
@@ -265,7 +266,9 @@ export function parseDatabaseManifestYaml(yaml: string): ParsedDatabaseManifest 
         value !== null &&
         typeof value === 'object' &&
         'version' in value &&
-        (value as { version?: unknown }).version !== 1;
+        !DATABASE_MANIFEST_SUPPORTED_VERSIONS.some(
+          (supported) => supported === Number((value as { version?: unknown }).version),
+        );
       return {
         code: unknownVersion
           ? ('unknown_manifest_version' as const)
@@ -289,10 +292,26 @@ export function parseDatabaseManifestYaml(yaml: string): ParsedDatabaseManifest 
   return { ok: true, definition: parsed.data };
 }
 
-/** Serialize a validated v1 definition deterministically, without writing it. */
+function stripV1SourceStorageFieldsFromV2Document(document: Document): void {
+  const version = document.get('version', true);
+  if (!isScalar(version) || Number(version.value) !== 2) return;
+  const sources = document.get('sources', true);
+  if (!isSeq(sources)) return;
+  for (const source of sources.items) {
+    if (!isMap(source)) continue;
+    source.items = source.items.filter((pair) => {
+      if (!isScalar(pair.key)) return true;
+      const key = String(pair.key.value);
+      return key !== 'folder' && key !== 'includeSubfolders';
+    });
+  }
+}
+
+/** Serialize a validated v1 or v2 definition deterministically, without writing it. */
 export function serializeDatabaseManifestYaml(input: unknown): string {
   const definition = DatabaseDefinitionSchema.parse(input);
   const document = new Document(definition);
+  stripV1SourceStorageFieldsFromV2Document(document);
   return document.toString({ lineWidth: 0 });
 }
 
@@ -419,6 +438,7 @@ export function updateDatabaseManifestYaml(existingYaml: string, input: unknown)
     );
   }
   document.contents = reconcileManifestNode(document, document.contents, definition) as ParsedNode;
+  stripV1SourceStorageFieldsFromV2Document(document);
   let result = document.toString({ lineWidth: 0 });
   if (existingYaml.includes('\r\n')) result = result.replaceAll('\n', '\r\n');
 

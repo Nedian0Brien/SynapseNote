@@ -414,6 +414,22 @@ export {
   type DatabaseRecordIndexStatus,
 } from './database-record-index.ts';
 export {
+  createDatabaseMarkdownTableWriter,
+  DatabaseMarkdownTableWriter,
+  DatabaseMarkdownTableWriterError,
+  type CreateDatabaseMarkdownTableWriterOptions,
+  type DatabaseMarkdownTableCellMutationInput,
+  type DatabaseMarkdownTableFileDelta,
+  type DatabaseMarkdownTableMutationReceipt,
+  type DatabaseMarkdownTableMutationResult,
+  type DatabaseMarkdownTableRevision,
+  type DatabaseMarkdownTableRowCreateInput,
+  type DatabaseMarkdownTableRowMutationInput,
+  type DatabaseMarkdownTableUndoInput,
+  type DatabaseMarkdownTableWriterFs,
+  type DatabaseMarkdownTableWriterErrorCode,
+} from './database-markdown-table-writer.ts';
+export {
   type CreateDatabaseRepairEngineOptions,
   createDatabaseRepairEngine,
   type DatabaseRepairAction,

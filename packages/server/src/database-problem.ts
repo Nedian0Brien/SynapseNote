@@ -641,6 +641,7 @@ function recoveryFor(code: DatabaseProblemCode): {
     case 'agent_view_budget_exceeded':
     case 'invalid_desired_state':
     case 'invalid_commit_request':
+    case 'v2_storage_read_only':
     case 'undo_invalid_request':
     case 'invalid_task':
     case 'invalid_task_cursor':

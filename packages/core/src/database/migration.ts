@@ -21,11 +21,20 @@ export interface DatabaseManifestMigrationDefinition {
 }
 
 /**
- * Canonical directed migration matrix. Version 1 is the baseline, so its only
- * valid migration is a byte-preserving identity. Adding a supported version
- * requires adding its canonical edges and extending the conformance test.
+ * Canonical directed migration matrix. V2 is read-compatible during the staged
+ * rollout, but the content-aware v1→v2 storage migration is intentionally not a
+ * manifest-only edge. It is implemented by the durable database migration task
+ * once owner-table inventory, document mapping, and verification are available.
  */
 export const DATABASE_MANIFEST_MIGRATIONS: readonly DatabaseManifestMigrationDefinition[] = [
+  {
+    id: 'database-manifest-v2-identity',
+    fromVersion: 2,
+    toVersion: 2,
+    kind: 'identity',
+    lossless: true,
+    preservesSourceBytes: true,
+  },
   {
     id: 'database-manifest-v1-identity',
     fromVersion: 1,

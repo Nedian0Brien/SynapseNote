@@ -61,7 +61,8 @@ export type DatabaseStoreErrorCode =
   | 'invalid_record_path'
   | 'record_not_found'
   | 'record_symlink'
-  | 'record_identity_error';
+  | 'record_identity_error'
+  | 'v2_storage_read_only';
 
 export class DatabaseStoreError extends Error {
   readonly code: DatabaseStoreErrorCode;
@@ -411,6 +412,13 @@ export class DatabaseStore {
           { databaseId: input.databaseId, sourceId: input.sourceId },
         );
       }
+      if (source.storage?.kind === 'markdown_table') {
+        throw new DatabaseStoreError(
+          'v2_storage_read_only',
+          `Data source "${source.id}" uses v2 Markdown owner-table storage; v1 record identity writes are disabled`,
+          { databaseId: database.id, sourceId: source.id, ownerPath: source.storage.owner.path },
+        );
+      }
       if (!isRecordPathInSource(input.recordPath, source)) {
         throw new DatabaseStoreError(
           'invalid_record_path',
@@ -525,6 +533,13 @@ export class DatabaseStore {
         'not_found',
         `Data source "${input.sourceId}" was not found in database "${input.databaseId}"`,
         { databaseId: input.databaseId, sourceId: input.sourceId },
+      );
+    }
+    if (source.storage?.kind === 'markdown_table') {
+      throw new DatabaseStoreError(
+        'v2_storage_read_only',
+        `Data source "${source.id}" uses v2 Markdown owner-table storage; folder onboarding is not a v2 writer`,
+        { databaseId: database.id, sourceId: source.id, ownerPath: source.storage.owner.path },
       );
     }
 

@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, test } from 'bun:test';
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseDefinitionSchema } from '@nedian0brien/synapsenote-core';
+import { createHash } from 'node:crypto';
 import {
   applyDatabaseRecordDiskEvent,
   createDatabaseRecordIndex,
@@ -12,6 +13,10 @@ import {
   DatabaseLexicalSearchLimitError,
 } from './database-record-index.ts';
 import { createDatabaseStore } from './database-store.ts';
+import {
+  createDatabaseMarkdownTableWriter,
+  DatabaseMarkdownTableWriterError,
+} from './database-markdown-table-writer.ts';
 
 const tempDirs: string[] = [];
 
@@ -66,11 +71,221 @@ function definition() {
   });
 }
 
+function v2Definition() {
+  const base = definition();
+  return DatabaseDefinitionSchema.parse({
+    ...base,
+    version: 2,
+    sources: [
+      {
+        ...base.sources[0],
+        folder: '.',
+        includeSubfolders: true,
+        storage: {
+          kind: 'markdown_table',
+          formatVersion: 2,
+          owner: { path: 'orders.md', blockId: 'dbb_orders_primary' },
+          titlePropertyId: 'prop_title',
+          storedPropertyIds: ['prop_title', 'prop_notes', 'prop_status'],
+        },
+      },
+    ],
+  });
+}
+
 function record(recordId: string, title: string, status: 'todo' | 'done'): string {
   return `---\n_sn:\n  database_id: db_tasks\n  source_id: ds_tasks\n  record_id: ${recordId}\ntitle: ${title}\nstatus: ${status}\n---\nBody for ${title}\n`;
 }
 
 describe('DatabaseRecordIndex rebuild', () => {
+  test('rebuilds a v2 owner table from linked Markdown documents without a source folder scan', async () => {
+    const { projectDir, contentDir } = tempProject();
+    mkdirSync(join(contentDir, 'orders'), { recursive: true });
+    const store = createDatabaseStore({ projectDir, contentDir });
+    await store.create(v2Definition());
+    writeFileSync(
+      join(contentDir, 'orders.md'),
+      [
+        '<!-- synapsenote:database',
+        'version=2',
+        'database=db_tasks',
+        'source=ds_tasks',
+        'block=dbb_orders_primary',
+        'columns=prop_title,prop_notes,prop_status',
+        '-->',
+        '',
+        '| Document | Notes | Status |',
+        '| --- | --- | --- |',
+        '| [[orders/alpha]] | First order | todo |',
+        '| [[orders/beta]] | Second order | done |',
+        '',
+      ].join('\n'),
+    );
+    writeFileSync(
+      join(contentDir, 'orders/alpha.md'),
+      '---\n_sn:\n  document_id: doc_alpha\ntitle: Alpha order\n---\nAlpha body\n',
+    );
+    writeFileSync(
+      join(contentDir, 'orders/beta.md'),
+      '---\n_sn:\n  document_id: doc_beta\ntitle: Beta order\n---\nBeta body\n',
+    );
+
+    const index = createDatabaseRecordIndex({ contentDir, databaseStore: store });
+    const rebuilt = await index.rebuild();
+
+    expect(rebuilt.indexed).toBe(2);
+    expect(index.list('db_tasks', 'ds_tasks')).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ values: { prop_title: 'Alpha order', prop_notes: 'First order', prop_status: 'opt_todo' }, path: 'orders/alpha.md', body: 'Alpha body\n' }),
+        expect.objectContaining({ values: { prop_title: 'Beta order', prop_notes: 'Second order', prop_status: 'opt_done' }, path: 'orders/beta.md', body: 'Beta body\n' }),
+      ]),
+    );
+    expect(index.snapshot().issues).toEqual([]);
+    expect(index.inspectPath('orders.md')).toMatchObject({
+      managed: true,
+      databaseId: 'db_tasks',
+      sourceId: 'ds_tasks',
+    });
+  });
+
+  test('does not infer a v2 identity from a linked document path', async () => {
+    const { projectDir, contentDir } = tempProject();
+    mkdirSync(join(contentDir, 'orders'), { recursive: true });
+    const store = createDatabaseStore({ projectDir, contentDir });
+    await store.create(v2Definition());
+    writeFileSync(
+      join(contentDir, 'orders.md'),
+      '<!-- synapsenote:database\nversion=2\ndatabase=db_tasks\nsource=ds_tasks\nblock=dbb_orders_primary\ncolumns=prop_title,prop_notes,prop_status\n-->\n\n| Document | Notes | Status |\n| --- | --- | --- |\n| [[orders/alpha]] | First order | todo |\n',
+    );
+    writeFileSync(join(contentDir, 'orders/alpha.md'), '# Alpha without identity\n');
+
+    const index = createDatabaseRecordIndex({ contentDir, databaseStore: store });
+    await index.rebuild();
+
+    expect(index.list()).toEqual([]);
+    expect(index.snapshot().issues).toContainEqual(
+      expect.objectContaining({ path: 'orders/alpha.md', materializationCode: 'missing_frontmatter' }),
+    );
+  });
+
+  test('rejects a v2 owner claimed by more than one source instead of picking a winner', async () => {
+    const { projectDir, contentDir } = tempProject();
+    mkdirSync(join(contentDir, 'orders'), { recursive: true });
+    const base = v2Definition();
+    const duplicateSource = {
+      ...base.sources[0]!,
+      id: 'ds_other',
+      key: 'other',
+      name: 'Other',
+      properties: [
+        { ...base.sources[0]!.properties[0]!, id: 'prop_other_title' },
+        { ...base.sources[0]!.properties[1]!, id: 'prop_other_notes' },
+        {
+          ...base.sources[0]!.properties[2]!,
+          id: 'prop_other_status',
+          options: [
+            { id: 'opt_other_todo', key: 'todo', name: 'Todo' },
+            { id: 'opt_other_done', key: 'done', name: 'Done' },
+          ],
+        },
+      ],
+      storage: {
+        ...base.sources[0]!.storage!,
+        owner: { path: 'orders.md', blockId: 'dbb_other_primary' },
+        titlePropertyId: 'prop_other_title',
+        storedPropertyIds: ['prop_other_title', 'prop_other_notes', 'prop_other_status'],
+      },
+    };
+    const database = DatabaseDefinitionSchema.parse({
+      ...base,
+      sources: [base.sources[0], duplicateSource],
+    });
+    const store = createDatabaseStore({ projectDir, contentDir });
+    await store.create(database);
+    writeFileSync(
+      join(contentDir, 'orders.md'),
+      '<!-- synapsenote:database\nversion=2\ndatabase=db_tasks\nsource=ds_tasks\nblock=dbb_orders_primary\ncolumns=prop_title,prop_notes,prop_status\n-->\n\n| Document | Notes | Status |\n| --- | --- | --- |\n',
+    );
+    const index = createDatabaseRecordIndex({ contentDir, databaseStore: store });
+    await index.rebuild();
+    expect(index.list()).toEqual([]);
+    expect(index.snapshot().issues).toContainEqual(
+      expect.objectContaining({ code: 'duplicate_owner', path: 'orders.md' }),
+    );
+  });
+
+  test('refreshes v2 rows when the owner table or linked document changes', async () => {
+    const { projectDir, contentDir } = tempProject();
+    mkdirSync(join(contentDir, 'orders'), { recursive: true });
+    const store = createDatabaseStore({ projectDir, contentDir });
+    await store.create(v2Definition());
+    const owner = [
+      '<!-- synapsenote:database',
+      'version=2',
+      'database=db_tasks',
+      'source=ds_tasks',
+      'block=dbb_orders_primary',
+      'columns=prop_title,prop_notes,prop_status',
+      '-->',
+      '',
+      '| Document | Notes | Status |',
+      '| --- | --- | --- |',
+      '| [[orders/alpha]] | First order | todo |',
+      '',
+    ].join('\n');
+    writeFileSync(join(contentDir, 'orders.md'), owner);
+    writeFileSync(
+      join(contentDir, 'orders/alpha.md'),
+      '---\n_sn:\n  document_id: doc_alpha\ntitle: Alpha order\n---\nAlpha body\n',
+    );
+    const index = createDatabaseRecordIndex({ contentDir, databaseStore: store });
+    await index.rebuild();
+    const id = index.list()[0]?.id;
+    expect(id).toBeDefined();
+
+    applyDatabaseRecordDiskEvent(index, contentDir, {
+      kind: 'update',
+      path: join(contentDir, 'orders/alpha.md'),
+      docName: 'orders/alpha',
+      content: '---\n_sn:\n  document_id: doc_alpha\ntitle: Renamed order\n---\nEdited body\n',
+    });
+    expect(index.getById(id!)).toMatchObject({ values: { prop_title: 'Renamed order' }, body: 'Edited body\n' });
+
+    applyDatabaseRecordDiskEvent(index, contentDir, {
+      kind: 'update',
+      path: join(contentDir, 'orders.md'),
+      docName: 'orders',
+      content: owner.replace('| [[orders/alpha]] | First order | todo |', '| [[orders/alpha]] | Edited note | done |'),
+    });
+    expect(index.getById(id!)).toMatchObject({ values: { prop_notes: 'Edited note', prop_status: 'opt_done' } });
+
+    applyDatabaseRecordDiskEvent(index, contentDir, {
+      kind: 'update',
+      path: join(contentDir, 'orders/alpha.md'),
+      docName: 'orders/alpha',
+      content: '---\n_sn:\n  document_id: doc_alpha\ntitle: Final order\n---\nFinal body\n',
+    });
+    expect(index.getById(id!)).toMatchObject({ values: { prop_title: 'Final order' }, body: 'Final body\n' });
+
+    applyDatabaseRecordDiskEvent(index, contentDir, {
+      kind: 'delete',
+      path: join(contentDir, 'orders/alpha.md'),
+      docName: 'orders/alpha',
+    });
+    expect(index.getById(id!)).toBeNull();
+    expect(index.snapshot().issues).toContainEqual(
+      expect.objectContaining({ path: 'orders.md', materializationCode: expect.stringContaining('broken_document_link') }),
+    );
+
+    applyDatabaseRecordDiskEvent(index, contentDir, {
+      kind: 'create',
+      path: join(contentDir, 'orders/alpha.md'),
+      docName: 'orders/alpha',
+      content: '---\n_sn:\n  document_id: doc_alpha\ntitle: Restored order\n---\nRestored body\n',
+    });
+    expect(index.getById(id!)).toMatchObject({ values: { prop_title: 'Restored order' } });
+  });
+
   test('projects property-only records without cloning canonical Markdown bodies', async () => {
     const { projectDir, contentDir } = tempProject();
     const store = createDatabaseStore({ projectDir, contentDir });
@@ -739,5 +954,117 @@ describe('DatabaseRecordIndex incremental rematerialization', () => {
     index.deletePath('tasks/two.md');
     expect(index.getById('rec_shared')).toMatchObject({ path: 'tasks/one.md' });
     expect(index.snapshot().issues).toEqual([]);
+  });
+
+  test('v2 writer applies cell edits with optimistic revisions and byte-exact undo', async () => {
+    const { projectDir, contentDir } = tempProject();
+    mkdirSync(join(contentDir, 'orders'), { recursive: true });
+    const store = createDatabaseStore({ projectDir, contentDir });
+    await store.create(v2Definition());
+    const owner = [
+      '<!-- synapsenote:database',
+      'version=2',
+      'database=db_tasks',
+      'source=ds_tasks',
+      'block=dbb_orders_primary',
+      'columns=prop_title,prop_notes,prop_status',
+      '-->',
+      '',
+      '| Document | Notes | Status |',
+      '| --- | --- | --- |',
+      '| [[orders/alpha]] | First order | todo |',
+      '',
+    ].join('\n');
+    writeFileSync(join(contentDir, 'orders.md'), owner);
+    writeFileSync(
+      join(contentDir, 'orders/alpha.md'),
+      '---\n_sn:\n  document_id: doc_alpha\ntitle: Alpha order\n---\nAlpha body\n',
+    );
+    const index = createDatabaseRecordIndex({ contentDir, databaseStore: store });
+    await index.rebuild();
+    const writer = createDatabaseMarkdownTableWriter({
+      projectDir,
+      contentDir,
+      databaseStore: store,
+      databaseRecordIndex: index,
+    });
+    const ownerRevision = `sha256:${createHash('sha256').update(owner).digest('hex')}`;
+    const recordId = index.list()[0]!.id;
+    const edited = await writer.updateCell({
+      databaseId: 'db_tasks',
+      sourceId: 'ds_tasks',
+      recordId,
+      propertyId: 'prop_notes',
+      value: 'Edited | note',
+      expectedOwnerRevision: ownerRevision,
+    });
+    expect(edited.changed).toBe(true);
+    expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toContain('Edited \\| note');
+    expect(index.getById(recordId)).toMatchObject({ values: { prop_notes: 'Edited | note' } });
+
+    await expect(
+      writer.updateCell({
+        databaseId: 'db_tasks',
+        sourceId: 'ds_tasks',
+        recordId,
+        propertyId: 'prop_notes',
+        value: 'stale',
+        expectedOwnerRevision: ownerRevision,
+      }),
+    ).rejects.toMatchObject<DatabaseMarkdownTableWriterError>({ code: 'target_changed' });
+
+    await writer.undo({ receipt: edited.receipt });
+    expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toBe(owner);
+    expect(index.getById(recordId)).toMatchObject({ values: { prop_notes: 'First order' } });
+  });
+
+  test('v2 writer creates and undoes a document-backed row without a record file', async () => {
+    const { projectDir, contentDir } = tempProject();
+    mkdirSync(join(contentDir, 'orders'), { recursive: true });
+    const store = createDatabaseStore({ projectDir, contentDir });
+    await store.create(v2Definition());
+    const owner = [
+      '<!-- synapsenote:database',
+      'version=2',
+      'database=db_tasks',
+      'source=ds_tasks',
+      'block=dbb_orders_primary',
+      'columns=prop_title,prop_notes,prop_status',
+      '-->',
+      '',
+      '| Document | Notes | Status |',
+      '| --- | --- | --- |',
+      '',
+    ].join('\n');
+    writeFileSync(join(contentDir, 'orders.md'), owner);
+    const index = createDatabaseRecordIndex({ contentDir, databaseStore: store });
+    await index.rebuild();
+    const writer = createDatabaseMarkdownTableWriter({
+      projectDir,
+      contentDir,
+      databaseStore: store,
+      databaseRecordIndex: index,
+      generateUuid: () => '00000000-0000-0000-0000-0000000000bb',
+    });
+    const ownerRevision = `sha256:${createHash('sha256').update(owner).digest('hex')}`;
+    const created = await writer.createRow({
+      databaseId: 'db_tasks',
+      sourceId: 'ds_tasks',
+      documentPath: 'orders/beta.md',
+      documentMarkdown: '# Beta order\nBeta body\n',
+      documentId: 'doc_beta',
+      values: { prop_notes: 'Second order', prop_status: 'done' },
+      expectedOwnerRevision: ownerRevision,
+    });
+    expect(created.changed).toBe(true);
+    expect(readFileSync(join(contentDir, 'orders/beta.md'), 'utf8')).toContain('document_id: doc_beta');
+    const beta = index.list().find((record) => record.path === 'orders/beta.md');
+    expect(beta).toMatchObject({ values: { prop_title: 'Beta order', prop_notes: 'Second order', prop_status: 'opt_done' } });
+    expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toContain('[[orders/beta]]');
+
+    await writer.undo({ receipt: created.receipt });
+    expect(() => readFileSync(join(contentDir, 'orders/beta.md'))).toThrow();
+    expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toBe(owner);
+    expect(index.list()).toHaveLength(0);
   });
 });

@@ -1,6 +1,6 @@
 # RFC 0008: Markdown table canonical database storage
 
-- 상태: 방향 승인, 구현 대기
+- 상태: 방향 승인, foundation 및 격리된 v2 writer primitive 구현 중 (production routing 전)
 - 작성일: 2026-07-27
 - 대상: `packages/core`, `packages/server`, `packages/app`, `packages/cli`, 데이터베이스 저장·인덱스·Git merge·마이그레이션 경계
 - 성격: canonical 저장 형식 변경, 단일 데이터베이스 엔진 결정

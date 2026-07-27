@@ -1,6 +1,6 @@
 # RFC 0008 implementation checklist: Markdown table database storage
 
-- 상태: Active, implementation not started
+- 상태: Active, implementation in progress (read path, contract foundation, isolated writer primitive)
 - 최종 수정: 2026-07-27
 - Companion RFC: [Markdown table canonical database storage](./0008-markdown-table-canonical-database-storage.md)
 - Current v1 tracker: [RFC 0001 implementation checklist](./0001-databases-implementation-checklist.md)
@@ -31,6 +31,44 @@ normative implementation tracker다. RFC 0001의 기존 체크 표시는 v1 capa
 부분 구현, feature flag, unit test만 통과한 prototype은 항목 설명에 진행 증거를
 추가할 수 있지만 checkbox를 완료하지 않는다. 한 항목이 여러 package를 열거하면
 모든 package 경계가 연결되어야 완료다.
+
+## 1.1 현재 구현 증거와 미완료 경계
+
+현재 branch에는 다음 foundation이 구현되어 있다. 이 목록은 milestone checkbox를
+자동으로 완료시키지 않으며, 각 항목의 전체 완료 기준을 충족할 때만 본문
+checkbox를 체크한다.
+
+- Core manifest는 v1 active writer를 유지하면서 v2를 read-compatible version으로
+  검증하고, source별 `markdown_table` storage binding과 migration alias metadata를
+  strict schema로 검사한다.
+- Core owner marker/GFM parser와 typed cell codec이 source range, escaped pipe,
+  invalid raw value, document/relation wikilink, source-preserving cell/row splice를
+  제공한다.
+- 범용 `_sn.document_id`, source+document 기반 deterministic record ID, v1 legacy
+  ID alias를 위한 순수 migration planner와 document identity insertion이 있다.
+- Server record index가 v2 owner 문서만 발견하고 linked Markdown 문서를 cold rebuild하며,
+  owner/document watcher edit를 재구성한다. 문서 ID가 없으면 path를 추정하지 않고
+  explicit diagnostic을 남긴다.
+- Server의 격리된 v2 writer primitive가 expected owner/row/cell revision을 확인한 뒤
+  source-preserving cell/row splice, document-backed row 생성, row 삭제, post-write index
+  rebuild, byte-exact receipt/undo를 수행한다. 이 writer는 아직 기존 plan/commit API의
+  production routing에 연결되지 않았다.
+- v1 `assignRecordId`, folder onboarding, 기존 record-file commit은 v2 source에서
+  `v2_storage_read_only` guard로 차단된다. 이는 v2 writer가 연결되기 전 dual-write를
+  허용하지 않기 위한 안전장치다.
+
+현재 활성화하지 않은 범위는 다음과 같다.
+
+- v2 owner-table mutation을 기존 plan/commit API에 연결하는 multi-file transaction,
+  durable crash recovery/journal, API routing은 아직 production writer로 활성화되지 않았다.
+  현재 writer primitive의 single-owner compensation과 receipt/undo는 이 기반을 위한
+  격리된 단계이며 D 영역 checkbox 완료 증거로 간주하지 않는다.
+- durable v1→v2 migration task는 preview/apply/verify/rollback 전체 계약을 연결하기
+  전이며, pure migration planner는 apply 권한을 갖지 않는다.
+- Formula/Rollup은 owner table에 저장하지 않도록 schema가 보장하고, v2 storage-neutral
+  records에 대해 Formula/Rollup을 재계산하는 core conformance test가 있다. 다만 v2
+  relation resolution, reverse invalidation, migration freeze context를 포함한
+  cross-source integration gate는 미완료다.
 
 ## 2. 전환 중 절대 깨면 안 되는 stop conditions
 
