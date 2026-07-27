@@ -1,4 +1,6 @@
 import { describe, expect, mock, test } from 'bun:test';
+import { DATABASE_STORAGE_CAPABILITY_MATRIX } from '@nedian0brien/synapsenote-core';
+import { DatabaseDescribeResponseSchema } from '@nedian0brien/synapsenote-server';
 import { describeDatabase, fetchDatabaseCatalog } from './database-catalog-client.ts';
 
 const hash = `sha256:${'a'.repeat(64)}`;
@@ -24,6 +26,25 @@ const database = {
       properties: [{ id: 'prop_title', key: 'title', name: 'Title', type: 'title' as const }],
     },
   ],
+};
+const describedWithCapabilities = {
+  manifestRevision: hash,
+  schemaRevision: hash,
+  database,
+  source: database.sources[0],
+  index: {
+    state: 'idle' as const,
+    revision: hash,
+    manifestRevision: hash,
+    recordCount: 0,
+    issueCount: 0,
+    progress: null,
+    lastRebuiltAt: null,
+    lastIncrementalAt: null,
+    lastError: null,
+  },
+  storageCapabilities: DATABASE_STORAGE_CAPABILITY_MATRIX,
+  allowedOperations: ['catalog', 'describe', 'find', 'query', 'pack'],
 };
 
 test('loads a validated compact catalog and exact source description', async () => {
@@ -88,7 +109,11 @@ test('loads a validated compact catalog and exact source description', async () 
       { databaseId: 'db_tasks', sourceId: 'ds_tasks' },
       { fetch: fetchImplementation as typeof fetch },
     ),
-  ).resolves.toMatchObject({ database: { id: 'db_tasks' }, source: { id: 'ds_tasks' } });
+  ).resolves.toMatchObject({
+    database: { id: 'db_tasks' },
+    source: { id: 'ds_tasks' },
+    storageCapabilities: [],
+  });
   expect(requests).toEqual([
     { path: '/api/databases/catalog?q=task', body: undefined },
     {
@@ -96,6 +121,32 @@ test('loads a validated compact catalog and exact source description', async () 
       body: { databaseId: 'db_tasks', sourceId: 'ds_tasks' },
     },
   ]);
+});
+
+test('parses a v2 describe response that reports storage capabilities', async () => {
+  const fetchImplementation = mock(async () => Response.json(describedWithCapabilities));
+
+  await expect(
+    describeDatabase(
+      { databaseId: 'db_tasks', sourceId: 'ds_tasks' },
+      { fetch: fetchImplementation as typeof fetch },
+    ),
+  ).resolves.toMatchObject({
+    source: { id: 'ds_tasks' },
+    storageCapabilities: [...DATABASE_STORAGE_CAPABILITY_MATRIX],
+  });
+});
+
+test('accepts every payload the server describe contract produces', async () => {
+  expect(() => DatabaseDescribeResponseSchema.parse(describedWithCapabilities)).not.toThrow();
+
+  const fetchImplementation = mock(async () => Response.json(describedWithCapabilities));
+  await expect(
+    describeDatabase(
+      { databaseId: 'db_tasks', sourceId: 'ds_tasks' },
+      { fetch: fetchImplementation as typeof fetch },
+    ),
+  ).resolves.toMatchObject({ database: { id: 'db_tasks' } });
 });
 
 test('retries transient catalog conflicts while the index settles', async () => {

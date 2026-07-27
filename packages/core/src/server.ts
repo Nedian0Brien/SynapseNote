@@ -59,6 +59,13 @@ export {
   serializeDatabasePortableBundle,
 } from './database/interchange.ts';
 export {
+  createDatabaseMarkdownTableExport,
+  type DatabaseMarkdownCanonicalExportEntry,
+  type DatabaseMarkdownComputedSnapshotRecord,
+  type DatabaseMarkdownTableExport,
+  type DatabaseMarkdownTableExportMode,
+} from './database/markdown-table-export.ts';
+export {
   type NotionExportDatabase,
   type NotionExportDataSource,
   type NotionExportProperty,

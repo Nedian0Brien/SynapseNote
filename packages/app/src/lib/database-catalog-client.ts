@@ -2,6 +2,7 @@ import {
   type DatabaseDefinition,
   DatabaseDefinitionSchema,
   type DatabaseSource,
+  type DatabaseStorageCapability,
 } from '@nedian0brien/synapsenote-core';
 import { z } from 'zod';
 import { withDatabaseReadRetry } from './database-read-retry.ts';
@@ -65,6 +66,17 @@ const DatabaseIndexStatusSchema = z
   })
   .strict();
 
+const DatabaseStorageCapabilitySchema = z
+  .object({
+    appProtocolVersion: z.literal(1),
+    manifestVersion: z.number().int(),
+    tableFormatVersion: z.number().int().nullable(),
+    read: z.enum(['full', 'read_only', 'unsupported']),
+    write: z.enum(['v1_record_files', 'v2_markdown_table', 'migration_required', 'unsupported']),
+    reason: z.string().min(1),
+  })
+  .strict();
+
 const DatabaseDescriptionSchema = z
   .object({
     manifestRevision: z.string().min(1),
@@ -72,6 +84,8 @@ const DatabaseDescriptionSchema = z
     database: DatabaseDefinitionSchema,
     source: z.unknown().nullable(),
     index: DatabaseIndexStatusSchema,
+    // Older servers (e.g. the shipped desktop CLI) do not send this field yet.
+    storageCapabilities: z.array(DatabaseStorageCapabilitySchema).optional().default([]),
     allowedOperations: z.array(z.string()),
   })
   .strict()
@@ -106,6 +120,7 @@ export interface DatabaseDescription {
   database: DatabaseDefinition;
   source: DatabaseSource | null;
   index: z.infer<typeof DatabaseIndexStatusSchema>;
+  storageCapabilities: readonly DatabaseStorageCapability[];
   allowedOperations: string[];
 }
 

@@ -363,13 +363,6 @@ export {
   titleLinkWithDocumentTitle,
 } from './database/markdown-table-document.ts';
 export {
-  createDatabaseMarkdownTableExport,
-  type DatabaseMarkdownCanonicalExportEntry,
-  type DatabaseMarkdownComputedSnapshotRecord,
-  type DatabaseMarkdownTableExport,
-  type DatabaseMarkdownTableExportMode,
-} from './database/markdown-table-export.ts';
-export {
   type DatabaseMarkdownIdentityRepairAction,
   type DatabaseMarkdownIdentityRepairDocument,
   type DatabaseMarkdownIdentityRepairIssue,

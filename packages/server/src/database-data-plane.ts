@@ -7,7 +7,6 @@ import {
   compileDatabaseFind,
   compileFormulaSource,
   createDatabaseDerivedRevision,
-  createDatabaseMarkdownTableExport,
   DATABASE_QUERY_SORT_SEMANTICS,
   DATABASE_STORAGE_CAPABILITY_MATRIX,
   type DatabaseAccessPrincipal,
@@ -21,7 +20,6 @@ import {
   type DatabaseFormValue,
   type DatabaseFormViewConfiguration,
   type DatabaseLinkedViewSettings,
-  type DatabaseMarkdownTableExport,
   type DatabasePermissionAction,
   type DatabaseProperty,
   type DatabasePropertyConversionPreview,
@@ -54,6 +52,10 @@ import {
   queryDatabaseRecords,
   validateDatabasePropertyConstraints,
 } from '@nedian0brien/synapsenote-core';
+import {
+  createDatabaseMarkdownTableExport,
+  type DatabaseMarkdownTableExport,
+} from '@nedian0brien/synapsenote-core/server';
 import type { EnqueueDatabaseAutomationEventInput } from './database-automation.ts';
 import type {
   DatabaseButtonPlan,
