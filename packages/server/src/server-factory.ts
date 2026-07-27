@@ -690,6 +690,7 @@ export function createServer(options: ServerOptions): ServerInstance {
   const databaseMarkdownTableWriter = createDatabaseMarkdownTableWriter({
     projectDir,
     contentDir,
+    allowExternalContentDir: ephemeral,
     databaseStore,
     databaseRecordIndex,
     refreshDatabaseIndex: () => databaseIndexCoordinator.refresh('transaction'),

@@ -4,8 +4,8 @@
 - 범위: content-free repository rehearsal; 사용자 문서/경로/셀 값은 수집하지 않음
 - 실행기: `packages/server/src/database-v2-pilot.ts`
 - 판정: **조건부 GO for the next release decision**; this content-free rehearsal is
-  not a release approval, and the current repository-wide desktop gate remains blocked
-  by the pre-existing lifecycle timeout
+  not a release approval. The repository-wide desktop gate is green, while bounded pilot
+  and operator sign-off remain separate release gates.
 
 ## Aggregate evidence
 
@@ -22,6 +22,7 @@ counters. The executable gate rejects counter inconsistencies, recovery-required
 tasks, rollback conflicts, and any critical/high defect as `no_go`.
 
 This is an opt-in rehearsal, not a claim about an external customer rollout. The report's
-GO decision means only that the aggregate counters satisfy the executable schema. Before
-changing the public default, attach the real bounded pilot window, desktop/UX evidence,
-and operator sign-off to a release record using the same schema.
+GO decision means only that the aggregate counters satisfy the executable schema. The
+repository desktop/UX gate is now attached as `DESKTOP-GATE-001`; before changing the
+public default, attach the real bounded pilot window and operator sign-off to a release
+record using the same schema.

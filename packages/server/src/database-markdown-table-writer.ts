@@ -117,6 +117,14 @@ const DEFAULT_FS: DatabaseMarkdownTableWriterFs = {
 export interface CreateDatabaseMarkdownTableWriterOptions {
   projectDir: string;
   contentDir: string;
+  /**
+   * Permit a deliberately isolated single-file session to write owner tables
+   * into the user's content directory while keeping the writer journal and
+   * lock under its throwaway project root. Normal project servers must leave
+   * this disabled so a split project/content layout cannot widen the write
+   * surface accidentally.
+   */
+  allowExternalContentDir?: boolean;
   databaseStore: DatabaseStore;
   databaseRecordIndex?: DatabaseRecordIndex;
   refreshDatabaseIndex?: () => Promise<unknown>;
@@ -480,6 +488,7 @@ function replaceMarkdownDocumentTitle(markdown: string, title: string): string {
 export class DatabaseMarkdownTableWriter {
   readonly #projectDir: string;
   readonly #contentDir: string;
+  readonly #allowExternalContentDir: boolean;
   readonly #databaseStore: DatabaseStore;
   readonly #refreshDatabaseIndex: () => Promise<unknown>;
   readonly #fs: DatabaseMarkdownTableWriterFs;
@@ -491,6 +500,7 @@ export class DatabaseMarkdownTableWriter {
   constructor(options: CreateDatabaseMarkdownTableWriterOptions) {
     this.#projectDir = resolve(options.projectDir);
     this.#contentDir = resolve(options.contentDir);
+    this.#allowExternalContentDir = options.allowExternalContentDir ?? false;
     this.#databaseStore = options.databaseStore;
     this.#refreshDatabaseIndex =
       options.refreshDatabaseIndex ??
@@ -504,7 +514,7 @@ export class DatabaseMarkdownTableWriter {
       options.atomicWrite ??
       ((path, content) => atomicWriteFile(path, content, { fs: tracedAtomicFs }));
     this.#lockPath = resolve(this.#projectDir, '.ok', 'databases', '.commit.lock');
-    if (!isWithin(this.#projectDir, this.#contentDir)) {
+    if (!isWithin(this.#projectDir, this.#contentDir) && !this.#allowExternalContentDir) {
       throw new Error('Database Markdown table contentDir must be inside projectDir');
     }
   }

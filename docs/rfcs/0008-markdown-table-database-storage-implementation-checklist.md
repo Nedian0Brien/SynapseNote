@@ -829,12 +829,12 @@ clone한 독립 workspace에서 inspect→rollback→cleanup을 실행해 L-007 
 - [x] **V2-J-009 — Diagnostics and repair.** Duplicate owner, malformed table, broken link,
   invalid cell, stale alias, interrupted migration에 actionable repair preview를 제공한다. 완료 기준:
   repair가 원본 bytes를 임의로 정상화하지 않고 plan/commit/undo를 사용한다.
-- [ ] **V2-J-010 — Web/desktop parity.** File watcher, reveal/open, Git integration을 포함한
+- [x] **V2-J-010 — Web/desktop parity.** File watcher, reveal/open, Git integration을 포함한
   primary journey가 web과 desktop에서 같은 canonical result를 낸다. 완료 기준: desktop-specific
   affected tests와 required desktop check가 통과한다. `DESKTOP-V2-PARITY-001` focused fixture는
-  3 pass / 12 assertions로 cold reload, linked Markdown reveal/open, Git proxy를 확인했지만
-  `bun run check:desktop`는 기존 `tests/integration/ephemeral-lifecycle.test.ts`의
-  `server.lock` timeout 1건 때문에 아직 실패한다.
+  3 pass / 12 assertions로 cold reload, linked Markdown reveal/open, Git proxy를 확인했고,
+  standalone single-file의 외부 contentDir 경계를 보장하는 writer 경로를 보강한 뒤
+  `bun run check:desktop`도 2,479 pass / 2 skip / 0 fail(2,481 tests)로 통과했다.
 
 ### J 영역 완료 기준
 
@@ -858,8 +858,11 @@ capability response는 구현됐고, writer `copy_row`는 `linked_view`를 `refe
 반환한다. `DatabaseMigrationRecoveryPanel`은 multi-database scope, exact plan hash/timestamp,
 owner/title choices, accessible details diff, durable task reconnect를 모두 같은 API boundary에
 묶는다. V1 edit CTA는 workspace/inline, plan/API, MCP, automation surface에서 같은
-`start_migration` recovery action을 사용한다. Desktop parity는 focused fixture를 통과했지만
-repository-wide `check:desktop`의 기존 lifecycle timeout 때문에 J-010 checkbox는 유지된다.
+`start_migration` recovery action을 사용한다. Desktop parity는 focused fixture와
+repository-wide `check:desktop` 모두 통과한다. Ephemeral single-file 세션은 임시 project
+root에 lock/journal을 두면서도 실제 문서 디렉터리의 Markdown만 정확히 쓰도록
+`allowExternalContentDir` 경계를 명시하고, 일반 project server에서는 여전히 project 밖
+contentDir을 차단한다.
 Diagnostics는 duplicate/missing/invalid identity와 stale alias에 대한
 explicit document-ID choice, plan hash/approval, exact apply/undo를 API/MCP/app에서 공유하며,
 intervening edit는 재작성을 거부한다(J-009 완료). `DatabaseMigrationDialog`와 DOM fixture는

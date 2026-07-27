@@ -21,14 +21,14 @@ public rollout은 별도 operator sign-off, bounded pilot, release record 승인
 
 | 판정 | 의미 | 현재 결정 |
 | --- | --- | --- |
-| 완료된 foundation | shared core 계약과 해당 server/app path가 연결되고 focused test가 있음 | A-001~009, B-001~009, C-001~008, D-001~010, E-001~008, F-001~009, G-001~007, H-001~010, I-001~012, J-001~009, K-001~009, L-001~007 |
-| 구현됐지만 release evidence 부족 | 코드와 focused 검증은 있으나 repository-wide 데스크톱 gate 또는 운영 기록이 부족함 | J-010, deferred-cleanup operator sign-off, external rollout record |
-| 아직 실행·승인하지 않음 | 외부 운영·desktop gate·release decision처럼 이 브랜치만으로 증명할 수 없는 단계 | public pilot, operator sign-off, final new-default approval |
+| 완료된 foundation | shared core 계약과 해당 server/app path가 연결되고 focused test가 있음 | A-001~009, B-001~009, C-001~008, D-001~010, E-001~008, F-001~009, G-001~007, H-001~010, I-001~012, J-001~010, K-001~009, L-001~007 |
+| 구현됐지만 release evidence 부족 | 코드와 focused 검증은 있으나 운영 기록이 부족함 | deferred-cleanup operator sign-off, external rollout record |
+| 아직 실행·승인하지 않음 | 외부 운영·release decision처럼 이 브랜치만으로 증명할 수 없는 단계 | public pilot, operator sign-off, final new-default approval |
 
 따라서 이 브랜치는 새 blank/template database의 v2 기본 writer 경로와 v1 product-mutation
-guard까지 포함하지만, 실제 public default rollout과 legacy writer retirement는 M0–M4,
-desktop/UX gate, bounded pilot, operator sign-off가 모두 닫힌 뒤 별도 release decision으로
-수행한다.
+guard까지 포함하고 repository-wide desktop/UX gate도 통과했지만, 실제 public default rollout과
+legacy writer retirement는 M0–M4, bounded pilot, operator sign-off가 모두 닫힌 뒤 별도 release
+decision으로 수행한다.
 
 ## 2. 영역별 완료 기준과 현재 증거
 
@@ -43,7 +43,7 @@ desktop/UX gate, bounded pilot, operator sign-off가 모두 닫힌 뒤 별도 re
 | G 협업/offline | stable cell key로 different-cell 자동 병합, same-cell/delete-vs-edit는 conflict/recovery-required | semantic diff/merge와 stable CRDT key, 실제 두 Yjs client의 ProseMirror metadata mapping/convergence/conflict classifier, app queue reconciliation, v2 Git branch checkout/cold rebuild, v2 owner merge와 manifest rebase/remote round-trip, durable actor/history journal | cross-editor production soak와 desktop collaboration parity |
 | H migration plan | write 없이 complete inventory, dependency closure, owner/title 선택, exact plan hash 생성 | owner selection/closure/preflight, explicit title keep/use/custom, task/API/MCP plan binding, frozen derived baseline binding, 7-case generated/existing/inline/full-page/CRLF/BOM/Unicode/invalid/limit matrix, and all stored scalar/link codecs | cross-database relation matrix at supported maximum and repair-choice UX |
 | I migration recovery | verified backup→staging→activation→cold verify→undo→retention cleanup을 durable checkpoint로 재개 | journal cleanup boundary, retention-aware inspect/rollback/cleanup preview+approval, migration logical equivalence, independent SIGKILL every staging/activation file, generic owner/document writer crash classification, post-commit cold rebuild, byte-exact undo/conflict, ENOSPC/EACCES failure injection, fresh Git clone runbook rehearsal | deferred-cleanup rehearsal on a production-like clone and operator sign-off |
-| J product/API/UX | web/desktop/server/MCP/CLI가 동일 operation/plan hash/revision/error와 recovery state를 노출 | API/MCP task schemas에 cleanup preview/approval, canonical/computed export endpoint, app offline rebase, CLI preview-cleanup/cleanup registration, linked-view reference-only/source-delete contract, diagnostics identity repair preview/apply/undo UI, stable migration-required problem mapping, workspace/inline-connected migration recovery panel with exact preview binding and durable polling, persisted task reconnect, retry/rollback affordances, content-free title/owner-choice controls, multi-database selection/hash binding, app/API/MCP/automation migration CTA parity, focused desktop cold-reload/reveal/Git parity | repository-wide desktop gate remains blocked by the pre-existing ephemeral lifecycle timeout; focused v2 parity is green |
+| J product/API/UX | web/desktop/server/MCP/CLI가 동일 operation/plan hash/revision/error와 recovery state를 노출 | API/MCP task schemas에 cleanup preview/approval, canonical/computed export endpoint, app offline rebase, CLI preview-cleanup/cleanup registration, linked-view reference-only/source-delete contract, diagnostics identity repair preview/apply/undo UI, stable migration-required problem mapping, workspace/inline-connected migration recovery panel with exact preview binding and durable polling, persisted task reconnect, retry/rollback affordances, content-free title/owner-choice controls, multi-database selection/hash binding, app/API/MCP/automation migration CTA parity, focused desktop cold-reload/reveal/Git parity, and the repository-wide desktop gate | deferred-cleanup operator sign-off and external rollout record remain release gates |
 | K 성능/보안/신뢰성 | supported-max의 수치 budget, max+1 거부, path/permission/telemetry noninterference, soak 결과 | deterministic 1k–1m corpus, 50k resource bound, 50k warm-query p50/p95/peak RSS, 50k DOM/query cancellation bound, 1k cold/index/incremental/derived, 100-row cell-commit, 1k migration-throughput, and 50k context p95 lifecycle report, process-relative RSS budget/regression policy, parser fuzz, telemetry/path tests, partial ENOSPC/EACCES writer/migration matrix, and the 50k-row/10-iteration reliability soak | release-sized multi-process OOM ceiling remains an operational observation, not a v2 storage correctness blocker |
 | L conformance/release | core conformance, differential/round-trip/crash/standalone, public docs/runbook, pilot/new-default/retirement decision | core Formula/query conformance, server v1/v2 differential, standalone clone, export/process-crash/Git/offline/real-Yjs/actor-history fixtures, migration matrix, public v2 storage/recovery docs, executable runbook rehearsal, content-free pilot schema/report, v1 compatibility RFC, this evidence doc, changesets | bounded external pilot, deferred-cleanup operator sign-off, final new-default release record, future compatibility-retirement audits |
 
@@ -102,7 +102,7 @@ evidence까지 repository artifact로 남겨야 한다.
 | `V1-GUARD-API-MCP-001` | `bun run test:file -- packages/server/src/database-data-plane.test.ts packages/server/src/database-problem.test.ts packages/server/src/mcp/tools/database-commit.test.ts` | 47 pass / 313 Data Plane assertions plus 12 pass / 37 problem/MCP assertions; a synthetic v1 product mutation returns one `storage_read_only`/migration-required policy and the plan conflict/MCP refusal map to the same non-retryable `start_migration` recovery action |
 | `V1-GUARD-AUTOMATION-001` | `bun run test:file -- packages/server/src/database-automation.test.ts` | 5 pass / 19 assertions; legacy automation record mutation is terminal `migration_required`, emits no retry, and preserves the read/dry-run conflict details |
 | `DESKTOP-V2-PARITY-001` | `bun test packages/desktop/src/main/database-v2-parity.test.ts packages/desktop/src/main/database-determinism-conformance.test.ts` | 3 pass / 12 assertions; desktop cold reload sees the same owner/document result, reveal/open targets the linked Markdown document, Git checkout uses the same server route, and shared Formula/query vectors remain equal |
-| `DESKTOP-GATE-001` | `bun run check:desktop` | 2,478 pass / 2 skip / 1 fail across 2,481 desktop tests; blocked by one pre-existing `tests/integration/ephemeral-lifecycle.test.ts` `server.lock` timeout after 30s. The v2-specific focused parity fixture above passes |
+| `DESKTOP-GATE-001` | `bun run check:desktop` | 2,479 pass / 2 skip / 0 fail across 2,481 desktop tests; standalone `ephemeral-lifecycle.test.ts` now boots and tears down through the v2 writer's explicit ephemeral external-content boundary |
 | `PILOT-SCHEMA-001` | `bun run test:file -- packages/server/src/database-v2-pilot.test.ts` | 2 pass / 6 assertions; content-free aggregate opt-in rehearsal schema produces go/no-go and rejects recovery/high-severity defects. This is not an external customer pilot. |
 | `V2-COMMIT-001` | `bun run test:file -- packages/server/src/database-commit.test.ts` | 50 pass / 530 assertions; v2 normal row creation, generic property update/delete, title/lifecycle writer routing, exact owner/document deltas, common-engine production-path v1 guard, and preview/apply undo are covered; no v2 `rec_*.md` path is created |
 | `APP-CREATION-001` | `bun run test:file -- packages/app/src/lib/database-creation.test.ts` | 11 pass / 70 assertions; blank/template/inline/delimited creation defaults to `markdown_table`, while existing-folder binding remains explicit `record_files` compatibility unless overridden |
@@ -181,9 +181,7 @@ post-commit cold rebuild, user undo, intervening edit conflict, deferred cleanup
 
 1. L/I: deferred-cleanup operator rehearsal을 production-like 새 clone에서 실행하고
    `MIG-019`–`MIG-023` 결과, task hash, operator sign-off를 release record로 고정한다.
-2. J: 기존 desktop `server.lock` lifecycle 실패를 별도 이슈로 해소하거나 명시적 waiver한
-   뒤 `DESKTOP-GATE-001`을 재실행한다. v2 focused parity는 이 gate와 독립적으로 유지한다.
-3. L: 실제 bounded opt-in pilot → new-default public rollout → legacy writer retirement을
+2. L: 실제 bounded opt-in pilot → new-default public rollout → legacy writer retirement을
    각각 별도 release record와 rollback window로 승인한다. RFC 0009의 compatibility
    retirement audit는 2.x 지원 창과 두 번의 zero-inventory audit 이후에만 시작한다.
 
