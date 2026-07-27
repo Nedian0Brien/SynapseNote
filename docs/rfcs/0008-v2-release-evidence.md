@@ -72,7 +72,7 @@ evidence까지 repository artifact로 남겨야 한다.
 | `PLANE-V2-001` | `bun run test:file -- packages/server/src/database-data-plane.test.ts` | 46 pass / 309 assertions; permission, query, derived, transaction and migration gates |
 | `API-V2-001` | `bun run test:file -- packages/server/src/database-data-plane-api.test.ts` | 35 pass / 338 assertions; strict HTTP schemas and task/mutation/recovery contracts including title-choice bindings |
 | `JOURNAL-RECOVERY-001` | `bun run test:file -- packages/server/src/database-migration-journal.test.ts` | 4 pass / 11 assertions; clean retry, unknown-edit recovery-required, retention cleanup boundary |
-| `TASK-RECOVERY-001` | `bun run test:file -- packages/server/src/database-task-service.test.ts` | 11 pass / 74 assertions; preview/apply/cold verification/rollback/retry/resume/inspection/retention refusal, derived-baseline hash binding, exact v1 byte restoration, and typed intervening-edit conflict |
+| `TASK-RECOVERY-001` | `bun run test:file -- packages/server/src/database-task-service.test.ts` | 11 pass / 74 assertions; preview/apply/cold verification/rollback/retry/resume/inspection/retention refusal, derived-baseline hash binding, exact v1 byte restoration, and typed per-path intervening-edit conflict |
 | `MIG-CRASH-001` | `bun run test:file -- packages/server/src/database-migration-process-crash.test.ts` | 1 pass / 96 assertions; independent SIGKILL at every staging and canonical activation file index, fresh recovery, v2 cold rebuild and journal activation |
 | `MCP-RECOVERY-001` | `bun run test:file -- packages/server/src/mcp/tools/database-task.test.ts` | 3 pass / 19 assertions; task action validation and HTTP forwarding |
 | `CLI-RECOVERY-001` | `bun run test:file -- packages/cli/src/commands/database.test.ts` | 12 pass / 43 assertions; machine-readable migration inspect/cleanup command registration and recovery action descriptions |
@@ -125,7 +125,7 @@ activation hook failure를 주입해 journal rollback과 exact before bytes를 �
 SIGKILL을 주입한 뒤 fresh task/store/index가 recovery하고 v2 cold rebuild를 완료하는 것을
 검증한다. `TASK-RECOVERY-001`은 clean migration의 byte-exact user undo와 intervening-edit
 `task_rollback_conflict`를 검증한다. 따라서 migration의 file-boundary checkpoint와 clean
-undo/conflict contract는 재현되지만 deferred cleanup, 일반 mutation의
+undo/conflict contract와 content-free conflict paths는 재현되지만 deferred cleanup, 일반 mutation의
 disk-full/permission/process-kill, 그리고 full fixture round-trip은 아직 별도 gate다.
 Release candidate에서는 `MIG-019`–`MIG-023`를 task-scoped same-volume staging,
 post-commit cold rebuild, user undo, intervening edit conflict, deferred cleanup까지

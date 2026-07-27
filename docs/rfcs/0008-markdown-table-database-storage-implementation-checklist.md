@@ -702,8 +702,9 @@ Fixture matrix는 H-010 gate로 남아 있다.
   before bytes를 복구한다. 완료 기준: v1 manifest/index/logical snapshot hash가 exact before와
   일치하고 unknown external edit는 overwrite 대신 `rollback_blocked`가 된다.
 - [x] **V2-I-009 — User undo.** Committed migration을 retention window 안에 reverse한다.
-  완료 기준: no-intervening-change는 byte-exact v1 복구, intervening-change는 per-path/cell
-  conflict preview, expired/missing backup은 명시적 refusal이다.
+  완료 기준: no-intervening-change는 byte-exact v1 복구, intervening-change는 content-free
+  per-path conflict preview/list와 `recovery_required` 상태를 반환하며, expired/missing backup은
+  명시적 refusal이다.
 - [x] **V2-I-010 — Cancel/retry semantics.** Commit 전 cancel과 commit 후 rollback을
   구분한다. 완료 기준: same plan retry는 idempotent하고 blocker 수정 뒤 old plan/approval은
   재사용되지 않는다.
@@ -738,9 +739,9 @@ evidence다. `database-migration-process-crash.test.ts`는 독립 child process�
 주입해 staging과 canonical activation의 모든 file index를 각각 재현하고, fresh task/store/
 index가 journal을 복구한 뒤 v2 cold rebuild와 linked-document metadata cleanup을 통과한다.
 `database-task-service.test.ts`는 clean migration의 byte-exact undo와 intervening-edit
-`task_rollback_conflict`를 검증하고, CLI `database migration inspect/cleanup`이 content-free
-recovery surface를 노출한다. Deferred cleanup destructive-plan rehearsal만 I-011 release
-gate로 남아 있다.
+`task_rollback_conflict`의 content-free conflict paths를 검증하고, CLI `database migration
+inspect/cleanup`이 recovery surface를 노출한다. Deferred cleanup destructive-plan rehearsal만
+I-011 release gate로 남아 있다.
 
 ## J. App, desktop, server API, MCP, CLI, and user experience
 
