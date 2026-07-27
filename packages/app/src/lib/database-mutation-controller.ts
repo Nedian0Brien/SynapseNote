@@ -1,4 +1,7 @@
-import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-server';
+import type {
+  DatabaseDesiredStateDraftInput,
+  DatabaseMarkdownTableMutationRequest,
+} from '@nedian0brien/synapsenote-server';
 import { useRef, useState } from 'react';
 import { useDatabaseMutationHistory } from './database-mutation-history';
 import { databaseUiMutationReviewMode } from './database-mutation-policy';
@@ -117,6 +120,59 @@ export function useDatabaseMutationController({
       });
   };
 
+  /**
+   * Execute the v2 owner-table path without manufacturing a v1 desired-state
+   * plan. The v2 receipt is intentionally not exposed as a legacy undo token;
+   * callers still get the same optimistic cleanup, refresh, and conflict
+   * semantics. The server receipt is not silently coerced into a legacy undo
+   * token; receipt-backed v2 undo remains an explicit server API surface.
+   */
+  const runMarkdownTable = (
+    mutation: DatabaseMarkdownTableMutationRequest,
+    policy: DatabaseMutationPolicy,
+  ) => {
+    if (
+      activeMutationRef.current ||
+      status !== 'idle' ||
+      undoStatus !== 'idle' ||
+      redoStatus !== 'idle'
+    ) {
+      return;
+    }
+    activeMutationRef.current = true;
+    setError(null);
+    resetForForwardMutation();
+    setStatus('saving');
+    const optimisticKeys = [
+      ...(policy.optimisticCellKey ? [policy.optimisticCellKey] : []),
+      ...(policy.optimisticCellKeys ?? []),
+    ];
+    const clearOptimistic = () => clearOptimisticValues(optimisticKeys);
+    void executeDatabaseMutation({ storage: 'markdown_table', mutation })
+      .then((outcome) => {
+        clearOptimistic();
+        if (!outcome.changed) {
+          onRefresh();
+          return;
+        }
+        onSaveFeedback('saved');
+        onRefresh();
+        policy.onCommitted?.();
+      })
+      .catch((cause: unknown) => {
+        clearOptimistic();
+        const problem = classifyDatabaseUiProblem(cause, 'Unable to save the database change.');
+        setErrorKind(problem.kind);
+        setError(databaseMutationUiMessage(problem.kind));
+        if (problem.kind === 'conflict') onRefresh();
+        policy.onFailed?.();
+      })
+      .finally(() => {
+        activeMutationRef.current = false;
+        setStatus('idle');
+      });
+  };
+
   return {
     status,
     error,
@@ -127,6 +183,7 @@ export function useDatabaseMutationController({
     redoToken,
     redoStatus,
     run,
+    runMarkdownTable,
     undo,
     redo,
   };

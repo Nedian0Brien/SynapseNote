@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 import { createHash } from 'node:crypto';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createDatabaseCommitEngine } from './database-commit.ts';
@@ -113,6 +113,104 @@ async function fixture() {
 }
 
 describe('DatabaseTaskService product handlers', () => {
+  test('creates a blank v2 owner table through the reviewed plan without a generated record folder', async () => {
+    const { contentDir, store, plans, commit, service } = await fixture();
+    const state = desiredState();
+    (state.sources[0] as (typeof state.sources)[number] & { storage?: 'markdown_table' }).storage =
+      'markdown_table';
+    state.sampleRecords = [];
+    const draft = plans.createDraft(state);
+    const v2Definition = draft.normalized.definition;
+    expect(v2Definition.version).toBe(2);
+    const plan = plans.createPlan(draft.id);
+    expect(plan.committable).toBe(true);
+    expect(plan.diff.manifests).toContainEqual(
+      expect.objectContaining({ path: 'content/task-service/tasks.md', action: 'create' }),
+    );
+    const task = await service.start({
+      operation: 'bulk',
+      commit: {
+        planId: plan.id,
+        planHash: plan.hash,
+        expectedSnapshotRevision: plan.snapshotRevision,
+        idempotencyKey: 'durable-v2-blank-create-0001',
+        approvalToken: commit.expectedApprovalToken(plan.hash),
+        actor: { principalId: 'agent:v2-blank-create', kind: 'agent' },
+      },
+    });
+    await expect(service.wait(task.id)).resolves.toMatchObject({ state: 'succeeded' });
+    expect(store.list()[0]).toMatchObject({ version: 2 });
+    expect(readFileSync(join(contentDir, 'task-service', 'tasks.md'), 'utf8')).toContain(
+      'synapsenote:database',
+    );
+    expect(() => readFileSync(join(contentDir, 'tasks', 'rec_1.md'))).toThrow();
+  });
+
+  test('migrates a v1 record-file database into owner-table v2 with cold verification', async () => {
+    const { projectDir, contentDir, store, index, plan, commit, service } = await fixture();
+    await service.wait(
+      await (async () => {
+        const task = await service.start({
+          operation: 'bulk',
+          commit: {
+            planId: plan.id,
+            planHash: plan.hash,
+            expectedSnapshotRevision: plan.snapshotRevision,
+            idempotencyKey: 'durable-v2-migration-bulk-0001',
+            approvalToken: commit.expectedApprovalToken(plan.hash),
+            actor: { principalId: 'agent:v2-migration', kind: 'agent' },
+          },
+        });
+        return task.id;
+      })(),
+    );
+    const database = store.list()[0];
+    if (!database) throw new Error('expected committed database');
+    const expectedManifestRevision = store.snapshot().revision;
+    const preview = await service.previewMigration({
+      operation: 'migration',
+      databaseIds: [database.id],
+      expectedManifestRevision,
+      targetVersion: 2,
+    });
+    const item = preview.items[0];
+    if (!item?.planHash || !item.migrationCommittedAt) throw new Error('expected v2 migration plan');
+    expect(preview).toMatchObject({ committable: true, summary: { ready: 1, blocked: 0 } });
+
+    await expect(
+      service.start({
+        operation: 'migration',
+        databaseIds: [database.id],
+        expectedManifestRevision,
+        targetVersion: 2,
+      }),
+    ).rejects.toMatchObject({ code: 'task_plan_hash_required' });
+
+    const task = await service.start({
+      operation: 'migration',
+      databaseIds: [database.id],
+      expectedManifestRevision,
+      targetVersion: 2,
+      planHashes: { [database.id]: item.planHash },
+      migrationCommittedAt: { [database.id]: item.migrationCommittedAt },
+    });
+    const migrated = await service.wait(task.id);
+    expect(migrated).toMatchObject({
+      state: 'succeeded',
+      result: { verification: { verifiedRows: 2, verifiedOwners: 1 } },
+    });
+    expect(readFileSync(join(projectDir, '.ok', 'databases', 'task-service.yml'), 'utf8')).toContain('version: 2');
+    expect(readFileSync(join(contentDir, 'task-service', 'tasks.md'), 'utf8')).toContain(
+      'synapsenote:database',
+    );
+    for (const path of readdirSync(join(contentDir, 'tasks'))) {
+      if (path.endsWith('.md')) {
+        expect(readFileSync(join(contentDir, 'tasks', path), 'utf8')).not.toContain('database_id:');
+      }
+    }
+    expect(index.list()).toHaveLength(2);
+  });
+
   test('runs approved bulk commit, frozen source import, and manifest migration tasks', async () => {
     const { projectDir, contentDir, store, index, plan, commit, taskStore, service } =
       await fixture();
@@ -418,7 +516,7 @@ describe('DatabaseTaskService product handlers', () => {
     });
     expect(readFileSync(path, 'utf8')).toBe(before);
 
-    const blockedInput = { ...target, targetVersion: 2 };
+    const blockedInput = { ...target, targetVersion: 3 };
     const blocked = await service.previewMigration(blockedInput);
     expect(blocked).toMatchObject({
       summary: { notNeeded: 0, blocked: 1 },
@@ -430,6 +528,49 @@ describe('DatabaseTaskService product handlers', () => {
       details: { blockerCount: 1 },
     });
     expect(readFileSync(path, 'utf8')).toBe(before);
+  });
+
+  test('blocks migration when the frozen v1 index contains an unresolved record issue', async () => {
+    const { contentDir, store, index, plan, commit, service } = await fixture();
+    await service.wait(
+      (
+        await service.start({
+          operation: 'bulk',
+          commit: {
+            planId: plan.id,
+            planHash: plan.hash,
+            expectedSnapshotRevision: plan.snapshotRevision,
+            idempotencyKey: 'durable-migration-index-blocker',
+            approvalToken: commit.expectedApprovalToken(plan.hash),
+            actor: { principalId: 'agent:migration-index-blocker', kind: 'agent' },
+          },
+        })
+      ).id,
+    );
+    const database = store.list()[0];
+    if (!database) throw new Error('expected committed database');
+    const recordName = readdirSync(join(contentDir, 'tasks')).find((name) => name.endsWith('.md'));
+    if (!recordName) throw new Error('expected a committed v1 record');
+    const recordPath = `tasks/${recordName}`;
+    index.upsertPath(recordPath, '---\ntitle: Missing identity\nstatus: todo\n---\n');
+
+    const preview = await service.previewMigration({
+      operation: 'migration',
+      databaseIds: [database.id],
+      expectedManifestRevision: store.snapshot().revision,
+      targetVersion: 2,
+    });
+    expect(preview).toMatchObject({
+      committable: false,
+      summary: { blocked: 1 },
+      items: [
+        {
+          action: 'blocked',
+          code: 'record_materialization_failed',
+          message: expect.stringContaining('invalid_record'),
+        },
+      ],
+    });
   });
 
   test('dispatches durably queued work and wires product retry and resume semantics', async () => {

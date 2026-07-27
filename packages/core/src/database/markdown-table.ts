@@ -16,6 +16,23 @@ import {
 export const DATABASE_MARKDOWN_OWNER_MARKER_VERSION = 2 as const;
 export const DATABASE_MARKDOWN_OWNER_MARKER_NAME = 'synapsenote:database' as const;
 
+/**
+ * Hard resource limits for the canonical owner-table format.  These values are
+ * deliberately exported from core so the browser, server, CLI, and standalone
+ * readers reject the same input before doing unbounded parsing or rendering.
+ */
+export const DATABASE_MARKDOWN_LIMITS = Object.freeze({
+  markerBytes: 16 * 1024,
+  ownerDocumentBytes: 4 * 1024 * 1024,
+  rows: 100_000,
+  columns: 200,
+  cellBytes: 64 * 1024,
+  jsonBytes: 128 * 1024,
+  jsonDepth: 16,
+  relationTargets: 100,
+  wikilinkAliasBytes: 512,
+} as const);
+
 export type DatabaseMarkdownOwnerMarkerVersion =
   typeof DATABASE_MARKDOWN_OWNER_MARKER_VERSION;
 
@@ -68,7 +85,8 @@ export type DatabaseMarkdownOwnerParseErrorCode =
   | 'table_invalid_header'
   | 'table_invalid_delimiter'
   | 'table_column_count'
-  | 'table_invalid_row';
+  | 'table_invalid_row'
+  | 'resource_limit';
 
 export interface DatabaseMarkdownOwnerParseError {
   ok: false;
@@ -84,6 +102,10 @@ export type ParseDatabaseMarkdownOwnerResult =
 const IDENTIFIER_RE = /^[A-Za-z][A-Za-z0-9_-]{0,127}$/;
 const COLUMN_IDENTIFIER_RE = /^(?:prop|sys)_[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
 const EMPTY_LINE_RE = /^[ \t]*(?:\r?\n|$)$/;
+
+function utf8Bytes(value: string): number {
+  return new TextEncoder().encode(value).byteLength;
+}
 
 function lineEnd(source: string, start: number): number {
   const newline = source.indexOf('\n', start);
@@ -112,6 +134,11 @@ export function encodeDatabaseMarkdownCellText(value: string): string {
   if (value.includes('\0')) throw new Error('A Markdown table cell cannot contain a NUL byte');
   if (value.includes('\r') || value.includes('\n')) {
     throw new Error('A Markdown table cell cannot contain a line break');
+  }
+  if (utf8Bytes(value) > DATABASE_MARKDOWN_LIMITS.cellBytes) {
+    throw new Error(
+      `A Markdown table cell exceeds the ${DATABASE_MARKDOWN_LIMITS.cellBytes}-byte limit`,
+    );
   }
   return value.replaceAll('\\', '\\\\').replaceAll('|', '\\|');
 }
@@ -235,6 +262,13 @@ function parseMarker(
   body: string,
   range: DatabaseMarkdownSourceRange,
 ): DatabaseMarkdownOwnerMarker | DatabaseMarkdownOwnerParseError {
+  if (utf8Bytes(body) > DATABASE_MARKDOWN_LIMITS.markerBytes) {
+    return invalid(
+      'resource_limit',
+      `Database owner marker exceeds the ${DATABASE_MARKDOWN_LIMITS.markerBytes}-byte limit`,
+      range,
+    );
+  }
   const values = new Map<string, string>();
   for (const [index, rawLine] of body.split(/\r?\n/).entries()) {
     const line = rawLine.trim();
@@ -285,6 +319,7 @@ function parseMarker(
   const columns = columnsValue.split(',').map((column) => column.trim());
   if (
     columns.length === 0 ||
+    columns.length > DATABASE_MARKDOWN_LIMITS.columns ||
     columns.some((column) => !COLUMN_IDENTIFIER_RE.test(column)) ||
     new Set(columns).size !== columns.length
   ) {
@@ -301,6 +336,12 @@ function parseMarker(
 
 /** Parse the owner marker and its immediately following GFM table. */
 export function parseDatabaseMarkdownOwner(source: string): ParseDatabaseMarkdownOwnerResult {
+  if (utf8Bytes(source) > DATABASE_MARKDOWN_LIMITS.ownerDocumentBytes) {
+    return invalid(
+      'resource_limit',
+      `Database owner document exceeds the ${DATABASE_MARKDOWN_LIMITS.ownerDocumentBytes}-byte limit`,
+    );
+  }
   const markerMatch = findOwnerMarker(source);
   if (!markerMatch) {
     return invalid('marker_missing', 'No SynapseNote database owner marker was found');
@@ -325,7 +366,12 @@ export function parseDatabaseMarkdownOwner(source: string): ParseDatabaseMarkdow
 
   const headerEnd = lineEnd(source, cursor);
   const header = createRow(source, 0, cursor, headerEnd);
-  if (header.cells.length !== marker.columns.length || header.cells.length === 0) {
+  if (
+    header.cells.length > DATABASE_MARKDOWN_LIMITS.columns ||
+    header.cells.some((cell) => utf8Bytes(cell.raw) > DATABASE_MARKDOWN_LIMITS.cellBytes) ||
+    header.cells.length !== marker.columns.length ||
+    header.cells.length === 0
+  ) {
     return invalid(
       'table_invalid_header',
       `Database owner table has ${header.cells.length} header columns; marker declares ${marker.columns.length}`,
@@ -353,6 +399,16 @@ export function parseDatabaseMarkdownOwner(source: string): ParseDatabaseMarkdow
     const line = lineWithoutEnding(source, rowCursor, end);
     if (line.trim() === '' || !isTableLine(line)) break;
     const row = createRow(source, rows.length, rowCursor, end);
+    if (
+      rows.length >= DATABASE_MARKDOWN_LIMITS.rows ||
+      row.cells.some((cell) => utf8Bytes(cell.raw) > DATABASE_MARKDOWN_LIMITS.cellBytes)
+    ) {
+      return invalid(
+        'resource_limit',
+        `Database owner table exceeds the ${DATABASE_MARKDOWN_LIMITS.rows}-row or ${DATABASE_MARKDOWN_LIMITS.cellBytes}-byte cell limit`,
+        row.range,
+      );
+    }
     if (row.cells.length !== marker.columns.length) {
       return invalid(
         'table_column_count',
@@ -386,12 +442,13 @@ export function serializeDatabaseMarkdownOwnerMarker(marker: DatabaseMarkdownOwn
     !IDENTIFIER_RE.test(marker.sourceId) ||
     !IDENTIFIER_RE.test(marker.blockId) ||
     marker.columns.length === 0 ||
+    marker.columns.length > DATABASE_MARKDOWN_LIMITS.columns ||
     marker.columns.some((column) => !COLUMN_IDENTIFIER_RE.test(column)) ||
     new Set(marker.columns).size !== marker.columns.length
   ) {
     throw new Error('Cannot serialize an invalid database owner marker');
   }
-  return [
+  const serialized = [
     '<!-- synapsenote:database',
     `version=${marker.version}`,
     `database=${marker.databaseId}`,
@@ -400,6 +457,10 @@ export function serializeDatabaseMarkdownOwnerMarker(marker: DatabaseMarkdownOwn
     `columns=${marker.columns.join(',')}`,
     '-->',
   ].join('\n');
+  if (utf8Bytes(serialized) > DATABASE_MARKDOWN_LIMITS.markerBytes) {
+    throw new Error(`Database owner marker exceeds the ${DATABASE_MARKDOWN_LIMITS.markerBytes}-byte limit`);
+  }
+  return serialized;
 }
 
 export function replaceDatabaseMarkdownTableCell(
@@ -495,7 +556,12 @@ function encodeWikilink(value: DatabaseMarkdownDocumentLink): string {
   if (!value.target || value.target.includes('\0') || value.target.includes(']')) {
     throw new Error('A wikilink target is invalid');
   }
-  if (value.alias !== undefined && (value.alias === '' || value.alias.includes(']'))) {
+  if (
+    value.alias !== undefined &&
+    (value.alias === '' ||
+      value.alias.includes(']') ||
+      utf8Bytes(value.alias) > DATABASE_MARKDOWN_LIMITS.wikilinkAliasBytes)
+  ) {
     throw new Error('A wikilink alias is invalid');
   }
   const raw = `[[${value.target}${value.alias === undefined ? '' : `|${value.alias}`}]]`;
@@ -505,16 +571,55 @@ function encodeWikilink(value: DatabaseMarkdownDocumentLink): string {
 function decodeWikilink(value: string): DatabaseMarkdownDocumentLink | null {
   const match = WIKILINK_RE.exec(value.trim());
   if (!match) return null;
+  if (match[2] !== undefined && utf8Bytes(match[2]) > DATABASE_MARKDOWN_LIMITS.wikilinkAliasBytes) {
+    return null;
+  }
   return { kind: 'wikilink', target: match[1], ...(match[2] ? { alias: match[2] } : {}) };
 }
 
+function canonicalJsonValue(value: unknown, seen = new Set<unknown>()): unknown {
+  if (value === null || typeof value !== 'object') {
+    if (typeof value === 'number' && !Number.isFinite(value)) return undefined;
+    return value;
+  }
+  if (seen.has(value)) throw new Error('JSON cell contains a circular reference');
+  seen.add(value);
+  try {
+    if (Array.isArray(value)) {
+      const output = value.map((entry) => canonicalJsonValue(entry, seen));
+      return output.some((entry) => entry === undefined) ? undefined : output;
+    }
+    const output: Record<string, unknown> = {};
+    for (const key of Object.keys(value as Record<string, unknown>).sort()) {
+      const entry = canonicalJsonValue((value as Record<string, unknown>)[key], seen);
+      if (entry === undefined) return undefined;
+      output[key] = entry;
+    }
+    return output;
+  } finally {
+    seen.delete(value);
+  }
+}
+
 function canonicalJson(value: unknown): string | undefined {
-  return JSON.stringify(value);
+  const canonical = canonicalJsonValue(value);
+  return canonical === undefined ? undefined : JSON.stringify(canonical);
 }
 
 function parseJson(value: string): unknown {
+  if (utf8Bytes(value) > DATABASE_MARKDOWN_LIMITS.jsonBytes) return undefined;
   try {
-    return JSON.parse(value);
+    const parsed = JSON.parse(value) as unknown;
+    const stack: Array<{ value: unknown; depth: number }> = [{ value: parsed, depth: 0 }];
+    while (stack.length > 0) {
+      const item = stack.pop();
+      if (!item) continue;
+      if (!item.value || typeof item.value !== 'object') continue;
+      if (item.depth >= DATABASE_MARKDOWN_LIMITS.jsonDepth) return undefined;
+      const children = Array.isArray(item.value) ? item.value : Object.values(item.value);
+      stack.push(...children.map((child) => ({ value: child, depth: item.depth + 1 })));
+    }
+    return parsed;
   } catch {
     return undefined;
   }
@@ -581,6 +686,27 @@ function encodeJsonCell(value: unknown): EncodeDatabaseMarkdownCellResult {
   try {
     const json = canonicalJson(value);
     if (json === undefined) return codecError('invalid_json', 'Value cannot be serialized as JSON');
+    if (utf8Bytes(json) > DATABASE_MARKDOWN_LIMITS.jsonBytes) {
+      return codecError(
+        'invalid_value',
+        `JSON cell exceeds the ${DATABASE_MARKDOWN_LIMITS.jsonBytes}-byte limit`,
+      );
+    }
+    const stack: Array<{ value: unknown; depth: number }> = [{ value, depth: 0 }];
+    while (stack.length > 0) {
+      const item = stack.pop();
+      if (!item) continue;
+      const current = item.value;
+      if (!current || typeof current !== 'object') continue;
+      if (item.depth >= DATABASE_MARKDOWN_LIMITS.jsonDepth) {
+        return codecError(
+          'invalid_value',
+          `JSON cell exceeds the ${DATABASE_MARKDOWN_LIMITS.jsonDepth}-level depth limit`,
+        );
+      }
+      const children = Array.isArray(current) ? current : Object.values(current);
+      stack.push(...children.map((child) => ({ value: child, depth: item.depth + 1 })));
+    }
     return { ok: true, text: encodeDatabaseMarkdownCellText(json) };
   } catch (error) {
     return codecError('invalid_json', error instanceof Error ? error.message : String(error));
@@ -607,6 +733,12 @@ export function encodeDatabaseMarkdownCell(
   }
   if (propertyType === 'relation' || propertyType === 'person') {
     const links = Array.isArray(value) ? value : [value];
+    if (links.length > DATABASE_MARKDOWN_LIMITS.relationTargets) {
+      return codecError(
+        'invalid_value',
+        `${propertyType} cells may contain at most ${DATABASE_MARKDOWN_LIMITS.relationTargets} wikilinks`,
+      );
+    }
     if (!links.every((item) => item && typeof item === 'object' && (item as { kind?: string }).kind === 'wikilink')) {
       return codecError('invalid_wikilink', `${propertyType} cells must contain wikilinks`);
     }
@@ -678,6 +810,12 @@ export function decodeDatabaseMarkdownCell(
   if (propertyType === 'relation' || propertyType === 'person') {
     const links = decodeWikilinks(value);
     if (!links || links.length === 0) return codecError('invalid_wikilink', `${propertyType} cells must contain wikilinks`);
+    if (links.length > DATABASE_MARKDOWN_LIMITS.relationTargets) {
+      return codecError(
+        'invalid_value',
+        `${propertyType} cells may contain at most ${DATABASE_MARKDOWN_LIMITS.relationTargets} wikilinks`,
+      );
+    }
     return { ok: true, value: links.length === 1 ? links[0] : links };
   }
   switch (propertyType) {

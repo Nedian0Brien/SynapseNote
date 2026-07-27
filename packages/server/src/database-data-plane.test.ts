@@ -1660,6 +1660,29 @@ Body
     }
   });
 
+  test('blocks every v2 and v1 mutation while a migration gate is held', async () => {
+    const { store, index, plans } = await fixture();
+    const dataPlane = createDatabaseDataPlane({
+      databaseStore: store,
+      databaseRecordIndex: index,
+      databasePlanEngine: plans,
+      isDatabaseMigrationActive: () => ({ taskId: 'task_migration_freeze' }),
+    });
+    expect(() => dataPlane.catalog()).toThrow(DatabaseDataPlaneError);
+    try {
+      dataPlane.catalog();
+    } catch (error) {
+      expect(error).toMatchObject({ code: 'transaction_in_progress', details: { taskId: 'task_migration_freeze' } });
+    }
+    await expect(dataPlane.commit({} as never)).rejects.toMatchObject({
+      code: 'transaction_in_progress',
+      details: { taskId: 'task_migration_freeze' },
+    });
+    await expect(
+      dataPlane.mutateMarkdownTable({ operation: 'update_cell', input: {} } as never),
+    ).rejects.toMatchObject({ code: 'transaction_in_progress', details: { taskId: 'task_migration_freeze' } });
+  });
+
   test('returns compact ranked catalog candidates without silently resolving ambiguity', async () => {
     const { dataPlane } = await fixture();
     const catalog = dataPlane.catalog('customer');

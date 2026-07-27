@@ -1,6 +1,7 @@
 # RFC 0008: Markdown table canonical database storage
 
-- 상태: 방향 승인, foundation 및 격리된 v2 writer primitive 구현 중 (production routing 전)
+- 상태: 방향 승인, core/read contract 및 storage-aware writer/API/MCP/CLI/app cell·기본 row path 구현 중
+  (new-default·native title/lifecycle write·full migration release는 gated)
 - 작성일: 2026-07-27
 - 대상: `packages/core`, `packages/server`, `packages/app`, `packages/cli`, 데이터베이스 저장·인덱스·Git merge·마이그레이션 경계
 - 성격: canonical 저장 형식 변경, 단일 데이터베이스 엔진 결정
@@ -271,7 +272,7 @@ Manifest가 property type과 stable option IDs/keys를 소유한다. Markdown ce
 | `files` | Markdown link 또는 wiki-embed 목록 |
 | `unique_id` | positive integer; prefix/watermark는 manifest 소유 |
 | `place` | versioned compact JSON object with canonical keys |
-| `created_time/by`, `last_edited_time/by` | 저장하지 않는 audit-derived virtual property |
+| `created_time/by`, `last_edited_time/by` | owner table에 저장하지 않는 audit-derived virtual property; migrated v1 baseline은 bounded manifest alias에서 projection |
 | `formula`, `rollup` | 저장하지 않는 schema-derived virtual property |
 | `button`, `verification` | action/derived state; canonical result cell 없음 |
 
@@ -457,7 +458,12 @@ Database search는 owner table의 raw Markdown page tier를 통해 typed cell을
 
 ### 12.2 Revision
 
-Source table revision은 owner document 전체 hash가 아니라 marker + bound table의 normalized structural hash를 사용한다. 같은 문서의 unrelated prose edit가 모든 database row revision을 바꾸면 안 된다.
+두 revision을 구분한다. `ownerWriteRevision`은 source-preserving splice의 lost-update를
+막기 위한 owner Markdown 전체 UTF-8 byte hash이고, `tableRevision`/`recordRevision`은
+marker와 bound table/row의 normalized structural hash다. 따라서 unrelated prose edit는
+logical row revision을 바꾸지 않지만, write API는 항상 관찰한 owner byte revision을
+precondition으로 요구한다. UI query projection은 v2 row마다 이 값을
+`storageRevision`으로 함께 전달한다.
 
 Record revision은 최소 다음으로 결정한다.
 
@@ -534,7 +540,12 @@ Yjs/ProseMirror collaboration은 owner Markdown document 하나를 공유하지�
 - 한계에 가까워지면 filter를 권하는 것이 아니라 source split/export/migration을 명시적으로 안내한다.
 - 한계를 넘는 write는 partial 파일을 만들지 않고 plan 단계에서 거부한다.
 
-구체적인 row/column 기본값은 구현 전 benchmark와 기존 512 KiB document boundary를 함께 측정한 뒤 implementation checklist에 고정한다. 측정 없이 높은 숫자를 약속하거나 숨은 alternate store로 넘기지 않는다.
+현재 구현의 hard limit은 다음과 같다. marker 16 KiB, owner Markdown 4 MiB,
+100,000 rows, 200 columns, cell 64 KiB, compact JSON 128 KiB/depth 16,
+relation/person wikilinks 100개, wikilink alias 512 bytes, migration alias 10,000개,
+manifest 1 MiB이다. Core parser, server writer, API schema와 migration planner가 같은
+상수를 사용하며 limit-1/limit/limit+1 fixture를 유지한다. 이 값은 benchmark evidence로
+조정할 수 있지만, 조정 시 format compatibility note와 changeset을 함께 갱신한다.
 
 ## 16. 기존 폴더 onboarding
 
@@ -645,16 +656,18 @@ migration 전체를 막는다. 별도 alias artifact를 추가하려면 이 RFC�
 | Relation record ID | Target document wikilink | Target source에서 legacy ID를 stable document ID/path로 해석할 수 있어야 한다. |
 | Formula/Rollup definition | v2 manifest definition | Stable property-ID AST와 definition revision을 보존한다. 결과 cell은 만들지 않는다. |
 | Formula/Rollup cached result | 없음 | 같은 frozen evaluation context에서 재계산한 결과만 비교한다. |
-| `_sn.archived_at` | Reserved stored lifecycle column | Manifest가 선언한 stable system property로 변환하고 기본 view에서는 숨긴다. |
-| `_sn.created_at/by`, `_sn.last_edited_at/by` | Audit-derived baseline + transaction history | v1 값을 migration verification baseline으로 보존하고 cell에는 쓰지 않는다. |
-| `_sn.page_layout_override` | Manifest-owned record layout override | Canonical record ID로 key를 바꾸고 orphan reference를 거부한다. |
+| `_sn.archived_at` | Bounded `migration.legacyRecordIds[canonicalRecordId].archivedAt` metadata | 값은 migration alias manifest에만 보존하고 owner cell/linked-document frontmatter의 두 번째 원본으로 만들지 않는다. Native v2 lifecycle writer는 별도 contract가 고정되기 전 활성화하지 않는다. |
+| `_sn.created_at/by`, `_sn.last_edited_at/by` | Bounded migration alias audit baseline | v1 값을 alias에 보존하고 v2 derived property projection에서 읽지만 owner table cell에는 쓰지 않는다. |
+| `_sn.page_layout_override` | Bounded migration alias record layout override | Canonical record ID alias로 key를 바꾸고 orphan reference를 거부한다. |
 | Unrelated frontmatter/body | 같은 linked document | Document ID/title에 필요한 승인 변경 외에는 byte-for-byte 보존한다. |
 | v1 record path | Linked document path | Existing-folder 문서는 유지하고 generated path rename은 별도 선택으로 처리한다. |
 | Inline/full-page `DatabaseView` | Owner block 또는 linked view | Source마다 정확히 하나만 owner가 되고 나머지는 reference-only linked view가 된다. |
 
-Reserved lifecycle/audit/layout representation은 v2 manifest schema가 확정될 때
-strict schema와 size budget을 가져야 한다. 이 세 필드의 canonical target이
-구현되지 않은 상태에서는 migration을 출시할 수 없다.
+Lifecycle/audit/layout의 migration baseline은 strict `migration.legacyRecordIds`
+schema와 alias/manifest byte budget을 사용한다. 이 metadata는 migration provenance와
+read projection을 위한 bounded compatibility layer이며 writable v2 cell이 아니다.
+Native v2 archive/audit/layout mutation은 이 RFC의 후속 contract가 확정되기 전에는
+지원하지 않고, UI/API는 명시적인 read-only diagnostic을 반환한다.
 
 ### 17.4 Migration eligibility와 blockers
 
@@ -717,6 +730,13 @@ approved|staging|verifying_staged -> cancelled
 staging|verifying_staged|committing|verifying_committed -> rolling_back
 rolling_back -> rolled_back | rollback_blocked
 ```
+
+구현 저장소는 위 제품 상태와 별도로 project-scoped migration journal의 파일 상태를
+`prepared → staged → activated` 또는 `recovery_required`로 기록한다. 정상 rollback은
+`rolled_back` terminal marker를 남긴다. Task store checkpoint와 journal checkpoint는
+서로 다른 파일에 atomic write로 저장되며, server 재시작 시 journal의 non-terminal
+entry가 먼저 migration gate를 복원한다. journal이 `recovery_required`이면 retry/apply를
+자동으로 재시도하지 않고 operator recovery를 요구한다.
 
 각 전이는 task ID, idempotency key hash, plan hash, actor, expected workspace
 snapshot, target file set, per-file before/after hash, checkpoint cursor를 durable
@@ -948,7 +968,8 @@ v1 manifest parse, record index rebuild, logical before snapshot equality까지 
 ### 17.11 Rollout과 compatibility 제거
 
 1. **Read-only foundation**: v2 core schema/parser/codec과 equivalence harness를
-   ship하되 production writer와 migration apply는 비활성화한다. Supported read
+   ship하고 storage-aware writer/API는 explicit v2 route로만 제공한다. New-default와 native
+   lifecycle mutation, migration apply release는 비활성화한다. Supported read
    versions와 default write version을 별도 상수/capability로 분리하여 이 단계에서
    database creation default를 실수로 v2로 올리지 않는다.
 2. **Internal fixtures**: generated blank, existing folder, inline, full-page,

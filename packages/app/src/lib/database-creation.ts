@@ -136,6 +136,9 @@ interface CreationProperty {
   options?: Array<{ key: string; name: string }>;
 }
 
+/** Storage choice exposed by creation preview; v1 remains the default until M5. */
+export type DatabaseCreationStorage = 'record_files' | 'markdown_table';
+
 type CreationView = NonNullable<DatabaseDesiredStateDraftInput['views']>[number];
 
 const TEMPLATE_BOARD_GROUPS: Record<DatabaseCreationTemplateKey, string> = {
@@ -238,6 +241,7 @@ function baseDesiredState(input: {
   properties: readonly CreationProperty[];
   records?: readonly Record<string, unknown>[];
   views?: readonly CreationView[];
+  storage?: DatabaseCreationStorage;
 }): DatabaseDesiredStateDraftInput {
   const name = input.name.trim();
   if (!name) throw new Error('Database name is required');
@@ -263,6 +267,7 @@ function baseDesiredState(input: {
         recordMeaning: `One ${name} record`,
         folder,
         includeSubfolders: input.includeSubfolders ?? true,
+        ...(input.storage ? { storage: input.storage } : {}),
         properties: input.properties.map((property) => ({ ...property })),
       },
     ],
@@ -295,6 +300,7 @@ export function createBlankDatabaseDesiredState(input: {
   name: string;
   key?: string;
   folder?: string;
+  storage?: DatabaseCreationStorage;
 }): DatabaseDesiredStateDraftInput {
   return baseDesiredState({
     ...input,
@@ -306,6 +312,7 @@ export function createExistingFolderDatabaseDesiredState(input: {
   name: string;
   folder: string;
   includeSubfolders?: boolean;
+  storage?: DatabaseCreationStorage;
 }): DatabaseDesiredStateDraftInput {
   if (!input.folder.trim()) throw new Error('Existing folder is required');
   return baseDesiredState({
@@ -597,6 +604,7 @@ export function createTemplateDatabaseDesiredState(input: {
   name: string;
   template: DatabaseCreationTemplateKey;
   folder?: string;
+  storage?: DatabaseCreationStorage;
 }): DatabaseDesiredStateDraftInput {
   const name = input.name.trim();
   const sourceKey = stableKey(name, 'database');
@@ -640,6 +648,7 @@ export function createDelimitedDatabaseDesiredState(input: {
   contents: string;
   delimiter: ',' | '\t' | ';';
   folder?: string;
+  storage?: DatabaseCreationStorage;
 }): DatabaseDesiredStateDraftInput {
   const [rawHeaders, ...rows] = parseDelimited(input.contents, input.delimiter);
   const headers = rawHeaders?.map((header, index) =>

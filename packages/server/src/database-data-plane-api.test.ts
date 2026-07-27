@@ -1597,6 +1597,28 @@ describe('database data plane HTTP handlers', () => {
     });
   });
 
+  test('exposes the storage-aware Markdown table mutation endpoint and fails closed when no v2 writer is configured', async () => {
+    const { handlers } = await fixture();
+    const response = await call(
+      handlers.markdownTableMutation,
+      'POST',
+      '/api/databases/markdown-table/mutate',
+      JSON.stringify({
+        operation: 'update_cell',
+        input: {
+          databaseId: 'db_tasks',
+          sourceId: 'ds_tasks',
+          recordId: 'rec_first',
+          propertyId: 'prop_tasks_score',
+          value: 9,
+          expectedOwnerRevision: `sha256:${'a'.repeat(64)}`,
+        },
+      }),
+    );
+    expect(response.status).toBe(503);
+    expect(JSON.parse(response.body)).toMatchObject({ code: 'mutation_unavailable' });
+  });
+
   test('serves compact catalog, exact description, and typed query contracts', async () => {
     const { handlers } = await fixture();
     const catalog = await call(handlers.catalog, 'GET', '/api/databases/catalog?q=work');

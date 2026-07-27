@@ -95,6 +95,8 @@ import { createDatabaseCommentStore, type DatabaseCommentStore } from './databas
 import { createDatabaseCommitEngine } from './database-commit.ts';
 import { createDatabaseConnectionExecutor } from './database-connection-executor.ts';
 import { createDatabaseDataPlane, type DatabaseDataPlane } from './database-data-plane.ts';
+import { createDatabaseMarkdownTableWriter } from './database-markdown-table-writer.ts';
+import { createDatabaseMigrationGate } from './database-migration-gate.ts';
 import { createDatabaseFormRetentionService } from './database-form-retention.ts';
 import { createDatabaseFormStateStore } from './database-form-state-store.ts';
 import {
@@ -685,6 +687,14 @@ export function createServer(options: ServerOptions): ServerInstance {
       policyRevision: 'sha256:1dfe3d423e5d5a1bdb88ce4a8c9356d8497872c00d292b734eaf015ed599aa63',
     }),
   });
+  const databaseMarkdownTableWriter = createDatabaseMarkdownTableWriter({
+    projectDir,
+    contentDir,
+    databaseStore,
+    databaseRecordIndex,
+    refreshDatabaseIndex: () => databaseIndexCoordinator.refresh('transaction'),
+  });
+  const databaseMigrationGate = createDatabaseMigrationGate();
   const databaseDataPlane = createDatabaseDataPlane({
     databaseStore,
     databaseRecordIndex,
@@ -701,6 +711,8 @@ export function createServer(options: ServerOptions): ServerInstance {
     bindMutationActorToAccessPrincipal: true,
     formStateStore: databaseFormStateStore,
     isCanonicalTransitionActive: () => databaseGitRecovery.isBlocked(),
+    isDatabaseMigrationActive: () => databaseMigrationGate.current(),
+    databaseMarkdownTableWriter,
   });
   const databaseRepairEngine = createDatabaseRepairEngine({
     projectDir,
@@ -1322,6 +1334,7 @@ export function createServer(options: ServerOptions): ServerInstance {
       databaseRecordIndex,
       databasePlanEngine,
       databaseCommitEngine,
+      migrationGate: databaseMigrationGate,
       refreshDatabaseIndex: () => databaseIndexCoordinator.refresh('transaction'),
     });
     databaseTemplateScheduler = createDatabaseTemplateScheduler({
@@ -3118,6 +3131,26 @@ export function createServer(options: ServerOptions): ServerInstance {
     } catch (error) {
       degraded.push('database-task-store');
       log.error({ err: error }, '[database-task] interrupted-task recovery failed');
+    }
+
+    try {
+      const recovered = await databaseMarkdownTableWriter.recover();
+      const blocked = recovered.filter((entry) => entry.state === 'recovery_required');
+      if (blocked.length > 0) {
+        degraded.push('database-markdown-table-transactions');
+        log.error(
+          { mutationIds: blocked.map((entry) => entry.mutationId) },
+          '[database-markdown-table] recovery is required before v2 writes can resume',
+        );
+      } else if (recovered.length > 0) {
+        log.info(
+          { recovered },
+          '[database-markdown-table] unfinished owner-table transactions reconciled',
+        );
+      }
+    } catch (error) {
+      degraded.push('database-markdown-table-transactions');
+      log.error({ err: error }, '[database-markdown-table] startup transaction recovery failed');
     }
 
     try {

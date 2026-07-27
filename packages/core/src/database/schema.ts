@@ -2896,11 +2896,27 @@ export type DatabaseAutomationTrigger = z.infer<typeof DatabaseAutomationTrigger
 export type DatabaseAutomationAction = z.infer<typeof DatabaseAutomationActionSchema>;
 export type DatabaseAutomation = z.infer<typeof DatabaseAutomationSchema>;
 
+export const DatabaseRecordActorSchema = z
+  .object({
+    kind: z.enum(['human', 'agent', 'sync', 'filesystem', 'system']),
+    principal_id: z.string().trim().min(1).max(256),
+  })
+  .strict();
+
+export type DatabaseRecordActor = z.infer<typeof DatabaseRecordActorSchema>;
+
 export const DatabaseMigrationLegacyRecordAliasSchema = z
   .object({
     sourceId: DataSourceIdSchema,
     documentId: DatabaseDocumentIdSchema,
     canonicalRecordId: DatabaseRecordIdSchema,
+    /** Frozen v1 lifecycle/audit baseline; never a second writable value source. */
+    archivedAt: z.string().datetime({ offset: true }).nullable().optional(),
+    createdAt: z.string().datetime({ offset: true }).optional(),
+    lastEditedAt: z.string().datetime({ offset: true }).optional(),
+    createdBy: DatabaseRecordActorSchema.optional(),
+    lastEditedBy: DatabaseRecordActorSchema.optional(),
+    pageLayoutOverride: DatabaseRecordPageLayoutOverrideSchema.optional(),
   })
   .strict();
 
@@ -4611,15 +4627,6 @@ export const DatabaseDefinitionSchema = z
   });
 
 export type DatabaseDefinition = z.infer<typeof DatabaseDefinitionSchema>;
-
-export const DatabaseRecordActorSchema = z
-  .object({
-    kind: z.enum(['human', 'agent', 'sync', 'filesystem', 'system']),
-    principal_id: z.string().trim().min(1).max(256),
-  })
-  .strict();
-
-export type DatabaseRecordActor = z.infer<typeof DatabaseRecordActorSchema>;
 
 export function databaseRecordActorKey(actor: DatabaseRecordActor): string {
   return `${actor.kind}|${actor.principal_id}`;

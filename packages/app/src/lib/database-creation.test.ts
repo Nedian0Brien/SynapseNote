@@ -40,6 +40,15 @@ describe('database creation desired state', () => {
     });
   });
 
+  test('keeps v1 as the default and preserves an explicit v2 storage choice', () => {
+    const legacy = createBlankDatabaseDesiredState({ name: 'Legacy' });
+    expect(legacy.sources[0]?.storage).toBeUndefined();
+
+    const v2 = createBlankDatabaseDesiredState({ name: 'Inline', storage: 'markdown_table' });
+    expect(v2.sources[0]?.storage).toBe('markdown_table');
+    expect(DatabaseDesiredStateDraftSchema.safeParse(v2).success).toBe(true);
+  });
+
   test('creates reviewed starter-template schemas without using non-committable record templates', () => {
     const desired = createTemplateDatabaseDesiredState({ name: 'Launch', template: 'tasks' });
     expect(DatabaseDesiredStateDraftSchema.safeParse(desired).success).toBe(true);

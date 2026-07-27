@@ -1,10 +1,17 @@
 import type { DatabaseValue } from '@nedian0brien/synapsenote-core';
-import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-server';
+import type {
+  DatabaseDesiredStateDraftInput,
+  DatabaseMarkdownTableMutationRequest as ServerDatabaseMarkdownTableMutationRequest,
+} from '@nedian0brien/synapsenote-server';
 import {
   type ExecuteDatabaseUiMutationInput,
   type ExecuteDatabaseUiMutationResult,
   executeDatabaseUiMutation,
 } from '../database-mutation-client';
+import {
+  mutateDatabaseMarkdownTable,
+  type DatabaseMarkdownTableMutationResponse,
+} from '../database-markdown-table-client';
 
 /**
  * The only transport seam used by database UI mutation commands.
@@ -27,10 +34,26 @@ export type DatabaseMutationRequest = ExecuteDatabaseUiMutationInput & {
   operationId?: string;
 };
 
+/** Explicit storage-aware command used by owner-table editors. */
+export type DatabaseMarkdownTableMutationRequest = {
+  storage: 'markdown_table';
+  mutation: ServerDatabaseMarkdownTableMutationRequest;
+};
+
 export function executeDatabaseMutation(
   request: DatabaseMutationRequest,
-): Promise<ExecuteDatabaseUiMutationResult> {
-  return executeDatabaseUiMutation(request);
+): Promise<ExecuteDatabaseUiMutationResult>;
+export function executeDatabaseMutation(
+  request: DatabaseMarkdownTableMutationRequest,
+): Promise<DatabaseMarkdownTableMutationResponse>;
+
+export function executeDatabaseMutation(
+  request: DatabaseMutationRequest | DatabaseMarkdownTableMutationRequest,
+): Promise<ExecuteDatabaseUiMutationResult | DatabaseMarkdownTableMutationResponse> {
+  if ('storage' in request && request.storage === 'markdown_table') {
+    return mutateDatabaseMarkdownTable(request.mutation);
+  }
+  return executeDatabaseUiMutation(request as DatabaseMutationRequest);
 }
 
 export function optimisticCellKey(recordId: string, propertyId: string): string {

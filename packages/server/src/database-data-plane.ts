@@ -37,6 +37,8 @@ import {
   type DatabaseView,
   databasePublicShareIsActive,
   evaluateDatabaseFilter,
+  buildDatabaseReverseRelationIndex,
+  createDatabaseDerivedRevision,
   type FormulaComputedResult,
   formulaErrorResult,
   isDatabaseValueValidForProperty,
@@ -118,6 +120,15 @@ import {
 } from './database-semantic-index.ts';
 import type { DatabaseStore } from './database-store.ts';
 import { recordDatabaseContextPackCapture } from './database-telemetry.ts';
+import {
+  DatabaseMarkdownTableWriterError,
+  type DatabaseMarkdownTableWriter,
+  type DatabaseMarkdownTableCellMutationInput,
+  type DatabaseMarkdownTableBulkCellMutationInput,
+  type DatabaseMarkdownTableRowMutationInput,
+  type DatabaseMarkdownTableRowCreateInput,
+  type DatabaseMarkdownTableUndoInput,
+} from './database-markdown-table-writer.ts';
 
 export type DatabaseDataPlaneErrorCode =
   | 'database_not_found'
@@ -147,7 +158,10 @@ export type DatabaseDataPlaneErrorCode =
   | 'form_duplicate_submission'
   | 'button_plan_expired'
   | 'repair_unavailable'
-  | 'transaction_in_progress';
+  | 'transaction_in_progress'
+  | 'mutation_unavailable'
+  | 'storage_read_only'
+  | 'mutation_failed';
 
 export class DatabaseDataPlaneError extends Error {
   readonly code: DatabaseDataPlaneErrorCode;
@@ -385,6 +399,7 @@ export interface DatabaseQueryExplainTrace {
     propertyIds: readonly string[];
     cache: 'hit' | 'miss' | 'not_applicable';
     permissionRevision: string | null;
+    revision: string | null;
   };
   truncation: {
     cause: DatabaseQueryResult['truncatedBy'];
@@ -474,6 +489,23 @@ export interface CreateDatabaseDataPlaneOptions {
   bindMutationActorToAccessPrincipal?: boolean;
   /** Blocks reads while Git exposes only part of a multi-file canonical transition. */
   isCanonicalTransitionActive?: () => boolean;
+  /** The sole v2 owner-table mutation boundary. */
+  databaseMarkdownTableWriter?: DatabaseMarkdownTableWriter;
+  /** Blocks mutations while a durable v1→v2 task owns the canonical transition. */
+  isDatabaseMigrationActive?: () => { taskId: string } | null;
+}
+
+export type DatabaseMarkdownTableMutationInput =
+  | DatabaseMarkdownTableCellMutationInput
+  | DatabaseMarkdownTableBulkCellMutationInput
+  | DatabaseMarkdownTableRowMutationInput
+  | Omit<DatabaseMarkdownTableRowMutationInput, 'values'>
+  | DatabaseMarkdownTableRowCreateInput
+  | DatabaseMarkdownTableUndoInput;
+
+export interface DatabaseMarkdownTableMutationRequest {
+  operation: 'update_cell' | 'update_cells' | 'replace_row' | 'delete_row' | 'create_row' | 'undo';
+  input: DatabaseMarkdownTableMutationInput;
 }
 
 export interface DatabaseFormSubmissionInput {
@@ -987,6 +1019,8 @@ export class DatabaseDataPlane {
   #defaultAccessPrincipal: DatabaseAccessPrincipal;
   readonly #bindMutationActorToAccessPrincipal: boolean;
   readonly #isCanonicalTransitionActive: () => boolean;
+  readonly #isDatabaseMigrationActive: () => { taskId: string } | null;
+  readonly #databaseMarkdownTableWriter: DatabaseMarkdownTableWriter | null;
   readonly #now: () => Date;
   readonly #formStateStore: DatabaseFormStateStore;
   #publishAutomationEvent:
@@ -1014,6 +1048,8 @@ export class DatabaseDataPlane {
     this.#formStateStore = options.formStateStore ?? createDatabaseFormStateStore();
     this.#publishAutomationEvent = options.publishAutomationEvent ?? null;
     this.#isCanonicalTransitionActive = options.isCanonicalTransitionActive ?? (() => false);
+    this.#isDatabaseMigrationActive = options.isDatabaseMigrationActive ?? (() => null);
+    this.#databaseMarkdownTableWriter = options.databaseMarkdownTableWriter ?? null;
     const resolveConfiguredQueryAccess =
       options.resolveQueryAccess ??
       (() => ({
@@ -2826,6 +2862,20 @@ export class DatabaseDataPlane {
       computedPropertyIds.length === 0
         ? null
         : `sha256:${createHash('sha256').update(stableJson(permissionScope)).digest('hex')}`;
+    const relationIndex =
+      computedPropertyIds.length === 0
+        ? null
+        : buildDatabaseReverseRelationIndex(database, allDatabaseRecords);
+    const derivedRevision =
+      computedPropertyIds.length === 0
+        ? null
+        : createDatabaseDerivedRevision({
+            manifestRevision: storeSnapshot.revision,
+            tableRevisions: { [database.id]: index.revision },
+            dependencyRevision: relationIndex?.revision ?? 'sha256:empty',
+            permissionRevision: derivedPermissionRevision ?? 'sha256:empty',
+            evaluationRevision: index.lastIncrementalAt ?? index.lastRebuiltAt ?? '1970-01-01T00:00:00.000Z',
+          });
     const derivedCacheKey =
       derivedPermissionRevision === null
         ? null
@@ -2836,6 +2886,7 @@ export class DatabaseDataPlane {
                 indexRevision: index.revision,
                 manifestRevision: storeSnapshot.revision,
                 permissionRevision: derivedPermissionRevision,
+                derivedRevision,
                 evaluatedAt:
                   index.lastIncrementalAt ?? index.lastRebuiltAt ?? '1970-01-01T00:00:00.000Z',
               }),
@@ -2886,6 +2937,10 @@ export class DatabaseDataPlane {
       records: derivedRecords.filter(
         (record) => record.sourceId === source.id && allowedRecordIds.has(record.id),
       ),
+      storageRevision:
+        source.storage?.kind === 'markdown_table'
+          ? this.#databaseRecordIndex.getStorageRevision(database.id, source.id)
+          : undefined,
       people: database.people,
       resolveFileAvailability: (path) => this.#databaseRecordIndex.fileAvailability(path),
       resolveRelationRecord,
@@ -2980,6 +3035,7 @@ export class DatabaseDataPlane {
         propertyIds: computedPropertyIds,
         cache: derivedCache,
         permissionRevision: derivedPermissionRevision,
+        revision: derivedRevision,
       },
       truncation: {
         cause: result.truncatedBy,
@@ -3551,6 +3607,7 @@ export class DatabaseDataPlane {
   }
 
   async submitForm(input: DatabaseFormSubmissionInput): Promise<DatabaseFormSubmissionResult> {
+    this.#assertMutationAllowed();
     const described = this.#describeCanonical({
       databaseId: input.databaseId,
       sourceId: input.sourceId,
@@ -4152,6 +4209,7 @@ export class DatabaseDataPlane {
   async executeButton(
     input: DatabaseButtonExecutionInput,
   ): Promise<{ run: DatabaseButtonRun; undoToken: string | null }> {
+    this.#assertMutationAllowed();
     if (!this.#databaseButtonExecutor) {
       throw new DatabaseDataPlaneError(
         'permission_denied',
@@ -4253,6 +4311,7 @@ export class DatabaseDataPlane {
   }
 
   async applyRepair(input: DatabaseRepairApplyInput): Promise<DatabaseRepairResult> {
+    this.#assertMutationAllowed();
     if (!this.#databaseRepairEngine) {
       throw new DatabaseDataPlaneError('repair_unavailable', 'Database repair is unavailable');
     }
@@ -4270,6 +4329,7 @@ export class DatabaseDataPlane {
   }
 
   async commit(input: DatabaseCommitInput): Promise<DatabaseCommitResult> {
+    this.#assertMutationAllowed();
     if (!this.#databaseCommitEngine) {
       throw new DatabaseCommitError(
         'commit_unavailable',
@@ -4308,6 +4368,87 @@ export class DatabaseDataPlane {
       this.#buttonInvocationByPlanId.delete(input.planId);
     }
     return result;
+  }
+
+  /** Route every v2 owner-table write through the storage-aware writer. */
+  async mutateMarkdownTable(input: DatabaseMarkdownTableMutationRequest): Promise<unknown> {
+    this.#assertMutationAllowed();
+    const writer = this.#databaseMarkdownTableWriter;
+    if (!writer) {
+      throw new DatabaseDataPlaneError(
+        'mutation_unavailable',
+        'Markdown owner-table mutation is unavailable on this server',
+      );
+    }
+    const raw = input.input as Record<string, unknown>;
+    const scope =
+      input.operation === 'undo' && raw.receipt && typeof raw.receipt === 'object'
+        ? (raw.receipt as Record<string, unknown>)
+        : raw;
+    const databaseId = String(scope.databaseId ?? '');
+    const sourceId = String(scope.sourceId ?? '');
+    const recordId = typeof scope.recordId === 'string' ? scope.recordId : undefined;
+    const propertyIds = typeof scope.propertyId === 'string' ? [scope.propertyId] : undefined;
+    const undoAction =
+      input.operation === 'undo'
+        ? scope.operation === 'create_row'
+          ? 'delete_record'
+          : scope.operation === 'delete_row'
+            ? 'create_record'
+            : 'update_record'
+        : null;
+    this.authorizeOperation({
+      action:
+        undoAction ?? (input.operation === 'create_row'
+          ? 'create_record'
+          : input.operation === 'delete_row'
+            ? 'delete_record'
+            : 'update_record'),
+      databaseId,
+      ...(sourceId ? { sourceId } : {}),
+      ...(recordId ? { recordIds: [recordId] } : {}),
+      ...(propertyIds ? { propertyIds } : {}),
+    });
+    try {
+      switch (input.operation) {
+        case 'update_cell':
+          return await writer.updateCell(input.input as DatabaseMarkdownTableCellMutationInput);
+        case 'update_cells':
+          return await writer.updateCells(input.input as DatabaseMarkdownTableBulkCellMutationInput);
+        case 'replace_row':
+          return await writer.replaceRow(input.input as DatabaseMarkdownTableRowMutationInput);
+        case 'delete_row':
+          return await writer.deleteRow(
+            input.input as Omit<DatabaseMarkdownTableRowMutationInput, 'values'>,
+          );
+        case 'create_row':
+          return await writer.createRow(input.input as DatabaseMarkdownTableRowCreateInput);
+        case 'undo':
+          return await writer.undo(input.input as DatabaseMarkdownTableUndoInput);
+      }
+    } catch (error) {
+      if (error instanceof DatabaseMarkdownTableWriterError) {
+        const code: DatabaseDataPlaneErrorCode =
+          error.code === 'target_changed' || error.code === 'owner_invalid'
+            ? 'stale_index'
+            : error.code === 'source_not_found'
+              ? 'source_not_found'
+              : error.code === 'record_not_found'
+                ? 'record_not_found'
+                : error.code === 'property_not_stored'
+                  ? 'property_not_found'
+                  : error.code === 'resource_limit'
+                    ? 'resource_limit'
+                  : error.code === 'v2_storage_required'
+                    ? 'storage_read_only'
+                    : 'mutation_failed';
+        throw new DatabaseDataPlaneError(code, error.message, {
+          ...error.details,
+          writerCode: error.code,
+        });
+      }
+      throw error;
+    }
   }
 
   async #publishPlanAutomationEvents(
@@ -4356,6 +4497,7 @@ export class DatabaseDataPlane {
   }
 
   async undo(input: DatabaseUndoInput): Promise<DatabaseUndoResult> {
+    this.#assertMutationAllowed();
     if (!this.#databaseCommitEngine) {
       throw new DatabaseCommitError(
         'commit_unavailable',
@@ -4588,6 +4730,14 @@ export class DatabaseDataPlane {
   }
 
   #assertReadable(): void {
+    const migration = this.#isDatabaseMigrationActive();
+    if (migration) {
+      throw new DatabaseDataPlaneError(
+        'transaction_in_progress',
+        'Database migration is in progress; retry after the task reaches a committed or rolled-back state',
+        { taskId: migration.taskId },
+      );
+    }
     if (
       this.#databaseCommitEngine?.isTransactionActive() ||
       this.#databaseRepairEngine?.isTransactionActive() ||
@@ -4598,6 +4748,18 @@ export class DatabaseDataPlane {
         'Database transaction is in progress; retry after it reaches a committed or rolled-back state',
       );
     }
+  }
+
+  #assertMutationAllowed(): void {
+    const migration = this.#isDatabaseMigrationActive();
+    if (migration) {
+      throw new DatabaseDataPlaneError(
+        'transaction_in_progress',
+        'Database migration is in progress; retry after the task reaches a committed or rolled-back state',
+        { taskId: migration.taskId },
+      );
+    }
+    this.#assertReadable();
   }
 
   #getContextRecord(recordId: string): {

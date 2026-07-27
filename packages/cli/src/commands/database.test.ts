@@ -90,6 +90,37 @@ Body
 }
 
 describe('database Git driver CLI', () => {
+  test('semantically merges independent v2 owner-table cells', () => {
+    const directory = temporaryDirectory();
+    const owner = `<!-- synapsenote:database\nversion=2\ndatabase=db_tasks\nsource=ds_tasks\nblock=dbb_tasks_primary\ncolumns=prop_title,prop_status\n-->\n\n| Title | Status |\n| --- | --- |\n| [[tasks/one]] | todo |\n`;
+    const paths = files(
+      directory,
+      owner,
+      owner.replace('| todo |', '| done |'),
+      owner.replace('| [[tasks/one]] |', '| [[tasks/renamed]] |'),
+    );
+
+    expect(runDatabaseMergeDriver('record', paths.basePath, paths.currentPath, paths.otherPath)).toBe(0);
+    const merged = readFileSync(paths.currentPath, 'utf-8');
+    expect(merged).toContain('[[tasks/renamed]]');
+    expect(merged).toContain('| done |');
+    expect(merged).not.toContain('<<<<<<<');
+  });
+
+  test('keeps a divergent v2 owner-table cell as an explicit conflict', () => {
+    const directory = temporaryDirectory();
+    const owner = `<!-- synapsenote:database\nversion=2\ndatabase=db_tasks\nsource=ds_tasks\nblock=dbb_tasks_primary\ncolumns=prop_title,prop_status\n-->\n\n| Title | Status |\n| --- | --- |\n| [[tasks/one]] | todo |\n`;
+    const paths = files(
+      directory,
+      owner,
+      owner.replace('| todo |', '| done |'),
+      owner.replace('| todo |', '| blocked |'),
+    );
+
+    expect(runDatabaseMergeDriver('record', paths.basePath, paths.currentPath, paths.otherPath)).toBe(1);
+    expect(readFileSync(paths.currentPath, 'utf-8')).toContain('<<<<<<<');
+  });
+
   test('installs idempotent attributes and trusted repo-local commands', () => {
     const directory = temporaryDirectory();
     git(directory, 'init', '--initial-branch=main');

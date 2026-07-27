@@ -20,6 +20,7 @@ import {
   type DatabaseVerificationProjection,
   DatabaseVerificationValueSchema,
   createDatabaseMarkdownRecordId,
+  databaseRecordActorKey,
   decodeDatabaseMarkdownCell,
   databaseFileDisplayName,
   databaseFileIdentity,
@@ -369,6 +370,12 @@ function v2PersonId(definition: DatabaseDefinition, link: DatabaseMarkdownDocume
   return person?.id ?? null;
 }
 
+function v2MigrationAlias(database: DatabaseDefinition, canonicalRecordId: string) {
+  const aliases = database.migration?.legacyRecordIds;
+  if (!aliases) return undefined;
+  return Object.values(aliases).find((alias) => alias.canonicalRecordId === canonicalRecordId);
+}
+
 /**
  * Rebuildable in-memory projection of canonical database records. File watcher
  * events reparse only their affected path; every lookup is keyed by stable IDs.
@@ -446,6 +453,25 @@ export class DatabaseRecordIndex {
   getById(recordId: string): DatabaseRecord | null {
     const record = this.#recordsById.get(recordId);
     return record ? cloneRecord(record) : null;
+  }
+
+  /**
+   * Return the byte revision of a v2 source's canonical owner document.
+   *
+   * A source with no rows still needs an owner precondition for row creation,
+   * so callers must not derive this value from the first projected record.
+   * Invalid or unavailable owners deliberately return null; mutation callers
+   * then fail closed instead of guessing a revision.
+   */
+  getStorageRevision(databaseId: string, sourceId: string): string | null {
+    const database = this.#databaseStore.getById(databaseId);
+    const source = database?.sources.find((candidate) => candidate.id === sourceId);
+    const storage = source?.storage;
+    if (!storage || storage.kind !== 'markdown_table') return null;
+    const ownerMarkdown = this.#v2OwnerMarkdownByPath.get(storage.owner.path);
+    return ownerMarkdown === undefined
+      ? null
+      : `sha256:${createHash('sha256').update(ownerMarkdown).digest('hex')}`;
   }
 
   /** Content-free lookup used to scope realtime invalidations to database paths. */
@@ -802,6 +828,31 @@ export class DatabaseRecordIndex {
         }
       }
       if (this.#progress) this.#progress.discovered = recordPaths.size;
+
+      // Attach the owning v1 manifest/source to scan failures. Migration
+      // preflight uses these bindings to block the exact database instead of
+      // accidentally treating a symlink/unreadable record as an unrelated
+      // workspace diagnostic.
+      for (const [path, issue] of [...this.#baseIssuesByPath.entries()]) {
+        if (issue.databaseId) continue;
+        const owner = storeSnapshot.databases
+          .flatMap((database) =>
+            database.sources
+              .filter((source) => !source.storage && isRecordPathInSource(path, source))
+              .map((source) => ({ database, source })),
+          )
+          .sort(
+            (left, right) =>
+              left.database.id.localeCompare(right.database.id) ||
+              left.source.id.localeCompare(right.source.id),
+          )[0];
+        if (!owner) continue;
+        this.#baseIssuesByPath.set(path, {
+          ...issue,
+          databaseId: owner.database.id,
+          sourceId: owner.source.id,
+        });
+      }
 
       for (const recordPath of [...recordPaths].sort((left, right) => left.localeCompare(right))) {
         try {
@@ -1256,6 +1307,7 @@ export class DatabaseRecordIndex {
     const issues: DatabaseRecordIssue[] = [];
     const storage = source.storage;
     if (!storage || storage.kind !== 'markdown_table') return null;
+    const migrationAlias = v2MigrationAlias(database, row.recordId);
     const propertyById = new Map(source.properties.map((property) => [property.id, property]));
 
     for (const property of source.properties) {
@@ -1358,9 +1410,17 @@ export class DatabaseRecordIndex {
         case 'formula':
         case 'rollup':
         case 'created_time':
+          if (migrationAlias?.createdAt) values[property.id] = migrationAlias.createdAt;
+          break;
         case 'last_edited_time':
+          if (migrationAlias?.lastEditedAt) values[property.id] = migrationAlias.lastEditedAt;
+          break;
         case 'created_by':
+          if (migrationAlias?.createdBy) values[property.id] = databaseRecordActorKey(migrationAlias.createdBy);
+          break;
         case 'last_edited_by':
+          if (migrationAlias?.lastEditedBy) values[property.id] = databaseRecordActorKey(migrationAlias.lastEditedBy);
+          break;
         case 'verification':
         case 'button':
           break;
@@ -1384,11 +1444,15 @@ export class DatabaseRecordIndex {
         .update('\0')
         .update(ownerMarkdown.slice(row.range.start, row.range.end))
         .digest('hex')}`,
+      storageRevision: `sha256:${createHash('sha256').update(ownerMarkdown).digest('hex')}`,
       values,
       ...(Object.keys(invalidValues).length > 0 ? { invalidValues } : {}),
       ...(issues.length > 0 ? { issues } : {}),
       body: document.body,
-      archivedAt: null,
+      archivedAt: migrationAlias?.archivedAt ?? null,
+      ...(migrationAlias?.pageLayoutOverride
+        ? { pageLayoutOverride: structuredClone(migrationAlias.pageLayoutOverride) }
+        : {}),
     };
     const evidenceValues = Object.fromEntries(
       source.properties.flatMap((property) =>
@@ -1398,7 +1462,15 @@ export class DatabaseRecordIndex {
       ),
     );
     record.evidenceRevision = `sha256:${createHash('sha256')
-      .update(JSON.stringify({ sourceId: source.id, values: evidenceValues, body: record.body, archivedAt: null }))
+      .update(
+        JSON.stringify({
+          sourceId: source.id,
+          values: evidenceValues,
+          body: record.body,
+          archivedAt: record.archivedAt ?? null,
+          pageLayoutOverride: record.pageLayoutOverride ?? null,
+        }),
+      )
       .digest('hex')}`;
     if (issues.length > 0) {
       this.#baseIssuesByPath.set(document.path, {
@@ -1665,10 +1737,14 @@ export class DatabaseRecordIndex {
     }
     if (paths.size > 1) {
       for (const path of paths) {
+        const candidate = this.#candidatesByPath.get(path);
         this.#duplicateIssuesByPath.set(path, {
           code: 'duplicate_record_id',
           path,
           message: `Record ID "${recordId}" is declared by more than one file`,
+          ...(candidate
+            ? { databaseId: candidate.databaseId, sourceId: candidate.sourceId }
+            : {}),
           recordId,
         });
       }

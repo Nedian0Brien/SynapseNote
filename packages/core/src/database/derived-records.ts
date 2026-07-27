@@ -193,12 +193,34 @@ export function materializeDatabaseDerivedRecords(
         return formulaValueResult('text', databasePlaceSearchText(value as DatabasePlaceValue));
       case 'relation': {
         const recordIds = (Array.isArray(value) ? value : [value]) as string[];
+        let missingTarget = false;
+        let deniedTarget = false;
         const pages = recordIds.flatMap((recordId) => {
           const target = recordsById.get(recordId);
-          return target && target.sourceId === property.targetSourceId && canReadRecord(target)
-            ? [pageFor(target)]
-            : [];
+          if (!target || target.sourceId !== property.targetSourceId) {
+            missingTarget = true;
+            return [];
+          }
+          if (!canReadRecord(target)) {
+            deniedTarget = true;
+            return [];
+          }
+          return [pageFor(target)];
         });
+        if (deniedTarget) {
+          return formulaErrorResult({
+            code: 'permission_denied',
+            message: `One or more relation targets for "${property.id}" are not readable`,
+            propertyId: property.id,
+          });
+        }
+        if (missingTarget) {
+          return formulaErrorResult({
+            code: 'missing_record',
+            message: `One or more relation targets for "${property.id}" are missing`,
+            propertyId: property.id,
+          });
+        }
         return property.cardinality === 'many'
           ? formulaValueResult('list', pages)
           : pages[0]
@@ -331,7 +353,14 @@ export function materializeDatabaseDerivedRecords(
           ];
         });
         try {
-          result = aggregateDatabaseRollup({
+          if (unavailable) {
+            result = formulaErrorResult({
+              code: 'missing_record',
+              message: `One or more Rollup relation targets for "${rollup.id}" are missing`,
+              propertyId: rollup.id,
+            });
+          } else {
+            result = aggregateDatabaseRollup({
             sourceId: record.sourceId,
             relationPropertyId: relation.id,
             targetSourceId: relation.targetSourceId,
@@ -345,7 +374,8 @@ export function materializeDatabaseDerivedRecords(
               truncatedBy: unavailable ? 'unavailable_target' : null,
             },
             targets,
-          }).result;
+            }).result;
+          }
         } catch (error) {
           result = formulaErrorResult({
             code:

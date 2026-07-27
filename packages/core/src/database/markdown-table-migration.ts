@@ -7,16 +7,21 @@ import { stripFrontmatter, unwrapFrontmatterFences } from '../extensions/frontma
 import { parseFrontmatterYaml } from '../frontmatter/yaml-codec.ts';
 import {
   encodeDatabaseMarkdownCell,
+  encodeDatabaseMarkdownCellText,
+  DATABASE_MARKDOWN_LIMITS,
   serializeDatabaseMarkdownOwnerMarker,
   type DatabaseMarkdownDocumentLink,
 } from './markdown-table.ts';
+import { DATABASE_MANIFEST_MAX_BYTES, serializeDatabaseManifestYaml } from './manifest.ts';
 import { materializeDatabaseRecord, type DatabaseRecord } from './record.ts';
 import {
   type DatabaseDefinition,
   type DatabaseProperty,
   type DatabaseRecordId,
   type DatabaseSource,
+  type DatabaseRecordActor,
   DatabaseDefinitionSchema,
+  parseDatabaseRecordActorKey,
 } from './schema.ts';
 
 export interface DatabaseMarkdownV1MigrationRecordInput {
@@ -37,6 +42,12 @@ export interface DatabaseMarkdownV2MigrationAlias {
   sourceId: string;
   documentId: string;
   canonicalRecordId: DatabaseRecordId;
+  archivedAt?: string | null;
+  createdAt?: string;
+  lastEditedAt?: string;
+  createdBy?: DatabaseRecordActor;
+  lastEditedBy?: DatabaseRecordActor;
+  pageLayoutOverride?: DatabaseRecord['pageLayoutOverride'];
 }
 
 export type DatabaseMarkdownV2MigrationBlockCode =
@@ -50,7 +61,9 @@ export type DatabaseMarkdownV2MigrationBlockCode =
   | 'unsafe_owner_path'
   | 'relation_target_missing'
   | 'unsupported_property_value'
-  | 'invalid_generated_manifest';
+  | 'invalid_generated_manifest'
+  | 'alias_limit_exceeded'
+  | 'resource_limit';
 
 export interface DatabaseMarkdownV2MigrationBlocker {
   code: DatabaseMarkdownV2MigrationBlockCode;
@@ -108,7 +121,21 @@ function removeLegacyDatabaseMetadata(markdown: string): string {
     let cursor = index + 1;
     while (cursor < lines.length && (/^[ \t]+/.test(lines[cursor] ?? '') || (lines[cursor] ?? '').trim() === '')) {
       const nestedLine = lines[cursor] ?? '';
-      if (!/^\s{2}(?:database_id|source_id|record_id):\s*/.test(nestedLine)) nested.push(nestedLine);
+      const ownedKey = /^\s{2}(?:database_id|source_id|record_id|created_at|last_edited_at|created_by|last_edited_by|archived_at|page_layout_override):\s*/.test(nestedLine);
+      if (ownedKey) {
+        cursor += 1;
+        // page_layout_override is a nested mapping. Drop its indented
+        // children together with the owned key instead of leaving orphaned
+        // YAML lines in the linked document frontmatter.
+        while (
+          cursor < lines.length &&
+          (/^\s{4,}/.test(lines[cursor] ?? '') || (lines[cursor] ?? '').trim() === '')
+        ) {
+          cursor += 1;
+        }
+        continue;
+      }
+      nested.push(nestedLine);
       cursor += 1;
     }
     if (nested.some((nestedLine) => nestedLine.trim() !== '')) output.push(line, ...nested);
@@ -230,9 +257,10 @@ function ownerMarkdown(
     blockId: owner.blockId,
     columns: source.storage?.storedPropertyIds ?? [],
   });
-  const headers = source.storage?.storedPropertyIds.map(
-    (propertyId) => source.properties.find((property) => property.id === propertyId)?.name ?? propertyId,
-  ) ?? [];
+  const headers = source.storage?.storedPropertyIds.map((propertyId) => {
+    const name = source.properties.find((property) => property.id === propertyId)?.name ?? propertyId;
+    return encodeDatabaseMarkdownCellText(name.replace(/[\r\n]+/gu, ' '));
+  }) ?? [];
   const row = (values: readonly string[]) => `| ${values.join(' | ')} |`;
   return [marker, '', row(headers), row(headers.map(() => '---')), ...rows.map(row), ''].join('\n');
 }
@@ -246,6 +274,10 @@ export function planDatabaseMarkdownV2Migration(input: {
   definition: DatabaseDefinition;
   records: readonly DatabaseMarkdownV1MigrationRecordInput[];
   owners: readonly DatabaseMarkdownV2MigrationOwnerInput[];
+  /** Keep legacy _sn database/source/record fields during additive cutover. */
+  preserveLegacyMetadata?: boolean;
+  /** Bind the compatibility metadata to the approved migration plan. */
+  migrationCommittedAt?: string;
 }): DatabaseMarkdownV2MigrationPlan {
   const blockers: DatabaseMarkdownV2MigrationBlocker[] = [];
   if (input.definition.version !== 1) {
@@ -311,7 +343,9 @@ export function planDatabaseMarkdownV2Migration(input: {
       });
       continue;
     }
-    linkedDocuments[record.path] = removeLegacyDatabaseMetadata(ensured.markdown);
+    linkedDocuments[record.path] = input.preserveLegacyMetadata
+      ? ensured.markdown
+      : removeLegacyDatabaseMetadata(ensured.markdown);
   }
 
   const ownerDocuments: Record<string, string> = {};
@@ -345,7 +379,7 @@ export function planDatabaseMarkdownV2Migration(input: {
         continue;
       }
       rows.push(encoded.values);
-      aliases.push({
+      const alias: DatabaseMarkdownV2MigrationAlias = {
         legacyRecordId: materializedRecord.id,
         sourceId: source.id,
         documentId: documentIds.get(materializedRecord.id)!,
@@ -353,9 +387,51 @@ export function planDatabaseMarkdownV2Migration(input: {
           source.id,
           documentIds.get(materializedRecord.id)!,
         ),
+      };
+      const createdTime = source.properties.find((property) => property.type === 'created_time');
+      const lastEditedTime = source.properties.find((property) => property.type === 'last_edited_time');
+      const createdBy = source.properties.find((property) => property.type === 'created_by');
+      const lastEditedBy = source.properties.find((property) => property.type === 'last_edited_by');
+      const createdAt = createdTime ? materializedRecord.values[createdTime.id] : undefined;
+      const lastEditedAt = lastEditedTime ? materializedRecord.values[lastEditedTime.id] : undefined;
+      const createdActor = createdBy ? materializedRecord.values[createdBy.id] : undefined;
+      const lastEditedActor = lastEditedBy ? materializedRecord.values[lastEditedBy.id] : undefined;
+      if (materializedRecord.archivedAt !== null && materializedRecord.archivedAt !== undefined) {
+        alias.archivedAt = materializedRecord.archivedAt;
+      }
+      if (typeof createdAt === 'string') alias.createdAt = createdAt;
+      if (typeof lastEditedAt === 'string') alias.lastEditedAt = lastEditedAt;
+      if (typeof createdActor === 'string') {
+        const parsed = parseDatabaseRecordActorKey(createdActor);
+        if (parsed) alias.createdBy = parsed;
+      }
+      if (typeof lastEditedActor === 'string') {
+        const parsed = parseDatabaseRecordActorKey(lastEditedActor);
+        if (parsed) alias.lastEditedBy = parsed;
+      }
+      if (materializedRecord.pageLayoutOverride) {
+        alias.pageLayoutOverride = structuredClone(materializedRecord.pageLayoutOverride);
+      }
+      aliases.push(alias);
+      if (aliases.length > 10_000) {
+        blockers.push({
+          code: 'alias_limit_exceeded',
+          sourceId: source.id,
+          path: recordInput.path,
+          message: 'The migration exceeds the 10000 legacy record alias limit',
+        });
+      }
+    }
+    const renderedOwner = ownerMarkdown(input.definition, migrationSource, owner, rows);
+    if (new TextEncoder().encode(renderedOwner).byteLength > DATABASE_MARKDOWN_LIMITS.ownerDocumentBytes) {
+      blockers.push({
+        code: 'resource_limit',
+        sourceId: source.id,
+        path: owner.path,
+        message: `Owner document exceeds the ${DATABASE_MARKDOWN_LIMITS.ownerDocumentBytes}-byte limit`,
       });
     }
-    ownerDocuments[owner.path] = ownerMarkdown(input.definition, migrationSource, owner, rows);
+    ownerDocuments[owner.path] = renderedOwner;
   }
 
   const sources = input.definition.sources.map((source) => {
@@ -371,8 +447,50 @@ export function planDatabaseMarkdownV2Migration(input: {
   });
   let definition: DatabaseDefinition | null = null;
   if (blockers.length === 0) {
-    const parsed = DatabaseDefinitionSchema.safeParse({ ...input.definition, version: 2, sources });
-    if (parsed.success) definition = parsed.data;
+    const migration = input.migrationCommittedAt
+      ? {
+          fromVersion: 1 as const,
+          committedAt: input.migrationCommittedAt,
+          sourceFolders: Object.fromEntries(
+            input.definition.sources.map((source) => [source.id, source.folder]),
+          ),
+          legacyRecordIds: Object.fromEntries(
+            aliases.map((alias) => [
+              alias.legacyRecordId,
+              {
+                sourceId: alias.sourceId,
+                documentId: alias.documentId,
+                canonicalRecordId: alias.canonicalRecordId,
+                ...(alias.archivedAt !== undefined ? { archivedAt: alias.archivedAt } : {}),
+                ...(alias.createdAt !== undefined ? { createdAt: alias.createdAt } : {}),
+                ...(alias.lastEditedAt !== undefined ? { lastEditedAt: alias.lastEditedAt } : {}),
+                ...(alias.createdBy !== undefined ? { createdBy: alias.createdBy } : {}),
+                ...(alias.lastEditedBy !== undefined ? { lastEditedBy: alias.lastEditedBy } : {}),
+                ...(alias.pageLayoutOverride !== undefined
+                  ? { pageLayoutOverride: alias.pageLayoutOverride }
+                  : {}),
+              },
+            ]),
+          ),
+        }
+      : undefined;
+    const parsed = DatabaseDefinitionSchema.safeParse({
+      ...input.definition,
+      version: 2,
+      sources,
+      ...(migration ? { migration } : {}),
+    });
+    if (parsed.success) {
+      const yaml = serializeDatabaseManifestYaml(parsed.data);
+      if (new TextEncoder().encode(yaml).byteLength > DATABASE_MANIFEST_MAX_BYTES) {
+        blockers.push({
+          code: 'resource_limit',
+          message: `Generated manifest exceeds the ${DATABASE_MANIFEST_MAX_BYTES}-byte limit`,
+        });
+      } else {
+        definition = parsed.data;
+      }
+    }
     else blockers.push({ code: 'invalid_generated_manifest', message: parsed.error.message });
   }
   return {

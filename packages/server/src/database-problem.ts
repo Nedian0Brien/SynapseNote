@@ -156,6 +156,34 @@ function recoveryFor(code: DatabaseProblemCode): {
           retryAfterMs: 250,
         },
       };
+    case 'mutation_unavailable':
+      return {
+        retryable: true,
+        recovery: {
+          action: 'retry',
+          instruction: 'The v2 Markdown mutation boundary is not ready on this server; retry after it is configured.',
+          endpoint: '/api/databases/markdown-table/mutate',
+          retryAfterMs: 1_000,
+        },
+      };
+    case 'storage_read_only':
+      return {
+        retryable: false,
+        recovery: {
+          action: 'review_plan',
+          instruction: 'This source is still v1/read-only. Preview and approve the v1→v2 migration before editing it.',
+          endpoint: '/api/databases/task',
+        },
+      };
+    case 'mutation_failed':
+      return {
+        retryable: false,
+        recovery: {
+          action: 'manual_recovery',
+          instruction: 'The v2 owner-table transaction did not complete. Inspect its durable journal and retry only after the state is explicit.',
+          endpoint: '/api/databases/diagnostics',
+        },
+      };
     case 'form_rate_limited':
       return {
         retryable: true,
@@ -260,6 +288,7 @@ function recoveryFor(code: DatabaseProblemCode): {
       };
     case 'task_snapshot_changed':
     case 'task_plan_hash_mismatch':
+    case 'task_plan_hash_required':
       return {
         retryable: false,
         recovery: {

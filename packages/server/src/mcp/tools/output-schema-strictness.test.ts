@@ -224,6 +224,7 @@ describe('MCP outputSchema strictness — auto-discovered registerTool sweep (no
     'data_place_search',
     'data_plan',
     'data_commit',
+    'data_markdown_table',
     'data_comments',
     'data_undo',
     'data_repair',

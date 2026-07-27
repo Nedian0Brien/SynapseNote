@@ -50,6 +50,7 @@ const EXPECTED_TOOLS = [
   'data_plan',
   'data_comments',
   'data_commit',
+  'data_markdown_table',
   'data_undo',
   'data_repair',
   'data_task',

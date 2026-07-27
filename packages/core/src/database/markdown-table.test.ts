@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
+  DATABASE_MARKDOWN_LIMITS,
   decodeDatabaseMarkdownCell,
   deleteDatabaseMarkdownTableRow,
   encodeDatabaseMarkdownCell,
@@ -10,6 +11,7 @@ import {
   replaceDatabaseMarkdownTableCell,
   serializeDatabaseMarkdownOwnerMarker,
 } from './markdown-table.ts';
+import { diffDatabaseMarkdownTables, mergeDatabaseMarkdownTables } from './markdown-table-diff.ts';
 
 const marker = {
   version: 2 as const,
@@ -36,6 +38,23 @@ function sourceWithTable(): string {
 }
 
 describe('parseDatabaseMarkdownOwner', () => {
+  test('enforces shared byte, row, and JSON resource limits', () => {
+    const oversized = `${sourceWithTable()}${'x'.repeat(DATABASE_MARKDOWN_LIMITS.ownerDocumentBytes)}`;
+    expect(parseDatabaseMarkdownOwner(oversized)).toMatchObject({
+      ok: false,
+      code: 'resource_limit',
+    });
+    const deep: Record<string, unknown> = {};
+    let cursor = deep;
+    for (let index = 0; index < DATABASE_MARKDOWN_LIMITS.jsonDepth + 1; index += 1) {
+      cursor.next = {};
+      cursor = cursor.next as Record<string, unknown>;
+    }
+    expect(encodeDatabaseMarkdownCell('files', deep)).toMatchObject({
+      ok: false,
+      code: 'invalid_value',
+    });
+  });
   test('binds a versioned marker to the immediate GFM table and preserves ranges', () => {
     const source = sourceWithTable();
     const result = parseDatabaseMarkdownOwner(source);
@@ -146,6 +165,42 @@ describe('parseDatabaseMarkdownOwner', () => {
       `- ${serializeDatabaseMarkdownOwnerMarker(marker).replaceAll('\n', '\n  ')}`,
     ].join('\n');
     expect(parseDatabaseMarkdownOwner(fenced)).toMatchObject({ ok: false, code: 'marker_missing' });
+  });
+});
+
+describe('semantic Markdown table diff and merge', () => {
+  test('classifies independent cell changes without reporting prose formatting', () => {
+    const base = sourceWithTable();
+    const parsed = parseDatabaseMarkdownOwner(base);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const ours = replaceDatabaseMarkdownTableCell(base, parsed.owner, 0, 2, '5');
+    const diff = diffDatabaseMarkdownTables(base, ours);
+    expect(diff.operations).toEqual([
+      expect.objectContaining({ kind: 'cell_update', rowKey: '[[orders/one|One]]', columnIndex: 2, before: '2', after: '5' }),
+    ]);
+  });
+
+  test('merges different cells and refuses a same-cell divergent edit', () => {
+    const base = sourceWithTable();
+    const parsed = parseDatabaseMarkdownOwner(base);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const ours = replaceDatabaseMarkdownTableCell(base, parsed.owner, 0, 1, 'ours');
+    const theirs = replaceDatabaseMarkdownTableCell(base, parsed.owner, 0, 2, '9');
+    const merged = mergeDatabaseMarkdownTables({ base, ours, theirs });
+    expect(merged.conflicts).toEqual([]);
+    expect(merged.merged).toContain('| [[orders/one\\|One]] | ours | 9 |');
+
+    const divergent = mergeDatabaseMarkdownTables({
+      base,
+      ours,
+      theirs: replaceDatabaseMarkdownTableCell(base, parsed.owner, 0, 1, 'theirs'),
+    });
+    expect(divergent.merged).toBeNull();
+    expect(divergent.conflicts).toEqual([
+      expect.objectContaining({ kind: 'cell', rowKey: '[[orders/one|One]]', columnIndex: 1 }),
+    ]);
   });
 });
 

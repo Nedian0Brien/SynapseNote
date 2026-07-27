@@ -87,7 +87,11 @@ export function appendDatabaseQueryPage(
   current: DatabaseQueryResult,
   next: DatabaseQueryResult,
 ): DatabaseQueryResult {
-  if (current.sourceId !== next.sourceId || current.snapshotRevision !== next.snapshotRevision) {
+  if (
+    current.sourceId !== next.sourceId ||
+    current.snapshotRevision !== next.snapshotRevision ||
+    current.storageRevision !== next.storageRevision
+  ) {
     throw new DatabaseQueryClientError(
       'Database page does not belong to the current source snapshot',
       { status: 409, problem: { current, next } },

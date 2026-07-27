@@ -2177,7 +2177,21 @@ export class DatabaseCommitEngine {
       ];
     }
     const stored = this.#databaseStore.getById(definition.id);
-    const manifestValid = stored !== null && stable(stored) === stable(definition);
+    const canonicalDefinition =
+      definition.version === 2
+        ? {
+            ...definition,
+            sources: definition.sources.map((source) => ({
+              ...source,
+              // v2 owner storage makes the legacy folder discovery fields
+              // compatibility-only; the manifest serializer canonicalizes
+              // them to the root defaults.
+              folder: '.',
+              includeSubfolders: true,
+            })),
+          }
+        : definition;
+    const manifestValid = stored !== null && stable(stored) === stable(canonicalDefinition);
     const stableTargetsResolved = plan.targetResolutions.every((resolution) =>
       plan.immutableTargetSet.includes(resolution.targetId),
     );

@@ -241,4 +241,22 @@ describe('permission-scoped derived record materialization', () => {
       problem: { code: 'dependency_error', cause: { code: 'result_type_mismatch' } },
     });
   });
+
+  test('keeps broken relation and Rollup targets as explicit derived errors', () => {
+    const task = record('rec_task', 'ds_tasks', {
+      prop_task_title: 'Broken relation',
+      prop_projects: ['rec_missing'],
+    });
+    const materialized = materializeDatabaseDerivedRecords({
+      definition,
+      records: [task],
+      context: { now: '2026-07-20T00:00:00.000Z', timeZone: 'UTC', locale: 'en' },
+      permissionRevision: `sha256:${'c'.repeat(64)}`,
+    });
+    const projected = materialized[0];
+    expect(projected?.computedResults?.prop_visible_budget).toMatchObject({
+      kind: 'error',
+      problem: { code: 'missing_record' },
+    });
+  });
 });

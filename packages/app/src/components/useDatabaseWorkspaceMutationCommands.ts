@@ -5,7 +5,10 @@ import type {
   ProjectedDatabaseRecord,
   ProjectedDatabaseRelationRecord,
 } from '@nedian0brien/synapsenote-core';
-import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-server';
+import type {
+  DatabaseDesiredStateDraftInput,
+  DatabaseMarkdownTableMutationRequest,
+} from '@nedian0brien/synapsenote-server';
 import { useEffect, useEffectEvent } from 'react';
 import { getBranchSnapshot } from '@/lib/current-branch-store';
 import { describeDatabase } from '@/lib/database-catalog-client';
@@ -267,6 +270,53 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
         setSaveFeedback('failed');
         setMutationError(problem);
         options.onFailed?.();
+      });
+  };
+
+  const runMarkdownTable = (
+    mutation: DatabaseMarkdownTableMutationRequest,
+    options: {
+      optimisticCellKey?: string;
+      onCommitted?: () => void;
+      onFailed?: () => void;
+    } = {},
+  ) => {
+    if (mutationStatus !== 'idle') return;
+    setMutationError(null);
+    setMutationConflict(null);
+    setSaveFeedback(null);
+    setMutationProgressVisible(true);
+    setMutationStatus('planning');
+    void executeDatabaseMutation({ storage: 'markdown_table', mutation })
+      .then((outcome) => {
+        if (options.optimisticCellKey) {
+          setOptimisticCellValues((current: ReadonlyMap<string, DatabaseValue | undefined>) => {
+            if (!current.has(options.optimisticCellKey as string)) return current;
+            const next = new Map(current);
+            next.delete(options.optimisticCellKey as string);
+            return next;
+          });
+        }
+        if (outcome.changed) setSaveFeedback('saved');
+        setRefresh((current: number) => current + 1);
+        options.onCommitted?.();
+      })
+      .catch((cause: unknown) => {
+        if (options.optimisticCellKey) {
+          setOptimisticCellValues((current: ReadonlyMap<string, DatabaseValue | undefined>) => {
+            if (!current.has(options.optimisticCellKey as string)) return current;
+            const next = new Map(current);
+            next.delete(options.optimisticCellKey as string);
+            return next;
+          });
+        }
+        const problem = classifyDatabaseUiProblem(cause, 'Database table edit failed');
+        setMutationError(problem);
+        options.onFailed?.();
+      })
+      .finally(() => {
+        setMutationStatus('idle');
+        setMutationProgressVisible(true);
       });
   };
 
@@ -536,6 +586,7 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
     finishReview,
     searchRelationCandidates,
     runMutation,
+    runMarkdownTable,
     commitSavedViewConfiguration,
     commitDefaultViewChange,
     reconcileQueuedWrites,

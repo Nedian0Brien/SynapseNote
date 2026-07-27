@@ -58,7 +58,11 @@ import {
 } from './database-button-executor.ts';
 import { DatabaseCommitError, DatabaseCommitInputSchema } from './database-commit.ts';
 import { DatabaseContextPackError } from './database-context-pack.ts';
-import { type DatabaseDataPlane, DatabaseDataPlaneError } from './database-data-plane.ts';
+import {
+  type DatabaseDataPlane,
+  DatabaseDataPlaneError,
+  type DatabaseMarkdownTableMutationRequest,
+} from './database-data-plane.ts';
 import { DatabaseAgentEntryPointLimiter } from './database-entry-point-limits.ts';
 import {
   type DatabasePermissionStore,
@@ -510,6 +514,110 @@ export const DatabasePlanRequestSchema = z.discriminatedUnion('action', [
     .strict(),
 ]);
 export const DatabaseCommitRequestSchema = DatabaseCommitInputSchema;
+
+const DatabaseMarkdownTableMutationBaseSchema = z.object({
+  databaseId: z.string().startsWith('db_'),
+  sourceId: z.string().startsWith('ds_'),
+});
+const DatabaseMarkdownTableCellValueSchema = z.unknown();
+export const DatabaseMarkdownTableMutationRequestSchema = z.discriminatedUnion('operation', [
+  z
+    .object({
+      operation: z.literal('update_cell'),
+      input: DatabaseMarkdownTableMutationBaseSchema
+        .extend({
+          recordId: z.string().startsWith('rec_'),
+          propertyId: z.string().startsWith('prop_'),
+          value: DatabaseMarkdownTableCellValueSchema,
+          expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+          expectedRowRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
+          expectedCellRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
+        })
+        .strict(),
+    })
+    .strict(),
+  z
+    .object({
+      operation: z.literal('update_cells'),
+      input: DatabaseMarkdownTableMutationBaseSchema
+        .extend({
+          cells: z
+            .array(
+              z
+                .object({
+                  recordId: z.string().startsWith('rec_'),
+                  propertyId: z.string().startsWith('prop_'),
+                  value: DatabaseMarkdownTableCellValueSchema,
+                  expectedRowRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
+                  expectedCellRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
+                })
+                .strict(),
+            )
+            .min(1)
+            .max(10_000),
+          expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+        })
+        .strict(),
+    })
+    .strict(),
+  z
+    .object({
+      operation: z.literal('replace_row'),
+      input: DatabaseMarkdownTableMutationBaseSchema
+        .extend({
+          recordId: z.string().startsWith('rec_'),
+          values: z.record(z.string().startsWith('prop_'), DatabaseMarkdownTableCellValueSchema),
+          expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+          expectedRowRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
+        })
+        .strict(),
+    })
+    .strict(),
+  z
+    .object({
+      operation: z.literal('delete_row'),
+      input: DatabaseMarkdownTableMutationBaseSchema
+        .extend({
+          recordId: z.string().startsWith('rec_'),
+          expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+          expectedRowRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
+        })
+        .strict(),
+    })
+    .strict(),
+  z
+    .object({
+      operation: z.literal('create_row'),
+      input: DatabaseMarkdownTableMutationBaseSchema
+        .extend({
+          documentPath: z.string().min(1).max(2_000),
+          documentMarkdown: z.string().max(4 * 1024 * 1024),
+          documentId: z.string().min(1).max(256).optional(),
+          values: z.record(z.string().startsWith('prop_'), DatabaseMarkdownTableCellValueSchema).optional(),
+          expectedOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+        })
+        .strict(),
+    })
+    .strict(),
+  z
+    .object({
+      operation: z.literal('undo'),
+      input: z
+        .object({
+          receipt: z.record(z.string(), z.unknown()),
+          expectedAfterOwnerRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
+        })
+        .strict(),
+    })
+    .strict(),
+]);
+export const DatabaseMarkdownTableMutationResponseSchema = z
+  .object({
+    operation: z.enum(['update_cell', 'update_cells', 'replace_row', 'delete_row', 'create_row', 'undo']),
+    changed: z.boolean(),
+    receipt: z.record(z.string(), z.unknown()),
+  })
+  .strict();
 export const DatabaseButtonRequestSchema = z.union([
   DatabaseButtonPlanInputSchema,
   DatabaseButtonExecutionInputSchema.extend({ action: z.literal('execute') }),
@@ -1210,6 +1318,7 @@ export const DatabaseQueryResponseSchema = z
     indexRevision: z.string().min(1),
     indexState: z.enum(['idle', 'rebuilding', 'error']),
     snapshotRevision: z.string().min(1),
+    storageRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).nullable().optional(),
     matched: z.number().int().nonnegative(),
     returned: z.number().int().nonnegative(),
     isComplete: z.boolean(),
@@ -1326,6 +1435,10 @@ export const DatabaseQueryResponseSchema = z
             propertyIds: z.array(z.string().min(1)),
             cache: z.enum(['hit', 'miss', 'not_applicable']),
             permissionRevision: z
+              .string()
+              .regex(/^sha256:[a-f0-9]{64}$/)
+              .nullable(),
+            revision: z
               .string()
               .regex(/^sha256:[a-f0-9]{64}$/)
               .nullable(),
@@ -2472,10 +2585,15 @@ export const DatabaseManifestMigrationPreviewSchema = z
           expectedRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
           sourceVersion: z.number().int().positive().nullable(),
           targetVersion: z.number().int().positive(),
-          action: z.enum(['not_needed', 'blocked']),
+          action: z.enum(['not_needed', 'ready', 'blocked']),
           migrationIds: z.array(z.string().min(1)),
           lossless: z.boolean(),
           changed: z.boolean(),
+          planHash: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
+          migrationCommittedAt: z.string().datetime({ offset: true }).optional(),
+          ownerPaths: z.array(z.string().min(1)).optional(),
+          linkedDocumentPaths: z.array(z.string().min(1)).optional(),
+          blockerCount: z.number().int().nonnegative().optional(),
           code: z.string().min(1).optional(),
           message: z.string().min(1).optional(),
         })
@@ -2484,6 +2602,7 @@ export const DatabaseManifestMigrationPreviewSchema = z
     summary: z
       .object({
         notNeeded: z.number().int().nonnegative(),
+        ready: z.number().int().nonnegative(),
         blocked: z.number().int().nonnegative(),
       })
       .strict(),
@@ -2534,6 +2653,9 @@ export const DatabaseTaskRequestSchema = z.discriminatedUnion('action', [
         z.literal('sha256:empty'),
       ]),
       targetVersion: z.number().int().positive(),
+      migrationCommittedAt: z
+        .record(z.string().min(1), z.string().datetime({ offset: true }))
+        .optional(),
     })
     .strict(),
   z
@@ -2566,6 +2688,12 @@ export const DatabaseTaskRequestSchema = z.discriminatedUnion('action', [
               z.literal('sha256:empty'),
             ]),
             targetVersion: z.number().int().positive(),
+            planHashes: z
+              .record(z.string().min(1), z.string().regex(/^sha256:[a-f0-9]{64}$/))
+              .optional(),
+            migrationCommittedAt: z
+              .record(z.string().min(1), z.string().datetime({ offset: true }))
+              .optional(),
           })
           .strict(),
       ]),
@@ -2695,6 +2823,10 @@ export const DATABASE_API_SCHEMAS: Readonly<{
       request: DatabaseCommitRequestSchema,
       response: DatabaseCommitResponseSchema,
     }),
+    markdownTableMutation: Object.freeze({
+      request: DatabaseMarkdownTableMutationRequestSchema,
+      response: DatabaseMarkdownTableMutationResponseSchema,
+    }),
     agentRuns: Object.freeze({
       request: DatabaseAgentRunsRequestSchema,
       response: DatabaseAgentRunsResponseSchema,
@@ -2755,6 +2887,7 @@ export interface DatabaseDataPlaneApiHandlers {
   button: (request: IncomingMessage, response: ServerResponse) => Promise<void>;
   placeSearch: (request: IncomingMessage, response: ServerResponse) => Promise<void>;
   commit: (request: IncomingMessage, response: ServerResponse) => Promise<void>;
+  markdownTableMutation: (request: IncomingMessage, response: ServerResponse) => Promise<void>;
   runs: (request: IncomingMessage, response: ServerResponse) => Promise<void>;
   templateRuns: (request: IncomingMessage, response: ServerResponse) => Promise<void>;
   automations: (request: IncomingMessage, response: ServerResponse) => Promise<void>;
@@ -3057,6 +3190,7 @@ function respondDataPlaneError(response: ServerResponse, handler: string, error:
         : error.code === 'permission_denied' || error.code === 'form_access_denied'
           ? 403
           : error.code === 'transaction_in_progress' ||
+              error.code === 'storage_read_only' ||
               error.code === 'button_plan_expired' ||
               error.code === 'form_closed' ||
               error.code === 'form_duplicate_submission'
@@ -3087,6 +3221,7 @@ function respondDataPlaneError(response: ServerResponse, handler: string, error:
                 ? 'urn:ok:error:invalid-request'
                 : error.code === 'stale_index' ||
                     error.code === 'transaction_in_progress' ||
+                    error.code === 'mutation_failed' ||
                     error.code === 'button_plan_expired'
                   ? 'urn:ok:error:stale-target'
                   : 'urn:ok:error:internal-server-error';
@@ -3809,6 +3944,39 @@ export function createDatabaseDataPlaneApiHandlers(
     },
     {
       handler: 'database-commit',
+      method: 'POST',
+      errorExtensions: DATABASE_REQUEST_ERROR_EXTENSIONS,
+    },
+  );
+
+  const markdownTableMutation = withValidation(
+    DatabaseMarkdownTableMutationRequestSchema,
+    async (_request, response, body) => {
+      if (!dataPlane) {
+        respondUnavailable(response, 'database-markdown-table-mutation');
+        return;
+      }
+      try {
+        const result = await dataPlane.mutateMarkdownTable(
+          body as unknown as DatabaseMarkdownTableMutationRequest,
+        );
+        successResponse(
+          response,
+          200,
+          DatabaseMarkdownTableMutationResponseSchema,
+          { operation: body.operation, ...(result as Record<string, unknown>) },
+          {
+            handler: 'database-markdown-table-mutation',
+            extraHeaders: noStoreHeaders(),
+            errorExtensions: DATABASE_INTERNAL_ERROR_EXTENSIONS,
+          },
+        );
+      } catch (error) {
+        respondDataPlaneError(response, 'database-markdown-table-mutation', error);
+      }
+    },
+    {
+      handler: 'database-markdown-table-mutation',
       method: 'POST',
       errorExtensions: DATABASE_REQUEST_ERROR_EXTENSIONS,
     },
@@ -4735,6 +4903,9 @@ export function createDatabaseDataPlaneApiHandlers(
                 ...(body.databaseIds ? { databaseIds: body.databaseIds } : {}),
                 expectedManifestRevision: body.expectedManifestRevision,
                 targetVersion: body.targetVersion,
+                ...(body.migrationCommittedAt
+                  ? { migrationCommittedAt: body.migrationCommittedAt }
+                  : {}),
               });
             case 'start':
               if (!taskService) {
@@ -4854,6 +5025,7 @@ export function createDatabaseDataPlaneApiHandlers(
     button,
     placeSearch,
     commit,
+    markdownTableMutation,
     runs,
     templateRuns,
     automations,

@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { relative, resolve, sep } from 'node:path';
 import {
   canonicalizeDatabaseDateValue,
   canonicalizeDatabasePlaceValue,
@@ -30,7 +30,9 @@ import {
   findDatabasePersonByReference,
   isSafeDatabaseAssetPath,
   isSafeDatabaseExternalFileUrl,
+  encodeDatabaseMarkdownCellText,
   serializeDatabaseManifestYaml,
+  serializeDatabaseMarkdownOwnerMarker,
   updateDatabaseManifestYaml,
   validateDatabasePropertyConstraints,
 } from '@nedian0brien/synapsenote-core';
@@ -57,6 +59,33 @@ const DatabaseDraftSourceSchema = z
     name: z.string().min(1),
     recordMeaning: z.string().min(1),
     folder: z.string(),
+    storage: z
+      .union([
+        z.literal('record_files'),
+        z.literal('markdown_table'),
+        z
+          .object({
+            kind: z.literal('markdown_table'),
+            ownerPath: z.string().min(1).max(2_000),
+            blockId: z.string().min(1).max(128).optional(),
+          })
+          .strict(),
+        z
+          .object({
+            kind: z.literal('markdown_table'),
+            formatVersion: z.literal(2),
+            owner: z
+              .object({
+                path: z.string().min(1).max(2_000),
+                blockId: z.string().min(1).max(128),
+              })
+              .strict(),
+            titlePropertyId: z.string().min(1),
+            storedPropertyIds: z.array(z.string().min(1)).min(1),
+          })
+          .strict(),
+      ])
+      .optional(),
     properties: z.array(DatabaseDraftPropertySchema).min(1),
   })
   .loose();
@@ -754,6 +783,9 @@ export interface DatabasePlanConflict {
     | 'person_target_missing'
     | 'source_record_migration_required'
     | 'source_removal_blocked'
+    | 'unsafe_owner_path'
+    | 'owner_path_conflict'
+    | 'owner_block_conflict'
     | 'planning_io_unavailable'
     | 'sample_required_value_missing'
     | 'sample_value_invalid'
@@ -1016,6 +1048,29 @@ function expiry(now: Date, ttlSeconds: number): string {
 
 function clone<T>(value: T): T {
   return structuredClone(value);
+}
+
+function emptyMarkdownOwnerTable(
+  definition: DatabaseDefinition,
+  source: DatabaseDefinition['sources'][number],
+): string {
+  const storage = source.storage;
+  if (!storage || storage.kind !== 'markdown_table') {
+    throw new Error(`Source "${source.id}" has no Markdown owner-table storage`);
+  }
+  const marker = serializeDatabaseMarkdownOwnerMarker({
+    version: 2,
+    databaseId: definition.id,
+    sourceId: source.id,
+    blockId: storage.owner.blockId,
+    columns: storage.storedPropertyIds,
+  });
+  const headers = storage.storedPropertyIds.map((propertyId) => {
+    const name = source.properties.find((property) => property.id === propertyId)?.name ?? propertyId;
+    return encodeDatabaseMarkdownCellText(name.replace(/[\r\n]+/gu, ' '));
+  });
+  const row = (values: readonly string[]) => `| ${values.join(' | ')} |`;
+  return [marker, '', row(headers), row(headers.map(() => '---')), ''].join('\n');
 }
 
 function errno(error: unknown): string | undefined {
@@ -2387,6 +2442,34 @@ export class DatabasePlanEngine {
       return this.#createDatabaseDeletionPlan(draft, snapshot, now, expiresAt);
     }
     const conflicts: DatabasePlanConflict[] = [];
+    if (definition.version === 2) {
+      const ownerPaths = new Map<string, string>();
+      const ownerBlocks = new Map<string, string>();
+      for (const source of definition.sources) {
+        const storage = source.storage;
+        if (!storage || storage.kind !== 'markdown_table') continue;
+        const previousPathSource = ownerPaths.get(storage.owner.path);
+        if (previousPathSource) {
+          conflicts.push({
+            code: 'owner_path_conflict',
+            message: `V2 owner path "${storage.owner.path}" is claimed by multiple sources`,
+            targetId: source.id,
+          });
+        } else {
+          ownerPaths.set(storage.owner.path, source.id);
+        }
+        const previousBlockSource = ownerBlocks.get(storage.owner.blockId);
+        if (previousBlockSource) {
+          conflicts.push({
+            code: 'owner_block_conflict',
+            message: `V2 owner block "${storage.owner.blockId}" is claimed by multiple sources`,
+            targetId: source.id,
+          });
+        } else {
+          ownerBlocks.set(storage.owner.blockId, source.id);
+        }
+      }
+    }
     const byId = snapshot.databases.find((candidate) => candidate.id === definition.id) ?? null;
     const byKey = snapshot.databases.find((candidate) => candidate.key === definition.key);
     if (byId && byId.key !== definition.key) {
@@ -2442,6 +2525,80 @@ export class DatabasePlanEngine {
           });
         }
       }
+    }
+    if (byId?.version === 2 && manifestAction === 'update') {
+      conflicts.push({
+        code: 'source_record_migration_required',
+        message:
+          'V2 owner-table schema changes require the Markdown table transaction boundary; the v1 manifest writer is disabled',
+        targetId: definition.id,
+      });
+    }
+    if (definition.version === 2 && manifestAction === 'create') {
+      if (!this.#projectDir || !this.#contentDir) {
+        conflicts.push({
+          code: 'planning_io_unavailable',
+          message: 'V2 database creation requires a project-scoped content directory',
+          targetId: definition.id,
+        });
+      } else {
+        for (const source of definition.sources) {
+          const storage = source.storage;
+          if (!storage || storage.kind !== 'markdown_table') continue;
+          const contentPath = relative(
+            this.#projectDir,
+            resolve(this.#contentDir, storage.owner.path),
+          )
+            .split(sep)
+            .join('/');
+          if (
+            !contentPath ||
+            contentPath === '..' ||
+            contentPath.startsWith('../') ||
+            contentPath.includes('\\') ||
+            contentPath.split('/').some((segment) => segment === '' || segment === '.' || segment === '..')
+          ) {
+            conflicts.push({
+              code: 'unsafe_owner_path',
+              message: `V2 owner path "${storage.owner.path}" escapes the project root`,
+              targetId: source.id,
+            });
+            continue;
+          }
+          try {
+            const before = this.#readFile(resolve(this.#projectDir, contentPath));
+            conflicts.push({
+              code: 'record_path_occupied',
+              message: `V2 owner path "${storage.owner.path}" is already occupied`,
+              targetId: source.id,
+            });
+            void before;
+          } catch (error) {
+            if (errno(error) !== 'ENOENT') {
+              conflicts.push({
+                code: 'planning_io_unavailable',
+                message: `V2 owner path "${storage.owner.path}" could not be inspected safely`,
+                targetId: source.id,
+              });
+              continue;
+            }
+            manifestDiff.push({
+              path: contentPath,
+              before: null,
+              after: emptyMarkdownOwnerTable(definition, source),
+              action: 'create',
+            });
+          }
+        }
+      }
+    }
+    if (definition.version === 2 && draft.normalized.sampleRecords.length > 0) {
+      conflicts.push({
+        code: 'source_record_migration_required',
+        message:
+          'V2 database creation cannot write sample records through the v1 record-file commit engine; create the owner table first and add rows through the Markdown table writer',
+        targetId: definition.id,
+      });
     }
 
     const currentObjects = databaseObjectMap(byId);
@@ -3663,6 +3820,23 @@ export class DatabasePlanEngine {
       }
       propertyIdsBySource.set(source.key, propertyIds);
     }
+    const wantsMarkdownTableStorage =
+      desiredState.sources.some(
+        (source) =>
+          source.storage === 'markdown_table' ||
+          (source.storage && typeof source.storage === 'object'),
+      ) || currentDefinition?.version === 2;
+    const storedProperty = (property: { type: string }): boolean =>
+      !new Set([
+        'formula',
+        'rollup',
+        'created_time',
+        'last_edited_time',
+        'created_by',
+        'last_edited_by',
+        'verification',
+        'button',
+      ]).has(property.type);
     const normalizedSources = desiredState.sources.map((source) => ({
       id: sourceIdByKey.get(source.key),
       key: source.key,
@@ -4145,6 +4319,46 @@ export class DatabasePlanEngine {
         }
         return base;
       }),
+      ...(wantsMarkdownTableStorage
+        ? {
+            storage: (() => {
+              const current = currentSourceByDesiredKey.get(source.key)?.storage;
+              const raw = source.storage;
+              const currentOwner = current?.kind === 'markdown_table' ? current.owner : undefined;
+              const rawOwner = raw && typeof raw === 'object' ? raw : undefined;
+              const ownerPath =
+                (rawOwner && 'ownerPath' in rawOwner ? rawOwner.ownerPath : undefined) ??
+                (rawOwner && 'owner' in rawOwner && rawOwner.owner && typeof rawOwner.owner === 'object'
+                  ? rawOwner.owner.path
+                  : undefined) ??
+                currentOwner?.path ??
+                `${desiredState.database.key}/${source.key}.md`;
+              const sourceId = sourceIdByKey.get(source.key) ?? '';
+              const blockId =
+                (rawOwner && 'blockId' in rawOwner ? rawOwner.blockId : undefined) ??
+                (rawOwner && 'owner' in rawOwner && rawOwner.owner && typeof rawOwner.owner === 'object'
+                  ? rawOwner.owner.blockId
+                  : undefined) ??
+                currentOwner?.blockId ??
+                `dbb_${sourceId.replace(/^ds_/, '').replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 110)}_primary`;
+              const titlePropertyId = propertyIdsBySource.get(source.key)?.get(
+                source.properties.find((property) => property.type === 'title')?.key ?? '',
+              );
+              if (!titlePropertyId) throw new Error(`Source "${source.key}" has no Title property`);
+              const storedPropertyIds = source.properties
+                .filter((property) => storedProperty(property))
+                .map((property) => propertyIdsBySource.get(source.key)?.get(property.key))
+                .filter((propertyId): propertyId is string => propertyId !== undefined);
+              return {
+                kind: 'markdown_table' as const,
+                formatVersion: 2 as const,
+                owner: { path: ownerPath, blockId },
+                titlePropertyId,
+                storedPropertyIds,
+              };
+            })(),
+          }
+        : {}),
     })) as unknown as DatabaseDefinition['sources'];
     const normalizedSourceMappings =
       desiredState.sourceMappings === undefined
@@ -4734,7 +4948,7 @@ export class DatabasePlanEngine {
       };
     });
     const rawDefinition = {
-      version: 1,
+      version: wantsMarkdownTableStorage ? (2 as const) : (1 as const),
       id: databaseId,
       key: desiredState.database.key,
       name: desiredState.database.name,

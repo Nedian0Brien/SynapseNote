@@ -81,6 +81,98 @@ describe('planDatabaseMarkdownV2Migration', () => {
     });
   });
 
+  test('binds migration provenance and aliases to the v2 manifest when committedAt is supplied', () => {
+    const result = planDatabaseMarkdownV2Migration({
+      definition: definition(),
+      owners: [{ sourceId: 'ds_tasks', path: 'tasks.md', blockId: 'dbb_tasks_primary' }],
+      migrationCommittedAt: '2026-07-27T00:00:00.000Z',
+      records: [
+        {
+          databaseId: 'db_tasks',
+          sourceId: 'ds_tasks',
+          path: 'tasks/alpha.md',
+          markdown:
+            '---\n_sn:\n  database_id: db_tasks\n  source_id: ds_tasks\n  record_id: rec_alpha\ntitle: Alpha\nnotes: Keep this\nstatus: todo\n---\n',
+        },
+      ],
+    });
+
+    expect(result.definition.migration).toMatchObject({
+      fromVersion: 1,
+      committedAt: '2026-07-27T00:00:00.000Z',
+      sourceFolders: { ds_tasks: 'tasks' },
+    });
+    expect(result.definition.migration?.legacyRecordIds.rec_alpha?.canonicalRecordId).toMatch(/^rec_/);
+  });
+
+  test('carries v1 lifecycle metadata in the bounded alias map instead of linked-document frontmatter', () => {
+    const temporal = definition();
+    temporal.sources[0]?.properties.push(
+      {
+        id: 'prop_created_time',
+        key: 'created_time',
+        name: 'Created time',
+        type: 'created_time',
+        required: false,
+        aliases: [],
+        semantics: {
+          constraints: { unique: false },
+          inferencePolicy: 'explicit_only',
+          sensitivity: 'inherit',
+        },
+      },
+      {
+        id: 'prop_last_edited_time',
+        key: 'last_edited_time',
+        name: 'Last edited time',
+        type: 'last_edited_time',
+        required: false,
+        aliases: [],
+        semantics: {
+          constraints: { unique: false },
+          inferencePolicy: 'explicit_only',
+          sensitivity: 'inherit',
+        },
+      },
+      {
+        id: 'prop_created_by',
+        key: 'created_by',
+        name: 'Created by',
+        type: 'created_by',
+        required: false,
+        aliases: [],
+        semantics: {
+          constraints: { unique: false },
+          inferencePolicy: 'explicit_only',
+          sensitivity: 'inherit',
+        },
+      },
+    );
+    const result = planDatabaseMarkdownV2Migration({
+      definition: temporal,
+      owners: [{ sourceId: 'ds_tasks', path: 'tasks.md', blockId: 'dbb_tasks_primary' }],
+      migrationCommittedAt: '2026-07-27T00:00:00.000Z',
+      records: [
+        {
+          databaseId: 'db_tasks',
+          sourceId: 'ds_tasks',
+          path: 'tasks/alpha.md',
+          markdown:
+            '---\n_sn:\n  database_id: db_tasks\n  source_id: ds_tasks\n  record_id: rec_alpha\n  archived_at: 2026-07-26T12:00:00.000Z\n  created_at: 2026-07-20T12:00:00.000Z\n  last_edited_at: 2026-07-26T12:00:00.000Z\n  created_by: { kind: agent, principal_id: agent:migration }\ntitle: Alpha\nnotes: Keep this\nstatus: todo\n---\n',
+        },
+      ],
+    });
+
+    expect(result.status).toBe('ready');
+    expect(result.definition?.migration?.legacyRecordIds.rec_alpha).toMatchObject({
+      archivedAt: '2026-07-26T12:00:00.000Z',
+      createdAt: '2026-07-20T12:00:00.000Z',
+      lastEditedAt: '2026-07-26T12:00:00.000Z',
+      createdBy: { kind: 'agent', principal_id: 'agent:migration' },
+    });
+    expect(result.linkedDocuments['tasks/alpha.md']).not.toContain('archived_at:');
+  });
+
   test('blocks invalid owner paths and unresolved typed values before any write', () => {
     const result = planDatabaseMarkdownV2Migration({
       definition: definition(),

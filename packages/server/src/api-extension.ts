@@ -18366,6 +18366,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     '/api/databases/button': databaseApi.button,
     '/api/databases/place/search': databaseApi.placeSearch,
     '/api/databases/commit': databaseApi.commit,
+    '/api/databases/markdown-table/mutate': databaseApi.markdownTableMutation,
     '/api/databases/autonomy': databaseApi.autonomy,
     '/api/databases/permissions': databaseApi.permissions,
     '/api/databases/public-shares': databaseApi.publicShares,

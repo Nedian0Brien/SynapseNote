@@ -22,6 +22,7 @@ import {
   type DatabaseSource,
   createDatabaseDocumentId,
   createDatabaseMarkdownRecordId,
+  DATABASE_MARKDOWN_LIMITS,
   decodeDatabaseMarkdownCell,
   deleteDatabaseMarkdownTableRow,
   encodeDatabaseMarkdownCell,
@@ -37,6 +38,10 @@ import { atomicWriteFile, withFileLock } from '@nedian0brien/synapsenote-core/se
 import type { DatabaseRecordIndex } from './database-record-index.ts';
 import type { DatabaseStore } from './database-store.ts';
 import { tracedAtomicFs } from './fs-traced.ts';
+import {
+  createDatabaseMarkdownTableJournal,
+  type DatabaseMarkdownTableJournal,
+} from './database-markdown-table-journal.ts';
 
 export type DatabaseMarkdownTableWriterErrorCode =
   | 'invalid_request'
@@ -55,7 +60,9 @@ export type DatabaseMarkdownTableWriterErrorCode =
   | 'document_path_conflict'
   | 'duplicate_record'
   | 'transaction_failed'
-  | 'rollback_failed';
+  | 'rollback_failed'
+  | 'resource_limit'
+  | 'recovery_required';
 
 export class DatabaseMarkdownTableWriterError extends Error {
   readonly code: DatabaseMarkdownTableWriterErrorCode;
@@ -98,6 +105,8 @@ export interface CreateDatabaseMarkdownTableWriterOptions {
   refreshDatabaseIndex?: () => Promise<unknown>;
   fs?: Partial<DatabaseMarkdownTableWriterFs>;
   generateUuid?: () => string;
+  journal?: DatabaseMarkdownTableJournal;
+  atomicWrite?: (path: string, content: string) => Promise<void>;
 }
 
 export interface DatabaseMarkdownTableRevision {
@@ -115,7 +124,7 @@ export interface DatabaseMarkdownTableFileDelta {
 export interface DatabaseMarkdownTableMutationReceipt {
   version: 1;
   mutationId: string;
-  operation: 'update_cell' | 'replace_row' | 'delete_row' | 'create_row';
+  operation: 'update_cell' | 'update_cells' | 'replace_row' | 'delete_row' | 'create_row';
   databaseId: string;
   sourceId: string;
   ownerPath: string;
@@ -127,6 +136,7 @@ export interface DatabaseMarkdownTableMutationReceipt {
   afterOwnerRevision: string;
   /** Durable-journal payload for byte-exact undo. */
   beforeOwnerContent: string;
+  afterOwnerContent?: string;
   /** Present only for create-row transactions. */
   createdDocumentContent?: string;
   committedAt: string;
@@ -141,6 +151,19 @@ export interface DatabaseMarkdownTableCellMutationInput {
   expectedOwnerRevision?: string;
   expectedRowRevision?: string;
   expectedCellRevision?: string;
+}
+
+export interface DatabaseMarkdownTableBulkCellMutationInput {
+  databaseId: string;
+  sourceId: string;
+  cells: readonly {
+    recordId: string;
+    propertyId: string;
+    value: unknown;
+    expectedRowRevision?: string;
+    expectedCellRevision?: string;
+  }[];
+  expectedOwnerRevision: string;
 }
 
 export interface DatabaseMarkdownTableRowMutationInput {
@@ -317,6 +340,8 @@ export class DatabaseMarkdownTableWriter {
   readonly #fs: DatabaseMarkdownTableWriterFs;
   readonly #generateUuid: () => string;
   readonly #lockPath: string;
+  readonly #journal: DatabaseMarkdownTableJournal;
+  readonly #atomicWrite: (path: string, content: string) => Promise<void>;
 
   constructor(options: CreateDatabaseMarkdownTableWriterOptions) {
     this.#projectDir = resolve(options.projectDir);
@@ -327,6 +352,10 @@ export class DatabaseMarkdownTableWriter {
       (options.databaseRecordIndex ? () => options.databaseRecordIndex!.rebuild() : async () => undefined);
     this.#fs = { ...DEFAULT_FS, ...options.fs };
     this.#generateUuid = options.generateUuid ?? randomUUID;
+    this.#journal = options.journal ?? createDatabaseMarkdownTableJournal(this.#projectDir);
+    this.#atomicWrite =
+      options.atomicWrite ??
+      ((path, content) => atomicWriteFile(path, content, { fs: tracedAtomicFs }));
     this.#lockPath = resolve(this.#projectDir, '.ok', 'databases', '.commit.lock');
     if (!isWithin(this.#projectDir, this.#contentDir)) {
       throw new Error('Database Markdown table contentDir must be inside projectDir');
@@ -335,6 +364,12 @@ export class DatabaseMarkdownTableWriter {
 
   async updateCell(input: DatabaseMarkdownTableCellMutationInput): Promise<DatabaseMarkdownTableMutationResult> {
     return this.#withLock(() => this.#updateCellLocked(input));
+  }
+
+  async updateCells(
+    input: DatabaseMarkdownTableBulkCellMutationInput,
+  ): Promise<DatabaseMarkdownTableMutationResult> {
+    return this.#withLock(() => this.#updateCellsLocked(input));
   }
 
   async replaceRow(input: DatabaseMarkdownTableRowMutationInput): Promise<DatabaseMarkdownTableMutationResult> {
@@ -353,9 +388,41 @@ export class DatabaseMarkdownTableWriter {
     return this.#withLock(() => this.#undoLocked(input));
   }
 
+  /** Reconcile transactions left on disk after a process kill without guessing. */
+  async recover(): Promise<readonly { mutationId: string; state: 'committed' | 'rolled_back' | 'recovery_required' }[]> {
+    const entries = await this.#journal.listInflight();
+    const recovered: Array<{ mutationId: string; state: 'committed' | 'rolled_back' | 'recovery_required' }> = [];
+    for (const entry of entries) {
+      let allBefore = true;
+      let allAfter = true;
+      for (const file of entry.files) {
+        const current = await this.#fs.readFile(this.#safeAbsolutePath(file.path)).catch(() => null);
+        const currentRevision = current === null ? null : sha256(current);
+        allBefore &&= currentRevision === file.beforeSha256;
+        allAfter &&= currentRevision === file.afterSha256;
+      }
+      const state = allAfter ? 'committed' : allBefore ? 'rolled_back' : 'recovery_required';
+      await this.#journal.checkpoint(entry.mutationId, state);
+      recovered.push({ mutationId: entry.mutationId, state });
+    }
+    return recovered;
+  }
+
   async #withLock<T>(operation: () => Promise<T>): Promise<T> {
     await this.#fs.mkdir(resolve(this.#lockPath, '..'));
-    return withFileLock(this.#lockPath, operation);
+    return withFileLock(this.#lockPath, async () => {
+      const unresolved = (await this.#journal.listInflight()).find(
+        (entry) => entry.state === 'recovery_required',
+      );
+      if (unresolved) {
+        throw new DatabaseMarkdownTableWriterError(
+          'recovery_required',
+          'A previous v2 owner-table transaction requires recovery before another write',
+          { mutationId: unresolved.mutationId },
+        );
+      }
+      return operation();
+    });
   }
 
   async #loadSource(databaseId: string, sourceId: string): Promise<ResolvedSource> {
@@ -500,11 +567,47 @@ export class DatabaseMarkdownTableWriter {
     if (!cell) throw new DatabaseMarkdownTableWriterError('owner_invalid', 'Owner row cell is missing', { rowIndex: row.rowIndex, columnIndex });
     this.#assertRowAndCellRevisions(resolved, row.rowIndex, cell, input.expectedRowRevision, input.expectedCellRevision);
     const nextValue = encodedCell(property, input.value);
-    if (cell.value === nextValue) {
+    if (cell.raw.trim() === nextValue) {
       return { changed: false, receipt: this.#receipt('update_cell', resolved, row, resolved.markdown, resolved.markdown, input.propertyId) };
     }
     const after = replaceDatabaseMarkdownTableCell(resolved.markdown, resolved.owner, row.rowIndex, columnIndex, nextValue);
     return this.#commitOwnerOnly('update_cell', resolved, row, after, input.propertyId);
+  }
+
+  async #updateCellsLocked(
+    input: DatabaseMarkdownTableBulkCellMutationInput,
+  ): Promise<DatabaseMarkdownTableMutationResult> {
+    if (!Array.isArray(input.cells) || input.cells.length === 0 || input.cells.length > 10_000) {
+      throw new DatabaseMarkdownTableWriterError('invalid_request', 'A v2 bulk mutation must contain 1-10000 cells');
+    }
+    const resolved = await this.#loadSource(input.databaseId, input.sourceId);
+    this.#assertExpectedRevision(resolved, input.expectedOwnerRevision);
+    const storage = sourceStorage(resolved.source);
+    const seen = new Set<string>();
+    const replacements: Array<{ row: ResolvedRow; columnIndex: number; encoded: string; start: number; end: number }> = [];
+    for (const cellInput of input.cells) {
+      const key = `${cellInput.recordId}\0${cellInput.propertyId}`;
+      if (seen.has(key)) throw new DatabaseMarkdownTableWriterError('invalid_request', 'A bulk mutation repeats the same row/property cell', { key });
+      seen.add(key);
+      const row = await this.#resolveRow(resolved, cellInput.recordId);
+      const columnIndex = storage.storedPropertyIds.indexOf(cellInput.propertyId);
+      const property = resolved.source.properties.find((candidate) => candidate.id === cellInput.propertyId);
+      if (!property) throw new DatabaseMarkdownTableWriterError('property_not_stored', `Property "${cellInput.propertyId}" is not defined by the source`, { propertyId: cellInput.propertyId });
+      if (property.type === 'unique_id') throw new DatabaseMarkdownTableWriterError('allocated_property_read_only', `Unique ID property "${property.id}" is allocated by the database`, { propertyId: property.id });
+      if (columnIndex < 0) throw new DatabaseMarkdownTableWriterError(property.type === 'formula' || property.type === 'rollup' ? 'derived_property_read_only' : 'property_not_stored', `Property "${cellInput.propertyId}" is not stored in the v2 owner table`, { propertyId: cellInput.propertyId });
+      const cell = resolved.owner.rows[row.rowIndex]?.cells[columnIndex];
+      if (!cell) throw new DatabaseMarkdownTableWriterError('owner_invalid', 'Owner row cell is missing', { rowIndex: row.rowIndex, columnIndex });
+      this.#assertRowAndCellRevisions(resolved, row.rowIndex, cell, cellInput.expectedRowRevision, cellInput.expectedCellRevision);
+      replacements.push({ row, columnIndex, encoded: encodedCell(property, cellInput.value), start: cell.valueRange.start, end: cell.valueRange.end });
+    }
+    let after = resolved.markdown;
+    for (const replacement of replacements.sort((left, right) => right.start - left.start)) {
+      after = after.slice(0, replacement.start) + replacement.encoded + after.slice(replacement.end);
+    }
+    const row = replacements[0]?.row;
+    if (!row) throw new DatabaseMarkdownTableWriterError('invalid_request', 'Bulk mutation has no cells');
+    if (after === resolved.markdown) return { changed: false, receipt: this.#receipt('update_cells', resolved, row, after, after) };
+    return this.#commitOwnerOnly('update_cells', resolved, row, after);
   }
 
   async #replaceRowLocked(input: DatabaseMarkdownTableRowMutationInput): Promise<DatabaseMarkdownTableMutationResult> {
@@ -540,6 +643,20 @@ export class DatabaseMarkdownTableWriter {
   async #createRowLocked(input: DatabaseMarkdownTableRowCreateInput): Promise<DatabaseMarkdownTableMutationResult> {
     const resolved = await this.#loadSource(input.databaseId, input.sourceId);
     this.#assertExpectedRevision(resolved, input.expectedOwnerRevision);
+    if (Buffer.byteLength(input.documentMarkdown, 'utf8') > DATABASE_MARKDOWN_LIMITS.ownerDocumentBytes) {
+      throw new DatabaseMarkdownTableWriterError(
+        'resource_limit',
+        'The linked Markdown document exceeds the v2 document byte limit',
+        { limit: DATABASE_MARKDOWN_LIMITS.ownerDocumentBytes },
+      );
+    }
+    if (resolved.owner.rows.length >= DATABASE_MARKDOWN_LIMITS.rows) {
+      throw new DatabaseMarkdownTableWriterError(
+        'resource_limit',
+        'The v2 owner table has reached its row limit',
+        { limit: DATABASE_MARKDOWN_LIMITS.rows },
+      );
+    }
     if (!safeRelativePath(input.documentPath, null) || !/\.(?:md|mdx)$/i.test(input.documentPath)) {
       throw new DatabaseMarkdownTableWriterError('invalid_request', 'A new v2 row document path must be a normalized relative Markdown path', {
         documentPath: input.documentPath,
@@ -594,24 +711,56 @@ export class DatabaseMarkdownTableWriter {
       return property.type === 'title' ? encodedCell(property, link) : encodedCell(property, values[propertyId]);
     });
     const afterOwner = insertDatabaseMarkdownTableRow(resolved.markdown, resolved.owner, resolved.owner.rows.length, encodedValues);
+    if (Buffer.byteLength(afterOwner, 'utf8') > DATABASE_MARKDOWN_LIMITS.ownerDocumentBytes) {
+      throw new DatabaseMarkdownTableWriterError(
+        'resource_limit',
+        'The v2 owner document exceeds the byte limit after row creation',
+        { limit: DATABASE_MARKDOWN_LIMITS.ownerDocumentBytes },
+      );
+    }
     const documentRevision = revision(ensured.markdown);
     const ownerRevision = revision(resolved.markdown);
     const mutationId = `mut_${this.#generateUuid().replaceAll('-', '')}`;
     try {
+      await this.#journal.prepare({
+        mutationId,
+        files: [
+          {
+            path: input.documentPath,
+            beforeSha256: null,
+            afterSha256: documentRevision.sha256,
+            before: null,
+            after: ensured.markdown,
+          },
+          {
+            path: sourceStorage(resolved.source).owner.path,
+            beforeSha256: ownerRevision.sha256,
+            afterSha256: sha256(afterOwner),
+            before: resolved.markdown,
+            after: afterOwner,
+          },
+        ],
+      });
+      await this.#journal.checkpoint(mutationId, 'writing');
+      await this.#assertNoSymlinkComponents(input.documentPath);
+      await this.#assertNoSymlinkComponents(sourceStorage(resolved.source).owner.path);
       await this.#fs.mkdir(resolve(documentAbsolutePath, '..'));
-      await atomicWriteFile(documentAbsolutePath, ensured.markdown, { fs: tracedAtomicFs });
+      await this.#atomicWrite(documentAbsolutePath, ensured.markdown);
       await this.#assertOwnerStillCurrent(resolved);
-      await atomicWriteFile(resolved.ownerAbsolutePath, afterOwner, { fs: tracedAtomicFs });
+      await this.#atomicWrite(resolved.ownerAbsolutePath, afterOwner);
+      await this.#journal.checkpoint(mutationId, 'committed');
       await this.#refreshDatabaseIndex();
     } catch (error) {
       try {
         const ownerCurrent = await this.#fs.readFile(resolved.ownerAbsolutePath).catch(() => null);
         if (ownerCurrent !== null && sha256(ownerCurrent) === sha256(afterOwner)) {
-          await atomicWriteFile(resolved.ownerAbsolutePath, resolved.markdown, { fs: tracedAtomicFs });
+          await this.#atomicWrite(resolved.ownerAbsolutePath, resolved.markdown);
         }
         const documentCurrent = await this.#fs.readFile(documentAbsolutePath).catch(() => null);
         if (documentCurrent !== null && sha256(documentCurrent) === documentRevision.sha256) await this.#fs.unlink(documentAbsolutePath);
+        await this.#journal.checkpoint(mutationId, 'rolled_back');
       } catch (rollbackError) {
+        await this.#journal.checkpoint(mutationId, 'recovery_required').catch(() => undefined);
         throw new DatabaseMarkdownTableWriterError('rollback_failed', 'V2 row creation failed and compensation was incomplete', {
           ownerPath: sourceStorage(resolved.source).owner.path,
           documentPath: input.documentPath,
@@ -648,13 +797,14 @@ export class DatabaseMarkdownTableWriter {
       afterOwnerRevision: sha256(afterOwner),
       beforeOwnerContent: resolved.markdown,
       createdDocumentContent: ensured.markdown,
+      afterOwnerContent: afterOwner,
       committedAt: new Date().toISOString(),
     };
     return { changed: true, receipt };
   }
 
   async #commitOwnerOnly(
-    operation: 'update_cell' | 'replace_row' | 'delete_row',
+    operation: 'update_cell' | 'update_cells' | 'replace_row' | 'delete_row',
     resolved: ResolvedSource,
     row: ResolvedRow,
     after: string,
@@ -663,19 +813,42 @@ export class DatabaseMarkdownTableWriter {
     const before = resolved.markdown;
     const ownerRevision = revision(before);
     const afterRevision = revision(after);
+    if (after !== before && Buffer.byteLength(after, 'utf8') > DATABASE_MARKDOWN_LIMITS.ownerDocumentBytes) {
+      throw new DatabaseMarkdownTableWriterError(
+        'resource_limit',
+        'The v2 owner document exceeds the byte limit after mutation',
+        { limit: DATABASE_MARKDOWN_LIMITS.ownerDocumentBytes },
+      );
+    }
     const receipt = this.#receipt(operation, resolved, row, before, after, propertyId);
     if (before === after) return { changed: false, receipt };
     try {
       await this.#assertOwnerStillCurrent(resolved);
-      await atomicWriteFile(resolved.ownerAbsolutePath, after, { fs: tracedAtomicFs });
+      await this.#assertNoSymlinkComponents(sourceStorage(resolved.source).owner.path);
+      await this.#journal.prepare({
+        mutationId: receipt.mutationId,
+        files: [{
+          path: sourceStorage(resolved.source).owner.path,
+          beforeSha256: ownerRevision.sha256,
+          afterSha256: afterRevision.sha256,
+          before,
+          after,
+        }],
+      });
+      await this.#journal.checkpoint(receipt.mutationId, 'writing');
+      await this.#assertNoSymlinkComponents(sourceStorage(resolved.source).owner.path);
+      await this.#atomicWrite(resolved.ownerAbsolutePath, after);
+      await this.#journal.checkpoint(receipt.mutationId, 'committed');
       await this.#refreshDatabaseIndex();
     } catch (error) {
       try {
         const current = await this.#fs.readFile(resolved.ownerAbsolutePath);
         if (sha256(current) === afterRevision.sha256) {
-          await atomicWriteFile(resolved.ownerAbsolutePath, before, { fs: tracedAtomicFs });
+          await this.#atomicWrite(resolved.ownerAbsolutePath, before);
         }
+        await this.#journal.checkpoint(receipt.mutationId, 'rolled_back');
       } catch (rollbackError) {
+        await this.#journal.checkpoint(receipt.mutationId, 'recovery_required').catch(() => undefined);
         throw new DatabaseMarkdownTableWriterError('rollback_failed', 'V2 owner-table write failed and compensation was incomplete', {
           ownerPath: resolved.ownerAbsolutePath,
           beforeRevision: ownerRevision.sha256,
@@ -715,23 +888,81 @@ export class DatabaseMarkdownTableWriter {
       });
     }
     if (sha256(current) === receipt.beforeOwnerRevision) return { changed: false, receipt };
+    const undoMutationId = `mut_${randomUUID().replaceAll('-', '')}`;
+    const beforeOwner = receipt.operation === 'create_row'
+      ? this.#ownerBefore(receipt, resolved.markdown)
+      : await this.#beforeOwnerBytes(receipt);
+    const ownerFilePath = receipt.ownerPath;
+    const undoFiles: Array<{
+      path: string;
+      beforeSha256: string | null;
+      afterSha256: string | null;
+      before: string | null;
+      after: string | null;
+    }> = [{
+      path: ownerFilePath,
+      beforeSha256: sha256(current),
+      afterSha256: sha256(beforeOwner),
+      before: current,
+      after: beforeOwner,
+    }];
+    let documentAbsolute: string | null = null;
+    let documentBefore: string | null = null;
     if (receipt.operation === 'create_row') {
       const documentFile = receipt.files.find((file) => file.path !== receipt.ownerPath && file.operation === 'create');
       if (!documentFile) throw new DatabaseMarkdownTableWriterError('invalid_request', 'Create-row receipt has no document file delta');
-      const documentAbsolute = this.#safeAbsolutePath(documentFile.path);
-      const documentCurrent = await this.#fs.readFile(documentAbsolute).catch(() => null);
-      if (documentCurrent !== null && documentFile.after && sha256(documentCurrent) !== documentFile.after.sha256) {
+      documentAbsolute = this.#safeAbsolutePath(documentFile.path);
+      documentBefore = await this.#fs.readFile(documentAbsolute).catch(() => null);
+      if (documentBefore !== null && documentFile.after && sha256(documentBefore) !== documentFile.after.sha256) {
         throw new DatabaseMarkdownTableWriterError('target_changed', 'Undo refused because the created document changed after the mutation', {
           documentPath: documentFile.path,
         });
       }
-      await this.#assertOwnerStillCurrent({ ...resolved, markdown: current });
-      await atomicWriteFile(resolved.ownerAbsolutePath, this.#ownerBefore(receipt, resolved.markdown), { fs: tracedAtomicFs });
-      if (documentCurrent !== null) await this.#fs.unlink(documentAbsolute);
-    } else {
-      const before = await this.#beforeOwnerBytes(receipt);
-      await this.#assertOwnerStillCurrent({ ...resolved, markdown: current });
-      await atomicWriteFile(resolved.ownerAbsolutePath, before, { fs: tracedAtomicFs });
+      undoFiles.push({
+        path: documentFile.path,
+        beforeSha256: documentBefore === null ? null : sha256(documentBefore),
+        afterSha256: null,
+        before: documentBefore,
+        after: null,
+      });
+    }
+    await this.#assertOwnerStillCurrent({ ...resolved, markdown: current });
+    await this.#assertNoSymlinkComponents(receipt.ownerPath);
+    if (documentAbsolute) await this.#assertNoSymlinkComponents(undoFiles[1]!.path);
+    await this.#journal.prepare({ mutationId: undoMutationId, files: undoFiles });
+    await this.#journal.checkpoint(undoMutationId, 'writing');
+    let ownerWritten = false;
+    try {
+      await this.#atomicWrite(resolved.ownerAbsolutePath, beforeOwner);
+      ownerWritten = true;
+      if (documentAbsolute && documentBefore !== null) await this.#fs.unlink(documentAbsolute);
+      await this.#journal.checkpoint(undoMutationId, 'committed');
+    } catch (error) {
+      try {
+        if (ownerWritten) await this.#atomicWrite(resolved.ownerAbsolutePath, current);
+        if (documentAbsolute && documentBefore !== null) {
+          const documentCurrent = await this.#fs.readFile(documentAbsolute).catch(() => null);
+          if (documentCurrent === null) {
+            await this.#fs.mkdir(resolve(documentAbsolute, '..'));
+            await this.#atomicWrite(documentAbsolute, documentBefore);
+          }
+        }
+        await this.#journal.checkpoint(undoMutationId, 'rolled_back');
+      } catch (rollbackError) {
+        await this.#journal.checkpoint(undoMutationId, 'recovery_required').catch(() => undefined);
+        throw new DatabaseMarkdownTableWriterError(
+          'rollback_failed',
+          'V2 undo failed and compensation was incomplete',
+          { ownerPath: receipt.ownerPath },
+          rollbackError,
+        );
+      }
+      throw new DatabaseMarkdownTableWriterError(
+        'transaction_failed',
+        'V2 undo failed and was rolled back',
+        { ownerPath: receipt.ownerPath },
+        error,
+      );
     }
     try {
       await this.#refreshDatabaseIndex();
@@ -767,6 +998,7 @@ export class DatabaseMarkdownTableWriter {
       beforeOwnerRevision: beforeRevision.sha256,
       afterOwnerRevision: afterRevision.sha256,
       beforeOwnerContent: before,
+      afterOwnerContent: after,
       committedAt: new Date().toISOString(),
     };
   }

@@ -284,6 +284,7 @@ export {
   planDatabaseManifestMigration,
 } from './database/migration.ts';
 export {
+  DATABASE_MARKDOWN_LIMITS,
   DATABASE_MARKDOWN_OWNER_MARKER_NAME,
   DATABASE_MARKDOWN_OWNER_MARKER_VERSION,
   type DatabaseMarkdownCellCodecError,
@@ -312,6 +313,16 @@ export {
   replaceDatabaseMarkdownTableCell,
   serializeDatabaseMarkdownOwnerMarker,
 } from './database/markdown-table.ts';
+export {
+  type DatabaseMarkdownSemanticDiff,
+  type DatabaseMarkdownSemanticMergeConflict,
+  type DatabaseMarkdownSemanticMergeInput,
+  type DatabaseMarkdownSemanticMergeResult,
+  type DatabaseMarkdownSemanticOperation,
+  type DatabaseMarkdownSemanticOperationKind,
+  diffDatabaseMarkdownTables,
+  mergeDatabaseMarkdownTables,
+} from './database/markdown-table-diff.ts';
 export { type DatabaseDocumentId, DatabaseDocumentIdSchema } from './database/stable-ids.ts';
 export {
   createDatabaseDocumentId,
@@ -342,6 +353,14 @@ export {
   type DatabaseMarkdownV2MigrationPlan,
   planDatabaseMarkdownV2Migration,
 } from './database/markdown-table-migration.ts';
+export {
+  type DatabaseDerivedRevisionInput,
+  type DatabaseReverseRelationEdge,
+  type DatabaseReverseRelationIndex,
+  buildDatabaseReverseRelationIndex,
+  createDatabaseDerivedRevision,
+  databaseReverseRelationDependents,
+} from './database/relation-dependency.ts';
 export { formatDatabaseNumber } from './database/number-format.ts';
 export {
   DATABASE_ACCESS_LAYER_KINDS,

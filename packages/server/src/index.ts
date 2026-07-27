@@ -251,6 +251,8 @@ export {
   type DatabaseDataPlanePackInput,
   type DatabaseDataPlaneQueryResult,
   type DatabaseDataPlaneRetrievalResult,
+  type DatabaseMarkdownTableMutationInput,
+  type DatabaseMarkdownTableMutationRequest,
   type DatabaseDescribeNotModifiedResult,
   type DatabaseDescribeResult,
   type DatabaseFindResult,
@@ -281,6 +283,8 @@ export {
   DatabaseCatalogResponseSchema,
   DatabaseCommitRequestSchema,
   DatabaseCommitResponseSchema,
+  DatabaseMarkdownTableMutationRequestSchema,
+  DatabaseMarkdownTableMutationResponseSchema,
   DatabaseComputedPropertyPreviewRequestSchema,
   DatabaseComputedPropertyPreviewResponseSchema,
   DatabaseContextInspectionRequestSchema,
@@ -419,6 +423,7 @@ export {
   DatabaseMarkdownTableWriterError,
   type CreateDatabaseMarkdownTableWriterOptions,
   type DatabaseMarkdownTableCellMutationInput,
+  type DatabaseMarkdownTableBulkCellMutationInput,
   type DatabaseMarkdownTableFileDelta,
   type DatabaseMarkdownTableMutationReceipt,
   type DatabaseMarkdownTableMutationResult,
@@ -429,6 +434,21 @@ export {
   type DatabaseMarkdownTableWriterFs,
   type DatabaseMarkdownTableWriterErrorCode,
 } from './database-markdown-table-writer.ts';
+export {
+  createDatabaseMigrationJournal,
+  DatabaseMigrationJournal,
+  type DatabaseMigrationJournalEntry,
+} from './database-migration-journal.ts';
+export {
+  createDatabaseMigrationGate,
+  DatabaseMigrationGate,
+  type DatabaseMigrationGateOwner,
+} from './database-migration-gate.ts';
+export {
+  createDatabaseMarkdownTableJournal,
+  DatabaseMarkdownTableJournal,
+  type DatabaseMarkdownTableJournalEntry,
+} from './database-markdown-table-journal.ts';
 export {
   type CreateDatabaseRepairEngineOptions,
   createDatabaseRepairEngine,

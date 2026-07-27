@@ -52,6 +52,11 @@ export interface DatabaseRecord {
   sourceId: string;
   path: string;
   revision: string | null;
+  /**
+   * Revision of the canonical v2 owner document. V1 records omit this field;
+   * v2 UI mutations use it as the optimistic owner-table precondition.
+   */
+  storageRevision?: string | null;
   /** Semantic revision of body and non-Verification values; stable across badge-only changes. */
   evidenceRevision?: string | null;
   values: Record<string, DatabaseValue>;

@@ -4,11 +4,50 @@ icon: LuTable2
 description: Create file-native databases, edit records as pages, configure saved views, and recover every reviewed change.
 ---
 
-SynapseNote databases are collections of canonical Markdown pages with a typed
-schema and rebuildable indexes. The files remain the source of truth; the
-database manifest stores schema, views, permissions, templates, and automation
-definitions. You can work visually in the editor or use the typed Data Plane
-from an agent.
+SynapseNote databases are collections of canonical Markdown content with a typed
+schema and rebuildable indexes. In the v2 storage format, the manifest stores
+schema/view metadata and each source owns exactly one marker-delimited Markdown
+table; every row points to a normal `.md` document with a `[[wikilink]]`. The
+table owns scalar cells, while the linked document owns title/body prose. Older
+v1 databases remain readable until an explicit migration is approved.
+
+You can work visually in the editor or use the typed Data Plane from an agent.
+
+## Markdown table storage (v2)
+
+An owner document contains only the SynapseNote database marker and its GFM
+table in the database-owned range. The rest of the document is ordinary
+Markdown. A typical row looks like this:
+
+```md
+<!-- synapsenote:database
+version=2
+database=db_tasks
+source=ds_tasks
+block=dbb_tasks_primary
+columns=prop_title,prop_status
+-->
+
+| Title | Status |
+| --- | --- |
+| [[tasks/ship-v2]] | in_progress |
+```
+
+Formula and Rollup results are computed from the typed read model and are never
+written into the owner table or linked-document frontmatter. The current v2
+writer requires an exact owner revision and edits only the affected source
+range. Cell edits and basic row create/delete use the same storage-aware route;
+row creation adds a normal Markdown document in the source folder. Title,
+archive/restore, move, duplicate, schema, and receipt-backed UI undo/redo
+remain gated until their multi-file lifecycle contracts are complete. During
+migration, archived/audit/layout values are retained in the bounded manifest
+compatibility alias; native v2 lifecycle editing is not yet a new-default
+capability.
+
+The parser rejects malformed markers, invalid cells, unsafe links, and hard
+resource limits instead of silently coercing values. Current limits are 16 KiB
+for a marker, 4 MiB for an owner document, 100,000 rows, 200 columns, 64 KiB
+per cell, and 128 KiB/depth-16 for compact JSON cells.
 
 ## Create a database
 

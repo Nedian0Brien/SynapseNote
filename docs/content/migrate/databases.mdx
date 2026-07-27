@@ -4,9 +4,32 @@ icon: LuArrowRightLeft
 description: What carries over when database content arrives from Notion, CSV/TSV, Markdown, or Obsidian.
 ---
 
-SynapseNote keeps canonical records as Markdown and stores database schema and
-views in a versioned manifest. Imports therefore distinguish lossless content
-conversion from features that require a new schema or manual review.
+SynapseNote keeps v2 scalar values in a marker-delimited owner Markdown table,
+links each document entity with `[[wikilink]]`, and stores schema/views in a
+versioned manifest. v1 record-per-file databases remain readable and are
+converted only through an explicit preview/approval task. Imports therefore
+distinguish lossless content conversion from features that require a new schema
+or manual review.
+
+## v1 → v2 database migration
+
+Migration is a durable, write-frozen task rather than background synchronization.
+The preview inventories every source record, exact before hash, typed cell
+conversion, document identity, relation target, title conflict, owner path, and
+bounded lifecycle/audit/layout alias. Apply is refused for unresolved index
+issues, unsafe paths, duplicate identities, unsupported cells, relation/derived
+blockers, or size-limit overflow.
+
+The task records a plan hash, approval binding, before/after bytes, and
+checkpoint journal under the project-local operational state. A restart restores
+the migration gate; clean rollback is retryable, while unknown external bytes
+become `recovery_required` instead of being overwritten. After cutover, a cold
+rebuild verifies the owner table and linked documents before the task reports
+success. Existing v1 files are not auto-migrated and are not dual-written.
+
+For the exact state machine, file limits, rollback boundaries, and fixture
+matrix, see [RFC 0008](https://github.com/Nedian0Brien/SynapseNote/blob/main/docs/rfcs/0008-markdown-table-canonical-database-storage.md)
+and its [implementation checklist](https://github.com/Nedian0Brien/SynapseNote/blob/main/docs/rfcs/0008-markdown-table-database-storage-implementation-checklist.md).
 
 ## Source matrix
 

@@ -62,6 +62,8 @@ interface Args {
   expectedManifestRevision?: string;
   databaseIds?: string[];
   targetVersion?: number;
+  planHashes?: Record<string, string>;
+  migrationCommittedAt?: Record<string, string>;
   cwd?: string;
 }
 
@@ -136,6 +138,10 @@ export function register(server: ServerInstance, deps: Dependencies): void {
           .optional(),
         databaseIds: z.array(z.string().min(1)).max(10_000).optional(),
         targetVersion: z.number().int().positive().optional(),
+        planHashes: z.record(z.string().min(1), z.string().regex(/^sha256:[a-f0-9]{64}$/)).optional(),
+        migrationCommittedAt: z
+          .record(z.string().min(1), z.string().datetime({ offset: true }))
+          .optional(),
         cwd: z.string().optional().describe(ROUTED_CWD_DESCRIPTION),
       },
       outputSchema: OutputSchema,
@@ -257,6 +263,9 @@ export function register(server: ServerInstance, deps: Dependencies): void {
                     expectedManifestRevision: args.expectedManifestRevision,
                     targetVersion: args.targetVersion,
                     ...(args.databaseIds ? { databaseIds: args.databaseIds } : {}),
+                    ...(args.migrationCommittedAt
+                      ? { migrationCommittedAt: args.migrationCommittedAt }
+                      : {}),
                   }
                 : args.action === 'cancel' || args.action === 'retry' || args.action === 'resume'
                   ? {
@@ -281,6 +290,10 @@ export function register(server: ServerInstance, deps: Dependencies): void {
                                 expectedManifestRevision: args.expectedManifestRevision,
                                 targetVersion: args.targetVersion,
                                 ...(args.databaseIds ? { databaseIds: args.databaseIds } : {}),
+                                ...(args.planHashes ? { planHashes: args.planHashes } : {}),
+                                ...(args.migrationCommittedAt
+                                  ? { migrationCommittedAt: args.migrationCommittedAt }
+                                  : {}),
                               },
                     },
         databaseAccessHeaders(deps.identityRef?.current),

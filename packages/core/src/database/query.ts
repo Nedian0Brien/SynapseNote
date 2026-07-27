@@ -211,6 +211,11 @@ export const ProjectedDatabaseRecordSchema = z
     id: z.string().min(1),
     path: z.string().min(1),
     revision: z.string().nullable(),
+    storageRevision: z
+      .string()
+      .regex(/^sha256:[a-f0-9]{64}$/)
+      .nullable()
+      .optional(),
     evidenceRevision: z
       .string()
       .regex(/^sha256:[a-f0-9]{64}$/)
@@ -257,6 +262,7 @@ export interface ProjectedDatabaseRecord {
   id: string;
   path: string;
   revision: string | null;
+  storageRevision?: string | null;
   evidenceRevision?: string | null;
   values: Record<string, DatabaseValue>;
   textProjections?: Record<
@@ -273,6 +279,8 @@ export interface ProjectedDatabaseRecord {
 export interface DatabaseQueryResult {
   sourceId: string;
   snapshotRevision: string;
+  /** Full canonical owner-document revision for storage-aware v2 writes. */
+  storageRevision?: string | null;
   matched: number;
   returned: number;
   isComplete: boolean;
@@ -452,6 +460,8 @@ export const DatabaseQueryResultSchema = z
   .object({
     sourceId: z.string().min(1),
     snapshotRevision: z.string().min(1),
+    /** Full canonical owner-document revision for storage-aware v2 writes. */
+    storageRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).nullable().optional(),
     matched: z.number().int().nonnegative(),
     returned: z.number().int().nonnegative(),
     isComplete: z.boolean(),
@@ -473,6 +483,8 @@ export interface QueryDatabaseRecordsInput {
   records: readonly DatabaseRecord[];
   query?: unknown;
   snapshotRevision: string;
+  /** Optional canonical owner-document revision for storage-aware mutation clients. */
+  storageRevision?: string | null;
   /** One frozen read instant for deterministic expiry projection across this result. */
   verificationTime?: Date;
   people?: readonly DatabasePerson[];
@@ -1662,6 +1674,9 @@ export function queryDatabaseRecords(input: QueryDatabaseRecordsInput): Database
       id: record.id,
       path: record.path,
       revision: record.revision,
+      ...(record.storageRevision === undefined
+        ? {}
+        : { storageRevision: record.storageRevision }),
       ...(record.evidenceRevision === undefined
         ? {}
         : { evidenceRevision: record.evidenceRevision }),
@@ -1768,6 +1783,7 @@ export function queryDatabaseRecords(input: QueryDatabaseRecordsInput): Database
   return {
     sourceId: input.source.id,
     snapshotRevision: input.snapshotRevision,
+    ...(input.storageRevision === undefined ? {} : { storageRevision: input.storageRevision }),
     matched: sorted.length,
     returned: page.length,
     isComplete: nextCursor === null,

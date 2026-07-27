@@ -56,6 +56,7 @@ import { register as registerDataAutomation } from './database-automation.ts';
 import { register as registerDataButton } from './database-button.ts';
 import { register as registerDataComments } from './database-comments.ts';
 import { register as registerDataCommit } from './database-commit.ts';
+import { register as registerDataMarkdownTable } from './database-markdown-table.ts';
 import { register as registerDataPlaceSearch } from './database-place-search.ts';
 import { register as registerDataPlan } from './database-plan.ts';
 import { register as registerDataRepair } from './database-repair.ts';
@@ -102,6 +103,7 @@ export const DATABASE_SANDBOX_MCP_TOOL_NAMES = [
   'data_place_search',
   'data_plan',
   'data_commit',
+  'data_markdown_table',
   'data_comments',
   'data_undo',
   'data_repair',
@@ -232,6 +234,12 @@ export function registerAllTools(
   });
   registerDataCommit(registrationServer, {
     resolveCwd: named('data_commit'),
+    config: opts.config,
+    serverUrl: opts.serverUrl,
+    identityRef: opts.identityRef,
+  });
+  registerDataMarkdownTable(registrationServer, {
+    resolveCwd: named('data_markdown_table'),
     config: opts.config,
     serverUrl: opts.serverUrl,
     identityRef: opts.identityRef,

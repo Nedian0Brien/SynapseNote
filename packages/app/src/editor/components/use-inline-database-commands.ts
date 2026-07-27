@@ -33,6 +33,13 @@ import { updateDatabaseRecordPeek } from '@/lib/database-overlay-store';
 import { requestOpenDatabaseRecord } from '@/lib/database-record-open-command';
 import type { DatabasePasteChange } from '@/lib/database-tsv';
 import { classifyDatabaseUiProblem, databaseMutationUiMessage } from '@/lib/database-ui-problem';
+import {
+  createMarkdownTableCellMutation,
+  createMarkdownTableRowCreateMutation,
+  markdownTableDefaultValues,
+  markdownTableDocumentMarkdown,
+  markdownTableDocumentPath,
+} from '@/lib/database-markdown-table-client';
 import { createInlineHistoryKeyDown } from './inline-database-history';
 import type { InlineDatabaseReferenceData } from './inline-database-types';
 import {
@@ -55,6 +62,10 @@ export interface UseInlineDatabaseCommandsOptions {
   controller: InlineControllerState;
   read: InlineReadState;
   runInlineMutation: RunInlineMutation;
+  runInlineMarkdownTableMutation: (
+    mutation: import('@nedian0brien/synapsenote-server').DatabaseMarkdownTableMutationRequest,
+    policy: DatabaseMutationPolicy,
+  ) => void;
   setInlineMutationError: (value: string | null) => void;
   inlineUndoToken: string | null;
   inlineRedoToken: string | null;
@@ -67,6 +78,7 @@ export function useInlineDatabaseCommands({
   controller,
   read,
   runInlineMutation,
+  runInlineMarkdownTableMutation,
   setInlineMutationError,
   inlineUndoToken,
   inlineRedoToken,
@@ -224,7 +236,27 @@ export function useInlineDatabaseCommands({
     if (state.status !== 'ready' || !linkedSource || !linkedDatabase) return;
     const cellKey = optimisticCellKey(record.id, property.id);
     try {
+      if (linkedSource.storage?.kind === 'markdown_table' && property.type === 'title') {
+        throw new Error('Edit the linked Markdown document title; the owner table stores only its wikilink');
+      }
       setInlineOptimisticCellValues((current) => setOptimisticCellValue(current, cellKey, value));
+      if (linkedSource.storage?.kind === 'markdown_table') {
+        if (!record.storageRevision) {
+          throw new Error('The current Markdown owner-table revision is unavailable');
+        }
+        runInlineMarkdownTableMutation(
+          createMarkdownTableCellMutation({
+            databaseId: linkedDatabase.id,
+            sourceId: linkedSource.id,
+            recordId: record.id,
+            propertyId: property.id,
+            value,
+            expectedOwnerRevision: record.storageRevision,
+          }),
+          { operation: 'cell', optimisticCellKey: cellKey },
+        );
+        return;
+      }
       runInlineMutation(
         createDatabaseCellMutationDesiredState({
           database: linkedDatabase,
@@ -254,6 +286,25 @@ export function useInlineDatabaseCommands({
   const createInlineRecord = (title: string) => {
     if (state.status !== 'ready' || !linkedSource || !linkedDatabase) return;
     try {
+      if (linkedSource.storage?.kind === 'markdown_table') {
+        const normalizedTitle = title.trim();
+        if (!normalizedTitle) throw new Error('Title cannot be empty');
+        if (!renderedResult?.storageRevision) {
+          throw new Error('The current Markdown owner-table revision is unavailable');
+        }
+        runInlineMarkdownTableMutation(
+          createMarkdownTableRowCreateMutation({
+            databaseId: linkedDatabase.id,
+            sourceId: linkedSource.id,
+            documentPath: markdownTableDocumentPath(linkedSource.folder, normalizedTitle),
+            documentMarkdown: markdownTableDocumentMarkdown(normalizedTitle),
+            values: markdownTableDefaultValues(linkedSource),
+            expectedOwnerRevision: renderedResult.storageRevision,
+          }),
+          { operation: 'record-create' },
+        );
+        return;
+      }
       runInlineMutation(
         createDatabaseRecordDesiredState({
           database: linkedDatabase,

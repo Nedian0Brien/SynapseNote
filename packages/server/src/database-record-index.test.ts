@@ -2,7 +2,10 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { DatabaseDefinitionSchema } from '@nedian0brien/synapsenote-core';
+import {
+  createDatabaseMarkdownRecordId,
+  DatabaseDefinitionSchema,
+} from '@nedian0brien/synapsenote-core';
 import { createHash } from 'node:crypto';
 import {
   applyDatabaseRecordDiskEvent,
@@ -140,6 +143,12 @@ describe('DatabaseRecordIndex rebuild', () => {
         expect.objectContaining({ values: { prop_title: 'Beta order', prop_notes: 'Second order', prop_status: 'opt_done' }, path: 'orders/beta.md', body: 'Beta body\n' }),
       ]),
     );
+    expect(index.list('db_tasks', 'ds_tasks')[0]?.storageRevision).toBe(
+      `sha256:${createHash('sha256').update(readFileSync(join(contentDir, 'orders.md'), 'utf8')).digest('hex')}`,
+    );
+    expect(index.getStorageRevision('db_tasks', 'ds_tasks')).toBe(
+      `sha256:${createHash('sha256').update(readFileSync(join(contentDir, 'orders.md'), 'utf8')).digest('hex')}`,
+    );
     expect(index.snapshot().issues).toEqual([]);
     expect(index.inspectPath('orders.md')).toMatchObject({
       managed: true,
@@ -166,6 +175,53 @@ describe('DatabaseRecordIndex rebuild', () => {
     expect(index.snapshot().issues).toContainEqual(
       expect.objectContaining({ path: 'orders/alpha.md', materializationCode: 'missing_frontmatter' }),
     );
+  });
+
+  test('projects migration lifecycle aliases without reintroducing linked-document metadata', async () => {
+    const { projectDir, contentDir } = tempProject();
+    mkdirSync(join(contentDir, 'orders'), { recursive: true });
+    const base = v2Definition();
+    const canonicalRecordId = createDatabaseMarkdownRecordId('ds_tasks', 'doc_alpha');
+    const migrated = DatabaseDefinitionSchema.parse({
+      ...base,
+      migration: {
+        fromVersion: 1,
+        committedAt: '2026-07-27T00:00:00.000Z',
+        sourceFolders: { ds_tasks: 'tasks' },
+        legacyRecordIds: {
+          rec_legacy_alpha: {
+            sourceId: 'ds_tasks',
+            documentId: 'doc_alpha',
+            canonicalRecordId,
+            archivedAt: '2026-07-20T00:00:00.000Z',
+            pageLayoutOverride: {
+              pinnedPropertyIds: [],
+              panelPropertyIds: ['prop_notes'],
+              hiddenPropertyIds: [],
+              groupOverrides: [],
+              fullWidthContent: true,
+            },
+          },
+        },
+      },
+    });
+    const store = createDatabaseStore({ projectDir, contentDir });
+    await store.create(migrated);
+    writeFileSync(
+      join(contentDir, 'orders.md'),
+      '<!-- synapsenote:database\nversion=2\ndatabase=db_tasks\nsource=ds_tasks\nblock=dbb_orders_primary\ncolumns=prop_title,prop_notes,prop_status\n-->\n\n| Document | Notes | Status |\n| --- | --- | --- |\n| [[orders/alpha]] | First order | todo |\n',
+    );
+    writeFileSync(
+      join(contentDir, 'orders/alpha.md'),
+      '---\n_sn:\n  document_id: doc_alpha\ntitle: Alpha order\n---\nAlpha body\n',
+    );
+    const index = createDatabaseRecordIndex({ contentDir, databaseStore: store });
+    await index.rebuild();
+    expect(index.getById(canonicalRecordId)).toMatchObject({
+      archivedAt: '2026-07-20T00:00:00.000Z',
+      pageLayoutOverride: { panelPropertyIds: ['prop_notes'], fullWidthContent: true },
+      values: { prop_title: 'Alpha order' },
+    });
   });
 
   test('rejects a v2 owner claimed by more than one source instead of picking a winner', async () => {

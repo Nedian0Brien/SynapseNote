@@ -92,6 +92,7 @@ export function useInlineDatabaseController({
     controller: controllerState,
     read,
     runInlineMutation: mutation.run,
+    runInlineMarkdownTableMutation: mutation.runMarkdownTable,
     setInlineMutationError: mutation.setError,
     inlineUndoToken: mutation.undoToken,
     inlineRedoToken: mutation.redoToken,
