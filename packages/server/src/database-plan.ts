@@ -2457,6 +2457,38 @@ export class DatabasePlanEngine {
       return this.#createDatabaseDeletionPlan(draft, snapshot, now, expiresAt);
     }
     const conflicts: DatabasePlanConflict[] = [];
+    // A cross-database relation names a source no single manifest contains, so
+    // the definition schema cannot confirm it resolves. This is the first layer
+    // that sees every database, which makes it the one that owes the check —
+    // otherwise a relation could point at a database that does not exist and
+    // only fail later, when a record tried to use it.
+    for (const source of definition.sources) {
+      for (const property of source.properties) {
+        if (property.type !== 'relation') continue;
+        const targetDatabaseId = property.targetDatabaseId;
+        if (targetDatabaseId === undefined || targetDatabaseId === definition.id) continue;
+        const targetDatabase = snapshot.databases.find(
+          (candidate) => candidate.id === targetDatabaseId,
+        );
+        if (!targetDatabase) {
+          conflicts.push({
+            code: 'relation_target_missing',
+            message: `Relation "${property.id}" targets database "${targetDatabaseId}", which is not in this workspace`,
+            targetId: property.id,
+            propertyId: property.id,
+          });
+          continue;
+        }
+        if (!targetDatabase.sources.some((candidate) => candidate.id === property.targetSourceId)) {
+          conflicts.push({
+            code: 'relation_target_missing',
+            message: `Relation "${property.id}" targets source "${property.targetSourceId}", which database "${targetDatabaseId}" does not define`,
+            targetId: property.id,
+            propertyId: property.id,
+          });
+        }
+      }
+    }
     if (definition.version === 2) {
       const ownerPaths = new Map<string, string>();
       const ownerBlocks = new Map<string, string>();
@@ -3048,7 +3080,13 @@ export class DatabasePlanEngine {
               movedTargetSourceByRecordId.get(recordId) ??
               indexedTarget?.sourceId;
             const targetDatabaseId = plannedTarget ? definition.id : indexedTarget?.databaseId;
-            if (targetSourceId !== property.targetSourceId || targetDatabaseId !== definition.id) {
+            // An absent `targetDatabaseId` means this database, which is what
+            // every relation authored before cross-database targets says.
+            const expectedDatabaseId = property.targetDatabaseId ?? definition.id;
+            if (
+              targetSourceId !== property.targetSourceId ||
+              targetDatabaseId !== expectedDatabaseId
+            ) {
               conflicts.push({
                 code: 'relation_target_missing',
                 message: `Relation property "${property.id}" target "${recordId}" does not resolve in source "${property.targetSourceId}"`,
@@ -4141,9 +4179,16 @@ export class DatabasePlanEngine {
               via: typeof property.pairedPropertyId === 'string' ? 'explicit_id' : 'stable_key',
             });
           }
+          // A cross-database target arrives as an explicit pair of IDs: its
+          // source is not in `sourceIdByKey`, so there is no key to compile,
+          // and the database it belongs to has to be carried through rather
+          // than inferred. Same-database relations omit it, as before.
+          const targetDatabaseId =
+            typeof property.targetDatabaseId === 'string' ? property.targetDatabaseId : undefined;
           return {
             ...base,
             targetSourceId,
+            ...(targetDatabaseId ? { targetDatabaseId } : {}),
             ...(pairedPropertyId ? { pairedPropertyId } : {}),
             ...(property.cardinality === 'one' || property.cardinality === 'many'
               ? { cardinality: property.cardinality }

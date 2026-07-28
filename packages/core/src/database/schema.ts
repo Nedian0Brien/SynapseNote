@@ -821,6 +821,19 @@ export const DatabasePropertySchema = z.discriminatedUnion('type', [
       ...propertyBaseShape,
       type: z.literal('relation'),
       targetSourceId: DataSourceIdSchema,
+      /**
+       * Database owning `targetSourceId`, when that is not this one.
+       *
+       * Absent means the target is a source of this same database — exactly
+       * what every relation written before cross-database targets existed
+       * looks like, so omitting it preserves the previous meaning.
+       *
+       * Named explicitly rather than inferred by looking the source up
+       * globally, so a manifest still says what it points at when the other
+       * database is missing: a dangling cross-database relation stays
+       * describable, and diagnosing one does not need the whole workspace.
+       */
+      targetDatabaseId: DatabaseIdSchema.optional(),
       cardinality: z.enum(['one', 'many']).default('many'),
       pairedPropertyId: DatabasePropertyIdSchema.optional(),
     })
@@ -3383,14 +3396,32 @@ export const DatabaseDefinitionSchema = z
     for (const [sourceIndex, source] of database.sources.entries()) {
       for (const [propertyIndex, property] of source.properties.entries()) {
         if (property.type === 'relation') {
-          if (!sourceIds.has(property.targetSourceId)) {
+          // A cross-database target names a source this manifest does not
+          // contain, so nothing here can confirm it exists — that check needs
+          // the whole workspace and belongs to the planner, which has the
+          // store. What this CAN enforce is that the relation is honest about
+          // which case it is in.
+          const crossDatabase =
+            property.targetDatabaseId !== undefined && property.targetDatabaseId !== database.id;
+          if (!crossDatabase && !sourceIds.has(property.targetSourceId)) {
             ctx.addIssue({
               code: 'custom',
               path: ['sources', sourceIndex, 'properties', propertyIndex, 'targetSourceId'],
               message: `Relation target source "${property.targetSourceId}" is not defined`,
             });
           }
-          if (property.pairedPropertyId) {
+          if (crossDatabase && property.pairedPropertyId) {
+            // The paired side lives in the other database's manifest, so
+            // keeping the two ends consistent would take a transaction across
+            // two manifests. Until that exists, a cross-database relation is
+            // one-way — which is a configuration Notion offers too.
+            ctx.addIssue({
+              code: 'custom',
+              path: ['sources', sourceIndex, 'properties', propertyIndex, 'pairedPropertyId'],
+              message: `Cross-database relation "${property.id}" cannot be two-way; the paired property would live in database "${property.targetDatabaseId}"`,
+            });
+          }
+          if (!crossDatabase && property.pairedPropertyId) {
             const targetSource = database.sources.find(
               (candidate) => candidate.id === property.targetSourceId,
             );

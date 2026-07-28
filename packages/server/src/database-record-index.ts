@@ -1561,11 +1561,17 @@ export class DatabaseRecordIndex {
             const targetBindings = targetPath
               ? this.#v2SourcesByDocumentPath.get(targetPath)
               : undefined;
+            // `#v2SourcesByDocumentPath` already spans every database, because
+            // a v2 relation cell is a wikilink to a DOCUMENT and a document
+            // does not care which database owns it. So a cross-database target
+            // needs no new lookup here — only the binding it is matched
+            // against. An absent `targetDatabaseId` still means this database.
+            const targetDatabaseId = property.targetDatabaseId ?? database.id;
             const targetBinding = [...(targetBindings ?? [])]
               .map((binding) => binding.split('\0'))
               .find(
                 ([databaseId, sourceId]) =>
-                  databaseId === database.id && sourceId === property.targetSourceId,
+                  databaseId === targetDatabaseId && sourceId === property.targetSourceId,
               );
             if (!target || !targetBinding) {
               issues.push(
