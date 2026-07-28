@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { DATABASE_ADDABLE_PROPERTY_TYPES } from '@/lib/database-mutations/database-property-commands';
+import { databaseAddablePropertyTypes } from '@/lib/database-mutations/database-property-commands';
 import {
   databasePropertyTypeExample,
   databasePropertyTypeLabel,
@@ -276,7 +276,7 @@ export function DatabasePropertiesDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {DATABASE_ADDABLE_PROPERTY_TYPES.map((type) => (
+                  {databaseAddablePropertyTypes(source.properties).map((type) => (
                     <SelectItem key={type} value={type}>
                       {databasePropertyTypeLabel(type)}
                     </SelectItem>

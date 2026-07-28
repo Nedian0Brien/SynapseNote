@@ -159,6 +159,8 @@ export function useDatabaseWorkspaceSchemaCommands(context: DatabaseWorkspaceCon
         name: input.name,
         type: input.type,
         existingKeys: selectedSource.properties.map((candidate: DatabaseProperty) => candidate.key),
+        database: selectedDatabase,
+        source: selectedSource,
       });
       const desiredState = createDatabaseAddPropertyDesiredState({
         database: selectedDatabase,

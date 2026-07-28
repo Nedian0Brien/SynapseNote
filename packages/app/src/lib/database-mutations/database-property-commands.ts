@@ -6,6 +6,7 @@ import type {
   ProjectedDatabaseRecord,
 } from '@nedian0brien/synapsenote-core';
 import {
+  compileFormulaSource,
   DatabaseDefinitionSchema,
   pruneDatabasePropertyReferences,
 } from '@nedian0brien/synapsenote-core';
@@ -66,7 +67,11 @@ export const DATABASE_ADDABLE_PROPERTY_GROUPS = [
       'place',
     ],
   },
-  { id: 'advanced', label: 'Advanced', types: ['unique_id', 'verification'] },
+  {
+    id: 'advanced',
+    label: 'Advanced',
+    types: ['relation', 'rollup', 'formula', 'unique_id', 'verification'],
+  },
   {
     id: 'metadata',
     label: 'Record metadata',
@@ -78,22 +83,107 @@ export const DATABASE_ADDABLE_PROPERTY_GROUPS = [
   types: readonly DatabasePropertyType[];
 }[];
 
-/** Flattened `DATABASE_ADDABLE_PROPERTY_GROUPS`, for the flat dropdown pickers. */
+/**
+ * The addable groups for one source, with the types it cannot support yet
+ * removed.
+ *
+ * Only `rollup` is conditional: it summarises values reached THROUGH a
+ * relation, so with no relation property in the source there is nothing for it
+ * to point at and no default that would mean anything. Offering it anyway would
+ * hand back a column the user cannot complete.
+ */
+export function databaseAddablePropertyGroups(
+  properties: readonly { type: DatabasePropertyType }[],
+): readonly { id: string; label: string; types: readonly DatabasePropertyType[] }[] {
+  const hasRelation = properties.some((property) => property.type === 'relation');
+  if (hasRelation) return DATABASE_ADDABLE_PROPERTY_GROUPS;
+  return DATABASE_ADDABLE_PROPERTY_GROUPS.map((group) => ({
+    ...group,
+    types: group.types.filter((type) => type !== 'rollup'),
+  }));
+}
+
+/** Flattened {@link databaseAddablePropertyGroups}, for the flat dropdown pickers. */
+export function databaseAddablePropertyTypes(
+  properties: readonly { type: DatabasePropertyType }[],
+): readonly DatabasePropertyType[] {
+  return databaseAddablePropertyGroups(properties).flatMap((group) => group.types);
+}
+
+/** Every type the pickers can ever offer, ignoring per-source availability. */
 export const DATABASE_ADDABLE_PROPERTY_TYPES: readonly DatabasePropertyType[] =
   DATABASE_ADDABLE_PROPERTY_GROUPS.flatMap((group) => group.types);
+
+/** Seeded formula body: an empty text literal, which compiles and evaluates. */
+const EMPTY_FORMULA_SOURCE = '""';
 
 /**
  * Builds the schema fragment used by the human Notion-style property picker.
  * Select-like properties need one option in the canonical manifest even when
  * the user has not entered any cell values yet, so seed an inert first option
  * that remains editable through the normal property configuration surface.
+ *
+ * The configurable types seed a valid, inert starting point and rely on their
+ * editor to refine it, which is how Notion behaves: picking Formula gives you
+ * an empty formula and opens the editor, not a modal that blocks creation.
  */
 export function createDatabasePropertyDefinitionForAdd(input: {
   name: string;
   type: DatabasePropertyType;
   existingKeys: readonly string[];
+  database: DatabaseDefinition;
+  source: DatabaseSource;
 }): { key: string; name: string; type: DatabasePropertyType } & Record<string, unknown> {
   const key = databasePropertyKeyFromName(input.name, input.existingKeys);
+  if (input.type === 'relation') {
+    // A relation can only target a source of the SAME database, so the only
+    // always-available target is this source — a self-relation, which is also
+    // the shape Notion's sub-items use. Repointing it is the relation editor's
+    // job.
+    return {
+      key,
+      name: input.name,
+      type: input.type,
+      targetSourceId: input.source.id,
+      cardinality: 'many',
+    };
+  }
+  if (input.type === 'formula') {
+    return {
+      key,
+      name: input.name,
+      type: input.type,
+      source: EMPTY_FORMULA_SOURCE,
+      ast: compileFormulaSource(EMPTY_FORMULA_SOURCE, {
+        definition: input.database,
+        sourceId: input.source.id,
+      }),
+    };
+  }
+  if (input.type === 'rollup') {
+    const relation = input.source.properties.find((property) => property.type === 'relation');
+    if (!relation || relation.type !== 'relation') {
+      throw new Error('A Rollup needs a Relation property to summarise through');
+    }
+    const target = input.database.sources.find(
+      (candidate) => candidate.id === relation.targetSourceId,
+    );
+    const targetProperty = target?.properties.find((property) => property.type === 'title');
+    if (!targetProperty) {
+      throw new Error(`Relation "${relation.name}" points at a source without a Title`);
+    }
+    // `count_all` ignores the target value entirely, so it is the one default
+    // that is meaningful for any relation before the user has chosen anything.
+    return {
+      key,
+      name: input.name,
+      type: input.type,
+      relationPropertyId: relation.id,
+      targetPropertyId: targetProperty.id,
+      function: 'count_all',
+      targetValueType: 'text',
+    };
+  }
   if (input.type === 'select' || input.type === 'multi_select') {
     return {
       key,

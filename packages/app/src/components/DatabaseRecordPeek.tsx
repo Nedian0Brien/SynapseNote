@@ -655,6 +655,8 @@ export function DatabaseRecordPeek({
       name: input.name,
       type: input.type,
       existingKeys: activeSource.properties.map((candidate) => candidate.key),
+      database: activeDatabase,
+      source: activeSource,
     });
     const desiredState = createDatabaseAddPropertyDesiredState({
       database: activeDatabase,

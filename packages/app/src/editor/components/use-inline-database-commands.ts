@@ -277,6 +277,8 @@ export function useInlineDatabaseCommands({
         name: input.name,
         type: input.type,
         existingKeys: linkedSource.properties.map((candidate) => candidate.key),
+        database: linkedDatabase,
+        source: linkedSource,
       });
       runInlineMutation(
         createDatabaseAddPropertyDesiredState({

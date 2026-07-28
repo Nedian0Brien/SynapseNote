@@ -151,6 +151,7 @@ export function DatabaseTableHeader({
         <DatabasePropertyInsertPopover
           open={addPropertyOpen}
           setOpen={setAddPropertyOpen}
+          sourceProperties={properties}
           mutationLocked={mutationLocked}
           propertyInsertTarget={propertyInsertTarget}
           setPropertyInsertTarget={setPropertyInsertTarget}
