@@ -288,7 +288,11 @@ const DEFAULT_FS: CommitFs = {
 };
 
 interface CommitGit {
-  snapshot(writer: WriterIdentity, message: string): Promise<string>;
+  snapshot(
+    writer: WriterIdentity,
+    message: string,
+    options?: { reuseUnchanged?: boolean },
+  ): Promise<string>;
   hashBlob(path: string): Promise<string>;
 }
 
@@ -1699,6 +1703,20 @@ export class DatabaseCommitEngine {
     return databaseWriterIdentity(actor);
   }
 
+  /** The shadow repo behind one `CommitGit`, built once for both callers. */
+  #shadowCommitGit(shadow: ShadowHandle): CommitGit {
+    return {
+      snapshot: (identity, message, options) =>
+        commitWip(shadow, identity, '', message, this.#branch(), {
+          reuseUnchanged: options?.reuseUnchanged === true,
+        }),
+      hashBlob: async (path) => {
+        const oid = (await shadowGit(shadow).raw('hash-object', '-w', '--', path)).trim();
+        return `sha1:${oid}`;
+      },
+    };
+  }
+
   #gitForActor(): CommitGit {
     if (this.#gitOverride) return this.#gitOverride;
     const shadow = this.#getShadow();
@@ -1708,13 +1726,7 @@ export class DatabaseCommitEngine {
         'Database transaction requires the shadow Git repository',
       );
     }
-    return {
-      snapshot: (identity, message) => commitWip(shadow, identity, '', message, this.#branch()),
-      hashBlob: async (path) => {
-        const oid = (await shadowGit(shadow).raw('hash-object', '-w', '--', path)).trim();
-        return `sha1:${oid}`;
-      },
-    };
+    return this.#shadowCommitGit(shadow);
   }
 
   async #execute(context: {
@@ -1733,18 +1745,7 @@ export class DatabaseCommitEngine {
       );
     }
     const writer = databaseWriterIdentity(input.actor);
-    const git: CommitGit =
-      this.#gitOverride ??
-      ({
-        snapshot: (identity, message) =>
-          commitWip(shadow as ShadowHandle, identity, '', message, this.#branch()),
-        hashBlob: async (path) => {
-          const oid = (
-            await shadowGit(shadow as ShadowHandle).raw('hash-object', '-w', '--', path)
-          ).trim();
-          return `sha1:${oid}`;
-        },
-      } satisfies CommitGit);
+    const git: CommitGit = this.#gitOverride ?? this.#shadowCommitGit(shadow as ShadowHandle);
     const mutationId = `mut_${compactUuid(this.#generateUuid)}`;
     const undoTokenId = `undo_${compactUuid(this.#generateUuid)}`;
     const undoToken = `${undoTokenId}.${compactUuid(this.#generateUuid)}`;
@@ -2007,9 +2008,14 @@ export class DatabaseCommitEngine {
         }
         await this.#assertTargetState(target);
       }
+      // The base is a handle on the git state this transaction starts from, not
+      // a saved version the user asked for, so when nothing has moved since the
+      // last snapshot the existing head already denotes it — same tree, two
+      // fewer git processes. The result snapshot below always writes.
       baseGitHead = await git.snapshot(
         writer,
         `checkpoint: database transaction base ${mutationId}`,
+        { reuseUnchanged: true },
       );
       await this.#fs.mkdir(stagingRoot);
       const staged = new Map<string, string>();

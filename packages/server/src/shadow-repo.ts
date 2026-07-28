@@ -25,7 +25,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import { existsSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
   type AutoConsolidationTrigger,
@@ -377,18 +377,51 @@ export async function sweepLegacyShadowRefs(shadow: ShadowHandle): Promise<numbe
  * @param branch - Project branch name (e.g. 'main', 'feature/xyz'). When omitted, defaults to 'main'.
  */
 /**
- * Tree SHA each per-writer WIP index file is known to hold, keyed by
- * `gitDir\0ref`. Lets `commitWipInner` keep git's stat cache alive across
- * commits instead of re-seeding (and so re-hashing the whole work tree) every
- * time. In-memory only: a fresh process, a moved ref, a missing index file, or
- * any error all fall back to seeding, so the cache can only ever save work — it
- * is never the thing that decides what gets committed.
+ * What each per-writer WIP index file and ref held the last time this process
+ * wrote them, keyed by `gitDir\0ref`.
+ *
+ * Two things ride on this. The index stat cache stays alive across commits
+ * instead of being re-seeded (and so re-hashing the whole work tree) every
+ * time; and the ref's commit is already known, so the two `rev-parse` calls
+ * that would otherwise re-derive it can be skipped. In-memory only: a fresh
+ * process, a moved ref, a missing index file, or any error all fall back to the
+ * spawning path, so the cache can only ever save work — it is never the thing
+ * that decides what gets committed.
  */
-const wipIndexTrees = new Map<string, string>();
+interface WipRefState {
+  /** Commit the ref held when this process last advanced it. */
+  commitSha: string;
+  /** That commit's tree, which the index file also holds, stat-warm. */
+  treeSha: string;
+}
+
+const wipIndexTrees = new Map<string, WipRefState>();
 
 /** Test seam: forget every cached index tree so a case can assert cold behaviour. */
 export function resetWipIndexCacheForTests(): void {
   wipIndexTrees.clear();
+}
+
+const OBJECT_ID_RE = /^[0-9a-f]{40}$/;
+
+/**
+ * Read a WIP ref straight off disk instead of spawning `git rev-parse`.
+ *
+ * Worth doing because a `git` process costs tens of milliseconds here whatever
+ * it is asked to do, while this read costs ~0.01ms — and `commitWip` spawns two
+ * of them per snapshot purely to learn a SHA it wrote itself. Only loose refs
+ * are read: a symref, a packed ref, or anything that is not a bare object ID
+ * returns null and the caller falls back to git, which is the only thing that
+ * resolves every ref form correctly.
+ */
+function readLooseRef(gitDir: string, ref: string): string | null {
+  if (ref.split('/').includes('..')) return null;
+  try {
+    const value = readFileSync(resolve(gitDir, ref), 'utf8').trim();
+    return OBJECT_ID_RE.test(value) ? value : null;
+  } catch {
+    return null;
+  }
 }
 
 export interface CommitWipOptions {
@@ -401,6 +434,18 @@ export interface CommitWipOptions {
    * ambiguously and would otherwise need a >1s wall-clock wait between them.
    */
   date?: string;
+  /**
+   * Return the ref's existing head instead of writing an empty commit when the
+   * work tree has not moved since this process last advanced it.
+   *
+   * Off by default because a checkpoint is a record of an *act* of saving, and
+   * a caller listing checkpoints would lose an entry it expected. Callers that
+   * want a handle on "the git state at this moment" rather than a new entry —
+   * the base snapshot of a database transaction is the one — opt in, and get
+   * back a commit whose tree is byte-identical to the one an empty commit
+   * would have carried.
+   */
+  reuseUnchanged?: boolean;
 }
 
 export async function commitWip(
@@ -419,7 +464,16 @@ export async function commitWip(
         'shadow.branch': branch,
       },
     },
-    async () => commitWipInner(shadow, writer, contentRoot, message, branch, opts?.date),
+    async () =>
+      commitWipInner(
+        shadow,
+        writer,
+        contentRoot,
+        message,
+        branch,
+        opts?.date,
+        opts?.reuseUnchanged,
+      ),
   );
 }
 
@@ -430,12 +484,26 @@ async function commitWipInner(
   message: string,
   branch = 'main',
   date?: string,
+  reuseUnchanged = false,
 ): Promise<string> {
   const tmpIndex = resolve(shadow.gitDir, `index-wip-${writer.id}`);
   const ref = `refs/wip/${branch}/${writer.id}`;
   const indexKey = `${shadow.gitDir}\0${ref}`;
   const sg = shadowGit(shadow);
   const gitPathspecs = shadowAddPathspecs(contentRoot);
+
+  const cached = wipIndexTrees.get(indexKey);
+  // The ref still holds exactly the commit this process last wrote it, and the
+  // index file it left behind is still there. Two facts follow without asking
+  // git for either: the index holds `cached.treeSha` stat-warm, and the parent
+  // of the commit about to be made is `cached.commitSha`. Both `rev-parse`
+  // calls below exist only to re-derive those, so the whole block is skipped —
+  // worth it because a `git` process costs tens of milliseconds here no matter
+  // how little it is asked to do.
+  const refIsOurs =
+    cached !== undefined &&
+    readLooseRef(shadow.gitDir, ref) === cached.commitSha &&
+    existsSync(tmpIndex);
 
   try {
     // Seed index from current ref state (if exists).
@@ -453,22 +521,24 @@ async function commitWipInner(
     // moves the tree out from under the cache and we fall back to seeding.
     // `#invalidate` on every failure keeps a half-applied index from being
     // trusted.
-    try {
-      const refTree = (await sg.raw('rev-parse', `${ref}^{tree}`)).trim();
-      if (wipIndexTrees.get(indexKey) !== refTree || !existsSync(tmpIndex)) {
-        await sg
-          .env({ GIT_DIR: shadow.gitDir, GIT_INDEX_FILE: tmpIndex })
-          .raw('read-tree', refTree);
+    if (!refIsOurs) {
+      try {
+        const refTree = (await sg.raw('rev-parse', `${ref}^{tree}`)).trim();
+        if (wipIndexTrees.get(indexKey)?.treeSha !== refTree || !existsSync(tmpIndex)) {
+          await sg
+            .env({ GIT_DIR: shadow.gitDir, GIT_INDEX_FILE: tmpIndex })
+            .raw('read-tree', refTree);
+          wipIndexTrees.delete(indexKey);
+        }
+      } catch (e) {
         wipIndexTrees.delete(indexKey);
-      }
-    } catch (e) {
-      wipIndexTrees.delete(indexKey);
-      const msg = e instanceof Error ? e.message : String(e);
-      if (msg.includes('unknown revision') || msg.includes('bad revision')) {
-        // Expected: first commit on this ref — start fresh
-      } else {
-        console.error(`[shadow-repo] Unexpected error seeding index for ${ref}:`, e);
-        throw e;
+        const msg = e instanceof Error ? e.message : String(e);
+        if (msg.includes('unknown revision') || msg.includes('bad revision')) {
+          // Expected: first commit on this ref — start fresh
+        } else {
+          console.error(`[shadow-repo] Unexpected error seeding index for ${ref}:`, e);
+          throw e;
+        }
       }
     }
 
@@ -484,17 +554,28 @@ async function commitWipInner(
       await sg.env({ GIT_DIR: shadow.gitDir, GIT_INDEX_FILE: tmpIndex }).raw('write-tree')
     ).trim();
 
-    // Find parent
-    let parentSha: string | null = null;
-    try {
-      parentSha = (await sg.raw('rev-parse', ref)).trim();
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (!msg.includes('unknown revision') && !msg.includes('bad revision')) {
-        console.error(`[shadow-repo] Unexpected error resolving ${ref}:`, e);
-        throw e;
+    // Nothing moved. The commit this would write carries the tree the ref
+    // already points at, so the ref is already a handle on this exact state —
+    // and skipping it saves the two remaining spawns, `commit-tree` and the
+    // `update-ref` that pays for a reflog write and its fsync.
+    if (reuseUnchanged && refIsOurs && cached !== undefined && treeSha === cached.treeSha) {
+      return cached.commitSha;
+    }
+
+    // Find parent — already known on the fast path, where the ref was read off
+    // disk and matched what this process last wrote.
+    let parentSha: string | null = refIsOurs ? (cached?.commitSha ?? null) : null;
+    if (parentSha === null) {
+      try {
+        parentSha = (await sg.raw('rev-parse', ref)).trim();
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (!msg.includes('unknown revision') && !msg.includes('bad revision')) {
+          console.error(`[shadow-repo] Unexpected error resolving ${ref}:`, e);
+          throw e;
+        }
+        // Expected: no parent — first commit on this ref
       }
-      // Expected: no parent — first commit on this ref
     }
     // The index now holds exactly `treeSha` with a warm stat cache, and the ref
     // is about to point at a commit for it — record that so the next call can
@@ -517,8 +598,14 @@ async function commitWipInner(
     }
     const commitSha = (await sg.env(commitEnv).raw(...args)).trim();
 
-    await sg.raw('update-ref', ref, commitSha);
-    wipIndexTrees.set(indexKey, treeSha);
+    // Compare-and-swap when the old value is known, so a ref moved by another
+    // process between reading it and here fails loudly instead of being
+    // silently overwritten. The read above is off disk on the fast path, which
+    // widens that window slightly versus asking git — this closes it again.
+    await sg.raw(
+      ...(parentSha ? ['update-ref', ref, commitSha, parentSha] : ['update-ref', ref, commitSha]),
+    );
+    wipIndexTrees.set(indexKey, { commitSha, treeSha });
     return commitSha;
   } catch (error) {
     // The index may be half-staged; never let the next call trust it. Drop the
