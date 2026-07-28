@@ -36,4 +36,24 @@ describe('useDatabaseRefreshScheduler', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Now' }));
     expect(screen.getByTestId('refresh-key').textContent).toBe('2');
   });
+
+  /**
+   * The window has to be measured from the first invalidation. A commit emits
+   * several — local callback, collaboration broadcast, the file writes echoing
+   * back — and restarting the timer on each one let the stream defer the
+   * refresh indefinitely, which is what made one row insert wait 575ms.
+   */
+  test('a steady drip of invalidations cannot push the refresh past the window', async () => {
+    render(<Harness />);
+    const drip = globalThis.setInterval(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Burst' }));
+    }, 5);
+    try {
+      await waitFor(() => expect(screen.getByTestId('refresh-key').textContent).not.toBe('0'), {
+        timeout: 200,
+      });
+    } finally {
+      globalThis.clearInterval(drip);
+    }
+  });
 });
