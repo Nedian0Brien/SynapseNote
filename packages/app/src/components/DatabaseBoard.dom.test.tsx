@@ -231,8 +231,10 @@ describe('DatabaseBoard', () => {
         ],
       }),
     );
+    // The live region announces the record title, not its id, so a screen
+    // reader hears the page the user moved.
     expect(screen.getByRole('status').textContent).toContain(
-      'Moved record rec_first to Status: Done',
+      'Moved record First task to Status: Done',
     );
 
     onTransition.mockClear();

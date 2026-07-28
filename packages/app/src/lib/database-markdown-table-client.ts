@@ -1,8 +1,8 @@
+import type { DatabaseSource } from '@nedian0brien/synapsenote-core';
 import type {
   DatabaseMarkdownTableMutationInput,
   DatabaseMarkdownTableMutationRequest,
 } from '@nedian0brien/synapsenote-server';
-import type { DatabaseSource } from '@nedian0brien/synapsenote-core';
 import {
   DatabaseMutationClientError,
   type DatabaseMutationClientOptions,
@@ -29,12 +29,15 @@ export async function mutateDatabaseMarkdownTable(
   input: DatabaseMarkdownTableMutationRequest,
   options: DatabaseMutationClientOptions = {},
 ): Promise<DatabaseMarkdownTableMutationResponse> {
-  const response = await (options.fetch ?? globalThis.fetch)('/api/databases/markdown-table/mutate', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', accept: 'application/json' },
-    body: JSON.stringify(input),
-    signal: options.signal,
-  });
+  const response = await (options.fetch ?? globalThis.fetch)(
+    '/api/databases/markdown-table/mutate',
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify(input),
+      signal: options.signal,
+    },
+  );
   const body: unknown = await response.json().catch(() => null);
   if (!response.ok) {
     const detail =
@@ -170,7 +173,9 @@ export function markdownTableDefaultValues(source: DatabaseSource): Record<strin
     if (!property) throw new Error(`Stored property "${propertyId}" is not defined by the source`);
     if (property.type === 'title') continue;
     if (property.type === 'unique_id') {
-      throw new Error('A v2 row with a Unique ID property requires an explicit reviewed allocation');
+      throw new Error(
+        'A v2 row with a Unique ID property requires an explicit reviewed allocation',
+      );
     }
     const defaultValue = property.semantics.defaultValue;
     if (property.required && defaultValue === undefined) {

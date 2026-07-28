@@ -4,8 +4,6 @@ import type {
   ProjectedDatabaseRecord,
 } from '@nedian0brien/synapsenote-core';
 import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-server';
-import type { DatabaseViewManagerInitialAction } from '@/components/DatabaseViewManagerDialog';
-import type { DatabaseViewTabAction } from '@/components/DatabaseViewTabMenu';
 import {
   createMarkdownTableCellMutation,
   createMarkdownTableRowCreateMutation,
@@ -30,12 +28,7 @@ import {
   createDatabasePropertyDefinitionForAdd,
 } from '@/lib/database-mutations/database-property-commands';
 import { createDatabaseRecordDesiredState } from '@/lib/database-mutations/database-record-commands';
-import type { DatabaseViewLifecycleChange } from '@/lib/database-mutations/database-view-commands';
-import {
-  createDatabaseDefaultViewChangeDesiredState,
-  createDatabasePageTitleDesiredState,
-  createDatabaseViewLifecycleChangeDesiredState,
-} from '@/lib/database-mutations/database-view-commands';
+import { createDatabasePageTitleDesiredState } from '@/lib/database-mutations/database-view-commands';
 import { navigateToDatabaseRecordPath } from '@/lib/database-navigation';
 import { updateDatabaseRecordPeek } from '@/lib/database-overlay-store';
 import { requestOpenDatabaseRecord } from '@/lib/database-record-open-command';
@@ -47,13 +40,11 @@ import {
 } from '@/lib/database-ui-problem';
 import { createInlineHistoryKeyDown } from './inline-database-history';
 import type { InlineDatabaseReferenceData } from './inline-database-types';
-import {
-  databaseViewTabActionToInitialAction,
-  linkedViewSettingsFromView,
-} from './inline-database-utils';
+import { linkedViewSettingsFromView } from './inline-database-utils';
 import type { useInlineDatabaseControllerState } from './use-inline-database-controller-state';
 import { createInlineDatabaseOptionCommands } from './use-inline-database-option-commands';
 import type { useInlineDatabaseReadState } from './use-inline-database-read-state';
+import { createInlineDatabaseViewCommands } from './use-inline-database-view-commands';
 
 type InlineControllerState = ReturnType<typeof useInlineDatabaseControllerState>;
 type InlineReadState = ReturnType<typeof useInlineDatabaseReadState>;
@@ -98,69 +89,27 @@ export function useInlineDatabaseCommands({
     setInitialRecordAction,
     setFullDatabaseOpen,
     setInitialTablePaste,
-    inlineOverlayState,
-    setInitialDatabaseSurface,
-    setInitialPropertyId,
-    setInitialViewAction,
-    setLinkedSortTargetId,
-    setLinkedViewSettingsOpen,
-    setLinkedFilterTargetId,
-    setLinkedFilterOpen,
-    setInlineViewManagerInitialAction,
-    setInlineViewManagerOpen,
   } = controller;
-  const { state, linkedSource, linkedDatabase, linkedView, activeLinkedView, renderedResult } =
-    read;
+  const { state, linkedSource, linkedDatabase, activeLinkedView, renderedResult } = read;
 
   const setInlineMutationErrorFromCause = (cause: unknown, fallback: string) => {
     const problem = classifyDatabaseUiProblem(cause, fallback);
     setInlineMutationError(databaseMutationUiMessage(problem.kind), problem.kind);
   };
 
-  const openInlineDatabaseSurface = (
-    surface: 'properties' | 'options' | 'view-settings' | 'view-manager' | 'filters',
-    propertyId?: string,
-    viewAction?: DatabaseViewManagerInitialAction,
-    options: { advanced?: boolean } = {},
-  ) => {
-    if (surface === 'properties') {
-      if (!options.advanced) {
-        inlineOverlayState.openProperties();
-        return;
-      }
-      setInitialDatabaseSurface('properties');
-      setInitialPropertyId(propertyId);
-      setFullDatabaseOpen(true);
-      return;
-    }
-    if (surface === 'view-settings') {
-      if (!options.advanced) {
-        inlineOverlayState.openSort(propertyId);
-        return;
-      }
-      setLinkedSortTargetId(propertyId);
-      setLinkedViewSettingsOpen(true);
-      return;
-    }
-    if (surface === 'filters') {
-      if (!options.advanced) {
-        inlineOverlayState.openFilter(propertyId);
-        return;
-      }
-      setLinkedFilterTargetId(propertyId);
-      setLinkedFilterOpen(true);
-      return;
-    }
-    if (surface === 'view-manager' && !options.advanced) {
-      setInlineViewManagerInitialAction(viewAction);
-      setInlineViewManagerOpen(true);
-      return;
-    }
-    setInitialDatabaseSurface(surface);
-    setInitialPropertyId(propertyId);
-    setInitialViewAction(viewAction);
-    setFullDatabaseOpen(true);
-  };
+  const {
+    openInlineDatabaseSurface,
+    handleInlineViewTabAction,
+    commitInlineViewChange,
+    commitInlineDefaultViewChange,
+  } = createInlineDatabaseViewCommands({
+    isReady: state.status === 'ready',
+    linkedSource,
+    linkedDatabase,
+    controller,
+    runInlineMutation,
+    setInlineMutationErrorFromCause,
+  });
 
   const openRecord = (record: ProjectedDatabaseRecord) => {
     if (state.status !== 'ready' || !linkedDatabase || !linkedSource) return;
@@ -185,22 +134,6 @@ export function useInlineDatabaseCommands({
       },
     });
     if (outcome.status === 'invalid') setInlineMutationError(outcome.reason);
-  };
-
-  const handleInlineViewTabAction = (
-    view: NonNullable<typeof linkedView>,
-    action: DatabaseViewTabAction,
-  ) => {
-    if (action === 'filters') {
-      openInlineDatabaseSurface('filters', undefined, undefined, { advanced: true });
-      return;
-    }
-    if (action === 'settings') {
-      openInlineDatabaseSurface('view-settings', undefined, undefined, { advanced: true });
-      return;
-    }
-    const initialAction = databaseViewTabActionToInitialAction(view, action);
-    openInlineDatabaseSurface('view-manager', undefined, initialAction ?? undefined);
   };
 
   const commitInlineTitle = () => {
@@ -418,44 +351,6 @@ export function useInlineDatabaseCommands({
     setInitialTablePaste(changes);
     setInlineMutationError(null);
     setFullDatabaseOpen(true);
-  };
-
-  const commitInlineViewChange = (change: DatabaseViewLifecycleChange) => {
-    if (state.status !== 'ready' || !linkedSource || !linkedDatabase) return;
-    try {
-      runInlineMutation(
-        createDatabaseViewLifecycleChangeDesiredState({
-          database: linkedDatabase,
-          source: linkedSource,
-          change,
-        }),
-        {
-          operation: 'view',
-          onCommitted: () => {
-            setInlineViewManagerInitialAction(undefined);
-            setInlineViewManagerOpen(false);
-          },
-        },
-      );
-    } catch (cause) {
-      setInlineMutationErrorFromCause(cause, 'Unable to update saved view');
-    }
-  };
-
-  const commitInlineDefaultViewChange = (nextViewId?: string) => {
-    if (state.status !== 'ready' || !linkedSource || !linkedDatabase) return;
-    try {
-      runInlineMutation(
-        createDatabaseDefaultViewChangeDesiredState({
-          database: linkedDatabase,
-          source: linkedSource,
-          ...(nextViewId ? { viewId: nextViewId } : {}),
-        }),
-        { operation: 'view', onCommitted: () => setInlineViewManagerOpen(false) },
-      );
-    } catch (cause) {
-      setInlineMutationErrorFromCause(cause, 'Unable to update default view');
-    }
   };
 
   return {

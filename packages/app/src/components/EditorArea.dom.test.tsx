@@ -90,6 +90,9 @@ let docCtx:
   | typeof DOC_COLD_CTX = FOLDER_DOC_CTX;
 mock.module('@/editor/DocumentContext', () => ({
   useDocumentContext: () => docCtx,
+  // Non-editor surfaces import the optional variant from here; omitting it
+  // fails to link them and takes the whole file down before any test runs.
+  useOptionalDocumentContext: () => docCtx,
   useDocumentTransition: () => ({ openDocumentTransition: null }),
 }));
 

@@ -39,6 +39,7 @@ const DATABASE_LEAF_BOUNDARIES = [
   'editor/components/use-inline-database-read-state.ts',
   'editor/components/use-inline-database-commands.ts',
   'editor/components/use-inline-database-option-commands.ts',
+  'editor/components/use-inline-database-view-commands.ts',
   'editor/components/inline-database-history.ts',
   'components/use-database-workspace-controller.ts',
   'components/use-database-workspace-controller-state.ts',

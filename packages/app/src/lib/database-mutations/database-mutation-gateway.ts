@@ -4,14 +4,14 @@ import type {
   DatabaseMarkdownTableMutationRequest as ServerDatabaseMarkdownTableMutationRequest,
 } from '@nedian0brien/synapsenote-server';
 import {
+  type DatabaseMarkdownTableMutationResponse,
+  mutateDatabaseMarkdownTable,
+} from '../database-markdown-table-client';
+import {
   type ExecuteDatabaseUiMutationInput,
   type ExecuteDatabaseUiMutationResult,
   executeDatabaseUiMutation,
 } from '../database-mutation-client';
-import {
-  mutateDatabaseMarkdownTable,
-  type DatabaseMarkdownTableMutationResponse,
-} from '../database-markdown-table-client';
 
 /**
  * The only transport seam used by database UI mutation commands.

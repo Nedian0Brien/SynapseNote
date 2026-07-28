@@ -22,6 +22,9 @@ export function createDatabaseTestFixture() {
     id: 'database_tasks',
     key: 'tasks',
     name: 'Tasks',
+    // Schema-defaulted on a parsed manifest; the fixture is a literal, so it
+    // must carry the same shape the comment surfaces read.
+    people: [],
     contract: {
       purpose: 'Track tasks',
       canonicality: 'canonical' as const,

@@ -27,6 +27,9 @@ mock.module('@/components/PropertyContext', () => ({
 }));
 mock.module('@/editor/DocumentContext', () => ({
   useDocumentContext: () => docCtx,
+  // Non-editor surfaces import the optional variant from here; omitting it
+  // fails to link them and takes the whole file down before any test runs.
+  useOptionalDocumentContext: () => docCtx,
   useDocumentTransition: () => ({ openDocumentTransition: null }),
 }));
 mock.module('@/hooks/use-document-stats', () => ({ useDocumentStats: () => null }));

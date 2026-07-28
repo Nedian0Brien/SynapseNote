@@ -384,7 +384,10 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
         shouldProcess: (item) =>
           item.databaseId === selection.databaseId && item.sourceId === selection.sourceId,
         rebase: async (item) => {
-          const records = new Map<string, { revision: string | null; values: Readonly<Record<string, unknown>> }>();
+          const records = new Map<
+            string,
+            { revision: string | null; values: Readonly<Record<string, unknown>> }
+          >();
           for (const mutation of item.recordMutations) {
             if (!mutation.id) continue;
             const current = await fetchDatabaseRecord({

@@ -5,9 +5,9 @@ import {
   createIndexedDbOfflineDatabaseMutationStore,
   createOfflineDatabaseMutation,
   enqueueOfflineDatabaseMutation,
-  rebaseOfflineDatabaseMutation,
   type OfflineDatabaseMutation,
   type OfflineDatabaseMutationStore,
+  rebaseOfflineDatabaseMutation,
   reconcileOfflineDatabaseMutations,
 } from './database-offline-mutation-queue';
 
@@ -279,7 +279,10 @@ describe('offline database mutation queue', () => {
       branch: 'main',
       serverInstanceId: 'server-one',
       records: new Map([
-        ['rec_one', { revision: `sha256:${'b'.repeat(64)}`, values: { status: 'todo', title: 'Task' } }],
+        [
+          'rec_one',
+          { revision: `sha256:${'b'.repeat(64)}`, values: { status: 'todo', title: 'Task' } },
+        ],
       ]),
     });
     expect(rebased).toMatchObject({ status: 'ready', rebasedRecordIds: ['rec_one'] });
@@ -294,7 +297,10 @@ describe('offline database mutation queue', () => {
         ['rec_one', { revision: `sha256:${'b'.repeat(64)}`, values: { status: 'in_progress' } }],
       ]),
     });
-    expect(conflict).toMatchObject({ status: 'conflict', conflicts: [{ code: 'precondition_changed', recordId: 'rec_one' }] });
+    expect(conflict).toMatchObject({
+      status: 'conflict',
+      conflicts: [{ code: 'precondition_changed', recordId: 'rec_one' }],
+    });
   });
 
   test('converges when a queued set already landed and blocks unstable targets', () => {
@@ -313,16 +319,20 @@ describe('offline database mutation queue', () => {
       sourceId: 'ds_tasks',
       branch: 'main',
       serverInstanceId: 'server-one',
-      recordMutations: [{ ...mutation, id: undefined, expectedRevision: undefined, uniqueValue: 'Task' }],
+      recordMutations: [
+        { ...mutation, id: undefined, expectedRevision: undefined, uniqueValue: 'Task' },
+      ],
       actor: { principalId: 'user:local' },
       idempotencyKey: 'offline-request-unique',
       label: 'Unstable target',
     });
-    expect(rebaseOfflineDatabaseMutation({
-      item: uniqueTarget,
-      branch: 'main',
-      serverInstanceId: 'server-one',
-      records: new Map(),
-    })).toMatchObject({ status: 'conflict', conflicts: [{ code: 'unstable_target' }] });
+    expect(
+      rebaseOfflineDatabaseMutation({
+        item: uniqueTarget,
+        branch: 'main',
+        serverInstanceId: 'server-one',
+        records: new Map(),
+      }),
+    ).toMatchObject({ status: 'conflict', conflicts: [{ code: 'unstable_target' }] });
   });
 });

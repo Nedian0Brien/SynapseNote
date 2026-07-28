@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test';
+import { DatabaseDefinitionSchema } from '@nedian0brien/synapsenote-core';
 import {
   markdownTableDefaultValues,
   markdownTableDocumentMarkdown,
   markdownTableDocumentPath,
   mutateDatabaseMarkdownTable,
 } from './database-markdown-table-client.ts';
-import { DatabaseDefinitionSchema } from '@nedian0brien/synapsenote-core';
 
 describe('database Markdown table client', () => {
   test('posts the exact v2 mutation and validates the receipt', async () => {
@@ -96,7 +96,11 @@ describe('database Markdown table client', () => {
               key: 'done',
               name: 'Done',
               type: 'checkbox',
-              semantics: { inferencePolicy: 'explicit_only', sensitivity: 'internal', defaultValue: false },
+              semantics: {
+                inferencePolicy: 'explicit_only',
+                sensitivity: 'internal',
+                defaultValue: false,
+              },
             },
           ],
           storage: {
@@ -109,7 +113,8 @@ describe('database Markdown table client', () => {
         },
       ],
     });
-    const source = definition.sources[0]!;
+    const [source] = definition.sources;
+    if (!source) throw new Error('normalized definition must expose its source');
     expect(markdownTableDocumentPath(source.folder, '  Ship / Plan  ')).toBe('notes/Ship-Plan.md');
     expect(markdownTableDocumentMarkdown('Ship\nPlan')).toBe('# Ship Plan\n\n');
     expect(markdownTableDefaultValues(source)).toEqual({ prop_done: false });

@@ -33,8 +33,8 @@ function okPayload(
   return {
     kind: 'launcher-miss',
     share: {
-      owner: 'inkeep',
-      repo: 'synapsenote',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
       branch: 'main',
       sharedUrl: 'https://github.com/Nedian0Brien/SynapseNote/blob/main/docs/guide.md',
       target: { kind: 'doc', docPath: 'docs/guide.md' },
@@ -467,8 +467,8 @@ describe('ShareReceiveDialog runtime behavior', () => {
     // target branch + doc; a dropped or partial share would pass the other
     // assertions while silently breaking the branch-switch UX.
     expect(openArg.pendingShareBranchSwitch?.share).toMatchObject({
-      owner: 'inkeep',
-      repo: 'synapsenote',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
       branch: 'feat/share',
       target: { kind: 'doc', docPath: 'docs/guide.md' },
     });

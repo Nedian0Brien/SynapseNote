@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
+// Spread into the mock below: these modules export more than this file stubs,
+// and a factory that lists only the stubbed names drops the rest, so every
+// module importing one of them fails to link.
+import * as navigationTargets from '@/components/navigation-targets';
 import { expectVisualClassTokens } from '@/test-utils/visual-contract';
 
 type NavigationTarget =
@@ -48,11 +52,8 @@ mock.module('@/lib/perf', () => ({
   ProfilerBoundary: ({ children }: { children: ReactNode }) => children,
 }));
 
-mock.module('@/editor/DocumentContext', () => ({
-  DocumentProvider: ({ children }: { children: ReactNode }) => (
-    <div data-testid="document-provider">{children}</div>
-  ),
-  useDocumentContext: () => ({
+function documentContextValue() {
+  return {
     activeDocName: activeTarget?.kind === 'doc' ? activeTarget.docName : null,
     activeTarget,
     clearTarget: clearTargetMock,
@@ -62,17 +63,24 @@ mock.module('@/editor/DocumentContext', () => ({
     // so it issues no `/api/skills` fetch); the real context always supplies them.
     openTabs,
     closeDocument: () => {},
-  }),
+  };
+}
+
+mock.module('@/editor/DocumentContext', () => ({
+  DocumentProvider: ({ children }: { children: ReactNode }) => (
+    <div data-testid="document-provider">{children}</div>
+  ),
+  useDocumentContext: () => documentContextValue(),
+  // The optional variant is what non-editor surfaces import from here; a mock
+  // without it fails to link them. It shares the stubbed context value.
+  useOptionalDocumentContext: () => documentContextValue(),
   useDocumentTransition: () => ({
     openTargetTransition: openTargetTransitionMock,
   }),
 }));
 
-mock.module('@/components/PageListContext', () => ({
-  PageListProvider: ({ children }: { children: ReactNode }) => (
-    <div data-testid="page-list-provider">{children}</div>
-  ),
-  usePageList: () => ({
+function pageListValue() {
+  return {
     assetPaths,
     filePaths,
     folderPaths,
@@ -81,10 +89,21 @@ mock.module('@/components/PageListContext', () => ({
     pages,
     pagesBySlug,
     pagesByBasename,
-  }),
+  };
+}
+
+mock.module('@/components/PageListContext', () => ({
+  PageListProvider: ({ children }: { children: ReactNode }) => (
+    <div data-testid="page-list-provider">{children}</div>
+  ),
+  usePageList: () => pageListValue(),
+  // Consumers reach for the optional variant too; a mock missing it fails to
+  // link every module that imports it from here.
+  useOptionalPageList: () => pageListValue(),
 }));
 
 mock.module('@/components/navigation-targets', () => ({
+  ...navigationTargets,
   resolveNavigationTarget: (...args: Parameters<typeof resolveNavigationTargetMock>) =>
     resolveNavigationTargetMock(...args),
   downgradeFolderIndexForHashNav: (target: NavigationTarget) =>
@@ -96,6 +115,9 @@ mock.module('@/lib/config-provider', () => ({
   ConfigProvider: ({ children }: { children: ReactNode }) => (
     <div data-testid="config-provider">{children}</div>
   ),
+  // The real module re-exports this hook, and FileTree and friends import it
+  // from here; a mock that drops it fails to link the whole file.
+  useConfigContext: () => ({ merged: null }),
 }));
 
 // AppBody reads `merged.appearance.preview.autoOpen` to compose the

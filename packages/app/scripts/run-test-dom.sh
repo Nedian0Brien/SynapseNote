@@ -51,13 +51,37 @@ if [ ! -d src ]; then
   exit 2
 fi
 
-if find src -name '*.dom.test.tsx' -print -quit | grep -q .; then
-  # Substring filter (bun test positional arg, not a glob). The full
-  # `.dom.test.tsx` suffix is the D18 routing contract; a looser `.dom.test`
-  # filter would also pull in `.dom.test.ts` files that the STOP rule at
-  # tests/integration/dom-test-filename-stop-rule.test.ts does not enforce
-  # against, blurring the substrate boundary.
-  exec bun test "${PRELOAD_FLAGS[@]}" .dom.test.tsx
+# The full-suite run is BATCHED across several `bun test` processes rather than
+# executed as one. `--isolate` gives each file a fresh global object, but every
+# file still shares one process: jsdom windows, timers, and Radix portals from
+# ~285 files accumulate until the tail of the run is measurably slower than the
+# head. That degradation is not a product signal — it expresses itself as
+# 30s-timeout failures and blown render-performance budgets in files that pass
+# on their own, so the suite's redness tracked how many files ran before them.
+# Bounding process lifetime keeps every file's timing comparable to running it
+# alone. Each batch inherits the same flags, so per-file semantics are unchanged.
+#
+# The `.dom.test.tsx` suffix is the D18 routing contract; a looser `.dom.test`
+# filter would also pull in `.dom.test.ts` files that the STOP rule at
+# tests/integration/dom-test-filename-stop-rule.test.ts does not enforce
+# against, blurring the substrate boundary.
+DOM_TEST_BATCH_SIZE="${DOM_TEST_BATCH_SIZE:-40}"
+batch=()
+status=0
+run_batch() {
+  [ "${#batch[@]}" -eq 0 ] && return 0
+  bun test "${PRELOAD_FLAGS[@]}" "${batch[@]}" || status=1
+  batch=()
+}
+
+while IFS= read -r file; do
+  batch+=("$file")
+  if [ "${#batch[@]}" -ge "$DOM_TEST_BATCH_SIZE" ]; then run_batch; fi
+done < <(find src -name '*.dom.test.tsx' | sort)
+
+if [ "${#batch[@]}" -gt 0 ] || [ "$status" -ne 0 ]; then
+  run_batch
+  exit "$status"
 fi
 
 echo "[test:dom] no *.dom.test.tsx files found in src/"

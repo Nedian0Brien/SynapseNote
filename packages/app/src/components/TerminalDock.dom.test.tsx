@@ -94,56 +94,62 @@ function emitTitle(ptyId: string, title: string): boolean {
   return true;
 }
 
-mock.module('./TerminalGate', () => ({
-  // biome-ignore lint/suspicious/noExplicitAny: test stub
-  TerminalGate: ({ bridge, launch, onTitleChange, onPtyId }: any) => {
-    const ptyIdRef = useRef<string | null>(null);
-    const cancelledRef = useRef(false);
-    // Latest-ref so a re-rendered onTitleChange identity (a fresh closure from
-    // the dock's session map) is reachable without re-registering the emitter.
-    const onTitleChangeRef = useRef(onTitleChange);
-    const onPtyIdRef = useRef(onPtyId);
-    useEffect(() => {
-      onTitleChangeRef.current = onTitleChange;
-      onPtyIdRef.current = onPtyId;
-    });
-    useEffect(() => {
-      cancelledRef.current = false;
-      void Promise.resolve(bridge?.terminal?.create?.({ cols: 80, rows: 24 })).then(
-        (result: { ok?: boolean; ptyId?: string } | undefined) => {
-          if (!result?.ok || result.ptyId == null) return;
-          // Unmounted while create() was in flight → reap the orphan, as the
-          // real session does; otherwise hold the id so unmount can reap it.
-          if (cancelledRef.current) bridge?.terminal?.kill?.(result.ptyId);
-          else {
-            ptyIdRef.current = result.ptyId;
-            // Report the live PTY up (as the real panel does) so the host's reuse
-            // map is populated — this is what makes an "Ask AI" launch write into
-            // the open terminal instead of opening a new tab.
-            onPtyIdRef.current?.(result.ptyId);
-            titleEmitters.set(result.ptyId, (title: string) => onTitleChangeRef.current?.(title));
-          }
-        },
-      );
-      return () => {
-        cancelledRef.current = true;
-        if (ptyIdRef.current != null) {
-          onPtyIdRef.current?.(null);
-          titleEmitters.delete(ptyIdRef.current);
-          bridge?.terminal?.kill?.(ptyIdRef.current);
+// biome-ignore lint/suspicious/noExplicitAny: test stub
+function TerminalSessionStub({ bridge, launch, onTitleChange, onPtyId }: any) {
+  const ptyIdRef = useRef<string | null>(null);
+  const cancelledRef = useRef(false);
+  // Latest-ref so a re-rendered onTitleChange identity (a fresh closure from
+  // the dock's session map) is reachable without re-registering the emitter.
+  const onTitleChangeRef = useRef(onTitleChange);
+  const onPtyIdRef = useRef(onPtyId);
+  useEffect(() => {
+    onTitleChangeRef.current = onTitleChange;
+    onPtyIdRef.current = onPtyId;
+  });
+  useEffect(() => {
+    cancelledRef.current = false;
+    void Promise.resolve(bridge?.terminal?.create?.({ cols: 80, rows: 24 })).then(
+      (result: { ok?: boolean; ptyId?: string } | undefined) => {
+        if (!result?.ok || result.ptyId == null) return;
+        // Unmounted while create() was in flight → reap the orphan, as the
+        // real session does; otherwise hold the id so unmount can reap it.
+        if (cancelledRef.current) bridge?.terminal?.kill?.(result.ptyId);
+        else {
+          ptyIdRef.current = result.ptyId;
+          // Report the live PTY up (as the real panel does) so the host's reuse
+          // map is populated — this is what makes an "Ask AI" launch write into
+          // the open terminal instead of opening a new tab.
+          onPtyIdRef.current?.(result.ptyId);
+          titleEmitters.set(result.ptyId, (title: string) => onTitleChangeRef.current?.(title));
         }
-      };
-    }, [bridge]);
-    return (
-      <span
-        data-testid="terminal-session"
-        data-launch={launch?.nonce ?? 'none'}
-        className="xterm-helper-textarea"
-        tabIndex={-1}
-      />
+      },
     );
-  },
-}));
+    return () => {
+      cancelledRef.current = true;
+      if (ptyIdRef.current != null) {
+        onPtyIdRef.current?.(null);
+        titleEmitters.delete(ptyIdRef.current);
+        bridge?.terminal?.kill?.(ptyIdRef.current);
+      }
+    };
+  }, [bridge]);
+  return (
+    <span
+      data-testid="terminal-session"
+      data-launch={launch?.nonce ?? 'none'}
+      className="xterm-helper-textarea"
+      tabIndex={-1}
+    />
+  );
+}
+
+mock.module('./TerminalGate', () => ({ TerminalGate: TerminalSessionStub }));
+
+// A `claude`/`codex` launch is routed to CliChatSession, not the terminal panel
+// (see TerminalSessionsHost's isCliChatId branch). The dock's assertions are
+// about tabs and PTY lifecycle, which both surfaces share, so the chat session
+// gets the same stand-in — otherwise every CLI launch renders no marker at all.
+mock.module('./chat/CliChatSession', () => ({ CliChatSession: TerminalSessionStub }));
 
 mock.module('@/lib/terminal-height-store', () => ({
   getInitialTerminalHeight: () => 240,
@@ -893,8 +899,9 @@ describe('TerminalDock multi-session', () => {
     await addTerminalTab(user);
     expect(cliReports.at(-1)).toBe(false);
 
-    // Switch back to the CLI tab → report flips true again.
-    await user.click(screen.getByRole('tab', { name: 'Terminal 1' }));
+    // Switch back to the CLI tab → report flips true again. A claude/codex
+    // launch is a chat session, so its tab carries the CLI label, not an ordinal.
+    await user.click(screen.getByRole('tab', { name: 'Claude chat' }));
     expect(cliReports.at(-1)).toBe(true);
   });
 

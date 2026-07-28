@@ -2,9 +2,9 @@ import { afterEach, describe, expect, mock, test } from 'bun:test';
 import {
   clearOptimisticCellValue,
   clearOptimisticCellValues,
+  executeDatabaseMutation,
   optimisticCellKey,
   setOptimisticCellValue,
-  executeDatabaseMutation,
 } from './database-mutation-gateway';
 
 const originalFetch = globalThis.fetch;
@@ -59,6 +59,10 @@ describe('database mutation gateway', () => {
         },
       },
     });
-    expect(result).toMatchObject({ operation: 'update_cell', changed: true, receipt: { mutationId: 'mut_gateway_v2' } });
+    expect(result).toMatchObject({
+      operation: 'update_cell',
+      changed: true,
+      receipt: { mutationId: 'mut_gateway_v2' },
+    });
   });
 });

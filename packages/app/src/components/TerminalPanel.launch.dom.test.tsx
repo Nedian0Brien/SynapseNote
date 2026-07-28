@@ -15,7 +15,11 @@
  */
 
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import type { TerminalCli } from '@nedian0brien/synapsenote-core';
+import {
+  MCP_SERVER_NAME,
+  OK_GATED_TOOL_NAMES,
+  type TerminalCli,
+} from '@nedian0brien/synapsenote-core';
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { ConfigContext, type ConfigContextValue } from '@/lib/config-context';
@@ -169,7 +173,14 @@ function launchInputWrites(inputMock: ReturnType<typeof mock>): string[] {
  * foreign/unverified entry bakes neither (the "bare" tests below). Codex/Cursor
  * never carry it, so this prefix is claude-only.
  */
-const CLAUDE_PRE = `--settings '{"enabledMcpjsonServers":["synapsenote"],"permissions":{"allow":["mcp__synapsenote","Bash(ok open:*)"],"deny":["mcp__synapsenote__delete","mcp__synapsenote__move","mcp__synapsenote__share_link","mcp__synapsenote__install"]}}'`;
+// The deny list is derived from the production constant, not restated: it is a
+// closed list that grows whenever a destructive tool is added (the database
+// `data_*` writers were the last additions), and a literal here silently drifts
+// out of lockstep with it.
+const CLAUDE_DENY = JSON.stringify(
+  OK_GATED_TOOL_NAMES.map((tool) => `mcp__${MCP_SERVER_NAME}__${tool}`),
+);
+const CLAUDE_PRE = `--settings '{"enabledMcpjsonServers":["${MCP_SERVER_NAME}"],"permissions":{"allow":["mcp__${MCP_SERVER_NAME}","Bash(ok open:*)"],"deny":${CLAUDE_DENY}}}'`;
 
 /** What a WIRED Claude launch bakes once the user turns the auto-approve toggle
  *  OFF: server trust survives (it is a separate opt-in), the permissions block

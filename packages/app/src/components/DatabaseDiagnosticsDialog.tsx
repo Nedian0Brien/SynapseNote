@@ -8,7 +8,6 @@ import type {
 import { AlertCircle, Download, Loader2, RefreshCw, ShieldAlert, Wrench } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogBody,
@@ -17,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 
 type DiagnosticsStatus = 'idle' | 'loading' | 'success' | 'error';
 type RepairStatus = 'idle' | 'previewing' | 'applying' | 'undoing' | 'applied' | 'undone' | 'error';
@@ -414,6 +414,7 @@ export function DatabaseDiagnosticsBody({
             {repairPlan.blockers
               .filter((blocker) => blocker.code === 'missing_document_id')
               .map((blocker) => (
+                // biome-ignore lint/a11y/noLabelWithoutControl: Input renders the wrapped control, which the static rule cannot see through.
                 <label key={blocker.path} className="flex items-center gap-2">
                   <span className="min-w-0 flex-1 truncate font-mono">{blocker.path}</span>
                   <Input
