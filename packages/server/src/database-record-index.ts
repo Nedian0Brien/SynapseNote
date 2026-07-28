@@ -41,6 +41,7 @@ import {
   stripFrontmatter,
   unwrapFrontmatterFences,
 } from '@nedian0brien/synapsenote-core';
+import { ALWAYS_SKIP_DIRS } from './content-filter.ts';
 import type { DatabaseStore } from './database-store.ts';
 import type { DiskEvent } from './file-watcher.ts';
 
@@ -434,6 +435,15 @@ export class DatabaseRecordIndex {
       revision: `sha256:${hash.digest('hex')}`,
       manifestRevision: this.#manifestRevision,
     };
+  }
+
+  /**
+   * Store revision this index last rebuilt against. `snapshot()` carries the
+   * same value but hashes every record to produce it; callers that only need to
+   * answer "has the manifest moved since the last rebuild?" read it from here.
+   */
+  manifestRevision(): string {
+    return this.#manifestRevision;
   }
 
   status(): DatabaseRecordIndexStatus {
@@ -1903,6 +1913,14 @@ export class DatabaseRecordIndex {
         continue;
       }
       if (entry.isDirectory()) {
+        // Prune the same floor the content walker enforces. These directories
+        // never hold user-authored notes, and on a repo-root content dir they
+        // dominate the walk: a `node_modules` tree contributes thousands of
+        // package READMEs that would otherwise be read on every rebuild AND
+        // offered as wikilink resolution candidates. The configured source root
+        // itself is never checked — only directories discovered beneath it — so
+        // a database whose folder is deliberately named `.ok` still indexes.
+        if (ALWAYS_SKIP_DIRS.has(entry.name)) continue;
         await this.#collectSourcePaths(absolutePath, paths);
       } else if (entry.isFile() && (recordPath.endsWith('.md') || recordPath.endsWith('.mdx'))) {
         paths.add(recordPath);

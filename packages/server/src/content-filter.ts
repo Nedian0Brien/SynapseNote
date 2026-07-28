@@ -126,8 +126,14 @@ const BUILTIN_SKIP_DIRS = new Set([
  * Excludes content-bearing-but-gitignored dirs (`dist`, `build`, `coverage`,
  * `.venv`, …) on purpose — Show All Files exists to surface those, so the
  * floor must not prune them. Bypass still admits everything outside this set.
+ *
+ * Exported because the database record index walks the content tree on its own
+ * (outside the content filter) to discover Markdown documents, and must prune
+ * the same floor: a `node_modules/**\/README.md` is not a database row, and
+ * letting it become a wikilink candidate is a correctness bug before it is a
+ * cost one.
  */
-const ALWAYS_SKIP_DIRS = new Set<string>([
+export const ALWAYS_SKIP_DIRS: ReadonlySet<string> = new Set<string>([
   '.git',
   'node_modules',
   '.ok',
