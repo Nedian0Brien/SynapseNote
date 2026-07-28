@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
+  cloneDatabaseMarkdownOwnerIdentity,
   DATABASE_MARKDOWN_LIMITS,
   decodeDatabaseMarkdownCell,
   deleteDatabaseMarkdownTableRow,
@@ -7,9 +8,9 @@ import {
   encodeDatabaseMarkdownCellText,
   insertDatabaseMarkdownTableRow,
   parseDatabaseMarkdownOwner,
-  cloneDatabaseMarkdownOwnerIdentity,
-  replaceDatabaseMarkdownTableRow,
   replaceDatabaseMarkdownTableCell,
+  replaceDatabaseMarkdownTableRow,
+  reshapeDatabaseMarkdownOwnerColumns,
   serializeDatabaseMarkdownOwnerMarker,
 } from './markdown-table.ts';
 import { diffDatabaseMarkdownTables, mergeDatabaseMarkdownTables } from './markdown-table-diff.ts';
@@ -77,7 +78,9 @@ describe('parseDatabaseMarkdownOwner', () => {
   });
 
   test('accepts a UTF-8 BOM before the owner marker', () => {
-    const result = parseDatabaseMarkdownOwner(`\uFEFF${serializeDatabaseMarkdownOwnerMarker(marker)}\n\n| A | B | C |\n| --- | --- | --- |\n| 1 | 2 | 3 |`);
+    const result = parseDatabaseMarkdownOwner(
+      `\uFEFF${serializeDatabaseMarkdownOwnerMarker(marker)}\n\n| A | B | C |\n| --- | --- | --- |\n| 1 | 2 | 3 |`,
+    );
     expect(result.ok).toBe(true);
   });
 
@@ -177,7 +180,12 @@ describe('parseDatabaseMarkdownOwner', () => {
       sourceId: 'ds_copy',
       blockId: 'dbb_copy_primary',
     });
-    expect(result.owner.marker).toEqual({ ...marker, databaseId: 'db_copy', sourceId: 'ds_copy', blockId: 'dbb_copy_primary' });
+    expect(result.owner.marker).toEqual({
+      ...marker,
+      databaseId: 'db_copy',
+      sourceId: 'ds_copy',
+      blockId: 'dbb_copy_primary',
+    });
     expect(result.markdown).toContain('| [[orders/one\\|One]] | A \\| B | 2 |');
     expect(result.markdown).toContain('Unrelated prose stays here.');
     expect(() =>
@@ -229,7 +237,13 @@ describe('semantic Markdown table diff and merge', () => {
     const ours = replaceDatabaseMarkdownTableCell(base, parsed.owner, 0, 2, '5');
     const diff = diffDatabaseMarkdownTables(base, ours);
     expect(diff.operations).toEqual([
-      expect.objectContaining({ kind: 'cell_update', rowKey: '[[orders/one|One]]', columnIndex: 2, before: '2', after: '5' }),
+      expect.objectContaining({
+        kind: 'cell_update',
+        rowKey: '[[orders/one|One]]',
+        columnIndex: 2,
+        before: '2',
+        after: '5',
+      }),
     ]);
   });
 
@@ -322,5 +336,75 @@ describe('database Markdown cell codecs', () => {
       ok: false,
       code: 'invalid_wikilink',
     });
+  });
+});
+
+describe('reshapeDatabaseMarkdownOwnerColumns', () => {
+  function reshape(columns: readonly { propertyId: string; header: string }[]): string {
+    const source = sourceWithTable();
+    const parsed = parseDatabaseMarkdownOwner(source);
+    if (!parsed.ok) throw new Error('fixture owner did not parse');
+    return reshapeDatabaseMarkdownOwnerColumns(source, parsed.owner, columns);
+  }
+
+  test('adds a column with empty cells and keeps every other byte', () => {
+    const next = reshape([
+      { propertyId: 'prop_document', header: '문서' },
+      { propertyId: 'prop_name', header: '이름' },
+      { propertyId: 'prop_quantity', header: '수량' },
+      { propertyId: 'prop_notes', header: 'Notes' },
+    ]);
+    expect(next).toContain('columns=prop_document,prop_name,prop_quantity,prop_notes');
+    expect(next).toContain('| 문서 | 이름 | 수량 | Notes |');
+    // A surviving cell keeps its exact encoded bytes, escapes included.
+    expect(next).toContain('| [[orders/one\\|One]] | A \\| B | 2 |  |');
+    expect(next).toContain('| [[orders/two]] | C | 3 |  |');
+    expect(next).toContain('# Orders');
+    expect(next).toContain('Unrelated prose stays here.');
+  });
+
+  test('carries values with their property when columns are reordered', () => {
+    const next = reshape([
+      { propertyId: 'prop_quantity', header: '수량' },
+      { propertyId: 'prop_document', header: '문서' },
+      { propertyId: 'prop_name', header: '이름' },
+    ]);
+    expect(next).toContain('columns=prop_quantity,prop_document,prop_name');
+    expect(next).toContain('| 2 | [[orders/one\\|One]] | A \\| B |');
+    // Alignment travels with its column too.
+    expect(next).toContain('| ---: | --- | --- |');
+  });
+
+  test('drops a removed column and leaves the survivors intact', () => {
+    const next = reshape([
+      { propertyId: 'prop_document', header: '문서' },
+      { propertyId: 'prop_quantity', header: '수량' },
+    ]);
+    expect(next).toContain('columns=prop_document,prop_quantity');
+    expect(next).toContain('| [[orders/one\\|One]] | 2 |');
+    expect(next).not.toContain('A \\| B');
+  });
+
+  test('refuses a duplicated or empty column set', () => {
+    expect(() =>
+      reshape([
+        { propertyId: 'prop_document', header: '문서' },
+        { propertyId: 'prop_document', header: 'Again' },
+      ]),
+    ).toThrow(/duplicated/);
+    expect(() => reshape([])).toThrow(/at least one column/);
+  });
+
+  test('round-trips through the parser with the new column count', () => {
+    const next = reshape([
+      { propertyId: 'prop_document', header: '문서' },
+      { propertyId: 'prop_notes', header: 'Notes' },
+    ]);
+    const reparsed = parseDatabaseMarkdownOwner(next);
+    expect(reparsed.ok).toBe(true);
+    if (!reparsed.ok) return;
+    expect(reparsed.owner.marker.columns).toEqual(['prop_document', 'prop_notes']);
+    expect(reparsed.owner.rows).toHaveLength(2);
+    expect(reparsed.owner.rows[0]?.cells).toHaveLength(2);
   });
 });

@@ -8,9 +8,9 @@
  */
 
 import {
+  type DatabaseDateValue,
   parseSerializedDatabaseDateValue,
   serializeDatabaseDateValue,
-  type DatabaseDateValue,
 } from './date.ts';
 
 export const DATABASE_MARKDOWN_OWNER_MARKER_VERSION = 2 as const;
@@ -33,8 +33,7 @@ export const DATABASE_MARKDOWN_LIMITS = Object.freeze({
   wikilinkAliasBytes: 512,
 } as const);
 
-export type DatabaseMarkdownOwnerMarkerVersion =
-  typeof DATABASE_MARKDOWN_OWNER_MARKER_VERSION;
+export type DatabaseMarkdownOwnerMarkerVersion = typeof DATABASE_MARKDOWN_OWNER_MARKER_VERSION;
 
 export interface DatabaseMarkdownOwnerMarker {
   version: DatabaseMarkdownOwnerMarkerVersion;
@@ -115,7 +114,11 @@ function lineEnd(source: string, start: number): number {
 
 function lineWithoutEnding(source: string, start: number, end: number): string {
   const raw = source.slice(start, end);
-  return raw.endsWith('\n') ? raw.slice(0, -1).endsWith('\r') ? raw.slice(0, -2) : raw.slice(0, -1) : raw;
+  return raw.endsWith('\n')
+    ? raw.slice(0, -1).endsWith('\r')
+      ? raw.slice(0, -2)
+      : raw.slice(0, -1)
+    : raw;
 }
 
 function isEscaped(source: string, index: number): boolean {
@@ -144,7 +147,11 @@ export function encodeDatabaseMarkdownCellText(value: string): string {
   return value.replaceAll('\\', '\\\\').replaceAll('|', '\\|');
 }
 
-function splitGfmRow(source: string, lineStart: number, lineEnd: number): DatabaseMarkdownTableCell[] {
+function splitGfmRow(
+  source: string,
+  lineStart: number,
+  lineEnd: number,
+): DatabaseMarkdownTableCell[] {
   const line = lineWithoutEnding(source, lineStart, lineEnd);
   const cells: DatabaseMarkdownTableCell[] = [];
   let contentStart = lineStart;
@@ -222,9 +229,7 @@ function findOwnerMarker(source: string): MarkerMatch | null {
     const logicalLine = cursor === 0 ? line.replace(/^\uFEFF/, '') : line;
     const opening = line.match(/^[ \t]{0,3}(`{3,}|~{3,})/);
     if (fence) {
-      if (
-        new RegExp(`^[ \\t]{0,3}\\${fence.character}{${fence.length},}[ \\t]*$`).test(line)
-      ) {
+      if (new RegExp(`^[ \\t]{0,3}\\${fence.character}{${fence.length},}[ \\t]*$`).test(line)) {
         fence = null;
       }
       cursor = end;
@@ -324,7 +329,11 @@ function parseMarker(
     columns.some((column) => !COLUMN_IDENTIFIER_RE.test(column)) ||
     new Set(columns).size !== columns.length
   ) {
-    return invalid('marker_invalid_field', 'Database marker columns must be unique stable IDs', range);
+    return invalid(
+      'marker_invalid_field',
+      'Database marker columns must be unique stable IDs',
+      range,
+    );
   }
   return {
     version: DATABASE_MARKDOWN_OWNER_MARKER_VERSION,
@@ -441,7 +450,9 @@ export function parseDatabaseMarkdownOwner(source: string): ParseDatabaseMarkdow
  * use this helper for both Node and browser byte readers and keep the same
  * fail-closed diagnostic contract as the string parser.
  */
-export function parseDatabaseMarkdownOwnerBytes(bytes: Uint8Array): ParseDatabaseMarkdownOwnerResult {
+export function parseDatabaseMarkdownOwnerBytes(
+  bytes: Uint8Array,
+): ParseDatabaseMarkdownOwnerResult {
   if (bytes.byteLength > DATABASE_MARKDOWN_LIMITS.ownerDocumentBytes) {
     return invalid(
       'resource_limit',
@@ -480,7 +491,9 @@ export function serializeDatabaseMarkdownOwnerMarker(marker: DatabaseMarkdownOwn
     '-->',
   ].join('\n');
   if (utf8Bytes(serialized) > DATABASE_MARKDOWN_LIMITS.markerBytes) {
-    throw new Error(`Database owner marker exceeds the ${DATABASE_MARKDOWN_LIMITS.markerBytes}-byte limit`);
+    throw new Error(
+      `Database owner marker exceeds the ${DATABASE_MARKDOWN_LIMITS.markerBytes}-byte limit`,
+    );
   }
   return serialized;
 }
@@ -525,7 +538,8 @@ export function cloneDatabaseMarkdownOwnerIdentity(input: {
     serialized +
     input.source.slice(parsed.owner.markerRange.end);
   const reparsed = parseDatabaseMarkdownOwner(markdown);
-  if (!reparsed.ok) throw new Error(`Cloned database owner failed verification: ${reparsed.message}`);
+  if (!reparsed.ok)
+    throw new Error(`Cloned database owner failed verification: ${reparsed.message}`);
   return { markdown, owner: reparsed.owner };
 }
 
@@ -542,15 +556,15 @@ export function replaceDatabaseMarkdownTableCell(
   const row = owner.rows[rowIndex];
   const cell = row?.cells[columnIndex];
   if (!cell) throw new Error(`Database table cell ${rowIndex}:${columnIndex} was not found`);
-  return (
-    source.slice(0, cell.valueRange.start) +
-    encodedValue +
-    source.slice(cell.valueRange.end)
-  );
+  return source.slice(0, cell.valueRange.start) + encodedValue + source.slice(cell.valueRange.end);
 }
 
 function tableLineEnding(source: string, owner: ParsedDatabaseMarkdownOwner): '\n' | '\r\n' {
-  const candidates = [owner.header.range, owner.delimiter.range, ...owner.rows.map((row) => row.range)];
+  const candidates = [
+    owner.header.range,
+    owner.delimiter.range,
+    ...owner.rows.map((row) => row.range),
+  ];
   for (const range of candidates) {
     const line = source.slice(range.start, range.end);
     if (line.endsWith('\r\n')) return '\r\n';
@@ -560,7 +574,8 @@ function tableLineEnding(source: string, owner: ParsedDatabaseMarkdownOwner): '\
 }
 
 function encodedTableRow(encodedValues: readonly string[], eol: '\n' | '\r\n'): string {
-  if (encodedValues.length === 0) throw new Error('A database table row must contain at least one cell');
+  if (encodedValues.length === 0)
+    throw new Error('A database table row must contain at least one cell');
   if (encodedValues.some((value) => value.includes('\r') || value.includes('\n'))) {
     throw new Error('A replacement database row cannot contain a line break');
   }
@@ -579,7 +594,101 @@ export function replaceDatabaseMarkdownTableRow(
   if (encodedValues.length !== owner.marker.columns.length) {
     throw new Error(`Database table row must contain ${owner.marker.columns.length} cells`);
   }
-  return source.slice(0, row.range.start) + encodedTableRow(encodedValues, tableLineEnding(source, owner)) + source.slice(row.range.end);
+  return (
+    source.slice(0, row.range.start) +
+    encodedTableRow(encodedValues, tableLineEnding(source, owner)) +
+    source.slice(row.range.end)
+  );
+}
+
+/** One column of a reshaped owner table: what it stores, and its header text. */
+export interface DatabaseMarkdownOwnerColumn {
+  propertyId: string;
+  /** Already-encoded header cell text. */
+  header: string;
+}
+
+/**
+ * Rewrite an owner table's column set: the marker's `columns=`, the header and
+ * delimiter rows, and every data row, in one pass.
+ *
+ * Cells follow their property, not their position — a surviving column keeps
+ * its exact encoded bytes wherever it lands, an added column gets an empty
+ * cell, and a removed column takes its values with it. That makes an add or a
+ * reorder value-preserving, and leaves removal as the only lossy shape, which
+ * is the one the caller has to have confirmed anyway.
+ *
+ * Bytes outside the marker and the table are preserved exactly, so prose above
+ * or below the block survives a schema change untouched.
+ *
+ * Columns arrive as one object each rather than parallel id/header arrays so
+ * the two cannot fall out of step.
+ */
+export function reshapeDatabaseMarkdownOwnerColumns(
+  source: string,
+  owner: ParsedDatabaseMarkdownOwner,
+  columns: readonly DatabaseMarkdownOwnerColumn[],
+): string {
+  if (columns.length === 0) {
+    throw new Error('A database owner table must keep at least one column');
+  }
+  if (columns.length > DATABASE_MARKDOWN_LIMITS.columns) {
+    throw new Error(
+      `A database owner table cannot exceed ${DATABASE_MARKDOWN_LIMITS.columns} columns`,
+    );
+  }
+  const duplicate = columns.find(
+    (column, index) =>
+      columns.findIndex((other) => other.propertyId === column.propertyId) !== index,
+  );
+  if (duplicate) {
+    throw new Error(`Database owner column "${duplicate.propertyId}" is duplicated`);
+  }
+  const eol = tableLineEnding(source, owner);
+  const indexByPropertyId = new Map(
+    owner.marker.columns.map((propertyId, index) => [propertyId, index] as const),
+  );
+  // `cell.raw` carries the source padding; `valueRange` is the same segment
+  // without it, which is what `encodedTableRow` re-pads. Slicing the source
+  // rather than reading `cell.value` keeps the GFM escapes intact — `value` is
+  // already unescaped, and re-emitting it would change what the cell means.
+  const cellsFor = (row: DatabaseMarkdownTableRow, fallback: string): string[] =>
+    columns.map((column) => {
+      const index = indexByPropertyId.get(column.propertyId);
+      if (index === undefined) return fallback;
+      const cell = row.cells[index];
+      return cell ? source.slice(cell.valueRange.start, cell.valueRange.end) : fallback;
+    });
+
+  // `markerRange` spans the marker AND the line ending that closes it, which
+  // the serializer does not emit. Carry that suffix across verbatim so a
+  // reshape cannot quietly delete the blank line before the table.
+  const markerText = source.slice(owner.markerRange.start, owner.markerRange.end);
+  const previousMarker = serializeDatabaseMarkdownOwnerMarker(owner.marker);
+  const markerSuffix = markerText.startsWith(previousMarker)
+    ? markerText.slice(previousMarker.length)
+    : eol;
+  const marker =
+    serializeDatabaseMarkdownOwnerMarker({
+      ...owner.marker,
+      columns: columns.map((column) => column.propertyId),
+    }) + markerSuffix;
+  const table = [
+    encodedTableRow(
+      columns.map((column) => column.header),
+      eol,
+    ),
+    encodedTableRow(cellsFor(owner.delimiter, '---'), eol),
+    ...owner.rows.map((row) => encodedTableRow(cellsFor(row, ''), eol)),
+  ].join('');
+
+  return (
+    source.slice(0, owner.markerRange.start) +
+    marker +
+    source.slice(owner.markerRange.end, owner.tableRange.start) +
+    table +
+    source.slice(owner.tableRange.end)
+  );
 }
 
 /** Insert a new owner-table row at a deterministic position without reserializing the table. */
@@ -596,7 +705,11 @@ export function insertDatabaseMarkdownTableRow(
     throw new Error(`Database table row must contain ${owner.marker.columns.length} cells`);
   }
   const insertion = owner.rows[rowIndex]?.range.start ?? owner.tableRange.end;
-  return source.slice(0, insertion) + encodedTableRow(encodedValues, tableLineEnding(source, owner)) + source.slice(insertion);
+  return (
+    source.slice(0, insertion) +
+    encodedTableRow(encodedValues, tableLineEnding(source, owner)) +
+    source.slice(insertion)
+  );
 }
 
 /** Delete one owner-table row while preserving the marker, header, and all prose bytes. */
@@ -788,11 +901,15 @@ export function encodeDatabaseMarkdownCell(
   if (propertyType === 'title') {
     if (typeof value === 'object' && value !== null && 'kind' in value) {
       const link = value as DatabaseMarkdownDocumentLink;
-      if (link.kind !== 'wikilink') return codecError('invalid_wikilink', 'Title must be a wikilink');
+      if (link.kind !== 'wikilink')
+        return codecError('invalid_wikilink', 'Title must be a wikilink');
       try {
         return { ok: true, text: encodeWikilink(link) };
       } catch (error) {
-        return codecError('invalid_wikilink', error instanceof Error ? error.message : String(error));
+        return codecError(
+          'invalid_wikilink',
+          error instanceof Error ? error.message : String(error),
+        );
       }
     }
     return codecError('invalid_wikilink', 'Title cells must contain a document wikilink');
@@ -805,7 +922,12 @@ export function encodeDatabaseMarkdownCell(
         `${propertyType} cells may contain at most ${DATABASE_MARKDOWN_LIMITS.relationTargets} wikilinks`,
       );
     }
-    if (!links.every((item) => item && typeof item === 'object' && (item as { kind?: string }).kind === 'wikilink')) {
+    if (
+      !links.every(
+        (item) =>
+          item && typeof item === 'object' && (item as { kind?: string }).kind === 'wikilink',
+      )
+    ) {
       return codecError('invalid_wikilink', `${propertyType} cells must contain wikilinks`);
     }
     try {
@@ -838,7 +960,12 @@ export function encodeDatabaseMarkdownCell(
         : codecError('invalid_type', 'Checkbox cells must contain booleans');
     case 'date':
       try {
-        return { ok: true, text: encodeDatabaseMarkdownCellText(serializeDatabaseDateValue(value as DatabaseDateValue)) };
+        return {
+          ok: true,
+          text: encodeDatabaseMarkdownCellText(
+            serializeDatabaseDateValue(value as DatabaseDateValue),
+          ),
+        };
       } catch (error) {
         return codecError('invalid_value', error instanceof Error ? error.message : String(error));
       }
@@ -846,7 +973,8 @@ export function encodeDatabaseMarkdownCell(
       if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) {
         return codecError('invalid_type', 'Multi-select cells must contain string arrays');
       }
-      if (new Set(value).size !== value.length) return codecError('invalid_value', 'Multi-select values must be unique');
+      if (new Set(value).size !== value.length)
+        return codecError('invalid_value', 'Multi-select values must be unique');
       return encodeJsonCell(value);
     case 'files':
     case 'place':
@@ -875,7 +1003,8 @@ export function decodeDatabaseMarkdownCell(
   }
   if (propertyType === 'relation' || propertyType === 'person') {
     const links = decodeWikilinks(value);
-    if (!links || links.length === 0) return codecError('invalid_wikilink', `${propertyType} cells must contain wikilinks`);
+    if (!links || links.length === 0)
+      return codecError('invalid_wikilink', `${propertyType} cells must contain wikilinks`);
     if (links.length > DATABASE_MARKDOWN_LIMITS.relationTargets) {
       return codecError(
         'invalid_value',
@@ -895,7 +1024,10 @@ export function decodeDatabaseMarkdownCell(
     case 'number':
     case 'unique_id': {
       if (!/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(value)) {
-        return codecError('invalid_value', `${propertyType} cell is not a canonical decimal number`);
+        return codecError(
+          'invalid_value',
+          `${propertyType} cell is not a canonical decimal number`,
+        );
       }
       const parsed = Number(value);
       return Number.isFinite(parsed)
@@ -919,14 +1051,18 @@ export function decodeDatabaseMarkdownCell(
       if (!Array.isArray(parsed) || parsed.some((item) => typeof item !== 'string')) {
         return codecError('invalid_json', 'Multi-select cell must be a JSON string array');
       }
-      if (new Set(parsed).size !== parsed.length) return codecError('invalid_value', 'Multi-select values must be unique');
+      if (new Set(parsed).size !== parsed.length)
+        return codecError('invalid_value', 'Multi-select values must be unique');
       return { ok: true, value: parsed };
     }
     case 'files':
     case 'place': {
       const parsed = parseJson(value);
       if (parsed === undefined || parsed === null || typeof parsed !== 'object') {
-        return codecError('invalid_json', `${propertyType} cell must contain a JSON object or array`);
+        return codecError(
+          'invalid_json',
+          `${propertyType} cell must contain a JSON object or array`,
+        );
       }
       return { ok: true, value: parsed as Record<string, unknown> | Record<string, unknown>[] };
     }

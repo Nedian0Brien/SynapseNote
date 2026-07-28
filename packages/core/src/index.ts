@@ -305,6 +305,7 @@ export {
   type DatabaseMarkdownCellPropertyType,
   type DatabaseMarkdownCellValue,
   type DatabaseMarkdownDocumentLink,
+  type DatabaseMarkdownOwnerColumn,
   type DatabaseMarkdownOwnerMarker,
   type DatabaseMarkdownOwnerMarkerVersion,
   type DatabaseMarkdownOwnerParseError,
@@ -325,6 +326,7 @@ export {
   parseDatabaseMarkdownOwnerBytes,
   replaceDatabaseMarkdownTableCell,
   replaceDatabaseMarkdownTableRow,
+  reshapeDatabaseMarkdownOwnerColumns,
   serializeDatabaseMarkdownOwnerMarker,
 } from './database/markdown-table.ts';
 export {
@@ -499,6 +501,7 @@ export {
   databasePropertyConversionRule,
   previewDatabasePropertyConversion,
 } from './database/property-conversion.ts';
+export { pruneDatabasePropertyReferences } from './database/property-removal.ts';
 export {
   DATABASE_PUBLIC_SHARE_TARGET_KINDS,
   type DatabasePublicSharePolicy,
