@@ -30,6 +30,7 @@ import {
   DatabaseVerificationValueSchema,
   databaseFileIdentity,
   databaseRecordPageLayoutOverrideIssues,
+  databaseStoredPropertyIds,
   encodeDatabaseMarkdownCellText,
   findDatabasePersonByReference,
   isSafeDatabaseAssetPath,
@@ -2538,13 +2539,39 @@ export class DatabasePlanEngine {
         }
       }
     }
+    // A v2 manifest update only needs the owner-table transaction boundary when
+    // it changes which properties occupy table COLUMNS. Renames, view/filter/
+    // sort/layout edits, and the derived property types (formula, rollup, the
+    // created/last-edited metadata, verification, button) leave every owner
+    // table byte-identical, so the manifest writer is the correct and only
+    // writer for them.
+    //
+    // Refusing all of them — as this did until now — froze the schema and every
+    // view of every v2 database, which is most of what the surface does.
+    //
+    // Both sides are DERIVED rather than read from `storage.storedPropertyIds`:
+    // a desired state arrives carrying the previous storage block verbatim
+    // (clients edit `properties` and leave `storage` alone), so comparing the
+    // stored field against itself would report "no column change" for exactly
+    // the edit that adds one.
     if (byId?.version === 2 && manifestAction === 'update') {
-      conflicts.push({
-        code: 'source_record_migration_required',
-        message:
-          'V2 owner-table schema changes require the Markdown table transaction boundary; the v1 manifest writer is disabled',
-        targetId: definition.id,
+      const columnChanges = definition.sources.filter((source) => {
+        const current = byId.sources.find((candidate) => candidate.id === source.id);
+        if (!current) return true;
+        if (current.storage?.kind !== 'markdown_table') return false;
+        return (
+          databaseStoredPropertyIds(current).join('\0') !==
+          databaseStoredPropertyIds(source).join('\0')
+        );
       });
+      for (const source of columnChanges) {
+        conflicts.push({
+          code: 'source_record_migration_required',
+          message:
+            'V2 owner-table column changes require the Markdown table transaction boundary; the v1 manifest writer is disabled',
+          targetId: source.id,
+        });
+      }
     }
     if (definition.version === 2 && manifestAction === 'create') {
       if (!this.#projectDir || !this.#contentDir) {
