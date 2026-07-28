@@ -1,18 +1,19 @@
 import { createHash } from 'node:crypto';
-import { readFileSync, type Dirent, realpathSync, statSync } from 'node:fs';
+import { type Dirent, readFileSync, realpathSync, statSync } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 import {
+  createDatabaseMarkdownRecordId,
+  createDatabaseMarkdownRecordRevisionSet,
+  DatabaseDateValueSchema,
   type DatabaseDefinition,
   type DatabaseDocumentId,
-  DatabaseDateValueSchema,
   type DatabaseFileAvailability,
   type DatabaseFileValue,
   type DatabaseMarkdownCellValue,
-  type DatabaseMarkdownDocumentLink,
   type DatabaseMarkdownDocumentCandidate,
+  type DatabaseMarkdownDocumentLink,
   type DatabaseMarkdownOwnerRow,
-  type ParsedDatabaseMarkdownOwner,
   type DatabaseProperty,
   type DatabaseRecord,
   type DatabaseRecordActor,
@@ -21,22 +22,21 @@ import {
   type DatabaseValue,
   type DatabaseVerificationProjection,
   DatabaseVerificationValueSchema,
-  createDatabaseMarkdownRecordId,
-  databaseRecordActorKey,
-  decodeDatabaseMarkdownCell,
   databaseFileDisplayName,
   databaseFileIdentity,
-  materializeDatabaseMarkdownOwner,
+  databaseRecordActorKey,
+  decodeDatabaseMarkdownCell,
   isRecordPathInSource,
   isSafeDatabaseAssetPath,
+  materializeDatabaseMarkdownOwner,
   materializeDatabaseRecord,
+  type ParsedDatabaseMarkdownOwner,
   parseDatabaseDocumentIdentity,
   parseDatabaseMarkdownOwner,
-  resolveDatabaseMarkdownDocumentLink,
-  resolveDatabaseDocumentTitle,
-  createDatabaseMarkdownRecordRevisionSet,
   parseFrontmatterYaml,
   projectDatabaseRichText,
+  resolveDatabaseDocumentTitle,
+  resolveDatabaseMarkdownDocumentLink,
   serializeDatabaseDateValue,
   stripFrontmatter,
   unwrapFrontmatterFences,
@@ -330,7 +330,10 @@ function isV2DocumentLink(candidate: unknown): candidate is DatabaseMarkdownDocu
   );
 }
 
-function v2CellLinks(value: string, type: DatabaseProperty['type']): DatabaseMarkdownDocumentLink[] {
+function v2CellLinks(
+  value: string,
+  type: DatabaseProperty['type'],
+): DatabaseMarkdownDocumentLink[] {
   if (type !== 'title' && type !== 'relation') return [];
   const decoded = decodeDatabaseMarkdownCell(type, value);
   if (!decoded.ok || decoded.value === null) return [];
@@ -356,10 +359,14 @@ function v2OptionId(
   return property.options.find((option) => option.key === key)?.id ?? null;
 }
 
-function v2PersonId(definition: DatabaseDefinition, link: DatabaseMarkdownDocumentLink): string | null {
+function v2PersonId(
+  definition: DatabaseDefinition,
+  link: DatabaseMarkdownDocumentLink,
+): string | null {
   const reference = link.target;
   const person = definition.people.find(
-    (candidate) => candidate.id === reference || candidate.key === reference || candidate.name === reference,
+    (candidate) =>
+      candidate.id === reference || candidate.key === reference || candidate.name === reference,
   );
   return person?.id ?? null;
 }
@@ -472,7 +479,11 @@ export class DatabaseRecordIndex {
   getV2CanonicalDocuments(
     databaseId: string,
     sourceId: string,
-  ): { ownerPath: string; ownerMarkdown: string; linkedDocuments: readonly { path: string; markdown: string }[] } | null {
+  ): {
+    ownerPath: string;
+    ownerMarkdown: string;
+    linkedDocuments: readonly { path: string; markdown: string }[];
+  } | null {
     const database = this.#databaseStore.getById(databaseId);
     const source = database?.sources.find((candidate) => candidate.id === sourceId);
     const storage = source?.storage;
@@ -488,6 +499,33 @@ export class DatabaseRecordIndex {
       .sort((left, right) => left.path.localeCompare(right.path))
       .map((document) => ({ path: document.path, markdown: document.markdown }));
     return { ownerPath: storage.owner.path, ownerMarkdown, linkedDocuments };
+  }
+
+  /**
+   * Every identity-bearing Markdown document, shaped for `[[wikilink]]`
+   * resolution.
+   *
+   * The index already discovers these during a rebuild and keeps them current
+   * incrementally, so callers that need to resolve a link must read them from
+   * here rather than walking the content tree themselves — a second walk is a
+   * second full-tree read on a path that is supposed to be incremental.
+   * Aliases mirror what the rebuild records: the resolved title, then the
+   * bare filename.
+   */
+  documentCandidates(): readonly DatabaseMarkdownDocumentCandidate[] {
+    return [...this.#v2DocumentsByPath.values()]
+      .sort((left, right) => left.path.localeCompare(right.path))
+      .map((document) => ({
+        path: document.path,
+        documentId: document.documentId,
+        aliases: [
+          document.title,
+          document.path
+            .split('/')
+            .at(-1)
+            ?.replace(/\.(?:md|mdx)$/i, '') ?? document.path,
+        ],
+      }));
   }
 
   /** Content-free lookup used to scope realtime invalidations to database paths. */
@@ -1035,7 +1073,8 @@ export class DatabaseRecordIndex {
         const [databaseId, sourceId] = bindingKey.split('\0');
         const database = this.#databaseStore.getById(databaseId ?? '');
         const source = database?.sources.find((candidate) => candidate.id === sourceId);
-        const ownerPath = source?.storage?.kind === 'markdown_table' ? source.storage.owner.path : undefined;
+        const ownerPath =
+          source?.storage?.kind === 'markdown_table' ? source.storage.owner.path : undefined;
         if (database && source && ownerPath !== undefined) {
           this.#clearV2SourceProjection({ databaseId, sourceId, ownerPath });
           const ownerMarkdown = this.#v2OwnerMarkdownByPath.get(ownerPath);
@@ -1161,7 +1200,11 @@ export class DatabaseRecordIndex {
       const identity = parseDatabaseDocumentIdentity(markdown);
       if (!identity.ok) continue;
       const { body } = stripFrontmatter(markdown);
-      const fallback = path.split('/').at(-1)?.replace(/\.(?:md|mdx)$/i, '') ?? path;
+      const fallback =
+        path
+          .split('/')
+          .at(-1)
+          ?.replace(/\.(?:md|mdx)$/i, '') ?? path;
       const title = resolveDatabaseDocumentTitle(markdown, fallback).value;
       const candidate: DatabaseMarkdownDocumentCandidate = {
         path,
@@ -1262,12 +1305,13 @@ export class DatabaseRecordIndex {
 
     for (const [bindingKey, paths] of targets) {
       const [databaseId, sourceId] = bindingKey.split('\0');
-      const ownerPath = sources.find(
-        ({ database, source }) => database.id === databaseId && source.id === sourceId,
-      )?.source.storage?.kind === 'markdown_table'
-        ? sources.find(({ database, source }) => database.id === databaseId && source.id === sourceId)
-            ?.source.storage?.owner.path
-        : undefined;
+      const ownerPath =
+        sources.find(({ database, source }) => database.id === databaseId && source.id === sourceId)
+          ?.source.storage?.kind === 'markdown_table'
+          ? sources.find(
+              ({ database, source }) => database.id === databaseId && source.id === sourceId,
+            )?.source.storage?.owner.path
+          : undefined;
       for (const path of paths) {
         const bindings = this.#v2SourcesByDocumentPath.get(path) ?? new Set<string>();
         bindings.add(bindingKey);
@@ -1304,7 +1348,13 @@ export class DatabaseRecordIndex {
           documentId: identity.documentId,
           markdown,
           body,
-          title: resolveDatabaseDocumentTitle(markdown, path.split('/').at(-1)?.replace(/\.(?:md|mdx)$/i, '') ?? path).value,
+          title: resolveDatabaseDocumentTitle(
+            markdown,
+            path
+              .split('/')
+              .at(-1)
+              ?.replace(/\.(?:md|mdx)$/i, '') ?? path,
+          ).value,
           revision: `sha256:${createHash('sha256').update(markdown).digest('hex')}`,
         });
       }
@@ -1320,7 +1370,8 @@ export class DatabaseRecordIndex {
         });
         if (resolution.ok && resolution.candidate) {
           const bindingKey = `${database.id}\0${source.id}`;
-          const bindings = this.#v2SourcesByDocumentPath.get(resolution.candidate.path) ?? new Set<string>();
+          const bindings =
+            this.#v2SourcesByDocumentPath.get(resolution.candidate.path) ?? new Set<string>();
           bindings.add(bindingKey);
           this.#v2SourcesByDocumentPath.set(resolution.candidate.path, bindings);
         }
@@ -1345,15 +1396,25 @@ export class DatabaseRecordIndex {
           message: `V2 database owner document "${ownerPath}" has an error: ${error.message}`,
           databaseId: database.id,
           sourceId: source.id,
-          ...(error.rowIndex !== undefined ? { materializationCode: `${error.code}:row:${error.rowIndex}` } : { materializationCode: error.code }),
+          ...(error.rowIndex !== undefined
+            ? { materializationCode: `${error.code}:row:${error.rowIndex}` }
+            : { materializationCode: error.code }),
         });
       }
       if (!('rows' in materialized)) continue;
       for (const row of materialized.rows) {
-        if (row.recordId === null || row.documentPath === null || row.documentLink === null) continue;
+        if (row.recordId === null || row.documentPath === null || row.documentLink === null)
+          continue;
         const document = this.#v2DocumentsByPath.get(row.documentPath);
         if (!document) continue;
-        const projected = this.#projectV2Row(database, source, row, document, markdown, materialized.owner);
+        const projected = this.#projectV2Row(
+          database,
+          source,
+          row,
+          document,
+          markdown,
+          materialized.owner,
+        );
         if (!projected) continue;
         this.#addCandidate(row.documentPath, projected);
       }
@@ -1399,7 +1460,10 @@ export class DatabaseRecordIndex {
         continue;
       }
       if (property.type === 'title') {
-        values[property.id] = resolveDatabaseDocumentTitle(document.markdown, v2FallbackTitle(row.documentLink!, document.path)).value;
+        values[property.id] = resolveDatabaseDocumentTitle(
+          document.markdown,
+          v2FallbackTitle(row.documentLink!, document.path),
+        ).value;
         continue;
       }
       switch (property.type) {
@@ -1416,13 +1480,17 @@ export class DatabaseRecordIndex {
         case 'select':
         case 'status': {
           if (typeof raw !== 'string') {
-            issues.push(v2Issue(property, `Property "${property.key}" must contain a string option key`));
+            issues.push(
+              v2Issue(property, `Property "${property.key}" must contain a string option key`),
+            );
             invalidValues[property.id] = JSON.stringify(raw);
             break;
           }
           const id = v2OptionId(property, raw);
           if (!id) {
-            issues.push(v2Issue(property, `Property "${property.key}" has no option with key "${raw}"`));
+            issues.push(
+              v2Issue(property, `Property "${property.key}" has no option with key "${raw}"`),
+            );
             invalidValues[property.id] = raw;
           } else values[property.id] = id;
           break;
@@ -1435,18 +1503,26 @@ export class DatabaseRecordIndex {
           }
           const ids = (raw as unknown as string[]).map((key) => v2OptionId(property, key));
           if (ids.some((id) => id === null) || new Set(ids).size !== ids.length) {
-            issues.push(v2Issue(property, `Property "${property.key}" contains an unknown or duplicate option`));
+            issues.push(
+              v2Issue(
+                property,
+                `Property "${property.key}" contains an unknown or duplicate option`,
+              ),
+            );
             invalidValues[property.id] = JSON.stringify(raw);
           } else values[property.id] = ids as string[];
           break;
         }
         case 'person': {
           const links = Array.isArray(raw) ? raw : [raw];
-          const ids = links
-            .filter(isV2DocumentLink)
-            .map((link) => v2PersonId(database, link));
+          const ids = links.filter(isV2DocumentLink).map((link) => v2PersonId(database, link));
           if (ids.some((id) => id === null) || (!property.multiple && ids.length > 1)) {
-            issues.push(v2Issue(property, `Property "${property.key}" contains an unknown person or invalid cardinality`));
+            issues.push(
+              v2Issue(
+                property,
+                `Property "${property.key}" contains an unknown person or invalid cardinality`,
+              ),
+            );
             invalidValues[property.id] = JSON.stringify(raw);
           } else values[property.id] = ids as string[];
           break;
@@ -1456,7 +1532,9 @@ export class DatabaseRecordIndex {
           const ids: string[] = [];
           for (const item of links) {
             if (!isV2DocumentLink(item)) {
-              issues.push(v2Issue(property, `Property "${property.key}" contains an invalid relation link`));
+              issues.push(
+                v2Issue(property, `Property "${property.key}" contains an invalid relation link`),
+              );
               continue;
             }
             const resolution = resolveDatabaseMarkdownDocumentLink({
@@ -1470,12 +1548,22 @@ export class DatabaseRecordIndex {
             });
             const targetPath = resolution.ok ? resolution.candidate?.path : undefined;
             const target = targetPath ? this.#v2DocumentsByPath.get(targetPath) : undefined;
-            const targetBindings = targetPath ? this.#v2SourcesByDocumentPath.get(targetPath) : undefined;
+            const targetBindings = targetPath
+              ? this.#v2SourcesByDocumentPath.get(targetPath)
+              : undefined;
             const targetBinding = [...(targetBindings ?? [])]
               .map((binding) => binding.split('\0'))
-              .find(([databaseId, sourceId]) => databaseId === database.id && sourceId === property.targetSourceId);
+              .find(
+                ([databaseId, sourceId]) =>
+                  databaseId === database.id && sourceId === property.targetSourceId,
+              );
             if (!target || !targetBinding) {
-              issues.push(v2Issue(property, `Relation target "${item.target}" could not be resolved (${resolution.code}) in source "${property.targetSourceId}"`));
+              issues.push(
+                v2Issue(
+                  property,
+                  `Relation target "${item.target}" could not be resolved (${resolution.code}) in source "${property.targetSourceId}"`,
+                ),
+              );
               continue;
             }
             ids.push(createDatabaseMarkdownRecordId(property.targetSourceId, target.documentId));
@@ -1501,10 +1589,12 @@ export class DatabaseRecordIndex {
           if (lifecycle.lastEditedAt) values[property.id] = lifecycle.lastEditedAt;
           break;
         case 'created_by':
-          if (lifecycle.createdBy) values[property.id] = databaseRecordActorKey(lifecycle.createdBy);
+          if (lifecycle.createdBy)
+            values[property.id] = databaseRecordActorKey(lifecycle.createdBy);
           break;
         case 'last_edited_by':
-          if (lifecycle.lastEditedBy) values[property.id] = databaseRecordActorKey(lifecycle.lastEditedBy);
+          if (lifecycle.lastEditedBy)
+            values[property.id] = databaseRecordActorKey(lifecycle.lastEditedBy);
           break;
         case 'verification':
         case 'button':
@@ -1532,11 +1622,14 @@ export class DatabaseRecordIndex {
       storageRevision: `sha256:${createHash('sha256').update(ownerMarkdown).digest('hex')}`,
       semanticRevisions: createDatabaseMarkdownRecordRevisionSet({
         ownerMarkdown,
-        owner: parsedOwner ?? (() => {
-          const parsed = parseDatabaseMarkdownOwner(ownerMarkdown);
-          if (!parsed.ok) throw new Error('Owner markdown unexpectedly failed to parse during v2 projection');
-          return parsed.owner;
-        })(),
+        owner:
+          parsedOwner ??
+          (() => {
+            const parsed = parseDatabaseMarkdownOwner(ownerMarkdown);
+            if (!parsed.ok)
+              throw new Error('Owner markdown unexpectedly failed to parse during v2 projection');
+            return parsed.owner;
+          })(),
         rowIndex: row.rowIndex,
         documentMarkdown: document.markdown,
       }),
@@ -1606,10 +1699,7 @@ export class DatabaseRecordIndex {
     this.#baseIssuesByPath.delete(binding.ownerPath);
   }
 
-  #readV2DocumentSync(
-    path: string,
-    binding: V2DocumentPathBinding,
-  ): V2Document | null {
+  #readV2DocumentSync(path: string, binding: V2DocumentPathBinding): V2Document | null {
     let markdown: string;
     try {
       markdown = readFileSync(resolve(this.#contentDir, path), 'utf-8');
@@ -1680,7 +1770,14 @@ export class DatabaseRecordIndex {
       if (row.recordId === null || row.documentPath === null || row.documentLink === null) continue;
       const document = this.#v2DocumentsByPath.get(row.documentPath);
       if (!document) continue;
-      const record = this.#projectV2Row(database, source, row, document, markdown, materialized.owner);
+      const record = this.#projectV2Row(
+        database,
+        source,
+        row,
+        document,
+        markdown,
+        materialized.owner,
+      );
       if (record) this.#addCandidate(row.documentPath, record);
     }
   }
@@ -1737,7 +1834,8 @@ export class DatabaseRecordIndex {
       const [databaseId, sourceId] = bindingKey.split('\0');
       const database = this.#databaseStore.getById(databaseId ?? '');
       const source = database?.sources.find((candidate) => candidate.id === sourceId);
-      const ownerPath = source?.storage?.kind === 'markdown_table' ? source.storage.owner.path : undefined;
+      const ownerPath =
+        source?.storage?.kind === 'markdown_table' ? source.storage.owner.path : undefined;
       if (!database || !source || ownerPath === undefined) continue;
       const documentBinding = { databaseId, sourceId, ownerPath };
       const identity = parseDatabaseDocumentIdentity(markdown);
@@ -1761,7 +1859,13 @@ export class DatabaseRecordIndex {
         documentId: identity.documentId,
         markdown,
         body,
-      title: resolveDatabaseDocumentTitle(markdown, path.split('/').at(-1)?.replace(/\.(?:md|mdx)$/i, '') ?? path).value,
+        title: resolveDatabaseDocumentTitle(
+          markdown,
+          path
+            .split('/')
+            .at(-1)
+            ?.replace(/\.(?:md|mdx)$/i, '') ?? path,
+        ).value,
         revision: `sha256:${createHash('sha256').update(markdown).digest('hex')}`,
       });
       const ownerMarkdown = this.#v2OwnerMarkdownByPath.get(ownerPath);
@@ -1837,9 +1941,7 @@ export class DatabaseRecordIndex {
           code: 'duplicate_record_id',
           path,
           message: `Record ID "${recordId}" is declared by more than one file`,
-          ...(candidate
-            ? { databaseId: candidate.databaseId, sourceId: candidate.sourceId }
-            : {}),
+          ...(candidate ? { databaseId: candidate.databaseId, sourceId: candidate.sourceId } : {}),
           recordId,
         });
       }

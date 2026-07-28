@@ -19,6 +19,7 @@ import {
   DatabaseDefinitionSchema,
   type DatabaseDocumentId,
   type DatabaseMarkdownCellPropertyType,
+  type DatabaseMarkdownDocumentCandidate,
   type DatabaseMarkdownDocumentLink,
   type DatabaseMarkdownOwnerMarker,
   type DatabaseMarkdownTableCell,
@@ -135,6 +136,12 @@ export interface CreateDatabaseMarkdownTableWriterOptions {
   allowExternalContentDir?: boolean;
   databaseStore: DatabaseStore;
   databaseRecordIndex?: DatabaseRecordIndex;
+  /**
+   * Wikilink resolution candidates, already maintained incrementally by the
+   * host. Supplying this keeps a row write off the full content-tree walk
+   * below; the walk stays as the authoritative fallback.
+   */
+  documentCandidates?: () => readonly DatabaseMarkdownDocumentCandidate[];
   /**
    * Make the index current after a commit. Receives the files this
    * transaction wrote (content-dir relative) when the caller knows them, so
@@ -508,6 +515,7 @@ export class DatabaseMarkdownTableWriter {
   readonly #refreshDatabaseIndex: (
     writes?: readonly DatabaseMarkdownTableWrite[],
   ) => Promise<unknown>;
+  readonly #documentCandidates: (() => readonly DatabaseMarkdownDocumentCandidate[]) | null;
   readonly #fs: DatabaseMarkdownTableWriterFs;
   readonly #generateUuid: () => string;
   readonly #lockPath: string;
@@ -524,6 +532,7 @@ export class DatabaseMarkdownTableWriter {
       (options.databaseRecordIndex
         ? () => options.databaseRecordIndex!.rebuild()
         : async () => undefined);
+    this.#documentCandidates = options.documentCandidates ?? null;
     this.#fs = { ...DEFAULT_FS, ...options.fs };
     this.#generateUuid = options.generateUuid ?? randomUUID;
     this.#journal = options.journal ?? createDatabaseMarkdownTableJournal(this.#projectDir);
@@ -774,9 +783,43 @@ export class DatabaseMarkdownTableWriter {
     };
   }
 
+  /**
+   * Locate the owner row for `recordId`.
+   *
+   * Resolving a row means resolving its `[[wikilink]]`, which needs the set of
+   * identity-bearing documents. Building that by walking the content tree is a
+   * full-workspace read on every write, so prefer the host's incrementally
+   * maintained set and fall back to the walk when it cannot resolve — the walk
+   * stays authoritative, it is just no longer the common path.
+   */
   async #resolveRow(resolved: ResolvedSource, recordId: string): Promise<ResolvedRow> {
+    const supplied = this.#documentCandidates?.() ?? null;
+    if (supplied === null || supplied.length === 0) {
+      return this.#resolveRowWithin(resolved, recordId, await this.#listDocumentCandidates());
+    }
+    try {
+      return await this.#resolveRowWithin(resolved, recordId, supplied);
+    } catch (error) {
+      // Only an unresolvable link means the supplied set was short — rescan for
+      // it. Every other outcome, `record_not_found` above all (the normal
+      // answer when creating a row), is a real answer that the walk would only
+      // repeat at the cost of a full-workspace read.
+      if (
+        !(error instanceof DatabaseMarkdownTableWriterError) ||
+        error.code !== 'document_not_found'
+      ) {
+        throw error;
+      }
+    }
+    return this.#resolveRowWithin(resolved, recordId, await this.#listDocumentCandidates());
+  }
+
+  async #resolveRowWithin(
+    resolved: ResolvedSource,
+    recordId: string,
+    documents: readonly DatabaseMarkdownDocumentCandidate[],
+  ): Promise<ResolvedRow> {
     const seen = new Map<string, number>();
-    const documents = await this.#listDocumentCandidates();
     for (const row of resolved.owner.rows) {
       const link = decodedTitleLink(resolved.owner, resolved.source, row.rowIndex);
       const resolution = resolveDatabaseMarkdownDocumentLink({

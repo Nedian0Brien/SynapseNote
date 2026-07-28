@@ -693,6 +693,10 @@ export function createServer(options: ServerOptions): ServerInstance {
     allowExternalContentDir: ephemeral,
     databaseStore,
     databaseRecordIndex,
+    // The index already discovers identity-bearing documents and keeps them
+    // current, so a row write resolves its wikilinks from there instead of
+    // re-walking the content tree.
+    documentCandidates: () => databaseRecordIndex.documentCandidates(),
     // A write that names the files it touched refreshes the index
     // incrementally; one that moved the manifest still rebuilds, because the
     // store itself changed rather than a row in it.
