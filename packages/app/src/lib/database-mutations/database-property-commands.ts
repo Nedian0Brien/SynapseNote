@@ -5,7 +5,10 @@ import type {
   DatabaseSource,
   ProjectedDatabaseRecord,
 } from '@nedian0brien/synapsenote-core';
-import { DatabaseDefinitionSchema } from '@nedian0brien/synapsenote-core';
+import {
+  DatabaseDefinitionSchema,
+  pruneDatabasePropertyReferences,
+} from '@nedian0brien/synapsenote-core';
 import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-server';
 
 import { databaseDraftBase } from './database-desired-state-base';
@@ -373,17 +376,14 @@ export function createDatabaseRemovePropertyDesiredState(input: {
   if (currentSource.properties.length <= 1) {
     throw new Error('A source requires at least one property');
   }
-  const definition = DatabaseDefinitionSchema.parse({
-    ...input.database,
-    sources: input.database.sources.map((source) =>
-      source.id === currentSource.id
-        ? {
-            ...source,
-            properties: source.properties.filter((property) => property.id !== currentProperty.id),
-          }
-        : source,
-    ),
-  });
+  // Dropping the property from `properties` alone leaves the definition
+  // referring to something that no longer exists — the owner-table column set
+  // and the view projection both still name it, and the manifest schema refuses
+  // that. Pruning lives in core, next to the schema that defines the reference
+  // surface, so the two cannot drift.
+  const definition = DatabaseDefinitionSchema.parse(
+    pruneDatabasePropertyReferences(input.database, currentSource.id, currentProperty.id),
+  );
   return {
     ...databaseDraftBase(definition),
     sampleRecords: [],
