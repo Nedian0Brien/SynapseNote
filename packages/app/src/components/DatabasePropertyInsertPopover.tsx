@@ -1,13 +1,45 @@
 import { Trans } from '@lingui/react/macro';
 import type { DatabasePropertyType } from '@nedian0brien/synapsenote-core';
 import { Plus } from 'lucide-react';
-import type { Dispatch, SetStateAction } from 'react';
+import { type Dispatch, type SetStateAction, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { type DatabaseCatalogCandidate, fetchDatabaseCatalog } from '@/lib/database-catalog-client';
 import { databaseAddablePropertyGroups } from '@/lib/database-mutations/database-property-commands';
 import { databasePropertyTypeLabel } from '@/lib/database-property-copy';
 import { DatabasePropertyTypeIcon } from './database-property-icons';
+
+export interface DatabaseRelationTarget {
+  databaseId: string;
+  sourceId: string;
+}
+
+/** Sentinel for "point at this source", since Select cannot hold an empty value. */
+const SELF_TARGET = 'self';
+
+/**
+ * Select options carry one string, but a relation target is a database AND a
+ * source. Pair them behind a named separator rather than an inline literal —
+ * a mangled separator would silently resolve every target back to this source.
+ */
+const TARGET_SEPARATOR = '/';
+
+function databaseSourceKey(databaseId: string, sourceId: string): string {
+  return `${databaseId}${TARGET_SEPARATOR}${sourceId}`;
+}
+
+function splitDatabaseSourceKey(value: string): [string | undefined, string | undefined] {
+  const [databaseId, sourceId] = value.split(TARGET_SEPARATOR);
+  return [databaseId, sourceId];
+}
 
 export function DatabasePropertyInsertPopover({
   open,
@@ -36,9 +68,47 @@ export function DatabasePropertyInsertPopover({
   setNewPropertyName: Dispatch<SetStateAction<string>>;
   newPropertyType: DatabasePropertyType;
   setNewPropertyType: Dispatch<SetStateAction<DatabasePropertyType>>;
-  submitAddProperty: () => void;
+  submitAddProperty: (relationTarget?: DatabaseRelationTarget) => void;
   showLabel?: boolean;
 }) {
+  // Loaded here rather than threaded down four component layers, matching
+  // `InlineDatabasePicker`, and only once the user actually reaches for a
+  // relation — every other property type needs no target at all.
+  const [candidates, setCandidates] = useState<readonly DatabaseCatalogCandidate[] | null>(null);
+  const [relationTarget, setRelationTarget] = useState<string>('');
+  const needsTarget = newPropertyType === 'relation';
+
+  useEffect(() => {
+    if (!open || !needsTarget || candidates !== null) return;
+    const controller = new AbortController();
+    void fetchDatabaseCatalog({ signal: controller.signal })
+      .then((catalog) => {
+        if (!controller.signal.aborted) setCandidates(catalog.candidates);
+      })
+      .catch(() => {
+        // A target list we could not load must not block creation: the seed
+        // falls back to a self-relation, which is always valid.
+        if (!controller.signal.aborted) setCandidates([]);
+      });
+    return () => controller.abort();
+  }, [candidates, needsTarget, open]);
+
+  const targets = (candidates ?? []).flatMap((database) =>
+    database.sources.map((source) => ({
+      value: databaseSourceKey(database.id, source.id),
+      label: database.name === source.name ? database.name : `${database.name} · ${source.name}`,
+    })),
+  );
+
+  const submit = () => {
+    if (!needsTarget || relationTarget === '' || relationTarget === SELF_TARGET) {
+      submitAddProperty();
+      return;
+    }
+    const [databaseId, sourceId] = splitDatabaseSourceKey(relationTarget);
+    submitAddProperty(databaseId && sourceId ? { databaseId, sourceId } : undefined);
+  };
+
   return (
     <Popover
       open={open}
@@ -88,7 +158,7 @@ export function DatabasePropertyInsertPopover({
             placeholder="Property name"
             onChange={(event) => setNewPropertyName(event.currentTarget.value)}
             onKeyDown={(event) => {
-              if (event.key === 'Enter') submitAddProperty();
+              if (event.key === 'Enter') submit();
             }}
           />
           <fieldset className="max-h-72 overflow-y-auto">
@@ -117,10 +187,32 @@ export function DatabasePropertyInsertPopover({
               </div>
             ))}
           </fieldset>
+          {needsTarget ? (
+            <div className="grid gap-1 text-xs">
+              <span className="font-medium">
+                <Trans>Related database</Trans>
+              </span>
+              <Select value={relationTarget || SELF_TARGET} onValueChange={setRelationTarget}>
+                <SelectTrigger aria-label="Relation target" className="h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={SELF_TARGET}>
+                    {candidates === null ? 'Loading…' : 'This database (sub-items)'}
+                  </SelectItem>
+                  {targets.map((target) => (
+                    <SelectItem key={target.value} value={target.value}>
+                      {target.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
           <Button
             type="button"
             disabled={!newPropertyName.trim() || mutationLocked}
-            onClick={submitAddProperty}
+            onClick={submit}
           >
             {propertyInsertTarget ? <Trans>Insert property</Trans> : <Trans>Add property</Trans>}
           </Button>

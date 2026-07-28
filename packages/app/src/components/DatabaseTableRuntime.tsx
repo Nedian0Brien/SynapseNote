@@ -390,7 +390,7 @@ export function DatabaseTable({
     void navigator.clipboard.writeText(rangeTsv(row, column));
   };
 
-  const submitAddProperty = () => {
+  const submitAddProperty = (relationTarget?: { databaseId: string; sourceId: string }) => {
     const name = newPropertyName.trim();
     if (!onAddProperty || !name || mutationLocked) return;
     setPendingPropertyRequest({
@@ -401,6 +401,7 @@ export function DatabaseTable({
     onAddProperty({
       name,
       type: newPropertyType,
+      ...(relationTarget ? { relationTarget } : {}),
       ...(propertyInsertTarget?.position === 'before'
         ? { insertBeforePropertyId: propertyInsertTarget.propertyId }
         : propertyInsertTarget?.position === 'after'

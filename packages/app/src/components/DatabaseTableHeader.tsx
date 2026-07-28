@@ -65,7 +65,7 @@ export interface DatabaseTableHeaderProps
   ) => void;
   openPropertyInsert: (property: DatabaseProperty, position: 'before' | 'after') => void;
   openPropertyRename: (property: DatabaseProperty) => void;
-  submitAddProperty: () => void;
+  submitAddProperty: (relationTarget?: { databaseId: string; sourceId: string }) => void;
 }
 
 export function DatabaseTableHeader({

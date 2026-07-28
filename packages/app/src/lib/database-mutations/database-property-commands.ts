@@ -133,18 +133,23 @@ export function createDatabasePropertyDefinitionForAdd(input: {
   existingKeys: readonly string[];
   database: DatabaseDefinition;
   source: DatabaseSource;
+  /** Relation only: where the new relation points. Defaults to this source. */
+  relationTarget?: { databaseId: string; sourceId: string };
 }): { key: string; name: string; type: DatabasePropertyType } & Record<string, unknown> {
   const key = databasePropertyKeyFromName(input.name, input.existingKeys);
   if (input.type === 'relation') {
-    // A relation can only target a source of the SAME database, so the only
-    // always-available target is this source — a self-relation, which is also
-    // the shape Notion's sub-items use. Repointing it is the relation editor's
-    // job.
+    // Defaults to a self-relation — the one target guaranteed to exist, and the
+    // shape Notion's sub-items use — unless the picker chose another database.
+    // `targetDatabaseId` is omitted for a same-database target so the manifest
+    // keeps the form every relation had before cross-database ones existed.
+    const target = input.relationTarget;
+    const targetDatabaseId = target?.databaseId ?? input.database.id;
     return {
       key,
       name: input.name,
       type: input.type,
-      targetSourceId: input.source.id,
+      targetSourceId: target?.sourceId ?? input.source.id,
+      ...(targetDatabaseId === input.database.id ? {} : { targetDatabaseId }),
       cardinality: 'many',
     };
   }

@@ -147,6 +147,7 @@ export function useDatabaseWorkspaceSchemaCommands(context: DatabaseWorkspaceCon
       type: DatabasePropertyType;
       insertBeforePropertyId?: string;
       insertAfterPropertyId?: string;
+      relationTarget?: { databaseId: string; sourceId: string };
     },
     policy: DatabaseUiMutationPolicyInput = databaseSchemaMutationPolicy,
   ) => {
@@ -161,6 +162,7 @@ export function useDatabaseWorkspaceSchemaCommands(context: DatabaseWorkspaceCon
         existingKeys: selectedSource.properties.map((candidate: DatabaseProperty) => candidate.key),
         database: selectedDatabase,
         source: selectedSource,
+        ...(input.relationTarget ? { relationTarget: input.relationTarget } : {}),
       });
       const desiredState = createDatabaseAddPropertyDesiredState({
         database: selectedDatabase,

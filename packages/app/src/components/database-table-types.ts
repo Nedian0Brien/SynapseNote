@@ -146,6 +146,8 @@ export interface DatabaseTableProps {
     type: DatabasePropertyType;
     insertBeforePropertyId?: string;
     insertAfterPropertyId?: string;
+    /** Relation only: the database and source the new relation points at. */
+    relationTarget?: { databaseId: string; sourceId: string };
   }) => void;
   onInvokeButton?: (
     record: ProjectedDatabaseRecord,
