@@ -25,29 +25,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { DATABASE_ADDABLE_PROPERTY_TYPES } from '@/lib/database-mutations/database-property-commands';
 import {
   databasePropertyTypeExample,
   databasePropertyTypeLabel,
 } from '@/lib/database-property-copy';
-
-/**
- * Types that construct with no additional required configuration (no
- * relation target, formula source, or verifier setup). Matches the target
- * set `DatabasePropertyConversionDialog` offers for the same reason.
- */
-const ADDABLE_PROPERTY_TYPES = [
-  'text',
-  'number',
-  'checkbox',
-  'date',
-  'select',
-  'multi_select',
-  'url',
-  'email',
-  'phone',
-  'files',
-  'place',
-] as const satisfies readonly DatabasePropertyType[];
 
 /**
  * Add, remove, and reorder schema properties for one database source. Every
@@ -294,7 +276,7 @@ export function DatabasePropertiesDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {ADDABLE_PROPERTY_TYPES.map((type) => (
+                  {DATABASE_ADDABLE_PROPERTY_TYPES.map((type) => (
                     <SelectItem key={type} value={type}>
                       {databasePropertyTypeLabel(type)}
                     </SelectItem>

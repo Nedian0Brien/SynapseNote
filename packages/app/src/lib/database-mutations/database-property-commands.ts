@@ -30,6 +30,56 @@ export function databasePropertyKeyFromName(name: string, existingKeys: readonly
 }
 
 /**
+ * Property types the human "add property" pickers offer, grouped in Notion's
+ * menu order. This is the single source the three pickers render — the table
+ * header popover, the Manage properties dialog, and the inline block popover —
+ * which previously each carried their own copy of the same eleven entries.
+ *
+ * Every entry must be one `createDatabasePropertyDefinitionForAdd` can seed
+ * into a valid draft with no further input; that pairing is the whole contract
+ * of this list, and `database-property-commands.test.ts` asserts it per entry
+ * rather than trusting the two to stay in step.
+ *
+ * `title` is absent on purpose: every source already has exactly one and it is
+ * frozen. A type must arrive here with both a seed AND a way to reconfigure
+ * what was seeded, or the user gets a column they can create and cannot fix.
+ */
+export const DATABASE_ADDABLE_PROPERTY_GROUPS = [
+  {
+    id: 'basic',
+    label: 'Basic',
+    types: [
+      'text',
+      'number',
+      'select',
+      'multi_select',
+      'date',
+      'person',
+      'files',
+      'checkbox',
+      'url',
+      'email',
+      'phone',
+      'place',
+    ],
+  },
+  { id: 'advanced', label: 'Advanced', types: ['unique_id', 'verification'] },
+  {
+    id: 'metadata',
+    label: 'Record metadata',
+    types: ['created_time', 'created_by', 'last_edited_time', 'last_edited_by'],
+  },
+] as const satisfies readonly {
+  id: string;
+  label: string;
+  types: readonly DatabasePropertyType[];
+}[];
+
+/** Flattened `DATABASE_ADDABLE_PROPERTY_GROUPS`, for the flat dropdown pickers. */
+export const DATABASE_ADDABLE_PROPERTY_TYPES: readonly DatabasePropertyType[] =
+  DATABASE_ADDABLE_PROPERTY_GROUPS.flatMap((group) => group.types);
+
+/**
  * Builds the schema fragment used by the human Notion-style property picker.
  * Select-like properties need one option in the canonical manifest even when
  * the user has not entered any cell values yet, so seed an inert first option
@@ -57,6 +107,12 @@ export function createDatabasePropertyDefinitionForAdd(input: {
       externalSearch: 'disabled',
       externalMap: 'disabled',
     };
+  }
+  if (input.type === 'unique_id') {
+    // Both fields are required by the manifest and neither has a schema
+    // default. An empty prefix renders the bare counter (Notion's own default);
+    // `DatabaseUniqueIdPropertyDialog` edits it afterwards.
+    return { key, name: input.name, type: input.type, prefix: '', nextNumber: 1 };
   }
   return { key, name: input.name, type: input.type };
 }

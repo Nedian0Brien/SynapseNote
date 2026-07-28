@@ -5,21 +5,9 @@ import type { Dispatch, SetStateAction } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DATABASE_ADDABLE_PROPERTY_GROUPS } from '@/lib/database-mutations/database-property-commands';
+import { databasePropertyTypeLabel } from '@/lib/database-property-copy';
 import { DatabasePropertyTypeIcon } from './database-property-icons';
-
-const NOTION_PROPERTY_TYPES: readonly { type: DatabasePropertyType; label: string }[] = [
-  { type: 'text', label: 'Text' },
-  { type: 'number', label: 'Number' },
-  { type: 'select', label: 'Select' },
-  { type: 'multi_select', label: 'Multi-select' },
-  { type: 'date', label: 'Date' },
-  { type: 'checkbox', label: 'Checkbox' },
-  { type: 'url', label: 'URL' },
-  { type: 'email', label: 'Email' },
-  { type: 'phone', label: 'Phone' },
-  { type: 'files', label: 'Files' },
-  { type: 'place', label: 'Place' },
-];
 
 export function DatabasePropertyInsertPopover({
   open,
@@ -100,21 +88,30 @@ export function DatabasePropertyInsertPopover({
               if (event.key === 'Enter') submitAddProperty();
             }}
           />
-          <fieldset className="grid grid-cols-2 gap-1.5">
+          <fieldset className="max-h-72 overflow-y-auto">
             <legend className="sr-only">Property type</legend>
-            {NOTION_PROPERTY_TYPES.map((candidate) => (
-              <Button
-                key={candidate.type}
-                type="button"
-                size="sm"
-                variant={newPropertyType === candidate.type ? 'secondary' : 'ghost'}
-                aria-pressed={newPropertyType === candidate.type}
-                className="justify-start gap-2"
-                onClick={() => setNewPropertyType(candidate.type)}
-              >
-                <DatabasePropertyTypeIcon type={candidate.type} className="size-4" />
-                {candidate.label}
-              </Button>
+            {DATABASE_ADDABLE_PROPERTY_GROUPS.map((group) => (
+              <div key={group.id} className="mb-1 last:mb-0">
+                <p className="px-2 py-1 font-medium text-[11px] text-muted-foreground uppercase tracking-wide">
+                  {group.label}
+                </p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {group.types.map((type) => (
+                    <Button
+                      key={type}
+                      type="button"
+                      size="sm"
+                      variant={newPropertyType === type ? 'secondary' : 'ghost'}
+                      aria-pressed={newPropertyType === type}
+                      className="justify-start gap-2"
+                      onClick={() => setNewPropertyType(type)}
+                    >
+                      <DatabasePropertyTypeIcon type={type} className="size-4" />
+                      {databasePropertyTypeLabel(type)}
+                    </Button>
+                  ))}
+                </div>
+              </div>
             ))}
           </fieldset>
           <Button

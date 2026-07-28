@@ -17,24 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { DATABASE_ADDABLE_PROPERTY_TYPES } from '@/lib/database-mutations/database-property-commands';
 import {
   databasePropertyTypeExample,
   databasePropertyTypeLabel,
 } from '@/lib/database-property-copy';
-
-const ADDABLE_PROPERTY_TYPES = [
-  'text',
-  'number',
-  'checkbox',
-  'date',
-  'select',
-  'multi_select',
-  'url',
-  'email',
-  'phone',
-  'files',
-  'place',
-] as const satisfies readonly DatabasePropertyType[];
 
 interface InlineDatabasePropertiesPopoverProps {
   open: boolean;
@@ -191,7 +178,7 @@ export function InlineDatabasePropertiesPopover({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {ADDABLE_PROPERTY_TYPES.map((type) => (
+                {DATABASE_ADDABLE_PROPERTY_TYPES.map((type) => (
                   <SelectItem key={type} value={type}>
                     <DatabasePropertyTypeIcon type={type} className="size-4" />
                     {databasePropertyTypeLabel(type)}
