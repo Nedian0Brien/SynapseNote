@@ -2642,15 +2642,28 @@ export function createServer(options: ServerOptions): ServerInstance {
   const requestDatabaseManifestRefresh = (): void => {
     const generation = ++databaseManifestRefreshGeneration;
     if (isBatchInProgress()) return;
-    void databaseIndexCoordinator
-      .refresh('schema-change')
-      .then((result) => {
+    void (async () => {
+      // A database transaction writes the manifest and then refreshes the index
+      // itself. The watcher reports that same write moments later, so firing
+      // unconditionally made every transaction pay a SECOND full rebuild — a
+      // whole-content-tree rescan whose cost grows with the vault, to re-read a
+      // manifest the index had just read.
+      //
+      // Comparing the revision on disk against the one the index built against
+      // settles it exactly: equal means this event is the echo of a write that
+      // is already indexed. Anything else — an external edit, a Git checkout, a
+      // manifest repaired by hand — differs, and still rebuilds.
+      const snapshot = await databaseStore.reload();
+      if (databaseRecordIndex.manifestRevision() === snapshot.revision) {
         databaseManifestAppliedGeneration = Math.max(databaseManifestAppliedGeneration, generation);
-        log.info(result, '[database-record-index] manifest change refresh complete');
-      })
-      .catch((error) => {
-        log.error({ err: error }, '[database-record-index] manifest change refresh failed');
-      });
+        return;
+      }
+      const result = await databaseIndexCoordinator.refresh('schema-change');
+      databaseManifestAppliedGeneration = Math.max(databaseManifestAppliedGeneration, generation);
+      log.info(result, '[database-record-index] manifest change refresh complete');
+    })().catch((error) => {
+      log.error({ err: error }, '[database-record-index] manifest change refresh failed');
+    });
   };
 
   /** Wrapper that buffers events during batch operations. */
