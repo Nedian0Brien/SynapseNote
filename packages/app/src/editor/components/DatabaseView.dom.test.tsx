@@ -8,6 +8,7 @@ import {
   waitFor,
 } from '@testing-library/react';
 import { StrictMode } from 'react';
+import { resetDatabaseLinkedViewCacheForTests } from '@/lib/database-linked-view-cache';
 import { DatabaseView, databaseViewTabActionToInitialAction } from './DatabaseView';
 import { JsxComponentHostProvider } from './jsx-host-context';
 
@@ -100,6 +101,10 @@ afterEach(() => {
   cleanup();
   globalThis.fetch = originalFetch;
   window.location.hash = originalHash;
+  // The linked-view cache is a module-level Map backed by sessionStorage, so a
+  // view remembered by one test would otherwise seed the next test's first
+  // render with a stale projection.
+  resetDatabaseLinkedViewCacheForTests();
 });
 
 describe('DatabaseView', () => {
@@ -2960,9 +2965,10 @@ describe('DatabaseView', () => {
     expect(await screen.findByTestId('inline-database-create-dialog')).toBeTruthy();
     expect(document.querySelector('[data-notion-inline-database-creation]')).not.toBeNull();
     expect(screen.getByRole('columnheader', { name: 'Title' })).toBeTruthy();
-    expect(
-      (screen.getByRole('button', { name: 'Add database view' }) as HTMLButtonElement).disabled,
-    ).toBe(true);
+    // The loaded inline header renders no view tab strip while the source has
+    // a single saved view, so the placeholder must not render one either — an
+    // extra strip would push the table down when the real surface swaps in.
+    expect(document.querySelector('[data-linked-database-view-tabs]')).toBeNull();
     expect(
       (screen.getByRole('button', { name: 'Add property' }) as HTMLButtonElement).disabled,
     ).toBe(true);
