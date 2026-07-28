@@ -137,6 +137,7 @@ export function useDatabaseWorkspaceControllerState({
   const [computedPropertyId, setComputedPropertyId] = useState<string | null>(null);
   const [uniqueIdPropertyId, setUniqueIdPropertyId] = useState<string | null>(null);
   const [placePropertyId, setPlacePropertyId] = useState<string | null>(null);
+  const [buttonPropertyId, setButtonPropertyId] = useState<string | null>(null);
   const [conversionPropertyId, setConversionPropertyId] = useState<string | null>(null);
   const [propertiesDialogOpen, setPropertiesDialogOpen] = useState(false);
   const [propertiesDialogRenameId, setPropertiesDialogRenameId] = useState<string | null>(null);
@@ -313,6 +314,8 @@ export function useDatabaseWorkspaceControllerState({
     setUniqueIdPropertyId,
     placePropertyId,
     setPlacePropertyId,
+    buttonPropertyId,
+    setButtonPropertyId,
     conversionPropertyId,
     setConversionPropertyId,
     propertiesDialogOpen,

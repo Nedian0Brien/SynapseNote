@@ -131,7 +131,7 @@ function desiredStateFrom(definition: DatabaseDefinition): Record<string, unknow
     },
     sources: structuredClone(definition.sources),
     views: definition.views.map((view) => {
-      const { sourceId, ...rest } = structuredClone(view);
+      const { sourceId: _sourceId, ...rest } = structuredClone(view);
       return { ...rest, sourceKey: 'tasks' };
     }),
     policy: { mode: 'review', allowedOperations: [], maxRecordsPerCommit: 1 },

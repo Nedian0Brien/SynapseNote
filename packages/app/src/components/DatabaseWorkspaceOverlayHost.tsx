@@ -1,6 +1,7 @@
 import type { DatabaseSource } from '@nedian0brien/synapsenote-core';
 import { DatabaseAdvancedFilterDialog } from '@/components/DatabaseAdvancedFilterDialog';
 import { DatabaseAutomationsDialog } from '@/components/DatabaseAutomationsDialog';
+import { DatabaseButtonPropertyDialog } from '@/components/DatabaseButtonPropertyDialog';
 import { DatabaseComputedPropertyDialog } from '@/components/DatabaseComputedPropertyDialog';
 import { DatabaseCreationDialog } from '@/components/DatabaseCreationDialog';
 import { DatabaseSourceIdentityMigrationDialog } from '@/components/DatabaseOnboardingDialog';
@@ -19,6 +20,7 @@ import { DatabaseSavedViewSettingsShell } from '@/components/database-saved-view
 import { CreatePromptComposer } from '@/components/empty-state/CreatePromptComposer';
 import {
   createDatabaseAutomationDesiredState,
+  createDatabaseButtonPropertyChangeDesiredState,
   createDatabaseComputedPropertyChangeDesiredState,
   createDatabasePlacePrivacyChangeDesiredState,
   createDatabaseTemplateLifecycleDesiredState,
@@ -56,6 +58,8 @@ export function DatabaseWorkspaceOverlayHost({
     setUniqueIdPropertyId,
     placeProperty,
     setPlacePropertyId,
+    buttonProperty,
+    setButtonPropertyId,
     conversionProperty,
     setConversionPropertyId,
     selection,
@@ -316,6 +320,37 @@ export function DatabaseWorkspaceOverlayHost({
             } catch (cause) {
               setMutationError(
                 classifyDatabaseUiProblem(cause, 'Unable to prepare the Place privacy change'),
+              );
+            }
+          }}
+        />
+      ) : null}
+      {description?.source && buttonProperty ? (
+        <DatabaseButtonPropertyDialog
+          key={buttonProperty.id}
+          open
+          onOpenChange={(nextOpen) => {
+            if (!nextOpen) setButtonPropertyId(null);
+          }}
+          database={description.database}
+          source={description.source}
+          property={buttonProperty}
+          onSave={(property) => {
+            try {
+              runMutation(
+                createDatabaseButtonPropertyChangeDesiredState({
+                  database: description.database,
+                  source: description.source as DatabaseSource,
+                  property,
+                }),
+                'ui-button-property',
+                'Button change failed',
+                { policy: databaseSchemaMutationPolicy },
+              );
+              setButtonPropertyId(null);
+            } catch (cause) {
+              setMutationError(
+                classifyDatabaseUiProblem(cause, 'Unable to prepare the Button change'),
               );
             }
           }}

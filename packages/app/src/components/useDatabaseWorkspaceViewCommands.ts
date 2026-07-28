@@ -97,6 +97,7 @@ export function useDatabaseWorkspaceViewCommands(context: DatabaseWorkspaceContr
     computedPropertyId,
     uniqueIdPropertyId,
     placePropertyId,
+    buttonPropertyId,
     conversionPropertyId,
     selectedRecordIds,
     setAgentScopeOverride,
@@ -257,6 +258,10 @@ export function useDatabaseWorkspaceViewCommands(context: DatabaseWorkspaceContr
   const placeProperty = description?.source?.properties.find(
     (property: DatabaseProperty): property is Extract<DatabaseProperty, { type: 'place' }> =>
       property.id === placePropertyId && property.type === 'place',
+  );
+  const buttonProperty = description?.source?.properties.find(
+    (property: DatabaseProperty): property is Extract<DatabaseProperty, { type: 'button' }> =>
+      property.id === buttonPropertyId && property.type === 'button',
   );
   const conversionProperty = description?.source?.properties.find(
     (property: DatabaseProperty) => property.id === conversionPropertyId,
@@ -576,6 +581,7 @@ export function useDatabaseWorkspaceViewCommands(context: DatabaseWorkspaceContr
     computedProperty,
     uniqueIdProperty,
     placeProperty,
+    buttonProperty,
     conversionProperty,
     canonicalSourceViews,
     sourceViews,

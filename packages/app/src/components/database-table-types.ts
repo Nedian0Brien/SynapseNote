@@ -145,6 +145,7 @@ export interface DatabaseTableProps {
     property: Extract<DatabaseProperty, { type: 'unique_id' }>,
   ) => void;
   onConfigurePlaceProperty?: (property: Extract<DatabaseProperty, { type: 'place' }>) => void;
+  onConfigureButtonProperty?: (property: Extract<DatabaseProperty, { type: 'button' }>) => void;
   onConfigureSelectProperty?: (property: DatabaseSelectProperty) => void;
   onConvertProperty?: (property: DatabaseProperty) => void;
   onOpenPropertySort?: (property: DatabaseProperty) => void;

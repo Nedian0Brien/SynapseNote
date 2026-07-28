@@ -130,7 +130,7 @@ function desiredStateWithRelation(
       },
     ],
     views: tasks.views.map((view) => {
-      const { sourceId, ...rest } = structuredClone(view);
+      const { sourceId: _sourceId, ...rest } = structuredClone(view);
       return { ...rest, sourceKey: 'tasks' };
     }),
     policy: { mode: 'review', allowedOperations: [], maxRecordsPerCommit: 1 },

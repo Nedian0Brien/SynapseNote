@@ -248,6 +248,8 @@ export function useDatabaseWorkspaceController(props: DatabaseTableDialogProps) 
     setUniqueIdPropertyId,
     placePropertyId,
     setPlacePropertyId,
+    buttonPropertyId,
+    setButtonPropertyId,
     conversionPropertyId,
     setConversionPropertyId,
     propertiesDialogOpen,
@@ -435,6 +437,7 @@ export function useDatabaseWorkspaceController(props: DatabaseTableDialogProps) 
     computedPropertyId !== null ||
     uniqueIdPropertyId !== null ||
     placePropertyId !== null ||
+    buttonPropertyId !== null ||
     conversionPropertyId !== null;
   useDatabasePresenceTarget(
     open && selection && (schemaSurfaceOpen || mutationStatus !== 'idle')
@@ -929,6 +932,7 @@ export function useDatabaseWorkspaceController(props: DatabaseTableDialogProps) 
     computedPropertyId,
     uniqueIdPropertyId,
     placePropertyId,
+    buttonPropertyId,
     conversionPropertyId,
     selectedRecordIds,
     setPropertyFilterTargetId,
@@ -973,6 +977,7 @@ export function useDatabaseWorkspaceController(props: DatabaseTableDialogProps) 
     setComputedPropertyId,
     setUniqueIdPropertyId,
     setPlacePropertyId,
+    setButtonPropertyId,
     setConversionPropertyId,
     onOpenContextInspector,
     onOpenAgentRuns,
@@ -991,6 +996,7 @@ export function useDatabaseWorkspaceController(props: DatabaseTableDialogProps) 
     computedProperty,
     uniqueIdProperty,
     placeProperty,
+    buttonProperty,
     conversionProperty,
     sourceViews,
     selectedView,
@@ -1181,6 +1187,9 @@ export function useDatabaseWorkspaceController(props: DatabaseTableDialogProps) 
     placeProperty,
     placePropertyId,
     setPlacePropertyId,
+    buttonProperty,
+    buttonPropertyId,
+    setButtonPropertyId,
     conversionProperty,
     conversionPropertyId,
     setConversionPropertyId,

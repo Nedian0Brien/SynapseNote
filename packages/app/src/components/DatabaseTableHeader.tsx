@@ -28,6 +28,7 @@ export interface DatabaseTableHeaderProps
     | 'onConfigureComputedProperty'
     | 'onConfigureUniqueIdProperty'
     | 'onConfigurePlaceProperty'
+    | 'onConfigureButtonProperty'
     | 'onConfigureSelectProperty'
     | 'onConvertProperty'
     | 'onManageProperties'
@@ -102,6 +103,7 @@ export function DatabaseTableHeader({
   onConfigureComputedProperty,
   onConfigureUniqueIdProperty,
   onConfigurePlaceProperty,
+  onConfigureButtonProperty,
   onConfigureSelectProperty,
   onConvertProperty,
   onManageProperties,
@@ -219,6 +221,7 @@ export function DatabaseTableHeader({
             onConfigureComputedProperty={onConfigureComputedProperty}
             onConfigureUniqueIdProperty={onConfigureUniqueIdProperty}
             onConfigurePlaceProperty={onConfigurePlaceProperty}
+            onConfigureButtonProperty={onConfigureButtonProperty}
             onConfigureSelectProperty={onConfigureSelectProperty}
             onConvertProperty={onConvertProperty}
             onManageProperties={onManageProperties}

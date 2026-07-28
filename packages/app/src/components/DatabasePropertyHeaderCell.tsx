@@ -101,6 +101,7 @@ type PropertyHeaderCellCallbacks = Pick<
   | 'onConfigureComputedProperty'
   | 'onConfigureUniqueIdProperty'
   | 'onConfigurePlaceProperty'
+  | 'onConfigureButtonProperty'
   | 'onConfigureSelectProperty'
   | 'onConvertProperty'
   | 'onManageProperties'
@@ -257,6 +258,22 @@ export function DatabasePropertyHeaderCell({
             )}
             aria-label={`Configure ${property.name} Place privacy`}
             onClick={() => menuCallbacks.onConfigurePlaceProperty?.(property)}
+          >
+            <Pencil aria-hidden="true" />
+          </Button>
+        ) : null}
+        {property.type === 'button' && menuCallbacks.onConfigureButtonProperty ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            className={cn(
+              'ml-1',
+              notionSurface &&
+                'opacity-0 transition-opacity group-hover/column:opacity-100 group-focus-within/column:opacity-100 focus-visible:opacity-100',
+            )}
+            aria-label={`Configure ${property.name} Button`}
+            onClick={() => menuCallbacks.onConfigureButtonProperty?.(property)}
           >
             <Pencil aria-hidden="true" />
           </Button>

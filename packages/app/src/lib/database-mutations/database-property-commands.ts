@@ -71,7 +71,7 @@ export const DATABASE_ADDABLE_PROPERTY_GROUPS = [
   {
     id: 'advanced',
     label: 'Advanced',
-    types: ['relation', 'rollup', 'formula', 'unique_id', 'verification'],
+    types: ['relation', 'rollup', 'formula', 'button', 'unique_id', 'verification'],
   },
   {
     id: 'metadata',
@@ -117,6 +117,24 @@ export const DATABASE_ADDABLE_PROPERTY_TYPES: readonly DatabasePropertyType[] =
 
 /** Seeded formula body: an empty text literal, which compiles and evaluates. */
 const EMPTY_FORMULA_SOURCE = '""';
+
+/** Title the seeded Button writes, so its one click produces something visible. */
+const SEEDED_BUTTON_RECORD_TITLE = 'New record';
+
+/**
+ * Action ids are stable keys scoped to one Button, so the first step can carry
+ * a fixed one. {@link nextDatabaseButtonActionId} continues the series.
+ */
+export const DATABASE_BUTTON_FIRST_ACTION_ID = 'step_1';
+
+/** Lowest `step_N` not already taken, so ids stay stable across reorders. */
+export function nextDatabaseButtonActionId(takenIds: readonly string[]): string {
+  const taken = new Set(takenIds);
+  for (let index = 1; ; index += 1) {
+    const candidate = `step_${index}`;
+    if (!taken.has(candidate)) return candidate;
+  }
+}
 
 /**
  * Builds the schema fragment used by the human Notion-style property picker.
@@ -188,6 +206,46 @@ export function createDatabasePropertyDefinitionForAdd(input: {
       targetPropertyId: targetProperty.id,
       function: 'count_all',
       targetValueType: 'text',
+    };
+  }
+  if (input.type === 'button') {
+    // A Button is a control, not a value, so the manifest requires at least one
+    // action up front. Creating a record in this same source is Notion's own
+    // archetype ("Add a task"), it touches nothing that already exists, and its
+    // effect is visible the moment it is clicked — which is what makes the
+    // seeded default explainable before `DatabaseButtonPropertyDialog` refines
+    // it.
+    const title = input.source.properties.find((property) => property.type === 'title');
+    if (!title) throw new Error('A Button needs a Title property to seed its first action');
+    // `create_record` must supply every required property that has no default.
+    // Nothing in the app marks a property required except Title, so this only
+    // fires on a hand-authored manifest — but seeding an action the manifest
+    // will reject is worse than saying why it cannot be seeded.
+    const blocking = input.source.properties.find(
+      (property) =>
+        property.required &&
+        property.type !== 'title' &&
+        property.semantics.defaultValue === undefined,
+    );
+    if (blocking) {
+      throw new Error(
+        `A Button cannot create records here until "${blocking.name}" has a default value`,
+      );
+    }
+    return {
+      key,
+      name: input.name,
+      type: input.type,
+      label: input.name,
+      actions: [
+        {
+          id: DATABASE_BUTTON_FIRST_ACTION_ID,
+          kind: 'create_record',
+          sourceId: input.source.id,
+          values: { [title.id]: SEEDED_BUTTON_RECORD_TITLE },
+          body: '',
+        },
+      ],
     };
   }
   if (input.type === 'select' || input.type === 'multi_select') {

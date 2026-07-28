@@ -65,6 +65,7 @@ export function DatabaseWorkspaceViewRenderer({
     setComputedPropertyId,
     setUniqueIdPropertyId,
     setPlacePropertyId,
+    setButtonPropertyId,
     openSelectOptions,
     setConversionPropertyId,
     setPropertySortTargetId,
@@ -388,6 +389,7 @@ export function DatabaseWorkspaceViewRenderer({
           onConfigureComputedProperty={(property) => setComputedPropertyId(property.id)}
           onConfigureUniqueIdProperty={(property) => setUniqueIdPropertyId(property.id)}
           onConfigurePlaceProperty={(property) => setPlacePropertyId(property.id)}
+          onConfigureButtonProperty={(property) => setButtonPropertyId(property.id)}
           onConfigureSelectProperty={openSelectOptions}
           onConvertProperty={(property) => setConversionPropertyId(property.id)}
           onOpenPropertySort={(property) => {
