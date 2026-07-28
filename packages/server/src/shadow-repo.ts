@@ -376,6 +376,21 @@ export async function sweepLegacyShadowRefs(shadow: ShadowHandle): Promise<numbe
  *
  * @param branch - Project branch name (e.g. 'main', 'feature/xyz'). When omitted, defaults to 'main'.
  */
+/**
+ * Tree SHA each per-writer WIP index file is known to hold, keyed by
+ * `gitDir\0ref`. Lets `commitWipInner` keep git's stat cache alive across
+ * commits instead of re-seeding (and so re-hashing the whole work tree) every
+ * time. In-memory only: a fresh process, a moved ref, a missing index file, or
+ * any error all fall back to seeding, so the cache can only ever save work — it
+ * is never the thing that decides what gets committed.
+ */
+const wipIndexTrees = new Map<string, string>();
+
+/** Test seam: forget every cached index tree so a case can assert cold behaviour. */
+export function resetWipIndexCacheForTests(): void {
+  wipIndexTrees.clear();
+}
+
 export interface CommitWipOptions {
   /**
    * Explicit commit timestamp (any git-parseable date, e.g. ISO 8601), applied
@@ -418,15 +433,36 @@ async function commitWipInner(
 ): Promise<string> {
   const tmpIndex = resolve(shadow.gitDir, `index-wip-${writer.id}`);
   const ref = `refs/wip/${branch}/${writer.id}`;
+  const indexKey = `${shadow.gitDir}\0${ref}`;
   const sg = shadowGit(shadow);
   const gitPathspecs = shadowAddPathspecs(contentRoot);
 
   try {
-    // Seed index from current ref state (if exists)
+    // Seed index from current ref state (if exists).
+    //
+    // `read-tree` writes a tree's entries with EMPTY stat data, so the very next
+    // `add --all` has to open and hash every file in the work tree to decide
+    // what changed — on a repo-sized content dir that is the entire cost of a
+    // WIP commit (~650ms here, vs ~20ms against a stat-warm index). So seed only
+    // when the index is not already known to hold exactly this ref's tree:
+    // after a successful write-tree below, it does, and re-seeding would throw
+    // away the stat cache that add-ing just paid to populate.
+    //
+    // Correctness rests on the cached tree matching `${ref}^{tree}`: any writer
+    // that advances the ref (another process, a branch switch, a park/restore)
+    // moves the tree out from under the cache and we fall back to seeding.
+    // `#invalidate` on every failure keeps a half-applied index from being
+    // trusted.
     try {
       const refTree = (await sg.raw('rev-parse', `${ref}^{tree}`)).trim();
-      await sg.env({ GIT_DIR: shadow.gitDir, GIT_INDEX_FILE: tmpIndex }).raw('read-tree', refTree);
+      if (wipIndexTrees.get(indexKey) !== refTree || !existsSync(tmpIndex)) {
+        await sg
+          .env({ GIT_DIR: shadow.gitDir, GIT_INDEX_FILE: tmpIndex })
+          .raw('read-tree', refTree);
+        wipIndexTrees.delete(indexKey);
+      }
     } catch (e) {
+      wipIndexTrees.delete(indexKey);
       const msg = e instanceof Error ? e.message : String(e);
       if (msg.includes('unknown revision') || msg.includes('bad revision')) {
         // Expected: first commit on this ref — start fresh
@@ -460,6 +496,9 @@ async function commitWipInner(
       }
       // Expected: no parent — first commit on this ref
     }
+    // The index now holds exactly `treeSha` with a warm stat cache, and the ref
+    // is about to point at a commit for it — record that so the next call can
+    // skip re-seeding. Set only after the ref actually moves, below.
 
     // Create commit with writer identity
     const args = ['commit-tree', treeSha, '-m', message];
@@ -479,13 +518,18 @@ async function commitWipInner(
     const commitSha = (await sg.env(commitEnv).raw(...args)).trim();
 
     await sg.raw('update-ref', ref, commitSha);
+    wipIndexTrees.set(indexKey, treeSha);
     return commitSha;
-  } finally {
+  } catch (error) {
+    // The index may be half-staged; never let the next call trust it. Drop the
+    // file too so a corrupt index cannot outlive the process that made it.
+    wipIndexTrees.delete(indexKey);
     try {
       rmSync(tmpIndex);
     } catch {
       // ignore cleanup failure
     }
+    throw error;
   }
 }
 
