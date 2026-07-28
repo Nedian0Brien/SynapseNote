@@ -48,13 +48,23 @@ export interface DatabaseRowMenu {
   anchor: HTMLButtonElement;
 }
 
-export type DatabaseSelectProperty = Extract<DatabaseProperty, { type: 'select' | 'multi_select' }>;
+/**
+ * Properties configured through the shared option surface. `status` belongs
+ * here because its options are the same options with a group attached — the
+ * core option engine treats all three alike.
+ */
+export type DatabaseSelectProperty = Extract<
+  DatabaseProperty,
+  { type: 'select' | 'multi_select' | 'status' }
+>;
 export type LoadStatus = 'idle' | 'loading' | 'success' | 'error';
 
 export function isDatabaseSelectProperty(
   property: DatabaseProperty,
 ): property is DatabaseSelectProperty {
-  return property.type === 'select' || property.type === 'multi_select';
+  return (
+    property.type === 'select' || property.type === 'multi_select' || property.type === 'status'
+  );
 }
 
 export const DATABASE_EXPORT_RECORD_LIMIT = 10_000;

@@ -71,12 +71,12 @@ export interface InlineDatabaseBlockProps {
   ) => void;
   onCreateInlineSelectOption: (
     record: ProjectedDatabaseRecord,
-    property: Extract<DatabaseProperty, { type: 'select' | 'multi_select' }>,
+    property: Extract<DatabaseProperty, { type: 'select' | 'multi_select' | 'status' }>,
     name: string,
     selectedOptionIds: readonly string[],
   ) => boolean;
   onReorderInlineSelectOptions: (
-    property: Extract<DatabaseProperty, { type: 'select' | 'multi_select' }>,
+    property: Extract<DatabaseProperty, { type: 'select' | 'multi_select' | 'status' }>,
     optionIds: readonly string[],
   ) => boolean;
   onCreateInlineRecord: (title: string) => void;

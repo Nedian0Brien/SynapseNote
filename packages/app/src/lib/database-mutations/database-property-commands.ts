@@ -56,6 +56,7 @@ export const DATABASE_ADDABLE_PROPERTY_GROUPS = [
       'text',
       'number',
       'select',
+      'status',
       'multi_select',
       'date',
       'person',

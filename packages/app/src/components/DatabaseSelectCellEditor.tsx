@@ -8,7 +8,10 @@ import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover'
 import { cn } from '@/lib/utils';
 import { databaseInlineOptionColorClass, multiSelectDraftValues } from './database-table-utils';
 
-type DatabaseSelectCellProperty = Extract<DatabaseProperty, { type: 'select' | 'multi_select' }>;
+type DatabaseSelectCellProperty = Extract<
+  DatabaseProperty,
+  { type: 'select' | 'multi_select' | 'status' }
+>;
 
 function selectedOptionIds(property: DatabaseSelectCellProperty, draft: string): string[] {
   return property.type === 'select' ? (draft === '' ? [] : [draft]) : multiSelectDraftValues(draft);

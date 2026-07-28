@@ -35,7 +35,7 @@ export function createInlineDatabaseOptionCommands({
 }: InlineDatabaseOptionCommandsInput) {
   const createAndAssignInlineSelectOption = (
     record: ProjectedDatabaseRecord,
-    property: Extract<DatabaseProperty, { type: 'select' | 'multi_select' }>,
+    property: Extract<DatabaseProperty, { type: 'select' | 'multi_select' | 'status' }>,
     name: string,
     selectedOptionIds: readonly string[],
   ): boolean => {
@@ -58,7 +58,7 @@ export function createInlineDatabaseOptionCommands({
   };
 
   const reorderInlineSelectOptions = (
-    property: Extract<DatabaseProperty, { type: 'select' | 'multi_select' }>,
+    property: Extract<DatabaseProperty, { type: 'select' | 'multi_select' | 'status' }>,
     optionIds: readonly string[],
   ): boolean => {
     if (!isReady || !linkedSource || !linkedDatabase) return false;

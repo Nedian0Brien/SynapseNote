@@ -254,7 +254,7 @@ export function DatabaseTable({
 
   const createSelectOption = (
     record: ProjectedDatabaseRecord,
-    property: Extract<DatabaseProperty, { type: 'select' | 'multi_select' }>,
+    property: Extract<DatabaseProperty, { type: 'select' | 'multi_select' | 'status' }>,
     name: string,
     selectedOptionIds: readonly string[],
   ): boolean => {

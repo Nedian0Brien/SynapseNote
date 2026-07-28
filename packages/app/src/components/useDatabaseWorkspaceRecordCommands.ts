@@ -188,7 +188,7 @@ export function useDatabaseWorkspaceRecordCommands(context: DatabaseWorkspaceCon
 
   const createAndAssignSelectOption = (
     record: ProjectedDatabaseRecord,
-    property: Extract<DatabaseProperty, { type: 'select' | 'multi_select' }>,
+    property: Extract<DatabaseProperty, { type: 'select' | 'multi_select' | 'status' }>,
     name: string,
     selectedOptionIds: readonly string[],
   ): boolean => {
@@ -216,7 +216,7 @@ export function useDatabaseWorkspaceRecordCommands(context: DatabaseWorkspaceCon
   };
 
   const reorderSelectOptions = (
-    property: Extract<DatabaseProperty, { type: 'select' | 'multi_select' }>,
+    property: Extract<DatabaseProperty, { type: 'select' | 'multi_select' | 'status' }>,
     optionIds: readonly string[],
   ): boolean => {
     if (!description?.source || mutationStatus !== 'idle') return false;

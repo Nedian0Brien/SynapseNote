@@ -315,3 +315,114 @@ describe('Select option lifecycle preview', () => {
     ).toThrow('every stable option ID exactly once');
   });
 });
+
+const statusDefinition = {
+  version: 1,
+  id: 'db_work',
+  key: 'work',
+  name: 'Work',
+  contract: {
+    purpose: 'Track work',
+    canonicality: 'canonical',
+    vocabulary: ['work'],
+    freshness: { expectation: 'realtime', maxAgeSeconds: 60 },
+    sensitivity: 'internal',
+  },
+  sources: [
+    {
+      id: 'ds_work',
+      key: 'work',
+      name: 'Work',
+      recordMeaning: 'One item',
+      folder: 'work',
+      properties: [
+        { id: 'prop_title', key: 'title', name: 'Title', type: 'title', required: true },
+        {
+          id: 'prop_stage',
+          key: 'stage',
+          name: 'Stage',
+          type: 'status',
+          groups: [
+            { id: 'stg_todo', key: 'todo', name: 'To-do', category: 'todo' },
+            { id: 'stg_doing', key: 'in_progress', name: 'In progress', category: 'in_progress' },
+            { id: 'stg_done', key: 'complete', name: 'Complete', category: 'complete' },
+          ],
+          options: [
+            { id: 'opt_new', key: 'not_started', name: 'Not started', groupId: 'stg_todo' },
+            { id: 'opt_extra', key: 'blocked', name: 'Blocked', groupId: 'stg_todo' },
+            { id: 'opt_doing', key: 'in_progress', name: 'In progress', groupId: 'stg_doing' },
+            { id: 'opt_done', key: 'done', name: 'Done', groupId: 'stg_done' },
+          ],
+        },
+      ],
+    },
+  ],
+  views: [],
+} as unknown as DatabaseDefinition;
+
+/**
+ * Status options are the same options with a group attached, so the engine
+ * treats them alike — except that the manifest requires every one of the three
+ * fixed groups to keep an option, which delete and merge can both violate.
+ */
+describe('status options', () => {
+  test('renames a status option like any other', () => {
+    const preview = previewDatabaseSelectOptionChange({
+      definition: statusDefinition,
+      sourceId: 'ds_work',
+      propertyId: 'prop_stage',
+      records: [],
+      change: { kind: 'rename', optionId: 'opt_done', name: 'Shipped' },
+    });
+    expect(preview.canApply).toBe(true);
+    const property = preview.definition.sources[0]?.properties[1];
+    const options = property && 'options' in property ? property.options : [];
+    expect(options.find((option) => option.id === 'opt_done')?.name).toBe('Shipped');
+  });
+
+  test('deletes an option while its group keeps another', () => {
+    const preview = previewDatabaseSelectOptionChange({
+      definition: statusDefinition,
+      sourceId: 'ds_work',
+      propertyId: 'prop_stage',
+      records: [],
+      change: { kind: 'delete', optionId: 'opt_extra' },
+    });
+    expect(preview.canApply).toBe(true);
+  });
+
+  test('refuses to empty a status group by deleting its last option', () => {
+    const preview = previewDatabaseSelectOptionChange({
+      definition: statusDefinition,
+      sourceId: 'ds_work',
+      propertyId: 'prop_stage',
+      records: [],
+      change: { kind: 'delete', optionId: 'opt_done' },
+    });
+    expect(preview.canApply).toBe(false);
+    expect(preview.conflicts.map((conflict) => conflict.code)).toContain('last_group_option');
+  });
+
+  test('refuses to empty a status group by merging its last option away', () => {
+    const preview = previewDatabaseSelectOptionChange({
+      definition: statusDefinition,
+      sourceId: 'ds_work',
+      propertyId: 'prop_stage',
+      records: [],
+      change: { kind: 'merge', sourceOptionId: 'opt_doing', targetOptionId: 'opt_done' },
+    });
+    expect(preview.canApply).toBe(false);
+    expect(preview.conflicts.map((conflict) => conflict.code)).toContain('last_group_option');
+  });
+
+  test('leaves a Select property free of the group rule', () => {
+    const preview = previewDatabaseSelectOptionChange({
+      definition,
+      sourceId: 'ds_tasks',
+      propertyId: 'prop_status',
+      records: [],
+      change: { kind: 'rename', optionId: 'opt_todo', name: 'Queued' },
+    });
+    expect(preview.conflicts.map((conflict) => conflict.code)).not.toContain('last_group_option');
+  });
+});

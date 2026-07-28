@@ -14,7 +14,7 @@ import { databaseDraftBase } from './database-desired-state-base';
 export function createDatabaseSelectOptionChangeDesiredState(input: {
   database: DatabaseDefinition;
   source: DatabaseSource;
-  property: Extract<DatabaseProperty, { type: 'select' | 'multi_select' }>;
+  property: Extract<DatabaseProperty, { type: 'select' | 'multi_select' | 'status' }>;
   records: readonly ProjectedDatabaseRecord[];
   recordsComplete: boolean;
   change: DatabaseSelectOptionChange;
@@ -22,8 +22,12 @@ export function createDatabaseSelectOptionChangeDesiredState(input: {
   preview: DatabaseSelectOptionPreview;
   desiredState: DatabaseDesiredStateDraftInput;
 } {
-  if (input.property.type !== 'select' && input.property.type !== 'multi_select') {
-    throw new Error('Option lifecycle changes require a Select or Multi-select property');
+  if (
+    input.property.type !== 'select' &&
+    input.property.type !== 'multi_select' &&
+    input.property.type !== 'status'
+  ) {
+    throw new Error('Option lifecycle changes require a Select, Multi-select, or Status property');
   }
   if (
     !input.source.properties.some(
@@ -121,7 +125,7 @@ function databaseSelectOptionKeyFromName(name: string, existingKeys: readonly st
 export function createDatabaseSelectOptionCreateDesiredState(input: {
   database: DatabaseDefinition;
   source: DatabaseSource;
-  property: Extract<DatabaseProperty, { type: 'select' | 'multi_select' }>;
+  property: Extract<DatabaseProperty, { type: 'select' | 'multi_select' | 'status' }>;
   record: ProjectedDatabaseRecord;
   selectedOptionIds: readonly string[];
   name: string;

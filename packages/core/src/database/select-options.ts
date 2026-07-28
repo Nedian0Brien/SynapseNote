@@ -1,7 +1,29 @@
 import type { DatabaseValue } from './record.ts';
 import type { DatabaseDefinition, DatabaseOption, DatabaseProperty } from './schema.ts';
 
-type OptionProperty = Extract<DatabaseProperty, { type: 'select' | 'multi_select' }>;
+/**
+ * Properties whose values are chosen from a stable option list. `status` joins
+ * `select`/`multi_select` here because its options ARE these options — it only
+ * adds a `groupId` on each, and a rule that no group may be emptied.
+ */
+type OptionProperty = Extract<DatabaseProperty, { type: 'select' | 'multi_select' | 'status' }>;
+
+/** True when this property partitions its options into fixed status groups. */
+function isStatusProperty(
+  property: OptionProperty,
+): property is Extract<DatabaseProperty, { type: 'status' }> {
+  return property.type === 'status';
+}
+
+/** Options left in `option`'s group once it is gone. */
+function siblingsInGroup(property: OptionProperty, optionId: string): number {
+  if (!isStatusProperty(property)) return Number.POSITIVE_INFINITY;
+  const group = property.options.find((candidate) => candidate.id === optionId)?.groupId;
+  if (group === undefined) return Number.POSITIVE_INFINITY;
+  return property.options.filter(
+    (candidate) => candidate.groupId === group && candidate.id !== optionId,
+  ).length;
+}
 
 export type DatabaseSelectOptionChange =
   | { kind: 'rename'; optionId: string; name: string }
@@ -34,6 +56,7 @@ export interface DatabaseSelectOptionConflict {
     | 'delete_default_in_use'
     | 'delete_view_in_use'
     | 'last_active_option'
+    | 'last_group_option'
     | 'merge_target_archived';
   message: string;
   recordIds?: readonly string[];
@@ -60,8 +83,12 @@ function requireSelectProperty(
   const propertyIndex = source.properties.findIndex((property) => property.id === propertyId);
   const property = source.properties[propertyIndex];
   if (!property) throw new Error(`Unknown database property "${propertyId}"`);
-  if (property.type !== 'select' && property.type !== 'multi_select') {
-    throw new Error(`Property "${propertyId}" is not Select or Multi-select`);
+  if (
+    property.type !== 'select' &&
+    property.type !== 'multi_select' &&
+    property.type !== 'status'
+  ) {
+    throw new Error(`Property "${propertyId}" is not Select, Multi-select, or Status`);
   }
   return { sourceIndex, propertyIndex, property };
 }
@@ -190,7 +217,9 @@ export function previewDatabaseSelectOptionChange(input: {
   if (
     !nextSource ||
     !nextPropertyCandidate ||
-    (nextPropertyCandidate.type !== 'select' && nextPropertyCandidate.type !== 'multi_select')
+    (nextPropertyCandidate.type !== 'select' &&
+      nextPropertyCandidate.type !== 'multi_select' &&
+      nextPropertyCandidate.type !== 'status')
   ) {
     throw new Error('Select option preview could not clone the target property');
   }
@@ -265,6 +294,12 @@ export function previewDatabaseSelectOptionChange(input: {
       ) as typeof nextProperty.semantics.defaultValue;
       defaultChanged = true;
     }
+    if (siblingsInGroup(currentProperty, sourceOption.id) === 0) {
+      conflicts.push({
+        code: 'last_group_option',
+        message: `Status option "${sourceOption.name}" is the last one in its group`,
+      });
+    }
     nextProperty.options = nextProperty.options.filter((option) => option.id !== sourceOption.id);
   } else {
     const option = requireOption(currentProperty, input.change.optionId);
@@ -326,6 +361,16 @@ export function previewDatabaseSelectOptionChange(input: {
         conflicts.push({
           code: 'last_active_option',
           message: 'A Select property must retain at least one active option',
+        });
+      }
+      // A Status board has three fixed groups and the manifest requires each to
+      // hold at least one option, so emptying one would produce a schema the
+      // server refuses. Report it here, where the user can still choose
+      // differently, rather than at commit.
+      if (siblingsInGroup(currentProperty, option.id) === 0) {
+        conflicts.push({
+          code: 'last_group_option',
+          message: `Status option "${option.name}" is the last one in its group`,
         });
       }
       nextProperty.options = nextProperty.options.filter((candidate) => candidate.id !== option.id);
