@@ -114,6 +114,14 @@ const DEFAULT_FS: DatabaseMarkdownTableWriterFs = {
   readdir: (path) => readdir(path, { withFileTypes: true }),
 };
 
+/** A file a Markdown-table transaction wrote, as it was left on disk. */
+export interface DatabaseMarkdownTableWrite {
+  /** Content-dir relative path. */
+  path: string;
+  /** Content written, or `null` when the transaction removed the file. */
+  markdown: string | null;
+}
+
 export interface CreateDatabaseMarkdownTableWriterOptions {
   projectDir: string;
   contentDir: string;
@@ -127,7 +135,14 @@ export interface CreateDatabaseMarkdownTableWriterOptions {
   allowExternalContentDir?: boolean;
   databaseStore: DatabaseStore;
   databaseRecordIndex?: DatabaseRecordIndex;
-  refreshDatabaseIndex?: () => Promise<unknown>;
+  /**
+   * Make the index current after a commit. Receives the files this
+   * transaction wrote (content-dir relative) when the caller knows them, so
+   * the host can refresh incrementally instead of rebuilding the whole index;
+   * called with no argument when the write also moved the manifest and the
+   * store itself has to be re-read.
+   */
+  refreshDatabaseIndex?: (writes?: readonly DatabaseMarkdownTableWrite[]) => Promise<unknown>;
   fs?: Partial<DatabaseMarkdownTableWriterFs>;
   generateUuid?: () => string;
   journal?: DatabaseMarkdownTableJournal;
@@ -490,7 +505,9 @@ export class DatabaseMarkdownTableWriter {
   readonly #contentDir: string;
   readonly #allowExternalContentDir: boolean;
   readonly #databaseStore: DatabaseStore;
-  readonly #refreshDatabaseIndex: () => Promise<unknown>;
+  readonly #refreshDatabaseIndex: (
+    writes?: readonly DatabaseMarkdownTableWrite[],
+  ) => Promise<unknown>;
   readonly #fs: DatabaseMarkdownTableWriterFs;
   readonly #generateUuid: () => string;
   readonly #lockPath: string;
@@ -1250,7 +1267,10 @@ export class DatabaseMarkdownTableWriter {
       await this.#atomicWrite(documentAbsolutePath, afterDocument);
       await this.#assertOwnerStillCurrent(resolved);
       await this.#atomicWrite(resolved.ownerAbsolutePath, afterOwner);
-      await this.#refreshDatabaseIndex();
+      await this.#refreshDatabaseIndex([
+        { path: row.documentPath, markdown: afterDocument },
+        { path: storage.owner.path, markdown: afterOwner },
+      ]);
       await this.#verifyCommittedFiles([
         { path: storage.owner.path, afterSha256: afterOwnerRevision.sha256 },
         { path: row.documentPath, afterSha256: documentAfterRevision.sha256 },
@@ -1943,7 +1963,10 @@ export class DatabaseMarkdownTableWriter {
       await this.#atomicWrite(documentAbsolutePath, ensured.markdown);
       await this.#assertOwnerStillCurrent(resolved);
       await this.#atomicWrite(resolved.ownerAbsolutePath, afterOwner);
-      await this.#refreshDatabaseIndex();
+      await this.#refreshDatabaseIndex([
+        { path: input.documentPath, markdown: ensured.markdown },
+        { path: sourceStorage(resolved.source).owner.path, markdown: afterOwner },
+      ]);
       await this.#verifyCommittedFiles([
         { path: input.documentPath, afterSha256: documentRevision.sha256 },
         { path: sourceStorage(resolved.source).owner.path, afterSha256: sha256(afterOwner) },

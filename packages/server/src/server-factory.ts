@@ -693,7 +693,18 @@ export function createServer(options: ServerOptions): ServerInstance {
     allowExternalContentDir: ephemeral,
     databaseStore,
     databaseRecordIndex,
-    refreshDatabaseIndex: () => databaseIndexCoordinator.refresh('transaction'),
+    // A write that names the files it touched refreshes the index
+    // incrementally; one that moved the manifest still rebuilds, because the
+    // store itself changed rather than a row in it.
+    refreshDatabaseIndex: (writes) =>
+      writes && writes.length > 0
+        ? databaseIndexCoordinator.applyTransactionWrites(
+            writes.map((write) => ({
+              absolutePath: resolve(contentDir, write.path),
+              markdown: write.markdown,
+            })),
+          )
+        : databaseIndexCoordinator.refresh('transaction'),
   });
   const databaseMigrationGate = createDatabaseMigrationGate();
   const databaseDataPlane = createDatabaseDataPlane({

@@ -44,6 +44,14 @@ export type DatabaseIndexChangeEvent =
 
 export type DatabaseIndexChangeListener = (event: DatabaseIndexChangeEvent) => void;
 
+/** A file a canonical transaction just wrote, as the writer left it on disk. */
+export interface DatabaseIndexTransactionWrite {
+  /** Absolute path of the written file. */
+  absolutePath: string;
+  /** Content the transaction wrote, or `null` when it removed the file. */
+  markdown: string | null;
+}
+
 /**
  * Serializes canonical index rebuilds and preserves file events that arrive
  * while a rebuild is reading disk. Repeated refresh requests are coalesced into
@@ -109,6 +117,47 @@ export class DatabaseIndexCoordinator {
     }
     this.#changeListeners.add(listener);
     return () => this.#changeListeners.delete(listener);
+  }
+
+  /**
+   * Make the index reflect the files a canonical transaction just wrote.
+   *
+   * `refresh('transaction')` used to be the only way to do this, and it is a
+   * full `rebuild()`: a re-scan of the whole content tree plus a re-read of
+   * every Markdown file in it, so `[[wikilink]]` targets resolve globally.
+   * A single-row write paid that twice — once for the explicit refresh, and
+   * again because the watcher events for the writer's own files re-armed the
+   * drain loop — which is where a one-row insert's multi-second latency came
+   * from. The writer knows exactly which files it wrote, so route them through
+   * the same incremental path the watcher already uses for external edits.
+   *
+   * When a canonical rebuild is already in flight, await that instead: it
+   * reads from disk, these files are already written, so it subsumes them.
+   * That preserves the guarantee callers depend on — once this resolves, the
+   * index reflects the write.
+   */
+  async applyTransactionWrites(writes: readonly DatabaseIndexTransactionWrite[]): Promise<void> {
+    const active = this.#activeRefresh;
+    if (active !== null) {
+      await active.catch(() => undefined);
+      return;
+    }
+    for (const write of writes) {
+      const docName = this.#docName(write.absolutePath);
+      this.#applyAndPublishDiskEvent(
+        write.markdown === null
+          ? { kind: 'delete', path: write.absolutePath, docName }
+          : { kind: 'update', path: write.absolutePath, docName, content: write.markdown },
+      );
+    }
+  }
+
+  /** Watcher-shaped doc name: content-relative path without its extension. */
+  #docName(absolutePath: string): string {
+    const relativePath = relative(resolve(this.#contentDir), resolve(absolutePath))
+      .split(sep)
+      .join('/');
+    return relativePath.replace(/\.(?:md|mdx)$/i, '');
   }
 
   refresh(reason: DatabaseIndexRefreshReason): Promise<DatabaseRecordIndexRebuildResult> {
