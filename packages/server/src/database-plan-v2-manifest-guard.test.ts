@@ -116,7 +116,7 @@ async function fixture(extraStored = false) {
     now: () => new Date('2026-07-28T00:00:00.000Z'),
     generateUuid: () => `${String(++counter).padStart(8, '0')}-0000-4000-8000-000000000000`,
   });
-  return { engine, definition };
+  return { engine, definition, contentDir };
 }
 
 /** Rebuild the wire-shaped desired state the app posts, from a definition. */
@@ -178,7 +178,7 @@ describe('v2 manifest update guard', () => {
     expect(plan.committable).toBe(true);
   });
 
-  test('refuses adding a stored property until the table boundary handles it', async () => {
+  test('reshapes the owner table when a stored property is added', async () => {
     const { engine, definition } = await fixture();
     const state = desiredStateFrom(definition);
     (state.sources as { properties: unknown[] }[])[0]?.properties.push({
@@ -188,16 +188,28 @@ describe('v2 manifest update guard', () => {
     });
 
     const plan = engine.createPlan(engine.createDraft(state).id);
-    expect(plan.conflicts).toContainEqual(
-      expect.objectContaining({
-        code: 'source_record_migration_required',
-        targetId: SOURCE_ID,
-      }),
-    );
-    expect(plan.committable).toBe(false);
+    expect(plan.conflicts).not.toContainEqual(columnConflict);
+    expect(plan.committable).toBe(true);
+
+    // The manifest and the owner table must move in the SAME plan, or a commit
+    // could land one without the other and break the marker/manifest binding.
+    const owner = plan.diff.manifests.find((entry) => entry.path === 'content/tasks.md');
+    const manifest = plan.diff.manifests.find((entry) => entry.path.endsWith('tasks.yml'));
+    expect(manifest?.action).toBe('update');
+    expect(owner?.action).toBe('update');
+    expect(owner?.after).toContain('| Title | Notes |');
+    // The added property's ID is minted during planning, so pin the shape:
+    // Title keeps column 0 and exactly one column joins it.
+    const nextColumns = owner?.after?.match(/columns=(.+)/)?.[1]?.split(',') ?? [];
+    expect(nextColumns).toHaveLength(2);
+    expect(nextColumns[0]).toBe(TITLE_ID);
+    // The manifest must agree with the marker, or materialization reports a
+    // storage_mismatch on the very next read.
+    expect(manifest?.after).toContain(`- ${nextColumns[0]}`);
+    expect(manifest?.after).toContain(`- ${nextColumns[1]}`);
   });
 
-  test('refuses removing a stored property', async () => {
+  test('reshapes the owner table when a stored property is removed', async () => {
     // Seeded WITH the notes column so the removal is a real change on disk.
     const { engine, definition } = await fixture(true);
     const state = desiredStateFrom(definition);
@@ -208,7 +220,26 @@ describe('v2 manifest update guard', () => {
     if (view) view.projection.propertyIds = [TITLE_ID];
 
     const plan = engine.createPlan(engine.createDraft(state).id);
+    expect(plan.conflicts).not.toContainEqual(columnConflict);
+    const owner = plan.diff.manifests.find((entry) => entry.path === 'content/tasks.md');
+    expect(owner?.after).toContain(`columns=${TITLE_ID}`);
+    expect(owner?.after).not.toContain(NOTES_ID);
+    expect(owner?.after).toContain('| Title |');
+  });
+
+  test('refuses a column change when the owner table cannot be parsed', async () => {
+    const { engine, definition, contentDir } = await fixture();
+    writeFileSync(join(contentDir, 'tasks.md'), 'no owner marker here\n');
+    const state = desiredStateFrom(definition);
+    (state.sources as { properties: unknown[] }[])[0]?.properties.push({
+      key: 'notes',
+      name: 'Notes',
+      type: 'text',
+    });
+
+    const plan = engine.createPlan(engine.createDraft(state).id);
     expect(plan.conflicts).toContainEqual(columnConflict);
+    expect(plan.committable).toBe(false);
   });
 
   test('allows renaming a stored property, which keeps the same column', async () => {

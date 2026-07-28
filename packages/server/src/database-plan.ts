@@ -35,6 +35,8 @@ import {
   findDatabasePersonByReference,
   isSafeDatabaseAssetPath,
   isSafeDatabaseExternalFileUrl,
+  parseDatabaseMarkdownOwner,
+  reshapeDatabaseMarkdownOwnerColumns,
   serializeDatabaseManifestYaml,
   serializeDatabaseMarkdownOwnerMarker,
   updateDatabaseManifestYaml,
@@ -2554,23 +2556,83 @@ export class DatabasePlanEngine {
     // (clients edit `properties` and leave `storage` alone), so comparing the
     // stored field against itself would report "no column change" for exactly
     // the edit that adds one.
+    //
+    // A real column change reshapes the owner table in the SAME plan as the
+    // manifest, so both files move together or neither does.
     if (byId?.version === 2 && manifestAction === 'update') {
-      const columnChanges = definition.sources.filter((source) => {
+      for (const source of definition.sources) {
         const current = byId.sources.find((candidate) => candidate.id === source.id);
-        if (!current) return true;
-        if (current.storage?.kind !== 'markdown_table') return false;
-        return (
-          databaseStoredPropertyIds(current).join('\0') !==
-          databaseStoredPropertyIds(source).join('\0')
+        const storage = source.storage;
+        if (!current || current.storage?.kind !== 'markdown_table') continue;
+        const nextColumns = databaseStoredPropertyIds(source);
+        if (databaseStoredPropertyIds(current).join('\0') === nextColumns.join('\0')) continue;
+        if (!storage || storage.kind !== 'markdown_table') {
+          conflicts.push({
+            code: 'source_record_migration_required',
+            message: `Source "${source.id}" dropped its owner-table storage in a column change`,
+            targetId: source.id,
+          });
+          continue;
+        }
+        if (!this.#projectDir || !this.#contentDir) {
+          conflicts.push({
+            code: 'planning_io_unavailable',
+            message: 'A V2 column change requires a project-scoped content directory',
+            targetId: source.id,
+          });
+          continue;
+        }
+        const ownerPath = relative(this.#projectDir, resolve(this.#contentDir, storage.owner.path))
+          .split(sep)
+          .join('/');
+        let before: string;
+        try {
+          before = this.#readFile(resolve(this.#projectDir, ownerPath));
+        } catch {
+          conflicts.push({
+            code: 'planning_io_unavailable',
+            message: `V2 owner table "${storage.owner.path}" could not be read for a column change`,
+            targetId: source.id,
+          });
+          continue;
+        }
+        const parsed = parseDatabaseMarkdownOwner(before);
+        if (!parsed.ok) {
+          conflicts.push({
+            code: 'source_record_migration_required',
+            message: `V2 owner table "${storage.owner.path}" is not parseable (${parsed.code}); repair it before changing columns`,
+            targetId: source.id,
+          });
+          continue;
+        }
+        const propertyById = new Map(
+          source.properties.map((property) => [property.id, property] as const),
         );
-      });
-      for (const source of columnChanges) {
-        conflicts.push({
-          code: 'source_record_migration_required',
-          message:
-            'V2 owner-table column changes require the Markdown table transaction boundary; the v1 manifest writer is disabled',
-          targetId: source.id,
-        });
+        try {
+          manifestDiff.push({
+            path: ownerPath,
+            before,
+            after: reshapeDatabaseMarkdownOwnerColumns(
+              before,
+              parsed.owner,
+              nextColumns.map((propertyId) => ({
+                propertyId,
+                header: encodeDatabaseMarkdownCellText(
+                  (propertyById.get(propertyId)?.name ?? propertyId).replace(/[\r\n]+/gu, ' '),
+                ),
+              })),
+            ),
+            action: 'update',
+          });
+        } catch (error) {
+          conflicts.push({
+            code: 'source_record_migration_required',
+            message: `V2 owner table "${storage.owner.path}" could not absorb the column change: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+            targetId: source.id,
+          });
+        }
       }
     }
     if (definition.version === 2 && manifestAction === 'create') {
