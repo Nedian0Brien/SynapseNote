@@ -15,6 +15,7 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import { Schema } from '@tiptap/pm/model';
 import { EditorState, type Plugin } from '@tiptap/pm/state';
 import type { DecorationSet } from '@tiptap/pm/view';
+import { LARGE_DOC_CHAR_THRESHOLD } from '@/components/EditorActivityPool';
 import {
   __resetFirstEmitForTesting,
   chunkWrapperDecorationKey,
@@ -83,9 +84,12 @@ function decorationSpecs(state: EditorState): DecorationSpec[] | null {
 }
 
 function makeState(doc: ReturnType<typeof schema.node>): EditorState {
+  // These cases pin decoration SHAPE, so they opt out of the size gate rather
+  // than build a document past the large-document threshold. The gate itself
+  // is covered by its own describe block below.
   return EditorState.create({
     doc,
-    plugins: [chunkWrapperDecorationPlugin()],
+    plugins: [chunkWrapperDecorationPlugin({ minDocSize: 0 })],
   });
 }
 
@@ -327,5 +331,36 @@ describe('chunkWrapperDecorationPlugin — ok/render/cv-auto-skip mark emission'
     __resetFirstEmitForTesting();
     decorationSpecs(makeState(doc));
     expect(performance.getEntriesByName('ok/render/cv-auto-skip').length).toBe(2);
+  });
+});
+
+describe('chunkWrapperDecorationPlugin — large-document gate', () => {
+  /** A doc whose ProseMirror content size clears `size`. */
+  function docOfSize(size: number): ReturnType<typeof schema.node> {
+    return schema.node('doc', null, [
+      schema.node('paragraph', null, [schema.text('x'.repeat(size))]),
+    ]);
+  }
+
+  test('an ordinary document is left alone', () => {
+    // content-visibility only pays off past the large-document threshold, and
+    // a skipped block repaints on focus — which reads as text disappearing
+    // when the caret leaves its paragraph. Ordinary docs must not opt in.
+    const state = EditorState.create({
+      doc: docOfSize(200),
+      plugins: [chunkWrapperDecorationPlugin()],
+    });
+    const plugin = state.plugins[0] as Plugin;
+    expect(plugin.props.decorations?.call(plugin, state)).toBeNull();
+  });
+
+  test('a document past the threshold is chunked', () => {
+    const state = EditorState.create({
+      doc: docOfSize(LARGE_DOC_CHAR_THRESHOLD + 10),
+      plugins: [chunkWrapperDecorationPlugin()],
+    });
+    const plugin = state.plugins[0] as Plugin;
+    const set = plugin.props.decorations?.call(plugin, state) as DecorationSet | null | undefined;
+    expect(set?.find().length).toBe(1);
   });
 });

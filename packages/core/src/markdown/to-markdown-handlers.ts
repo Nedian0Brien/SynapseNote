@@ -252,6 +252,10 @@ export const toMarkdownHandlers = {
     if (state.stack.includes('tableCell') || state.stack.includes('okAtxHeading')) {
       return '<br />';
     }
+    // A `soft` break is ProseMirror's linebreak replacement for a newline that
+    // was a plain soft wrap in the source — re-emit it as that newline, not as
+    // a hard break the author never wrote.
+    if (node.data?.sourceStyle === 'soft') return '\n';
     if (node.data?.sourceStyle === 'backslash') return '\\\n';
     return '  \n';
   },

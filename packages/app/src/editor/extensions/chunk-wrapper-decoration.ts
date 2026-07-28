@@ -89,6 +89,7 @@
 
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
+import { LARGE_DOC_CHAR_THRESHOLD } from '@/components/EditorActivityPool';
 import { mark } from '@/lib/perf';
 
 export const chunkWrapperDecorationKey = new PluginKey('chunkWrapperDecoration');
@@ -123,7 +124,17 @@ function supportsContentVisibilityAuto(): boolean {
 
 const cvAutoSupported = supportsContentVisibilityAuto();
 
-export function chunkWrapperDecorationPlugin(): Plugin {
+export interface ChunkWrapperDecorationOptions {
+  /**
+   * Smallest document (in ProseMirror content size) that pays for chunking.
+   * Defaults to the editor-wide large-document threshold; tests lower it to
+   * exercise decoration shape without building a half-million-character doc.
+   */
+  minDocSize?: number;
+}
+
+export function chunkWrapperDecorationPlugin(options: ChunkWrapperDecorationOptions = {}): Plugin {
+  const minDocSize = options.minDocSize ?? LARGE_DOC_CHAR_THRESHOLD;
   // Browsers without CV:auto support get a no-op plugin: the CSS rule is
   // already inert there, so emitting decorations would just churn DOM
   // attributes per-transaction for no rendering benefit.
@@ -134,6 +145,14 @@ export function chunkWrapperDecorationPlugin(): Plugin {
     key: chunkWrapperDecorationKey,
     props: {
       decorations(state) {
+        // `content-visibility: auto` buys nothing on a document that fits in a
+        // few viewports, and it is not free: a skipped block only paints while
+        // the browser considers it relevant, and focus is one of the things
+        // that makes it relevant. On an ordinary document that reads as text
+        // vanishing when the caret leaves its paragraph and returning when it
+        // comes back. Gate on the same threshold the rest of the editor uses
+        // for large documents so only the documents this was built for pay it.
+        if (state.doc.content.size < minDocSize) return null;
         const decos: Decoration[] = [];
         state.doc.forEach((node, pos) => {
           // Skip text-only at root (rare); only emit for block children.
