@@ -412,11 +412,14 @@ export {
   resolveDatabaseMigrationOwnerSelection,
 } from './database/markdown-table-migration-preflight.ts';
 export {
+  DATABASE_STORED_PROPERTY_TYPES,
   type DatabaseMarkdownDocumentResolution,
   type DatabaseMarkdownOwnerCellIssue,
   type DatabaseMarkdownOwnerMaterializationError,
   type DatabaseMarkdownOwnerMaterializationErrorCode,
   type DatabaseMarkdownOwnerRow,
+  databaseStoredPropertyIds,
+  isStoredDatabasePropertyType,
   type MaterializeDatabaseMarkdownOwnerInput,
   type MaterializedDatabaseMarkdownOwner,
   materializeDatabaseMarkdownOwner,

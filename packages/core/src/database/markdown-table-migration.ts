@@ -17,6 +17,10 @@ import {
   replaceDatabaseDocumentTitle,
   resolveDatabaseDocumentTitle,
 } from './markdown-table-document.ts';
+import {
+  databaseStoredPropertyIds,
+  isStoredDatabasePropertyType,
+} from './markdown-table-record.ts';
 import { type DatabaseRecord, materializeDatabaseRecord } from './record.ts';
 import {
   type DatabaseDefinition,
@@ -94,17 +98,6 @@ export interface DatabaseMarkdownV2MigrationPlan {
   aliases: readonly DatabaseMarkdownV2MigrationAlias[];
   blockers: readonly DatabaseMarkdownV2MigrationBlocker[];
 }
-
-const DERIVED_PROPERTY_TYPES = new Set<DatabaseProperty['type']>([
-  'formula',
-  'rollup',
-  'created_time',
-  'last_edited_time',
-  'created_by',
-  'last_edited_by',
-  'verification',
-  'button',
-]);
 
 function safeOwnerPath(path: string): boolean {
   return (
@@ -243,7 +236,7 @@ function encodeRow(
   const values: string[] = [];
   for (const propertyId of source.storage?.storedPropertyIds ?? []) {
     const property = source.properties.find((candidate) => candidate.id === propertyId);
-    if (!property || DERIVED_PROPERTY_TYPES.has(property.type)) {
+    if (!property || !isStoredDatabasePropertyType(property.type)) {
       return {
         ok: false,
         propertyId,
@@ -487,9 +480,7 @@ export function planDatabaseMarkdownV2Migration(input: {
       });
       continue;
     }
-    const storedPropertyIds = source.properties
-      .filter((property) => !DERIVED_PROPERTY_TYPES.has(property.type))
-      .map((property) => property.id);
+    const storedPropertyIds = databaseStoredPropertyIds(source);
     const migrationSource: DatabaseSource = {
       ...source,
       storage: {
@@ -497,7 +488,7 @@ export function planDatabaseMarkdownV2Migration(input: {
         formatVersion: 2,
         owner: { path: owner.path, blockId: owner.blockId },
         titlePropertyId: source.properties.find((property) => property.type === 'title')?.id ?? '',
-        storedPropertyIds,
+        storedPropertyIds: [...storedPropertyIds],
       },
     };
     const rows: string[][] = [];
@@ -592,9 +583,7 @@ export function planDatabaseMarkdownV2Migration(input: {
     const owner = ownerBySource.get(source.id);
     const titlePropertyId =
       source.properties.find((property) => property.type === 'title')?.id ?? '';
-    const storedPropertyIds = source.properties
-      .filter((property) => !DERIVED_PROPERTY_TYPES.has(property.type))
-      .map((property) => property.id);
+    const storedPropertyIds = databaseStoredPropertyIds(source);
     return {
       ...source,
       storage: owner

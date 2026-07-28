@@ -1,20 +1,14 @@
+import { createDatabaseMarkdownRecordId } from './document-identity.ts';
 import {
-  decodeDatabaseMarkdownCell,
   type DatabaseMarkdownCellPropertyType,
   type DatabaseMarkdownCellValue,
   type DatabaseMarkdownDocumentLink,
+  decodeDatabaseMarkdownCell,
   type ParsedDatabaseMarkdownOwner,
   parseDatabaseMarkdownOwner,
 } from './markdown-table.ts';
 import type { DatabaseMarkdownDocumentLinkResolution } from './markdown-table-links.ts';
-import {
-  createDatabaseMarkdownRecordId,
-} from './document-identity.ts';
-import type {
-  DatabaseProperty,
-  DatabaseRecordId,
-  DatabaseSource,
-} from './schema.ts';
+import type { DatabaseProperty, DatabaseRecordId, DatabaseSource } from './schema.ts';
 import type { DatabaseDocumentId } from './stable-ids.ts';
 
 export interface DatabaseMarkdownDocumentResolution {
@@ -61,9 +55,13 @@ export interface MaterializeDatabaseMarkdownOwnerInput {
   databaseId: string;
   source: DatabaseSource;
   markdown: string;
-  resolveDocument: (link: DatabaseMarkdownDocumentLink) => DatabaseMarkdownDocumentResolution | null;
+  resolveDocument: (
+    link: DatabaseMarkdownDocumentLink,
+  ) => DatabaseMarkdownDocumentResolution | null;
   /** Optional shared resolver. When supplied, its diagnostic code is preserved. */
-  resolveDocumentLink?: (link: DatabaseMarkdownDocumentLink) => DatabaseMarkdownDocumentLinkResolution;
+  resolveDocumentLink?: (
+    link: DatabaseMarkdownDocumentLink,
+  ) => DatabaseMarkdownDocumentLinkResolution;
 }
 
 export interface MaterializedDatabaseMarkdownOwner {
@@ -72,7 +70,20 @@ export interface MaterializedDatabaseMarkdownOwner {
   errors: readonly DatabaseMarkdownOwnerMaterializationError[];
 }
 
-const STORED_PROPERTY_TYPES = new Set<DatabaseProperty['type']>([
+/**
+ * Property types that occupy a column in a v2 owner table. Their complement —
+ * formula, rollup, the four created/last-edited metadata types, verification,
+ * and button — is computed or governed elsewhere and lives only in the
+ * manifest, so adding one of those never reshapes the table.
+ *
+ * This is the single source for that partition. Callers that need the other
+ * half ask `isStoredDatabasePropertyType` rather than restating the list;
+ * `markdown-table-record.test.ts` asserts the two halves still cover every
+ * declared property type, so a new type cannot land in neither.
+ */
+export const DATABASE_STORED_PROPERTY_TYPES: ReadonlySet<DatabaseProperty['type']> = new Set<
+  DatabaseProperty['type']
+>([
   'title',
   'text',
   'number',
@@ -91,8 +102,31 @@ const STORED_PROPERTY_TYPES = new Set<DatabaseProperty['type']>([
   'place',
 ]);
 
-function isCodecPropertyType(type: DatabaseProperty['type']): type is DatabaseMarkdownCellPropertyType {
-  return STORED_PROPERTY_TYPES.has(type);
+/** True when a property of this type is stored as an owner-table column. */
+export function isStoredDatabasePropertyType(
+  type: DatabaseProperty['type'],
+): type is DatabaseMarkdownCellPropertyType {
+  return DATABASE_STORED_PROPERTY_TYPES.has(type);
+}
+
+/**
+ * The owner-table column order a source's schema implies, as property IDs.
+ *
+ * This is what `source.storage.storedPropertyIds` must equal, and the reason it
+ * is derived rather than read: a schema change arrives carrying the PREVIOUS
+ * storage block (clients edit `properties` and leave `storage` alone), so
+ * comparing the stored field against itself would never notice a new column.
+ */
+export function databaseStoredPropertyIds(source: DatabaseSource): readonly string[] {
+  return source.properties
+    .filter((property) => isStoredDatabasePropertyType(property.type))
+    .map((property) => property.id);
+}
+
+function isCodecPropertyType(
+  type: DatabaseProperty['type'],
+): type is DatabaseMarkdownCellPropertyType {
+  return isStoredDatabasePropertyType(type);
 }
 
 function documentResolution(
@@ -105,7 +139,9 @@ function documentResolution(
 /** Materialize owner-table rows into a storage-neutral typed read model. */
 export function materializeDatabaseMarkdownOwner(
   input: MaterializeDatabaseMarkdownOwnerInput,
-): MaterializedDatabaseMarkdownOwner | { errors: readonly DatabaseMarkdownOwnerMaterializationError[] } {
+):
+  | MaterializedDatabaseMarkdownOwner
+  | { errors: readonly DatabaseMarkdownOwnerMaterializationError[] } {
   const parsed = parseDatabaseMarkdownOwner(input.markdown);
   if (!parsed.ok) {
     return {
@@ -220,9 +256,13 @@ export function materializeDatabaseMarkdownOwner(
           });
           continue;
         }
-        const resolved = linkResolution?.ok && linkResolution.candidate
-          ? { path: linkResolution.candidate.path, documentId: linkResolution.candidate.documentId as DatabaseDocumentId }
-          : documentResolution(input, documentLink);
+        const resolved =
+          linkResolution?.ok && linkResolution.candidate
+            ? {
+                path: linkResolution.candidate.path,
+                documentId: linkResolution.candidate.documentId as DatabaseDocumentId,
+              }
+            : documentResolution(input, documentLink);
         if (!resolved) {
           errors.push({
             code: 'broken_document_link',

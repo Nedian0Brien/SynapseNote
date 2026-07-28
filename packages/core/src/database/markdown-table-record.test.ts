@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'bun:test';
-import { materializeDatabaseMarkdownOwner } from './markdown-table-record.ts';
-import type { DatabaseSource } from './schema.ts';
+import {
+  DATABASE_STORED_PROPERTY_TYPES,
+  databaseStoredPropertyIds,
+  isStoredDatabasePropertyType,
+  materializeDatabaseMarkdownOwner,
+} from './markdown-table-record.ts';
+import { DATABASE_PROPERTY_TYPES, type DatabaseSource } from './schema.ts';
 
 const source: DatabaseSource = {
   id: 'ds_orders',
@@ -69,7 +74,10 @@ describe('materializeDatabaseMarkdownOwner', () => {
   test('keeps invalid rows visible and reports broken or duplicate documents', () => {
     const invalidMarkdown = markdown
       .replace('| [[orders/one]] | First order |', '| [[orders/missing]] | First order |')
-      .replace('| [[orders/two\\|Order \\| Two]] | Second order |', '| [[orders/missing]] | Second order |');
+      .replace(
+        '| [[orders/two\\|Order \\| Two]] | Second order |',
+        '| [[orders/missing]] | Second order |',
+      );
     const result = materializeDatabaseMarkdownOwner({
       databaseId: 'db_orders',
       source,
@@ -91,8 +99,41 @@ describe('materializeDatabaseMarkdownOwner', () => {
     });
     expect('rows' in result).toBe(true);
     if (!('rows' in result)) return;
-    expect(result.errors).toContainEqual(
-      expect.objectContaining({ code: 'storage_mismatch' }),
-    );
+    expect(result.errors).toContainEqual(expect.objectContaining({ code: 'storage_mismatch' }));
+  });
+});
+
+describe('stored / derived property partition', () => {
+  test('every declared property type is on exactly one side', () => {
+    const derived = DATABASE_PROPERTY_TYPES.filter((type) => !isStoredDatabasePropertyType(type));
+    const stored = DATABASE_PROPERTY_TYPES.filter((type) => isStoredDatabasePropertyType(type));
+    // A new property type that lands in neither half would silently be dropped
+    // from owner tables; one in both is impossible by construction, so the
+    // count check is what keeps the partition total as the vocabulary grows.
+    expect(stored.length + derived.length).toBe(DATABASE_PROPERTY_TYPES.length);
+    expect(stored.length).toBe(DATABASE_STORED_PROPERTY_TYPES.size);
+    expect(derived).toEqual([
+      'created_time',
+      'last_edited_time',
+      'created_by',
+      'last_edited_by',
+      'verification',
+      'button',
+      'formula',
+      'rollup',
+    ]);
+  });
+
+  test('databaseStoredPropertyIds keeps schema order and drops derived columns', () => {
+    expect(
+      databaseStoredPropertyIds({
+        ...source,
+        properties: [
+          { id: 'prop_title', key: 'title', name: 'Title', type: 'title' },
+          { id: 'prop_made', key: 'made', name: 'Created time', type: 'created_time' },
+          { id: 'prop_notes', key: 'notes', name: 'Notes', type: 'text' },
+        ],
+      }),
+    ).toEqual(['prop_title', 'prop_notes']);
   });
 });
