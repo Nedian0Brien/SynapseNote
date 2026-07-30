@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 import { createHash } from 'node:crypto';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -169,5 +169,38 @@ describe('v2 row create identity check', () => {
     const owner = readFileSync(join(contentDir, 'orders.md'), 'utf8');
     expect(owner).toContain('[[orders/fresh]]');
     expect(readFileSync(join(contentDir, 'orders', 'fresh.md'), 'utf8')).toContain('document_id:');
+  });
+});
+
+/**
+ * The HTTP layer drops `afterOwnerContent` and `createdDocumentContent` from
+ * the receipt it returns, because nothing on the wire reads them and they carry
+ * the whole owner table. The client round-trips that slimmed receipt back into
+ * `undo`, so undo has to work without them.
+ */
+describe('undo with the receipt the HTTP layer actually returns', () => {
+  test('reverses a created row from a slimmed receipt', async () => {
+    const { writer, ownerRevision, contentDir } = await fixture(3);
+    const created = await writer.createRow({
+      databaseId: 'db_tasks',
+      sourceId: 'ds_tasks',
+      documentPath: 'orders/fresh.md',
+      documentMarkdown: '# Fresh\n',
+      expectedOwnerRevision: ownerRevision,
+    });
+    expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toContain('[[orders/fresh]]');
+
+    const {
+      afterOwnerContent: _afterOwnerContent,
+      createdDocumentContent: _createdDocumentContent,
+      ...slimmed
+    } = created.receipt as unknown as Record<string, unknown>;
+
+    const undone = await writer.undo({
+      receipt: slimmed as never,
+    } as never);
+    expect(undone.changed).toBe(true);
+    expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).not.toContain('[[orders/fresh]]');
+    expect(existsSync(join(contentDir, 'orders', 'fresh.md'))).toBe(false);
   });
 });

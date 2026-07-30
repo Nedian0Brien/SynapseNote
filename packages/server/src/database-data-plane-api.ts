@@ -4341,6 +4341,28 @@ export function createDatabaseDataPlaneApiHandlers(
     },
   );
 
+  /**
+   * Drop the receipt bytes no HTTP caller reads.
+   *
+   * A v2 receipt carries the owner table's full before AND after content plus
+   * any created document, so every one-row insert shipped the whole table twice
+   * to a browser that never opens either field — and the cost grows with the
+   * table. `beforeOwnerContent` stays: the client round-trips the receipt into
+   * the `undo` operation, and `#beforeOwnerBytes` needs it there. The two dropped
+   * fields are read only by `database-commit.ts`, which composes v2 receipts
+   * in-process and never sees this response.
+   */
+  function slimMarkdownTableReceipt(result: { receipt?: unknown }): { receipt?: unknown } {
+    const receipt = result.receipt;
+    if (receipt === null || typeof receipt !== 'object' || Array.isArray(receipt)) return {};
+    const {
+      afterOwnerContent: _afterOwnerContent,
+      createdDocumentContent: _createdDocumentContent,
+      ...rest
+    } = receipt as Record<string, unknown>;
+    return { receipt: rest };
+  }
+
   const markdownTableMutation = withValidation(
     DatabaseMarkdownTableMutationRequestSchema,
     async (_request, response, body) => {
@@ -4356,7 +4378,11 @@ export function createDatabaseDataPlaneApiHandlers(
           response,
           200,
           DatabaseMarkdownTableMutationResponseSchema,
-          { operation: body.operation, ...(result as Record<string, unknown>) },
+          {
+            operation: body.operation,
+            ...(result as Record<string, unknown>),
+            ...slimMarkdownTableReceipt(result as { receipt?: unknown }),
+          },
           {
             handler: 'database-markdown-table-mutation',
             extraHeaders: noStoreHeaders(),
