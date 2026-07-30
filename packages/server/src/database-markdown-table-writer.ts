@@ -1919,16 +1919,33 @@ export class DatabaseMarkdownTableWriter {
       );
     }
     const recordId = createDatabaseMarkdownRecordId(resolved.source.id, documentId);
-    try {
-      await this.#resolveRow(resolved, recordId);
-      throw new DatabaseMarkdownTableWriterError(
-        'duplicate_record',
-        `Document identity already belongs to record "${recordId}"`,
-        { recordId },
-      );
-    } catch (error) {
-      if (!(error instanceof DatabaseMarkdownTableWriterError) || error.code !== 'record_not_found')
-        throw error;
+    // The duplicate check resolves and READS every row's linked document to
+    // learn whether one already carries this identity — O(rows) file reads on
+    // every insert, measured at 28ms of a 54ms create against ~35 rows and
+    // growing linearly from there.
+    //
+    // It is only capable of finding something when the identity came from
+    // outside: an explicit `documentId`, or one already embedded in the
+    // supplied Markdown. When neither is present the identity is a UUID minted
+    // three lines above and cannot already belong to a row, so the scan can
+    // only ever walk the whole table to conclude what construction guarantees.
+    // The UI's row-create path is exactly that case.
+    const identityWasSupplied = input.documentId !== undefined || existing.ok;
+    if (identityWasSupplied) {
+      try {
+        await this.#resolveRow(resolved, recordId);
+        throw new DatabaseMarkdownTableWriterError(
+          'duplicate_record',
+          `Document identity already belongs to record "${recordId}"`,
+          { recordId },
+        );
+      } catch (error) {
+        if (
+          !(error instanceof DatabaseMarkdownTableWriterError) ||
+          error.code !== 'record_not_found'
+        )
+          throw error;
+      }
     }
     const storage = sourceStorage(resolved.source);
     const link: DatabaseMarkdownDocumentLink = {
