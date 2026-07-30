@@ -621,6 +621,7 @@ export function useDatabaseWorkspaceController(props: DatabaseTableDialogProps) 
 
   const mutationCommands = useDatabaseWorkspaceMutationCommands({
     open,
+    refreshNow,
     reviewResolver: reviewResolverRef,
     setMutationStatus,
     description,

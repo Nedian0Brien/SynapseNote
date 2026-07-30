@@ -356,6 +356,7 @@ export function useDatabaseWorkspaceRecordCommands(context: DatabaseWorkspaceCon
             expectedOwnerRevision: result.storageRevision,
           }),
           {
+            immediate: true,
             onCommitted: options.focusAfterCreate
               ? () => setNewRecordFocusRequest((current: number | null) => (current ?? 0) + 1)
               : undefined,

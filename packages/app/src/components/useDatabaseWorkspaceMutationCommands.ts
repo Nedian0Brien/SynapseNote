@@ -65,6 +65,7 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
     setLastRedoToken,
     setSelectedRecordIds,
     setRefresh,
+    refreshNow,
     setOptimisticCellValues,
     setRecordPatches,
     locallyHandledRecordIdsRef,
@@ -280,6 +281,16 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
       optimisticCellKey?: string;
       onCommitted?: () => void;
       onFailed?: () => void;
+      /**
+       * Read back immediately rather than through the coalescing window.
+       *
+       * The window exists to merge a mutation's local success callback with the
+       * collaboration broadcast that follows it, which is right when the change
+       * is already on screen — an edited cell renders optimistically, so waiting
+       * costs nothing. A created row has nothing to render until the read lands,
+       * so the same wait is the whole latency the user sees.
+       */
+      immediate?: boolean;
     } = {},
   ) => {
     if (mutationStatus !== 'idle') return;
@@ -299,7 +310,12 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
           });
         }
         if (outcome.changed) setSaveFeedback('saved');
-        setRefresh((current: number) => current + 1);
+        // The controller context is typed `Record<string, any>`, so a missing
+        // `refreshNow` would not fail the build — it would throw here and the
+        // create would never refresh at all. Fall back to the coalesced path
+        // instead, which is slower but always correct.
+        if (options.immediate && typeof refreshNow === 'function') refreshNow();
+        else setRefresh((current: number) => current + 1);
         options.onCommitted?.();
       })
       .catch((cause: unknown) => {
