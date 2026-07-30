@@ -34,6 +34,7 @@
     "test:perf": "bun test tests/stress/component-blocks.perf.test.ts",
     "test:a11y": "playwright test --config playwright.a11y.config.ts",
     "perf:profile": "bun run tests/perf/profile.ts",
+    "measure:database-row-insert": "bun run tests/perf/profile.ts --scenario=database-row-insert",
     "sweep:cache-regime": "bun run tests/perf/profile.ts --scenario=sweep-cache-regime",
     "sweep:convention-cap-graduation": "bun run tests/perf/profile.ts --scenario=sweep-convention-cap-graduation",
     "probe:tiptap-leak": "bun run tests/perf/probes/tiptap-destroy-leak.ts",
