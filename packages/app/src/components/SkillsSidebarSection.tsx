@@ -71,9 +71,16 @@ import {
  */
 export function SkillsSidebarSection() {
   const { t } = useLingui();
-  const state = useSkills();
   const { activeDocName } = useDocumentContext();
   const [newSkillOpen, setNewSkillOpen] = useState(false);
+  // The section is collapsed by default, and its list is the only always-mounted
+  // `useSkills` consumer in the app. Left enabled, it re-fetched the whole skill
+  // catalog on the CC1 `files` signal — which every file write raises, including
+  // one a database row insert makes, costing ~200ms of server work to refresh a
+  // list nobody can see. `enabled` already exists for exactly this; the section
+  // just never used it.
+  const [open, setOpen] = useState(false);
+  const state = useSkills({ enabled: open });
   // Same install/uninstall/delete/history flow + dialogs the Settings list uses.
   const actions = useSkillActions();
 
@@ -92,7 +99,7 @@ export function SkillsSidebarSection() {
     // Collapsible like the Files tree: clicking the "Skills" header toggles the
     // whole list. The `+` (New skill) stays an absolutely-positioned group action
     // outside the trigger so it doesn't toggle the section.
-    <Collapsible className="group/skills shrink-0">
+    <Collapsible open={open} onOpenChange={setOpen} className="group/skills shrink-0">
       {/* `px-0` overrides the base `p-2`'s horizontal inset so the "Skills"
           header lands at the same 8px baseline as the Files section's project
           header (both rely solely on their own SidebarGroupLabel `px-2`) —
