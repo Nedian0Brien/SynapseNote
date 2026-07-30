@@ -1,71 +1,16 @@
 import { useLingui } from '@lingui/react/macro';
-import { previewDatabaseSelectOptionChange } from '@nedian0brien/synapsenote-core';
 import { useEffect } from 'react';
 import { resolvePageCover, resolvePageIcon } from '@/components/page-header-utils';
-import { getBranchSnapshot } from '@/lib/current-branch-store';
-import { describeDatabase } from '@/lib/database-catalog-client';
-import {
-  createDatabaseBulkCellMutationDesiredState,
-  createDatabaseBulkCheckboxToggleDesiredState,
-  createDatabaseCellMutationDesiredState,
-  createDatabaseDefaultViewChangeDesiredState,
-  createDatabasePageAppearanceDesiredState,
-  createDatabasePageTitleDesiredState,
-  createDatabaseRecordArchiveDesiredState,
-  createDatabaseRecordCopyDesiredState,
-  createDatabaseRecordDeletionDesiredState,
-  createDatabaseRecordDesiredState,
-  createDatabaseRecordMoveDesiredState,
-  createDatabaseSelectOptionChangeDesiredState,
-  createDatabaseTablePasteDesiredState,
-  createDatabaseViewConfigurationChangeDesiredState,
-  rebaseQueuedDatabaseRecordMutations,
-} from '@/lib/database-cell-mutation';
-import {
-  databaseDelimitedRecordIds,
-  inspectDatabaseImport,
-  planDatabaseDelimitedImport,
-} from '@/lib/database-csv';
 import { databaseSnapshotToJson } from '@/lib/database-json';
-import {
-  applyDatabaseUiRedo,
-  applyDatabaseUiUndo,
-  createDatabaseButtonPlan,
-  createDatabaseVerificationPlan,
-  DatabasePlanExecutionError,
-  executeDatabaseButtonPlan,
-  executeDatabaseUiMutation,
-  executeReviewedDatabasePlan,
-  previewDatabaseUiRedo,
-  previewDatabaseUiUndo,
-} from '@/lib/database-mutation-client';
-import { databaseUiMutationReviewMode } from '@/lib/database-mutation-policy';
 import { isDatabasePageFavorite } from '@/lib/database-navigation';
 import { databaseOfflineCacheKey } from '@/lib/database-offline-cache';
-import {
-  createOfflineDatabaseMutation,
-  enqueueOfflineDatabaseMutation,
-  offlineDatabaseMutationStore,
-  offlineQueueableRecordMutations,
-  reconcileOfflineDatabaseMutations,
-} from '@/lib/database-offline-mutation-queue';
+import { offlineDatabaseMutationStore } from '@/lib/database-offline-mutation-queue';
 import { useDatabasePresenceTarget, useRemoteDatabasePresence } from '@/lib/database-presence';
-import { appendDatabaseQueryPage } from '@/lib/database-query-client';
-import { databaseRecordsToTsv } from '@/lib/database-tsv';
-import { classifyDatabaseUiProblem, databaseConflictProblem } from '@/lib/database-ui-problem';
-import {
-  databaseBrowserLoadedRecordLimit,
-  databaseBrowserNextPageLimit,
-} from '@/lib/database-view-bounds';
+import { classifyDatabaseUiProblem } from '@/lib/database-ui-problem';
 import { loadDatabaseLastOpenedView, saveDatabaseLastOpenedView } from '@/lib/database-view-state';
-import { getServerInstanceId } from '@/lib/server-instance-store';
 import { useDatabaseWorkspaceReadModel } from '@/lib/use-database-workspace-read-model';
 import type { DatabaseSelectProperty, LoadStatus } from './DatabaseTableGrid';
-import {
-  downloadTextFile,
-  isDatabaseSelectProperty,
-  searchDatabaseRelationRecords,
-} from './DatabaseTableGrid';
+import { isDatabaseSelectProperty } from './DatabaseTableGrid';
 import { databaseTableAggregate } from './database-table-utils';
 import type { DatabaseTableDialogProps } from './database-workspace-types';
 import { useDatabaseWorkspaceControllerState } from './use-database-workspace-controller-state';
@@ -586,14 +531,6 @@ export function useDatabaseWorkspaceController(props: DatabaseTableDialogProps) 
   // before the view command hook is assembled. The view hook recomputes and
   // returns the same projections for rendering; keeping this preflight copy
   // avoids a temporal dependency between independent command domains.
-  const commandSelectProperties =
-    description?.source?.properties.filter(isDatabaseSelectProperty) ?? [];
-  const commandSelectedOptionProperty = commandSelectProperties.find(
-    (property) => property.id === optionPropertyId,
-  );
-  const commandSelectedOption = commandSelectedOptionProperty?.options.find(
-    (option) => option.id === optionId,
-  );
   const commandCanonicalSourceViews =
     description?.database.views.filter((view) => view.sourceId === description.source?.id) ?? [];
   const commandSourceViews = optimisticViewOrder
@@ -625,16 +562,13 @@ export function useDatabaseWorkspaceController(props: DatabaseTableDialogProps) 
     reviewResolver: reviewResolverRef,
     setMutationStatus,
     description,
-    searchDatabaseRelationRecords,
     setRelationCandidates,
     setMutationError,
     setMutationConflict,
     setOfflineQueueMessage,
     setSaveFeedback,
     setMutationProgressVisible,
-    databaseUiMutationReviewMode,
     setMutationReviewMode,
-    executeDatabaseUiMutation,
     setGhost,
     setLastUndoToken,
     setLastRedoToken,
@@ -644,26 +578,9 @@ export function useDatabaseWorkspaceController(props: DatabaseTableDialogProps) 
     setRecordPatches,
     locallyHandledRecordIdsRef,
     selection,
-    getBranchSnapshot,
-    getServerInstanceId,
-    offlineQueueableRecordMutations,
-    createOfflineDatabaseMutation,
-    enqueueOfflineDatabaseMutation,
-    offlineDatabaseMutationStore,
     setOfflineQueue,
     queueReconciliationRunning: queueReconciliationRunningRef,
     offlineQueue,
-    classifyDatabaseUiProblem,
-    DatabasePlanExecutionError,
-    reconcileOfflineDatabaseMutations,
-    describeDatabase,
-    rebaseQueuedDatabaseRecordMutations,
-    databaseConflictProblem,
-    createDatabaseViewConfigurationChangeDesiredState,
-    createDatabaseDefaultViewChangeDesiredState,
-    executeReviewedDatabasePlan,
-    createDatabaseButtonPlan,
-    executeDatabaseButtonPlan,
     buttonStatus,
     setButtonStatus,
     setButtonPlan,
@@ -690,14 +607,9 @@ export function useDatabaseWorkspaceController(props: DatabaseTableDialogProps) 
     runMutation,
     runMarkdownTable,
     setMutationError,
-    classifyDatabaseUiProblem,
-    createDatabaseCellMutationDesiredState,
-    createDatabaseVerificationPlan,
     setMutationStatus,
-    executeReviewedDatabasePlan,
     reviewResolver: reviewResolverRef,
     setGhost,
-    databaseConflictProblem,
     setLastUndoToken,
     setLastRedoToken,
     setRefresh,
@@ -713,11 +625,6 @@ export function useDatabaseWorkspaceController(props: DatabaseTableDialogProps) 
     setMoveTargetSourceId,
     moveRecord,
     moveTargetSourceId,
-    createDatabaseRecordDesiredState,
-    createDatabaseRecordDeletionDesiredState,
-    createDatabaseRecordCopyDesiredState,
-    createDatabaseRecordArchiveDesiredState,
-    createDatabaseRecordMoveDesiredState,
     open,
     initialRecordAction,
     result,
@@ -740,20 +647,10 @@ export function useDatabaseWorkspaceController(props: DatabaseTableDialogProps) 
     selectedRecordIds,
     bulkPropertyId,
     bulkDraft,
-    setBulkDraft,
-    setBulkPropertyId,
     setMutationError,
-    classifyDatabaseUiProblem,
     mutationStatus,
     runMutation,
-    createDatabaseBulkCellMutationDesiredState,
-    createDatabaseBulkCheckboxToggleDesiredState,
-    createDatabaseTablePasteDesiredState,
-    relationCandidates,
-    searchRelationCandidates,
     setSelectedRecordIds,
-    setRefresh,
-    selectedView: commandSelectedView,
     initialDatabaseSurface,
     initialViewAction,
     initialPropertyId,
@@ -776,8 +673,6 @@ export function useDatabaseWorkspaceController(props: DatabaseTableDialogProps) 
     initialTablePaste,
     handledInitialTablePaste: handledInitialTablePasteRef,
     open,
-    databaseRecordsToTsv,
-    downloadTextFile,
   });
   const {
     bulkProperty,
@@ -792,48 +687,27 @@ export function useDatabaseWorkspaceController(props: DatabaseTableDialogProps) 
     exportDatabase,
   } = bulkCommands;
   const schemaCommands = useDatabaseWorkspaceSchemaCommands({
-    selectedOption: commandSelectedOption,
-    selectedOptionProperty: commandSelectedOptionProperty,
-    optionName,
-    optionColor,
-    optionMergeTargetId,
     setOptionPreview,
     setOptionStatus,
-    previewDatabaseSelectOptionChange,
     description,
     setMutationError,
-    classifyDatabaseUiProblem,
     optionPreview,
     runMutation,
-    createDatabaseSelectOptionChangeDesiredState,
     setPropertyDeletionPreview,
     setPropertiesError,
     setPropertiesRemoveStatus,
     propertiesRemoveStatus,
     mutationStatus,
-    setMutationStatus,
     result,
     csvStatus,
     setCsvStatus,
     importPreview,
     setImportPreview,
-    databaseDelimitedRecordIds,
-    inspectDatabaseImport,
-    planDatabaseDelimitedImport,
-    databaseRecordsToTsv,
-    databaseSnapshotToJson,
-    downloadTextFile,
     setLastUndoToken,
     setLastRedoToken,
     lastUndoToken,
     lastRedoToken,
-    applyDatabaseUiUndo,
-    applyDatabaseUiRedo,
-    previewDatabaseUiUndo,
-    previewDatabaseUiRedo,
-    executeDatabaseUiMutation,
     selection,
-    runReviewedPlan,
     optionStatus,
     optionPropertyId,
     collectDatabaseSnapshot,
@@ -865,19 +739,13 @@ export function useDatabaseWorkspaceController(props: DatabaseTableDialogProps) 
   const viewCommands = useDatabaseWorkspaceViewCommands({
     description,
     selectedViewId,
-    databaseBrowserLoadedRecordLimit,
-    databaseBrowserNextPageLimit,
     pageStatus,
     setPageStatus,
-    pageCursor,
     setPageCursor,
     result,
-    appendDatabaseQueryPage,
     setRefresh,
     locallyHandledRecordIdsRef,
     mutationStatus,
-    buttonStatus,
-    isCanvasPresentation,
     optionId,
     optimisticViewOrder,
     selection,
@@ -887,24 +755,14 @@ export function useDatabaseWorkspaceController(props: DatabaseTableDialogProps) 
     setFilterDialogOpen,
     setViewSettingsOpen,
     setViewManagerOpen,
-    setPropertyDeletionPreview,
-    setPropertiesDialogOpen,
     setSelectedRecordIds,
-    saveDatabaseLastOpenedView,
-    commitSavedViewConfiguration,
     commitDefaultViewChange,
     setAgentMenuOpen,
     setSelectedViewId,
     setTableCalculations,
-    tableViewStatesRef,
-    tableViewStateKey,
-    tableCalculations,
-    showArchived,
     pageTitleDraft,
     setPageTitleEditing,
     databasePageTitle,
-    pageFavorite,
-    setPageFavorite,
     setViewRenameTarget,
     setPageError,
     undoStatus,
@@ -942,47 +800,10 @@ export function useDatabaseWorkspaceController(props: DatabaseTableDialogProps) 
     setAppearanceOpen,
     setMutationError,
     runMutation,
-    createDatabasePageTitleDesiredState,
-    createDatabasePageAppearanceDesiredState,
-    databaseConflictProblem,
     isPagePresentation,
     open,
-    initialViewAction,
-    initialPropertyId,
-    initialDatabaseSurface,
-    handledInitialDatabaseSurface: handledInitialDatabaseSurfaceRef,
-    handledInitialSelectedRecordIds: handledInitialSelectedRecordIdsRef,
-    initialSelectedRecordIds,
     preserveSelectionOnRefreshRef,
-    initialAction,
-    initialTarget,
     onOpenChange,
-    setPageTitleDraft,
-    pageTitleInputRef,
-    setMoveRecord,
-    moveRecord,
-    editCell,
-    createAndAssignSelectOption,
-    reorderSelectOptions,
-    changeVerification,
-    deleteRecord,
-    duplicateRecord,
-    changeArchiveState,
-    planTablePaste,
-    searchRelationCandidates,
-    planBoardTransition,
-    planTimelineChange,
-    planCalendarChange,
-    setMoveTargetSourceId,
-    createRecord,
-    setComputedPropertyId,
-    setUniqueIdPropertyId,
-    setPlacePropertyId,
-    setButtonPropertyId,
-    setConversionPropertyId,
-    onOpenContextInspector,
-    onOpenAgentRuns,
-    setPropertiesDialogRenameId,
   });
   const {
     loadedRecordLimit,

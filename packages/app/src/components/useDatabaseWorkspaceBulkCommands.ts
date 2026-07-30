@@ -27,9 +27,9 @@ import {
   isDatabaseSelectProperty,
 } from './DatabaseTableGrid';
 
-import type { DatabaseWorkspaceControllerContext } from './database-workspace-context';
+import type { DatabaseWorkspaceBulkCommandsContext } from './database-workspace-context';
 
-export function useDatabaseWorkspaceBulkCommands(context: DatabaseWorkspaceControllerContext) {
+export function useDatabaseWorkspaceBulkCommands(context: DatabaseWorkspaceBulkCommandsContext) {
   const {
     description,
     result,

@@ -34,9 +34,9 @@ import type { DatabaseSelectProperty } from './DatabaseTableGrid';
 
 import { databaseSchemaMutationPolicy, isDatabaseSelectProperty } from './DatabaseTableGrid';
 
-import type { DatabaseWorkspaceControllerContext } from './database-workspace-context';
+import type { DatabaseWorkspaceViewCommandsContext } from './database-workspace-context';
 
-export function useDatabaseWorkspaceViewCommands(context: DatabaseWorkspaceControllerContext) {
+export function useDatabaseWorkspaceViewCommands(context: DatabaseWorkspaceViewCommandsContext) {
   const {
     description,
     selectedViewId,

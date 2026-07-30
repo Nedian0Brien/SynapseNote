@@ -1,28 +1,19 @@
 import type {
   DatabaseProperty,
-  DatabaseValue,
   DatabaseView,
   ProjectedDatabaseRecord,
   ProjectedDatabaseRelationRecord,
 } from '@nedian0brien/synapsenote-core';
-import type {
-  DatabaseDesiredStateDraftInput,
-  DatabaseMarkdownTableMutationRequest,
-} from '@nedian0brien/synapsenote-server';
 import { useEffect, useEffectEvent } from 'react';
 import { getBranchSnapshot } from '@/lib/current-branch-store';
 import { describeDatabase } from '@/lib/database-catalog-client';
 import {
   createDatabaseButtonPlan,
   DatabasePlanExecutionError,
-  type ExecuteDatabaseUiMutationResult,
   executeDatabaseButtonPlan,
   executeReviewedDatabasePlan,
 } from '@/lib/database-mutation-client';
-import {
-  type DatabaseUiMutationPolicyInput,
-  databaseUiMutationReviewMode,
-} from '@/lib/database-mutation-policy';
+import { databaseUiMutationReviewMode } from '@/lib/database-mutation-policy';
 import { executeDatabaseMutation } from '@/lib/database-mutations/database-mutation-gateway';
 import { rebaseQueuedDatabaseRecordMutations } from '@/lib/database-mutations/database-record-commands';
 import {
@@ -44,9 +35,15 @@ import { getServerInstanceId } from '@/lib/server-instance-store';
 
 import { searchDatabaseRelationRecords } from './DatabaseTableGrid';
 
-import type { DatabaseWorkspaceControllerContext } from './database-workspace-context';
+import type {
+  DatabaseWorkspaceMutationCommandsContext,
+  DatabaseWorkspaceRunMarkdownTable,
+  DatabaseWorkspaceRunMutation,
+} from './database-workspace-context';
 
-export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceControllerContext) {
+export function useDatabaseWorkspaceMutationCommands(
+  context: DatabaseWorkspaceMutationCommandsContext,
+) {
   'use no memo';
   const {
     open,
@@ -93,7 +90,7 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
   ): Promise<ProjectedDatabaseRelationRecord[]> => {
     if (!description) return [];
     const found = await searchDatabaseRelationRecords(description.database, property, query);
-    setRelationCandidates((current: ProjectedDatabaseRelationRecord[]) => [
+    setRelationCandidates((current) => [
       ...new Map(
         [...current, ...found].map((record: ProjectedDatabaseRelationRecord) => [
           record.id,
@@ -104,23 +101,11 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
     return found;
   };
 
-  const runMutation = (
-    desiredState: DatabaseDesiredStateDraftInput,
-    idempotencyPrefix: string,
-    failureMessage: string,
-    options: {
-      assertions?: { databaseAbsent?: boolean; createdRecords?: number };
-      review?: 'required' | 'automatic';
-      policy?: DatabaseUiMutationPolicyInput;
-      optimisticCellKey?: string;
-      presentation?: 'default' | 'silent';
-      recordRefresh?: { databaseId: string; sourceId: string; recordId: string };
-      onCommitted?: (
-        outcome: Extract<ExecuteDatabaseUiMutationResult, { status: 'committed' }>,
-      ) => void;
-      onNotCommitted?: () => void;
-      onFailed?: () => void;
-    } = {},
+  const runMutation: DatabaseWorkspaceRunMutation = (
+    desiredState,
+    idempotencyPrefix,
+    failureMessage,
+    options = {},
   ) => {
     const idempotencyKey = `${idempotencyPrefix}-${crypto.randomUUID()}`;
     setMutationError(null);
@@ -177,21 +162,14 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
           if (recordRefresh) {
             try {
               const lookup = await fetchDatabaseRecord(recordRefresh);
-              setRecordPatches(
-                (
-                  current: ReadonlyMap<
-                    string,
-                    { record: ProjectedDatabaseRecord; snapshotRevision: string }
-                  >,
-                ) => {
-                  const next = new Map(current);
-                  next.set(recordRefresh.recordId, {
-                    record: lookup.record,
-                    snapshotRevision: lookup.indexRevision,
-                  });
-                  return next;
-                },
-              );
+              setRecordPatches((current) => {
+                const next = new Map(current);
+                next.set(recordRefresh.recordId, {
+                  record: lookup.record,
+                  snapshotRevision: lookup.indexRevision,
+                });
+                return next;
+              });
             } catch {
               locallyHandledRecordIdsRef.current.delete(recordRefresh.recordId);
               setRefresh((current: number) => current + 1);
@@ -210,7 +188,7 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
           options.onCommitted?.(outcome);
         }
         if (options.optimisticCellKey) {
-          setOptimisticCellValues((current: ReadonlyMap<string, DatabaseValue | undefined>) => {
+          setOptimisticCellValues((current) => {
             if (!current.has(options.optimisticCellKey as string)) return current;
             const next = new Map(current);
             next.delete(options.optimisticCellKey as string);
@@ -225,7 +203,7 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
           locallyHandledRecordIdsRef.current.delete(options.recordRefresh.recordId);
         }
         if (options.optimisticCellKey) {
-          setOptimisticCellValues((current: ReadonlyMap<string, DatabaseValue | undefined>) => {
+          setOptimisticCellValues((current) => {
             if (!current.has(options.optimisticCellKey as string)) return current;
             const next = new Map(current);
             next.delete(options.optimisticCellKey as string);
@@ -275,24 +253,7 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
       });
   };
 
-  const runMarkdownTable = (
-    mutation: DatabaseMarkdownTableMutationRequest,
-    options: {
-      optimisticCellKey?: string;
-      onCommitted?: () => void;
-      onFailed?: () => void;
-      /**
-       * Read back immediately rather than through the coalescing window.
-       *
-       * The window exists to merge a mutation's local success callback with the
-       * collaboration broadcast that follows it, which is right when the change
-       * is already on screen — an edited cell renders optimistically, so waiting
-       * costs nothing. A created row has nothing to render until the read lands,
-       * so the same wait is the whole latency the user sees.
-       */
-      immediate?: boolean;
-    } = {},
-  ) => {
+  const runMarkdownTable: DatabaseWorkspaceRunMarkdownTable = (mutation, options = {}) => {
     if (mutationStatus !== 'idle') return;
     setMutationError(null);
     setMutationConflict(null);
@@ -302,7 +263,7 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
     void executeDatabaseMutation({ storage: 'markdown_table', mutation })
       .then((outcome) => {
         if (options.optimisticCellKey) {
-          setOptimisticCellValues((current: ReadonlyMap<string, DatabaseValue | undefined>) => {
+          setOptimisticCellValues((current) => {
             if (!current.has(options.optimisticCellKey as string)) return current;
             const next = new Map(current);
             next.delete(options.optimisticCellKey as string);
@@ -310,17 +271,13 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
           });
         }
         if (outcome.changed) setSaveFeedback('saved');
-        // The controller context is typed `Record<string, any>`, so a missing
-        // `refreshNow` would not fail the build — it would throw here and the
-        // create would never refresh at all. Fall back to the coalesced path
-        // instead, which is slower but always correct.
-        if (options.immediate && typeof refreshNow === 'function') refreshNow();
+        if (options.immediate) refreshNow();
         else setRefresh((current: number) => current + 1);
         options.onCommitted?.();
       })
       .catch((cause: unknown) => {
         if (options.optimisticCellKey) {
-          setOptimisticCellValues((current: ReadonlyMap<string, DatabaseValue | undefined>) => {
+          setOptimisticCellValues((current) => {
             if (!current.has(options.optimisticCellKey as string)) return current;
             const next = new Map(current);
             next.delete(options.optimisticCellKey as string);

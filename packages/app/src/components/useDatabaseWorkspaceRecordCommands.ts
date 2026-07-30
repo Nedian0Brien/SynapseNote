@@ -44,7 +44,7 @@ import {
 import { classifyDatabaseUiProblem, databaseConflictProblem } from '@/lib/database-ui-problem';
 import type { DatabaseInitialRecordAction } from './DatabaseTableGrid';
 
-import type { DatabaseWorkspaceControllerContext } from './database-workspace-context';
+import type { DatabaseWorkspaceRecordCommandsContext } from './database-workspace-context';
 
 function filterReferencesProperty(filter: DatabaseFilter, propertyId: string): boolean {
   if ('and' in filter) return filter.and.some((item) => filterReferencesProperty(item, propertyId));
@@ -68,7 +68,9 @@ function canPatchSelectRecordLocally(
   return calculations[propertyId] === undefined;
 }
 
-export function useDatabaseWorkspaceRecordCommands(context: DatabaseWorkspaceControllerContext) {
+export function useDatabaseWorkspaceRecordCommands(
+  context: DatabaseWorkspaceRecordCommandsContext,
+) {
   const {
     description,
     mutationStatus,
@@ -128,9 +130,7 @@ export function useDatabaseWorkspaceRecordCommands(context: DatabaseWorkspaceCon
     }
     try {
       const cellKey = optimisticCellKey(record.id, property.id);
-      setOptimisticCellValues((current: ReadonlyMap<string, DatabaseValue | undefined>) =>
-        setOptimisticCellValue(current, cellKey, value),
-      );
+      setOptimisticCellValues((current) => setOptimisticCellValue(current, cellKey, value));
       if (description.source.storage?.kind === 'markdown_table') {
         const mutation =
           property.type === 'title'
