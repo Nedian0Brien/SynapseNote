@@ -1776,6 +1776,14 @@ export class DatabaseRecordIndex {
       revision: `sha256:${createHash('sha256').update(markdown).digest('hex')}`,
     };
     this.#v2DocumentsByPath.set(path, document);
+    // A path can be judged before the owner table claims it. The writer applies
+    // the created document first, and at that moment nothing knows the file is
+    // a database row, so it is materialized as a v1 record, fails for want of
+    // `_sn` metadata, and leaves an `invalid_record` issue behind. Registering
+    // it as a v2 document is the moment that verdict becomes stale — and
+    // nothing else clears it, so every v2 row creation used to leave a bogus
+    // "must define valid _sn ..." issue that only a full rebuild removed.
+    this.#baseIssuesByPath.delete(path);
     return document;
   }
 
