@@ -359,15 +359,15 @@ RFC 0003(테이블 지오메트리)은 **진짜로 실행되었습니다.** 대�
 
 ### Phase 1a — 모듈 경계 가드 복구
 
-- [ ] **1a-1** `database-property-commands.ts`의 카탈로그/시드 절반(1–276행, 표 참조)을 `lib/database-mutations/database-property-catalog.ts`로 이동
+- [x] **1a-1** `database-property-commands.ts`의 카탈로그/시드 절반(1–276행, 표 참조)을 `lib/database-mutations/database-property-catalog.ts`로 이동
   - 기준: 새 파일이 존재하고, 이동한 심볼 10개가 전부 거기서 export된다. `git diff`에서 **로직 변경이 0줄**이다 (이동과 import 조정만).
-- [ ] **1a-2** `database-property-commands.ts`가 예산 이하로 내려감
+- [x] **1a-2** `database-property-commands.ts`가 예산 이하로 내려감
   - 기준: `awk 'END{print NR+1}' packages/app/src/lib/database-mutations/database-property-commands.ts` 가 **400 이하** (가드는 `wc -l`+1로 셈)
-- [ ] **1a-3** 새 파일에 예산 등록
+- [x] **1a-3** 새 파일에 예산 등록
   - 기준: `MODULE_SIZE_BUDGETS`(`packages/app/src/build/module-boundaries.ts`)에 `database-property-catalog.ts` 항목이 있고, `DATABASE_LEAF_BOUNDARIES`(`module-boundaries.test.ts:16`)에도 경로가 있다
-- [ ] **1a-4** 새 파일이 leaf 제약을 위반하지 않음
+- [x] **1a-4** 새 파일이 leaf 제약을 위반하지 않음
   - 기준: `bun run test`가 `database leaves do not own transport, snapshot, or route writes`와 `database command modules do not regress to the compatibility barrel` 둘 다 통과
-- [ ] **1a-5** 앱 스위트 초록
+- [x] **1a-5** 앱 스위트 초록
   - 기준: `cd packages/app && bun run test` → **fail 0** (현재 5870 pass / 1 fail → 5871 pass / 0 fail)
   - 기준: `cd packages/app && bun run test:dom` → 10 pass / 0 fail
   - 기준: `cd packages/app && bun run typecheck` 종료코드 0
@@ -375,14 +375,14 @@ RFC 0003(테이블 지오메트리)은 **진짜로 실행되었습니다.** 대�
 
 ### Phase 1b — 서버 계약 3건
 
-- [ ] **1b-1** `markdownTableMutation`을 계약 테스트 기대 목록에 추가
+- [x] **1b-1** `markdownTableMutation`을 계약 테스트 기대 목록에 추가
   - 기준: `database-api-schema.test.ts:54`의 배열에 `'markdownTableMutation'`이 있고, 위치가 레지스트리 실제 키 순서와 같다 (`commit`과 `agentRuns` 사이). `toEqual`은 순서를 봄
   - 기준: `DATABASE_API_SCHEMA_VERSION`은 **1에서 바뀌지 않았다**
-- [ ] **1b-2** `preview_migration` 봉투 실패 해소
+- [x] **1b-2** `preview_migration` 봉투 실패 해소
   - 기준: 스키마 정의를 읽고 **변경이 의도된 것인지 판단한 근거를 커밋 메시지에 남겼다**. 의도된 변경이면 테스트를 갱신, 실수면 스키마를 고치고 보고
-- [ ] **1b-3** `database-task-service.test.ts:158` 실패 해소
+- [x] **1b-3** `database-task-service.test.ts:158` 실패 해소
   - 기준: 1b-2와 동일한 판단 절차를 거쳤다
-- [ ] **1b-4** 서버 데이터베이스 스위트 초록
+- [x] **1b-4** 서버 데이터베이스 스위트 초록
   - 기준: `bun test packages/server/src/database-*.test.ts` → **456 pass / 0 fail**
 
 ### Phase 2 — 워크스페이스 컨텍스트 타입화
