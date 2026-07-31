@@ -6,6 +6,8 @@ import {
   DATABASE_ADDABLE_PROPERTY_TYPES,
   databaseAddablePropertyTypes,
   databasePropertyKeyFromName,
+  EMPTY_FORMULA_SOURCE,
+  SEEDED_BUTTON_RECORD_TITLE,
 } from './database-property-catalog';
 import { createDatabaseAddPropertyDesiredState } from './database-property-commands';
 
@@ -87,6 +89,11 @@ function seedsValidDraft(
  * property and option IDs that the draft deliberately omits.
  */
 describe('DATABASE_ADDABLE_PROPERTY_TYPES', () => {
+  it('exports the stable seeds owned by the property catalog boundary', () => {
+    expect(EMPTY_FORMULA_SOURCE).toBe('""');
+    expect(SEEDED_BUTTON_RECORD_TITLE).toBe('New record');
+  });
+
   it('seeds every type offered for a source without a relation', () => {
     for (const type of databaseAddablePropertyTypes(source.properties)) {
       seedsValidDraft(definition, source, type);

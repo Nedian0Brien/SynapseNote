@@ -108,10 +108,10 @@ export const DATABASE_ADDABLE_PROPERTY_TYPES: readonly DatabasePropertyType[] =
   DATABASE_ADDABLE_PROPERTY_GROUPS.flatMap((group) => group.types);
 
 /** Seeded formula body: an empty text literal, which compiles and evaluates. */
-const EMPTY_FORMULA_SOURCE = '""';
+export const EMPTY_FORMULA_SOURCE = '""';
 
 /** Title the seeded Button writes, so its one click produces something visible. */
-const SEEDED_BUTTON_RECORD_TITLE = 'New record';
+export const SEEDED_BUTTON_RECORD_TITLE = 'New record';
 
 /**
  * Action ids are stable keys scoped to one Button, so the first step can carry
