@@ -21,6 +21,7 @@ describe('database focused property suite', () => {
         <DatabasePropertyInsertPopover
           open={open}
           setOpen={setOpen}
+          sourceProperties={[]}
           mutationLocked={false}
           propertyInsertTarget={null}
           setPropertyInsertTarget={() => {}}

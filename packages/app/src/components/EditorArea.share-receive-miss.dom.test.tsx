@@ -77,6 +77,7 @@ mock.module('@/components/ShareReceiveMissPanel', () => ({
 // placeholder, so "fell through to create-mode" is observable without the real
 // TipTap/CodeMirror stack.
 mock.module('./EditorActivityPool', () => ({
+  LARGE_DOC_CHAR_THRESHOLD: 500_000,
   EditorActivityPool: ({ editorPlaceholder }: { editorPlaceholder?: string }) => (
     <div data-testid="editor-pool" data-placeholder={editorPlaceholder} />
   ),
