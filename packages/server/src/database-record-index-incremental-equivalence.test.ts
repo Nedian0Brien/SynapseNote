@@ -65,16 +65,28 @@ function definition() {
   });
 }
 
+/** The same source, with `note` additionally declared unique. */
+function uniqueDefinition() {
+  const parsed = definition();
+  const note = parsed.sources[0]?.properties.find((property) => property.id === 'prop_note');
+  if (!note) throw new Error('note property missing');
+  note.semantics = {
+    ...note.semantics,
+    constraints: { ...note.semantics.constraints, unique: true },
+  };
+  return parsed;
+}
+
 const OWNER_PATH = 'owner.md';
 
-function seedProject() {
+function seedProject(manifest = definition()) {
   const projectDir = mkdtempSync(join(tmpdir(), 'synapsenote-v2-equivalence-'));
   const contentDir = join(projectDir, 'content');
   mkdirSync(join(projectDir, '.ok', 'databases'), { recursive: true });
   mkdirSync(join(contentDir, 'rows'), { recursive: true });
   writeFileSync(
     join(projectDir, '.ok', 'databases', 'tasks.yml'),
-    serializeDatabaseManifestYaml(definition()),
+    serializeDatabaseManifestYaml(manifest),
   );
   writeFileSync(
     join(contentDir, OWNER_PATH),
@@ -251,5 +263,59 @@ describe('v2 incremental index equals a full rebuild', () => {
       await expectEquivalent(projectDir, contentDir, index, label);
     }
     expect(live.length).toBeGreaterThan(0);
+  });
+
+  /**
+   * Unique constraints are the one thing a projection cannot decide row by row:
+   * whether a value repeats is a fact about the whole source.
+   *
+   * The refresh used to clear the projection, reconcile the constraints against
+   * that empty result, then reproject without reconciling again — so a
+   * duplicate introduced by an external edit was reported by a rebuild and
+   * silently missed by every incremental apply. The pass is deferred to the end
+   * of the refresh now, which is both the correct moment and one pass instead
+   * of one per retired row.
+   */
+  test('a duplicate introduced by an external edit is reported without a rebuild', async () => {
+    const { projectDir, contentDir } = seedProject(uniqueDefinition());
+    for (const name of ['a', 'b']) {
+      writeFileSync(
+        join(contentDir, 'rows', `${name}.md`),
+        `---\n_sn:\n  document_id: doc_${name}\n---\n# ${name}\n`,
+      );
+    }
+    const table = (codes: readonly [string, string]) =>
+      [
+        '<!-- synapsenote:database',
+        'version=2',
+        'database=db_tasks',
+        'source=ds_tasks',
+        'block=dbb_owner_primary',
+        'columns=prop_title,prop_note',
+        '-->',
+        '',
+        '| Document | Note |',
+        '| --- | --- |',
+        `| [[rows/a]] | ${codes[0]} |`,
+        `| [[rows/b]] | ${codes[1]} |`,
+        '',
+      ].join('\n');
+
+    writeFileSync(join(contentDir, OWNER_PATH), table(['A1', 'B2']));
+    const store = createDatabaseStore({ projectDir, contentDir });
+    await store.reload();
+    const index = createDatabaseRecordIndex({ contentDir, databaseStore: store });
+    await index.rebuild();
+    expect(index.snapshot().issues).toEqual([]);
+
+    const collided = table(['A1', 'A1']);
+    writeFileSync(join(contentDir, OWNER_PATH), collided);
+    index.upsertPath(OWNER_PATH, collided);
+
+    expect(index.snapshot().issues.map((issue) => issue.code)).toEqual([
+      'duplicate_unique_value',
+      'duplicate_unique_value',
+    ]);
+    await expectEquivalent(projectDir, contentDir, index, 'external duplicate');
   });
 });

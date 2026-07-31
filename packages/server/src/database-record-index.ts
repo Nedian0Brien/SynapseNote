@@ -243,6 +243,40 @@ function valueKey(value: DatabaseValue): string {
   return `${Array.isArray(value) ? 'array' : typeof value}:${JSON.stringify(value)}`;
 }
 
+/**
+ * Whether two projections of one record would produce identical typed and
+ * lexical postings.
+ *
+ * `#addTyped` reads exactly these fields — the id it files under, the values it
+ * keys by `valueKey`, and the body it tokenizes — so when they all match, the
+ * postings already in the index are the postings the new record wants. The rest
+ * of the record may differ freely: an owner-table write moves every row's
+ * `storageRevision` and `semanticRevisions.owner`, because both hash the whole
+ * table, and neither is indexed.
+ *
+ * Comparing values by `valueKey` rather than by identity is deliberate — it is
+ * the function the typed index keys by, so equal keys mean equal postings by
+ * construction. A false negative only costs the work this exists to avoid.
+ */
+function sameIndexedContent(left: DatabaseRecord, right: DatabaseRecord): boolean {
+  if (
+    left.id !== right.id ||
+    left.databaseId !== right.databaseId ||
+    left.sourceId !== right.sourceId ||
+    left.body !== right.body
+  ) {
+    return false;
+  }
+  const keys = Object.keys(left.values);
+  if (keys.length !== Object.keys(right.values).length) return false;
+  for (const key of keys) {
+    const other = right.values[key];
+    if (other === undefined) return false;
+    if (valueKey(left.values[key] as DatabaseValue) !== valueKey(other)) return false;
+  }
+  return true;
+}
+
 function databaseValueText(value: DatabaseValue): string {
   const date = DatabaseDateValueSchema.safeParse(value);
   return date.success ? serializeDatabaseDateValue(date.data) : String(value);
@@ -402,6 +436,8 @@ export class DatabaseRecordIndex {
   readonly #v2SourcesByDocumentPath = new Map<string, Set<string>>();
   readonly #v2DocumentsByPath = new Map<string, V2Document>();
   readonly #v2MissingDocuments = new Set<string>();
+  #uniqueReconcileDepth = 0;
+  #uniqueReconcilePending = false;
   #manifestRevision = 'sha256:empty';
   #state: DatabaseRecordIndexStatus['state'] = 'idle';
   #progress: DatabaseRecordIndexStatus['progress'] = null;
@@ -965,12 +1001,16 @@ export class DatabaseRecordIndex {
     fileTimes: DatabaseRecordFileTimes = recordFileTimes(this.#contentDir, recordPath),
   ): void {
     this.#markIncrementalChange();
-    this.deletePath(recordPath);
     const v2Owner = this.#v2OwnersByPath.get(recordPath);
     if (v2Owner) {
+      // Deliberately not deleted first. For an owner path `deletePath` clears
+      // the entire projection, which would strip every row of its postings
+      // moments before the refresh rebuilds them identically. The refresh
+      // reconciles against what is already there instead.
       this.#refreshV2OwnerSync(v2Owner, markdown);
       return;
     }
+    this.deletePath(recordPath);
     if (this.#v2SourcesByDocumentPath.has(recordPath)) {
       this.#refreshV2DocumentSync(recordPath, markdown);
       return;
@@ -1040,7 +1080,7 @@ export class DatabaseRecordIndex {
           });
         }
         this.#addCandidate(recordPath, materialized.record);
-        if (this.#state !== 'rebuilding') this.#reconcileUniqueConstraints();
+        this.#requestUniqueReconcile();
         return;
       }
       failures.push({
@@ -1106,7 +1146,7 @@ export class DatabaseRecordIndex {
     paths?.delete(recordPath);
     if (paths?.size === 0) this.#pathsByRecordId.delete(previous.id);
     this.#reconcileRecordId(previous.id);
-    if (this.#state !== 'rebuilding') this.#reconcileUniqueConstraints();
+    this.#requestUniqueReconcile();
   }
 
   renamePath(
@@ -1787,13 +1827,15 @@ export class DatabaseRecordIndex {
     return document;
   }
 
+  /** Project every row of one owner table, and report the paths it claimed. */
   #refreshV2SourceProjectionSync(
     database: DatabaseDefinition,
     source: DatabaseSource,
     ownerPath: string,
-  ): void {
+  ): ReadonlySet<string> {
+    const projected = new Set<string>();
     const markdown = this.#v2OwnerMarkdownByPath.get(ownerPath);
-    if (markdown === undefined) return;
+    if (markdown === undefined) return projected;
     const materialized = materializeDatabaseMarkdownOwner({
       databaseId: database.id,
       source,
@@ -1814,7 +1856,7 @@ export class DatabaseRecordIndex {
         materializationCode: error.code,
       });
     }
-    if (!('rows' in materialized)) return;
+    if (!('rows' in materialized)) return projected;
     const ownerScoped = {
       storageRevision: `sha256:${createHash('sha256').update(markdown).digest('hex')}`,
       revisions: createDatabaseMarkdownOwnerScopedRevisions(markdown, materialized.owner),
@@ -1823,6 +1865,12 @@ export class DatabaseRecordIndex {
       if (row.recordId === null || row.documentPath === null || row.documentLink === null) continue;
       const document = this.#v2DocumentsByPath.get(row.documentPath);
       if (!document) continue;
+      // The projection is the only thing that judges this row, so its previous
+      // verdict has to go before it speaks again — otherwise a row that was
+      // repaired keeps the issue describing the version that was broken.
+      // Clearing used to fall out of deleting the row first; the reconcile does
+      // not delete it, so it clears explicitly.
+      this.#baseIssuesByPath.delete(row.documentPath);
       const record = this.#projectV2Row(
         database,
         source,
@@ -1832,23 +1880,72 @@ export class DatabaseRecordIndex {
         materialized.owner,
         ownerScoped,
       );
-      if (record) this.#addCandidate(row.documentPath, record);
+      if (!record) continue;
+      this.#addCandidate(row.documentPath, record);
+      projected.add(row.documentPath);
+    }
+    return projected;
+  }
+
+  /**
+   * Reproject one owner table over whatever it already produced.
+   *
+   * This used to clear the source's whole projection and rebuild it. Correct,
+   * but it charged every untouched row a full teardown and rebuild of its typed
+   * and lexical postings, and that — not parsing, not projecting — was ~76% of
+   * the cost of a write: a one-row insert into an 800-row table spent 152ms of
+   * 199ms re-tokenizing 799 row bodies that had not changed.
+   *
+   * So it reconciles instead. Rows the new table still projects keep their
+   * place, and `#reconcileRecordId` recognizes the reprojection as identical
+   * and leaves the postings alone. What the new table no longer projects is
+   * retired at the end. Cross-row work is deferred to one pass rather than one
+   * per retirement.
+   */
+  #refreshV2OwnerSync(binding: V2DocumentPathBinding, markdown: string): void {
+    this.#uniqueReconcileDepth += 1;
+    try {
+      this.#refreshV2OwnerProjectionSync(binding, markdown);
+    } finally {
+      this.#uniqueReconcileDepth -= 1;
+      if (this.#uniqueReconcileDepth === 0 && this.#uniqueReconcilePending) {
+        this.#uniqueReconcilePending = false;
+        this.#reconcileUniqueConstraints();
+      }
     }
   }
 
-  #refreshV2OwnerSync(binding: V2DocumentPathBinding, markdown: string): void {
+  #refreshV2OwnerProjectionSync(binding: V2DocumentPathBinding, markdown: string): void {
     const database = this.#databaseStore.getById(binding.databaseId);
     const source = database?.sources.find((candidate) => candidate.id === binding.sourceId);
     if (!database || !source || source.storage?.kind !== 'markdown_table') return;
     const sourceKey = this.#v2SourceKey(binding.databaseId, binding.sourceId);
+
+    // The rows this source held going in. The projection below claims back the
+    // ones the new table still contains; whatever is left over is a row the
+    // write removed, and only those are retired.
+    //
+    // Deliberately narrower than the blanket clear it replaces, which also
+    // deleted every document merely *linked* from a relation or person cell.
+    // Such a document is never this source's row, so it cannot be stale here —
+    // but it may well be another source's row, which the blanket clear
+    // destroyed until the next full rebuild restored it.
+    const retired = new Set<string>();
+    for (const [path, record] of this.#candidatesByPath) {
+      if (record.databaseId === binding.databaseId && record.sourceId === binding.sourceId) {
+        retired.add(path);
+      }
+    }
+
     for (const [path, bindings] of this.#v2SourcesByDocumentPath) {
       if (!bindings.delete(sourceKey)) continue;
       if (bindings.size === 0) this.#v2SourcesByDocumentPath.delete(path);
     }
-    this.#clearV2SourceProjection(binding);
+    this.#baseIssuesByPath.delete(binding.ownerPath);
     this.#v2OwnerMarkdownByPath.set(binding.ownerPath, markdown);
     const parsed = parseDatabaseMarkdownOwner(markdown);
     if (!parsed.ok) {
+      for (const path of retired) this.deletePath(path);
       this.#baseIssuesByPath.set(binding.ownerPath, {
         code: 'invalid_record',
         path: binding.ownerPath,
@@ -1877,7 +1974,11 @@ export class DatabaseRecordIndex {
         }
       }
     }
-    this.#refreshV2SourceProjectionSync(database, source, binding.ownerPath);
+    for (const path of this.#refreshV2SourceProjectionSync(database, source, binding.ownerPath)) {
+      retired.delete(path);
+    }
+    for (const path of retired) this.deletePath(path);
+    this.#requestUniqueReconcile();
   }
 
   #refreshV2DocumentSync(path: string, markdown: string): void {
@@ -1973,7 +2074,20 @@ export class DatabaseRecordIndex {
   }
 
   #addCandidate(recordPath: string, record: DatabaseRecord): void {
+    const displaced = this.#candidatesByPath.get(recordPath);
     this.#candidatesByPath.set(recordPath, record);
+    if (displaced && displaced.id !== record.id) {
+      // This path now declares a different record. Left alone, the old id keeps
+      // a path it no longer owns, and the next reconcile reads it back as a
+      // second declaration — reporting a duplicate against a row that does not
+      // exist. Overwriting the candidate used to be preceded by deleting the
+      // path outright, which is what unhooked the old id; the reconcile below
+      // does not delete, so the unhooking is explicit.
+      const displacedPaths = this.#pathsByRecordId.get(displaced.id);
+      displacedPaths?.delete(recordPath);
+      if (displacedPaths?.size === 0) this.#pathsByRecordId.delete(displaced.id);
+      this.#reconcileRecordId(displaced.id);
+    }
     const paths = this.#pathsByRecordId.get(record.id) ?? new Set<string>();
     paths.add(recordPath);
     this.#pathsByRecordId.set(record.id, paths);
@@ -1982,10 +2096,24 @@ export class DatabaseRecordIndex {
 
   #reconcileRecordId(recordId: string): void {
     const previous = this.#recordsById.get(recordId);
+    const paths = this.#pathsByRecordId.get(recordId) ?? new Set<string>();
+    if (paths.size === 1 && previous) {
+      const onlyPath = [...paths][0];
+      const candidate = onlyPath === undefined ? undefined : this.#candidatesByPath.get(onlyPath);
+      // A reprojection that reproduces the same id, values and body wants the
+      // postings that are already filed. Re-deriving them means tokenizing the
+      // record body twice — once to unfile it, once to file it back — and an
+      // owner-table write reprojects every row, so this single comparison is
+      // what keeps a one-row write from costing O(rows) tokenizations.
+      if (candidate && sameIndexedContent(previous, candidate)) {
+        this.#recordsById.set(recordId, candidate);
+        for (const path of paths) this.#duplicateIssuesByPath.delete(path);
+        return;
+      }
+    }
     if (previous) this.#removeTyped(previous);
     this.#recordsById.delete(recordId);
 
-    const paths = this.#pathsByRecordId.get(recordId) ?? new Set<string>();
     for (const path of paths) this.#duplicateIssuesByPath.delete(path);
     if (paths.size === 1) {
       const onlyPath = [...paths][0];
@@ -2008,6 +2136,26 @@ export class DatabaseRecordIndex {
         });
       }
     }
+  }
+
+  /**
+   * Ask for a unique-constraint pass, coalescing the ones raised inside a batch.
+   *
+   * The pass is cross-row by nature — it reads every record of a source — so it
+   * is only meaningful once the batch that is moving records has finished. An
+   * owner-table refresh retires rows and projects rows, and running the pass
+   * after each individual retirement both cost O(rows) each and answered from a
+   * half-applied index: the refresh cleared the projection, reconciled against
+   * the empty result, then reprojected without reconciling again, so an
+   * externally introduced duplicate went unreported until a full rebuild.
+   */
+  #requestUniqueReconcile(): void {
+    if (this.#state === 'rebuilding') return;
+    if (this.#uniqueReconcileDepth > 0) {
+      this.#uniqueReconcilePending = true;
+      return;
+    }
+    this.#reconcileUniqueConstraints();
   }
 
   #reconcileUniqueConstraints(): void {
