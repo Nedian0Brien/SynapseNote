@@ -56,6 +56,7 @@ export default defineScenario({
         clickAt: 0,
         rowAt: null as number | null,
         readyAt: null as number | null,
+        mutateDoneAt: null as number | null,
         watching: null as string | null,
         requests: [] as { url: string; startMs: number; durationMs: number }[],
         observer: null as MutationObserver | null,
@@ -74,23 +75,26 @@ export default defineScenario({
             startMs,
             durationMs: performance.now() - startMs,
           });
-          // The read-back is the moment the app HAS the row. Checked on the
-          // response body rather than the DOM because the grid virtualizes:
-          // past a screenful of rows a freshly created one may never be
-          // rendered, and a measurement that depends on scroll position
-          // reports a timeout as if it were a regression.
-          if (probe.readyAt === null && probe.watching && path.includes('/api/databases/query')) {
-            const watching = probe.watching;
-            response
-              .clone()
-              .text()
-              .then((body) => {
-                if (probe.readyAt === null && body.includes(watching)) {
-                  probe.readyAt = performance.now();
-                }
-              })
-              .catch(() => undefined);
+          // Completion is the first read-back that STARTED after the write
+          // landed — not the row appearing in the DOM, and not the row
+          // appearing in the response body.
+          //
+          // Both of those are scale-dependent and fail as the table grows: the
+          // grid virtualizes rows outside the viewport, and the query is
+          // paginated, so past one page a freshly created row is in neither.
+          // Each flaw reports a timeout that reads exactly like a regression —
+          // the DOM check lost 4 of 7 samples at ~30 rows, the body check 24 of
+          // 40 at ~250. What the user actually waits for is the read cycle, and
+          // that is measurable at any size.
+          if (
+            probe.readyAt === null &&
+            probe.mutateDoneAt !== null &&
+            startMs >= probe.mutateDoneAt &&
+            path.includes('/api/databases/query')
+          ) {
+            probe.readyAt = performance.now();
           }
+          if (path.includes('/markdown-table/mutate')) probe.mutateDoneAt = performance.now();
           return response;
         });
       };
@@ -156,6 +160,24 @@ export default defineScenario({
     await page.waitForSelector('[role="grid"]', { state: 'visible', timeout: 30_000 });
     await page.waitForTimeout(SETTLE_MS);
 
+    // Insert cost scales with the table: the index refresh inside the write
+    // measured 32ms at 140 rows and 75ms at 212. A median is therefore only
+    // comparable to a baseline captured at a similar size, so record the size.
+    //
+    // This saturates at the query's page size — it answers "at least this
+    // many", which is enough to refuse a blind comparison, not enough to plot.
+    const queryPageRowCount = await page.evaluate(async (source: string) => {
+      const response = await fetch('/api/databases/query', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ databaseId: source.split('/')[0], sourceId: source.split('/')[1] }),
+      });
+      if (!response.ok) return -1;
+      const body = (await response.json()) as { records?: unknown[]; totalCount?: number };
+      return body.totalCount ?? body.records?.length ?? -1;
+    }, `${target.databaseId}/${target.sourceId}`);
+    ctx.recordMetric('queryPageRowCount', queryPageRowCount);
+
     const samples: RowSample[] = [];
     for (let index = 0; index < ITERATIONS; index += 1) {
       const label = `perf-row-${Date.now()}-${index}`;
@@ -171,6 +193,7 @@ export default defineScenario({
         };
         probe.rowAt = null;
         probe.readyAt = null;
+        probe.mutateDoneAt = null;
         probe.watching = rowLabel;
         probe.requests = [];
         probe.observer?.disconnect();
@@ -216,6 +239,7 @@ export default defineScenario({
                   clickAt: number;
                   rowAt: number | null;
                   readyAt: number | null;
+                  mutateDoneAt: number | null;
                   requests: { url: string; startMs: number; durationMs: number }[];
                 };
               }
