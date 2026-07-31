@@ -16,21 +16,25 @@
 
 ### 테스트를 올바르게 실행하는 법
 
-앱 테스트는 **반드시 `packages/app`에서 패키지 스크립트로** 실행합니다. 저장소 루트에서 `bun test packages/app/src`로 돌리면 `bunfig.toml`의 preload(`lingui-macro-preload`, `static-asset-preload`)와 `--conditions development`가 빠져서 **5,512개 중 1,563개가 거짓 실패**합니다.
+**`AGENTS.md`의 검증 관례를 따르십시오.** 저장소에 이미 정해진 진입점이 있습니다:
 
 ```bash
-cd packages/app && bun run test        # 비-DOM 티어. 정상이면 5870 pass / 1 fail
-cd packages/app && bun run test:dom    # DOM 티어. 정상이면 10 pass / 0 fail
+bun run test:file -- <test-path>              # 국소 변경의 기본
+bun run check:package -- <app|server|core>    # 변경이 그 패키지 전체에 걸칠 때만
 ```
 
-서버·코어는 루트에서 직접 실행해도 됩니다.
+`test:file`(`scripts/test-file.ts`)이 라우팅을 대신 처리합니다 — `.dom.test.tsx`는 `--cwd packages/app`의 `test:dom`으로, 나머지는 `--conditions development`로 보냅니다. **집중 검사가 통과한 뒤 더 넓은 초록을 얻으려고 상향하지 마십시오** (AGENTS.md 명시).
+
+**`bun test <path>`를 저장소 루트에서 직접 호출하지 마십시오.** 앱 테스트에서 `--conditions development`와 `packages/app/bunfig.toml`의 preload(`lingui-macro-preload`, `static-asset-preload`)가 빠져 **5,512개 중 1,563개가 거짓 실패**합니다. 이 문서를 쓰는 과정에서 실제로 겪었고, 저장소가 망가진 줄 알았습니다. `test:file`을 쓰면 일어나지 않습니다.
+
+Phase 종료 시 티어 전체를 확인해야 한다면 패키지 스크립트를 씁니다:
 
 ```bash
-bun test packages/core/src                    # 정상이면 2630 pass / 0 fail
-bun test packages/server/src/database-*.test.ts   # 정상이면 453 pass / 3 fail (Phase 1b 참조)
+cd packages/app && bun run test        # 비-DOM. 현재 5870 pass / 1 fail (Phase 1a가 그 1건)
+cd packages/app && bun run test:dom    # DOM. 현재 10 pass / 0 fail
+bun test packages/core/src             # 현재 2630 pass / 0 fail
+bun test packages/server/src/database-*.test.ts   # 현재 453 pass / 3 fail (Phase 1b 참조)
 ```
-
-서버 전체 스위트는 필요할 때만 돌립니다 (느립니다).
 
 ### 서버 코드를 고쳤는데 dev 서버에 반영되지 않는 이유
 
