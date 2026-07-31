@@ -392,6 +392,36 @@ export default defineScenario({
       ctx.recordMetric('rowInsertGrowthRatio', Math.round((last / Math.max(first, 1)) * 100) / 100);
     }
 
+    // Where the slope actually lives. `rowInsertGrowthRatio` says a write costs
+    // more as the table grows; it does not say which request grew, and the
+    // answer has already been counter-intuitive once — making the owner
+    // projection ~9x cheaper per row moved the ratio not at all, because the
+    // projection was not the term that grows. Attributing the slope per
+    // endpoint is what keeps the next optimization aimed at something measured
+    // rather than something assumed.
+    if (inOrder.length >= 8) {
+      const slice = Math.max(2, Math.floor(samples.length / 4));
+      const endpointMs = (sample: (typeof samples)[number], endpoint: string): number =>
+        (sample.requests ?? [])
+          .filter((request) => request.url.includes(endpoint))
+          .reduce((total, request) => total + request.durationMs, 0);
+      for (const endpoint of ['/mutate', '/describe', '/query']) {
+        const perSample = samples.map((sample) => endpointMs(sample, endpoint));
+        const mean = (values: readonly number[]) =>
+          values.reduce((total, value) => total + value, 0) / Math.max(values.length, 1);
+        const first = mean(perSample.slice(0, slice));
+        const last = mean(perSample.slice(-slice));
+        if (last === 0 && first === 0) continue;
+        const name = endpoint.replace('/', '');
+        ctx.recordMetric(`rowInsert_${name}_firstQuarterMs`, Math.round(first));
+        ctx.recordMetric(`rowInsert_${name}_lastQuarterMs`, Math.round(last));
+        ctx.recordMetric(
+          `rowInsert_${name}_growthRatio`,
+          Math.round((last / Math.max(first, 1)) * 100) / 100,
+        );
+      }
+    }
+
     // The request breakdown of the median run — this is what tells a slow
     // write apart from a slow read-back apart from contention.
     const median = samples.find(

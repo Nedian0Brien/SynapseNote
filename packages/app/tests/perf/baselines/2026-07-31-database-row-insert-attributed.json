@@ -1,0 +1,53 @@
+{
+  "label": "database-row-insert-attributed",
+  "capturedAt": "2026-07-31T06:28:00.000Z",
+  "commitSha": "a51f31b2",
+  "runCount": 3,
+  "iterations": 40,
+  "supersedes": "2026-07-31-database-row-insert-fresh-table.json",
+  "notes": [
+    "Same scenario and same iteration count as the baseline it supersedes, so",
+    "the totals are directly comparable. What is new is per-endpoint",
+    "attribution of the slope.",
+    "`a51f31b2` made the v2 owner projection ~9x cheaper per row (246us -> 27us,",
+    "measured directly against the index). It moved this scenario's growth",
+    "ratio not at all: 1.58-1.67 here against 1.48-1.84 before. That is not a",
+    "failed change, it is a mis-aimed one — the projection was ~0.22ms of a",
+    "~1.3ms/row end-to-end slope, so removing 9/10 of it is inside the noise.",
+    "The attribution metrics exist so the next attempt is aimed at something",
+    "measured. Averaged over the three runs, of the +51.7ms a write picks up",
+    "between the first and last quarter of the table: mutate +35.3ms (68%),",
+    "the client gap between responses +12.0ms (23%), describe +2.7ms (5%),",
+    "query +1.7ms (3%).",
+    "So the write endpoint holds the slope, and it is remarkably stable about",
+    "it — mutate grows 1.89x/2.01x/2.03x across the three runs. The index",
+    "refresh is no longer a meaningful part of that; the remaining ~0.88ms/row",
+    "is the rest of the write path (owner reserialization, the shadow-repo",
+    "commit, the durable journal entry), none of which has been measured yet.",
+    "rowInsertMedianMs is submit -> the first read-back that started after the",
+    "write landed. Runs are only comparable at the same iteration count.",
+    "Captured with OK_PERF_ROW_ITERATIONS=40 against a restarted dev server, so",
+    "the API process is running the code under test rather than whatever was",
+    "loaded when the server started."
+  ],
+  "scenarios": {
+    "database-row-insert": {
+      "rowInsertMedianMs": { "p50": 124, "runs": [119, 124, 124] },
+      "rowInsertMinMs": { "runs": [72, 74, 73] },
+      "rowInsertMaxMs": { "runs": [153, 150, 149] },
+      "rowInsertFirstQuarterMeanMs": { "runs": [83, 84, 83] },
+      "rowInsertLastQuarterMeanMs": { "runs": [139, 133, 133] },
+      "rowInsertGrowthRatio": { "runs": [1.67, 1.58, 1.6], "goal": 1.0 },
+      "rowInsert_mutate_firstQuarterMs": { "runs": [36, 36, 35] },
+      "rowInsert_mutate_lastQuarterMs": { "runs": [69, 72, 72] },
+      "rowInsert_mutate_growthRatio": { "runs": [1.89, 2.01, 2.03], "goal": 1.0 },
+      "rowInsert_describe_firstQuarterMs": { "runs": [23, 24, 23] },
+      "rowInsert_describe_lastQuarterMs": { "runs": [30, 24, 24] },
+      "rowInsert_describe_growthRatio": { "runs": [1.32, 1.0, 1.05] },
+      "rowInsert_query_firstQuarterMs": { "runs": [8, 9, 9] },
+      "rowInsert_query_lastQuarterMs": { "runs": [13, 9, 9] },
+      "rowInsert_query_growthRatio": { "runs": [1.57, 1.0, 0.97] },
+      "timerClampMs": { "runs": [91, 90, 91], "nominalMs": 75 }
+    }
+  }
+}
