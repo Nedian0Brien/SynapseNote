@@ -4,9 +4,11 @@
 - 브랜치: `codex/fix-row-latency-cv-fidelity`
 - 선행 문서: RFC 0010 (최적화 종료 보고), RFC 0002 (대형 모듈 경계 — 절반만 실행됨)
 - 대상: 이 문서를 받아 작업할 에이전트
-- 판정: **Phase 1은 무조건 먼저.** Phase 2는 근거가 확실함. Phase 3은 선택이며 사람의 판단이 필요함
+- 판정: **세 Phase 모두 착수 승인됨.** 순서는 1 → 2 → 3 고정. 열린 결정 없음
 
 이 문서는 자립적으로 작성되었습니다. 작성 당시 대화 맥락 없이도 실행 가능해야 합니다.
+
+**진행 방식** — "완료 체크리스트" 절이 이 문서의 실행 계약입니다. 각 항목은 명령으로 확인 가능한 기준을 갖습니다. 항목을 체크하기 전에 그 기준을 실제로 실행해 통과를 확인하십시오. 통과 없이 체크하지 마십시오.
 
 ## 0. 먼저 — 이 저장소에서 검증할 때의 함정
 
@@ -107,7 +109,7 @@ bunx biome check packages/app/src/lib/database-mutations/
 
 import 사이트가 깨지지 않았는지 확인합니다. 이 심볼들의 소비자는 속성 추가 다이얼로그와 Button 편집기입니다.
 
-### 1b. 서버 API 계약 3건 (**사람의 결정 필요 — 임의로 고치지 말 것**)
+### 1b. 서버 API 계약 3건 (**결정 완료 — 아래대로 반영**)
 
 **현상** — `bun test packages/server/src/database-*.test.ts`에서 3건 실패:
 
@@ -115,19 +117,35 @@ import 사이트가 깨지지 않았는지 확인합니다. 이 심볼들의 소
 2. `database-api-schema.test.ts` — `... > defines content-free task list, get, cancel, progress, result, and problem envelopes`
 3. `database-task-service.test.ts:158` — `creates a blank v2 owner table through the reviewed plan without a generated record folder`
 
-**원인** — 이 브랜치가 만든 것입니다. `edbd7ace`(2026-07-27, "harden markdown table v2 migration and routing")가 `DATABASE_API_SCHEMAS.operations`(`packages/server/src/database-data-plane-api.ts:3122`)에 `markdownTableMutation`을 추가했는데, 그 레지스트리를 고정하는 계약 테스트를 갱신하지 않았습니다. 2번은 `DatabaseTaskResponseSchema`의 `preview_migration` 형태가 v2 작업 중 바뀐 것으로 보입니다.
+**원인** — 이 브랜치가 만든 것입니다. `edbd7ace`(2026-07-27, "harden markdown table v2 migration and routing")가 `DATABASE_API_SCHEMAS.operations`(`packages/server/src/database-data-plane-api.ts:3122`)에 `markdownTableMutation`을 추가했는데, 그 레지스트리를 고정하는 계약 테스트를 갱신하지 않았습니다.
 
-**왜 임의로 고치면 안 되는가** — 1번 테스트는 낡은 assertion이 아니라 **의도적으로 동결된 공개 API 계약**입니다. `DATABASE_API_SCHEMA_VERSION`은 1이고, 테스트는 `Object.isFrozen`과 정확한 연산 목록을 함께 검사합니다. 즉 테스트는 제 역할을 하고 있고, 답해야 할 질문은 이것입니다:
+**1번 — 결정: 연산 목록에 `markdownTableMutation`을 추가한다. 스키마 버전은 1로 유지한다.**
 
-> v2 markdown-table mutation이 **v1 공개 계약에 속하는가?** 속한다면 목록에 추가하고 문서화한다. 속하지 않는다면 레지스트리에서 빼거나 스키마 버전을 올린다.
+근거:
 
-이건 제품·호환성 판단입니다. 에이전트는 **결정하지 말고**, 세 실패의 정확한 diff를 정리해 사람에게 올립니다. 결정을 받은 뒤에 반영합니다.
+- `/api/databases/markdown-table/mutate`는 실제로 라우팅된 엔드포인트이며(`api-extension.ts:18378`) 앱 자신이 호출합니다(`app/src/lib/database-markdown-table-client.ts:33`). 선언하는 쪽이 사실에 맞습니다.
+- 연산 추가는 **가산적**이라 기존 연산의 형태를 바꾸지 않습니다.
+- 레지스트리에는 **프로덕션 소비자가 없습니다.** `DATABASE_API_SCHEMAS`를 읽는 곳은 자기 자신의 계약 테스트뿐입니다 (주석은 "transports, contract tests, future SDK generation"이라고 하지만 transport는 실제로 읽지 않습니다). 응답 헤더 `X-SynapseNote-Database-Schema-Version: 1`은 나가지만 레지스트리 내용을 파싱하는 클라이언트는 없습니다. 따라서 버전을 올려도 알아볼 대상이 없고, 올리지 않아도 깨질 대상이 없습니다.
 
-**완료 정의** — 결정을 받은 경우: `bun test packages/server/src/database-*.test.ts`가 456 pass / 0 fail. 결정을 못 받은 경우: 3건의 diff와 선택지를 정리한 노트를 남기고 Phase 2로 진행합니다 (이 3건은 Phase 2 작업 영역과 겹치지 않습니다).
+즉 이것은 호환성 위험이 아니라 **선언의 정확성** 문제이고, 정확한 선언은 "이 엔드포인트는 존재한다"입니다.
+
+테스트(`database-api-schema.test.ts:54`)의 기대 목록에 `markdownTableMutation`을 추가합니다. 위치는 레지스트리의 실제 키 순서와 일치시켜야 합니다 (`toEqual`은 순서를 봅니다) — 현재 레지스트리에서는 `commit`과 `agentRuns` 사이입니다.
+
+**2번과 3번 — 판단 불필요, 형태를 맞추면 됩니다.**
+
+2번은 `DatabaseTaskResponseSchema`의 `preview_migration` 봉투가 v2 작업 중 바뀐 것이고, 3번은 `plan.diff.manifests`의 기대 항목이 낡은 것입니다. 둘 다 공개 계약 동결과 무관하므로 **현재 스키마·동작에 맞게 테스트를 갱신**합니다.
+
+단, 갱신 전에 확인할 것: 바뀐 형태가 **의도된 것인지** 각 스키마의 정의를 읽고 판단합니다. 스키마가 실수로 바뀐 것으로 보이면 테스트가 아니라 스키마를 고치고 보고합니다.
+
+**완료 정의**
+
+```bash
+bun test packages/server/src/database-*.test.ts   # 456 pass / 0 fail
+```
 
 ---
 
-## Phase 2 — `DatabaseWorkspaceControllerContext` 타입화
+## Phase 2 — 워크스페이스 컨텍스트 두 타입에 실제 타입 부여
 
 근거가 가장 확실하고 범위가 명확한 구조 작업입니다.
 
@@ -226,7 +244,9 @@ cd packages/app && bun run test && bun run test:dom
 bunx biome check packages/app/src/components/
 ```
 
-추가로: `database-workspace-context.ts`에 `Record<string, any>`가 남아있지 않을 것. `useDatabaseWorkspaceMutationCommands.ts:313`의 `typeof refreshNow === 'function'` 런타임 가드는 **일단 그대로 둡니다** (타입이 붙었다고 즉시 제거하면 회귀 시 조용해집니다). 제거 여부는 별도 판단.
+추가로: `database-workspace-context.ts`에 `Record<string, any>`가 남아있지 않을 것.
+
+**결정: `useDatabaseWorkspaceMutationCommands.ts:313`의 `typeof refreshNow === 'function'` 런타임 가드는 유지합니다.** 타입이 붙어도 제거하지 마십시오. 비용이 0이고, 타입은 이 저장소 안에서 컴파일 타임에만 보호합니다. 이 값이 사라졌을 때의 실패 양상이 "서버는 성공했는데 UI가 실패라고 표시"였다는 점을 감안하면, 중복 방어를 남기는 편이 낫습니다.
 
 ### 위험
 
@@ -234,13 +254,58 @@ bunx biome check packages/app/src/components/
 
 ---
 
-## Phase 3 — 선택 (착수 전 사람의 판단 필요)
+## Phase 3 — 서버 모놀리스에 첫 경계를 세운다 (**결정 완료 — 범위 한정**)
 
-Phase 1, 2와 달리 여기는 **무엇을 할지 정해져 있지 않습니다.** 두 후보의 근거를 제시하되, 착수는 지시를 받고 합니다.
+**결정: 서버 쪽을 한다. 단 `api-extension.ts`를 "리팩터링"하지 않는다.**
 
-### 후보 A — 서버 모놀리스 (계획이 아예 없는 영역)
+18,831줄을 쪼개겠다는 계획은 실패합니다. 대신 **응집된 블록 하나를 뽑아내고, 그 과정에서 서버용 크기 예산 가드를 설치**합니다. 성과물은 두 개입니다: 파일 하나가 작아지는 것, 그리고 **다시 부풀지 못하게 막는 장치**.
 
-`docs/rfcs/`의 모든 모듈화 계획(0001, 0002, 0003, 0004, globals-css)은 **`packages/app`만** 겨냥합니다. 서버 쪽은 3~4배 크면서 계획이 없습니다.
+가드가 성과물인 이유는 Phase 1a가 증명합니다 — 앱에는 크기 가드가 있어서 위반이 즉시 빨간불로 드러났습니다. 서버에는 아무것도 없어서 18,831줄까지 왔습니다.
+
+### 3-1. 첫 추출 대상: show-all / search 디렉터리 워커
+
+`packages/server/src/api-extension.ts`의 **1321–1975행**. 라우트 파일 안에 사는 파일시스템 워커로, 관심사가 명백히 다릅니다. 연속 블록이고 이미 테스트 훅을 갖고 있어(= 이미 독립 단위로 취급되고 있음) 첫 추출로 가장 안전합니다.
+
+| 행 | 심볼 |
+| ---: | --- |
+| 1329 | `DEFAULT_SHOWALL_MAX_ENTRIES` |
+| 1330 | `getShowAllMaxEntries()` |
+| 1349 | `DEFAULT_SEARCH_MAX_ENTRIES` |
+| 1350 | `getSearchMaxEntries()` |
+| 1371 | `__getShowAllWalkStatsForTesting()` |
+| 1377 | `__resetShowAllWalkStatsForTesting()` |
+| 1393 | `StreamShowAllOpts` |
+| 1425 | `WalkShowAllOpts` |
+| 1466 | `streamShowAllEntries()` (async generator) |
+| 1918 | `walkContentDirForShowAll()` (버퍼드 어댑터) |
+
+새 모듈: `packages/server/src/content-show-all-walk.ts` (약 650줄). `api-extension.ts`는 그것을 import합니다.
+
+**절차** — RFC 0003이 성공한 방식을 따릅니다:
+
+1. 블록을 그대로 새 파일로 옮깁니다. **로직을 고치지 않습니다.** import/export만 조정합니다.
+2. `api-extension.ts`에서 재노출이 필요한지 확인합니다 (외부 소비자가 있으면 배럴 유지, 없으면 직접 import).
+3. 타입체크 + 기존 테스트가 초록인지 확인합니다.
+4. **그 다음에** 이 모듈에 대한 단위 테스트를 붙입니다. 이미 `__get/__resetShowAllWalkStatsForTesting`이 있으니 테스트 가능한 표면이 마련돼 있습니다.
+
+**하지 말 것** — 옮기면서 동시에 개선하지 마십시오. 순수 이동 커밋 하나, 그 다음 필요하면 개선 커밋. 이동과 수정이 한 커밋에 섞이면 회귀 시 이분 탐색이 불가능합니다.
+
+### 3-2. 서버 크기 예산 가드 설치
+
+앱의 `packages/app/src/build/module-boundaries.ts` + `module-boundaries.test.ts`를 참고해 서버용 등가물을 만듭니다.
+
+**중요 — 현실적인 예산을 잡으십시오.** 서버에는 이미 18,831줄짜리 파일이 있습니다. 모든 파일에 낮은 예산을 강제하면 즉시 빨간불이 되어 가드가 무시됩니다. 앱이 쓰는 방식(`LEGACY_MODULE_EXCEPTIONS` — 명시적 예외를 RFC 단계와 함께 기록)을 그대로 따릅니다:
+
+- 새로 추출한 `content-show-all-walk.ts`에는 실제 크기에 근접한 예산 (예: 700).
+- `api-extension.ts`는 **현재 크기를 상한으로 등록**합니다. 줄어들 수는 있어도 늘어날 수는 없게 됩니다. 이것만으로도 지금보다 낫습니다.
+- 나머지 대형 파일도 같은 방식으로 현재 크기를 상한으로 박아둡니다.
+
+이렇게 하면 가드가 **첫날부터 초록**이면서 모든 파일에 대해 단조 감소를 강제합니다.
+
+### 참고 — 남은 서버 모놀리스 (이번 Phase 범위 밖, 기록용)
+
+| 파일 | 줄 수 | 성격 |
+| --- | ---: | --- |
 
 | 파일 | 줄 수 | 성격 |
 | --- | ---: | --- |
@@ -251,11 +316,11 @@ Phase 1, 2와 달리 여기는 **무엇을 할지 정해져 있지 않습니다.
 | `server/src/database-data-plane.ts` | 5,237 | 메서드 51개, 8개 이상 무관한 책임. `configure*` 주입 세터 5개 |
 | `server/src/server-factory.ts` | 4,782 | `createServer()` 하나가 4,176줄. 전부 하나의 렉시컬 스코프 클로저라 **개별 테스트 불가** |
 
-`api-extension.ts`가 압도적이지만 그만큼 위험합니다. 착수한다면 라우트 그룹 단위로 잘라내되, 반드시 **RFC 0003이 성공한 방식**(경계를 먼저 정의하고, 순수 모듈을 뽑고, 테스트를 붙이고, 크기 예산을 등록)을 따르고, RFC 0002가 실패한 방식(파사드 + Runtime 덩어리 이동)을 피합니다.
+이들은 Phase 3의 첫 추출이 끝나고 가드가 설치된 뒤, 같은 절차를 반복할 다음 후보입니다. **이번 Phase에서는 손대지 않습니다.**
 
-### 후보 B — RFC 0002 미완 절반
+### 참고 — 다음 순번이 될 앱 쪽 부채 (역시 범위 밖)
 
-앱 공통 파일들은 계획만 있고 실행되지 않았습니다. 오히려 커진 것도 있습니다.
+RFC 0002의 앱 공통 절반은 계획만 있고 실행되지 않았습니다. 오히려 커진 것도 있습니다.
 
 | 파일 | RFC 기준선 | 현재 |
 | --- | ---: | ---: |
@@ -264,9 +329,7 @@ Phase 1, 2와 달리 여기는 **무엇을 할지 정해져 있지 않습니다.
 | `editor/DocumentContext.tsx` | 1,963 | **1,973 (+10)** |
 | `components/settings/SettingsDialogBody.tsx` | 1,621 | 1,538 |
 
-계획된 디렉터리는 존재하나 껍데기입니다 (`components/file-tree/`에 3개 파일 234줄, 계획된 `FileTreeRender`/`FileTreeDragDrop`/`FileTreeContextMenu` 등은 없음).
-
-`FileTree.tsx`는 단일 컴포넌트가 ~3,280줄에 `useEffect` 26개이고, 그 안에 **6개의 원시 CSS 블록**(`FILE_TREE_UNSAFE_CSS`)과 손으로 만든 Lucide 스프라이트 시트가 들어 있습니다.
+계획된 디렉터리는 존재하나 껍데기입니다 (`components/file-tree/`에 3개 파일 234줄, 계획된 `FileTreeRender`/`FileTreeDragDrop`/`FileTreeContextMenu` 등은 없음). `FileTree.tsx`는 단일 컴포넌트가 ~3,280줄에 `useEffect` 26개이고, 그 안에 **6개의 원시 CSS 블록**(`FILE_TREE_UNSAFE_CSS`)과 손으로 만든 Lucide 스프라이트 시트가 들어 있습니다.
 
 ### 참고 — 이미 성공한 사례
 
@@ -276,15 +339,109 @@ RFC 0003(테이블 지오메트리)은 **진짜로 실행되었습니다.** 대�
 
 ---
 
-## 결정이 필요한 항목 (요약)
+## 이미 결정된 항목 (다시 묻지 말 것)
 
-에이전트가 임의로 정하면 안 되는 것들입니다.
+세 건 모두 2026-07-31에 결정되었습니다. 에이전트는 이대로 진행하고, **재론하지 않습니다.**
 
-| # | 항목 | 질문 |
+| # | 항목 | 결정 |
 | --- | --- | --- |
-| 1 | Phase 1b | v2 markdown-table mutation이 동결된 v1 공개 API 계약에 속하는가? 아니면 스키마 버전을 올리는가? |
-| 2 | Phase 3 | 후보 A(서버 모놀리스)와 B(앱 0002 잔여) 중 무엇을, 혹은 둘 다 하지 않을 것인가? |
-| 3 | Phase 2 (4단계) | 타입 부착 후 `useDatabaseWorkspaceMutationCommands.ts:313`의 런타임 가드를 제거할 것인가? |
+| 1 | Phase 1b | `markdownTableMutation`을 v1 연산 목록에 **추가**한다. 스키마 버전은 1 유지 |
+| 2 | Phase 3 | **서버** 쪽을 한다. 단 `api-extension.ts` 전면 리팩터링이 아니라, show-all 워커 1개 추출 + 크기 가드 설치로 범위를 한정 |
+| 3 | Phase 2 | `useDatabaseWorkspaceMutationCommands.ts:313`의 런타임 가드는 **유지**한다 |
+
+새로운 결정이 필요한 상황이 생기면 **멈추고 물어봅니다.** 특히 Phase 2에서 타입 에러가 나오는 경우(= 잠복 버그 발견), Phase 3에서 순수 이동이 불가능한 경우가 그렇습니다.
+
+---
+
+## 완료 체크리스트
+
+각 항목은 **명령으로 확인 가능한 기준**을 갖습니다. 기준을 통과하지 못하면 그 항목은 완료가 아닙니다. 상위 Phase가 초록이 되기 전에 다음 Phase로 넘어가지 않습니다.
+
+### Phase 1a — 모듈 경계 가드 복구
+
+- [ ] **1a-1** `database-property-commands.ts`의 카탈로그/시드 절반(1–276행, 표 참조)을 `lib/database-mutations/database-property-catalog.ts`로 이동
+  - 기준: 새 파일이 존재하고, 이동한 심볼 10개가 전부 거기서 export된다. `git diff`에서 **로직 변경이 0줄**이다 (이동과 import 조정만).
+- [ ] **1a-2** `database-property-commands.ts`가 예산 이하로 내려감
+  - 기준: `awk 'END{print NR+1}' packages/app/src/lib/database-mutations/database-property-commands.ts` 가 **400 이하** (가드는 `wc -l`+1로 셈)
+- [ ] **1a-3** 새 파일에 예산 등록
+  - 기준: `MODULE_SIZE_BUDGETS`(`packages/app/src/build/module-boundaries.ts`)에 `database-property-catalog.ts` 항목이 있고, `DATABASE_LEAF_BOUNDARIES`(`module-boundaries.test.ts:16`)에도 경로가 있다
+- [ ] **1a-4** 새 파일이 leaf 제약을 위반하지 않음
+  - 기준: `bun run test`가 `database leaves do not own transport, snapshot, or route writes`와 `database command modules do not regress to the compatibility barrel` 둘 다 통과
+- [ ] **1a-5** 앱 스위트 초록
+  - 기준: `cd packages/app && bun run test` → **fail 0** (현재 5870 pass / 1 fail → 5871 pass / 0 fail)
+  - 기준: `cd packages/app && bun run test:dom` → 10 pass / 0 fail
+  - 기준: `cd packages/app && bun run typecheck` 종료코드 0
+  - 기준: `bunx biome check packages/app/src/lib/database-mutations/` 경고 외 오류 0
+
+### Phase 1b — 서버 계약 3건
+
+- [ ] **1b-1** `markdownTableMutation`을 계약 테스트 기대 목록에 추가
+  - 기준: `database-api-schema.test.ts:54`의 배열에 `'markdownTableMutation'`이 있고, 위치가 레지스트리 실제 키 순서와 같다 (`commit`과 `agentRuns` 사이). `toEqual`은 순서를 봄
+  - 기준: `DATABASE_API_SCHEMA_VERSION`은 **1에서 바뀌지 않았다**
+- [ ] **1b-2** `preview_migration` 봉투 실패 해소
+  - 기준: 스키마 정의를 읽고 **변경이 의도된 것인지 판단한 근거를 커밋 메시지에 남겼다**. 의도된 변경이면 테스트를 갱신, 실수면 스키마를 고치고 보고
+- [ ] **1b-3** `database-task-service.test.ts:158` 실패 해소
+  - 기준: 1b-2와 동일한 판단 절차를 거쳤다
+- [ ] **1b-4** 서버 데이터베이스 스위트 초록
+  - 기준: `bun test packages/server/src/database-*.test.ts` → **456 pass / 0 fail**
+
+### Phase 2 — 워크스페이스 컨텍스트 타입화
+
+- [ ] **2-1** `RenderContext`를 생산자에서 유도
+  - 기준: `database-workspace-context.ts`의 `DatabaseWorkspaceRenderContext`가 더 이상 `Record<string, any>`가 아니고, 223개 키를 손으로 적지 않았다 (`typeof`/`ReturnType` 사용)
+  - 기준: `cd packages/app && bun run typecheck` 종료코드 0
+- [ ] **2-2** 명령 훅 5개에 각각 파라미터 인터페이스 부여 (커밋 5개)
+  - 기준: `useDatabaseWorkspaceRecordCommands` → `MutationCommands` → `BulkCommands` → `SchemaCommands` → `ViewCommands` 순으로, **각 훅마다 별도 커밋**이고 각 커밋 시점에 `bun run typecheck`가 통과
+  - 기준: 다섯 인터페이스를 하나로 합치지 않았다 (키 집합이 49/38/43/55/120으로 다름)
+- [ ] **2-3** 별칭 제거
+  - 기준: `grep -rn "Record<string, any>" packages/app/src packages/server/src packages/core/src` 결과가 **0건** (테스트 파일 제외)
+  - 기준: `DatabaseWorkspaceControllerContext` 별칭이 삭제되었거나, 남았다면 참조가 0건임을 확인
+- [ ] **2-4** `any` 억제 헤더 제거
+  - 기준: 5개 파일(`DatabaseWorkspaceRecordActions/Toolbar/StatusPanel/ViewRenderer/ReadState`)에 `biome-ignore-all lint/suspicious/noExplicitAny`가 남아있지 않다
+  - 기준: `bunx biome check packages/app/src/components/` 통과
+- [ ] **2-5** 런타임 코드 무변경 확인
+  - 기준: `git diff` 전체에서 **런타임 동작을 바꾸는 변경이 0줄**이다. 타입 주석·인터페이스·import만 바뀐다
+  - 기준: `useDatabaseWorkspaceMutationCommands.ts`의 `typeof refreshNow === 'function'` 가드가 **그대로 남아 있다**
+- [ ] **2-6** 앱 스위트 초록
+  - 기준: `cd packages/app && bun run test && bun run test:dom` 둘 다 fail 0
+- [ ] **2-7** 발견된 잠복 버그 보고
+  - 기준: 타입 부착 중 나온 타입 에러가 있었다면, **고치지 않고** 파일·심볼·예상 실패 양상을 정리해 보고했다. 없었다면 "없음"을 명시
+
+### Phase 3 — 서버 첫 경계 + 크기 가드
+
+- [ ] **3-1** show-all 워커를 순수 이동
+  - 기준: `packages/server/src/content-show-all-walk.ts`가 존재하고 표의 심볼 10개를 export한다
+  - 기준: **이동 커밋에 로직 변경이 없다.** 리뷰어가 `git show --stat`과 diff로 "옮기기만 했다"를 확인할 수 있어야 한다
+- [ ] **3-2** `api-extension.ts` 축소 확인
+  - 기준: `wc -l packages/server/src/api-extension.ts`가 이전보다 **최소 600줄 줄었다** (18,831 → 약 18,200 이하)
+- [ ] **3-3** 관련 스위트 초록
+  - 기준: `bun test packages/server/src/database-*.test.ts` fail 0 (Phase 1b가 끝났다는 전제)
+  - 기준: show-all/search 워커를 덮는 테스트 파일을 찾아 실행하고 통과 — 최소한 `bun test packages/server/src/api-extension*.test.ts`
+  - 기준: `bun run --filter @nedian0brien/synapsenote-server typecheck` 종료코드 0
+  - **서버 전체 스위트(`bun test packages/server/src`)는 10분 이상 걸립니다.** 돌린다면 Phase 종료 시 한 번만 돌리고, **fail 0을 요구하지 말고 착수 전 기준선과 비교**하십시오 (무관한 선재 실패가 있을 수 있음). 기준선을 모른 채 실패를 보면 자기 변경 탓으로 오진합니다
+- [ ] **3-4** 추출한 모듈에 단위 테스트 추가
+  - 기준: `content-show-all-walk.test.ts`가 존재하고, `__getShowAllWalkStatsForTesting`을 사용해 **워크 횟수를 실제로 검증**한다
+  - 기준: 그 테스트가 변경 없이는 실패함을 확인했다 (일부러 깨뜨려 확인 — 이 저장소에서 "실패할 수 없는 테스트"를 만든 전례가 있음)
+- [ ] **3-5** 서버 크기 예산 가드 설치
+  - 기준: 앱의 `module-boundaries.ts`/`.test.ts`에 대응하는 서버용 모듈과 테스트가 존재한다
+  - 기준: 가드가 **첫 실행부터 초록**이다. 대형 파일은 현재 크기를 상한으로 등록해 단조 감소만 강제한다
+  - 기준: `api-extension.ts`가 상한과 함께 등록되어 있어, 한 줄이라도 늘리면 빨간불이 된다
+- [ ] **3-6** 가드가 실제로 작동함을 확인
+  - 기준: `api-extension.ts`에 임시로 빈 줄 몇 개를 넣었을 때 가드가 **실패**하는 것을 확인하고 되돌렸다
+
+### 전체 종료 기준
+
+빠른 것부터 나열했습니다. 위 4개는 매 커밋마다 돌려도 부담이 없습니다.
+
+- [ ] `bun test packages/core/src` → 2630 pass / 0 fail *(~10초)*
+- [ ] `cd packages/app && bun run test` → fail 0 *(~20초)*
+- [ ] `cd packages/app && bun run test:dom` → fail 0 *(~1초)*
+- [ ] `bun test packages/server/src/database-*.test.ts` → fail 0 *(~70초)*
+- [ ] 각 패키지 `typecheck` 종료코드 0
+- [ ] `bunx biome check` 오류 0
+- [ ] 이 문서의 결정 3건이 코드에 그대로 반영되어 있다 (버전 1 유지, 런타임 가드 유지, 서버 가드 설치)
+
+**서버 전체 스위트는 이 목록에 없습니다.** 10분 이상 걸리고, 이 계획의 변경은 데이터베이스 관련 모듈과 `api-extension.ts`에 한정되므로 위 범위로 충분합니다. 굳이 돌린다면 **작업 시작 전에 한 번 돌려 기준선을 기록**해 두십시오 — 그래야 끝나고 나온 실패가 자기 것인지 원래 것인지 구분됩니다.
 
 ## 범위 밖 (이번에 하지 않기로 한 것)
 
