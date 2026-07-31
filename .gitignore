@@ -31,6 +31,15 @@ blob-report/
 .mirror-output/
 /test-doc.md
 
+# Artifacts of `tests/perf --scenario=database-row-insert`. The scenario writes
+# real rows into the workspace it measures, which for a dev run is the
+# repository root, so one 300-row run leaves 300 documents, an owner table and
+# a manifest behind. Untracked they bury `git status` — a single session
+# accumulated 850, and the next reader cannot find their own changes.
+/perf-row-*.md
+/perf_row_insert_*-rows.md
+/.ok/databases/perf_row_insert_*.yml
+
 # Env files (keep .env.example committed)
 .env
 .env.local
