@@ -156,7 +156,7 @@ describe('DatabaseTaskService product handlers', () => {
     const plan = plans.createPlan(draft.id);
     expect(plan.committable).toBe(true);
     expect(plan.diff.manifests).toContainEqual(
-      expect.objectContaining({ path: 'content/task-service/tasks.md', action: 'create' }),
+      expect.objectContaining({ path: 'content/task-service-tasks.md', action: 'create' }),
     );
     const task = await service.start({
       operation: 'bulk',
@@ -171,7 +171,7 @@ describe('DatabaseTaskService product handlers', () => {
     });
     await expect(service.wait(task.id)).resolves.toMatchObject({ state: 'succeeded' });
     expect(store.list()[0]).toMatchObject({ version: 2 });
-    expect(readFileSync(join(contentDir, 'task-service', 'tasks.md'), 'utf8')).toContain(
+    expect(readFileSync(join(contentDir, 'task-service-tasks.md'), 'utf8')).toContain(
       'synapsenote:database',
     );
     expect(() => readFileSync(join(contentDir, 'tasks', 'rec_1.md'))).toThrow();
