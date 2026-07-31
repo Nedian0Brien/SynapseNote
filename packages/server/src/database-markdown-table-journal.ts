@@ -1,8 +1,15 @@
 import { randomUUID } from 'node:crypto';
-import { lstat, mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { lstat, mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { DatabaseRecordActorSchema } from '@nedian0brien/synapsenote-core';
 import { z } from 'zod';
+
+/**
+ * Finished journal entries kept on disk. Large enough that the recent history
+ * a manual recovery would reach for is still there, small enough that the
+ * directory cannot grow without bound.
+ */
+export const DATABASE_MARKDOWN_TABLE_JOURNAL_RETENTION = 50;
 
 const Sha256Schema = z.string().regex(/^sha256:[a-f0-9]{64}$/);
 const JournalFileSchema = z
@@ -104,7 +111,61 @@ export class DatabaseMarkdownTableJournal {
       updatedAt: new Date().toISOString(),
     });
     await writeJson(resolve(this.#root, `${mutationId}.json`), next);
+    if (next.state === 'committed' || next.state === 'rolled_back') await this.#prune();
     return next;
+  }
+
+  /**
+   * Drop finished entries beyond {@link DATABASE_MARKDOWN_TABLE_JOURNAL_RETENTION}.
+   *
+   * Nothing used to remove them. Each entry carries the before AND after bytes
+   * of every file the transaction touched — for a v2 row insert that is the
+   * whole owner table twice, ~12KB and growing with the table — so one editing
+   * session left 176 files and 1.3MB behind, forever. Two things degrade with
+   * that pile: `listInflight` reads every entry on boot to find the unfinished
+   * ones, and the write of each new entry into an ever-larger directory is
+   * where this path's p99 sits (345ms against a 44ms median, with the spike
+   * landing in the committed checkpoint every time).
+   *
+   * Finished entries are kept, not deleted outright: a receipt that cannot
+   * recover its own before-bytes is told to fall back to this journal, so the
+   * recent window has to stay readable.
+   */
+  async #prune(): Promise<void> {
+    try {
+      const names = (await readdir(this.#root)).filter((name) => name.endsWith('.json'));
+      // Hysteresis: the sweep is O(entries) in stat calls, so let the directory
+      // drift above the cap rather than paying for it on every commit.
+      if (names.length <= DATABASE_MARKDOWN_TABLE_JOURNAL_RETENTION * 2) return;
+      const dated = await Promise.all(
+        names.map(async (name) => {
+          const path = resolve(this.#root, name);
+          try {
+            return { name, path, modifiedAt: (await stat(path)).mtimeMs };
+          } catch {
+            return null;
+          }
+        }),
+      );
+      const ordered = dated
+        .filter((entry): entry is { name: string; path: string; modifiedAt: number } => entry !== null)
+        .sort((left, right) => right.modifiedAt - left.modifiedAt);
+      for (const candidate of ordered.slice(DATABASE_MARKDOWN_TABLE_JOURNAL_RETENTION)) {
+        try {
+          const entry = await this.get(candidate.name.slice(0, -5));
+          // Never remove work that has not reached a terminal state — that is
+          // exactly what recovery needs to find.
+          if (entry.state !== 'committed' && entry.state !== 'rolled_back') continue;
+          await rm(candidate.path, { force: true });
+        } catch {
+          // A single unreadable or racing entry must not fail the mutation
+          // whose checkpoint triggered the sweep.
+        }
+      }
+    } catch {
+      // Pruning is maintenance. It never decides whether a transaction
+      // committed, so a failure here is dropped rather than surfaced.
+    }
   }
 
   async get(mutationId: string): Promise<DatabaseMarkdownTableJournalEntry> {
