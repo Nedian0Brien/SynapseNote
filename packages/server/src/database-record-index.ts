@@ -3,6 +3,7 @@ import { type Dirent, readFileSync, realpathSync, statSync } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 import {
+  createDatabaseMarkdownOwnerScopedRevisions,
   createDatabaseMarkdownRecordId,
   createDatabaseMarkdownRecordRevisionSet,
   DatabaseDateValueSchema,
@@ -14,6 +15,7 @@ import {
   type DatabaseMarkdownDocumentCandidate,
   type DatabaseMarkdownDocumentLink,
   type DatabaseMarkdownOwnerRow,
+  type DatabaseMarkdownOwnerScopedRevisions,
   type DatabaseProperty,
   type DatabaseRecord,
   type DatabaseRecordActor,
@@ -1412,6 +1414,10 @@ export class DatabaseRecordIndex {
         });
       }
       if (!('rows' in materialized)) continue;
+      const ownerScoped = {
+        storageRevision: `sha256:${createHash('sha256').update(markdown).digest('hex')}`,
+        revisions: createDatabaseMarkdownOwnerScopedRevisions(markdown, materialized.owner),
+      };
       for (const row of materialized.rows) {
         if (row.recordId === null || row.documentPath === null || row.documentLink === null)
           continue;
@@ -1424,6 +1430,7 @@ export class DatabaseRecordIndex {
           document,
           markdown,
           materialized.owner,
+          ownerScoped,
         );
         if (!projected) continue;
         this.#addCandidate(row.documentPath, projected);
@@ -1431,6 +1438,17 @@ export class DatabaseRecordIndex {
     }
   }
 
+  /**
+   * Project one owner row into a record.
+   *
+   * `ownerScoped` carries the values that describe the whole table rather than
+   * this row — the storage revision and the owner/table pair of the revision
+   * set. Each is a hash over the entire owner markdown and is identical for
+   * every row of one projection, so a caller looping over rows computes them
+   * once and passes them down. Left out, they are derived here, which keeps
+   * single-row callers honest at the cost this loop cannot afford: projecting
+   * 318 rows hashed ~6MB of markdown to produce two constants.
+   */
   #projectV2Row(
     database: DatabaseDefinition,
     source: DatabaseSource,
@@ -1438,6 +1456,10 @@ export class DatabaseRecordIndex {
     document: V2Document,
     ownerMarkdown: string,
     parsedOwner?: ParsedDatabaseMarkdownOwner,
+    ownerScoped?: {
+      storageRevision: string;
+      revisions: DatabaseMarkdownOwnerScopedRevisions;
+    },
   ): DatabaseRecord | null {
     if (row.recordId === null) return null;
     const values: Record<string, DatabaseValue> = {};
@@ -1635,7 +1657,9 @@ export class DatabaseRecordIndex {
         .update('\0')
         .update(ownerMarkdown.slice(row.range.start, row.range.end))
         .digest('hex')}`,
-      storageRevision: `sha256:${createHash('sha256').update(ownerMarkdown).digest('hex')}`,
+      storageRevision:
+        ownerScoped?.storageRevision ??
+        `sha256:${createHash('sha256').update(ownerMarkdown).digest('hex')}`,
       semanticRevisions: createDatabaseMarkdownRecordRevisionSet({
         ownerMarkdown,
         owner:
@@ -1648,6 +1672,7 @@ export class DatabaseRecordIndex {
           })(),
         rowIndex: row.rowIndex,
         documentMarkdown: document.markdown,
+        ...(ownerScoped ? { ownerScoped: ownerScoped.revisions } : {}),
       }),
       values,
       ...(Object.keys(invalidValues).length > 0 ? { invalidValues } : {}),
@@ -1782,6 +1807,10 @@ export class DatabaseRecordIndex {
       });
     }
     if (!('rows' in materialized)) return;
+    const ownerScoped = {
+      storageRevision: `sha256:${createHash('sha256').update(markdown).digest('hex')}`,
+      revisions: createDatabaseMarkdownOwnerScopedRevisions(markdown, materialized.owner),
+    };
     for (const row of materialized.rows) {
       if (row.recordId === null || row.documentPath === null || row.documentLink === null) continue;
       const document = this.#v2DocumentsByPath.get(row.documentPath);
@@ -1793,6 +1822,7 @@ export class DatabaseRecordIndex {
         document,
         markdown,
         materialized.owner,
+        ownerScoped,
       );
       if (record) this.#addCandidate(row.documentPath, record);
     }

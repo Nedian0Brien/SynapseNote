@@ -1,7 +1,11 @@
 import { sha256 } from '@noble/hashes/sha256';
 import { bytesToHex } from '@noble/hashes/utils';
 import { z } from 'zod';
-import type { ParsedDatabaseMarkdownOwner, DatabaseMarkdownTableCell, DatabaseMarkdownTableRow } from './markdown-table.ts';
+import type {
+  DatabaseMarkdownTableCell,
+  DatabaseMarkdownTableRow,
+  ParsedDatabaseMarkdownOwner,
+} from './markdown-table.ts';
 
 function hash(value: string): string {
   return `sha256:${bytesToHex(sha256(new TextEncoder().encode(value)))}`;
@@ -23,11 +27,13 @@ export function databaseMarkdownOwnerRevision(markdown: string): string {
 
 /** Revision of marker/schema/header structure; prose and row values are excluded. */
 export function databaseMarkdownTableStructureRevision(owner: ParsedDatabaseMarkdownOwner): string {
-  return hash(stable({
-    marker: owner.marker,
-    header: owner.header.cells.map((cell) => cell.value),
-    delimiter: owner.delimiter.cells.map((cell) => cell.value),
-  }));
+  return hash(
+    stable({
+      marker: owner.marker,
+      header: owner.header.cells.map((cell) => cell.value),
+      delimiter: owner.delimiter.cells.map((cell) => cell.value),
+    }),
+  );
 }
 
 /** Semantic row revision; whitespace/alignment changes do not invalidate it. */
@@ -74,17 +80,48 @@ export const DatabaseMarkdownRecordRevisionSetSchema = z
   })
   .strict();
 
+/**
+ * The two revisions in a record's set that describe the OWNER rather than the
+ * row: identical for every row of one projection, and each a hash over the
+ * whole table.
+ *
+ * Recomputing them per row made projecting a 318-row source hash ~6MB of
+ * markdown to produce two values, which is most of the cost of applying a
+ * single-row write. Callers that project more than one row compute this once
+ * and hand it down; the shape exists so that hoisting is a parameter rather
+ * than a caller reaching for the two helpers and assembling them by hand.
+ */
+export interface DatabaseMarkdownOwnerScopedRevisions {
+  owner: string;
+  table: string;
+}
+
+export function createDatabaseMarkdownOwnerScopedRevisions(
+  ownerMarkdown: string,
+  owner: ParsedDatabaseMarkdownOwner,
+): DatabaseMarkdownOwnerScopedRevisions {
+  return {
+    owner: databaseMarkdownOwnerRevision(ownerMarkdown),
+    table: databaseMarkdownTableStructureRevision(owner),
+  };
+}
+
 export function createDatabaseMarkdownRecordRevisionSet(input: {
   ownerMarkdown: string;
   owner: ParsedDatabaseMarkdownOwner;
   rowIndex: number;
   documentMarkdown: string;
+  /** Precomputed owner-scoped pair; derived from the owner when omitted. */
+  ownerScoped?: DatabaseMarkdownOwnerScopedRevisions;
 }): DatabaseMarkdownRecordRevisionSet {
   const row = input.owner.rows[input.rowIndex];
   if (!row) throw new Error(`Database table row ${input.rowIndex} was not found`);
+  const ownerScoped =
+    input.ownerScoped ??
+    createDatabaseMarkdownOwnerScopedRevisions(input.ownerMarkdown, input.owner);
   return {
-    owner: databaseMarkdownOwnerRevision(input.ownerMarkdown),
-    table: databaseMarkdownTableStructureRevision(input.owner),
+    owner: ownerScoped.owner,
+    table: ownerScoped.table,
     row: databaseMarkdownTableRowRevision(row),
     cells: Object.fromEntries(
       row.cells.map((cell) => [
@@ -115,7 +152,8 @@ export function createDatabaseMarkdownRevisionSet(
   for (const [index, row] of input.owner.rows.entries()) {
     const key = rowKeys[index] ?? String(index);
     rows[key] = databaseMarkdownTableRowRevision(row);
-    for (const cell of row.cells) cells[`${key}:${cell.columnIndex}`] = databaseMarkdownTableCellRevision(cell);
+    for (const cell of row.cells)
+      cells[`${key}:${cell.columnIndex}`] = databaseMarkdownTableCellRevision(cell);
   }
   return {
     manifest: input.manifestRevision,

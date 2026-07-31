@@ -428,8 +428,10 @@ export {
 } from './database/markdown-table-record.ts';
 export {
   type CreateDatabaseMarkdownRevisionSetInput,
+  createDatabaseMarkdownOwnerScopedRevisions,
   createDatabaseMarkdownRecordRevisionSet,
   createDatabaseMarkdownRevisionSet,
+  type DatabaseMarkdownOwnerScopedRevisions,
   type DatabaseMarkdownRecordRevisionSet,
   DatabaseMarkdownRecordRevisionSetSchema,
   type DatabaseMarkdownRevisionSet,
