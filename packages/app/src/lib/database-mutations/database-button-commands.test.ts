@@ -5,10 +5,10 @@ import { DatabaseDesiredStateDraftSchema } from '@nedian0brien/synapsenote-serve
 
 import { createDatabaseButtonPropertyChangeDesiredState } from './database-property-advanced-commands';
 import {
-  createDatabaseAddPropertyDesiredState,
   createDatabasePropertyDefinitionForAdd,
   nextDatabaseButtonActionId,
-} from './database-property-commands';
+} from './database-property-catalog';
+import { createDatabaseAddPropertyDesiredState } from './database-property-commands';
 
 function definitionWith(extraProperties: readonly unknown[] = []): DatabaseDefinition {
   return DatabaseDefinitionSchema.parse({

@@ -53,6 +53,11 @@ export const MODULE_SIZE_BUDGETS: readonly ModuleSizeBudget[] = [
     owner: 'database schema property commands',
   },
   {
+    path: 'lib/database-mutations/database-property-catalog.ts',
+    maxLines: 300,
+    owner: 'database property catalog and seeds',
+  },
+  {
     path: 'lib/database-mutations/database-record-commands.ts',
     maxLines: 350,
     owner: 'database record commands',
@@ -283,6 +288,7 @@ export const DATABASE_BOUNDARY_CONTRACT = [
   'lib/database-mutations/database-property-advanced-commands.ts',
   'lib/database-mutations/database-property-option-commands.ts',
   'lib/database-mutations/database-property-commands.ts',
+  'lib/database-mutations/database-property-catalog.ts',
   'lib/database-mutations/database-record-commands.ts',
   'lib/database-mutations/database-bulk-commands.ts',
   'lib/database-mutations/database-cell-commands.ts',

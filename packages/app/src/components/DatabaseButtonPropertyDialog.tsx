@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { nextDatabaseButtonActionId } from '@/lib/database-mutations/database-property-commands';
+import { nextDatabaseButtonActionId } from '@/lib/database-mutations/database-property-catalog';
 
 type ButtonProperty = Extract<DatabaseProperty, { type: 'button' }>;
 

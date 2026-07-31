@@ -9,7 +9,6 @@ import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-s
 import {
   createDatabaseAddPropertyDesiredState,
   createDatabaseDuplicatePropertyDesiredState,
-  createDatabasePropertyDefinitionForAdd,
   createDatabaseRemovePropertyDesiredState,
   createDatabaseRenamePropertyDesiredState,
   createDatabaseReorderPropertiesDesiredState,
@@ -17,6 +16,7 @@ import {
   createDatabaseTablePasteDesiredState,
   createDatabaseUnsetPropertyValuesDesiredState,
 } from '@/lib/database-cell-mutation';
+import { createDatabasePropertyDefinitionForAdd } from '@/lib/database-mutations/database-property-catalog';
 import {
   databaseDelimitedRecordIds,
   inspectDatabaseImport,

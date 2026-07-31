@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { type DatabaseCatalogCandidate, fetchDatabaseCatalog } from '@/lib/database-catalog-client';
-import { databaseAddablePropertyGroups } from '@/lib/database-mutations/database-property-commands';
+import { databaseAddablePropertyGroups } from '@/lib/database-mutations/database-property-catalog';
 import { databasePropertyTypeLabel } from '@/lib/database-property-copy';
 import { DatabasePropertyTypeIcon } from './database-property-icons';
 

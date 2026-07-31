@@ -1,14 +1,13 @@
 import { describe, expect, it } from 'bun:test';
 import { DatabaseDefinitionSchema } from '@nedian0brien/synapsenote-core';
 import { DatabaseDesiredStateDraftSchema } from '@nedian0brien/synapsenote-server';
-
 import {
-  createDatabaseAddPropertyDesiredState,
   createDatabasePropertyDefinitionForAdd,
   DATABASE_ADDABLE_PROPERTY_TYPES,
   databaseAddablePropertyTypes,
   databasePropertyKeyFromName,
-} from './database-property-commands';
+} from './database-property-catalog';
+import { createDatabaseAddPropertyDesiredState } from './database-property-commands';
 
 const definition = DatabaseDefinitionSchema.parse({
   version: 1,

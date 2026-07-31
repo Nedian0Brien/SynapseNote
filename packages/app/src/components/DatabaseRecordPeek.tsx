@@ -58,10 +58,8 @@ import { useOptionalDocumentContext } from '@/editor/DocumentContext';
 import { describeDatabase } from '@/lib/database-catalog-client';
 import { databaseUiMutationReviewMode } from '@/lib/database-mutation-policy';
 import { executeDatabaseMutation } from '@/lib/database-mutations/database-mutation-gateway';
-import {
-  createDatabaseAddPropertyDesiredState,
-  createDatabasePropertyDefinitionForAdd,
-} from '@/lib/database-mutations/database-property-commands';
+import { createDatabaseAddPropertyDesiredState } from '@/lib/database-mutations/database-property-commands';
+import { createDatabasePropertyDefinitionForAdd } from '@/lib/database-mutations/database-property-catalog';
 import {
   databasePageTargetToHash,
   databaseRecordPathToHash,

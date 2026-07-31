@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { databaseAddablePropertyTypes } from '@/lib/database-mutations/database-property-commands';
+import { databaseAddablePropertyTypes } from '@/lib/database-mutations/database-property-catalog';
 import {
   databasePropertyTypeExample,
   databasePropertyTypeLabel,
