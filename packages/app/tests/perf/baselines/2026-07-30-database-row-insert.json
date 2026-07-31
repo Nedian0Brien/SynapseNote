@@ -4,6 +4,7 @@
  "commitSha": "c8c783247ebbefdd160f88258bdffc7ef9558a41",
  "runCount": 3,
  "notes": [
+  "SUPERSEDED \u2014 captured against a shared table that grew from 35 to 358 rows during measurement, so this median describes a table size rather than a code version. Do not compare against it.",
   "First trustworthy foreground measurement of the database row insert path.",
   "Captured after: shadow-repo snapshot fast path (582ac496), refresh-scheduler",
   "starvation fix (29f6787b), collapsed-skills gating (6629db4d), and immediate",
@@ -47,5 +48,6 @@
     "nominalMs": 75
    }
   }
- }
+ },
+ "supersededBy": "2026-07-31-database-row-insert-fresh-table.json"
 }

@@ -130,28 +130,110 @@ export default defineScenario({
       );
     }
 
-    // Pick a target: the explicit override, else the first catalog source.
+    // A fresh database per run, unless one is named explicitly.
+    //
+    // Measuring against whatever the catalog happened to hold made every run
+    // depend on how many rows earlier runs had left behind — the table drifted
+    // from 35 rows to 358 over one session, the median moved with it, and no
+    // two baselines were comparable. Creating the table here makes a run
+    // reproducible and, because each insert lands in a table one row larger
+    // than the last, the run measures the slope rather than a single point.
     const override = process.env.OK_PERF_DATABASE;
     const target = override
       ? { databaseId: override.split('/')[0] ?? '', sourceId: override.split('/')[1] ?? '' }
-      : await page.evaluate(async () => {
-          const response = await fetch('/api/databases/catalog');
-          const catalog = (await response.json()) as {
-            candidates?: { id: string; sources?: { id: string }[] }[];
+      : await page.evaluate(async (stamp: string) => {
+          const post = (path: string, body: unknown) =>
+            fetch(path, {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify(body),
+            });
+          const desiredState = {
+            database: {
+              key: `perf_row_insert_${stamp}`,
+              name: `Perf row insert ${stamp}`,
+              contract: {
+                purpose: 'Row insert latency scenario',
+                canonicality: 'canonical',
+                vocabulary: ['perf'],
+                freshness: { expectation: 'realtime', maxAgeSeconds: 60 },
+                sensitivity: 'internal',
+              },
+            },
+            sources: [
+              {
+                key: 'rows',
+                name: 'Rows',
+                recordMeaning: 'One measured row',
+                folder: `perf-row-insert-${stamp}`,
+                // `markdown_table` is what makes this the v2 owner-table path,
+                // which is the write the scenario exists to measure.
+                storage: 'markdown_table',
+                properties: [{ key: 'title', name: 'Title', type: 'title' }],
+              },
+            ],
+            views: [
+              {
+                key: 'table',
+                name: 'Table',
+                sourceKey: 'rows',
+                layout: { type: 'table', configuration: {} },
+                projection: { propertyKeys: ['title'], body: 'hidden' },
+              },
+            ],
+            templates: [],
+            policy: { mode: 'review', allowedOperations: [], maxRecordsPerCommit: 1 },
+            sampleRecords: [],
+            recordMutations: [],
           };
-          for (const candidate of catalog.candidates ?? []) {
-            const source = candidate.sources?.[0];
-            if (source) return { databaseId: candidate.id, sourceId: source.id };
+          const draft = await post('/api/databases/plan', {
+            action: 'create_draft',
+            desiredState,
+          });
+          if (!draft.ok) return { databaseId: '', sourceId: '', error: `draft ${draft.status}` };
+          const draftBody = (await draft.json()) as { draft: { id: string } };
+          const planned = await post('/api/databases/plan', {
+            action: 'create_plan',
+            draftId: draftBody.draft.id,
+          });
+          if (!planned.ok) return { databaseId: '', sourceId: '', error: `plan ${planned.status}` };
+          const { plan } = (await planned.json()) as {
+            plan: {
+              id: string;
+              hash: string;
+              snapshotRevision: string;
+              targetResolutions: { kind: string; targetId: string }[];
+            };
+          };
+          const databaseId =
+            plan.targetResolutions.find((entry) => entry.kind === 'database')?.targetId ?? '';
+          const sourceId =
+            plan.targetResolutions.find((entry) => entry.kind === 'source')?.targetId ?? '';
+          const committed = await post('/api/databases/commit', {
+            planId: plan.id,
+            planHash: plan.hash,
+            expectedSnapshotRevision: plan.snapshotRevision,
+            idempotencyKey: `perf-row-insert-${databaseId}`,
+            approvalToken: `approve:${plan.hash}`,
+            actor: { principalId: 'agent:perf', kind: 'agent' },
+            assertions: { databaseAbsent: true },
+          });
+          if (!committed.ok) {
+            return { databaseId: '', sourceId: '', error: `commit ${committed.status}` };
           }
-          return { databaseId: '', sourceId: '' };
-        });
+          return { databaseId, sourceId, error: '' };
+        }, String(Date.now()));
 
     if (!target.databaseId || !target.sourceId) {
-      ctx.note('No database in the catalog — nothing to measure.');
+      ctx.note(
+        `Could not obtain a target database${'error' in target && target.error ? `: ${target.error}` : ''}.`,
+      );
       ctx.recordMetric('rowInsertMedianMs', -1);
       return;
     }
-    ctx.note(`target ${target.databaseId}/${target.sourceId}`);
+    ctx.note(
+      `target ${target.databaseId}/${target.sourceId}${override ? ' (override)' : ' (fresh)'}`,
+    );
 
     await page.goto(
       `${opts.target}/#database/${encodeURIComponent(target.databaseId)}/${encodeURIComponent(target.sourceId)}`,
@@ -290,6 +372,24 @@ export default defineScenario({
       ctx.recordMetric('rowInsertMedianMs', measured[Math.floor(measured.length / 2)] ?? -1);
       ctx.recordMetric('rowInsertMinMs', measured[0] ?? -1);
       ctx.recordMetric('rowInsertMaxMs', measured.at(-1) ?? -1);
+    }
+
+    // Against a fresh table, sample i is an insert into a table of size i — so
+    // the run measures the slope, not a point. Comparing the first quarter of
+    // the samples with the last is what shows whether the write is O(rows) or
+    // flat, which is the property the projection work is chasing.
+    const inOrder = samples
+      .map((sample) => sample.clickToReadyMs)
+      .filter((value): value is number => value !== null);
+    if (inOrder.length >= 8) {
+      const slice = Math.max(2, Math.floor(inOrder.length / 4));
+      const mean = (values: readonly number[]) =>
+        Math.round(values.reduce((total, value) => total + value, 0) / values.length);
+      const first = mean(inOrder.slice(0, slice));
+      const last = mean(inOrder.slice(-slice));
+      ctx.recordMetric('rowInsertFirstQuarterMeanMs', first);
+      ctx.recordMetric('rowInsertLastQuarterMeanMs', last);
+      ctx.recordMetric('rowInsertGrowthRatio', Math.round((last / Math.max(first, 1)) * 100) / 100);
     }
 
     // The request breakdown of the median run — this is what tells a slow
