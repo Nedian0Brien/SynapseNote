@@ -16,6 +16,8 @@ import {
   parseDatabaseCellDraft,
 } from '@/lib/database-cell-mutation';
 import { databaseRecordsToCsv } from '@/lib/database-csv';
+import type { DatabaseDescription } from '@/lib/database-catalog-client';
+import type { databaseSnapshotToJson } from '@/lib/database-json';
 import { appendDatabaseQueryPage, queryDatabase } from '@/lib/database-query-client';
 import { type DatabasePasteChange, databaseRecordsToTsv } from '@/lib/database-tsv';
 import { classifyDatabaseUiProblem } from '@/lib/database-ui-problem';
@@ -27,9 +29,53 @@ import {
   isDatabaseSelectProperty,
 } from './DatabaseTableGrid';
 
-import type { DatabaseWorkspaceControllerContext } from './database-workspace-context';
+import type { DatabaseTableDialogProps } from './database-workspace-types';
+import type { useDatabaseWorkspaceControllerState } from './use-database-workspace-controller-state';
+import type { useDatabaseWorkspaceMutationCommands } from './useDatabaseWorkspaceMutationCommands';
 
-export function useDatabaseWorkspaceBulkCommands(context: DatabaseWorkspaceControllerContext) {
+type DatabaseWorkspaceControllerState = ReturnType<typeof useDatabaseWorkspaceControllerState>;
+type DatabaseWorkspaceMutationCommands = ReturnType<typeof useDatabaseWorkspaceMutationCommands>;
+
+export interface DatabaseWorkspaceBulkCommandsContext
+  extends Pick<
+    DatabaseWorkspaceControllerState,
+    | 'selectedRecordIds'
+    | 'bulkPropertyId'
+    | 'bulkDraft'
+    | 'setMutationError'
+    | 'mutationStatus'
+    | 'setSelectedRecordIds'
+    | 'setPropertiesDialogRenameId'
+    | 'setPropertiesDialogOpen'
+    | 'setViewRenameTarget'
+    | 'setViewManagerOpen'
+    | 'setFilterDialogOpen'
+    | 'setViewSettingsOpen'
+    | 'selection'
+    | 'showArchived'
+    | 'csvStatus'
+    | 'setCsvStatus'
+  > {
+  description: DatabaseDescription | null;
+  result: DatabaseQueryResult | null;
+  runMutation: DatabaseWorkspaceMutationCommands['runMutation'];
+  initialTablePaste: readonly DatabasePasteChange[] | undefined;
+  handledInitialTablePaste: DatabaseWorkspaceControllerState['handledInitialTablePasteRef'];
+  open: boolean;
+  initialDatabaseSurface: DatabaseTableDialogProps['initialDatabaseSurface'];
+  initialViewAction: DatabaseTableDialogProps['initialViewAction'];
+  initialPropertyId: string | undefined;
+  handledInitialDatabaseSurface: DatabaseWorkspaceControllerState['handledInitialDatabaseSurfaceRef'];
+  openSelectOptions: (property: DatabaseSelectProperty) => void;
+  commitDefaultViewChange: DatabaseWorkspaceMutationCommands['commitDefaultViewChange'];
+  initialSelectedRecordIds: readonly string[] | undefined;
+  handledInitialSelectedRecordIds: DatabaseWorkspaceControllerState['handledInitialSelectedRecordIdsRef'];
+  databaseSnapshotToJson: typeof databaseSnapshotToJson;
+}
+
+export function useDatabaseWorkspaceBulkCommands(
+  context: DatabaseWorkspaceBulkCommandsContext & Record<string, unknown>,
+) {
   const {
     description,
     result,
