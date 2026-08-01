@@ -1,6 +1,6 @@
 import { plural } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react/macro';
-import { UploadAssetSuccessSchema, WorkspaceSuccessSchema } from '@nedian0brien/synapsenote-core';
+import { WorkspaceSuccessSchema } from '@nedian0brien/synapsenote-core';
 import type { FileTreeDropResult, FileTreeRenameEvent } from '@pierre/trees';
 import { useFileTree } from '@pierre/trees/react';
 import { useTheme } from 'next-themes';
@@ -16,18 +16,15 @@ import { toast } from 'sonner';
 import { DeleteConfirmationDialog } from '@/components/DeleteConfirmationDialog';
 import { FileTreeFilteredToZeroNotice } from '@/components/FileTreeFilteredToZeroNotice';
 import {
-  appendSidebarUploadFields,
   collectTreeFolderPathsFromDocuments,
   computeTreeAncestorPaths,
   docNameToTreePath,
   documentsToTreePaths,
   documentsTreePathSignature,
-  fileEntryFromUploadedPath,
   fileEntryToTreePath,
   folderPathToTreeDirectoryPath,
   treeDirectoryPathToFolderPath,
   treePathSignature,
-  uploadedPathForSidebarDrop,
 } from '@/components/file-tree-adapter';
 import type {
   FileTreeTarget,
@@ -65,7 +62,7 @@ import { useConflicts } from '@/hooks/use-conflicts';
 import { useConfigContext } from '@/lib/config-provider';
 import { emitDocumentsChanged } from '@/lib/documents-events';
 import type { PageHeaderRenameResult } from '@/lib/page-header-rename-events';
-import { parseServerResponse, parseSuccessOrWarn } from '@/lib/parse-server-response';
+import { parseSuccessOrWarn } from '@/lib/parse-server-response';
 import { cn } from '@/lib/utils';
 import { applyRenamedDocuments as reconcileRenamedDocuments } from './file-tree/apply-renamed-documents';
 import { FileTreeMenu } from './file-tree/FileTreeMenu';
@@ -89,12 +86,14 @@ import { useFileTreeCreation } from './file-tree/useFileTreeCreation';
 import { useFileTreeDragAndDrop } from './file-tree/useFileTreeDragAndDrop';
 import { useFileTreeKeyboard } from './file-tree/useFileTreeKeyboard';
 import { createDuplicateFileTreeMutation } from './file-tree/useFileTreeMutations';
+import { useFileTreeNavigation } from './file-tree/useFileTreeNavigation';
 import { useFileTreePointerInteractions } from './file-tree/useFileTreePointerInteractions';
 import { createFileTreeRenameHandlers } from './file-tree/useFileTreeRename';
 import { useFileTreeRowPresentation } from './file-tree/useFileTreeRowPresentation';
 import { useFileTreeSelection } from './file-tree/useFileTreeSelection';
 import { useFileTreeShowAll } from './file-tree/useFileTreeShowAll';
 import { createFileTreeTrashHandlers } from './file-tree/useFileTreeTrash';
+import { useFileTreeUploads } from './file-tree/useFileTreeUploads';
 import { useHandoffDispatch } from './handoff/useHandoffDispatch';
 import { useInstalledAgents } from './handoff/useInstalledAgents';
 
@@ -802,126 +801,17 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     },
   });
 
-  async function uploadExternalFilesToTarget(
-    files: readonly File[],
-    parentDir: string,
-    uploadBusyPath: string,
-  ) {
-    if (files.length === 0 || busyPathRef.current !== null) return;
-
-    const clearBusyState = () => {
-      busyPathRef.current = null;
-      setBusyPath(null);
-    };
-    busyPathRef.current = uploadBusyPath;
-    setBusyPath(uploadBusyPath);
-    setError(null);
-
-    const uploadedEntries: FileEntry[] = [];
-    let uploadedCount = 0;
-    let failedCount = 0;
-
-    for (const file of files) {
-      const formData = new FormData();
-      formData.append('file', file);
-      appendSidebarUploadFields(formData, parentDir, file.name || 'upload');
-
-      try {
-        const res = await fetch('/api/upload', { method: 'POST', body: formData });
-        const parsed = await parseServerResponse(res, t`Failed to upload file`);
-        if (!parsed.ok) {
-          failedCount += 1;
-          toast.error(parsed.title, { description: file.name });
-          continue;
-        }
-
-        const success = parseSuccessOrWarn(
-          UploadAssetSuccessSchema,
-          parsed.body,
-          'upload:drop',
-          null,
-        );
-        if (success === null) {
-          failedCount += 1;
-          toast.error(t`Failed to upload file`, { description: file.name });
-          continue;
-        }
-        const uploadedPath = uploadedPathForSidebarDrop(parentDir, success);
-        if (success.deduped === true) {
-          failedCount += 1;
-          toast.error(t`File already exists`, { description: uploadedPath });
-          continue;
-        }
-        uploadedCount += 1;
-        const entry = fileEntryFromUploadedPath(uploadedPath, file);
-        if (entry) uploadedEntries.push(entry);
-      } catch (err) {
-        failedCount += 1;
-        console.warn('[FileTree] external file upload failed:', err);
-        toast.error(
-          err instanceof TypeError ? t`Network error — please try again` : t`Failed to upload file`,
-          {
-            description: file.name,
-          },
-        );
-      }
-    }
-
-    try {
-      if (uploadedEntries.length > 0) {
-        for (const entry of uploadedEntries) {
-          if (isDocumentEntry(entry)) addPage(entry.docName);
-        }
-        setDocuments((current) => {
-          const existing = new Set(current.map(fileEntryToTreePath));
-          let changed = false;
-          const next = [...current];
-          for (const entry of uploadedEntries) {
-            const treePath = fileEntryToTreePath(entry);
-            recentLocalAddsRef.current.set(treePath, Date.now());
-            if (existing.has(treePath)) continue;
-            existing.add(treePath);
-            next.push(entry);
-            changed = true;
-          }
-          if (!changed) return current;
-          resetModelToDocuments(next);
-          markNextDocumentsAsApplied(next);
-          return next;
-        });
-      }
-
-      if (uploadedCount > 0) {
-        emitDocumentsChanged(['files', 'backlinks', 'graph']);
-        refreshDocsScheduleRef.current?.();
-        toast.success(
-          plural(uploadedCount, {
-            one: 'Uploaded one file',
-            other: `Uploaded ${uploadedCount} files`,
-          }),
-          { description: parentDir || t`Project root` },
-        );
-      }
-
-      if (failedCount > 0) {
-        setError(
-          uploadedCount > 0
-            ? plural(failedCount, {
-                one: '1 file failed to upload',
-                other: `${failedCount} files failed to upload`,
-              })
-            : t`Failed to upload file`,
-        );
-      }
-      clearBusyState();
-    } catch (err) {
-      const message = t`Upload may have succeeded but the sidebar is out of date — refresh to resync`;
-      console.warn('[FileTree] upload post-upload reconciliation failed:', err);
-      toast.error(message);
-      setError(message);
-      clearBusyState();
-    }
-  }
+  const uploadExternalFilesToTarget = useFileTreeUploads({
+    busyPathRef,
+    recentLocalAddsRef,
+    refreshDocsScheduleRef,
+    setBusyPath,
+    setError,
+    setDocuments,
+    addPage,
+    resetModelToDocuments,
+    markNextDocumentsAsApplied,
+  });
 
   function expandSubtree(treePath: string) {
     const root = folderPathToTreeDirectoryPath(treePath);
