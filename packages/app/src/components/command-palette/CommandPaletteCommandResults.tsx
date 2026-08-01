@@ -1,4 +1,4 @@
-import { Trans } from '@lingui/react/macro';
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   Database,
   FilePlus2,
@@ -20,6 +20,7 @@ import { filterCommandPaletteRegistry } from './command-palette-command-registry
 
 /** Renders core workspace commands and typed agent-dispatch actions. */
 export function CommandPaletteCommandResults() {
+  const { t } = useLingui();
   const {
     activeDocName,
     bridge,
@@ -36,7 +37,6 @@ export function CommandPaletteCommandResults() {
     setCreateDialogKind,
     setSeedDialogOpen,
     showAgentGroup,
-    t,
   } = useCommandPaletteState();
   const visible = (id: string) => commandIds.has(id);
   const showCommands = [
@@ -56,7 +56,7 @@ export function CommandPaletteCommandResults() {
         [
           {
             id: target.id,
-            label: t`Open with AI ${target.displayName}`,
+            label: t({ message: `Open with AI ${target.displayName}` }),
             aliases: [target.id, 'agent handoff', 'open in'],
             available: true,
           },
@@ -220,8 +220,8 @@ export function CommandPaletteCommandResults() {
                   ? t`Not installed`
                   : null;
             const accessibleLabel = hint
-              ? t`Open with AI ${target.displayName}, ${hint}`
-              : t`Open with AI ${target.displayName}`;
+              ? t({ message: `Open with AI ${target.displayName}, ${hint}` })
+              : t({ message: `Open with AI ${target.displayName}` });
             return (
               <CommandItem
                 key={target.id}

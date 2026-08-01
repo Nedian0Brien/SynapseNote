@@ -63,7 +63,8 @@ export function EditorAreaDocumentRightPanel() {
 /** Render owner for the PDF document-information rail and its portal host. */
 export function EditorAreaPdfRightPanel() {
   const { props, rail } = useEditorAreaState();
-  if (rail.terminalColumnPresent) return null;
+  const { setPdfPanelContainer, terminalColumnPresent } = rail;
+  if (terminalColumnPresent) return null;
   const activePdfPanelTab =
     props.activeTab === 'pages' ||
     props.activeTab === 'annotations' ||
@@ -83,7 +84,7 @@ export function EditorAreaPdfRightPanel() {
         showChatTab={props.terminalBridge != null}
         pdfContent={
           <div
-            ref={rail.setPdfPanelContainer}
+            ref={setPdfPanelContainer}
             data-testid="pdf-panel-host"
             data-panel-tab={activePdfPanelTab}
             className="h-full min-h-0 overflow-hidden bg-background"

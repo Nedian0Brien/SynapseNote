@@ -1,5 +1,5 @@
 // biome-ignore-all lint/plugin/no-raw-html-interactive-element: filter pills intentionally use native buttons to preserve the existing compact command-dialog affordance.
-import { Trans } from '@lingui/react/macro';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { Hash, Sparkles } from 'lucide-react';
 import { CreateProjectDialog } from '@/components/CreateProjectDialog';
 import { NewItemDialog } from '@/components/NewItemDialog';
@@ -15,6 +15,7 @@ import { computeVisibleSearchResults } from './command-palette-utils';
 
 /** Owns dialog framing, query input, filter pills, and dependent overlay mounts. */
 export function CommandPaletteSurface() {
+  const { t } = useLingui();
   const {
     bridge,
     createDialogKind,
@@ -44,7 +45,6 @@ export function CommandPaletteSurface() {
     setQuery,
     setReportBugOpen,
     setSeedDialogOpen,
-    t,
     toggleTagMode,
     trimmedDeferredQuery,
   } = useCommandPaletteState();

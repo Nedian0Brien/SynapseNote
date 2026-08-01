@@ -10,7 +10,16 @@ import { useEditorAreaState } from './EditorAreaStateProvider';
 export function EditorAreaTerminalColumn() {
   const { resolvedTheme } = useTheme();
   const { props, rail, activeDocName, activeProvider, activeTarget } = useEditorAreaState();
-  if (!rail.terminalColumnPresent) return null;
+  const {
+    initialTerminalWidthPx,
+    isDraggingTerminalHandle,
+    onTerminalHandlePointerDown,
+    onTerminalPanelResize,
+    setRightTerminalContainer,
+    terminalColumnPanelRef,
+    terminalColumnPresent,
+  } = rail;
+  if (!terminalColumnPresent) return null;
   const hasDocument =
     activeProvider != null &&
     activeDocName != null &&
@@ -18,20 +27,20 @@ export function EditorAreaTerminalColumn() {
   const isPdf = activeTarget?.kind === 'asset' && activeTarget.mediaKind === 'pdf';
   return (
     <>
-      <ResizableHandle withHandle onPointerDown={rail.onTerminalHandlePointerDown} />
+      <ResizableHandle withHandle onPointerDown={onTerminalHandlePointerDown} />
       <ResizablePanel
         id="terminal-column"
-        panelRef={rail.terminalColumnPanelRef}
+        panelRef={terminalColumnPanelRef}
         style={{ backgroundColor: xtermThemeForMode(resolvedTheme).background }}
-        defaultSize={`${rail.initialTerminalWidthPx}px`}
+        defaultSize={`${initialTerminalWidthPx}px`}
         minSize={`${MIN_TERMINAL_WIDTH}px`}
         maxSize="95%"
         collapsible
         collapsedSize={0}
-        onResize={rail.onTerminalPanelResize}
+        onResize={onTerminalPanelResize}
         className={cn(
           'flex flex-col',
-          !rail.isDraggingTerminalHandle &&
+          !isDraggingTerminalHandle &&
             'transition-[flex-grow] duration-200 ease-out motion-reduce:transition-none motion-reduce:duration-0',
         )}
       >
@@ -45,7 +54,7 @@ export function EditorAreaTerminalColumn() {
           showChatTab
           chatContent={
             <div
-              ref={rail.setRightTerminalContainer}
+              ref={setRightTerminalContainer}
               data-testid="right-chat-host"
               className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background"
             />

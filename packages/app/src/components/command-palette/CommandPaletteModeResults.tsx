@@ -1,4 +1,4 @@
-import { Plural, Trans } from '@lingui/react/macro';
+import { Plural, Trans, useLingui } from '@lingui/react/macro';
 import { FileText, Hash, Loader2, Sparkles } from 'lucide-react';
 import { CommandEmpty, CommandGroup, CommandItem, CommandShortcut } from '@/components/ui/command';
 import { makeOmnibarRecentKey } from '../command-palette-recents';
@@ -8,6 +8,7 @@ import { navigateToDocHash } from './command-palette-utils';
 
 /** Renders the exclusive tag and explicit-submit semantic result families. */
 export function CommandPaletteModeResults() {
+  const { t } = useLingui();
   const {
     fireSemanticSearch,
     isSemanticMode,
@@ -21,7 +22,6 @@ export function CommandPaletteModeResults() {
     semanticTotalCount,
     semanticView,
     setQuery,
-    t,
     tagDocs,
     tagDocsStatus,
     tagListItems,
@@ -98,7 +98,7 @@ export function CommandPaletteModeResults() {
             <CommandGroup
               heading={
                 semanticView.results.dimmed
-                  ? t`Showing results for "${semanticResultsLabel}"`
+                  ? t({ message: `Showing results for "${semanticResultsLabel}"` })
                   : t`By meaning`
               }
             >
@@ -121,7 +121,9 @@ export function CommandPaletteModeResults() {
       ) : null}
       {paletteMode.kind === 'tag-list' ? (
         <CommandGroup
-          heading={paletteMode.query ? t`Tags matching "${tagListQuery}"` : t`All tags`}
+          heading={
+            paletteMode.query ? t({ message: `Tags matching "${tagListQuery}"` }) : t`All tags`
+          }
         >
           {tagsListStatus === 'loading' ? (
             <CommandEmpty>
@@ -136,7 +138,7 @@ export function CommandPaletteModeResults() {
           {tagsListStatus !== 'loading' && tagListItems.length === 0 ? (
             <CommandEmpty>
               {paletteMode.query
-                ? t`No tags match "${tagListQuery}".`
+                ? t({ message: `No tags match "${tagListQuery}".` })
                 : t`No tags yet — author \`#tagname\` in any doc to populate the index.`}
             </CommandEmpty>
           ) : null}
@@ -157,7 +159,7 @@ export function CommandPaletteModeResults() {
         </CommandGroup>
       ) : null}
       {paletteMode.kind === 'tag-docs' ? (
-        <CommandGroup heading={t`Docs tagged #${tagDocsName}`}>
+        <CommandGroup heading={t({ message: `Docs tagged #${tagDocsName}` })}>
           {tagDocsStatus === 'loading' ? (
             <CommandEmpty>
               <Trans>Loading docs</Trans>
@@ -169,7 +171,9 @@ export function CommandPaletteModeResults() {
             </CommandEmpty>
           ) : null}
           {tagDocsStatus === 'success' && tagDocs.length === 0 ? (
-            <CommandEmpty>{t`No docs registered under #${tagDocsName}.`}</CommandEmpty>
+            <CommandEmpty>
+              {t({ message: `No docs registered under #${tagDocsName}.` })}
+            </CommandEmpty>
           ) : null}
           {tagDocs.map((doc) => {
             const title = doc.title || doc.docName.split('/').pop() || doc.docName;

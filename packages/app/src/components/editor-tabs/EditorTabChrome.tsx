@@ -204,7 +204,7 @@ export function TabPinOrCloseButton({
         variant="ghost"
         size="icon-xs"
         type="button"
-        aria-label={t`Unpin ${accessibleLabel}`}
+        aria-label={t({ message: `Unpin ${accessibleLabel}` })}
         data-testid="editor-tab-unpin-button"
         className="mr-1.5 text-primary! hover:bg-primary/10!"
         onClick={(event) => {
@@ -221,7 +221,7 @@ export function TabPinOrCloseButton({
       type="button"
       variant="ghost"
       size="icon-xs"
-      aria-label={t`Close ${accessibleLabel}`}
+      aria-label={t({ message: `Close ${accessibleLabel}` })}
       data-testid="editor-tab-close-button"
       className={getTabCloseButtonClass(forceCloseVisible || isActive)}
       tabIndex={getTabCloseButtonTabIndex(isActive)}
@@ -268,7 +268,9 @@ export function DocumentTabButton({
   const { t } = useLingui();
   const lifecycleStatus = useLifecycleStatus(docName);
   const hasConflict = lifecycleStatus === 'conflict';
-  const buttonAccessibleLabel = hasConflict ? t`${accessibleLabel} (conflict)` : accessibleLabel;
+  const buttonAccessibleLabel = hasConflict
+    ? t({ message: `${accessibleLabel} (conflict)` })
+    : accessibleLabel;
   return (
     <button
       type="button"
