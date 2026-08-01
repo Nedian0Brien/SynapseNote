@@ -1,20 +1,10 @@
 import { plural } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react/macro';
-import {
-  isDocumentOverOpenByteLimit,
-  UploadAssetSuccessSchema,
-  WorkspaceSuccessSchema,
-} from '@nedian0brien/synapsenote-core';
-import {
-  FILE_TREE_TAG_NAME,
-  type FileTreeDropResult,
-  type FileTreeRenameEvent,
-} from '@pierre/trees';
+import { UploadAssetSuccessSchema, WorkspaceSuccessSchema } from '@nedian0brien/synapsenote-core';
+import type { FileTreeDropResult, FileTreeRenameEvent } from '@pierre/trees';
 import { useFileTree } from '@pierre/trees/react';
 import { useTheme } from 'next-themes';
 import {
-  type DragEvent as ReactDragEvent,
-  type MouseEvent as ReactMouseEvent,
   startTransition,
   useEffect,
   useImperativeHandle,
@@ -34,11 +24,8 @@ import {
   documentsTreePathSignature,
   fileEntryFromUploadedPath,
   fileEntryToTreePath,
-  filesFromExternalDrop,
   folderPathToTreeDirectoryPath,
-  isExternalFileDrag,
   treeDirectoryPathToFolderPath,
-  treeFilePathToDocumentDocName,
   treePathSignature,
   treePathToAppPath,
   uploadedPathForSidebarDrop,
@@ -125,22 +112,12 @@ import {
   MARKDOWN_FILE_ICON_VIEWBOX,
 } from './file-tree/FileTreePresentation';
 import { FileTreeViewport } from './file-tree/FileTreeViewport';
-import {
-  alternateMarkdownTreePath,
-  hasSameStemMarkdownSiblingTreePath,
-} from './file-tree/file-tree-commands';
 import type { FileTreeProps } from './file-tree/file-tree-types';
 import { useFileTreeCreation } from './file-tree/useFileTreeCreation';
-import {
-  clickIsInTreeContentArea,
-  clickIsInTreeItemSection,
-  FILE_TREE_EXTERNAL_FILE_DROP_BUSY_PATH,
-  findTreeItemElement,
-  findTreeItemPath,
-  useFileTreeDragAndDrop,
-} from './file-tree/useFileTreeDragAndDrop';
+import { useFileTreeDragAndDrop } from './file-tree/useFileTreeDragAndDrop';
 import { useFileTreeKeyboard } from './file-tree/useFileTreeKeyboard';
 import { createDuplicateFileTreeMutation } from './file-tree/useFileTreeMutations';
+import { useFileTreePointerInteractions } from './file-tree/useFileTreePointerInteractions';
 import { createFileTreeRenameHandlers } from './file-tree/useFileTreeRename';
 import { useFileTreeRowPresentation } from './file-tree/useFileTreeRowPresentation';
 import { useFileTreeSelection } from './file-tree/useFileTreeSelection';
@@ -148,7 +125,6 @@ import { useFileTreeShowAll } from './file-tree/useFileTreeShowAll';
 import { createFileTreeTrashHandlers } from './file-tree/useFileTreeTrash';
 import { useHandoffDispatch } from './handoff/useHandoffDispatch';
 import { useInstalledAgents } from './handoff/useInstalledAgents';
-import { cancelHoverPrewarm, scheduleHoverPrewarm } from './sidebar-hover-prewarm';
 import { useSidebar } from './ui/sidebar';
 
 export type { FileTreeHandle } from './file-tree/file-tree-types';
@@ -1530,158 +1506,29 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     });
   }, []);
 
-  function cancelCurrentHoverPrewarm() {
-    const current = hoveredPrewarmDocRef.current;
-    if (current) cancelHoverPrewarm(current);
-    hoveredPrewarmDocRef.current = null;
-  }
-
-  function hasSameStemMarkdownSiblingRendered(treePath: string): boolean {
-    const alternate = alternateMarkdownTreePath(treePath);
-    if (!alternate) return false;
-    const shadow = fileTreeHostRef.current?.querySelector(FILE_TREE_TAG_NAME)?.shadowRoot;
-    if (!shadow) return false;
-    for (const row of shadow.querySelectorAll<HTMLElement>('[data-item-path]')) {
-      if (row.dataset.itemPath === alternate) return true;
-    }
-    return false;
-  }
-
-  function handleTreeMouseMove(event: ReactMouseEvent<HTMLElement>) {
-    const path = findTreeItemPath(event.nativeEvent);
-    if (!path || path.endsWith('/')) {
-      cancelCurrentHoverPrewarm();
-      return;
-    }
-    const entry = documentsRef.current.find((item) => fileEntryToTreePath(item) === path);
-    if (entry && isAssetEntry(entry)) {
-      cancelCurrentHoverPrewarm();
-      return;
-    }
-    const docName =
-      entry && isDocumentEntry(entry)
-        ? entry.docName
-        : treeFilePathToDocumentDocName(path, documentsRef.current);
-    if (entry && isDocumentEntry(entry) && isDocumentOverOpenByteLimit(entry.size)) {
-      cancelCurrentHoverPrewarm();
-      return;
-    }
-    if (hoveredPrewarmDocRef.current === docName) return;
-    cancelCurrentHoverPrewarm();
-    hoveredPrewarmDocRef.current = docName;
-    scheduleHoverPrewarm(docName, (nextDocName) => prewarm(nextDocName));
-  }
-
-  function handleTreeClickCapture(event: ReactMouseEvent<HTMLElement>) {
-    if (event.defaultPrevented || event.button !== 0) return;
-
-    // Pierre only emits selection changes when the selected path changes.
-    // If app navigation lags behind the selected row, a plain click on that
-    // already-selected row still needs to activate the row's target.
-    const item = findTreeItemElement(event.nativeEvent);
-    if (!item) {
-      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      // Plain click on the tree's empty content area (no row) deselects the
-      // active row for creation purposes — New file / New folder then land at
-      // the project root. The editor view is untouched. Gated to the scroll
-      // region so clicks on the header / search chrome don't trigger it.
-      if (clickIsInTreeContentArea(event.nativeEvent)) {
-        setCreationDirCleared(true);
-      }
-      return;
-    }
-    const wasSelected = item.getAttribute('aria-selected') === 'true';
-
-    const rawPath = item.dataset.itemPath;
-    if (!rawPath) return;
-
-    const path =
-      item.dataset.itemType === 'folder' ? folderPathToTreeDirectoryPath(rawPath) : rawPath;
-
-    if (item.dataset.itemType === 'folder') {
-      const folderPath = treeDirectoryPathToFolderPath(path);
-      const folderItem = asDirectoryHandle(model.getItem(path));
-      // The leading chevron is a disclosure control only. Intercept Pierre's
-      // whole-row toggle before it selects/navigates so expanding or collapsing
-      // a folder leaves the current document and tree selection untouched.
-      if (clickIsInTreeItemSection(event.nativeEvent, 'icon')) {
-        event.preventDefault();
-        event.stopPropagation();
-        if (!folderItem) return;
-        if (folderItem.isExpanded()) folderItem.collapse();
-        else folderItem.expand();
-        return;
-      }
-      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      // Every other part of the folder row is navigation only. Stop Pierre's
-      // default whole-row disclosure toggle, including when this folder is
-      // already selected and navigation itself is a no-op.
-      event.preventDefault();
-      event.stopPropagation();
-      if (!wasSelected) {
-        queueMicrotask(() => navigateToFolderWithPulse(folderPath));
-        return;
-      }
-      if (model.getSelectedPaths().length !== 1) return;
-      if (window.location.hash === hashFromFolderPath(folderPath)) return;
-      queueMicrotask(() => navigateToFolderWithPulse(folderPath));
-      return;
-    }
-
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-
-    if (!wasSelected) {
-      // Lazy/show-all model state can lag rows that already rendered, so the
-      // DOM query is the fallback for same-stem markdown sibling detection.
-      if (
-        hasSameStemMarkdownSiblingTreePath(path, treePathsRef.current) ||
-        hasSameStemMarkdownSiblingRendered(path)
-      ) {
-        pendingExactFileSelectionRef.current = path;
-        // Let handleSelectionChange's microtask consume the exact file selection
-        // before navigation commits the extension-qualified URL.
-        setTimeout(
-          () =>
-            navigateToWithPulse(path, undefined, {
-              registerPage: true,
-              tabBehavior: sidebarDocumentTabBehavior,
-            }),
-          0,
-        );
-        return;
-      }
-      queueMicrotask(() => activateTreePath(path));
-      return;
-    }
-    const docName = treeFilePathToDocumentDocName(path, documentsRef.current);
-    if (model.getSelectedPaths().length !== 1) return;
-    if (window.location.hash === hashFromDocName(docName)) return;
-    queueMicrotask(() => activateTreePath(path));
-  }
-
-  function handleEmptyExternalFileDragOver(event: ReactDragEvent<HTMLDivElement>) {
-    if (!isExternalFileDrag(event.nativeEvent)) return;
-    event.preventDefault();
-    event.stopPropagation();
-    event.dataTransfer.dropEffect = 'copy';
-    setEmptyExternalFileDropActive(true);
-  }
-
-  function handleEmptyExternalFileDragLeave(event: ReactDragEvent<HTMLDivElement>) {
-    const related = event.relatedTarget;
-    if (related instanceof Node && event.currentTarget.contains(related)) return;
-    setEmptyExternalFileDropActive(false);
-  }
-
-  function handleEmptyExternalFileDrop(event: ReactDragEvent<HTMLDivElement>) {
-    if (!isExternalFileDrag(event.nativeEvent)) return;
-    const files = filesFromExternalDrop(event.nativeEvent);
-    if (files.length === 0) return;
-    event.preventDefault();
-    event.stopPropagation();
-    setEmptyExternalFileDropActive(false);
-    void uploadExternalFilesToTarget(files, '', FILE_TREE_EXTERNAL_FILE_DROP_BUSY_PATH);
-  }
+  const {
+    cancelCurrentHoverPrewarm,
+    handleTreeMouseMove,
+    handleTreeClickCapture,
+    handleEmptyExternalFileDragOver,
+    handleEmptyExternalFileDragLeave,
+    handleEmptyExternalFileDrop,
+  } = useFileTreePointerInteractions({
+    model,
+    hostRef: fileTreeHostRef,
+    documentsRef,
+    treePathsRef,
+    pendingExactFileSelectionRef,
+    hoveredPrewarmDocRef,
+    sidebarDocumentTabBehavior,
+    setCreationDirCleared,
+    setEmptyExternalFileDropActive,
+    activateTreePath,
+    navigateToFolderWithPulse,
+    navigateToWithPulse,
+    prewarm,
+    uploadExternalFilesToTarget,
+  });
 
   if (loading) {
     return <FileTreeSkeleton />;
