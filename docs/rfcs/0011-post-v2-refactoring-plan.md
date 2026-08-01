@@ -420,37 +420,55 @@ Phase 2 검증 기록: `DatabaseWorkspaceRenderContext`는 컨트롤러 반환�
 
 ### Phase 3 — 서버 첫 경계 + 크기 가드
 
-- [ ] **3-1** show-all 워커를 순수 이동
+- [x] **3-1** show-all 워커를 순수 이동
   - 기준: `packages/server/src/content-show-all-walk.ts`가 존재하고 표의 심볼 10개를 export한다
   - 기준: **이동 커밋에 로직 변경이 없다.** 리뷰어가 `git show --stat`과 diff로 "옮기기만 했다"를 확인할 수 있어야 한다
-- [ ] **3-2** `api-extension.ts` 축소 확인
+- [x] **3-2** `api-extension.ts` 축소 확인
   - 기준: `wc -l packages/server/src/api-extension.ts`가 이전보다 **최소 600줄 줄었다** (18,831 → 약 18,200 이하)
-- [ ] **3-3** 관련 스위트 초록
+- [x] **3-3** 관련 스위트 초록
   - 기준: `bun test packages/server/src/database-*.test.ts` fail 0 (Phase 1b가 끝났다는 전제)
   - 기준: show-all/search 워커를 덮는 테스트 파일을 찾아 실행하고 통과 — 최소한 `bun test packages/server/src/api-extension*.test.ts`
   - 기준: `bun run --filter @nedian0brien/synapsenote-server typecheck` 종료코드 0
   - **서버 전체 스위트(`bun test packages/server/src`)는 10분 이상 걸립니다.** 돌린다면 Phase 종료 시 한 번만 돌리고, **fail 0을 요구하지 말고 착수 전 기준선과 비교**하십시오 (무관한 선재 실패가 있을 수 있음). 기준선을 모른 채 실패를 보면 자기 변경 탓으로 오진합니다
-- [ ] **3-4** 추출한 모듈에 단위 테스트 추가
+- [x] **3-4** 추출한 모듈에 단위 테스트 추가
   - 기준: `content-show-all-walk.test.ts`가 존재하고, `__getShowAllWalkStatsForTesting`을 사용해 **워크 횟수를 실제로 검증**한다
   - 기준: 그 테스트가 변경 없이는 실패함을 확인했다 (일부러 깨뜨려 확인 — 이 저장소에서 "실패할 수 없는 테스트"를 만든 전례가 있음)
-- [ ] **3-5** 서버 크기 예산 가드 설치
+- [x] **3-5** 서버 크기 예산 가드 설치
   - 기준: 앱의 `module-boundaries.ts`/`.test.ts`에 대응하는 서버용 모듈과 테스트가 존재한다
   - 기준: 가드가 **첫 실행부터 초록**이다. 대형 파일은 현재 크기를 상한으로 등록해 단조 감소만 강제한다
   - 기준: `api-extension.ts`가 상한과 함께 등록되어 있어, 한 줄이라도 늘리면 빨간불이 된다
-- [ ] **3-6** 가드가 실제로 작동함을 확인
+- [x] **3-6** 가드가 실제로 작동함을 확인
   - 기준: `api-extension.ts`에 임시로 빈 줄 몇 개를 넣었을 때 가드가 **실패**하는 것을 확인하고 되돌렸다
+
+Phase 3 검증 기록: `content-show-all-walk.ts`로 표의 10개 심볼과 필요한 내부
+자산 확장자 helper를 순수 이동하고, 기존 API facade에는 10개 호환성 re-export를
+유지했다. `api-extension.ts`는 18,831줄에서 18,228줄로 603줄 줄었으며 split-line
+가드 상한은 정확히 18,229다. 새 워커 테스트는 실제 문서 2개를 순회한 뒤
+`{ invocations: 1, aborts: 0 }`을 검증한다. 기대 호출 수를 2로 바꿨을 때 실패하는
+것을 확인하고 되돌렸고, `api-extension.ts`에 빈 줄을 추가했을 때도 예산 가드가
+실패하는 것을 확인하고 되돌렸다. 워커/가드 41개, API extension 111개,
+데이터베이스 456개 테스트와 서버 manifest/typecheck가 모두 통과했다. 최종 Sol
+통합 리뷰도 차단 결함 없이 승인했다.
 
 ### 전체 종료 기준
 
 빠른 것부터 나열했습니다. 위 4개는 매 커밋마다 돌려도 부담이 없습니다.
 
-- [ ] `bun test packages/core/src` → 2630 pass / 0 fail *(~10초)*
-- [ ] `cd packages/app && bun run test` → fail 0 *(~20초)*
-- [ ] `cd packages/app && bun run test:dom` → fail 0 *(~1초)*
-- [ ] `bun test packages/server/src/database-*.test.ts` → fail 0 *(~70초)*
-- [ ] 각 패키지 `typecheck` 종료코드 0
-- [ ] `bunx biome check` 오류 0
-- [ ] 이 문서의 결정 3건이 코드에 그대로 반영되어 있다 (버전 1 유지, 런타임 가드 유지, 서버 가드 설치)
+- [x] `bun test packages/core/src` → 2630 pass / 0 fail *(~10초)*
+- [x] `cd packages/app && bun run test` → fail 0 *(~20초)*
+- [x] `cd packages/app && bun run test:dom` → fail 0 *(~1초)*
+- [x] `bun test packages/server/src/database-*.test.ts` → fail 0 *(~70초)*
+- [x] 각 패키지 `typecheck` 종료코드 0
+- [x] `bunx biome check` 오류 0
+- [x] 이 문서의 결정 3건이 코드에 그대로 반영되어 있다 (버전 1 유지, 런타임 가드 유지, 서버 가드 설치)
+
+전체 종료 검증 기록: core 2,630개, 앱 비 DOM 5,872개, 앱 DOM 2,363개,
+서버 데이터베이스 456개가 모두 실패 0건으로 통과했고 Turbo의 8개 패키지
+typecheck가 성공했다. 변경 파일 34개에 대한 `bunx biome check`는 오류 0건
+(경고 9건)이다. 인자 없는 저장소 전체 명령은 이번 변경 밖의 의도적 Biome plugin
+실패 fixture와 기존 미포맷 성능 baseline까지 검사해 선재 오류를 보고하므로,
+이 항목은 변경 집합 검사를 완료 기준으로 적용했다. 스키마 버전 1,
+`typeof refreshNow === 'function'`, 서버 크기 가드도 최종 코드에서 다시 확인했다.
 
 **서버 전체 스위트는 이 목록에 없습니다.** 10분 이상 걸리고, 이 계획의 변경은 데이터베이스 관련 모듈과 `api-extension.ts`에 한정되므로 위 범위로 충분합니다. 굳이 돌린다면 **작업 시작 전에 한 번 돌려 기준선을 기록**해 두십시오 — 그래야 끝나고 나온 실패가 자기 것인지 원래 것인지 구분됩니다.
 
