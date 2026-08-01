@@ -21,6 +21,7 @@ import {
   DatabaseQueryResponseSchema,
 } from './database-data-plane-api.ts';
 import { previewDatabaseComputedProperty } from './database-data-plane-computed-preview.ts';
+import { createDatabaseContextSearchProjection } from './database-data-plane-context-search-projection.ts';
 import { createDatabaseFormRetentionService } from './database-form-retention.ts';
 import { createDatabaseFormStateStore } from './database-form-state-store.ts';
 import { createDatabasePlanEngine } from './database-plan.ts';
@@ -3816,15 +3817,16 @@ External edit remains canonical.
   test('applies row and property permissions before lexical ranking, counts, and evidence', async () => {
     const { store, index } = await fixture();
     const policyRevision = `sha256:${'e'.repeat(64)}`;
+    const resolveQueryAccess: ResolveDatabaseQueryAccess = () => ({
+      policyId: 'lexical-row-scope',
+      policyRevision,
+      allowedRecordIds: ['rec_beta'],
+      allowedPropertyIds: ['prop_customer_feedback_title'],
+    });
     const rowScoped = createDatabaseDataPlane({
       databaseStore: store,
       databaseRecordIndex: index,
-      resolveQueryAccess: () => ({
-        policyId: 'lexical-row-scope',
-        policyRevision,
-        allowedRecordIds: ['rec_beta'],
-        allowedPropertyIds: ['prop_customer_feedback_title'],
-      }),
+      resolveQueryAccess,
     });
     const deniedFind = rowScoped.find({
       databaseId: 'db_feedback',
@@ -3857,6 +3859,28 @@ External edit remains canonical.
     });
     expect(JSON.stringify(deniedFind.retrieval)).not.toContain('rec_alpha');
     expect(JSON.stringify(deniedFind.retrieval)).not.toContain('enterprise customer');
+    const freeText = deniedFind.plan.interpretation.freeText;
+    if (!freeText || !deniedFind.retrieval) throw new Error('Expected lexical find fixture');
+    const directRetrieval = createDatabaseContextSearchProjection({
+      assertReadable: () => {},
+      snapshot: store.snapshot.bind(store),
+      recordIndex: index,
+      resolveQueryAccess,
+      currentAccessPrincipal: () => ({ kind: 'user', id: 'user:local-owner' }),
+      now: () => new Date(),
+    }).searchTextWithAccess(
+      {
+        databaseId: 'db_feedback',
+        sourceId: 'ds_customer_feedback',
+        text: freeText.text,
+        propertyIds: freeText.searchedPropertyIds,
+        titlePropertyId: 'prop_customer_feedback_title',
+        includeBody: true,
+        limit: deniedFind.plan.interpretation.limit,
+      },
+      deniedFind.plan.query ?? {},
+    );
+    expect(directRetrieval).toEqual(deniedFind.retrieval);
 
     const deniedPack = rowScoped.pack({
       databaseId: 'db_feedback',
