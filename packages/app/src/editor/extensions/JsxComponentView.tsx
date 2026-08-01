@@ -92,6 +92,7 @@ import {
   deriveJsxAttributePolicy,
   updateElementJsxProps,
 } from './jsx-component-view/jsx-component-view-attribute-policy.ts';
+import { deriveJsxConversionPolicy } from './jsx-component-view/jsx-component-view-conversion-policy.ts';
 import {
   extractPrimitiveProps,
   getElementJsxAttrs,
@@ -459,7 +460,13 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
   // forever (no retry signal, no React re-render trigger). After retries
   // exhaust, the placeholder swaps to a stuck-state UX with Delete + Copy
   // source affordances so the user can recover without blaming the editor.
-  const needsConversion = descriptor.name === '*' || renderError !== null;
+  const conversionPolicy = deriveJsxConversionPolicy({
+    componentName: String(node.attrs.componentName ?? ''),
+    descriptorDisplayName: descriptor.displayName,
+    descriptorName: descriptor.name,
+    renderError,
+  });
+  const { needsConversion, reason: conversionReason, telemetryComponent } = conversionPolicy;
   const convertedRef = useRef(false);
   const retryCountRef = useRef(0);
   const [stuck, setStuck] = useState(false);
@@ -470,13 +477,10 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
     if (typeof p !== 'number') return;
 
     const source = reconstructSource(node);
-    const reason =
-      descriptor.name === '*'
-        ? `Unregistered component: ${node.attrs.componentName as string}`
-        : `Render error in <${descriptor.displayName ?? descriptor.name}>: ${renderError?.message ?? 'unknown'}`;
+    if (conversionReason === null) return;
 
     const fallbackNode = node.type.schema.nodes.rawMdxFallback.create(
-      { reason },
+      { reason: conversionReason },
       node.type.schema.text(source),
     );
 
@@ -499,14 +503,12 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
       try {
         editor.view.dispatch(editor.state.tr.replaceWith(p, p + node.nodeSize, fallbackNode));
         convertedRef.current = true;
-        const clampedComponent = descriptor.name === '*' ? 'wildcard' : descriptor.name;
-        incrementJsxAutoConvertSucceeded(clampedComponent);
+        incrementJsxAutoConvertSucceeded(telemetryComponent);
       } catch (err) {
         // Position may have changed if other transactions fired.
         // Log as a structured event so recurring failures are visible in
         // telemetry — a swallowed exception here would otherwise leave the
         // user on the "opening source editor..." placeholder with no signal.
-        const clampedComponent = descriptor.name === '*' ? 'wildcard' : descriptor.name;
         console.warn(
           JSON.stringify({
             event: 'jsx-component-auto-convert-failed',
@@ -515,13 +517,13 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
             // rawComponentName (see also ComponentErrorBoundary). Capped at
             // 200 chars to match the slicing pattern used elsewhere for
             // user-authored names in log payloads.
-            component: clampedComponent,
+            component: telemetryComponent,
             rawComponentName: String(node.attrs.componentName ?? '').slice(0, 200),
             reason: err instanceof Error ? err.message.slice(0, 500) : String(err).slice(0, 500),
             retry: retryCountRef.current,
           }),
         );
-        incrementJsxAutoConvertFailed(clampedComponent);
+        incrementJsxAutoConvertFailed(telemetryComponent);
 
         retryCountRef.current += 1;
         if (retryCountRef.current < MAX_AUTO_CONVERT_RETRIES) {
@@ -552,7 +554,7 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
       cancelAnimationFrame(frameId);
       if (timeoutId !== undefined) clearTimeout(timeoutId);
     };
-  }, [needsConversion, node, editor, getPos, descriptor, renderError, stuck]);
+  }, [needsConversion, node, editor, getPos, stuck, conversionReason, telemetryComponent]);
 
   // Stuck-state UX: retries exhausted. The user sees a durable placeholder
   // with "Delete" and "Copy source" affordances so they can recover without
