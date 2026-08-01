@@ -15,11 +15,8 @@ import {
   type DatabaseFormStateStore,
   databaseFormPrivateKey,
 } from './database-form-state-store.ts';
-import type {
-  DatabaseDesiredStateDraftInput,
-  DatabaseDraftArtifact,
-  DatabasePlanArtifact,
-} from './database-plan.ts';
+import type { DatabaseDraftArtifact, DatabasePlanArtifact } from './database-plan-artifacts.ts';
+import type { DatabaseDesiredStateDraftInput } from './database-plan-draft-contracts.ts';
 
 export interface DatabaseFormSubmissionInput {
   databaseId: string;

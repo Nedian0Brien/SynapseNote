@@ -10,7 +10,7 @@ import { DatabaseButtonPlanInputSchema } from './database-button.ts';
 import { DatabaseButtonExecutionInputSchema } from './database-button-executor.ts';
 import { DatabaseCommitInputSchema } from './database-commit.ts';
 import { DatabasePlaceSearchInputSchema } from './database-place-search.ts';
-import { DatabaseDesiredStateDraftSchema } from './database-plan.ts';
+import { DatabaseDesiredStateDraftSchema } from './database-plan-draft-contracts.ts';
 
 export const DatabasePlanRequestSchema = z.discriminatedUnion('action', [
   z

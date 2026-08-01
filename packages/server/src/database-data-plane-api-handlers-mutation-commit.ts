@@ -1,4 +1,3 @@
-import type { DatabaseMarkdownTableMutationRequest } from './database-data-plane.ts';
 import {
   DatabaseButtonRequestSchema,
   DatabaseCommitRequestSchema,
@@ -25,6 +24,7 @@ import {
   respondDataPlaneError,
   respondUnavailable,
 } from './database-data-plane-api-response.ts';
+import type { DatabaseMarkdownTableMutationRequest } from './database-data-plane-markdown-adapters.ts';
 import { DatabasePlaceSearchError } from './database-place-search.ts';
 import { DATABASE_REQUEST_ERROR_EXTENSIONS } from './database-problem.ts';
 import { errorResponse } from './http/error-response.ts';

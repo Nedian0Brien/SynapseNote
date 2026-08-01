@@ -27,7 +27,7 @@ import type {
   DatabaseQueryPermissionExclusions,
   DatabaseQueryResultState,
   ResolveDatabaseQueryAccess,
-} from './database-data-plane.ts';
+} from './database-data-plane-contracts.ts';
 import { DatabaseDataPlaneError } from './database-data-plane-errors.ts';
 import {
   collectDatabaseQueryPropertyIds,

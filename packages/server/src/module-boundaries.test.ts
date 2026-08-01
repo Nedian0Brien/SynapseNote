@@ -9,7 +9,6 @@ import {
   resolveServerModule,
   SERVER_MODULE_SIZE_BUDGETS,
   serverSourceRoot,
-  TEMPORARY_FORMER_FACADE_IMPORT_ALLOWLIST,
 } from './module-boundaries.ts';
 
 const DATABASE_FACADE_PATHS = [
@@ -87,7 +86,7 @@ describe('RFC 0011 server module boundary guard', () => {
     const src = serverSourceRoot(import.meta.filename);
     const leaves = databaseExtractionLeaves(src);
     const budgetedPaths = new Set(SERVER_MODULE_SIZE_BUDGETS.map(({ path }) => path));
-    expect(leaves.length).toBe(44);
+    expect(leaves.length).toBe(45);
     for (const modulePath of leaves) {
       expect(budgetedPaths.has(modulePath), `${modulePath} must have a size budget`).toBe(true);
       const budget = SERVER_MODULE_SIZE_BUDGETS.find((candidate) => candidate.path === modulePath);
@@ -110,7 +109,7 @@ describe('RFC 0011 server module boundary guard', () => {
     }
   });
 
-  test('database extraction leaves do not import former facades outside the temporary allowlist', () => {
+  test('database extraction leaves do not import former facades', () => {
     const src = serverSourceRoot(import.meta.filename);
     const actual = databaseExtractionLeaves(src).flatMap((modulePath) =>
       findFormerServerFacadeImports(
@@ -118,9 +117,7 @@ describe('RFC 0011 server module boundary guard', () => {
         readFileSync(resolveServerModule(src, modulePath), 'utf8'),
       ),
     );
-    const sortImports = (imports: readonly (typeof actual)[number][]) =>
-      imports.map(({ path, target, kind }) => `${path}:${target}:${kind}`).sort();
-    expect(sortImports(actual)).toEqual(sortImports(TEMPORARY_FORMER_FACADE_IMPORT_ALLOWLIST));
+    expect(actual).toEqual([]);
   });
 
   test('database facade budgets reject one additional source line', () => {

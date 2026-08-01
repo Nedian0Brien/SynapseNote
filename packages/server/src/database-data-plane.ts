@@ -142,6 +142,26 @@ export type {
   DatabaseCatalogSourceCard,
 } from './database-data-plane-catalog.ts';
 export type { DatabaseComputedPropertyPreviewResult } from './database-data-plane-computed-preview.ts';
+export type {
+  AppliedDatabaseAgentView,
+  AppliedDatabaseSavedQuery,
+  DatabaseDataPlaneLexicalSearchResult,
+  DatabaseDataPlanePackInput,
+  DatabaseDataPlaneQueryInput,
+  DatabaseDataPlaneQueryResult,
+  DatabaseDataPlaneRetrievalResult,
+  DatabaseFindResult,
+  DatabasePropertyConversionPlanPreview,
+  DatabaseQueryAccessDecision,
+  DatabaseQueryDelta,
+  DatabaseQueryDeltaReceipt,
+  DatabaseQueryExplainTrace,
+  DatabaseQueryPermissionExclusions,
+  DatabaseQueryResultState,
+  DatabaseRetrievalMode,
+  ResolveDatabaseGlobalAccess,
+  ResolveDatabaseQueryAccess,
+} from './database-data-plane-contracts.ts';
 export type { DatabaseDataPlaneErrorCode } from './database-data-plane-errors.ts';
 export { DatabaseDataPlaneError } from './database-data-plane-errors.ts';
 export type {
@@ -161,7 +181,7 @@ export type {
   DatabaseRecordLookupResult,
 } from './database-data-plane-read-projection.ts';
 
-export interface DatabaseFindResult {
+interface DatabaseFindResult {
   databaseId: string;
   sourceId: string;
   manifestRevision: string;
@@ -171,7 +191,7 @@ export interface DatabaseFindResult {
   result: DatabaseDataPlaneQueryResult | null;
 }
 
-export interface DatabaseDataPlaneLexicalSearchResult extends DatabaseLexicalSearchResult {
+interface DatabaseDataPlaneLexicalSearchResult extends DatabaseLexicalSearchResult {
   permissionExclusions: DatabaseQueryPermissionExclusions;
   resultState: {
     empty: boolean;
@@ -181,9 +201,9 @@ export interface DatabaseDataPlaneLexicalSearchResult extends DatabaseLexicalSea
   };
 }
 
-export type DatabaseRetrievalMode = 'lexical' | 'semantic' | 'hybrid';
+type DatabaseRetrievalMode = 'lexical' | 'semantic' | 'hybrid';
 
-export interface DatabaseDataPlaneRetrievalResult {
+interface DatabaseDataPlaneRetrievalResult {
   databaseId: string;
   sourceId: string;
   manifestRevision: string;
@@ -200,7 +220,7 @@ export interface DatabaseDataPlaneRetrievalResult {
   permissionExclusions: DatabaseQueryPermissionExclusions;
 }
 
-export interface DatabaseDataPlaneQueryResult extends DatabaseQueryResult {
+interface DatabaseDataPlaneQueryResult extends DatabaseQueryResult {
   databaseId: string;
   queryId: string;
   manifestRevision: string;
@@ -215,7 +235,7 @@ export interface DatabaseDataPlaneQueryResult extends DatabaseQueryResult {
   delta: DatabaseQueryDelta | null;
 }
 
-export interface AppliedDatabaseAgentView {
+interface AppliedDatabaseAgentView {
   id: string;
   key: string;
   name: string;
@@ -226,7 +246,7 @@ export interface AppliedDatabaseAgentView {
   writePolicy: NonNullable<DatabaseView['agent']>['writePolicy'];
 }
 
-export interface AppliedDatabaseSavedQuery {
+interface AppliedDatabaseSavedQuery {
   id: string;
   key: string;
   name: string;
@@ -235,7 +255,7 @@ export interface AppliedDatabaseSavedQuery {
   revision: string;
 }
 
-export interface DatabaseQueryResultState {
+interface DatabaseQueryResultState {
   empty: boolean;
   emptyReason:
     | 'no_match'
@@ -248,7 +268,7 @@ export interface DatabaseQueryResultState {
   truncated: boolean;
 }
 
-export interface DatabaseQueryExplainTrace {
+interface DatabaseQueryExplainTrace {
   source: { databaseId: string; sourceId: string };
   savedQuery: AppliedDatabaseSavedQuery | null;
   agentView: AppliedDatabaseAgentView | null;
@@ -293,7 +313,7 @@ export interface DatabaseQueryExplainTrace {
   };
 }
 
-export interface DatabaseQueryAccessDecision {
+interface DatabaseQueryAccessDecision {
   /** False means the operation itself is denied, independently of projections. */
   allowed?: boolean;
   /** Stable human-inspectable policy identifier, not a secret or bearer token. */
@@ -308,7 +328,7 @@ export interface DatabaseQueryAccessDecision {
   allowBody?: boolean;
 }
 
-export interface DatabaseQueryPermissionExclusions {
+interface DatabaseQueryPermissionExclusions {
   evaluated: true;
   policyId: string;
   policyRevision: string;
@@ -317,7 +337,7 @@ export interface DatabaseQueryPermissionExclusions {
   body?: boolean;
 }
 
-export type ResolveDatabaseQueryAccess = (input: {
+type ResolveDatabaseQueryAccess = (input: {
   action: DatabasePermissionAction;
   database: DatabaseDefinition;
   source: DatabaseSource;
@@ -326,18 +346,18 @@ export type ResolveDatabaseQueryAccess = (input: {
   principal: DatabaseAccessPrincipal;
 }) => DatabaseQueryAccessDecision;
 
-export type ResolveDatabaseGlobalAccess = (input: {
+type ResolveDatabaseGlobalAccess = (input: {
   action: DatabasePermissionAction;
   principal: DatabaseAccessPrincipal;
 }) => Pick<DatabaseQueryAccessDecision, 'allowed' | 'policyId' | 'policyRevision'>;
 
-export interface DatabaseQueryDeltaReceipt {
+interface DatabaseQueryDeltaReceipt {
   queryId: string;
   recordRevisions: Readonly<Record<string, string | null>>;
   isComplete: boolean;
 }
 
-export interface DatabaseQueryDelta {
+interface DatabaseQueryDelta {
   sinceQueryId: string;
   scope: 'returned_page';
   addedOrChangedRecordIds: readonly string[];
@@ -347,7 +367,7 @@ export interface DatabaseQueryDelta {
   isComplete: boolean;
 }
 
-export interface DatabaseDataPlaneQueryInput {
+interface DatabaseDataPlaneQueryInput {
   databaseId: string;
   sourceId: string;
   viewId?: string;
@@ -389,7 +409,7 @@ export interface CreateDatabaseDataPlaneOptions {
   isDatabaseMigrationActive?: () => { taskId: string } | null;
 }
 
-export interface DatabasePropertyConversionPlanPreview {
+interface DatabasePropertyConversionPlanPreview {
   databaseId: string;
   sourceId: string;
   propertyId: string;
@@ -400,7 +420,7 @@ export interface DatabasePropertyConversionPlanPreview {
   plan: DatabasePlanArtifact | null;
 }
 
-export type DatabaseDataPlanePackInput = Omit<
+type DatabaseDataPlanePackInput = Omit<
   DatabaseContextPackInput,
   | 'maxTokens'
   | 'reserveTokens'

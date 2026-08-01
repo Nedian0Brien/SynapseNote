@@ -4,7 +4,7 @@ import type { DatabaseAgentRunStore } from './database-agent-run-store.ts';
 import type { DatabaseAutomationService } from './database-automation.ts';
 import type { DatabaseAutomationNotificationStore } from './database-automation-notification-store.ts';
 import type { DatabaseAutonomyStore } from './database-autonomy-store.ts';
-import type { DatabaseDataPlane } from './database-data-plane.ts';
+import type { DatabaseDataPlaneHandlerPort } from './database-data-plane-contracts.ts';
 import type { DatabaseAgentEntryPointLimiter } from './database-entry-point-limits.ts';
 import type { DatabasePermissionStore } from './database-permission-store.ts';
 import type { DatabasePlaceSearchService } from './database-place-search.ts';
@@ -49,7 +49,7 @@ export interface DatabaseDataPlaneApiHandlers {
 
 /** Immutable service dependencies shared by one HTTP handler assembly. */
 export interface DatabaseDataPlaneApiHandlerContext {
-  dataPlane?: DatabaseDataPlane;
+  dataPlane?: DatabaseDataPlaneHandlerPort;
   taskStore?: DatabaseTaskStore;
   taskService?: DatabaseTaskService;
   autonomyStore?: DatabaseAutonomyStore;

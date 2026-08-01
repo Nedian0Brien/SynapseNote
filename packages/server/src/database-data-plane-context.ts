@@ -17,7 +17,7 @@ import {
 import type {
   AppliedDatabaseAgentView,
   DatabaseDataPlanePackInput,
-} from './database-data-plane.ts';
+} from './database-data-plane-contracts.ts';
 import { DatabaseDataPlaneError } from './database-data-plane-errors.ts';
 import type {
   DatabaseRecordIndex,

@@ -10,14 +10,14 @@ import {
 import type {
   DatabasePropertyConversionPlanPreview,
   ResolveDatabaseQueryAccess,
-} from './database-data-plane.ts';
+} from './database-data-plane-contracts.ts';
 import { DatabaseDataPlaneError } from './database-data-plane-errors.ts';
 import type {
   DatabaseDraftArtifact,
   DatabasePlanArtifact,
-  DatabasePlanEngine,
+  DatabasePlanEnginePort,
   DatabaseVerificationDraftResult,
-} from './database-plan.ts';
+} from './database-plan-artifacts.ts';
 import type { DatabaseRecordIndex } from './database-record-index.ts';
 
 interface PlanMutationPort {
@@ -27,7 +27,7 @@ interface PlanMutationPort {
   assertPlanMutationAccess(plan: DatabasePlanArtifact): void;
   authorizeOperation(input: { action: 'delete_database'; databaseId: string }): void;
   snapshot(): { revision: string; databases: readonly DatabaseDefinition[] };
-  planEngine: DatabasePlanEngine;
+  planEngine: DatabasePlanEnginePort;
   recordIndex: Pick<DatabaseRecordIndex, 'list' | 'snapshot'>;
   resolveQueryAccess: ResolveDatabaseQueryAccess;
   currentAccessPrincipal(): DatabaseAccessPrincipal;

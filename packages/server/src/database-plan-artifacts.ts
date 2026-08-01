@@ -141,6 +141,31 @@ export interface DatabaseVerificationDraftResult {
   };
 }
 
+/**
+ * The planning capabilities consumed by data-plane collaborators. Keeping this
+ * structural port beside the artifacts prevents those collaborators from
+ * reaching back into the plan orchestration facade.
+ */
+export interface DatabasePlanEnginePort {
+  createDraft(input: unknown, ttlSeconds?: number): DatabaseDraftArtifact;
+  createDatabaseDeletionDraft(
+    databaseId: string,
+    expectedSnapshotRevision: string,
+    ttlSeconds?: number,
+  ): DatabaseDraftArtifact;
+  createVerificationDraft(
+    input: unknown,
+    actor: DatabaseRecordActor,
+    ttlSeconds?: number,
+  ): DatabaseVerificationDraftResult;
+  getDraft(draftId: string): DatabaseDraftArtifact;
+  discardDraft(draftId: string): { discarded: boolean; draftId: string };
+  createPlan(draftId: string, ttlSeconds?: number): DatabasePlanArtifact;
+  getPlan(planId: string): DatabasePlanArtifact;
+  restoreDraft(draft: DatabaseDraftArtifact): void;
+  restorePlan(plan: DatabasePlanArtifact): void;
+}
+
 export type DatabaseConvergenceAction = 'create' | 'update' | 'noop';
 
 export const DatabasePlanApprovalCodeSchema = z.enum([

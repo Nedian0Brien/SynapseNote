@@ -10,7 +10,7 @@ import type {
   DatabaseQueryDelta,
   DatabaseQueryExplainTrace,
   DatabaseQueryPermissionExclusions,
-} from './database-data-plane.ts';
+} from './database-data-plane-contracts.ts';
 import { databaseFilterPropertyIds } from './database-data-plane-query-filter.ts';
 import type { DatabaseRecordIndexStatus } from './database-record-index.ts';
 

@@ -1,7 +1,6 @@
 import type { z } from 'zod';
 import { DatabaseAgentPromptRetentionError } from './database-agent-prompt-retention.ts';
 import { DatabaseCommitError } from './database-commit.ts';
-import { DatabaseDataPlaneError } from './database-data-plane.ts';
 import { DatabaseAgentRunsRequestSchema } from './database-data-plane-api-contracts-access.ts';
 import {
   DatabaseAutomationRequestSchema,
@@ -22,7 +21,8 @@ import {
   respondDataPlaneError,
   respondUnavailable,
 } from './database-data-plane-api-response.ts';
-import { type DatabasePlanArtifact, DatabasePlanError } from './database-plan.ts';
+import { DatabaseDataPlaneError } from './database-data-plane-errors.ts';
+import { type DatabasePlanArtifact, DatabasePlanError } from './database-plan-artifacts.ts';
 import { DATABASE_REQUEST_ERROR_EXTENSIONS } from './database-problem.ts';
 import { withValidation } from './http/request-validation.ts';
 import { successResponse } from './http/success-response.ts';

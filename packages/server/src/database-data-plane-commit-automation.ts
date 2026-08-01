@@ -15,7 +15,7 @@ import {
   mutateDatabaseMarkdownTable,
 } from './database-data-plane-markdown-adapters.ts';
 import type { DatabaseMarkdownTableWriter } from './database-markdown-table-writer.ts';
-import type { DatabasePlanArtifact, DatabasePlanEngine } from './database-plan.ts';
+import type { DatabasePlanArtifact, DatabasePlanEnginePort } from './database-plan-artifacts.ts';
 import type { DatabaseRecordIndex } from './database-record-index.ts';
 import type {
   DatabaseRepairApplyInput,
@@ -38,7 +38,7 @@ interface CommitAutomationPort {
   assertPlanMutationAccess(plan: DatabasePlanArtifact): void;
   authorizeOperation(input: { action: 'alter_schema'; databaseId: string }): void;
   databases(): readonly { id: string }[];
-  planEngine: Pick<DatabasePlanEngine, 'getPlan'>;
+  planEngine: Pick<DatabasePlanEnginePort, 'getPlan'>;
   recordIndex: Pick<DatabaseRecordIndex, 'getById'>;
   getCommitEngine(): DatabaseCommitEngine | null;
   setCommitEngine(engine: DatabaseCommitEngine): void;

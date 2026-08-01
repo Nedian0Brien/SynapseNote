@@ -4,7 +4,7 @@ import {
   DatabaseQueryError,
   type DatabaseSource,
 } from '@nedian0brien/synapsenote-core';
-import type { DatabaseQueryAccessDecision } from './database-data-plane.ts';
+import type { DatabaseQueryAccessDecision } from './database-data-plane-contracts.ts';
 import { DatabaseDataPlaneError } from './database-data-plane-errors.ts';
 
 export function databaseFilterPropertyIds(filter: DatabaseFilter | undefined): string[] {

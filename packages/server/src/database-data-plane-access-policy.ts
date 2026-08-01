@@ -9,7 +9,7 @@ import {
   type DatabaseView,
 } from '@nedian0brien/synapsenote-core';
 import { DatabaseDataPlaneError } from './database-data-plane-errors.ts';
-import type { DatabaseDraftArtifact, DatabasePlanArtifact } from './database-plan.ts';
+import type { DatabaseDraftArtifact, DatabasePlanArtifact } from './database-plan-artifacts.ts';
 import type { DatabaseSemanticIndexStatus } from './database-semantic-index.ts';
 import { isV1Database, v1MigrationRequiredMessage } from './database-v1-compatibility.ts';
 

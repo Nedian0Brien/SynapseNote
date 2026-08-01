@@ -1,5 +1,4 @@
 import { resolveDatabaseAutonomyMode } from '@nedian0brien/synapsenote-core';
-import { DatabaseDataPlaneError } from './database-data-plane.ts';
 import {
   DatabaseAutonomyRequestSchema,
   DatabasePermissionsRequestSchema,
@@ -25,6 +24,7 @@ import {
   respondPermissionStoreError,
   respondUnavailable,
 } from './database-data-plane-api-response.ts';
+import { DatabaseDataPlaneError } from './database-data-plane-errors.ts';
 import {
   DATABASE_REQUEST_ERROR_EXTENSIONS,
   databaseProblemExtensions,

@@ -6,7 +6,6 @@ import type { DatabaseAgentRunStore } from './database-agent-run-store.ts';
 import type { DatabaseAutomationService } from './database-automation.ts';
 import type { DatabaseAutomationNotificationStore } from './database-automation-notification-store.ts';
 import type { DatabaseAutonomyStore } from './database-autonomy-store.ts';
-import type { DatabaseDataPlane } from './database-data-plane.ts';
 import type {
   DatabaseDataPlaneApiHandlerContext,
   DatabaseDataPlaneApiHandlers,
@@ -16,6 +15,7 @@ import { createDatabaseCatalogQueryHandlers } from './database-data-plane-api-ha
 import { createDatabaseMutationCommitHandlers } from './database-data-plane-api-handlers-mutation-commit.ts';
 import { createDatabasePermissionShareAutonomyHandlers } from './database-data-plane-api-handlers-permission-share-autonomy.ts';
 import { createDatabaseTaskMigrationHandlers } from './database-data-plane-api-handlers-task-migration.ts';
+import type { DatabaseDataPlaneHandlerPort } from './database-data-plane-contracts.ts';
 import { DatabaseAgentEntryPointLimiter } from './database-entry-point-limits.ts';
 import type { DatabasePermissionStore } from './database-permission-store.ts';
 import type { DatabasePlaceSearchService } from './database-place-search.ts';
@@ -165,7 +165,7 @@ export type DatabaseTaskResponse = z.infer<typeof DatabaseTaskResponseSchema>;
 export type { DatabaseDataPlaneApiHandlers } from './database-data-plane-api-handler-context.ts';
 
 export function createDatabaseDataPlaneApiHandlers(
-  dataPlane?: DatabaseDataPlane,
+  dataPlane?: DatabaseDataPlaneHandlerPort,
   taskStore?: DatabaseTaskStore,
   taskService?: DatabaseTaskService,
   autonomyStore?: DatabaseAutonomyStore,

@@ -18,105 +18,6 @@ export interface FormerServerFacadeImport {
   kind: 'type' | 'runtime';
 }
 
-/**
- * Temporary compatibility bridges left while the M7 extraction wave rewires
- * public error and contract exports. The direction guard must stay exact: a
- * new bridge is a failing test, and this list is removed once the bridges are
- * replaced with direct contract imports.
- */
-export const TEMPORARY_FORMER_FACADE_IMPORT_ALLOWLIST: readonly FormerServerFacadeImport[] = [
-  {
-    path: 'database-data-plane-access-policy.ts',
-    target: 'database-plan.ts',
-    kind: 'type',
-  },
-  {
-    path: 'database-data-plane-api-contracts-mutation.ts',
-    target: 'database-plan.ts',
-    kind: 'runtime',
-  },
-  {
-    path: 'database-data-plane-api-handler-context.ts',
-    target: 'database-data-plane.ts',
-    kind: 'type',
-  },
-  {
-    path: 'database-data-plane-api-handlers-agent-automation.ts',
-    target: 'database-data-plane.ts',
-    kind: 'runtime',
-  },
-  {
-    path: 'database-data-plane-api-handlers-agent-automation.ts',
-    target: 'database-plan.ts',
-    kind: 'runtime',
-  },
-  {
-    path: 'database-data-plane-api-handlers-mutation-commit.ts',
-    target: 'database-data-plane.ts',
-    kind: 'type',
-  },
-  {
-    path: 'database-data-plane-api-handlers-permission-share-autonomy.ts',
-    target: 'database-data-plane.ts',
-    kind: 'runtime',
-  },
-  {
-    path: 'database-data-plane-api-response.ts',
-    target: 'database-data-plane.ts',
-    kind: 'runtime',
-  },
-  {
-    path: 'database-data-plane-api-response.ts',
-    target: 'database-plan.ts',
-    kind: 'runtime',
-  },
-  {
-    path: 'database-data-plane-commit-automation.ts',
-    target: 'database-plan.ts',
-    kind: 'type',
-  },
-  {
-    path: 'database-data-plane-context.ts',
-    target: 'database-data-plane.ts',
-    kind: 'type',
-  },
-  {
-    path: 'database-data-plane-form-policy.ts',
-    target: 'database-plan.ts',
-    kind: 'type',
-  },
-  {
-    path: 'database-data-plane-plan-mutations.ts',
-    target: 'database-data-plane.ts',
-    kind: 'type',
-  },
-  {
-    path: 'database-data-plane-plan-mutations.ts',
-    target: 'database-plan.ts',
-    kind: 'type',
-  },
-  {
-    path: 'database-data-plane-query-execution.ts',
-    target: 'database-data-plane.ts',
-    kind: 'type',
-  },
-  {
-    path: 'database-data-plane-query-filter.ts',
-    target: 'database-data-plane.ts',
-    kind: 'type',
-  },
-  {
-    path: 'database-data-plane-query-trace.ts',
-    target: 'database-data-plane.ts',
-    kind: 'type',
-  },
-  {
-    path: 'database-data-plane-retrieval.ts',
-    target: 'database-data-plane.ts',
-    kind: 'type',
-  },
-];
-
 const FORMER_SERVER_FACADE_IMPORT_RE =
   /\bfrom\s+['"](?:\.\.\/|\.\/)*(database-data-plane-api|database-plan|database-data-plane)\.ts['"]/g;
 
@@ -220,7 +121,7 @@ export const SERVER_MODULE_SIZE_BUDGETS: readonly ServerModuleSizeBudget[] = [
   },
   {
     path: 'database-data-plane.ts',
-    maxLines: 1_719,
+    maxLines: 1_739,
     owner: 'Owns database data-plane domain composition.',
   },
   {
@@ -334,6 +235,11 @@ export const SERVER_MODULE_SIZE_BUDGETS: readonly ServerModuleSizeBudget[] = [
     owner: 'Owns computed database property previews.',
   },
   {
+    path: 'database-data-plane-contracts.ts',
+    maxLines: 323,
+    owner: 'Owns public database data-plane query, retrieval, and handler contracts.',
+  },
+  {
     path: 'database-data-plane-context-search-projection.ts',
     maxLines: 334,
     owner: 'Owns database context search projection.',
@@ -350,7 +256,7 @@ export const SERVER_MODULE_SIZE_BUDGETS: readonly ServerModuleSizeBudget[] = [
   },
   {
     path: 'database-data-plane-form-policy.ts',
-    maxLines: 499,
+    maxLines: 496,
     owner: 'Owns database form submission and external capability policy.',
   },
   {
@@ -395,7 +301,7 @@ export const SERVER_MODULE_SIZE_BUDGETS: readonly ServerModuleSizeBudget[] = [
   },
   {
     path: 'database-plan-artifacts.ts',
-    maxLines: 386,
+    maxLines: 411,
     owner: 'Owns public database plan artifacts and error contracts.',
   },
   {
