@@ -49,15 +49,11 @@ import {
   detectInstalledEditors,
   EDITOR_TARGETS,
   getOkArtifactPaths,
-  HOSTS_WITH_USER_SKILL_DIR,
-  isEntryUpToDate,
   isOwnManagedEntry,
   type McpInstallOptions,
   type ProjectAiIntegrationsResult,
   previewContent,
   readExistingMcpEntry,
-  removeOwnMcpEntry,
-  removeProjectSkill,
   removeUserGlobalSkillBundle,
   repairMcpConfigs,
   runStop,
@@ -65,7 +61,6 @@ import {
   validateLocalFolderForShare,
   writeEditorMcpConfig,
   writeProjectAiIntegrations,
-  writeProjectSkill,
   writeUserMcpConfigs,
 } from '@nedian0brien/synapsenote';
 import {
@@ -127,7 +122,6 @@ import type {
   EditorViewMenuStateSnapshot,
   McpWiringEditorId,
   OnboardingShowPayload,
-  RecentProject,
 } from '../shared/ipc-channels.ts';
 import { createHandler } from '../shared/ipc-handler.ts';
 import { registerPendingDelivery, sendToRenderer } from '../shared/ipc-send.ts';
@@ -156,10 +150,7 @@ import {
   startBundleReplaceWatcher,
 } from './bundle-replace-detector.ts';
 import { cascadePosition } from './cascade-position.ts';
-import {
-  checkTargetExists as checkTargetExistsImpl,
-  computeShareTargetMissing,
-} from './check-target-exists.ts';
+import { checkTargetExists as checkTargetExistsImpl } from './check-target-exists.ts';
 import {
   cliProbeArgs,
   resolveClaudeReadiness,
@@ -213,7 +204,6 @@ import { ensureGitAvailable } from './git-preflight-handler.ts';
 import { readCanonicalGitHubRemoteUrl } from './git-remote.ts';
 import { formatInstanceAppName, resolveInstanceLabel } from './instance-identity.ts';
 import { deriveInstanceUserDataDir } from './instance-isolation.ts';
-import { registerIntegrationsSettings } from './integrations-settings.ts';
 import { registerAssetIpcHandlers } from './ipc/asset-registrar.ts';
 import { registerBugLocalOpsIpc } from './ipc/bug-local-ops-registrar.ts';
 import {
@@ -221,6 +211,12 @@ import {
   handleBugReportCreate,
   handleBugReportSend,
 } from './ipc/bug-report.ts';
+import {
+  registerIntegrationsSettingsIpc,
+  registerProjectIntegrationsSettingsIpc,
+} from './ipc/integrations-settings-registrar.ts';
+import { registerProjectCreateIpcHandlers } from './ipc/project-create-registrar.ts';
+import { registerProjectIpcHandlers } from './ipc/project-registrar.ts';
 import { registerDesktopIpcRegistrars } from './ipc/registrar-registry.ts';
 import { handleSeedApply, handleSeedListPacks, handleSeedPlan } from './ipc/seed.ts';
 import { handleSharingSetMode, handleSharingStatus } from './ipc/sharing.ts';
@@ -255,16 +251,10 @@ import {
   computePathLeg,
   type EnsureCliOnPathResult,
   ensureCliOnPath,
-  isPathShimInstalled,
-  removePathShimFromRcFiles,
 } from './path-install.ts';
 import { savePdfAssetSafely } from './pdf-asset-save.ts';
 import { exportWebContentsToPdf } from './pdf-export.ts';
 import { installStdioBrokenPipeGuard } from './process-safety-net.ts';
-import {
-  type ProjectIntegrationsCliSurface,
-  registerProjectIntegrationsSettings,
-} from './project-integrations-settings.ts';
 import {
   checkAndRepairProjectMcpOnProjectOpen,
   type ProjectMcpReclaimCliSurface,
@@ -3090,17 +3080,6 @@ function dispatchToastWhenReady(payload: {
   }, 60_000);
 }
 
-/**
- * Bound on the membership-set scoping for `ok:fs:remove-git-folder`.
- * Each `findEnclosingGitRoot` IPC return pushes its `gitRoot` here; the
- * destructive handler refuses anything not in the set. FIFO-evicted at
- * the cap so a long-lived session doesn't grow unbounded. The size is
- * generous enough that legitimate workflows (a user opening the Create
- * Project dialog repeatedly, switching parents, etc.) never evict a
- * candidate they're actively about to click on.
- */
-const RECENT_GIT_ROOTS_CAP = 256;
-
 function registerIpcHandlers() {
   const rawHandle = createHandler(ipcMain);
   const registeredStaticChannels = new Set<string>();
@@ -3110,27 +3089,6 @@ function registerIpcHandlers() {
     }
     registeredStaticChannels.add(channel);
     rawHandle(channel, handler);
-  };
-
-  // Per-session membership set for `ok:fs:remove-git-folder`. Populated
-  // by `ok:fs:find-enclosing-git-root` returns; read by the destructive
-  // handler via the `allowedGitRoots` dep on `removeGitFolder`. Scope-
-  // narrows the destructive surface so a compromised or fabricated
-  // renderer payload can't target arbitrary `.git` directories.
-  const recentGitRoots = new Set<string>();
-  const recordRecentGitRoot = (gitRoot: string): void => {
-    if (recentGitRoots.has(gitRoot)) {
-      // Move-to-end for LRU-ish eviction: re-probe of an already-known
-      // root keeps it from being evicted while the user is staring at
-      // its banner.
-      recentGitRoots.delete(gitRoot);
-    }
-    recentGitRoots.add(gitRoot);
-    while (recentGitRoots.size > RECENT_GIT_ROOTS_CAP) {
-      const oldest = recentGitRoots.values().next().value;
-      if (oldest === undefined) break;
-      recentGitRoots.delete(oldest);
-    }
   };
 
   // Terminal ownership stays sender-scoped: the resolver derives its root from the
@@ -3458,32 +3416,108 @@ function registerIpcHandlers() {
     return undefined;
   });
 
-  handle('ok:project:get-info', async (event) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    if (!win) throw new Error('webContents has no parent BrowserWindow');
-    const ctx = wm?.getContextForBrowserWindow(win as unknown as BrowserWindowLike);
-    if (!ctx) throw new Error('No project context for this window');
-    return {
-      collabUrl: `ws://localhost:${ctx.port}/collab`,
-      apiOrigin: ctx.apiOrigin,
-      projectPath: ctx.projectPath,
-      projectName: ctx.projectName,
-      mode: 'editor' as const,
-      // Mirrors the preload's cold-start config: `true` under the Electron
-      // smoke suite so the renderer uses xterm's DOM renderer (see TerminalPanel).
-      e2eSmoke: process.env.OK_DESKTOP_E2E_SMOKE === '1',
-      // Ephemeral single-file windows carry teardown state on `ctx.ephemeral`;
-      // its presence IS the single-file signal for the renderer's chrome gate.
-      singleFile: ctx.ephemeral !== undefined,
-      // `initialDoc` is a cold-start-only hash seed (consumed once at renderer
-      // boot from the preload-injected bridge config). A live window queried via
-      // get-info has already navigated, so there is nothing to re-seed → null.
-      initialDoc: null,
-      // `freshlyCreated` is a cold-start-only onboarding signal (the card
-      // evaluates it once at first paint). A re-queried live window is past
-      // that point — parity with `initialDoc: null` above.
-      freshlyCreated: false,
-    };
+  const projectWindowForSender = (sender: unknown) =>
+    BrowserWindow.fromWebContents(sender as Electron.WebContents) ?? undefined;
+  const projectContextForWindow = (window: BrowserWindowLike | undefined) =>
+    window && wm ? wm.getContextForBrowserWindow(window) : undefined;
+  const branchInfoProxyDeps: BranchInfoProxyDeps = {
+    readServerLock: (lockDir) => readServerLock(lockDir),
+    isProcessAlive,
+    fetch: globalThis.fetch,
+    log: { warn: (message, meta) => console.warn(message, meta ?? {}) },
+  };
+  registerProjectIpcHandlers({
+    handle,
+    getWindowForWebContents: projectWindowForSender,
+    getProjectContext: projectContextForWindow,
+    getE2eSmoke: () => process.env.OK_DESKTOP_E2E_SMOKE === '1',
+    getAppState: () => appState,
+    setAppState: (state) => {
+      appState = state;
+    },
+    saveAppState,
+    refreshApplicationMenu,
+    annotateMissing,
+    classifyRecentGit: classifyRecentGitAsync,
+    readWorktreeBranch: readWorktreeBranchAsync,
+    removeRecentProject,
+    getProjectSessionState,
+    setProjectSessionState,
+    isEntryPoint,
+    openProject: openProjectOrFallbackToNavigator,
+    focusWindowForProject: (path) => wm?.focusWindowForProject(path) ?? null,
+    sendToRenderer,
+    checkTargetExists: checkTargetExistsImpl,
+    realpath: realpathSync,
+    listWorktrees: listWorktreeSelector,
+    checkoutWorktree: checkoutShareBranchWorktree,
+    createWorktree,
+    validateLocalFolderForShare,
+    readHeadBranch: readHeadBranchImpl,
+    branchInfoProxyDeps,
+    proxyFetchBranchInfo,
+    proxyRunCheckout,
+    proxyShareTargetStatus,
+    proxyAwaitBranchSwitched,
+    runOkInit,
+    closeProjectWindow: (path) => wm?.closeProjectWindow(path) ?? false,
+    restartAttachedServer: (path, opts) =>
+      wm
+        ? wm.restartAttachedServer(path, opts)
+        : Promise.resolve({ ok: false, reason: 'other' as const }),
+    resolveLocalOpCliArgs,
+    logIpcError,
+  });
+  registerProjectCreateIpcHandlers({
+    handle,
+    getAppState: () => appState,
+    setAppState: (state) => {
+      appState = state;
+    },
+    saveAppState,
+    getDocumentsPath: () => app.getPath('documents'),
+    resolveDefaultProjectsRoot,
+    folderState,
+    findEnclosingProjectRoot,
+    findEnclosingGitRoot,
+    stopWorktreeServer: (gitRoot) => {
+      try {
+        const outcome = runStop({
+          lockDir: resolveLockDir(gitRoot),
+          log: (msg) => getLogger('project').info({ gitRoot }, `[remove-git-folder] ${msg}`),
+        });
+        getLogger('project').info(
+          { gitRoot, stopped: outcome.stopped.length, hadTargets: outcome.hadTargets },
+          'remove-git-folder: stopped worktree server before .git removal',
+        );
+      } catch (err) {
+        getLogger('project').warn(
+          { gitRoot, err: err instanceof Error ? err.message : String(err) },
+          'remove-git-folder: worktree server stop failed',
+        );
+      }
+    },
+    removeGitFolder: (gitRoot, allowedGitRoots) => removeGitFolder(gitRoot, { allowedGitRoots }),
+    runCreateNew,
+    isCreateNewProjectError: (err): err is CreateNewProjectError =>
+      err instanceof CreateNewProjectError,
+    logAiIntegrationOutcomes,
+    setLastUsedProjectParent,
+    recordOnboardingFlow,
+    logCreatedProject: (result) =>
+      getLogger('create-new').info(
+        {
+          projectDir: result.projectDir,
+          target: result.target,
+          variant: result.variant,
+          gitRootPromoted: result.gitRootPromoted,
+        },
+        'created project',
+      ),
+    openProject: (path) => openProjectOrFallbackToNavigator(path, 'create-new'),
+    recordCreateNewBannerShown,
+    openNavigator,
+    logIpcError,
   });
 
   // OK config sharing mode — read + toggle the sharing posture for
@@ -3546,468 +3580,11 @@ function registerIpcHandlers() {
     );
   });
 
-  handle('ok:project:list-recent', async () => {
-    // Enrich each present recent with its git-worktree relationship so the
-    // renderer can nest linked worktrees under their main project. Each present
-    // recent needs two git spawns (classify + branch); cold, that's up to ~40.
-    // Run them concurrently via `Promise.all` of the async variants so the
-    // response isn't gated on a serial chain of blocking spawns on the main
-    // event loop — otherwise the switcher's first open renders visibly late.
-    // `classifyRecentGitAsync` is memoized per path (repeat calls are cheap);
-    // the branch label is read fresh since it changes on checkout. Missing
-    // paths are left un-probed.
-    return Promise.all(
-      annotateMissing(appState).map(async (entry): Promise<RecentProject> => {
-        if (entry.missing) return entry;
-        const [git, branch] = await Promise.all([
-          classifyRecentGitAsync(entry.path),
-          // Resolve the branch via git (walks up), not a raw `.git/HEAD` read, so
-          // a project opened at a git subdirectory (e.g. an OK subtree) still gets
-          // its branch label.
-          readWorktreeBranchAsync(entry.path),
-        ]);
-        if (git.gitCommonDir === null) return entry;
-        return {
-          ...entry,
-          gitCommonDir: git.gitCommonDir,
-          mainRoot: git.mainRoot ?? undefined,
-          isLinkedWorktree: git.isLinkedWorktree,
-          branch,
-        };
-      }),
-    );
-  });
-
-  handle('ok:project:remove-recent', async (_event, projectPath) => {
-    if (typeof projectPath !== 'string' || projectPath.length === 0) {
-      throw new Error('ok:project:remove-recent rejected: invalid projectPath');
-    }
-    appState = removeRecentProject(appState, projectPath);
-    saveAppState(appState);
-    refreshApplicationMenu();
-    return undefined;
-  });
-
-  handle('ok:project:get-session-state', async (event) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    if (!win || !wm)
-      return {
-        openTabs: [],
-        pinnedTabIds: [],
-        activeDocName: null,
-        activeTabId: null,
-        updatedAt: null,
-      };
-    const ctx = wm.getContextForBrowserWindow(win as unknown as BrowserWindowLike);
-    if (!ctx)
-      return {
-        openTabs: [],
-        pinnedTabIds: [],
-        activeDocName: null,
-        activeTabId: null,
-        updatedAt: null,
-      };
-    return getProjectSessionState(appState, ctx.projectPath);
-  });
-
-  handle('ok:project:set-session-state', async (event, state) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    if (!win || !wm) return undefined;
-    const ctx = wm.getContextForBrowserWindow(win as unknown as BrowserWindowLike);
-    if (!ctx) return undefined;
-    appState = setProjectSessionState(appState, ctx.projectPath, state);
-    saveAppState(appState);
-    return undefined;
-  });
-
-  handle('ok:project:open', async (_event, request) => {
-    // Route through the wrapper so boot failures (lock collision, git-init
-    // error, generic crash) surface as the standard Electron error dialog
-    // + Navigator fall-back instead of escaping to the renderer as a raw
-    // IPC error. Matches the menu / deep-link / last-opened-project paths.
-    if (!isEntryPoint(request.entryPoint)) {
-      throw new Error(
-        `ok:project:open rejected: invalid entryPoint '${String(request.entryPoint)}'`,
-      );
-    }
-    // Renderer-initiated share-receive opens (fresh clone, multi-worktree pivot)
-    // reach window-open here instead of through the URL-scheme dispatcher, which
-    // is where `dispatchResolvedShare` probes the target. Run the same probe so a
-    // moved/deleted target flags `targetMissing` and the editor renders the
-    // honest verdict panel instead of the create-mode editor. Synchronous native
-    // probe — no new IPC — computed once for both the warm and cold branches.
-    const targetMissing =
-      request.pendingDeepLinkTarget !== undefined &&
-      computeShareTargetMissing(checkTargetExistsImpl, request.path, request.pendingDeepLinkTarget);
-    // Warm-focus path for share-receive: when an existing window holds the
-    // requested project, focus it and dispatch the deep-link directly. Mirrors
-    // the URL-scheme warm path in url-scheme.ts so the IPC and the deep-link
-    // entry points stay equivalent.
-    if (request.pendingDeepLinkTarget !== undefined && wm) {
-      const existing = wm.focusWindowForProject(request.path) as
-        | (BrowserWindowLike & { webContents: BrowserWindowLike['webContents'] })
-        | null;
-      if (existing) {
-        sendToRenderer(existing.webContents, 'ok:deep-link', {
-          doc: request.pendingDeepLinkTarget.path,
-          kind: request.pendingDeepLinkTarget.kind,
-          branch: request.pendingBranch ?? null,
-          multiCandidate: request.pendingMultiCandidate === true,
-          // Only carry the flag when set — keeps the common (present) case's
-          // payload identical to the pre-gate shape.
-          ...(targetMissing ? { targetMissing: true } : {}),
-        });
-        return undefined;
-      }
-    }
-    // Warm-focus path for the share-receive branch-switch ("I have it
-    // locally" on a mismatched branch). A branch-switch open carries no
-    // `pendingDeepLinkTarget`, so the deep-link warm path above is skipped;
-    // mirror it here so an already-open editor for this project gets the
-    // `project-branch-switch` surface instead of being spawned cold. Mirrors
-    // url-scheme.ts's warm `sendShareDeepLink` for the `fallback` case. For the
-    // bug's hot path (repo not yet in recents) no window is open, so this falls
-    // through to the cold spawn below.
-    if (request.pendingShareBranchSwitch !== undefined && wm) {
-      const existing = wm.focusWindowForProject(request.path) as
-        | (BrowserWindowLike & { webContents: BrowserWindowLike['webContents'] })
-        | null;
-      if (existing) {
-        sendToRenderer(existing.webContents, 'ok:share:received', {
-          kind: 'project-branch-switch' as const,
-          share: request.pendingShareBranchSwitch.share,
-          projectPath: request.pendingShareBranchSwitch.projectPath,
-          currentBranch: request.pendingShareBranchSwitch.currentBranch,
-        });
-        return undefined;
-      }
-    }
-    await openProjectOrFallbackToNavigator(
-      request.path,
-      request.entryPoint,
-      request.pendingDeepLinkTarget,
-      request.pendingBranch,
-      request.pendingMultiCandidate,
-      request.pendingShareBranchSwitch,
-      targetMissing || undefined,
-    );
-    return undefined;
-  });
-
-  // Worktree selector (worktree = window). Git-only surface: enumerate
-  // the sender window's project's branches + worktrees, or create/locate the
-  // worktree for a branch under `<mainRoot>/.ok/worktrees/`. Opening the
-  // resulting worktree window is the renderer's job (`ok:project:open` with
-  // entryPoint `'worktree'`). A project-less window (Navigator) has no repo →
-  // `no-git`. The window's `projectPath` is already realpath-canonicalized by
-  // `discoverProject`, but we realpath defensively so the current-window flag
-  // matches `listGitWorktrees`'s realpath-collapsed entry paths.
-  handle('ok:worktree:dispatch', async (event, request) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    const ctx =
-      win && wm ? wm.getContextForBrowserWindow(win as unknown as BrowserWindowLike) : null;
-    const projectPath = ctx?.projectPath ?? null;
-    if (!projectPath) {
-      logIpcError({
-        event: 'ipc.error',
-        channel: 'ok:worktree:dispatch',
-        reason: 'no-git',
-        handler: 'worktreeDispatch',
-      });
-      return { ok: false, reason: 'no-git' };
-    }
-    let anchor: string;
-    try {
-      anchor = realpathSync(projectPath);
-    } catch {
-      anchor = projectPath;
-    }
-    if (request.kind === 'list') {
-      return listWorktreeSelector(anchor, anchor);
-    }
-    if (request.kind === 'checkout') {
-      return checkoutShareBranchWorktree({ anchorPath: anchor, branch: request.branch });
-    }
-    return createWorktree({
-      anchorPath: anchor,
-      branch: request.branch,
-      baseBranch: request.baseBranch,
-      baseRef: request.baseRef,
-      remoteRef: request.remoteRef,
-      createBranch: request.createBranch,
-    });
-  });
-
-  handle('ok:share:validate-folder', async (_event, request) => {
-    return validateLocalFolderForShare(request.folderPath, {
-      owner: request.owner,
-      repo: request.repo,
-    });
-  });
-
-  handle('ok:project:check-target-exists', async (_event, request) => {
-    return checkTargetExistsImpl(request.projectPath, request.kind, request.path);
-  });
-
-  handle('ok:project:read-head-branch', async (_event, projectPath) => {
-    return readHeadBranchImpl(projectPath);
-  });
-
-  const branchInfoProxyDeps: BranchInfoProxyDeps = {
-    readServerLock: (lockDir) => readServerLock(lockDir),
-    isProcessAlive,
-    fetch: globalThis.fetch,
-    log: {
-      warn: (message, meta) => console.warn(message, meta ?? {}),
-    },
-  };
-
-  handle('ok:project:fetch-branch-info', async (_event, request) => {
-    return proxyFetchBranchInfo(request, branchInfoProxyDeps);
-  });
-
-  handle('ok:project:run-checkout', async (_event, request) => {
-    return proxyRunCheckout(request, branchInfoProxyDeps);
-  });
-
-  handle('ok:project:fetch-target-status', async (_event, request) => {
-    return proxyShareTargetStatus(request, branchInfoProxyDeps);
-  });
-
-  handle('ok:project:await-branch-switched', async (_event, request) => {
-    return proxyAwaitBranchSwitched(request, branchInfoProxyDeps);
-  });
-
-  handle('ok:project:ok-init', async (_event, request) => {
-    return runOkInit(request.projectPath);
-  });
-
-  handle('ok:project:close', async (event) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    if (!win || !wm) return undefined;
-    const ctx = wm.getContextForBrowserWindow(win as unknown as BrowserWindowLike);
-    if (ctx) {
-      wm.closeProjectWindow(ctx.projectPath);
-    }
-    return undefined;
-  });
-
-  handle('ok:project:restart-server', async (_event, projectPath) => {
-    // Renderer-initiated from the version-drift notification. Terminates the
-    // attached (not-owned) server and recreates the window against a fresh
-    // own-version spawn. The returned outcome only reaches the renderer on
-    // failure (a surviving window) — success recreates the originating window.
-    // The try/catch makes the contract uniform: every path resolves with an
-    // outcome rather than rejecting on a destroyed renderer.
-    if (!wm) {
-      logIpcError({
-        event: 'ipc.error',
-        channel: 'ok:project:restart-server',
-        reason: 'no-window-manager',
-        handler: 'restartServer',
-      });
-      return { ok: false, reason: 'other' };
-    }
-    try {
-      const outcome = await wm.restartAttachedServer(projectPath, {
-        localOpCliArgs: resolveLocalOpCliArgs(),
-      });
-      if (outcome.ok === false) {
-        logIpcError({
-          event: 'ipc.error',
-          channel: 'ok:project:restart-server',
-          reason: outcome.reason,
-          handler: 'restartServer',
-        });
-      }
-      return outcome;
-    } catch (err) {
-      logIpcError({
-        event: 'ipc.error',
-        channel: 'ok:project:restart-server',
-        reason: 'other',
-        handler: 'restartServer',
-        cause: err,
-      });
-      return { ok: false, reason: 'other' };
-    }
-  });
-
   // ── Create-new-project dialog cascade IPC ─────────────────────────────────
   // Four read-only `ok:fs:*` probes + the `ok:project:create-new` writer.
   // Renderer-side cascade (`CreateProjectDialog`) calls the probes reactively
   // to render the inline banner; the writer re-runs every check server-side
   // as defense-in-depth (renderer is untrusted at the IPC boundary).
-
-  handle('ok:fs:default-projects-root', async () => {
-    return resolveDefaultProjectsRoot(appState.lastUsedProjectParent, app.getPath('documents'));
-  });
-
-  handle('ok:fs:folder-state', async (_event, path) => {
-    if (typeof path !== 'string' || path.length === 0) {
-      throw new Error('ok:fs:folder-state rejected: path must be a non-empty string');
-    }
-    return folderState(path);
-  });
-
-  handle('ok:fs:find-enclosing-project-root', async (_event, path) => {
-    if (typeof path !== 'string' || path.length === 0) {
-      throw new Error(
-        'ok:fs:find-enclosing-project-root rejected: path must be a non-empty string',
-      );
-    }
-    return findEnclosingProjectRoot(path);
-  });
-
-  handle('ok:fs:find-enclosing-git-root', async (_event, path) => {
-    if (typeof path !== 'string' || path.length === 0) {
-      throw new Error('ok:fs:find-enclosing-git-root rejected: path must be a non-empty string');
-    }
-    const result = findEnclosingGitRoot(path);
-    if (result !== null) {
-      // Membership-set scoping for `ok:fs:remove-git-folder`: the renderer
-      // may only ask main to delete a `<gitRoot>/.git` that *main* surfaced
-      // from a recent probe. Bounded FIFO so the set doesn't grow without
-      // limit over a long-lived session. See `remove-git-folder.ts` and
-      // `remove-git-folder.test.ts` for the full validation chain.
-      recordRecentGitRoot(result.gitRoot);
-    }
-    return result;
-  });
-
-  // Destructive IPC scoped to a single shape: `<gitRoot>/.git`. Validation
-  // chain lives in `remove-git-folder.ts` (testable pure function with
-  // tmpdir-fixture coverage) — handler is a thin wrapper that owns only
-  // the per-session `recentGitRoots` membership set.
-  handle('ok:fs:remove-git-folder', async (_event, gitRoot) => {
-    // Primary teardown: deterministically stop this worktree's OWN collab
-    // server (+ ui sibling) BEFORE removing its `.git`, so a deleted worktree
-    // doesn't leave an orphaned server holding a now-dangling lockDir. Reuses
-    // the path-addressable `runStop` against the worktree's lockDir. Scoped to
-    // the same `recentGitRoots` membership set that gates the delete itself, so
-    // a fabricated path can't drive a stray SIGTERM. Best-effort: a worktree
-    // with no running server is a no-op, and a stop failure must not block the
-    // delete (idle-shutdown — 30min — is the backstop for anything missed).
-    if (typeof gitRoot === 'string' && recentGitRoots.has(gitRoot)) {
-      try {
-        // Route runStop's own log through the structured logger (not stdout) so
-        // the success path — which PIDs were SIGTERM'd before `.git` deletion —
-        // is captured for incident forensics, not silently dropped.
-        const outcome = runStop({
-          lockDir: resolveLockDir(gitRoot),
-          log: (msg) => getLogger('project').info({ gitRoot }, `[remove-git-folder] ${msg}`),
-        });
-        getLogger('project').info(
-          { gitRoot, stopped: outcome.stopped.length, hadTargets: outcome.hadTargets },
-          'remove-git-folder: stopped worktree server before .git removal',
-        );
-      } catch (err) {
-        getLogger('project').warn(
-          { gitRoot, err: err instanceof Error ? err.message : String(err) },
-          'remove-git-folder: worktree server stop failed',
-        );
-      }
-    }
-    await removeGitFolder(gitRoot, { allowedGitRoots: recentGitRoots });
-    return undefined;
-  });
-
-  handle('ok:project:create-new', async (_event, args) => {
-    let result: Awaited<ReturnType<typeof runCreateNew>>;
-    try {
-      result = await runCreateNew({
-        parent: args.parent,
-        name: args.name,
-        editors: args.editors,
-        sharing: args.sharing,
-        packId: args.packId,
-      });
-    } catch (err) {
-      if (err instanceof CreateNewProjectError) {
-        logIpcError({
-          event: 'ipc.error',
-          channel: 'ok:project:create-new',
-          reason: err.reason,
-          handler: 'runCreateNew',
-          cause: { message: err.message },
-        });
-      } else {
-        // Unexpected error type (TypeError, OOM, etc.) — still emit a
-        // structured log line so triage has a main-side audit trail; the
-        // renderer maps non-CreateNewProjectError shapes to `{reason:'unknown'}`.
-        logIpcError({
-          event: 'ipc.error',
-          channel: 'ok:project:create-new',
-          reason: 'unexpected',
-          handler: 'runCreateNew',
-          cause: err,
-        });
-      }
-      throw err;
-    }
-
-    // Per-editor write outcomes → structured log line (count of failures
-    // also feeds the OnboardingFlow span's ai_integrations_failed_count
-    // attribute, same as the pick-existing dialog path).
-    const aiFailedCount = logAiIntegrationOutcomes(result.aiIntegrations);
-
-    // The user picked `args.parent`; persist that — NOT `result.target`'s
-    // parent (which is the same here, but the contract is "remember where
-    // the user wanted to put projects," not "remember where the last one
-    // landed after sanitization").
-    appState = setLastUsedProjectParent(appState, args.parent);
-    saveAppState(appState);
-
-    recordOnboardingFlow({
-      flowKind: result.variant,
-      entryPoint: 'create-new',
-      gitInitRequested: !result.gitRootPromoted,
-      // `result.defaultContentDir` is invariantly `'.'` (see the field's
-      // JSDoc in `create-new-project.ts`). The create-new flow has no UI
-      // for adjusting content scope at scaffold time, so this telemetry
-      // attribute is always `false` here — emitted explicitly for parity
-      // with the Pick-existing flow's payload shape.
-      contentDirChanged: false,
-      warningsCount: 0,
-      failedCount: aiFailedCount,
-    });
-
-    // Paths logged verbatim: the bounded-cardinality STOP rule applies to
-    // span/metric attributes, not pino log fields; the telemetry span emitted
-    // just above stays bounded.
-    getLogger('create-new').info(
-      {
-        projectDir: result.projectDir,
-        target: result.target,
-        variant: result.variant,
-        gitRootPromoted: result.gitRootPromoted,
-      },
-      'created project',
-    );
-
-    // Open the editor window against the project root (the git root when
-    // promoted, otherwise the user-facing folder). By now `projectDir`
-    // carries `.ok/config.yml`, so `discoverProject`'s walk inside
-    // `openProject` classifies it as `kind: 'managed'` and the silent
-    // scaffold branch won't re-fire.
-    await openProjectOrFallbackToNavigator(result.projectDir, 'create-new');
-    return undefined;
-  });
-
-  handle('ok:project:record-create-new-banner-shown', async (_event, banner) => {
-    if (banner !== 'nested' && banner !== 'nonempty' && banner !== 'git-confirm') {
-      throw new Error(
-        `ok:project:record-create-new-banner-shown rejected: unknown banner ${JSON.stringify(banner)}`,
-      );
-    }
-    recordCreateNewBannerShown(banner);
-    return undefined;
-  });
-
-  handle('ok:navigator:open', async () => {
-    openNavigator();
-    return undefined;
-  });
 
   // Schema-incompatibility IPC handlers. The pure handler bodies live in
   // `update-state-handlers.ts` so the unit tier can pin the composition
@@ -4079,8 +3656,23 @@ function registerIpcHandlers() {
 
   registerBugLocalOpsIpc({ handle, app, shell, resolveCliArgs: resolveLocalOpCliArgs });
 
-  registerIntegrationsSettingsIpc();
-  registerProjectIntegrationsSettingsIpc();
+  const integrationsSettingsDeps = {
+    app,
+    ipcMain,
+    platform: process.platform,
+    env: process.env,
+    homeDir: osHomedir,
+    getLogger,
+    pathInstallLogger,
+    buildEnsureCliOnPathOpts,
+    buildReclaimUserSkillsOpts,
+    getWindowForWebContents: (sender: Electron.WebContents) =>
+      BrowserWindow.fromWebContents(sender),
+    getProjectPath: (window: BrowserWindow) =>
+      wm.getContextForBrowserWindow(window as unknown as BrowserWindowLike)?.projectPath,
+  };
+  registerIntegrationsSettingsIpc(integrationsSettingsDeps);
+  registerProjectIntegrationsSettingsIpc(integrationsSettingsDeps);
   // Lifecycle IPC is owned and armed independently. Every remaining request
   // channel must be registered exactly once by the static registrar map.
   const expectedStaticChannels = new Set<string>();
@@ -4095,273 +3687,6 @@ function registerIpcHandlers() {
       throw new Error(`desktop IPC handler has no static registrar owner: ${channel}`);
     }
   }
-}
-
-/**
- * Settings → AI tools: persistent status/toggle IPC over the same install
- * actors as the first-launch consent dialog (`createMcpWiringOpts`) and the
- * startup reclaim — `writeUserMcpConfigs` + surgical removal for editors,
- * `ensureCliOnPath` / rc-block strip for the PATH shim, decision-gated
- * reclaim + teardown for the user-global skill bundles. `available` mirrors
- * the wiring gate set so the section renders read-only exactly where the
- * consent dialog would refuse to arm.
- */
-function registerIntegrationsSettingsIpc(): void {
-  const integrationsLogger = getLogger('integrations-settings');
-  const available =
-    process.env.OK_RECLAIM_DISABLE !== '1' &&
-    process.platform === 'darwin' &&
-    (app.isPackaged || process.env.OK_M6B_FORCE === '1') &&
-    /\.app\/Contents\/MacOS\/[^/]+$/.test(app.getPath('exe'));
-  const tildifyHomePath = (path: string): string => {
-    const home = osHomedir();
-    return path.startsWith(`${home}/`) ? `~${path.slice(home.length)}` : path;
-  };
-  registerIntegrationsSettings({
-    home: osHomedir(),
-    available,
-    ipcMain,
-    cli: {
-      // User-global surface only: `scope: 'project'` targets (Pi) have no
-      // user-global MCP config to manage — their `configPath()` throws — so
-      // they must not surface as a row here, mirroring the consent dialog's
-      // and startup repair sweep's scope filter in `mcp-wiring.ts`.
-      allEditorIds: ALL_EDITOR_IDS.filter((id) => EDITOR_TARGETS[id].scope === 'global'),
-      editorLabel: (editorId) => EDITOR_TARGETS[editorId].label,
-      detectInstalledEditors: (cwd, home) => detectInstalledEditors(cwd, home),
-      classifyExistingMcpEntry: (editorId, home) =>
-        classifyExistingMcpEntry(EDITOR_TARGETS[editorId], '', home),
-      // The removal gate: `isEntryUpToDate` recognizes both the resolver-chain
-      // and OpenCode shapes via the version sentinel; `isOwnManagedEntry` is
-      // the exact canonical match. Same predicate `removeOwnMcpEntry` applies
-      // internally, so a row shown as 'installed' is always removable.
-      isOwnEntry: (entry) => isEntryUpToDate(entry) || isOwnManagedEntry(entry),
-      editorConfigPath: (editorId) => {
-        try {
-          return tildifyHomePath(EDITOR_TARGETS[editorId].configPath('', osHomedir()));
-        } catch {
-          // Platform-mismatched resolver (e.g. Claude Desktop off-macOS).
-          return null;
-        }
-      },
-      editorEntryLocator: (editorId) => {
-        const target = EDITOR_TARGETS[editorId];
-        const server = target.serverName('');
-        return target.format === 'toml'
-          ? `[${target.topLevelKey}.${server}]`
-          : [target.topLevelKey, target.serverMapSubKey, server].filter(Boolean).join('.');
-      },
-      writeUserMcpConfigs: (writeOpts) => writeUserMcpConfigs(writeOpts),
-      removeUserMcpEntry: (editorId) =>
-        removeOwnMcpEntry(EDITOR_TARGETS[editorId], '', osHomedir()),
-    },
-    path: {
-      computeStatus: () => {
-        const descriptor = computePathInstallDescriptor({
-          home: osHomedir(),
-          env: process.env,
-          logger: pathInstallLogger,
-        });
-        return {
-          shellDetected: descriptor.shellDetected,
-          rcFilesToTouch: descriptor.rcFilesToTouch,
-          installed: isPathShimInstalled({
-            home: osHomedir(),
-            env: process.env,
-            logger: pathInstallLogger,
-          }),
-        };
-      },
-      install: async () => {
-        const result = await ensureCliOnPath({
-          ...buildEnsureCliOnPathOpts(),
-          consentDecision: { status: 'granted', at: new Date().toISOString() },
-        });
-        if (result.status === 'failed-all') return { ok: false as const, error: result.error };
-        if (result.status === 'skipped') {
-          return {
-            ok: false as const,
-            error: `PATH setup is unavailable in this build (${result.reason}).`,
-          };
-        }
-        return { ok: true as const };
-      },
-      uninstall: async () => {
-        const result = removePathShimFromRcFiles({
-          home: osHomedir(),
-          env: process.env,
-          logger: pathInstallLogger,
-        });
-        if (result.status === 'failed') return { ok: false as const, error: result.error };
-        return { ok: true as const };
-      },
-    },
-    skills: {
-      computeStatuses: () =>
-        USER_GLOBAL_BUNDLE_IDS.map((id) => {
-          const home = osHomedir();
-          const name = BUNDLE_SKILL_NAME[id];
-          return {
-            id,
-            name,
-            installed: existsSync(join(home, '.agents', 'skills', name)),
-            // Central copy always; per-host copies only where the host root
-            // exists (mirrors installUserBundleToHostDirs' skipped-host-absent).
-            paths: [
-              `~/.agents/skills/${name}`,
-              ...HOSTS_WITH_USER_SKILL_DIR.filter((h) => existsSync(join(home, h.hostDir))).map(
-                (h) => `~/${h.hostDir}/skills/${name}`,
-              ),
-            ],
-          };
-        }),
-      setEnabled: async (bundleId, enabled) => {
-        const home = osHomedir();
-        const id = USER_GLOBAL_BUNDLE_IDS.find((b) => b === bundleId);
-        if (!id) return { ok: false as const, error: 'Unknown skill.' };
-        const name = BUNDLE_SKILL_NAME[id];
-        // Decision first (the durable record every install actor gates on),
-        // then the disk effect — same order as the consent-dialog leg.
-        try {
-          await writeBundleDecision(home, name, enabled);
-        } catch (err) {
-          return {
-            ok: false as const,
-            error: `Couldn't save your preference for ${name}: ${formatUnknownError(err)}`,
-          };
-        }
-        if (!enabled) {
-          try {
-            removeUserGlobalSkillBundle(home, id);
-          } catch (err) {
-            return { ok: false as const, error: formatUnknownError(err) };
-          }
-          return { ok: true as const };
-        }
-        try {
-          const result = await reclaimUserSkillsOnLaunch(buildReclaimUserSkillsOpts());
-          if (result.status === 'skipped') {
-            return {
-              ok: false as const,
-              error: `Couldn't install ${name} (${result.reason}).`,
-            };
-          }
-        } catch (err) {
-          return { ok: false as const, error: formatUnknownError(err) };
-        }
-        // Verify by effect — the reclaim reports per-target entries, but the
-        // central-store dir is the definitive "installed" signal every other
-        // surface reads.
-        if (!existsSync(join(home, '.agents', 'skills', name))) {
-          return { ok: false as const, error: `Couldn't install ${name}.` };
-        }
-        return { ok: true as const };
-      },
-    },
-    logger: {
-      warn: (msg, ctx) => integrationsLogger.warn((ctx ?? {}) as Record<string, unknown>, msg),
-      error: (msg, ctx) => integrationsLogger.error((ctx ?? {}) as Record<string, unknown>, msg),
-      event: (payload) => integrationsLogger.info(payload, payload.event),
-    },
-  });
-}
-
-/**
- * Settings → This project → AI tools: persistent status/toggle IPC over the
- * same PROJECT-LOCAL install actors as the per-project onboarding dialog and
- * the reclaim-on-open sweep — `writeEditorMcpConfig` / `removeOwnMcpEntry` with
- * a project config-path override for the per-editor MCP files, and
- * `writeProjectSkill` / `removeProjectSkill` for the project runtime skill.
- * Every request resolves the sender window's project (webContents →
- * ProjectContext) so the renderer can never target a foreign directory.
- * `available` mirrors the global surface's gate set.
- */
-function registerProjectIntegrationsSettingsIpc(): void {
-  const projectLogger = getLogger('project-integrations-settings');
-  const available =
-    process.env.OK_RECLAIM_DISABLE !== '1' &&
-    process.platform === 'darwin' &&
-    (app.isPackaged || process.env.OK_M6B_FORCE === '1') &&
-    /\.app\/Contents\/MacOS\/[^/]+$/.test(app.getPath('exe'));
-  const tildifyHomePath = (path: string): string => {
-    const home = osHomedir();
-    return path.startsWith(`${home}/`) ? `~${path.slice(home.length)}` : path;
-  };
-  // The canonical project skill lives under Claude Code's `.claude/skills/`; its
-  // presence is the single row's checked state (the write fans out to every
-  // capable editor, but the `.claude` copy is the one the discovery skill and
-  // CLAUDE.md reference).
-  const canonicalSkillTarget = EDITOR_TARGETS.claude;
-  const projectInstallOpts: McpInstallOptions = { mode: 'published', skipAvailabilityCheck: true };
-
-  const cli: ProjectIntegrationsCliSurface = {
-    allEditorIds: ALL_EDITOR_IDS,
-    editorLabel: (id) => EDITOR_TARGETS[id].label,
-    projectConfigPath: (id, projectDir) =>
-      EDITOR_TARGETS[id].projectConfigPath?.(projectDir) ?? null,
-    projectSkillPath: (id, projectDir) => EDITOR_TARGETS[id].projectSkillPath?.(projectDir) ?? null,
-    entryLocator: (id) => {
-      const target = EDITOR_TARGETS[id];
-      // `format: 'file'` targets (Pi) own a whole managed file, not a keyed
-      // entry — there is no dotted/table locator to show.
-      if (target.format === 'file') return 'synapsenote (managed extension file)';
-      const server = target.serverName('');
-      return target.format === 'toml'
-        ? `[${target.topLevelKey}.${server}]`
-        : [target.topLevelKey, target.serverMapSubKey, server].filter(Boolean).join('.');
-    },
-    classifyExistingProjectMcpConfig: (id, projectDir, projectPath) =>
-      classifyExistingMcpEntry(EDITOR_TARGETS[id], projectDir, undefined, projectPath),
-    isOwnEntry: (entry) => isEntryUpToDate(entry) || isOwnManagedEntry(entry),
-    writeProjectMcpConfig: ({ id, projectDir, projectPath }) => {
-      const result = writeEditorMcpConfig(
-        EDITOR_TARGETS[id],
-        projectDir,
-        projectInstallOpts,
-        undefined,
-        projectPath,
-      );
-      if (result.action === 'written' || result.action === 'overwritten') {
-        return { action: result.action };
-      }
-      if (result.action === 'declined') {
-        return { action: 'declined', reason: result.declineReason };
-      }
-      return { action: 'failed', error: result.error };
-    },
-    removeProjectMcpEntry: (id, projectDir, projectPath) =>
-      removeOwnMcpEntry(EDITOR_TARGETS[id], projectDir, undefined, projectPath),
-    isProjectSkillInstalled: (projectDir) => {
-      const skillPath = canonicalSkillTarget.projectSkillPath?.(projectDir);
-      return skillPath !== undefined && existsSync(skillPath);
-    },
-    writeProjectSkill: (id, projectDir) => {
-      const result = writeProjectSkill(EDITOR_TARGETS[id], projectDir);
-      return { action: result.action, ...(result.error ? { error: result.error } : {}) };
-    },
-    removeProjectSkill: (id, projectDir) => {
-      const result = removeProjectSkill(EDITOR_TARGETS[id], projectDir);
-      return { action: result.action, ...(result.error ? { error: result.error } : {}) };
-    },
-  };
-
-  registerProjectIntegrationsSettings({
-    available,
-    ipcMain,
-    cli,
-    resolveProjectDir: (event) => {
-      const win = BrowserWindow.fromWebContents(event.sender);
-      if (!win) return null;
-      return (
-        wm.getContextForBrowserWindow(win as unknown as BrowserWindowLike)?.projectPath ?? null
-      );
-    },
-    tildify: tildifyHomePath,
-    logger: {
-      warn: (msg, ctx) => projectLogger.warn((ctx ?? {}) as Record<string, unknown>, msg),
-      event: (payload) => projectLogger.info(payload, payload.event),
-    },
-  });
 }
 
 /**
