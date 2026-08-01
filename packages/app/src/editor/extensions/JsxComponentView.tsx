@@ -83,6 +83,7 @@ import {
   deriveJsxAttributePolicy,
   updateElementJsxProps,
 } from './jsx-component-view/jsx-component-view-attribute-policy.ts';
+import { shouldHandleJsxNodeViewKey } from './jsx-component-view/jsx-component-view-interaction-policy.ts';
 import {
   extractPrimitiveProps,
   getElementJsxAttrs,
@@ -526,8 +527,15 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
   //    preserved by only handling the key when editable props exist.
   const handleKeyDown = (e: React.KeyboardEvent) => {
     const target = e.target as HTMLElement;
+    const keyAction = shouldHandleJsxNodeViewKey({
+      hasEditableProps,
+      inTextInput: target.matches('input, textarea'),
+      isInnermostSelected,
+      isSelected: selected,
+      key: e.key,
+    });
 
-    if (e.key === 'Backspace' || e.key === 'Delete') {
+    if (keyAction === 'delete') {
       // Strict NodeSelection-on-this-wrapper. TipTap's raw `selected` prop
       // fires for range-encompass too (any `from <= pos && to >= pos +
       // nodeSize`), so gating on raw `selected` would let a multi-block
@@ -535,7 +543,6 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
       // didn't intercept first. `isInnermostSelected` is the strict
       // NodeSelection-on-this-wrapper discriminator used everywhere else
       // for the data-selected attr, chrome visibility, and tabindex.
-      if (!isInnermostSelected) return;
       // React events bubble through the React tree including portals, so
       // keydowns inside Radix `<PopoverContent>` reach this handler even
       // though its DOM lives at document.body. Filter to events whose DOM
@@ -553,7 +560,6 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
       // by the time we reach here, the remaining text-edit surface is a
       // <input>/<textarea> embedded in the rendered body (chrome inputs,
       // future descriptor-defined text fields).
-      if (target.matches('input, textarea')) return;
       const p = typeof getPos === 'function' ? getPos() : undefined;
       if (typeof p !== 'number') return;
       e.preventDefault();
@@ -591,9 +597,7 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
       return;
     }
 
-    if (e.key !== 'Enter' && e.key !== ' ') return;
-    if (!selected) return;
-    if (!hasEditableProps) return;
+    if (keyAction !== 'popover') return;
     // Allow keystrokes inside the chrome / child inputs to bubble normally.
     if (target.closest('.jsx-component-chrome')) return;
     if (target.closest('input, textarea, select, button')) return;
