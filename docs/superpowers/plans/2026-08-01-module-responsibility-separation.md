@@ -141,14 +141,14 @@ Target boundaries:
 
 Checklist:
 
-- [ ] Characterize save, cancel, layout switching, and draft-reset behavior in the existing DOM test.
-- [ ] Move draft initialization/reconciliation into a pure, tested module.
-- [ ] Move validation and desired-state compilation into a pure, tested module.
-- [ ] Extract layout-family panels with narrow typed props and no controller imports.
-- [ ] Make `DatabaseSavedViewSettingsLayoutPanel.tsx` a real dispatcher, not a pass-through facade.
-- [ ] Remove `DatabaseSavedViewSettingsDialogRuntime.tsx` after the facade composes the real panels.
-- [ ] Register each new module in `MODULE_SIZE_BUDGETS`; normal leaf ceiling is 350 lines.
-- [ ] Keep `DatabaseSavedViewSettingsDialog.tsx` at or below its existing 80-line budget.
+- [x] Characterize save, cancel, layout switching, and draft-reset behavior in the existing DOM test.
+- [x] Move draft initialization/reconciliation into a pure, tested module.
+- [x] Move validation and desired-state compilation into a pure, tested module.
+- [x] Extract layout-family panels with narrow typed props and no controller imports.
+- [x] Make `DatabaseSavedViewSettingsLayoutPanel.tsx` a real dispatcher, not a pass-through facade.
+- [x] Remove `DatabaseSavedViewSettingsDialogRuntime.tsx` after the facade composes the real panels.
+- [x] Register each new module in `MODULE_SIZE_BUDGETS`; normal leaf ceiling is 350 lines.
+- [x] Keep `DatabaseSavedViewSettingsDialog.tsx` at or below its existing 80-line budget.
 
 Verification:
 
@@ -172,15 +172,15 @@ Target boundaries:
 
 Checklist:
 
-- [ ] Add focused contract tests for selected-view restoration and render-context production.
-- [ ] Extract read and projection lifecycle without moving mutation behavior.
-- [ ] Extract overlay/dialog state without importing command hooks.
-- [ ] Extract the five command input builders as typed factories or narrow hooks.
-- [ ] Extract render-context construction using the already-derived Phase 2 type.
-- [ ] Remove `use-database-workspace-controller-runtime.ts`.
-- [ ] Keep `use-database-workspace-controller.ts` at or below 300 lines.
-- [ ] Preserve `typeof refreshNow === 'function'` exactly.
-- [ ] Prove database table DOM identity and route/hash behavior remain unchanged.
+- [x] Add focused contract tests for selected-view restoration and render-context production.
+- [x] Extract read and projection lifecycle without moving mutation behavior.
+- [x] Extract overlay/dialog state without importing command hooks.
+- [x] Extract the five command input builders as typed factories or narrow hooks.
+- [x] Extract render-context construction using the already-derived Phase 2 type.
+- [x] Remove `use-database-workspace-controller-runtime.ts`.
+- [x] Keep `use-database-workspace-controller.ts` at or below 300 lines.
+- [x] Preserve `typeof refreshNow === 'function'` exactly.
+- [x] Prove database table DOM identity and route/hash behavior remain unchanged.
 
 Verification:
 
