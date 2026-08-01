@@ -51,14 +51,21 @@ describe('database navigation boundary', () => {
   });
 
   test('production NodeViews emit lifecycle trace events without owning the overlay', () => {
-    const source = readFileSync(
+    const facadeSource = readFileSync(
       resolve(import.meta.dir, '../editor/extensions/JsxComponentView.tsx'),
       'utf8',
     );
-    expect(source).toContain("'node_view_mounted'");
-    expect(source).toContain("'node_view_unmounted'");
-    expect(source).not.toContain('recordPeek');
-    expect(source).not.toContain('DatabaseRecordPeek');
+    const lifecycleSource = readFileSync(
+      resolve(
+        import.meta.dir,
+        '../editor/extensions/jsx-component-view/use-jsx-component-view-lifecycle.ts',
+      ),
+      'utf8',
+    );
+    expect(lifecycleSource).toContain("'node_view_mounted'");
+    expect(lifecycleSource).toContain("'node_view_unmounted'");
+    expect(`${facadeSource}\n${lifecycleSource}`).not.toContain('recordPeek');
+    expect(`${facadeSource}\n${lifecycleSource}`).not.toContain('DatabaseRecordPeek');
   });
 
   test('inline and workspace title/open/keyboard routes share the canonical open command', () => {
