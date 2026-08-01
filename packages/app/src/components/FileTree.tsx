@@ -1,8 +1,6 @@
 import { plural } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react/macro';
 import {
-  CreateFolderSuccessSchema,
-  CreatePageSuccessSchema,
   DeletePathSuccessSchema,
   isDocumentOverOpenByteLimit,
   RenamePathSuccessSchema,
@@ -35,8 +33,6 @@ import {
   collectTreeFolderPathsFromDocuments,
   computeTreeAncestorPaths,
   computeTreeDropDestinationPath,
-  createPagePathFromTreeDestination,
-  createTreePlaceholder,
   docNameToTreePath,
   documentsToTreePaths,
   documentsTreePathSignature,
@@ -156,6 +152,7 @@ import {
   resolveKeyboardDeleteTargets,
 } from './file-tree/file-tree-commands';
 import type { FileTreeProps } from './file-tree/file-tree-types';
+import { useFileTreeCreation } from './file-tree/useFileTreeCreation';
 import {
   clickIsInTreeContentArea,
   clickIsInTreeItemSection,
@@ -198,19 +195,6 @@ function focusEditorAfterRename(docName: string): void {
 }
 
 const CONNECTIVITY_RECONNECT_RETRY_MS = 2000;
-
-interface PendingCreate {
-  kind: 'file' | 'folder';
-  renamePath: string;
-  createdPath: string;
-  previousHash: string;
-  disposeCommitListener: () => void;
-}
-
-interface PendingCreateCleanupOptions {
-  updateUi?: boolean;
-  restoreLocation?: boolean;
-}
 
 interface FileTreeDeleteRequest {
   targets: FileTreeTarget[];
@@ -325,11 +309,6 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
   // to-Trash flow does NOT (Step 1 is `shell.trashItem`, an OS call), so we
   // refuse here before the file leaves disk.
   const { conflicts: activeConflicts } = useConflicts();
-  // Sibling to startCreating's inline-rename UX: opens NewItemDialog when
-  // the user picks "New from template…" from a folder context menu, so the
-  // template picker is reachable without giving up the fast typed-name
-  // path that the toolbar / first-row create still uses.
-  const [newItemRequest, setNewItemRequest] = useState<{ parentDir: string } | null>(null);
   const [workspace, setWorkspace] = useState<WorkspaceInfo | null>(null);
   // Clicking the tree's empty content area "deselects" the active row *for
   // creation purposes only*: New file / New folder land at the project root
@@ -438,10 +417,6 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
   );
   const assetTreePathsRef = useRef(assetTreePaths);
   const activeAncestorTreePathsRef = useRef<string[]>([]);
-  const pendingCreateRef = useRef<PendingCreate | null>(null);
-  const cleanupPendingCreateRef = useRef<
-    (pending: PendingCreate, options?: PendingCreateCleanupOptions) => Promise<void>
-  >(async () => {});
   const skipNextResetSignatureRef = useRef<string | null>(null);
   const hoveredPrewarmDocRef = useRef<string | null>(null);
   const suppressSelectionRef = useRef(false);
@@ -839,6 +814,32 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     handleDuplicateTargetRef.current = handleDuplicateTarget;
   });
 
+  const {
+    newItemRequest,
+    setNewItemRequest,
+    pendingCreateRef,
+    clearPendingCreate,
+    cleanupPendingCreate,
+    cleanupPendingCreateRef,
+    startCreating,
+    startCreatingFromTemplate,
+  } = useFileTreeCreation({
+    model,
+    treePaths,
+    folderTreePathsRef,
+    busyPathRef,
+    recentLocalAddsRef,
+    setBusyPath,
+    setDocuments,
+    resetModelToDocuments,
+    markNextDocumentsAsApplied,
+    addPage,
+    navigateToFile: navigateToWithPulse,
+    navigateToFolder: navigateToFolderWithPulse,
+    closeDocument,
+    closeTabs,
+  });
+
   function recoverMarkdownRenameConflict(message: string): boolean {
     const bareDestinationPath = parseAlreadyExistsRenamePath(message);
     if (!bareDestinationPath || markdownTreeExtension(bareDestinationPath)) return false;
@@ -867,106 +868,6 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     model.move(sourceTreePath, destinationTreePath);
     return true;
   }
-
-  const clearPendingCreate = (pending?: PendingCreate | null) => {
-    const current = pending ?? pendingCreateRef.current;
-    if (!current || pendingCreateRef.current !== current) return;
-    current.disposeCommitListener();
-    pendingCreateRef.current = null;
-  };
-
-  async function cleanupPendingCreate(
-    pending: PendingCreate,
-    options: PendingCreateCleanupOptions = {},
-  ) {
-    const updateUi = options.updateUi ?? true;
-    const restoreLocation = options.restoreLocation ?? updateUi;
-
-    clearPendingCreate(pending);
-    if (updateUi) setBusyPath(pending.renamePath);
-
-    try {
-      const res = await fetch('/api/delete-path', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kind: pending.kind, path: pending.createdPath }),
-      });
-      // 404 on cleanup is fine — the entry was never persisted server-side.
-      // Any other non-2xx is a real failure that needs to surface.
-      if (!res.ok && res.status !== 404) {
-        const kind = pending.kind;
-        const createdPath = pending.createdPath;
-        const parsed = await parseServerResponse(res, t`Failed to clean up pending ${kind}`);
-        // `parseServerResponse` returns `{ok: false, title}` whenever the
-        // upstream `res.ok` is false — the union's success arm is unreachable
-        // under this branch. Discriminate explicitly for the type system,
-        // and short-circuit the unreachable arm without ceremony.
-        if (parsed.ok) return;
-        const detail = parsed.title;
-        const message = t`${detail} - ${kind} "${createdPath}" still exists on disk`;
-        if (updateUi) {
-          toast.error(message);
-        } else {
-          console.warn(`[FileTree] cleanup pending create failed: ${message}`);
-        }
-        if (updateUi) {
-          setBusyPath(null);
-          resetModelToDocuments();
-        }
-        return;
-      }
-    } catch (err) {
-      console.warn('[FileTree] cleanup pending create failed:', err);
-      if (updateUi) {
-        const kind = pending.kind;
-        const createdPath = pending.createdPath;
-        toast.error(t`Network error - ${kind} "${createdPath}" still exists on disk`);
-      }
-      if (updateUi) {
-        setBusyPath(null);
-        resetModelToDocuments();
-      }
-      return;
-    }
-
-    if (updateUi) {
-      if (pending.kind === 'file') {
-        closeDocument(pending.createdPath);
-      } else {
-        closeTabs([folderTabId(pending.createdPath)], { force: true });
-      }
-    }
-    if (updateUi) {
-      setDocuments((current) => {
-        const next = applyDeleteToDocuments(
-          current,
-          pending.kind === 'file' ? [pending.createdPath] : [],
-          pending.kind === 'folder' ? pending.createdPath : undefined,
-        );
-        markNextDocumentsAsApplied(next);
-        return next;
-      });
-    }
-    emitDocumentsChanged(['files', 'backlinks', 'graph']);
-    if (restoreLocation) window.location.hash = pending.previousHash;
-    if (updateUi) setBusyPath(null);
-  }
-
-  useEffect(() => {
-    return () => {
-      const pending = pendingCreateRef.current;
-      if (pending) {
-        void cleanupPendingCreateRef
-          .current(pending, {
-            restoreLocation: false,
-            updateUi: false,
-          })
-          .catch((err) => {
-            console.warn('[FileTree] unmount cleanup failed:', err);
-          });
-      }
-    };
-  }, []);
 
   useFileTreeShowAll({
     model,
@@ -1171,6 +1072,7 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     });
   }, [model]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: pending-create and cleanup callbacks flow through stable refs; listener lifecycle follows the tree model.
   useEffect(() => {
     return model.onMutation('remove', (event) => {
       const pending = pendingCreateRef.current;
@@ -1645,171 +1547,6 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     }
   }
 
-  function startCreatingFromTemplate(parentDir: string) {
-    setNewItemRequest({ parentDir });
-  }
-
-  async function startCreating(
-    kind: 'file' | 'folder',
-    parentDir: string,
-    options?: { template?: string },
-  ) {
-    if (busyPathRef.current) return;
-
-    const pendingCreate = pendingCreateRef.current;
-    if (pendingCreate) {
-      // Pierre commits an unchanged inline rename on blur without firing onRename.
-      // Treat the default-named item as committed so toolbar/menu creates still work.
-      clearPendingCreate(pendingCreate);
-    }
-
-    try {
-      const placeholder = createTreePlaceholder(kind, parentDir, [
-        ...treePaths,
-        ...folderTreePathsRef.current,
-      ]);
-      setBusyPath(placeholder.renamePath);
-      busyPathRef.current = placeholder.renamePath;
-      const previousHash = window.location.hash;
-
-      let createdPath: string;
-      if (kind === 'file') {
-        const createPath = createPagePathFromTreeDestination('file', placeholder.addPath);
-        // Template param mirrors NewItemDialog's create call: the server seeds
-        // the new doc from the named template's body + frontmatter. Omitted for
-        // the blank "New file" path so behavior there is unchanged.
-        const createBody: { path: string; template?: string } = { path: createPath };
-        if (options?.template) createBody.template = options.template;
-        const res = await fetch('/api/create-page', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(createBody),
-        });
-        const parsed = await parseServerResponse(res, t`Failed to create file`);
-
-        if (!parsed.ok) {
-          toast.error(parsed.title);
-          setBusyPath(null);
-          busyPathRef.current = null;
-          return;
-        }
-
-        const fallbackDocName = treeFilePathToDocName(createPath);
-        const success = parseSuccessOrWarn(CreatePageSuccessSchema, parsed.body, 'create-page', {
-          docName: fallbackDocName,
-        });
-        const docName = success.docName;
-        createdPath = docName;
-        const docExt = createPath.toLowerCase().endsWith('.mdx') ? '.mdx' : '.md';
-        const newFileEntry: FileEntry = {
-          kind: 'document',
-          docName,
-          docExt,
-          modified: new Date().toISOString(),
-          size: 0,
-        };
-        // Mirror `applyRenamedDocuments`'s `addPage(entry.toDocName)`: until
-        // the `/api/pages` refetch lands (50–500ms), `pages.has(docName)`
-        // would otherwise be false and drive `isNewDoc=true` at
-        // `EditorActivityPool.tsx`, flipping the composite TipTap key when
-        // the refetch resolves and forcing a mid-window remount during the
-        // create → inline-rename → click race.
-        addPage(docName);
-        // Register the optimistic add inside the updater so the
-        // duplicate-check early-return path doesn't leak a registry entry
-        // for a path we never inserted. See mergeAndPruneRecentLocalAdds.
-        setDocuments((current) => {
-          if (current.some((entry) => isDocumentEntry(entry) && entry.docName === docName)) {
-            return current;
-          }
-          const next = [...current, newFileEntry];
-          markNextDocumentsAsApplied(next);
-          recentLocalAddsRef.current.set(fileEntryToTreePath(newFileEntry), Date.now());
-          return next;
-        });
-        emitDocumentsChanged(['files', 'backlinks', 'graph']);
-        navigateToWithPulse(docName);
-      } else {
-        const folderPath = treeDirectoryPathToFolderPath(placeholder.addPath);
-        const res = await fetch('/api/create-folder', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ path: folderPath }),
-        });
-        const parsed = await parseServerResponse(res, t`Failed to create folder`);
-
-        if (!parsed.ok) {
-          toast.error(parsed.title);
-          setBusyPath(null);
-          busyPathRef.current = null;
-          return;
-        }
-
-        const success = parseSuccessOrWarn(
-          CreateFolderSuccessSchema,
-          parsed.body,
-          'create-folder',
-          { path: folderPath },
-        );
-        createdPath = success.path;
-        const newFolderEntry: FileEntry = {
-          kind: 'folder',
-          path: createdPath,
-          modified: new Date().toISOString(),
-          size: 0,
-        };
-        setDocuments((current) => {
-          if (current.some((entry) => isFolderEntry(entry) && entry.path === createdPath)) {
-            return current;
-          }
-          const next = [...current, newFolderEntry];
-          markNextDocumentsAsApplied(next);
-          recentLocalAddsRef.current.set(fileEntryToTreePath(newFolderEntry), Date.now());
-          return next;
-        });
-        emitDocumentsChanged(['files']);
-        navigateToFolderWithPulse(createdPath);
-      }
-
-      let disposed = false;
-      const handleCommitKeyDown = (event: KeyboardEvent) => {
-        if (event.key !== 'Enter') return;
-        const pending = pendingCreateRef.current;
-        if (!pending || pending.renamePath !== placeholder.renamePath) return;
-        queueMicrotask(() => clearPendingCreate(pending));
-      };
-      const disposeCommitListener = () => {
-        if (disposed) return;
-        disposed = true;
-        document.removeEventListener('keydown', handleCommitKeyDown, true);
-      };
-      document.addEventListener('keydown', handleCommitKeyDown, true);
-      pendingCreateRef.current = {
-        kind,
-        renamePath: placeholder.renamePath,
-        createdPath,
-        previousHash,
-        disposeCommitListener,
-      };
-      setBusyPath(null);
-      busyPathRef.current = null;
-      model.add(placeholder.addPath);
-      model.startRenaming(placeholder.renamePath, { removeIfCanceled: true });
-    } catch (err) {
-      console.warn('[FileTree] create placeholder failed:', err);
-      toast.error(t`Could not start creating a new item`);
-      const pending = pendingCreateRef.current;
-      if (pending) {
-        await cleanupPendingCreate(pending);
-      } else {
-        clearPendingCreate();
-      }
-      setBusyPath(null);
-      busyPathRef.current = null;
-      resetModelToDocuments();
-    }
-  }
-
   function expandSubtree(treePath: string) {
     const root = folderPathToTreeDirectoryPath(treePath);
     startTransition(() => {
@@ -1860,7 +1597,6 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     folderTreePathsRef.current = folderTreePaths;
     activeAncestorTreePathsRef.current = activeAncestorTreePaths;
     userCollapsedActiveAncestorPathsRef.current = userCollapsedActiveAncestorPaths;
-    cleanupPendingCreateRef.current = cleanupPendingCreate;
     uploadExternalFilesRef.current = (files, parentDir, uploadBusyPath) => {
       void uploadExternalFilesToTarget(files, parentDir, uploadBusyPath);
     };
