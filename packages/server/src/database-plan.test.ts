@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { createDatabasePlanEngine, DatabasePlanError } from './database-plan.ts';
+import { DatabaseDesiredStateDraftSchema as extractedDraftSchema } from './database-plan-draft-contracts.ts';
 import { createDatabaseRecordIndex } from './database-record-index.ts';
 import { createDatabaseStore } from './database-store.ts';
 
@@ -180,6 +181,10 @@ function fixture() {
 }
 
 describe('DatabasePlanEngine ephemeral desired state', () => {
+  test('exposes the desired-state contract from its dedicated module', () => {
+    expect(extractedDraftSchema.safeParse(desiredState()).success).toBe(true);
+  });
+
   test('classifies every user-resolvable area touched by an exact plan', () => {
     const { engine } = fixture();
     const state = desiredState() as ReturnType<typeof desiredState> & { automations: unknown[] };
