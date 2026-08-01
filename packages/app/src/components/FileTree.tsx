@@ -1,5 +1,5 @@
 import { plural } from '@lingui/core/macro';
-import { Trans, useLingui } from '@lingui/react/macro';
+import { useLingui } from '@lingui/react/macro';
 import { WorkspaceSuccessSchema } from '@nedian0brien/synapsenote-core';
 import type { FileTreeDropResult, FileTreeRenameEvent } from '@pierre/trees';
 import { useTheme } from 'next-themes';
@@ -12,7 +12,6 @@ import {
   useState,
 } from 'react';
 import { toast } from 'sonner';
-import { FileTreeFilteredToZeroNotice } from '@/components/FileTreeFilteredToZeroNotice';
 import {
   docNameToTreePath,
   fileEntryToTreePath,
@@ -34,7 +33,6 @@ import {
   isDocumentEntry,
 } from '@/components/file-tree-utils';
 import { coerceTrashFailureReason, type TrashFailedTarget } from '@/components/TrashFailureModal';
-import { Button } from '@/components/ui/button';
 import { asDirectoryHandle } from '@/components/use-selection-mirror';
 import { getEditorForDoc } from '@/editor/active-editor';
 import { useDocumentCollaboration } from '@/editor/document-context/useDocumentCollaboration';
@@ -46,9 +44,9 @@ import { useConfigContext } from '@/lib/config-provider';
 import { emitDocumentsChanged } from '@/lib/documents-events';
 import type { PageHeaderRenameResult } from '@/lib/page-header-rename-events';
 import { parseSuccessOrWarn } from '@/lib/parse-server-response';
-import { cn } from '@/lib/utils';
 import { applyRenamedDocuments as reconcileRenamedDocuments } from './file-tree/apply-renamed-documents';
 import { FileTreeDialogs } from './file-tree/FileTreeDialogs';
+import { FileTreeEmptyState } from './file-tree/FileTreeEmptyState';
 import { FileTreeMenu } from './file-tree/FileTreeMenu';
 import { FileTreeHeaderNotice, FileTreeSkeleton } from './file-tree/FileTreePresentation';
 import { FileTreeViewport } from './file-tree/FileTreeViewport';
@@ -947,59 +945,23 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     : null;
 
   if (documents.length === 0) {
-    // The empty tree is the most likely state during a relaunch (zero docs
-    // while the server is down), so both notices carry their live-region role
-    // here too — matching `FileTreeHeaderNotice` on the populated path.
-    if (reconnectNotice !== null) {
-      return (
-        <div className="flex flex-1 items-center justify-center py-8">
-          <span role="status" className="select-none text-sidebar-foreground/50 text-sm">
-            {reconnectNotice}
-          </span>
-        </div>
-      );
-    }
-    if (error) {
-      return (
-        <div className="flex flex-1 items-center justify-center py-8">
-          <span role="alert" className="select-none text-sidebar-foreground/50 text-sm">
-            {error}
-          </span>
-        </div>
-      );
-    }
-    if (
-      classifyEmptyTree({
-        visibility: { showHiddenFiles, showOnlyMarkdownFiles },
-        unfilteredRootEntryCount,
-        knownPageCount: pages.size,
-      }) === 'filtered-to-zero'
-    ) {
-      return <FileTreeFilteredToZeroNotice />;
-    }
     return (
-      <section
-        aria-label={t`File drop zone`}
-        className={cn(
-          'flex flex-1 flex-col items-center justify-center gap-3 rounded-md py-8',
-          emptyExternalFileDropActive && 'bg-primary/5 ring-2 ring-primary/70 ring-inset',
-        )}
+      <FileTreeEmptyState
+        reconnectNotice={reconnectNotice}
+        error={error}
+        filteredToZero={
+          classifyEmptyTree({
+            visibility: { showHiddenFiles, showOnlyMarkdownFiles },
+            unfilteredRootEntryCount,
+            knownPageCount: pages.size,
+          }) === 'filtered-to-zero'
+        }
+        externalDropActive={emptyExternalFileDropActive}
         onDragOver={handleEmptyExternalFileDragOver}
         onDragLeave={handleEmptyExternalFileDragLeave}
         onDrop={handleEmptyExternalFileDrop}
-      >
-        <span className="select-none text-sidebar-foreground/30 text-sm">
-          <Trans>No files yet.</Trans>
-        </span>
-        <Button
-          variant="link"
-          size="sm"
-          className="font-mono uppercase"
-          onClick={() => startCreating('file', '')}
-        >
-          <Trans>Create your first file</Trans>
-        </Button>
-      </section>
+        onCreateFirstFile={() => startCreating('file', '')}
+      />
     );
   }
 
