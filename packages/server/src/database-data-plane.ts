@@ -1,6 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { createHash } from 'node:crypto';
-import type { FrontmatterValue } from '@nedian0brien/synapsenote-core';
 import {
   applyDatabaseLinkedViewSettings,
   buildDatabaseReverseRelationIndex,
@@ -8,12 +7,10 @@ import {
   compileFormulaSource,
   createDatabaseDerivedRevision,
   DATABASE_QUERY_SORT_SEMANTICS,
-  DATABASE_STORAGE_CAPABILITY_MATRIX,
   type DatabaseAccessPrincipal,
   DatabaseAccessPrincipalSchema,
   type DatabaseConditionalColorResult,
   type DatabaseDefinition,
-  DatabaseDefinitionSchema,
   type DatabaseFilter,
   type DatabaseFindPlan,
   type DatabaseFormValue,
@@ -32,10 +29,7 @@ import {
   DatabaseQuerySchema,
   type DatabaseRecord,
   type DatabaseRecordActor,
-  type DatabaseRecordIssue,
   type DatabaseSource,
-  type DatabaseStorageCapability,
-  type DatabaseValue,
   DatabaseVerificationValueSchema,
   type DatabaseView,
   databasePublicShareIsActive,
@@ -104,6 +98,12 @@ import {
   mutateDatabaseMarkdownTable,
 } from './database-data-plane-markdown-adapters.ts';
 import {
+  createDatabaseReadProjection,
+  type DatabaseDescribeNotModifiedResult,
+  type DatabaseDescribeResult,
+  type DatabaseRecordLookupResult,
+} from './database-data-plane-read-projection.ts';
+import {
   createDatabaseFormStateStore,
   type DatabaseFormStateStore,
 } from './database-form-state-store.ts';
@@ -163,40 +163,11 @@ export type {
   DatabaseMarkdownTableMutationInput,
   DatabaseMarkdownTableMutationRequest,
 } from './database-data-plane-markdown-adapters.ts';
-
-export interface DatabaseDescribeResult {
-  manifestRevision: string;
-  schemaRevision: string;
-  database: DatabaseDefinition;
-  source: DatabaseSource | null;
-  index: DatabaseRecordIndexStatus;
-  storageCapabilities: readonly DatabaseStorageCapability[];
-  allowedOperations: readonly ['catalog', 'describe', 'find', 'query', 'pack'];
-}
-
-export interface DatabaseDescribeNotModifiedResult {
-  notModified: true;
-  manifestRevision: string;
-  schemaRevision: string;
-  databaseId: string;
-  sourceId: string | null;
-}
-
-export interface DatabaseRecordLookupResult {
-  databaseId: string;
-  sourceId: string;
-  manifestRevision: string;
-  indexRevision: string;
-  record: {
-    id: string;
-    path: string;
-    revision: string | null;
-    values: Record<string, DatabaseValue>;
-    invalidValues?: Record<string, FrontmatterValue>;
-    issues?: DatabaseRecordIssue[];
-    archivedAt?: string;
-  };
-}
+export type {
+  DatabaseDescribeNotModifiedResult,
+  DatabaseDescribeResult,
+  DatabaseRecordLookupResult,
+} from './database-data-plane-read-projection.ts';
 
 export interface DatabaseComputedPropertyPreviewResult {
   databaseId: string;
@@ -1119,6 +1090,19 @@ export class DatabaseDataPlane {
     };
   }
 
+  #readProjectionPort() {
+    return {
+      assertReadable: this.#assertReadable.bind(this),
+      snapshot: this.#databaseStore.snapshot.bind(this.#databaseStore),
+      indexStatus: this.#databaseRecordIndex.status.bind(this.#databaseRecordIndex),
+      resolveQueryAccess: this.#resolveQueryAccess,
+      currentAccessPrincipal: this.#currentAccessPrincipal.bind(this),
+      catalog: () => this.catalog().candidates,
+      publicShare: this.#publicShare.getStore.bind(this.#publicShare),
+      getContextRecord: this.#getContextRecord.bind(this),
+    };
+  }
+
   #trustedMutationActor(): DatabaseCommitInput['actor'] {
     const principal = this.#currentAccessPrincipal();
     return principal.kind === 'agent'
@@ -1270,52 +1254,7 @@ export class DatabaseDataPlane {
     databaseKey?: string;
     sourceId?: string;
   }): DatabaseDescribeResult {
-    this.#assertReadable();
-    const snapshot = this.#databaseStore.snapshot();
-    const database = snapshot.databases.find(
-      (candidate) =>
-        (input.databaseId !== undefined && candidate.id === input.databaseId) ||
-        (input.databaseKey !== undefined && candidate.key === input.databaseKey),
-    );
-    if (!database) {
-      throw new DatabaseDataPlaneError('database_not_found', 'Database was not found', {
-        databaseId: input.databaseId,
-        databaseKey: input.databaseKey,
-        candidates: snapshot.databases.map((candidate) => ({
-          id: candidate.id,
-          key: candidate.key,
-          name: candidate.name,
-        })),
-      });
-    }
-    const source =
-      input.sourceId === undefined
-        ? null
-        : (database.sources.find((candidate) => candidate.id === input.sourceId) ?? null);
-    if (input.sourceId !== undefined && !source) {
-      throw new DatabaseDataPlaneError(
-        'source_not_found',
-        `Data source "${input.sourceId}" was not found`,
-        {
-          databaseId: database.id,
-          sourceId: input.sourceId,
-          candidates: database.sources.map((candidate) => ({
-            id: candidate.id,
-            key: candidate.key,
-            name: candidate.name,
-          })),
-        },
-      );
-    }
-    return {
-      manifestRevision: snapshot.revision,
-      schemaRevision: databaseSchemaRevision(database),
-      database: cloneDefinition(database),
-      source: source ? structuredClone(source) : null,
-      index: this.#databaseRecordIndex.status(),
-      storageCapabilities: DATABASE_STORAGE_CAPABILITY_MATRIX,
-      allowedOperations: ['catalog', 'describe', 'find', 'query', 'pack'],
-    };
+    return createDatabaseReadProjection(this.#readProjectionPort()).describeCanonical(input);
   }
 
   describe(input: {
@@ -1324,201 +1263,7 @@ export class DatabaseDataPlane {
     sourceId?: string;
     includeViews?: boolean;
   }): DatabaseDescribeResult {
-    this.#assertReadable();
-    const snapshot = this.#databaseStore.snapshot();
-    const database = snapshot.databases.find(
-      (candidate) =>
-        (input.databaseId !== undefined && candidate.id === input.databaseId) ||
-        (input.databaseKey !== undefined && candidate.key === input.databaseKey),
-    );
-    if (!database) {
-      throw new DatabaseDataPlaneError('database_not_found', 'Database was not found', {
-        databaseId: input.databaseId,
-        databaseKey: input.databaseKey,
-        candidates: this.catalog().candidates.map(({ id, key, name }) => ({
-          id,
-          key,
-          name,
-        })),
-      });
-    }
-    const query = DatabaseQuerySchema.parse({});
-    const receipts: Array<{
-      sourceId: string;
-      policyId: string;
-      policyRevision: string;
-      allowedPropertyIds: readonly string[] | null;
-    }> = [];
-    const projectedSources = database.sources.flatMap((source) => {
-      const access = this.#resolveQueryAccess({
-        action: 'describe',
-        database: cloneDefinition(database),
-        source: structuredClone(source),
-        query: structuredClone(query),
-        view: null,
-        principal: this.#currentAccessPrincipal(),
-      });
-      if (access.allowed === false) return [];
-      const allowedPropertyIds =
-        access.allowedPropertyIds === null ? null : new Set(access.allowedPropertyIds);
-      const properties = source.properties.filter(
-        (property) => allowedPropertyIds === null || allowedPropertyIds.has(property.id),
-      );
-      if (!properties.some((property) => property.type === 'title')) return [];
-      receipts.push({
-        sourceId: source.id,
-        policyId: access.policyId,
-        policyRevision: access.policyRevision,
-        allowedPropertyIds:
-          access.allowedPropertyIds === null ? null : [...access.allowedPropertyIds].sort(),
-      });
-      return [
-        {
-          ...structuredClone(source),
-          properties: properties.map((property) => structuredClone(property)),
-          defaultViewId: undefined,
-          pageLayout: undefined,
-        },
-      ];
-    });
-    const requestedSourceExists =
-      input.sourceId === undefined ||
-      database.sources.some((candidate) => candidate.id === input.sourceId);
-    const requestedSourceVisible =
-      input.sourceId === undefined ||
-      projectedSources.some((source) => source.id === input.sourceId);
-    if (!requestedSourceExists || !requestedSourceVisible) {
-      throw new DatabaseDataPlaneError(
-        requestedSourceExists ? 'permission_denied' : 'source_not_found',
-        requestedSourceExists
-          ? 'Database description is outside the effective access scope'
-          : 'Data source was not found',
-        {
-          databaseId: database.id,
-          ...(input.sourceId ? { sourceId: input.sourceId } : {}),
-          candidates:
-            this.catalog()
-              .candidates.find((candidate) => candidate.id === database.id)
-              ?.sources.map(({ id, key, name }) => ({ id, key, name })) ?? [],
-        },
-      );
-    }
-    if (projectedSources.length === 0) {
-      throw new DatabaseDataPlaneError(
-        'permission_denied',
-        'Database description is outside the effective access scope',
-        {
-          databaseId: database.id,
-          ...(input.sourceId ? { sourceId: input.sourceId } : {}),
-          candidates: [],
-        },
-      );
-    }
-    const scopedSchemaRevision = (projection: DatabaseDefinition): string =>
-      `sha256:${createHash('sha256')
-        .update(
-          stableJson({
-            canonicalSchemaRevision: databaseSchemaRevision(database),
-            receipts,
-            projection,
-          }),
-        )
-        .digest('hex')}`;
-    if (
-      projectedSources.length === database.sources.length &&
-      receipts.every(({ allowedPropertyIds }) => allowedPropertyIds === null)
-    ) {
-      const canonical = this.#describeCanonical(input);
-      return {
-        ...canonical,
-        schemaRevision: scopedSchemaRevision(canonical.database),
-      };
-    }
-    const projectedSourceIds = new Set(projectedSources.map((source) => source.id));
-    const projected = DatabaseDefinitionSchema.safeParse({
-      ...cloneDefinition(database),
-      people: [],
-      sources: projectedSources.map((source) => ({
-        ...source,
-        properties: source.properties.filter(
-          (property) =>
-            property.type !== 'relation' || projectedSourceIds.has(property.targetSourceId),
-        ),
-      })),
-      sourceMappings: undefined,
-      views: (() => {
-        const policy = this.#publicShare.getStore();
-        if (
-          policy &&
-          (policy.target.kind === 'view' ||
-            policy.target.kind === 'form' ||
-            policy.target.kind === 'chart')
-        ) {
-          const viewId = policy.target.viewId;
-          return database.views
-            .filter((view) => view.id === viewId && projectedSourceIds.has(view.sourceId))
-            .map((view) => structuredClone(view));
-        }
-        if (input.includeViews !== true) return [];
-        const visiblePropertyIdsBySource = new Map(
-          projectedSources.map((source) => [
-            source.id,
-            new Set(source.properties.map((property) => property.id)),
-          ]),
-        );
-        return database.views
-          .filter((view) => projectedSourceIds.has(view.sourceId))
-          .filter((view) => {
-            const visiblePropertyIds = visiblePropertyIdsBySource.get(view.sourceId);
-            const source = database.sources.find((candidate) => candidate.id === view.sourceId);
-            if (!visiblePropertyIds || !source) return false;
-            const access = this.#resolveQueryAccess({
-              action: 'describe',
-              database: cloneDefinition(database),
-              source: structuredClone(source),
-              query: structuredClone(query),
-              view: structuredClone(view),
-              principal: this.#currentAccessPrincipal(),
-            });
-            if (access.allowed === false) return false;
-            const allowedPropertyIds =
-              access.allowedPropertyIds === null
-                ? visiblePropertyIds
-                : new Set(access.allowedPropertyIds);
-            return view.projection.propertyIds.every((propertyId) =>
-              allowedPropertyIds.has(propertyId),
-            );
-          })
-          .map((view) => structuredClone(view));
-      })(),
-      templates: [],
-      buttons: [],
-      automations: [],
-    });
-    if (!projected.success) {
-      throw new DatabaseDataPlaneError(
-        'permission_denied',
-        'The effective property scope cannot be represented as a self-contained schema',
-        {
-          databaseId: database.id,
-          ...(input.sourceId ? { sourceId: input.sourceId } : {}),
-          policyIds: receipts.map(({ policyId }) => policyId),
-        },
-      );
-    }
-    const source =
-      input.sourceId === undefined
-        ? null
-        : (projected.data.sources.find((candidate) => candidate.id === input.sourceId) ?? null);
-    return {
-      manifestRevision: snapshot.revision,
-      schemaRevision: scopedSchemaRevision(projected.data),
-      database: projected.data,
-      source,
-      index: this.#databaseRecordIndex.status(),
-      storageCapabilities: DATABASE_STORAGE_CAPABILITY_MATRIX,
-      allowedOperations: ['catalog', 'describe', 'find', 'query', 'pack'],
-    };
+    return createDatabaseReadProjection(this.#readProjectionPort()).describe(input);
   }
 
   describeIfChanged(input: {
@@ -1527,15 +1272,7 @@ export class DatabaseDataPlane {
     sourceId?: string;
     ifSchemaRevision?: string;
   }): DatabaseDescribeResult | DatabaseDescribeNotModifiedResult {
-    const described = this.describe(input);
-    if (input.ifSchemaRevision !== described.schemaRevision) return described;
-    return {
-      notModified: true,
-      manifestRevision: described.manifestRevision,
-      schemaRevision: described.schemaRevision,
-      databaseId: described.database.id,
-      sourceId: described.source?.id ?? null,
-    };
+    return createDatabaseReadProjection(this.#readProjectionPort()).describeIfChanged(input);
   }
 
   find(input: {
@@ -1921,64 +1658,7 @@ export class DatabaseDataPlane {
     sourceId: string;
     recordId: string;
   }): DatabaseRecordLookupResult {
-    const described = this.#describeCanonical({
-      databaseId: input.databaseId,
-      sourceId: input.sourceId,
-    });
-    const index = described.index;
-    if (index.state === 'error') {
-      throw new DatabaseDataPlaneError(
-        'index_unavailable',
-        'Database record index is unavailable',
-        {
-          indexState: index.state,
-          lastError: index.lastError,
-        },
-      );
-    }
-    if (index.state === 'rebuilding' || index.manifestRevision !== described.manifestRevision) {
-      throw new DatabaseDataPlaneError('stale_index', 'Database record index is not current', {
-        indexState: index.state,
-        indexRevision: index.revision,
-        indexManifestRevision: index.manifestRevision,
-        manifestRevision: described.manifestRevision,
-      });
-    }
-
-    const access = this.#getContextRecord(input.recordId);
-    if (access.deniedRecord) {
-      throw new DatabaseDataPlaneError('permission_denied', 'Record access is denied', {
-        databaseId: input.databaseId,
-        sourceId: input.sourceId,
-        recordId: input.recordId,
-      });
-    }
-    const record = access.record;
-    if (!record || record.databaseId !== input.databaseId || record.sourceId !== input.sourceId) {
-      throw new DatabaseDataPlaneError('record_not_found', 'Database record was not found', {
-        databaseId: input.databaseId,
-        sourceId: input.sourceId,
-        recordId: input.recordId,
-      });
-    }
-    return {
-      databaseId: input.databaseId,
-      sourceId: input.sourceId,
-      manifestRevision: described.manifestRevision,
-      indexRevision: index.revision,
-      record: {
-        id: record.id,
-        path: record.path,
-        revision: record.revision,
-        ...(record.semanticRevisions
-          ? { semanticRevisions: structuredClone(record.semanticRevisions) }
-          : {}),
-        values: structuredClone(record.values),
-        ...(record.invalidValues ? { invalidValues: structuredClone(record.invalidValues) } : {}),
-        ...(record.issues ? { issues: structuredClone(record.issues) } : {}),
-        ...(record.archivedAt ? { archivedAt: record.archivedAt } : {}),
-      },
-    };
+    return createDatabaseReadProjection(this.#readProjectionPort()).record(input);
   }
 
   /**
