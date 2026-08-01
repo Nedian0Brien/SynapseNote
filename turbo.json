@@ -46,6 +46,9 @@
         "package.json"
       ]
     },
+    "@nedian0brien/synapsenote#test": {
+      "dependsOn": ["build", "^build"]
+    },
     "test:unit": {
       "dependsOn": ["^build"],
       "cache": true,
