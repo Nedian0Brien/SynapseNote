@@ -1,6 +1,6 @@
 # Module Responsibility Separation Delivery Plan
 
-**Status:** In progress; Milestones 1–6 complete, Milestone 7 and final integration pending.
+**Status:** In progress; Milestones 1–7 complete, final integration pending.
 **Prepared:** 2026-08-01
 **Predecessor:** `docs/rfcs/0011-post-v2-refactoring-plan.md`
 
@@ -387,31 +387,31 @@ shape changes are allowed.
 
 ### 7A. Wire schemas versus HTTP handlers
 
-- [ ] Move request/response Zod schemas and inferred public types from
+- [x] Move request/response Zod schemas and inferred public types from
       `database-data-plane-api.ts` into operation-family contract modules.
-- [ ] Keep one immutable `DATABASE_API_SCHEMAS` registry with schema version 1.
-- [ ] Move error-to-response mapping into a shared API problem responder.
-- [ ] Split handler creation by catalog/query, mutation/commit, task/migration, and
+- [x] Keep one immutable `DATABASE_API_SCHEMAS` registry with schema version 1.
+- [x] Move error-to-response mapping into a shared API problem responder.
+- [x] Split handler creation by catalog/query, mutation/commit, task/migration, and
       permission/share/autonomy families.
-- [ ] Keep `createDatabaseDataPlaneApiHandlers` as composition only, target 250 lines.
-- [ ] Register exact size budgets for contracts and handler families.
+- [x] Keep `createDatabaseDataPlaneApiHandlers` as composition only, target 250 lines.
+- [x] Register exact size budgets for contracts and handler families.
 
 ### 7B. Planning schemas versus planning engine
 
-- [ ] Extract desired-state draft schemas and public plan artifact types.
-- [ ] Extract normalization and convergence policy as pure functions.
-- [ ] Extract write-guard and conflict compilation.
-- [ ] Keep `DatabasePlanEngine` responsible only for orchestration and dependency calls.
-- [ ] Preserve plan hashes, approval codes, diff ordering, and diagnostics exactly.
+- [x] Extract desired-state draft schemas and public plan artifact types.
+- [x] Extract normalization and convergence policy as pure functions.
+- [x] Extract write-guard and conflict compilation.
+- [x] Keep `DatabasePlanEngine` responsible only for orchestration and dependency calls.
+- [x] Preserve plan hashes, approval codes, diff ordering, and diagnostics exactly.
 
 ### 7C. Data-plane service domains
 
-- [ ] Extract catalog/describe/read projection.
-- [ ] Extract query/filter/retrieval and explain-trace production.
-- [ ] Extract form submission and external capability policy.
-- [ ] Extract public sharing and permission projection.
-- [ ] Extract Markdown-table mutation/export adapters.
-- [ ] Keep `DatabaseDataPlane` as dependency composition or replace it with explicit domain ports;
+- [x] Extract catalog/describe/read projection.
+- [x] Extract query/filter/retrieval and explain-trace production.
+- [x] Extract form submission and external capability policy.
+- [x] Extract public sharing and permission projection.
+- [x] Extract Markdown-table mutation/export adapters.
+- [x] Keep `DatabaseDataPlane` as dependency composition or replace it with explicit domain ports;
       do not create another all-purpose service object.
 
 Verification:
