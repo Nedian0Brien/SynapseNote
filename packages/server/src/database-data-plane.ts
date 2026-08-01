@@ -21,7 +21,6 @@ import {
   type DatabasePropertyConversionPreview,
   DatabasePropertySchema,
   type DatabasePublicSharePolicy,
-  DatabasePublicSharePolicySchema,
   type DatabasePublicShareTarget,
   type DatabaseQuery,
   DatabaseQueryError,
@@ -32,7 +31,6 @@ import {
   type DatabaseSource,
   DatabaseVerificationValueSchema,
   type DatabaseView,
-  databasePublicShareIsActive,
   evaluateDatabaseFilter,
   type FormulaComputedResult,
   formulaErrorResult,
@@ -97,6 +95,10 @@ import {
   exportDatabaseMarkdownTable,
   mutateDatabaseMarkdownTable,
 } from './database-data-plane-markdown-adapters.ts';
+import {
+  createDatabasePublicSharePolicy,
+  type DatabasePublicShareTargetResolution,
+} from './database-data-plane-public-share.ts';
 import {
   createDatabaseReadProjection,
   type DatabaseDescribeNotModifiedResult,
@@ -163,6 +165,7 @@ export type {
   DatabaseMarkdownTableMutationInput,
   DatabaseMarkdownTableMutationRequest,
 } from './database-data-plane-markdown-adapters.ts';
+export type { DatabasePublicShareTargetResolution } from './database-data-plane-public-share.ts';
 export type {
   DatabaseDescribeNotModifiedResult,
   DatabaseDescribeResult,
@@ -326,13 +329,6 @@ export interface DatabaseQueryAccessDecision {
   allowedPropertyIds: readonly string[] | null;
   /** Omitted means allowed for backward-compatible trusted resolvers. */
   allowBody?: boolean;
-}
-
-export interface DatabasePublicShareTargetResolution {
-  databaseId: string;
-  sourceId: string;
-  viewId: string | null;
-  recordId: string | null;
 }
 
 export interface DatabaseQueryPermissionExclusions {
@@ -754,29 +750,6 @@ function layoutPropertyIds(view: DatabaseView | null): string[] {
   return [];
 }
 
-function viewReferencedPropertyIds(view: DatabaseView): string[] {
-  return [
-    ...filterPropertyIds(view.where),
-    ...view.sort.map(({ propertyId }) => propertyId),
-    ...view.groups.map(({ propertyId }) => propertyId),
-    ...view.projection.propertyIds,
-    ...conditionalColorPropertyIds(view),
-    ...layoutPropertyIds(view),
-    ...(view.layout.type === 'form'
-      ? view.layout.configuration.questions.flatMap((question) => [
-          question.propertyId,
-          ...(question.visibleWhen?.conditions.flatMap(({ questionId }) => {
-            const dependency =
-              view.layout.type === 'form'
-                ? view.layout.configuration.questions.find(({ id }) => id === questionId)
-                : undefined;
-            return dependency ? [dependency.propertyId] : [];
-          }) ?? []),
-        ])
-      : []),
-  ];
-}
-
 function chartAggregate(view: DatabaseView) {
   if (view.layout.type !== 'chart') return undefined;
   const configuration = view.layout.configuration;
@@ -959,12 +932,9 @@ export class DatabaseDataPlane {
 
   /** Bind a server-resolved share. Request JSON must never call this with an unverified policy. */
   withPublicShare<T>(policy: DatabasePublicSharePolicy, operation: () => T): T {
-    const parsed = DatabasePublicSharePolicySchema.parse(policy);
-    if (!databasePublicShareIsActive(parsed, this.#now())) {
-      throw new DatabaseDataPlaneError('permission_denied', 'Public share is unavailable');
-    }
-    return this.#publicShare.run(parsed, () =>
-      this.withAccessPrincipal({ kind: 'user', id: `share:${parsed.id}` }, operation),
+    return createDatabasePublicSharePolicy(this.#publicSharePort()).withPublicShare(
+      policy,
+      operation,
     );
   }
 
@@ -974,103 +944,7 @@ export class DatabaseDataPlane {
     propertyIds: readonly string[];
     allowFormSubmission: boolean;
   }): DatabasePublicShareTargetResolution {
-    const target = input.target;
-    this.authorizeOperation({ action: 'publish', databaseId: target.databaseId });
-    const database = this.#databaseStore
-      .snapshot()
-      .databases.find((candidate) => candidate.id === target.databaseId);
-    if (!database) {
-      throw new DatabaseDataPlaneError('database_not_found', 'Database was not found');
-    }
-    let source: DatabaseSource | undefined;
-    let view: DatabaseView | undefined;
-    let record: DatabaseRecord | undefined;
-    if (target.kind === 'database') {
-      source = database.sources.find((candidate) => candidate.id === target.sourceId);
-    } else if (target.kind === 'record') {
-      record = this.#databaseRecordIndex.getById(target.recordId) ?? undefined;
-      if (record?.databaseId === database.id) {
-        source = database.sources.find((candidate) => candidate.id === record?.sourceId);
-      }
-    } else {
-      view = database.views.find((candidate) => candidate.id === target.viewId);
-      source = view
-        ? database.sources.find((candidate) => candidate.id === view?.sourceId)
-        : undefined;
-      if (
-        view &&
-        ((target.kind === 'form' && view.layout.type !== 'form') ||
-          (target.kind === 'chart' && view.layout.type !== 'chart') ||
-          (target.kind === 'view' && (view.layout.type === 'form' || view.layout.type === 'chart')))
-      ) {
-        throw new DatabaseDataPlaneError('view_not_found', 'Share target view type does not match');
-      }
-    }
-    if (!source) {
-      throw new DatabaseDataPlaneError(
-        target.kind === 'record'
-          ? 'record_not_found'
-          : target.kind === 'database'
-            ? 'source_not_found'
-            : 'view_not_found',
-        'Public share target was not found',
-      );
-    }
-    const knownPropertyIds = new Set(source.properties.map(({ id }) => id));
-    const unknownPropertyIds = input.propertyIds.filter((id) => !knownPropertyIds.has(id));
-    if (unknownPropertyIds.length > 0) {
-      throw new DatabaseDataPlaneError(
-        'property_not_found',
-        'Public share references an unknown property',
-        { propertyIds: unknownPropertyIds },
-      );
-    }
-    const titleProperty = source.properties.find(({ type }) => type === 'title');
-    if (!titleProperty || !input.propertyIds.includes(titleProperty.id)) {
-      throw new DatabaseDataPlaneError(
-        'permission_denied',
-        'Public shares must include the source title property',
-      );
-    }
-    if (view) {
-      const hiddenViewPropertyIds = viewReferencedPropertyIds(view).filter(
-        (propertyId) => !input.propertyIds.includes(propertyId),
-      );
-      if (hiddenViewPropertyIds.length > 0) {
-        throw new DatabaseDataPlaneError(
-          'permission_denied',
-          'Public View shares must expose every property required by the View',
-          { propertyIds: [...new Set(hiddenViewPropertyIds)].sort() },
-        );
-      }
-    }
-    if (input.allowFormSubmission) {
-      if (target.kind !== 'form' || view?.layout.type !== 'form') {
-        throw new DatabaseDataPlaneError(
-          'form_access_denied',
-          'Only a Form share may accept submissions',
-        );
-      }
-      const submittedPropertyIds = view.layout.configuration.questions.map(
-        ({ propertyId }) => propertyId,
-      );
-      const hiddenSubmissionPropertyIds = submittedPropertyIds.filter(
-        (propertyId) => !input.propertyIds.includes(propertyId),
-      );
-      if (hiddenSubmissionPropertyIds.length > 0) {
-        throw new DatabaseDataPlaneError(
-          'form_access_denied',
-          'Form shares must expose every submitted property',
-          { propertyIds: hiddenSubmissionPropertyIds },
-        );
-      }
-    }
-    return {
-      databaseId: database.id,
-      sourceId: source.id,
-      viewId: view?.id ?? null,
-      recordId: record?.id ?? null,
-    };
+    return createDatabasePublicSharePolicy(this.#publicSharePort()).validateTarget(input);
   }
 
   #currentAccessPrincipal(): DatabaseAccessPrincipal {
@@ -1100,6 +974,17 @@ export class DatabaseDataPlane {
       catalog: () => this.catalog().candidates,
       publicShare: this.#publicShare.getStore.bind(this.#publicShare),
       getContextRecord: this.#getContextRecord.bind(this),
+    };
+  }
+
+  #publicSharePort() {
+    return {
+      now: this.#now,
+      runPublicShare: this.#publicShare.run.bind(this.#publicShare),
+      withAccessPrincipal: this.withAccessPrincipal.bind(this),
+      authorizeOperation: this.authorizeOperation.bind(this),
+      snapshot: this.#databaseStore.snapshot.bind(this.#databaseStore),
+      getRecordById: this.#databaseRecordIndex.getById.bind(this.#databaseRecordIndex),
     };
   }
 
@@ -4041,84 +3926,7 @@ export class DatabaseDataPlane {
     policy: DatabasePublicSharePolicy,
     input: Parameters<ResolveDatabaseQueryAccess>[0],
   ): DatabaseQueryAccessDecision {
-    const revision = `sha256:${createHash('sha256')
-      .update(
-        stableJson({
-          id: policy.id,
-          target: policy.target,
-          access: policy.access,
-          propertyIds: policy.propertyIds,
-          allowBody: policy.allowBody,
-          allowFormSubmission: policy.allowFormSubmission,
-          expiresAt: policy.expiresAt,
-          revokedAt: policy.revokedAt,
-          tokenHash: policy.tokenHash,
-          updatedAt: policy.updatedAt,
-        }),
-      )
-      .digest('hex')}`;
-    const denied = (): DatabaseQueryAccessDecision => ({
-      allowed: false,
-      policyId: policy.id,
-      policyRevision: revision,
-      allowedRecordIds: [],
-      allowedPropertyIds: [],
-      allowBody: false,
-    });
-    const readableActions = new Set<DatabasePermissionAction>([
-      'catalog',
-      'describe',
-      'read_record',
-      'search',
-      'query',
-      'aggregate',
-      'expand_relation',
-      'pack_context',
-    ]);
-    const target = policy.target;
-    if (!readableActions.has(input.action) || input.database.id !== target.databaseId) {
-      return denied();
-    }
-
-    let sourceId: string | null = null;
-    let allowedRecordIds: readonly string[] | null = null;
-    if (target.kind === 'database') {
-      sourceId = target.sourceId;
-    } else if (target.kind === 'record') {
-      const record = this.#databaseRecordIndex.getById(target.recordId);
-      if (!record || record.databaseId !== target.databaseId) return denied();
-      sourceId = record.sourceId;
-      allowedRecordIds = [record.id];
-    } else {
-      const targetView = input.database.views.find(({ id }) => id === target.viewId);
-      if (!targetView) return denied();
-      sourceId = targetView.sourceId;
-      const operationNeedsView =
-        target.kind !== 'form' &&
-        (input.action === 'query' ||
-          input.action === 'aggregate' ||
-          input.action === 'pack_context');
-      if (operationNeedsView && input.view?.id !== targetView.id) return denied();
-      if (input.view && input.view.id !== targetView.id) return denied();
-    }
-    if (input.source.id !== sourceId) return denied();
-    const knownPropertyIds = new Set(input.source.properties.map(({ id }) => id));
-    const allowedPropertyIds = policy.propertyIds.filter((id) => knownPropertyIds.has(id));
-    if (
-      !input.source.properties.some(
-        ({ id, type }) => type === 'title' && allowedPropertyIds.includes(id),
-      )
-    ) {
-      return denied();
-    }
-    return {
-      allowed: true,
-      policyId: policy.id,
-      policyRevision: revision,
-      allowedRecordIds,
-      allowedPropertyIds,
-      allowBody: policy.allowBody,
-    };
+    return createDatabasePublicSharePolicy(this.#publicSharePort()).resolveAccess(policy, input);
   }
 }
 
