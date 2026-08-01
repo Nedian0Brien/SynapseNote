@@ -1,8 +1,5 @@
-import {
-  FILE_TREE_TAG_NAME,
-  FileTree as PierreFileTree,
-  type FileTree as PierreFileTreeModel,
-} from '@pierre/trees';
+import { FILE_TREE_TAG_NAME, type FileTree as PierreFileTreeModel } from '@pierre/trees';
+import { FileTree as PierreFileTree } from '@pierre/trees/react';
 import { type ComponentProps, type MutableRefObject, type ReactNode, useEffect } from 'react';
 import { createFileTreeStyle } from '@/components/file-tree-density';
 import { FILE_TREE_CREATION_CLEARED_ATTR } from './FileTreePresentation';
