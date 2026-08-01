@@ -161,7 +161,7 @@ export function createDatabaseMarkdownRevisionSet(
     table: databaseMarkdownTableStructureRevision(input.owner),
     rows,
     cells,
-    documents: { ...(input.documentRevisions ?? {}) },
+    documents: { ...input.documentRevisions },
     derived: input.derivedRevision ?? null,
   };
 }

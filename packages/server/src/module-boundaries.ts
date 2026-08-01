@@ -201,7 +201,7 @@ export const SERVER_MODULE_SIZE_BUDGETS: readonly ServerModuleSizeBudget[] = [
   },
   {
     path: 'database-data-plane-api-handlers-task-migration.ts',
-    maxLines: 348,
+    maxLines: 349,
     owner: 'Owns database data-plane API task-migration handlers.',
   },
   {

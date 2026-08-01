@@ -1436,7 +1436,7 @@ export class DatabaseMarkdownTableWriter {
       nextDatabase = DatabaseDefinitionSchema.parse({
         ...resolved.database,
         storageMetadata: {
-          ...(resolved.database.storageMetadata ?? {}),
+          ...resolved.database.storageMetadata,
           recordLifecycle: {
             ...existing,
             [input.recordId]: next,
@@ -1812,7 +1812,7 @@ export class DatabaseMarkdownTableWriter {
         DatabaseDefinitionSchema.parse({
           ...resolved.database,
           storageMetadata: {
-            ...(resolved.database.storageMetadata ?? {}),
+            ...resolved.database.storageMetadata,
             recordLifecycle: remainingLifecycle,
           },
         }),

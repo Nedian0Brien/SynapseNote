@@ -933,7 +933,7 @@ export class DatabaseRecordIndex {
       // preflight uses these bindings to block the exact database instead of
       // accidentally treating a symlink/unreadable record as an unrelated
       // workspace diagnostic.
-      for (const [path, issue] of [...this.#baseIssuesByPath.entries()]) {
+      for (const [path, issue] of this.#baseIssuesByPath.entries()) {
         if (issue.databaseId) continue;
         const owner = storeSnapshot.databases
           .flatMap((database) =>

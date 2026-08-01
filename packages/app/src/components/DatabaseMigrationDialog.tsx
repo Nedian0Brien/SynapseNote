@@ -421,7 +421,7 @@ export function DatabaseMigrationRecoveryPanel({
   ) => {
     const next = {
       ...titleChoices,
-      [databaseId]: { ...(titleChoices[databaseId] ?? {}), [recordId]: choice },
+      [databaseId]: { ...titleChoices[databaseId], [recordId]: choice },
     };
     setTitleChoices(next);
     void loadPreview(undefined, { ownerChoices, titleChoices: next });
@@ -435,7 +435,7 @@ export function DatabaseMigrationRecoveryPanel({
   ) => {
     const next = {
       ...ownerChoices,
-      [databaseId]: { ...(ownerChoices[databaseId] ?? {}), [sourceId]: { path, blockId } },
+      [databaseId]: { ...ownerChoices[databaseId], [sourceId]: { path, blockId } },
     };
     setOwnerChoices(next);
     void loadPreview(undefined, { ownerChoices: next, titleChoices });

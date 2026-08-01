@@ -75,11 +75,12 @@ export function createDatabaseTaskMigrationHandlers({
           body.action === 'preview'
             ? {
                 action: body.action,
-                plan: await dataPlane.previewRepair(body.ttlSeconds, {
-                  ...(body.documentIds
+                plan: await dataPlane.previewRepair(
+                  body.ttlSeconds,
+                  body.documentIds
                     ? { documentIds: body.documentIds as Record<string, `doc_${string}`> }
-                    : {}),
-                }),
+                    : {},
+                ),
               }
             : body.action === 'apply'
               ? {

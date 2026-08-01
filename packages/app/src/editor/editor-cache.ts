@@ -67,7 +67,7 @@ export function shouldCacheEditor(stats: { viewCount: number; bytes: number }): 
   return shouldCacheBySize(stats, VIEW_COUNT_CACHE_THRESHOLD, BYTES_CACHE_THRESHOLD);
 }
 export function __resetCacheForTests(): void {
-  for (const docName of [...tiptapCache.keys()]) evictTiptapEditor(docName);
-  for (const docName of [...cmCache.keys()]) evictCmEditor(docName);
+  for (const docName of tiptapCache.keys()) evictTiptapEditor(docName);
+  for (const docName of cmCache.keys()) evictCmEditor(docName);
   replaceActivityMountList(new Set());
 }
