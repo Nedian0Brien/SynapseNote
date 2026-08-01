@@ -1,6 +1,6 @@
 # Module Responsibility Separation Delivery Plan
 
-**Status:** Proposed; this document authorizes planning, not implementation.
+**Status:** In progress; Milestones 1–3 complete, Milestones 4–8 pending.
 **Prepared:** 2026-08-01
 **Predecessor:** `docs/rfcs/0011-post-v2-refactoring-plan.md`
 
@@ -210,14 +210,14 @@ Target boundaries:
 
 Checklist:
 
-- [ ] Pin existing lazy-show-all, mutation, selection, and drag/drop behavior before extraction.
-- [ ] Extract show-all state first and run only the show-all DOM tests.
-- [ ] Extract mutation state second and run create/duplicate tests.
-- [ ] Extract selection state third and run selection-mirror tests.
-- [ ] Extract drag/drop state fourth with a focused external-drop test.
-- [ ] Move virtualized row rendering into `FileTreeViewport` without recalculating state there.
-- [ ] Reduce `FileTree.tsx` to composition and imperative-handle wiring, target 400 lines or fewer.
-- [ ] Replace the RFC 0002 legacy exception with budgets for the final modules.
+- [x] Pin existing lazy-show-all, mutation, selection, and drag/drop behavior before extraction.
+- [x] Extract show-all state first and run only the show-all DOM tests.
+- [x] Extract mutation state second and run create/duplicate tests.
+- [x] Extract selection state third and run selection-mirror tests.
+- [x] Extract drag/drop state fourth with a focused external-drop test.
+- [x] Move virtualized row rendering into `FileTreeViewport` without recalculating state there.
+- [x] Reduce `FileTree.tsx` to composition and imperative-handle wiring, target 400 lines or fewer.
+- [x] Replace the RFC 0002 legacy exception with budgets for the final modules.
 
 Verification:
 
@@ -247,12 +247,12 @@ shared app shell state.
 
 Checklist for every row:
 
-- [ ] Name one state owner and one render owner before editing.
-- [ ] Add the target modules and their budgets before removing the exception.
-- [ ] Move state transitions before JSX presentation.
-- [ ] Keep extracted leaves free of imports from the original facade.
-- [ ] Run the directly affected test file and app typecheck.
-- [ ] Remove the corresponding `LEGACY_MODULE_EXCEPTIONS` entry.
+- [x] Name one state owner and one render owner before editing.
+- [x] Add the target modules and their budgets before removing the exception.
+- [x] Move state transitions before JSX presentation.
+- [x] Keep extracted leaves free of imports from the original facade.
+- [x] Run the directly affected test file and app typecheck.
+- [x] Remove the corresponding `LEGACY_MODULE_EXCEPTIONS` entry.
 
 Milestone 3 completion: `LEGACY_MODULE_EXCEPTIONS` is empty and its guard test is changed to require
 an empty list, preventing new indefinite exceptions.
