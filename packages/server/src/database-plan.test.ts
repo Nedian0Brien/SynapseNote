@@ -6,8 +6,11 @@ import { createDatabasePlanEngine, DatabasePlanError } from './database-plan.ts'
 import { DatabasePlanApprovalCodeSchema as extractedApprovalCodeSchema } from './database-plan-artifacts.ts';
 import { hashDatabasePlanValue } from './database-plan-convergence-policy.ts';
 import { DatabaseDesiredStateDraftSchema as extractedDraftSchema } from './database-plan-draft-contracts.ts';
+import { compileDatabasePlanManifest } from './database-plan-manifest-compiler.ts';
 import { compileDatabasePlan } from './database-plan-manifest-record-compiler.ts';
 import { normalizeDatabaseSampleValue } from './database-plan-normalization-policy.ts';
+import { compileDatabasePlanArtifact } from './database-plan-operation-compiler.ts';
+import { compileDatabasePlanRecords } from './database-plan-record-compiler.ts';
 import { DatabaseWriteGuardSnapshotSchema } from './database-plan-write-guards.ts';
 import { createDatabaseRecordIndex } from './database-record-index.ts';
 import { createDatabaseStore } from './database-store.ts';
@@ -16,9 +19,18 @@ const tempDirs: string[] = [];
 
 test('delegates manifest and record conflict compilation to its dedicated compiler', () => {
   const engineSource = readFileSync(new URL('./database-plan.ts', import.meta.url), 'utf8');
+  const compilerSources = [
+    './database-plan-manifest-compiler.ts',
+    './database-plan-record-compiler.ts',
+    './database-plan-operation-compiler.ts',
+  ].map((path) => readFileSync(new URL(path, import.meta.url), 'utf8'));
 
   expect(compileDatabasePlan).toBeFunction();
+  expect(compileDatabasePlanManifest).toBeFunction();
+  expect(compileDatabasePlanRecords).toBeFunction();
+  expect(compileDatabasePlanArtifact).toBeFunction();
   expect(engineSource).toContain('const plan = compileDatabasePlan(');
+  expect(compilerSources.every((source) => source.trimEnd().split('\n').length <= 750)).toBe(true);
 });
 
 afterEach(() => {
