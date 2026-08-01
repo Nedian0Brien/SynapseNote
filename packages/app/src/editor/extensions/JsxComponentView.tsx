@@ -89,6 +89,10 @@ import { formatContainerAriaLabel } from '../utils/editor-strings.ts';
 import { reconstructSource } from '../utils/reconstruct-source.ts';
 import { autonomousFragmentEditAllowed } from './autonomous-fragment-edit.ts';
 import {
+  deriveJsxAttributePolicy,
+  updateElementJsxProps,
+} from './jsx-component-view/jsx-component-view-attribute-policy.ts';
+import {
   extractPrimitiveProps,
   getElementJsxAttrs,
   isJsxInteractiveTarget,
@@ -335,14 +339,13 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
   //     genuine "must decide" surfaces; `getDefaultProps` leaves the key
   //     absent on slash-insert, which is what trips the nudge here.
   const currentProps = (node.attrs.props as Record<string, unknown>) ?? {};
-  const needsConfig =
-    hasEditableProps &&
-    descriptor.props.some((p) => {
-      if (p.type !== 'string') return false;
-      if (!p.required) return false;
-      if ('hidden' in p && p.hidden) return false;
-      return !Object.hasOwn(currentProps, p.name);
-    });
+  const isAlignable = ALIGNABLE_DESCRIPTOR_NAMES.has(descriptor.name);
+  const attributePolicy = deriveJsxAttributePolicy({
+    currentProps,
+    isAlignable,
+    props: descriptor.props,
+  });
+  const needsConfig = hasEditableProps && attributePolicy.needsConfig;
 
   // STRICTER than `needsConfig`: only fires when the descriptor's autoFocus
   // string prop is empty/absent. `needsConfig` flags any required string
@@ -359,14 +362,6 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
   const isSelfClosingLeaf = !descriptor.hasChildren || !!descriptor.isSelfClosing;
   const selectOnBodyClick = descriptor.interaction?.selectOnBodyClick ?? true;
   const usesExplicitDragHandle = descriptor.interaction?.drag === 'handle';
-
-  // Two render-time call sites below (data-align default clamp +
-  // chrome-bar render condition) gate on whether this descriptor is
-  // alignable; the click-handler's live-reread guard uses
-  // `ALIGNABLE_DESCRIPTOR_NAMES.has(curDescriptorName)` directly so it
-  // doesn't close over `descriptor.name`. Mirrors the
-  // `isSelfClosingLeaf` centralization above.
-  const isAlignable = ALIGNABLE_DESCRIPTOR_NAMES.has(descriptor.name);
 
   /**
    * Per-descriptor "source-bearing prop" mapping for the edit
@@ -921,23 +916,7 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
         // text-align rule, leaving the wrapper visually unaligned with
         // no diagnostic. Treat anything outside the canonical enum as
         // `'center'`.
-        data-align={(() => {
-          const rawAlign = currentProps.align;
-          if (rawAlign === 'left' || rawAlign === 'right' || rawAlign === 'center') {
-            return rawAlign;
-          }
-          // Default-`center` fallback for descriptors whose `align` prop
-          // carries `omitOnDefault: true` (parsed-without-explicit-align
-          // → `align` undefined on the prop bag, so the CSS rule
-          // `[data-component-type="X"][data-align="center"]` never
-          // matches without this clamp). Must stay in lockstep with the
-          // chrome-bar alignment trio condition + bubble-menu
-          // predicates in `ImageAlignButtons.tsx`.
-          if (isAlignable) {
-            return 'center';
-          }
-          return undefined;
-        })()}
+        data-align={attributePolicy.dataAlign}
         data-selected={isInnermostSelected ? 'true' : undefined}
         data-has-child-selected={hasChildSelected ? 'true' : undefined}
         data-range-selected={isRangeEncompassed ? 'true' : undefined}
@@ -1433,20 +1412,7 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
             const elementAttrs = getElementJsxAttrs(curNode.attrs);
             if (!elementAttrs) return;
             try {
-              const currentNodeProps = elementAttrs.props;
-              const nextProps = {
-                ...currentNodeProps,
-                [editableSource.propName]: value,
-              };
-              // `sourceDirty: true` is the same contract the alignment
-              // click handler enforces — without it the serializer
-              // re-emits the verbatim `sourceRaw` and the modal edit is
-              // silently dropped on save.
-              const nextAttrs = {
-                ...elementAttrs,
-                props: nextProps,
-                sourceDirty: true,
-              };
+              const nextAttrs = updateElementJsxProps(elementAttrs, editableSource.propName, value);
               editor.view.dispatch(editor.state.tr.setNodeMarkup(livePos, null, nextAttrs));
               markUserTyping();
             } catch (err) {
@@ -1529,43 +1495,12 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
               // emit `sourceRaw` verbatim, dropping every PropPanel edit.
               const elementAttrs = getElementJsxAttrs(curNode.attrs);
               if (!elementAttrs) return;
-              const currentNodeProps = elementAttrs.props;
-              // `undefined` means "clear this prop" — we DELETE the key
-              // rather than storing `{[propName]: undefined}`. If we kept
-              // the undefined entry, `reconstructAttrs` would serialize it
-              // as a boolean-shorthand attr (`<Image width />`) via
-              // `propToMdxJsxAttribute`'s `value == null` branch. PropPanel
-              // passes undefined when the user backspaces a numeric input to
-              // empty for an optional prop. We ALSO filter the matching
-              // entry out of the preserved `attributes` array so the
-              // dirty-path reconstruction in `reconstructAttrs` doesn't
-              // re-emit the original (stale) value.
-              const nextProps: Record<string, unknown> = { ...currentNodeProps };
-              const currentAttributes = Array.isArray(curNode.attrs.attributes)
-                ? (curNode.attrs.attributes as unknown[])
-                : [];
-              let nextAttributes = currentAttributes;
-              if (value === undefined) {
-                delete nextProps[propName];
-                nextAttributes = currentAttributes.filter(
-                  (a) =>
-                    !(
-                      a != null &&
-                      typeof a === 'object' &&
-                      (a as Record<string, unknown>).type === 'mdxJsxAttribute' &&
-                      (a as Record<string, unknown>).name === propName
-                    ),
-                );
-              } else {
-                nextProps[propName] = value;
-              }
               editor.view.dispatch(
-                editor.state.tr.setNodeMarkup(p, null, {
-                  ...elementAttrs,
-                  attributes: nextAttributes,
-                  props: nextProps,
-                  sourceDirty: true,
-                }),
+                editor.state.tr.setNodeMarkup(
+                  p,
+                  null,
+                  updateElementJsxProps(elementAttrs, propName, value),
+                ),
               );
               markUserTyping();
             }}
