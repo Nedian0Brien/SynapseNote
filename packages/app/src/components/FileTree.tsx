@@ -1,9 +1,7 @@
 import { plural } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react/macro';
 import {
-  DeletePathSuccessSchema,
   isDocumentOverOpenByteLimit,
-  TrashCleanupSuccessSchema,
   UploadAssetSuccessSchema,
   WorkspaceSuccessSchema,
 } from '@nedian0brien/synapsenote-core';
@@ -48,15 +46,12 @@ import {
 } from '@/components/file-tree-adapter';
 import { createFileTreeStyle } from '@/components/file-tree-density';
 import { applyExtensionBadges } from '@/components/file-tree-extension-badge';
-import {
-  applyDeleteToDocuments,
-  buildTrashAbsPath,
-  canonicalizeAssetTargetForDelete,
-  type FileTreeTarget,
-  type RenamedAssetMapping,
-  type RenamedDocExtensionMapping,
-  type RenamedDocMapping,
-  type RenamedFolderMapping,
+import type {
+  FileTreeTarget,
+  RenamedAssetMapping,
+  RenamedDocExtensionMapping,
+  RenamedDocMapping,
+  RenamedFolderMapping,
 } from '@/components/file-tree-operations';
 import { applyRenameInputAffordance } from '@/components/file-tree-rename-chip';
 import {
@@ -74,7 +69,6 @@ import {
   type DocumentEntry,
   type FileEntry,
   type FolderEntry,
-  hasOkPathSegment,
   isAssetEntry,
   isDocumentEntry,
   isFolderEntry,
@@ -138,8 +132,6 @@ import {
 } from './file-tree/FileTreePresentation';
 import {
   alternateMarkdownTreePath,
-  collectTabsToCloseForDelete,
-  deleteTargetCoversPendingCreate,
   hasSameStemMarkdownSiblingTreePath,
   isEditableKeyboardTarget,
   resolveDuplicableKeyboardTarget,
@@ -158,6 +150,7 @@ import {
 import { createDuplicateFileTreeMutation } from './file-tree/useFileTreeMutations';
 import { createFileTreeRenameHandlers } from './file-tree/useFileTreeRename';
 import { useFileTreeShowAll } from './file-tree/useFileTreeShowAll';
+import { createFileTreeTrashHandlers } from './file-tree/useFileTreeTrash';
 import { useHandoffDispatch } from './handoff/useHandoffDispatch';
 import { useInstalledAgents } from './handoff/useInstalledAgents';
 import { cancelHoverPrewarm, scheduleHoverPrewarm } from './sidebar-hover-prewarm';
@@ -1631,404 +1624,42 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     [model],
   );
 
-  /**
-   * Post-delete aftermath shared by both Electron (Step 2) and web
-   * (today's HTTP hard-delete). Handles pending-create reconciliation, tab
-   * closure, IDB clearing for deleted docNames, tree-model removal, and the
-   * documents-state update + change emit. Runs after the deletion source of
-   * truth (disk or Trash) has already removed the items — this only mirrors
-   * the in-memory + UI state to match.
-   */
-  async function applyDeleteAftermath(
-    successfulTargets: readonly FileTreeTarget[],
-    deletedDocNames: readonly string[],
-    deletedFolderPaths: readonly string[],
-  ) {
-    const tabsToClose = collectTabsToCloseForDelete(
-      successfulTargets,
-      documentsRef.current,
-      folderTreePathsRef.current,
-    );
-    const pendingCreate = pendingCreateRef.current;
-    if (
-      pendingCreate &&
-      successfulTargets.some((target) => deleteTargetCoversPendingCreate(target, pendingCreate))
-    ) {
-      if (pendingCreate.kind === 'file') {
-        tabsToClose.docNames.add(pendingCreate.createdPath);
-      } else {
-        tabsToClose.folderPaths.add(pendingCreate.createdPath);
-      }
-      clearPendingCreate(pendingCreate);
-    }
-    const deleted = new Set([...tabsToClose.docNames, ...deletedDocNames]);
-    const deletedFolders = new Set([...tabsToClose.folderPaths, ...deletedFolderPaths]);
-    const deletedAssets = new Set([
-      ...tabsToClose.assetPaths,
-      ...successfulTargets.filter((target) => target.kind === 'asset').map((target) => target.path),
-    ]);
-    closeTabs(
-      [
-        ...[...deleted].map((docName) => docTabId(docName)),
-        ...[...deletedFolders].map((folderPath) => folderTabId(folderPath)),
-        ...[...deletedAssets].map((assetPath) => assetTabId(assetPath)),
-      ],
-      { force: true },
-    );
-    // Clear IDB for each deleted docName so a same-browser delete-then-recreate
-    // (or a sibling rename that lands on this docName) cannot resurrect content
-    // from stale IndexedDB rows.
-    await Promise.all([...deleted].map((docName) => closeAndClearForRename(docName)));
-
-    for (const target of successfulTargets) {
-      const treePath =
-        target.kind === 'folder'
-          ? folderPathToTreeDirectoryPath(target.path)
-          : target.kind === 'asset'
-            ? target.path
-            : docNameToTreePath(target.path, target.docExt);
-      if (model.getItem(treePath)) {
-        model.remove(treePath, target.kind === 'folder' ? { recursive: true } : undefined);
-      }
-    }
-    setDocuments((current) => {
-      let next = applyDeleteToDocuments(current, [...deleted], undefined, [...deletedAssets]);
-      for (const folderPath of deletedFolders) {
-        next = applyDeleteToDocuments(next, [], folderPath);
-      }
-      markNextDocumentsAsApplied(next);
-      return next;
+  const { handleDeleteTargets, handleTrashFailureDeletePermanently, handleTrashFailureRetry } =
+    createFileTreeTrashHandlers({
+      documents: () => documentsRef.current,
+      folderTreePaths: () => folderTreePathsRef.current,
+      activeConflicts: () => activeConflicts,
+      workspace: () => workspace,
+      desktopBridge: () => (typeof window !== 'undefined' ? window.okDesktop : undefined),
+      pendingCreate: () => pendingCreateRef.current,
+      setDeleteRequest,
+      trashFailure: () => trashFailure,
+      setTrashFailure,
+      setBusyPath,
+      resetModelToDocuments,
+      clearPendingCreate,
+      closeTabs,
+      docTabId,
+      folderTabId,
+      assetTabId,
+      coerceTrashFailureReason,
+      closeAndClearForRename,
+      model,
+      setDocuments,
+      markNextDocumentsAsApplied,
+      emitDocumentsChanged,
+      fetch,
+      toastError: toast.error,
+      messages: {
+        failedDelete: t`Failed to delete path`,
+        failedCleanup: t`Failed to clean up after trash`,
+        cleanupFailed: (count) =>
+          t`Server-side cleanup failed for ${plural(count, { one: '# item', other: '# items' })}`,
+        cleanupDescription: t`The file is in your Trash; the file-watcher will reconcile.`,
+        conflict: t`Cannot delete files with unresolved conflicts`,
+        couldNotComplete: t`Could not complete delete`,
+      },
     });
-    emitDocumentsChanged(['files', 'backlinks', 'graph']);
-  }
-
-  /**
-   * Hard-delete via `POST /api/delete-path` — web mode and the Electron
-   * fallback path (Delete Permanently from `TrashFailureModal`). Iterates
-   * over targets; on per-target failure, applies the aftermath for whatever
-   * succeeded so far and surfaces a toast. Returns `true` iff every target
-   * deleted cleanly.
-   */
-  async function hardDeleteTargets(targets: readonly FileTreeTarget[]): Promise<boolean> {
-    const deletedDocNames: string[] = [];
-    const deletedFolderPaths: string[] = [];
-    const successfulTargets: FileTreeTarget[] = [];
-    for (const target of targets) {
-      const kind = target.kind;
-      setBusyPath(target.path);
-      const res = await fetch('/api/delete-path', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kind, path: target.path }),
-      });
-      const parsed = await parseServerResponse(res, t`Failed to delete path`);
-      if (!parsed.ok) {
-        // Partial-failure recovery — apply aftermath for what succeeded so
-        // the tree stays consistent, then surface the error and bail.
-        if (successfulTargets.length > 0) {
-          await applyDeleteAftermath(successfulTargets, deletedDocNames, deletedFolderPaths);
-        }
-        toast.error(parsed.title);
-        return false;
-      }
-      const success = parseSuccessOrWarn(DeletePathSuccessSchema, parsed.body, 'delete-path', {
-        deletedDocNames: [],
-      });
-      deletedDocNames.push(...success.deletedDocNames);
-      if (kind === 'folder') {
-        deletedFolderPaths.push(target.path);
-      }
-      successfulTargets.push(target);
-    }
-    await applyDeleteAftermath(successfulTargets, deletedDocNames, deletedFolderPaths);
-    return true;
-  }
-
-  /**
-   * Electron-only 2-step Trash flow:
-   *   Step 1: `bridge.shell.trashItem(absPath)` — moves the item to ~/.Trash.
-   *           Tab close happens AFTER this succeeds — eliminates the
-   *           fail-forward UX hazard where the tab would close before the
-   *           user knew the trash failed.
-   *   Step 2: `POST /api/trash/cleanup` — server runs
-   *           `captureAndCloseDocuments` + `recentlyRemovedDocs.setDeleted` +
-   *           fileIndex purge + CC1 broadcast. Does NOT touch disk (file is
-   *           already in Trash). Threads `extractActorIdentity` per
-   *           CLAUDE.md STOP rule.
-   *
-   * Returns the targets split by per-step outcome. Step 1 failures populate
-   * `failed` for the `TrashFailureModal` to render. Step 2 failures surface
-   * as a toast since the item IS in the OS Trash — the server-side state
-   * will reconcile via the file-watcher eventually.
-   */
-  async function trashTargetsViaShell(
-    targets: readonly FileTreeTarget[],
-    bridge: NonNullable<typeof window.okDesktop>,
-    workspaceInfo: WorkspaceInfo,
-  ): Promise<{
-    trashed: FileTreeTarget[];
-    failed: TrashFailedTarget[];
-  }> {
-    const trashed: FileTreeTarget[] = [];
-    const failed: TrashFailedTarget[] = [];
-    for (const target of targets) {
-      setBusyPath(target.path);
-      const absPath = buildTrashAbsPath(target, workspaceInfo);
-      const result = await bridge.shell.trashItem(absPath);
-      if (result.ok) {
-        trashed.push(target);
-      } else {
-        failed.push({
-          kind: target.kind,
-          path: target.path,
-          name: target.name,
-          // Narrow over the IPC wire (different process). A widened bridge
-          // contract that adds a new failure reason would otherwise blow
-          // through `as TrashFailureReason` and surface an unmapped label.
-          reason: coerceTrashFailureReason(result.reason),
-          detail: result.detail,
-        });
-      }
-    }
-    return { trashed, failed };
-  }
-
-  /**
-   * Step 2 of the trash flow — POST cleanup for each successfully trashed
-   * target. Aggregates the server-reported `deletedDocNames` so the in-memory
-   * aftermath uses the same set the server-side index purged.
-   *
-   * Per-target failures DON'T bail the loop: every successful trashItem (Step
-   * 1) deserves its server-side cleanup attempt, and a transient failure on
-   * one target shouldn't strand the others' state. Failures get a single
-   * aggregated toast at the end + a console.warn per failure; the file-watcher
-   * reconciles any state we couldn't push (the file IS already in OS Trash).
-   * Returns `null` only when ALL targets failed (so the caller knows to fall
-   * back to a local aftermath using just the targets themselves).
-   */
-  async function postTrashCleanup(
-    trashed: readonly FileTreeTarget[],
-  ): Promise<{ deletedDocNames: string[]; deletedFolderPaths: string[] } | null> {
-    const deletedDocNames: string[] = [];
-    const deletedFolderPaths: string[] = [];
-    const failedCleanups: Array<{ target: FileTreeTarget; reason: string }> = [];
-    for (const target of trashed) {
-      const kind = target.kind;
-      // Per-iteration try/catch funnels thrown fetch failures (e.g.
-      // `TypeError: Failed to fetch` on network loss) into the same
-      // `failedCleanups` aggregation path the HTTP-level branch uses,
-      // keeping `postTrashCleanup` non-throwing. Without this, a thrown
-      // fetch propagates out to `handleDeleteTargets`'s outer catch and
-      // shows the misleading "Could not complete delete" toast — but
-      // items in `trashed[]` already moved to OS Trash, so the delete
-      // DID succeed; only the cleanup notification failed.
-      try {
-        const res = await fetch('/api/trash/cleanup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ kind, path: target.path }),
-        });
-        const parsed = await parseServerResponse(res, t`Failed to clean up after trash`);
-        if (!parsed.ok) {
-          // Continue the loop — file IS in Trash, the file-watcher will
-          // reconcile any server-side state we couldn't push directly. Log
-          // the per-target failure so the diagnostic trail names which targets
-          // need watcher follow-up; the aggregated toast at the end surfaces
-          // a single message to the user rather than N noisy toasts.
-          console.warn('[FileTree] trash-cleanup failed', {
-            target: `${target.kind}:${target.path}`,
-            reason: parsed.title,
-          });
-          failedCleanups.push({ target, reason: parsed.title });
-          continue;
-        }
-        const success = parseSuccessOrWarn(
-          TrashCleanupSuccessSchema,
-          parsed.body,
-          'trash-cleanup',
-          { deletedDocNames: [] },
-        );
-        deletedDocNames.push(...success.deletedDocNames);
-        if (kind === 'folder') {
-          deletedFolderPaths.push(target.path);
-        }
-      } catch (err) {
-        console.warn('[FileTree] trash-cleanup threw', {
-          target: `${target.kind}:${target.path}`,
-          err,
-        });
-        failedCleanups.push({ target, reason: t`Network error during cleanup` });
-      }
-    }
-    if (failedCleanups.length > 0) {
-      const failedCount = failedCleanups.length;
-      toast.error(
-        t`Server-side cleanup failed for ${plural(failedCount, { one: '# item', other: '# items' })}`,
-        {
-          description: t`The file is in your Trash; the file-watcher will reconcile.`,
-        },
-      );
-    }
-    // All targets failed → caller falls back to a local aftermath using just
-    // the targets (everything is in the OS Trash regardless).
-    if (failedCleanups.length === trashed.length && trashed.length > 0) {
-      return null;
-    }
-    return { deletedDocNames, deletedFolderPaths };
-  }
-
-  async function handleDeleteTargets(targets: FileTreeTarget[]) {
-    // Last chokepoint before side effects: on Electron, `shell.trashItem`
-    // moves files to the OS Trash BEFORE the server's reserved-path guard can
-    // refuse, so read-only `.ok` targets are dropped here regardless of which
-    // entry surface produced them.
-    const deleteTargets = targets
-      .filter((target) => !hasOkPathSegment(target.path))
-      .map((target) => canonicalizeAssetTargetForDelete(target, documentsRef.current));
-    const firstTarget = deleteTargets[0];
-    if (!firstTarget) return;
-
-    // Refuse if any target (file) or any conflicted child of a target
-    // (folder) is in conflict. The HTTP `/api/delete-path` route already
-    // refuses with 409 (`urn:ok:error:doc-in-conflict`), but the Electron
-    // Move-to-Trash flow goes through `shell.trashItem` first — by the
-    // time `/api/trash/cleanup` runs the file is already in OS Trash.
-    // Refusing here keeps the source-of-truth gate (server-side) honest
-    // and avoids stranding conflicted files in the OS Trash where the
-    // sync engine can't see them.
-    //
-    // Path-shape mismatch trap: `c.file` is extension-FUL (e.g. `foo.md`);
-    // `FileTreeTarget.path` for files is extension-LESS (`foo`) with the
-    // extension in `t.docExt`. Reconstruct the extension-ful candidate
-    // before the equality check, mirroring the server-side
-    // `${docName}${getDocExtension(...)}` pattern in handleDeletePath.
-    const blockingConflicts = activeConflicts.filter((c) =>
-      deleteTargets.some((t) => {
-        if (t.kind === 'file') {
-          const fileWithExt = `${t.path}${t.docExt ?? '.md'}`;
-          return c.file === fileWithExt;
-        }
-        if (t.kind === 'folder') return c.file.startsWith(`${t.path}/`);
-        return false;
-      }),
-    );
-    if (blockingConflicts.length > 0) {
-      const sample = blockingConflicts.slice(0, 3).map((c) => c.file);
-      const rest =
-        blockingConflicts.length > sample.length
-          ? `, +${blockingConflicts.length - sample.length} more`
-          : '';
-      toast.error('Cannot delete files with unresolved conflicts', {
-        description: `Resolve the conflict on ${sample.join(', ')}${rest} before deleting.`,
-      });
-      return;
-    }
-
-    setBusyPath(firstTarget.path);
-    setDeleteRequest(null);
-
-    const bridge = typeof window !== 'undefined' ? window.okDesktop : undefined;
-    try {
-      if (bridge && workspace) {
-        // Electron path: 2-step Trash flow.
-        const { trashed, failed } = await trashTargetsViaShell(deleteTargets, bridge, workspace);
-        if (trashed.length > 0) {
-          const cleanup = await postTrashCleanup(trashed);
-          if (cleanup) {
-            await applyDeleteAftermath(
-              trashed,
-              cleanup.deletedDocNames,
-              cleanup.deletedFolderPaths,
-            );
-          } else {
-            // Step 2 failed but Step 1 succeeded — file is in Trash, server
-            // will reconcile via file-watcher. Apply local aftermath using
-            // the targets themselves so the renderer mirrors the truth on
-            // disk (file is gone).
-            const localDocNames = trashed.filter((t) => t.kind === 'file').map((t) => t.path);
-            const localFolderPaths = trashed.filter((t) => t.kind === 'folder').map((t) => t.path);
-            await applyDeleteAftermath(trashed, localDocNames, localFolderPaths);
-          }
-        }
-        if (failed.length > 0) {
-          // Surface the trash-failure fallback modal for the failed subset;
-          // the successful subset is already committed to the tree.
-          setTrashFailure({ failed, originalTargets: [...deleteTargets] });
-        }
-        setBusyPath(null);
-      } else {
-        // Web path: today's HTTP hard-delete (no OS Trash in the browser).
-        const ok = await hardDeleteTargets(deleteTargets);
-        setBusyPath(null);
-        if (!ok) resetModelToDocuments();
-      }
-    } catch (err) {
-      // Network is one of many failure modes here: tree-model `model.remove`
-      // throws, IDB tab-close persistence errors, the trash IPC link going
-      // away mid-flight, an unexpected `fetch` reject. Generic phrasing
-      // surfaces the underlying error detail (via the toast description)
-      // rather than misattributing every failure as a network error.
-      const detail = err instanceof Error ? err.message : String(err);
-      console.warn('[FileTree] delete failed:', err);
-      toast.error(t`Could not complete delete`, { description: detail });
-      setBusyPath(null);
-      resetModelToDocuments();
-    }
-  }
-
-  /**
-   * Delete Permanently from `TrashFailureModal` — hard-delete (today's
-   * `POST /api/delete-path`) for the targets that failed Step 1. Tabs close
-   * + IDB clears via the shared aftermath.
-   */
-  async function handleTrashFailureDeletePermanently() {
-    if (!trashFailure) return;
-    const failedSet = new Set(trashFailure.failed.map((t) => `${t.kind}:${t.path}`));
-    const targetsToHardDelete = trashFailure.originalTargets.filter((t) =>
-      failedSet.has(`${t.kind}:${t.path}`),
-    );
-    setTrashFailure(null);
-    if (targetsToHardDelete.length === 0) return;
-    setBusyPath(targetsToHardDelete[0]?.path ?? null);
-    try {
-      const ok = await hardDeleteTargets(targetsToHardDelete);
-      setBusyPath(null);
-      if (!ok) resetModelToDocuments();
-    } catch (err) {
-      // Mirror the sibling catch — `hardDeleteTargets` shares the same
-      // failure-mode surface (model.remove throws, IDB tab-close, fetch
-      // reject, …), so the toast generalization applies here too. Surfacing
-      // the underlying error detail beats misattributing every failure as
-      // network noise.
-      const detail = err instanceof Error ? err.message : String(err);
-      console.warn('[FileTree] hard-delete fallback failed:', err);
-      toast.error(t`Could not complete delete`, { description: detail });
-      setBusyPath(null);
-      resetModelToDocuments();
-    }
-  }
-
-  /**
-   * Retry from `TrashFailureModal` — re-run Step 1 against the FAILED
-   * subset only. Targets that succeeded in the prior attempt are already
-   * in the system Trash; replaying them produces fresh `not-found` results
-   * (realpath fails for already-trashed items) and re-opens the failure
-   * modal listing items the user already disposed of. Filter to the failed
-   * targets so Retry actually means "try those specific items again."
-   *
-   * Compound `${kind}:${path}` key matches `handleTrashFailureDeletePermanently`
-   * above — same shape `FileTreeTarget` carries (kind ∪ path) so different
-   * target kinds that share the same relative path never alias each other.
-   */
-  async function handleTrashFailureRetry() {
-    if (!trashFailure) return;
-    const failedSet = new Set(trashFailure.failed.map((f) => `${f.kind}:${f.path}`));
-    const originals = trashFailure.originalTargets.filter((t) =>
-      failedSet.has(`${t.kind}:${t.path}`),
-    );
-    setTrashFailure(null);
-    await handleDeleteTargets(originals);
-  }
 
   // Hold a ref to handleDeleteTargets so the menu-action subscription
   // effect below can keep its closure off the latest function identity
