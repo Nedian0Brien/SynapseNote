@@ -100,6 +100,14 @@ import {
   type DatabasePublicShareTargetResolution,
 } from './database-data-plane-public-share.ts';
 import {
+  collectDatabaseQueryPropertyIds,
+  scopeDatabaseQueryProjection,
+} from './database-data-plane-query-filter.ts';
+import {
+  createDatabaseQueryDelta,
+  createDatabaseQueryTrace,
+} from './database-data-plane-query-trace.ts';
+import {
   createDatabaseReadProjection,
   type DatabaseDescribeNotModifiedResult,
   type DatabaseDescribeResult,
@@ -1726,97 +1734,23 @@ export class DatabaseDataPlane {
     });
     const allRecords = allDatabaseRecords.filter((record) => record.sourceId === source.id);
     const allRecordIds = new Set(allRecords.map((record) => record.id));
-    const allPropertyIds = new Set(source.properties.map((property) => property.id));
-    const requestedPropertyIds = [
-      ...filterPropertyIds(parsedQuery.where),
-      ...parsedQuery.sort.map((sort) => sort.propertyId),
-      ...(parsedQuery.select ?? []),
-      ...(parsedQuery.aggregate?.groupBy.map((group) => group.propertyId) ?? []),
-      ...(parsedQuery.aggregate?.calculations.flatMap((calculation) =>
-        calculation.propertyId ? [calculation.propertyId] : [],
-      ) ?? []),
-      ...colorPropertyIds,
-      ...visualPropertyIds,
-    ];
-    const accessPropertyIds =
-      access.allowedPropertyIds === null
-        ? allPropertyIds
-        : new Set(access.allowedPropertyIds.filter((propertyId) => allPropertyIds.has(propertyId)));
-    const unknownPropertyId = requestedPropertyIds.find(
-      (propertyId) => !allPropertyIds.has(propertyId),
-    );
-    if (unknownPropertyId && access.allowedPropertyIds !== null) {
-      throw new DatabaseDataPlaneError(
-        'permission_denied',
-        'The query references a property outside the effective read scope',
-        {
-          policyId: access.policyId,
-          policyRevision: access.policyRevision,
-          deniedPropertyIds: [unknownPropertyId],
-          allowedPropertyIds: [...accessPropertyIds].sort(),
-        },
-      );
-    }
-    if (unknownPropertyId) {
-      throw new DatabaseQueryError(
-        'unknown_property',
-        `Property "${unknownPropertyId}" is not defined by source "${source.id}"`,
-        {
-          propertyId: unknownPropertyId,
-          candidates: source.properties
-            .filter((property) => accessPropertyIds.has(property.id))
-            .map((property) => ({
-              id: property.id,
-              key: property.key,
-              name: property.name,
-            })),
-        },
-      );
-    }
-    if (parsedQuery.select && new Set(parsedQuery.select).size !== parsedQuery.select.length) {
-      throw new DatabaseQueryError(
-        'duplicate_property',
-        'Query select contains the same property more than once',
-        { propertyIds: parsedQuery.select },
-      );
-    }
     const allowedRecordIds =
       access.allowedRecordIds === null
         ? allRecordIds
         : new Set(access.allowedRecordIds.filter((recordId) => allRecordIds.has(recordId)));
-    const allowedPropertyIds = accessPropertyIds;
-    const dependencyPropertyIds = [
-      ...filterPropertyIds(parsedQuery.where),
-      ...parsedQuery.sort.map((sort) => sort.propertyId),
-      ...(parsedQuery.aggregate?.groupBy.map((group) => group.propertyId) ?? []),
-      ...(parsedQuery.aggregate?.calculations.flatMap((calculation) =>
-        calculation.propertyId ? [calculation.propertyId] : [],
-      ) ?? []),
-      ...colorPropertyIds,
-      ...visualPropertyIds,
-    ];
-    const deniedDependencies = [...new Set(dependencyPropertyIds)].filter(
-      (propertyId) => !allowedPropertyIds.has(propertyId),
-    );
-    if (deniedDependencies.length > 0) {
-      throw new DatabaseDataPlaneError(
-        'permission_denied',
-        'The query filters, sorts, groups, or calculates a property outside the effective read scope',
-        {
-          policyId: access.policyId,
-          policyRevision: access.policyRevision,
-          deniedPropertyIds: deniedDependencies,
-          allowedPropertyIds: [...allowedPropertyIds].sort(),
-        },
-      );
-    }
-    const selectedPropertyIds = (parsedQuery.select ?? [...allPropertyIds]).filter((propertyId) =>
-      allowedPropertyIds.has(propertyId),
-    );
-    const scopedQuery: DatabaseQuery = {
-      ...parsedQuery,
-      select: selectedPropertyIds,
-    };
+    const queryProperties = collectDatabaseQueryPropertyIds({
+      query: parsedQuery,
+      colorPropertyIds,
+      visualPropertyIds,
+    });
+    const { allPropertyIds, allowedPropertyIds, selectedPropertyIds, scopedQuery } =
+      scopeDatabaseQueryProjection({
+        source,
+        query: parsedQuery,
+        requestedPropertyIds: queryProperties.requested,
+        dependencyPropertyIds: queryProperties.dependencies,
+        access,
+      });
     const relationPermissionScopes = new Map<string, unknown>();
     const relationAccess = new Map<
       string,
@@ -2101,88 +2035,30 @@ export class DatabaseDataPlane {
               ? 'partial_index'
               : 'no_match';
     const requestedProjection = parsedQuery.select ?? [...allPropertyIds];
-    const trace: DatabaseQueryExplainTrace = {
-      source: { databaseId: database.id, sourceId: source.id },
+    const trace = createDatabaseQueryTrace({
+      databaseId: database.id,
+      sourceId: source.id,
       savedQuery,
       agentView,
-      filter: {
-        expression: parsedQuery.where ? structuredClone(parsedQuery.where) : null,
-        propertyIds: [...new Set(filterPropertyIds(parsedQuery.where))],
-      },
-      ranking: {
-        strategy: 'typed_sort_then_record_id',
-        sort: structuredClone(parsedQuery.sort),
-        semantics: DATABASE_QUERY_SORT_SEMANTICS,
-        tieBreakers: ['record_id'],
-      },
-      projection: {
-        requestedPropertyIds: [...requestedProjection],
-        returnedPropertyIds: [...selectedPropertyIds],
-        excludedPropertyIds: requestedProjection.filter(
-          (propertyId) => !allowedPropertyIds.has(propertyId),
-        ),
-      },
-      aggregation: {
-        requested: parsedQuery.aggregate ? structuredClone(parsedQuery.aggregate) : null,
-        appliedAfterPermissionScope: true,
-        matched: result.aggregation?.matched ?? result.matched,
-        totalGroups: result.aggregation?.totalGroups ?? 0,
-        returnedGroups: result.aggregation?.returnedGroups ?? 0,
-        truncatedBy: result.aggregation?.truncatedBy ?? null,
-      },
+      query: parsedQuery,
+      requestedPropertyIds: requestedProjection,
+      selectedPropertyIds,
+      allowedPropertyIds,
+      result,
       permission: permissionExclusions,
-      index: {
-        revision: index.revision,
-        state: index.state,
-        freshness: 'snapshot',
-        issueCount: sourceIssueCount,
-      },
+      index,
+      issueCount: sourceIssueCount,
       derivedIndex: {
         propertyIds: computedPropertyIds,
         cache: derivedCache,
         permissionRevision: derivedPermissionRevision,
         revision: derivedRevision,
       },
-      truncation: {
-        cause: result.truncatedBy,
-        limit: parsedQuery.page.limit,
-        cursorProvided: parsedQuery.page.cursor !== undefined,
-        nextCursor: result.nextCursor,
-      },
-    };
-    const recordRevisions = Object.fromEntries(
-      result.records.map((record) => [
-        record.id,
-        `sha256:${createHash('sha256')
-          .update(
-            stableJson({
-              canonicalRevision: record.revision,
-              computedResults: record.computedResults ?? null,
-            }),
-          )
-          .digest('hex')}`,
-      ]),
-    );
-    const previousIds = Object.keys(input.deltaSince?.recordRevisions ?? {}).sort();
-    const currentIds = Object.keys(recordRevisions).sort();
-    const absent = previousIds.filter((recordId) => !(recordId in recordRevisions));
-    const delta = input.deltaSince
-      ? {
-          sinceQueryId: input.deltaSince.queryId,
-          scope: 'returned_page' as const,
-          addedOrChangedRecordIds: currentIds.filter(
-            (recordId) => input.deltaSince?.recordRevisions[recordId] !== recordRevisions[recordId],
-          ),
-          unchangedRecordIds: currentIds.filter(
-            (recordId) => input.deltaSince?.recordRevisions[recordId] === recordRevisions[recordId],
-          ),
-          removedRecordIds:
-            input.deltaSince.isComplete && result.isComplete ? absent : ([] as string[]),
-          absentFromPageRecordIds:
-            input.deltaSince.isComplete && result.isComplete ? ([] as string[]) : absent,
-          isComplete: input.deltaSince.isComplete && result.isComplete,
-        }
-      : null;
+    });
+    const { recordRevisions, delta } = createDatabaseQueryDelta({
+      result,
+      deltaSince: input.deltaSince,
+    });
     return {
       ...result,
       ...(conditionalColors ? { conditionalColors } : {}),
