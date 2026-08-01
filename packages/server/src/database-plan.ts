@@ -40,6 +40,7 @@ import {
   type DatabaseWriteGuardSnapshot,
   type ResolveDatabaseWriteGuards,
 } from './database-plan-artifacts.ts';
+import { compileDatabaseRelationConflicts } from './database-plan-conflict-compiler.ts';
 import {
   cloneDatabasePlanValue as clone,
   compactDatabasePlanUuid as compactUuid,
@@ -677,38 +678,7 @@ export class DatabasePlanEngine {
       return this.#createDatabaseDeletionPlan(draft, snapshot, now, expiresAt);
     }
     const conflicts: DatabasePlanConflict[] = [];
-    // A cross-database relation names a source no single manifest contains, so
-    // the definition schema cannot confirm it resolves. This is the first layer
-    // that sees every database, which makes it the one that owes the check —
-    // otherwise a relation could point at a database that does not exist and
-    // only fail later, when a record tried to use it.
-    for (const source of definition.sources) {
-      for (const property of source.properties) {
-        if (property.type !== 'relation') continue;
-        const targetDatabaseId = property.targetDatabaseId;
-        if (targetDatabaseId === undefined || targetDatabaseId === definition.id) continue;
-        const targetDatabase = snapshot.databases.find(
-          (candidate) => candidate.id === targetDatabaseId,
-        );
-        if (!targetDatabase) {
-          conflicts.push({
-            code: 'relation_target_missing',
-            message: `Relation "${property.id}" targets database "${targetDatabaseId}", which is not in this workspace`,
-            targetId: property.id,
-            propertyId: property.id,
-          });
-          continue;
-        }
-        if (!targetDatabase.sources.some((candidate) => candidate.id === property.targetSourceId)) {
-          conflicts.push({
-            code: 'relation_target_missing',
-            message: `Relation "${property.id}" targets source "${property.targetSourceId}", which database "${targetDatabaseId}" does not define`,
-            targetId: property.id,
-            propertyId: property.id,
-          });
-        }
-      }
-    }
+    conflicts.push(...compileDatabaseRelationConflicts(definition, snapshot));
     if (definition.version === 2) {
       const ownerPaths = new Map<string, string>();
       const ownerBlocks = new Map<string, string>();
