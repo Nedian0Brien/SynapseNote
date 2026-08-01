@@ -527,11 +527,10 @@ export class DatabaseMarkdownTableWriter {
     this.#contentDir = resolve(options.contentDir);
     this.#allowExternalContentDir = options.allowExternalContentDir ?? false;
     this.#databaseStore = options.databaseStore;
+    const databaseRecordIndex = options.databaseRecordIndex;
     this.#refreshDatabaseIndex =
       options.refreshDatabaseIndex ??
-      (options.databaseRecordIndex
-        ? () => options.databaseRecordIndex!.rebuild()
-        : async () => undefined);
+      (databaseRecordIndex ? () => databaseRecordIndex.rebuild() : async () => undefined);
     this.#documentCandidates = options.documentCandidates ?? null;
     this.#fs = { ...DEFAULT_FS, ...options.fs };
     this.#generateUuid = options.generateUuid ?? randomUUID;
@@ -1154,7 +1153,7 @@ export class DatabaseMarkdownTableWriter {
     this.#assertRowAndCellRevisions(
       resolved,
       row.rowIndex,
-      resolved.owner.rows[row.rowIndex]!.cells[0]!,
+      this.#requiredFirstCell(resolved, row.rowIndex),
       input.expectedRowRevision,
       undefined,
     );
@@ -1241,10 +1240,15 @@ export class DatabaseMarkdownTableWriter {
       target: link.target,
       alias: input.title.trim(),
     };
-    const encodedLink = encodedCell(
-      resolved.source.properties.find((property) => property.id === storage.titlePropertyId)!,
-      nextLink,
+    const titleProperty = resolved.source.properties.find(
+      (property) => property.id === storage.titlePropertyId,
     );
+    if (!titleProperty)
+      throw new DatabaseMarkdownTableWriterError(
+        'owner_invalid',
+        'Database source is missing its stored Title property',
+      );
+    const encodedLink = encodedCell(titleProperty, nextLink);
     const afterOwner = replaceDatabaseMarkdownTableCell(
       resolved.markdown,
       resolved.owner,
@@ -1771,7 +1775,7 @@ export class DatabaseMarkdownTableWriter {
     this.#assertRowAndCellRevisions(
       resolved,
       row.rowIndex,
-      resolved.owner.rows[row.rowIndex]!.cells[0]!,
+      this.#requiredFirstCell(resolved, row.rowIndex),
       input.expectedRowRevision,
       undefined,
     );
@@ -2451,7 +2455,8 @@ export class DatabaseMarkdownTableWriter {
         !receipt.beforeDocumentContent ||
         !receipt.afterDocumentRevision ||
         !receipt.beforeDocumentRevision ||
-        !titleDocumentPath
+        !titleDocumentPath ||
+        titleDocumentCurrent === null
       ) {
         throw new DatabaseMarkdownTableWriterError(
           'invalid_request',
@@ -2459,8 +2464,8 @@ export class DatabaseMarkdownTableWriter {
         );
       }
       if (
-        sha256(titleDocumentCurrent!) !== receipt.afterDocumentRevision &&
-        sha256(titleDocumentCurrent!) !== receipt.beforeDocumentRevision
+        sha256(titleDocumentCurrent) !== receipt.afterDocumentRevision &&
+        sha256(titleDocumentCurrent) !== receipt.beforeDocumentRevision
       ) {
         throw new DatabaseMarkdownTableWriterError(
           'target_changed',
@@ -2468,7 +2473,7 @@ export class DatabaseMarkdownTableWriter {
           {
             documentPath: titleDocumentPath,
             expectedAfterRevision: receipt.afterDocumentRevision,
-            observedRevision: sha256(titleDocumentCurrent!),
+            observedRevision: sha256(titleDocumentCurrent),
           },
         );
       }
@@ -2489,21 +2494,22 @@ export class DatabaseMarkdownTableWriter {
         !receipt.afterDocumentRevision ||
         !receipt.beforeDocumentRevision ||
         !moveDocumentPath ||
-        !movePreviousPath
+        !movePreviousPath ||
+        movedDocumentCurrent === null
       ) {
         throw new DatabaseMarkdownTableWriterError(
           'invalid_request',
           'Move receipt does not carry recoverable document paths/bytes',
         );
       }
-      if (sha256(movedDocumentCurrent!) !== receipt.afterDocumentRevision) {
+      if (sha256(movedDocumentCurrent) !== receipt.afterDocumentRevision) {
         throw new DatabaseMarkdownTableWriterError(
           'target_changed',
           'Undo refused because the moved document changed after the mutation',
           {
             documentPath: moveDocumentPath,
             expectedAfterRevision: receipt.afterDocumentRevision,
-            observedRevision: sha256(movedDocumentCurrent!),
+            observedRevision: sha256(movedDocumentCurrent),
           },
         );
       }
@@ -2561,9 +2567,11 @@ export class DatabaseMarkdownTableWriter {
     if (
       sha256(current) === receipt.beforeOwnerRevision &&
       (receipt.operation !== 'update_title' ||
-        sha256(titleDocumentCurrent!) === receipt.beforeDocumentRevision) &&
+        (titleDocumentCurrent !== null &&
+          sha256(titleDocumentCurrent) === receipt.beforeDocumentRevision)) &&
       (!lifecycleManifestPath ||
-        sha256(lifecycleManifestCurrent!) === receipt.beforeManifestRevision)
+        (lifecycleManifestCurrent !== null &&
+          sha256(lifecycleManifestCurrent) === receipt.beforeManifestRevision))
     )
       return { changed: false, receipt };
     const undoMutationId = `mut_${randomUUID().replaceAll('-', '')}`;
@@ -2621,39 +2629,66 @@ export class DatabaseMarkdownTableWriter {
         after: null,
       });
     } else if (receipt.operation === 'update_title') {
+      if (
+        !titleDocumentPath ||
+        titleDocumentCurrent === null ||
+        receipt.beforeDocumentContent === undefined
+      ) {
+        throw new DatabaseMarkdownTableWriterError(
+          'invalid_request',
+          'Title receipt does not carry recoverable linked-document bytes',
+        );
+      }
       documentAbsolute = titleDocumentAbsolute;
       documentBefore = titleDocumentCurrent;
       undoFiles.push({
-        path: titleDocumentPath!,
-        beforeSha256: sha256(documentBefore!),
-        afterSha256: sha256(receipt.beforeDocumentContent!),
+        path: titleDocumentPath,
+        beforeSha256: sha256(documentBefore),
+        afterSha256: sha256(receipt.beforeDocumentContent),
         before: documentBefore,
-        after: receipt.beforeDocumentContent!,
+        after: receipt.beforeDocumentContent,
       });
     } else if (receipt.operation === 'move_document') {
+      if (
+        !moveDocumentPath ||
+        !movePreviousPath ||
+        movedDocumentCurrent === null ||
+        receipt.beforeDocumentContent === undefined
+      ) {
+        throw new DatabaseMarkdownTableWriterError(
+          'invalid_request',
+          'Move receipt does not carry recoverable document paths/bytes',
+        );
+      }
       documentAbsolute = moveDocumentAbsolute;
       documentBefore = movedDocumentCurrent;
       undoFiles.push({
-        path: moveDocumentPath!,
-        beforeSha256: sha256(documentBefore!),
+        path: moveDocumentPath,
+        beforeSha256: sha256(documentBefore),
         afterSha256: null,
         before: documentBefore,
         after: null,
       });
       undoFiles.push({
-        path: movePreviousPath!,
+        path: movePreviousPath,
         beforeSha256: null,
-        afterSha256: sha256(receipt.beforeDocumentContent!),
+        afterSha256: sha256(receipt.beforeDocumentContent),
         before: null,
-        after: receipt.beforeDocumentContent!,
+        after: receipt.beforeDocumentContent,
       });
     } else if (lifecycleManifestPath) {
+      if (lifecycleManifestCurrent === null || receipt.beforeManifestContent === undefined) {
+        throw new DatabaseMarkdownTableWriterError(
+          'invalid_request',
+          'Manifest mutation receipt does not carry recoverable bytes',
+        );
+      }
       undoFiles.push({
-        path: lifecycleManifestPath!,
-        beforeSha256: sha256(lifecycleManifestCurrent!),
-        afterSha256: sha256(receipt.beforeManifestContent!),
+        path: lifecycleManifestPath,
+        beforeSha256: sha256(lifecycleManifestCurrent),
+        afterSha256: sha256(receipt.beforeManifestContent),
         before: lifecycleManifestCurrent,
-        after: receipt.beforeManifestContent!,
+        after: receipt.beforeManifestContent,
       });
     }
     await this.#assertOwnerStillCurrent({ ...resolved, markdown: current });
@@ -2724,9 +2759,11 @@ export class DatabaseMarkdownTableWriter {
         ) {
           const previousAbsolute = this.#safeAbsolutePath(movePreviousPath);
           const previousCurrent = await this.#fs.readFile(previousAbsolute).catch(() => null);
+          const beforeDocumentContent = receipt.beforeDocumentContent;
           if (
             previousCurrent !== null &&
-            sha256(previousCurrent) === sha256(receipt.beforeDocumentContent!)
+            beforeDocumentContent !== undefined &&
+            sha256(previousCurrent) === sha256(beforeDocumentContent)
           ) {
             await this.#fs.unlink(previousAbsolute);
           }
@@ -2796,8 +2833,9 @@ export class DatabaseMarkdownTableWriter {
   ): DatabaseMarkdownTableMutationReceipt {
     const beforeRevision = revision(before);
     const afterRevision = revision(after);
-    const manifestBeforeRevision = manifest ? revision(manifest.before) : null;
-    const manifestAfterRevision = manifest ? revision(manifest.after) : null;
+    const manifestRevisions = manifest
+      ? { before: revision(manifest.before), after: revision(manifest.after) }
+      : null;
     return {
       version: 1,
       mutationId: `mut_${this.#generateUuid().replaceAll('-', '')}`,
@@ -2815,13 +2853,13 @@ export class DatabaseMarkdownTableWriter {
           before: beforeRevision,
           after: afterRevision,
         },
-        ...(manifest && manifestBeforeRevision && manifestAfterRevision
+        ...(manifest && manifestRevisions
           ? [
               {
                 path: manifest.path,
                 operation: 'update' as const,
-                before: manifestBeforeRevision,
-                after: manifestAfterRevision,
+                before: manifestRevisions.before,
+                after: manifestRevisions.after,
               },
             ]
           : []),
@@ -2830,11 +2868,11 @@ export class DatabaseMarkdownTableWriter {
       afterOwnerRevision: afterRevision.sha256,
       beforeOwnerContent: before,
       afterOwnerContent: after,
-      ...(manifest
+      ...(manifest && manifestRevisions
         ? {
             manifestPath: manifest.path,
-            beforeManifestRevision: manifestBeforeRevision!.sha256,
-            afterManifestRevision: manifestAfterRevision!.sha256,
+            beforeManifestRevision: manifestRevisions.before.sha256,
+            afterManifestRevision: manifestRevisions.after.sha256,
             beforeManifestContent: manifest.before,
             afterManifestContent: manifest.after,
           }
@@ -3130,6 +3168,22 @@ export class DatabaseMarkdownTableWriter {
     }
   }
 
+  #requiredFirstCell(resolved: ResolvedSource, rowIndex: number): DatabaseMarkdownTableCell {
+    const row = resolved.owner.rows[rowIndex];
+    if (!row)
+      throw new DatabaseMarkdownTableWriterError(
+        'owner_invalid',
+        `Owner row ${rowIndex} is missing`,
+      );
+    const cell = row.cells[0];
+    if (!cell)
+      throw new DatabaseMarkdownTableWriterError(
+        'owner_invalid',
+        `Owner row ${rowIndex} is missing its Title cell`,
+      );
+    return cell;
+  }
+
   #safeAbsolutePath(path: string): string {
     const absolute = resolve(this.#contentDir, path);
     if (!isWithin(this.#contentDir, absolute)) {
@@ -3205,12 +3259,6 @@ export class DatabaseMarkdownTableWriter {
       }
     }
   }
-}
-
-function normalizeDocumentPath(target: string): string | null {
-  if (!safeRelativePath(target, null)) return null;
-  const path = /\.(?:md|mdx)$/i.test(target) ? target : `${target}.md`;
-  return safeRelativePath(path, null) && /\.(?:md|mdx)$/i.test(path) ? path : null;
 }
 
 function isWithin(base: string, candidate: string): boolean {

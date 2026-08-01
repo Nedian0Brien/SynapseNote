@@ -238,7 +238,7 @@ describe('v1 to v2 migration round-trip', () => {
   });
 
   test('requires and verifies a frozen Formula/Rollup baseline through apply, cold rebuild, and undo', async () => {
-    const { projectDir, contentDir, store, index, service } = await fixture();
+    const { projectDir, contentDir, store, service } = await fixture();
     const before = snapshotFiles(projectDir, contentDir);
     const database = store.getById('db_roundtrip');
     if (!database) throw new Error('round-trip database is missing');

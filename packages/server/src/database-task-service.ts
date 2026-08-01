@@ -1986,7 +1986,7 @@ export class DatabaseTaskService {
         await this.#migrationJournal.rollback(context.task.id);
         await this.#databaseStore.reload();
         await this.#refreshDatabaseIndex();
-      } catch (error) {
+      } catch (_error) {
         throw executionProblem(
           'task_recovery_required',
           'Migration recovery is required',
@@ -2237,7 +2237,7 @@ export class DatabaseTaskService {
         await this.#migrationJournal.rollback(context.task.id);
         await this.#databaseStore.reload();
         await this.#refreshDatabaseIndex();
-      } catch (rollbackError) {
+      } catch (_rollbackError) {
         throw executionProblem(
           'task_rollback_failed',
           'Migration failed and automatic rollback was incomplete',

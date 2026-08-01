@@ -24,7 +24,7 @@ import { createDatabaseStore } from './database-store.ts';
 const tempDirs: string[] = [];
 const SERVER_PACKAGE_ROOT = resolve(import.meta.dir, '..');
 
-const CHILD_DRIVER = String.raw`
+const CHILD_DRIVER = `
   const { join } = await import('node:path');
   const { writeFile } = await import('node:fs/promises');
   const { createDatabaseRecordIndex } = await import('./src/database-record-index.ts');

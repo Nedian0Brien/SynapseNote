@@ -26,7 +26,7 @@ import { createDatabaseTaskStore } from './database-task-store.ts';
 const tempDirs: string[] = [];
 const SERVER_PACKAGE_ROOT = resolve(import.meta.dir, '..');
 
-const CHILD_DRIVER = String.raw`
+const CHILD_DRIVER = `
   const { join } = await import('node:path');
   const { createDatabaseCommitEngine } = await import('./src/database-commit.ts');
   const { createDatabaseRecordIndex } = await import('./src/database-record-index.ts');
@@ -194,7 +194,7 @@ async function recoverAfterCrash(projectDir: string, contentDir: string, taskId:
     databasePlanEngine: plans,
     git: {
       snapshot: async () => '0'.repeat(40),
-      hashBlob: async () => 'sha1:' + 'a'.repeat(40),
+      hashBlob: async () => `sha1:${'a'.repeat(40)}`,
     },
   });
   const taskStore = createDatabaseTaskStore({ projectDir });

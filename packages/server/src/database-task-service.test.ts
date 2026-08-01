@@ -301,27 +301,29 @@ describe('DatabaseTaskService product handlers', () => {
     expect(index.list()).toHaveLength(2);
     const migratedDefinition = store.list()[0];
     if (!migratedDefinition) throw new Error('expected migrated definition');
+    const baseline = derivedBaselines[database.id];
+    if (!baseline) throw new Error('expected derived baseline');
+    const source = database.sources[0];
+    const migratedSource = migratedDefinition.sources[0];
+    if (!source || !migratedSource) throw new Error('expected migrated source');
+    const doubleEstimate = migratedSource.properties.find(
+      (property) => property.key === 'double-estimate',
+    );
+    if (!doubleEstimate) throw new Error('expected migrated Formula property');
     const derived = materializeDatabaseDerivedRecords({
       definition: migratedDefinition,
       records: index.list(),
       context: {
-        now: derivedBaselines[database.id]!.evaluatedAt,
-        timeZone: derivedBaselines[database.id]!.timeZone,
-        locale: derivedBaselines[database.id]!.locale,
+        now: baseline.evaluatedAt,
+        timeZone: baseline.timeZone,
+        locale: baseline.locale,
       },
-      permissionRevision: derivedBaselines[database.id]!.permissionRevision,
+      permissionRevision: baseline.permissionRevision,
     });
     expect(
       derived
-        .filter((record) => record.sourceId === database.sources[0]!.id)
-        .map(
-          (record) =>
-            record.computedResults?.[
-              migratedDefinition.sources[0]!.properties.find(
-                (property) => property.key === 'double-estimate',
-              )!.id
-            ],
-        )
+        .filter((record) => record.sourceId === source.id)
+        .map((record) => record.computedResults?.[doubleEstimate.id])
         .map((result) => (result?.kind === 'value' ? result.value : result?.problem.code)),
     ).toEqual([6, 10]);
 
@@ -353,7 +355,7 @@ describe('DatabaseTaskService product handlers', () => {
   });
 
   test('maps migration undo after an intervening edit to a typed conflict', async () => {
-    const { projectDir, contentDir, store, plan, commit, service } = await fixture();
+    const { contentDir, store, plan, commit, service } = await fixture();
     const seeded = await service.start({
       operation: 'bulk',
       commit: {

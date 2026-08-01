@@ -46,6 +46,12 @@ afterEach(() => {
   for (const dir of tempDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
+function fixtureRecord(index: ReturnType<typeof createDatabaseRecordIndex>) {
+  const record = index.list()[0];
+  if (!record) throw new Error('expected indexed fixture record');
+  return record;
+}
+
 function definition() {
   return DatabaseDefinitionSchema.parse({
     version: 1,
@@ -358,16 +364,22 @@ describe('DatabaseRecordIndex rebuild', () => {
     const { projectDir, contentDir } = tempProject();
     mkdirSync(join(contentDir, 'orders'), { recursive: true });
     const base = v2Definition();
+    const source = base.sources[0];
+    if (!source) throw new Error('v2 fixture source is missing');
+    const [title, notes, status] = source.properties;
+    if (!title || !notes || !status) throw new Error('v2 fixture properties are missing');
+    const storage = source.storage;
+    if (!storage) throw new Error('v2 fixture storage is missing');
     const duplicateSource = {
-      ...base.sources[0]!,
+      ...source,
       id: 'ds_other',
       key: 'other',
       name: 'Other',
       properties: [
-        { ...base.sources[0]!.properties[0]!, id: 'prop_other_title' },
-        { ...base.sources[0]!.properties[1]!, id: 'prop_other_notes' },
+        { ...title, id: 'prop_other_title' },
+        { ...notes, id: 'prop_other_notes' },
         {
-          ...base.sources[0]!.properties[2]!,
+          ...status,
           id: 'prop_other_status',
           options: [
             { id: 'opt_other_todo', key: 'todo', name: 'Todo' },
@@ -376,7 +388,7 @@ describe('DatabaseRecordIndex rebuild', () => {
         },
       ],
       storage: {
-        ...base.sources[0]!.storage!,
+        ...storage,
         owner: { path: 'orders.md', blockId: 'dbb_other_primary' },
         titlePropertyId: 'prop_other_title',
         storedPropertyIds: ['prop_other_title', 'prop_other_notes', 'prop_other_status'],
@@ -384,7 +396,7 @@ describe('DatabaseRecordIndex rebuild', () => {
     };
     const database = DatabaseDefinitionSchema.parse({
       ...base,
-      sources: [base.sources[0], duplicateSource],
+      sources: [source, duplicateSource],
     });
     const store = createDatabaseStore({ projectDir, contentDir });
     await store.create(database);
@@ -426,8 +438,7 @@ describe('DatabaseRecordIndex rebuild', () => {
     );
     const index = createDatabaseRecordIndex({ contentDir, databaseStore: store });
     await index.rebuild();
-    const id = index.list()[0]?.id;
-    expect(id).toBeDefined();
+    const id = fixtureRecord(index).id;
 
     applyDatabaseRecordDiskEvent(index, contentDir, {
       kind: 'update',
@@ -435,7 +446,7 @@ describe('DatabaseRecordIndex rebuild', () => {
       docName: 'orders/alpha',
       content: '---\n_sn:\n  document_id: doc_alpha\ntitle: Renamed order\n---\nEdited body\n',
     });
-    expect(index.getById(id!)).toMatchObject({
+    expect(index.getById(id)).toMatchObject({
       values: { prop_title: 'Renamed order' },
       body: 'Edited body\n',
     });
@@ -449,7 +460,7 @@ describe('DatabaseRecordIndex rebuild', () => {
         '| [[orders/alpha]] | Edited note | done |',
       ),
     });
-    expect(index.getById(id!)).toMatchObject({
+    expect(index.getById(id)).toMatchObject({
       values: { prop_notes: 'Edited note', prop_status: 'opt_done' },
     });
 
@@ -459,7 +470,7 @@ describe('DatabaseRecordIndex rebuild', () => {
       docName: 'orders/alpha',
       content: '---\n_sn:\n  document_id: doc_alpha\ntitle: Final order\n---\nFinal body\n',
     });
-    expect(index.getById(id!)).toMatchObject({
+    expect(index.getById(id)).toMatchObject({
       values: { prop_title: 'Final order' },
       body: 'Final body\n',
     });
@@ -469,7 +480,7 @@ describe('DatabaseRecordIndex rebuild', () => {
       path: join(contentDir, 'orders/alpha.md'),
       docName: 'orders/alpha',
     });
-    expect(index.getById(id!)).toBeNull();
+    expect(index.getById(id)).toBeNull();
     expect(index.snapshot().issues).toContainEqual(
       expect.objectContaining({
         path: 'orders.md',
@@ -483,7 +494,7 @@ describe('DatabaseRecordIndex rebuild', () => {
       docName: 'orders/alpha',
       content: '---\n_sn:\n  document_id: doc_alpha\ntitle: Restored order\n---\nRestored body\n',
     });
-    expect(index.getById(id!)).toMatchObject({ values: { prop_title: 'Restored order' } });
+    expect(index.getById(id)).toMatchObject({ values: { prop_title: 'Restored order' } });
   });
 
   test('projects property-only records without cloning canonical Markdown bodies', async () => {
@@ -1189,7 +1200,7 @@ describe('DatabaseRecordIndex incremental rematerialization', () => {
       databaseRecordIndex: index,
     });
     const ownerRevision = `sha256:${createHash('sha256').update(owner).digest('hex')}`;
-    const recordId = index.list()[0]!.id;
+    const recordId = fixtureRecord(index).id;
     const edited = await writer.updateCell({
       databaseId: 'db_tasks',
       sourceId: 'ds_tasks',
@@ -1311,7 +1322,7 @@ describe('DatabaseRecordIndex incremental rematerialization', () => {
         writeFileSync(path, content);
       },
     });
-    const recordId = index.list()[0]!.id;
+    const recordId = fixtureRecord(index).id;
     const ownerRevision = `sha256:${createHash('sha256').update(owner).digest('hex')}`;
 
     await expect(
@@ -1436,7 +1447,7 @@ describe('DatabaseRecordIndex incremental rematerialization', () => {
       databaseStore: store,
       databaseRecordIndex: index,
     });
-    const recordId = index.list()[0]!.id;
+    const recordId = fixtureRecord(index).id;
     const ownerRevision = `sha256:${createHash('sha256').update(owner).digest('hex')}`;
     const changed = await writer.updateTitle({
       databaseId: 'db_tasks',
@@ -1505,7 +1516,7 @@ describe('DatabaseRecordIndex incremental rematerialization', () => {
       databaseStore: store,
       databaseRecordIndex: index,
     });
-    const record = index.list()[0]!;
+    const record = fixtureRecord(index);
     const ownerRevision = `sha256:${createHash('sha256').update(owner).digest('hex')}`;
     const changed = await writer.updateCell({
       databaseId: 'db_tasks',
@@ -1553,7 +1564,7 @@ describe('DatabaseRecordIndex incremental rematerialization', () => {
       databaseStore: store,
       databaseRecordIndex: index,
     });
-    const record = index.list()[0]!;
+    const record = fixtureRecord(index);
     const ownerRevision = `sha256:${createHash('sha256').update(owner).digest('hex')}`;
     const moved = await writer.moveDocument({
       databaseId: 'db_tasks',
@@ -1606,7 +1617,7 @@ describe('DatabaseRecordIndex incremental rematerialization', () => {
       databaseStore: store,
       databaseRecordIndex: index,
     });
-    const record = index.list()[0]!;
+    const record = fixtureRecord(index);
     const ownerRevision = `sha256:${createHash('sha256').update(owner).digest('hex')}`;
 
     const deleted = await writer.deleteRow({
@@ -1659,7 +1670,7 @@ describe('DatabaseRecordIndex incremental rematerialization', () => {
       databaseStore: store,
       databaseRecordIndex: index,
     });
-    const record = index.list()[0]!;
+    const record = fixtureRecord(index);
     const manifestPath = join(projectDir, '.ok/databases/tasks.yml');
     const manifestBefore = readFileSync(manifestPath, 'utf8');
     const ownerRevision = `sha256:${createHash('sha256').update(owner).digest('hex')}`;

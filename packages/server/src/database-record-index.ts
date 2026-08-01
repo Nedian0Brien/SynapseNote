@@ -35,13 +35,11 @@ import {
   type ParsedDatabaseMarkdownOwner,
   parseDatabaseDocumentIdentity,
   parseDatabaseMarkdownOwner,
-  parseFrontmatterYaml,
   projectDatabaseRichText,
   resolveDatabaseDocumentTitle,
   resolveDatabaseMarkdownDocumentLink,
   serializeDatabaseDateValue,
   stripFrontmatter,
-  unwrapFrontmatterFences,
 } from '@nedian0brien/synapsenote-core';
 import { ALWAYS_SKIP_DIRS } from './content-filter.ts';
 import type { DatabaseStore } from './database-store.ts';
@@ -1532,9 +1530,11 @@ export class DatabaseRecordIndex {
         continue;
       }
       if (property.type === 'title') {
+        const documentLink = row.documentLink;
+        if (!documentLink) throw new Error('V2 title row is missing its document link');
         values[property.id] = resolveDatabaseDocumentTitle(
           document.markdown,
-          v2FallbackTitle(row.documentLink!, document.path),
+          v2FallbackTitle(documentLink, document.path),
         ).value;
         continue;
       }
@@ -1651,7 +1651,11 @@ export class DatabaseRecordIndex {
             invalidValues[property.id] = JSON.stringify(raw);
           } else if (ids.length === 0) {
             invalidValues[property.id] = JSON.stringify(raw);
-          } else values[property.id] = property.cardinality === 'one' ? ids[0]! : ids;
+          } else {
+            const firstId = ids[0];
+            if (!firstId) throw new Error('Resolved relation target unexpectedly missing');
+            values[property.id] = property.cardinality === 'one' ? firstId : ids;
+          }
           break;
         }
         case 'files':

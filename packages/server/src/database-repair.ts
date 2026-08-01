@@ -1200,13 +1200,13 @@ export class DatabaseRepairEngine {
           fingerprint: entry.requestFingerprint,
           result,
         });
+        const undoFiles = entry.undoFiles;
         const canHydrateUndo =
           entry.undoToken !== undefined &&
-          entry.undoFiles !== undefined &&
-          entry.undoFiles.every((file) => file.before !== null) &&
+          undoFiles?.every((file) => file.before !== null) === true &&
           result.receipt.undoToken === entry.undoToken;
         if (canHydrateUndo) {
-          const undoFiles = entry.undoFiles!;
+          if (!undoFiles) throw new Error('repair journal undo files unexpectedly missing');
           const definitions: Array<{
             databaseId: string;
             before: DatabaseDefinition;
