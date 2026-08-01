@@ -75,7 +75,6 @@ import {
   subscribeToPageHeaderRename,
 } from '@/lib/page-header-rename-events';
 import { parseServerResponse, parseSuccessOrWarn } from '@/lib/parse-server-response';
-import { getRelaunchInFlightSnapshot, useRelaunchInFlight } from '@/lib/relaunch-store';
 import { cn } from '@/lib/utils';
 import { applyRenamedDocuments as reconcileRenamedDocuments } from './file-tree/apply-renamed-documents';
 import { FileTreeMenu } from './file-tree/FileTreeMenu';
@@ -93,6 +92,7 @@ import {
 } from './file-tree/FileTreePresentation';
 import { FileTreeViewport } from './file-tree/FileTreeViewport';
 import type { FileTreeProps } from './file-tree/file-tree-types';
+import { useFileTreeConnectivity } from './file-tree/useFileTreeConnectivity';
 import { useFileTreeCreation } from './file-tree/useFileTreeCreation';
 import { useFileTreeDragAndDrop } from './file-tree/useFileTreeDragAndDrop';
 import { useFileTreeKeyboard } from './file-tree/useFileTreeKeyboard';
@@ -131,8 +131,6 @@ function focusEditorAfterRename(docName: string): void {
     }
   });
 }
-
-const CONNECTIVITY_RECONNECT_RETRY_MS = 2000;
 
 interface FileTreeDeleteRequest {
   targets: FileTreeTarget[];
@@ -191,17 +189,6 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     navigateToAssetWithPulse,
     activateTreePath,
   } = useFileTreeNavigation({ documents, sidebarDocumentTabBehavior });
-  // True while the listing is being silently re-attempted after a reachability
-  // failure that coincides with a known desktop auto-update relaunch. Drives a
-  // calm "Relaunching…" notice in place of the red "Could not reach server"
-  // error, and is cleared the moment a fetch succeeds (self-heal) or the
-  // reachability failure outlives the relaunch (then the honest error wins).
-  const [reconnecting, setReconnecting] = useState(false);
-  // Drives the render copy + the start/abort flip effect. The fetch closures
-  // read the live value via `getRelaunchInFlightSnapshot()` at failure time
-  // (always current — no effect-synced ref needed).
-  const relaunchInFlight = useRelaunchInFlight();
-  const connectivityRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Count of entries the server returned when the showAll walk hit its entry
   // cap (so the list is a partial prefix); null when the list is complete.
   const [truncatedShownCount, setTruncatedShownCount] = useState<number | null>(null);
@@ -326,69 +313,17 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
   const activeTargetRef = useRef(activeTarget);
   const [emptyExternalFileDropActive, setEmptyExternalFileDropActive] = useState(false);
 
-  // --- Reachability handling (desktop auto-update relaunch self-heal) ------
-  // The file tree owns the global "Could not reach server" signal the other
-  // sidebar sections defer to. During a desktop relaunch the server is
-  // intentionally torn down (up to 10s) before `quitAndInstall`, so route
-  // reachability failures through these helpers: stay calm and keep retrying
-  // while a relaunch is in flight, but surface the honest error immediately for
-  // a real outage (unchanged behavior).
-  function clearConnectivityRetry() {
-    if (connectivityRetryTimerRef.current !== null) {
-      clearTimeout(connectivityRetryTimerRef.current);
-      connectivityRetryTimerRef.current = null;
-    }
-  }
-  function noteConnectivityRecovered() {
-    clearConnectivityRetry();
-    setReconnecting(false);
-  }
-  // An HTTP response (4xx/5xx, shape mismatch, mid-stream error) proves the
-  // server WAS reachable — drop any calm-reconnect state so the genuine error
-  // is shown, never masked behind the spinner. HTTP errors don't reschedule a
-  // retry, so without this the spinner could latch with the error invisible.
-  function reportServerReachableError(title: string) {
-    noteConnectivityRecovered();
-    setError(title);
-  }
-  function reportConnectivityFailure() {
-    clearConnectivityRetry();
-    // Read the live store snapshot (always current) rather than an effect-synced
-    // ref, so an in-flight fetch failing before a render commits still sees the
-    // relaunch and stays calm.
-    if (getRelaunchInFlightSnapshot()) {
-      setError(null);
-      setReconnecting(true);
-      connectivityRetryTimerRef.current = setTimeout(() => {
-        connectivityRetryTimerRef.current = null;
-        refreshDocsScheduleRef.current?.();
-      }, CONNECTIVITY_RECONNECT_RETRY_MS);
-      return;
-    }
-    setReconnecting(false);
-    setError(t`Could not reach server`);
-  }
-
-  // Re-attempt the listing whenever a relaunch starts or aborts: starting → the
-  // failing fetch flips the banner from red to the calm "Relaunching…" copy;
-  // aborting → a successful fetch self-heals the panel without waiting for the
-  // next focus / CC1 refresh. Skips the initial render.
-  const isFirstRelaunchEffectRunRef = useRef(true);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: relaunchInFlight is a transition trigger, not a read — the body calls the hoisted scheduler ref only. Sibling pattern at the visibility-toggle flip effect below.
-  useEffect(() => {
-    if (isFirstRelaunchEffectRunRef.current) {
-      isFirstRelaunchEffectRunRef.current = false;
-      return;
-    }
-    refreshDocsScheduleRef.current?.();
-  }, [relaunchInFlight]);
-
-  // Drop a pending reconnect retry on unmount so a late timer can't touch state
-  // after teardown. `clearConnectivityRetry` only reads a stable ref; it is
-  // intentionally NOT a dep — listing it would re-run this effect (and fire its
-  // cleanup) every render, cancelling live retries.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: mount/unmount-only; see comment above.
-  useEffect(() => clearConnectivityRetry, []);
+  const {
+    reconnecting,
+    relaunchInFlight,
+    noteConnectivityRecovered,
+    reportServerReachableError,
+    reportConnectivityFailure,
+  } = useFileTreeConnectivity({
+    refreshDocsScheduleRef,
+    setError,
+    unreachableMessage: t`Could not reach server`,
+  });
 
   useFileTreeDragAndDrop({
     fileTreeHostRef,
