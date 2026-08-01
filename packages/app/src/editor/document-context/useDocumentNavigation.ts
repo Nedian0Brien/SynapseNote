@@ -1,4 +1,5 @@
-import { useDocumentContext } from '../DocumentContext';
+import { use } from 'react';
+import { DocumentContext } from './context';
 import type { DocumentContextValue } from './document-context-types';
 
 export type DocumentNavigation = Pick<
@@ -27,7 +28,8 @@ export type DocumentNavigation = Pick<
  * state exposed by the root context.
  */
 export function useDocumentNavigation(): DocumentNavigation {
-  const context = useDocumentContext();
+  const context = use(DocumentContext);
+  if (!context) throw new Error('useDocumentNavigation must be used within <DocumentProvider />');
   return {
     activeTarget: context.activeTarget,
     activeTabId: context.activeTabId,

@@ -1,4 +1,5 @@
-import { useDocumentContext } from '../DocumentContext';
+import { use } from 'react';
+import { DocumentContext } from './context';
 import type { DocumentContextValue } from './document-context-types';
 
 export type DocumentTabs = Pick<
@@ -29,7 +30,8 @@ export type DocumentTabs = Pick<
 
 /** Tab-strip contract kept separate from document navigation and providers. */
 export function useDocumentTabs(): DocumentTabs {
-  const context = useDocumentContext();
+  const context = use(DocumentContext);
+  if (!context) throw new Error('useDocumentTabs must be used within <DocumentProvider />');
   return {
     activeTabId: context.activeTabId,
     openTabs: context.openTabs,

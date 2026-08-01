@@ -1,4 +1,5 @@
-import { useDocumentContext } from '../DocumentContext';
+import { use } from 'react';
+import { DocumentContext } from './context';
 import type { DocumentContextValue } from './document-context-types';
 
 export type DocumentCollaboration = Pick<
@@ -28,7 +29,9 @@ export type DocumentCollaboration = Pick<
 
 /** Provider/pool contract. UI surfaces should not own or recreate providers. */
 export function useDocumentCollaboration(): DocumentCollaboration {
-  const context = useDocumentContext();
+  const context = use(DocumentContext);
+  if (!context)
+    throw new Error('useDocumentCollaboration must be used within <DocumentProvider />');
   return {
     principal: context.principal,
     activeProvider: context.activeProvider,
