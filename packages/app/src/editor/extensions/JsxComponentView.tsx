@@ -38,17 +38,14 @@ import { Trans, useLingui } from '@lingui/react/macro';
 import {
   incrementJsxKeyboardDeleteFailed,
   incrementJsxMoveFailed,
-  incrementJsxPopoverCloseRestoreFailed,
   incrementJsxRenderFailure,
   incrementJsxStuckCopyFailed,
   incrementJsxStuckDeleteFailed,
 } from '@nedian0brien/synapsenote-core';
 import type { NodeViewProps } from '@tiptap/core';
-import { TextSelection } from '@tiptap/pm/state';
 import { NodeViewContent, NodeViewWrapper } from '@tiptap/react';
 import { ArrowDown, ArrowUp, ExternalLink, Pencil, Settings2, Trash2 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useEffect, useRef, useState } from 'react';
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 import { Button } from '@/components/ui/button';
 import { hashFromDocName } from '@/lib/doc-hash';
@@ -65,31 +62,21 @@ import { JsxComponentHostProvider } from '../components/jsx-host-context.tsx';
 import { PropPanel } from '../components/PropPanel.tsx';
 import { getEditorDocName } from '../extensions/doc-context.ts';
 import { normalizeDocRelativeMediaRenderProps } from '../extensions/media-render-props.ts';
-import { markUserTyping } from '../observers.ts';
 import { getDescriptor } from '../registry/index.ts';
 import {
   resolveDescriptorPlaceholder,
   shouldRenderPlaceholder,
 } from '../registry/resolve-descriptor-placeholder.ts';
-import {
-  consumeAutoOpen,
-  createChildNode,
-  focusInsertedComponent,
-} from '../slash-command/component-items.tsx';
+import { createChildNode, focusInsertedComponent } from '../slash-command/component-items.tsx';
 import { ALIGNABLE_DESCRIPTOR_NAMES } from '../utils/alignable-descriptors.ts';
 import { formatContainerAriaLabel } from '../utils/editor-strings.ts';
 import { reconstructSource } from '../utils/reconstruct-source.ts';
-import {
-  deriveJsxAttributePolicy,
-  updateElementJsxProps,
-} from './jsx-component-view/jsx-component-view-attribute-policy.ts';
-import { shouldHandleJsxNodeViewKey } from './jsx-component-view/jsx-component-view-interaction-policy.ts';
+import { deriveJsxAttributePolicy } from './jsx-component-view/jsx-component-view-attribute-policy.ts';
 import {
   extractPrimitiveProps,
-  getElementJsxAttrs,
-  isJsxInteractiveTarget,
   stableHash,
 } from './jsx-component-view/jsx-component-view-utils.ts';
+import { useJsxComponentViewInteractions } from './jsx-component-view/use-jsx-component-view-interactions.ts';
 import { useJsxComponentViewLifecycle } from './jsx-component-view/use-jsx-component-view-lifecycle.ts';
 
 // Compatibility exports keep existing extension tests and downstream local
@@ -188,8 +175,6 @@ function ComponentErrorBoundary(props: ComponentErrorBoundaryProps) {
 export function JsxComponentView({ node, editor, extension, getPos, selected }: NodeViewProps) {
   const { t } = useLingui();
   const descriptor = getDescriptor(node.attrs.componentName as string);
-  const [popoverOpen, setPopoverOpen] = useState(false);
-  const wasSelected = useRef(false);
   const lifecycle = useJsxComponentViewLifecycle({ descriptor, editor, getPos, node, selected });
   const {
     canMoveDown,
@@ -276,19 +261,31 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
           descriptor.name === 'MathFence'
         ? { propName: 'formula', language: 'latex' }
         : null;
-  const [editModalOpen, setEditModalOpen] = useState(false);
-
-  // Auto-open popover when: (1) component becomes selected AND (2) the
-  // pendingAutoOpen flag is set. Uses controlled state so it works across
-  // React re-renders (defaultOpen only reads on first mount). `wasSelected`
-  // ref prevents double-fire under Strict Mode; explicit deps ensure the
-  // effect only runs when one of the watched values actually changes.
-  useEffect(() => {
-    if (selected && !wasSelected.current && hasEditableProps && consumeAutoOpen(pos)) {
-      setPopoverOpen(true);
-    }
-    wasSelected.current = selected;
-  }, [selected, hasEditableProps, pos]);
+  const {
+    editModalOpen,
+    handleBodyClick,
+    handleCloseAutoFocus,
+    handleKeyDown,
+    handleModalSave,
+    handlePopoverOpenChange,
+    handlePropChange,
+    openPanel,
+    popoverOpen,
+    setEditModalOpen,
+    setPopoverOpen,
+  } = useJsxComponentViewInteractions({
+    descriptor,
+    editor,
+    getPos,
+    hasEditableProps,
+    isInnermostSelected,
+    isSelfClosingLeaf,
+    node,
+    pos,
+    selectOnBodyClick,
+    selected,
+    showPlaceholder,
+  });
 
   const primitiveProps = extractPrimitiveProps(node.attrs, descriptor.reactNodePropNames);
   // Compat descriptors render through their canonical's React component via
@@ -457,47 +454,14 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
   // Placeholder-mode click is owned by `<DescriptorPlaceholder onClick>` —
   // skip the wrapper-level handler so setNodeSelection does not double-fire
   // alongside `openPanel`'s own selection + popover-open.
-  const handleBodyClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (showPlaceholder) return;
-    if (!isSelfClosingLeaf || !selectOnBodyClick) return;
-    const target = e.target as HTMLElement;
-    // React events bubble through the React tree including portals, so
-    // clicks on inputs inside Radix Popover/Dialog content reach this
-    // handler even though those nodes live at document.body. Filter to
-    // clicks that are actually inside this wrapper's DOM — otherwise the
-    // `setNodeSelection().focus()` below steals focus from the popover's
-    // inputs and the user can't type into the PropPanel.
-    if (!e.currentTarget.contains(target)) return;
-    if (target.closest('.jsx-component-chrome')) return;
-    if (target.closest('.jsx-add-child-pill, .jsx-empty-child-placeholder')) return;
-    // Rendered leaf components can contain native controls or composite
-    // widgets. Let those controls own their click/focus behavior. This is a
-    // defense-in-depth guard for descriptors that have not opted into the
-    // explicit interactive mode; interactive descriptors also set
-    // `selectOnBodyClick: false` above.
-    if (isJsxInteractiveTarget(target)) {
-      return;
-    }
-    if (typeof pos !== 'number') return;
-    const curNode = editor.state.doc.nodeAt(pos);
-    if (!curNode) return;
-    const nodeEnd = pos + curNode.nodeSize;
-    const selFrom = editor.state.selection.from;
-    if (selFrom < pos || selFrom >= nodeEnd) return;
-    editor.chain().focus().setNodeSelection(pos).run();
-  };
+  // Body, keyboard, popover, and prop-edit event ownership lives in
+  // `useJsxComponentViewInteractions`; this render owner only wires them.
 
   // Click-on-placeholder: NodeSelect this block (so chrome / halo reflect
   // it) and open the controlled popover. No rAF-defer needed (unlike the
   // slash-insert auto-open path) — the click is user-event-time and the
   // NodeView is already mounted, so `setNodeSelection` + `setPopoverOpen` can
   // dispatch synchronously.
-  const openPanel = () => {
-    const p = typeof getPos === 'function' ? getPos() : undefined;
-    if (typeof p !== 'number') return;
-    editor.chain().focus().setNodeSelection(p).run();
-    setPopoverOpen(true);
-  };
 
   // ARIA: role="group" for typed-children containers, with a descriptive
   // aria-label summarizing content. Screen readers announce on focus/select.
@@ -525,85 +489,6 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
   //    container components with editable children, the default
   //    NodeSelection → Enter PM behavior (enter the content hole) is
   //    preserved by only handling the key when editable props exist.
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    const target = e.target as HTMLElement;
-    const keyAction = shouldHandleJsxNodeViewKey({
-      hasEditableProps,
-      inTextInput: target.matches('input, textarea'),
-      isInnermostSelected,
-      isSelected: selected,
-      key: e.key,
-    });
-
-    if (keyAction === 'delete') {
-      // Strict NodeSelection-on-this-wrapper. TipTap's raw `selected` prop
-      // fires for range-encompass too (any `from <= pos && to >= pos +
-      // nodeSize`), so gating on raw `selected` would let a multi-block
-      // range-delete collapse to "delete just this wrapper" if PM's keymap
-      // didn't intercept first. `isInnermostSelected` is the strict
-      // NodeSelection-on-this-wrapper discriminator used everywhere else
-      // for the data-selected attr, chrome visibility, and tabindex.
-      // React events bubble through the React tree including portals, so
-      // keydowns inside Radix `<PopoverContent>` reach this handler even
-      // though its DOM lives at document.body. Filter to events whose DOM
-      // target is actually inside this wrapper's subtree — otherwise
-      // pressing Backspace on a popover input would delete the block out
-      // from under the user. Mirrors `handleBodyClick`'s containment guard.
-      if (!e.currentTarget.contains(target)) return;
-      // The text-edit guard is narrowed to native form controls. Composite
-      // wrappers (Accordion / Cards / …) carry contentEditable=true on
-      // their content holes for PM's prose editing, so an `isContentEditable`
-      // check would over-match and let users hit Backspace on focused chrome
-      // buttons without ever reaching the wrapper-delete path. The
-      // `isInnermostSelected` gate above already filters out the user-in-body
-      // case (TextSelection-inside → `selected=false` → early-return), so
-      // by the time we reach here, the remaining text-edit surface is a
-      // <input>/<textarea> embedded in the rendered body (chrome inputs,
-      // future descriptor-defined text fields).
-      const p = typeof getPos === 'function' ? getPos() : undefined;
-      if (typeof p !== 'number') return;
-      e.preventDefault();
-      // Defensive: a remote peer edit between the gate check and the chain
-      // dispatch can shift `p` so the chain throws `RangeError`. `chain().run()`
-      // also returns `false` on dispatch failure without throwing. Either
-      // outcome means the user's keystroke was consumed but produced nothing
-      // visible. Mirror the stuck-state `deleteNode` telemetry shape so ops
-      // can aggregate the failure rate against a consistent denominator.
-      try {
-        const dispatched = editor.chain().focus().setNodeSelection(p).deleteSelection().run();
-        if (!dispatched) {
-          incrementJsxKeyboardDeleteFailed(descriptor.name);
-          console.warn(
-            JSON.stringify({
-              event: 'jsx-component-keyboard-delete-failed',
-              component: descriptor.name,
-              rawComponentName: String(node.attrs.componentName ?? '').slice(0, 200),
-              reason: 'chain-dispatch-returned-false',
-            }),
-          );
-        }
-      } catch (err) {
-        if (!(err instanceof RangeError)) throw err;
-        incrementJsxKeyboardDeleteFailed(descriptor.name);
-        console.warn(
-          JSON.stringify({
-            event: 'jsx-component-keyboard-delete-failed',
-            component: descriptor.name,
-            rawComponentName: String(node.attrs.componentName ?? '').slice(0, 200),
-            reason: err.message.slice(0, 500),
-          }),
-        );
-      }
-      return;
-    }
-
-    if (keyAction !== 'popover') return;
-    // Allow keystrokes inside the chrome / child inputs to bubble normally.
-    if (target.closest('.jsx-component-chrome')) return;
-    if (target.closest('input, textarea, select, button')) return;
-    e.preventDefault();
-    setPopoverOpen(true);
-  };
 
   // PropPanel close-handler. Two paths share the same "selection still inside
   // the node" guard (respect user intent when a click-outside has moved PM's
@@ -623,47 +508,8 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
   // Defer to rAF so PM's click handler settles first. No `.focus()` call —
   // DOM focus is owned by Radix's `onCloseAutoFocus` on `<PopoverContent>`
   // (returns focus to the trigger button).
-  const handleOpenChange = (open: boolean) => {
-    setPopoverOpen(open);
-    if (open) return;
-    requestAnimationFrame(() => {
-      const p = typeof getPos === 'function' ? getPos() : undefined;
-      if (typeof p !== 'number') return;
-      // The dispatch sites below can throw `RangeError` if a concurrent
-      // CRDT edit shifts positions between the guard checks above and the
-      // actual dispatch. Mirrors every sibling handler in this file
-      // (handleKeyDown, deleteNode, the auto-convert effect) — narrow on
-      // RangeError, log structured telemetry, re-raise anything else.
-      try {
-        const curNode = editor.state.doc.nodeAt(p);
-        if (!curNode) return;
-        const nodeEnd = p + curNode.nodeSize;
-        const selFrom = editor.state.selection.from;
-        if (selFrom < p || selFrom >= nodeEnd) return;
-        if (isSelfClosingLeaf) {
-          const $end = editor.state.doc.resolve(Math.min(nodeEnd, editor.state.doc.content.size));
-          const nextSel = TextSelection.near($end, 1);
-          editor.view.dispatch(editor.state.tr.setSelection(nextSel).scrollIntoView());
-        } else {
-          editor.chain().setNodeSelection(p).run();
-        }
-      } catch (err) {
-        if (!(err instanceof RangeError)) throw err;
-        incrementJsxPopoverCloseRestoreFailed(descriptor.name);
-        console.warn(
-          JSON.stringify({
-            event: 'jsx-component-popover-close-restore-failed',
-            component: descriptor.name,
-            rawComponentName: String(node.attrs.componentName ?? '').slice(0, 200),
-            reason: err.message.slice(0, 500),
-          }),
-        );
-      }
-    });
-  };
-
   return (
-    <Popover open={popoverOpen} onOpenChange={handleOpenChange}>
+    <Popover open={popoverOpen} onOpenChange={handlePopoverOpenChange}>
       <NodeViewWrapper
         className="jsx-component-wrapper my-2"
         // Stable test-selector contract, decoupled from `className` (which can
@@ -1161,40 +1007,7 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
               </div>
             );
           }}
-          onSave={(value) => {
-            // Mirror the canonical sibling-write pattern in
-            // PropPanel.onChange and the alignment click handler: read
-            // `pos` fresh via `getPos()` at dispatch time, re-read the
-            // current node via `nodeAt()` so concurrent CRDT edits
-            // (remote peers, agent writes) aren't clobbered by a stale
-            // render-closure attr spread, and call `markUserTyping()`
-            // after dispatch so Observer-B classification + debounced
-            // persistence behave identically to the other write paths.
-            // The modal stays open for seconds-to-minutes during which
-            // remote edits can land — this pattern is load-bearing.
-            const livePos = typeof getPos === 'function' ? getPos() : undefined;
-            if (typeof livePos !== 'number') return;
-            const curNode = editor.state.doc.nodeAt(livePos);
-            if (!curNode) return;
-            // Defense at the write boundary — see the PropPanel site
-            // for full rationale. `editableSource` is set only
-            // for element-kind descriptors today, so this guard is
-            // structurally unreachable; a future broadening of the
-            // table would otherwise stamp element-shaped attrs onto an
-            // expression node and `markdown/index.ts`'s jsxComponent
-            // serializer would silently emit `sourceRaw` verbatim,
-            // dropping the modal edit.
-            const elementAttrs = getElementJsxAttrs(curNode.attrs);
-            if (!elementAttrs) return;
-            try {
-              const nextAttrs = updateElementJsxProps(elementAttrs, editableSource.propName, value);
-              editor.view.dispatch(editor.state.tr.setNodeMarkup(livePos, null, nextAttrs));
-              markUserTyping();
-            } catch (err) {
-              if (!(err instanceof RangeError)) throw err;
-              console.warn('[JsxComponentView] edit-save failed — position race', err);
-            }
-          }}
+          onSave={(value) => handleModalSave(editableSource.propName, value)}
         />
       ) : null}
       {/* z-60 overrides the shadcn popover base (z-50) so the PropPanel
@@ -1229,14 +1042,7 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
           // rAF-deferred caret-advance in handleOpenChange and any other
           // racing focus calls. preventDefault on the unmount-auto-focus
           // event tells FocusScope to skip its own focus() restore.
-          onCloseAutoFocus={
-            isSelfClosingLeaf
-              ? (e) => {
-                  e.preventDefault();
-                  editor.view.focus();
-                }
-              : undefined
-          }
+          onCloseAutoFocus={handleCloseAutoFocus}
         >
           <div className="text-xs font-medium text-muted-foreground mb-2">
             <Trans>{propPanelDescriptorLabel} Properties</Trans>
@@ -1245,40 +1051,7 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
             descriptor={descriptor}
             values={primitiveProps}
             onDismiss={() => setPopoverOpen(false)}
-            onChange={(propName, value) => {
-              // Update the node at its live position — NOT via
-              // `editor.commands.updateAttributes`, which targets the
-              // *current selection*. When the PropPanel popover has an input
-              // focused, the PM selection has already moved off this Card
-              // (the editor loses focus to the portal input), so
-              // selection-based updateAttributes silently no-ops and every
-              // keystroke disappears. `setNodeMarkup(pos, ...)` targets the
-              // node at its position regardless of where the selection is now.
-              const p = typeof getPos === 'function' ? getPos() : undefined;
-              if (typeof p !== 'number') return;
-              const curNode = editor.state.doc.nodeAt(p);
-              if (!curNode) return;
-              // Defense at the write boundary: PropPanel writes only target
-              // `kind: 'element'` nodes. Today PropPanel never opens for
-              // `kind: 'expression'` nodes (their componentName is empty,
-              // which falls through to the wildcard descriptor with empty
-              // `props`, so `hasEditableProps` is false). If a future
-              // refactor changes that gate (e.g., custom PropPanel for
-              // expression blocks), this spread would otherwise stamp
-              // element-shaped attrs onto an expression node and the
-              // serializer at `markdown/index.ts:jsxComponent` would silently
-              // emit `sourceRaw` verbatim, dropping every PropPanel edit.
-              const elementAttrs = getElementJsxAttrs(curNode.attrs);
-              if (!elementAttrs) return;
-              editor.view.dispatch(
-                editor.state.tr.setNodeMarkup(
-                  p,
-                  null,
-                  updateElementJsxProps(elementAttrs, propName, value),
-                ),
-              );
-              markUserTyping();
-            }}
+            onChange={handlePropChange}
           />
           {/* Explicit confirmation affordance. PropPanel auto-saves on
               every keystroke / select change (`onChange` above runs the
