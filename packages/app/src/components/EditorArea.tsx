@@ -27,7 +27,6 @@ import { MountStalledAffordance } from '@/components/MountStalledAffordance';
 import { PropertyProvider, useProperties } from '@/components/PropertyContext';
 import { ShareReceiveMissPanel } from '@/components/ShareReceiveMissPanel';
 import { SkillFileViewer } from '@/components/SkillFileViewer';
-import { SettingsDialogShell } from '@/components/settings/SettingsDialogShell';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { useDocumentTransition } from '@/editor/DocumentContext';
 import { useDocumentCollaboration } from '@/editor/document-context/useDocumentCollaboration';
@@ -52,7 +51,6 @@ import { RIGHT_COLLAPSE_THRESHOLD, resolvePartition } from '@/lib/sidebar-partit
 import { applyToggle, readPins, resolveEffectiveState } from '@/lib/sidebar-pin-store';
 import type { TerminalDockPosition } from '@/lib/terminal-dock-store';
 import { MIN_TERMINAL_WIDTH, writeTerminalWidth } from '@/lib/terminal-width-store';
-import { useSettingsRoute } from '@/lib/use-settings-route';
 import { cn } from '@/lib/utils';
 import { useSyncStatus } from '@/presence/use-sync-status';
 import { BottomComposer } from './BottomComposer';
@@ -61,6 +59,7 @@ import { EditorActivityPool } from './EditorActivityPool';
 import { EditorFooter } from './EditorFooter';
 import type { EditorMode } from './EditorPane';
 import { EditorToolbar } from './EditorToolbar';
+import { SettingsDialogPortal } from './editor-area/SettingsDialogPortal';
 import { shouldPaintOverlay } from './editor-area-overlay';
 import { computeStickyRepinLayout } from './editor-area-sticky-repin';
 import { TerminalDock } from './TerminalDock';
@@ -163,18 +162,6 @@ export function EditorArea(props: EditorAreaProps) {
  * The user-scope ConfigBinding stays warm for the session via
  * ConfigProvider, so reopens are flash-free end-to-end.
  */
-function SettingsDialogPortal() {
-  const settingsRoute = useSettingsRoute();
-  return (
-    <SettingsDialogShell
-      open={settingsRoute.open}
-      onOpenChange={(next) => {
-        if (!next) settingsRoute.close();
-      }}
-    />
-  );
-}
-
 function EditorAreaInner({
   editorMode,
   onModeChange,
