@@ -22,6 +22,8 @@ import { sharedExtensions } from './extensions/shared.ts';
 import { isSystemDoc } from './is-system-doc';
 import { getMountId } from './mount-id-registry';
 import { setupObservers } from './observers';
+import { disposeEntryResources } from './provider-pool-entry-disposal';
+import { beginEntryTeardown } from './provider-pool-entry-state';
 import { BridgeSetupError, invalidateSyncPromise, rejectSyncPromise } from './sync-promise';
 
 /**
@@ -2748,91 +2750,15 @@ export class ProviderPool {
   }
 
   private destroyEntry(entry: PoolEntry): void {
-    // Idempotent: a second destroyEntry call on a torn-down entry no-ops.
-    if (entry.kind === 'tearing-down') return;
-
-    // Capture variant-specific Active fields BEFORE the kind flip so we
-    // can run the cleanup work after we've put the entry into a state
-    // where event-handler closures will bail on `kind !== 'active'`.
-    const observerCleanup = entry.observerCleanup;
-    const observerFireCounterCleanup = entry.observerFireCounterCleanup;
-    const persistence = entry.persistence;
-    const pendingRecycleTimer = entry.pendingRecycleTimer;
-    const docName = entry.docName;
-
-    // Flip kind to 'tearing-down' atomically + null variant-specific
-    // fields. The cast through `unknown` is unavoidable because TS's
-    // discriminated unions don't model in-place kind mutations — both
-    // sides of the union are structurally compatible at the JS level.
-    const torn = entry as unknown as TearingDownPoolEntry;
-    torn.kind = 'tearing-down';
-    torn.persistence = null;
-    torn.observerCleanup = null;
-    torn.observerFireCounterCleanup = null;
-    torn.pendingRecycleTimer = null;
-    torn.serverDrivenCloseReauthInFlight = false;
-
-    if (pendingRecycleTimer) clearTimeout(pendingRecycleTimer);
-
-    // Detach the syncPromise cache entry BEFORE destroy() fires the provider's
-    // `close` event — otherwise the sync-promise listener would reject the
-    // already-consumed promise with PreSyncDisconnectError on pool-triggered
-    // teardown. Natural (network-triggered) close events still reject as
-    // expected because this path only runs inside pool destroy/recycle/evict.
-    invalidateSyncPromise(docName);
-    // Fire the eviction event so the editor cache (and any future
-    // subscriber) can clean up entries bound to `provider.document` via
-    // Collaboration.configure / y-codemirror.next BEFORE the provider is
-    // destroyed. Without this ordering, cached `Editor`/`EditorView`
-    // instances retain refs to an orphaned Y.Doc. The pool stays free
-    // of editor-cache knowledge; the cache subscribes via
-    // `pool.onEvict(...)` and runs whatever teardown it owns.
-    this.fireEvict(docName);
-    // Observer cleanup (observers reference Y.Doc state). Captured pre-flip
-    // because the post-flip variant has `observerCleanup: null`. Wrapped in
-    // try/catch matching fireEvict's pattern: a buggy observer cleanup must
-    // not abort the rest of destroyEntry — in particular it must not stop
-    // closeAndClearPersistence's downstream clearData() from running, which
-    // would re-open the content-duplication bug class the close-before-await
-    // reorder is designed to prevent.
-    try {
-      observerCleanup?.();
-    } catch (err) {
-      console.warn(`[ProviderPool] observer cleanup threw for ${docName}:`, err);
-    }
-    // Tear down DEV-only observer-fire counter for this docName before the
-    // Y.Doc is destroyed. The Y.Doc.off call inside the cleanup must run
-    // while the doc is alive; the counter entry is then deleted from the
-    // exposed map so a fresh open() starts from a clean slate. Captured
-    // pre-flip — same rationale as observerCleanup. Same try/catch discipline.
-    try {
-      observerFireCounterCleanup?.();
-    } catch (err) {
-      console.warn(`[ProviderPool] observer-fire-counter cleanup threw for ${docName}:`, err);
-    }
-    clearObserverFireCounter(docName);
-
-    // Tear down client-side persistence BEFORE the provider. The synchronous
-    // part of y-indexeddb's `destroy()` runs `doc.off('update', _storeUpdate)`
-    // and `doc.off('destroy', this.destroy)` immediately, so by the time
-    // `provider.destroy()` runs (which calls `document.destroy()` internally)
-    // the persistence's listeners are gone — no recursive re-entry. The
-    // returned promise only covers the IDB connection close, which is safe
-    // to run asynchronously against a separate IDB handle. We intentionally
-    // do not `await` here — keeping `destroyEntry` synchronous preserves all
-    // call-site shapes.
-    if (persistence !== null) {
-      const pendingPersistenceDestroy = persistence.destroy();
-      pendingPersistenceDestroy.catch((err) => {
-        console.warn(`[ProviderPool] persistence destroy failed for ${docName}:`, err);
-      });
-    }
-
-    try {
-      torn.provider.destroy(); // destroy() disconnects + removes all listeners + awareness cleanup
-    } catch (err) {
-      console.warn(`[ProviderPool] Provider destroy failed for ${docName}:`, err);
-    }
+    const resources = beginEntryTeardown(entry);
+    if (resources === null) return;
+    disposeEntryResources({
+      ...resources,
+      docName: entry.docName,
+      provider: entry.provider,
+      fireEvict: (docName) => this.fireEvict(docName),
+      clearObserverFireCounter,
+    });
   }
 
   private recycleDisconnectedEntry(docName: string): void {
