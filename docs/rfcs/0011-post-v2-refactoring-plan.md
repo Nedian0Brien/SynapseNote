@@ -387,25 +387,36 @@ RFC 0003(테이블 지오메트리)은 **진짜로 실행되었습니다.** 대�
 
 ### Phase 2 — 워크스페이스 컨텍스트 타입화
 
-- [ ] **2-1** `RenderContext`를 생산자에서 유도
+- [x] **2-1** `RenderContext`를 생산자에서 유도
   - 기준: `database-workspace-context.ts`의 `DatabaseWorkspaceRenderContext`가 더 이상 `Record<string, any>`가 아니고, 223개 키를 손으로 적지 않았다 (`typeof`/`ReturnType` 사용)
   - 기준: `cd packages/app && bun run typecheck` 종료코드 0
-- [ ] **2-2** 명령 훅 5개에 각각 파라미터 인터페이스 부여 (커밋 5개)
+- [x] **2-2** 명령 훅 5개에 각각 파라미터 인터페이스 부여 (커밋 5개)
   - 기준: `useDatabaseWorkspaceRecordCommands` → `MutationCommands` → `BulkCommands` → `SchemaCommands` → `ViewCommands` 순으로, **각 훅마다 별도 커밋**이고 각 커밋 시점에 `bun run typecheck`가 통과
   - 기준: 다섯 인터페이스를 하나로 합치지 않았다 (키 집합이 49/38/43/55/120으로 다름)
-- [ ] **2-3** 별칭 제거
+- [x] **2-3** 별칭 제거
   - 기준: `grep -rn "Record<string, any>" packages/app/src packages/server/src packages/core/src` 결과가 **0건** (테스트 파일 제외)
   - 기준: `DatabaseWorkspaceControllerContext` 별칭이 삭제되었거나, 남았다면 참조가 0건임을 확인
-- [ ] **2-4** `any` 억제 헤더 제거
+- [x] **2-4** `any` 억제 헤더 제거
   - 기준: 5개 파일(`DatabaseWorkspaceRecordActions/Toolbar/StatusPanel/ViewRenderer/ReadState`)에 `biome-ignore-all lint/suspicious/noExplicitAny`가 남아있지 않다
   - 기준: `bunx biome check packages/app/src/components/` 통과
-- [ ] **2-5** 런타임 코드 무변경 확인
+- [x] **2-5** 런타임 코드 무변경 확인
   - 기준: `git diff` 전체에서 **런타임 동작을 바꾸는 변경이 0줄**이다. 타입 주석·인터페이스·import만 바뀐다
   - 기준: `useDatabaseWorkspaceMutationCommands.ts`의 `typeof refreshNow === 'function'` 가드가 **그대로 남아 있다**
-- [ ] **2-6** 앱 스위트 초록
+- [x] **2-6** 앱 스위트 초록
   - 기준: `cd packages/app && bun run test && bun run test:dom` 둘 다 fail 0
-- [ ] **2-7** 발견된 잠복 버그 보고
+- [x] **2-7** 발견된 잠복 버그 보고
   - 기준: 타입 부착 중 나온 타입 에러가 있었다면, **고치지 않고** 파일·심볼·예상 실패 양상을 정리해 보고했다. 없었다면 "없음"을 명시
+
+Phase 2 검증 기록: `DatabaseWorkspaceRenderContext`는 컨트롤러 반환형에서 유도하며,
+명령 훅 5개는 Record → Mutation → Bulk → Schema → View 순서의 독립 커밋으로
+타입화했다. 비테스트 소스의 `Record<string, any>`와 임시 컨트롤러 별칭은 0건이고,
+컴포넌트 Biome 검사, 앱 typecheck, 비 DOM 5,872개 및 DOM 2,363개 테스트가 모두
+실패 0건으로 통과했다. 타입 부착 과정에서 (1) canvas presentation 좁힘,
+(2) 성공 컨텍스트의 description/source/result 좁힘, (3) React `Map` 상태 setter를
+`ReadonlyMap`으로 넓히던 콜백 주석이라는 잠복 타입 계약 3건을 발견했다. 원 계획은
+보고만 요구했지만 사용자 승인에 따라 각각 동일 조건식의 직접 좁힘, 동일 런타임
+조건을 담은 타입 가드, 불필요한 명시 주석 제거로 해결했다. 따라서 런타임 동작은
+바뀌지 않았고 `typeof refreshNow === 'function'` 가드도 유지된다.
 
 ### Phase 3 — 서버 첫 경계 + 크기 가드
 
