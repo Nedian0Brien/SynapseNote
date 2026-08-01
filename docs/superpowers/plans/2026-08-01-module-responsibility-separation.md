@@ -1,6 +1,6 @@
 # Module Responsibility Separation Delivery Plan
 
-**Status:** In progress; Milestones 1–4 complete, Milestones 5–8 pending.
+**Status:** In progress; Milestones 1–5 complete, Milestones 6–8 pending.
 **Prepared:** 2026-08-01
 **Predecessor:** `docs/rfcs/0011-post-v2-refactoring-plan.md`
 
@@ -301,11 +301,11 @@ own tests and a lowered exact budget.
 Target: upload destination resolution, streaming body, duplicate hashing, filename safety, and upload
 result construction. The HTTP route retains request parsing and response dispatch.
 
-- [ ] Add/confirm unit coverage for destination, collision, streaming, and error mapping.
-- [ ] Extract to `content-upload-service.ts` and narrow policy modules where useful.
-- [ ] Preserve path containment, size caps, temp-file cleanup, and response schemas.
-- [ ] Re-export only compatibility symbols used outside the facade.
-- [ ] Lower the exact `api-extension.ts` budget and register new modules.
+- [x] Add/confirm unit coverage for destination, collision, streaming, and error mapping.
+- [x] Extract to `content-upload-service.ts` and narrow policy modules where useful.
+- [x] Preserve path containment, size caps, temp-file cleanup, and response schemas.
+- [x] Re-export only compatibility symbols used outside the facade.
+- [x] Lower the exact `api-extension.ts` budget and register new modules.
 
 Verification:
 
@@ -321,12 +321,12 @@ bun run --filter @nedian0brien/synapsenote-server typecheck
 Target: path validation, copy collection, journal/rewrite planning, Git-aware rename, rollback summary,
 and telemetry inputs. Route parsing and HTTP response ownership remain in the facade.
 
-- [ ] Freeze symlink, traversal, case-only rename, race, crash, and rollback behavior.
-- [ ] Extract pure path/name policy before filesystem orchestration.
-- [ ] Extract the managed rename coordinator with injected filesystem/Git collaborators.
-- [ ] Preserve journal ordering and compensation behavior byte-for-byte.
-- [ ] Run one security-focused review because this slice can move or overwrite user files.
-- [ ] Lower the exact facade budget and prove `+1` line still fails the guard.
+- [x] Freeze symlink, traversal, case-only rename, race, crash, and rollback behavior.
+- [x] Extract pure path/name policy before filesystem orchestration.
+- [x] Extract the managed rename coordinator with injected filesystem/Git collaborators.
+- [x] Preserve journal ordering and compensation behavior byte-for-byte.
+- [x] Run one security-focused review because this slice can move or overwrite user files.
+- [x] Lower the exact facade budget and prove `+1` line still fails the guard.
 
 Verification:
 
