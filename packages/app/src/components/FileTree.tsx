@@ -1,19 +1,15 @@
 import { plural } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react/macro';
-import { WorkspaceSuccessSchema } from '@nedian0brien/synapsenote-core';
 import { useTheme } from 'next-themes';
-import { startTransition, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { folderPathToTreeDirectoryPath } from '@/components/file-tree-adapter';
 import { coerceTrashFailureReason } from '@/components/TrashFailureModal';
-import { asDirectoryHandle } from '@/components/use-selection-mirror';
 import { useDocumentCollaboration } from '@/editor/document-context/useDocumentCollaboration';
 import { useDocumentTabs } from '@/editor/document-context/useDocumentTabs';
 import { assetTabId, docTabId, folderTabId } from '@/editor/editor-tabs';
 import { useConflicts } from '@/hooks/use-conflicts';
 import { useConfigContext } from '@/lib/config-provider';
 import { emitDocumentsChanged } from '@/lib/documents-events';
-import { parseSuccessOrWarn } from '@/lib/parse-server-response';
 import { FileTreeDialogs } from './file-tree/FileTreeDialogs';
 import { FileTreeSurface } from './file-tree/FileTreeSurface';
 import type { FileTreeProps } from './file-tree/file-tree-types';
@@ -22,6 +18,7 @@ import { useFileTreeConnectivity } from './file-tree/useFileTreeConnectivity';
 import { useFileTreeCreation } from './file-tree/useFileTreeCreation';
 import { useFileTreeDocumentState } from './file-tree/useFileTreeDocumentState';
 import { useFileTreeDragAndDrop } from './file-tree/useFileTreeDragAndDrop';
+import { useFileTreeFolderActions } from './file-tree/useFileTreeFolderActions';
 import { useFileTreeImperativeHandle } from './file-tree/useFileTreeImperativeHandle';
 import { useFileTreeInteractionState } from './file-tree/useFileTreeInteractionState';
 import { useFileTreeKeyboard } from './file-tree/useFileTreeKeyboard';
@@ -29,22 +26,18 @@ import { useFileTreeModel } from './file-tree/useFileTreeModel';
 import { createDuplicateFileTreeMutation } from './file-tree/useFileTreeMutations';
 import { useFileTreeNavigation } from './file-tree/useFileTreeNavigation';
 import { useFileTreePointerInteractions } from './file-tree/useFileTreePointerInteractions';
+import { useFileTreeRefresh } from './file-tree/useFileTreeRefresh';
 import { useFileTreeRenameCoordinator } from './file-tree/useFileTreeRenameCoordinator';
 import { useFileTreeRowPresentation } from './file-tree/useFileTreeRowPresentation';
 import { useFileTreeSelection } from './file-tree/useFileTreeSelection';
-import { useFileTreeShowAll } from './file-tree/useFileTreeShowAll';
 import { createFileTreeTrashHandlers } from './file-tree/useFileTreeTrash';
 import { useFileTreeTreeState } from './file-tree/useFileTreeTreeState';
 import { useFileTreeUploads } from './file-tree/useFileTreeUploads';
+import { useFileTreeWorkspace } from './file-tree/useFileTreeWorkspace';
 import { useHandoffDispatch } from './handoff/useHandoffDispatch';
 import { useInstalledAgents } from './handoff/useInstalledAgents';
 
 export type { FileTreeHandle } from './file-tree/file-tree-types';
-
-interface WorkspaceInfo {
-  contentDir: string;
-  pathSeparator: '/' | '\\';
-}
 
 /**
  * Must be mounted inside a `SidebarProvider` — `useSidebar()` throws otherwise.
@@ -107,7 +100,7 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
   // to-Trash flow does NOT (Step 1 is `shell.trashItem`, an OS call), so we
   // refuse here before the file leaves disk.
   const { conflicts: activeConflicts } = useConflicts();
-  const [workspace, setWorkspace] = useState<WorkspaceInfo | null>(null);
+  const workspace = useFileTreeWorkspace();
   const {
     deleteRequest,
     setDeleteRequest,
@@ -293,7 +286,7 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
       navigateToAssetWithPulse,
     });
 
-  useFileTreeShowAll({
+  useFileTreeRefresh({
     model,
     documentsRef,
     setDocuments,
@@ -310,62 +303,17 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     treeVisibilityFromRefs,
     collectExpandedFolderTreePaths,
     refreshDocsScheduleRef,
-    failedTitle: t`Failed to load documents`,
-    mismatchTitle: t`Documents response did not match expected shape.`,
     noteConnectivityRecovered,
     reportServerReachableError,
     reportConnectivityFailure,
+    showHiddenFiles,
+    showOnlyMarkdownFiles,
+    showOkFolders,
+    treePathsSignature,
+    treePathsRef,
+    skipNextResetSignatureRef,
+    expandedPathsForReset,
   });
-
-  // Re-fetch + re-filter when the user flips a sidebar visibility toggle.
-  // Hidden files and only-markdown are pure client-side filters (the server
-  // response doesn't depend on them); Show .ok folders parameterizes the
-  // request itself (the listing URL carries `showOk`). Either way the flip
-  // reuses the scheduler's in-flight coalescing, and the fetch closures read
-  // the flipped values through the refs. Skips on first render to avoid
-  // double-fetching on mount.
-  const isFirstVisibilityFlipEffectRunRef = useRef(true);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the visibility toggles are flip-detection triggers, not reads — the effect body reads refs only. Sibling pattern at the treePathsSignature reset effect above.
-  useEffect(() => {
-    if (isFirstVisibilityFlipEffectRunRef.current) {
-      isFirstVisibilityFlipEffectRunRef.current = false;
-      return;
-    }
-    refreshDocsScheduleRef.current?.();
-  }, [showHiddenFiles, showOnlyMarkdownFiles, showOkFolders]);
-
-  useEffect(() => {
-    let active = true;
-    fetch('/api/workspace')
-      .then(async (res) => {
-        const data = await res.json();
-        if (!active) return;
-        if (!res.ok) return;
-        const parsed = parseSuccessOrWarn(WorkspaceSuccessSchema, data, 'workspace', null);
-        if (!parsed) return;
-        setWorkspace({
-          contentDir: parsed.contentDir,
-          pathSeparator: parsed.pathSeparator,
-        });
-      })
-      .catch((err) => {
-        console.warn('[FileTree] /api/workspace fetch failed:', err);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: expandedPathsForReset reads refs; model + treePathsSignature are the reset triggers.
-  useEffect(() => {
-    if (skipNextResetSignatureRef.current === treePathsSignature) {
-      skipNextResetSignatureRef.current = null;
-      return;
-    }
-    model.resetPaths(treePathsRef.current, {
-      initialExpandedPaths: expandedPathsForReset(),
-    });
-  }, [model, treePathsSignature]);
 
   useFileTreeSelection({
     model,
@@ -418,33 +366,10 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     markNextDocumentsAsApplied,
   });
 
-  function expandSubtree(treePath: string) {
-    const root = folderPathToTreeDirectoryPath(treePath);
-    startTransition(() => {
-      for (const folderPath of folderTreePathsRef.current) {
-        if (folderPath === root || folderPath.startsWith(root)) {
-          const item = asDirectoryHandle(model.getItem(folderPath));
-          if (item) {
-            item.expand();
-          }
-        }
-      }
-    });
-  }
-
-  function collapseSubtree(treePath: string) {
-    const root = folderPathToTreeDirectoryPath(treePath);
-    startTransition(() => {
-      for (const folderPath of [...folderTreePathsRef.current].reverse()) {
-        if (folderPath === root || folderPath.startsWith(root)) {
-          const item = asDirectoryHandle(model.getItem(folderPath));
-          if (item) {
-            item.collapse();
-          }
-        }
-      }
-    });
-  }
+  const { expandSubtree, collapseSubtree } = useFileTreeFolderActions({
+    model,
+    folderTreePathsRef,
+  });
 
   useLayoutEffect(() => {
     documentsRef.current = documents;
