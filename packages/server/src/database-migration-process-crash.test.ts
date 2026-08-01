@@ -16,12 +16,12 @@ import {
   serializeDatabaseManifestYaml,
 } from '@nedian0brien/synapsenote-core';
 import { createDatabaseCommitEngine } from './database-commit.ts';
-import { createDatabaseRecordIndex } from './database-record-index.ts';
 import { createDatabaseMigrationJournal } from './database-migration-journal.ts';
+import { createDatabasePlanEngine } from './database-plan.ts';
+import { createDatabaseRecordIndex } from './database-record-index.ts';
 import { createDatabaseStore } from './database-store.ts';
 import { createDatabaseTaskService } from './database-task-service.ts';
 import { createDatabaseTaskStore } from './database-task-store.ts';
-import { createDatabasePlanEngine } from './database-plan.ts';
 
 const tempDirs: string[] = [];
 const SERVER_PACKAGE_ROOT = resolve(import.meta.dir, '..');

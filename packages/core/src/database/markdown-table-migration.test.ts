@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { DatabaseDefinitionSchema } from './schema.ts';
 import { planDatabaseMarkdownV2Migration } from './markdown-table-migration.ts';
+import { DatabaseDefinitionSchema } from './schema.ts';
 
 function definition() {
   return DatabaseDefinitionSchema.parse({
@@ -71,7 +71,9 @@ describe('planDatabaseMarkdownV2Migration', () => {
         },
       ],
     });
-    expect(result.ownerDocuments['tasks.md']).toContain('| [[tasks/alpha\\|Alpha]] | Keep this | todo |');
+    expect(result.ownerDocuments['tasks.md']).toContain(
+      '| [[tasks/alpha\\|Alpha]] | Keep this | todo |',
+    );
     expect(result.linkedDocuments['tasks/alpha.md']).toContain('document_id: doc_alpha');
     expect(result.linkedDocuments['tasks/alpha.md']).not.toContain('database_id:');
     expect(result.linkedDocuments['tasks/alpha.md']).not.toContain('record_id:');
@@ -102,7 +104,9 @@ describe('planDatabaseMarkdownV2Migration', () => {
       committedAt: '2026-07-27T00:00:00.000Z',
       sourceFolders: { ds_tasks: 'tasks' },
     });
-    expect(result.definition.migration?.legacyRecordIds.rec_alpha?.canonicalRecordId).toMatch(/^rec_/);
+    expect(result.definition.migration?.legacyRecordIds.rec_alpha?.canonicalRecordId).toMatch(
+      /^rec_/,
+    );
   });
 
   test('carries v1 lifecycle metadata in the bounded alias map instead of linked-document frontmatter', () => {
@@ -198,7 +202,10 @@ describe('planDatabaseMarkdownV2Migration', () => {
     const conflictDefinition = definition();
     const conflictSource = conflictDefinition.sources[0]!;
     const conflictTitle = conflictSource.properties[0]!;
-    conflictSource.properties[0] = { ...conflictTitle, key: 'record_title' } as typeof conflictTitle;
+    conflictSource.properties[0] = {
+      ...conflictTitle,
+      key: 'record_title',
+    } as typeof conflictTitle;
     const result = planDatabaseMarkdownV2Migration({
       definition: conflictDefinition,
       owners: [{ sourceId: 'ds_tasks', path: 'tasks.md', blockId: 'dbb_tasks_primary' }],
@@ -223,7 +230,10 @@ describe('planDatabaseMarkdownV2Migration', () => {
     const conflictDefinition = definition();
     const conflictSource = conflictDefinition.sources[0]!;
     const conflictTitle = conflictSource.properties[0]!;
-    conflictSource.properties[0] = { ...conflictTitle, key: 'record_title' } as typeof conflictTitle;
+    conflictSource.properties[0] = {
+      ...conflictTitle,
+      key: 'record_title',
+    } as typeof conflictTitle;
     const input = {
       definition: conflictDefinition,
       owners: [{ sourceId: 'ds_tasks', path: 'tasks.md', blockId: 'dbb_tasks_primary' }],
@@ -243,7 +253,9 @@ describe('planDatabaseMarkdownV2Migration', () => {
       titleChoices: { rec_alpha: { kind: 'keep_document_title' } },
     });
     expect(keepDocument.status).toBe('ready');
-    expect(keepDocument.ownerDocuments['tasks.md']).toContain('| [[tasks/alpha\\|Document title]] |');
+    expect(keepDocument.ownerDocuments['tasks.md']).toContain(
+      '| [[tasks/alpha\\|Document title]] |',
+    );
     expect(keepDocument.linkedDocuments['tasks/alpha.md']).toContain('# Document title');
 
     const useRecord = planDatabaseMarkdownV2Migration({
@@ -267,7 +279,10 @@ describe('planDatabaseMarkdownV2Migration', () => {
     const conflictDefinition = definition();
     const conflictSource = conflictDefinition.sources[0]!;
     const conflictTitle = conflictSource.properties[0]!;
-    conflictSource.properties[0] = { ...conflictTitle, key: 'record_title' } as typeof conflictTitle;
+    conflictSource.properties[0] = {
+      ...conflictTitle,
+      key: 'record_title',
+    } as typeof conflictTitle;
     const result = planDatabaseMarkdownV2Migration({
       definition: conflictDefinition,
       owners: [{ sourceId: 'ds_tasks', path: 'tasks.md', blockId: 'dbb_tasks_primary' }],
@@ -283,7 +298,9 @@ describe('planDatabaseMarkdownV2Migration', () => {
       ],
     });
     expect(result.status).toBe('blocked');
-    expect(result.blockers).toContainEqual(expect.objectContaining({ code: 'title_choice_invalid' }));
+    expect(result.blockers).toContainEqual(
+      expect.objectContaining({ code: 'title_choice_invalid' }),
+    );
     expect(result.ownerDocuments).toEqual({});
   });
 });

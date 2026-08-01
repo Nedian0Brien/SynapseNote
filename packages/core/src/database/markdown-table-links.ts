@@ -1,5 +1,5 @@
-import type { DatabaseDocumentId } from './stable-ids.ts';
 import type { DatabaseMarkdownDocumentLink } from './markdown-table.ts';
+import type { DatabaseDocumentId } from './stable-ids.ts';
 
 /** A document visible to the storage-neutral wikilink resolver. */
 export interface DatabaseMarkdownDocumentCandidate {
@@ -45,7 +45,8 @@ function normalizePath(value: string): string | null {
   if (/^[A-Za-z]:(?:\/|$)/.test(trimmed)) return null;
   const withExtension = /\.(?:md|mdx)$/iu.test(trimmed) ? trimmed : `${trimmed}.md`;
   const segments = withExtension.split('/');
-  if (segments.some((segment) => segment === '' || segment === '.' || segment === '..')) return null;
+  if (segments.some((segment) => segment === '' || segment === '.' || segment === '..'))
+    return null;
   return segments.join('/');
 }
 
@@ -77,11 +78,19 @@ function withoutExtension(path: string): string {
 }
 
 function fold(value: string, caseSensitive: boolean): string {
-  return caseSensitive ? value.normalize('NFKC') : value.normalize('NFKC').toLocaleLowerCase('en-US');
+  return caseSensitive
+    ? value.normalize('NFKC')
+    : value.normalize('NFKC').toLocaleLowerCase('en-US');
 }
 
-function candidateSort(left: DatabaseMarkdownDocumentCandidate, right: DatabaseMarkdownDocumentCandidate): number {
-  return left.path.localeCompare(right.path) || String(left.documentId).localeCompare(String(right.documentId));
+function candidateSort(
+  left: DatabaseMarkdownDocumentCandidate,
+  right: DatabaseMarkdownDocumentCandidate,
+): number {
+  return (
+    left.path.localeCompare(right.path) ||
+    String(left.documentId).localeCompare(String(right.documentId))
+  );
 }
 
 /**
@@ -97,14 +106,29 @@ export function resolveDatabaseMarkdownDocumentLink(
   const rawTarget = input.link.target.trim();
   const target = rawTarget;
   if (rawTarget.startsWith('!')) {
-    return { ok: false, code: 'embed_not_allowed', target, message: 'Embedded wikilinks are not valid database cells' };
+    return {
+      ok: false,
+      code: 'embed_not_allowed',
+      target,
+      message: 'Embedded wikilinks are not valid database cells',
+    };
   }
   if (rawTarget.includes('#') || rawTarget.includes('^')) {
-    return { ok: false, code: 'heading_not_allowed', target, message: 'Heading and block references are not valid database cells' };
+    return {
+      ok: false,
+      code: 'heading_not_allowed',
+      target,
+      message: 'Heading and block references are not valid database cells',
+    };
   }
   const normalized = relativeTarget(input.fromPath, rawTarget);
   if (!normalized) {
-    return { ok: false, code: 'outside_root', target, message: 'Wikilink target is outside the content root or is not a safe Markdown path' };
+    return {
+      ok: false,
+      code: 'outside_root',
+      target,
+      message: 'Wikilink target is outside the content root or is not a safe Markdown path',
+    };
   }
   const documents = [...input.documents].sort(candidateSort);
   const byDocumentId = new Map<string, DatabaseMarkdownDocumentCandidate>();
@@ -112,43 +136,104 @@ export function resolveDatabaseMarkdownDocumentLink(
     const key = String(document.documentId);
     if (byDocumentId.has(key)) {
       const candidates = documents.filter((candidate) => String(candidate.documentId) === key);
-      return { ok: false, code: 'duplicate_document', target, candidates, message: `Document identity "${key}" is declared more than once` };
+      return {
+        ok: false,
+        code: 'duplicate_document',
+        target,
+        candidates,
+        message: `Document identity "${key}" is declared more than once`,
+      };
     }
     byDocumentId.set(key, document);
   }
   const normalizedFold = fold(normalized, input.caseSensitive ?? false);
   const exact = documents.filter((document) => {
     const path = normalizePath(document.path);
-    return path !== null && (fold(path, input.caseSensitive ?? false) === normalizedFold || fold(withoutExtension(path), input.caseSensitive ?? false) === fold(withoutExtension(normalized), input.caseSensitive ?? false));
+    return (
+      path !== null &&
+      (fold(path, input.caseSensitive ?? false) === normalizedFold ||
+        fold(withoutExtension(path), input.caseSensitive ?? false) ===
+          fold(withoutExtension(normalized), input.caseSensitive ?? false))
+    );
   });
   if (exact.length === 1) {
-    return { ok: true, code: 'resolved', target, candidate: exact[0], message: `Resolved wikilink "${target}"` };
+    return {
+      ok: true,
+      code: 'resolved',
+      target,
+      candidate: exact[0],
+      message: `Resolved wikilink "${target}"`,
+    };
   }
   if (exact.length > 1) {
-    return { ok: false, code: 'ambiguous', target, candidates: exact, message: `Wikilink "${target}" matches multiple documents` };
+    return {
+      ok: false,
+      code: 'ambiguous',
+      target,
+      candidates: exact,
+      message: `Wikilink "${target}" matches multiple documents`,
+    };
   }
 
-  const basename = fold(withoutExtension(normalized).split('/').at(-1) ?? normalized, input.caseSensitive ?? false);
+  const basename = fold(
+    withoutExtension(normalized).split('/').at(-1) ?? normalized,
+    input.caseSensitive ?? false,
+  );
   const basenameMatches = documents.filter((document) => {
     const path = normalizePath(document.path);
-    return path !== null && fold(withoutExtension(path).split('/').at(-1) ?? path, input.caseSensitive ?? false) === basename;
+    return (
+      path !== null &&
+      fold(withoutExtension(path).split('/').at(-1) ?? path, input.caseSensitive ?? false) ===
+        basename
+    );
   });
   if (basenameMatches.length === 1) {
-    return { ok: true, code: 'resolved', target, candidate: basenameMatches[0], message: `Resolved basename wikilink "${target}"` };
+    return {
+      ok: true,
+      code: 'resolved',
+      target,
+      candidate: basenameMatches[0],
+      message: `Resolved basename wikilink "${target}"`,
+    };
   }
   if (basenameMatches.length > 1) {
-    return { ok: false, code: 'ambiguous', target, candidates: basenameMatches, message: `Basename wikilink "${target}" is ambiguous` };
+    return {
+      ok: false,
+      code: 'ambiguous',
+      target,
+      candidates: basenameMatches,
+      message: `Basename wikilink "${target}" is ambiguous`,
+    };
   }
 
   const alias = fold(input.link.alias ?? rawTarget, input.caseSensitive ?? false);
   const aliasMatches = documents.filter((document) =>
-    (document.aliases ?? []).some((candidate) => fold(candidate, input.caseSensitive ?? false) === alias),
+    (document.aliases ?? []).some(
+      (candidate) => fold(candidate, input.caseSensitive ?? false) === alias,
+    ),
   );
   if (aliasMatches.length === 1) {
-    return { ok: true, code: 'resolved', target, candidate: aliasMatches[0], message: `Resolved alias wikilink "${target}"` };
+    return {
+      ok: true,
+      code: 'resolved',
+      target,
+      candidate: aliasMatches[0],
+      message: `Resolved alias wikilink "${target}"`,
+    };
   }
   if (aliasMatches.length > 1) {
-    return { ok: false, code: 'ambiguous', target, candidates: aliasMatches, message: `Alias wikilink "${target}" is ambiguous` };
+    return {
+      ok: false,
+      code: 'ambiguous',
+      target,
+      candidates: aliasMatches,
+      message: `Alias wikilink "${target}" is ambiguous`,
+    };
   }
-  return { ok: false, code: 'missing', target, message: `Wikilink "${target}" does not resolve to a Markdown document` };
+  return {
+    ok: false,
+    code: 'missing',
+    target,
+    message: `Wikilink "${target}" does not resolve to a Markdown document`,
+  };
 }

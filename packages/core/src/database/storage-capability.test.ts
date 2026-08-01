@@ -10,14 +10,18 @@ describe('database storage capability matrix', () => {
       read: 'full',
       write: 'v1_record_files',
     });
-    expect(databaseStorageCapabilityFor({ manifestVersion: 2, tableFormatVersion: 2 })).toMatchObject({
+    expect(
+      databaseStorageCapabilityFor({ manifestVersion: 2, tableFormatVersion: 2 }),
+    ).toMatchObject({
       read: 'full',
       write: 'v2_markdown_table',
     });
   });
 
   test('fails closed for unknown versions and never downgrades writes', () => {
-    expect(databaseStorageCapabilityFor({ manifestVersion: 3, tableFormatVersion: 3 })).toMatchObject({
+    expect(
+      databaseStorageCapabilityFor({ manifestVersion: 3, tableFormatVersion: 3 }),
+    ).toMatchObject({
       read: 'unsupported',
       write: 'unsupported',
       manifestVersion: 3,

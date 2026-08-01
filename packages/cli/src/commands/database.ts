@@ -10,8 +10,8 @@ import {
 import { dirname, join, resolve } from 'node:path';
 import {
   type DatabaseGitMergeConflict,
-  mergeDatabaseMarkdownTables,
   mergeDatabaseManifestGit,
+  mergeDatabaseMarkdownTables,
   mergeDatabaseRecordGit,
   parseDatabaseMarkdownOwner,
 } from '@nedian0brien/synapsenote-core';
@@ -171,7 +171,10 @@ async function postDatabaseTask(
   const result: unknown = await response.json().catch(() => null);
   if (!response.ok) {
     const detail =
-      result && typeof result === 'object' && 'detail' in result && typeof result.detail === 'string'
+      result &&
+      typeof result === 'object' &&
+      'detail' in result &&
+      typeof result.detail === 'string'
         ? result.detail
         : `Database task request failed with HTTP ${response.status}`;
     throw new Error(`${detail} (project: ${projectRoot})`);
@@ -185,7 +188,11 @@ function printDatabaseTask(value: unknown, json: boolean): void {
     return;
   }
   const task =
-    value && typeof value === 'object' && 'task' in value && value.task && typeof value.task === 'object'
+    value &&
+    typeof value === 'object' &&
+    'task' in value &&
+    value.task &&
+    typeof value.task === 'object'
       ? (value.task as Record<string, unknown>)
       : null;
   if (task) {
@@ -295,26 +302,46 @@ export function databaseCommand(): Command {
     .command('preview')
     .description('Create an exact read-only v1→v2 plan')
     .requiredOption('--manifest-revision <revision>')
-    .requiredOption('--target-version <version>', 'target manifest version', (value) => Number(value))
+    .requiredOption('--target-version <version>', 'target manifest version', (value) =>
+      Number(value),
+    )
     .option('--database-id <id>', 'limit the preview to one database; repeatable via comma list')
     .requiredOption('--server-url <url>', 'running server URL')
     .option('--json', 'print machine-readable JSON')
-    .action(async (options: { manifestRevision: string; targetVersion: number; databaseId?: string; serverUrl: string; json?: boolean }) => {
-      const result = await postDatabaseTask(process.cwd(), {
-        action: 'preview_migration',
-        expectedManifestRevision: options.manifestRevision,
-        targetVersion: options.targetVersion,
-        ...(options.databaseId ? { databaseIds: options.databaseId.split(',').filter(Boolean) } : {}),
-      }, options);
-      printDatabaseTask(result, options.json === true);
-    });
+    .action(
+      async (options: {
+        manifestRevision: string;
+        targetVersion: number;
+        databaseId?: string;
+        serverUrl: string;
+        json?: boolean;
+      }) => {
+        const result = await postDatabaseTask(
+          process.cwd(),
+          {
+            action: 'preview_migration',
+            expectedManifestRevision: options.manifestRevision,
+            targetVersion: options.targetVersion,
+            ...(options.databaseId
+              ? { databaseIds: options.databaseId.split(',').filter(Boolean) }
+              : {}),
+          },
+          options,
+        );
+        printDatabaseTask(result, options.json === true);
+      },
+    );
   migration
     .command('inspect <task-id>')
     .description('Inspect a migration task and content-free recovery hashes')
     .requiredOption('--server-url <url>', 'running server URL')
     .option('--json', 'print machine-readable JSON')
     .action(async (taskId: string, options: { serverUrl: string; json?: boolean }) => {
-      const result = await postDatabaseTask(process.cwd(), { action: 'inspect_migration', taskId }, options);
+      const result = await postDatabaseTask(
+        process.cwd(),
+        { action: 'inspect_migration', taskId },
+        options,
+      );
       printDatabaseTask(result, options.json === true);
     });
   migration
@@ -323,49 +350,85 @@ export function databaseCommand(): Command {
     .requiredOption('--server-url <url>', 'running server URL')
     .option('--json', 'print machine-readable JSON')
     .action(async (taskId: string, options: { serverUrl: string; json?: boolean }) => {
-      const result = await postDatabaseTask(process.cwd(), { action: 'preview_cleanup_migration', taskId }, options);
+      const result = await postDatabaseTask(
+        process.cwd(),
+        { action: 'preview_cleanup_migration', taskId },
+        options,
+      );
       printDatabaseTask(result, options.json === true);
     });
   migration
     .command('apply')
     .description('Start a migration only with an explicitly approved preview hash')
     .requiredOption('--manifest-revision <revision>')
-    .requiredOption('--target-version <version>', 'target manifest version', (value) => Number(value))
-    .requiredOption('--plan-hashes <json>', 'JSON object mapping database IDs to preview plan hashes')
-    .requiredOption('--approval-token <token>', 'must equal approve:<sorted preview plan hashes joined by commas>')
+    .requiredOption('--target-version <version>', 'target manifest version', (value) =>
+      Number(value),
+    )
+    .requiredOption(
+      '--plan-hashes <json>',
+      'JSON object mapping database IDs to preview plan hashes',
+    )
+    .requiredOption(
+      '--approval-token <token>',
+      'must equal approve:<sorted preview plan hashes joined by commas>',
+    )
     .requiredOption('--server-url <url>', 'running server URL')
     .option('--database-id <id>', 'limit the migration to one database; repeatable via comma list')
-    .option('--migration-committed-at <json>', 'JSON object mapping database IDs to preview timestamps')
+    .option(
+      '--migration-committed-at <json>',
+      'JSON object mapping database IDs to preview timestamps',
+    )
     .option('--json', 'print machine-readable JSON')
-    .action(async (options: { manifestRevision: string; targetVersion: number; planHashes: string; approvalToken: string; serverUrl: string; databaseId?: string; migrationCommittedAt?: string; json?: boolean }) => {
-      let planHashes: Record<string, string>;
-      let migrationCommittedAt: Record<string, string> | undefined;
-      try {
-        planHashes = JSON.parse(options.planHashes) as Record<string, string>;
-        if (options.migrationCommittedAt) migrationCommittedAt = JSON.parse(options.migrationCommittedAt) as Record<string, string>;
-      } catch {
-        throw new Error('--plan-hashes and --migration-committed-at must be valid JSON objects');
-      }
-      const hashValues = Object.values(planHashes).sort();
-      const expectedApproval = hashValues.length > 0 ? `approve:${hashValues.join(',')}` : null;
-      if (expectedApproval === null || options.approvalToken !== expectedApproval) {
-        throw new Error(
-          'Migration apply requires --approval-token=approve:<sorted preview plan hashes joined by commas>',
+    .action(
+      async (options: {
+        manifestRevision: string;
+        targetVersion: number;
+        planHashes: string;
+        approvalToken: string;
+        serverUrl: string;
+        databaseId?: string;
+        migrationCommittedAt?: string;
+        json?: boolean;
+      }) => {
+        let planHashes: Record<string, string>;
+        let migrationCommittedAt: Record<string, string> | undefined;
+        try {
+          planHashes = JSON.parse(options.planHashes) as Record<string, string>;
+          if (options.migrationCommittedAt)
+            migrationCommittedAt = JSON.parse(options.migrationCommittedAt) as Record<
+              string,
+              string
+            >;
+        } catch {
+          throw new Error('--plan-hashes and --migration-committed-at must be valid JSON objects');
+        }
+        const hashValues = Object.values(planHashes).sort();
+        const expectedApproval = hashValues.length > 0 ? `approve:${hashValues.join(',')}` : null;
+        if (expectedApproval === null || options.approvalToken !== expectedApproval) {
+          throw new Error(
+            'Migration apply requires --approval-token=approve:<sorted preview plan hashes joined by commas>',
+          );
+        }
+        const result = await postDatabaseTask(
+          process.cwd(),
+          {
+            action: 'start',
+            task: {
+              operation: 'migration',
+              expectedManifestRevision: options.manifestRevision,
+              targetVersion: options.targetVersion,
+              planHashes,
+              ...(options.databaseId
+                ? { databaseIds: options.databaseId.split(',').filter(Boolean) }
+                : {}),
+              ...(migrationCommittedAt ? { migrationCommittedAt } : {}),
+            },
+          },
+          options,
         );
-      }
-      const result = await postDatabaseTask(process.cwd(), {
-        action: 'start',
-        task: {
-          operation: 'migration',
-          expectedManifestRevision: options.manifestRevision,
-          targetVersion: options.targetVersion,
-          planHashes,
-          ...(options.databaseId ? { databaseIds: options.databaseId.split(',').filter(Boolean) } : {}),
-          ...(migrationCommittedAt ? { migrationCommittedAt } : {}),
-        },
-      }, options);
-      printDatabaseTask(result, options.json === true);
-    });
+        printDatabaseTask(result, options.json === true);
+      },
+    );
   for (const action of ['resume', 'rollback'] as const) {
     migration
       .command(`${action} <task-id>`)
@@ -373,14 +436,23 @@ export function databaseCommand(): Command {
       .requiredOption('--expected-revision <revision>')
       .requiredOption('--server-url <url>', 'running server URL')
       .option('--json', 'print machine-readable JSON')
-      .action(async (taskId: string, options: { expectedRevision: string; serverUrl: string; json?: boolean }) => {
-        const result = await postDatabaseTask(process.cwd(), {
-          action,
-          taskId,
-          expectedRevision: options.expectedRevision,
-        }, options);
-        printDatabaseTask(result, options.json === true);
-      });
+      .action(
+        async (
+          taskId: string,
+          options: { expectedRevision: string; serverUrl: string; json?: boolean },
+        ) => {
+          const result = await postDatabaseTask(
+            process.cwd(),
+            {
+              action,
+              taskId,
+              expectedRevision: options.expectedRevision,
+            },
+            options,
+          );
+          printDatabaseTask(result, options.json === true);
+        },
+      );
   }
   migration
     .command('cleanup <task-id>')
@@ -390,16 +462,31 @@ export function databaseCommand(): Command {
     .requiredOption('--approval-token <token>', 'must equal approve:<cleanup plan hash>')
     .requiredOption('--server-url <url>', 'running server URL')
     .option('--json', 'print machine-readable JSON')
-    .action(async (taskId: string, options: { expectedRevision: string; planHash: string; approvalToken: string; serverUrl: string; json?: boolean }) => {
-      const result = await postDatabaseTask(process.cwd(), {
-        action: 'cleanup_migration',
-        taskId,
-        expectedRevision: options.expectedRevision,
-        planHash: options.planHash,
-        approvalToken: options.approvalToken,
-      }, options);
-      printDatabaseTask(result, options.json === true);
-    });
+    .action(
+      async (
+        taskId: string,
+        options: {
+          expectedRevision: string;
+          planHash: string;
+          approvalToken: string;
+          serverUrl: string;
+          json?: boolean;
+        },
+      ) => {
+        const result = await postDatabaseTask(
+          process.cwd(),
+          {
+            action: 'cleanup_migration',
+            taskId,
+            expectedRevision: options.expectedRevision,
+            planHash: options.planHash,
+            approvalToken: options.approvalToken,
+          },
+          options,
+        );
+        printDatabaseTask(result, options.json === true);
+      },
+    );
   database
     .command('merge-driver <kind> <base> <current> <other>', { hidden: true })
     .action((kind: string, base: string, current: string, other: string) => {

@@ -470,13 +470,15 @@ describe('database server/API/MCP contract conformance', () => {
     expect(direct.derivedRevision).toMatch(/^sha256:/);
     expect(api.derivedRevision).toBe(direct.derivedRevision);
     expect(mcpQuery?.derivedRevision).toBe(direct.derivedRevision);
-    expect(api.records).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        computedResults: expect.objectContaining({
-          prop_double_score: expect.objectContaining({ kind: 'value', value: 4 }),
+    expect(api.records).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          computedResults: expect.objectContaining({
+            prop_double_score: expect.objectContaining({ kind: 'value', value: 4 }),
+          }),
         }),
-      }),
-    ]));
+      ]),
+    );
     expect(mcpQuery?.records).toEqual(direct.records);
   });
 

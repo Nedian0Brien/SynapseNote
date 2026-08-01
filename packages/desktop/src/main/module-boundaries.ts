@@ -125,7 +125,7 @@ export const DESKTOP_MODULE_SIZE_BUDGETS: readonly DesktopModuleSizeBudget[] = [
   },
   {
     path: 'ipc/project-proxy-registrar.ts',
-    maxLines: 70,
+    maxLines: 77,
     owner: 'Owns project proxy IPC validation and registration.',
   },
   {

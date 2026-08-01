@@ -13,8 +13,8 @@ import {
   type YAMLSeq,
 } from 'yaml';
 import {
-  DATABASE_PROPERTY_TYPES,
   DATABASE_MANIFEST_SUPPORTED_VERSIONS,
+  DATABASE_PROPERTY_TYPES,
   type DatabaseDefinition,
   DatabaseDefinitionSchema,
 } from './schema.ts';

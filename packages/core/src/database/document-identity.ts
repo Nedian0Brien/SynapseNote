@@ -2,10 +2,10 @@ import { sha256 } from '@noble/hashes/sha256';
 import { stripFrontmatter, unwrapFrontmatterFences } from '../extensions/frontmatter.ts';
 import { parseFrontmatterYaml } from '../frontmatter/yaml-codec.ts';
 import {
-  DatabaseDocumentIdSchema,
-  DatabaseRecordIdSchema,
   type DatabaseDocumentId,
+  DatabaseDocumentIdSchema,
   type DatabaseRecordId,
+  DatabaseRecordIdSchema,
   type DataSourceId,
 } from './stable-ids.ts';
 
@@ -131,9 +131,7 @@ export function createDatabaseDocumentId(
 }
 
 /** Stable migration identity derived from a legacy v1 record ID. */
-export function createDatabaseDocumentIdFromLegacyRecordId(
-  recordId: string,
-): DatabaseDocumentId {
+export function createDatabaseDocumentIdFromLegacyRecordId(recordId: string): DatabaseDocumentId {
   const parsed = DatabaseRecordIdSchema.parse(recordId);
   return DatabaseDocumentIdSchema.parse(`doc_${parsed.slice('rec_'.length)}`);
 }
@@ -177,12 +175,20 @@ export function ensureDatabaseDocumentIdentity(input: {
   }
   const closing = /\r?\n---[ \t]*(?:\r?\n|$)/.exec(frontmatter);
   if (!closing) {
-    return { ok: false, code: 'malformed_frontmatter', message: 'Cannot locate the closing frontmatter fence' };
+    return {
+      ok: false,
+      code: 'malformed_frontmatter',
+      message: 'Cannot locate the closing frontmatter fence',
+    };
   }
   const frontmatterBody = unwrapFrontmatterFences(frontmatter);
   const bodyOffset = frontmatter.indexOf(frontmatterBody);
   if (bodyOffset < 0) {
-    return { ok: false, code: 'malformed_frontmatter', message: 'Cannot locate the frontmatter body' };
+    return {
+      ok: false,
+      code: 'malformed_frontmatter',
+      message: 'Cannot locate the frontmatter body',
+    };
   }
   let insertion: number;
   const snLine = /^_sn:[ \t]*\r?\n/m.exec(frontmatterBody);
@@ -197,7 +203,8 @@ export function ensureDatabaseDocumentIdentity(input: {
     const tail = frontmatter.slice(bodyOffset + frontmatterBody.length);
     const ending = tail.startsWith(eol) ? '' : eol;
     const addition = `${prefix}_sn:${eol}  document_id: ${input.documentId}${ending}`;
-    const bodyWithAddition = frontmatterBody.slice(0, insertion) + addition + frontmatterBody.slice(insertion);
+    const bodyWithAddition =
+      frontmatterBody.slice(0, insertion) + addition + frontmatterBody.slice(insertion);
     const nextFrontmatter =
       frontmatter.slice(0, bodyOffset) +
       bodyWithAddition +
@@ -210,7 +217,8 @@ export function ensureDatabaseDocumentIdentity(input: {
     };
   }
   const insertionText = `  document_id: ${input.documentId}${eol}`;
-  const nextBody = frontmatterBody.slice(0, insertion) + insertionText + frontmatterBody.slice(insertion);
+  const nextBody =
+    frontmatterBody.slice(0, insertion) + insertionText + frontmatterBody.slice(insertion);
   const nextFrontmatter =
     frontmatter.slice(0, bodyOffset) +
     nextBody +
@@ -292,8 +300,14 @@ export function reassignDatabaseDocumentIdentity(input: {
   const sectionStart = snLine.index + snLine[0].length;
   const remainder = body.slice(sectionStart);
   const nextTopLevel = remainder.search(/^[^ \t\r\n][^\r\n]*$/m);
-  const section = body.slice(sectionStart, nextTopLevel < 0 ? body.length : sectionStart + nextTopLevel);
-  const idLine = /^(?<indent>[ \t]+)document_id:[ \t]*(?<value>[^\r\n#]+)(?<tail>[ \t]*(?:#.*)?)$/m.exec(section);
+  const section = body.slice(
+    sectionStart,
+    nextTopLevel < 0 ? body.length : sectionStart + nextTopLevel,
+  );
+  const idLine =
+    /^(?<indent>[ \t]+)document_id:[ \t]*(?<value>[^\r\n#]+)(?<tail>[ \t]*(?:#.*)?)$/m.exec(
+      section,
+    );
   if (!idLine?.groups?.value) {
     return {
       ok: false,

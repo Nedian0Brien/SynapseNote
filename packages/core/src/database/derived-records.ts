@@ -374,19 +374,19 @@ export function materializeDatabaseDerivedRecords(
             });
           } else {
             result = aggregateDatabaseRollup({
-            sourceId: record.sourceId,
-            relationPropertyId: relation.id,
-            targetSourceId: relation.targetSourceId,
-            targetPropertyId: rollup.targetPropertyId,
-            function: rollup.function,
-            targetValueType: rollup.targetValueType,
-            ...(rollup.targetItemType ? { targetItemType: rollup.targetItemType } : {}),
-            permission: { applied: true, revision: input.permissionRevision },
-            snapshot: {
-              complete: !unavailable,
-              truncatedBy: unavailable ? 'unavailable_target' : null,
-            },
-            targets,
+              sourceId: record.sourceId,
+              relationPropertyId: relation.id,
+              targetSourceId: relation.targetSourceId,
+              targetPropertyId: rollup.targetPropertyId,
+              function: rollup.function,
+              targetValueType: rollup.targetValueType,
+              ...(rollup.targetItemType ? { targetItemType: rollup.targetItemType } : {}),
+              permission: { applied: true, revision: input.permissionRevision },
+              snapshot: {
+                complete: !unavailable,
+                truncatedBy: unavailable ? 'unavailable_target' : null,
+              },
+              targets,
             }).result;
           }
         } catch (error) {

@@ -22,6 +22,7 @@ import {
   isSafeDatabaseExternalFileUrl,
 } from './files.ts';
 import { type FormulaComputedResult, FormulaComputedResultSchema } from './formula-result.ts';
+import { DatabaseMarkdownRecordRevisionSetSchema } from './markdown-table-revision.ts';
 import {
   type DatabasePerson,
   DatabasePersonIdSchema,
@@ -35,7 +36,6 @@ import {
   databasePlaceSearchText,
 } from './place.ts';
 import type { DatabaseRecord, DatabaseRecordIssue, DatabaseValue } from './record.ts';
-import { DatabaseMarkdownRecordRevisionSetSchema } from './markdown-table-revision.ts';
 import {
   type ProjectedDatabaseRelationRecord,
   ProjectedDatabaseRelationRecordSchema,
@@ -466,8 +466,16 @@ export const DatabaseQueryResultSchema = z
     sourceId: z.string().min(1),
     snapshotRevision: z.string().min(1),
     /** Full canonical owner-document revision for storage-aware v2 writes. */
-    storageRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).nullable().optional(),
-    derivedRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/).nullable().optional(),
+    storageRevision: z
+      .string()
+      .regex(/^sha256:[a-f0-9]{64}$/)
+      .nullable()
+      .optional(),
+    derivedRevision: z
+      .string()
+      .regex(/^sha256:[a-f0-9]{64}$/)
+      .nullable()
+      .optional(),
     matched: z.number().int().nonnegative(),
     returned: z.number().int().nonnegative(),
     isComplete: z.boolean(),
@@ -1681,9 +1689,7 @@ export function queryDatabaseRecords(input: QueryDatabaseRecordsInput): Database
       id: record.id,
       path: record.path,
       revision: record.revision,
-      ...(record.storageRevision === undefined
-        ? {}
-        : { storageRevision: record.storageRevision }),
+      ...(record.storageRevision === undefined ? {} : { storageRevision: record.storageRevision }),
       ...(record.semanticRevisions === undefined
         ? {}
         : { semanticRevisions: structuredClone(record.semanticRevisions) }),

@@ -2,9 +2,9 @@ import { describe, expect, test } from 'bun:test';
 import { resolve } from 'node:path';
 import {
   DATABASE_MARKDOWN_LIMITS,
+  type ParseDatabaseMarkdownOwnerResult,
   parseDatabaseMarkdownOwner,
   parseDatabaseMarkdownOwnerBytes,
-  type ParseDatabaseMarkdownOwnerResult,
 } from './markdown-table.ts';
 
 const ITERATIONS = 256;
@@ -46,8 +46,9 @@ function generatedSource(seed: number): string {
   const lines = 1 + integer(seed, 1, 24);
   return Array.from({ length: lines }, (_, index) => {
     const fragments = 1 + integer(seed, index + 10, 4);
-    return Array.from({ length: fragments }, (_, fragment) =>
-      FRAGMENTS[integer(seed, index * 7 + fragment + 30, FRAGMENTS.length)] ?? '',
+    return Array.from(
+      { length: fragments },
+      (_, fragment) => FRAGMENTS[integer(seed, index * 7 + fragment + 30, FRAGMENTS.length)] ?? '',
     ).join(integer(seed, index + 100, 2) === 0 ? ' ' : '\n');
   }).join('\n');
 }
@@ -56,7 +57,9 @@ function assertTyped(result: ParseDatabaseMarkdownOwnerResult, seed: number): vo
   expect(typeof result, `seed ${seed}`).toBe('object');
   if (result.ok) {
     expect(result.owner.marker.version, `seed ${seed}`).toBe(2);
-    expect(result.owner.rows.length, `seed ${seed}`).toBeLessThanOrEqual(DATABASE_MARKDOWN_LIMITS.rows);
+    expect(result.owner.rows.length, `seed ${seed}`).toBeLessThanOrEqual(
+      DATABASE_MARKDOWN_LIMITS.rows,
+    );
     return;
   }
   expect(typeof result.code, `seed ${seed}`).toBe('string');
@@ -77,7 +80,9 @@ describe('Markdown owner-table parser fuzz corpus', () => {
   });
 
   test('rejects oversized owner input before table traversal', () => {
-    const result = parseDatabaseMarkdownOwner('x'.repeat(DATABASE_MARKDOWN_LIMITS.ownerDocumentBytes + 1));
+    const result = parseDatabaseMarkdownOwner(
+      'x'.repeat(DATABASE_MARKDOWN_LIMITS.ownerDocumentBytes + 1),
+    );
     expect(result).toMatchObject({ ok: false, code: 'resource_limit' });
   });
 

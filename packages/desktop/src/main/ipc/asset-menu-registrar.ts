@@ -1,7 +1,7 @@
 /** Native asset context-menu IPC, kept separate from file-open containment. */
 
-import { isAssetMenuParams } from './asset-request.ts';
 import type { AssetRegistrarDeps } from './asset-registrar.ts';
+import { isAssetMenuParams } from './asset-request.ts';
 
 export function registerAssetMenuIpc(deps: AssetRegistrarDeps): void {
   deps.register('ok:shell:show-asset-menu', async (event, rawParams) => {

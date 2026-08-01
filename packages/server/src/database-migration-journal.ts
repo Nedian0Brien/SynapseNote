@@ -1,12 +1,12 @@
 /** Durable project-scoped journal for v1→v2 multi-file canonical transitions. */
 
 import { createHash, randomUUID } from 'node:crypto';
-import { lstat, mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
+import { lstat, mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { atomicWriteFile } from '@nedian0brien/synapsenote-core/server';
 import { z } from 'zod';
-import { tracedAtomicFs } from './fs-traced.ts';
 import { DatabaseTaskRollbackError } from './database-task-rollback.ts';
+import { tracedAtomicFs } from './fs-traced.ts';
 
 const Sha256Schema = z.string().regex(/^sha256:[a-f0-9]{64}$/);
 const FileSchema = z
@@ -46,7 +46,13 @@ function stableJson(value: unknown): string {
 }
 
 function safeRelativePath(path: string): string {
-  if (!path || path.includes('\0') || path.includes('\\') || path.startsWith('/') || /^[A-Za-z]:/.test(path)) {
+  if (
+    !path ||
+    path.includes('\0') ||
+    path.includes('\\') ||
+    path.startsWith('/') ||
+    /^[A-Za-z]:/.test(path)
+  ) {
     throw new Error(`Unsafe migration journal path: ${path}`);
   }
   const segments = path.split('/');
@@ -124,7 +130,9 @@ export class DatabaseMigrationJournal {
     }
     const entries: DatabaseMigrationJournalEntry[] = [];
     for (const name of names) {
-      const value = EntrySchema.parse(JSON.parse(await readFile(resolve(this.#root, name), 'utf8')));
+      const value = EntrySchema.parse(
+        JSON.parse(await readFile(resolve(this.#root, name), 'utf8')),
+      );
       entries.push(value);
     }
     return entries;
@@ -160,9 +168,12 @@ export class DatabaseMigrationJournal {
     }
   }
 
-  async rollback(taskId: string): Promise<{ taskId: string; restored: number; status: 'applied' | 'already_applied' }> {
+  async rollback(
+    taskId: string,
+  ): Promise<{ taskId: string; restored: number; status: 'applied' | 'already_applied' }> {
     const journal = await this.#read(taskId, false);
-    if (journal.state === 'rolled_back') return { taskId, restored: journal.files.length, status: 'already_applied' };
+    if (journal.state === 'rolled_back')
+      return { taskId, restored: journal.files.length, status: 'already_applied' };
     let observed: Array<{
       file: DatabaseMigrationJournalEntry['files'][number];
       absolute: string;
@@ -182,7 +193,9 @@ export class DatabaseMigrationJournal {
       await this.checkpoint(taskId, 'recovery_required').catch(() => undefined);
       throw error;
     }
-    const conflicts = observed.filter(({ file, hash }) => hash !== file.beforeSha256 && hash !== file.afterSha256);
+    const conflicts = observed.filter(
+      ({ file, hash }) => hash !== file.beforeSha256 && hash !== file.afterSha256,
+    );
     if (conflicts.length > 0) {
       await this.checkpoint(taskId, 'recovery_required');
       throw new DatabaseTaskRollbackError(
@@ -218,7 +231,8 @@ export class DatabaseMigrationJournal {
     const safe = safeRelativePath(path);
     const absolute = resolve(this.#projectDir, safe);
     const rel = relative(this.#projectDir, absolute);
-    if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) throw new Error(`Migration path escapes project root: ${path}`);
+    if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel))
+      throw new Error(`Migration path escapes project root: ${path}`);
     return absolute;
   }
 
@@ -241,12 +255,19 @@ export class DatabaseMigrationJournal {
     const path = resolve(this.#root, `${taskId}.json`);
     try {
       const stats = await lstat(path);
-      if (stats.isSymbolicLink() || !stats.isFile()) throw new Error(`Migration journal is not a regular file: ${path}`);
+      if (stats.isSymbolicLink() || !stats.isFile())
+        throw new Error(`Migration journal is not a regular file: ${path}`);
       return EntrySchema.parse(JSON.parse(await readFile(path, 'utf8')));
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
       if (!create) throw new Error(`Migration journal not found: ${taskId}`);
-      return { version: 1, taskId, state: 'prepared', files: [], updatedAt: new Date().toISOString() };
+      return {
+        version: 1,
+        taskId,
+        state: 'prepared',
+        files: [],
+        updatedAt: new Date().toISOString(),
+      };
     }
   }
 
@@ -255,7 +276,11 @@ export class DatabaseMigrationJournal {
     const path = resolve(this.#root, `${value.taskId}.json`);
     const temp = `${path}.${randomUUID()}.tmp`;
     try {
-      await writeFile(temp, `${stableJson(value)}\n`, { encoding: 'utf8', mode: 0o600, flag: 'wx' });
+      await writeFile(temp, `${stableJson(value)}\n`, {
+        encoding: 'utf8',
+        mode: 0o600,
+        flag: 'wx',
+      });
       await rename(temp, path);
     } finally {
       await rm(temp, { force: true }).catch(() => undefined);

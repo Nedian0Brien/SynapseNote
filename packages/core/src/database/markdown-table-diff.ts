@@ -1,11 +1,11 @@
 import {
+  type DatabaseMarkdownTableRow,
+  deleteDatabaseMarkdownTableRow,
   encodeDatabaseMarkdownCellText,
   insertDatabaseMarkdownTableRow,
+  type ParsedDatabaseMarkdownOwner,
   parseDatabaseMarkdownOwner,
   replaceDatabaseMarkdownTableCell,
-  deleteDatabaseMarkdownTableRow,
-  type DatabaseMarkdownTableRow,
-  type ParsedDatabaseMarkdownOwner,
 } from './markdown-table.ts';
 
 export type DatabaseMarkdownSemanticOperationKind =
@@ -84,22 +84,33 @@ export function diffDatabaseMarkdownTables(
   }
   const operations: DatabaseMarkdownSemanticOperation[] = [];
   const conflicts: string[] = [];
-  if (baseOwner.marker.databaseId !== nextOwner.marker.databaseId ||
-      baseOwner.marker.sourceId !== nextOwner.marker.sourceId ||
-      baseOwner.marker.blockId !== nextOwner.marker.blockId ||
-      baseOwner.marker.columns.join('\0') !== nextOwner.marker.columns.join('\0')) {
+  if (
+    baseOwner.marker.databaseId !== nextOwner.marker.databaseId ||
+    baseOwner.marker.sourceId !== nextOwner.marker.sourceId ||
+    baseOwner.marker.blockId !== nextOwner.marker.blockId ||
+    baseOwner.marker.columns.join('\0') !== nextOwner.marker.columns.join('\0')
+  ) {
     conflicts.push('owner_marker_changed');
   }
   const baseHeader = baseOwner.header.cells.map((cell) => cell.value);
   const nextHeader = nextOwner.header.cells.map((cell) => cell.value);
   if (baseHeader.join('\0') !== nextHeader.join('\0')) {
-    operations.push({ kind: 'header_update', before: baseHeader.join('\0'), after: nextHeader.join('\0') });
+    operations.push({
+      kind: 'header_update',
+      before: baseHeader.join('\0'),
+      after: nextHeader.join('\0'),
+    });
   }
   const baseRows = rowMap(baseOwner, keyForRow);
   const nextRows = rowMap(nextOwner, keyForRow);
   for (const [rowKey, row] of baseRows) {
     if (!nextRows.has(rowKey)) {
-      operations.push({ kind: 'row_delete', rowKey, before: row.cells.map((cell) => cell.value).join('\0'), after: null });
+      operations.push({
+        kind: 'row_delete',
+        rowKey,
+        before: row.cells.map((cell) => cell.value).join('\0'),
+        after: null,
+      });
       continue;
     }
     const nextRow = nextRows.get(rowKey)!;
@@ -116,18 +127,29 @@ export function diffDatabaseMarkdownTables(
   }
   for (const [rowKey, row] of nextRows) {
     if (!baseRows.has(rowKey)) {
-      operations.push({ kind: 'row_insert', rowKey, before: null, after: row.cells.map((cell) => cell.value).join('\0') });
+      operations.push({
+        kind: 'row_insert',
+        rowKey,
+        before: null,
+        after: row.cells.map((cell) => cell.value).join('\0'),
+      });
     }
   }
   const baseOrder = [...baseRows.keys()];
   const nextOrder = [...nextRows.keys()];
-  if (baseOrder.filter((key) => nextRows.has(key)).join('\0') !== nextOrder.filter((key) => baseRows.has(key)).join('\0')) {
+  if (
+    baseOrder.filter((key) => nextRows.has(key)).join('\0') !==
+    nextOrder.filter((key) => baseRows.has(key)).join('\0')
+  ) {
     operations.push({ kind: 'row_reorder' });
   }
   return { operations, conflicts };
 }
 
-function sameCells(left: DatabaseMarkdownTableRow | undefined, right: DatabaseMarkdownTableRow | undefined): boolean {
+function sameCells(
+  left: DatabaseMarkdownTableRow | undefined,
+  right: DatabaseMarkdownTableRow | undefined,
+): boolean {
   if (!left || !right || left.cells.length !== right.cells.length) return left === right;
   return left.cells.every((cell, index) => cell.value === right.cells[index]?.value);
 }
@@ -146,7 +168,15 @@ export function mergeDatabaseMarkdownTables(
   if (!baseOwner || !oursOwner || !theirsOwner) {
     return {
       merged: null,
-      conflicts: [{ kind: 'marker', base: null, ours: null, theirs: null, message: 'One merge side has an invalid owner table' }],
+      conflicts: [
+        {
+          kind: 'marker',
+          base: null,
+          ours: null,
+          theirs: null,
+          message: 'One merge side has an invalid owner table',
+        },
+      ],
     };
   }
   const marker = JSON.stringify(baseOwner.marker);
@@ -157,11 +187,26 @@ export function mergeDatabaseMarkdownTables(
   ];
   for (const [name, owner] of sides) {
     if (JSON.stringify(owner.marker) !== marker) {
-      conflicts.push({ kind: 'marker', base: marker, ours: name === 'ours' ? JSON.stringify(owner.marker) : marker, theirs: name === 'theirs' ? JSON.stringify(owner.marker) : marker, message: `${name} changed the owner marker` });
+      conflicts.push({
+        kind: 'marker',
+        base: marker,
+        ours: name === 'ours' ? JSON.stringify(owner.marker) : marker,
+        theirs: name === 'theirs' ? JSON.stringify(owner.marker) : marker,
+        message: `${name} changed the owner marker`,
+      });
     }
   }
-  if (baseOwner.header.cells.length !== oursOwner.header.cells.length || baseOwner.header.cells.length !== theirsOwner.header.cells.length) {
-    conflicts.push({ kind: 'header', base: baseOwner.header.cells.map((cell) => cell.value).join('\0'), ours: oursOwner.header.cells.map((cell) => cell.value).join('\0'), theirs: theirsOwner.header.cells.map((cell) => cell.value).join('\0'), message: 'Owner table column count changed' });
+  if (
+    baseOwner.header.cells.length !== oursOwner.header.cells.length ||
+    baseOwner.header.cells.length !== theirsOwner.header.cells.length
+  ) {
+    conflicts.push({
+      kind: 'header',
+      base: baseOwner.header.cells.map((cell) => cell.value).join('\0'),
+      ours: oursOwner.header.cells.map((cell) => cell.value).join('\0'),
+      theirs: theirsOwner.header.cells.map((cell) => cell.value).join('\0'),
+      message: 'Owner table column count changed',
+    });
   }
   const baseHeader = baseOwner.header.cells.map((cell) => cell.value).join('\0');
   const oursHeader = oursOwner.header.cells.map((cell) => cell.value).join('\0');
@@ -188,16 +233,20 @@ export function mergeDatabaseMarkdownTables(
     baseOwner.rows.length === oursOwner.rows.length &&
     baseOwner.rows.length === theirsOwner.rows.length;
   const keySetsDiffer =
-    [...defaultBaseRows.keys()].sort().join('\0') !== [...defaultOursRows.keys()].sort().join('\0') ||
-    [...defaultBaseRows.keys()].sort().join('\0') !== [...defaultTheirsRows.keys()].sort().join('\0');
+    [...defaultBaseRows.keys()].sort().join('\0') !==
+      [...defaultOursRows.keys()].sort().join('\0') ||
+    [...defaultBaseRows.keys()].sort().join('\0') !==
+      [...defaultTheirsRows.keys()].sort().join('\0');
   // A path/title rename changes the visible wikilink but not the row identity.
   // When all sides retain the same row cardinality and only the identity key
   // became unavailable, use row position as a conservative local fallback.
   // If the key sets still match, preserve stable-key order so row reorders stay
   // explicit conflicts instead of being mistaken for cell edits.
-  const keyForRow = input.rowKey ?? (sameRowCount && keySetsDiffer
-    ? (_row: DatabaseMarkdownTableRow, index: number) => `__positional_row_${index}`
-    : defaultRowKey);
+  const keyForRow =
+    input.rowKey ??
+    (sameRowCount && keySetsDiffer
+      ? (_row: DatabaseMarkdownTableRow, index: number) => `__positional_row_${index}`
+      : defaultRowKey);
   const baseRows = rowMap(baseOwner, keyForRow);
   const oursRows = rowMap(oursOwner, keyForRow);
   const theirsRows = rowMap(theirsOwner, keyForRow);
@@ -232,17 +281,35 @@ export function mergeDatabaseMarkdownTables(
     if (!base) {
       if (!ours && !theirs) continue;
       if (ours && theirs && !sameCells(ours, theirs)) {
-        conflicts.push({ kind: 'row', rowKey, base: null, ours: ours.cells.map((cell) => cell.value).join('\0'), theirs: theirs.cells.map((cell) => cell.value).join('\0'), message: 'Both sides inserted the same row key with different values' });
+        conflicts.push({
+          kind: 'row',
+          rowKey,
+          base: null,
+          ours: ours.cells.map((cell) => cell.value).join('\0'),
+          theirs: theirs.cells.map((cell) => cell.value).join('\0'),
+          message: 'Both sides inserted the same row key with different values',
+        });
         continue;
       }
       const selected = ours ?? theirs;
-      if (selected) mergedRows.set(rowKey, selected.cells.map((cell) => cell.value));
+      if (selected)
+        mergedRows.set(
+          rowKey,
+          selected.cells.map((cell) => cell.value),
+        );
       continue;
     }
     if (!ours || !theirs) {
       const surviving = ours ?? theirs;
       if (!surviving || sameCells(surviving, base)) continue;
-      conflicts.push({ kind: 'row', rowKey, base: base.cells.map((cell) => cell.value).join('\0'), ours: ours ? ours.cells.map((cell) => cell.value).join('\0') : null, theirs: theirs ? theirs.cells.map((cell) => cell.value).join('\0') : null, message: 'One side deleted a row while the other edited it' });
+      conflicts.push({
+        kind: 'row',
+        rowKey,
+        base: base.cells.map((cell) => cell.value).join('\0'),
+        ours: ours ? ours.cells.map((cell) => cell.value).join('\0') : null,
+        theirs: theirs ? theirs.cells.map((cell) => cell.value).join('\0') : null,
+        message: 'One side deleted a row while the other edited it',
+      });
       continue;
     }
     const cells: string[] = [];
@@ -251,7 +318,15 @@ export function mergeDatabaseMarkdownTables(
       const oursValue = ours.cells[columnIndex]?.value ?? '';
       const theirsValue = theirs.cells[columnIndex]?.value ?? '';
       if (oursValue !== baseValue && theirsValue !== baseValue && oursValue !== theirsValue) {
-        conflicts.push({ kind: 'cell', rowKey, columnIndex, base: baseValue, ours: oursValue, theirs: theirsValue, message: 'Both sides changed the same table cell differently' });
+        conflicts.push({
+          kind: 'cell',
+          rowKey,
+          columnIndex,
+          base: baseValue,
+          ours: oursValue,
+          theirs: theirsValue,
+          message: 'Both sides changed the same table cell differently',
+        });
         cells.push(baseValue);
       } else {
         cells.push(oursValue !== baseValue ? oursValue : theirsValue);
@@ -275,14 +350,25 @@ export function mergeDatabaseMarkdownTables(
   for (const [rowKey, values] of mergedRows) {
     const row = owner.rows.find((candidate, index) => keyForRow(candidate, index) === rowKey);
     if (!row) {
-      merged = insertDatabaseMarkdownTableRow(merged, owner, owner.rows.length, values.map(encodeDatabaseMarkdownCellText));
+      merged = insertDatabaseMarkdownTableRow(
+        merged,
+        owner,
+        owner.rows.length,
+        values.map(encodeDatabaseMarkdownCellText),
+      );
       owner = parseOwner(merged)!;
       continue;
     }
     for (let columnIndex = values.length - 1; columnIndex >= 0; columnIndex -= 1) {
       const current = row.cells[columnIndex]?.value ?? '';
       if (current !== values[columnIndex]) {
-        merged = replaceDatabaseMarkdownTableCell(merged, owner, row.rowIndex, columnIndex, encodeDatabaseMarkdownCellText(values[columnIndex] ?? ''));
+        merged = replaceDatabaseMarkdownTableCell(
+          merged,
+          owner,
+          row.rowIndex,
+          columnIndex,
+          encodeDatabaseMarkdownCellText(values[columnIndex] ?? ''),
+        );
         owner = parseOwner(merged)!;
       }
     }

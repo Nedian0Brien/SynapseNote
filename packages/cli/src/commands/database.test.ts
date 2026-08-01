@@ -93,11 +93,18 @@ describe('database Git driver CLI', () => {
   test('exposes inspect and retention cleanup recovery commands', () => {
     const migration = databaseCommand().commands.find((command) => command.name() === 'migration');
     expect(migration?.commands.map((command) => command.name())).toEqual(
-      expect.arrayContaining(['inspect', 'preview-cleanup', 'cleanup', 'preview', 'apply', 'status']),
+      expect.arrayContaining([
+        'inspect',
+        'preview-cleanup',
+        'cleanup',
+        'preview',
+        'apply',
+        'status',
+      ]),
     );
-    expect(migration?.commands.find((command) => command.name() === 'inspect')?.description()).toContain(
-      'content-free recovery hashes',
-    );
+    expect(
+      migration?.commands.find((command) => command.name() === 'inspect')?.description(),
+    ).toContain('content-free recovery hashes');
   });
 
   test('semantically merges independent v2 owner-table cells', () => {
@@ -110,7 +117,9 @@ describe('database Git driver CLI', () => {
       owner.replace('| [[tasks/one]] |', '| [[tasks/renamed]] |'),
     );
 
-    expect(runDatabaseMergeDriver('record', paths.basePath, paths.currentPath, paths.otherPath)).toBe(0);
+    expect(
+      runDatabaseMergeDriver('record', paths.basePath, paths.currentPath, paths.otherPath),
+    ).toBe(0);
     const merged = readFileSync(paths.currentPath, 'utf-8');
     expect(merged).toContain('[[tasks/renamed]]');
     expect(merged).toContain('| done |');
@@ -127,7 +136,9 @@ describe('database Git driver CLI', () => {
       owner.replace('| todo |', '| blocked |'),
     );
 
-    expect(runDatabaseMergeDriver('record', paths.basePath, paths.currentPath, paths.otherPath)).toBe(1);
+    expect(
+      runDatabaseMergeDriver('record', paths.basePath, paths.currentPath, paths.otherPath),
+    ).toBe(1);
     expect(readFileSync(paths.currentPath, 'utf-8')).toContain('<<<<<<<');
   });
 

@@ -124,7 +124,10 @@ describe('data_task MCP tool', () => {
         });
       }
       if (body.action === 'cleanup_migration') {
-        return Response.json({ action: 'cleanup_migration', cleanup: { taskId: 'task_1', removed: true } });
+        return Response.json({
+          action: 'cleanup_migration',
+          cleanup: { taskId: 'task_1', removed: true },
+        });
       }
       return Response.json({
         action: body.action,

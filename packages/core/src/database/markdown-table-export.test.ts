@@ -23,7 +23,14 @@ describe('Markdown table export contract', () => {
       ownerMarkdown: '',
       evaluatedAt: '2026-07-27T00:00:00.000Z',
       derivedRevision: 'sha256:derived',
-      records: [{ recordId: 'rec_a', path: 'orders/a.md', values: { prop_count: 2 }, computed: { prop_total: 4 } }],
+      records: [
+        {
+          recordId: 'rec_a',
+          path: 'orders/a.md',
+          values: { prop_count: 2 },
+          computed: { prop_total: 4 },
+        },
+      ],
     });
     expect(exported.canonical).toEqual([]);
     expect(exported.derivedRevision).toBe('sha256:derived');

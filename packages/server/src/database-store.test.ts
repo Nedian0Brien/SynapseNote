@@ -448,7 +448,10 @@ describe('DatabaseStore record identity assignment', () => {
     const store = createDatabaseStore({ projectDir, contentDir });
     await store.create(v2Definition());
     mkdirSync(join(contentDir, 'orders'), { recursive: true });
-    writeFileSync(join(contentDir, 'orders', 'alpha.md'), '---\n_sn:\n  document_id: doc_alpha\n---\n');
+    writeFileSync(
+      join(contentDir, 'orders', 'alpha.md'),
+      '---\n_sn:\n  document_id: doc_alpha\n---\n',
+    );
 
     await expect(
       store.assignRecordId({
@@ -460,7 +463,9 @@ describe('DatabaseStore record identity assignment', () => {
     await expect(
       store.previewSourceOnboarding({ databaseId: 'db_orders', sourceId: 'ds_orders' }),
     ).rejects.toMatchObject({ code: 'v2_storage_read_only' });
-    expect(readFileSync(join(contentDir, 'orders', 'alpha.md'), 'utf-8')).not.toContain('record_id:');
+    expect(readFileSync(join(contentDir, 'orders', 'alpha.md'), 'utf-8')).not.toContain(
+      'record_id:',
+    );
   });
 
   test('assigns once, preserves bytes and file mode, and is idempotent', async () => {

@@ -442,9 +442,7 @@ describe('GET /api/search — database entity kinds', () => {
         provenance: 'database',
         revision: expect.stringMatching(/^sha256:/),
       });
-      const visibleRecordResults = support.results.filter(
-        (row) => row.recordId === 'rec_visible',
-      );
+      const visibleRecordResults = support.results.filter((row) => row.recordId === 'rec_visible');
       expect(visibleRecordResults).toHaveLength(1);
       expect(visibleRecordResults[0]?.kind).toBe('record');
       expect(new Set(support.results.map((row) => `${row.kind}:${row.path}`)).size).toBe(

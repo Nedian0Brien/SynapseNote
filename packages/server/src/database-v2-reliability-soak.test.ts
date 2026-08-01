@@ -5,8 +5,8 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
-  DatabaseDefinitionSchema,
   createDatabaseMarkdownRecordId,
+  DatabaseDefinitionSchema,
   parseDatabaseMarkdownOwner,
   serializeDatabaseManifestYaml,
 } from '@nedian0brien/synapsenote-core';

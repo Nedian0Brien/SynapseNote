@@ -21,9 +21,10 @@ describe('database document identity', () => {
       ok: false,
       code: 'missing_frontmatter',
     });
-    expect(
-      parseDatabaseDocumentIdentity('---\n_sn: [broken\n---\n# Broken\n'),
-    ).toMatchObject({ ok: false, code: 'malformed_frontmatter' });
+    expect(parseDatabaseDocumentIdentity('---\n_sn: [broken\n---\n# Broken\n')).toMatchObject({
+      ok: false,
+      code: 'malformed_frontmatter',
+    });
     expect(parseDatabaseDocumentIdentity('---\ntitle: Missing\n---\n')).toMatchObject({
       ok: false,
       code: 'missing_document_id',
@@ -103,10 +104,16 @@ describe('database document identity', () => {
       reassignDatabaseDocumentIdentity({ markdown: '# no id', documentId: 'doc_copy' }),
     ).toMatchObject({ ok: false, code: 'missing_document_id' });
     expect(
-      reassignDatabaseDocumentIdentity({ markdown: '---\n_sn: [broken\n---\n', documentId: 'doc_copy' }),
+      reassignDatabaseDocumentIdentity({
+        markdown: '---\n_sn: [broken\n---\n',
+        documentId: 'doc_copy',
+      }),
     ).toMatchObject({ ok: false, code: 'malformed_frontmatter' });
     expect(
-      reassignDatabaseDocumentIdentity({ markdown: '---\n_sn:\n  document_id: nope\n---\n', documentId: 'doc_copy' }),
+      reassignDatabaseDocumentIdentity({
+        markdown: '---\n_sn:\n  document_id: nope\n---\n',
+        documentId: 'doc_copy',
+      }),
     ).toMatchObject({ ok: false, code: 'invalid_existing_document_id' });
   });
 });

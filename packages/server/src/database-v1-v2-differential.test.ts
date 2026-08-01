@@ -3,12 +3,12 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import {
+  compareDatabaseMigrationLogicalSnapshots,
   DatabaseDefinitionSchema,
   DatabaseQuerySchema,
   planDatabaseMarkdownV2Migration,
   queryDatabaseRecords,
   serializeDatabaseManifestYaml,
-  compareDatabaseMigrationLogicalSnapshots,
 } from '@nedian0brien/synapsenote-core';
 import { createDatabaseRecordIndex } from './database-record-index.ts';
 import { createDatabaseStore } from './database-store.ts';
@@ -95,7 +95,11 @@ function recordMarkdown(record: (typeof RECORDS)[number]): string {
   ].join('\n');
 }
 
-function seedV1Workspace(): { projectDir: string; contentDir: string; definition: ReturnType<typeof v1Definition> } {
+function seedV1Workspace(): {
+  projectDir: string;
+  contentDir: string;
+  definition: ReturnType<typeof v1Definition>;
+} {
   const projectDir = mkdtempSync(join(tmpdir(), 'synapsenote-database-differential-v1-'));
   const contentDir = join(projectDir, 'content');
   mkdirSync(join(projectDir, '.ok', 'databases'), { recursive: true });
@@ -105,7 +109,8 @@ function seedV1Workspace(): { projectDir: string; contentDir: string; definition
     join(projectDir, '.ok', 'databases', 'tasks.yml'),
     serializeDatabaseManifestYaml(definition),
   );
-  for (const record of RECORDS) writeFileSync(join(contentDir, record.path), recordMarkdown(record));
+  for (const record of RECORDS)
+    writeFileSync(join(contentDir, record.path), recordMarkdown(record));
   tempDirs.push(projectDir);
   return { projectDir, contentDir, definition };
 }
@@ -172,7 +177,9 @@ describe('v1/v2 database reader differential', () => {
 
     const v2Runtime = await readIndex(v2ProjectDir, v2ContentDir);
     const v2Records = v2Runtime.index.list('db_tasks', 'ds_tasks');
-    const aliases = new Map(migration.aliases.map((alias) => [alias.legacyRecordId, alias.canonicalRecordId]));
+    const aliases = new Map(
+      migration.aliases.map((alias) => [alias.legacyRecordId, alias.canonicalRecordId]),
+    );
     const canonicalId = (legacyId: string): string => aliases.get(legacyId) ?? legacyId;
     const logical = compareDatabaseMigrationLogicalSnapshots({
       expected: v1Records.map((record) => ({
@@ -183,7 +190,11 @@ describe('v1/v2 database reader differential', () => {
       })),
       actual: v2Records,
     });
-    expect(logical).toMatchObject({ passed: true, expectedCount: RECORDS.length, actualCount: RECORDS.length });
+    expect(logical).toMatchObject({
+      passed: true,
+      expectedCount: RECORDS.length,
+      actualCount: RECORDS.length,
+    });
     expect(v2Records.map((record) => record.id).sort()).toEqual(
       v1Records.map((record) => canonicalId(record.id)).sort(),
     );

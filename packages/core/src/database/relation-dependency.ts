@@ -62,11 +62,12 @@ export function buildDatabaseReverseRelationIndex(
     }
   }
   for (const [target, edges] of byTargetRecordId) {
-    edges.sort((left, right) =>
-      left.sourceId.localeCompare(right.sourceId) ||
-      left.recordId.localeCompare(right.recordId) ||
-      left.propertyId.localeCompare(right.propertyId) ||
-      left.ordinal - right.ordinal,
+    edges.sort(
+      (left, right) =>
+        left.sourceId.localeCompare(right.sourceId) ||
+        left.recordId.localeCompare(right.recordId) ||
+        left.propertyId.localeCompare(right.propertyId) ||
+        left.ordinal - right.ordinal,
     );
     byTargetRecordId.set(target, edges);
   }

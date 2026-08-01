@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'bun:test';
-import { DatabaseDefinitionSchema } from './schema.ts';
-import { materializeDatabaseRecord, type DatabaseValue } from './record.ts';
-import { materializeDatabaseMarkdownOwner } from './markdown-table-record.ts';
 import { parseDatabaseDocumentIdentity } from './document-identity.ts';
 import { resolveDatabaseDocumentTitle } from './markdown-table-document.ts';
 import { planDatabaseMarkdownV2Migration } from './markdown-table-migration.ts';
 import { compareDatabaseMigrationLogicalSnapshots } from './markdown-table-migration-equivalence.ts';
+import { materializeDatabaseMarkdownOwner } from './markdown-table-record.ts';
 import { queryDatabaseRecords } from './query.ts';
+import { type DatabaseValue, materializeDatabaseRecord } from './record.ts';
+import { DatabaseDefinitionSchema } from './schema.ts';
 
 describe('v1 to v2 migration logical equivalence', () => {
   test('ignores storage paths but compares stable IDs, typed values, invalid raw, and derived results', () => {
@@ -90,21 +90,25 @@ describe('v1 to v2 migration logical equivalence', () => {
         databaseId: 'db_tasks',
         sourceId: 'ds_tasks',
         path: 'tasks/alpha.md',
-        markdown: '---\n_sn:\n  database_id: db_tasks\n  source_id: ds_tasks\n  record_id: rec_alpha\ntitle: Alpha\nnotes: Keep this\nscore: 2.5\n---\nAlpha body\n',
+        markdown:
+          '---\n_sn:\n  database_id: db_tasks\n  source_id: ds_tasks\n  record_id: rec_alpha\ntitle: Alpha\nnotes: Keep this\nscore: 2.5\n---\nAlpha body\n',
       },
       {
         databaseId: 'db_tasks',
         sourceId: 'ds_tasks',
         path: 'tasks/beta.md',
-        markdown: '---\n_sn:\n  database_id: db_tasks\n  source_id: ds_tasks\n  record_id: rec_beta\ntitle: Beta\nnotes: Review this\nscore: 4\n---\nBeta body\n',
+        markdown:
+          '---\n_sn:\n  database_id: db_tasks\n  source_id: ds_tasks\n  record_id: rec_beta\ntitle: Beta\nnotes: Review this\nscore: 4\n---\nBeta body\n',
       },
     ] as const;
-    const v1 = records.map((record) => materializeDatabaseRecord({
-      definition,
-      sourceId: 'ds_tasks',
-      path: record.path,
-      markdown: record.markdown,
-    }));
+    const v1 = records.map((record) =>
+      materializeDatabaseRecord({
+        definition,
+        sourceId: 'ds_tasks',
+        path: record.path,
+        markdown: record.markdown,
+      }),
+    );
     expect(v1.every((result) => result.ok)).toBe(true);
     const plan = planDatabaseMarkdownV2Migration({
       definition,
@@ -127,7 +131,9 @@ describe('v1 to v2 migration logical equivalence', () => {
       markdown: ownerMarkdown!,
       resolveDocument: (link) => {
         const target = link.target.replace(/\.(?:md|mdx)$/iu, '');
-        const document = linked.find((candidate) => candidate.path.replace(/\.(?:md|mdx)$/iu, '') === target);
+        const document = linked.find(
+          (candidate) => candidate.path.replace(/\.(?:md|mdx)$/iu, '') === target,
+        );
         return document ? { path: document.path, documentId: document.documentId } : null;
       },
     });
@@ -147,7 +153,13 @@ describe('v1 to v2 migration logical equivalence', () => {
     const actual = materialized.rows.map((row) => {
       const values = { ...row.values } as Record<string, unknown>;
       const document = linked.find((candidate) => candidate.documentId === row.documentId);
-      if (document && values.prop_title && typeof values.prop_title === 'object' && !Array.isArray(values.prop_title) && 'kind' in values.prop_title) {
+      if (
+        document &&
+        values.prop_title &&
+        typeof values.prop_title === 'object' &&
+        !Array.isArray(values.prop_title) &&
+        'kind' in values.prop_title
+      ) {
         values.prop_title = resolveDatabaseDocumentTitle(document.markdown, document.path).value;
       }
       return {

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { parseDatabaseManifestYaml } from './manifest.ts';
-import { DatabaseSourceSchema, DatabaseMarkdownOwnerStorageSchema } from './schema.ts';
+import { DatabaseMarkdownOwnerStorageSchema, DatabaseSourceSchema } from './schema.ts';
 
 const fixture = parseDatabaseManifestYaml(
   readFileSync(new URL('./fixtures/v1/database.yml', import.meta.url), 'utf8'),

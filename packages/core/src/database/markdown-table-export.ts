@@ -72,6 +72,8 @@ export function createDatabaseMarkdownTableExport(input: {
     derivedRevision: input.derivedRevision,
     evaluatedAt: input.evaluatedAt,
     canonical: [],
-    snapshot: [...(input.records ?? [])].sort((left, right) => left.recordId.localeCompare(right.recordId)),
+    snapshot: [...(input.records ?? [])].sort((left, right) =>
+      left.recordId.localeCompare(right.recordId),
+    ),
   };
 }

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { DatabaseDefinitionSchema } from './schema.ts';
 import { DATABASE_MARKDOWN_LIMITS } from './markdown-table.ts';
 import { planDatabaseMarkdownV2Migration } from './markdown-table-migration.ts';
+import { DatabaseDefinitionSchema } from './schema.ts';
 
 const definition = DatabaseDefinitionSchema.parse({
   version: 1,
@@ -95,7 +95,13 @@ const definition = DatabaseDefinitionSchema.parse({
     },
   ],
   people: [
-    { id: 'person_alice', key: 'alice', name: 'Alice', kind: 'local', subjectId: 'principal-alice' },
+    {
+      id: 'person_alice',
+      key: 'alice',
+      name: 'Alice',
+      kind: 'local',
+      subjectId: 'principal-alice',
+    },
   ],
 });
 
@@ -104,11 +110,9 @@ const owners = [
   { sourceId: 'ds_targets', path: 'targets.md', blockId: 'dbb_targets_matrix' },
 ] as const;
 
-function itemMarkdown(options: {
-  lineEnding?: '\n' | '\r\n';
-  bom?: boolean;
-  text?: string;
-} = {}): string {
+function itemMarkdown(
+  options: { lineEnding?: '\n' | '\r\n'; bom?: boolean; text?: string } = {},
+): string {
   const eol = options.lineEnding ?? '\n';
   const source = [
     '---',
@@ -159,17 +163,38 @@ describe('v1→v2 migration fixture matrix', () => {
   test.each([
     ['generated blank', [], 'items.md'],
     ['existing folder', [{ path: 'items/rec_item.md', markdown: itemMarkdown() }], 'items.md'],
-    ['inline owner block', [{ path: 'items/rec_item.md', markdown: itemMarkdown() }], 'notes/page.md'],
-    ['full-page owner document', [{ path: 'items/rec_item.md', markdown: itemMarkdown() }], 'databases/items.md'],
-    ['CRLF BOM Unicode', [{ path: 'items/rec_item.md', markdown: itemMarkdown({ lineEnding: '\r\n', bom: true }) }], 'items.md'],
+    [
+      'inline owner block',
+      [{ path: 'items/rec_item.md', markdown: itemMarkdown() }],
+      'notes/page.md',
+    ],
+    [
+      'full-page owner document',
+      [{ path: 'items/rec_item.md', markdown: itemMarkdown() }],
+      'databases/items.md',
+    ],
+    [
+      'CRLF BOM Unicode',
+      [{ path: 'items/rec_item.md', markdown: itemMarkdown({ lineEnding: '\r\n', bom: true }) }],
+      'items.md',
+    ],
   ] as const)('%s creates a deterministic plan for %s', (_name, records, ownerPath) => {
     const result = planDatabaseMarkdownV2Migration({
       definition,
-      owners: owners.map((owner) => (owner.sourceId === 'ds_items' ? { ...owner, path: ownerPath } : owner)),
+      owners: owners.map((owner) =>
+        owner.sourceId === 'ds_items' ? { ...owner, path: ownerPath } : owner,
+      ),
       records: [
         ...records.map((record) => ({ databaseId: 'db_matrix', sourceId: 'ds_items', ...record })),
         ...(records.length > 0
-          ? [{ databaseId: 'db_matrix', sourceId: 'ds_targets', path: 'targets/target.md', markdown: targetMarkdown() }]
+          ? [
+              {
+                databaseId: 'db_matrix',
+                sourceId: 'ds_targets',
+                path: 'targets/target.md',
+                markdown: targetMarkdown(),
+              },
+            ]
           : []),
       ],
     });
@@ -197,12 +222,19 @@ describe('v1→v2 migration fixture matrix', () => {
           path: 'items/invalid.md',
           markdown: itemMarkdown().replace('select: alpha', 'select: unknown'),
         },
-        { databaseId: 'db_matrix', sourceId: 'ds_targets', path: 'targets/target.md', markdown: targetMarkdown() },
+        {
+          databaseId: 'db_matrix',
+          sourceId: 'ds_targets',
+          path: 'targets/target.md',
+          markdown: targetMarkdown(),
+        },
       ],
     });
     expect(result.status).toBe('blocked');
     expect(result.ownerDocuments).toEqual({});
-    expect(result.blockers.some((blocker) => blocker.code === 'unsupported_property_value')).toBe(true);
+    expect(result.blockers.some((blocker) => blocker.code === 'unsupported_property_value')).toBe(
+      true,
+    );
   });
 
   test('blocks a frontmatter value that exceeds the canonical byte budget before activation', () => {
@@ -214,13 +246,22 @@ describe('v1→v2 migration fixture matrix', () => {
           databaseId: 'db_matrix',
           sourceId: 'ds_items',
           path: 'items/large.md',
-          markdown: itemMarkdown({ text: JSON.stringify('x'.repeat(DATABASE_MARKDOWN_LIMITS.cellBytes + 1)) }),
+          markdown: itemMarkdown({
+            text: JSON.stringify('x'.repeat(DATABASE_MARKDOWN_LIMITS.cellBytes + 1)),
+          }),
         },
-        { databaseId: 'db_matrix', sourceId: 'ds_targets', path: 'targets/target.md', markdown: targetMarkdown() },
+        {
+          databaseId: 'db_matrix',
+          sourceId: 'ds_targets',
+          path: 'targets/target.md',
+          markdown: targetMarkdown(),
+        },
       ],
     });
     expect(result.status).toBe('blocked');
     expect(result.ownerDocuments).toEqual({});
-    expect(result.blockers.map((blocker) => blocker.code)).toContain('record_materialization_failed');
+    expect(result.blockers.map((blocker) => blocker.code)).toContain(
+      'record_materialization_failed',
+    );
   });
 });

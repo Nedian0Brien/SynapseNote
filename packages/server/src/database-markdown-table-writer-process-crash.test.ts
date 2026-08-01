@@ -8,6 +8,7 @@
  */
 
 import { afterEach, describe, expect, test } from 'bun:test';
+import { createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -15,11 +16,10 @@ import {
   DatabaseDefinitionSchema,
   serializeDatabaseManifestYaml,
 } from '@nedian0brien/synapsenote-core';
+import { createDatabaseMarkdownTableJournal } from './database-markdown-table-journal.ts';
+import { createDatabaseMarkdownTableWriter } from './database-markdown-table-writer.ts';
 import { createDatabaseRecordIndex } from './database-record-index.ts';
 import { createDatabaseStore } from './database-store.ts';
-import { createDatabaseMarkdownTableWriter } from './database-markdown-table-writer.ts';
-import { createDatabaseMarkdownTableJournal } from './database-markdown-table-journal.ts';
-import { createHash } from 'node:crypto';
 
 const tempDirs: string[] = [];
 const SERVER_PACKAGE_ROOT = resolve(import.meta.dir, '..');
@@ -99,12 +99,20 @@ function definition() {
   });
 }
 
-function seedProject(): { projectDir: string; contentDir: string; owner: string; document: string } {
+function seedProject(): {
+  projectDir: string;
+  contentDir: string;
+  owner: string;
+  document: string;
+} {
   const projectDir = mkdtempSync(join(tmpdir(), 'synapsenote-v2-writer-crash-'));
   const contentDir = join(projectDir, 'content');
   mkdirSync(join(projectDir, '.ok', 'databases'), { recursive: true });
   mkdirSync(join(contentDir, 'orders'), { recursive: true });
-  writeFileSync(join(projectDir, '.ok', 'databases', 'tasks.yml'), serializeDatabaseManifestYaml(definition()));
+  writeFileSync(
+    join(projectDir, '.ok', 'databases', 'tasks.yml'),
+    serializeDatabaseManifestYaml(definition()),
+  );
   const owner = [
     '<!-- synapsenote:database',
     'version=2',
@@ -168,11 +176,15 @@ describe('v2 owner-table writer process-kill recovery', () => {
       if (crashIndex === 0) {
         expect(state).toBe('recovery_required');
         expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toBe(owner);
-        expect(readFileSync(join(contentDir, 'orders/alpha.md'), 'utf8')).toContain('Renamed order');
+        expect(readFileSync(join(contentDir, 'orders/alpha.md'), 'utf8')).toContain(
+          'Renamed order',
+        );
       } else {
         expect(state).toBe('committed');
         expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toContain('Renamed order');
-        expect(readFileSync(join(contentDir, 'orders/alpha.md'), 'utf8')).toContain('Renamed order');
+        expect(readFileSync(join(contentDir, 'orders/alpha.md'), 'utf8')).toContain(
+          'Renamed order',
+        );
       }
       const journal = await createDatabaseMarkdownTableJournal(projectDir).listInflight();
       expect(journal).toHaveLength(crashIndex === 0 ? 1 : 0);
@@ -227,7 +239,9 @@ describe('v2 owner-table writer process-kill recovery', () => {
         await coldStore.reload();
         const coldIndex = createDatabaseRecordIndex({ contentDir, databaseStore: coldStore });
         await coldIndex.rebuild();
-        expect(coldIndex.getById(currentRecord.id)?.values.prop_notes).toBe(`iteration-${iteration}`);
+        expect(coldIndex.getById(currentRecord.id)?.values.prop_notes).toBe(
+          `iteration-${iteration}`,
+        );
       }
     }
     if (!lastReceipt) throw new Error('soak produced no receipt');
@@ -277,7 +291,9 @@ describe('v2 owner-table writer process-kill recovery', () => {
     expect(copied.receipt.operation).toBe('copy_row');
     expect(copied.receipt.recordId).not.toBe(source.id);
     expect(readFileSync(join(contentDir, 'orders/alpha.md'), 'utf8')).toBe(document);
-    expect(readFileSync(join(contentDir, 'orders/copy.md'), 'utf8')).toContain('document_id: doc_copy');
+    expect(readFileSync(join(contentDir, 'orders/copy.md'), 'utf8')).toContain(
+      'document_id: doc_copy',
+    );
     expect(readFileSync(join(contentDir, 'orders.md'), 'utf8')).toContain('[[orders/copy]]');
     await writer.undo({ receipt: copied.receipt });
     expect(readFileSync(join(contentDir, 'orders/alpha.md'), 'utf8')).toBe(document);

@@ -27,7 +27,11 @@ describe('Markdown identity repair planning', () => {
     expect(plan.actions).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ kind: 'assign_document_id', path: 'tasks/alpha.md' }),
-        expect.objectContaining({ kind: 'rewrite_title_alias', ownerPath: 'tasks.md', rowIndex: 0 }),
+        expect.objectContaining({
+          kind: 'rewrite_title_alias',
+          ownerPath: 'tasks.md',
+          rowIndex: 0,
+        }),
       ]),
     );
     expect(plan.issues.map((issue) => issue.code)).toEqual(['stale_alias']);

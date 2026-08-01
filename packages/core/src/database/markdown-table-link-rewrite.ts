@@ -1,7 +1,4 @@
-import {
-  parseDatabaseMarkdownOwner,
-  type ParsedDatabaseMarkdownOwner,
-} from './markdown-table.ts';
+import { type ParsedDatabaseMarkdownOwner, parseDatabaseMarkdownOwner } from './markdown-table.ts';
 
 export interface DatabaseMarkdownLinkRewrite {
   rowIndex: number;
@@ -47,12 +44,15 @@ export function rewriteDatabaseMarkdownDocumentLinks(input: {
   for (const row of parsed.owner.rows) {
     for (const cell of row.cells) {
       const source = input.markdown.slice(cell.valueRange.start, cell.valueRange.end);
-      const next = source.replace(/\[\[([^\]|#^]+)(?:\|([^\]]*))?\]\]/gu, (whole, target: string, alias?: string) => {
-        const escapedSeparator = target.endsWith('\\');
-        const cleanTarget = escapedSeparator ? target.slice(0, -1) : target;
-        if (pathTarget(cleanTarget.trim()) !== oldTarget) return whole;
-        return `[[${newTarget}${alias === undefined ? '' : `${escapedSeparator ? '\\|' : '|'}${alias}`}]]`;
-      });
+      const next = source.replace(
+        /\[\[([^\]|#^]+)(?:\|([^\]]*))?\]\]/gu,
+        (whole, target: string, alias?: string) => {
+          const escapedSeparator = target.endsWith('\\');
+          const cleanTarget = escapedSeparator ? target.slice(0, -1) : target;
+          if (pathTarget(cleanTarget.trim()) !== oldTarget) return whole;
+          return `[[${newTarget}${alias === undefined ? '' : `${escapedSeparator ? '\\|' : '|'}${alias}`}]]`;
+        },
+      );
       if (next === source) continue;
       replacements.push({ start: cell.valueRange.start, end: cell.valueRange.end, value: next });
       rewrites.push({
@@ -66,7 +66,8 @@ export function rewriteDatabaseMarkdownDocumentLinks(input: {
   }
   let markdown = input.markdown;
   for (const replacement of replacements.sort((left, right) => right.start - left.start)) {
-    markdown = markdown.slice(0, replacement.start) + replacement.value + markdown.slice(replacement.end);
+    markdown =
+      markdown.slice(0, replacement.start) + replacement.value + markdown.slice(replacement.end);
   }
   const reparsed = parseDatabaseMarkdownOwner(markdown);
   if (!reparsed.ok) throw new Error(`Rewritten owner failed verification: ${reparsed.message}`);

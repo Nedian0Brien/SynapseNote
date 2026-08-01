@@ -9,7 +9,8 @@ afterEach(() => {
 });
 
 function capture() {
-  let handler: (args: Record<string, unknown>) => Promise<Record<string, unknown>> = async () => ({});
+  let handler: (args: Record<string, unknown>) => Promise<Record<string, unknown>> =
+    async () => ({});
   let config: Record<string, unknown> = {};
   const server = {
     registerTool(_name: string, nextConfig: Record<string, unknown>, nextHandler: typeof handler) {

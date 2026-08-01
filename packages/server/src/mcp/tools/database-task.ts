@@ -73,7 +73,12 @@ interface Args {
   ownerChoices?: Record<string, Record<string, { path: string; blockId: string }>>;
   titleChoices?: Record<
     string,
-    Record<string, { kind: 'keep_document_title' } | { kind: 'use_record_title' } | { kind: 'custom_title'; title: string }>
+    Record<
+      string,
+      | { kind: 'keep_document_title' }
+      | { kind: 'use_record_title' }
+      | { kind: 'custom_title'; title: string }
+    >
   >;
   derivedBaselines?: Record<
     string,
@@ -108,14 +113,25 @@ const OutputSchema = outputSchemaWithText({
       taskId: z.string().startsWith('task_'),
       state: z.enum(['prepared', 'staged', 'activated', 'rolled_back', 'recovery_required']),
       updatedAt: z.string().datetime(),
-      files: z.array(z.object({ path: z.string(), beforeSha256: z.string().nullable(), afterSha256: z.string().nullable() }).strict()),
+      files: z.array(
+        z
+          .object({
+            path: z.string(),
+            beforeSha256: z.string().nullable(),
+            afterSha256: z.string().nullable(),
+          })
+          .strict(),
+      ),
       taskMaterialPresent: z.boolean(),
       undoAvailable: z.boolean(),
       undoExpiresAt: z.string().datetime().nullable(),
     })
     .optional(),
   cleanupPlan: DatabaseMigrationCleanupPlanSchema.optional(),
-  cleanup: z.object({ taskId: z.string().startsWith('task_'), removed: z.boolean() }).strict().optional(),
+  cleanup: z
+    .object({ taskId: z.string().startsWith('task_'), removed: z.boolean() })
+    .strict()
+    .optional(),
   problem: DatabaseToolProblemOutputSchema.optional(),
 });
 
@@ -182,7 +198,9 @@ export function register(server: ServerInstance, deps: Dependencies): void {
           .optional(),
         databaseIds: z.array(z.string().min(1)).max(10_000).optional(),
         targetVersion: z.number().int().positive().optional(),
-        planHashes: z.record(z.string().min(1), z.string().regex(/^sha256:[a-f0-9]{64}$/)).optional(),
+        planHashes: z
+          .record(z.string().min(1), z.string().regex(/^sha256:[a-f0-9]{64}$/))
+          .optional(),
         migrationCommittedAt: z
           .record(z.string().min(1), z.string().datetime({ offset: true }))
           .optional(),
@@ -191,7 +209,9 @@ export function register(server: ServerInstance, deps: Dependencies): void {
             z.string().startsWith('db_'),
             z.record(
               z.string().startsWith('ds_'),
-              z.object({ path: z.string().min(1), blockId: z.string().startsWith('dbb_') }).strict(),
+              z
+                .object({ path: z.string().min(1), blockId: z.string().startsWith('dbb_') })
+                .strict(),
             ),
           )
           .optional(),
@@ -203,7 +223,9 @@ export function register(server: ServerInstance, deps: Dependencies): void {
               z.discriminatedUnion('kind', [
                 z.object({ kind: z.literal('keep_document_title') }).strict(),
                 z.object({ kind: z.literal('use_record_title') }).strict(),
-                z.object({ kind: z.literal('custom_title'), title: z.string().min(1).max(200) }).strict(),
+                z
+                  .object({ kind: z.literal('custom_title'), title: z.string().min(1).max(200) })
+                  .strict(),
               ]),
             ),
           )
@@ -267,7 +289,10 @@ export function register(server: ServerInstance, deps: Dependencies): void {
         });
       }
       if (
-        (args.action === 'cancel' || args.action === 'cleanup_migration' || args.action === 'retry' || args.action === 'resume') &&
+        (args.action === 'cancel' ||
+          args.action === 'cleanup_migration' ||
+          args.action === 'retry' ||
+          args.action === 'resume') &&
         !args.expectedRevision
       ) {
         return databaseToolInputError(
@@ -363,40 +388,49 @@ export function register(server: ServerInstance, deps: Dependencies): void {
                   ? { action: args.action, taskId: args.taskId }
                   : args.action === 'preview_cleanup_migration'
                     ? { action: args.action, taskId: args.taskId }
-                  : args.action === 'cleanup_migration' || args.action === 'cancel' || args.action === 'retry' || args.action === 'resume'
-                  ? {
-                      action: args.action,
-                      taskId: args.taskId,
-                      expectedRevision: args.expectedRevision,
-                      ...(args.planHash ? { planHash: args.planHash } : {}),
-                      ...(args.approvalToken ? { approvalToken: args.approvalToken } : {}),
-                    }
-                  : {
-                      action: args.action,
-                      task:
-                        args.operation === 'bulk'
-                          ? { operation: args.operation, commit: args.commit }
-                          : args.operation === 'import'
-                            ? {
-                                operation: args.operation,
-                                databaseId: args.databaseId,
-                                sourceId: args.sourceId,
-                                expectedManifestRevision: args.expectedManifestRevision,
-                              }
-                            : {
-                                operation: 'migration',
-                                expectedManifestRevision: args.expectedManifestRevision,
-                                targetVersion: args.targetVersion,
-                                ...(args.databaseIds ? { databaseIds: args.databaseIds } : {}),
-                                ...(args.planHashes ? { planHashes: args.planHashes } : {}),
-                                ...(args.migrationCommittedAt
-                                  ? { migrationCommittedAt: args.migrationCommittedAt }
-                                  : {}),
-                                ...(args.ownerChoices ? { ownerChoices: args.ownerChoices } : {}),
-                                ...(args.titleChoices ? { titleChoices: args.titleChoices } : {}),
-                                ...(args.derivedBaselines ? { derivedBaselines: args.derivedBaselines } : {}),
-                              },
-                    },
+                    : args.action === 'cleanup_migration' ||
+                        args.action === 'cancel' ||
+                        args.action === 'retry' ||
+                        args.action === 'resume'
+                      ? {
+                          action: args.action,
+                          taskId: args.taskId,
+                          expectedRevision: args.expectedRevision,
+                          ...(args.planHash ? { planHash: args.planHash } : {}),
+                          ...(args.approvalToken ? { approvalToken: args.approvalToken } : {}),
+                        }
+                      : {
+                          action: args.action,
+                          task:
+                            args.operation === 'bulk'
+                              ? { operation: args.operation, commit: args.commit }
+                              : args.operation === 'import'
+                                ? {
+                                    operation: args.operation,
+                                    databaseId: args.databaseId,
+                                    sourceId: args.sourceId,
+                                    expectedManifestRevision: args.expectedManifestRevision,
+                                  }
+                                : {
+                                    operation: 'migration',
+                                    expectedManifestRevision: args.expectedManifestRevision,
+                                    targetVersion: args.targetVersion,
+                                    ...(args.databaseIds ? { databaseIds: args.databaseIds } : {}),
+                                    ...(args.planHashes ? { planHashes: args.planHashes } : {}),
+                                    ...(args.migrationCommittedAt
+                                      ? { migrationCommittedAt: args.migrationCommittedAt }
+                                      : {}),
+                                    ...(args.ownerChoices
+                                      ? { ownerChoices: args.ownerChoices }
+                                      : {}),
+                                    ...(args.titleChoices
+                                      ? { titleChoices: args.titleChoices }
+                                      : {}),
+                                    ...(args.derivedBaselines
+                                      ? { derivedBaselines: args.derivedBaselines }
+                                      : {}),
+                                  },
+                        },
         databaseAccessHeaders(deps.identityRef?.current),
       );
       if (!response.ok) return databaseToolHttpError(response, { action: args.action, cwd });
@@ -433,12 +467,14 @@ export function register(server: ServerInstance, deps: Dependencies): void {
       }
       if (args.action === 'inspect_migration') {
         return textPlusStructured(
-          `Migration ${String((data.inspection as { taskId?: unknown } | undefined)?.taskId)} is ${String((data.inspection as { state?: unknown } | undefined)?.state)}; undo is ${((data.inspection as { undoAvailable?: unknown } | undefined)?.undoAvailable === true) ? 'available' : 'not available'}.`,
+          `Migration ${String((data.inspection as { taskId?: unknown } | undefined)?.taskId)} is ${String((data.inspection as { state?: unknown } | undefined)?.state)}; undo is ${(data.inspection as { undoAvailable?: unknown } | undefined)?.undoAvailable === true ? 'available' : 'not available'}.`,
           { cwd, action: args.action, inspection: data.inspection },
         );
       }
       if (args.action === 'preview_cleanup_migration') {
-        const cleanupPlan = data.cleanupPlan as { taskId?: unknown; committable?: unknown } | undefined;
+        const cleanupPlan = data.cleanupPlan as
+          | { taskId?: unknown; committable?: unknown }
+          | undefined;
         return textPlusStructured(
           `Cleanup preview for ${String(cleanupPlan?.taskId)} is ${cleanupPlan?.committable === true ? 'ready for approval' : 'blocked'}.`,
           { cwd, action: args.action, cleanupPlan: data.cleanupPlan },
@@ -446,7 +482,7 @@ export function register(server: ServerInstance, deps: Dependencies): void {
       }
       if (args.action === 'cleanup_migration') {
         return textPlusStructured(
-          `Migration recovery material for ${String((data.cleanup as { taskId?: unknown } | undefined)?.taskId)} was ${((data.cleanup as { removed?: unknown } | undefined)?.removed === true) ? 'removed' : 'retained'}.`,
+          `Migration recovery material for ${String((data.cleanup as { taskId?: unknown } | undefined)?.taskId)} was ${(data.cleanup as { removed?: unknown } | undefined)?.removed === true ? 'removed' : 'retained'}.`,
           { cwd, action: args.action, cleanup: data.cleanup },
         );
       }

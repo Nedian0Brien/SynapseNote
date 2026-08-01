@@ -91,11 +91,7 @@ const definition = DatabaseDefinitionSchema.parse({
   ],
 });
 
-function record(
-  id: string,
-  sourceId: string,
-  values: DatabaseRecord['values'],
-): DatabaseRecord {
+function record(id: string, sourceId: string, values: DatabaseRecord['values']): DatabaseRecord {
   return {
     id,
     databaseId: definition.id,

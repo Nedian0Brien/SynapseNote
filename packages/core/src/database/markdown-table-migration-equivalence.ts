@@ -39,7 +39,9 @@ function digest(value: string): string {
   return `sha256:${bytesToHex(sha256(new TextEncoder().encode(value)))}`;
 }
 
-function snapshot(record: DatabaseMigrationLogicalSnapshotRecord | DatabaseRecord): DatabaseMigrationLogicalSnapshotRecord {
+function snapshot(
+  record: DatabaseMigrationLogicalSnapshotRecord | DatabaseRecord,
+): DatabaseMigrationLogicalSnapshotRecord {
   const canonicalRecordId = 'canonicalRecordId' in record ? record.canonicalRecordId : record.id;
   return {
     canonicalRecordId,
@@ -59,28 +61,47 @@ export function compareDatabaseMigrationLogicalSnapshots(input: {
   expected: readonly DatabaseMigrationLogicalSnapshotRecord[];
   actual: readonly (DatabaseMigrationLogicalSnapshotRecord | DatabaseRecord)[];
 }): DatabaseMigrationEquivalenceReport {
-  const expected = [...input.expected].map(snapshot).sort((left, right) => left.canonicalRecordId.localeCompare(right.canonicalRecordId));
-  const actual = [...input.actual].map(snapshot).sort((left, right) => left.canonicalRecordId.localeCompare(right.canonicalRecordId));
+  const expected = [...input.expected]
+    .map(snapshot)
+    .sort((left, right) => left.canonicalRecordId.localeCompare(right.canonicalRecordId));
+  const actual = [...input.actual]
+    .map(snapshot)
+    .sort((left, right) => left.canonicalRecordId.localeCompare(right.canonicalRecordId));
   const expectedById = new Map(expected.map((record) => [record.canonicalRecordId, record]));
   const actualById = new Map(actual.map((record) => [record.canonicalRecordId, record]));
   const mismatches: DatabaseMigrationEquivalenceMismatch[] = [];
   for (const record of expected) {
     const observed = actualById.get(record.canonicalRecordId);
     if (!observed) {
-      mismatches.push({ recordId: record.canonicalRecordId, field: 'missing', expected: record, actual: null });
+      mismatches.push({
+        recordId: record.canonicalRecordId,
+        field: 'missing',
+        expected: record,
+        actual: null,
+      });
       continue;
     }
     for (const field of ['sourceId', 'values', 'invalidValues', 'computedResults'] as const) {
       const expectedValue = record[field] ?? null;
       const actualValue = observed[field] ?? null;
       if (stable(expectedValue) !== stable(actualValue)) {
-        mismatches.push({ recordId: record.canonicalRecordId, field, expected: expectedValue, actual: actualValue });
+        mismatches.push({
+          recordId: record.canonicalRecordId,
+          field,
+          expected: expectedValue,
+          actual: actualValue,
+        });
       }
     }
   }
   for (const record of actual) {
     if (!expectedById.has(record.canonicalRecordId)) {
-      mismatches.push({ recordId: record.canonicalRecordId, field: 'missing', expected: null, actual: record });
+      mismatches.push({
+        recordId: record.canonicalRecordId,
+        field: 'missing',
+        expected: null,
+        actual: record,
+      });
     }
   }
   const expectedRevision = digest(stable(expected));

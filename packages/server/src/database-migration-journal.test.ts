@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { createDatabaseMigrationJournal } from './database-migration-journal.ts';
 
 describe('DatabaseMigrationJournal', () => {
@@ -64,10 +64,18 @@ describe('DatabaseMigrationJournal', () => {
     });
     await expect(journal.cleanup('task_cleanup')).rejects.toThrow('cleanup boundary');
     await journal.checkpoint('task_cleanup', 'activated');
-    await mkdir(join(projectDir, '.ok', 'local', 'database-migrations', 'task_cleanup'), { recursive: true });
-    await writeFile(join(projectDir, '.ok', 'local', 'database-migrations', 'task_cleanup', 'backup.json'), '{}');
+    await mkdir(join(projectDir, '.ok', 'local', 'database-migrations', 'task_cleanup'), {
+      recursive: true,
+    });
+    await writeFile(
+      join(projectDir, '.ok', 'local', 'database-migrations', 'task_cleanup', 'backup.json'),
+      '{}',
+    );
     expect(await journal.hasTaskMaterial('task_cleanup')).toBe(true);
-    await expect(journal.cleanup('task_cleanup')).resolves.toEqual({ taskId: 'task_cleanup', removed: true });
+    await expect(journal.cleanup('task_cleanup')).resolves.toEqual({
+      taskId: 'task_cleanup',
+      removed: true,
+    });
     expect(await journal.hasTaskMaterial('task_cleanup')).toBe(false);
     expect((await journal.get('task_cleanup')).state).toBe('activated');
   });

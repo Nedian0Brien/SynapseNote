@@ -1,80 +1,52 @@
 {
- "label": "database-row-insert-fresh-table",
- "capturedAt": "2026-07-31T05:10:00.000Z",
- "commitSha": "a3d6ac73aa4ca8f20c4bb5ddfcc134755c1f2e0e",
- "runCount": 3,
- "supersedes": "2026-07-30-database-row-insert.json",
- "notes": [
-  "Supersedes the 2026-07-30 baseline, which was captured against whatever",
-  "the catalog happened to hold. That table drifted from 35 rows to 358 as",
-  "the measuring itself added rows, so its 192ms median describes a table",
-  "size, not a code version, and must not be compared against.",
-  "The scenario now creates its own empty v2 database per run. Sample i is",
-  "therefore an insert into a table of size i, which is what makes",
-  "rowInsertGrowthRatio meaningful: it is the mean of the last quarter of",
-  "the samples over the mean of the first.",
-  "A growth ratio near 1.0 is the goal. At 1.66 over only 40 rows, the write",
-  "is O(rows) \u2014 the owner-table projection re-derives every row on every",
-  "single-row write. `a3d6ac73` halved the per-row constant; it did not",
-  "change the shape.",
-  "rowInsertMedianMs is submit -> the first read-back that started after the",
-  "write landed. Runs are only comparable at the same iteration count."
- ],
- "iterations": 40,
- "scenarios": {
-  "database-row-insert": {
-   "rowInsertMedianMs": {
-    "p50": 118,
-    "runs": [
-     113,
-     118,
-     118
-    ]
-   },
-   "rowInsertMinMs": {
-    "runs": [
-     68,
-     64,
-     72
-    ]
-   },
-   "rowInsertMaxMs": {
-    "runs": [
-     184,
-     359,
-     200
-    ]
-   },
-   "rowInsertFirstQuarterMeanMs": {
-    "runs": [
-     80,
-     81,
-     83
-    ]
-   },
-   "rowInsertLastQuarterMeanMs": {
-    "runs": [
-     133,
-     149,
-     123
-    ]
-   },
-   "rowInsertGrowthRatio": {
-    "runs": [
-     1.66,
-     1.84,
-     1.48
-    ],
-    "goal": 1.0
-   },
-   "timerClampMs": {
-    "runs": [
-     89,
-     83,
-     84
-    ],
-    "nominalMs": 75
-   }
+  "label": "database-row-insert-fresh-table",
+  "capturedAt": "2026-07-31T05:10:00.000Z",
+  "commitSha": "a3d6ac73aa4ca8f20c4bb5ddfcc134755c1f2e0e",
+  "runCount": 3,
+  "supersedes": "2026-07-30-database-row-insert.json",
+  "notes": [
+    "Supersedes the 2026-07-30 baseline, which was captured against whatever",
+    "the catalog happened to hold. That table drifted from 35 rows to 358 as",
+    "the measuring itself added rows, so its 192ms median describes a table",
+    "size, not a code version, and must not be compared against.",
+    "The scenario now creates its own empty v2 database per run. Sample i is",
+    "therefore an insert into a table of size i, which is what makes",
+    "rowInsertGrowthRatio meaningful: it is the mean of the last quarter of",
+    "the samples over the mean of the first.",
+    "A growth ratio near 1.0 is the goal. At 1.66 over only 40 rows, the write",
+    "is O(rows) \u2014 the owner-table projection re-derives every row on every",
+    "single-row write. `a3d6ac73` halved the per-row constant; it did not",
+    "change the shape.",
+    "rowInsertMedianMs is submit -> the first read-back that started after the",
+    "write landed. Runs are only comparable at the same iteration count."
+  ],
+  "iterations": 40,
+  "scenarios": {
+    "database-row-insert": {
+      "rowInsertMedianMs": {
+        "p50": 118,
+        "runs": [113, 118, 118]
+      },
+      "rowInsertMinMs": {
+        "runs": [68, 64, 72]
+      },
+      "rowInsertMaxMs": {
+        "runs": [184, 359, 200]
+      },
+      "rowInsertFirstQuarterMeanMs": {
+        "runs": [80, 81, 83]
+      },
+      "rowInsertLastQuarterMeanMs": {
+        "runs": [133, 149, 123]
+      },
+      "rowInsertGrowthRatio": {
+        "runs": [1.66, 1.84, 1.48],
+        "goal": 1.0
+      },
+      "timerClampMs": {
+        "runs": [89, 83, 84],
+        "nominalMs": 75
+      }
+    }
   }
- }
 }

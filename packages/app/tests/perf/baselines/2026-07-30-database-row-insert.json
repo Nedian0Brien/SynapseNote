@@ -1,53 +1,37 @@
 {
- "label": "database-row-insert-baseline",
- "capturedAt": "2026-07-30T09:30:00.000Z",
- "commitSha": "c8c783247ebbefdd160f88258bdffc7ef9558a41",
- "runCount": 3,
- "notes": [
-  "SUPERSEDED \u2014 captured against a shared table that grew from 35 to 358 rows during measurement, so this median describes a table size rather than a code version. Do not compare against it.",
-  "First trustworthy foreground measurement of the database row insert path.",
-  "Captured after: shadow-repo snapshot fast path (582ac496), refresh-scheduler",
-  "starvation fix (29f6787b), collapsed-skills gating (6629db4d), and immediate",
-  "read-back on create (c8c78324).",
-  "rowInsertMedianMs is submit -> the read-back query returns the row. It is NOT",
-  "the paint: the grid virtualizes, so past a screenful of rows a new one may",
-  "never enter the DOM (rowInsertPaintedSamples records how many did).",
-  "A run whose timerClampMs is far above its 75ms nominal was taken in a",
-  "throttled tab; discard it instead of comparing it here."
- ],
- "scenarios": {
-  "database-row-insert": {
-   "rowInsertMedianMs": {
-    "p50": 192,
-    "runs": [
-     192,
-     184,
-     193
-    ]
-   },
-   "rowInsertMinMs": {
-    "runs": [
-     182,
-     182,
-     183
-    ]
-   },
-   "rowInsertMaxMs": {
-    "runs": [
-     205,
-     689,
-     439
-    ]
-   },
-   "timerClampMs": {
-    "runs": [
-     104,
-     129,
-     126
-    ],
-    "nominalMs": 75
-   }
-  }
- },
- "supersededBy": "2026-07-31-database-row-insert-fresh-table.json"
+  "label": "database-row-insert-baseline",
+  "capturedAt": "2026-07-30T09:30:00.000Z",
+  "commitSha": "c8c783247ebbefdd160f88258bdffc7ef9558a41",
+  "runCount": 3,
+  "notes": [
+    "SUPERSEDED \u2014 captured against a shared table that grew from 35 to 358 rows during measurement, so this median describes a table size rather than a code version. Do not compare against it.",
+    "First trustworthy foreground measurement of the database row insert path.",
+    "Captured after: shadow-repo snapshot fast path (582ac496), refresh-scheduler",
+    "starvation fix (29f6787b), collapsed-skills gating (6629db4d), and immediate",
+    "read-back on create (c8c78324).",
+    "rowInsertMedianMs is submit -> the read-back query returns the row. It is NOT",
+    "the paint: the grid virtualizes, so past a screenful of rows a new one may",
+    "never enter the DOM (rowInsertPaintedSamples records how many did).",
+    "A run whose timerClampMs is far above its 75ms nominal was taken in a",
+    "throttled tab; discard it instead of comparing it here."
+  ],
+  "scenarios": {
+    "database-row-insert": {
+      "rowInsertMedianMs": {
+        "p50": 192,
+        "runs": [192, 184, 193]
+      },
+      "rowInsertMinMs": {
+        "runs": [182, 182, 183]
+      },
+      "rowInsertMaxMs": {
+        "runs": [205, 689, 439]
+      },
+      "timerClampMs": {
+        "runs": [104, 129, 126],
+        "nominalMs": 75
+      }
+    }
+  },
+  "supersededBy": "2026-07-31-database-row-insert-fresh-table.json"
 }

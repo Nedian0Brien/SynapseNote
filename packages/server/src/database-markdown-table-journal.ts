@@ -148,7 +148,9 @@ export class DatabaseMarkdownTableJournal {
         }),
       );
       const ordered = dated
-        .filter((entry): entry is { name: string; path: string; modifiedAt: number } => entry !== null)
+        .filter(
+          (entry): entry is { name: string; path: string; modifiedAt: number } => entry !== null,
+        )
         .sort((left, right) => right.modifiedAt - left.modifiedAt);
       for (const candidate of ordered.slice(DATABASE_MARKDOWN_TABLE_JOURNAL_RETENTION)) {
         try {

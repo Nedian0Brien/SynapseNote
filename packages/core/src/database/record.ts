@@ -9,6 +9,7 @@ import {
 } from './date.ts';
 import { DatabaseFilesValueSchema, type DatabaseFileValue } from './files.ts';
 import type { FormulaComputedResult } from './formula-result.ts';
+import type { DatabaseMarkdownRecordRevisionSet } from './markdown-table-revision.ts';
 import { findDatabasePersonByReference } from './person.ts';
 import {
   canonicalizeDatabasePlaceValue,
@@ -33,7 +34,6 @@ import {
   validateDatabasePropertyConstraints,
 } from './schema.ts';
 import { type DatabaseVerificationValue, DatabaseVerificationValueSchema } from './verification.ts';
-import type { DatabaseMarkdownRecordRevisionSet } from './markdown-table-revision.ts';
 
 export type DatabaseValue =
   | string

@@ -206,14 +206,20 @@ describe('database index Git synchronization', () => {
     git(projectDir, 'config', 'user.email', 'database-test@example.invalid');
     writeFileSync(manifestPath, v2Manifest('main'));
     writeFileSync(ownerPath, v2Owner('main'));
-    writeFileSync(join(mainDocumentDir, 'task.md'), '---\n_sn:\n  document_id: doc_v2_main\n---\n# Main task\n');
+    writeFileSync(
+      join(mainDocumentDir, 'task.md'),
+      '---\n_sn:\n  document_id: doc_v2_main\n---\n# Main task\n',
+    );
     git(projectDir, 'add', '.');
     git(projectDir, 'commit', '-m', 'main v2 database');
     git(projectDir, 'checkout', '-b', 'feature');
     writeFileSync(manifestPath, v2Manifest('feature'));
     writeFileSync(ownerPath, v2Owner('feature'));
     mkdirSync(join(contentDir, 'tasks-v2-feature'), { recursive: true });
-    writeFileSync(join(contentDir, 'tasks-v2-feature', 'task.md'), '---\n_sn:\n  document_id: doc_v2_feature\n---\n# Feature task\n');
+    writeFileSync(
+      join(contentDir, 'tasks-v2-feature', 'task.md'),
+      '---\n_sn:\n  document_id: doc_v2_feature\n---\n# Feature task\n',
+    );
     rmSync(mainDocumentDir, { recursive: true, force: true });
     git(projectDir, 'add', '.');
     git(projectDir, 'commit', '-m', 'feature v2 database');
@@ -241,7 +247,9 @@ describe('database index Git synchronization', () => {
       );
       expect(server.databaseStore.getById('db_v2_main')).toBeNull();
       expect(server.databaseRecordIndex.list('db_v2_main')).toHaveLength(0);
-      expect(server.databaseRecordIndex.list('db_v2_feature')[0]?.path).toBe('tasks-v2-feature/task.md');
+      expect(server.databaseRecordIndex.list('db_v2_feature')[0]?.path).toBe(
+        'tasks-v2-feature/task.md',
+      );
     } finally {
       await server.destroy();
     }

@@ -212,13 +212,29 @@ mock.module('@/editor/document-context/useDocumentNavigation', () => ({
 }));
 mock.module('@/editor/document-context/useDocumentTabs', () => ({
   useDocumentTabs: () => ({
-    activateNewTab, activateTab, closeNewTab, closeTab, closeTabs, newTabIds,
-    openNewTab, openTabs, pinTab, pinnedTabIds, reopenClosedTab,
-    remapTabsForRename, reorderTabs, unpinTab, visibleTabIds,
+    activateNewTab,
+    activateTab,
+    closeNewTab,
+    closeTab,
+    closeTabs,
+    newTabIds,
+    openNewTab,
+    openTabs,
+    pinTab,
+    pinnedTabIds,
+    reopenClosedTab,
+    remapTabsForRename,
+    reorderTabs,
+    unpinTab,
+    visibleTabIds,
   }),
 }));
 mock.module('@/editor/document-context/useDocumentCollaboration', () => ({
-  useDocumentCollaboration: () => ({ closeAndClearForRename, getPoolActiveDocName, poolHas: () => false }),
+  useDocumentCollaboration: () => ({
+    closeAndClearForRename,
+    getPoolActiveDocName,
+    poolHas: () => false,
+  }),
 }));
 
 mock.module('@/components/PageListContext', () => ({

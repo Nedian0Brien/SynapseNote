@@ -23,16 +23,23 @@ export type NormalizeDatabaseDocumentTitleResult =
   | { ok: true; value: string }
   | DatabaseDocumentTitleError;
 
-function titleError(code: DatabaseDocumentTitleErrorCode, message: string): DatabaseDocumentTitleError {
+function titleError(
+  code: DatabaseDocumentTitleErrorCode,
+  message: string,
+): DatabaseDocumentTitleError {
   return { ok: false, code, message };
 }
 
 /** Validate the one logical title representation shared by table and document surfaces. */
-export function normalizeDatabaseDocumentTitle(value: string): NormalizeDatabaseDocumentTitleResult {
+export function normalizeDatabaseDocumentTitle(
+  value: string,
+): NormalizeDatabaseDocumentTitleResult {
   const normalized = value.trim();
   if (normalized === '') return titleError('empty', 'A document title must not be empty');
-  if (normalized.includes('\0')) return titleError('nul', 'A document title must not contain a NUL byte');
-  if (/\r|\n/u.test(normalized)) return titleError('line_break', 'A document title must fit on one line');
+  if (normalized.includes('\0'))
+    return titleError('nul', 'A document title must not contain a NUL byte');
+  if (/\r|\n/u.test(normalized))
+    return titleError('line_break', 'A document title must fit on one line');
   if (normalized.length > DATABASE_DOCUMENT_TITLE_MAX_LENGTH) {
     return titleError(
       'too_long',
@@ -43,7 +50,12 @@ export function normalizeDatabaseDocumentTitle(value: string): NormalizeDatabase
 }
 
 function fallbackTitle(path: string): string {
-  return path.split('/').at(-1)?.replace(/\.(?:md|mdx)$/iu, '') || path;
+  return (
+    path
+      .split('/')
+      .at(-1)
+      ?.replace(/\.(?:md|mdx)$/iu, '') || path
+  );
 }
 
 function firstHeading(body: string): string | null {
@@ -73,7 +85,10 @@ function firstHeading(body: string): string | null {
 }
 
 /** Resolve the logical document title without treating a database alias as storage. */
-export function resolveDatabaseDocumentTitle(markdown: string, path: string): DatabaseDocumentTitle {
+export function resolveDatabaseDocumentTitle(
+  markdown: string,
+  path: string,
+): DatabaseDocumentTitle {
   const { frontmatter, body } = stripFrontmatter(markdown);
   if (frontmatter !== '') {
     const parsed = parseFrontmatterYaml(unwrapFrontmatterFences(frontmatter));
@@ -108,9 +123,12 @@ export function replaceDatabaseDocumentTitle(
     const titleIndex = lines.findIndex((line) => /^title\s*:/u.test(line));
     const bodyOffset = frontmatter.indexOf(frontmatterBody);
     if (bodyOffset < 0) return titleError('line_break', 'Unable to locate the frontmatter body');
-    const nextBody = titleIndex >= 0
-      ? lines.map((line, index) => index === titleIndex ? `title: ${JSON.stringify(value)}` : line).join(eol)
-      : `${frontmatterBody}${frontmatterBody.endsWith(eol) || frontmatterBody === '' ? '' : eol}title: ${JSON.stringify(value)}`;
+    const nextBody =
+      titleIndex >= 0
+        ? lines
+            .map((line, index) => (index === titleIndex ? `title: ${JSON.stringify(value)}` : line))
+            .join(eol)
+        : `${frontmatterBody}${frontmatterBody.endsWith(eol) || frontmatterBody === '' ? '' : eol}title: ${JSON.stringify(value)}`;
     return {
       ok: true,
       title: value,
@@ -150,7 +168,10 @@ export function replaceDatabaseDocumentTitle(
       return {
         ok: true,
         title: value,
-        markdown: markdown.slice(0, cursor) + `${heading[1]}${value}${heading[3] ?? ''}${lineEnding}` + markdown.slice(end),
+        markdown:
+          markdown.slice(0, cursor) +
+          `${heading[1]}${value}${heading[3] ?? ''}${lineEnding}` +
+          markdown.slice(end),
       };
     }
     cursor = end;

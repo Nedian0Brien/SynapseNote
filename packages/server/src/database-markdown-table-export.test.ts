@@ -82,13 +82,19 @@ describe('server Markdown-table export', () => {
     tempDirs.push(projectDir);
     const store = createDatabaseStore({ projectDir, contentDir });
     await store.create(definition());
-    const owner = '<!-- synapsenote:database\nversion=2\ndatabase=db_tasks\nsource=ds_tasks\nblock=dbb_tasks_primary\ncolumns=prop_title,prop_status\n-->\n\n| Document | Status |\n| --- | --- |\n| [[tasks/alpha]] | todo |\n';
+    const owner =
+      '<!-- synapsenote:database\nversion=2\ndatabase=db_tasks\nsource=ds_tasks\nblock=dbb_tasks_primary\ncolumns=prop_title,prop_status\n-->\n\n| Document | Status |\n| --- | --- |\n| [[tasks/alpha]] | todo |\n';
     const linked = '---\n_sn:\n  document_id: doc_alpha\n---\n# Alpha\nBody\n';
     writeFileSync(join(contentDir, 'tasks.md'), owner);
     writeFileSync(join(contentDir, 'tasks/alpha.md'), linked);
     const index = createDatabaseRecordIndex({ contentDir, databaseStore: store });
     await index.rebuild();
-    const plans = createDatabasePlanEngine({ databaseStore: store, databaseRecordIndex: index, projectDir, contentDir });
+    const plans = createDatabasePlanEngine({
+      databaseStore: store,
+      databaseRecordIndex: index,
+      projectDir,
+      contentDir,
+    });
     const commit = createDatabaseCommitEngine({
       projectDir,
       contentDir,
@@ -97,9 +103,18 @@ describe('server Markdown-table export', () => {
       databasePlanEngine: plans,
       git: { snapshot: async () => '0'.repeat(40), hashBlob: async () => `sha1:${'a'.repeat(40)}` },
     });
-    const dataPlane = createDatabaseDataPlane({ databaseStore: store, databaseRecordIndex: index, databasePlanEngine: plans, databaseCommitEngine: commit });
+    const dataPlane = createDatabaseDataPlane({
+      databaseStore: store,
+      databaseRecordIndex: index,
+      databasePlanEngine: plans,
+      databaseCommitEngine: commit,
+    });
 
-    const canonical = dataPlane.exportMarkdownTable({ databaseId: 'db_tasks', sourceId: 'ds_tasks', mode: 'canonical_markdown' });
+    const canonical = dataPlane.exportMarkdownTable({
+      databaseId: 'db_tasks',
+      sourceId: 'ds_tasks',
+      mode: 'canonical_markdown',
+    });
     expect(canonical.mode).toBe('canonical_markdown');
     expect(canonical.canonical.map((entry) => entry.path)).toEqual(['tasks.md', 'tasks/alpha.md']);
     expect(canonical.canonical[0]?.content).toContain('synapsenote:database');
@@ -118,9 +133,16 @@ describe('server Markdown-table export', () => {
       query: { select: ['prop_double_status_length'], page: { limit: 10 } },
     });
     const exportedDerivedRevision = snapshot.derivedRevision;
-    expect(snapshot).toMatchObject({ mode: 'computed_snapshot', canonical: [], evaluatedAt: expect.any(String), derivedRevision: expect.stringMatching(/^sha256:/) });
+    expect(snapshot).toMatchObject({
+      mode: 'computed_snapshot',
+      canonical: [],
+      evaluatedAt: expect.any(String),
+      derivedRevision: expect.stringMatching(/^sha256:/),
+    });
     expect(exportedDerivedRevision).toBe(query.derivedRevision);
-    expect(snapshot.snapshot).toEqual([expect.objectContaining({ recordId: expect.stringMatching(/^rec_/), path: 'tasks/alpha.md' })]);
+    expect(snapshot.snapshot).toEqual([
+      expect.objectContaining({ recordId: expect.stringMatching(/^rec_/), path: 'tasks/alpha.md' }),
+    ]);
     expect(JSON.stringify(snapshot.snapshot)).not.toContain('synapsenote:database');
   });
 });
