@@ -6,6 +6,7 @@ import { createDatabasePlanEngine, DatabasePlanError } from './database-plan.ts'
 import { DatabasePlanApprovalCodeSchema as extractedApprovalCodeSchema } from './database-plan-artifacts.ts';
 import { hashDatabasePlanValue } from './database-plan-convergence-policy.ts';
 import { DatabaseDesiredStateDraftSchema as extractedDraftSchema } from './database-plan-draft-contracts.ts';
+import { normalizeDatabaseSampleValue } from './database-plan-normalization-policy.ts';
 import { DatabaseWriteGuardSnapshotSchema } from './database-plan-write-guards.ts';
 import { createDatabaseRecordIndex } from './database-record-index.ts';
 import { createDatabaseStore } from './database-store.ts';
@@ -211,6 +212,16 @@ describe('DatabasePlanEngine ephemeral desired state', () => {
         querySnapshots: [],
       }).success,
     ).toBe(true);
+  });
+
+  test('keeps sample-value normalization in the pure policy', () => {
+    expect(
+      normalizeDatabaseSampleValue(
+        { id: 'prop_due', key: 'due', name: 'Due', type: 'date', required: false },
+        '2026-08-02',
+        [],
+      ),
+    ).toBe('2026-08-02');
   });
 
   test('classifies every user-resolvable area touched by an exact plan', () => {
