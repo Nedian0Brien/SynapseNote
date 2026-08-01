@@ -11,6 +11,20 @@ import type { IpcMain, IpcMainInvokeEvent } from 'electron';
 import type { RequestChannels } from './ipc-channels.ts';
 
 /**
+ * Per-channel boundary parser for renderer-controlled Electron arguments.
+ *
+ * Keep schemas with their owning registrar. This adapter only guarantees that
+ * a registrar parser runs before the typed handler receives its tuple.
+ */
+export interface IpcHandlerValidation<K extends keyof RequestChannels> {
+  readonly parse: (rawArgs: readonly unknown[]) => RequestChannels[K]['args'] | undefined;
+  readonly onInvalid: (
+    event: IpcMainInvokeEvent,
+    rawArgs: readonly unknown[],
+  ) => RequestChannels[K]['result'] | Promise<RequestChannels[K]['result']>;
+}
+
+/**
  * Build a typed registrar bound to an `ipcMain` instance.
  *
  * Usage:
@@ -32,8 +46,15 @@ export function createHandler(ipc: IpcMain) {
       event: IpcMainInvokeEvent,
       ...args: RequestChannels[K]['args']
     ) => RequestChannels[K]['result'] | Promise<RequestChannels[K]['result']>,
+    validation?: IpcHandlerValidation<K>,
   ): void => {
     ipc.handle(channel, (event, ...rawArgs: unknown[]) => {
+      if (validation) {
+        const args = validation.parse(rawArgs);
+        return args === undefined
+          ? validation.onInvalid(event, rawArgs)
+          : handler(event, ...args);
+      }
       return handler(event, ...(rawArgs as RequestChannels[K]['args']));
     });
   };

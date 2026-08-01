@@ -84,12 +84,12 @@ export interface DesktopIpcBindings {
 export function registerDesktopIpcHandlers(bindings: DesktopIpcBindings): void {
   const rawHandle = createHandler(ipcMain);
   const registeredStaticChannels = new Set<string>();
-  const handle: DesktopIpcHandler = (channel, handler) => {
+  const handle: DesktopIpcHandler = (channel, handler, validation) => {
     if (registeredStaticChannels.has(channel)) {
       throw new Error(`duplicate desktop IPC handler registration: ${channel}`);
     }
     registeredStaticChannels.add(channel);
-    rawHandle(channel, handler);
+    rawHandle(channel, handler, validation);
   };
 
   registerDesktopTerminalIpc({ handle, bindings });

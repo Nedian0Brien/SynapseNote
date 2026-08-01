@@ -82,4 +82,40 @@ describe('registerAssetIpcHandlers', () => {
     expect(openAsset).toHaveBeenLastCalledWith('/project', 'docs/guide.pdf');
     expect(revealAsset).toHaveBeenLastCalledWith('/project', 'docs/guide.pdf');
   });
+
+  test('refuses malformed asset requests before they reach project-scoped operations', async () => {
+    const handlers = new Map<string, AssetIpcHandler>();
+    const openAsset = mock(async () => ({ ok: true }) as const);
+    const exportPdf = mock(async () => ({ ok: true, canceled: true }) as const);
+
+    registerAssetIpcHandlers({
+      register: (channel, handler) => handlers.set(channel, handler),
+      platform: 'linux',
+      getWindowForWebContents: () => ({ id: 1 }),
+      getProjectPath: () => '/project',
+      openExternal: async () => {},
+      fetchWebPreviewMetadata: async () => null,
+      detectProtocol: async () => ({ installed: false }),
+      spawnCursor: async () => ({ ok: true }),
+      recordHandoff: async () => {},
+      openAsset,
+      savePdfAsset: async () => ({ ok: true }),
+      exportPdf,
+      revealAsset: async () => ({ ok: true }),
+      popAssetMenu: () => {},
+      copyText: () => {},
+      showItemInFolder: () => ({ ok: true }),
+      defaultBugReportZipPath: () => '/tmp/bug-reports/report.zip',
+      revealExternal: async () => ({ ok: true, outcome: 'dismissed' }),
+      logIpcError: () => {},
+      warn: () => {},
+    });
+
+    await expect(handlers.get('ok:shell:open-asset')?.({ sender: {} }, null)).resolves.toEqual({
+      ok: false,
+      reason: 'print-failed',
+    });
+    expect(openAsset).not.toHaveBeenCalled();
+    expect(exportPdf).not.toHaveBeenCalled();
+  });
 });

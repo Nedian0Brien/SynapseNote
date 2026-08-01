@@ -14,6 +14,7 @@ import {
 import { listNativeCliChatSessions } from '../cli-chat-sessions.ts';
 import { getLogger } from '../desktop-logger.ts';
 import { logIpcError } from '../ipc-log.ts';
+import { parseTerminalPtyArgs } from './terminal-pty-request.ts';
 import { isTerminalConsented, isTerminalConsentedWithGrace } from '../terminal-consent.ts';
 import {
   clampPtyDimension,
@@ -69,7 +70,7 @@ export function registerTerminalPtyIpc(deps: TerminalPtyRegistrarDeps): void {
       ...(opts.launchCommand === undefined ? {} : { launchCommand: opts.launchCommand }),
       ...(opts.privateHistory ? { privateHistory: true } : {}),
     });
-  });
+  }, { parse: (args) => parseTerminalPtyArgs('ok:pty:create', args), onInvalid: () => ({ ok: false, reason: 'no-project' }) });
   handle('ok:pty:input', async (event, req) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) {
@@ -97,7 +98,7 @@ export function registerTerminalPtyIpc(deps: TerminalPtyRegistrarDeps): void {
       }
     }
     return undefined;
-  });
+  }, { parse: (args) => parseTerminalPtyArgs('ok:pty:input', args), onInvalid: () => undefined });
   handle('ok:pty:resize', async (event, req) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win)
@@ -108,17 +109,17 @@ export function registerTerminalPtyIpc(deps: TerminalPtyRegistrarDeps): void {
         rows: clampPtyDimension(req.rows, DEFAULT_PTY_ROWS),
       });
     return undefined;
-  });
+  }, { parse: (args) => parseTerminalPtyArgs('ok:pty:resize', args), onInvalid: () => undefined });
   handle('ok:pty:kill', async (event, req) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) terminalManager.kill({ windowId: win.id, ptyId: req.ptyId });
     return undefined;
-  });
+  }, { parse: (args) => parseTerminalPtyArgs('ok:pty:kill', args), onInvalid: () => undefined });
   handle('ok:pty:drain', async (event, req) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) terminalManager.drain({ windowId: win.id, ptyId: req.ptyId, bytes: req.bytes });
     return undefined;
-  });
+  }, { parse: (args) => parseTerminalPtyArgs('ok:pty:drain', args), onInvalid: () => undefined });
   handle('ok:pty:list', async (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     return win ? terminalManager.listSessions(win.id) : [];
@@ -145,6 +146,9 @@ export function registerTerminalPtyIpc(deps: TerminalPtyRegistrarDeps): void {
       ptyId: req.ptyId,
       webContents: win.webContents,
     });
+  }, {
+    parse: (args) => parseTerminalPtyArgs('ok:pty:adopt', args),
+    onInvalid: () => ({ ok: false, reason: 'unknown-session' }),
   });
   handle('ok:pty:set-meta', async (event, req) => {
     const win = BrowserWindow.fromWebContents(event.sender);
@@ -156,19 +160,22 @@ export function registerTerminalPtyIpc(deps: TerminalPtyRegistrarDeps): void {
         ordinal: req.ordinal,
       });
     return undefined;
-  });
+  }, { parse: (args) => parseTerminalPtyArgs('ok:pty:set-meta', args), onInvalid: () => undefined });
   handle('ok:pty:set-order', async (event, req) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win)
       terminalManager.setSessionOrder({ windowId: win.id, orderedPtyIds: req.orderedPtyIds });
     return undefined;
-  });
+  }, { parse: (args) => parseTerminalPtyArgs('ok:pty:set-order', args), onInvalid: () => undefined });
   handle('ok:terminal:claude-assist', async (event, req) => {
     const rewireError = req.action === 'rewire' ? await deps.rewireClaudeMcp(event) : undefined;
     const readiness = await deps.resolveClaudeReadiness(
       deps.resolveProjectRoot(event) ?? undefined,
     );
     return rewireError === undefined ? readiness : { ...readiness, rewireError };
+  }, {
+    parse: (args) => parseTerminalPtyArgs('ok:terminal:claude-assist', args),
+    onInvalid: async (event) => deps.resolveClaudeReadiness(deps.resolveProjectRoot(event) ?? undefined),
   });
   handle('ok:terminal:cli-preflight', async (_event, req): Promise<CliReadiness> => {
     if (!(req.cli in TERMINAL_CLIS)) {
@@ -176,6 +183,9 @@ export function registerTerminalPtyIpc(deps: TerminalPtyRegistrarDeps): void {
       return { onPath: 'unknown' };
     }
     return deps.resolveCliOnPath(req.cli);
+  }, {
+    parse: (args) => parseTerminalPtyArgs('ok:terminal:cli-preflight', args),
+    onInvalid: () => ({ onPath: 'unknown' }),
   });
   handle(
     'ok:terminal:cli-installed-map',

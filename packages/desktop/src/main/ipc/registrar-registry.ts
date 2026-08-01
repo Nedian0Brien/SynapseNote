@@ -8,7 +8,9 @@
  * their own startup/lifecycle owners.
  */
 import type { RequestChannels } from '../../shared/ipc-channels.ts';
+import { assertDesktopIpcRegistrarOwnership } from './registrar-ownership.ts';
 
+export { assertDesktopIpcRegistrarOwnership } from './registrar-ownership.ts';
 export type StaticDesktopIpcChannel = Exclude<
   keyof RequestChannels,
   | 'ok:update:relaunch-now'
@@ -127,11 +129,9 @@ export const DESKTOP_IPC_REGISTRARS = {
 export function registerDesktopIpcRegistrars(
   register: (channel: StaticDesktopIpcChannel) => void,
 ): void {
-  const seen = new Set<StaticDesktopIpcChannel>();
+  assertDesktopIpcRegistrarOwnership(DESKTOP_IPC_REGISTRARS);
   for (const channels of Object.values(DESKTOP_IPC_REGISTRARS)) {
     for (const channel of channels) {
-      if (seen.has(channel)) throw new Error(`duplicate desktop IPC registrar channel: ${channel}`);
-      seen.add(channel);
       register(channel);
     }
   }

@@ -15,6 +15,7 @@ import type { AppState } from '../state-store.ts';
 import type { ShareDeepLinkBranchSwitchPayload } from '../url-scheme.ts';
 import type { BrowserWindowLike } from '../window-manager.ts';
 import type { RecentGitInfo } from '../worktree-recents.ts';
+import { registerProjectProxyIpcHandlers } from './project-proxy-registrar.ts';
 
 type IpcHandle = ReturnType<typeof createHandler>;
 
@@ -150,6 +151,24 @@ function contextForEvent(
   return deps.getProjectContext(deps.getWindowForWebContents(event.sender));
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function hasStringFields(value: unknown, fields: readonly string[]): value is Record<string, unknown> {
+  return isRecord(value) && fields.every((field) => typeof value[field] === 'string');
+}
+
+function isProjectOpenRequest(value: unknown): value is Record<string, unknown> {
+  if (!hasStringFields(value, ['path', 'entryPoint']) || value.target !== 'new-window') return false;
+  if (value.pendingDeepLinkTarget !== undefined &&
+    (!hasStringFields(value.pendingDeepLinkTarget, ['path']) ||
+      (value.pendingDeepLinkTarget.kind !== 'doc' && value.pendingDeepLinkTarget.kind !== 'folder'))) {
+    return false;
+  }
+  return value.pendingBranch === undefined || value.pendingBranch === null || typeof value.pendingBranch === 'string';
+}
+
 const EMPTY_SESSION: SessionState = {
   openTabs: [],
   pinnedTabIds: [],
@@ -220,6 +239,9 @@ export function registerProjectIpcHandlers(deps: ProjectRegistrarDeps): void {
   handle('ok:project:set-session-state', async (event, state) => {
     const ctx = contextForEvent(deps, event);
     if (!ctx) return undefined;
+    if (!isRecord(state) || !Array.isArray(state.openTabs) || !Array.isArray(state.pinnedTabIds)) {
+      return undefined;
+    }
     const next = deps.setProjectSessionState(deps.getAppState(), ctx.projectPath, state);
     deps.setAppState(next);
     deps.saveAppState(next);
@@ -227,6 +249,7 @@ export function registerProjectIpcHandlers(deps: ProjectRegistrarDeps): void {
   });
 
   handle('ok:project:open', async (_event, request) => {
+    if (!isProjectOpenRequest(request)) return undefined;
     if (!deps.isEntryPoint(request.entryPoint)) {
       throw new Error(
         `ok:project:open rejected: invalid entryPoint '${String(request.entryPoint)}'`,
@@ -277,6 +300,13 @@ export function registerProjectIpcHandlers(deps: ProjectRegistrarDeps): void {
   });
 
   handle('ok:worktree:dispatch', async (event, request) => {
+    const rawRequest: unknown = request;
+    if (
+      !isRecord(rawRequest) ||
+      (rawRequest.kind !== 'list' && rawRequest.kind !== 'checkout' && rawRequest.kind !== 'create')
+    ) {
+      return { ok: false, reason: 'no-git' } as const;
+    }
     const projectPath = contextForEvent(deps, event)?.projectPath;
     if (!projectPath) {
       deps.logIpcError({
@@ -300,44 +330,7 @@ export function registerProjectIpcHandlers(deps: ProjectRegistrarDeps): void {
     return deps.createWorktree({ anchorPath: anchor, ...request }) as never;
   });
 
-  handle(
-    'ok:share:validate-folder',
-    async (_event, request) =>
-      deps.validateLocalFolderForShare(request.folderPath, {
-        owner: request.owner,
-        repo: request.repo,
-      }) as never,
-  );
-  handle('ok:project:check-target-exists', async (_event, request) =>
-    deps.checkTargetExists(request.projectPath, request.kind, request.path),
-  );
-  handle(
-    'ok:project:read-head-branch',
-    async (_event, projectPath) => deps.readHeadBranch(projectPath) as never,
-  );
-  handle(
-    'ok:project:fetch-branch-info',
-    async (_event, request) =>
-      deps.proxyFetchBranchInfo(request, deps.branchInfoProxyDeps) as never,
-  );
-  handle(
-    'ok:project:run-checkout',
-    async (_event, request) => deps.proxyRunCheckout(request, deps.branchInfoProxyDeps) as never,
-  );
-  handle(
-    'ok:project:fetch-target-status',
-    async (_event, request) =>
-      deps.proxyShareTargetStatus(request, deps.branchInfoProxyDeps) as never,
-  );
-  handle(
-    'ok:project:await-branch-switched',
-    async (_event, request) =>
-      deps.proxyAwaitBranchSwitched(request, deps.branchInfoProxyDeps) as never,
-  );
-  handle(
-    'ok:project:ok-init',
-    async (_event, request) => deps.runOkInit(request.projectPath) as never,
-  );
+  registerProjectProxyIpcHandlers(deps);
 
   handle('ok:project:close', async (event) => {
     const ctx = contextForEvent(deps, event);
@@ -346,6 +339,7 @@ export function registerProjectIpcHandlers(deps: ProjectRegistrarDeps): void {
   });
 
   handle('ok:project:restart-server', async (_event, projectPath) => {
+    if (typeof projectPath !== 'string') return { ok: false, reason: 'other' };
     try {
       const outcome = await deps.restartAttachedServer(projectPath, {
         localOpCliArgs: deps.resolveLocalOpCliArgs(),

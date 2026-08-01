@@ -2,10 +2,16 @@ import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
+  assertDesktopIpcRegistrarOwnership,
   DESKTOP_IPC_REGISTRARS,
   DYNAMIC_LIFECYCLE_CHANNELS,
   registerDesktopIpcRegistrars,
 } from '../../src/main/ipc/registrar-registry.ts';
+
+const CHANNELS_SOURCE = readFileSync(
+  join(__dirname, '..', '..', 'src', 'shared', 'ipc-channels.ts'),
+  'utf-8',
+);
 
 const MAIN_INDEX_SOURCE = readFileSync(
   join(__dirname, '..', '..', 'src', 'main', 'index.ts'),
@@ -34,20 +40,54 @@ function functionLineCount(source: string, name: string): number {
   throw new Error(`${name} has unbalanced braces`);
 }
 
+function canonicalRequestChannels(): string[] {
+  const marker = 'export interface RequestChannels {';
+  const start = CHANNELS_SOURCE.indexOf(marker);
+  if (start === -1) throw new Error('RequestChannels not found');
+  const body = CHANNELS_SOURCE.slice(start);
+  return [...body.matchAll(/^  '([^']+)': \{/gm)].map((match) => match[1] ?? '');
+}
+
 describe('desktop IPC registrar registry', () => {
-  test('registers each static channel once, leaving lifecycle channels explicit', () => {
+  test('owns every canonical RequestChannels key exactly once or explicitly as lifecycle', () => {
     const registered: string[] = [];
     registerDesktopIpcRegistrars((channel) => registered.push(channel));
 
+    const canonical = canonicalRequestChannels();
+    const staticChannels = canonical.filter(
+      (channel) => !DYNAMIC_LIFECYCLE_CHANNELS.includes(channel as never),
+    );
     expect(new Set(registered).size).toBe(registered.length);
-    expect(registered).not.toContain('ok:update:check-now');
-    expect(DYNAMIC_LIFECYCLE_CHANNELS).toContain('ok:update:check-now');
-    expect(registered.sort()).toEqual(Object.values(DESKTOP_IPC_REGISTRARS).flat().slice().sort());
+    expect(registered.slice().sort()).toEqual(staticChannels.slice().sort());
+    expect([...registered, ...DYNAMIC_LIFECYCLE_CHANNELS].slice().sort()).toEqual(
+      canonical.slice().sort(),
+    );
   });
 
-  test('rejects a duplicate channel in a registrar map', () => {
-    const original = DESKTOP_IPC_REGISTRARS.terminalPty[0];
-    expect(original).toBe('ok:pty:create');
+  test('rejects an omitted or duplicate canonical channel in a registrar map', () => {
+    const canonical = canonicalRequestChannels().filter(
+      (channel) => !DYNAMIC_LIFECYCLE_CHANNELS.includes(channel as never),
+    );
+    const registrars = Object.fromEntries(
+      Object.entries(DESKTOP_IPC_REGISTRARS).map(([owner, channels]) => [owner, [...channels]]),
+    );
+    const omitted = Object.fromEntries(
+      Object.entries(registrars).map(([owner, channels]) => [
+        owner,
+        owner === 'terminalPty' ? channels.slice(1) : channels,
+      ]),
+    );
+    const duplicate = {
+      ...registrars,
+      seed: [...registrars.seed, registrars.terminalPty[0]],
+    };
+
+    expect(() => assertDesktopIpcRegistrarOwnership(omitted, canonical)).toThrow(
+      'missing desktop IPC registrar channel: ok:pty:create',
+    );
+    expect(() => assertDesktopIpcRegistrarOwnership(duplicate, canonical)).toThrow(
+      'duplicate desktop IPC registrar channel: ok:pty:create',
+    );
   });
 
   test('keeps main boot orchestration and IPC composition within their budgets', () => {

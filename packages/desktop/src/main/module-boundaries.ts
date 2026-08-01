@@ -84,6 +84,16 @@ export const DESKTOP_MODULE_SIZE_BUDGETS: readonly DesktopModuleSizeBudget[] = [
     owner: 'Owns asset IPC registration.',
   },
   {
+    path: 'ipc/asset-menu-registrar.ts',
+    maxLines: 40,
+    owner: 'Owns native asset-menu IPC registration.',
+  },
+  {
+    path: 'ipc/asset-request.ts',
+    maxLines: 50,
+    owner: 'Owns asset IPC runtime payload guards.',
+  },
+  {
     path: 'ipc/bug-local-ops-registrar.ts',
     maxLines: 92,
     owner: 'Owns bug and local-operations IPC registration.',
@@ -114,9 +124,19 @@ export const DESKTOP_MODULE_SIZE_BUDGETS: readonly DesktopModuleSizeBudget[] = [
     owner: 'Owns project and worktree IPC registration.',
   },
   {
+    path: 'ipc/project-proxy-registrar.ts',
+    maxLines: 70,
+    owner: 'Owns project proxy IPC validation and registration.',
+  },
+  {
     path: 'ipc/registrar-registry.ts',
     maxLines: 139,
     owner: 'Owns static IPC registrar channel ownership.',
+  },
+  {
+    path: 'ipc/registrar-ownership.ts',
+    maxLines: 25,
+    owner: 'Owns static registrar ownership validation.',
   },
   {
     path: 'ipc/seed-registrar.ts',
@@ -135,8 +155,13 @@ export const DESKTOP_MODULE_SIZE_BUDGETS: readonly DesktopModuleSizeBudget[] = [
   },
   {
     path: 'ipc/terminal-pty-registrar.ts',
-    maxLines: 189,
+    maxLines: 199,
     owner: 'Owns terminal PTY IPC registration.',
+  },
+  {
+    path: 'ipc/terminal-pty-request.ts',
+    maxLines: 115,
+    owner: 'Owns terminal PTY runtime payload guards.',
   },
 ];
 

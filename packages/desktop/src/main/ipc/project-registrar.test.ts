@@ -67,5 +67,7 @@ describe('registerProjectIpcHandlers', () => {
       projectName: 'Owned',
       collabUrl: 'ws://localhost:4321/collab',
     });
+
+    await expect(handlers.get('ok:project:open')?.({ sender }, null)).resolves.toBeUndefined();
   });
 });

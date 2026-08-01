@@ -10,6 +10,8 @@
 import { dirname } from 'node:path';
 import type { RequestChannels } from '../../shared/ipc-channels.ts';
 import { handleShellOpenExternal } from '../shell-allowlist.ts';
+import { isExportPdfRequest, isHandoffStatsLine, isWebPreviewRequest } from './asset-request.ts';
+import { registerAssetMenuIpc } from './asset-menu-registrar.ts';
 
 type AssetIpcChannel =
   | 'ok:shell:open-external'
@@ -22,7 +24,6 @@ type AssetIpcChannel =
   | 'ok:shell:show-item-in-folder'
   | 'ok:shell:reveal-external';
 
-type OpenAssetRequest = RequestChannels['ok:shell:open-asset']['args'][0];
 type OpenAssetResult = RequestChannels['ok:shell:open-asset']['result'];
 type RevealAssetResult = RequestChannels['ok:shell:reveal-asset']['result'];
 type SpawnCursorResult = RequestChannels['ok:shell:spawn-cursor']['result'];
@@ -142,35 +143,43 @@ export function registerAssetIpcHandlers(deps: AssetRegistrarDeps): void {
 
   deps.register('ok:shell:open-external', async (_event, request) => {
     if (typeof request !== 'string') {
-      return deps.fetchWebPreviewMetadata((request as { url: string }).url);
+      if (!isWebPreviewRequest(request)) {
+        return undefined;
+      }
+      return deps.fetchWebPreviewMetadata(request.url);
     }
     await shellOpenExternal(request);
     return undefined;
   });
 
   deps.register('ok:shell:detect-protocol', async (_event, scheme) => {
-    return deps.detectProtocol(scheme as string);
+    return typeof scheme === 'string' ? deps.detectProtocol(scheme) : { installed: false };
   });
 
   deps.register('ok:shell:spawn-cursor', async (event, path) => {
-    const outcome = await deps.spawnCursor(projectPathForEvent(deps, event), path as string);
+    if (typeof path !== 'string') return { ok: false, reason: 'invalid-path' } as const;
+    const outcome = await deps.spawnCursor(projectPathForEvent(deps, event), path);
     logFailure(deps, 'ok:shell:spawn-cursor', 'spawnCursor', outcome);
     return outcome;
   });
 
   deps.register('ok:shell:record-handoff', async (_event, line) => {
-    await deps.recordHandoff(line as RequestChannels['ok:shell:record-handoff']['args'][0]);
+    if (!isHandoffStatsLine(line)) return undefined;
+    await deps.recordHandoff(line);
     return undefined;
   });
 
   deps.register('ok:shell:open-asset', async (event, relPathOrRequest, pdfBytes) => {
     const callerWindow = deps.getWindowForWebContents(event.sender);
     if (typeof relPathOrRequest !== 'string') {
-      const request = relPathOrRequest as Extract<OpenAssetRequest, { kind: 'export-pdf' }>;
-      if (request.kind !== 'export-pdf' || callerWindow === undefined) {
+      if (
+        !isExportPdfRequest(relPathOrRequest) ||
+        pdfBytes !== undefined ||
+        callerWindow === undefined
+      ) {
         return { ok: false, reason: 'print-failed' } as const;
       }
-      const outcome = await deps.exportPdf(event.sender, request.suggestedName);
+      const outcome = await deps.exportPdf(event.sender, relPathOrRequest.suggestedName);
       logFailure(deps, 'ok:shell:open-asset', 'exportPdf', outcome);
       return outcome;
     }
@@ -188,14 +197,18 @@ export function registerAssetIpcHandlers(deps: AssetRegistrarDeps): void {
       return { ok: false, reason } as const;
     }
 
+    if (pdfBytes !== undefined && !(pdfBytes instanceof Uint8Array)) {
+      return { ok: false, reason: 'invalid-pdf' } as const;
+    }
     const outcome = pdfBytes
-      ? await deps.savePdfAsset(projectPath, relPath, pdfBytes as Uint8Array)
+      ? await deps.savePdfAsset(projectPath, relPath, pdfBytes)
       : await deps.openAsset(projectPath, relPath);
     logFailure(deps, 'ok:shell:open-asset', pdfBytes ? 'savePdf' : 'openAsset', outcome);
     return outcome;
   });
 
   deps.register('ok:shell:reveal-asset', async (event, relPath) => {
+    if (typeof relPath !== 'string') return { ok: false, reason: 'path-escape' } as const;
     const projectPath = projectPathForEvent(deps, event);
     if (!projectPath) {
       deps.logIpcError({
@@ -206,38 +219,19 @@ export function registerAssetIpcHandlers(deps: AssetRegistrarDeps): void {
       });
       return { ok: false, reason: 'path-escape' } as const;
     }
-    const outcome = await deps.revealAsset(projectPath, relPath as string);
+    const outcome = await deps.revealAsset(projectPath, relPath);
     logFailure(deps, 'ok:shell:reveal-asset', 'revealAsset', outcome);
     return outcome;
   });
 
-  deps.register('ok:shell:show-asset-menu', async (event, rawParams) => {
-    const callerWindow = deps.getWindowForWebContents(event.sender);
-    if (callerWindow === undefined) return undefined;
-    const projectPath = deps.getProjectPath(callerWindow);
-    if (!projectPath) return undefined;
-    const params = rawParams as AssetMenuParams;
-    deps.popAssetMenu(callerWindow, {
-      kind: params.kind,
-      platform: deps.platform,
-      actions: {
-        reveal: async () => {
-          await deps.revealAsset(projectPath, params.relPath);
-        },
-        openInDefault: async () => {
-          await deps.openAsset(projectPath, params.relPath);
-        },
-        copyLink: () => deps.copyText(params.relPath),
-      },
-    });
-    return undefined;
-  });
+  registerAssetMenuIpc(deps);
 
   deps.register('ok:shell:show-item-in-folder', async (event, path) => {
+    if (typeof path !== 'string') return undefined;
     const result = deps.showItemInFolder(
       projectPathForEvent(deps, event),
       [dirname(deps.defaultBugReportZipPath())],
-      path as string,
+      path,
     );
     if (!result.ok) {
       deps.warn('[main] show-item-in-folder refused', { reason: result.reason });
@@ -246,8 +240,9 @@ export function registerAssetIpcHandlers(deps: AssetRegistrarDeps): void {
   });
 
   deps.register('ok:shell:reveal-external', async (event, absPath) => {
+    if (typeof absPath !== 'string') return { ok: false, reason: 'invalid-path' } as const;
     const callerWindow = deps.getWindowForWebContents(event.sender);
-    const result = await deps.revealExternal(absPath as string, callerWindow);
+    const result = await deps.revealExternal(absPath, callerWindow);
     if (!result.ok) {
       deps.warn('[main] reveal-external refused', { reason: result.reason });
     }
