@@ -90,7 +90,7 @@ export function getLocalTabSessionKey(): string | null {
   return localTabSessionStorageKey(window.location.origin);
 }
 
-export function readInitialLocalTabSession() {
+function readInitialLocalTabSession() {
   if (typeof window === 'undefined') return parseEditorTabSessionState(null, MAX_POOL);
   const key = getLocalTabSessionKey();
   if (!key) return parseEditorTabSessionState(null, MAX_POOL);
