@@ -24,8 +24,58 @@ export const SERVER_MODULE_SIZE_BUDGETS: readonly ServerModuleSizeBudget[] = [
   },
   {
     path: 'api-extension.ts',
-    maxLines: 18_230,
-    owner: 'HTTP API extension facade',
+    maxLines: 16_285,
+    owner: 'Owns the HTTP API extension facade.',
+  },
+  {
+    path: 'content-upload-policy.ts',
+    maxLines: 46,
+    owner: 'Owns content upload path and filename policy.',
+  },
+  {
+    path: 'content-upload-service.ts',
+    maxLines: 241,
+    owner: 'Owns content upload streaming and duplicate detection.',
+  },
+  {
+    path: 'content-path-safety.ts',
+    maxLines: 46,
+    owner: 'Owns content path symlink safety checks.',
+  },
+  {
+    path: 'content-path-policy.ts',
+    maxLines: 80,
+    owner: 'Owns content path validation and resolution.',
+  },
+  {
+    path: 'content-rename-filesystem.ts',
+    maxLines: 134,
+    owner: 'Owns managed rename filesystem and Git operations.',
+  },
+  {
+    path: 'managed-rename-coordinator.ts',
+    maxLines: 80,
+    owner: 'Owns managed rename operation coordination.',
+  },
+  {
+    path: 'managed-rename-content.ts',
+    maxLines: 367,
+    owner: 'Owns managed rename content contracts and orchestration.',
+  },
+  {
+    path: 'managed-rename-enumeration.ts',
+    maxLines: 135,
+    owner: 'Owns managed rename asset enumeration.',
+  },
+  {
+    path: 'managed-rename-asset-executor.ts',
+    maxLines: 245,
+    owner: 'Owns managed rename asset execution.',
+  },
+  {
+    path: 'managed-rename-document-executor.ts',
+    maxLines: 407,
+    owner: 'Owns managed rename document execution.',
   },
   {
     path: 'database-plan.ts',
