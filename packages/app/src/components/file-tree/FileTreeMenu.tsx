@@ -236,7 +236,12 @@ export function FileTreeMenu({
             <DropdownMenuSeparator />
           </>
         ) : null}
-        <FileTreeMenuPathActions item={item} workspace={workspace} onClose={close} />
+        <FileTreeMenuPathActions
+          item={item}
+          workspace={workspace}
+          onClose={close}
+          action="reveal"
+        />
         {!isAsset ? (
           <OpenInAgentContextSubmenu
             input={handoffInput}
@@ -270,6 +275,7 @@ export function FileTreeMenu({
             <Trans>Share</Trans>
           </DropdownMenuItem>
         ) : null}
+        <FileTreeMenuPathActions item={item} workspace={workspace} onClose={close} action="copy" />
         {showExpand || showCollapse ? <DropdownMenuSeparator /> : null}
         {showExpand ? (
           <DropdownMenuItem

@@ -76,44 +76,50 @@ export function FileTreeMenuPathActions({
   item,
   workspace,
   onClose,
+  action = 'all',
 }: {
   item: ContextMenuItem;
   workspace: FileTreeWorkspace | null;
   onClose: () => void;
+  action?: 'all' | 'copy' | 'reveal';
 }) {
   const relativePath = relativePathForTreeItem(item);
   return (
     <>
-      <RevealInFileManager item={item} workspace={workspace} onClose={onClose} />
-      <DropdownMenuSub>
-        <DropdownMenuSubTrigger>
-          <Copy aria-hidden="true" />
-          <Trans>Copy path</Trans>
-        </DropdownMenuSubTrigger>
-        <DropdownMenuSubContent>
-          <DropdownMenuItem
-            disabled={!workspace}
-            onSelect={() => {
-              if (!workspace) return;
-              onClose();
-              void copyPath(
-                joinWorkspacePath(workspace.contentDir, relativePath, workspace.pathSeparator),
-                'full',
-              );
-            }}
-          >
-            <Trans>Full path</Trans>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={() => {
-              onClose();
-              void copyPath(relativePath, 'relative');
-            }}
-          >
-            <Trans>Relative path</Trans>
-          </DropdownMenuItem>
-        </DropdownMenuSubContent>
-      </DropdownMenuSub>
+      {action !== 'copy' && (
+        <RevealInFileManager item={item} workspace={workspace} onClose={onClose} />
+      )}
+      {action !== 'reveal' && (
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <Copy aria-hidden="true" />
+            <Trans>Copy path</Trans>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuItem
+              disabled={!workspace}
+              onSelect={() => {
+                if (!workspace) return;
+                onClose();
+                void copyPath(
+                  joinWorkspacePath(workspace.contentDir, relativePath, workspace.pathSeparator),
+                  'full',
+                );
+              }}
+            >
+              <Trans>Full path</Trans>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => {
+                onClose();
+                void copyPath(relativePath, 'relative');
+              }}
+            >
+              <Trans>Relative path</Trans>
+            </DropdownMenuItem>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+      )}
     </>
   );
 }

@@ -71,7 +71,14 @@ export function useFileTreeCommandSubscriptions({
             name: target.assetPath.split('/').pop() ?? target.assetPath,
           },
         ]);
+        return;
       }
+      console.warn(
+        JSON.stringify({
+          event: 'file-tree-menu-action-delete-unsupported-kind',
+          kind: target.kind,
+        }),
+      );
     });
   }, []);
   // biome-ignore lint/correctness/useExhaustiveDependencies: native command subscription reads the latest document list through a stable ref.
@@ -96,7 +103,14 @@ export function useFileTreeCommandSubscriptions({
           path: target.folderPath,
           name: target.folderPath.split('/').pop() ?? target.folderPath,
         });
+        return;
       }
+      console.warn(
+        JSON.stringify({
+          event: 'file-tree-menu-action-duplicate-unsupported-kind',
+          kind: target.kind,
+        }),
+      );
     });
   }, []);
   // biome-ignore lint/correctness/useExhaustiveDependencies: the page-header bus reads the latest rename handler through its stable ref.
@@ -114,7 +128,16 @@ export function useFileTreeCommandSubscriptions({
         model.startRenaming(target.folderPath);
         return;
       }
-      if (target.kind === 'asset') model.startRenaming(target.assetPath);
+      if (target.kind === 'asset') {
+        model.startRenaming(target.assetPath);
+        return;
+      }
+      console.warn(
+        JSON.stringify({
+          event: 'file-tree-menu-action-rename-unsupported-kind',
+          kind: target.kind,
+        }),
+      );
     });
   }, [model]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: the page-header bus reads the latest rename handler through its stable ref.
