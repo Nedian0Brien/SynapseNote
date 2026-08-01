@@ -482,6 +482,118 @@ export const MODULE_SIZE_BUDGETS: readonly ModuleSizeBudget[] = [
     maxLines: 60,
     owner: 'Owns file-tree workspace context.',
   },
+  // Editor cache and provider-pool leaves use separate ports so their
+  // lifecycles cannot form a dependency cycle.
+  {
+    path: 'editor/editor-cache-activity.ts',
+    maxLines: 90,
+    owner: 'Owns editor-cache activity and eviction notifications.',
+  },
+  {
+    path: 'editor/editor-cache-codemirror.ts',
+    maxLines: 200,
+    owner: 'Owns CodeMirror editor cache operations.',
+  },
+  {
+    path: 'editor/editor-cache-config.ts',
+    maxLines: 50,
+    owner: 'Owns editor-cache thresholds and configuration.',
+  },
+  {
+    path: 'editor/editor-cache-dom.ts',
+    maxLines: 80,
+    owner: 'Owns editor-cache DOM parking and reparenting.',
+  },
+  {
+    path: 'editor/editor-cache-policy.ts',
+    maxLines: 60,
+    owner: 'Owns editor-cache admission and eviction policy.',
+  },
+  {
+    path: 'editor/editor-cache-rename-snapshots.ts',
+    maxLines: 130,
+    owner: 'Owns editor-cache rename snapshots.',
+  },
+  {
+    path: 'editor/editor-cache-state.ts',
+    maxLines: 60,
+    owner: 'Owns editor-cache mutable state stores.',
+  },
+  {
+    path: 'editor/editor-cache-tiptap.ts',
+    maxLines: 220,
+    owner: 'Owns Tiptap editor cache operations.',
+  },
+  {
+    path: 'editor/editor-cache-types.ts',
+    maxLines: 100,
+    owner: 'Owns editor-cache type contracts.',
+  },
+  {
+    path: 'editor/editor-cache.ts',
+    maxLines: 73,
+    owner: 'Owns the editor-cache public entrypoint facade.',
+  },
+  {
+    path: 'editor/provider-pool-connection.ts',
+    maxLines: 420,
+    owner: 'Owns provider-pool connection lifecycle.',
+  },
+  {
+    path: 'editor/provider-pool-contracts.ts',
+    maxLines: 400,
+    owner: 'Owns provider-pool public contracts and constants.',
+  },
+  {
+    path: 'editor/provider-pool-entry-disposal.ts',
+    maxLines: 80,
+    owner: 'Owns provider-pool entry disposal.',
+  },
+  {
+    path: 'editor/provider-pool-entry-state.ts',
+    maxLines: 80,
+    owner: 'Owns provider-pool entry teardown state.',
+  },
+  {
+    path: 'editor/provider-pool-eviction.ts',
+    maxLines: 420,
+    owner: 'Owns provider-pool eviction and recycling.',
+  },
+  {
+    path: 'editor/provider-pool-lineage.ts',
+    maxLines: 200,
+    owner: 'Owns provider-pool lineage reconciliation.',
+  },
+  {
+    path: 'editor/provider-pool-persistence.ts',
+    maxLines: 340,
+    owner: 'Owns provider-pool persistence and replay handoff.',
+  },
+  {
+    path: 'editor/provider-pool-recovery.ts',
+    maxLines: 210,
+    owner: 'Owns provider-pool recovery transitions.',
+  },
+  {
+    path: 'editor/provider-pool-replay.ts',
+    maxLines: 30,
+    owner: 'Owns provider-pool replay buffering.',
+  },
+  {
+    path: 'editor/provider-pool-signals.ts',
+    maxLines: 100,
+    owner: 'Owns provider-pool lifecycle signals.',
+  },
+  {
+    path: 'editor/provider-pool-state.ts',
+    maxLines: 410,
+    owner: 'Owns provider-pool state transitions.',
+  },
+  {
+    path: 'editor/provider-pool.ts',
+    maxLines: 8,
+    owner: 'Owns the provider-pool public entrypoint facade.',
+  },
   // RFC 0002 app-shell extraction leaves. Keep each responsibility explicit
   // so a future monolith regression is visible at the boundary guard.
   {

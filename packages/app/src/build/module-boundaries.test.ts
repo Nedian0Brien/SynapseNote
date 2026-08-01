@@ -117,6 +117,32 @@ describe('RFC 0002 module boundary guard', () => {
     }
   });
 
+  test('editor cache and provider pool stay on separate dependency ports', () => {
+    const editorCacheModules = MODULE_SIZE_BUDGETS.filter(({ path }) =>
+      path.startsWith('editor/editor-cache-'),
+    );
+    const providerPoolModules = MODULE_SIZE_BUDGETS.filter(({ path }) =>
+      path.startsWith('editor/provider-pool-'),
+    );
+    const providerPoolImport = /\b(?:from|import)\s*(?:\(\s*)?['"][^'"]*provider-pool[^'"]*['"]/;
+    const editorCacheImport = /\b(?:from|import)\s*(?:\(\s*)?['"][^'"]*editor-cache[^'"]*['"]/;
+
+    expect(editorCacheModules.length).toBeGreaterThan(0);
+    expect(providerPoolModules.length).toBeGreaterThan(0);
+    for (const budget of editorCacheModules) {
+      const source = readFileSync(resolveAppModule(APP_SRC, budget.path), 'utf8');
+      expect(source, `${budget.path} must not import provider-pool implementation`).not.toMatch(
+        providerPoolImport,
+      );
+    }
+    for (const budget of providerPoolModules) {
+      const source = readFileSync(resolveAppModule(APP_SRC, budget.path), 'utf8');
+      expect(source, `${budget.path} must not import editor-cache implementation`).not.toMatch(
+        editorCacheImport,
+      );
+    }
+  });
+
   test('database leaves do not own transport, snapshot, or route writes', () => {
     for (const modulePath of DATABASE_LEAF_BOUNDARIES) {
       const source = readFileSync(resolveAppModule(APP_SRC, modulePath), 'utf8');
