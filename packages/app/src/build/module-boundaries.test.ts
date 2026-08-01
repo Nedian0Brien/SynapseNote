@@ -57,6 +57,7 @@ const DATABASE_LEAF_BOUNDARIES = [
   'editor/components/use-inline-database-view-commands.ts',
   'editor/components/inline-database-history.ts',
   'components/use-database-workspace-controller.ts',
+  'components/database-workspace-controller-boundaries.ts',
   'components/use-database-workspace-controller-state.ts',
   'components/DatabaseSavedViewSettingsDialog.tsx',
   'components/DatabaseRecordPageChrome.tsx',
@@ -142,19 +143,37 @@ describe('RFC 0002 module boundary guard', () => {
     expect(inlineFacade).toContain('useInlineDatabaseControllerState');
     expect(inlineFacade).toContain('useInlineDatabaseCommands');
 
-    const workspaceRuntime = readFileSync(
-      resolveAppModule(APP_SRC, 'components/use-database-workspace-controller-runtime.ts'),
+    const workspaceFacade = readFileSync(
+      resolveAppModule(APP_SRC, 'components/use-database-workspace-controller.ts'),
       'utf8',
     );
-    expect(workspaceRuntime).toContain("from './use-database-workspace-controller-state'");
-    expect(workspaceRuntime).toContain("from './useDatabaseWorkspaceViewCommands'");
-    expect(workspaceRuntime).toContain('useDatabaseWorkspaceControllerState');
-    expect(workspaceRuntime).toContain('useDatabaseWorkspaceViewCommands');
-    const workspaceViewCommands = readFileSync(
-      resolveAppModule(APP_SRC, 'components/useDatabaseWorkspaceViewCommands.ts'),
+    expect(workspaceFacade).toContain("from './use-database-workspace-controller-state'");
+    expect(workspaceFacade).toContain("from './use-database-workspace-read-lifecycle'");
+    expect(workspaceFacade).toContain("from './use-database-workspace-mutation-record-commands'");
+    expect(workspaceFacade).toContain("from './use-database-workspace-structure-commands'");
+    expect(workspaceFacade).toContain('useDatabaseWorkspaceControllerState');
+    expect(workspaceFacade).toContain('useDatabaseWorkspaceReadLifecycle');
+    expect(workspaceFacade).toContain('useDatabaseWorkspaceMutationRecordCommands');
+    expect(workspaceFacade).toContain('useDatabaseWorkspaceStructureCommands');
+
+    const workspaceMutationRecordCommands = readFileSync(
+      resolveAppModule(APP_SRC, 'components/use-database-workspace-mutation-record-commands.ts'),
       'utf8',
     );
-    expect(workspaceViewCommands).toContain('requestOpenDatabaseRecord');
+    expect(workspaceMutationRecordCommands).toContain(
+      "from './useDatabaseWorkspaceMutationCommands'",
+    );
+    expect(workspaceMutationRecordCommands).toContain(
+      "from './useDatabaseWorkspaceRecordCommands'",
+    );
+
+    const workspaceStructureCommands = readFileSync(
+      resolveAppModule(APP_SRC, 'components/use-database-workspace-structure-commands.ts'),
+      'utf8',
+    );
+    expect(workspaceStructureCommands).toContain("from './useDatabaseWorkspaceBulkCommands'");
+    expect(workspaceStructureCommands).toContain("from './useDatabaseWorkspaceSchemaCommands'");
+    expect(workspaceStructureCommands).toContain("from './useDatabaseWorkspaceViewCommands'");
   });
 
   test('paths in diagnostics are app-relative', () => {

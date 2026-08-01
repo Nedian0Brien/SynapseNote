@@ -171,9 +171,29 @@ export const MODULE_SIZE_BUDGETS: readonly ModuleSizeBudget[] = [
     owner: 'database workspace controller facade',
   },
   {
+    path: 'components/database-workspace-controller-boundaries.ts',
+    maxLines: 60,
+    owner: 'database workspace controller boundary helpers',
+  },
+  {
     path: 'components/use-database-workspace-controller-state.ts',
     maxLines: 450,
     owner: 'database workspace interaction state',
+  },
+  {
+    path: 'components/use-database-workspace-read-lifecycle.ts',
+    maxLines: 400,
+    owner: 'database workspace read lifecycle and projections',
+  },
+  {
+    path: 'components/use-database-workspace-mutation-record-commands.ts',
+    maxLines: 220,
+    owner: 'database workspace mutation and record command ports',
+  },
+  {
+    path: 'components/use-database-workspace-structure-commands.ts',
+    maxLines: 450,
+    owner: 'database workspace bulk, schema, and view command ports',
   },
   {
     path: 'components/DatabaseSavedViewSettingsDialog.tsx',
@@ -379,7 +399,11 @@ export const DATABASE_BOUNDARY_CONTRACT = [
   'editor/components/use-inline-database-view-commands.ts',
   'editor/components/inline-database-history.ts',
   'components/use-database-workspace-controller.ts',
+  'components/database-workspace-controller-boundaries.ts',
   'components/use-database-workspace-controller-state.ts',
+  'components/use-database-workspace-read-lifecycle.ts',
+  'components/use-database-workspace-mutation-record-commands.ts',
+  'components/use-database-workspace-structure-commands.ts',
   'components/DatabaseSavedViewSettingsDialog.tsx',
   'components/DatabaseRecordPageChrome.tsx',
   'components/database-saved-view-settings/database-saved-view-settings-utils.ts',
