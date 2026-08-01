@@ -14,7 +14,6 @@ import {
   type DatabaseConditionalColorResult,
   type DatabaseDefinition,
   DatabaseDefinitionSchema,
-  DatabaseFilesValueSchema,
   type DatabaseFilter,
   type DatabaseFindPlan,
   type DatabaseFormValue,
@@ -43,14 +42,12 @@ import {
   evaluateDatabaseFilter,
   type FormulaComputedResult,
   formulaErrorResult,
-  isDatabaseValueValidForProperty,
   isRecordPathInSource,
   materializeDatabaseDerivedRecords,
   type ProjectedDatabaseRelationRecord,
   previewDatabasePropertyConversion,
   projectDatabaseVerification,
   queryDatabaseRecords,
-  validateDatabasePropertyConstraints,
 } from '@nedian0brien/synapsenote-core';
 import type { DatabaseMarkdownTableExport } from '@nedian0brien/synapsenote-core/server';
 import type { EnqueueDatabaseAutomationEventInput } from './database-automation.ts';
@@ -89,6 +86,13 @@ import {
 } from './database-context-pack.ts';
 import { DatabaseDataPlaneError } from './database-data-plane-errors.ts';
 import {
+  authorizeDatabaseFormUpload,
+  type DatabaseFormSubmissionInput,
+  type DatabaseFormSubmissionResult,
+  type DatabaseFormUploadAuthorization,
+  submitDatabaseForm,
+} from './database-data-plane-form-policy.ts';
+import {
   type DatabaseMarkdownTableExportInput,
   type DatabaseMarkdownTableMutationRequest,
   exportDatabaseMarkdownTable,
@@ -97,7 +101,6 @@ import {
 import {
   createDatabaseFormStateStore,
   type DatabaseFormStateStore,
-  databaseFormPrivateKey,
 } from './database-form-state-store.ts';
 import type { DatabaseMarkdownTableWriter } from './database-markdown-table-writer.ts';
 import {
@@ -138,6 +141,11 @@ import { isV1Database, v1MigrationRequiredMessage } from './database-v1-compatib
 
 export type { DatabaseDataPlaneErrorCode } from './database-data-plane-errors.ts';
 export { DatabaseDataPlaneError } from './database-data-plane-errors.ts';
+export type {
+  DatabaseFormSubmissionInput,
+  DatabaseFormSubmissionResult,
+  DatabaseFormUploadAuthorization,
+} from './database-data-plane-form-policy.ts';
 export type {
   DatabaseMarkdownTableExportInput,
   DatabaseMarkdownTableMutationInput,
@@ -466,29 +474,6 @@ export interface CreateDatabaseDataPlaneOptions {
   isDatabaseMigrationActive?: () => { taskId: string } | null;
 }
 
-export interface DatabaseFormSubmissionInput {
-  databaseId: string;
-  sourceId: string;
-  viewId: string;
-  submissionId: string;
-  startedAt: string;
-  answers: Readonly<Record<string, DatabaseFormValue>>;
-  honeypot?: string;
-  remoteAddress: string;
-}
-
-export interface DatabaseFormSubmissionResult {
-  status: 'created';
-  recordId: string;
-  submittedAt: string;
-  idempotentReplay: boolean;
-  confirmation: DatabaseFormViewConfiguration['confirmation'];
-}
-
-export interface DatabaseFormUploadAuthorization {
-  parentDocName: string;
-}
-
 export interface DatabasePropertyConversionPlanPreview {
   databaseId: string;
   sourceId: string;
@@ -579,7 +564,7 @@ function contextSensitivityPolicy(
   };
 }
 
-function isLoopbackAddress(value: string): boolean {
+function _isLoopbackAddress(value: string): boolean {
   const address = value.trim().toLowerCase();
   return (
     address === '127.0.0.1' ||
@@ -603,7 +588,7 @@ function formValuesEqual(left: unknown, right: unknown): boolean {
   return stableJson(left) === stableJson(right);
 }
 
-function formQuestionVisible(
+function _formQuestionVisible(
   question: DatabaseFormViewConfiguration['questions'][number],
   questions: readonly DatabaseFormViewConfiguration['questions'][number][],
   answers: Readonly<Record<string, DatabaseFormValue>>,
@@ -3587,314 +3572,27 @@ export class DatabaseDataPlane {
     );
   }
 
+  #formPolicyPort() {
+    return {
+      assertMutationAllowed: this.#assertMutationAllowed.bind(this),
+      describeCanonical: this.#describeCanonical.bind(this),
+      publicShare: () => this.#publicShare.getStore(),
+      now: this.#now,
+      formStateStore: this.#formStateStore,
+      recordById: this.#databaseRecordIndex.getById.bind(this.#databaseRecordIndex),
+      query: (input: unknown) => this.query(input as DatabaseDataPlaneQueryInput),
+      databaseDefinitionDraftBase,
+      withTrustedMutation: <T>(operation: () => T): T =>
+        this.#trustedFormMutation.run(true, operation),
+      createDraft: this.createDraft.bind(this),
+      createPlan: this.createPlan.bind(this),
+      commit: this.commit.bind(this),
+      publishFormAutomationEvent: this.#publishFormAutomationEvent.bind(this),
+    };
+  }
+
   async submitForm(input: DatabaseFormSubmissionInput): Promise<DatabaseFormSubmissionResult> {
-    this.#assertMutationAllowed();
-    const described = this.#describeCanonical({
-      databaseId: input.databaseId,
-      sourceId: input.sourceId,
-    });
-    if (!described.source) {
-      throw new DatabaseDataPlaneError('source_not_found', 'Form data source was not found');
-    }
-    const view = described.database.views.find((candidate) => candidate.id === input.viewId);
-    if (!view || view.layout.type !== 'form') {
-      throw new DatabaseDataPlaneError('form_not_found', 'Form view was not found', {
-        viewId: input.viewId,
-      });
-    }
-    if (view.sourceId !== described.source.id) {
-      throw new DatabaseDataPlaneError('view_source_mismatch', 'Form belongs to another source');
-    }
-    const publicShare = this.#publicShare.getStore();
-    if (
-      publicShare &&
-      (publicShare.target.kind !== 'form' ||
-        publicShare.target.databaseId !== input.databaseId ||
-        publicShare.target.viewId !== input.viewId ||
-        !publicShare.allowFormSubmission)
-    ) {
-      throw new DatabaseDataPlaneError(
-        'form_access_denied',
-        'This public share does not accept form submissions.',
-      );
-    }
-    const configuration = view.layout.configuration;
-    if (
-      !publicShare &&
-      configuration.access === 'internal' &&
-      !isLoopbackAddress(input.remoteAddress)
-    ) {
-      throw new DatabaseDataPlaneError(
-        'form_access_denied',
-        'This form only accepts responses from the local workspace.',
-      );
-    }
-
-    const now = this.#now();
-    if (configuration.closesAt && now.getTime() >= Date.parse(configuration.closesAt)) {
-      throw new DatabaseDataPlaneError('form_closed', configuration.closedMessage, {
-        closesAt: configuration.closesAt,
-      });
-    }
-    const receiptKey = `${described.database.id}:${view.id}:${input.submissionId}`;
-    const receiptKeyHash = databaseFormPrivateKey(receiptKey);
-    const fingerprint = `sha256:${createHash('sha256')
-      .update(stableJson({ startedAt: input.startedAt, answers: input.answers }))
-      .digest('hex')}`;
-    const prior = await this.#formStateStore.get(receiptKeyHash);
-    if (prior) {
-      if (prior.fingerprint !== fingerprint) {
-        throw new DatabaseDataPlaneError(
-          'form_duplicate_submission',
-          'Submission ID was already used for different answers.',
-        );
-      }
-      if (prior.state === 'created') {
-        await this.#publishFormAutomationEvent(prior);
-        return { ...prior.result, idempotentReplay: true };
-      }
-      if (prior.state === 'deleted') {
-        throw new DatabaseDataPlaneError(
-          'form_duplicate_submission',
-          'This submission was accepted previously and has passed its retention period.',
-        );
-      }
-      const indexed = this.#databaseRecordIndex.getById(prior.recordId);
-      if (
-        indexed?.databaseId === described.database.id &&
-        indexed.sourceId === described.source.id
-      ) {
-        await this.#formStateStore.markCreated(prior.id, now.toISOString());
-        await this.#publishFormAutomationEvent(prior);
-        return { ...prior.result, idempotentReplay: true };
-      }
-    }
-    if (configuration.spamProtection.honeypot && (input.honeypot ?? '') !== '') {
-      throw new DatabaseDataPlaneError('form_invalid_submission', 'Form submission was rejected.');
-    }
-    const startedAt = Date.parse(input.startedAt);
-    const minimumMs = configuration.spamProtection.minimumCompletionSeconds * 1_000;
-    if (!Number.isFinite(startedAt) || now.getTime() - startedAt < minimumMs) {
-      throw new DatabaseDataPlaneError(
-        'form_invalid_submission',
-        'Form was submitted too quickly. Please review your answers and try again.',
-      );
-    }
-    const rate = configuration.spamProtection.rateLimit;
-    if (!prior) {
-      const rateDecision = await this.#formStateStore.consumeRate({
-        keyHash: databaseFormPrivateKey(
-          `submit:${described.database.id}:${view.id}:${input.remoteAddress}`,
-        ),
-        nowMs: now.getTime(),
-        windowSeconds: rate.windowSeconds,
-        limit: rate.maxSubmissions,
-      });
-      if (!rateDecision.allowed) {
-        throw new DatabaseDataPlaneError(
-          'form_rate_limited',
-          'Too many responses were submitted. Please try again later.',
-          { retryAfterSeconds: rateDecision.retryAfterSeconds },
-        );
-      }
-    }
-
-    const knownPropertyIds = new Set(
-      configuration.questions.map((question) => question.propertyId),
-    );
-    for (const propertyId of Object.keys(input.answers)) {
-      if (!knownPropertyIds.has(propertyId)) {
-        throw new DatabaseDataPlaneError(
-          'form_invalid_submission',
-          `Answer targets an unknown form property "${propertyId}".`,
-        );
-      }
-    }
-
-    const visiblePropertyIds = new Set<string>();
-    for (const question of configuration.questions) {
-      const visible = formQuestionVisible(question, configuration.questions, input.answers);
-      const answer = input.answers[question.propertyId];
-      if (!visible) {
-        if (answer !== undefined) {
-          throw new DatabaseDataPlaneError(
-            'form_invalid_submission',
-            `Hidden question "${question.label}" cannot be submitted.`,
-          );
-        }
-        continue;
-      }
-      visiblePropertyIds.add(question.propertyId);
-      if (question.required && isEmptyFormValue(answer)) {
-        throw new DatabaseDataPlaneError(
-          'form_invalid_submission',
-          `"${question.label}" is required.`,
-          { propertyId: question.propertyId },
-        );
-      }
-    }
-
-    const valuesByPropertyId: Record<string, DatabaseFormValue> = {
-      ...structuredClone(configuration.defaults),
-    };
-    for (const [propertyId, value] of Object.entries(input.answers)) {
-      if (visiblePropertyIds.has(propertyId) && !isEmptyFormValue(value)) {
-        valuesByPropertyId[propertyId] = structuredClone(value);
-      }
-    }
-    const valuesByPropertyKey: Record<string, DatabaseFormValue> = {};
-    for (const [propertyId, value] of Object.entries(valuesByPropertyId)) {
-      const property = described.source.properties.find((candidate) => candidate.id === propertyId);
-      if (!property || !isDatabaseValueValidForProperty(property, value)) {
-        throw new DatabaseDataPlaneError(
-          'form_invalid_submission',
-          `Submitted value is invalid for property "${propertyId}".`,
-          { propertyId },
-        );
-      }
-      const constraintIssue = validateDatabasePropertyConstraints(property, value);
-      if (constraintIssue) {
-        throw new DatabaseDataPlaneError(
-          'form_invalid_submission',
-          `${property.name} ${constraintIssue}.`,
-          { propertyId },
-        );
-      }
-      if (property.type === 'files') {
-        const files = DatabaseFilesValueSchema.parse(value);
-        if (
-          !configuration.fileUploads.enabled ||
-          files.length > configuration.fileUploads.maxFilesPerQuestion ||
-          files.some((file) => file.kind !== 'local')
-        ) {
-          throw new DatabaseDataPlaneError(
-            'form_invalid_submission',
-            'File answers must use uploaded local files within the configured limit.',
-            { propertyId },
-          );
-        }
-      }
-      valuesByPropertyKey[property.key] = value;
-    }
-
-    const duplicatePolicy = configuration.duplicateSubmission;
-    if (duplicatePolicy.type === 'reject_property') {
-      const duplicateValue = valuesByPropertyId[duplicatePolicy.propertyId];
-      if (isEmptyFormValue(duplicateValue)) {
-        throw new DatabaseDataPlaneError(
-          'form_invalid_submission',
-          'The duplicate-check field requires a value.',
-          { propertyId: duplicatePolicy.propertyId },
-        );
-      }
-      if (
-        typeof duplicateValue !== 'string' &&
-        typeof duplicateValue !== 'number' &&
-        typeof duplicateValue !== 'boolean'
-      ) {
-        throw new DatabaseDataPlaneError(
-          'form_invalid_submission',
-          'The duplicate-check field must contain one scalar value.',
-        );
-      }
-      const existing = this.query({
-        databaseId: described.database.id,
-        sourceId: described.source.id,
-        query: {
-          where: {
-            propertyId: duplicatePolicy.propertyId,
-            operator: 'eq',
-            value: duplicateValue,
-          },
-          select: [duplicatePolicy.propertyId],
-          page: { limit: 1 },
-        },
-      });
-      if (existing.matched > 0) {
-        throw new DatabaseDataPlaneError(
-          'form_duplicate_submission',
-          'A response with this value has already been submitted.',
-          { propertyId: duplicatePolicy.propertyId },
-        );
-      }
-    }
-
-    const desiredState: DatabaseDesiredStateDraftInput = {
-      ...databaseDefinitionDraftBase(described.database),
-      sampleRecords: [
-        {
-          id:
-            prior?.recordId ??
-            `rec_form_${receiptKeyHash.slice('sha256:'.length, 'sha256:'.length + 32)}`,
-          sourceKey: described.source.key,
-          values: valuesByPropertyKey,
-          body: '',
-        },
-      ],
-      recordMutations: [],
-    };
-    const draft = this.#trustedFormMutation.run(true, () => this.createDraft(desiredState, 300));
-    const recordId = draft.normalized.sampleRecords[0]?.id;
-    if (!recordId) throw new Error('Form draft did not allocate a record ID');
-    const plan = this.#trustedFormMutation.run(true, () => this.createPlan(draft.id, 300));
-    if (!plan.committable) {
-      throw new DatabaseDataPlaneError(
-        'form_invalid_submission',
-        'Form response does not satisfy the database schema.',
-        { conflicts: plan.conflicts },
-      );
-    }
-    const result: DatabaseFormSubmissionResult = {
-      status: 'created',
-      recordId,
-      submittedAt: prior?.result.submittedAt ?? now.toISOString(),
-      idempotentReplay: false,
-      confirmation: structuredClone(configuration.confirmation),
-    };
-    const deleteAfter =
-      configuration.retention.type === 'delete_after'
-        ? new Date(
-            Date.parse(result.submittedAt) + configuration.retention.days * 86_400_000,
-          ).toISOString()
-        : null;
-    const receipt = await this.#formStateStore.reserve({
-      keyHash: receiptKeyHash,
-      fingerprint,
-      databaseId: described.database.id,
-      sourceId: described.source.id,
-      viewId: view.id,
-      recordId,
-      result,
-      deleteAfter,
-      now: now.toISOString(),
-    });
-    try {
-      await this.#trustedFormMutation.run(true, () =>
-        this.commit({
-          planId: plan.id,
-          planHash: plan.hash,
-          expectedSnapshotRevision: plan.snapshotRevision,
-          idempotencyKey: `form:${view.id}:${input.submissionId}`,
-          approvalToken: `approve:${plan.hash}`,
-          actor: { kind: 'system', principalId: `form:${view.id}` },
-        }),
-      );
-    } catch (error) {
-      const indexed = this.#databaseRecordIndex.getById(receipt.recordId);
-      if (
-        !indexed ||
-        indexed.databaseId !== receipt.databaseId ||
-        indexed.sourceId !== receipt.sourceId
-      ) {
-        throw error;
-      }
-      await this.#formStateStore.markCreated(receipt.id, this.#now().toISOString());
-      await this.#publishFormAutomationEvent(receipt);
-      return { ...receipt.result, idempotentReplay: true };
-    }
-    await this.#formStateStore.markCreated(receipt.id, this.#now().toISOString());
-    await this.#publishFormAutomationEvent(receipt);
-    return result;
+    return submitDatabaseForm(this.#formPolicyPort(), input);
   }
 
   async authorizeFormUpload(input: {
@@ -3903,58 +3601,8 @@ export class DatabaseDataPlane {
     viewId: string;
     remoteAddress: string;
   }): Promise<DatabaseFormUploadAuthorization> {
-    const described = this.#describeCanonical({
-      databaseId: input.databaseId,
-      sourceId: input.sourceId,
-    });
-    if (!described.source) {
-      throw new DatabaseDataPlaneError('source_not_found', 'Form data source was not found');
-    }
-    const view = described.database.views.find((candidate) => candidate.id === input.viewId);
-    if (!view || view.layout.type !== 'form') {
-      throw new DatabaseDataPlaneError('form_not_found', 'Form view was not found');
-    }
-    if (view.sourceId !== described.source.id) {
-      throw new DatabaseDataPlaneError('view_source_mismatch', 'Form belongs to another source');
-    }
-    const configuration = view.layout.configuration;
-    if (configuration.access === 'internal' && !isLoopbackAddress(input.remoteAddress)) {
-      throw new DatabaseDataPlaneError(
-        'form_access_denied',
-        'This form only accepts uploads from the local workspace.',
-      );
-    }
-    const now = this.#now();
-    if (configuration.closesAt && now.getTime() >= Date.parse(configuration.closesAt)) {
-      throw new DatabaseDataPlaneError('form_closed', configuration.closedMessage);
-    }
-    if (!configuration.fileUploads.enabled) {
-      throw new DatabaseDataPlaneError(
-        'form_invalid_submission',
-        'This form does not accept file uploads.',
-      );
-    }
-    const rate = configuration.spamProtection.rateLimit;
-    const uploadLimit = rate.maxSubmissions * configuration.fileUploads.maxFilesPerQuestion;
-    const rateDecision = await this.#formStateStore.consumeRate({
-      keyHash: databaseFormPrivateKey(
-        `upload:${described.database.id}:${view.id}:${input.remoteAddress}`,
-      ),
-      nowMs: now.getTime(),
-      windowSeconds: rate.windowSeconds,
-      limit: uploadLimit,
-    });
-    if (!rateDecision.allowed) {
-      throw new DatabaseDataPlaneError(
-        'form_rate_limited',
-        'Too many form files were uploaded. Please try again later.',
-        { retryAfterSeconds: rateDecision.retryAfterSeconds },
-      );
-    }
-    const folder = described.source.folder === '.' ? '' : `${described.source.folder}/`;
-    return { parentDocName: `${folder}form-response` };
+    return authorizeDatabaseFormUpload(this.#formPolicyPort(), input);
   }
-
   getDraft(draftId: string): DatabaseDraftArtifact {
     const draft = this.#databasePlanEngine.getDraft(draftId);
     this.#assertDraftReadAccess(draft);
