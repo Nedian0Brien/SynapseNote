@@ -3,7 +3,6 @@ import { Trans, useLingui } from '@lingui/react/macro';
 import {
   DeletePathSuccessSchema,
   isDocumentOverOpenByteLimit,
-  RenamePathSuccessSchema,
   TrashCleanupSuccessSchema,
   UploadAssetSuccessSchema,
   WorkspaceSuccessSchema,
@@ -32,7 +31,6 @@ import {
   appendSidebarUploadFields,
   collectTreeFolderPathsFromDocuments,
   computeTreeAncestorPaths,
-  computeTreeDropDestinationPath,
   docNameToTreePath,
   documentsToTreePaths,
   documentsTreePathSignature,
@@ -41,7 +39,6 @@ import {
   filesFromExternalDrop,
   folderPathToTreeDirectoryPath,
   isExternalFileDrag,
-  normalizeTreePathForKind,
   treeDirectoryPathToFolderPath,
   treeFilePathToDocName,
   treeFilePathToDocumentDocName,
@@ -65,7 +62,6 @@ import { applyRenameInputAffordance } from '@/components/file-tree-rename-chip';
 import {
   getFileExtension,
   hasSupportedDocumentExtension,
-  validateAndCoerceRenameDestination,
 } from '@/components/file-tree-rename-validation';
 import { revealActiveRow } from '@/components/file-tree-reveal';
 import {
@@ -160,6 +156,7 @@ import {
   useFileTreeDragAndDrop,
 } from './file-tree/useFileTreeDragAndDrop';
 import { createDuplicateFileTreeMutation } from './file-tree/useFileTreeMutations';
+import { createFileTreeRenameHandlers } from './file-tree/useFileTreeRename';
 import { useFileTreeShowAll } from './file-tree/useFileTreeShowAll';
 import { useHandoffDispatch } from './handoff/useHandoffDispatch';
 import { useInstalledAgents } from './handoff/useInstalledAgents';
@@ -1120,239 +1117,33 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     });
   };
 
-  async function handleTreeRename(event: FileTreeRenameEvent): Promise<PageHeaderRenameResult> {
-    const sourceIsAsset = !event.isFolder && isAssetTreePath(event.sourcePath);
-    const sourceTreePath = sourceIsAsset
-      ? event.sourcePath
-      : normalizeTreePathForKind(event.sourcePath, event.isFolder);
-
-    setBusyPath(sourceTreePath);
-    setError(null);
-
-    try {
-      // Operate on RAW event paths — `normalizeTreePathForKind` appends `.md`
-      // to anything not already ending in `.md` / `.mdx`, which would mask
-      // "user changed the extension to .tx" into "user typed weird basename
-      // foo.tx and we appended .md".
-      const validation = validateAndCoerceRenameDestination(
-        event.sourcePath,
-        event.destinationPath,
-        event.isFolder,
-      );
-      const documentBecomesFile =
-        !event.isFolder &&
-        !sourceIsAsset &&
-        !hasSupportedDocumentExtension(validation.destinationPath);
-      const destinationTreePath =
-        sourceIsAsset || documentBecomesFile
-          ? validation.destinationPath
-          : normalizeTreePathForKind(validation.destinationPath, event.isFolder);
-
-      const payload = event.isFolder
-        ? {
-            kind: 'folder' as const,
-            fromPath: treeDirectoryPathToFolderPath(sourceTreePath),
-            toPath: treeDirectoryPathToFolderPath(destinationTreePath),
-          }
-        : sourceIsAsset || documentBecomesFile
-          ? {
-              kind: 'asset' as const,
-              fromPath: sourceTreePath,
-              toPath: destinationTreePath,
-            }
-          : {
-              kind: 'file' as const,
-              fromPath: treeFilePathToDocumentDocName(sourceTreePath, documentsRef.current),
-              toPath: destinationTreePath,
-            };
-      const activeBeforeRename = {
-        docName: activeDocNameRef.current,
-        folderPath:
-          activeTargetRef.current?.kind === 'folder' ? activeTargetRef.current.folderPath : null,
-        assetPath:
-          activeTargetRef.current?.kind === 'asset' ? activeTargetRef.current.assetPath : null,
-      };
-
-      const res = await fetch('/api/rename-path', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const parsed = await parseServerResponse(res, t`Failed to rename path`);
-
-      if (!parsed.ok) {
-        toast.error(parsed.title);
-        resetModelToDocuments();
-        const pending = pendingCreateRef.current;
-        if (pending && pending.renamePath === sourceTreePath) {
-          await cleanupPendingCreate(pending);
-        } else {
-          clearPendingCreate();
-        }
-        setBusyPath(null);
-        return { ok: false, message: parsed.title };
-      }
-
-      const success = parseSuccessOrWarn(RenamePathSuccessSchema, parsed.body, 'rename-path', {
-        renamed: [],
-        renamedAssets: [],
-      });
-      // Split try/catch: server-side rename already committed
-      // (`parsed.ok === true`). A failure inside `applyRenamedDocuments`
-      // (IDB clear, tab remap, document-state reconciliation) is a
-      // client-side reconciliation failure, NOT a network error.
-      // Labeling it "Network error — please try again" would misdirect
-      // the user toward a retry that POSTs against a now-nonexistent
-      // source path and fails differently. The correct recovery is to
-      // refresh and resync with disk truth.
-      try {
-        await applyRenamedDocuments(
-          success.renamed,
-          event.isFolder
-            ? [
-                {
-                  fromPath: treeDirectoryPathToFolderPath(sourceTreePath),
-                  toPath: treeDirectoryPathToFolderPath(destinationTreePath),
-                },
-              ]
-            : [],
-          success.renamedAssets,
-          activeBeforeRename,
-          !event.isFolder && !sourceIsAsset && !documentBecomesFile
-            ? success.renamed.flatMap((entry): RenamedDocExtensionMapping[] => {
-                const docExt = getFileExtension(destinationTreePath);
-                return docExt ? [{ toDocName: entry.toDocName, docExt }] : [];
-              })
-            : [],
-        );
-      } catch (reconcileErr) {
-        console.warn('[FileTree] post-rename reconciliation failed', {
-          err: reconcileErr,
-          sourceTreePath,
-          destinationTreePath,
-          renamedCount: success.renamed.length,
-          renamedAssetCount: success.renamedAssets.length,
-        });
-        toast.error(t`Rename succeeded but the sidebar may be out of date — refresh to resync`);
-      }
-      clearPendingCreate();
-      setBusyPath(null);
-      return { ok: true };
-    } catch (err) {
-      console.warn('[FileTree] rename failed:', err);
-      const msg = t`Network error — please try again`;
-      toast.error(msg);
-      setError(msg);
-      resetModelToDocuments();
-      const pending = pendingCreateRef.current;
-      if (pending && pending.renamePath === sourceTreePath) {
-        await cleanupPendingCreate(pending);
-      } else {
-        clearPendingCreate();
-      }
-      setBusyPath(null);
-      return { ok: false, message: msg };
-    }
-  }
-
-  async function handleDropComplete(event: FileTreeDropResult) {
-    const operations = event.draggedPaths
-      .map((sourcePath) => {
-        const destinationTreePath = computeTreeDropDestinationPath(sourcePath, event.target);
-        return sourcePath === destinationTreePath ? null : { sourcePath, destinationTreePath };
-      })
-      .filter((operation) => !!operation);
-    if (operations.length === 0) return;
-
-    setBusyPath(operations[0]?.sourcePath ?? null);
-    setError(null);
-
-    try {
-      let renamed: RenamedDocMapping[] = [];
-      let renamedAssets: RenamedAssetMapping[] = [];
-      const renamedFolders: RenamedFolderMapping[] = [];
-      const activeBeforeRename = {
-        docName: activeDocNameRef.current,
-        folderPath:
-          activeTargetRef.current?.kind === 'folder' ? activeTargetRef.current.folderPath : null,
-        assetPath:
-          activeTargetRef.current?.kind === 'asset' ? activeTargetRef.current.assetPath : null,
-      };
-      for (const operation of operations) {
-        const isFolder = operation.sourcePath.endsWith('/');
-        const sourceIsAsset = !isFolder && isAssetTreePath(operation.sourcePath);
-        const sourceDocName = sourceIsAsset
-          ? null
-          : treeFilePathToDocumentDocName(operation.sourcePath, documentsRef.current);
-        const payload = isFolder
-          ? {
-              kind: 'folder' as const,
-              fromPath: treeDirectoryPathToFolderPath(operation.sourcePath),
-              toPath: treeDirectoryPathToFolderPath(operation.destinationTreePath),
-            }
-          : sourceIsAsset
-            ? {
-                kind: 'asset' as const,
-                fromPath: operation.sourcePath,
-                toPath: operation.destinationTreePath,
-              }
-            : {
-                kind: 'file' as const,
-                fromPath: sourceDocName ?? treeFilePathToDocName(operation.sourcePath),
-                toPath:
-                  sourceDocName && hasSupportedDocumentExtension(sourceDocName)
-                    ? operation.destinationTreePath
-                    : treeFilePathToDocName(operation.destinationTreePath),
-              };
-
-        const res = await fetch('/api/rename-path', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        const parsed = await parseServerResponse(res, t`Failed to move`);
-
-        if (!parsed.ok) {
-          toast.error(parsed.title);
-          resetModelToDocuments();
-          setBusyPath(null);
-          return;
-        }
-        const success = parseSuccessOrWarn(
-          RenamePathSuccessSchema,
-          parsed.body,
-          'rename-path:drop',
-          { renamed: [], renamedAssets: [] },
-        );
-        renamed = renamed.concat(success.renamed);
-        renamedAssets = renamedAssets.concat(success.renamedAssets);
-        if (isFolder) {
-          renamedFolders.push({
-            fromPath: treeDirectoryPathToFolderPath(operation.sourcePath),
-            toPath: treeDirectoryPathToFolderPath(operation.destinationTreePath),
-          });
-        }
-      }
-
-      try {
-        await applyRenamedDocuments(renamed, renamedFolders, renamedAssets, activeBeforeRename);
-      } catch (reconcileErr) {
-        console.warn('[FileTree] post-move reconciliation failed', {
-          err: reconcileErr,
-          operationCount: operations.length,
-          renamedCount: renamed.length,
-          renamedAssetCount: renamedAssets.length,
-        });
-        toast.error(t`Move succeeded but the sidebar may be out of date — refresh to resync`);
-      }
-      setBusyPath(null);
-    } catch (err) {
-      console.warn('[FileTree] move failed:', err);
-      toast.error(t`Network error — please try again`);
-      resetModelToDocuments();
-      setBusyPath(null);
-    }
-  }
+  const { handleTreeRename, handleDropComplete } = createFileTreeRenameHandlers({
+    documents: documentsRef.current,
+    activeBeforeRename: () => ({
+      docName: activeDocNameRef.current,
+      folderPath:
+        activeTargetRef.current?.kind === 'folder' ? activeTargetRef.current.folderPath : null,
+      assetPath:
+        activeTargetRef.current?.kind === 'asset' ? activeTargetRef.current.assetPath : null,
+    }),
+    isAssetTreePath,
+    fetch,
+    setBusyPath,
+    setError,
+    resetModelToDocuments,
+    pendingCreate: () => pendingCreateRef.current,
+    cleanupPendingCreate,
+    clearPendingCreate,
+    applyRenamedDocuments,
+    toastError: toast.error,
+    messages: {
+      failedRename: t`Failed to rename path`,
+      failedMove: t`Failed to move`,
+      renameResync: t`Rename succeeded but the sidebar may be out of date — refresh to resync`,
+      moveResync: t`Move succeeded but the sidebar may be out of date — refresh to resync`,
+      networkError: t`Network error — please try again`,
+    },
+  });
 
   async function uploadExternalFilesToTarget(
     files: readonly File[],
