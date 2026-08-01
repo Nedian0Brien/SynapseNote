@@ -120,11 +120,15 @@ const KNOWN_PAIRED_WRITE_ORIGINS = new Set<string>([
  * PUT handler's per-session origin (`api-extension.ts`) — a distinct local name
  * for the same `getSession(...).origin` value, used in the canonical
  * `transact(fn, session.origin)` pattern through `composeAndWriteRawBody`.
+ * `runtime.managedRenameOrigin` is the injected managed-rename origin; both
+ * loaded-document rewrite paths call `runtime.composeAndWriteRawBody` inside
+ * the transaction before using that origin.
  */
 const KNOWN_PAIRED_WRITE_ORIGIN_PROPS = new Set<string>([
   'session.origin',
   'session.undoOrigin',
   'templateSession.origin',
+  'runtime.managedRenameOrigin',
 ]);
 
 // ─── AST helpers ─────────────────────────────────────────────
