@@ -74,6 +74,7 @@ import {
   type DatabaseCatalogNotModifiedResult,
   type DatabaseCatalogResult,
 } from './database-data-plane-catalog.ts';
+import { createDatabaseContextPackCoordinator } from './database-data-plane-context.ts';
 import { DatabaseDataPlaneError } from './database-data-plane-errors.ts';
 import {
   authorizeDatabaseFormUpload,
@@ -1030,6 +1031,23 @@ export class DatabaseDataPlane {
     };
   }
 
+  #contextPackPort() {
+    return {
+      snapshot: this.#databaseStore.snapshot.bind(this.#databaseStore),
+      visibleViews: this.#visibleViews.bind(this),
+      appliedAgentView,
+      contextSensitivityPolicy,
+      filterPropertyIds,
+      combineFilters,
+      createContextPack: this.#createContextPack.bind(this),
+      captureContextPack: this.#captureContextPack.bind(this),
+      authorizeOperation: this.authorizeOperation.bind(this),
+      contextInspector: this.#contextInspector,
+      recordIndex: this.#databaseRecordIndex,
+      databaseSchemaRevision,
+    };
+  }
+
   #trustedMutationActor(): DatabaseCommitInput['actor'] {
     const principal = this.#currentAccessPrincipal();
     return principal.kind === 'agent'
@@ -1539,252 +1557,31 @@ export class DatabaseDataPlane {
   query(input: DatabaseDataPlaneQueryInput): DatabaseDataPlaneQueryResult {
     return executeDatabaseQuery(this.#queryExecutionPort(), input);
   }
-  pack(input: DatabaseDataPlanePackInput): DatabaseContextPack {
-    const snapshot = this.#databaseStore.snapshot();
-    const database = snapshot.databases.find((candidate) => candidate.id === input.databaseId);
-    if (!database) {
-      throw new DatabaseDataPlaneError('database_not_found', 'Database was not found', {
-        databaseId: input.databaseId,
-      });
-    }
-    const source = database.sources.find((candidate) => candidate.id === input.sourceId);
-    if (!source) {
-      throw new DatabaseDataPlaneError('source_not_found', 'Data source was not found', {
-        databaseId: input.databaseId,
-        sourceId: input.sourceId,
-      });
-    }
-    const visibleAgentViews = this.#visibleViews(database, source, 'pack_context').filter(
-      (candidate) => candidate.layout.type === 'agent' && candidate.agent,
-    );
-    const view =
-      input.agentViewId === undefined
-        ? null
-        : (visibleAgentViews.find((candidate) => candidate.id === input.agentViewId) ?? null);
-    if (input.agentViewId !== undefined && (!view || view.layout.type !== 'agent' || !view.agent)) {
-      throw new DatabaseDataPlaneError('agent_view_not_found', 'Agent View was not found', {
-        agentViewId: input.agentViewId,
-        candidates: visibleAgentViews.map((candidate) => ({
-          id: candidate.id,
-          key: candidate.key,
-          name: candidate.name,
-        })),
-      });
-    }
-    if (view && view.sourceId !== source.id) {
-      throw new DatabaseDataPlaneError(
-        'agent_view_source_mismatch',
-        'Agent View belongs to a different data source',
-        {
-          agentViewId: view.id,
-          viewSourceId: view.sourceId,
-          sourceId: source.id,
-        },
-      );
-    }
-    if (!view) {
-      if (input.maxTokens === undefined || !input.tokenizer || !input.encoding) {
-        throw new DatabaseContextPackError(
-          'invalid_pack_budget',
-          'A context pack without an Agent View requires maxTokens, tokenizer, and encoding',
-        );
-      }
-      const { agentViewId: _agentViewId, ...plain } = input;
-      return this.#captureContextPack(
-        this.#createContextPack({
-          ...plain,
-          sensitivityPolicy: contextSensitivityPolicy(database, 'internal'),
-          maxTokens: input.maxTokens,
-          tokenizer: input.tokenizer,
-          encoding: input.encoding,
-        }),
-      );
-    }
 
-    const agentContract = view.agent;
-    if (!agentContract || view.layout.type !== 'agent') {
-      throw new Error('validated Agent View is missing its typed contract');
-    }
-    const agentView = appliedAgentView(view);
-    const sensitivityPolicy = contextSensitivityPolicy(
-      database,
-      agentContract.readPolicy.maxSensitivity,
-    );
-    const budget = agentContract.tokenBudget;
-    if (
-      agentContract.semanticContract.evidence === 'required' &&
-      input.disclosure?.level !== 'evidence'
-    ) {
-      throw new DatabaseDataPlaneError(
-        'agent_view_scope_violation',
-        'Agent View requires evidence disclosure with an explicit search text',
-        { agentViewId: view.id, requiredDisclosure: 'evidence' },
-      );
-    }
-    if (input.disclosure?.level === 'full_body' && view.projection.body !== 'full') {
-      throw new DatabaseDataPlaneError(
-        'agent_view_scope_violation',
-        'Agent View does not permit full-body disclosure',
-        { agentViewId: view.id, allowedBodyDisclosure: view.projection.body },
-      );
-    }
-    if (input.maxTokens !== undefined && input.maxTokens > budget.maxTokens) {
-      throw new DatabaseDataPlaneError(
-        'agent_view_budget_exceeded',
-        'Requested token budget exceeds the Agent View maximum',
-        {
-          agentViewId: view.id,
-          requestedMaxTokens: input.maxTokens,
-          maxTokens: budget.maxTokens,
-        },
-      );
-    }
-    if (
-      (input.tokenizer !== undefined && input.tokenizer !== budget.tokenizer) ||
-      (input.encoding !== undefined && input.encoding !== budget.encoding)
-    ) {
-      throw new DatabaseDataPlaneError(
-        'agent_view_scope_violation',
-        'Tokenizer and encoding must match the saved Agent View contract',
-        {
-          agentViewId: view.id,
-          tokenizer: budget.tokenizer,
-          encoding: budget.encoding,
-        },
-      );
-    }
-    const projected = new Set(view.projection.propertyIds);
-    const propertyIds = input.propertyIds ?? view.projection.propertyIds;
-    const requestedDependencies = [
-      ...propertyIds,
-      ...filterPropertyIds(input.query?.where),
-      ...(input.query?.sort ?? []).map((sort) => sort.propertyId),
-    ];
-    const outsideScope = [...new Set(requestedDependencies)].filter(
-      (propertyId) => !projected.has(propertyId),
-    );
-    if (outsideScope.length > 0) {
-      throw new DatabaseDataPlaneError(
-        'agent_view_scope_violation',
-        'Context pack references properties outside the Agent View projection',
-        {
-          agentViewId: view.id,
-          deniedPropertyIds: outsideScope,
-          allowedPropertyIds: [...projected],
-        },
-      );
-    }
-    const savedRelation = agentContract.scope;
-    if (
-      input.relationExpansion &&
-      (savedRelation.relationDepth === 0 ||
-        input.relationExpansion.maxDepth > savedRelation.relationDepth ||
-        input.relationExpansion.maxRecords > savedRelation.relationMaxRecords ||
-        input.relationExpansion.maxRecordsPerRelation > savedRelation.relationFanOut)
-    ) {
-      throw new DatabaseDataPlaneError(
-        'agent_view_scope_violation',
-        'Relation expansion exceeds the saved Agent View scope',
-        {
-          agentViewId: view.id,
-          allowedRelationScope: {
-            maxDepth: savedRelation.relationDepth,
-            maxRecords: savedRelation.relationMaxRecords,
-            maxRecordsPerRelation: savedRelation.relationFanOut,
-          },
-        },
-      );
-    }
-    const relationExpansion =
-      input.relationExpansion ??
-      (savedRelation.relationDepth > 0
-        ? {
-            maxDepth: savedRelation.relationDepth,
-            maxRecords: savedRelation.relationMaxRecords,
-            maxRecordsPerRelation: savedRelation.relationFanOut,
-          }
-        : undefined);
-    const reserveTokens = Math.max(
-      input.reserveTokens ?? budget.reserveTokens,
-      budget.reserveTokens,
-    );
-    const maxTokens = input.maxTokens ?? budget.maxTokens;
-    if (reserveTokens >= maxTokens) {
-      throw new DatabaseDataPlaneError(
-        'agent_view_budget_exceeded',
-        'Agent View reserve leaves no usable context budget',
-        { agentViewId: view.id, maxTokens, reserveTokens },
-      );
-    }
-    const { agentViewId: _agentViewId, ...requested } = input;
-    return this.#captureContextPack(
-      this.#createContextPack({
-        ...requested,
-        propertyIds: [...propertyIds],
-        query: {
-          where: combineFilters(view.where, input.query?.where),
-          sort: input.query?.sort?.length ? input.query.sort : view.sort,
-          select: [...propertyIds],
-          includeArchived: input.query?.includeArchived ?? false,
-        },
-        maxTokens,
-        reserveTokens,
-        tokenizer: budget.tokenizer,
-        encoding: budget.encoding,
-        ...(relationExpansion ? { relationExpansion } : {}),
-        agentView,
-        recordLimit: agentContract.scope.maxRecords,
-        includeBodyEvidence: view.projection.body !== 'hidden' && sensitivityPolicy.allowBody,
-        sensitivityPolicy,
-      }),
-    );
+  pack(input: DatabaseDataPlanePackInput): DatabaseContextPack {
+    return createDatabaseContextPackCoordinator(this.#contextPackPort()).pack(input);
   }
 
   listContextInspections(
     scope?: DatabaseContextInspectionScope,
   ): readonly DatabaseContextInspectionSummary[] {
-    this.authorizeOperation({ action: 'read_audit' });
-    return this.#contextInspector.list(scope);
+    return createDatabaseContextPackCoordinator(this.#contextPackPort()).listContextInspections(scope);
   }
 
   getContextInspection(
     packId: string,
     scope?: DatabaseContextInspectionScope,
   ): DatabaseContextInspection {
-    this.authorizeOperation({ action: 'read_audit' });
-    const inspection = this.#contextInspector.get(packId, scope);
-    if (!inspection) {
-      throw new DatabaseDataPlaneError(
-        'context_inspection_not_found',
-        `Context inspection for pack "${packId}" was not found`,
-        {
-          packId,
-          candidates: this.#contextInspector.list(scope).map((candidate) => candidate.packId),
-        },
-      );
-    }
-    return inspection;
+    return createDatabaseContextPackCoordinator(this.#contextPackPort()).getContextInspection(
+      packId,
+      scope,
+    );
   }
 
-  #captureContextPack(pack: DatabaseContextPack): DatabaseContextPack {
-    this.#contextInspector.capture(pack);
-    recordDatabaseContextPackCapture({
-      estimatedTokens: pack.budget.estimatedTokens,
-      truncated: !pack.isComplete,
-    });
-    return pack;
-  }
-
-  /** Content-free index state: revision, freshness, rebuild progress, and
-   *  last error. See `DatabaseRecordIndexStatus`. */
   getRecordIndexStatus(): DatabaseRecordIndexStatus {
-    this.authorizeOperation({ action: 'read_audit' });
-    return this.#databaseRecordIndex.status();
+    return createDatabaseContextPackCoordinator(this.#contextPackPort()).getRecordIndexStatus();
   }
 
-  /** Content-free summary of live index issues, grouped by code, plus a
-   *  bounded sample of stable IDs/paths — never record property values or
-   *  Markdown bodies. */
   getRecordIndexIssuesSummary(): {
     total: number;
     byCode: Partial<Record<DatabaseRecordIndexIssueCode, number>>;
@@ -1796,39 +1593,25 @@ export class DatabaseDataPlane {
       recordId?: string;
     }>;
   } {
-    this.authorizeOperation({ action: 'read_audit' });
-    const issues = this.#databaseRecordIndex.snapshot().issues;
-    const byCode: Partial<Record<DatabaseRecordIndexIssueCode, number>> = {};
-    for (const issue of issues) {
-      byCode[issue.code] = (byCode[issue.code] ?? 0) + 1;
-    }
-    return {
-      total: issues.length,
-      byCode,
-      sample: issues.slice(0, 50).map((issue) => ({
-        code: issue.code,
-        path: issue.path,
-        ...(issue.databaseId ? { databaseId: issue.databaseId } : {}),
-        ...(issue.sourceId ? { sourceId: issue.sourceId } : {}),
-        ...(issue.recordId ? { recordId: issue.recordId } : {}),
-      })),
-    };
+    return createDatabaseContextPackCoordinator(this.#contextPackPort()).getRecordIndexIssuesSummary();
   }
 
-  /** Content-free per-database schema revisions, for diagnostics. */
   getSchemaRevisions(): ReadonlyArray<{
     databaseId: string;
     key: string;
     name: string;
     schemaRevision: string;
   }> {
-    this.authorizeOperation({ action: 'read_audit' });
-    return this.#databaseStore.snapshot().databases.map((database) => ({
-      databaseId: database.id,
-      key: database.key,
-      name: database.name,
-      schemaRevision: databaseSchemaRevision(database),
-    }));
+    return createDatabaseContextPackCoordinator(this.#contextPackPort()).getSchemaRevisions();
+  }
+
+  #captureContextPack(pack: DatabaseContextPack): DatabaseContextPack {
+    this.#contextInspector.capture(pack);
+    recordDatabaseContextPackCapture({
+      estimatedTokens: pack.budget.estimatedTokens,
+      truncated: !pack.isComplete,
+    });
+    return pack;
   }
 
   #createContextPack(input: DatabaseContextPackInput): DatabaseContextPack {
