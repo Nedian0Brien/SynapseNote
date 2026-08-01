@@ -53,16 +53,13 @@ import { createFileTreeStyle } from '@/components/file-tree-density';
 import { applyExtensionBadges } from '@/components/file-tree-extension-badge';
 import {
   applyDeleteToDocuments,
-  applyRenameToDocuments,
   buildTrashAbsPath,
   canonicalizeAssetTargetForDelete,
   type FileTreeTarget,
-  planRenameCleanupCalls,
   type RenamedAssetMapping,
   type RenamedDocExtensionMapping,
   type RenamedDocMapping,
   type RenamedFolderMapping,
-  remapActiveDocName,
 } from '@/components/file-tree-operations';
 import { applyRenameInputAffordance } from '@/components/file-tree-rename-chip';
 import {
@@ -128,6 +125,7 @@ import {
 import { parseServerResponse, parseSuccessOrWarn } from '@/lib/parse-server-response';
 import { getRelaunchInFlightSnapshot, useRelaunchInFlight } from '@/lib/relaunch-store';
 import { cn } from '@/lib/utils';
+import { applyRenamedDocuments as reconcileRenamedDocuments } from './file-tree/apply-renamed-documents';
 import { FileTreeMenu } from './file-tree/FileTreeMenu';
 import {
   AGENT_DECORATION_ICON_ID,
@@ -1092,104 +1090,34 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     },
     renamedDocExtensions: RenamedDocExtensionMapping[] = [],
   ) => {
-    const currentActiveDocName = activeBeforeRename?.docName ?? activeDocNameRef.current;
-    const docToAssetRenames = new Map<string, string>();
-    const assetToDocRenames = new Map<string, string>();
-    for (const entry of documentsRef.current) {
-      if (isDocumentEntry(entry)) {
-        const assetPath = renamedAssets.find(
-          (renamedAsset) =>
-            renamedAsset.fromPath === docNameToTreePath(entry.docName, entry.docExt),
-        )?.toPath;
-        if (assetPath) docToAssetRenames.set(entry.docName, assetPath);
-        continue;
-      }
-      if (isAssetEntry(entry)) {
-        const docPath = renamedAssets.find(
-          (renamedAsset) => renamedAsset.fromPath === entry.path,
-        )?.toPath;
-        if (docPath && hasSupportedDocumentExtension(docPath)) {
-          assetToDocRenames.set(entry.path, treeFilePathToDocName(docPath));
-        }
-      }
-    }
-    const activeDocToAssetPath = currentActiveDocName
-      ? (docToAssetRenames.get(currentActiveDocName) ?? null)
-      : null;
-    const currentActiveFolderPath =
-      activeBeforeRename?.folderPath ??
-      (activeTargetRef.current?.kind === 'folder' ? activeTargetRef.current.folderPath : null);
-    const nextActiveFolderPath = currentActiveFolderPath
-      ? remapPathForFolderRenames(currentActiveFolderPath, renamedFolders)
-      : null;
-    const currentActiveAssetPath =
-      activeBeforeRename?.assetPath ??
-      (activeTargetRef.current?.kind === 'asset' ? activeTargetRef.current.assetPath : null);
-    const activeAssetToDoc = currentActiveAssetPath
-      ? (assetToDocRenames.get(currentActiveAssetPath) ?? null)
-      : null;
-    const nextActiveDocName = activeDocToAssetPath
-      ? null
-      : (activeAssetToDoc ?? remapActiveDocName(currentActiveDocName, renamed));
-    const nextActiveAssetPath =
-      activeDocToAssetPath ??
-      (currentActiveAssetPath
-        ? activeAssetToDoc
-          ? null
-          : (renamedAssets.find((entry) => entry.fromPath === currentActiveAssetPath)?.toPath ??
-            remapPathForFolderRenames(currentActiveAssetPath, renamedFolders))
-        : null);
-
-    captureRenameSnapshots(renamed);
-    // Wipe IDB for ends that need it. `planRenameCleanupCalls` gates the
-    // `to` clear behind whether the server-push `onRenameRedirect` path has
-    // already done the close+clear+reopen. The full rationale (race shape,
-    // why the `from` clear stays) is documented at the helper's site in
-    // `file-tree-operations.ts`.
-    const cleanupDocNames = [
-      ...planRenameCleanupCalls(renamed, getPoolActiveDocName(), poolHas),
-      ...docToAssetRenames.keys(),
-    ];
-    await Promise.all(cleanupDocNames.map((docName) => closeAndClearForRename(docName)));
-    for (const entry of renamed) {
-      addPage(entry.toDocName);
-    }
-    for (const entry of assetToDocRenames.values()) {
-      addPage(entry);
-    }
-    remapTabsForRename(renamed, renamedFolders, renamedAssets);
-
-    let nextDocumentsForRename: FileEntry[] | null = null;
-    setDocuments((current) => {
-      const next = applyRenameToDocuments(
-        current,
-        renamed,
-        renamedFolders,
-        renamedAssets,
-        renamedDocExtensions,
-      );
-      nextDocumentsForRename = next;
-      reconcileModelAfterExtensionlessRename(current, next, renamed, renamedAssets);
-      markNextDocumentsAsApplied(next);
-      return next;
+    await reconcileRenamedDocuments({
+      documents: documentsRef.current,
+      renamed,
+      renamedFolders,
+      renamedAssets,
+      renamedDocExtensions,
+      activeBeforeRename,
+      activeDocName: activeDocNameRef.current,
+      activeFolderPath:
+        activeTargetRef.current?.kind === 'folder' ? activeTargetRef.current.folderPath : null,
+      activeAssetPath:
+        activeTargetRef.current?.kind === 'asset' ? activeTargetRef.current.assetPath : null,
+      getPoolActiveDocName,
+      poolHas,
+      captureRenameSnapshots,
+      closeAndClearForRename,
+      addPage,
+      remapTabsForRename,
+      remapPathForFolderRenames,
+      setDocuments,
+      reconcileModelAfterExtensionlessRename,
+      markNextDocumentsAsApplied,
+      navigateToWithPulse,
+      navigateToFolderWithPulse,
+      navigateToAssetWithPulse,
+      focusEditorAfterRename,
+      emitDocumentsChanged,
     });
-
-    if (
-      currentActiveFolderPath &&
-      nextActiveFolderPath &&
-      nextActiveFolderPath !== currentActiveFolderPath
-    ) {
-      navigateToFolderWithPulse(nextActiveFolderPath);
-    } else if (nextActiveDocName && nextActiveDocName !== currentActiveDocName) {
-      navigateToWithPulse(nextActiveDocName);
-      focusEditorAfterRename(nextActiveDocName);
-    } else if (
-      nextActiveAssetPath &&
-      (activeDocToAssetPath || nextActiveAssetPath !== currentActiveAssetPath)
-    ) {
-      navigateToAssetWithPulse(nextActiveAssetPath, nextDocumentsForRename ?? documentsRef.current);
-    }
-    emitDocumentsChanged(['files', 'backlinks', 'graph']);
   };
 
   async function handleTreeRename(event: FileTreeRenameEvent): Promise<PageHeaderRenameResult> {
