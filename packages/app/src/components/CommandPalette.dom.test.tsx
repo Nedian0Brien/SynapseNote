@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { createContext, type ReactNode } from 'react';
 import { renderLinguiTemplate } from '@/test-utils/lingui-mock';
 
 type CommandDialogProps = {
@@ -172,11 +172,9 @@ mock.module('@/components/PageListContext', () => ({
   }),
 }));
 
-mock.module('@/editor/DocumentContext', () => ({
-  useDocumentContext: () => ({
-    activeDocName,
-    activeTarget,
-  }),
+const TestDocumentContext = createContext<unknown>(null);
+mock.module('@/editor/document-context/context', () => ({
+  DocumentContext: TestDocumentContext,
 }));
 
 mock.module('@/lib/use-workspace', () => ({
@@ -276,17 +274,27 @@ async function renderPalette({
   const onOpenChange = mock(() => {});
   const { CommandPalette } = await import('./CommandPalette');
   render(
-    <CommandPalette
-      bridge={bridge as never}
-      open={true}
-      onOpenChange={onOpenChange}
-      onOpenDataInspector={onOpenDataInspector}
-      onOpenAgentRuns={onOpenAgentRuns}
-      onOpenDatabases={onOpenDatabases}
-    />,
+    withDocumentContext(
+      <CommandPalette
+        bridge={bridge as never}
+        open={true}
+        onOpenChange={onOpenChange}
+        onOpenDataInspector={onOpenDataInspector}
+        onOpenAgentRuns={onOpenAgentRuns}
+        onOpenDatabases={onOpenDatabases}
+      />,
+    ),
   );
   await waitFor(() => expect(screen.getByRole('dialog')).not.toBeNull());
   return { bridge, onOpenChange };
+}
+
+function withDocumentContext(children: ReactNode) {
+  return (
+    <TestDocumentContext.Provider value={{ activeDocName, activeTarget }}>
+      {children}
+    </TestDocumentContext.Provider>
+  );
 }
 
 async function setQuery(value: string) {
@@ -649,7 +657,7 @@ describe('CommandPalette DOM behavior', () => {
     const { CommandPalette } = await import('./CommandPalette');
     const onOpenChange = mock(() => {});
     const { rerender } = render(
-      <CommandPalette bridge={null} open={true} onOpenChange={onOpenChange} />,
+      withDocumentContext(<CommandPalette bridge={null} open={true} onOpenChange={onOpenChange} />),
     );
     await waitFor(() => expect(screen.getByRole('dialog')).not.toBeNull());
 
@@ -664,7 +672,9 @@ describe('CommandPalette DOM behavior', () => {
     // dependency flips, the effect re-runs, and the body search fires. This is
     // the "search runs automatically once the workspace is ready" contract.
     pageListLoading = false;
-    rerender(<CommandPalette bridge={null} open={true} onOpenChange={onOpenChange} />);
+    rerender(
+      withDocumentContext(<CommandPalette bridge={null} open={true} onOpenChange={onOpenChange} />),
+    );
 
     await waitFor(() =>
       expect(fetchMock.mock.calls.some((call) => call[0] === '/api/search')).toBe(true),
@@ -718,7 +728,7 @@ describe('CommandPalette DOM behavior', () => {
     const { CommandPalette } = await import('./CommandPalette');
     const onOpenChange = mock(() => {});
     const { rerender } = render(
-      <CommandPalette bridge={null} open={true} onOpenChange={onOpenChange} />,
+      withDocumentContext(<CommandPalette bridge={null} open={true} onOpenChange={onOpenChange} />),
     );
     await waitFor(() => expect(screen.getByRole('dialog')).not.toBeNull());
     await setQuery('arch');
@@ -732,7 +742,11 @@ describe('CommandPalette DOM behavior', () => {
     const callsAtClose = searchCalls();
 
     // Close the palette: the effect cleanup must cancel the in-flight poll.
-    rerender(<CommandPalette bridge={null} open={false} onOpenChange={onOpenChange} />);
+    rerender(
+      withDocumentContext(
+        <CommandPalette bridge={null} open={false} onOpenChange={onOpenChange} />,
+      ),
+    );
 
     // Past two poll cadences, the count must not grow.
     await new Promise((resolve) => setTimeout(resolve, COMMAND_PALETTE_POLL_GRACE_MS));
