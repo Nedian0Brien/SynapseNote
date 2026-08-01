@@ -46,12 +46,12 @@ import type {
   DatabaseButtonExecutor,
   DatabaseButtonRun,
 } from './database-button-executor.ts';
-import {
-  type DatabaseCommitEngine,
-  type DatabaseCommitInput,
-  type DatabaseCommitResult,
-  type DatabaseUndoInput,
-  type DatabaseUndoResult,
+import type {
+  DatabaseCommitEngine,
+  DatabaseCommitInput,
+  DatabaseCommitResult,
+  DatabaseUndoInput,
+  DatabaseUndoResult,
 } from './database-commit.ts';
 import {
   type DatabaseContextInspection,
