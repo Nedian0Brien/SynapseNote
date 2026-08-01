@@ -86,8 +86,8 @@ describe('RFC 0002 module boundary guard', () => {
     }
   });
 
-  test('only the FileTree extraction remains a legacy exception', () => {
-    expect(LEGACY_MODULE_EXCEPTIONS.map(({ path }) => path)).toEqual(['components/FileTree.tsx']);
+  test('all RFC 0002 legacy exceptions are retired', () => {
+    expect(LEGACY_MODULE_EXCEPTIONS).toEqual([]);
   });
 
   test('database implementation boundaries are present and explicit', () => {

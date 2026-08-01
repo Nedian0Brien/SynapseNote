@@ -310,6 +310,178 @@ export const MODULE_SIZE_BUDGETS: readonly ModuleSizeBudget[] = [
     maxLines: 140,
     owner: 'record page route adapter',
   },
+  // FileTree extraction leaves. Keep each responsibility explicit while the
+  // facade remains a small composition and imperative-handle boundary.
+  {
+    path: 'components/FileTree.tsx',
+    maxLines: 400,
+    owner: 'Owns file-tree composition and imperative-handle wiring.',
+  },
+  {
+    path: 'components/file-tree/FileTreeDialogs.tsx',
+    maxLines: 140,
+    owner: 'Owns file-tree dialog rendering.',
+  },
+  {
+    path: 'components/file-tree/FileTreeEmptyState.tsx',
+    maxLines: 90,
+    owner: 'Owns file-tree empty-state rendering.',
+  },
+  {
+    path: 'components/file-tree/FileTreeMenu.tsx',
+    maxLines: 380,
+    owner: 'Owns file-tree menu presentation and dispatch.',
+  },
+  {
+    path: 'components/file-tree/FileTreeMenuPathActions.tsx',
+    maxLines: 150,
+    owner: 'Owns file-tree path menu actions.',
+  },
+  {
+    path: 'components/file-tree/FileTreePresentation.tsx',
+    maxLines: 180,
+    owner: 'Owns file-tree row presentation.',
+  },
+  {
+    path: 'components/file-tree/FileTreeSurface.tsx',
+    maxLines: 210,
+    owner: 'Owns file-tree surface composition.',
+  },
+  {
+    path: 'components/file-tree/FileTreeViewport.tsx',
+    maxLines: 120,
+    owner: 'Owns file-tree virtualized viewport rendering.',
+  },
+  {
+    path: 'components/file-tree/apply-renamed-documents.ts',
+    maxLines: 180,
+    owner: 'Owns renamed-document reconciliation.',
+  },
+  {
+    path: 'components/file-tree/useFileTreeCommandSubscriptions.ts',
+    maxLines: 190,
+    owner: 'Owns file-tree command subscriptions.',
+  },
+  {
+    path: 'components/file-tree/useFileTreeConnectivity.ts',
+    maxLines: 100,
+    owner: 'Owns file-tree connectivity state.',
+  },
+  {
+    path: 'components/file-tree/useFileTreeCreation.ts',
+    maxLines: 340,
+    owner: 'Owns file-tree creation actions.',
+  },
+  {
+    path: 'components/file-tree/useFileTreeDocumentState.ts',
+    maxLines: 90,
+    owner: 'Owns file-tree document state projection.',
+  },
+  {
+    path: 'components/file-tree/useFileTreeDragAndDrop.ts',
+    maxLines: 250,
+    owner: 'Owns file-tree drag-and-drop state and actions.',
+  },
+  {
+    path: 'components/file-tree/useFileTreeEventBindings.ts',
+    maxLines: 170,
+    owner: 'Owns file-tree event bindings.',
+  },
+  {
+    path: 'components/file-tree/useFileTreeFolderActions.ts',
+    maxLines: 60,
+    owner: 'Owns file-tree folder actions.',
+  },
+  {
+    path: 'components/file-tree/useFileTreeImperativeHandle.ts',
+    maxLines: 140,
+    owner: 'Owns file-tree imperative-handle commands.',
+  },
+  {
+    path: 'components/file-tree/useFileTreeInteractionState.ts',
+    maxLines: 120,
+    owner: 'Owns file-tree interaction state.',
+  },
+  {
+    path: 'components/file-tree/useFileTreeKeyboard.ts',
+    maxLines: 150,
+    owner: 'Owns file-tree keyboard navigation.',
+  },
+  {
+    path: 'components/file-tree/useFileTreeModel.ts',
+    maxLines: 140,
+    owner: 'Owns file-tree model projection.',
+  },
+  {
+    path: 'components/file-tree/useFileTreeMutationActions.ts',
+    maxLines: 200,
+    owner: 'Owns file-tree mutation action dispatch.',
+  },
+  {
+    path: 'components/file-tree/useFileTreeMutations.ts',
+    maxLines: 140,
+    owner: 'Owns file-tree mutation orchestration.',
+  },
+  {
+    path: 'components/file-tree/useFileTreeNavigation.ts',
+    maxLines: 190,
+    owner: 'Owns file-tree navigation transitions.',
+  },
+  {
+    path: 'components/file-tree/useFileTreePointerInteractions.ts',
+    maxLines: 240,
+    owner: 'Owns file-tree pointer interactions.',
+  },
+  {
+    path: 'components/file-tree/useFileTreeRefresh.ts',
+    maxLines: 150,
+    owner: 'Owns file-tree refresh lifecycle.',
+  },
+  {
+    path: 'components/file-tree/useFileTreeRename.ts',
+    maxLines: 300,
+    owner: 'Owns file-tree rename actions.',
+  },
+  {
+    path: 'components/file-tree/useFileTreeRenameCoordinator.ts',
+    maxLines: 260,
+    owner: 'Owns file-tree rename coordination.',
+  },
+  {
+    path: 'components/file-tree/useFileTreeRowPresentation.ts',
+    maxLines: 110,
+    owner: 'Owns file-tree row presentation state.',
+  },
+  {
+    path: 'components/file-tree/useFileTreeSelection.ts',
+    maxLines: 180,
+    owner: 'Owns file-tree selection and focus state.',
+  },
+  {
+    path: 'components/file-tree/useFileTreeShowAll.ts',
+    maxLines: 330,
+    owner: 'Owns file-tree show-all traversal and refresh.',
+  },
+  {
+    path: 'components/file-tree/useFileTreeTrash.ts',
+    maxLines: 360,
+    owner: 'Owns file-tree trash actions and cleanup.',
+  },
+  {
+    path: 'components/file-tree/useFileTreeTreeState.ts',
+    maxLines: 140,
+    owner: 'Owns file-tree tree state projection.',
+  },
+  {
+    path: 'components/file-tree/useFileTreeUploads.ts',
+    maxLines: 180,
+    owner: 'Owns file-tree upload actions.',
+  },
+  {
+    path: 'components/file-tree/useFileTreeWorkspace.ts',
+    maxLines: 60,
+    owner: 'Owns file-tree workspace context.',
+  },
   // RFC 0002 app-shell extraction leaves. Keep each responsibility explicit
   // so a future monolith regression is visible at the boundary guard.
   {
@@ -599,20 +771,8 @@ export const MODULE_SIZE_BUDGETS: readonly ModuleSizeBudget[] = [
   },
 ];
 
-/**
- * Existing facades are intentionally tracked until the remaining extraction
- * phases land. An exception is not permission to grow: it records the owner,
- * target boundary and the RFC phase that must remove it.
- */
-export const LEGACY_MODULE_EXCEPTIONS: readonly LegacyModuleException[] = [
-  {
-    path: 'components/FileTree.tsx',
-    currentRole: 'tree facade/controller/render',
-    targetBoundary: 'components/file-tree/',
-    phase: '6a',
-    rfc: '0002',
-  },
-];
+/** All RFC 0002 app-shell facades now have explicit ownership boundaries. */
+export const LEGACY_MODULE_EXCEPTIONS: readonly LegacyModuleException[] = [];
 
 /** Database boundaries owned by the RFC 0006 feature tree. */
 export const DATABASE_BOUNDARY_CONTRACT = [
@@ -675,7 +835,8 @@ export function appSourceRoot(moduleFile: string): string {
 }
 
 export function moduleLineCount(file: string): number {
-  return readFileSync(file, 'utf8').split(/\r?\n/).length;
+  const lines = readFileSync(file, 'utf8').split(/\r?\n/);
+  return lines.at(-1) === '' ? lines.length - 1 : lines.length;
 }
 
 export function resolveAppModule(appSrc: string, modulePath: string): string {
