@@ -27,7 +27,7 @@ import {
 import { readdir, readFile, stat } from 'node:fs/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { homedir } from 'node:os';
-import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, extname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { setTimeout as wait } from 'node:timers/promises';
 import type { Document, Extension, Hocuspocus } from '@hocuspocus/server';
@@ -579,6 +579,7 @@ import type { TagIndex } from './tag-index.ts';
 import { getMeter, getTracer, withSpan, withSpanSync } from './telemetry.ts';
 import { getDocumentHistory, getFolderTimeline } from './timeline-query.ts';
 import { recordTimelineCoalesced } from './timeline-telemetry.ts';
+import { createWorkspaceSearchCacheKey } from './workspace-search-cache-key.ts';
 
 // Cache the HTTP duration histogram at module scope — lazy-init at first use
 // so the meter is a real meter (post-`initTelemetry`), not the pre-init no-op.
@@ -16445,7 +16446,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     corpus: WorkspaceSearchCorpus;
     truncated: boolean;
   }> {
-    const cacheKey = `${contentDir} ${projectDir ?? ''}`;
+    const cacheKey = createWorkspaceSearchCacheKey(contentDir, projectDir);
     const fingerprint = workspaceSearchFingerprint();
     const workspaceSearchCache = workspaceSearchCaches.get(cacheKey);
     if (workspaceSearchCache?.fingerprint === fingerprint && workspaceSearchCache.corpus) {

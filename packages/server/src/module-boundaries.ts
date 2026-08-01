@@ -13,13 +13,18 @@ export interface ServerModuleSizeBudget {
  */
 export const SERVER_MODULE_SIZE_BUDGETS: readonly ServerModuleSizeBudget[] = [
   {
+    path: 'workspace-search-cache-key.ts',
+    maxLines: 5,
+    owner: 'workspace search cache-key encoding',
+  },
+  {
     path: 'content-show-all-walk.ts',
     maxLines: 626,
     owner: 'show-all and search directory walk',
   },
   {
     path: 'api-extension.ts',
-    maxLines: 18_229,
+    maxLines: 18_230,
     owner: 'HTTP API extension facade',
   },
   {

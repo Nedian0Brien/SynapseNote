@@ -32,6 +32,15 @@ describe('RFC 0011 server module boundary guard', () => {
     expect(moduleLineCount(resolveServerModule(src, budget.path))).toBe(budget.maxLines);
   });
 
+  test('workspace search cache key boundary equals its current split-line count', () => {
+    const src = serverSourceRoot(import.meta.filename);
+    const budget = SERVER_MODULE_SIZE_BUDGETS.find(
+      (candidate) => candidate.path === 'workspace-search-cache-key.ts',
+    );
+    if (!budget) throw new Error('workspace-search-cache-key.ts budget must exist');
+    expect(moduleLineCount(resolveServerModule(src, budget.path))).toBe(budget.maxLines);
+  });
+
   test('reports a synthetic module that exceeds its line budget', () => {
     fixtureRoot = mkdtempSync(join(tmpdir(), 'synapsenote-server-boundaries-'));
     writeFileSync(join(fixtureRoot, 'oversized.ts'), 'one\ntwo\n');
