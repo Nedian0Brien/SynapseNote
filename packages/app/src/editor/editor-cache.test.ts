@@ -1256,7 +1256,7 @@ describe('STOP rule: editor-cache never calls editor.mount() / editor.unmount()'
     // extension-drag-handle plugin closures hit TipTap's throwing proxy
     // during the re-create path). If a future edit re-introduces them,
     // this test fails immediately.
-    const sourceText = await Bun.file(`${import.meta.dir}/editor-cache.ts`).text();
+    const sourceText = await Bun.file(`${import.meta.dir}/editor-cache-tiptap.ts`).text();
     // Allow references in comments/documentation (common to explain WHY not to),
     // but forbid actual code patterns: `.mount(` / `.unmount(` on an editor-like
     // receiver. We detect the function-call shape only.
