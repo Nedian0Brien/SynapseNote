@@ -15,15 +15,9 @@ import { toast } from 'sonner';
 import { DeleteConfirmationDialog } from '@/components/DeleteConfirmationDialog';
 import { FileTreeFilteredToZeroNotice } from '@/components/FileTreeFilteredToZeroNotice';
 import {
-  collectTreeFolderPathsFromDocuments,
-  computeTreeAncestorPaths,
   docNameToTreePath,
-  documentsToTreePaths,
-  documentsTreePathSignature,
   fileEntryToTreePath,
   folderPathToTreeDirectoryPath,
-  treeDirectoryPathToFolderPath,
-  treePathSignature,
 } from '@/components/file-tree-adapter';
 import type {
   FileTreeTarget,
@@ -80,6 +74,7 @@ import { useFileTreeRowPresentation } from './file-tree/useFileTreeRowPresentati
 import { useFileTreeSelection } from './file-tree/useFileTreeSelection';
 import { useFileTreeShowAll } from './file-tree/useFileTreeShowAll';
 import { createFileTreeTrashHandlers } from './file-tree/useFileTreeTrash';
+import { useFileTreeTreeState } from './file-tree/useFileTreeTreeState';
 import { useFileTreeUploads } from './file-tree/useFileTreeUploads';
 import { useHandoffDispatch } from './handoff/useHandoffDispatch';
 import { useInstalledAgents } from './handoff/useInstalledAgents';
@@ -223,8 +218,6 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     documents.filter(isAssetEntry).map((entry) => fileEntryToTreePath(entry)),
   );
   const assetTreePathsRef = useRef(assetTreePaths);
-  const activeAncestorTreePathsRef = useRef<string[]>([]);
-  const skipNextResetSignatureRef = useRef<string | null>(null);
   const hoveredPrewarmDocRef = useRef<string | null>(null);
   const suppressSelectionRef = useRef(false);
   const sidebarDragInProgressRef = useRef(false);
@@ -340,62 +333,34 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     dropCompleteRef: handleDropCompleteRef,
   });
 
-  function normalizeSelectionPath(treePath: string): string {
-    const item = model.getItem(treePath) ?? model.getItem(folderPathToTreeDirectoryPath(treePath));
-    if (item?.isDirectory()) {
-      return folderPathToTreeDirectoryPath(treeDirectoryPathToFolderPath(item.getPath()));
-    }
-    return treePath;
-  }
-
-  const treePaths = documentsToTreePaths(documents);
-  const treePathsSignature = treePathSignature(treePaths);
-  const treePathsRef = useRef(treePaths);
-  const folderTreePaths = collectTreeFolderPathsFromDocuments(documents, {
-    includeOkFolders: showOkFolders,
+  const {
+    treePaths,
+    treePathsSignature,
+    treePathsRef,
+    folderTreePaths,
+    folderTreePathsRef,
+    activeAncestorTreePaths,
+    activeAncestorTreePathsRef,
+    activeAncestorTreePathsSignature,
+    autoRevealActiveAncestorTreePathsSignature,
+    skipNextResetSignatureRef,
+    normalizeSelectionPath,
+    collectExpandedFolderTreePaths,
+    expandedPathsForReset,
+    resetModelToDocuments,
+    markNextDocumentsAsApplied,
+  } = useFileTreeTreeState({
+    model,
+    documents,
+    documentsRef,
+    showOkFolders,
+    showOkFoldersRef,
+    selectedFolderPath,
+    activeTreePath,
+    activeNavigationPath,
+    userCollapsedActiveAncestorPaths,
+    userCollapsedActiveAncestorPathsRef,
   });
-  const folderTreePathsRef = useRef(folderTreePaths);
-
-  // Keep parents visible without forcing the selected folder itself open.
-  const activeAncestorTreePaths = selectedFolderPath
-    ? computeTreeAncestorPaths(folderPathToTreeDirectoryPath(selectedFolderPath)).slice(0, -1)
-    : computeTreeAncestorPaths(activeTreePath ?? activeNavigationPath);
-  const activeAncestorTreePathsSignature = activeAncestorTreePaths.join('\0');
-  const autoRevealActiveAncestorTreePathsSignature = activeAncestorTreePaths
-    .filter((path) => !userCollapsedActiveAncestorPaths.has(path))
-    .join('\0');
-
-  const collectExpandedFolderTreePaths = () => {
-    const expanded = new Set<string>();
-    for (const folderPath of folderTreePathsRef.current) {
-      const item = asDirectoryHandle(model.getItem(folderPath));
-      if (item?.isExpanded()) {
-        expanded.add(folderPath);
-      }
-    }
-    return expanded;
-  };
-
-  const expandedPathsForReset = (nextDocuments?: readonly FileEntry[]) => {
-    const nextFolderPaths = new Set(
-      collectTreeFolderPathsFromDocuments(nextDocuments ?? documentsRef.current, {
-        includeOkFolders: showOkFoldersRef.current,
-      }),
-    );
-    const expanded = collectExpandedFolderTreePaths();
-    for (const ancestor of activeAncestorTreePathsRef.current) {
-      if (userCollapsedActiveAncestorPathsRef.current.has(ancestor)) continue;
-      expanded.add(ancestor);
-    }
-    return [...expanded].filter((path) => nextFolderPaths.has(path));
-  };
-
-  const resetModelToDocuments = (nextDocuments?: readonly FileEntry[]) => {
-    const nextPaths = documentsToTreePaths(nextDocuments ?? documentsRef.current);
-    model.resetPaths(nextPaths, {
-      initialExpandedPaths: expandedPathsForReset(nextDocuments),
-    });
-  };
 
   // Invariant: Pierre's `#focusedPath` and `#selectedPaths` reference paths
   // in `documentsToTreePaths(documents)`. If the user deletes the suffix
@@ -452,10 +417,6 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     if (lastCanonical != null) {
       model.focusPath(lastCanonical);
     }
-  };
-
-  const markNextDocumentsAsApplied = (nextDocuments: readonly FileEntry[]) => {
-    skipNextResetSignatureRef.current = documentsTreePathSignature(nextDocuments);
   };
 
   const isAssetTreePath = (treePath: string) => assetTreePathsRef.current.has(treePath);
@@ -832,6 +793,7 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     startCreatingFromTemplateRef.current = startCreatingFromTemplate;
   });
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: imperative methods intentionally read live folder paths through the stable tree-state ref.
   useImperativeHandle(
     ref,
     () => ({
