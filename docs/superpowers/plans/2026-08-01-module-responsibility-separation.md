@@ -1,6 +1,6 @@
 # Module Responsibility Separation Delivery Plan
 
-**Status:** In progress; Milestones 1–3 complete, Milestones 4–8 pending.
+**Status:** In progress; Milestones 1–4 complete, Milestones 5–8 pending.
 **Prepared:** 2026-08-01
 **Predecessor:** `docs/rfcs/0011-post-v2-refactoring-plan.md`
 
@@ -273,13 +273,13 @@ Target boundaries:
 
 Checklist:
 
-- [ ] Add state-machine characterization tests for attach, teardown, replay, and eviction.
-- [ ] Extract pure transition functions before extracting side effects.
-- [ ] Extract persistence and observer adapters with explicit disposal contracts.
-- [ ] Keep `ProviderPool` as the orchestration class; target 600 lines or fewer.
-- [ ] Split editor-cache policy from DOM mount ownership; each target 450 lines or fewer.
-- [ ] Preserve provider object identity, teardown ordering, and stored lineage behavior.
-- [ ] Add budgets and dependency tests preventing cache/provider cycles.
+- [x] Add state-machine characterization tests for attach, teardown, replay, and eviction.
+- [x] Extract pure transition functions before extracting side effects.
+- [x] Extract persistence and observer adapters with explicit disposal contracts.
+- [x] Keep `ProviderPool` as the orchestration class; target 600 lines or fewer.
+- [x] Split editor-cache policy from DOM mount ownership; each target 450 lines or fewer.
+- [x] Preserve provider object identity, teardown ordering, and stored lineage behavior.
+- [x] Add budgets and dependency tests preventing cache/provider cycles.
 
 Verification:
 
