@@ -1,8 +1,8 @@
 import { describe, expect, mock, test } from 'bun:test';
 import {
-  registerAssetIpcHandlers,
   type AssetIpcHandler,
   type AssetIpcRegistrar,
+  registerAssetIpcHandlers,
 } from './asset-registrar.ts';
 
 describe('registerAssetIpcHandlers', () => {
@@ -13,11 +13,18 @@ describe('registerAssetIpcHandlers', () => {
     };
     const sender = { id: 10 };
     const callerWindow = { id: 1 };
-    const openAsset = mock(async (_projectPath: string, _relPath: string) => ({ ok: true }) as const);
-    const revealAsset = mock(async (_projectPath: string, _relPath: string) => ({ ok: true }) as const);
-    const spawnCursor = mock(async (_projectPath: string | undefined, _path: string) => ({ ok: true }) as const);
-    let menuParams: Parameters<Parameters<typeof registerAssetIpcHandlers>[0]['popAssetMenu']>[1] | null =
-      null;
+    const openAsset = mock(
+      async (_projectPath: string, _relPath: string) => ({ ok: true }) as const,
+    );
+    const revealAsset = mock(
+      async (_projectPath: string, _relPath: string) => ({ ok: true }) as const,
+    );
+    const spawnCursor = mock(
+      async (_projectPath: string | undefined, _path: string) => ({ ok: true }) as const,
+    );
+    let menuParams:
+      | Parameters<Parameters<typeof registerAssetIpcHandlers>[0]['popAssetMenu']>[1]
+      | null = null;
 
     registerAssetIpcHandlers({
       register,
