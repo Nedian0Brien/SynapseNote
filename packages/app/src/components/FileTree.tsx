@@ -2,7 +2,6 @@ import { plural } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { WorkspaceSuccessSchema } from '@nedian0brien/synapsenote-core';
 import type { FileTreeDropResult, FileTreeRenameEvent } from '@pierre/trees';
-import { useFileTree } from '@pierre/trees/react';
 import { useTheme } from 'next-themes';
 import {
   startTransition,
@@ -39,10 +38,8 @@ import {
   classifyEmptyTree,
   type DocumentEntry,
   type FileEntry,
-  type FolderEntry,
   isAssetEntry,
   isDocumentEntry,
-  isFolderEntry,
 } from '@/components/file-tree-utils';
 import { NewItemDialog } from '@/components/NewItemDialog';
 import {
@@ -66,18 +63,7 @@ import { parseSuccessOrWarn } from '@/lib/parse-server-response';
 import { cn } from '@/lib/utils';
 import { applyRenamedDocuments as reconcileRenamedDocuments } from './file-tree/apply-renamed-documents';
 import { FileTreeMenu } from './file-tree/FileTreeMenu';
-import {
-  AGENT_DECORATION_ICON_ID,
-  FILE_TREE_DECORATION_SPRITE_SHEET,
-  FILE_TREE_DENSITY_OPTIONS,
-  FILE_TREE_UNSAFE_CSS,
-  FileTreeHeaderNotice,
-  FileTreeSkeleton,
-  isAgentTreePath,
-  LINK_DECORATION_ICON_ID,
-  MARKDOWN_FILE_ICON_ID,
-  MARKDOWN_FILE_ICON_VIEWBOX,
-} from './file-tree/FileTreePresentation';
+import { FileTreeHeaderNotice, FileTreeSkeleton } from './file-tree/FileTreePresentation';
 import { FileTreeViewport } from './file-tree/FileTreeViewport';
 import type { FileTreeProps } from './file-tree/file-tree-types';
 import { useFileTreeCommandSubscriptions } from './file-tree/useFileTreeCommandSubscriptions';
@@ -85,6 +71,7 @@ import { useFileTreeConnectivity } from './file-tree/useFileTreeConnectivity';
 import { useFileTreeCreation } from './file-tree/useFileTreeCreation';
 import { useFileTreeDragAndDrop } from './file-tree/useFileTreeDragAndDrop';
 import { useFileTreeKeyboard } from './file-tree/useFileTreeKeyboard';
+import { useFileTreeModel } from './file-tree/useFileTreeModel';
 import { createDuplicateFileTreeMutation } from './file-tree/useFileTreeMutations';
 import { useFileTreeNavigation } from './file-tree/useFileTreeNavigation';
 import { useFileTreePointerInteractions } from './file-tree/useFileTreePointerInteractions';
@@ -344,83 +331,13 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
   const showOnlyMarkdownFiles = merged?.appearance?.sidebar?.showOnlyMarkdownFiles ?? false;
   const showOkFolders = merged?.appearance?.sidebar?.showOkFolders ?? false;
 
-  const isAvailable = () => busyPathRef.current === null;
-
-  const { model } = useFileTree({
-    paths: [],
-    initialExpansion: 'closed',
-    fileTreeSearchMode: 'hide-non-matches',
-    initialVisibleRowCount: 18,
-    stickyFolders: true,
-    ...FILE_TREE_DENSITY_OPTIONS,
-    icons: {
-      set: 'complete',
-      spriteSheet: FILE_TREE_DECORATION_SPRITE_SHEET,
-      byFileExtension: {
-        md: { name: MARKDOWN_FILE_ICON_ID, viewBox: MARKDOWN_FILE_ICON_VIEWBOX },
-        mdx: { name: MARKDOWN_FILE_ICON_ID, viewBox: MARKDOWN_FILE_ICON_VIEWBOX },
-      },
-    },
-    unsafeCSS: FILE_TREE_UNSAFE_CSS,
-    composition: {
-      contextMenu: {
-        enabled: true,
-        triggerMode: 'both',
-        buttonVisibility: 'when-needed',
-      },
-    },
-    dragAndDrop: {
-      canDrag: isAvailable,
-      canDrop: isAvailable,
-      onDropComplete: (event) => handleDropCompleteRef.current(event),
-      onDropError: (message) => {
-        toast.error(message);
-      },
-    },
-    renaming: {
-      canRename: isAvailable,
-      onRename: (event) => handleRenameRef.current(event),
-      onError: (message) => handleRenameErrorRef.current(message),
-    },
-    onSelectionChange: (selectedPaths) => handleSelectionChangeRef.current(selectedPaths),
-    renderRowDecoration: ({ item }) => {
-      if (item.kind === 'file') {
-        const doc = documentsRef.current.find(
-          (entry): entry is DocumentEntry =>
-            isDocumentEntry(entry) && docNameToTreePath(entry.docName, entry.docExt) === item.path,
-        );
-        if (doc?.isSymlink) {
-          const targetPath = doc.targetPath;
-          return {
-            icon: LINK_DECORATION_ICON_ID,
-            title: targetPath ? t`Symlink to ${targetPath}` : t`Symlink`,
-          };
-        }
-        if (isAgentTreePath(item.path)) {
-          return {
-            icon: AGENT_DECORATION_ICON_ID,
-            title: t`Agent configuration file`,
-          };
-        }
-        return null;
-      }
-      // Symlinked directories carry isSymlink on their FolderEntry. Badge the
-      // alias folder itself (Finder-style — its contents are not separately
-      // marked, since they live behind the one symlink).
-      const folder = documentsRef.current.find(
-        (entry): entry is FolderEntry =>
-          isFolderEntry(entry) &&
-          folderPathToTreeDirectoryPath(entry.path) === folderPathToTreeDirectoryPath(item.path),
-      );
-      if (folder?.isSymlink) {
-        const targetPath = folder.targetPath;
-        return {
-          icon: LINK_DECORATION_ICON_ID,
-          title: targetPath ? t`Symlink to ${targetPath}` : t`Symlink`,
-        };
-      }
-      return null;
-    },
+  const { model } = useFileTreeModel({
+    documentsRef,
+    busyPathRef,
+    selectionChangeRef: handleSelectionChangeRef,
+    renameRef: handleRenameRef,
+    renameErrorRef: handleRenameErrorRef,
+    dropCompleteRef: handleDropCompleteRef,
   });
 
   function normalizeSelectionPath(treePath: string): string {
