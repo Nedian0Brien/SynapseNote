@@ -195,6 +195,7 @@ import { ensureGitAvailable } from './git-preflight-handler.ts';
 import { readCanonicalGitHubRemoteUrl } from './git-remote.ts';
 import { formatInstanceAppName, resolveInstanceLabel } from './instance-identity.ts';
 import { deriveInstanceUserDataDir } from './instance-isolation.ts';
+import { registerAppStateIpc } from './ipc/app-state-registrar.ts';
 import { registerAssetIpcHandlers } from './ipc/asset-registrar.ts';
 import { registerBugLocalOpsIpc } from './ipc/bug-local-ops-registrar.ts';
 import {
@@ -3238,89 +3239,45 @@ function registerIpcHandlers() {
     return result;
   });
 
-  handle('ok:editor:active-target-changed', async (_event, target) => {
-    // Last-write-wins across windows — see `editorActiveTarget` declaration.
-    // The renderer pushes after each navigation; main rebuilds the menu so
-    // Rename / Duplicate / Move to Trash flip enabled/disabled per the new
-    // scope. No attempt to dedupe identical successive pushes — the rebuild
-    // is cheap and the renderer dedupes upstream where it matters.
-    editorActiveTarget = target;
-    refreshApplicationMenu();
-    return undefined;
-  });
-
-  handle('ok:editor:view-menu-state-changed', async (event, state) => {
-    // Sibling of the active-target push. Stored in module scope so the
-    // next `refreshApplicationMenu` rebuild reads the latest snapshot.
-    // Last-write-wins across windows matches the singleton menu model.
-    editorViewMenuState = mergeViewMenuState(editorViewMenuState, state);
-    // The menu snapshot is a singleton, but dock visibility must recover
-    // per-window after a reload — record it keyed by the sender window so the
-    // reloaded renderer reads back its own dock state, not another window's.
-    if (state.terminalVisible !== undefined) {
-      const win = BrowserWindow.fromWebContents(event.sender);
-      if (win) dockVisibleForWindow.set(win.id, state.terminalVisible);
-    }
-    refreshApplicationMenu();
-    return undefined;
-  });
-
-  handle('ok:clipboard:write-text', async (_event, text) => {
-    clipboard.writeText(text);
-    return undefined;
-  });
-
-  handle('ok:theme:set-source', async (_event, { source }) => {
-    return applyThemeSource(
-      {
-        // `nativeTheme.themeSource` crosses our trust boundary — it is owned
-        // by Electron, not by our type system. The validator narrows the
-        // value back to `OkThemeSource` at the read seam (symmetric with
-        // the write-side guard `applyThemeSource` already runs on `source`)
-        // and falls back to `'system'` if Electron ever widens the union.
-        getThemeSource: () =>
-          isOkThemeSource(nativeTheme.themeSource) ? nativeTheme.themeSource : 'system',
-        setThemeSource: (s) => {
-          nativeTheme.themeSource = s;
+  registerAppStateIpc({
+    handle,
+    activeTargetChanged: (target) => {
+      editorActiveTarget = target;
+      refreshApplicationMenu();
+    },
+    viewMenuStateChanged: (event, state) => {
+      editorViewMenuState = mergeViewMenuState(editorViewMenuState, state);
+      if (state.terminalVisible !== undefined) {
+        const win = BrowserWindow.fromWebContents(event.sender);
+        if (win) dockVisibleForWindow.set(win.id, state.terminalVisible);
+      }
+      refreshApplicationMenu();
+    },
+    writeClipboard: (text) => clipboard.writeText(text),
+    setThemeSource: (source) =>
+      applyThemeSource(
+        {
+          getThemeSource: () =>
+            isOkThemeSource(nativeTheme.themeSource) ? nativeTheme.themeSource : 'system',
+          setThemeSource: (value) => {
+            nativeTheme.themeSource = value;
+          },
+          warn: (line) => console.warn(line),
         },
-        warn: (line) => console.warn(line),
-      },
-      source,
-    );
-  });
-
-  handle('ok:theme:applied', async (event, opts) => {
-    // Composition lives in `applyThemeApplied`. This handler resolves the
-    // sender's BrowserWindow (Electron-specific surface) and threads the
-    // structural collaborators in. See `theme-applied-handler.ts` for the
-    // multiplexed-signal contract and the cross-window vibrancy fan-out +
-    // per-window flicker memo.
-    const win = BrowserWindow.fromWebContents(event.sender);
-    applyThemeApplied(
-      {
-        fireThemeApplied: (w) => showGate.fireThemeApplied(w as BrowserWindowLike),
-        applyReducedTransparency: (reduced) =>
-          applyReducedTransparency(reducedTransparencyDeps, reduced),
-        warn: (line) => console.warn(line),
-      },
-      win as unknown as object | null,
-      opts,
-    );
-    return undefined;
-  });
-
-  handle('ok:startup:renderer-marks', async (_event, marks) => {
-    // Fold the renderer's two launch checkpoints into the waterfall. Fire-and-
-    // forget from the renderer; we never reject (the renderer swallows anyway).
-    // The payload crosses the IPC trust boundary untyped at runtime
-    // (`createHandler` casts without enforcement), so validate that both marks
-    // are finite before ingesting — a non-finite value would flow into
-    // `round(NaN - appReady)` and JSON-serialize as `null` in the timeline log.
-    if (!Number.isFinite(marks?.pageListReadyMs) || !Number.isFinite(marks?.firstContentMs)) {
-      return undefined;
-    }
-    ingestRendererStartupMarks(marks);
-    return undefined;
+        source,
+      ),
+    themeApplied: (event, options) =>
+      applyThemeApplied(
+        {
+          fireThemeApplied: (win) => showGate.fireThemeApplied(win as BrowserWindowLike),
+          applyReducedTransparency: (reduced) =>
+            applyReducedTransparency(reducedTransparencyDeps, reduced),
+          warn: (line) => console.warn(line),
+        },
+        BrowserWindow.fromWebContents(event.sender) as unknown as object | null,
+        options,
+      ),
+    ingestRendererStartupMarks,
   });
 
   const projectWindowForSender = (sender: unknown) =>
