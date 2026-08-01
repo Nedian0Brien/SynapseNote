@@ -52,10 +52,7 @@ import {
   queryDatabaseRecords,
   validateDatabasePropertyConstraints,
 } from '@nedian0brien/synapsenote-core';
-import {
-  createDatabaseMarkdownTableExport,
-  type DatabaseMarkdownTableExport,
-} from '@nedian0brien/synapsenote-core/server';
+import type { DatabaseMarkdownTableExport } from '@nedian0brien/synapsenote-core/server';
 import type { EnqueueDatabaseAutomationEventInput } from './database-automation.ts';
 import type {
   DatabaseButtonPlan,
@@ -90,24 +87,19 @@ import {
   type DatabaseContextPackInput,
   type DatabaseContextPackTokenizer,
 } from './database-context-pack.ts';
+import { DatabaseDataPlaneError } from './database-data-plane-errors.ts';
+import {
+  type DatabaseMarkdownTableExportInput,
+  type DatabaseMarkdownTableMutationRequest,
+  exportDatabaseMarkdownTable,
+  mutateDatabaseMarkdownTable,
+} from './database-data-plane-markdown-adapters.ts';
 import {
   createDatabaseFormStateStore,
   type DatabaseFormStateStore,
   databaseFormPrivateKey,
 } from './database-form-state-store.ts';
-import {
-  type DatabaseMarkdownTableBulkCellMutationInput,
-  type DatabaseMarkdownTableCellMutationInput,
-  type DatabaseMarkdownTableDocumentMoveInput,
-  type DatabaseMarkdownTableLifecycleMutationInput,
-  type DatabaseMarkdownTableRowCopyInput,
-  type DatabaseMarkdownTableRowCreateInput,
-  type DatabaseMarkdownTableRowMutationInput,
-  type DatabaseMarkdownTableTitleMutationInput,
-  type DatabaseMarkdownTableUndoInput,
-  type DatabaseMarkdownTableWriter,
-  DatabaseMarkdownTableWriterError,
-} from './database-markdown-table-writer.ts';
+import type { DatabaseMarkdownTableWriter } from './database-markdown-table-writer.ts';
 import {
   createDatabasePlanEngine,
   type DatabaseDesiredStateDraftInput,
@@ -144,54 +136,13 @@ import type { DatabaseStore } from './database-store.ts';
 import { recordDatabaseContextPackCapture } from './database-telemetry.ts';
 import { isV1Database, v1MigrationRequiredMessage } from './database-v1-compatibility.ts';
 
-export type DatabaseDataPlaneErrorCode =
-  | 'database_not_found'
-  | 'source_not_found'
-  | 'property_not_found'
-  | 'record_not_found'
-  | 'invalid_computed_property'
-  | 'invalid_property_conversion'
-  | 'delta_query_mismatch'
-  | 'stale_index'
-  | 'index_unavailable'
-  | 'semantic_index_unavailable'
-  | 'resource_limit'
-  | 'permission_denied'
-  | 'view_not_found'
-  | 'view_source_mismatch'
-  | 'agent_view_not_found'
-  | 'agent_view_source_mismatch'
-  | 'agent_view_scope_violation'
-  | 'agent_view_budget_exceeded'
-  | 'context_inspection_not_found'
-  | 'form_not_found'
-  | 'form_access_denied'
-  | 'form_closed'
-  | 'form_invalid_submission'
-  | 'form_rate_limited'
-  | 'form_duplicate_submission'
-  | 'button_plan_expired'
-  | 'repair_unavailable'
-  | 'transaction_in_progress'
-  | 'mutation_unavailable'
-  | 'storage_read_only'
-  | 'mutation_failed';
-
-export class DatabaseDataPlaneError extends Error {
-  readonly code: DatabaseDataPlaneErrorCode;
-  readonly details: Readonly<Record<string, unknown>>;
-
-  constructor(
-    code: DatabaseDataPlaneErrorCode,
-    message: string,
-    details: Readonly<Record<string, unknown>> = {},
-  ) {
-    super(message);
-    this.name = 'DatabaseDataPlaneError';
-    this.code = code;
-    this.details = details;
-  }
-}
+export type { DatabaseDataPlaneErrorCode } from './database-data-plane-errors.ts';
+export { DatabaseDataPlaneError } from './database-data-plane-errors.ts';
+export type {
+  DatabaseMarkdownTableExportInput,
+  DatabaseMarkdownTableMutationInput,
+  DatabaseMarkdownTableMutationRequest,
+} from './database-data-plane-markdown-adapters.ts';
 
 export type DatabaseCatalogMatchField =
   | 'database_key'
@@ -278,13 +229,6 @@ export interface DatabaseRecordLookupResult {
     issues?: DatabaseRecordIssue[];
     archivedAt?: string;
   };
-}
-
-export interface DatabaseMarkdownTableExportInput {
-  databaseId: string;
-  sourceId: string;
-  mode: 'canonical_markdown' | 'computed_snapshot';
-  query?: unknown;
 }
 
 export interface DatabaseComputedPropertyPreviewResult {
@@ -520,33 +464,6 @@ export interface CreateDatabaseDataPlaneOptions {
   allowLegacyV1Mutation?: boolean;
   /** Blocks mutations while a durable v1→v2 task owns the canonical transition. */
   isDatabaseMigrationActive?: () => { taskId: string } | null;
-}
-
-export type DatabaseMarkdownTableMutationInput =
-  | DatabaseMarkdownTableCellMutationInput
-  | DatabaseMarkdownTableBulkCellMutationInput
-  | DatabaseMarkdownTableRowMutationInput
-  | Omit<DatabaseMarkdownTableRowMutationInput, 'values'>
-  | DatabaseMarkdownTableRowCreateInput
-  | DatabaseMarkdownTableRowCopyInput
-  | DatabaseMarkdownTableTitleMutationInput
-  | DatabaseMarkdownTableDocumentMoveInput
-  | DatabaseMarkdownTableLifecycleMutationInput
-  | DatabaseMarkdownTableUndoInput;
-
-export interface DatabaseMarkdownTableMutationRequest {
-  operation:
-    | 'update_cell'
-    | 'update_cells'
-    | 'replace_row'
-    | 'delete_row'
-    | 'create_row'
-    | 'copy_row'
-    | 'update_title'
-    | 'move_document'
-    | 'update_lifecycle'
-    | 'undo';
-  input: DatabaseMarkdownTableMutationInput;
 }
 
 export interface DatabaseFormSubmissionInput {
@@ -2241,76 +2158,18 @@ export class DatabaseDataPlane {
    * mistaken for an importable database source.
    */
   exportMarkdownTable(input: DatabaseMarkdownTableExportInput): DatabaseMarkdownTableExport {
-    const described = this.#describeCanonical({
-      databaseId: input.databaseId,
-      sourceId: input.sourceId,
-    });
-    const source = described.source;
-    if (!source || source.storage?.kind !== 'markdown_table') {
-      throw new DatabaseDataPlaneError(
-        'source_not_found',
-        'The requested source does not use v2 Markdown owner-table storage',
-        { databaseId: input.databaseId, sourceId: input.sourceId },
-      );
-    }
-    const canonical = this.#databaseRecordIndex.getV2CanonicalDocuments(
-      input.databaseId,
-      input.sourceId,
-    );
-    if (!canonical) {
-      throw new DatabaseDataPlaneError(
-        'index_unavailable',
-        'Canonical v2 Markdown files are not available from the current index snapshot',
-        { databaseId: input.databaseId, sourceId: input.sourceId },
-      );
-    }
-    if (input.mode === 'canonical_markdown') {
-      return createDatabaseMarkdownTableExport({
-        mode: input.mode,
-        manifestRevision: described.manifestRevision,
-        ownerPath: canonical.ownerPath,
-        ownerMarkdown: canonical.ownerMarkdown,
-        linkedDocuments: canonical.linkedDocuments,
-      });
-    }
-    const query = this.query({
-      databaseId: input.databaseId,
-      sourceId: input.sourceId,
-      query: {
-        ...(input.query && typeof input.query === 'object' ? input.query : {}),
-        page: {
-          ...(input.query &&
-          typeof input.query === 'object' &&
-          'page' in input.query &&
-          input.query.page &&
-          typeof input.query.page === 'object'
-            ? input.query.page
-            : {}),
-          limit: 500,
-        },
+    return exportDatabaseMarkdownTable(
+      {
+        describeCanonical: this.#describeCanonical.bind(this),
+        getV2CanonicalDocuments: this.#databaseRecordIndex.getV2CanonicalDocuments.bind(
+          this.#databaseRecordIndex,
+        ),
+        query: this.query.bind(this),
+        now: this.#now,
       },
-    });
-    return createDatabaseMarkdownTableExport({
-      mode: input.mode,
-      manifestRevision: query.manifestRevision,
-      ownerPath: canonical.ownerPath,
-      ownerMarkdown: canonical.ownerMarkdown,
-      evaluatedAt: this.#now().toISOString(),
-      derivedRevision: query.derivedRevision ?? query.snapshotRevision,
-      records: query.records.map((record) => ({
-        recordId: record.id,
-        path: record.path,
-        values: structuredClone(record.values),
-        ...(record.computedResults ? { computed: structuredClone(record.computedResults) } : {}),
-      })),
-    });
+      input,
+    );
   }
-
-  /**
-   * Evaluate an unsaved Formula or Rollup definition against one frozen,
-   * permission-filtered record snapshot. This is intentionally read-only: the
-   * candidate schema never enters the store or canonical Markdown.
-   */
   previewComputedProperty(input: {
     databaseId: string;
     sourceId: string;
@@ -4512,99 +4371,18 @@ export class DatabaseDataPlane {
 
   /** Route every v2 owner-table write through the storage-aware writer. */
   async mutateMarkdownTable(input: DatabaseMarkdownTableMutationRequest): Promise<unknown> {
-    this.#assertMutationAllowed();
-    const writer = this.#databaseMarkdownTableWriter;
-    if (!writer) {
-      throw new DatabaseDataPlaneError(
-        'mutation_unavailable',
-        'Markdown owner-table mutation is unavailable on this server',
-      );
-    }
-    const raw = input.input as Record<string, unknown>;
-    const scope =
-      input.operation === 'undo' && raw.receipt && typeof raw.receipt === 'object'
-        ? (raw.receipt as Record<string, unknown>)
-        : raw;
-    const databaseId = String(scope.databaseId ?? '');
-    const sourceId = String(scope.sourceId ?? '');
-    const recordId = typeof scope.recordId === 'string' ? scope.recordId : undefined;
-    const propertyIds = typeof scope.propertyId === 'string' ? [scope.propertyId] : undefined;
-    const undoAction =
-      input.operation === 'undo'
-        ? scope.operation === 'create_row' || scope.operation === 'copy_row'
-          ? 'delete_record'
-          : scope.operation === 'delete_row'
-            ? 'create_record'
-            : 'update_record'
-        : null;
-    this.authorizeOperation({
-      action:
-        undoAction ??
-        (input.operation === 'create_row' || input.operation === 'copy_row'
-          ? 'create_record'
-          : input.operation === 'delete_row'
-            ? 'delete_record'
-            : 'update_record'),
-      databaseId,
-      ...(sourceId ? { sourceId } : {}),
-      ...(recordId ? { recordIds: [recordId] } : {}),
-      ...(propertyIds ? { propertyIds } : {}),
-    });
-    const mutationInput = this.#bindMutationActorToAccessPrincipal
-      ? { ...input.input, actor: this.#trustedRecordActor() }
-      : input.input;
-    try {
-      switch (input.operation) {
-        case 'update_cell':
-          return await writer.updateCell(mutationInput as DatabaseMarkdownTableCellMutationInput);
-        case 'update_cells':
-          return await writer.updateCells(
-            mutationInput as DatabaseMarkdownTableBulkCellMutationInput,
-          );
-        case 'replace_row':
-          return await writer.replaceRow(mutationInput as DatabaseMarkdownTableRowMutationInput);
-        case 'delete_row':
-          return await writer.deleteRow(
-            mutationInput as Omit<DatabaseMarkdownTableRowMutationInput, 'values'>,
-          );
-        case 'create_row':
-          return await writer.createRow(mutationInput as DatabaseMarkdownTableRowCreateInput);
-        case 'copy_row':
-          return await writer.copyRow(mutationInput as DatabaseMarkdownTableRowCopyInput);
-        case 'update_title':
-          return await writer.updateTitle(mutationInput as DatabaseMarkdownTableTitleMutationInput);
-        case 'move_document':
-          return await writer.moveDocument(mutationInput as DatabaseMarkdownTableDocumentMoveInput);
-        case 'update_lifecycle':
-          return await writer.updateLifecycle(
-            mutationInput as DatabaseMarkdownTableLifecycleMutationInput,
-          );
-        case 'undo':
-          return await writer.undo(mutationInput as DatabaseMarkdownTableUndoInput);
-      }
-    } catch (error) {
-      if (error instanceof DatabaseMarkdownTableWriterError) {
-        const code: DatabaseDataPlaneErrorCode =
-          error.code === 'target_changed' || error.code === 'owner_invalid'
-            ? 'stale_index'
-            : error.code === 'source_not_found'
-              ? 'source_not_found'
-              : error.code === 'record_not_found'
-                ? 'record_not_found'
-                : error.code === 'property_not_stored'
-                  ? 'property_not_found'
-                  : error.code === 'resource_limit'
-                    ? 'resource_limit'
-                    : error.code === 'v2_storage_required'
-                      ? 'storage_read_only'
-                      : 'mutation_failed';
-        throw new DatabaseDataPlaneError(code, error.message, {
-          ...error.details,
-          writerCode: error.code,
-        });
-      }
-      throw error;
-    }
+    return mutateDatabaseMarkdownTable(
+      {
+        assertMutationAllowed: this.#assertMutationAllowed.bind(this),
+        writer: this.#databaseMarkdownTableWriter,
+        authorizeOperation: this.authorizeOperation.bind(this),
+        mutationInput: (mutation) =>
+          this.#bindMutationActorToAccessPrincipal
+            ? { ...mutation, actor: this.#trustedRecordActor() }
+            : mutation,
+      },
+      input,
+    );
   }
 
   async #publishPlanAutomationEvents(
