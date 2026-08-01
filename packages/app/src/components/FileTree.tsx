@@ -79,7 +79,6 @@ import {
   folderPathToTreeDirectoryPath,
   isExternalFileDrag,
   normalizeTreePathForKind,
-  parentFolderPathForTreeItemDropTarget,
   relativePathForTreeItem,
   treeDirectoryPathToFolderPath,
   treeFilePathToDocName,
@@ -153,7 +152,6 @@ import {
   parseOkignoreDoc,
   serializeOkignoreDoc,
 } from '@/components/settings/okignore-doc';
-import { sidebarDragPayloadForTreePath } from '@/components/sidebar-drag-payload';
 import {
   coerceTrashFailureReason,
   type TrashFailedTarget,
@@ -216,7 +214,6 @@ import {
   SHOW_ALL_NDJSON_ACCEPT,
   ShowAllStreamError,
 } from '@/lib/show-all-stream';
-import { OK_SIDEBAR_DRAG_MIME, serializeSidebarDragPayload } from '@/lib/sidebar-drag';
 import { cn } from '@/lib/utils';
 import { joinWorkspacePath } from '@/lib/workspace-paths';
 import {
@@ -230,6 +227,16 @@ import {
   selectedTreePathsToDeleteTargets,
 } from './file-tree/file-tree-commands';
 import type { FileTreeProps } from './file-tree/file-tree-types';
+import {
+  clickIsInTreeContentArea,
+  clickIsInTreeItemSection,
+  FILE_TREE_EXTERNAL_FILE_DROP_BUSY_PATH,
+  FILE_TREE_EXTERNAL_FILE_DROP_ROOT_ATTR,
+  FILE_TREE_EXTERNAL_FILE_DROP_TARGET_ATTR,
+  findTreeItemElement,
+  findTreeItemPath,
+  useFileTreeDragAndDrop,
+} from './file-tree/useFileTreeDragAndDrop';
 import { mergeRootEntriesAdditive, spliceLazyFolderChildren } from './file-tree-merge';
 import { OpenInAgentContextSubmenu } from './handoff/OpenInAgentContextSubmenu';
 import {
@@ -266,39 +273,6 @@ function focusEditorAfterRename(docName: string): void {
       // Editor view may be mid-transition; focus is best-effort.
     }
   });
-}
-
-interface ExternalFileDropTarget {
-  parentDir: string;
-  row: HTMLElement | null;
-  root: HTMLElement | null;
-  busyPath: string;
-}
-
-interface ExternalFileDropAffordanceRef {
-  current: {
-    row: HTMLElement | null;
-    root: HTMLElement | null;
-  };
-}
-
-function clearExternalFileDropAffordance(ref: ExternalFileDropAffordanceRef) {
-  const current = ref.current;
-  current.row?.removeAttribute(FILE_TREE_EXTERNAL_FILE_DROP_TARGET_ATTR);
-  current.root?.removeAttribute(FILE_TREE_EXTERNAL_FILE_DROP_ROOT_ATTR);
-  ref.current = { row: null, root: null };
-}
-
-function setExternalFileDropAffordance(
-  ref: ExternalFileDropAffordanceRef,
-  target: ExternalFileDropTarget,
-) {
-  const current = ref.current;
-  if (current.row === target.row && current.root === target.root) return;
-  clearExternalFileDropAffordance(ref);
-  target.row?.setAttribute(FILE_TREE_EXTERNAL_FILE_DROP_TARGET_ATTR, 'true');
-  target.root?.setAttribute(FILE_TREE_EXTERNAL_FILE_DROP_ROOT_ATTR, 'true');
-  ref.current = { row: target.row, root: target.root };
 }
 
 // Module-level functions can't call `useLingui()`, so this file uses the
@@ -386,10 +360,6 @@ const FILE_TREE_ROOT_DROP_CSS = `
     }
   }
 `;
-
-const FILE_TREE_EXTERNAL_FILE_DROP_TARGET_ATTR = 'data-ok-external-file-drop-target';
-const FILE_TREE_EXTERNAL_FILE_DROP_ROOT_ATTR = 'data-ok-external-file-drop-root-target';
-const FILE_TREE_EXTERNAL_FILE_DROP_BUSY_PATH = '__external-file-drop__';
 
 // Cadence for re-attempting the listing fetch while a desktop auto-update
 // relaunch is in flight. The server is intentionally torn down (up to 10s)
@@ -1462,105 +1432,17 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
   // biome-ignore lint/correctness/useExhaustiveDependencies: mount/unmount-only; see comment above.
   useEffect(() => clearConnectivityRetry, []);
 
-  useEffect(() => {
-    if (loading || documents.length === 0) return;
-    const shadow = fileTreeHostRef.current?.querySelector(FILE_TREE_TAG_NAME)?.shadowRoot;
-    if (!shadow) return;
-    const shadowRoot = shadow;
-
-    function clearSidebarDragInProgressSoon() {
-      if (sidebarDragClearTimerRef.current !== null) {
-        clearTimeout(sidebarDragClearTimerRef.current);
-      }
-      sidebarDragClearTimerRef.current = setTimeout(() => {
-        sidebarDragInProgressRef.current = false;
-        sidebarDragClearTimerRef.current = null;
-      }, 0);
-    }
-
-    function handleDragStart(event: Event) {
-      if (!(event instanceof DragEvent)) return;
-      const item = findTreeItemElement(event);
-      const rawPath = item?.dataset.itemPath;
-      if (!rawPath) return;
-
-      const treePath =
-        item.dataset.itemType === 'folder' ? folderPathToTreeDirectoryPath(rawPath) : rawPath;
-      const payload = sidebarDragPayloadForTreePath(
-        treePath,
-        documentsRef.current,
-        pageMetaRef.current,
-      );
-      if (!payload) return;
-
-      if (sidebarDragClearTimerRef.current !== null) {
-        clearTimeout(sidebarDragClearTimerRef.current);
-        sidebarDragClearTimerRef.current = null;
-      }
-      sidebarDragInProgressRef.current = true;
-      event.dataTransfer?.setData(OK_SIDEBAR_DRAG_MIME, serializeSidebarDragPayload(payload));
-    }
-
-    function handleExternalFileDragOver(event: Event) {
-      if (!(event instanceof DragEvent)) return;
-      if (!isExternalFileDrag(event)) return;
-      const target = resolveExternalFileDropTarget(event);
-      if (!target) {
-        clearExternalFileDropAffordance(externalFileDropTargetRef);
-        return;
-      }
-      event.preventDefault();
-      event.stopPropagation();
-      if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
-      setExternalFileDropAffordance(externalFileDropTargetRef, target);
-    }
-
-    function handleExternalFileDragLeave(event: Event) {
-      if (!(event instanceof DragEvent)) return;
-      if (!isExternalFileDrag(event)) return;
-      const related = event.relatedTarget;
-      if (related instanceof Node && shadowRoot.contains(related)) return;
-      clearExternalFileDropAffordance(externalFileDropTargetRef);
-    }
-
-    function handleExternalFileDrop(event: Event) {
-      if (!(event instanceof DragEvent)) return;
-      if (!isExternalFileDrag(event)) return;
-      const target = resolveExternalFileDropTarget(event);
-      const files = filesFromExternalDrop(event);
-      if (!target || files.length === 0) {
-        clearExternalFileDropAffordance(externalFileDropTargetRef);
-        return;
-      }
-      event.preventDefault();
-      event.stopPropagation();
-      clearExternalFileDropAffordance(externalFileDropTargetRef);
-      uploadExternalFilesRef.current(files, target.parentDir, target.busyPath);
-    }
-
-    shadow.addEventListener('dragstart', handleDragStart, { capture: true });
-    shadow.addEventListener('dragover', handleExternalFileDragOver, { capture: true });
-    shadow.addEventListener('dragleave', handleExternalFileDragLeave, { capture: true });
-    shadow.addEventListener('drop', handleExternalFileDrop, { capture: true });
-    shadow.addEventListener('dragend', clearSidebarDragInProgressSoon, { capture: true });
-    window.addEventListener('drop', clearSidebarDragInProgressSoon, true);
-    window.addEventListener('dragend', clearSidebarDragInProgressSoon, true);
-    return () => {
-      shadow.removeEventListener('dragstart', handleDragStart, { capture: true });
-      shadow.removeEventListener('dragover', handleExternalFileDragOver, { capture: true });
-      shadow.removeEventListener('dragleave', handleExternalFileDragLeave, { capture: true });
-      shadow.removeEventListener('drop', handleExternalFileDrop, { capture: true });
-      shadow.removeEventListener('dragend', clearSidebarDragInProgressSoon, { capture: true });
-      window.removeEventListener('drop', clearSidebarDragInProgressSoon, true);
-      window.removeEventListener('dragend', clearSidebarDragInProgressSoon, true);
-      clearExternalFileDropAffordance(externalFileDropTargetRef);
-      if (sidebarDragClearTimerRef.current !== null) {
-        clearTimeout(sidebarDragClearTimerRef.current);
-        sidebarDragClearTimerRef.current = null;
-      }
-      sidebarDragInProgressRef.current = false;
-    };
-  }, [documents.length, loading]);
+  useFileTreeDragAndDrop({
+    fileTreeHostRef,
+    documents,
+    documentsRef,
+    pageMetaRef,
+    loading,
+    sidebarDragInProgressRef,
+    sidebarDragClearTimerRef,
+    externalFileDropTargetRef,
+    uploadExternalFilesRef,
+  });
 
   const {
     selectedFilePath,
@@ -4411,74 +4293,6 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
       />
     </>
   );
-}
-
-function findTreeItemPath(event: MouseEvent): string | null {
-  return findTreeItemElement(event)?.dataset.itemPath ?? null;
-}
-
-function findTreeItemElement(event: MouseEvent): HTMLElement | null {
-  for (const entry of event.composedPath()) {
-    if (entry instanceof HTMLElement && entry.dataset.itemPath) {
-      return entry;
-    }
-  }
-  return null;
-}
-
-function clickIsInTreeItemSection(event: MouseEvent, section: string): boolean {
-  for (const entry of event.composedPath()) {
-    if (entry instanceof HTMLElement && entry.dataset.itemSection === section) {
-      return true;
-    }
-  }
-  return false;
-}
-
-function findTreeVirtualizedRootElement(event: MouseEvent): HTMLElement | null {
-  for (const entry of event.composedPath()) {
-    if (entry instanceof HTMLElement && entry.matches('[data-file-tree-virtualized-root]')) {
-      return entry;
-    }
-  }
-  return null;
-}
-
-function resolveExternalFileDropTarget(event: MouseEvent): ExternalFileDropTarget | null {
-  const item = findTreeItemElement(event);
-  if (item) {
-    const rawPath = item.dataset.itemPath;
-    if (!rawPath) return null;
-    const isFolder = item.dataset.itemType === 'folder';
-    const parentDir = parentFolderPathForTreeItemDropTarget(rawPath, isFolder);
-    return {
-      parentDir,
-      row: item,
-      root: null,
-      busyPath: isFolder ? folderPathToTreeDirectoryPath(parentDir) : rawPath,
-    };
-  }
-  if (!clickIsInTreeContentArea(event)) return null;
-  return {
-    parentDir: '',
-    row: null,
-    root: findTreeVirtualizedRootElement(event),
-    busyPath: FILE_TREE_EXTERNAL_FILE_DROP_BUSY_PATH,
-  };
-}
-
-// True when the click landed inside the tree's scrollable content region (the
-// row list + its empty area below the last row), as opposed to the header /
-// search chrome. Same `[data-file-tree-virtualized-scroll]` anchor the
-// drag-to-root patch uses, reached via composedPath because the tree renders
-// in a shadow root.
-function clickIsInTreeContentArea(event: MouseEvent): boolean {
-  for (const entry of event.composedPath()) {
-    if (entry instanceof HTMLElement && entry.matches('[data-file-tree-virtualized-scroll]')) {
-      return true;
-    }
-  }
-  return false;
 }
 
 // Cold-start sidebar fallback. Mimics the row shape of the file tree (chevron
