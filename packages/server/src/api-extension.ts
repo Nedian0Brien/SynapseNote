@@ -7,24 +7,20 @@
  */
 
 import { type SpawnOptions, spawn } from 'node:child_process';
-import { createHash, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import {
-  closeSync,
   createReadStream,
-  createWriteStream,
   type Dirent,
   existsSync,
   mkdirSync,
-  openSync,
   readdirSync,
   readFileSync,
-  readSync,
   realpathSync,
   statSync,
   unlinkSync,
   writeFileSync,
 } from 'node:fs';
-import { readdir, readFile, stat } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { homedir } from 'node:os';
 import { basename, dirname, extname, isAbsolute, relative, resolve, sep } from 'node:path';
@@ -237,8 +233,6 @@ import {
   formatRollbackSubject,
   resolveGitDirDetailed,
 } from '@nedian0brien/synapsenote-core/shadow-repo-layout';
-import busboy from 'busboy';
-import { fileTypeFromBuffer } from 'file-type';
 import { parse as parseYaml } from 'yaml';
 import { z } from 'zod';
 import { captureEffect } from './activity-log.ts';
@@ -401,11 +395,7 @@ import { readSkillInstallStateSnapshot } from './skill-state.ts';
 import { readSkillTargets, writeSkillTargets } from './skill-targets-store.ts';
 import { handleSpawnCursor } from './spawn-cursor-api.ts';
 import { readUiLock } from './ui-lock.ts';
-import {
-  HashingPassThrough,
-  linkTempToFinalWithCollisionRetry,
-  mintTempUploadPath,
-} from './upload-streaming.ts';
+import { linkTempToFinalWithCollisionRetry } from './upload-streaming.ts';
 
 export { extractPageTitle } from './page-identity.ts';
 
@@ -432,7 +422,6 @@ import {
   ManagedRenameSnapshotMissingError,
   ManagedRenameSourceNotFoundError,
   ManagedRenameSourceTypeMismatchError,
-  SymlinkEscapeError,
 } from './apply-managed-rename.ts';
 import {
   type BacklinkIndex,
@@ -446,6 +435,17 @@ import { isConfigDoc, isSystemDoc } from './cc1-broadcast.ts';
 import { withHiddenWindowsConsole } from './child-process-windows-hide.ts';
 import type { ResolveStrategy } from './conflict-storage.ts';
 import type { ContentFilter } from './content-filter.ts';
+import { assertNoSymlinkEscape, SymlinkEscapeError } from './content-path-safety.ts';
+import { resolveUploadDestDir } from './content-upload-policy.ts';
+import {
+  chooseUploadFilename,
+  DATABASE_FORM_UPLOAD_FILE_MAX_BYTES,
+  findDuplicateAsset,
+  readUploadBody,
+  sniffUpload,
+  UPLOAD_FILE_MAX_BYTES,
+  type UploadResult,
+} from './content-upload-service.ts';
 import {
   docNameToRelativePath,
   forgetDocExtension,
@@ -579,6 +579,13 @@ import type { TagIndex } from './tag-index.ts';
 import { getMeter, getTracer, withSpan, withSpanSync } from './telemetry.ts';
 import { getDocumentHistory, getFolderTimeline } from './timeline-query.ts';
 import { recordTimelineCoalesced } from './timeline-telemetry.ts';
+import {
+  classifyUploadErrno,
+  UploadWriteError,
+  type UploadWriteReason,
+  uploadStatusFor,
+  uploadTitleFor,
+} from './upload-errors.ts';
 import { createWorkspaceSearchCacheKey } from './workspace-search-cache-key.ts';
 
 // Cache the HTTP duration histogram at module scope — lazy-init at first use
@@ -838,457 +845,9 @@ function safeDocPath(docName: string, contentRoot: string): { path: string } | {
   return { path };
 }
 
-const GENERIC_PASTE_NAMES = /^(image\.(png|jpe?g|gif|webp)|Clipboard.*|Untitled.*)$/i;
+export { resolveUploadDestDir, sanitizeFilename } from './content-upload-policy.ts';
 
-// unicode-preserving. Permits any Unicode letter, number, or combining
-// mark, plus pictographic emoji and the punctuation whitelist (., -, _, space).
-// Everything else (including `/`, `\`, null bytes, control chars, CRLF) is
-// either stripped or replaced so path-escape guards downstream keep their
-// invariants. CJK, Arabic, Cyrillic, and emoji survive — macOS/Finder
-// ergonomics without sacrificing filesystem safety.
-const SAFE_FILENAME_CHARS = /[^\p{L}\p{N}\p{M}\p{Extended_Pictographic}.\-_ ]/gu;
-// Stripping C0 + DEL is the whole point — the rule fires on intentional use.
-// biome-ignore lint/suspicious/noControlCharactersInRegex: intentional — sanitize must strip control bytes.
-const STRIP_ON_SIGHT = /[/\\\x00-\x1f\x7f]/g;
-
-export function sanitizeFilename(name: string): string {
-  // Strip path separators and null/control bytes BEFORE any other pass so
-  // they cannot reappear inside a replacement and dodge later checks.
-  let stripped = name.replace(STRIP_ON_SIGHT, '');
-  stripped = stripped.replace(SAFE_FILENAME_CHARS, '_');
-
-  // Collapse underscore and dot runs so "../etc/passwd" → "etcpasswd" and
-  // "foo__bar" → "foo_bar".
-  stripped = stripped.replace(/_+/g, '_').replace(/\.{2,}/g, '.');
-
-  // No hidden files — trim leading dots and leading underscores.
-  stripped = stripped.replace(/^[._]+/, '');
-  // Filesystem portability — strip trailing dots (Windows trims them too).
-  stripped = stripped.replace(/\.+$/, '');
-
-  if (stripped === '') return 'upload';
-
-  // Most filesystems cap basenames at 255 bytes (ext4, APFS, exFAT). Without a
-  // ceiling, a multipart `Content-Disposition` filename approaching busboy's
-  // header size can sail through Unicode-letter sanitization and surface as
-  // `ENAMETOOLONG` from `linkSync`, which classifies as a generic
-  // `storage-error` → 500. Truncate the stem (preserving the extension) to
-  // stay within the portable basename ceiling.
-  const MAX_BYTES = 255;
-  const encoder = new TextEncoder();
-  if (encoder.encode(stripped).length > MAX_BYTES) {
-    const dotIdx = stripped.lastIndexOf('.');
-    const ext = dotIdx >= 0 ? stripped.slice(dotIdx) : '';
-    let stem = dotIdx >= 0 ? stripped.slice(0, dotIdx) : stripped;
-    // `slice(0, -1)` removes one UTF-16 code unit. A trailing emoji is a
-    // surrogate pair, so the loop transiently produces a lone-surrogate
-    // string that `TextEncoder` re-encodes as U+FFFD (3 bytes) — harmless
-    // since the emoji is fully consumed before the loop exits and the
-    // returned string is always valid UTF-8.
-    while (encoder.encode(stem + ext).length > MAX_BYTES && stem.length > 0) {
-      stem = stem.slice(0, -1);
-    }
-    stripped = (stem || 'upload') + ext;
-    // The loop drains the stem; it cannot shrink the extension itself.
-    // An adversarial 250+ byte extension (e.g. `'x.' + 'a'.repeat(300)`)
-    // would drain the stem to empty and still leave `'upload' + ext`
-    // above the ceiling. Final-pass guard: fall back to extensionless
-    // `'upload'` when even the floor exceeds MAX_BYTES.
-    if (encoder.encode(stripped).length > MAX_BYTES) stripped = 'upload';
-  }
-
-  return stripped;
-}
-
-/**
- * Resolve the destination directory for an upload from the parent doc's
- * path and the configured `content.attachmentFolderPath`. Matches Obsidian's
- * literal schema (free-form string):
- *
- *   - `"./"` (default)  → same directory as the doc
- *   - `"/"`             → content-directory root
- *   - `"./<sub>"`       → subdirectory beside the doc
- *   - `"<name>"` (bare) → fixed content-relative path
- *
- * Treats any `./` prefix as "relative to doc dir," any other value as
- * "relative to content dir." Empty or whitespace-only strings fall back
- * to the default (doc dir).
- *
- * Returns an absolute path within `resolvedContentDir` — path-escape
- * enforcement happens at the caller via `isWithinContentDir` + `realpath`.
- */
-export function resolveUploadDestDir(
-  parentDocName: string,
-  attachmentFolderPath: string,
-  resolvedContentDir: string,
-): string {
-  const trimmed = attachmentFolderPath.trim();
-  if (trimmed === '' || trimmed === './') {
-    return resolve(resolvedContentDir, dirname(parentDocName));
-  }
-  if (trimmed === '/') {
-    return resolvedContentDir;
-  }
-  if (trimmed.startsWith('./')) {
-    // Subdirectory beside the doc. `"./attachments"` → `<docDir>/attachments`.
-    return resolve(resolvedContentDir, dirname(parentDocName), trimmed.slice(2));
-  }
-  // Bare name or nested path: fixed content-relative location.
-  return resolve(resolvedContentDir, trimmed);
-}
-
-/**
- * Read at most `n` bytes from the start of `path`. Feeds both the magic-byte
- * sniff (`fileTypeFromBuffer` over the head) and the SVG text fallback
- * (`file-type` can't detect text-based SVG), without ever materializing the
- * whole file.
- */
-function readTempFileHead(path: string, n: number): Buffer {
-  const fd = openSync(path, 'r');
-  try {
-    const buf = Buffer.alloc(n);
-    const read = readSync(fd, buf, 0, n, 0);
-    return buf.subarray(0, read);
-  } finally {
-    closeSync(fd);
-  }
-}
-
-/**
- * Scan `destDir` non-recursively for an existing file whose sha256 matches
- * the buffer's. Returns the matching basename (case-preserving) or null if
- * no match. Bounded by directory size — O(n) in sibling count, not vault size.
- * Only files with extensions in ASSET_EXTENSIONS are candidates; everything
- * else (markdown, .git/, etc.) is skipped.
- *
- * `expectedSize` is the buffer's byte length — passed in so we can size-
- * prefilter before hashing siblings. sha256 collision requires equal-sized
- * inputs, so same-extension siblings with a different size are not
- * candidates and we skip their (potentially multi-MB) read. This turns
- * the common "paste a new screenshot" path from O(total asset bytes in
- * dir) back to O(sibling count × stat). Non-ENOENT read failures log at
- * WARN so silent dedup degradation has a signal.
- */
-/**
- * Upper bound on size-matched candidates we'll read+hash in a single
- * dedup call. A capture-device folder with 1000+ screenshots at the same
- * resolution could theoretically produce that many same-size siblings;
- * each candidate costs a sync readFileSync + sha256Hex of the entire
- * buffer, which would block the event loop for seconds per upload under
- * adversarial / pathological load.
- *
- * Past the bound, dedup degrades to best-effort: we log a structured
- * WARN and return null (treat as no-match → write a new file with the
- * collision-suffix loop). This is a bounded-resource defense, not a
- * correctness change — a duplicate that slips through produces the
- * cheap storage cost of one extra on-disk copy, not silent data loss.
- * The O(1) hash-cache alternative is a
- * larger architectural change and a follow-on.
- */
-const MAX_DEDUP_SCAN_CANDIDATES = 1000;
-
-/**
- * Stream a file's bytes through a sha256 Hash transform and return the hex
- * digest. Keeps memory O(1) regardless of file size — a 500 MB candidate
- * read by the buffer-based `readFileSync` path would otherwise materialize
- * the whole file in heap, which defeats the streaming-upload amendment's
- * O(1) memory guarantee.
- *
- * Throws on read errors so the caller can classify ENOENT (concurrent
- * rename — stay silent) vs other errors (log and skip).
- */
-async function streamingHashFile(path: string): Promise<string> {
-  const hash = createHash('sha256');
-  await pipeline(createReadStream(path), hash);
-  return hash.digest('hex');
-}
-
-async function findDuplicateAsset(
-  destDir: string,
-  sha: string,
-  expectedSize: number,
-): Promise<string | null> {
-  let entries: string[];
-  try {
-    // Async `readdir` so the directory walk doesn't block the event
-    // loop during uploads — bun's loop is shared with WebSocket sync
-    // and CRDT updates, and a 1k-entry walk is observable on bursty
-    // upload traffic. The MAX_DEDUP_SCAN_CANDIDATES cap
-    // bounds the worst case at 1000 same-size siblings, but the
-    // pre-cap entry list can still be much larger.
-    entries = await readdir(destDir);
-  } catch {
-    return null;
-  }
-  const log = getLogger('upload');
-  let scanned = 0;
-  for (const entry of entries) {
-    const ext = extname(entry).slice(1).toLowerCase();
-    if (!ASSET_EXTENSIONS.has(ext)) continue;
-    const fullPath = resolve(destDir, entry);
-    let entryStat: Awaited<ReturnType<typeof stat>>;
-    try {
-      entryStat = await stat(fullPath);
-    } catch {
-      continue;
-    }
-    if (!entryStat.isFile() || entryStat.size !== expectedSize) continue;
-    // Bounded scan: only count candidates that passed the cheap size
-    // prefilter, since same-size siblings are the ones that cost a
-    // full-file hash each (streaming now, not buffered).
-    scanned++;
-    if (scanned > MAX_DEDUP_SCAN_CANDIDATES) {
-      log.warn(
-        {
-          event: 'upload-dedup-skip',
-          reason: 'scan-cap-exceeded',
-          destDir,
-          scanned: MAX_DEDUP_SCAN_CANDIDATES,
-          expectedSize,
-        },
-        `[upload-dedup] candidate scan exceeded ${MAX_DEDUP_SCAN_CANDIDATES} same-size siblings — degrading to no-dedup for this upload`,
-      );
-      return null;
-    }
-    let candidateSha: string;
-    try {
-      // Stream + hash the candidate to preserve the O(1) memory guarantee
-      // the upload pipeline otherwise maintains end-to-end. A 500 MB
-      // candidate otherwise spiked heap to 500 MB per scan.
-      candidateSha = await streamingHashFile(fullPath);
-    } catch (err) {
-      const code = (err as NodeJS.ErrnoException).code;
-      // ENOENT is the legitimate concurrent-rename race — stay silent.
-      if (code !== 'ENOENT') {
-        log.warn(
-          { event: 'upload-dedup-skip', reason: 'read-failed', code, entry },
-          '[upload-dedup] skipped candidate — read failed',
-        );
-      }
-      continue;
-    }
-    if (candidateSha === sha) return entry;
-  }
-  return null;
-}
-
-/**
- * Discriminator for write failures so the upload handler can surface a
- * specific error code (`collision-exhaustion` / `storage-full` /
- * `storage-readonly` / `storage-error`) instead of collapsing every
- * filesystem failure into a generic 500 "Failed to save file" response.
- * The code field is a stable part of the error envelope; the numeric
- * HTTP status differentiates transient-yet-retry (500) from full-disk
- * (507) per RFC 4918.
- */
-import {
-  classifyUploadErrno,
-  UploadWriteError,
-  type UploadWriteReason,
-  uploadStatusFor,
-  uploadTitleFor,
-} from './upload-errors.ts';
-
-interface UploadResult {
-  filename: string;
-  mimeType: string;
-  parentDocName: string;
-  placement: string;
-  tempPath: string;
-  sha: string;
-  byteLength: number;
-}
-
-export const UPLOAD_FILE_MAX_BYTES = 100 * 1024 * 1024;
-export const DATABASE_FORM_UPLOAD_FILE_MAX_BYTES = 25 * 1024 * 1024;
-
-/**
- * Stream multipart upload body to a tempfile while hashing on-the-fly.
- *
- * Replaces the buffer-to-memory pattern (chunks.push(chunk) +
- * Buffer.concat) with busboy's streaming 'file' event piped through a
- * HashingPassThrough Transform into createWriteStream(tempPath). Memory
- * becomes O(1), while busboy stops the file stream at the caller-selected
- * byte ceiling (25 MiB for public Forms, 100 MiB elsewhere).
- *
- * Error contract (typed via UploadWriteError.reason — URN-form ProblemType):
- *   - urn:ok:error:malformed-upload: busboy 'error' (unparseable multipart, etc.)
- *   - urn:ok:error:storage-full: ENOSPC / EDQUOT during the write stream
- *   - urn:ok:error:storage-readonly: EROFS / EACCES / EPERM during the write stream
- *   - urn:ok:error:storage-error: any other write-stream error
- *   - urn:ok:error:payload-too-large: file part exceeded its byte ceiling
- *
- * On any error, the tempfile is best-effort unlinked before propagating.
- */
-function readUploadBody(
-  req: IncomingMessage,
-  projectDir: string,
-  maxFileBytes: number = UPLOAD_FILE_MAX_BYTES,
-): Promise<UploadResult> {
-  return new Promise((resolveP, reject) => {
-    let bb: ReturnType<typeof busboy>;
-    try {
-      // `files: 1` caps the file part; `fields` + `fieldSize` cap non-file
-      // surface so a flooded multipart can't buffer thousands of fields or a
-      // multi-MB string field in memory before the upload body resolves. The
-      // legitimate schema (agentId / docName / position / summary) is bounded
-      // — short identifiers, never approaching 2 KB or 10 entries. The
-      // ENAMETOOLONG-via-crafted-filename DoS path is closed by the 255-byte
-      // ceiling in `sanitizeFilename` (the filesystem-portability layer);
-      // busboy does not expose a header-section-size limit (only headerPairs
-      // count), so the parsed-value cap is the right place.
-      bb = busboy({
-        headers: req.headers,
-        limits: { files: 1, fields: 10, fieldSize: 2 * 1024, fileSize: maxFileBytes },
-      });
-    } catch (err) {
-      reject(new UploadWriteError('urn:ok:error:malformed-upload', err));
-      return;
-    }
-
-    let settled = false;
-    let filename = 'upload';
-    let mimeType = '';
-    let parentDocName = '';
-    let placement = '';
-    let tempPath: string | undefined;
-    let pipelineError: unknown;
-    // Track whether the 'file' event ever fired. busboy emits 'close' as
-    // soon as it finishes parsing the request body — but the file
-    // pipeline (createWriteStream + HashingPassThrough) is async and may
-    // still be running when 'close' fires. We must NOT resolve to an
-    // empty UploadResult on 'close' when a file IS being processed; the
-    // pipeline `.then()` is the legitimate resolver in that case. Only
-    // the no-file path needs the 'close' fallback.
-    let fileEventFired = false;
-
-    // Mint the tempfile path lazily on the first 'file' event — busboy
-    // can fire 'error' before any file arrives (e.g. missing boundary)
-    // and we'd otherwise create a zero-byte tempfile for no reason.
-
-    const fail = (reason: UploadWriteReason, cause: unknown) => {
-      if (settled) return;
-      settled = true;
-      if (tempPath) {
-        try {
-          unlinkSync(tempPath);
-        } catch {
-          // best-effort; orphan sweep catches stragglers
-        }
-      }
-      reject(cause instanceof UploadWriteError ? cause : new UploadWriteError(reason, cause));
-    };
-
-    const classifyWriteError = classifyUploadErrno;
-
-    bb.on('field', (name, val) => {
-      if (name === 'parentDocName') parentDocName = val;
-      if (name === 'placement') placement = val;
-    });
-
-    bb.on('file', (_fieldname, file, info) => {
-      fileEventFired = true;
-      filename = info.filename || 'upload';
-      mimeType = info.mimeType || '';
-
-      // `mintTempUploadPath` does `tracedMkdirSync(.., { recursive: true })`
-      // which can throw ENOSPC / EDQUOT / EROFS / EACCES / EPERM / EIO. An
-      // uncaught throw here bubbles back through busboy's `_write` and
-      // re-emits as `'error'`, which the listener below classifies as
-      // `'urn:ok:error:malformed-upload'` (HTTP 400). That misleads operators triaging
-      // a full disk into chasing a phantom client bug. Catch the sync
-      // throw, classify via the same table the pipeline rejection uses,
-      // and drain the file part so busboy can finish parsing the rest.
-      let path: string;
-      try {
-        path = mintTempUploadPath(projectDir);
-      } catch (err) {
-        const nodeErr = err as NodeJS.ErrnoException;
-        fail(classifyWriteError(nodeErr), err as Error);
-        file.resume();
-        return;
-      }
-      tempPath = path;
-      const hasher = new HashingPassThrough();
-      const writeStream = createWriteStream(path);
-
-      file.once('limit', () => {
-        fail(
-          'urn:ok:error:payload-too-large',
-          new Error(`Upload file exceeded ${maxFileBytes} bytes`),
-        );
-      });
-
-      pipeline(file, hasher, writeStream)
-        .then(() => {
-          if (settled) return;
-          settled = true;
-          resolveP({
-            filename,
-            mimeType,
-            parentDocName,
-            placement,
-            tempPath: path,
-            sha: hasher.digest(),
-            byteLength: hasher.byteLength(),
-          });
-        })
-        .catch((err) => {
-          pipelineError = err;
-          // Classify from the deepest write error if available; otherwise
-          // treat as a generic storage-error. The unlink happens inside fail().
-          const nodeErr = err as NodeJS.ErrnoException;
-          fail(classifyWriteError(nodeErr), err);
-        });
-    });
-
-    bb.on('error', (err) => {
-      fail('urn:ok:error:malformed-upload', err);
-    });
-
-    // busboy's `close` (Writable, emitClose:true via @types/busboy@1.6.0)
-    // fires once busboy finishes parsing the request body. If by then
-    // no `file` event ever fired, the request was a well-formed
-    // multipart with fields-only (no file part) — resolve with a
-    // synthetic empty UploadResult so the route handler's
-    // `byteLength === 0` guard returns the standard 400 "No file
-    // received." Without this hook the Promise never settles on fields-
-    // only uploads and the connection hangs until Node's request
-    // timeout fires (DoS).
-    //
-    // CRUCIAL: gate on `!fileEventFired`. If a file part IS present,
-    // busboy emits 'close' as soon as it finishes parsing — but the
-    // async write/hash pipeline below may still be running. Resolving
-    // here would race the pipeline's legitimate resolveP and produce a
-    // spurious empty result. Pipeline resolves win in that case.
-    bb.on('close', () => {
-      if (settled || pipelineError) return;
-      if (fileEventFired) return;
-      settled = true;
-      resolveP({
-        filename: '',
-        mimeType: '',
-        parentDocName,
-        placement,
-        tempPath: '',
-        sha: '',
-        byteLength: 0,
-      });
-    });
-
-    // Guard the "client disconnected mid-stream" path. busboy never
-    // reaches `_final` if the request aborts before the closing boundary,
-    // so its `close` would not fire and the Promise would otherwise hang.
-    req.on('close', () => {
-      if (settled || pipelineError) return;
-      if (!req.complete) {
-        fail('urn:ok:error:malformed-upload', new Error('client disconnected'));
-      }
-    });
-
-    req.pipe(bb);
-  });
-}
+/** Upload body parsing, asset inspection, and deduplication live in content-upload-service.ts. */
 
 /**
  * Resolve a subdirectory path within a base directory, rejecting traversal attempts.
@@ -1448,58 +1007,6 @@ function requireNonEmptyDocName(
     { handler },
   );
   return null;
-}
-
-/**
- * Ensures `fullPath` does not escape `resolvedContentDir` via symlinks (matches persistence
- * symlink-escape checks). Walks up with dirname when the leaf is missing so destinations like
- * `link/new.md` are rejected if `link` resolves outside the content dir.
- *
- * Uses `realpathSync(resolvedContentDir)` as the boundary anchor so platform normalization
- * (e.g. macOS `/var` → `/private/var`) matches `realpathSync` of paths under it.
- */
-function assertNoSymlinkEscape(fullPath: string, resolvedContentDir: string): void {
-  let contentRoot: string;
-  try {
-    contentRoot = realpathSync(resolvedContentDir);
-  } catch (err) {
-    const code = (err as NodeJS.ErrnoException).code;
-    // ENOENT means the content dir hasn't been created yet — no symlink
-    // escape is possible against a non-existent directory, but we have
-    // no safe baseline for the check either. Throw the same
-    // `symlink-escape:` error class so the caller's catch routes through
-    // the existing error path. Other errno classes (EPERM, EIO, ENOMEM)
-    // must NOT be swallowed silently — they'd leave the security gate
-    // disabled with no log line, no telemetry, no error response. Throw
-    // and let the top-level handler emit a typed RFC 9457 problem.
-    if (code === 'ENOENT') {
-      throw new SymlinkEscapeError('content directory does not exist');
-    }
-    throw err;
-  }
-
-  let cur = fullPath;
-  for (;;) {
-    try {
-      const canonical = realpathSync(cur);
-      if (!isWithinContentDir(canonical, contentRoot)) {
-        throw new SymlinkEscapeError('path resolves outside content directory');
-      }
-      return;
-    } catch (err) {
-      const code = (err as NodeJS.ErrnoException).code;
-      if (code === 'ELOOP') {
-        throw new SymlinkEscapeError('symlink cycle in path');
-      }
-      if (code !== 'ENOENT') throw err;
-      const parent = dirname(cur);
-      if (parent === cur) throw err;
-      if (parent !== resolvedContentDir && !parent.startsWith(`${resolvedContentDir}${sep}`)) {
-        throw err;
-      }
-      cur = parent;
-    }
-  }
 }
 
 function resolveContentEntryPath(contentDir: string, kind: ContentEntryKind, path: string): string {
@@ -10734,28 +10241,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     // arrived with a generic clipboard filename. Non-sniffable bytes are
     // accepted under the client-supplied filename.
     //
-    const SNIFF_HEAD_BYTES = 4100;
-    const head = readTempFileHead(tempPath, SNIFF_HEAD_BYTES);
-    const fileTypeResult = await fileTypeFromBuffer(head);
-    let detectedMime: string | undefined = fileTypeResult?.mime;
-    let detectedExt: string | undefined = fileTypeResult?.ext;
-    // file-type can't detect SVG (text-based, no magic bytes) — check manually.
-    // STOP: this fallback is LOAD-BEARING — SVG must render via
-    // <img>, never inline DOM. Do not remove without a compensating guard.
-    if (!detectedMime) {
-      // Strip a leading UTF-8 BOM (U+FEFF) before the pattern match.
-      // `trimStart()` removes ECMAScript whitespace but not the BOM, so a
-      // file starting with `\xEF\xBB\xBF<svg ...>` would otherwise evade the
-      // head check the comment above documents as the SVG-disguised-as-PNG
-      const headText = head.subarray(0, 256).toString('utf-8').replace(/^﻿/, '').trimStart();
-      if (
-        headText.startsWith('<svg') ||
-        (headText.startsWith('<?xml') && headText.includes('<svg'))
-      ) {
-        detectedMime = 'image/svg+xml';
-        detectedExt = 'svg';
-      }
-    }
+    const { mime: detectedMime, ext: detectedExt } = await sniffUpload(tempPath);
 
     // Same-dir sha256 dedup. Bounded scan over destDir, skipped entirely
     // when DEFAULT_DEDUP_MODE === 'off'. The dedup test happens BEFORE
@@ -10805,23 +10291,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     // GENERIC_PASTE_NAMES: clipboard paste arrives with synthetic names
     // ("image.png", "Clipboard 2024-04-21 14:23:45"). Replace with a
     // timestamp stem so the disk filename is human-meaningful.
-    let finalFilename: string;
-    const isGenericPaste = !filename || filename === 'upload' || GENERIC_PASTE_NAMES.test(filename);
-    if (isGenericPaste) {
-      const now = new Date();
-      const ts = now
-        .toISOString()
-        .replace(/[-:T]/g, '')
-        .slice(0, 14)
-        .replace(/(\d{8})(\d{6})/, '$1-$2');
-      // Prefer the sniffed extension when present; otherwise try the
-      // client-supplied extname, finally fall back to .bin.
-      const fallbackExt = filename ? extname(filename).slice(1) : '';
-      const ext = detectedExt ?? fallbackExt ?? '';
-      finalFilename = ext === '' ? `pasted-${ts}` : `pasted-${ts}.${ext}`;
-    } else {
-      finalFilename = sanitizeFilename(filename);
-    }
+    const finalFilename = chooseUploadFilename({ filename, detectedExt });
 
     try {
       const destFilename = linkTempToFinalWithCollisionRetry(tempPath, destDir, finalFilename);

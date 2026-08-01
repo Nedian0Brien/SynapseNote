@@ -7,6 +7,8 @@ import {
   rewriteWikiLinksForDocumentRename,
 } from './managed-rename-rewrite.ts';
 
+export { SymlinkEscapeError } from './content-path-safety.ts';
+
 interface ManagedRenameAffectedDocPair {
   from: string;
   to: string;
@@ -104,18 +106,6 @@ export class ManagedRenameReservedPathError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'ManagedRenameReservedPathError';
-  }
-}
-
-/**
- * Thrown when a `safeContentPath` resolution lands outside the content
- * directory — content dir missing, path resolves outside, or a symlink cycle.
- * Caller surfaces as 400 `urn:ok:error:path-escape`.
- */
-export class SymlinkEscapeError extends Error {
-  constructor(message: string) {
-    super(`symlink-escape: ${message}`);
-    this.name = 'SymlinkEscapeError';
   }
 }
 
