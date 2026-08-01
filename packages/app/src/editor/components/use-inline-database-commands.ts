@@ -23,8 +23,8 @@ import {
   optimisticCellKey,
   setOptimisticCellValue,
 } from '@/lib/database-mutations/database-mutation-gateway';
-import { createDatabaseAddPropertyDesiredState } from '@/lib/database-mutations/database-property-commands';
 import { createDatabasePropertyDefinitionForAdd } from '@/lib/database-mutations/database-property-catalog';
+import { createDatabaseAddPropertyDesiredState } from '@/lib/database-mutations/database-property-commands';
 import { createDatabaseRecordDesiredState } from '@/lib/database-mutations/database-record-commands';
 import { createDatabasePageTitleDesiredState } from '@/lib/database-mutations/database-view-commands';
 import { navigateToDatabaseRecordPath } from '@/lib/database-navigation';
