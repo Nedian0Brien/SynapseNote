@@ -31,7 +31,6 @@ import {
   type FormulaComputedResult,
   formulaErrorResult,
   materializeDatabaseDerivedRecords,
-  previewDatabasePropertyConversion,
   projectDatabaseVerification,
 } from '@nedian0brien/synapsenote-core';
 import type { DatabaseMarkdownTableExport } from '@nedian0brien/synapsenote-core/server';
@@ -65,7 +64,6 @@ import {
   createDatabaseContextPack,
   type DatabaseContextPack,
   type DatabaseContextPackEncoding,
-  DatabaseContextPackError,
   type DatabaseContextPackInput,
   type DatabaseContextPackTokenizer,
 } from './database-context-pack.ts';
@@ -89,6 +87,7 @@ import {
   exportDatabaseMarkdownTable,
   mutateDatabaseMarkdownTable,
 } from './database-data-plane-markdown-adapters.ts';
+import { createDatabasePlanMutationCoordinator } from './database-data-plane-plan-mutations.ts';
 import {
   createDatabasePublicSharePolicy,
   type DatabasePublicShareTargetResolution,
@@ -1048,6 +1047,24 @@ export class DatabaseDataPlane {
     };
   }
 
+  #planMutationPort() {
+    return {
+      assertReadable: this.#assertReadable.bind(this),
+      assertPlanningInputReadAccess: this.#assertPlanningInputReadAccess.bind(this),
+      assertDraftReadAccess: this.#assertDraftReadAccess.bind(this),
+      assertPlanMutationAccess: this.#assertPlanMutationAccess.bind(this),
+      authorizeOperation: this.authorizeOperation.bind(this),
+      snapshot: this.#databaseStore.snapshot.bind(this.#databaseStore),
+      planEngine: this.#databasePlanEngine,
+      recordIndex: this.#databaseRecordIndex,
+      resolveQueryAccess: this.#resolveQueryAccess,
+      currentAccessPrincipal: this.#currentAccessPrincipal.bind(this),
+      bindMutationActorToAccessPrincipal: this.#bindMutationActorToAccessPrincipal,
+      trustedRecordActor: this.#trustedRecordActor.bind(this),
+      cloneDefinition,
+    };
+  }
+
   #trustedMutationActor(): DatabaseCommitInput['actor'] {
     const principal = this.#currentAccessPrincipal();
     return principal.kind === 'agent'
@@ -1565,7 +1582,9 @@ export class DatabaseDataPlane {
   listContextInspections(
     scope?: DatabaseContextInspectionScope,
   ): readonly DatabaseContextInspectionSummary[] {
-    return createDatabaseContextPackCoordinator(this.#contextPackPort()).listContextInspections(scope);
+    return createDatabaseContextPackCoordinator(this.#contextPackPort()).listContextInspections(
+      scope,
+    );
   }
 
   getContextInspection(
@@ -1593,7 +1612,9 @@ export class DatabaseDataPlane {
       recordId?: string;
     }>;
   } {
-    return createDatabaseContextPackCoordinator(this.#contextPackPort()).getRecordIndexIssuesSummary();
+    return createDatabaseContextPackCoordinator(
+      this.#contextPackPort(),
+    ).getRecordIndexIssuesSummary();
   }
 
   getSchemaRevisions(): ReadonlyArray<{
@@ -1783,15 +1804,10 @@ export class DatabaseDataPlane {
   }
 
   createDraft(input: unknown, ttlSeconds?: number): DatabaseDraftArtifact {
-    this.#assertPlanningInputReadAccess(input);
-    const draft = this.#databasePlanEngine.createDraft(input, ttlSeconds);
-    try {
-      this.#assertDraftReadAccess(draft);
-      return draft;
-    } catch (error) {
-      this.#databasePlanEngine.discardDraft(draft.id);
-      throw error;
-    }
+    return createDatabasePlanMutationCoordinator(this.#planMutationPort()).createDraft(
+      input,
+      ttlSeconds,
+    );
   }
 
   createDatabaseDeletionDraft(
@@ -1799,19 +1815,9 @@ export class DatabaseDataPlane {
     expectedSnapshotRevision: string,
     ttlSeconds?: number,
   ): DatabaseDraftArtifact {
-    this.authorizeOperation({ action: 'delete_database', databaseId });
-    const draft = this.#databasePlanEngine.createDatabaseDeletionDraft(
-      databaseId,
-      expectedSnapshotRevision,
-      ttlSeconds,
-    );
-    try {
-      this.#assertDraftReadAccess(draft);
-      return draft;
-    } catch (error) {
-      this.#databasePlanEngine.discardDraft(draft.id);
-      throw error;
-    }
+    return createDatabasePlanMutationCoordinator(
+      this.#planMutationPort(),
+    ).createDatabaseDeletionDraft(databaseId, expectedSnapshotRevision, ttlSeconds);
   }
 
   createVerificationDraft(
@@ -1819,12 +1825,52 @@ export class DatabaseDataPlane {
     actor: DatabaseRecordActor,
     ttlSeconds?: number,
   ): DatabaseVerificationDraftResult {
-    this.#assertPlanningInputReadAccess(input);
-    return this.#databasePlanEngine.createVerificationDraft(
+    return createDatabasePlanMutationCoordinator(this.#planMutationPort()).createVerificationDraft(
       input,
-      this.#bindMutationActorToAccessPrincipal ? this.#trustedRecordActor() : actor,
+      actor,
       ttlSeconds,
     );
+  }
+
+  getDraft(draftId: string): DatabaseDraftArtifact {
+    return createDatabasePlanMutationCoordinator(this.#planMutationPort()).getDraft(draftId);
+  }
+
+  discardDraft(draftId: string): { discarded: boolean; draftId: string } {
+    return createDatabasePlanMutationCoordinator(this.#planMutationPort()).discardDraft(draftId);
+  }
+
+  createPlan(draftId: string, ttlSeconds?: number): DatabasePlanArtifact {
+    return createDatabasePlanMutationCoordinator(this.#planMutationPort()).createPlan(
+      draftId,
+      ttlSeconds,
+    );
+  }
+
+  getPlan(planId: string): DatabasePlanArtifact {
+    return createDatabasePlanMutationCoordinator(this.#planMutationPort()).getPlan(planId);
+  }
+
+  restorePlanBundle(bundle: {
+    plan: DatabasePlanArtifact;
+    draft: DatabaseDraftArtifact;
+  }): DatabasePlanArtifact {
+    return createDatabasePlanMutationCoordinator(this.#planMutationPort()).restorePlanBundle(
+      bundle,
+    );
+  }
+
+  previewPropertyConversion(input: {
+    databaseId: string;
+    sourceId: string;
+    propertyId: string;
+    targetProperty: unknown;
+    allowLossy?: boolean;
+    ttlSeconds?: number;
+  }): DatabasePropertyConversionPlanPreview {
+    return createDatabasePlanMutationCoordinator(
+      this.#planMutationPort(),
+    ).previewPropertyConversion(input);
   }
 
   #formPolicyPort() {
@@ -1858,212 +1904,6 @@ export class DatabaseDataPlane {
   }): Promise<DatabaseFormUploadAuthorization> {
     return authorizeDatabaseFormUpload(this.#formPolicyPort(), input);
   }
-  getDraft(draftId: string): DatabaseDraftArtifact {
-    const draft = this.#databasePlanEngine.getDraft(draftId);
-    this.#assertDraftReadAccess(draft);
-    return draft;
-  }
-
-  discardDraft(draftId: string): { discarded: boolean; draftId: string } {
-    this.#assertDraftReadAccess(this.#databasePlanEngine.getDraft(draftId));
-    return this.#databasePlanEngine.discardDraft(draftId);
-  }
-
-  createPlan(draftId: string, ttlSeconds?: number): DatabasePlanArtifact {
-    this.#assertReadable();
-    this.#assertDraftReadAccess(this.#databasePlanEngine.getDraft(draftId));
-    const plan = this.#databasePlanEngine.createPlan(draftId, ttlSeconds);
-    this.#assertPlanMutationAccess(plan);
-    return plan;
-  }
-
-  getPlan(planId: string): DatabasePlanArtifact {
-    const plan = this.#databasePlanEngine.getPlan(planId);
-    this.#assertPlanMutationAccess(plan);
-    return plan;
-  }
-
-  /** Restore a persisted immutable Agent Run plan and its draft after a process restart. */
-  restorePlanBundle(bundle: {
-    plan: DatabasePlanArtifact;
-    draft: DatabaseDraftArtifact;
-  }): DatabasePlanArtifact {
-    this.#databasePlanEngine.restoreDraft(bundle.draft);
-    this.#databasePlanEngine.restorePlan(bundle.plan);
-    return this.getPlan(bundle.plan.id);
-  }
-
-  previewPropertyConversion(input: {
-    databaseId: string;
-    sourceId: string;
-    propertyId: string;
-    targetProperty: unknown;
-    allowLossy?: boolean;
-    ttlSeconds?: number;
-  }): DatabasePropertyConversionPlanPreview {
-    this.#assertReadable();
-    const snapshot = this.#databaseStore.snapshot();
-    const database = snapshot.databases.find((candidate) => candidate.id === input.databaseId);
-    if (!database) {
-      throw new DatabaseDataPlaneError('database_not_found', 'Database was not found', {
-        databaseId: input.databaseId,
-      });
-    }
-    const source = database.sources.find((candidate) => candidate.id === input.sourceId);
-    if (!source) {
-      throw new DatabaseDataPlaneError('source_not_found', 'Data source was not found', {
-        databaseId: database.id,
-        sourceId: input.sourceId,
-      });
-    }
-    const sourceProperty = source.properties.find((candidate) => candidate.id === input.propertyId);
-    if (!sourceProperty) {
-      throw new DatabaseDataPlaneError('property_not_found', 'Property was not found', {
-        databaseId: database.id,
-        sourceId: source.id,
-        propertyId: input.propertyId,
-      });
-    }
-    const parsedTarget = DatabasePropertySchema.safeParse(input.targetProperty);
-    if (!parsedTarget.success) {
-      throw new DatabaseDataPlaneError(
-        'invalid_property_conversion',
-        'Target property schema is invalid',
-        {
-          issues: parsedTarget.error.issues.map((issue) => ({
-            path: issue.path.join('.'),
-            message: issue.message,
-          })),
-        },
-      );
-    }
-    const targetProperty = parsedTarget.data;
-    if (
-      targetProperty.id !== sourceProperty.id ||
-      targetProperty.key !== sourceProperty.key ||
-      targetProperty.name !== sourceProperty.name
-    ) {
-      throw new DatabaseDataPlaneError(
-        'invalid_property_conversion',
-        'Type conversion must preserve the property ID, key, and name',
-        { propertyId: sourceProperty.id },
-      );
-    }
-    const access = this.#resolveQueryAccess({
-      action: 'alter_schema',
-      database: cloneDefinition(database),
-      source: structuredClone(source),
-      query: DatabaseQuerySchema.parse({}),
-      view: null,
-      principal: this.#currentAccessPrincipal(),
-    });
-    if (access.allowedRecordIds !== null || access.allowedPropertyIds !== null) {
-      throw new DatabaseDataPlaneError(
-        'permission_denied',
-        'Property conversion requires complete source and schema access',
-        {
-          databaseId: database.id,
-          sourceId: source.id,
-          propertyId: sourceProperty.id,
-        },
-      );
-    }
-    const records = this.#databaseRecordIndex.list(database.id, source.id);
-    if (records.some((record) => record.revision === null)) {
-      throw new DatabaseDataPlaneError(
-        'stale_index',
-        'Property conversion requires exact revisions for every source record',
-        { databaseId: database.id, sourceId: source.id },
-      );
-    }
-    const preview = previewDatabasePropertyConversion({
-      sourceProperty,
-      targetProperty,
-      records: records.map((record) => ({
-        id: record.id,
-        revision: record.revision as string,
-        value: record.values[sourceProperty.id],
-      })),
-      allowLossy: input.allowLossy,
-    });
-    const base = {
-      databaseId: database.id,
-      sourceId: source.id,
-      propertyId: sourceProperty.id,
-      manifestRevision: snapshot.revision,
-      indexRevision: this.#databaseRecordIndex.snapshot().revision,
-      preview,
-    };
-    if (!preview.committable) return { ...base, draft: null, plan: null };
-
-    const sourceKeyById = new Map(database.sources.map((entry) => [entry.id, entry.key] as const));
-    const desiredState = {
-      database: {
-        id: database.id,
-        key: database.key,
-        name: database.name,
-        ...(database.description ? { description: database.description } : {}),
-        ...(database.icon ? { icon: database.icon } : {}),
-        ...(database.cover ? { cover: database.cover } : {}),
-        ...(database.aliases ? { aliases: [...database.aliases] } : {}),
-        people: structuredClone(database.people),
-        contract: structuredClone(database.contract),
-      },
-      sources: database.sources.map((entry) => ({
-        ...structuredClone(entry),
-        properties: entry.properties.map((property) =>
-          property.id === sourceProperty.id
-            ? structuredClone(targetProperty)
-            : structuredClone(property),
-        ),
-      })),
-      views: database.views.map((view) => {
-        const { sourceId, ...canonicalView } = structuredClone(view);
-        return {
-          ...canonicalView,
-          sourceKey: sourceKeyById.get(sourceId) ?? sourceId,
-        };
-      }),
-      policy: {
-        mode: 'review' as const,
-        allowedOperations: ['alter_schema', 'mutate_record'],
-        maxRecordsPerCommit: Math.max(1, records.length),
-      },
-      sampleRecords: [],
-      recordMutations: preview.changes.flatMap((change) => {
-        if (change.outcome === 'empty' || change.outcome === 'blocked') return [];
-        return [
-          {
-            id: change.recordId,
-            expectedRevision: change.expectedRevision,
-            sourceKey: source.key,
-            operations:
-              change.after === undefined
-                ? [{ op: 'unset' as const, propertyKey: targetProperty.key }]
-                : [
-                    {
-                      op: 'set' as const,
-                      propertyKey: targetProperty.key,
-                      value: structuredClone(change.after),
-                    },
-                  ],
-          },
-        ];
-      }),
-    };
-    try {
-      const draft = this.#databasePlanEngine.createDraft(desiredState, input.ttlSeconds);
-      const plan = this.#databasePlanEngine.createPlan(draft.id, input.ttlSeconds);
-      return { ...base, draft, plan };
-    } catch (error) {
-      throw new DatabaseDataPlaneError(
-        'invalid_property_conversion',
-        'Property conversion could not produce an exact database plan',
-        { reason: error instanceof Error ? error.message : String(error) },
-      );
-    }
-  }
-
   createButtonPlan(input: DatabaseButtonPlanInput): DatabaseButtonPlan {
     this.#assertReadable();
     if (!this.#databaseButtonPlanner) {

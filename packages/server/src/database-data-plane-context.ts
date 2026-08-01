@@ -3,22 +3,22 @@ import type {
   DatabaseFilter,
   DatabaseView,
 } from '@nedian0brien/synapsenote-core';
-import {
-  type DatabaseContextInspection,
-  type DatabaseContextInspectionScope,
-  type DatabaseContextInspectionSummary,
-  type DatabaseContextInspector,
+import type {
+  DatabaseContextInspection,
+  DatabaseContextInspectionScope,
+  DatabaseContextInspectionSummary,
+  DatabaseContextInspector,
 } from './database-context-inspector.ts';
 import {
   type DatabaseContextPack,
   DatabaseContextPackError,
   type DatabaseContextPackInput,
 } from './database-context-pack.ts';
-import { DatabaseDataPlaneError } from './database-data-plane-errors.ts';
 import type {
   AppliedDatabaseAgentView,
   DatabaseDataPlanePackInput,
 } from './database-data-plane.ts';
+import { DatabaseDataPlaneError } from './database-data-plane-errors.ts';
 import type {
   DatabaseRecordIndex,
   DatabaseRecordIndexIssueCode,
@@ -74,7 +74,10 @@ export function createDatabaseContextPackCoordinator(port: ContextPackPort) {
         input.agentViewId === undefined
           ? null
           : (visibleAgentViews.find((candidate) => candidate.id === input.agentViewId) ?? null);
-      if (input.agentViewId !== undefined && (!view || view.layout.type !== 'agent' || !view.agent)) {
+      if (
+        input.agentViewId !== undefined &&
+        (!view || view.layout.type !== 'agent' || !view.agent)
+      ) {
         throw new DatabaseDataPlaneError('agent_view_not_found', 'Agent View was not found', {
           agentViewId: input.agentViewId,
           candidates: visibleAgentViews.map((candidate) => ({
