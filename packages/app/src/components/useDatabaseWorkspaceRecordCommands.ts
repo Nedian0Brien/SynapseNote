@@ -9,6 +9,7 @@ import type {
   ProjectedDatabaseRecord,
 } from '@nedian0brien/synapsenote-core';
 import { useEffect, useEffectEvent } from 'react';
+import type { DatabaseDescription } from '@/lib/database-catalog-client';
 import {
   createMarkdownTableCellMutation,
   createMarkdownTableLifecycleMutation,
@@ -44,8 +45,6 @@ import {
 } from '@/lib/database-mutations/database-record-commands';
 import { classifyDatabaseUiProblem, databaseConflictProblem } from '@/lib/database-ui-problem';
 import type { DatabaseInitialRecordAction } from './DatabaseTableGrid';
-
-import type { DatabaseDescription } from '@/lib/database-catalog-client';
 import type { useDatabaseWorkspaceControllerState } from './use-database-workspace-controller-state';
 import type { useDatabaseWorkspaceMutationCommands } from './useDatabaseWorkspaceMutationCommands';
 

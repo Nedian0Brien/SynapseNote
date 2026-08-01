@@ -8,6 +8,7 @@ import { useEffect, useEffectEvent } from 'react';
 import type { DatabaseBoardTransition } from '@/components/DatabaseBoard';
 import type { DatabaseCalendarChange } from '@/components/DatabaseCalendar';
 import type { DatabaseTimelineChange } from '@/components/DatabaseTimeline';
+import type { DatabaseDescription } from '@/lib/database-catalog-client';
 import {
   createDatabaseBulkCellMutationDesiredState,
   createDatabaseBulkCheckboxToggleDesiredState,
@@ -16,7 +17,6 @@ import {
   parseDatabaseCellDraft,
 } from '@/lib/database-cell-mutation';
 import { databaseRecordsToCsv } from '@/lib/database-csv';
-import type { DatabaseDescription } from '@/lib/database-catalog-client';
 import type { databaseSnapshotToJson } from '@/lib/database-json';
 import { appendDatabaseQueryPage, queryDatabase } from '@/lib/database-query-client';
 import { type DatabasePasteChange, databaseRecordsToTsv } from '@/lib/database-tsv';

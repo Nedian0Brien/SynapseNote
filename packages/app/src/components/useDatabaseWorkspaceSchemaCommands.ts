@@ -7,6 +7,7 @@ import type {
 } from '@nedian0brien/synapsenote-core';
 import { previewDatabaseSelectOptionChange } from '@nedian0brien/synapsenote-core';
 import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-server';
+import type { DatabaseDescription } from '@/lib/database-catalog-client';
 import {
   createDatabaseAddPropertyDesiredState,
   createDatabaseDuplicatePropertyDesiredState,
@@ -17,7 +18,6 @@ import {
   createDatabaseTablePasteDesiredState,
   createDatabaseUnsetPropertyValuesDesiredState,
 } from '@/lib/database-cell-mutation';
-import { createDatabasePropertyDefinitionForAdd } from '@/lib/database-mutations/database-property-catalog';
 import {
   databaseDelimitedRecordIds,
   inspectDatabaseImport,
@@ -30,6 +30,7 @@ import {
   previewDatabaseUiUndo,
 } from '@/lib/database-mutation-client';
 import type { DatabaseUiMutationPolicyInput } from '@/lib/database-mutation-policy';
+import { createDatabasePropertyDefinitionForAdd } from '@/lib/database-mutations/database-property-catalog';
 import {
   createDatabasePropertyDeletionPreview,
   type DatabasePropertyDeletionPreview,
@@ -37,10 +38,7 @@ import {
 import { fetchDatabaseRecord } from '@/lib/database-query-client';
 import { classifyDatabaseUiProblem } from '@/lib/database-ui-problem';
 import type { DatabaseSelectProperty } from './DatabaseTableGrid';
-
 import { databaseSchemaMutationPolicy, isDatabaseSelectProperty } from './DatabaseTableGrid';
-
-import type { DatabaseDescription } from '@/lib/database-catalog-client';
 import type { useDatabaseWorkspaceControllerState } from './use-database-workspace-controller-state';
 import type { useDatabaseWorkspaceBulkCommands } from './useDatabaseWorkspaceBulkCommands';
 import type { useDatabaseWorkspaceMutationCommands } from './useDatabaseWorkspaceMutationCommands';

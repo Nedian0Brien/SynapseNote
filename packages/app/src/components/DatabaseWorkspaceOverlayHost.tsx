@@ -79,7 +79,6 @@ export function DatabaseWorkspaceOverlayHost({
     setMutationError,
     creationInstanceKey,
     creationOpen,
-    isCanvasPresentation,
     onCreationCancelled,
     setCreationInstanceKey,
     setSelection,

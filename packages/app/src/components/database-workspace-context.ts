@@ -1,4 +1,3 @@
-/* biome-ignore-all lint/suspicious/noExplicitAny: the remaining controller context is removed after the five command contracts are migrated. */
 import type { useDatabaseWorkspaceController } from './use-database-workspace-controller-runtime';
 
 /**
@@ -12,9 +11,6 @@ import type { useDatabaseWorkspaceController } from './use-database-workspace-co
 export type DatabaseWorkspaceRenderContext = ReturnType<
   typeof useDatabaseWorkspaceController
 >['workspaceRenderContext'];
-
-/** Internal command dependency bag used while the command contracts are migrated. */
-export type DatabaseWorkspaceControllerContext = Record<string, any>;
 
 export type DatabaseWorkspaceSuccessContext = DatabaseWorkspaceRenderContext & {
   description: NonNullable<DatabaseWorkspaceRenderContext['description']> & {

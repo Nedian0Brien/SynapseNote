@@ -1,6 +1,5 @@
 import type {
   DatabaseProperty,
-  DatabaseValue,
   DatabaseView,
   ProjectedDatabaseRecord,
   ProjectedDatabaseRelationRecord,
@@ -11,6 +10,7 @@ import type {
 } from '@nedian0brien/synapsenote-server';
 import { useEffect, useEffectEvent } from 'react';
 import { getBranchSnapshot } from '@/lib/current-branch-store';
+import type { DatabaseDescription } from '@/lib/database-catalog-client';
 import { describeDatabase } from '@/lib/database-catalog-client';
 import {
   createDatabaseButtonPlan,
@@ -41,10 +41,7 @@ import {
 import { fetchDatabaseRecord } from '@/lib/database-query-client';
 import { classifyDatabaseUiProblem, databaseConflictProblem } from '@/lib/database-ui-problem';
 import { getServerInstanceId } from '@/lib/server-instance-store';
-
 import { searchDatabaseRelationRecords } from './DatabaseTableGrid';
-
-import type { DatabaseDescription } from '@/lib/database-catalog-client';
 import type { useDatabaseWorkspaceControllerState } from './use-database-workspace-controller-state';
 
 type DatabaseWorkspaceControllerState = ReturnType<typeof useDatabaseWorkspaceControllerState>;
@@ -250,7 +247,7 @@ export function useDatabaseWorkspaceMutationCommands(
           options.onCommitted?.(outcome);
         }
         if (options.optimisticCellKey) {
-              setOptimisticCellValues((current) => {
+          setOptimisticCellValues((current) => {
             if (!current.has(options.optimisticCellKey as string)) return current;
             const next = new Map(current);
             next.delete(options.optimisticCellKey as string);
@@ -265,7 +262,7 @@ export function useDatabaseWorkspaceMutationCommands(
           locallyHandledRecordIdsRef.current.delete(options.recordRefresh.recordId);
         }
         if (options.optimisticCellKey) {
-              setOptimisticCellValues((current) => {
+          setOptimisticCellValues((current) => {
             if (!current.has(options.optimisticCellKey as string)) return current;
             const next = new Map(current);
             next.delete(options.optimisticCellKey as string);
@@ -342,7 +339,7 @@ export function useDatabaseWorkspaceMutationCommands(
     void executeDatabaseMutation({ storage: 'markdown_table', mutation })
       .then((outcome) => {
         if (options.optimisticCellKey) {
-        setOptimisticCellValues((current) => {
+          setOptimisticCellValues((current) => {
             if (!current.has(options.optimisticCellKey as string)) return current;
             const next = new Map(current);
             next.delete(options.optimisticCellKey as string);
@@ -350,8 +347,7 @@ export function useDatabaseWorkspaceMutationCommands(
           });
         }
         if (outcome.changed) setSaveFeedback('saved');
-        // The controller context is typed `Record<string, any>`, so a missing
-        // `refreshNow` would not fail the build — it would throw here and the
+        // A missing `refreshNow` would not fail the build — it would throw here and the
         // create would never refresh at all. Fall back to the coalesced path
         // instead, which is slower but always correct.
         if (options.immediate && typeof refreshNow === 'function') refreshNow();
@@ -360,7 +356,7 @@ export function useDatabaseWorkspaceMutationCommands(
       })
       .catch((cause: unknown) => {
         if (options.optimisticCellKey) {
-        setOptimisticCellValues((current) => {
+          setOptimisticCellValues((current) => {
             if (!current.has(options.optimisticCellKey as string)) return current;
             const next = new Map(current);
             next.delete(options.optimisticCellKey as string);

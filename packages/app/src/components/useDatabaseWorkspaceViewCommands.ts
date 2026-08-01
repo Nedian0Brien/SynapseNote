@@ -11,6 +11,7 @@ import type { DatabasePageAppearance } from '@/components/DatabasePageAppearance
 import type { DatabaseViewTabAction } from '@/components/DatabaseViewTabMenu';
 import type { DatabaseAgentScope } from '@/components/handoff/database-agent-scope';
 import { subscribeToDatabaseAgentRunChanged } from '@/lib/database-agent-run-events';
+import type { DatabaseDescription } from '@/lib/database-catalog-client';
 import {
   createDatabasePageAppearanceDesiredState,
   createDatabasePageTitleDesiredState,
@@ -31,12 +32,9 @@ import {
 import { duplicateDatabaseView } from '@/lib/database-view-lifecycle';
 import { saveDatabaseLastOpenedView } from '@/lib/database-view-state';
 import { subscribeToDatabaseChanged } from '@/lib/documents-events';
-import type { DatabaseSelectProperty, LoadStatus } from './DatabaseTableGrid';
-
-import { databaseSchemaMutationPolicy, isDatabaseSelectProperty } from './DatabaseTableGrid';
-
-import type { DatabaseDescription } from '@/lib/database-catalog-client';
 import type { DatabaseWorkspaceReadModel } from '@/lib/use-database-workspace-read-model';
+import type { DatabaseSelectProperty, LoadStatus } from './DatabaseTableGrid';
+import { databaseSchemaMutationPolicy, isDatabaseSelectProperty } from './DatabaseTableGrid';
 import type { DatabaseTableDialogProps } from './database-workspace-types';
 import type { useDatabaseWorkspaceControllerState } from './use-database-workspace-controller-state';
 import type { useDatabaseWorkspaceMutationCommands } from './useDatabaseWorkspaceMutationCommands';

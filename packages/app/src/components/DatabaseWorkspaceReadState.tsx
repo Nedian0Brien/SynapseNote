@@ -1,4 +1,3 @@
-/* biome-ignore-all lint/suspicious/noExplicitAny: the legacy read payload is normalized at the controller boundary. */
 import { Trans } from '@lingui/react/macro';
 import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -72,9 +71,9 @@ export function DatabaseWorkspaceReadState({
                   </Trans>
                 </p>
                 <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                  {creationPreview.sampleRecords.slice(0, 4).map((record: any) => {
+                  {creationPreview.sampleRecords.slice(0, 4).map((record) => {
                     const source = creationPreview.sources.find(
-                      (candidate: any) => candidate.key === record.sourceKey,
+                      (candidate) => candidate.key === record.sourceKey,
                     );
                     const properties = source?.properties.slice(0, 4) ?? [];
                     return (
@@ -84,7 +83,7 @@ export function DatabaseWorkspaceReadState({
                       >
                         <div className="font-medium">Page preview</div>
                         <dl className="mt-1 grid gap-1">
-                          {properties.map((property: any) => (
+                          {properties.map((property) => (
                             <div key={property.key} className="grid grid-cols-[auto_1fr] gap-2">
                               <dt className="text-muted-foreground">{property.name}</dt>
                               <dd className="truncate">
@@ -145,8 +144,8 @@ export function DatabaseWorkspaceReadState({
             </div>
             {scopedOfflineQueue.length > 0 ? (
               <p className="text-muted-foreground text-xs">
-                {scopedOfflineQueue.filter((item: any) => item.state === 'queued').length} queued ·{' '}
-                {scopedOfflineQueue.filter((item: any) => item.state === 'blocked').length} blocked.
+                {scopedOfflineQueue.filter((item) => item.state === 'queued').length} queued ·{' '}
+                {scopedOfflineQueue.filter((item) => item.state === 'blocked').length} blocked.
                 Reconnected writes are replanned against current property values and require exact
                 review before commit.
               </p>

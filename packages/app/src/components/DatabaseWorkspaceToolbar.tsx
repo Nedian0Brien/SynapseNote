@@ -45,7 +45,11 @@ import { createDatabaseDefaultViewChangeDesiredState } from '@/lib/database-cell
 import { cn } from '@/lib/utils';
 import type { DatabaseWorkspaceSuccessContext } from './database-workspace-context';
 
-export function DatabaseWorkspaceToolbar({ context }: { context: DatabaseWorkspaceSuccessContext }) {
+export function DatabaseWorkspaceToolbar({
+  context,
+}: {
+  context: DatabaseWorkspaceSuccessContext;
+}) {
   const { t } = useLingui();
   const {
     isPagePresentation,
@@ -125,7 +129,7 @@ export function DatabaseWorkspaceToolbar({ context }: { context: DatabaseWorkspa
               {isPagePresentation ? <Trans>All pages</Trans> : <Trans>All records</Trans>}
             </Button>
           ) : null}
-          {sourceViews.map((view: any, index: number) => (
+          {sourceViews.map((view, index: number) => (
             <fieldset
               key={view.id}
               aria-label={`${view.name} view tab controls`}
@@ -220,7 +224,7 @@ export function DatabaseWorkspaceToolbar({ context }: { context: DatabaseWorkspa
         <DatabasePresenceBadges
           scope="schema"
           entries={remotePresence.filter(
-            (entry: any) =>
+            (entry) =>
               entry.databaseId === description.database.id &&
               entry.sourceId === description.source?.id &&
               entry.scope === 'schema',
@@ -239,7 +243,7 @@ export function DatabaseWorkspaceToolbar({ context }: { context: DatabaseWorkspa
                   {isPagePresentation ? <Trans>All pages</Trans> : <Trans>All records</Trans>}
                 </SelectItem>
               ) : null}
-              {sourceViews.map((view: any) => (
+              {sourceViews.map((view) => (
                 <SelectItem key={view.id} value={view.id}>
                   {view.favorite === true ? '★ ' : ''}
                   {view.name}
@@ -250,12 +254,12 @@ export function DatabaseWorkspaceToolbar({ context }: { context: DatabaseWorkspa
         </div>
         {description.database.buttons
           .filter(
-            (button: any) =>
+            (button) =>
               button.placement.kind === 'database' ||
               (button.placement.kind === 'source' &&
                 button.placement.sourceId === description.source?.id),
           )
-          .map((button: any) => (
+          .map((button) => (
             <Button
               key={button.id}
               variant="outline"
@@ -355,7 +359,7 @@ export function DatabaseWorkspaceToolbar({ context }: { context: DatabaseWorkspa
             size="sm"
             disabled={mutationStatus !== 'idle'}
             aria-pressed={showArchived}
-            onClick={() => setShowArchived((value: any) => !value)}
+            onClick={() => setShowArchived((value) => !value)}
           >
             <Archive />
             {showArchived ? <Trans>Hide archived</Trans> : <Trans>Show archived</Trans>}
@@ -480,7 +484,7 @@ export function DatabaseWorkspaceToolbar({ context }: { context: DatabaseWorkspa
             {isCanvasPresentation ? (
               <DropdownMenuItem
                 disabled={mutationStatus !== 'idle'}
-                onSelect={() => setShowArchived((value: any) => !value)}
+                onSelect={() => setShowArchived((value) => !value)}
               >
                 <Archive aria-hidden="true" />
                 {showArchived ? <Trans>Hide archived</Trans> : <Trans>Show archived</Trans>}

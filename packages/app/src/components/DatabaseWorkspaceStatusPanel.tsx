@@ -106,7 +106,7 @@ export function DatabaseWorkspaceStatusPanel({
             {buttonPlan.internalPlan?.diff.records.length ?? 0} database record changes ·{' '}
             {buttonPlan.externalSteps.length} external actions
           </div>
-          {buttonPlan.externalSteps.map((step: any) => (
+          {buttonPlan.externalSteps.map((step) => (
             <div key={step.actionId} className="rounded border bg-background p-2 text-xs">
               <div className="font-medium">
                 {step.eventName} → {step.connectionId}
@@ -184,7 +184,7 @@ export function DatabaseWorkspaceStatusPanel({
             <DatabaseAtomicApprovalScope approvals={ghost.approvals} />
             {ghost.risk.reasons.length > 0 ? (
               <ul className="mt-1 list-disc pl-5 text-xs" aria-label="Change risks">
-                {ghost.risk.reasons.map((reason: any) => (
+                {ghost.risk.reasons.map((reason) => (
                   <li key={reason}>{reason}</li>
                 ))}
               </ul>
