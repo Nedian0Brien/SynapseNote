@@ -6,6 +6,7 @@ import { createDatabasePlanEngine, DatabasePlanError } from './database-plan.ts'
 import { DatabasePlanApprovalCodeSchema as extractedApprovalCodeSchema } from './database-plan-artifacts.ts';
 import { hashDatabasePlanValue } from './database-plan-convergence-policy.ts';
 import { DatabaseDesiredStateDraftSchema as extractedDraftSchema } from './database-plan-draft-contracts.ts';
+import { DatabaseWriteGuardSnapshotSchema } from './database-plan-write-guards.ts';
 import { createDatabaseRecordIndex } from './database-record-index.ts';
 import { createDatabaseStore } from './database-store.ts';
 
@@ -195,6 +196,21 @@ describe('DatabasePlanEngine ephemeral desired state', () => {
     expect(hashDatabasePlanValue({ b: 1, a: 2 })).toBe(
       'sha256:d3626ac30a87e6f7a6428233b3c68299976865fa5508e4267c5415c76af7a772',
     );
+  });
+
+  test('keeps write-guard validation in its dedicated contract', () => {
+    expect(
+      DatabaseWriteGuardSnapshotSchema.safeParse({
+        permissions: [
+          {
+            scopeId: 'project',
+            policyId: 'owner',
+            policyRevision: `sha256:${'a'.repeat(64)}`,
+          },
+        ],
+        querySnapshots: [],
+      }).success,
+    ).toBe(true);
   });
 
   test('classifies every user-resolvable area touched by an exact plan', () => {

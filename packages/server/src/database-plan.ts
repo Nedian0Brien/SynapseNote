@@ -35,7 +35,6 @@ import {
   updateDatabaseManifestYaml,
   validateDatabasePropertyConstraints,
 } from '@nedian0brien/synapsenote-core';
-import { z } from 'zod';
 import { databaseMarkdownTableDocumentPath } from './database-markdown-table-creation.ts';
 import type { DatabaseRecordIndex } from './database-record-index.ts';
 import type { DatabaseStore } from './database-store.ts';
@@ -73,6 +72,7 @@ import {
   type DatabaseDesiredStateDraft,
   DatabaseDesiredStateDraftSchema,
 } from './database-plan-draft-contracts.ts';
+import { DatabaseWriteGuardSnapshotSchema } from './database-plan-write-guards.ts';
 
 export {
   type DatabaseConflictDomain,
@@ -218,31 +218,6 @@ export interface CreateDatabasePlanEngineOptions {
   generateUuid?: () => string;
   resolveWriteGuards?: ResolveDatabaseWriteGuards;
 }
-
-const DatabaseWriteGuardSnapshotSchema = z
-  .object({
-    permissions: z
-      .array(
-        z
-          .object({
-            scopeId: z.string().min(1),
-            policyId: z.string().min(1),
-            policyRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
-            capability: z.enum(['write', 'verification']).optional(),
-          })
-          .strict(),
-      )
-      .min(1),
-    querySnapshots: z.array(
-      z
-        .object({
-          queryId: z.string().min(1),
-          snapshotRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
-        })
-        .strict(),
-    ),
-  })
-  .strict();
 
 function filterWithPropertyIds(
   filter: unknown,
