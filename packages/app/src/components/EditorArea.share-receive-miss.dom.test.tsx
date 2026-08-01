@@ -32,6 +32,25 @@ mock.module('@/editor/DocumentContext', () => ({
   useOptionalDocumentContext: () => docCtx,
   useDocumentTransition: () => ({ openDocumentTransition: null }),
 }));
+mock.module('@/editor/document-context/useDocumentNavigation', () => ({
+  useDocumentNavigation: () => ({
+    activeDocName: docCtx.activeDocName,
+    activeTarget: docCtx.activeTarget,
+  }),
+}));
+mock.module('@/editor/document-context/useDocumentCollaboration', () => ({
+  useDocumentCollaboration: () => ({
+    activeProvider: docCtx.activeProvider,
+    recycleDocument: docCtx.recycleDocument,
+  }),
+}));
+mock.module('@/editor/document-context/useDocumentPanels', () => ({
+  useDocumentPanels: () => ({
+    docPanelMode: docCtx.docPanelMode,
+    docPanelAgentId: docCtx.docPanelAgentId,
+    docPanelExpandSignal: docCtx.docPanelExpandSignal,
+  }),
+}));
 mock.module('@/hooks/use-document-stats', () => ({ useDocumentStats: () => null }));
 mock.module('@/hooks/use-selection-stats', () => ({ useSelectionStats: () => null }));
 mock.module('@/hooks/use-lifecycle-status', () => ({ useLifecycleStatus: () => 'ready' }));

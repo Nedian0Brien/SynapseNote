@@ -95,6 +95,25 @@ mock.module('@/editor/DocumentContext', () => ({
   useOptionalDocumentContext: () => docCtx,
   useDocumentTransition: () => ({ openDocumentTransition: null }),
 }));
+mock.module('@/editor/document-context/useDocumentNavigation', () => ({
+  useDocumentNavigation: () => ({
+    activeDocName: docCtx.activeDocName,
+    activeTarget: docCtx.activeTarget,
+  }),
+}));
+mock.module('@/editor/document-context/useDocumentCollaboration', () => ({
+  useDocumentCollaboration: () => ({
+    activeProvider: docCtx.activeProvider,
+    recycleDocument: docCtx.recycleDocument,
+  }),
+}));
+mock.module('@/editor/document-context/useDocumentPanels', () => ({
+  useDocumentPanels: () => ({
+    docPanelMode: docCtx.docPanelMode,
+    docPanelAgentId: docCtx.docPanelAgentId,
+    docPanelExpandSignal: docCtx.docPanelExpandSignal,
+  }),
+}));
 
 mock.module('@/components/EmptyEditorState', () => ({
   // Forward terminalDock so the EditorArea -> EmptyEditorState prop wiring is
