@@ -214,8 +214,8 @@ import { readCanonicalGitHubRemoteUrl } from './git-remote.ts';
 import { formatInstanceAppName, resolveInstanceLabel } from './instance-identity.ts';
 import { deriveInstanceUserDataDir } from './instance-isolation.ts';
 import { registerIntegrationsSettings } from './integrations-settings.ts';
-import { registerBugLocalOpsIpc } from './ipc/bug-local-ops-registrar.ts';
 import { registerAssetIpcHandlers } from './ipc/asset-registrar.ts';
+import { registerBugLocalOpsIpc } from './ipc/bug-local-ops-registrar.ts';
 import {
   handleBugReportCrashAck,
   handleBugReportCreate,
@@ -3194,36 +3194,98 @@ function registerIpcHandlers() {
   registerAssetIpcHandlers({
     register: handle as unknown as import('./ipc/asset-registrar.ts').AssetIpcRegistrar,
     platform: process.platform,
-    getWindowForWebContents: (sender) => BrowserWindow.fromWebContents(sender as Electron.WebContents) ?? undefined,
-    getProjectPath: (window) => wm?.getContextForBrowserWindow(window as BrowserWindowLike)?.projectPath,
+    getWindowForWebContents: (sender) =>
+      BrowserWindow.fromWebContents(sender as Electron.WebContents) ?? undefined,
+    getProjectPath: (window) =>
+      wm?.getContextForBrowserWindow(window as BrowserWindowLike)?.projectPath,
     openExternal: (url) => shell.openExternal(url),
     fetchWebPreviewMetadata,
-    detectProtocol: (scheme) => detectProtocolImpl({ platform: process.platform, getApplicationInfoForProtocol: (url) => app.getApplicationInfoForProtocol(url) }, scheme),
-    spawnCursor: async (projectPath, path) => spawnCursorImpl({
-      platform: process.platform, projectPath,
-      getApplicationInfoForProtocol: (url) => app.getApplicationInfoForProtocol(url),
-      spawn: (exec, args, timeoutMs) => new Promise((resolve) => {
-        try {
-          const child = spawn(exec, [...args], { shell: false, timeout: timeoutMs, stdio: ['ignore', 'ignore', 'pipe'] });
-          child.stderr?.on('data', () => {});
-          child.once('spawn', () => resolve({ ok: true }));
-          child.once('error', () => resolve({ ok: false, reason: 'spawn-error' }));
-        } catch { resolve({ ok: false, reason: 'spawn-error' }); }
-      }),
-    }, path),
-    recordHandoff: (line) => recordHandoffImpl({ homedir: osHomedir, appendFile: (path, content) => fsPromises.appendFile(path, content, 'utf-8'), mkdir: (path) => fsPromises.mkdir(path, { recursive: true }).then(() => undefined) }, line),
-    openAsset: (projectPath, relPath) => openAssetSafely({ projectPath, platform: process.platform, openPath: (canonical) => shell.openPath(canonical) }, relPath),
-    savePdfAsset: (projectPath, relPath, bytes) => savePdfAssetSafely({ projectPath, platform: process.platform }, relPath, bytes),
+    detectProtocol: (scheme) =>
+      detectProtocolImpl(
+        {
+          platform: process.platform,
+          getApplicationInfoForProtocol: (url) => app.getApplicationInfoForProtocol(url),
+        },
+        scheme,
+      ),
+    spawnCursor: async (projectPath, path) =>
+      spawnCursorImpl(
+        {
+          platform: process.platform,
+          projectPath,
+          getApplicationInfoForProtocol: (url) => app.getApplicationInfoForProtocol(url),
+          spawn: (exec, args, timeoutMs) =>
+            new Promise((resolve) => {
+              try {
+                const child = spawn(exec, [...args], {
+                  shell: false,
+                  timeout: timeoutMs,
+                  stdio: ['ignore', 'ignore', 'pipe'],
+                });
+                child.stderr?.on('data', () => {});
+                child.once('spawn', () => resolve({ ok: true }));
+                child.once('error', () => resolve({ ok: false, reason: 'spawn-error' }));
+              } catch {
+                resolve({ ok: false, reason: 'spawn-error' });
+              }
+            }),
+        },
+        path,
+      ),
+    recordHandoff: (line) =>
+      recordHandoffImpl(
+        {
+          homedir: osHomedir,
+          appendFile: (path, content) => fsPromises.appendFile(path, content, 'utf-8'),
+          mkdir: (path) => fsPromises.mkdir(path, { recursive: true }).then(() => undefined),
+        },
+        line,
+      ),
+    openAsset: (projectPath, relPath) =>
+      openAssetSafely(
+        {
+          projectPath,
+          platform: process.platform,
+          openPath: (canonical) => shell.openPath(canonical),
+        },
+        relPath,
+      ),
+    savePdfAsset: (projectPath, relPath, bytes) =>
+      savePdfAssetSafely({ projectPath, platform: process.platform }, relPath, bytes),
     exportPdf: (sender, suggestedName) => {
       const callerWin = BrowserWindow.fromWebContents(sender as Electron.WebContents);
       if (!callerWin) return Promise.resolve({ ok: false, reason: 'print-failed' } as const);
-      return exportWebContentsToPdf({ showSaveDialog: (options) => dialog.showSaveDialog(callerWin, options), printToPDF: (options) => (sender as Electron.WebContents).printToPDF(options), writeFile: (path, bytes) => fsPromises.writeFile(path, bytes) }, suggestedName);
+      return exportWebContentsToPdf(
+        {
+          showSaveDialog: (options) => dialog.showSaveDialog(callerWin, options),
+          printToPDF: (options) => (sender as Electron.WebContents).printToPDF(options),
+          writeFile: (path, bytes) => fsPromises.writeFile(path, bytes),
+        },
+        suggestedName,
+      );
     },
-    revealAsset: (projectPath, relPath) => revealAssetSafely({ projectPath, platform: process.platform, showItemInFolder: (canonical) => shell.showItemInFolder(canonical) }, relPath),
+    revealAsset: (projectPath, relPath) =>
+      revealAssetSafely(
+        {
+          projectPath,
+          platform: process.platform,
+          showItemInFolder: (canonical) => shell.showItemInFolder(canonical),
+        },
+        relPath,
+      ),
     popAssetMenu: (window, params) =>
       popAssetMenu({ Menu, window: window as Electron.BrowserWindow }, params),
     copyText: (text) => clipboard.writeText(text),
-    showItemInFolder: (projectPath, allowedRoots, path) => showItemInFolderImpl({ projectPath, allowedRoots, platform: process.platform, showItemInFolder: (candidate) => shell.showItemInFolder(candidate) }, path),
+    showItemInFolder: (projectPath, allowedRoots, path) =>
+      showItemInFolderImpl(
+        {
+          projectPath,
+          allowedRoots,
+          platform: process.platform,
+          showItemInFolder: (candidate) => shell.showItemInFolder(candidate),
+        },
+        path,
+      ),
     defaultBugReportZipPath,
     revealExternal: (absPath, callerWindow) =>
       handleRevealExternal(absPath, {

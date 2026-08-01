@@ -79,7 +79,10 @@ export interface AssetRegistrarDeps {
   readonly detectProtocol: (
     scheme: string,
   ) => Promise<RequestChannels['ok:shell:detect-protocol']['result']>;
-  readonly spawnCursor: (projectPath: string | undefined, path: string) => Promise<SpawnCursorResult>;
+  readonly spawnCursor: (
+    projectPath: string | undefined,
+    path: string,
+  ) => Promise<SpawnCursorResult>;
   readonly recordHandoff: (
     line: RequestChannels['ok:shell:record-handoff']['args'][0],
   ) => Promise<void>;
@@ -231,9 +234,11 @@ export function registerAssetIpcHandlers(deps: AssetRegistrarDeps): void {
   });
 
   deps.register('ok:shell:show-item-in-folder', async (event, path) => {
-    const result = deps.showItemInFolder(projectPathForEvent(deps, event), [
-      dirname(deps.defaultBugReportZipPath()),
-    ], path as string);
+    const result = deps.showItemInFolder(
+      projectPathForEvent(deps, event),
+      [dirname(deps.defaultBugReportZipPath())],
+      path as string,
+    );
     if (!result.ok) {
       deps.warn('[main] show-item-in-folder refused', { reason: result.reason });
     }
