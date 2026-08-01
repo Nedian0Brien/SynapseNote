@@ -84,6 +84,11 @@ import {
   type DatabaseContextPackInput,
   type DatabaseContextPackTokenizer,
 } from './database-context-pack.ts';
+import {
+  createDatabaseCatalog,
+  type DatabaseCatalogNotModifiedResult,
+  type DatabaseCatalogResult,
+} from './database-data-plane-catalog.ts';
 import { DatabaseDataPlaneError } from './database-data-plane-errors.ts';
 import {
   authorizeDatabaseFormUpload,
@@ -139,6 +144,13 @@ import type { DatabaseStore } from './database-store.ts';
 import { recordDatabaseContextPackCapture } from './database-telemetry.ts';
 import { isV1Database, v1MigrationRequiredMessage } from './database-v1-compatibility.ts';
 
+export type {
+  DatabaseCatalogEntry,
+  DatabaseCatalogMatchField,
+  DatabaseCatalogNotModifiedResult,
+  DatabaseCatalogResult,
+  DatabaseCatalogSourceCard,
+} from './database-data-plane-catalog.ts';
 export type { DatabaseDataPlaneErrorCode } from './database-data-plane-errors.ts';
 export { DatabaseDataPlaneError } from './database-data-plane-errors.ts';
 export type {
@@ -151,59 +163,6 @@ export type {
   DatabaseMarkdownTableMutationInput,
   DatabaseMarkdownTableMutationRequest,
 } from './database-data-plane-markdown-adapters.ts';
-
-export type DatabaseCatalogMatchField =
-  | 'database_key'
-  | 'database_name'
-  | 'database_alias'
-  | 'purpose'
-  | 'vocabulary'
-  | 'source_key'
-  | 'source_name'
-  | 'record_meaning'
-  | 'relation_key'
-  | 'relation_name'
-  | 'relation_target';
-
-export interface DatabaseCatalogSourceCard {
-  id: string;
-  key: string;
-  name: string;
-  recordMeaning: string;
-  propertyCount: number;
-}
-
-export interface DatabaseCatalogEntry {
-  id: string;
-  key: string;
-  name: string;
-  schemaRevision: string;
-  purpose: string;
-  canonicality: DatabaseDefinition['contract']['canonicality'];
-  vocabulary: readonly string[];
-  freshness: DatabaseDefinition['contract']['freshness'];
-  sensitivity: DatabaseDefinition['contract']['sensitivity'];
-  sources: readonly DatabaseCatalogSourceCard[];
-  viewCount: number;
-  relationCount: number;
-  score: number;
-  matchedBy: readonly DatabaseCatalogMatchField[];
-}
-
-export interface DatabaseCatalogResult {
-  query: string | null;
-  manifestRevision: string;
-  catalogRevision: string;
-  complete: true;
-  candidates: readonly DatabaseCatalogEntry[];
-}
-
-export interface DatabaseCatalogNotModifiedResult {
-  notModified: true;
-  query: string | null;
-  manifestRevision: string;
-  catalogRevision: string;
-}
 
 export interface DatabaseDescribeResult {
   manifestRevision: string;
@@ -505,10 +464,6 @@ export type DatabaseDataPlanePackInput = Omit<
   /** Internal cooperative cancellation seam; never part of the wire schema. */
   throwIfCancelled?: () => void;
 };
-
-function normalized(value: string): string {
-  return value.normalize('NFKC').toLocaleLowerCase().trim();
-}
 
 function cloneDefinition(definition: DatabaseDefinition): DatabaseDefinition {
   return structuredClone(definition);
@@ -937,16 +892,6 @@ const UNRESTRICTED_POLICY_REVISION = `sha256:${createHash('sha256')
   .update('synapsenote:database-query-access:project-owner:v1')
   .digest('hex')}`;
 
-function databaseCatalogRevision(
-  manifestRevision: string,
-  query: string | null,
-  permissionFingerprint: unknown,
-): string {
-  return `sha256:${createHash('sha256')
-    .update(stableJson({ manifestRevision, query, permissionFingerprint }))
-    .digest('hex')}`;
-}
-
 export class DatabaseDataPlane {
   readonly #databaseStore: DatabaseStore;
   readonly #databaseRecordIndex: DatabaseRecordIndex;
@@ -1161,6 +1106,19 @@ export class DatabaseDataPlane {
     return this.#accessPrincipal.getStore() ?? this.#defaultAccessPrincipal;
   }
 
+  #catalogPort() {
+    return {
+      assertReadable: this.#assertReadable.bind(this),
+      snapshot: this.#databaseStore.snapshot.bind(this.#databaseStore),
+      index: {
+        list: this.#databaseRecordIndex.list.bind(this.#databaseRecordIndex),
+        status: this.#databaseRecordIndex.status.bind(this.#databaseRecordIndex),
+      },
+      resolveQueryAccess: this.#resolveQueryAccess,
+      currentAccessPrincipal: this.#currentAccessPrincipal.bind(this),
+    };
+  }
+
   #trustedMutationActor(): DatabaseCommitInput['actor'] {
     const principal = this.#currentAccessPrincipal();
     return principal.kind === 'agent'
@@ -1279,73 +1237,7 @@ export class DatabaseDataPlane {
   }
 
   catalog(query?: string): DatabaseCatalogResult {
-    this.#assertReadable();
-    const snapshot = this.#databaseStore.snapshot();
-    const needle = query === undefined || query.trim() === '' ? null : normalized(query);
-    const permissionReceipts: unknown[] = [];
-    const candidates = snapshot.databases
-      .map((database) => {
-        const visibleSources = database.sources.flatMap((source) => {
-          const access = this.#resolveQueryAccess({
-            action: 'catalog',
-            database: cloneDefinition(database),
-            source: structuredClone(source),
-            query: DatabaseQuerySchema.parse({}),
-            view: null,
-            principal: this.#currentAccessPrincipal(),
-          });
-          permissionReceipts.push({
-            databaseId: database.id,
-            sourceId: source.id,
-            allowed: access.allowed !== false,
-            policyId: access.policyId,
-            policyRevision: access.policyRevision,
-            allowedPropertyIds:
-              access.allowedPropertyIds === null ? null : [...access.allowedPropertyIds].sort(),
-          });
-          if (access.allowed === false) return [];
-          const allowedPropertyIds =
-            access.allowedPropertyIds === null ? null : new Set(access.allowedPropertyIds);
-          return [
-            {
-              ...structuredClone(source),
-              properties:
-                allowedPropertyIds === null
-                  ? structuredClone(source.properties)
-                  : source.properties
-                      .filter((property) => allowedPropertyIds.has(property.id))
-                      .map((property) => structuredClone(property)),
-            },
-          ];
-        });
-        if (visibleSources.length === 0) return null;
-        const visibleSourceIds = new Set(visibleSources.map((source) => source.id));
-        return this.#catalogEntry(
-          {
-            ...cloneDefinition(database),
-            sources: visibleSources,
-            views: database.views
-              .filter((view) => visibleSourceIds.has(view.sourceId))
-              .map((view) => structuredClone(view)),
-          },
-          needle,
-        );
-      })
-      .filter((entry): entry is DatabaseCatalogEntry => entry !== null)
-      .filter((entry) => needle === null || entry.score > 0)
-      .sort(
-        (left, right) =>
-          right.score - left.score ||
-          left.key.localeCompare(right.key) ||
-          left.id.localeCompare(right.id),
-      );
-    return {
-      query: needle,
-      manifestRevision: snapshot.revision,
-      catalogRevision: databaseCatalogRevision(snapshot.revision, needle, permissionReceipts),
-      complete: true,
-      candidates,
-    };
+    return createDatabaseCatalog(this.#catalogPort()).catalog(query);
   }
 
   /**
@@ -1354,40 +1246,7 @@ export class DatabaseDataPlane {
    * a cached record document can never outlive a permission change.
    */
   workspaceSearchRevision(): string {
-    this.#assertReadable();
-    const snapshot = this.#databaseStore.snapshot();
-    const query = DatabaseQuerySchema.parse({});
-    const policies = snapshot.databases.flatMap((database) =>
-      database.sources.map((source) => {
-        const access = this.#resolveQueryAccess({
-          action: 'search',
-          database: cloneDefinition(database),
-          source: structuredClone(source),
-          query: structuredClone(query),
-          view: null,
-          principal: this.#currentAccessPrincipal(),
-        });
-        return {
-          databaseId: database.id,
-          sourceId: source.id,
-          policyId: access.policyId,
-          policyRevision: access.policyRevision,
-          allowedRecordIds:
-            access.allowedRecordIds === null ? null : [...access.allowedRecordIds].sort(),
-          allowedPropertyIds:
-            access.allowedPropertyIds === null ? null : [...access.allowedPropertyIds].sort(),
-        };
-      }),
-    );
-    return `sha256:${createHash('sha256')
-      .update(
-        stableJson({
-          manifestRevision: snapshot.revision,
-          indexRevision: this.#databaseRecordIndex.status().revision,
-          policies,
-        }),
-      )
-      .digest('hex')}`;
+    return createDatabaseCatalog(this.#catalogPort()).workspaceSearchRevision();
   }
 
   /**
@@ -1396,28 +1255,14 @@ export class DatabaseDataPlane {
    * cannot duplicate (or bypass permissions for) database records.
    */
   workspaceSearchRecordPaths(): readonly string[] {
-    const snapshot = this.#databaseStore.snapshot();
-    return snapshot.databases
-      .flatMap((database) =>
-        database.sources.flatMap((source) =>
-          this.#databaseRecordIndex.list(database.id, source.id).map((record) => record.path),
-        ),
-      )
-      .sort();
+    return createDatabaseCatalog(this.#catalogPort()).workspaceSearchRecordPaths();
   }
 
   catalogIfChanged(
     query?: string,
     ifCatalogRevision?: string,
   ): DatabaseCatalogResult | DatabaseCatalogNotModifiedResult {
-    const catalog = this.catalog(query);
-    if (ifCatalogRevision !== catalog.catalogRevision) return catalog;
-    return {
-      notModified: true,
-      query: catalog.query,
-      manifestRevision: catalog.manifestRevision,
-      catalogRevision: catalog.catalogRevision,
-    };
+    return createDatabaseCatalog(this.#catalogPort()).catalogIfChanged(query, ifCatalogRevision);
   }
 
   #describeCanonical(input: {
@@ -4484,65 +4329,6 @@ export class DatabaseDataPlane {
       deniedPropertyIds: source.properties
         .map((property) => property.id)
         .filter((propertyId) => !allowedPropertyIds.has(propertyId)),
-    };
-  }
-
-  #catalogEntry(database: DatabaseDefinition, needle: string | null): DatabaseCatalogEntry {
-    const matched = new Map<DatabaseCatalogMatchField, number>();
-    const match = (field: DatabaseCatalogMatchField, value: string, weight: number): void => {
-      if (needle !== null && normalized(value).includes(needle)) {
-        matched.set(field, Math.max(matched.get(field) ?? 0, weight));
-      }
-    };
-    if (needle !== null) {
-      match('database_key', database.key, normalized(database.key) === needle ? 120 : 100);
-      match('database_name', database.name, normalized(database.name) === needle ? 110 : 90);
-      for (const alias of database.aliases) match('database_alias', alias, 80);
-      match('purpose', database.contract.purpose, 70);
-      for (const word of database.contract.vocabulary) match('vocabulary', word, 75);
-      for (const source of database.sources) {
-        match('source_key', source.key, 70);
-        match('source_name', source.name, 65);
-        match('record_meaning', source.recordMeaning, 60);
-        for (const property of source.properties) {
-          if (property.type !== 'relation') continue;
-          match('relation_key', property.key, 65);
-          match('relation_name', property.name, 60);
-          const target = database.sources.find(
-            (candidate) => candidate.id === property.targetSourceId,
-          );
-          if (target) {
-            match('relation_target', target.key, 55);
-            match('relation_target', target.name, 50);
-          }
-        }
-      }
-    }
-    return {
-      id: database.id,
-      key: database.key,
-      name: database.name,
-      schemaRevision: databaseSchemaRevision(database),
-      purpose: database.contract.purpose,
-      canonicality: database.contract.canonicality,
-      vocabulary: [...database.contract.vocabulary],
-      freshness: structuredClone(database.contract.freshness),
-      sensitivity: database.contract.sensitivity,
-      sources: database.sources.map((source) => ({
-        id: source.id,
-        key: source.key,
-        name: source.name,
-        recordMeaning: source.recordMeaning,
-        propertyCount: source.properties.length,
-      })),
-      viewCount: database.views.length,
-      relationCount: database.sources.reduce(
-        (count, source) =>
-          count + source.properties.filter((property) => property.type === 'relation').length,
-        0,
-      ),
-      score: [...matched.values()].reduce((sum, value) => sum + value, 0),
-      matchedBy: [...matched.keys()],
     };
   }
 
