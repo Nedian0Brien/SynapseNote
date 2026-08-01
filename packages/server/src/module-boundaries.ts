@@ -111,7 +111,7 @@ export const SERVER_MODULE_SIZE_BUDGETS: readonly ServerModuleSizeBudget[] = [
   },
   {
     path: 'database-plan.ts',
-    maxLines: 2_765,
+    maxLines: 2_221,
     owner: 'Owns database plan engine orchestration.',
   },
   {
@@ -338,6 +338,11 @@ export const SERVER_MODULE_SIZE_BUDGETS: readonly ServerModuleSizeBudget[] = [
     path: 'database-plan-normalization-policy.ts',
     maxLines: 729,
     owner: 'Owns database desired-state normalization policy.',
+  },
+  {
+    path: 'database-plan-destruction-verification-policy.ts',
+    maxLines: 654,
+    owner: 'Owns database deletion and verification planning policy.',
   },
   {
     path: 'database-plan-operation-compiler.ts',

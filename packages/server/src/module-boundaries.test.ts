@@ -86,7 +86,7 @@ describe('RFC 0011 server module boundary guard', () => {
     const src = serverSourceRoot(import.meta.filename);
     const leaves = databaseExtractionLeaves(src);
     const budgetedPaths = new Set(SERVER_MODULE_SIZE_BUDGETS.map(({ path }) => path));
-    expect(leaves.length).toBe(46);
+    expect(leaves.length).toBe(47);
     for (const modulePath of leaves) {
       expect(budgetedPaths.has(modulePath), `${modulePath} must have a size budget`).toBe(true);
       const budget = SERVER_MODULE_SIZE_BUDGETS.find((candidate) => candidate.path === modulePath);
@@ -139,6 +139,23 @@ describe('RFC 0011 server module boundary guard', () => {
     expect(contract).not.toMatch(/\bany\b/);
     expect(publicContract).not.toMatch(/DatabaseDataPlaneHandlerArguments/);
     expect(publicContract).not.toMatch(/DatabaseDataPlaneHandlerResult/);
+  });
+
+  test('plan engine delegates destruction and verification policy to its bounded module', () => {
+    const src = serverSourceRoot(import.meta.filename);
+    const facade = readFileSync(resolveServerModule(src, 'database-plan.ts'), 'utf8');
+    const policy = readFileSync(
+      resolveServerModule(src, 'database-plan-destruction-verification-policy.ts'),
+      'utf8',
+    );
+
+    expect(facade).toContain('createDatabaseDeletionDraftPolicy(');
+    expect(facade).toContain('createDatabaseVerificationDraftPolicy(');
+    expect(facade).toContain('compileDatabaseDeletionPlanPolicy(');
+    expect(facade).not.toContain('function deletionDesiredState(');
+    expect(policy).toContain('export function createDatabaseDeletionDraftPolicy');
+    expect(policy).toContain('export function createDatabaseVerificationDraftPolicy');
+    expect(policy).toContain('export function compileDatabaseDeletionPlanPolicy');
   });
 
   test('database facade budgets reject one additional source line', () => {
