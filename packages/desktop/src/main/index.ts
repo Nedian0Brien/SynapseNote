@@ -220,22 +220,12 @@ import { readCanonicalGitHubRemoteUrl } from './git-remote.ts';
 import { formatInstanceAppName, resolveInstanceLabel } from './instance-identity.ts';
 import { deriveInstanceUserDataDir } from './instance-isolation.ts';
 import { registerIntegrationsSettings } from './integrations-settings.ts';
+import { registerBugLocalOpsIpc } from './ipc/bug-local-ops-registrar.ts';
 import {
   handleBugReportCrashAck,
   handleBugReportCreate,
   handleBugReportSend,
 } from './ipc/bug-report.ts';
-import { handleBuildAndOpen, handleDetectClaudeDesktop } from './ipc/install-skill.ts';
-import {
-  createLocalOpState,
-  handleAuthCancel,
-  handleAuthRepos,
-  handleAuthStart,
-  handleAuthStatus,
-  handleCloneCancel,
-  handleCloneStart,
-  type LocalOpDeps,
-} from './ipc/local-op.ts';
 import { registerDesktopIpcRegistrars } from './ipc/registrar-registry.ts';
 import { handleSeedApply, handleSeedListPacks, handleSeedPlan } from './ipc/seed.ts';
 import { handleSharingSetMode, handleSharingStatus } from './ipc/sharing.ts';
@@ -4477,75 +4467,7 @@ function registerIpcHandlers() {
   });
   handle('ok:seed:list-packs', async () => handleSeedListPacks());
 
-  // Chat & Cowork skill install-dialog IPC.
-  // Two channels: (1) detect Claude Desktop's presence, (2) build .skill
-  // locally + invoke OS file association. No network, no GitHub Releases.
-  // See packages/desktop/src/main/ipc/install-skill.ts.
-  handle('ok:skill:detect-claude-desktop', async () => {
-    return handleDetectClaudeDesktop();
-  });
-  handle('ok:skill:build-and-open', async (_event, opts) => {
-    const result = await handleBuildAndOpen({ app, shell, force: opts?.force });
-    if (!result.ok) {
-      logIpcError({
-        event: 'ipc.error',
-        channel: 'ok:skill:build-and-open',
-        reason: result.reason,
-        handler: 'handleBuildAndOpen',
-        cause: result.message !== undefined ? { message: result.message } : undefined,
-      });
-    }
-    return result;
-  });
-
-  // Pre-project local-op flows for the Navigator window. The Navigator has
-  // no backing API server (apiOrigin === ''), so the renderer's HTTP path
-  // to `/api/local-op/auth/login` + `/api/local-op/clone` 404s on the
-  // electron-vite dev server. These IPC handlers spawn the same CLI
-  // subprocess directly from main and stream events back via webContents.
-  // Editor windows continue to use the HTTP path — no regression.
-  const localOpDeps: LocalOpDeps = {
-    resolveCliArgs: resolveLocalOpCliArgs,
-    state: createLocalOpState(),
-  };
-  handle('ok:local-op:auth:start', async (event) => {
-    const result = handleAuthStart(localOpDeps, event.sender);
-    if (!result.ok) {
-      logIpcError({
-        event: 'ipc.error',
-        channel: 'ok:local-op:auth:start',
-        reason: result.error,
-        handler: 'handleAuthStart',
-      });
-    }
-    return result;
-  });
-  handle('ok:local-op:auth:cancel', async (_event, streamId) => {
-    handleAuthCancel(localOpDeps, streamId);
-    return undefined;
-  });
-  handle('ok:local-op:clone:start', async (event, request) => {
-    const result = handleCloneStart(localOpDeps, event.sender, request);
-    if (!result.ok) {
-      logIpcError({
-        event: 'ipc.error',
-        channel: 'ok:local-op:clone:start',
-        reason: result.error,
-        handler: 'handleCloneStart',
-      });
-    }
-    return result;
-  });
-  handle('ok:local-op:clone:cancel', async (_event, streamId) => {
-    handleCloneCancel(localOpDeps, streamId);
-    return undefined;
-  });
-  handle('ok:local-op:auth:status', async (_event, request) => {
-    return handleAuthStatus(localOpDeps, request);
-  });
-  handle('ok:local-op:auth:repos', async (_event, request) => {
-    return handleAuthRepos(localOpDeps, request);
-  });
+  registerBugLocalOpsIpc({ handle, app, shell, resolveCliArgs: resolveLocalOpCliArgs });
 
   registerIntegrationsSettingsIpc();
   registerProjectIntegrationsSettingsIpc();
