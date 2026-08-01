@@ -1,16 +1,25 @@
 import { afterEach, describe, expect, test } from 'bun:test';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   assertModuleSizeBudgets,
+  findFormerServerFacadeImports,
   moduleLineCount,
   resolveServerModule,
   SERVER_MODULE_SIZE_BUDGETS,
   serverSourceRoot,
+  TEMPORARY_FORMER_FACADE_IMPORT_ALLOWLIST,
 } from './module-boundaries.ts';
 
-const SERVER_EXTRACTION_LEAVES = [
+const DATABASE_FACADE_PATHS = [
+  'database-data-plane-api.ts',
+  'database-plan.ts',
+  'database-data-plane.ts',
+] as const;
+
+const DATABASE_EXTRACTION_PATH = /^database-(?:data-plane-api|plan|data-plane)-.+\.ts$/;
+const CONTENT_EXTRACTION_LEAVES = [
   'content-upload-policy.ts',
   'content-upload-service.ts',
   'content-path-safety.ts',
@@ -23,6 +32,17 @@ const SERVER_EXTRACTION_LEAVES = [
   'managed-rename-document-executor.ts',
 ] as const;
 
+function databaseExtractionLeaves(src: string): readonly string[] {
+  return readdirSync(src)
+    .filter(
+      (entry) =>
+        DATABASE_EXTRACTION_PATH.test(entry) &&
+        !entry.endsWith('.test.ts') &&
+        !DATABASE_FACADE_PATHS.includes(entry as (typeof DATABASE_FACADE_PATHS)[number]),
+    )
+    .sort();
+}
+
 describe('RFC 0011 server module boundary guard', () => {
   let fixtureRoot: string | undefined;
 
@@ -34,6 +54,15 @@ describe('RFC 0011 server module boundary guard', () => {
   test('current server boundaries exist and stay within their budgets', () => {
     const src = serverSourceRoot(import.meta.filename);
     assertModuleSizeBudgets(src, SERVER_MODULE_SIZE_BUDGETS);
+  });
+
+  test('database facade budgets equal their current split-line counts', () => {
+    const src = serverSourceRoot(import.meta.filename);
+    for (const path of DATABASE_FACADE_PATHS) {
+      const budget = SERVER_MODULE_SIZE_BUDGETS.find((candidate) => candidate.path === path);
+      if (!budget) throw new Error(`${path} budget must exist`);
+      expect(moduleLineCount(resolveServerModule(src, budget.path))).toBe(budget.maxLines);
+    }
   });
 
   test('api extension budget equals its current split-line count', () => {
@@ -54,12 +83,25 @@ describe('RFC 0011 server module boundary guard', () => {
     expect(moduleLineCount(resolveServerModule(src, budget.path))).toBe(budget.maxLines);
   });
 
-  test('new server leaves are budgeted and do not import the api extension facade', () => {
+  test('every extracted database server leaf has an exact size budget', () => {
+    const src = serverSourceRoot(import.meta.filename);
+    const leaves = databaseExtractionLeaves(src);
+    const budgetedPaths = new Set(SERVER_MODULE_SIZE_BUDGETS.map(({ path }) => path));
+    expect(leaves.length).toBe(44);
+    for (const modulePath of leaves) {
+      expect(budgetedPaths.has(modulePath), `${modulePath} must have a size budget`).toBe(true);
+      const budget = SERVER_MODULE_SIZE_BUDGETS.find((candidate) => candidate.path === modulePath);
+      if (!budget) throw new Error(`${modulePath} budget must exist`);
+      expect(moduleLineCount(resolveServerModule(src, modulePath))).toBe(budget.maxLines);
+    }
+  });
+
+  test('content leaves are budgeted and do not import the api extension facade', () => {
     const src = serverSourceRoot(import.meta.filename);
     const budgetedPaths = new Set(SERVER_MODULE_SIZE_BUDGETS.map(({ path }) => path));
     const apiExtensionImport = /\b(?:from|import)\s*(?:\(\s*)?['"][^'"]*api-extension[^'"]*['"]/;
 
-    for (const modulePath of SERVER_EXTRACTION_LEAVES) {
+    for (const modulePath of CONTENT_EXTRACTION_LEAVES) {
       expect(budgetedPaths.has(modulePath), `${modulePath} must have a size budget`).toBe(true);
       const source = readFileSync(resolveServerModule(src, modulePath), 'utf8');
       expect(source, `${modulePath} must not import api-extension.ts`).not.toMatch(
@@ -68,21 +110,37 @@ describe('RFC 0011 server module boundary guard', () => {
     }
   });
 
-  test('api extension budget rejects one additional source line', () => {
-    fixtureRoot = mkdtempSync(join(tmpdir(), 'synapsenote-server-boundaries-'));
-    const apiBudget = SERVER_MODULE_SIZE_BUDGETS.find(
-      (candidate) => candidate.path === 'api-extension.ts',
+  test('database extraction leaves do not import former facades outside the temporary allowlist', () => {
+    const src = serverSourceRoot(import.meta.filename);
+    const actual = databaseExtractionLeaves(src).flatMap((modulePath) =>
+      findFormerServerFacadeImports(
+        modulePath,
+        readFileSync(resolveServerModule(src, modulePath), 'utf8'),
+      ),
     );
-    if (!apiBudget) throw new Error('api-extension.ts budget must exist');
+    const sortImports = (imports: readonly (typeof actual)[number][]) =>
+      imports.map(({ path, target, kind }) => `${path}:${target}:${kind}`).sort();
+    expect(sortImports(actual)).toEqual(sortImports(TEMPORARY_FORMER_FACADE_IMPORT_ALLOWLIST));
+  });
 
-    const oversizedSource = `${'line\n'.repeat(apiBudget.maxLines)}extra`;
-    writeFileSync(join(fixtureRoot, apiBudget.path), oversizedSource);
+  test('database facade budgets reject one additional source line', () => {
+    fixtureRoot = mkdtempSync(join(tmpdir(), 'synapsenote-server-boundaries-'));
+    const facadeBudgets = SERVER_MODULE_SIZE_BUDGETS.filter(({ path }) =>
+      DATABASE_FACADE_PATHS.includes(path as (typeof DATABASE_FACADE_PATHS)[number]),
+    );
+    expect(facadeBudgets).toHaveLength(DATABASE_FACADE_PATHS.length);
+    for (const budget of facadeBudgets) {
+      const oversizedSource = `${'line\n'.repeat(budget.maxLines)}extra`;
+      writeFileSync(join(fixtureRoot, budget.path), oversizedSource);
+    }
     const root = fixtureRoot;
     if (!root) throw new Error('synthetic fixture root must exist');
 
-    expect(() => assertModuleSizeBudgets(root, [apiBudget])).toThrow(
-      `api-extension.ts exceeds ${apiBudget.maxLines} lines`,
-    );
+    for (const budget of facadeBudgets) {
+      expect(() => assertModuleSizeBudgets(root, [budget])).toThrow(
+        `${budget.path} exceeds ${budget.maxLines} lines`,
+      );
+    }
   });
 
   test('reports a synthetic module that exceeds its line budget', () => {
