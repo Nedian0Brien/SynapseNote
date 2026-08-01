@@ -49,7 +49,6 @@ import {
   detectInstalledEditors,
   EDITOR_TARGETS,
   getOkArtifactPaths,
-  isOwnManagedEntry,
   type McpInstallOptions,
   type ProjectAiIntegrationsResult,
   previewContent,
@@ -68,8 +67,6 @@ import {
   PROTOCOL_VERSION,
   ServerInfoSuccessSchema,
   SPAWN_ERROR_LOG,
-  TERMINAL_CLIS,
-  type TerminalCli,
 } from '@nedian0brien/synapsenote-core';
 import {
   assertGitAvailable,
@@ -115,7 +112,7 @@ import {
   shell,
   utilityProcess,
 } from 'electron';
-import type { ClaudeReadiness, CliReadiness, OkMenuAction } from '../shared/bridge-contract.ts';
+import type { OkMenuAction } from '../shared/bridge-contract.ts';
 import { type EntryPoint, isEntryPoint } from '../shared/entry-point.ts';
 import type {
   EditorActiveTargetSnapshot,
@@ -151,13 +148,7 @@ import {
 } from './bundle-replace-detector.ts';
 import { cascadePosition } from './cascade-position.ts';
 import { checkTargetExists as checkTargetExistsImpl } from './check-target-exists.ts';
-import {
-  cliProbeArgs,
-  resolveClaudeReadiness,
-  resolveCliInstalledMap,
-  resolveCliOnPath,
-  runLoginShellProbe,
-} from './claude-readiness.ts';
+import { runLoginShellProbe } from './claude-readiness.ts';
 import { requestUserConsent, walkExceedsCap } from './consent-dialog.ts';
 import {
   type CrashDetection,
@@ -297,6 +288,7 @@ import {
   setSpellCheckEnabled as setSpellCheckEnabledState,
   type UpdateChannel,
 } from './state-store.ts';
+import { createTerminalCapabilities } from './terminal-capabilities.ts';
 import { type TerminalReaper, wireWindowTerminalReap } from './terminal-lifecycle.ts';
 import { createTerminalManager, type PtyUtilityLike } from './terminal-manager.ts';
 import {
@@ -2894,97 +2886,12 @@ function probeLoginShellOnPath(args?: readonly string[]): Promise<number | null>
   );
 }
 
-/**
- * Whether the project's OWN `synapsenote` `.mcp.json` entry is OK's canonical
- * managed server. The trust gate for the docked-terminal Claude MCP pre-approval
- * (see core `terminal-launch.ts` + cli `isOwnManagedEntry`): a foreign,
- * tampered, or missing same-named entry — the supply-chain risk in a
- * shared/cloned project whose committed `.mcp.json` travels with it — returns
- * false, so the launch stays bare and Claude shows its own "trust this server?"
- * prompt. `classifyExistingMcpEntry` honors its never-throws contract; no bound
- * project, or an editor with no project config path, → false.
- */
-function isProjectClaudeMcpOwn(projectRoot: string | undefined): boolean {
-  if (projectRoot === undefined) return false;
-  const target = EDITOR_TARGETS.claude;
-  const projectPath = target.projectConfigPath?.(projectRoot);
-  if (projectPath === undefined) return false;
-  const classified = classifyExistingMcpEntry(target, projectRoot, undefined, projectPath);
-  return classified.kind === 'present' && isOwnManagedEntry(classified.entry);
-}
-
-/**
- * Resolve docked-terminal Claude Code readiness: probe `claude` on the
- * login-shell PATH, classify the user-global `synapsenote` entry in
- * `~/.claude.json`, and verify the PROJECT's `.mcp.json` `synapsenote` entry
- * is OK's own (gates MCP pre-approval). The real subprocess + config reads are
- * the runtime e2e rung (a built terminal).
- */
-function resolveTerminalClaudeReadiness(projectRoot: string | undefined): Promise<ClaudeReadiness> {
-  return resolveClaudeReadiness({
-    probeClaude: () => probeLoginShellOnPath(),
-    classifyMcpEntry: () =>
-      createMcpWiringCliSurface().classifyExistingMcpEntry('claude', osHomedir()).kind,
-    isProjectMcpPreApprovable: () => isProjectClaudeMcpOwn(projectRoot),
-  });
-}
-
-/**
- * Resolve docked-terminal on-PATH readiness for a non-Claude agent CLI
- * (codex / cursor). `cli` maps to its fixed registry binary
- * (`TERMINAL_CLIS[cli].bin`), so the `command -v` probe is never
- * renderer-controlled. No MCP-wiring concept here — purely on-PATH.
- */
-function resolveTerminalCliOnPath(cli: TerminalCli): Promise<CliReadiness> {
-  return resolveCliOnPath({
-    probe: () => probeLoginShellOnPath(cliProbeArgs(TERMINAL_CLIS[cli].bin)),
-    // Codex-only: report whether OK's `synapsenote` server is already in the
-    // user's codex config, so the launch site adds the `-c` tool-auto-approve
-    // override only when it won't break config load (a `-c` under an undefined
-    // server id makes codex fail to load its config). `classifyExistingMcpEntry`
-    // never throws; `resolveCliOnPath` guards it anyway.
-    ...(cli === 'codex'
-      ? {
-          okServerConfigured: () =>
-            classifyExistingMcpEntry(EDITOR_TARGETS.codex, '', osHomedir()).kind === 'present',
-        }
-      : {}),
-  });
-}
-
-/**
- * Time-to-live for the cached batched CLI installed-map. The New-chat default
- * auto-pick re-queries on each click; installs/uninstalls are rare, so a short
- * TTL spares four login-shell probes per click while staying fresh enough that a
- * just-installed CLI shows up within a minute.
- */
-const CLI_INSTALLED_MAP_TTL_MS = 60_000;
-let cliInstalledMapCache: { at: number; value: Promise<Record<TerminalCli, boolean>> } | null =
-  null;
-
-/**
- * Batched on-PATH readiness for all four CLIs, cached ~60s. Caches the in-flight
- * Promise (not the resolved value) so concurrent New-chat clicks share one probe
- * batch. `resolveCliInstalledMap` never rejects today (each entry degrades to
- * not-installed); the defensive `.catch` below evicts the cache if a future
- * change ever lets one through, so a transient failure becomes an immediate
- * retry rather than a 60s-cached rejection.
- */
-function resolveTerminalCliInstalledMap(): Promise<Record<TerminalCli, boolean>> {
-  const now = Date.now();
-  if (cliInstalledMapCache && now - cliInstalledMapCache.at < CLI_INSTALLED_MAP_TTL_MS) {
-    return cliInstalledMapCache.value;
-  }
-  const value = resolveCliInstalledMap({
-    probe: (cli) => probeLoginShellOnPath(cliProbeArgs(TERMINAL_CLIS[cli].bin)),
-  }).catch((err) => {
-    // Don't let a rejected probe stay cached for the full TTL; the next call retries fresh.
-    cliInstalledMapCache = null;
-    throw err;
-  });
-  cliInstalledMapCache = { at: now, value };
-  return value;
-}
+const terminalCapabilities = createTerminalCapabilities({
+  homeDir: osHomedir,
+  probeLoginShell: probeLoginShellOnPath,
+  classifyClaudeMcp: () =>
+    createMcpWiringCliSurface().classifyExistingMcpEntry('claude', osHomedir()).kind,
+});
 
 /**
  * Window to receive an immediate `ok:mcp-wiring:show` on the File-menu
@@ -3121,8 +3028,8 @@ function registerIpcHandlers() {
     handle,
     terminalManager,
     resolveProjectRoot: resolveTerminalProjectRoot,
-    isProjectClaudeMcpOwn,
-    resolveClaudeReadiness: resolveTerminalClaudeReadiness,
+    isProjectClaudeMcpOwn: terminalCapabilities.isProjectClaudeMcpOwn,
+    resolveClaudeReadiness: terminalCapabilities.resolveClaudeReadiness,
     rewireClaudeMcp: async (event) => {
       if (process.platform !== 'darwin' || !app.isPackaged) return undefined;
       const win = BrowserWindow.fromWebContents(event.sender);
@@ -3141,8 +3048,8 @@ function registerIpcHandlers() {
       }
     },
     getDockVisible: (windowId) => dockVisibleForWindow.get(windowId) ?? false,
-    resolveCliOnPath: resolveTerminalCliOnPath,
-    resolveCliInstalledMap: resolveTerminalCliInstalledMap,
+    resolveCliOnPath: terminalCapabilities.resolveCliOnPath,
+    resolveCliInstalledMap: terminalCapabilities.resolveCliInstalledMap,
   });
 
   handle('ok:dialog:open-folder', async (_event, opts) => {
