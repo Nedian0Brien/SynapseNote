@@ -89,7 +89,8 @@ const OK_AUTO_APPROVE_ALLOW_RULES: readonly string[] = [
  * OK MCP tools kept GATED even when auto-approve is on: `deny` out-ranks `allow`
  * in Claude's precedence (deny then ask then allow), so these keep prompting.
  * The goal is a frictionless read/write loop, never a silent `delete` / `move`
- * (KB-wide blast radius), `share_link` (data exfiltration), or `install` (writes
+ * (KB-wide blast radius), `share_link` (data exfiltration), `data_markdown_table`
+ * (mutates Markdown-table content), or `install` (writes
  * executable skill scripts into the agent's own config dir — a persistence
  * vector, unlike a version-recoverable doc write), `data_commit` (creates
  * canonical database files from an approved plan), or `data_repair` (may
@@ -113,6 +114,7 @@ export const OK_GATED_TOOL_NAMES: readonly string[] = [
   'data_run',
   'data_place_search',
   'data_automation',
+  'data_markdown_table',
 ];
 
 const OK_AUTO_APPROVE_DENY_RULES: readonly string[] = OK_GATED_TOOL_NAMES.map(

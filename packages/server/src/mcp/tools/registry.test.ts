@@ -137,13 +137,13 @@ function captureRegistered(toolProfile: 'full' | 'database-sandbox' = 'full'): s
   return names;
 }
 
-describe('registerAllTools — 31-tool surface', () => {
-  test('registers exactly 31 tools', () => {
+describe('registerAllTools — 32-tool surface', () => {
+  test('registers exactly 32 tools', () => {
     const names = captureRegistered();
-    expect(names.length).toBe(31);
+    expect(names.length).toBe(32);
   });
 
-  test('the 31 expected tool names are all present', () => {
+  test('the 32 expected tool names are all present', () => {
     const names = new Set(captureRegistered());
     for (const expected of EXPECTED_TOOLS) {
       expect(names).toContain(expected);
@@ -222,9 +222,9 @@ const OK_AUTO_APPROVED_TOOLS = [
 
 describe('docked-terminal auto-approve classification', () => {
   test('every registered tool is classified as gated or auto-approved', () => {
-    expect(new Set([...OK_AUTO_APPROVED_TOOLS, ...OK_GATED_TOOL_NAMES])).toEqual(
-      new Set(captureRegistered()),
-    );
+    const classified = new Set([...OK_AUTO_APPROVED_TOOLS, ...OK_GATED_TOOL_NAMES]);
+    const registered = new Set(captureRegistered());
+    expect([...classified].sort()).toEqual([...registered].sort());
   });
 
   test('no tool is both gated and auto-approved', () => {
