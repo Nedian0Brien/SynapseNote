@@ -48,7 +48,6 @@ import {
   isFolderEntry,
 } from '@/components/file-tree-utils';
 import { NewItemDialog } from '@/components/NewItemDialog';
-import type { ResolvedNavigationTarget } from '@/components/navigation-targets';
 import {
   coerceTrashFailureReason,
   type TrashFailedTarget,
@@ -65,15 +64,7 @@ import { assetTabId, docTabId, folderTabId, remapPathForFolderRenames } from '@/
 import { useConflicts } from '@/hooks/use-conflicts';
 import { useConfigContext } from '@/lib/config-provider';
 import { emitDocumentsChanged } from '@/lib/documents-events';
-import {
-  subscribeToFileTreeMenuActionDelete,
-  subscribeToFileTreeMenuActionDuplicate,
-  subscribeToFileTreeMenuActionRename,
-} from '@/lib/file-tree-menu-action-events';
-import {
-  type PageHeaderRenameResult,
-  subscribeToPageHeaderRename,
-} from '@/lib/page-header-rename-events';
+import type { PageHeaderRenameResult } from '@/lib/page-header-rename-events';
 import { parseServerResponse, parseSuccessOrWarn } from '@/lib/parse-server-response';
 import { cn } from '@/lib/utils';
 import { applyRenamedDocuments as reconcileRenamedDocuments } from './file-tree/apply-renamed-documents';
@@ -92,6 +83,7 @@ import {
 } from './file-tree/FileTreePresentation';
 import { FileTreeViewport } from './file-tree/FileTreeViewport';
 import type { FileTreeProps } from './file-tree/file-tree-types';
+import { useFileTreeCommandSubscriptions } from './file-tree/useFileTreeCommandSubscriptions';
 import { useFileTreeConnectivity } from './file-tree/useFileTreeConnectivity';
 import { useFileTreeCreation } from './file-tree/useFileTreeCreation';
 import { useFileTreeDragAndDrop } from './file-tree/useFileTreeDragAndDrop';
@@ -1145,167 +1137,13 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
       },
     });
 
-  // Hold a ref to handleDeleteTargets so the menu-action subscription
-  // effect below can keep its closure off the latest function identity
-  // without forcing the effect to re-bind on every render. Declared after
-  // the function declaration to keep React Compiler's
-  // `PruneHoistedContexts` pass from tripping on the forward-reference
-  // pattern the earlier startCreating refs benefit from (those functions
-  // are declared above their refs).
-  const handleDeleteTargetsRef = useRef(handleDeleteTargets);
-  useEffect(() => {
-    handleDeleteTargetsRef.current = handleDeleteTargets;
+  useFileTreeCommandSubscriptions({
+    model,
+    documentsRef,
+    onDeleteTargets: handleDeleteTargets,
+    duplicateTargetRef: handleDuplicateTargetRef,
+    renameRef: handleRenameRef,
   });
-
-  // Subscribe to the macOS File menu's `move-to-trash` request bus. The
-  // FileSidebar menu-action handler emits when the user picks File → Move
-  // to Trash; we convert the navigation-target snapshot to the same
-  // `FileTreeTarget` shape the row context menu produces and route through
-  // the existing 2-step Trash spine. One subscription owns the
-  // surface so a hot-reload / remount tears down cleanly.
-  //
-  // docExt is looked up from `documentsRef` (the in-memory document list)
-  // at fire-time so document trash flow + downstream rename hints render the
-  // real `.md` / `.mdx` rather than guessing. Assets remain first-class
-  // `kind: 'asset'` targets and share the same delete spine.
-  useEffect(() => {
-    return subscribeToFileTreeMenuActionDelete((target) => {
-      if (target.kind === 'doc' || target.kind === 'folder-index') {
-        const docName = target.docName;
-        const docEntry = documentsRef.current.find(
-          (entry): entry is DocumentEntry => isDocumentEntry(entry) && entry.docName === docName,
-        );
-        void handleDeleteTargetsRef.current([
-          {
-            kind: 'file',
-            path: docName,
-            name: docName.split('/').pop() ?? docName,
-            docExt: docEntry?.docExt,
-          },
-        ]);
-        return;
-      }
-      if (target.kind === 'folder') {
-        void handleDeleteTargetsRef.current([
-          {
-            kind: 'folder',
-            path: target.folderPath,
-            name: target.folderPath.split('/').pop() ?? target.folderPath,
-          },
-        ]);
-        return;
-      }
-      if (target.kind === 'asset') {
-        void handleDeleteTargetsRef.current([
-          {
-            kind: 'asset',
-            path: target.assetPath,
-            name: target.assetPath.split('/').pop() ?? target.assetPath,
-          },
-        ]);
-        return;
-      }
-      // missing — File menu's Move to Trash is disabled for this scope
-      // upstream; the emit shouldn't fire. Logging the event so a future
-      // drift between the menu-enable gate and the emitter is caught.
-      console.warn(
-        JSON.stringify({
-          event: 'file-tree-menu-action-delete-unsupported-kind',
-          kind: target.kind,
-        }),
-      );
-    });
-  }, []);
-
-  // macOS File menu's `duplicate` item bridges to the same HTTP duplicate
-  // spine the row context menu uses. Path resolution mirrors Rename/Delete:
-  // doc + folder-index duplicate the file, folder duplicates the folder, and
-  // asset + missing are guarded upstream by menu enablement.
-  useEffect(() => {
-    return subscribeToFileTreeMenuActionDuplicate((target: ResolvedNavigationTarget) => {
-      if (target.kind === 'doc' || target.kind === 'folder-index') {
-        const docName = target.docName;
-        const docEntry = documentsRef.current.find(
-          (entry): entry is DocumentEntry => isDocumentEntry(entry) && entry.docName === docName,
-        );
-        void handleDuplicateTargetRef.current({
-          kind: 'file',
-          path: docName,
-          name: docName.split('/').pop() ?? docName,
-          docExt: docEntry?.docExt,
-        });
-        return;
-      }
-      if (target.kind === 'folder') {
-        void handleDuplicateTargetRef.current({
-          kind: 'folder',
-          path: target.folderPath,
-          name: target.folderPath.split('/').pop() ?? target.folderPath,
-        });
-        return;
-      }
-      console.warn(
-        JSON.stringify({
-          event: 'file-tree-menu-action-duplicate-unsupported-kind',
-          kind: target.kind,
-        }),
-      );
-    });
-  }, []);
-
-  // macOS File menu's `rename` item bridges to Pierre's inline-rename via
-  // the model API. Path resolution per kind: doc + folder-index use
-  // `docNameToTreePath(docName, docExt)` (extension lookup from documentsRef
-  // mirrors the delete subscriber); folder uses folderPath directly.
-  // asset uses the raw asset path; missing falls through to a structured
-  // warn because the menu enable gate disables rename for that scope.
-  useEffect(() => {
-    return subscribeToFileTreeMenuActionRename((target) => {
-      if (target.kind === 'doc' || target.kind === 'folder-index') {
-        const docName = target.docName;
-        const docEntry = documentsRef.current.find(
-          (entry): entry is DocumentEntry => isDocumentEntry(entry) && entry.docName === docName,
-        );
-        const treePath = docNameToTreePath(docName, docEntry?.docExt);
-        model.startRenaming(treePath);
-        return;
-      }
-      if (target.kind === 'folder') {
-        model.startRenaming(target.folderPath);
-        return;
-      }
-      if (target.kind === 'asset') {
-        model.startRenaming(target.assetPath);
-        return;
-      }
-      console.warn(
-        JSON.stringify({
-          event: 'file-tree-menu-action-rename-unsupported-kind',
-          kind: target.kind,
-        }),
-      );
-    });
-  }, [model]);
-
-  // The page header edits the extensionless basename in place, but FileTree
-  // owns the managed rename transaction and all post-rename reconciliation.
-  // Bridge the request here and preserve the document's current extension and
-  // parent directory when constructing Pierre's raw rename event.
-  useEffect(() => {
-    return subscribeToPageHeaderRename(async ({ docName, docExt, nextTitle }) => {
-      const sourcePath = docNameToTreePath(docName, docExt);
-      const lastSlash = sourcePath.lastIndexOf('/');
-      const parent = lastSlash < 0 ? '' : sourcePath.slice(0, lastSlash + 1);
-      const extension = getFileExtension(sourcePath) || docExt;
-      const destinationPath = `${parent}${nextTitle}${extension}`;
-      const outcome = await handleRenameRef.current({
-        sourcePath,
-        destinationPath,
-        isFolder: false,
-      });
-      return outcome;
-    });
-  }, []);
 
   const {
     cancelCurrentHoverPrewarm,
