@@ -23,5 +23,8 @@ describe('database lifecycle performance benchmark', () => {
     }
     expect(result.peakRssBytes <= result.memoryBudgetBytes).toBe(true);
     expect(result.passed).toBe(metrics.every((measured) => measured.passed));
-  }, 60_000);
+    // The seven five-sample product paths take ~23s alone. This test runs in the
+    // database category alongside Turbo's four package workers, so match the
+    // server harness's contention-safe ceiling instead of overriding it at 60s.
+  }, 120_000);
 });
