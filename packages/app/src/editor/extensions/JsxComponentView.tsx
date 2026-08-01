@@ -36,8 +36,6 @@
 
 import { Trans, useLingui } from '@lingui/react/macro';
 import {
-  incrementJsxAutoConvertFailed,
-  incrementJsxAutoConvertSucceeded,
   incrementJsxKeyboardDeleteFailed,
   incrementJsxMoveFailed,
   incrementJsxPopoverCloseRestoreFailed,
@@ -53,10 +51,6 @@ import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 import { Button } from '@/components/ui/button';
-import {
-  createDatabaseInteractionId,
-  recordDatabaseInteractionTrace,
-} from '@/lib/database-interaction-trace';
 import { hashFromDocName } from '@/lib/doc-hash';
 import {
   Popover,
@@ -71,8 +65,6 @@ import { JsxComponentHostProvider } from '../components/jsx-host-context.tsx';
 import { PropPanel } from '../components/PropPanel.tsx';
 import { getEditorDocName } from '../extensions/doc-context.ts';
 import { normalizeDocRelativeMediaRenderProps } from '../extensions/media-render-props.ts';
-import { getWrapperBridgeId } from '../extensions/selection-state-plugin.ts';
-import { useBlockSelection } from '../hooks/use-block-selection.ts';
 import { markUserTyping } from '../observers.ts';
 import { getDescriptor } from '../registry/index.ts';
 import {
@@ -87,18 +79,17 @@ import {
 import { ALIGNABLE_DESCRIPTOR_NAMES } from '../utils/alignable-descriptors.ts';
 import { formatContainerAriaLabel } from '../utils/editor-strings.ts';
 import { reconstructSource } from '../utils/reconstruct-source.ts';
-import { autonomousFragmentEditAllowed } from './autonomous-fragment-edit.ts';
 import {
   deriveJsxAttributePolicy,
   updateElementJsxProps,
 } from './jsx-component-view/jsx-component-view-attribute-policy.ts';
-import { deriveJsxConversionPolicy } from './jsx-component-view/jsx-component-view-conversion-policy.ts';
 import {
   extractPrimitiveProps,
   getElementJsxAttrs,
   isJsxInteractiveTarget,
   stableHash,
 } from './jsx-component-view/jsx-component-view-utils.ts';
+import { useJsxComponentViewLifecycle } from './jsx-component-view/use-jsx-component-view-lifecycle.ts';
 
 // Compatibility exports keep existing extension tests and downstream local
 // integrations stable while the NodeView implementation uses the narrower
@@ -193,124 +184,26 @@ function ComponentErrorBoundary(props: ComponentErrorBoundaryProps) {
 
 // ── Main NodeView ───────────────────────────────────────────────────────
 
-/**
- * How many times the auto-convert effect retries its `replaceWith` dispatch
- * before falling through to the stuck-state UX. Observed failure shapes are
- * all transient position races (remote peer edit shifts the target range,
- * Observer B re-parse lands mid-flight), so three attempts over ~350ms is
- * long enough to clear every realistic contention window without keeping
- * the user on a dead placeholder if something deeper is wrong.
- */
-const MAX_AUTO_CONVERT_RETRIES = 3;
-
 export function JsxComponentView({ node, editor, extension, getPos, selected }: NodeViewProps) {
   const { t } = useLingui();
   const descriptor = getDescriptor(node.attrs.componentName as string);
-  const [renderError, setRenderError] = useState<Error | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const wasSelected = useRef(false);
-  const nodeViewInteractionId = useRef(createDatabaseInteractionId());
-  const nodeViewComponent = useRef(String(node.attrs.componentName ?? 'unknown'));
-
-  useEffect(() => {
-    const interactionId = nodeViewInteractionId.current;
-    const component = nodeViewComponent.current;
-    recordDatabaseInteractionTrace(interactionId, 'node_view_mounted', { component });
-    return () => {
-      recordDatabaseInteractionTrace(interactionId, 'node_view_unmounted', { component });
-    };
-  }, []);
-
-  const pos = typeof getPos === 'function' ? getPos() : undefined;
-
-  let isChildOfComponent = false;
-  let siblingIndex = 0;
-  let siblingCount = 1;
-  try {
-    if (pos !== undefined) {
-      const $pos = editor.state.doc.resolve(pos);
-      if ($pos.depth > 0 && $pos.parent.type.name === 'jsxComponent') {
-        isChildOfComponent = true;
-        siblingIndex = $pos.index($pos.depth);
-        siblingCount = $pos.parent.childCount;
-      }
-    }
-  } catch (err) {
-    // PM `doc.resolve(pos)` throws RangeError when the position is outside
-    // the current doc — happens during teardown (getPos() returns a stale
-    // position after the node was detached) and during the recycle race
-    // where the ProseMirror view rebuilds mid-render. Both are expected;
-    // re-throwing would blow up the ErrorBoundary and mask real bugs.
-    // Anything other than RangeError is unexpected — surface it.
-    if (!(err instanceof RangeError)) throw err;
-  }
-  const canMoveUp = isChildOfComponent && siblingIndex > 0;
-  const canMoveDown = isChildOfComponent && siblingIndex < siblingCount - 1;
-
-  // Selection layer (Precedent #31): read canonical block-selection state
-  // from SelectionStatePlugin and derive this wrapper's role.
-  //
-  //  - isRangeEncompassed:  TextSelection / AllSelection fully covers this
-  //                         wrapper. Paints the soft `--selection-soft` halo.
-  //  - isInnermostSelected: THIS wrapper has NodeSelection on it — the halo
-  //                         gate. Routed through TipTap's `selected` NodeView
-  //                         prop (NOT a direct `editor.state.selection` read)
-  //                         because `useBlockSelection` is identity-preserving;
-  //                         a direct read would not trigger a re-render on the
-  //                         TextSelection-inside → NodeSelection-on transition
-  //                         that the popover-close restore performs inside
-  //                         `requestAnimationFrame`. `selected` flips true for
-  //                         both NodeSelection-on and range-encompass-of this
-  //                         wrapper; subtracting `isRangeEncompassed` narrows
-  //                         it to NodeSelection-on.
-  //  - isInnermostInChain:  THIS wrapper is the leaf of the ancestor chain.
-  //                         Selection-type-agnostic — fires for both
-  //                         NodeSelection-on AND TextSelection-inside this
-  //                         wrapper. Used as the non-leaf guard for
-  //                         `hasChildSelected` so that under TextSelection-
-  //                         inside (where `isInnermostSelected` is false on
-  //                         the chain leaf) the leaf does not falsely tag
-  //                         itself as its own ancestor.
-  //  - hasChildSelected:    THIS wrapper is a non-leaf ancestor of the
-  //                         current selection. Gets `data-has-child-selected`
-  //                         so the CSS layer can hide its own halo in favor
-  //                         of the innermost (Gutenberg-style innermost-wins,
-  //                         store-driven rather than `:has()`-based —
-  //                         Precedent #34).
-  //  - selectionOrigin:     How the user arrived at this selection
-  //                         ('keyboard' | 'pointer' | 'programmatic').
-  //                         Plumbed-through for future keyboard-only focus-
-  //                         ring differentiation; no v1 visual treatment.
-  //  - isDragging:          An HTML5 drag is active; suppress the halo.
-  //
-  // Plugin may not be registered during intermediate build states —
-  // `useBlockSelection` then returns EMPTY (all flags off).
-  const blockSelection = useBlockSelection(editor);
-  const wrapperBridgeId = typeof pos === 'number' ? getWrapperBridgeId(editor.state, pos) : null;
-  const isRangeEncompassed =
-    wrapperBridgeId !== null &&
-    (blockSelection?.rangeEncompassedBlockIds.has(wrapperBridgeId) ?? false);
-  const chainLeafBridgeId = blockSelection?.ancestorChain.at(-1)?.bridgeId ?? null;
-  const isInnermostInChain = wrapperBridgeId !== null && chainLeafBridgeId === wrapperBridgeId;
-  // `selected && !isRangeEncompassed` alone is not enough: TipTap's
-  // `selectNode()` fires whenever `from <= pos && to >= pos + nodeSize`,
-  // which is true for ANY wrapper whose range is fully covered by the
-  // selection — including an inner wrapper nested inside an outer that
-  // is NodeSelected (the outer's NodeSelection range fully encloses the
-  // inner). Without the chain-leaf guard, both wrappers paint a halo.
-  // `isInnermostInChain` resolves the chain leaf (the actual NodeSelection
-  // target) from the selection-state plugin's ancestor walk, which only
-  // collects wrappers reached by `$from.node(depth)` outward plus the
-  // NodeSelection's own `selection.node` — never inner descendants of the
-  // selected node.
-  const isInnermostSelected = selected && !isRangeEncompassed && isInnermostInChain;
-  const hasChildSelected =
-    wrapperBridgeId !== null &&
-    !isInnermostInChain &&
-    (blockSelection?.ancestorChain.some((entry) => entry.bridgeId === wrapperBridgeId) ?? false);
-  const selectionOrigin =
-    isInnermostSelected && blockSelection ? blockSelection.selectionOrigin : undefined;
-  const isDraggingSelf = isInnermostSelected && (blockSelection?.isDragging ?? false);
+  const lifecycle = useJsxComponentViewLifecycle({ descriptor, editor, getPos, node, selected });
+  const {
+    canMoveDown,
+    canMoveUp,
+    hasChildSelected,
+    isChildOfComponent,
+    isDraggingSelf,
+    isInnermostSelected,
+    isRangeEncompassed,
+    needsConversion,
+    pos,
+    selectionOrigin,
+    setRenderError,
+    stuck,
+  } = lifecycle;
 
   const hasEditableProps = descriptor.props.some(
     (p) => !('hidden' in p && p.hidden) && p.type !== 'reactnode',
@@ -431,130 +324,6 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
     const p = typeof getPos === 'function' ? (getPos() ?? 0) : 0;
     return p + 1 + node.content.size;
   };
-
-  // ── Auto-convert to rawMdxFallback for wildcard + render errors ────────
-  // Fires once after the dispatch actually lands. The rawMdxFallback CM
-  // handles source editing + re-parse on commit.
-  //
-  // `convertedRef` is flipped INSIDE the rAF callback (after the successful
-  // dispatch), not before scheduling it. Under React 19 StrictMode, every
-  // effect runs → cleanup → remounts-and-reruns. If the ref were flipped
-  // pre-dispatch, the StrictMode cleanup `cancelAnimationFrame` would cancel
-  // the only dispatch attempt and the remount's effect would early-return
-  // (convertedRef already true → skip) — leaving the user stuck on the
-  // "opening source editor..." placeholder forever. Flipping the ref
-  // post-dispatch means the first rAF that actually lands wins; cancelled
-  // rAFs don't count toward "already converted."
-  //
-  // The `cancelled` closure flag makes this re-entry-safe: if a fast
-  // re-render triggers the effect twice before the first rAF fires, only
-  // the first dispatch succeeds; the second sees `cancelled === true` from
-  // its own cleanup and skips. Local to the effect invocation, so a
-  // cancelled first run doesn't block a subsequent run's dispatch.
-  //
-  // Bounded retry: on dispatch failure (position went stale under a remote
-  // peer edit, Observer B re-parse, etc.) we schedule up to MAX_AUTO_CONVERT_RETRIES
-  // backoff attempts before giving up. Without a retry schedule, nothing
-  // guarantees a subsequent re-render fires — a quiescent doc with a latent
-  // failing condition would leave the user on the non-editable placeholder
-  // forever (no retry signal, no React re-render trigger). After retries
-  // exhaust, the placeholder swaps to a stuck-state UX with Delete + Copy
-  // source affordances so the user can recover without blaming the editor.
-  const conversionPolicy = deriveJsxConversionPolicy({
-    componentName: String(node.attrs.componentName ?? ''),
-    descriptorDisplayName: descriptor.displayName,
-    descriptorName: descriptor.name,
-    renderError,
-  });
-  const { needsConversion, reason: conversionReason, telemetryComponent } = conversionPolicy;
-  const convertedRef = useRef(false);
-  const retryCountRef = useRef(0);
-  const [stuck, setStuck] = useState(false);
-  useEffect(() => {
-    if (!needsConversion || convertedRef.current || stuck) return;
-
-    const p = typeof getPos === 'function' ? getPos() : undefined;
-    if (typeof p !== 'number') return;
-
-    const source = reconstructSource(node);
-    if (conversionReason === null) return;
-
-    const fallbackNode = node.type.schema.nodes.rawMdxFallback.create(
-      { reason: conversionReason },
-      node.type.schema.text(source),
-    );
-
-    let cancelled = false;
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-
-    const dispatchOnce = () => {
-      if (cancelled) return;
-      // In source mode this WYSIWYG editor is hidden; an autonomous structural
-      // replace here races Observer B's per-keystroke re-derive and doubles the
-      // span. Skip WITHOUT flipping convertedRef or scheduling a retry.
-      // Re-conversion after a flip back to WYSIWYG rides on the next NodeView
-      // re-render (typically Observer B's re-derive of the span or any
-      // transaction touching it) — the mode flip itself does not remount the
-      // hidden editor or re-run this effect, so a fully quiescent doc can sit
-      // on the placeholder until the next transaction. Accepted trade-off:
-      // the placeholder is inert and any edit re-triggers conversion, while
-      // dispatching from the hidden editor corrupts the authoritative bytes.
-      if (!autonomousFragmentEditAllowed(editor)) return;
-      try {
-        editor.view.dispatch(editor.state.tr.replaceWith(p, p + node.nodeSize, fallbackNode));
-        convertedRef.current = true;
-        incrementJsxAutoConvertSucceeded(telemetryComponent);
-      } catch (err) {
-        // Position may have changed if other transactions fired.
-        // Log as a structured event so recurring failures are visible in
-        // telemetry — a swallowed exception here would otherwise leave the
-        // user on the "opening source editor..." placeholder with no signal.
-        console.warn(
-          JSON.stringify({
-            event: 'jsx-component-auto-convert-failed',
-            // Low-cardinality label for aggregation — always registered
-            // descriptor name or literal 'wildcard'. Raw user text goes in
-            // rawComponentName (see also ComponentErrorBoundary). Capped at
-            // 200 chars to match the slicing pattern used elsewhere for
-            // user-authored names in log payloads.
-            component: telemetryComponent,
-            rawComponentName: String(node.attrs.componentName ?? '').slice(0, 200),
-            reason: err instanceof Error ? err.message.slice(0, 500) : String(err).slice(0, 500),
-            retry: retryCountRef.current,
-          }),
-        );
-        incrementJsxAutoConvertFailed(telemetryComponent);
-
-        retryCountRef.current += 1;
-        if (retryCountRef.current < MAX_AUTO_CONVERT_RETRIES) {
-          // Exponential-ish backoff: 50ms, 150ms, 350ms. Short enough to
-          // feel instant in the typical case where a concurrent tx cleared
-          // on the next tick; long enough to not hammer the event loop.
-          const delay = 50 * (2 ** retryCountRef.current - 1);
-          timeoutId = setTimeout(() => {
-            if (cancelled) return;
-            dispatchOnce();
-          }, delay);
-        } else {
-          // Retries exhausted — surface the stuck-state UX so the user
-          // can Delete / Copy source instead of sitting on a dead placeholder.
-          if (!cancelled) setStuck(true);
-        }
-      }
-    };
-
-    // Defer to next frame to avoid dispatching during render. Tracked +
-    // cancelled on cleanup so an unmount between schedule and fire (e.g.,
-    // parent tree replaced by a remote peer edit, or StrictMode's
-    // intentional unmount-remount) does not dispatch against a stale view.
-    const frameId = requestAnimationFrame(dispatchOnce);
-
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(frameId);
-      if (timeoutId !== undefined) clearTimeout(timeoutId);
-    };
-  }, [needsConversion, node, editor, getPos, stuck, conversionReason, telemetryComponent]);
 
   // Stuck-state UX: retries exhausted. The user sees a durable placeholder
   // with "Delete" and "Copy source" affordances so they can recover without
