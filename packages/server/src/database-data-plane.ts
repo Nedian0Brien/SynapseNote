@@ -67,6 +67,7 @@ import {
   type DatabaseContextPackInput,
   type DatabaseContextPackTokenizer,
 } from './database-context-pack.ts';
+import { createDatabaseButtonCoordinator } from './database-data-plane-buttons.ts';
 import {
   createDatabaseCatalog,
   type DatabaseCatalogNotModifiedResult,
@@ -1065,6 +1066,23 @@ export class DatabaseDataPlane {
     };
   }
 
+  #buttonPort() {
+    return {
+      assertReadable: this.#assertReadable.bind(this),
+      assertMutationAllowed: this.#assertMutationAllowed.bind(this),
+      authorizeOperation: this.authorizeOperation.bind(this),
+      planner: this.#databaseButtonPlanner,
+      plans: this.#buttonPlans,
+      invocationByPlanId: this.#buttonInvocationByPlanId,
+      executor: () => this.#databaseButtonExecutor,
+      setExecutor: (executor: DatabaseButtonExecutor) => {
+        this.#databaseButtonExecutor = executor;
+      },
+      bindMutationActorToAccessPrincipal: this.#bindMutationActorToAccessPrincipal,
+      trustedMutationActor: this.#trustedMutationActor.bind(this),
+    };
+  }
+
   #trustedMutationActor(): DatabaseCommitInput['actor'] {
     const principal = this.#currentAccessPrincipal();
     return principal.kind === 'agent'
@@ -1905,78 +1923,21 @@ export class DatabaseDataPlane {
     return authorizeDatabaseFormUpload(this.#formPolicyPort(), input);
   }
   createButtonPlan(input: DatabaseButtonPlanInput): DatabaseButtonPlan {
-    this.#assertReadable();
-    if (!this.#databaseButtonPlanner) {
-      throw new DatabaseDataPlaneError(
-        'permission_denied',
-        'Database Button planning is not configured for this server',
-      );
-    }
-    const plan = this.#databaseButtonPlanner.createPlan(input);
-    this.#buttonPlans.set(plan.id, structuredClone(plan));
-    if (plan.internalPlan) {
-      this.#buttonInvocationByPlanId.set(plan.internalPlan.id, {
-        databaseId: plan.databaseId,
-        sourceId: plan.sourceId,
-        recordId: plan.recordId,
-        propertyId: plan.propertyId,
-        buttonId: plan.buttonId,
-      });
-    }
-    return plan;
+    return createDatabaseButtonCoordinator(this.#buttonPort()).createButtonPlan(input);
   }
 
   configureButtonExecutor(executor: DatabaseButtonExecutor): void {
-    this.#databaseButtonExecutor = executor;
+    createDatabaseButtonCoordinator(this.#buttonPort()).configureButtonExecutor(executor);
   }
 
   async executeButton(
     input: DatabaseButtonExecutionInput,
   ): Promise<{ run: DatabaseButtonRun; undoToken: string | null }> {
-    this.#assertMutationAllowed();
-    if (!this.#databaseButtonExecutor) {
-      throw new DatabaseDataPlaneError(
-        'permission_denied',
-        'Database Button execution is unavailable on this server',
-      );
-    }
-    const plan = this.#buttonPlans.get(input.buttonPlanId);
-    if (!plan) {
-      throw new DatabaseDataPlaneError(
-        'button_plan_expired',
-        'Database Button plan expired; create and review a fresh plan',
-        { buttonPlanId: input.buttonPlanId },
-      );
-    }
-    this.authorizeOperation({
-      action: 'run_automation',
-      databaseId: plan.databaseId,
-      sourceId: plan.sourceId,
-      ...(plan.recordId ? { recordIds: [plan.recordId] } : {}),
-      ...(plan.propertyId ? { propertyIds: [plan.propertyId] } : {}),
-    });
-    if (plan.externalSteps.length > 0) {
-      this.authorizeOperation({
-        action: 'external_egress',
-        databaseId: plan.databaseId,
-        sourceId: plan.sourceId,
-      });
-    }
-    const result = await this.#databaseButtonExecutor.execute(
-      plan,
-      this.#bindMutationActorToAccessPrincipal
-        ? { ...input, actor: this.#trustedMutationActor() }
-        : input,
-    );
-    if (result.run.state === 'succeeded' || result.run.state === 'failed') {
-      this.#buttonPlans.delete(input.buttonPlanId);
-    }
-    return result;
+    return createDatabaseButtonCoordinator(this.#buttonPort()).executeButton(input);
   }
 
   async listButtonRuns(limit = 100): Promise<DatabaseButtonRun[]> {
-    this.authorizeOperation({ action: 'read_audit' });
-    return this.#databaseButtonExecutor?.list(limit) ?? [];
+    return createDatabaseButtonCoordinator(this.#buttonPort()).listButtonRuns(limit);
   }
 
   configureCommitEngine(engine: DatabaseCommitEngine): void {
