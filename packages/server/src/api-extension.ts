@@ -120,7 +120,6 @@ import {
   MetricsParseHealthSuccessSchema,
   MetricsReconciliationSuccessSchema,
   normalizeAttachmentFolderPath,
-  OK_DIR,
   OrphansSuccessSchema,
   PageHeadingsSuccessSchema,
   PagesSuccessSchema,
@@ -435,7 +434,22 @@ import { isConfigDoc, isSystemDoc } from './cc1-broadcast.ts';
 import { withHiddenWindowsConsole } from './child-process-windows-hide.ts';
 import type { ResolveStrategy } from './conflict-storage.ts';
 import type { ContentFilter } from './content-filter.ts';
+import {
+  type ContentEntryKind,
+  isReservedProjectStatePath,
+  isValidRelativeContentPath,
+  probeAndRegisterSourceFileExtension,
+  resolveContentEntryPath,
+} from './content-path-policy.ts';
 import { assertNoSymlinkEscape, SymlinkEscapeError } from './content-path-safety.ts';
+import {
+  isCaseOnlySelfCollision,
+  renamePathOnDisk,
+  renameTrackedPathInGit,
+  stringsDifferOnlyByCase,
+  toGitRelativePath,
+  writeFileIfContentDiffers,
+} from './content-rename-filesystem.ts';
 import { resolveUploadDestDir } from './content-upload-policy.ts';
 import {
   chooseUploadFilename,
@@ -478,7 +492,6 @@ import {
   normalizeFsPath,
   tracedCpSync,
   tracedMkdirSync,
-  tracedRenameSync,
   tracedRmdirSync,
   tracedRmSync,
   tracedUnlinkSync,
@@ -520,6 +533,7 @@ import {
   managedArtifactAbsPath,
   managedArtifactTimelinePaths,
 } from './managed-artifact-persistence.ts';
+import { createManagedRenameCoordinator } from './managed-rename-coordinator.ts';
 import {
   createManagedRenameRecoveryJournal,
   type ManagedRenameSnapshot,
@@ -904,8 +918,6 @@ interface InflightShowAllWalk {
   waiters: number;
 }
 
-type ContentEntryKind = 'file' | 'folder';
-
 interface RenamedDocMapping {
   fromDocName: string;
   toDocName: string;
@@ -924,29 +936,6 @@ interface ManagedRenameRewriteSummary {
 interface ManagedRenameRewrittenDoc {
   docName: string;
   rewrites: number;
-}
-
-function isValidRelativeContentPath(path: string): boolean {
-  if (!path || path.startsWith('/') || path.includes('\\') || path.includes('\x00')) {
-    return false;
-  }
-
-  return path.split('/').every((segment) => segment && segment !== '.' && segment !== '..');
-}
-
-/**
- * True when any `/`-separated segment of `path` is `.ok` or `.git`, at any
- * depth — nested `<folder>/.ok/` is a first-class OK shape (folder metadata +
- * templates), so a top-level-only check is not a boundary. Segments compare
- * case-insensitively: on the default case-insensitive macOS filesystem an
- * externally-addressed `.OK/x` IS `.ok/x`. Same segment walk as
- * `pathHasAlwaysSkipSegment` in content-filter.ts.
- */
-function isReservedProjectStatePath(path: string): boolean {
-  return path.split('/').some((segment) => {
-    const normalized = segment.toLowerCase();
-    return normalized === OK_DIR || normalized === '.git';
-  });
 }
 
 function isReservedSyntheticFolderPath(path: string): boolean {
@@ -1007,29 +996,6 @@ function requireNonEmptyDocName(
     { handler },
   );
   return null;
-}
-
-function resolveContentEntryPath(contentDir: string, kind: ContentEntryKind, path: string): string {
-  if (!isValidRelativeContentPath(path)) {
-    throw new Error('path must be a relative content path');
-  }
-
-  const resolvedContentDir = resolve(contentDir);
-  // When kind is 'file': if the caller passed an explicit supported extension,
-  // use the path verbatim — this is how rename callers signal an extension
-  // change (toPath: "foo.mdx" renames foo.md → foo.mdx). Extension-less paths
-  // route through `docNameToRelativePath`, which consults the registered
-  // extension map so legacy callers keep the source's existing extension.
-  const relativePath = kind === 'file' ? docNameToRelativePath(path) : path;
-  const fullPath = resolve(resolvedContentDir, relativePath);
-
-  if (fullPath !== resolvedContentDir && !fullPath.startsWith(`${resolvedContentDir}${sep}`)) {
-    throw new Error('path must not escape content directory');
-  }
-
-  assertNoSymlinkEscape(fullPath, resolvedContentDir);
-
-  return fullPath;
 }
 
 function splitContentPath(path: string): { parent: string; basename: string } {
@@ -1200,218 +1166,6 @@ function collectFolderPaths(contentDir: string, folderPath: string): string[] {
   walk(folderAbs, folderPath);
   folders.sort((a, b) => a.localeCompare(b));
   return folders;
-}
-
-/**
- * Probe disk for the actual on-disk extension of a file's docName, registering
- * it in the doc-extensions map if found. Closes a boot/watcher race where the
- * rename handler runs before the file watcher has observed the source — without
- * this, `getDocExtension()` returns the `.md` default, which silently defeats
- * `.mdx`-specific exclusion patterns and routes existence checks to the wrong
- * path. Iterating in `SUPPORTED_DOC_EXTENSIONS` precedence order ensures the
- * `.mdx` precedence rule is preserved when both files exist on disk.
- * Idempotent — `registerDocExtension` is a no-op when the higher-precedence
- * extension is already registered.
- */
-function probeAndRegisterSourceFileExtension(contentDir: string, fromPath: string): void {
-  if (!isValidRelativeContentPath(fromPath)) return;
-  const resolvedContentDir = resolve(contentDir);
-  if (isSupportedDocFile(fromPath)) {
-    const extensionless = stripDocExtension(fromPath);
-    for (const ext of SUPPORTED_DOC_EXTENSIONS) {
-      const candidate = resolve(resolvedContentDir, `${extensionless}${ext}`);
-      if (
-        candidate !== resolvedContentDir &&
-        !candidate.startsWith(`${resolvedContentDir}${sep}`)
-      ) {
-        continue;
-      }
-      if (existsSync(candidate)) {
-        registerDocExtension(extensionless, ext);
-      }
-    }
-    const explicitCandidate = resolve(resolvedContentDir, fromPath);
-    if (
-      explicitCandidate !== resolvedContentDir &&
-      explicitCandidate.startsWith(`${resolvedContentDir}${sep}`) &&
-      existsSync(explicitCandidate)
-    ) {
-      registerDocExtension(extensionless, extname(fromPath));
-    }
-    return;
-  }
-  for (const ext of SUPPORTED_DOC_EXTENSIONS) {
-    const candidate = resolve(resolvedContentDir, `${fromPath}${ext}`);
-    if (candidate !== resolvedContentDir && !candidate.startsWith(`${resolvedContentDir}${sep}`)) {
-      continue;
-    }
-    if (existsSync(candidate)) {
-      registerDocExtension(fromPath, ext);
-      return;
-    }
-  }
-}
-
-function toGitRelativePath(projectDir: string, absolutePath: string): string | null {
-  const resolvedProjectDir = resolve(projectDir);
-  const resolvedPath = resolve(absolutePath);
-  if (
-    resolvedPath !== resolvedProjectDir &&
-    !resolvedPath.startsWith(`${resolvedProjectDir}${sep}`)
-  ) {
-    return null;
-  }
-  return relative(resolvedProjectDir, resolvedPath).split(sep).join('/');
-}
-
-function stringsDifferOnlyByCase(left: string, right: string): boolean {
-  return left !== right && left.toLowerCase() === right.toLowerCase();
-}
-
-function pathsDifferOnlyByCase(left: string, right: string): boolean {
-  return stringsDifferOnlyByCase(resolve(left), resolve(right));
-}
-
-function isCaseOnlySelfCollision(sourcePath: string, destinationPath: string): boolean {
-  if (!pathsDifferOnlyByCase(sourcePath, destinationPath)) return false;
-  if (!existsSync(sourcePath) || !existsSync(destinationPath)) return false;
-
-  try {
-    const sourceStat = statSync(sourcePath);
-    const destinationStat = statSync(destinationPath);
-    return sourceStat.dev === destinationStat.dev && sourceStat.ino === destinationStat.ino;
-  } catch {
-    return false;
-  }
-}
-
-function createCaseOnlyRenameTempPath(sourcePath: string): string {
-  const parent = dirname(sourcePath);
-  for (let attempt = 0; attempt < 10; attempt += 1) {
-    const candidate = resolve(parent, `.ok-case-rename-${randomUUID()}`);
-    if (!existsSync(candidate)) return candidate;
-  }
-  throw new Error('Unable to allocate temporary path for case-only rename');
-}
-
-/**
- * Write `content` to `filePath` only when it differs from the bytes already on
- * disk. The rename spine moves a file (placing the source's bytes at the
- * destination) and then writes the reconciled content; when that reconciled
- * content is byte-identical to what the move placed, the physical write is
- * redundant. Skipping the no-op write preserves the invariant that a
- * no-content-change rename writes the destination exactly once.
- *
- * This is a BYTE-EXACT guard (`current === content`), distinct from
- * persistence.ts's `markdownSemanticallyUnchanged`, which skips on SEMANTIC
- * (`normalizeBridge`-normalized) equality. The byte comparison is deliberate:
- * it under-skips relative to semantic equality, so it can only ever leave an
- * occasional redundant write, never suppress a needed one. Aligning it to
- * `normalizeBridge` would skip writes for byte-different-but-semantically-equal
- * content and leave stale bytes on disk.
- *
- * Callers MUST still `registerWrite` the path unconditionally: the move does
- * not `registerWrite` the destination, so the file-watcher's self-suppression
- * for it depends entirely on the caller's post-write `registerWrite`. This
- * guard wraps only the physical write.
- */
-function writeFileIfContentDiffers(filePath: string, content: string): void {
-  const current = existsSync(filePath) ? readFileSync(filePath, 'utf-8') : null;
-  if (current === content) return;
-  tracedWriteFileSync(filePath, content, 'utf-8');
-}
-
-function renamePathOnDisk(sourcePath: string, destinationPath: string): void {
-  tracedMkdirSync(dirname(destinationPath), { recursive: true });
-  if (!pathsDifferOnlyByCase(sourcePath, destinationPath)) {
-    tracedRenameSync(sourcePath, destinationPath);
-    return;
-  }
-
-  const tempPath = createCaseOnlyRenameTempPath(sourcePath);
-  tracedRenameSync(sourcePath, tempPath);
-  try {
-    tracedRenameSync(tempPath, destinationPath);
-  } catch (err) {
-    try {
-      const tempExists = existsSync(tempPath);
-      const sourceExists = existsSync(sourcePath);
-      if (tempExists && !sourceExists) {
-        tracedRenameSync(tempPath, sourcePath);
-      } else {
-        console.warn('[renamePathOnDisk] skipped case-only rollback due to unexpected state:', {
-          tempExists,
-          sourceExists,
-        });
-      }
-    } catch (rollbackErr) {
-      console.warn(
-        '[renamePathOnDisk] failed to roll back temporary case-only rename:',
-        rollbackErr,
-      );
-    }
-    throw err;
-  }
-}
-
-async function renameTrackedPathInGit(
-  projectDir: string | undefined,
-  sourcePath: string,
-  destinationPath: string,
-): Promise<boolean> {
-  if (!projectDir) return false;
-  const sourceRel = toGitRelativePath(projectDir, sourcePath);
-  const destinationRel = toGitRelativePath(projectDir, destinationPath);
-  if (!sourceRel || !destinationRel) return false;
-
-  return await withParentLock(async () => {
-    const pg = simpleGit({ baseDir: projectDir, timeout: { block: 15_000 } });
-    // `ls-files` throws `GitError: fatal: not a git repository` when
-    // projectDir isn't a git checkout — normal in test tmpdirs and in Vite
-    // dev's isolated OK_TEST_CONTENT_DIR mode. Treat that as "not tracked"
-    // so the caller falls back to `fs.renameSync`. Any other git failure
-    // (permission denied, corrupted index) also falls through to fs rename
-    // rather than 500ing the /api/rename-path handler.
-    let tracked = '';
-    try {
-      tracked = (await pg.raw('ls-files', '--', sourceRel)).trim();
-    } catch (err) {
-      console.warn('[renameTrackedPathInGit] git ls-files failed, falling back to fs rename:', err);
-      return false;
-    }
-    if (!tracked) return false;
-    mkdirSync(dirname(destinationPath), { recursive: true });
-    let partialStateMutation = false;
-    try {
-      if (pathsDifferOnlyByCase(sourcePath, destinationPath)) {
-        const tempPath = createCaseOnlyRenameTempPath(sourcePath);
-        const tempRel = toGitRelativePath(projectDir, tempPath);
-        if (!tempRel) return false;
-        await pg.raw('mv', '--', sourceRel, tempRel);
-        try {
-          await pg.raw('mv', '--', tempRel, destinationRel);
-        } catch (err) {
-          try {
-            await pg.raw('mv', '--', tempRel, sourceRel);
-          } catch (rollbackErr) {
-            console.warn(
-              '[renameTrackedPathInGit] case-only git rename failed and rollback also failed; git index and disk may have diverged:',
-              rollbackErr,
-            );
-            partialStateMutation = true;
-          }
-          throw err;
-        }
-      } else {
-        await pg.raw('mv', '--', sourceRel, destinationRel);
-      }
-      return true;
-    } catch (err) {
-      if (partialStateMutation) throw err;
-      console.warn('[renameTrackedPathInGit] git mv failed, falling back to fs rename:', err);
-      return false;
-    }
-  });
 }
 
 export interface ApiExtensionOptions {
@@ -2935,7 +2689,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     return renamedAssets;
   }
 
-  async function _performAssetRename(
+  async function executeAssetRename(
     fromPath: string,
     toPath: string,
   ): Promise<{
@@ -3033,7 +2787,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     );
   }
 
-  async function _performDocumentToFileRename(
+  async function executeDocumentToFileRename(
     fromPath: string,
     toPath: string,
   ): Promise<{
@@ -3128,7 +2882,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
             cleanupPaths: [toPath],
           });
           let rewrittenDocs: ManagedRenameRewrittenDoc[] = [];
-          await withManagedRenameRecovery(projectDir ?? contentDir, recoveryJournal, async () => {
+          await createManagedRenameCoordinator({
+            withRecovery: (operation) =>
+              withManagedRenameRecovery(projectDir ?? contentDir, recoveryJournal, operation),
+          }).runDurableRename(async () => {
             writeFileIfContentDiffers(sourcePath, sourceContent);
             registerWrite(sourcePath, contentHash(sourceContent));
 
@@ -3181,7 +2938,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     );
   }
 
-  async function _performManagedRenameForDocs(
+  async function executeManagedDocumentRename(
     fromPath: string,
     toPath: string,
     kind: ContentEntryKind,
@@ -3429,7 +3186,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           const rewrittenDocs: ManagedRenameRewrittenDoc[] = [];
           const rewriteDocNames = [...rewriteDocNameSet].sort((a, b) => a.localeCompare(b));
 
-          await withManagedRenameRecovery(projectDir ?? contentDir, recoveryJournal, async () => {
+          await createManagedRenameCoordinator({
+            withRecovery: (operation) =>
+              withManagedRenameRecovery(projectDir ?? contentDir, recoveryJournal, operation),
+          }).runDurableRename(async () => {
             for (const docName of missingBacklinkSources) {
               backlinkIndex.deleteDocument(docName);
             }
@@ -3732,6 +3492,17 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       ),
     );
   }
+
+  // The route owns request/response concerns only. The three mutation paths
+  // are exposed through this coordinator so their durable ordering stays one
+  // explicit collaboration boundary (and can be moved without widening route
+  // dependencies further).
+  const managedRenameCoordinator = createManagedRenameCoordinator({
+    withRecovery: (operation) => operation(),
+    executeAssetRename,
+    executeDocumentToFileRename,
+    executeDocumentRename: executeManagedDocumentRename,
+  });
 
   /**
    * Canonical identity boundary (precedent #24) — every mutating POST handler calls this
@@ -9192,8 +8963,8 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           try {
             result =
               isSupportedDocFile(fromPath) && !isSupportedDocFile(toPath)
-                ? await _performDocumentToFileRename(fromPath, toPath)
-                : await _performAssetRename(fromPath, toPath);
+                ? await managedRenameCoordinator.renameDocumentToFile(fromPath, toPath)
+                : await managedRenameCoordinator.renameAsset(fromPath, toPath);
           } catch (err) {
             if (err instanceof DocInConflictError) {
               respondDocInConflict(res, err, 'rename-path');
@@ -9359,7 +9130,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           rewrittenDocs: ManagedRenameRewrittenDoc[];
         };
         try {
-          result = await _performManagedRenameForDocs(
+          result = await managedRenameCoordinator.renameDocuments(
             fromPath,
             toPath,
             operationKind,
