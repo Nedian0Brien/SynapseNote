@@ -8,16 +8,34 @@ import { navigateToDocHash } from './command-palette-utils';
 
 /** Renders the exclusive tag and explicit-submit semantic result families. */
 export function CommandPaletteModeResults() {
-  const state = useCommandPaletteState();
-  const tagListQuery = state.paletteMode.kind === 'tag-list' ? state.paletteMode.query : '';
-  const tagDocsName = state.paletteMode.kind === 'tag-docs' ? state.paletteMode.tagName : '';
-  const semanticSubmitQuery = state.semanticView?.submit?.query ?? '';
-  const semanticResultsLabel = state.semanticView?.results.forQuery ?? '';
+  const {
+    fireSemanticSearch,
+    isSemanticMode,
+    navigateToEntry,
+    onOpenChange,
+    paletteMode,
+    query,
+    semanticIndexedCount,
+    semanticIndexing,
+    semanticResults,
+    semanticTotalCount,
+    semanticView,
+    setQuery,
+    t,
+    tagDocs,
+    tagDocsStatus,
+    tagListItems,
+    tagsListStatus,
+  } = useCommandPaletteState();
+  const tagListQuery = paletteMode.kind === 'tag-list' ? paletteMode.query : '';
+  const tagDocsName = paletteMode.kind === 'tag-docs' ? paletteMode.tagName : '';
+  const semanticSubmitQuery = semanticView?.submit?.query ?? '';
+  const semanticResultsLabel = semanticView?.results.forQuery ?? '';
   return (
     <>
-      {state.isSemanticMode && state.semanticView ? (
+      {isSemanticMode && semanticView ? (
         <>
-          {state.semanticIndexing ? (
+          {semanticIndexing ? (
             <div
               className="flex items-center gap-2 px-3 py-2 text-muted-foreground text-xs"
               role="status"
@@ -26,19 +44,19 @@ export function CommandPaletteModeResults() {
             >
               <Loader2 className="size-3.5 animate-spin" />
               <Trans>
-                Indexing your pages — {state.semanticIndexedCount} of {state.semanticTotalCount}{' '}
-                ready. Results may be incomplete.
+                Indexing your pages — {semanticIndexedCount} of {semanticTotalCount} ready. Results
+                may be incomplete.
               </Trans>
             </div>
           ) : null}
-          {state.semanticView.submit ? (
+          {semanticView.submit ? (
             <CommandGroup>
               <CommandItem
                 value="semantic-submit"
-                onSelect={() => state.fireSemanticSearch(semanticSubmitQuery)}
+                onSelect={() => fireSemanticSearch(semanticSubmitQuery)}
                 data-testid="command-palette-semantic-submit"
               >
-                {state.semanticView.submit.kind === 'retry' ? (
+                {semanticView.submit.kind === 'retry' ? (
                   <span className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
                     <Sparkles />
                     <Trans>Couldn&apos;t reach the embeddings provider — press ↵ to retry</Trans>
@@ -55,12 +73,12 @@ export function CommandPaletteModeResults() {
               </CommandItem>
             </CommandGroup>
           ) : null}
-          {state.semanticView.notice === 'empty' ? (
+          {semanticView.notice === 'empty' ? (
             <CommandEmpty data-testid="command-palette-semantic-empty">
               <Trans>Type a query, then press ↵ to search your pages by meaning.</Trans>
             </CommandEmpty>
           ) : null}
-          {state.semanticView.notice === 'searching' ? (
+          {semanticView.notice === 'searching' ? (
             <div
               className="flex items-center justify-center gap-2 py-6 text-muted-foreground text-sm"
               role="status"
@@ -71,29 +89,29 @@ export function CommandPaletteModeResults() {
               <Trans>Searching by meaning</Trans>
             </div>
           ) : null}
-          {state.semanticView.notice === 'no-results' ? (
+          {semanticView.notice === 'no-results' ? (
             <CommandEmpty data-testid="command-palette-semantic-no-results">
-              <Trans>No pages matched &quot;{state.query.trim()}&quot; by meaning.</Trans>
+              <Trans>No pages matched &quot;{query.trim()}&quot; by meaning.</Trans>
             </CommandEmpty>
           ) : null}
-          {state.semanticView.results.show ? (
+          {semanticView.results.show ? (
             <CommandGroup
               heading={
-                state.semanticView.results.dimmed
-                  ? state.t`Showing results for "${semanticResultsLabel}"`
-                  : state.t`By meaning`
+                semanticView.results.dimmed
+                  ? t`Showing results for "${semanticResultsLabel}"`
+                  : t`By meaning`
               }
             >
               <div
                 data-testid="command-palette-semantic-results"
-                data-dimmed={state.semanticView.results.dimmed}
+                data-dimmed={semanticView.results.dimmed}
               >
-                {state.semanticResults.map((entry) => (
+                {semanticResults.map((entry) => (
                   <NavigationItem
                     key={makeOmnibarRecentKey(entry.kind, entry.path)}
                     entry={entry}
-                    disabled={state.semanticView?.results.dimmed}
-                    onSelect={() => state.navigateToEntry(entry)}
+                    disabled={semanticView.results.dimmed}
+                    onSelect={() => navigateToEntry(entry)}
                   />
                 ))}
               </div>
@@ -101,34 +119,32 @@ export function CommandPaletteModeResults() {
           ) : null}
         </>
       ) : null}
-      {state.paletteMode.kind === 'tag-list' ? (
+      {paletteMode.kind === 'tag-list' ? (
         <CommandGroup
-          heading={
-            state.paletteMode.query ? state.t`Tags matching "${tagListQuery}"` : state.t`All tags`
-          }
+          heading={paletteMode.query ? t`Tags matching "${tagListQuery}"` : t`All tags`}
         >
-          {state.tagsListStatus === 'loading' ? (
+          {tagsListStatus === 'loading' ? (
             <CommandEmpty>
               <Trans>Loading tags</Trans>
             </CommandEmpty>
           ) : null}
-          {state.tagsListStatus === 'error' ? (
+          {tagsListStatus === 'error' ? (
             <CommandEmpty>
               <Trans>Failed to load tags. Press Escape and re-open to retry.</Trans>
             </CommandEmpty>
           ) : null}
-          {state.tagsListStatus !== 'loading' && state.tagListItems.length === 0 ? (
+          {tagsListStatus !== 'loading' && tagListItems.length === 0 ? (
             <CommandEmpty>
-              {state.paletteMode.query
-                ? state.t`No tags match "${tagListQuery}".`
-                : state.t`No tags yet — author \`#tagname\` in any doc to populate the index.`}
+              {paletteMode.query
+                ? t`No tags match "${tagListQuery}".`
+                : t`No tags yet — author \`#tagname\` in any doc to populate the index.`}
             </CommandEmpty>
           ) : null}
-          {state.tagListItems.map((tag) => (
+          {tagListItems.map((tag) => (
             <CommandItem
               key={`tag:${tag.name}`}
               value={`tag ${tag.name}`}
-              onSelect={() => state.setQuery(`tag:${tag.name}`)}
+              onSelect={() => setQuery(`tag:${tag.name}`)}
               data-testid={`command-palette-tag-${tag.name}`}
             >
               <Hash />
@@ -140,22 +156,22 @@ export function CommandPaletteModeResults() {
           ))}
         </CommandGroup>
       ) : null}
-      {state.paletteMode.kind === 'tag-docs' ? (
-        <CommandGroup heading={state.t`Docs tagged #${tagDocsName}`}>
-          {state.tagDocsStatus === 'loading' ? (
+      {paletteMode.kind === 'tag-docs' ? (
+        <CommandGroup heading={t`Docs tagged #${tagDocsName}`}>
+          {tagDocsStatus === 'loading' ? (
             <CommandEmpty>
               <Trans>Loading docs</Trans>
             </CommandEmpty>
           ) : null}
-          {state.tagDocsStatus === 'error' ? (
+          {tagDocsStatus === 'error' ? (
             <CommandEmpty>
               <Trans>Failed to load docs. Press Escape and re-open to retry.</Trans>
             </CommandEmpty>
           ) : null}
-          {state.tagDocsStatus === 'success' && state.tagDocs.length === 0 ? (
-            <CommandEmpty>{state.t`No docs registered under #${tagDocsName}.`}</CommandEmpty>
+          {tagDocsStatus === 'success' && tagDocs.length === 0 ? (
+            <CommandEmpty>{t`No docs registered under #${tagDocsName}.`}</CommandEmpty>
           ) : null}
-          {state.tagDocs.map((doc) => {
+          {tagDocs.map((doc) => {
             const title = doc.title || doc.docName.split('/').pop() || doc.docName;
             const viaTags = doc.matchingTags
               .filter((tag) => tag !== tagDocsName)
@@ -166,7 +182,7 @@ export function CommandPaletteModeResults() {
                 key={`tag-doc:${doc.docName}`}
                 value={`tag-doc ${doc.docName}`}
                 onSelect={() => {
-                  state.onOpenChange(false);
+                  onOpenChange(false);
                   navigateToDocHash(doc.docName);
                 }}
                 data-testid={`command-palette-tag-doc-${doc.docName}`}

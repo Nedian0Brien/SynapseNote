@@ -42,9 +42,16 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     useDocumentCollaboration();
   const { resolvedTheme } = useTheme();
   const { okignoreBinding, merged } = useConfigContext();
+  const showHiddenFiles = merged?.appearance?.sidebar?.showHiddenFiles ?? false;
+  const showOnlyMarkdownFiles = merged?.appearance?.sidebar?.showOnlyMarkdownFiles ?? false;
+  const showOkFolders = merged?.appearance?.sidebar?.showOkFolders ?? false;
   const sidebarDocumentTabBehavior =
     merged?.editor?.sidebarOpenBehavior === 'current-tab' ? 'replace-active' : 'append';
-  const listing = useFileTreeDocumentState();
+  const listing = useFileTreeDocumentState({
+    showHiddenFiles,
+    showOnlyMarkdownFiles,
+    showOkFolders,
+  });
   const navigation = useFileTreeNavigation({
     documents: listing.documents,
     sidebarDocumentTabBehavior,
@@ -98,9 +105,6 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     isElectronHost: typeof window !== 'undefined' && window.okDesktop != null,
     dispatch: dispatchHandoff,
   };
-  const showHiddenFiles = merged?.appearance?.sidebar?.showHiddenFiles ?? false;
-  const showOnlyMarkdownFiles = merged?.appearance?.sidebar?.showOnlyMarkdownFiles ?? false;
-  const showOkFolders = merged?.appearance?.sidebar?.showOkFolders ?? false;
 
   const { model } = useFileTreeModel({
     documentsRef: listing.documentsRef,
@@ -241,15 +245,6 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     uploadExternalFilesToTarget,
   });
 
-  // Bridge `creationDirCleared` (React state) to the imperative handle's
-  // subscribers (FileSidebar) — Pierre's model.subscribe doesn't observe React
-  // state, so notify the handle listeners explicitly on change.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: both refs are stable lifecycle holders returned by the interaction-state hook.
-  useEffect(() => {
-    interaction.creationDirClearedRef.current = interaction.creationDirCleared;
-    for (const listener of interaction.handleListenersRef.current) listener();
-  }, [interaction.creationDirCleared]);
-
   // biome-ignore lint/correctness/useExhaustiveDependencies: pending-create and cleanup callbacks flow through stable refs; listener lifecycle follows the tree model.
   useEffect(() => {
     return model.onMutation('remove', (event) => {
@@ -260,29 +255,17 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
   }, [model]);
 
   useLayoutEffect(() => {
-    listing.documentsRef.current = listing.documents;
-    interaction.pageMetaRef.current = navigation.pageMeta;
-    interaction.activeDocNameRef.current = navigation.activeDocName;
-    interaction.activeTargetRef.current = navigation.activeTarget;
-    listing.assetTreePathsRef.current = listing.assetTreePaths;
-    listing.busyPathRef.current = listing.busyPath;
-    listing.showHiddenFilesRef.current = showHiddenFiles;
-    listing.showOnlyMarkdownFilesRef.current = showOnlyMarkdownFiles;
-    listing.showOkFoldersRef.current = showOkFolders;
-    tree.treePathsRef.current = tree.treePaths;
-    tree.folderTreePathsRef.current = tree.folderTreePaths;
-    tree.activeAncestorTreePathsRef.current = tree.activeAncestorTreePaths;
-    interaction.userCollapsedActiveAncestorPathsRef.current =
-      interaction.userCollapsedActiveAncestorPaths;
-    interaction.uploadExternalFilesRef.current = (files, parentDir, uploadBusyPath) => {
-      void uploadExternalFilesToTarget(files, parentDir, uploadBusyPath);
-    };
-    interaction.handleRenameErrorRef.current = (message) => {
-      if (recoverMarkdownRenameConflict(message)) return;
-      toast.error(message);
-    };
-    interaction.handleRenameRef.current = handleTreeRename;
-    interaction.handleDropCompleteRef.current = handleDropComplete;
+    interaction.syncModelCallbacks({
+      uploadExternalFiles: (files, parentDir, uploadBusyPath) => {
+        void uploadExternalFilesToTarget(files, parentDir, uploadBusyPath);
+      },
+      handleRenameError: (message) => {
+        if (recoverMarkdownRenameConflict(message)) return;
+        toast.error(message);
+      },
+      handleRename: handleTreeRename,
+      handleDropComplete,
+    });
   });
 
   useFileTreeImperativeHandle({

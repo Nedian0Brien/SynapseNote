@@ -61,6 +61,7 @@ export function useDocumentPoolLifecycle(
     setActiveTarget,
     setPrincipal,
   } = state;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mutable lifecycle refs are intentionally read inside the effect; their stable identities are the valid dependencies.
   useEffect(() => {
     if (collabUrl === null) return;
     let cancelled = false;
@@ -339,7 +340,6 @@ export function useDocumentPoolLifecycle(
     };
   }, [
     collabUrl,
-    visibleTabIdsRef.current,
     visibleTabIdsRef,
     setVisibleTabIds,
     setTabIdentityResolved, // Sync initial state
@@ -347,11 +347,8 @@ export function useDocumentPoolLifecycle(
     setPrincipal,
     setActiveTarget,
     setPinnedTabIds,
-    pinnedTabIdsRef.current,
-    newTabIdsRef.current,
     pinnedTabIdsRef,
     setOpenTabs,
-    openTabsRef.current,
     openTabsRef,
   ]);
 }

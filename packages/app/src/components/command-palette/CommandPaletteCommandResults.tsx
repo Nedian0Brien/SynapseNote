@@ -20,8 +20,25 @@ import { filterCommandPaletteRegistry } from './command-palette-command-registry
 
 /** Renders core workspace commands and typed agent-dispatch actions. */
 export function CommandPaletteCommandResults() {
-  const state = useCommandPaletteState();
-  const visible = (id: string) => state.commandIds.has(id);
+  const {
+    activeDocName,
+    bridge,
+    commandIds,
+    deferredQuery,
+    dispatchHandoff,
+    handoffInput,
+    installStates,
+    onOpenAgentRuns,
+    onOpenChange,
+    onOpenDatabaseDiagnostics,
+    onOpenDatabases,
+    onOpenDataInspector,
+    setCreateDialogKind,
+    setSeedDialogOpen,
+    showAgentGroup,
+    t,
+  } = useCommandPaletteState();
+  const visible = (id: string) => commandIds.has(id);
   const showCommands = [
     'new-file',
     'new-folder',
@@ -39,24 +56,24 @@ export function CommandPaletteCommandResults() {
         [
           {
             id: target.id,
-            label: state.t`Open with AI ${target.displayName}`,
+            label: t`Open with AI ${target.displayName}`,
             aliases: [target.id, 'agent handoff', 'open in'],
             available: true,
           },
         ],
-        state.deferredQuery,
+        deferredQuery,
       ).length > 0,
   );
   return (
     <>
       {showCommands ? (
-        <CommandGroup heading={state.t`Commands`}>
+        <CommandGroup heading={t`Commands`}>
           {visible('new-file') ? (
             <CommandItem
               value="new file create file"
               onSelect={() => {
-                state.onOpenChange(false);
-                state.setCreateDialogKind('file');
+                onOpenChange(false);
+                setCreateDialogKind('file');
               }}
               data-testid="command-palette-new-file"
             >
@@ -71,8 +88,8 @@ export function CommandPaletteCommandResults() {
             <CommandItem
               value="new folder create folder"
               onSelect={() => {
-                state.onOpenChange(false);
-                state.setCreateDialogKind('folder');
+                onOpenChange(false);
+                setCreateDialogKind('folder');
               }}
               data-testid="command-palette-new-folder"
             >
@@ -80,16 +97,14 @@ export function CommandPaletteCommandResults() {
               <span>
                 <Trans>New folder</Trans>
               </span>
-              {state.bridge ? (
-                <CommandShortcut>{formatShortcut('new-folder')}</CommandShortcut>
-              ) : null}
+              {bridge ? <CommandShortcut>{formatShortcut('new-folder')}</CommandShortcut> : null}
             </CommandItem>
           ) : null}
           {visible('new-database') ? (
             <CommandItem
               value="new database create database new table database page"
               onSelect={() => {
-                state.onOpenChange(false);
+                onOpenChange(false);
                 dispatchDatabaseSlashCommand('new');
               }}
               data-testid="command-palette-new-database"
@@ -104,8 +119,8 @@ export function CommandPaletteCommandResults() {
             <CommandItem
               value="open graph graph panel network"
               onSelect={() => {
-                if (!state.activeDocName) return;
-                state.onOpenChange(false);
+                if (!activeDocName) return;
+                onOpenChange(false);
                 requestDocPanelTab('graph');
               }}
               data-testid="command-palette-open-graph"
@@ -120,8 +135,8 @@ export function CommandPaletteCommandResults() {
             <CommandItem
               value="initialize starter pack scaffold seed"
               onSelect={() => {
-                state.onOpenChange(false);
-                state.setSeedDialogOpen(true);
+                onOpenChange(false);
+                setSeedDialogOpen(true);
               }}
               data-testid="command-palette-initialize-starter-pack"
             >
@@ -135,8 +150,8 @@ export function CommandPaletteCommandResults() {
             <CommandItem
               value="inspect agent data context what agent saw context pack tokens redactions omissions"
               onSelect={() => {
-                state.onOpenChange(false);
-                state.onOpenDataInspector?.();
+                onOpenChange(false);
+                onOpenDataInspector?.();
               }}
               data-testid="command-palette-open-data-inspector"
             >
@@ -150,8 +165,8 @@ export function CommandPaletteCommandResults() {
             <CommandItem
               value="open agent runs database history proposed diff verification undo"
               onSelect={() => {
-                state.onOpenChange(false);
-                state.onOpenAgentRuns?.();
+                onOpenChange(false);
+                onOpenAgentRuns?.();
               }}
               data-testid="command-palette-open-agent-runs"
             >
@@ -165,8 +180,8 @@ export function CommandPaletteCommandResults() {
             <CommandItem
               value="open databases table records properties browse data"
               onSelect={() => {
-                state.onOpenChange(false);
-                state.onOpenDatabases?.();
+                onOpenChange(false);
+                onOpenDatabases?.();
               }}
               data-testid="command-palette-open-databases"
             >
@@ -180,8 +195,8 @@ export function CommandPaletteCommandResults() {
             <CommandItem
               value="open database diagnostics index state invalid records schema revisions tasks repair"
               onSelect={() => {
-                state.onOpenChange(false);
-                state.onOpenDatabaseDiagnostics?.();
+                onOpenChange(false);
+                onOpenDatabaseDiagnostics?.();
               }}
               data-testid="command-palette-open-database-diagnostics"
             >
@@ -193,29 +208,29 @@ export function CommandPaletteCommandResults() {
           ) : null}
         </CommandGroup>
       ) : null}
-      {state.showAgentGroup ? (
-        <CommandGroup heading={state.t`Open with AI`}>
+      {showAgentGroup ? (
+        <CommandGroup heading={t`Open with AI`}>
           {visibleTargets.map((target) => {
-            const installState = state.installStates[target.id];
-            const enabled = installState.installed === true && state.handoffInput !== null;
+            const installState = installStates[target.id];
+            const enabled = installState.installed === true && handoffInput !== null;
             const hint =
               installState.installed === null
-                ? state.t`Detecting`
+                ? t`Detecting`
                 : installState.installed === false
-                  ? state.t`Not installed`
+                  ? t`Not installed`
                   : null;
             const accessibleLabel = hint
-              ? state.t`Open with AI ${target.displayName}, ${hint}`
-              : state.t`Open with AI ${target.displayName}`;
+              ? t`Open with AI ${target.displayName}, ${hint}`
+              : t`Open with AI ${target.displayName}`;
             return (
               <CommandItem
                 key={target.id}
                 value={`send to ai ${target.displayName} ${target.id} agent open in`}
                 disabled={!enabled}
                 onSelect={() => {
-                  if (!enabled || !state.handoffInput) return;
-                  state.onOpenChange(false);
-                  void state.dispatchHandoff(target.id, state.handoffInput);
+                  if (!enabled || !handoffInput) return;
+                  onOpenChange(false);
+                  void dispatchHandoff(target.id, handoffInput);
                 }}
                 data-testid={`command-palette-open-in-${target.id}`}
                 aria-label={accessibleLabel}

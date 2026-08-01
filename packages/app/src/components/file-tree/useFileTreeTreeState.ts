@@ -1,5 +1,5 @@
 import type { FileTree as PierreFileTreeModel } from '@pierre/trees';
-import { type MutableRefObject, useRef } from 'react';
+import { type MutableRefObject, useLayoutEffect, useRef } from 'react';
 import {
   collectTreeFolderPathsFromDocuments,
   computeTreeAncestorPaths,
@@ -54,6 +54,11 @@ export function useFileTreeTreeState({
   const autoRevealActiveAncestorTreePathsSignature = activeAncestorTreePaths
     .filter((path) => !userCollapsedActiveAncestorPaths.has(path))
     .join('\0');
+  useLayoutEffect(() => {
+    treePathsRef.current = treePaths;
+    folderTreePathsRef.current = folderTreePaths;
+    activeAncestorTreePathsRef.current = activeAncestorTreePaths;
+  }, [activeAncestorTreePaths, folderTreePaths, treePaths]);
   const normalizeSelectionPath = (treePath: string): string => {
     const item = model.getItem(treePath) ?? model.getItem(folderPathToTreeDirectoryPath(treePath));
     return item?.isDirectory()

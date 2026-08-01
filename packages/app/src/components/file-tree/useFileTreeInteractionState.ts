@@ -1,5 +1,5 @@
 import type { FileTreeDropResult, FileTreeRenameEvent } from '@pierre/trees';
-import { useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import type { FileTreeTarget } from '@/components/file-tree-operations';
 import type { ResolvedNavigationTarget } from '@/components/navigation-targets';
@@ -12,6 +12,13 @@ export type FileTreeDeleteRequest = { targets: FileTreeTarget[] };
 export type TrashFailureRequest = {
   failed: TrashFailedTarget[];
   originalTargets: FileTreeTarget[];
+};
+
+type ModelCallbacks = {
+  uploadExternalFiles: (files: readonly File[], parentDir: string, busyPath: string) => void;
+  handleRenameError: (message: string) => void;
+  handleRename: (event: FileTreeRenameEvent) => Promise<PageHeaderRenameResult>;
+  handleDropComplete: (event: FileTreeDropResult) => void;
 };
 
 type Input = {
@@ -55,6 +62,27 @@ export function useFileTreeInteractionState({ pageMeta, activeDocName, activeTar
   const handleDropCompleteRef = useRef<(event: FileTreeDropResult) => void>(() => {});
   const activeTargetRef = useRef(activeTarget);
   const [emptyExternalFileDropActive, setEmptyExternalFileDropActive] = useState(false);
+  useEffect(() => {
+    creationDirClearedRef.current = creationDirCleared;
+    for (const listener of handleListenersRef.current) listener();
+  }, [creationDirCleared]);
+  useLayoutEffect(() => {
+    pageMetaRef.current = pageMeta;
+    activeDocNameRef.current = activeDocName;
+    activeTargetRef.current = activeTarget;
+    userCollapsedActiveAncestorPathsRef.current = userCollapsedActiveAncestorPaths;
+  }, [activeDocName, activeTarget, pageMeta, userCollapsedActiveAncestorPaths]);
+  const syncModelCallbacks = ({
+    uploadExternalFiles,
+    handleRenameError,
+    handleRename,
+    handleDropComplete,
+  }: ModelCallbacks) => {
+    uploadExternalFilesRef.current = uploadExternalFiles;
+    handleRenameErrorRef.current = handleRenameError;
+    handleRenameRef.current = handleRename;
+    handleDropCompleteRef.current = handleDropComplete;
+  };
   return {
     deleteRequest,
     setDeleteRequest,
@@ -83,6 +111,7 @@ export function useFileTreeInteractionState({ pageMeta, activeDocName, activeTar
     handleRenameErrorRef,
     handleDropCompleteRef,
     activeTargetRef,
+    syncModelCallbacks,
     emptyExternalFileDropActive,
     setEmptyExternalFileDropActive,
   };

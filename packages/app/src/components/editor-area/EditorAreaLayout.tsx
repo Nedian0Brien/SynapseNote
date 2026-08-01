@@ -18,6 +18,17 @@ export function EditorAreaLayout() {
     docPanelMode,
     docPanelAgentId,
   } = useEditorAreaState();
+  const {
+    groupRef,
+    initialRightCollapsed,
+    isDraggingDocHandle,
+    isDraggingTerminalHandle,
+    setBottomTerminalContainer,
+    setGroupContainer,
+    setTerminalEditorRegion,
+    terminalColumnPresent,
+    terminalDockPosition,
+  } = rail;
   const isColdDocument = activeProvider == null || activeDocName == null;
   if (
     isColdDocument &&
@@ -27,24 +38,23 @@ export function EditorAreaLayout() {
     return <EditorSkeleton />;
   }
   const hasRightPanel =
-    !rail.terminalColumnPresent &&
+    !terminalColumnPresent &&
     ((activeTarget?.kind === 'folder' && docPanelMode === 'agent' && docPanelAgentId !== null) ||
       (activeTarget?.kind === 'asset' && activeTarget.mediaKind === 'pdf') ||
       (isColdDocument && hasHashNavigationTarget()) ||
       (!isColdDocument &&
         activeTarget?.kind !== 'large-file' &&
         activeTarget?.kind !== 'skill-file'));
-  const editorAbsorbsResidual =
-    (hasRightPanel && !rail.initialRightCollapsed) || rail.terminalColumnPresent;
+  const editorAbsorbsResidual = (hasRightPanel && !initialRightCollapsed) || terminalColumnPresent;
   const primaryView = <EditorAreaPrimaryView />;
   const leftColumn =
     props.terminalBridge != null ? (
       <TerminalDock
         visible={props.terminalVisible}
         onVisibleChange={props.onTerminalVisibleChange ?? (() => {})}
-        dockPosition={rail.terminalDockPosition}
-        onBottomContainer={rail.setBottomTerminalContainer}
-        onEditorRegion={rail.setTerminalEditorRegion}
+        dockPosition={terminalDockPosition}
+        onBottomContainer={setBottomTerminalContainer}
+        onEditorRegion={setTerminalEditorRegion}
       >
         {primaryView}
       </TerminalDock>
@@ -52,17 +62,17 @@ export function EditorAreaLayout() {
       primaryView
     );
   return (
-    <div className="relative flex min-h-0 flex-1" ref={rail.setGroupContainer}>
+    <div className="relative flex min-h-0 flex-1" ref={setGroupContainer}>
       <ResizablePanelGroup
         orientation="horizontal"
-        groupRef={rail.groupRef}
-        data-dragging={rail.isDraggingDocHandle || rail.isDraggingTerminalHandle || undefined}
+        groupRef={groupRef}
+        data-dragging={isDraggingDocHandle || isDraggingTerminalHandle || undefined}
       >
         <ResizablePanel
-          minSize={rail.terminalColumnPresent ? '5%' : '30%'}
+          minSize={terminalColumnPresent ? '5%' : '30%'}
           {...(editorAbsorbsResidual ? {} : { defaultSize: '100%' })}
           className={cn(
-            !(rail.isDraggingDocHandle || rail.isDraggingTerminalHandle) &&
+            !(isDraggingDocHandle || isDraggingTerminalHandle) &&
               'transition-[flex-grow] duration-200 ease-out motion-reduce:transition-none motion-reduce:duration-0',
           )}
         >

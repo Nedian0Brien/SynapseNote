@@ -15,48 +15,78 @@ import { computeVisibleSearchResults } from './command-palette-utils';
 
 /** Owns dialog framing, query input, filter pills, and dependent overlay mounts. */
 export function CommandPaletteSurface() {
-  const state = useCommandPaletteState();
+  const {
+    bridge,
+    createDialogKind,
+    createProjectOpen,
+    enterSemanticMode,
+    exitSemanticMode,
+    fallbackSearchResults,
+    inExclusiveMode,
+    initialCreateDir,
+    inputRef,
+    isSemanticMode,
+    isTagMode,
+    onOpenChange,
+    onPaletteEscapeKeyDown,
+    onSemanticInputKeyDown,
+    open,
+    paletteMode,
+    query,
+    reportBugOpen,
+    searchResults,
+    searchStatus,
+    searchTruncated,
+    seedDialogOpen,
+    semanticCapable,
+    setCreateDialogKind,
+    setCreateProjectOpen,
+    setQuery,
+    setReportBugOpen,
+    setSeedDialogOpen,
+    t,
+    toggleTagMode,
+    trimmedDeferredQuery,
+  } = useCommandPaletteState();
   const visibleSearchResults = computeVisibleSearchResults({
-    searchResults: state.searchResults,
-    fallbackSearchResults: state.fallbackSearchResults,
-    searchStatus: state.searchStatus,
+    searchResults,
+    fallbackSearchResults,
+    searchStatus,
   });
   return (
     <>
       <CommandDialog
-        open={state.open}
-        onOpenChange={state.onOpenChange}
-        title={state.t`Workspace Command Palette`}
-        description={state.t`Search pages, databases, folders, and commands for the current workspace.`}
+        open={open}
+        onOpenChange={onOpenChange}
+        title={t`Workspace Command Palette`}
+        description={t`Search pages, databases, folders, and commands for the current workspace.`}
         className="sm:max-w-2xl"
         commandProps={{
           shouldFilter: false,
           className:
             '[&_[cmdk-input-wrapper]_svg]:h-4 [&_[cmdk-input-wrapper]_svg]:w-4 [&_[cmdk-item]_svg]:h-4 [&_[cmdk-item]_svg]:w-4',
         }}
-        onEscapeKeyDown={state.onPaletteEscapeKeyDown}
+        onEscapeKeyDown={onPaletteEscapeKeyDown}
       >
         <CommandInput
-          ref={state.inputRef}
-          value={state.query}
-          onValueChange={state.setQuery}
-          onKeyDown={state.onSemanticInputKeyDown}
+          ref={inputRef}
+          value={query}
+          onValueChange={setQuery}
+          onKeyDown={onSemanticInputKeyDown}
           placeholder={
-            state.isSemanticMode
-              ? state.t`Search by meaning`
-              : state.t`Search pages, databases, or commands`
+            isSemanticMode ? t`Search by meaning` : t`Search pages, databases, or commands`
           }
         />
         <div className="flex flex-wrap gap-1.5 border-b px-3 py-2">
           <button
             type="button"
-            onClick={state.toggleTagMode}
+            onClick={toggleTagMode}
             data-testid="command-palette-filter-tag"
-            data-active={state.isTagMode}
-            aria-pressed={state.isTagMode}
+            data-active={isTagMode}
+            aria-pressed={isTagMode}
             className={cn(
               'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-              state.isTagMode
+              isTagMode
                 ? 'border-primary/30 bg-primary/10 text-primary'
                 : 'border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground',
             )}
@@ -66,18 +96,16 @@ export function CommandPaletteSurface() {
               <Trans>By tag</Trans>
             </span>
           </button>
-          {state.semanticCapable ? (
+          {semanticCapable ? (
             <button
               type="button"
-              onClick={() =>
-                state.isSemanticMode ? state.exitSemanticMode() : state.enterSemanticMode()
-              }
+              onClick={() => (isSemanticMode ? exitSemanticMode() : enterSemanticMode())}
               data-testid="command-palette-filter-semantic"
-              data-active={state.isSemanticMode}
-              aria-pressed={state.isSemanticMode}
+              data-active={isSemanticMode}
+              aria-pressed={isSemanticMode}
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-                state.isSemanticMode
+                isSemanticMode
                   ? 'border-primary/30 bg-primary/10 text-primary'
                   : 'border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground',
               )}
@@ -91,40 +119,38 @@ export function CommandPaletteSurface() {
         </div>
         <CommandPaletteResults />
         <CommandPaletteSearchHint
-          mode={classifyOmnibarSearchHint(state.trimmedDeferredQuery, visibleSearchResults, {
-            truncated: state.searchTruncated,
+          mode={classifyOmnibarSearchHint(trimmedDeferredQuery, visibleSearchResults, {
+            truncated: searchTruncated,
           })}
-          inExclusiveMode={state.inExclusiveMode}
-          paletteModeKind={state.paletteMode.kind}
+          inExclusiveMode={inExclusiveMode}
+          paletteModeKind={paletteMode.kind}
         />
       </CommandDialog>
       <NewItemDialog
-        open={state.createDialogKind === 'file'}
+        open={createDialogKind === 'file'}
         onOpenChange={(next) => {
-          if (!next) state.setCreateDialogKind(null);
+          if (!next) setCreateDialogKind(null);
         }}
         kind="file"
-        initialDir={state.initialCreateDir}
+        initialDir={initialCreateDir}
       />
       <NewItemDialog
-        open={state.createDialogKind === 'folder'}
+        open={createDialogKind === 'folder'}
         onOpenChange={(next) => {
-          if (!next) state.setCreateDialogKind(null);
+          if (!next) setCreateDialogKind(null);
         }}
         kind="folder"
-        initialDir={state.initialCreateDir}
+        initialDir={initialCreateDir}
       />
-      <SeedDialog open={state.seedDialogOpen} onOpenChange={state.setSeedDialogOpen} />
-      {state.bridge ? (
+      <SeedDialog open={seedDialogOpen} onOpenChange={setSeedDialogOpen} />
+      {bridge ? (
         <CreateProjectDialog
-          open={state.createProjectOpen}
-          onOpenChange={state.setCreateProjectOpen}
-          bridge={state.bridge}
+          open={createProjectOpen}
+          onOpenChange={setCreateProjectOpen}
+          bridge={bridge}
         />
       ) : null}
-      {state.bridge ? (
-        <ReportBugDialog open={state.reportBugOpen} onOpenChange={state.setReportBugOpen} />
-      ) : null}
+      {bridge ? <ReportBugDialog open={reportBugOpen} onOpenChange={setReportBugOpen} /> : null}
     </>
   );
 }

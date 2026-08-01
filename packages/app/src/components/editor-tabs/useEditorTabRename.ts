@@ -16,7 +16,10 @@ import { parseServerResponse, parseSuccessOrWarn } from '@/lib/parse-server-resp
 
 const TAB_RENAME_EXTENSIONS = ['.md', '.mdx'] as const;
 
-type Translator = (message: TemplateStringsArray) => string;
+type Translator = {
+  (message: TemplateStringsArray): string;
+  (descriptor: { message: string }): string;
+};
 
 function navigateToDoc(docName: string) {
   const nextHash = hashFromDocName(docName);
@@ -148,7 +151,7 @@ export function useEditorTabRename({
       return;
     }
     if (!isValidNodeName(normalized)) {
-      setRenameError(t`Name can’t be empty, ".", "..", or contain / or \\`);
+      setRenameError(t({ message: 'Name can’t be empty, ".", "..", or contain / or \\' }));
       renameInputRef.current?.focus();
       return;
     }

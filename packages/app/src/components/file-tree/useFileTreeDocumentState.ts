@@ -1,9 +1,19 @@
-import { useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { fileEntryToTreePath } from '@/components/file-tree-adapter';
 import { type FileEntry, isAssetEntry } from '@/components/file-tree-utils';
 
 /** Owns fetched document listing state and the stable refs used by refresh and mutation flows. */
-export function useFileTreeDocumentState() {
+type Input = {
+  showHiddenFiles: boolean;
+  showOnlyMarkdownFiles: boolean;
+  showOkFolders: boolean;
+};
+
+export function useFileTreeDocumentState({
+  showHiddenFiles,
+  showOnlyMarkdownFiles,
+  showOkFolders,
+}: Input) {
   const [documents, setDocuments] = useState<FileEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +40,14 @@ export function useFileTreeDocumentState() {
     showOkFolders: showOkFoldersRef.current,
   });
   const refreshDocsScheduleRef = useRef<(() => void) | null>(null);
+  useLayoutEffect(() => {
+    documentsRef.current = documents;
+    assetTreePathsRef.current = assetTreePaths;
+    busyPathRef.current = busyPath;
+    showHiddenFilesRef.current = showHiddenFiles;
+    showOnlyMarkdownFilesRef.current = showOnlyMarkdownFiles;
+    showOkFoldersRef.current = showOkFolders;
+  }, [assetTreePaths, busyPath, documents, showHiddenFiles, showOkFolders, showOnlyMarkdownFiles]);
   return {
     documents,
     setDocuments,
