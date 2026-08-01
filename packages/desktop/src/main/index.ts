@@ -236,6 +236,7 @@ import {
   handleCloneStart,
   type LocalOpDeps,
 } from './ipc/local-op.ts';
+import { registerDesktopIpcRegistrars } from './ipc/registrar-registry.ts';
 import { handleSeedApply, handleSeedListPacks, handleSeedPlan } from './ipc/seed.ts';
 import { handleSharingSetMode, handleSharingStatus } from './ipc/sharing.ts';
 import {
@@ -3122,7 +3123,15 @@ function dispatchToastWhenReady(payload: {
 const RECENT_GIT_ROOTS_CAP = 256;
 
 function registerIpcHandlers() {
-  const handle = createHandler(ipcMain);
+  const rawHandle = createHandler(ipcMain);
+  const registeredStaticChannels = new Set<string>();
+  const handle: typeof rawHandle = (channel, handler) => {
+    if (registeredStaticChannels.has(channel)) {
+      throw new Error(`duplicate desktop IPC handler registration: ${channel}`);
+    }
+    registeredStaticChannels.add(channel);
+    rawHandle(channel, handler);
+  };
 
   // Per-session membership set for `ok:fs:remove-git-folder`. Populated
   // by `ok:fs:find-enclosing-git-root` returns; read by the destructive
@@ -4540,6 +4549,13 @@ function registerIpcHandlers() {
 
   registerIntegrationsSettingsIpc();
   registerProjectIntegrationsSettingsIpc();
+  // Lifecycle IPC is owned and armed independently. Every remaining request
+  // channel must be registered exactly once by the static registrar map.
+  registerDesktopIpcRegistrars((channel) => {
+    if (!registeredStaticChannels.has(channel)) {
+      throw new Error(`desktop IPC registrar did not install ${channel}`);
+    }
+  });
 }
 
 /**
