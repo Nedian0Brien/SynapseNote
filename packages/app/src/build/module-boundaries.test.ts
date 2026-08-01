@@ -90,6 +90,14 @@ describe('RFC 0002 module boundary guard', () => {
     expect(LEGACY_MODULE_EXCEPTIONS).toEqual([]);
   });
 
+  test('editor tab shell is registered as a bounded leaf', () => {
+    const path = 'components/editor-tabs/EditorTabShell.tsx';
+    const budget = MODULE_SIZE_BUDGETS.find((candidate) => candidate.path === path);
+    expect(budget, `${path} must have a size budget`).toBeDefined();
+    expect(budget?.maxLines ?? 0).toBeLessThanOrEqual(450);
+    expect(budget?.owner.length ?? 0).toBeGreaterThan(0);
+  });
+
   test('database implementation boundaries are present and explicit', () => {
     const missing = missingDatabaseBoundaryModules(APP_SRC);
     expect(missing).toEqual([]);

@@ -767,6 +767,11 @@ export const MODULE_SIZE_BUDGETS: readonly ModuleSizeBudget[] = [
     owner: 'Owns editor tab chrome rendering.',
   },
   {
+    path: 'components/editor-tabs/EditorTabShell.tsx',
+    maxLines: 100,
+    owner: 'Owns editor tab shell composition.',
+  },
+  {
     path: 'components/editor-tabs/EditorTabItem.tsx',
     maxLines: 400,
     owner: 'Owns editor tab item rendering and actions.',
