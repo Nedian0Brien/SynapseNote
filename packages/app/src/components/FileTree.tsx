@@ -7,7 +7,7 @@ import { startTransition, useEffect, useLayoutEffect, useRef, useState } from 'r
 import { toast } from 'sonner';
 import { fileEntryToTreePath, folderPathToTreeDirectoryPath } from '@/components/file-tree-adapter';
 import type { FileTreeTarget } from '@/components/file-tree-operations';
-import { classifyEmptyTree, type FileEntry, isAssetEntry } from '@/components/file-tree-utils';
+import { type FileEntry, isAssetEntry } from '@/components/file-tree-utils';
 import { coerceTrashFailureReason, type TrashFailedTarget } from '@/components/TrashFailureModal';
 import { asDirectoryHandle } from '@/components/use-selection-mirror';
 import { useDocumentCollaboration } from '@/editor/document-context/useDocumentCollaboration';
@@ -19,10 +19,7 @@ import { emitDocumentsChanged } from '@/lib/documents-events';
 import type { PageHeaderRenameResult } from '@/lib/page-header-rename-events';
 import { parseSuccessOrWarn } from '@/lib/parse-server-response';
 import { FileTreeDialogs } from './file-tree/FileTreeDialogs';
-import { FileTreeEmptyState } from './file-tree/FileTreeEmptyState';
-import { FileTreeMenu } from './file-tree/FileTreeMenu';
-import { FileTreeHeaderNotice, FileTreeSkeleton } from './file-tree/FileTreePresentation';
-import { FileTreeViewport } from './file-tree/FileTreeViewport';
+import { FileTreeSurface } from './file-tree/FileTreeSurface';
 import type { FileTreeProps } from './file-tree/file-tree-types';
 import { useFileTreeCommandSubscriptions } from './file-tree/useFileTreeCommandSubscriptions';
 import { useFileTreeConnectivity } from './file-tree/useFileTreeConnectivity';
@@ -78,7 +75,7 @@ interface WorkspaceInfo {
  * Today only `FileSidebar` mounts it, which is always inside the provider.
  */
 export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
-  const { t, i18n } = useLingui();
+  const { t } = useLingui();
   const { closeTabs, closeDocument, remapTabsForRename } = useDocumentTabs();
   const { closeAndClearForRename, getPoolActiveDocName, poolHas, prewarm } =
     useDocumentCollaboration();
@@ -655,117 +652,60 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     uploadExternalFilesToTarget,
   });
 
-  if (loading) {
-    return <FileTreeSkeleton />;
-  }
-
-  // Calm reconnect copy shown in place of the red "Could not reach server"
-  // error while the listing is silently re-attempted across a relaunch's full
-  // lifecycle: "Relaunching…" while the relaunch is in flight, and (after an
-  // aborted relaunch clears `relaunchInFlight` while a retry is still settling)
-  // the honest "Reconnecting…".
-  const reconnectNotice = reconnecting
-    ? relaunchInFlight
-      ? t`Relaunching to install the update…`
-      : t`Reconnecting…`
-    : null;
-
-  if (documents.length === 0) {
-    return (
-      <FileTreeEmptyState
-        reconnectNotice={reconnectNotice}
-        error={error}
-        filteredToZero={
-          classifyEmptyTree({
-            visibility: { showHiddenFiles, showOnlyMarkdownFiles },
-            unfilteredRootEntryCount,
-            knownPageCount: pages.size,
-          }) === 'filtered-to-zero'
-        }
-        externalDropActive={emptyExternalFileDropActive}
-        onDragOver={handleEmptyExternalFileDragOver}
-        onDragLeave={handleEmptyExternalFileDragLeave}
-        onDrop={handleEmptyExternalFileDrop}
-        onCreateFirstFile={() => startCreating('file', '')}
-      />
-    );
-  }
-
-  const anyActionBusy = busyPath !== null;
-  // Sidebar files come from the disk walk, not the search index, so the
-  // guidance must not point at search. Under lazy depth-1 loading the cap
-  // applies per fetched level, so the count describes the truncated folder's
-  // level — not the whole tree, which can legitimately show more rows than
-  // the count.
-  let truncationNotice: string | null = null;
-  if (truncatedShownCount !== null) {
-    const formattedCount = new Intl.NumberFormat(i18n.locale).format(truncatedShownCount);
-    truncationNotice = plural(truncatedShownCount, {
-      one: 'Showing the first item in one folder — the rest of that folder is hidden.',
-      other: `Showing the first ${formattedCount} items in one folder — the rest of that folder is hidden.`,
-    });
-  }
   return (
-    <>
-      <FileTreeViewport
-        hostRef={fileTreeHostRef}
-        model={model}
-        resolvedTheme={resolvedTheme}
-        creationDirCleared={creationDirCleared}
-        onContentHeightChange={onContentHeightChange}
-        header={
-          (error || reconnectNotice !== null || truncationNotice !== null) && (
-            <>
-              {reconnectNotice !== null ? (
-                <FileTreeHeaderNotice kind="reconnecting">{reconnectNotice}</FileTreeHeaderNotice>
-              ) : (
-                error && <FileTreeHeaderNotice kind="error">{error}</FileTreeHeaderNotice>
-              )}
-              {truncationNotice !== null && (
-                <FileTreeHeaderNotice kind="info">{truncationNotice}</FileTreeHeaderNotice>
-              )}
-            </>
-          )
-        }
-        onClickCapture={handleTreeClickCapture}
-        onMouseMove={handleTreeMouseMove}
-        onMouseLeave={cancelCurrentHoverPrewarm}
-        renderContextMenu={(item, context) => (
-          <FileTreeMenu
-            item={item}
-            context={context}
-            anyActionBusy={anyActionBusy}
-            workspace={workspace}
-            handoff={handoff}
-            model={model}
-            okignoreBinding={okignoreBinding}
-            onStartCreating={startCreating}
-            onCreateFromTemplate={(parentDir, templateName) =>
-              startCreating('file', parentDir, { template: templateName })
-            }
-            onDuplicate={handleDuplicateTarget}
-            onDelete={(targets) => setDeleteRequest({ targets })}
-            onExpandSubtree={expandSubtree}
-            onCollapseSubtree={collapseSubtree}
-            folderTreePaths={folderTreePaths}
-            isAsset={assetTreePaths.has(item.path)}
-            documents={documents}
-          />
-        )}
-      />
-      <FileTreeDialogs
-        deleteRequest={deleteRequest}
-        busy={busyPath !== null}
-        onCloseDelete={() => setDeleteRequest(null)}
-        onDelete={handleDeleteTargets}
-        trashFailure={trashFailure}
-        onCloseTrashFailure={() => setTrashFailure(null)}
-        onDeletePermanently={handleTrashFailureDeletePermanently}
-        onRetry={handleTrashFailureRetry}
-        newItemOpen={newItemRequest !== null}
-        newItemInitialDir={newItemRequest?.parentDir ?? ''}
-        onCloseNewItem={() => setNewItemRequest(null)}
-      />
-    </>
+    <FileTreeSurface
+      loading={loading}
+      documents={documents}
+      error={error}
+      reconnecting={reconnecting}
+      relaunchInFlight={relaunchInFlight}
+      truncatedShownCount={truncatedShownCount}
+      showHiddenFiles={showHiddenFiles}
+      showOnlyMarkdownFiles={showOnlyMarkdownFiles}
+      unfilteredRootEntryCount={unfilteredRootEntryCount}
+      pageCount={pages.size}
+      emptyExternalFileDropActive={emptyExternalFileDropActive}
+      onEmptyExternalFileDragOver={handleEmptyExternalFileDragOver}
+      onEmptyExternalFileDragLeave={handleEmptyExternalFileDragLeave}
+      onEmptyExternalFileDrop={handleEmptyExternalFileDrop}
+      onCreateFirstFile={() => startCreating('file', '')}
+      hostRef={fileTreeHostRef}
+      model={model}
+      resolvedTheme={resolvedTheme}
+      creationDirCleared={creationDirCleared}
+      onContentHeightChange={onContentHeightChange}
+      onClickCapture={handleTreeClickCapture}
+      onMouseMove={handleTreeMouseMove}
+      onMouseLeave={cancelCurrentHoverPrewarm}
+      workspace={workspace}
+      handoff={handoff}
+      okignoreBinding={okignoreBinding}
+      onStartCreating={startCreating}
+      onCreateFromTemplate={(parentDir, templateName) =>
+        startCreating('file', parentDir, { template: templateName })
+      }
+      onDuplicate={handleDuplicateTarget}
+      onDelete={(targets) => setDeleteRequest({ targets })}
+      onExpandSubtree={expandSubtree}
+      onCollapseSubtree={collapseSubtree}
+      folderTreePaths={folderTreePaths}
+      assetTreePaths={assetTreePaths}
+      anyActionBusy={busyPath !== null}
+      dialogs={
+        <FileTreeDialogs
+          deleteRequest={deleteRequest}
+          busy={busyPath !== null}
+          onCloseDelete={() => setDeleteRequest(null)}
+          onDelete={handleDeleteTargets}
+          trashFailure={trashFailure}
+          onCloseTrashFailure={() => setTrashFailure(null)}
+          onDeletePermanently={handleTrashFailureDeletePermanently}
+          onRetry={handleTrashFailureRetry}
+          newItemOpen={newItemRequest !== null}
+          newItemInitialDir={newItemRequest?.parentDir ?? ''}
+          onCloseNewItem={() => setNewItemRequest(null)}
+        />
+      }
+    />
   );
 }

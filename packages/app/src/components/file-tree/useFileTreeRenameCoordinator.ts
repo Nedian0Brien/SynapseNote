@@ -35,7 +35,7 @@ type Input = {
   setBusyPath: Dispatch<SetStateAction<string | null>>;
   setError: Dispatch<SetStateAction<string | null>>;
   setDocuments: ApplyRenamedDocumentsInput['setDocuments'];
-  resetModelToDocuments: () => void;
+  resetModelToDocuments: (documents?: readonly FileEntry[]) => void;
   markNextDocumentsAsApplied: (documents: readonly FileEntry[]) => void;
   cleanupPendingCreate: (pending: PendingCreate) => Promise<void>;
   clearPendingCreate: () => void;
