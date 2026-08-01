@@ -15,6 +15,7 @@
  * could observe.
  */
 import { describe, expect, test } from 'bun:test';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Project, SyntaxKind } from 'ts-morph';
 
@@ -23,10 +24,12 @@ const SANCTIONED_CALLERS = ['attachValidatedPersistence', 'open'] as const;
 describe('persistence-attach boundary (buildPersistence callers)', () => {
   test('buildPersistence has exactly the two sanctioned callers', () => {
     const project = new Project({ skipAddingFilesFromTsConfig: true });
-    const sourceFile = project.addSourceFileAtPath(join(import.meta.dir, 'provider-pool.ts'));
+    const sourceFiles = ['provider-pool-persistence.ts', 'provider-pool-connection.ts'].map(
+      (file) => project.addSourceFileAtPath(join(import.meta.dir, file)),
+    );
 
-    const callerMethods = sourceFile
-      .getDescendantsOfKind(SyntaxKind.CallExpression)
+    const callerMethods = sourceFiles
+      .flatMap((sourceFile) => sourceFile.getDescendantsOfKind(SyntaxKind.CallExpression))
       .filter((call) => {
         const expression = call.getExpression();
         return (
@@ -38,7 +41,7 @@ describe('persistence-attach boundary (buildPersistence callers)', () => {
       .map((call) => {
         const method = call.getFirstAncestorByKind(SyntaxKind.MethodDeclaration);
         const line = call.getStartLineNumber();
-        return `${method?.getName() ?? '<outside-method>'} (provider-pool.ts:${line})`;
+        return `${method?.getName() ?? '<outside-method>'} (${call.getSourceFile().getBaseName()}:${line})`;
       })
       .sort();
 
@@ -48,5 +51,27 @@ describe('persistence-attach boundary (buildPersistence callers)', () => {
     // third sanctioned caller is genuinely being introduced, update the
     // boundary-contract JSDoc on `buildPersistence` in the same change.
     expect(callerMethods.map((entry) => entry.split(' ')[0])).toEqual([...SANCTIONED_CALLERS]);
+  });
+});
+
+describe('ProviderPool capability composition', () => {
+  test('keeps the public facade small and delegates to named collaborators', () => {
+    const facade = join(import.meta.dir, 'provider-pool.ts');
+    expect(existsSync(facade)).toBe(true);
+    expect(readFileSync(facade, 'utf8').split('\n').length).toBeLessThanOrEqual(600);
+
+    const collaborators = [
+      'provider-pool-state.ts',
+      'provider-pool-lineage.ts',
+      'provider-pool-recovery.ts',
+      'provider-pool-persistence.ts',
+      'provider-pool-connection.ts',
+      'provider-pool-eviction.ts',
+    ];
+    for (const collaborator of collaborators) {
+      const file = join(import.meta.dir, collaborator);
+      expect(existsSync(file)).toBe(true);
+      expect(readFileSync(file, 'utf8').split('\n').length).toBeLessThanOrEqual(450);
+    }
   });
 });
