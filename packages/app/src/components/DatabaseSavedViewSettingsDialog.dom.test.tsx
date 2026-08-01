@@ -63,6 +63,61 @@ describe('DatabaseSavedViewSettingsDialog', () => {
     }
   });
 
+  test('resets a cancelled draft and initializes the next opened layout from its view', () => {
+    const onOpenChange = mock(() => {});
+    const boardView: DatabaseView = {
+      ...view,
+      id: 'view_board_reopened',
+      key: 'board-reopened',
+      layout: {
+        type: 'board',
+        configuration: {
+          cardSize: 'large',
+          cardPreview: { type: 'none' },
+          fitImage: false,
+          colorColumns: true,
+          groupLimit: 30,
+          cardLimitPerGroup: 40,
+        },
+      },
+    };
+    const { rerender } = render(
+      <DatabaseSavedViewSettingsDialog
+        open
+        onOpenChange={onOpenChange}
+        source={source}
+        view={view}
+        onSave={() => {}}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Wrap saved view cells' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    rerender(
+      <DatabaseSavedViewSettingsDialog
+        open={false}
+        onOpenChange={onOpenChange}
+        source={source}
+        view={view}
+        onSave={() => {}}
+      />,
+    );
+    rerender(
+      <DatabaseSavedViewSettingsDialog
+        open
+        onOpenChange={onOpenChange}
+        source={source}
+        view={boardView}
+        onSave={() => {}}
+      />,
+    );
+
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(screen.getByRole('combobox', { name: 'Board card size' }).textContent).toContain(
+      'Large cards',
+    );
+  });
+
   test('persists Feed chronology, author, density, properties, read state, and page limit', async () => {
     const feedSource: DatabaseSource = {
       ...source,

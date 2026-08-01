@@ -202,8 +202,78 @@ export const MODULE_SIZE_BUDGETS: readonly ModuleSizeBudget[] = [
   },
   {
     path: 'components/database-saved-view-settings/DatabaseSavedViewSettingsLayoutPanel.tsx',
-    maxLines: 120,
+    maxLines: 135,
     owner: 'saved view layout settings panel',
+  },
+  {
+    path: 'components/database-saved-view-settings/DatabaseSavedViewSettingsDialog.tsx',
+    maxLines: 110,
+    owner: 'saved view settings dialog composer',
+  },
+  {
+    path: 'components/database-saved-view-settings/DatabaseSavedViewSettingsSortsGroupsPanel.tsx',
+    maxLines: 245,
+    owner: 'saved view sort and group controls',
+  },
+  {
+    path: 'components/database-saved-view-settings/DatabaseSavedViewSettingsProjectionPanel.tsx',
+    maxLines: 160,
+    owner: 'saved view projection controls',
+  },
+  {
+    path: 'components/database-saved-view-settings/DatabaseSavedViewSettingsConditionalColorsPanel.tsx',
+    maxLines: 265,
+    owner: 'saved view conditional color controls',
+  },
+  {
+    path: 'components/database-saved-view-settings/DatabaseSavedViewSettingsTablePanel.tsx',
+    maxLines: 60,
+    owner: 'saved view table controls',
+  },
+  {
+    path: 'components/database-saved-view-settings/DatabaseSavedViewSettingsBoardPanel.tsx',
+    maxLines: 145,
+    owner: 'saved view board controls',
+  },
+  {
+    path: 'components/database-saved-view-settings/DatabaseSavedViewSettingsTimelinePanel.tsx',
+    maxLines: 235,
+    owner: 'saved view timeline controls',
+  },
+  {
+    path: 'components/database-saved-view-settings/DatabaseSavedViewSettingsCalendarPanel.tsx',
+    maxLines: 135,
+    owner: 'saved view calendar controls',
+  },
+  {
+    path: 'components/database-saved-view-settings/DatabaseSavedViewSettingsListPanel.tsx',
+    maxLines: 145,
+    owner: 'saved view list controls',
+  },
+  {
+    path: 'components/database-saved-view-settings/DatabaseSavedViewSettingsGalleryPanel.tsx',
+    maxLines: 150,
+    owner: 'saved view gallery controls',
+  },
+  {
+    path: 'components/database-saved-view-settings/DatabaseSavedViewSettingsChartPanel.tsx',
+    maxLines: 300,
+    owner: 'saved view chart controls',
+  },
+  {
+    path: 'components/database-saved-view-settings/DatabaseSavedViewSettingsMapPanel.tsx',
+    maxLines: 175,
+    owner: 'saved view map controls',
+  },
+  {
+    path: 'components/database-saved-view-settings/database-saved-view-settings-types.ts',
+    maxLines: 40,
+    owner: 'saved view settings panel contract',
+  },
+  {
+    path: 'components/database-saved-view-settings/use-saved-view-settings-draft.ts',
+    maxLines: 60,
+    owner: 'saved view settings draft lifecycle',
   },
   {
     path: 'components/database-record-page/database-record-page-utils.ts',
@@ -313,6 +383,21 @@ export const DATABASE_BOUNDARY_CONTRACT = [
   'components/DatabaseSavedViewSettingsDialog.tsx',
   'components/DatabaseRecordPageChrome.tsx',
   'components/database-saved-view-settings/database-saved-view-settings-utils.ts',
+  'components/database-saved-view-settings/database-saved-view-settings-draft.ts',
+  'components/database-saved-view-settings/database-saved-view-settings-types.ts',
+  'components/database-saved-view-settings/use-saved-view-settings-draft.ts',
+  'components/database-saved-view-settings/DatabaseSavedViewSettingsDialog.tsx',
+  'components/database-saved-view-settings/DatabaseSavedViewSettingsSortsGroupsPanel.tsx',
+  'components/database-saved-view-settings/DatabaseSavedViewSettingsProjectionPanel.tsx',
+  'components/database-saved-view-settings/DatabaseSavedViewSettingsConditionalColorsPanel.tsx',
+  'components/database-saved-view-settings/DatabaseSavedViewSettingsTablePanel.tsx',
+  'components/database-saved-view-settings/DatabaseSavedViewSettingsBoardPanel.tsx',
+  'components/database-saved-view-settings/DatabaseSavedViewSettingsTimelinePanel.tsx',
+  'components/database-saved-view-settings/DatabaseSavedViewSettingsCalendarPanel.tsx',
+  'components/database-saved-view-settings/DatabaseSavedViewSettingsListPanel.tsx',
+  'components/database-saved-view-settings/DatabaseSavedViewSettingsGalleryPanel.tsx',
+  'components/database-saved-view-settings/DatabaseSavedViewSettingsChartPanel.tsx',
+  'components/database-saved-view-settings/DatabaseSavedViewSettingsMapPanel.tsx',
   'components/database-record-page/database-record-page-utils.ts',
 ] as const;
 
