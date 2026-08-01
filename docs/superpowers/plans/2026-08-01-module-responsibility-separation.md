@@ -94,16 +94,17 @@ causes Biome to misclassify imports used later in the file.
 
 ### Checklist
 
-- [ ] Add `api-extension-source-hygiene.test.ts`; first run must fail because the production source
+- [x] Add `api-extension-source-hygiene.test.ts`; first run must fail because the production source
       contains a literal NUL byte, then retain it as a regression guard.
-- [ ] Extract a pure `createWorkspaceSearchCacheKey` helper and test that its runtime separator is
+- [x] Extract a pure `createWorkspaceSearchCacheKey` helper and test that its runtime separator is
       exactly one U+0000 character and cannot collide across content/project pairs.
-- [ ] Replace the literal byte with `\0` or `\u0000` source text without changing the runtime value.
-- [ ] Confirm `rg` scans through the end of `api-extension.ts` without a binary-file warning.
-- [ ] Confirm Biome no longer reports the extraction-related false-positive unused `relative` import.
-- [ ] Register the new test exactly once in the server manifest and run search/API focused tests.
-- [ ] Run server typecheck and changed-file Biome.
-- [ ] Deliver the running web editor and record the exact URL before starting Milestone 2.
+- [x] Replace the literal byte with `\0` or `\u0000` source text without changing the runtime value.
+- [x] Confirm `rg` scans through the end of `api-extension.ts` without a binary-file warning.
+- [x] Confirm Biome no longer reports the extraction-related false-positive unused `relative` import.
+- [x] Register the new test exactly once in the server manifest and run search/API focused tests.
+- [x] Run server typecheck and changed-file Biome.
+- [x] Deliver the running web editor and record the exact URL before starting Milestone 2
+      (`http://localhost:5174/`, HTTP 200 on 2026-08-01).
 
 ### Verification
 
