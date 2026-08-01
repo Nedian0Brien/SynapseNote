@@ -167,12 +167,6 @@ import {
   resolveCliOnPath,
   runLoginShellProbe,
 } from './claude-readiness.ts';
-import {
-  buildCliChatCommand,
-  buildCliChatShellCommand,
-  isCliChatLaunchInput,
-} from './cli-chat-command.ts';
-import { listNativeCliChatSessions } from './cli-chat-sessions.ts';
 import { requestUserConsent, walkExceedsCap } from './consent-dialog.ts';
 import {
   type CrashDetection,
@@ -221,6 +215,7 @@ import { formatInstanceAppName, resolveInstanceLabel } from './instance-identity
 import { deriveInstanceUserDataDir } from './instance-isolation.ts';
 import { registerIntegrationsSettings } from './integrations-settings.ts';
 import { registerBugLocalOpsIpc } from './ipc/bug-local-ops-registrar.ts';
+import { registerAssetIpcHandlers } from './ipc/asset-registrar.ts';
 import {
   handleBugReportCrashAck,
   handleBugReportCreate,
@@ -229,6 +224,7 @@ import {
 import { registerDesktopIpcRegistrars } from './ipc/registrar-registry.ts';
 import { handleSeedApply, handleSeedListPacks, handleSeedPlan } from './ipc/seed.ts';
 import { handleSharingSetMode, handleSharingStatus } from './ipc/sharing.ts';
+import { registerTerminalPtyIpc } from './ipc/terminal-pty-registrar.ts';
 import {
   detectProtocol as detectProtocolImpl,
   recordHandoff as recordHandoffImpl,
@@ -311,15 +307,8 @@ import {
   setSpellCheckEnabled as setSpellCheckEnabledState,
   type UpdateChannel,
 } from './state-store.ts';
-import { isTerminalConsented, isTerminalConsentedWithGrace } from './terminal-consent.ts';
 import { type TerminalReaper, wireWindowTerminalReap } from './terminal-lifecycle.ts';
-import {
-  clampPtyDimension,
-  createTerminalManager,
-  DEFAULT_PTY_COLS,
-  DEFAULT_PTY_ROWS,
-  type PtyUtilityLike,
-} from './terminal-manager.ts';
+import { createTerminalManager, type PtyUtilityLike } from './terminal-manager.ts';
 import {
   recordConcurrentSessions,
   recordShellExit,
@@ -3144,8 +3133,8 @@ function registerIpcHandlers() {
     }
   };
 
-  // Docked-terminal PTY mediator. Forks one `pty-host` utilityProcess per
-  // window lazily on first create; coalesces + backpressures shell output.
+  // Terminal ownership stays sender-scoped: the resolver derives its root from the
+  // BrowserWindow/WindowManager mapping, never from renderer payload.
   const terminalManager = createTerminalManager({
     forkPtyHost: () =>
       utilityProcess.fork(join(__dirname, 'utility/pty-host.js')) as unknown as PtyUtilityLike,
@@ -3159,181 +3148,25 @@ function registerIpcHandlers() {
     recordTerminalSession,
     recordConcurrentSessions,
   });
-  // Publish the reap surface so the window factory + will-quit can reach it.
   terminalReaper = terminalManager;
-
-  handle('ok:pty:create', async (event, opts) => {
+  const resolveTerminalProjectRoot = (event: Electron.IpcMainInvokeEvent): string | null => {
     const win = BrowserWindow.fromWebContents(event.sender);
     const editorCtx =
       win && wm ? wm.getContextForBrowserWindow(win as unknown as BrowserWindowLike) : null;
-    // A standalone terminal window is not in `windowsByPath` (one-per-project,
-    // focus-existing), so `getContextForBrowserWindow` returns nothing for it.
-    // Editor windows keep their existing per-project resolution; a terminal
-    // window resolves its cwd from the windowId-keyed terminalWindows registry,
-    // falling back to homedir() when project-less (never null — create() refuses
-    // null). A window in neither map (e.g. the Navigator) resolves to null and
-    // is refused below rather than spawning a shell at an arbitrary dir.
-    const projectPath = resolvePtyProjectRoot({
+    return resolvePtyProjectRoot({
       editorProjectPath: editorCtx?.projectPath ?? null,
       terminalWindow: win ? getTerminalWindowContext(win.id) : undefined,
       homedir: osHomedir(),
     });
-    if (!win || !projectPath) {
-      logIpcError({
-        event: 'ipc.error',
-        channel: 'ok:pty:create',
-        reason: 'no-project',
-        handler: 'createPty',
-      });
-      return { ok: false, reason: 'no-project' };
-    }
-    // Trust-boundary backstop (fail-open): the terminal is allowed by default,
-    // so refuse a real shell ONLY when the window's project-local
-    // `terminal.enabled === false`. Absent/unreadable/malformed/null/true all
-    // read as allowed. The renderer's TerminalGate is the UX enforcement; this
-    // re-check means a renderer regression/compromise can't spawn a shell after
-    // a human has explicitly opted the project out.
-    //
-    // A human opts out via a live CRDT config binding that reaches disk only
-    // after the persistence debounce. The bounded re-read covers the inverse
-    // race — re-enabling (false→absent) — so a shell-open immediately after
-    // re-enable isn't refused on a stale `false`; never trusting the renderer.
-    // The not-opted-out path stays instant and only a just-re-enabled open waits.
-    if (!isTerminalConsented(projectPath) && !(await isTerminalConsentedWithGrace(projectPath))) {
-      logIpcError({
-        event: 'ipc.error',
-        channel: 'ok:pty:create',
-        reason: 'not-consented',
-        handler: 'createPty',
-      });
-      return { ok: false, reason: 'not-consented' };
-    }
-    return terminalManager.create({
-      windowId: win.id,
-      webContents: win.webContents,
-      projectRoot: projectPath,
-      cols: clampPtyDimension(opts.cols, DEFAULT_PTY_COLS),
-      rows: clampPtyDimension(opts.rows, DEFAULT_PTY_ROWS),
-      ...(opts.launchCommand === undefined ? {} : { launchCommand: opts.launchCommand }),
-      ...(opts.privateHistory ? { privateHistory: true } : {}),
-    });
-  });
-  handle('ok:pty:input', async (event, req) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    if (win) {
-      if (isCliChatLaunchInput(req.chat)) {
-        const editorCtx = wm
-          ? wm.getContextForBrowserWindow(win as unknown as BrowserWindowLike)
-          : null;
-        const projectRoot = resolvePtyProjectRoot({
-          editorProjectPath: editorCtx?.projectPath ?? null,
-          terminalWindow: getTerminalWindowContext(win.id),
-          homedir: osHomedir(),
-        });
-        const claudeMcpOwn =
-          req.chat.cli === 'claude' && isProjectClaudeMcpOwn(projectRoot ?? undefined);
-        const autoApproveOkTools =
-          req.chat.autoApproveOkTools !== false &&
-          (claudeMcpOwn ||
-            (req.chat.cli === 'codex' &&
-              classifyExistingMcpEntry(EDITOR_TARGETS.codex, '', osHomedir()).kind === 'present'));
-        const command = buildCliChatCommand(req.chat, {
-          autoApproveOkTools,
-          mcpPreApprove: claudeMcpOwn,
-          dataPlaneOnlyWrites: process.env.SYNAPSENOTE_DATABASE_SANDBOX_MODE === 'data-plane-only',
-        });
-        terminalManager.input({
-          windowId: win.id,
-          ptyId: req.ptyId,
-          data: `${buildCliChatShellCommand(command)}\r`,
-        });
-      } else if (typeof req.data === 'string') {
-        terminalManager.input({ windowId: win.id, ptyId: req.ptyId, data: req.data });
-      }
-    }
-    return undefined;
-  });
-  handle('ok:pty:resize', async (event, req) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    if (win) {
-      terminalManager.resize({
-        windowId: win.id,
-        ptyId: req.ptyId,
-        cols: clampPtyDimension(req.cols, DEFAULT_PTY_COLS),
-        rows: clampPtyDimension(req.rows, DEFAULT_PTY_ROWS),
-      });
-    }
-    return undefined;
-  });
-  handle('ok:pty:kill', async (event, req) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    if (win) terminalManager.kill({ windowId: win.id, ptyId: req.ptyId });
-    return undefined;
-  });
-  handle('ok:pty:drain', async (event, req) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    if (win) terminalManager.drain({ windowId: win.id, ptyId: req.ptyId, bytes: req.bytes });
-    return undefined;
-  });
-  handle('ok:pty:list', async (event) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    return win ? terminalManager.listSessions(win.id) : [];
-  });
-  handle('ok:terminal:cli-chat-sessions', async (event) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    const editorCtx =
-      win && wm ? wm.getContextForBrowserWindow(win as unknown as BrowserWindowLike) : null;
-    const projectPath = resolvePtyProjectRoot({
-      editorProjectPath: editorCtx?.projectPath ?? null,
-      terminalWindow: win ? getTerminalWindowContext(win.id) : undefined,
-      homedir: osHomedir(),
-    });
-    return projectPath === null
-      ? []
-      : listNativeCliChatSessions({ homeDir: osHomedir(), projectRoot: projectPath });
-  });
-  handle('ok:pty:adopt', async (event, req) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    if (!win) {
-      logIpcError({
-        event: 'ipc.error',
-        channel: 'ok:pty:adopt',
-        reason: 'unknown-session',
-        handler: 'adoptPty',
-      });
-      return { ok: false, reason: 'unknown-session' };
-    }
-    return terminalManager.adoptSession({
-      windowId: win.id,
-      ptyId: req.ptyId,
-      webContents: win.webContents,
-    });
-  });
-  handle('ok:pty:set-meta', async (event, req) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    if (win)
-      terminalManager.setSessionMeta({
-        windowId: win.id,
-        ptyId: req.ptyId,
-        customLabel: req.customLabel,
-        ordinal: req.ordinal,
-      });
-    return undefined;
-  });
-  handle('ok:pty:set-order', async (event, req) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    if (win)
-      terminalManager.setSessionOrder({ windowId: win.id, orderedPtyIds: req.orderedPtyIds });
-    return undefined;
-  });
-  handle('ok:terminal:claude-assist', async (event, req) => {
-    let rewireError: string | undefined;
-    if (req.action === 'rewire' && process.platform === 'darwin' && app.isPackaged) {
-      // Re-arm MCP wiring: the same forceShow consent path as
-      // File -> Set up SynapseNote integrations, so the user can wire
-      // `synapsenote` into Claude Code. Fires ONLY from the renderer's
-      // re-wire button — agents have no ok:terminal:* surface, and the consent
-      // dialog itself is human-only.
+  };
+  registerTerminalPtyIpc({
+    handle,
+    terminalManager,
+    resolveProjectRoot: resolveTerminalProjectRoot,
+    isProjectClaudeMcpOwn,
+    resolveClaudeReadiness: resolveTerminalClaudeReadiness,
+    rewireClaudeMcp: async (event) => {
+      if (process.platform !== 'darwin' || !app.isPackaged) return undefined;
       const win = BrowserWindow.fromWebContents(event.sender);
       mcpWiringHandle?.destroy();
       mcpWiringHandle = null;
@@ -3342,370 +3175,85 @@ function registerIpcHandlers() {
           forceShow: true,
           immediateDispatchTarget: win?.webContents,
         });
+        return undefined;
       } catch (err) {
-        rewireError = formatUnknownError(err);
+        const rewireError = formatUnknownError(err);
         getLogger('terminal').warn({ err: rewireError }, 'claude mcp rewire failed');
+        return rewireError;
       }
-    }
-    // Scope the project-MCP pre-approval check to the caller window's project
-    // (its `.mcp.json` is what `claude` reads in the PTY cwd). A window with no
-    // bound project → undefined → not pre-approvable (Claude prompts).
-    const callerWin = BrowserWindow.fromWebContents(event.sender);
-    const projectRoot =
-      callerWin && wm
-        ? wm.getContextForBrowserWindow(callerWin as unknown as BrowserWindowLike)?.projectPath
-        : undefined;
-    const readiness = await resolveTerminalClaudeReadiness(projectRoot);
-    // Surface the rewire failure to the renderer so the button doesn't no-op
-    // silently; readiness itself is still computed for the rest of the banner.
-    return rewireError === undefined ? readiness : { ...readiness, rewireError };
-  });
-
-  handle('ok:terminal:cli-preflight', async (_event, req): Promise<CliReadiness> => {
-    // `req.cli` crosses the IPC boundary as a compile-time `TerminalCli`, but
-    // `createHandler` casts rawArgs without runtime enforcement — validate the
-    // untrusted discriminant against the registry before it indexes
-    // `TERMINAL_CLIS[...].bin`. An out-of-registry value yields a safe `unknown`
-    // verdict (never a silent TypeError, never a `command -v <bad>` probe).
-    if (!(req.cli in TERMINAL_CLIS)) {
-      getLogger('terminal').warn({ cli: req.cli }, 'cli-preflight: unknown cli discriminant');
-      return { onPath: 'unknown' };
-    }
-    return resolveTerminalCliOnPath(req.cli);
-  });
-
-  handle('ok:terminal:cli-installed-map', async (): Promise<Record<TerminalCli, boolean>> => {
-    return resolveTerminalCliInstalledMap();
-  });
-
-  handle('ok:terminal:dock-state', async (event) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    return { visible: win ? (dockVisibleForWindow.get(win.id) ?? false) : false };
+    },
+    getDockVisible: (windowId) => dockVisibleForWindow.get(windowId) ?? false,
+    resolveCliOnPath: resolveTerminalCliOnPath,
+    resolveCliInstalledMap: resolveTerminalCliInstalledMap,
   });
 
   handle('ok:dialog:open-folder', async (_event, opts) => {
     return promptForExistingFolder(dialog, opts);
   });
 
-  const shellOpenExternal = handleShellOpenExternal({
+  registerAssetIpcHandlers({
+    register: handle as unknown as import('./ipc/asset-registrar.ts').AssetIpcRegistrar,
+    platform: process.platform,
+    getWindowForWebContents: (sender) => BrowserWindow.fromWebContents(sender as Electron.WebContents) ?? undefined,
+    getProjectPath: (window) => wm?.getContextForBrowserWindow(window as BrowserWindowLike)?.projectPath,
     openExternal: (url) => shell.openExternal(url),
-  });
-  handle('ok:shell:open-external', async (_event, request) => {
-    if (typeof request !== 'string') return fetchWebPreviewMetadata(request.url);
-    await shellOpenExternal(request);
-    return undefined;
-  });
-
-  handle('ok:shell:detect-protocol', async (_event, scheme) => {
-    return detectProtocolImpl(
-      {
-        platform: process.platform,
-        getApplicationInfoForProtocol: (url) => app.getApplicationInfoForProtocol(url),
-      },
-      scheme,
-    );
-  });
-
-  handle('ok:shell:spawn-cursor', async (event, path) => {
-    // Scope the spawn to the caller window's project directory. A
-    // BrowserWindow without a ProjectContext (e.g. the Navigator, before it
-    // spawns an editor) should never reach this handler, but we treat that
-    // case as "no project scope" — a missing `projectPath` passes through to
-    // `spawnCursorImpl` which gates on the presence of the field. The
-    // validateSpawnPath + isPathWithinProject checks inside the impl refuse
-    // any out-of-scope path when a project IS bound.
-    const callerWin = BrowserWindow.fromWebContents(event.sender);
-    const callerProjectPath =
-      callerWin && wm
-        ? wm.getContextForBrowserWindow(callerWin as unknown as BrowserWindowLike)?.projectPath
-        : undefined;
-    const outcome = await spawnCursorImpl(
-      {
-        platform: process.platform,
-        projectPath: callerProjectPath,
-        getApplicationInfoForProtocol: (url) => app.getApplicationInfoForProtocol(url),
-        spawn: (exec, args, timeoutMs) =>
-          new Promise((resolve) => {
-            try {
-              const child = spawn(exec, [...args], {
-                shell: false,
-                timeout: timeoutMs,
-                stdio: ['ignore', 'ignore', 'pipe'],
-              });
-              // Drain stderr so a chatty child can't block on a full pipe buffer.
-              child.stderr?.on('data', () => {});
-              // `spawn` event fires once the process is successfully launched —
-              // that's the success criterion (not a clean exit). The
-              // macOS `/usr/bin/open` helper exits immediately after handing
-              // off to Launch Services, but the `spawn` event still resolves
-              // before exit, so this remains correct under the open-a routing.
-              child.once('spawn', () => resolve({ ok: true }));
-              child.once('error', () => resolve({ ok: false, reason: 'spawn-error' }));
-            } catch {
-              resolve({ ok: false, reason: 'spawn-error' });
-            }
-          }),
-      },
-      path,
-    );
-    if (!outcome.ok) {
-      logIpcError({
-        event: 'ipc.error',
-        channel: 'ok:shell:spawn-cursor',
-        reason: outcome.reason,
-        handler: 'spawnCursor',
-      });
-    }
-    return outcome;
-  });
-
-  handle('ok:shell:record-handoff', async (_event, line) => {
-    await recordHandoffImpl(
-      {
-        homedir: osHomedir,
-        appendFile: (path, content) => fsPromises.appendFile(path, content, 'utf-8'),
-        mkdir: (path) => fsPromises.mkdir(path, { recursive: true }).then(() => undefined),
-      },
-      line,
-    );
-    return undefined;
-  });
-
-  // Asset-open/PDF dispatch. The tagged export request prints its caller;
-  // path requests thread the caller window's
-  // ProjectContext.projectPath so containment checks scope to the project
-  // that owns the click — different windows (editor + navigator) don't see
-  // each other's roots. Windows without a ProjectContext resolve as no-op
-  // refusal (`path-escape`): a click from such a window has no legitimate
-  // asset scope.
-  handle('ok:shell:open-asset', async (event, relPathOrRequest, pdfBytes) => {
-    const callerWin = BrowserWindow.fromWebContents(event.sender);
-    if (typeof relPathOrRequest !== 'string') {
-      if (relPathOrRequest.kind !== 'export-pdf' || !callerWin) {
-        return { ok: false, reason: 'print-failed' } as const;
-      }
-      const outcome = await exportWebContentsToPdf(
-        {
-          showSaveDialog: (options) => dialog.showSaveDialog(callerWin, options),
-          printToPDF: (options) => event.sender.printToPDF(options),
-          writeFile: (path, bytes) => fsPromises.writeFile(path, bytes),
-        },
-        relPathOrRequest.suggestedName,
-      );
-      if (!outcome.ok) {
-        logIpcError({
-          event: 'ipc.error',
-          channel: 'ok:shell:open-asset',
-          reason: outcome.reason,
-          handler: 'exportPdf',
-        });
-      }
-      return outcome;
-    }
-    const relPath = relPathOrRequest;
-    const callerProjectPath =
-      callerWin && wm
-        ? wm.getContextForBrowserWindow(callerWin as unknown as BrowserWindowLike)?.projectPath
-        : undefined;
-    if (!callerProjectPath) {
-      logIpcError({
-        event: 'ipc.error',
-        channel: 'ok:shell:open-asset',
-        reason: pdfBytes ? 'invalid-path' : 'path-escape',
-        handler: pdfBytes ? 'savePdf' : 'openAsset',
-      });
-      return pdfBytes
-        ? ({ ok: false, reason: 'invalid-path' } as const)
-        : ({ ok: false, reason: 'path-escape' } as const);
-    }
-    if (pdfBytes) {
-      const outcome = await savePdfAssetSafely(
-        { projectPath: callerProjectPath, platform: process.platform },
-        relPath,
-        pdfBytes,
-      );
-      if (!outcome.ok) {
-        logIpcError({
-          event: 'ipc.error',
-          channel: 'ok:shell:open-asset',
-          reason: outcome.reason,
-          handler: 'savePdf',
-        });
-      }
-      return outcome;
-    }
-    const outcome = await openAssetSafely(
-      {
-        projectPath: callerProjectPath,
-        platform: process.platform,
-        openPath: (canonical) => shell.openPath(canonical),
-      },
-      relPath,
-    );
-    if (!outcome.ok) {
-      logIpcError({
-        event: 'ipc.error',
-        channel: 'ok:shell:open-asset',
-        reason: outcome.reason,
-        handler: 'openAsset',
-      });
-    }
-    return outcome;
-  });
-
-  handle('ok:shell:reveal-asset', async (event, relPath) => {
-    const callerWin = BrowserWindow.fromWebContents(event.sender);
-    const callerProjectPath =
-      callerWin && wm
-        ? wm.getContextForBrowserWindow(callerWin as unknown as BrowserWindowLike)?.projectPath
-        : undefined;
-    if (!callerProjectPath) {
-      logIpcError({
-        event: 'ipc.error',
-        channel: 'ok:shell:reveal-asset',
-        reason: 'path-escape',
-        handler: 'revealAsset',
-      });
-      return { ok: false, reason: 'path-escape' } as const;
-    }
-    const outcome = await revealAssetSafely(
-      {
-        projectPath: callerProjectPath,
-        platform: process.platform,
-        showItemInFolder: (canonical) => shell.showItemInFolder(canonical),
-      },
-      relPath,
-    );
-    if (!outcome.ok) {
-      logIpcError({
-        event: 'ipc.error',
-        channel: 'ok:shell:reveal-asset',
-        reason: outcome.reason,
-        handler: 'revealAsset',
-      });
-    }
-    return outcome;
-  });
-
-  // Native right-click context menu. Renderer plugin resolves the clicked
-  // on-disk reference (asset chip, wiki-link chip, or image) and invokes
-  // this with {relPath, title, kind}. Main builds the menu via
-  // `Menu.buildFromTemplate` and pops it on the caller window —
-  // gesture-attested because main observes the click directly (the
-  // renderer plugin merely forwards the intent; the actual popup is
-  // sourced in main). Actions route through the same `openAssetSafely` /
-  // `revealAssetSafely` gates as the left-click flow.
-  handle('ok:shell:show-asset-menu', async (event, params) => {
-    const callerWin = BrowserWindow.fromWebContents(event.sender);
-    if (!callerWin || !wm) return undefined;
-    const projectPath = wm.getContextForBrowserWindow(
-      callerWin as unknown as BrowserWindowLike,
-    )?.projectPath;
-    if (!projectPath) return undefined;
-    popAssetMenu(
-      {
-        Menu,
-        window: callerWin,
-      },
-      {
-        kind: params.kind,
-        platform: process.platform,
-        actions: {
-          reveal: async () => {
-            await revealAssetSafely(
-              {
-                projectPath,
-                platform: process.platform,
-                showItemInFolder: (canonical) => shell.showItemInFolder(canonical),
-              },
-              params.relPath,
-            );
-          },
-          openInDefault: async () => {
-            await openAssetSafely(
-              {
-                projectPath,
-                platform: process.platform,
-                openPath: (canonical) => shell.openPath(canonical),
-              },
-              params.relPath,
-            );
-          },
-          copyLink: () => {
-            clipboard.writeText(params.relPath);
-          },
-        },
-      },
-    );
-    return undefined;
-  });
-
-  handle('ok:shell:show-item-in-folder', async (event, path) => {
-    // Resolve caller window's project directory (undefined for Navigator).
-    // Validation, refusal, and security rationale live in `showItemInFolderImpl`.
-    const callerWin = BrowserWindow.fromWebContents(event.sender);
-    const callerProjectPath =
-      callerWin && wm
-        ? wm.getContextForBrowserWindow(callerWin as unknown as BrowserWindowLike)?.projectPath
-        : undefined;
-    const result = showItemInFolderImpl(
-      {
-        platform: process.platform,
-        projectPath: callerProjectPath,
-        // The bug-report zip lives in `~/.ok/bug-reports/`, outside every
-        // project, so the review/failure card's Reveal would otherwise be
-        // refused (`out-of-project`, or `no-project-bound` from a Navigator
-        // window). This dir is main-derived, not renderer-influenced.
-        allowedRoots: [dirname(defaultBugReportZipPath())],
-        showItemInFolder: (p) => shell.showItemInFolder(p),
-      },
-      path,
-    );
-    // Channel result is `undefined` (silent-by-design — don't leak validation
-    // signal back to a potentially-compromised renderer), but a refusal is
-    // worth a main-side breadcrumb: a renderer bug constructing a wrong path
-    // otherwise produces a "nothing happened" UX with no debug trail.
-    if (!result.ok) {
-      console.warn('[main] show-item-in-folder refused', { reason: result.reason });
-    }
-    return undefined;
-  });
-
-  handle('ok:shell:reveal-external', async (event, absPath) => {
-    // Out-of-project reveal for terminal clickable-links. Uncontained by design;
-    // the confirmation dialog is the trust boundary (see reveal-external.ts).
-    const callerWin = BrowserWindow.fromWebContents(event.sender);
-    const result = await handleRevealExternal(absPath, {
-      // statSync (not existsSync) so a permission error (EACCES/EPERM on a system
-      // path) surfaces as `unreadable` rather than being flattened to `missing`.
-      probe: (p) => {
+    fetchWebPreviewMetadata,
+    detectProtocol: (scheme) => detectProtocolImpl({ platform: process.platform, getApplicationInfoForProtocol: (url) => app.getApplicationInfoForProtocol(url) }, scheme),
+    spawnCursor: async (projectPath, path) => spawnCursorImpl({
+      platform: process.platform, projectPath,
+      getApplicationInfoForProtocol: (url) => app.getApplicationInfoForProtocol(url),
+      spawn: (exec, args, timeoutMs) => new Promise((resolve) => {
         try {
-          statSync(p);
-          return 'exists';
-        } catch (err) {
-          return (err as NodeJS.ErrnoException).code === 'ENOENT' ? 'missing' : 'unreadable';
-        }
-      },
-      confirmReveal: async (p) => {
-        const opts: MessageBoxOptions = {
-          type: 'question',
-          buttons: ['Reveal in Finder', 'Cancel'],
-          defaultId: 0,
-          cancelId: 1,
-          message: `"${basename(p)}" is outside your project`,
-          detail: `${p}\n\nReveal it in Finder?`,
-        };
-        const { response } = callerWin
-          ? await dialog.showMessageBox(callerWin, opts)
-          : await dialog.showMessageBox(opts);
-        return response === 0;
-      },
-      showItemInFolder: (p) => shell.showItemInFolder(p),
-    });
-    if (!result.ok) {
-      console.warn('[main] reveal-external refused', { reason: result.reason });
-    }
-    return result;
+          const child = spawn(exec, [...args], { shell: false, timeout: timeoutMs, stdio: ['ignore', 'ignore', 'pipe'] });
+          child.stderr?.on('data', () => {});
+          child.once('spawn', () => resolve({ ok: true }));
+          child.once('error', () => resolve({ ok: false, reason: 'spawn-error' }));
+        } catch { resolve({ ok: false, reason: 'spawn-error' }); }
+      }),
+    }, path),
+    recordHandoff: (line) => recordHandoffImpl({ homedir: osHomedir, appendFile: (path, content) => fsPromises.appendFile(path, content, 'utf-8'), mkdir: (path) => fsPromises.mkdir(path, { recursive: true }).then(() => undefined) }, line),
+    openAsset: (projectPath, relPath) => openAssetSafely({ projectPath, platform: process.platform, openPath: (canonical) => shell.openPath(canonical) }, relPath),
+    savePdfAsset: (projectPath, relPath, bytes) => savePdfAssetSafely({ projectPath, platform: process.platform }, relPath, bytes),
+    exportPdf: (sender, suggestedName) => {
+      const callerWin = BrowserWindow.fromWebContents(sender as Electron.WebContents);
+      if (!callerWin) return Promise.resolve({ ok: false, reason: 'print-failed' } as const);
+      return exportWebContentsToPdf({ showSaveDialog: (options) => dialog.showSaveDialog(callerWin, options), printToPDF: (options) => (sender as Electron.WebContents).printToPDF(options), writeFile: (path, bytes) => fsPromises.writeFile(path, bytes) }, suggestedName);
+    },
+    revealAsset: (projectPath, relPath) => revealAssetSafely({ projectPath, platform: process.platform, showItemInFolder: (canonical) => shell.showItemInFolder(canonical) }, relPath),
+    popAssetMenu: (window, params) =>
+      popAssetMenu({ Menu, window: window as Electron.BrowserWindow }, params),
+    copyText: (text) => clipboard.writeText(text),
+    showItemInFolder: (projectPath, allowedRoots, path) => showItemInFolderImpl({ projectPath, allowedRoots, platform: process.platform, showItemInFolder: (candidate) => shell.showItemInFolder(candidate) }, path),
+    defaultBugReportZipPath,
+    revealExternal: (absPath, callerWindow) =>
+      handleRevealExternal(absPath, {
+        probe: (path) => {
+          try {
+            statSync(path);
+            return 'exists';
+          } catch (err) {
+            return (err as NodeJS.ErrnoException).code === 'ENOENT' ? 'missing' : 'unreadable';
+          }
+        },
+        confirmReveal: async (path) => {
+          const options: MessageBoxOptions = {
+            type: 'question',
+            buttons: ['Reveal in Finder', 'Cancel'],
+            defaultId: 0,
+            cancelId: 1,
+            message: `"${basename(path)}" is outside your project`,
+            detail: `${path}\n\nReveal it in Finder?`,
+          };
+          const window = callerWindow as Electron.BrowserWindow | undefined;
+          const { response } = window
+            ? await dialog.showMessageBox(window, options)
+            : await dialog.showMessageBox(options);
+          return response === 0;
+        },
+        showItemInFolder: (path) => shell.showItemInFolder(path),
+      }),
+    logIpcError,
+    warn: (message, details) => console.warn(message, details),
   });
 
   handle('ok:shell:trash-item', async (event, absPath) => {
