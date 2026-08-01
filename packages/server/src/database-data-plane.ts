@@ -48,7 +48,6 @@ import type {
 } from './database-button-executor.ts';
 import {
   type DatabaseCommitEngine,
-  DatabaseCommitError,
   type DatabaseCommitInput,
   type DatabaseCommitResult,
   type DatabaseUndoInput,
@@ -73,6 +72,7 @@ import {
   type DatabaseCatalogNotModifiedResult,
   type DatabaseCatalogResult,
 } from './database-data-plane-catalog.ts';
+import { createDatabaseCommitAutomationCoordinator } from './database-data-plane-commit-automation.ts';
 import { createDatabaseContextPackCoordinator } from './database-data-plane-context.ts';
 import { DatabaseDataPlaneError } from './database-data-plane-errors.ts';
 import {
@@ -86,7 +86,6 @@ import {
   type DatabaseMarkdownTableExportInput,
   type DatabaseMarkdownTableMutationRequest,
   exportDatabaseMarkdownTable,
-  mutateDatabaseMarkdownTable,
 } from './database-data-plane-markdown-adapters.ts';
 import { createDatabasePlanMutationCoordinator } from './database-data-plane-plan-mutations.ts';
 import {
@@ -1083,6 +1082,39 @@ export class DatabaseDataPlane {
     };
   }
 
+  #commitAutomationPort() {
+    return {
+      assertReadable: this.#assertReadable.bind(this),
+      assertMutationAllowed: this.#assertMutationAllowed.bind(this),
+      assertPlanMutationAccess: this.#assertPlanMutationAccess.bind(this),
+      authorizeOperation: this.authorizeOperation.bind(this),
+      databases: () => this.#databaseStore.snapshot().databases,
+      planEngine: this.#databasePlanEngine,
+      recordIndex: this.#databaseRecordIndex,
+      getCommitEngine: () => this.#databaseCommitEngine,
+      setCommitEngine: (engine: DatabaseCommitEngine) => {
+        this.#databaseCommitEngine = engine;
+      },
+      getRepairEngine: () => this.#databaseRepairEngine,
+      setRepairEngine: (engine: DatabaseRepairEngine) => {
+        this.#databaseRepairEngine = engine;
+      },
+      getPublisher: () => this.#publishAutomationEvent,
+      setPublisher: (
+        publisher: (input: EnqueueDatabaseAutomationEventInput) => Promise<unknown>,
+      ) => {
+        this.#publishAutomationEvent = publisher;
+      },
+      now: this.#now,
+      bindMutationActorToAccessPrincipal: this.#bindMutationActorToAccessPrincipal,
+      trustedMutationActor: this.#trustedMutationActor.bind(this),
+      trustedRecordActor: this.#trustedRecordActor.bind(this),
+      buttonInvocationByPlanId: this.#buttonInvocationByPlanId,
+      markdownTableWriter: this.#databaseMarkdownTableWriter,
+      stableJson,
+    };
+  }
+
   #trustedMutationActor(): DatabaseCommitInput['actor'] {
     const principal = this.#currentAccessPrincipal();
     return principal.kind === 'agent'
@@ -1941,18 +1973,17 @@ export class DatabaseDataPlane {
   }
 
   configureCommitEngine(engine: DatabaseCommitEngine): void {
-    this.#databaseCommitEngine = engine;
-  }
-
-  /** Replace derived semantic state after a live provider/config change. */
-  configureSemanticIndex(index: DatabaseSemanticIndex): void {
-    this.#semanticIndex = index;
+    createDatabaseCommitAutomationCoordinator(this.#commitAutomationPort()).configureCommitEngine(
+      engine,
+    );
   }
 
   configureAutomationEventPublisher(
     publisher: (input: EnqueueDatabaseAutomationEventInput) => Promise<unknown>,
   ): void {
-    this.#publishAutomationEvent = publisher;
+    createDatabaseCommitAutomationCoordinator(
+      this.#commitAutomationPort(),
+    ).configureAutomationEventPublisher(publisher);
   }
 
   async #publishFormAutomationEvent(receipt: {
@@ -1962,191 +1993,56 @@ export class DatabaseDataPlane {
     viewId: string;
     recordId: string;
   }): Promise<void> {
-    if (!this.#publishAutomationEvent) return;
-    const record = this.#databaseRecordIndex.getById(receipt.recordId);
-    if (!record?.revision) {
-      throw new DatabaseDataPlaneError(
-        'index_unavailable',
-        'Form response was committed but its automation event awaits an exact indexed revision.',
-        { recordId: receipt.recordId },
-      );
-    }
-    await this.#publishAutomationEvent({
-      deduplicationKey: `form:${receipt.id}`,
-      databaseId: receipt.databaseId,
-      kind: 'form_submitted',
-      occurredAt: this.#now().toISOString(),
-      sourceId: receipt.sourceId,
-      recordId: receipt.recordId,
-      recordRevision: record.revision,
-      viewId: receipt.viewId,
-    });
+    return createDatabaseCommitAutomationCoordinator(
+      this.#commitAutomationPort(),
+    ).publishFormAutomationEvent(receipt);
   }
 
   configureRepairEngine(engine: DatabaseRepairEngine): void {
-    this.#databaseRepairEngine = engine;
+    createDatabaseCommitAutomationCoordinator(this.#commitAutomationPort()).configureRepairEngine(
+      engine,
+    );
   }
 
   async previewRepair(
     ttlSeconds?: number,
     options?: DatabaseRepairPreviewOptions,
   ): Promise<DatabaseRepairPlan> {
-    this.#assertReadable();
-    if (!this.#databaseRepairEngine) {
-      throw new DatabaseDataPlaneError('repair_unavailable', 'Database repair is unavailable');
-    }
-    return this.#databaseRepairEngine.preview(ttlSeconds, options);
+    return createDatabaseCommitAutomationCoordinator(this.#commitAutomationPort()).previewRepair(
+      ttlSeconds,
+      options,
+    );
   }
 
   async applyRepair(input: DatabaseRepairApplyInput): Promise<DatabaseRepairResult> {
-    this.#assertMutationAllowed();
-    if (!this.#databaseRepairEngine) {
-      throw new DatabaseDataPlaneError('repair_unavailable', 'Database repair is unavailable');
-    }
-    for (const database of this.#databaseStore.snapshot().databases) {
-      this.authorizeOperation({
-        action: 'alter_schema',
-        databaseId: database.id,
-      });
-    }
-    return this.#databaseRepairEngine.apply(
-      this.#bindMutationActorToAccessPrincipal
-        ? { ...input, principalId: this.#trustedMutationActor().principalId }
-        : input,
-    );
-  }
-
-  async undoRepair(input: DatabaseRepairUndoInput): Promise<DatabaseRepairUndoResult> {
-    this.#assertMutationAllowed();
-    if (!this.#databaseRepairEngine) {
-      throw new DatabaseDataPlaneError('repair_unavailable', 'Database repair is unavailable');
-    }
-    for (const database of this.#databaseStore.snapshot().databases) {
-      this.authorizeOperation({ action: 'alter_schema', databaseId: database.id });
-    }
-    return this.#databaseRepairEngine.undo(
-      this.#bindMutationActorToAccessPrincipal
-        ? { ...input, principalId: this.#trustedMutationActor().principalId }
-        : input,
-    );
-  }
-
-  async commit(input: DatabaseCommitInput): Promise<DatabaseCommitResult> {
-    this.#assertMutationAllowed();
-    if (!this.#databaseCommitEngine) {
-      throw new DatabaseCommitError(
-        'commit_unavailable',
-        'Database commit engine is not configured',
-      );
-    }
-    const exactPlan = this.#databasePlanEngine.getPlan(input.planId);
-    this.#assertPlanMutationAccess(exactPlan);
-    const trustedInput = this.#bindMutationActorToAccessPrincipal
-      ? { ...input, actor: this.#trustedMutationActor() }
-      : input;
-    const result = await this.#databaseCommitEngine.commit(trustedInput);
-    await this.#publishPlanAutomationEvents(exactPlan, result);
-    const invocation = this.#buttonInvocationByPlanId.get(input.planId);
-    if (invocation && this.#publishAutomationEvent) {
-      const record = invocation.recordId
-        ? this.#databaseRecordIndex.getById(invocation.recordId)
-        : null;
-      if (invocation.recordId && !record?.revision) {
-        throw new DatabaseDataPlaneError(
-          'index_unavailable',
-          'Button changes committed but the invocation event awaits an exact indexed revision.',
-          { recordId: invocation.recordId, mutationId: result.mutationId },
-        );
-      }
-      await this.#publishAutomationEvent({
-        deduplicationKey: `button:${result.mutationId}`,
-        databaseId: invocation.databaseId,
-        kind: 'button_invoked',
-        sourceId: invocation.sourceId,
-        recordId: invocation.recordId,
-        recordRevision: record?.revision ?? null,
-        propertyId: invocation.propertyId,
-        buttonId: invocation.buttonId,
-      });
-      this.#buttonInvocationByPlanId.delete(input.planId);
-    }
-    return result;
-  }
-
-  /** Route every v2 owner-table write through the storage-aware writer. */
-  async mutateMarkdownTable(input: DatabaseMarkdownTableMutationRequest): Promise<unknown> {
-    return mutateDatabaseMarkdownTable(
-      {
-        assertMutationAllowed: this.#assertMutationAllowed.bind(this),
-        writer: this.#databaseMarkdownTableWriter,
-        authorizeOperation: this.authorizeOperation.bind(this),
-        mutationInput: (mutation) =>
-          this.#bindMutationActorToAccessPrincipal
-            ? { ...mutation, actor: this.#trustedRecordActor() }
-            : mutation,
-      },
+    return createDatabaseCommitAutomationCoordinator(this.#commitAutomationPort()).applyRepair(
       input,
     );
   }
 
-  async #publishPlanAutomationEvents(
-    plan: DatabasePlanArtifact,
-    result: DatabaseCommitResult,
-  ): Promise<void> {
-    if (!this.#publishAutomationEvent) return;
-    const databaseId = plan.affectedObjects.databaseIds[0];
-    if (!databaseId) return;
-    for (const change of plan.diff.records) {
-      if (change.action === 'delete') continue;
-      const record = this.#databaseRecordIndex.getById(change.recordId);
-      if (!record?.revision) {
-        throw new DatabaseDataPlaneError(
-          'index_unavailable',
-          'Database changes committed but automation events await an exact indexed revision.',
-          { recordId: change.recordId, mutationId: result.mutationId },
-        );
-      }
-      if (change.action === 'create') {
-        await this.#publishAutomationEvent({
-          deduplicationKey: `commit:${result.mutationId}:record:${record.id}`,
-          databaseId,
-          kind: 'record_added',
-          sourceId: record.sourceId,
-          recordId: record.id,
-          recordRevision: record.revision,
-        });
-        continue;
-      }
-      const before = change.before?.values ?? {};
-      const after = change.after?.values ?? {};
-      for (const propertyId of new Set(Object.keys(before).concat(Object.keys(after)))) {
-        if (stableJson(before[propertyId]) === stableJson(after[propertyId])) continue;
-        await this.#publishAutomationEvent({
-          deduplicationKey: `commit:${result.mutationId}:record:${record.id}:property:${propertyId}`,
-          databaseId,
-          kind: 'property_changed',
-          sourceId: record.sourceId,
-          recordId: record.id,
-          recordRevision: record.revision,
-          propertyId,
-        });
-      }
-    }
+  async undoRepair(input: DatabaseRepairUndoInput): Promise<DatabaseRepairUndoResult> {
+    return createDatabaseCommitAutomationCoordinator(this.#commitAutomationPort()).undoRepair(
+      input,
+    );
+  }
+
+  async commit(input: DatabaseCommitInput): Promise<DatabaseCommitResult> {
+    return createDatabaseCommitAutomationCoordinator(this.#commitAutomationPort()).commit(input);
+  }
+
+  async mutateMarkdownTable(input: DatabaseMarkdownTableMutationRequest): Promise<unknown> {
+    return createDatabaseCommitAutomationCoordinator(
+      this.#commitAutomationPort(),
+    ).mutateMarkdownTable(input);
   }
 
   async undo(input: DatabaseUndoInput): Promise<DatabaseUndoResult> {
-    this.#assertMutationAllowed();
-    if (!this.#databaseCommitEngine) {
-      throw new DatabaseCommitError(
-        'commit_unavailable',
-        'Database commit engine is not configured',
-      );
-    }
-    return this.#databaseCommitEngine.undo(
-      this.#bindMutationActorToAccessPrincipal && input.action === 'apply'
-        ? { ...input, actor: this.#trustedMutationActor() }
-        : input,
-    );
+    return createDatabaseCommitAutomationCoordinator(this.#commitAutomationPort()).undo(input);
+  }
+
+  /** Replace derived semantic state after a live provider/config change. */
+  configureSemanticIndex(index: DatabaseSemanticIndex): void {
+    this.#semanticIndex = index;
   }
 
   #projectSemanticIndexStatus(
