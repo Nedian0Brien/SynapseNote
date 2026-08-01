@@ -4,7 +4,6 @@ import {
   CreateFolderSuccessSchema,
   CreatePageSuccessSchema,
   DeletePathSuccessSchema,
-  DuplicatePathSuccessSchema,
   type HandoffOutcome,
   type HandoffTarget,
   type InstallState,
@@ -100,7 +99,6 @@ import {
 import { buildOkignorePatternFromTarget } from '@/components/file-tree-okignore';
 import {
   applyDeleteToDocuments,
-  applyDuplicateToDocuments,
   applyRenameToDocuments,
   buildTrashAbsPath,
   canonicalizeAssetTargetForDelete,
@@ -227,6 +225,7 @@ import {
   findTreeItemPath,
   useFileTreeDragAndDrop,
 } from './file-tree/useFileTreeDragAndDrop';
+import { createDuplicateFileTreeMutation } from './file-tree/useFileTreeMutations';
 import { useFileTreeShowAll } from './file-tree/useFileTreeShowAll';
 import { OpenInAgentContextSubmenu } from './handoff/OpenInAgentContextSubmenu';
 import {
@@ -1603,78 +1602,22 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
 
   const isAssetTreePath = (treePath: string) => assetTreePathsRef.current.has(treePath);
 
-  async function handleDuplicateTarget(target: FileTreeTarget) {
-    if (target.kind === 'asset') return;
-    if (busyPathRef.current !== null) return;
-    const clearBusyState = () => {
-      setBusyPath(null);
-      busyPathRef.current = null;
-    };
-    busyPathRef.current = target.path;
-    setBusyPath(target.path);
-    setError(null);
-
-    try {
-      const res = await fetch('/api/duplicate-path', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kind: target.kind, path: target.path }),
-      });
-      const parsed = await parseServerResponse(res, t`Failed to duplicate path`);
-
-      if (!parsed.ok) {
-        toast.error(parsed.title);
-        resetModelToDocuments();
-        clearBusyState();
-        return;
-      }
-
-      const success = parseSuccessOrWarn(
-        DuplicatePathSuccessSchema,
-        parsed.body,
-        'duplicate-path',
-        null,
-      );
-      if (success === null) {
-        const message = t`Duplicate succeeded but the sidebar may be out of date — refresh to resync`;
-        toast.error(message);
-        setError(message);
-        emitDocumentsChanged(['files', 'backlinks', 'graph']);
-        resetModelToDocuments();
-        clearBusyState();
-        return;
-      }
-
-      for (const docName of success.duplicatedDocNames) {
-        addPage(docName);
-      }
-      setDocuments((current) => {
-        const next = applyDuplicateToDocuments(current, target, success);
-        resetModelToDocuments(next);
-        markNextDocumentsAsApplied(next);
-        return next;
-      });
-      emitDocumentsChanged(['files', 'backlinks', 'graph']);
-
-      if (success.path !== target.path) {
-        if (success.kind === 'folder') {
-          navigateToFolderWithPulse(success.path);
-        } else {
-          navigateToWithPulse(success.path);
-        }
-      }
-      toast.success(success.kind === 'folder' ? t`Folder duplicated` : t`File duplicated`, {
-        description: success.path,
-      });
-      clearBusyState();
-    } catch (err) {
-      const detail = err instanceof Error ? err.message : String(err);
-      console.warn('[FileTree] duplicate failed:', err);
-      toast.error(t`Could not duplicate item`, { description: detail });
-      resetModelToDocuments();
-      clearBusyState();
-    }
-  }
+  const handleDuplicateTarget = createDuplicateFileTreeMutation({
+    busyPathRef,
+    setBusyPath,
+    setError,
+    setDocuments,
+    resetModelToDocuments,
+    markNextDocumentsAsApplied,
+    addPage,
+    navigateToFile: navigateToWithPulse,
+    navigateToFolder: navigateToFolderWithPulse,
+    failedTitle: t`Failed to duplicate path`,
+    resyncMessage: t`Duplicate succeeded but the sidebar may be out of date — refresh to resync`,
+    duplicateLabel: t`File duplicated`,
+    folderDuplicateLabel: t`Folder duplicated`,
+    networkMessage: t`Could not duplicate item`,
+  });
 
   const handleDuplicateTargetRef = useRef(handleDuplicateTarget);
   useEffect(() => {

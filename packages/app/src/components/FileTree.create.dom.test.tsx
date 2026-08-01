@@ -11,7 +11,7 @@
 import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from 'bun:test';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { MouseEventHandler, ReactNode } from 'react';
+import { createContext, type MouseEventHandler, type ReactNode } from 'react';
 import type { FileEntry } from './file-tree-utils';
 
 type MenuItemProps = {
@@ -262,6 +262,22 @@ mock.module('@/editor/DocumentContext', () => ({
     closeDocument: closeDocumentMock,
     closeAndClearDocument: closeAndClearForRenameMock,
     closeAndClearForDelete: closeAndClearForRenameMock,
+    closeAndClearForRename: closeAndClearForRenameMock,
+    getPoolActiveDocName: () => 'notes/source',
+    poolHas: () => false,
+    isNewTabActive: false,
+    openTarget: openTargetMock,
+    prewarm: () => {},
+    remapTabsForRename: remapTabsForRenameMock,
+  }),
+}));
+
+mock.module('@/editor/document-context/context', () => ({
+  DocumentContext: createContext({
+    activeDocName: 'notes/source',
+    activeTarget: { kind: 'doc', target: 'notes/source', docName: 'notes/source' },
+    closeTabs: closeTabsMock,
+    closeDocument: closeDocumentMock,
     closeAndClearForRename: closeAndClearForRenameMock,
     getPoolActiveDocName: () => 'notes/source',
     poolHas: () => false,

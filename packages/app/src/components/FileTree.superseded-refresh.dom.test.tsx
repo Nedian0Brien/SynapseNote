@@ -231,6 +231,29 @@ mock.module('@/editor/DocumentContext', () => ({
     remapTabsForRename: mock(() => {}),
   }),
 }));
+mock.module('@/editor/document-context/useDocumentNavigation', () => ({
+  useDocumentNavigation: () => ({
+    activeDocName: null,
+    activeTarget: null,
+    isNewTabActive: false,
+    openTarget: mock(() => {}),
+  }),
+}));
+mock.module('@/editor/document-context/useDocumentTabs', () => ({
+  useDocumentTabs: () => ({
+    closeTabs: mock(() => {}),
+    closeDocument: mock(() => {}),
+    remapTabsForRename: mock(() => {}),
+  }),
+}));
+mock.module('@/editor/document-context/useDocumentCollaboration', () => ({
+  useDocumentCollaboration: () => ({
+    closeAndClearForRename: mock(async () => {}),
+    getPoolActiveDocName: () => null,
+    poolHas: () => false,
+    prewarm: () => {},
+  }),
+}));
 mock.module('@/components/PageListContext', () => ({
   usePageList: () => ({ addPage: mock(() => {}) }),
 }));
