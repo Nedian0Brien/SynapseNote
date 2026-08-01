@@ -5,39 +5,19 @@ import type { FileTreeDropResult, FileTreeRenameEvent } from '@pierre/trees';
 import { useTheme } from 'next-themes';
 import { startTransition, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import {
-  docNameToTreePath,
-  fileEntryToTreePath,
-  folderPathToTreeDirectoryPath,
-} from '@/components/file-tree-adapter';
-import type {
-  FileTreeTarget,
-  RenamedAssetMapping,
-  RenamedDocExtensionMapping,
-  RenamedDocMapping,
-  RenamedFolderMapping,
-} from '@/components/file-tree-operations';
-import { getFileExtension } from '@/components/file-tree-rename-validation';
-import {
-  classifyEmptyTree,
-  type DocumentEntry,
-  type FileEntry,
-  isAssetEntry,
-  isDocumentEntry,
-} from '@/components/file-tree-utils';
+import { fileEntryToTreePath, folderPathToTreeDirectoryPath } from '@/components/file-tree-adapter';
+import type { FileTreeTarget } from '@/components/file-tree-operations';
+import { classifyEmptyTree, type FileEntry, isAssetEntry } from '@/components/file-tree-utils';
 import { coerceTrashFailureReason, type TrashFailedTarget } from '@/components/TrashFailureModal';
 import { asDirectoryHandle } from '@/components/use-selection-mirror';
-import { getEditorForDoc } from '@/editor/active-editor';
 import { useDocumentCollaboration } from '@/editor/document-context/useDocumentCollaboration';
 import { useDocumentTabs } from '@/editor/document-context/useDocumentTabs';
-import { captureRenameSnapshots } from '@/editor/editor-cache';
-import { assetTabId, docTabId, folderTabId, remapPathForFolderRenames } from '@/editor/editor-tabs';
+import { assetTabId, docTabId, folderTabId } from '@/editor/editor-tabs';
 import { useConflicts } from '@/hooks/use-conflicts';
 import { useConfigContext } from '@/lib/config-provider';
 import { emitDocumentsChanged } from '@/lib/documents-events';
 import type { PageHeaderRenameResult } from '@/lib/page-header-rename-events';
 import { parseSuccessOrWarn } from '@/lib/parse-server-response';
-import { applyRenamedDocuments as reconcileRenamedDocuments } from './file-tree/apply-renamed-documents';
 import { FileTreeDialogs } from './file-tree/FileTreeDialogs';
 import { FileTreeEmptyState } from './file-tree/FileTreeEmptyState';
 import { FileTreeMenu } from './file-tree/FileTreeMenu';
@@ -54,7 +34,7 @@ import { useFileTreeModel } from './file-tree/useFileTreeModel';
 import { createDuplicateFileTreeMutation } from './file-tree/useFileTreeMutations';
 import { useFileTreeNavigation } from './file-tree/useFileTreeNavigation';
 import { useFileTreePointerInteractions } from './file-tree/useFileTreePointerInteractions';
-import { createFileTreeRenameHandlers } from './file-tree/useFileTreeRename';
+import { useFileTreeRenameCoordinator } from './file-tree/useFileTreeRenameCoordinator';
 import { useFileTreeRowPresentation } from './file-tree/useFileTreeRowPresentation';
 import { useFileTreeSelection } from './file-tree/useFileTreeSelection';
 import { useFileTreeShowAll } from './file-tree/useFileTreeShowAll';
@@ -65,30 +45,6 @@ import { useHandoffDispatch } from './handoff/useHandoffDispatch';
 import { useInstalledAgents } from './handoff/useInstalledAgents';
 
 export type { FileTreeHandle } from './file-tree/file-tree-types';
-
-const MARKDOWN_TREE_EXTENSION_PATTERN = /\.(md|mdx)$/i;
-
-function parseAlreadyExistsRenamePath(message: string): string | null {
-  const match = message.match(/^"(.+)" already exists\.$/);
-  return match ? match[1] : null;
-}
-
-function markdownTreeExtension(path: string): string | null {
-  const match = path.match(MARKDOWN_TREE_EXTENSION_PATTERN);
-  return match ? match[0] : null;
-}
-
-function focusEditorAfterRename(docName: string): void {
-  window.requestAnimationFrame(() => {
-    const editor = getEditorForDoc(docName);
-    if (!editor || editor.isDestroyed) return;
-    try {
-      editor.commands.focus();
-    } catch {
-      // Editor view may be mid-transition; focus is best-effort.
-    }
-  });
-}
 
 interface FileTreeDeleteRequest {
   targets: FileTreeTarget[];
@@ -347,65 +303,6 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     userCollapsedActiveAncestorPathsRef,
   });
 
-  // Invariant: Pierre's `#focusedPath` and `#selectedPaths` reference paths
-  // in `documentsToTreePaths(documents)`. If the user deletes the suffix
-  // before committing an inline rename, Pierre can leave the store keyed by
-  // the extensionless basename ('bar'), while React documents hold the
-  // canonical 'bar.md' / 'bar.png'. Reconcile by moving Pierre's leftover to
-  // canonical before the natural `resetPaths` gets suppressed by
-  // `markNextDocumentsAsApplied`.
-  const reconcileModelAfterExtensionlessRename = (
-    current: readonly FileEntry[],
-    next: readonly FileEntry[],
-    renamed: readonly RenamedDocMapping[],
-    renamedAssets: readonly RenamedAssetMapping[] = [],
-  ): void => {
-    let reconciledCount = 0;
-    let lastCanonical: string | null = null;
-    for (const { fromDocName, toDocName } of renamed) {
-      const source = current.find(
-        (entry): entry is DocumentEntry => isDocumentEntry(entry) && entry.docName === fromDocName,
-      );
-      if (source == null) continue;
-      // Positive selector for the extensionless commit condition. Drag/drop
-      // + folder-cascade have canonical paths already, so `getItem(toDocName)`
-      // returns null and we skip (which also avoids Pierre's `movePath` throw
-      // on missing source). Idempotent under React StrictMode double-invocation.
-      if (model.getItem(toDocName) == null) continue;
-      const destination = next.find(
-        (entry): entry is DocumentEntry => isDocumentEntry(entry) && entry.docName === toDocName,
-      );
-      const canonicalTreePath = docNameToTreePath(toDocName, destination?.docExt ?? source.docExt);
-      // `move()` atomically remaps `#focusedPath` AND `#selectedPaths` via
-      // `#applyMutationState` — selection reconciliation depends on this.
-      model.move(toDocName, canonicalTreePath);
-      lastCanonical = canonicalTreePath;
-      reconciledCount += 1;
-    }
-    for (const { toPath } of renamedAssets) {
-      const ext = getFileExtension(toPath);
-      if (ext === '') continue;
-      const extensionlessTreePath = toPath.slice(0, -ext.length);
-      if (model.getItem(extensionlessTreePath) == null) continue;
-      if (model.getItem(toPath) == null) {
-        model.move(extensionlessTreePath, toPath);
-      }
-      lastCanonical = toPath;
-      reconciledCount += 1;
-    }
-    if (reconciledCount === 0) return;
-    resetModelToDocuments(next);
-    // Focus is singular — Pierre's commit invariant means at most one
-    // extensionless inline rename, so `reconciledCount` is ~always 1.
-    // The explicit focus call hedges against `resetPaths` clearing the
-    // in-memory focus state (no-op when already focused or absent).
-    if (lastCanonical != null) {
-      model.focusPath(lastCanonical);
-    }
-  };
-
-  const isAssetTreePath = (treePath: string) => assetTreePathsRef.current.has(treePath);
-
   const handleDuplicateTarget = createDuplicateFileTreeMutation({
     busyPathRef,
     setBusyPath,
@@ -454,34 +351,32 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     closeTabs,
   });
 
-  function recoverMarkdownRenameConflict(message: string): boolean {
-    const bareDestinationPath = parseAlreadyExistsRenamePath(message);
-    if (!bareDestinationPath || markdownTreeExtension(bareDestinationPath)) return false;
-
-    const sourceTreePath = model.getFocusedPath() ?? model.getSelectedPaths()[0] ?? null;
-    if (!sourceTreePath || sourceTreePath.endsWith('/') || isAssetTreePath(sourceTreePath)) {
-      return false;
-    }
-
-    const sourceExtension = markdownTreeExtension(sourceTreePath);
-    if (!sourceExtension) return false;
-
-    const folderTreePath = folderPathToTreeDirectoryPath(bareDestinationPath);
-    if (!folderTreePathsRef.current.includes(folderTreePath)) return false;
-
-    const destinationTreePath = `${bareDestinationPath}${sourceExtension}`;
-    if (treePathsRef.current.includes(destinationTreePath)) return false;
-
-    const event = {
-      sourcePath: sourceTreePath,
-      destinationPath: destinationTreePath,
-      isFolder: false,
-    } satisfies FileTreeRenameEvent;
-
-    void handleTreeRename(event);
-    model.move(sourceTreePath, destinationTreePath);
-    return true;
-  }
+  const { handleTreeRename, handleDropComplete, recoverMarkdownRenameConflict } =
+    useFileTreeRenameCoordinator({
+      model,
+      documentsRef,
+      activeDocNameRef,
+      activeTargetRef,
+      assetTreePathsRef,
+      folderTreePathsRef,
+      treePathsRef,
+      pendingCreateRef,
+      setBusyPath,
+      setError,
+      setDocuments,
+      resetModelToDocuments,
+      markNextDocumentsAsApplied,
+      cleanupPendingCreate,
+      clearPendingCreate,
+      getPoolActiveDocName,
+      poolHas,
+      closeAndClearForRename,
+      addPage,
+      remapTabsForRename,
+      navigateToWithPulse,
+      navigateToFolderWithPulse,
+      navigateToAssetWithPulse,
+    });
 
   useFileTreeShowAll({
     model,
@@ -594,75 +489,6 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
       void cleanupPendingCreateRef.current(pending);
     });
   }, [model]);
-
-  const applyRenamedDocuments = async (
-    renamed: RenamedDocMapping[],
-    renamedFolders: RenamedFolderMapping[] = [],
-    renamedAssets: RenamedAssetMapping[] = [],
-    activeBeforeRename?: {
-      docName: string | null;
-      folderPath: string | null;
-      assetPath: string | null;
-    },
-    renamedDocExtensions: RenamedDocExtensionMapping[] = [],
-  ) => {
-    await reconcileRenamedDocuments({
-      documents: documentsRef.current,
-      renamed,
-      renamedFolders,
-      renamedAssets,
-      renamedDocExtensions,
-      activeBeforeRename,
-      activeDocName: activeDocNameRef.current,
-      activeFolderPath:
-        activeTargetRef.current?.kind === 'folder' ? activeTargetRef.current.folderPath : null,
-      activeAssetPath:
-        activeTargetRef.current?.kind === 'asset' ? activeTargetRef.current.assetPath : null,
-      getPoolActiveDocName,
-      poolHas,
-      captureRenameSnapshots,
-      closeAndClearForRename,
-      addPage,
-      remapTabsForRename,
-      remapPathForFolderRenames,
-      setDocuments,
-      reconcileModelAfterExtensionlessRename,
-      markNextDocumentsAsApplied,
-      navigateToWithPulse,
-      navigateToFolderWithPulse,
-      navigateToAssetWithPulse,
-      focusEditorAfterRename,
-      emitDocumentsChanged,
-    });
-  };
-
-  const { handleTreeRename, handleDropComplete } = createFileTreeRenameHandlers({
-    documents: documentsRef.current,
-    activeBeforeRename: () => ({
-      docName: activeDocNameRef.current,
-      folderPath:
-        activeTargetRef.current?.kind === 'folder' ? activeTargetRef.current.folderPath : null,
-      assetPath:
-        activeTargetRef.current?.kind === 'asset' ? activeTargetRef.current.assetPath : null,
-    }),
-    isAssetTreePath,
-    fetch,
-    setBusyPath,
-    setError,
-    resetModelToDocuments,
-    pendingCreate: () => pendingCreateRef.current,
-    cleanupPendingCreate,
-    clearPendingCreate,
-    applyRenamedDocuments,
-    toastError: toast.error,
-    messages: {
-      failedRename: t`Failed to rename path`,
-      failedMove: t`Failed to move`,
-      renameResync: t`Rename succeeded but the sidebar may be out of date — refresh to resync`,
-      moveResync: t`Move succeeded but the sidebar may be out of date — refresh to resync`,
-      networkError: t`Network error — please try again`,
-    },
-  });
 
   const uploadExternalFilesToTarget = useFileTreeUploads({
     busyPathRef,
