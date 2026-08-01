@@ -3,14 +3,7 @@ import { useLingui } from '@lingui/react/macro';
 import { WorkspaceSuccessSchema } from '@nedian0brien/synapsenote-core';
 import type { FileTreeDropResult, FileTreeRenameEvent } from '@pierre/trees';
 import { useTheme } from 'next-themes';
-import {
-  startTransition,
-  useEffect,
-  useImperativeHandle,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
+import { startTransition, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
   docNameToTreePath,
@@ -55,6 +48,7 @@ import { useFileTreeCommandSubscriptions } from './file-tree/useFileTreeCommandS
 import { useFileTreeConnectivity } from './file-tree/useFileTreeConnectivity';
 import { useFileTreeCreation } from './file-tree/useFileTreeCreation';
 import { useFileTreeDragAndDrop } from './file-tree/useFileTreeDragAndDrop';
+import { useFileTreeImperativeHandle } from './file-tree/useFileTreeImperativeHandle';
 import { useFileTreeKeyboard } from './file-tree/useFileTreeKeyboard';
 import { useFileTreeModel } from './file-tree/useFileTreeModel';
 import { createDuplicateFileTreeMutation } from './file-tree/useFileTreeMutations';
@@ -755,110 +749,16 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     documentCount: documents.length,
   });
 
-  // Snapshot cache for getFolderState() — keeps the returned object
-  // reference-stable when {folderCount, expandedCount} are unchanged so
-  // FileSidebar's `setFolderState(tree.getFolderState())` calls bail
-  // out via React's `Object.is` instead of triggering redundant
-  // re-renders. Allocates a fresh object only when values genuinely
-  // shifted.
-  const folderStateCacheRef = useRef<{ folderCount: number; expandedCount: number }>({
-    folderCount: 0,
-    expandedCount: 0,
-  });
-
-  // Stash the inline imperative closures in refs so useImperativeHandle's
-  // deps array can stay `[model]` only. Without this, Biome's
-  // useExhaustiveDependencies forces those identifiers into the deps and then
-  // immediately complains they "change on every re-render" — a no-win box
-  // because manual memoization (useCallback / useMemo) is banned in this
-  // codebase per CLAUDE.md.
-  //
-  // Refs are synced in a useEffect (not during render) — React Compiler
-  // disallows mutating `.current` during render. Effects run after commit
-  // and before paint; by the time the handle methods fire on user
-  // interaction (click), the ref is current.
-  const startCreatingRef = useRef(startCreating);
-  const startCreatingFromTemplateRef = useRef(startCreatingFromTemplate);
-  useEffect(() => {
-    startCreatingRef.current = startCreating;
-    startCreatingFromTemplateRef.current = startCreatingFromTemplate;
-  });
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: imperative methods intentionally read live folder paths through the stable tree-state ref.
-  useImperativeHandle(
+  useFileTreeImperativeHandle({
     ref,
-    () => ({
-      startCreating(kind, parentDir) {
-        void startCreatingRef.current(kind, parentDir);
-      },
-      startCreatingFromTemplate(parentDir) {
-        startCreatingFromTemplateRef.current(parentDir);
-      },
-      createFromTemplate(parentDir, templateName) {
-        void startCreatingRef.current('file', parentDir, { template: templateName });
-      },
-      expandAll() {
-        startTransition(() => {
-          for (const folderPath of folderTreePathsRef.current) {
-            const item = asDirectoryHandle(model.getItem(folderPath));
-            if (item) {
-              item.expand();
-            }
-          }
-        });
-      },
-      collapseAll() {
-        startTransition(() => {
-          for (const folderPath of [...folderTreePathsRef.current].reverse()) {
-            const item = asDirectoryHandle(model.getItem(folderPath));
-            if (item) {
-              item.collapse();
-            }
-          }
-        });
-      },
-      getFolderState() {
-        // Read fresh from the model on every call — paths reflect any
-        // pending /api/documents update via folderTreePathsRef, isExpanded()
-        // reflects pending tree-model mutations from the current frame.
-        const paths = folderTreePathsRef.current;
-        let expandedCount = 0;
-        for (const p of paths) {
-          if (asDirectoryHandle(model.getItem(p))?.isExpanded()) expandedCount++;
-        }
-        const folderCount = paths.length;
-        const cached = folderStateCacheRef.current;
-        if (cached.folderCount === folderCount && cached.expandedCount === expandedCount) {
-          return cached;
-        }
-        const next = { folderCount, expandedCount };
-        folderStateCacheRef.current = next;
-        return next;
-      },
-      isCreationTargetCleared() {
-        return creationDirClearedRef.current;
-      },
-      clearCreationTarget() {
-        setCreationDirCleared(true);
-      },
-      subscribe(listener: () => void) {
-        // The Pierre tree model's subscribe fires on ALL tree-state changes:
-        // expand, collapse, focus, AND resetPaths (which is invoked from the
-        // documents-update effect at the resetPaths call site). One
-        // subscription covers both the per-folder expand/collapse path AND
-        // the folder-list-changed path that documents-fetched triggers. The
-        // local listener set adds `creationDirCleared` (React state) changes,
-        // which Pierre's model never observes.
-        handleListenersRef.current.add(listener);
-        const unsubscribeModel = model.subscribe(listener);
-        return () => {
-          handleListenersRef.current.delete(listener);
-          unsubscribeModel();
-        };
-      },
-    }),
-    [model],
-  );
+    model,
+    folderTreePathsRef,
+    creationDirClearedRef,
+    handleListenersRef,
+    setCreationDirCleared,
+    startCreating,
+    startCreatingFromTemplate,
+  });
 
   const { handleDeleteTargets, handleTrashFailureDeletePermanently, handleTrashFailureRetry } =
     createFileTreeTrashHandlers({
