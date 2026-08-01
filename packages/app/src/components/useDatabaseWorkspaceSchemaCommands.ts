@@ -3,6 +3,7 @@ import type {
   DatabasePropertyType,
   DatabaseQueryResult,
   DatabaseSelectOptionChange,
+  DatabaseView,
 } from '@nedian0brien/synapsenote-core';
 import { previewDatabaseSelectOptionChange } from '@nedian0brien/synapsenote-core';
 import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-server';
@@ -39,9 +40,58 @@ import type { DatabaseSelectProperty } from './DatabaseTableGrid';
 
 import { databaseSchemaMutationPolicy, isDatabaseSelectProperty } from './DatabaseTableGrid';
 
-import type { DatabaseWorkspaceControllerContext } from './database-workspace-context';
+import type { DatabaseDescription } from '@/lib/database-catalog-client';
+import type { useDatabaseWorkspaceControllerState } from './use-database-workspace-controller-state';
+import type { useDatabaseWorkspaceBulkCommands } from './useDatabaseWorkspaceBulkCommands';
+import type { useDatabaseWorkspaceMutationCommands } from './useDatabaseWorkspaceMutationCommands';
 
-export function useDatabaseWorkspaceSchemaCommands(context: DatabaseWorkspaceControllerContext) {
+type DatabaseWorkspaceControllerState = ReturnType<typeof useDatabaseWorkspaceControllerState>;
+type DatabaseWorkspaceBulkCommands = ReturnType<typeof useDatabaseWorkspaceBulkCommands>;
+type DatabaseWorkspaceMutationCommands = ReturnType<typeof useDatabaseWorkspaceMutationCommands>;
+
+export interface DatabaseWorkspaceSchemaCommandsContext
+  extends Pick<
+    DatabaseWorkspaceControllerState,
+    | 'setOptionPreview'
+    | 'setOptionStatus'
+    | 'setMutationError'
+    | 'optionPreview'
+    | 'setPropertyDeletionPreview'
+    | 'setPropertiesError'
+    | 'setPropertiesRemoveStatus'
+    | 'propertiesRemoveStatus'
+    | 'mutationStatus'
+    | 'csvStatus'
+    | 'setCsvStatus'
+    | 'importPreview'
+    | 'setImportPreview'
+    | 'setLastUndoToken'
+    | 'setLastRedoToken'
+    | 'lastUndoToken'
+    | 'lastRedoToken'
+    | 'selection'
+    | 'optionStatus'
+    | 'optionPropertyId'
+    | 'setPropertiesDialogOpen'
+    | 'setPropertiesDialogRenameId'
+    | 'undoStatus'
+    | 'setUndoStatus'
+    | 'setSelectedRecordIds'
+    | 'setRefresh'
+    | 'setOptimisticViewOrder'
+    | 'redoStatus'
+    | 'setRedoStatus'
+  > {
+  description: DatabaseDescription | null;
+  result: DatabaseQueryResult | null;
+  runMutation: DatabaseWorkspaceMutationCommands['runMutation'];
+  collectDatabaseSnapshot: DatabaseWorkspaceBulkCommands['collectDatabaseSnapshot'];
+  selectedView: DatabaseView | undefined;
+}
+
+export function useDatabaseWorkspaceSchemaCommands(
+  context: DatabaseWorkspaceSchemaCommandsContext & Record<string, unknown>,
+) {
   const {
     setOptionPreview,
     setOptionStatus,
