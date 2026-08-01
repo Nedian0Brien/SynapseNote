@@ -86,6 +86,10 @@ describe('RFC 0002 module boundary guard', () => {
     }
   });
 
+  test('only the FileTree extraction remains a legacy exception', () => {
+    expect(LEGACY_MODULE_EXCEPTIONS.map(({ path }) => path)).toEqual(['components/FileTree.tsx']);
+  });
+
   test('database implementation boundaries are present and explicit', () => {
     const missing = missingDatabaseBoundaryModules(APP_SRC);
     expect(missing).toEqual([]);
@@ -100,6 +104,9 @@ describe('RFC 0002 module boundary guard', () => {
       'components/CommandPalette.tsx',
       'components/settings/SettingsDialogBody.tsx',
       'editor/DocumentContext.tsx',
+      'components/EditorArea.tsx',
+      'components/EditorTabs.tsx',
+      'editor/extensions/JsxComponentView.tsx',
     ];
     for (const budget of MODULE_SIZE_BUDGETS) {
       const file = resolveAppModule(APP_SRC, budget.path);

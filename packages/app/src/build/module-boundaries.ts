@@ -310,6 +310,293 @@ export const MODULE_SIZE_BUDGETS: readonly ModuleSizeBudget[] = [
     maxLines: 140,
     owner: 'record page route adapter',
   },
+  // RFC 0002 app-shell extraction leaves. Keep each responsibility explicit
+  // so a future monolith regression is visible at the boundary guard.
+  {
+    path: 'editor/document-context/DocumentProviderComposition.tsx',
+    maxLines: 150,
+    owner: 'Owns document provider composition.',
+  },
+  {
+    path: 'editor/document-context/context.ts',
+    maxLines: 40,
+    owner: 'Owns document context creation and accessors.',
+  },
+  {
+    path: 'editor/document-context/hmr.ts',
+    maxLines: 60,
+    owner: 'Owns document context hot-module replacement wiring.',
+  },
+  {
+    path: 'editor/document-context/runtime-helpers.ts',
+    maxLines: 280,
+    owner: 'Owns document runtime helper state.',
+  },
+  {
+    path: 'editor/document-context/useDocumentCommands.ts',
+    maxLines: 380,
+    owner: 'Owns document command actions.',
+  },
+  {
+    path: 'editor/document-context/useDocumentPoolLifecycle.ts',
+    maxLines: 390,
+    owner: 'Owns document pool lifecycle transitions.',
+  },
+  {
+    path: 'editor/document-context/useDocumentProviderState.ts',
+    maxLines: 400,
+    owner: 'Owns document provider state projection.',
+  },
+  {
+    path: 'editor/document-context/useDocumentTabCommands.ts',
+    maxLines: 450,
+    owner: 'Owns document tab command transitions.',
+  },
+  {
+    path: 'components/command-palette/CommandPaletteCommandResults.tsx',
+    maxLines: 260,
+    owner: 'Owns command palette command result rendering.',
+  },
+  {
+    path: 'components/command-palette/CommandPaletteModeResults.tsx',
+    maxLines: 220,
+    owner: 'Owns command palette mode result rendering.',
+  },
+  {
+    path: 'components/command-palette/CommandPaletteNavigationItem.tsx',
+    maxLines: 120,
+    owner: 'Owns command palette navigation item rendering.',
+  },
+  {
+    path: 'components/command-palette/CommandPaletteNavigationResults.tsx',
+    maxLines: 150,
+    owner: 'Owns command palette navigation result rendering.',
+  },
+  {
+    path: 'components/command-palette/CommandPaletteProjectResults.tsx',
+    maxLines: 240,
+    owner: 'Owns command palette project result rendering.',
+  },
+  {
+    path: 'components/command-palette/CommandPaletteResults.tsx',
+    maxLines: 40,
+    owner: 'Owns command palette result composition.',
+  },
+  {
+    path: 'components/command-palette/CommandPaletteSearchHint.tsx',
+    maxLines: 60,
+    owner: 'Owns command palette search hint rendering.',
+  },
+  {
+    path: 'components/command-palette/CommandPaletteStateProvider.tsx',
+    maxLines: 50,
+    owner: 'Owns command palette state context.',
+  },
+  {
+    path: 'components/command-palette/CommandPaletteSurface.tsx',
+    maxLines: 160,
+    owner: 'Owns command palette surface composition.',
+  },
+  {
+    path: 'components/command-palette/command-palette-command-registry.ts',
+    maxLines: 40,
+    owner: 'Owns command palette command registration.',
+  },
+  {
+    path: 'components/command-palette/use-command-palette-actions.ts',
+    maxLines: 140,
+    owner: 'Owns command palette action dispatch.',
+  },
+  {
+    path: 'components/command-palette/use-command-palette-controller.ts',
+    maxLines: 380,
+    owner: 'Owns command palette controller orchestration.',
+  },
+  {
+    path: 'components/command-palette/use-command-palette-lexical-search.ts',
+    maxLines: 150,
+    owner: 'Owns command palette lexical search.',
+  },
+  {
+    path: 'components/command-palette/use-command-palette-semantic-search.ts',
+    maxLines: 220,
+    owner: 'Owns command palette semantic search.',
+  },
+  {
+    path: 'components/command-palette/use-command-palette-session.ts',
+    maxLines: 100,
+    owner: 'Owns command palette session state.',
+  },
+  {
+    path: 'components/command-palette/use-command-palette-tags.ts',
+    maxLines: 130,
+    owner: 'Owns command palette tag filtering.',
+  },
+  {
+    path: 'components/editor-area/SettingsDialogPortal.tsx',
+    maxLines: 30,
+    owner: 'Owns editor area settings dialog portal rendering.',
+  },
+  {
+    path: 'components/editor-area/EditorAreaDocumentSurface.tsx',
+    maxLines: 150,
+    owner: 'Owns editor area document surface rendering.',
+  },
+  {
+    path: 'components/editor-area/EditorAreaLayout.tsx',
+    maxLines: 100,
+    owner: 'Owns editor area layout composition.',
+  },
+  {
+    path: 'components/editor-area/EditorAreaRightPanels.tsx',
+    maxLines: 180,
+    owner: 'Owns editor area right-panel rendering.',
+  },
+  {
+    path: 'components/editor-area/EditorAreaStateProvider.tsx',
+    maxLines: 190,
+    owner: 'Owns editor area state context.',
+  },
+  {
+    path: 'components/editor-area/EditorAreaTerminalColumn.tsx',
+    maxLines: 80,
+    owner: 'Owns editor area terminal column rendering.',
+  },
+  {
+    path: 'components/editor-area/EditorAreaView.tsx',
+    maxLines: 160,
+    owner: 'Owns editor area primary view composition.',
+  },
+  {
+    path: 'components/editor-area/types.ts',
+    maxLines: 50,
+    owner: 'Owns editor area public view contracts.',
+  },
+  {
+    path: 'components/editor-area/useEditorAreaRightRail.ts',
+    maxLines: 400,
+    owner: 'Owns editor area right-rail state.',
+  },
+  {
+    path: 'components/editor-tabs/EditorTabChrome.tsx',
+    maxLines: 330,
+    owner: 'Owns editor tab chrome rendering.',
+  },
+  {
+    path: 'components/editor-tabs/EditorTabItem.tsx',
+    maxLines: 400,
+    owner: 'Owns editor tab item rendering and actions.',
+  },
+  {
+    path: 'components/editor-tabs/EditorTabStrip.tsx',
+    maxLines: 220,
+    owner: 'Owns editor tab strip composition.',
+  },
+  {
+    path: 'components/editor-tabs/editor-tab-model.ts',
+    maxLines: 140,
+    owner: 'Owns editor tab model transformations.',
+  },
+  {
+    path: 'components/editor-tabs/useEditorTabKeyboardShortcuts.ts',
+    maxLines: 180,
+    owner: 'Owns editor tab keyboard commands.',
+  },
+  {
+    path: 'components/editor-tabs/useEditorTabRename.ts',
+    maxLines: 270,
+    owner: 'Owns editor tab rename transitions.',
+  },
+  {
+    path: 'editor/extensions/jsx-component-view/JsxComponentViewChrome.tsx',
+    maxLines: 260,
+    owner: 'Owns JSX component view chrome rendering.',
+  },
+  {
+    path: 'editor/extensions/jsx-component-view/JsxComponentViewContent.tsx',
+    maxLines: 190,
+    owner: 'Owns JSX component view content rendering.',
+  },
+  {
+    path: 'editor/extensions/jsx-component-view/JsxComponentViewOverlays.tsx',
+    maxLines: 140,
+    owner: 'Owns JSX component view overlay rendering.',
+  },
+  {
+    path: 'editor/extensions/jsx-component-view/jsx-component-view-attribute-policy.ts',
+    maxLines: 90,
+    owner: 'Owns JSX component attribute policy.',
+  },
+  {
+    path: 'editor/extensions/jsx-component-view/jsx-component-view-conversion-policy.ts',
+    maxLines: 50,
+    owner: 'Owns JSX component conversion policy.',
+  },
+  {
+    path: 'editor/extensions/jsx-component-view/jsx-component-view-interaction-policy.ts',
+    maxLines: 80,
+    owner: 'Owns JSX component interaction policy.',
+  },
+  {
+    path: 'editor/extensions/jsx-component-view/use-jsx-component-view-interactions.ts',
+    maxLines: 260,
+    owner: 'Owns JSX component view interaction state.',
+  },
+  {
+    path: 'editor/extensions/jsx-component-view/use-jsx-component-view-lifecycle.ts',
+    maxLines: 210,
+    owner: 'Owns JSX component view lifecycle.',
+  },
+  {
+    path: 'components/settings/settings-dialog/attachments-section.tsx',
+    maxLines: 270,
+    owner: 'Owns settings attachment controls.',
+  },
+  {
+    path: 'components/settings/settings-dialog/config-validation-feedback.ts',
+    maxLines: 80,
+    owner: 'Owns settings configuration validation feedback.',
+  },
+  {
+    path: 'components/settings/settings-dialog/hotkeys-section.tsx',
+    maxLines: 150,
+    owner: 'Owns settings hotkey controls.',
+  },
+  {
+    path: 'components/settings/settings-dialog/integrations-section.tsx',
+    maxLines: 80,
+    owner: 'Owns settings integration controls.',
+  },
+  {
+    path: 'components/settings/settings-dialog/preferences-panel.tsx',
+    maxLines: 50,
+    owner: 'Owns settings preference controls.',
+  },
+  {
+    path: 'components/settings/settings-dialog/schema-settings-section.tsx',
+    maxLines: 100,
+    owner: 'Owns settings schema controls.',
+  },
+  {
+    path: 'components/settings/settings-dialog/section-skeleton.tsx',
+    maxLines: 40,
+    owner: 'Owns settings section loading skeleton.',
+  },
+  {
+    path: 'components/settings/settings-dialog/settings-dialog-section-registry.tsx',
+    maxLines: 90,
+    owner: 'Owns settings dialog section registry.',
+  },
+  {
+    path: 'components/settings/settings-dialog/settings-field.tsx',
+    maxLines: 420,
+    owner: 'Owns settings field rendering and updates.',
+  },
+  {
+    path: 'components/settings/settings-dialog/sync-section.tsx',
+    maxLines: 300,
+    owner: 'Owns settings synchronization controls.',
+  },
 ];
 
 /**
@@ -323,48 +610,6 @@ export const LEGACY_MODULE_EXCEPTIONS: readonly LegacyModuleException[] = [
     currentRole: 'tree facade/controller/render',
     targetBoundary: 'components/file-tree/',
     phase: '6a',
-    rfc: '0002',
-  },
-  {
-    path: 'editor/DocumentContext.tsx',
-    currentRole: 'provider composition',
-    targetBoundary: 'editor/document-context/',
-    phase: '6b',
-    rfc: '0002',
-  },
-  {
-    path: 'components/CommandPalette.tsx',
-    currentRole: 'palette coordinator/render',
-    targetBoundary: 'components/command-palette/',
-    phase: '6c',
-    rfc: '0002',
-  },
-  {
-    path: 'editor/extensions/JsxComponentView.tsx',
-    currentRole: 'NodeView lifecycle/render',
-    targetBoundary: 'editor/extensions/jsx-component-view/',
-    phase: '6d',
-    rfc: '0002',
-  },
-  {
-    path: 'components/settings/SettingsDialogBody.tsx',
-    currentRole: 'settings section coordinator',
-    targetBoundary: 'components/settings/',
-    phase: '6e',
-    rfc: '0002',
-  },
-  {
-    path: 'components/EditorArea.tsx',
-    currentRole: 'editor layout coordinator',
-    targetBoundary: 'components/editor-area/',
-    phase: '6f',
-    rfc: '0002',
-  },
-  {
-    path: 'components/EditorTabs.tsx',
-    currentRole: 'tab-strip coordinator',
-    targetBoundary: 'components/editor-tabs/',
-    phase: '6g',
     rfc: '0002',
   },
 ];
