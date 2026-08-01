@@ -14,7 +14,6 @@ import {
 import { listNativeCliChatSessions } from '../cli-chat-sessions.ts';
 import { getLogger } from '../desktop-logger.ts';
 import { logIpcError } from '../ipc-log.ts';
-import { parseTerminalPtyArgs } from './terminal-pty-request.ts';
 import { isTerminalConsented, isTerminalConsentedWithGrace } from '../terminal-consent.ts';
 import {
   clampPtyDimension,
@@ -22,6 +21,7 @@ import {
   DEFAULT_PTY_COLS,
   DEFAULT_PTY_ROWS,
 } from '../terminal-manager.ts';
+import { parseTerminalPtyArgs } from './terminal-pty-request.ts';
 
 type TerminalManager = ReturnType<typeof createTerminalManager>;
 
@@ -40,86 +40,111 @@ export interface TerminalPtyRegistrarDeps {
 
 export function registerTerminalPtyIpc(deps: TerminalPtyRegistrarDeps): void {
   const { handle, terminalManager } = deps;
-  handle('ok:pty:create', async (event, opts) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    const projectRoot = deps.resolveProjectRoot(event);
-    if (!win || !projectRoot) {
-      logIpcError({
-        event: 'ipc.error',
-        channel: 'ok:pty:create',
-        reason: 'no-project',
-        handler: 'createPty',
-      });
-      return { ok: false, reason: 'no-project' };
-    }
-    if (!isTerminalConsented(projectRoot) && !(await isTerminalConsentedWithGrace(projectRoot))) {
-      logIpcError({
-        event: 'ipc.error',
-        channel: 'ok:pty:create',
-        reason: 'not-consented',
-        handler: 'createPty',
-      });
-      return { ok: false, reason: 'not-consented' };
-    }
-    return terminalManager.create({
-      windowId: win.id,
-      webContents: win.webContents,
-      projectRoot,
-      cols: clampPtyDimension(opts.cols, DEFAULT_PTY_COLS),
-      rows: clampPtyDimension(opts.rows, DEFAULT_PTY_ROWS),
-      ...(opts.launchCommand === undefined ? {} : { launchCommand: opts.launchCommand }),
-      ...(opts.privateHistory ? { privateHistory: true } : {}),
-    });
-  }, { parse: (args) => parseTerminalPtyArgs('ok:pty:create', args), onInvalid: () => ({ ok: false, reason: 'no-project' }) });
-  handle('ok:pty:input', async (event, req) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    if (win) {
-      if (isCliChatLaunchInput(req.chat)) {
-        const projectRoot = deps.resolveProjectRoot(event);
-        const claudeMcpOwn =
-          req.chat.cli === 'claude' && deps.isProjectClaudeMcpOwn(projectRoot ?? undefined);
-        const autoApproveOkTools =
-          req.chat.autoApproveOkTools !== false &&
-          (claudeMcpOwn ||
-            (req.chat.cli === 'codex' &&
-              classifyExistingMcpEntry(EDITOR_TARGETS.codex, '', osHomedir()).kind === 'present'));
-        const command = buildCliChatCommand(req.chat, {
-          autoApproveOkTools,
-          mcpPreApprove: claudeMcpOwn,
-          dataPlaneOnlyWrites: process.env.SYNAPSENOTE_DATABASE_SANDBOX_MODE === 'data-plane-only',
+  handle(
+    'ok:pty:create',
+    async (event, opts) => {
+      const win = BrowserWindow.fromWebContents(event.sender);
+      const projectRoot = deps.resolveProjectRoot(event);
+      if (!win || !projectRoot) {
+        logIpcError({
+          event: 'ipc.error',
+          channel: 'ok:pty:create',
+          reason: 'no-project',
+          handler: 'createPty',
         });
-        terminalManager.input({
+        return { ok: false, reason: 'no-project' };
+      }
+      if (!isTerminalConsented(projectRoot) && !(await isTerminalConsentedWithGrace(projectRoot))) {
+        logIpcError({
+          event: 'ipc.error',
+          channel: 'ok:pty:create',
+          reason: 'not-consented',
+          handler: 'createPty',
+        });
+        return { ok: false, reason: 'not-consented' };
+      }
+      return terminalManager.create({
+        windowId: win.id,
+        webContents: win.webContents,
+        projectRoot,
+        cols: clampPtyDimension(opts.cols, DEFAULT_PTY_COLS),
+        rows: clampPtyDimension(opts.rows, DEFAULT_PTY_ROWS),
+        ...(opts.launchCommand === undefined ? {} : { launchCommand: opts.launchCommand }),
+        ...(opts.privateHistory ? { privateHistory: true } : {}),
+      });
+    },
+    {
+      parse: (args) => parseTerminalPtyArgs('ok:pty:create', args),
+      onInvalid: () => ({ ok: false, reason: 'no-project' }),
+    },
+  );
+  handle(
+    'ok:pty:input',
+    async (event, req) => {
+      const win = BrowserWindow.fromWebContents(event.sender);
+      if (win) {
+        if (isCliChatLaunchInput(req.chat)) {
+          const projectRoot = deps.resolveProjectRoot(event);
+          const claudeMcpOwn =
+            req.chat.cli === 'claude' && deps.isProjectClaudeMcpOwn(projectRoot ?? undefined);
+          const autoApproveOkTools =
+            req.chat.autoApproveOkTools !== false &&
+            (claudeMcpOwn ||
+              (req.chat.cli === 'codex' &&
+                classifyExistingMcpEntry(EDITOR_TARGETS.codex, '', osHomedir()).kind ===
+                  'present'));
+          const command = buildCliChatCommand(req.chat, {
+            autoApproveOkTools,
+            mcpPreApprove: claudeMcpOwn,
+            dataPlaneOnlyWrites:
+              process.env.SYNAPSENOTE_DATABASE_SANDBOX_MODE === 'data-plane-only',
+          });
+          terminalManager.input({
+            windowId: win.id,
+            ptyId: req.ptyId,
+            data: `${buildCliChatShellCommand(command)}\r`,
+          });
+        } else if (typeof req.data === 'string') {
+          terminalManager.input({ windowId: win.id, ptyId: req.ptyId, data: req.data });
+        }
+      }
+      return undefined;
+    },
+    { parse: (args) => parseTerminalPtyArgs('ok:pty:input', args), onInvalid: () => undefined },
+  );
+  handle(
+    'ok:pty:resize',
+    async (event, req) => {
+      const win = BrowserWindow.fromWebContents(event.sender);
+      if (win)
+        terminalManager.resize({
           windowId: win.id,
           ptyId: req.ptyId,
-          data: `${buildCliChatShellCommand(command)}\r`,
+          cols: clampPtyDimension(req.cols, DEFAULT_PTY_COLS),
+          rows: clampPtyDimension(req.rows, DEFAULT_PTY_ROWS),
         });
-      } else if (typeof req.data === 'string') {
-        terminalManager.input({ windowId: win.id, ptyId: req.ptyId, data: req.data });
-      }
-    }
-    return undefined;
-  }, { parse: (args) => parseTerminalPtyArgs('ok:pty:input', args), onInvalid: () => undefined });
-  handle('ok:pty:resize', async (event, req) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    if (win)
-      terminalManager.resize({
-        windowId: win.id,
-        ptyId: req.ptyId,
-        cols: clampPtyDimension(req.cols, DEFAULT_PTY_COLS),
-        rows: clampPtyDimension(req.rows, DEFAULT_PTY_ROWS),
-      });
-    return undefined;
-  }, { parse: (args) => parseTerminalPtyArgs('ok:pty:resize', args), onInvalid: () => undefined });
-  handle('ok:pty:kill', async (event, req) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    if (win) terminalManager.kill({ windowId: win.id, ptyId: req.ptyId });
-    return undefined;
-  }, { parse: (args) => parseTerminalPtyArgs('ok:pty:kill', args), onInvalid: () => undefined });
-  handle('ok:pty:drain', async (event, req) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    if (win) terminalManager.drain({ windowId: win.id, ptyId: req.ptyId, bytes: req.bytes });
-    return undefined;
-  }, { parse: (args) => parseTerminalPtyArgs('ok:pty:drain', args), onInvalid: () => undefined });
+      return undefined;
+    },
+    { parse: (args) => parseTerminalPtyArgs('ok:pty:resize', args), onInvalid: () => undefined },
+  );
+  handle(
+    'ok:pty:kill',
+    async (event, req) => {
+      const win = BrowserWindow.fromWebContents(event.sender);
+      if (win) terminalManager.kill({ windowId: win.id, ptyId: req.ptyId });
+      return undefined;
+    },
+    { parse: (args) => parseTerminalPtyArgs('ok:pty:kill', args), onInvalid: () => undefined },
+  );
+  handle(
+    'ok:pty:drain',
+    async (event, req) => {
+      const win = BrowserWindow.fromWebContents(event.sender);
+      if (win) terminalManager.drain({ windowId: win.id, ptyId: req.ptyId, bytes: req.bytes });
+      return undefined;
+    },
+    { parse: (args) => parseTerminalPtyArgs('ok:pty:drain', args), onInvalid: () => undefined },
+  );
   handle('ok:pty:list', async (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     return win ? terminalManager.listSessions(win.id) : [];
@@ -130,63 +155,84 @@ export function registerTerminalPtyIpc(deps: TerminalPtyRegistrarDeps): void {
       ? []
       : listNativeCliChatSessions({ homeDir: osHomedir(), projectRoot });
   });
-  handle('ok:pty:adopt', async (event, req) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    if (!win) {
-      logIpcError({
-        event: 'ipc.error',
-        channel: 'ok:pty:adopt',
-        reason: 'unknown-session',
-        handler: 'adoptPty',
-      });
-      return { ok: false, reason: 'unknown-session' };
-    }
-    return terminalManager.adoptSession({
-      windowId: win.id,
-      ptyId: req.ptyId,
-      webContents: win.webContents,
-    });
-  }, {
-    parse: (args) => parseTerminalPtyArgs('ok:pty:adopt', args),
-    onInvalid: () => ({ ok: false, reason: 'unknown-session' }),
-  });
-  handle('ok:pty:set-meta', async (event, req) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    if (win)
-      terminalManager.setSessionMeta({
+  handle(
+    'ok:pty:adopt',
+    async (event, req) => {
+      const win = BrowserWindow.fromWebContents(event.sender);
+      if (!win) {
+        logIpcError({
+          event: 'ipc.error',
+          channel: 'ok:pty:adopt',
+          reason: 'unknown-session',
+          handler: 'adoptPty',
+        });
+        return { ok: false, reason: 'unknown-session' };
+      }
+      return terminalManager.adoptSession({
         windowId: win.id,
         ptyId: req.ptyId,
-        customLabel: req.customLabel,
-        ordinal: req.ordinal,
+        webContents: win.webContents,
       });
-    return undefined;
-  }, { parse: (args) => parseTerminalPtyArgs('ok:pty:set-meta', args), onInvalid: () => undefined });
-  handle('ok:pty:set-order', async (event, req) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    if (win)
-      terminalManager.setSessionOrder({ windowId: win.id, orderedPtyIds: req.orderedPtyIds });
-    return undefined;
-  }, { parse: (args) => parseTerminalPtyArgs('ok:pty:set-order', args), onInvalid: () => undefined });
-  handle('ok:terminal:claude-assist', async (event, req) => {
-    const rewireError = req.action === 'rewire' ? await deps.rewireClaudeMcp(event) : undefined;
-    const readiness = await deps.resolveClaudeReadiness(
-      deps.resolveProjectRoot(event) ?? undefined,
-    );
-    return rewireError === undefined ? readiness : { ...readiness, rewireError };
-  }, {
-    parse: (args) => parseTerminalPtyArgs('ok:terminal:claude-assist', args),
-    onInvalid: async (event) => deps.resolveClaudeReadiness(deps.resolveProjectRoot(event) ?? undefined),
-  });
-  handle('ok:terminal:cli-preflight', async (_event, req): Promise<CliReadiness> => {
-    if (!(req.cli in TERMINAL_CLIS)) {
-      getLogger('terminal').warn({ cli: req.cli }, 'cli-preflight: unknown cli discriminant');
-      return { onPath: 'unknown' };
-    }
-    return deps.resolveCliOnPath(req.cli);
-  }, {
-    parse: (args) => parseTerminalPtyArgs('ok:terminal:cli-preflight', args),
-    onInvalid: () => ({ onPath: 'unknown' }),
-  });
+    },
+    {
+      parse: (args) => parseTerminalPtyArgs('ok:pty:adopt', args),
+      onInvalid: () => ({ ok: false, reason: 'unknown-session' }),
+    },
+  );
+  handle(
+    'ok:pty:set-meta',
+    async (event, req) => {
+      const win = BrowserWindow.fromWebContents(event.sender);
+      if (win)
+        terminalManager.setSessionMeta({
+          windowId: win.id,
+          ptyId: req.ptyId,
+          customLabel: req.customLabel,
+          ordinal: req.ordinal,
+        });
+      return undefined;
+    },
+    { parse: (args) => parseTerminalPtyArgs('ok:pty:set-meta', args), onInvalid: () => undefined },
+  );
+  handle(
+    'ok:pty:set-order',
+    async (event, req) => {
+      const win = BrowserWindow.fromWebContents(event.sender);
+      if (win)
+        terminalManager.setSessionOrder({ windowId: win.id, orderedPtyIds: req.orderedPtyIds });
+      return undefined;
+    },
+    { parse: (args) => parseTerminalPtyArgs('ok:pty:set-order', args), onInvalid: () => undefined },
+  );
+  handle(
+    'ok:terminal:claude-assist',
+    async (event, req) => {
+      const rewireError = req.action === 'rewire' ? await deps.rewireClaudeMcp(event) : undefined;
+      const readiness = await deps.resolveClaudeReadiness(
+        deps.resolveProjectRoot(event) ?? undefined,
+      );
+      return rewireError === undefined ? readiness : { ...readiness, rewireError };
+    },
+    {
+      parse: (args) => parseTerminalPtyArgs('ok:terminal:claude-assist', args),
+      onInvalid: async (event) =>
+        deps.resolveClaudeReadiness(deps.resolveProjectRoot(event) ?? undefined),
+    },
+  );
+  handle(
+    'ok:terminal:cli-preflight',
+    async (_event, req): Promise<CliReadiness> => {
+      if (!(req.cli in TERMINAL_CLIS)) {
+        getLogger('terminal').warn({ cli: req.cli }, 'cli-preflight: unknown cli discriminant');
+        return { onPath: 'unknown' };
+      }
+      return deps.resolveCliOnPath(req.cli);
+    },
+    {
+      parse: (args) => parseTerminalPtyArgs('ok:terminal:cli-preflight', args),
+      onInvalid: () => ({ onPath: 'unknown' }),
+    },
+  );
   handle(
     'ok:terminal:cli-installed-map',
     async (): Promise<Record<TerminalCli, boolean>> => deps.resolveCliInstalledMap(),

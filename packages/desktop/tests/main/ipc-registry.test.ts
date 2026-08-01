@@ -45,7 +45,7 @@ function canonicalRequestChannels(): string[] {
   const start = CHANNELS_SOURCE.indexOf(marker);
   if (start === -1) throw new Error('RequestChannels not found');
   const body = CHANNELS_SOURCE.slice(start);
-  return [...body.matchAll(/^  '([^']+)': \{/gm)].map((match) => match[1] ?? '');
+  return [...body.matchAll(/^ {2}'([^']+)': \{/gm)].map((match) => match[1] ?? '');
 }
 
 describe('desktop IPC registrar registry', () => {

@@ -155,18 +155,28 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function hasStringFields(value: unknown, fields: readonly string[]): value is Record<string, unknown> {
+function hasStringFields(
+  value: unknown,
+  fields: readonly string[],
+): value is Record<string, unknown> {
   return isRecord(value) && fields.every((field) => typeof value[field] === 'string');
 }
 
 function isProjectOpenRequest(value: unknown): value is Record<string, unknown> {
-  if (!hasStringFields(value, ['path', 'entryPoint']) || value.target !== 'new-window') return false;
-  if (value.pendingDeepLinkTarget !== undefined &&
+  if (!hasStringFields(value, ['path', 'entryPoint']) || value.target !== 'new-window')
+    return false;
+  if (
+    value.pendingDeepLinkTarget !== undefined &&
     (!hasStringFields(value.pendingDeepLinkTarget, ['path']) ||
-      (value.pendingDeepLinkTarget.kind !== 'doc' && value.pendingDeepLinkTarget.kind !== 'folder'))) {
+      (value.pendingDeepLinkTarget.kind !== 'doc' && value.pendingDeepLinkTarget.kind !== 'folder'))
+  ) {
     return false;
   }
-  return value.pendingBranch === undefined || value.pendingBranch === null || typeof value.pendingBranch === 'string';
+  return (
+    value.pendingBranch === undefined ||
+    value.pendingBranch === null ||
+    typeof value.pendingBranch === 'string'
+  );
 }
 
 const EMPTY_SESSION: SessionState = {

@@ -10,8 +10,8 @@
 import { dirname } from 'node:path';
 import type { RequestChannels } from '../../shared/ipc-channels.ts';
 import { handleShellOpenExternal } from '../shell-allowlist.ts';
-import { isExportPdfRequest, isHandoffStatsLine, isWebPreviewRequest } from './asset-request.ts';
 import { registerAssetMenuIpc } from './asset-menu-registrar.ts';
+import { isExportPdfRequest, isHandoffStatsLine, isWebPreviewRequest } from './asset-request.ts';
 
 type AssetIpcChannel =
   | 'ok:shell:open-external'

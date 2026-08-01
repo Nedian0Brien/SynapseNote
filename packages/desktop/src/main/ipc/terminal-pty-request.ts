@@ -30,7 +30,10 @@ function optionalStringField(value: Record<string, unknown>, key: string): boole
 function isCliChat(value: unknown): boolean {
   if (!isRecord(value)) return false;
   if (value.cli !== 'codex' && value.cli !== 'claude') return false;
-  if (!stringField(value, 'prompt') || (value.sessionId !== null && typeof value.sessionId !== 'string')) {
+  if (
+    !stringField(value, 'prompt') ||
+    (value.sessionId !== null && typeof value.sessionId !== 'string')
+  ) {
     return false;
   }
   if (!['read-only', 'workspace-write', 'full-access'].includes(String(value.permissionMode))) {
@@ -39,7 +42,9 @@ function isCliChat(value: unknown): boolean {
   if (!isRecord(value.modelSettings)) return false;
   return (
     typeof value.modelSettings.model === 'string' &&
-    ['low', 'medium', 'high', 'xhigh', 'ultra', 'max'].includes(String(value.modelSettings.effort)) &&
+    ['low', 'medium', 'high', 'xhigh', 'ultra', 'max'].includes(
+      String(value.modelSettings.effort),
+    ) &&
     ['default', 'fast'].includes(String(value.modelSettings.speed))
   );
 }
@@ -63,15 +68,16 @@ export function parseTerminalPtyArgs<K extends TerminalPtyChannel>(
 
   switch (channel) {
     case 'ok:pty:create':
-      return typeof value.cols === 'number' && typeof value.rows === 'number' &&
-          optionalStringField(value, 'launchCommand') &&
-          (value.privateHistory === undefined || typeof value.privateHistory === 'boolean')
+      return typeof value.cols === 'number' &&
+        typeof value.rows === 'number' &&
+        optionalStringField(value, 'launchCommand') &&
+        (value.privateHistory === undefined || typeof value.privateHistory === 'boolean')
         ? ([value] as RequestChannels[K]['args'])
         : undefined;
     case 'ok:pty:input':
       return isPtyRequest(value) &&
-          optionalStringField(value, 'data') &&
-          (value.chat === undefined || isCliChat(value.chat))
+        optionalStringField(value, 'data') &&
+        (value.chat === undefined || isCliChat(value.chat))
         ? ([value] as RequestChannels[K]['args'])
         : undefined;
     case 'ok:pty:resize':
@@ -87,14 +93,22 @@ export function parseTerminalPtyArgs<K extends TerminalPtyChannel>(
         : undefined;
     case 'ok:pty:set-meta':
       return isPtyRequest(value) &&
-          (value.customLabel === undefined || value.customLabel === null || typeof value.customLabel === 'string') &&
-          (value.ordinal === undefined || typeof value.ordinal === 'number') &&
-          (value.chatCli === undefined || value.chatCli === null || value.chatCli === 'codex' || value.chatCli === 'claude') &&
-          (value.chatSessionId === undefined || value.chatSessionId === null || typeof value.chatSessionId === 'string')
+        (value.customLabel === undefined ||
+          value.customLabel === null ||
+          typeof value.customLabel === 'string') &&
+        (value.ordinal === undefined || typeof value.ordinal === 'number') &&
+        (value.chatCli === undefined ||
+          value.chatCli === null ||
+          value.chatCli === 'codex' ||
+          value.chatCli === 'claude') &&
+        (value.chatSessionId === undefined ||
+          value.chatSessionId === null ||
+          typeof value.chatSessionId === 'string')
         ? ([value] as RequestChannels[K]['args'])
         : undefined;
     case 'ok:pty:set-order':
-      return Array.isArray(value.orderedPtyIds) && value.orderedPtyIds.every((id) => typeof id === 'string')
+      return Array.isArray(value.orderedPtyIds) &&
+        value.orderedPtyIds.every((id) => typeof id === 'string')
         ? ([value] as RequestChannels[K]['args'])
         : undefined;
     case 'ok:terminal:claude-assist':

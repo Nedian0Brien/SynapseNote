@@ -51,9 +51,7 @@ export function createHandler(ipc: IpcMain) {
     ipc.handle(channel, (event, ...rawArgs: unknown[]) => {
       if (validation) {
         const args = validation.parse(rawArgs);
-        return args === undefined
-          ? validation.onInvalid(event, rawArgs)
-          : handler(event, ...args);
+        return args === undefined ? validation.onInvalid(event, rawArgs) : handler(event, ...args);
       }
       return handler(event, ...(rawArgs as RequestChannels[K]['args']));
     });

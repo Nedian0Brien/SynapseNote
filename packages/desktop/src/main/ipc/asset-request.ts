@@ -33,6 +33,8 @@ export function isWebPreviewRequest(value: unknown): value is { kind: 'web-previ
   return isRecord(value) && value.kind === 'web-preview' && typeof value.url === 'string';
 }
 
-export function isExportPdfRequest(value: unknown): value is { kind: 'export-pdf'; suggestedName: string } {
+export function isExportPdfRequest(
+  value: unknown,
+): value is { kind: 'export-pdf'; suggestedName: string } {
   return isRecord(value) && value.kind === 'export-pdf' && typeof value.suggestedName === 'string';
 }

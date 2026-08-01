@@ -120,7 +120,7 @@ export const DESKTOP_MODULE_SIZE_BUDGETS: readonly DesktopModuleSizeBudget[] = [
   },
   {
     path: 'ipc/project-registrar.ts',
-    maxLines: 374,
+    maxLines: 378,
     owner: 'Owns project and worktree IPC registration.',
   },
   {
@@ -155,12 +155,12 @@ export const DESKTOP_MODULE_SIZE_BUDGETS: readonly DesktopModuleSizeBudget[] = [
   },
   {
     path: 'ipc/terminal-pty-registrar.ts',
-    maxLines: 199,
+    maxLines: 245,
     owner: 'Owns terminal PTY IPC registration.',
   },
   {
     path: 'ipc/terminal-pty-request.ts',
-    maxLines: 115,
+    maxLines: 124,
     owner: 'Owns terminal PTY runtime payload guards.',
   },
 ];
