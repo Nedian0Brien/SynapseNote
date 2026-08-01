@@ -38,7 +38,6 @@ import {
   folderPathToTreeDirectoryPath,
   isExternalFileDrag,
   treeDirectoryPathToFolderPath,
-  treeFilePathToDocName,
   treeFilePathToDocumentDocName,
   treePathSignature,
   treePathToAppPath,
@@ -58,7 +57,6 @@ import {
   getFileExtension,
   hasSupportedDocumentExtension,
 } from '@/components/file-tree-rename-validation';
-import { revealActiveRow } from '@/components/file-tree-reveal';
 import {
   resolveFileTreeSelection,
   resolveFileTreeSelectionAction,
@@ -87,7 +85,7 @@ import {
 } from '@/components/TrashFailureModal';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
-import { asDirectoryHandle, useSelectionMirror } from '@/components/use-selection-mirror';
+import { asDirectoryHandle } from '@/components/use-selection-mirror';
 import { getEditorForDoc } from '@/editor/active-editor';
 import { useDocumentCollaboration } from '@/editor/document-context/useDocumentCollaboration';
 import { useDocumentNavigation } from '@/editor/document-context/useDocumentNavigation';
@@ -149,6 +147,7 @@ import {
 } from './file-tree/useFileTreeDragAndDrop';
 import { createDuplicateFileTreeMutation } from './file-tree/useFileTreeMutations';
 import { createFileTreeRenameHandlers } from './file-tree/useFileTreeRename';
+import { useFileTreeSelection } from './file-tree/useFileTreeSelection';
 import { useFileTreeShowAll } from './file-tree/useFileTreeShowAll';
 import { createFileTreeTrashHandlers } from './file-tree/useFileTreeTrash';
 import { useHandoffDispatch } from './handoff/useHandoffDispatch';
@@ -931,19 +930,26 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     });
   }, [model, treePathsSignature]);
 
-  useSelectionMirror(
+  useFileTreeSelection({
     model,
     activeTreePath,
+    baseActiveTreePath,
+    treePathsSignature,
+    loading,
+    activeAncestorTreePathsSignature,
     autoRevealActiveAncestorTreePathsSignature,
     suppressSelectionRef,
-    // Re-run trigger: re-assert the active-row selection after the tree is
-    // repopulated by `model.resetPaths` (see the reset effect above). Without
-    // this, a direct-URL / hash-nav first paint whose `/api/documents` lands
-    // AFTER the first mirror commit reveals + expands the row but never
-    // selects it (selectedRow count stays 0). Same trigger the reveal-active-
-    // row effect already uses.
-    treePathsSignature,
-  );
+    sidebarDragInProgressRef,
+    pendingExactFileSelectionRef,
+    activeAncestorTreePathsRef,
+    fileTreeHostRef,
+    handleSelectionChangeRef,
+    documentsRef,
+    setCreationDirCleared,
+    setUserCollapsedActiveAncestorPaths,
+    normalizeSelectionPath,
+    activateTreePath,
+  });
 
   // Feed the parent pane the tree's true content height so a short tree sits
   // flush above the Skills section (no bottom-dock / header overlap) and a long
@@ -1004,18 +1010,6 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     };
   }, [onContentHeightChange, model]);
 
-  // Re-couple the creation target to the active item whenever navigation moves
-  // it — opening a row, following a link, switching tabs. `baseActiveTreePath`
-  // is the activeTarget-derived path BEFORE the cleared override, so this fires
-  // on real nav changes but NOT when the empty-space click flips `cleared`
-  // (which leaves activeTarget untouched). Keeps "clicked empty space" sticky
-  // until the user actually navigates again.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: setCreationDirCleared is a stable state setter; baseActiveTreePath is the sole trigger.
-  useEffect(() => {
-    setCreationDirCleared(false);
-    setUserCollapsedActiveAncestorPaths(new Set());
-  }, [baseActiveTreePath]);
-
   // Bridge `creationDirCleared` (React state) to the imperative handle's
   // subscribers (FileSidebar) — Pierre's model.subscribe doesn't observe React
   // state, so notify the handle listeners explicitly on change.
@@ -1023,42 +1017,6 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     creationDirClearedRef.current = creationDirCleared;
     for (const listener of handleListenersRef.current) listener();
   }, [creationDirCleared]);
-
-  // Scroll the active document's row into view in the virtualized file tree.
-  // `useSelectionMirror` (above) selects the row and expands its ancestors but
-  // only sets @pierre/trees' *focused index* — Pierre auto-scrolls a focused
-  // row into view solely when the tree owns DOM focus, which a programmatic open
-  // never gives it, so the row can stay below the fold after opening a doc from
-  // a link or switching tabs. Declared after `useSelectionMirror` so it runs
-  // after that effect on the same commit (React flushes same-tier effects in
-  // declaration order); a layout effect would run before it instead.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: activeAncestorTreePathsSignature + treePathsSignature are re-run triggers — the row's visible index shifts when ancestors expand or the tree repopulates.
-  useEffect(() => {
-    if (loading || !activeTreePath) return;
-    revealActiveRow(model, activeTreePath);
-  }, [activeTreePath, activeAncestorTreePathsSignature, treePathsSignature, loading, model]);
-
-  useEffect(() => {
-    return model.subscribe(() => {
-      if (model.isSearchOpen()) return;
-      if (activeAncestorTreePathsRef.current.length === 0) return;
-      setUserCollapsedActiveAncestorPaths((current) => {
-        const next = new Set(current);
-        let changed = false;
-        for (const ancestor of activeAncestorTreePathsRef.current) {
-          const item = asDirectoryHandle(model.getItem(ancestor));
-          if (!item) continue;
-          if (item.isExpanded()) {
-            if (next.delete(ancestor)) changed = true;
-          } else if (!next.has(ancestor)) {
-            next.add(ancestor);
-            changed = true;
-          }
-        }
-        return changed ? next : current;
-      });
-    });
-  }, [model]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: pending-create and cleanup callbacks flow through stable refs; listener lifecycle follows the tree model.
   useEffect(() => {
@@ -1287,14 +1245,6 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     });
   }
 
-  function selectedRenderedTreePath(): string | null {
-    const shadow = fileTreeHostRef.current?.querySelector(FILE_TREE_TAG_NAME)?.shadowRoot;
-    const selectedRow = shadow?.querySelector<HTMLElement>(
-      '[aria-selected="true"][data-item-path]',
-    );
-    return selectedRow?.dataset.itemPath ?? null;
-  }
-
   useLayoutEffect(() => {
     documentsRef.current = documents;
     pageMetaRef.current = pageMeta;
@@ -1311,36 +1261,6 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     userCollapsedActiveAncestorPathsRef.current = userCollapsedActiveAncestorPaths;
     uploadExternalFilesRef.current = (files, parentDir, uploadBusyPath) => {
       void uploadExternalFilesToTarget(files, parentDir, uploadBusyPath);
-    };
-    handleSelectionChangeRef.current = (selectedPaths) => {
-      if (suppressSelectionRef.current || sidebarDragInProgressRef.current) return;
-      if (selectedPaths.length !== 1) return;
-      const selected = selectedPaths[0];
-      if (selected) {
-        // Selecting a row re-establishes it as the creation target (the reset
-        // effect also catches this once activeTarget commits, but clearing
-        // eagerly avoids a one-frame deselected flash on the clicked row).
-        setCreationDirCleared(false);
-        const selectedTreePath = normalizeSelectionPath(selected);
-        const pendingExactFileSelection = pendingExactFileSelectionRef.current;
-        // The click handler sets this ref and schedules hash navigation with
-        // setTimeout(0); this microtask consumes the exact row first.
-        const hasPendingExactFileSelection =
-          pendingExactFileSelection !== null &&
-          treeFilePathToDocName(pendingExactFileSelection) ===
-            treeFilePathToDocName(selectedTreePath);
-        const targetTreePath = hasPendingExactFileSelection
-          ? pendingExactFileSelection
-          : selectedTreePath;
-        pendingExactFileSelectionRef.current = null;
-        queueMicrotask(() => {
-          const renderedTreePath = hasPendingExactFileSelection ? null : selectedRenderedTreePath();
-          activateTreePath(
-            normalizeSelectionPath(renderedTreePath ?? targetTreePath),
-            documentsRef.current,
-          );
-        });
-      }
     };
     handleRenameErrorRef.current = (message) => {
       if (recoverMarkdownRenameConflict(message)) return;
