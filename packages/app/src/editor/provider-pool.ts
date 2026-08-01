@@ -24,6 +24,7 @@ import { getMountId } from './mount-id-registry';
 import { setupObservers } from './observers';
 import { disposeEntryResources } from './provider-pool-entry-disposal';
 import { beginEntryTeardown } from './provider-pool-entry-state';
+import { TAB_REPLAY_ORIGIN, takeBufferedReplay } from './provider-pool-replay';
 import { BridgeSetupError, invalidateSyncPromise, rejectSyncPromise } from './sync-promise';
 
 /**
@@ -31,7 +32,7 @@ import { BridgeSetupError, invalidateSyncPromise, rejectSyncPromise } from './sy
  * update onto a freshly-recycled provider. Lets tests and future observers
  * distinguish replay writes from user edits / server sync deliveries.
  */
-export const TAB_REPLAY_ORIGIN = Object.freeze({ kind: 'tab-replay' } as const);
+export { TAB_REPLAY_ORIGIN } from './provider-pool-replay';
 
 export type SyncState = 'connecting' | 'synced' | 'disconnected';
 export type ServerRestartRecoveryState =
@@ -2017,14 +2018,8 @@ export class ProviderPool {
       const replayOnce = (): void => {
         provider.off('synced', replayOnce);
         if (entry.kind !== 'active' || this.entries.get(docName) !== entry) return;
-        const current = this.bufferedUpdates.get(docName);
+        const current = takeBufferedReplay(this.bufferedUpdates, docName);
         if (current === undefined) return;
-        // Drop the buffer reference up-front: a malformed update that
-        // throws would throw again on retry, and the server's sync has
-        // already delivered the canonical state. Catch the throw so it
-        // doesn't escape into Hocuspocus's event emitter as an unhandled
-        // rejection and so the next sync can proceed.
-        this.bufferedUpdates.delete(docName);
         try {
           Y.applyUpdate(provider.document, current, TAB_REPLAY_ORIGIN);
         } catch (err: unknown) {
