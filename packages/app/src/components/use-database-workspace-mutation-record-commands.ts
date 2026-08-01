@@ -53,7 +53,7 @@ export function useDatabaseWorkspaceMutationRecordCommands({
   description: MutationInput['description'];
   result: RecordInput['result'];
   selectedView: RecordInput['selectedView'];
-  itemNoun: string;
+  itemNoun: RecordInput['itemNoun'];
 }) {
   const { open, initialRecordAction } = props;
   const {

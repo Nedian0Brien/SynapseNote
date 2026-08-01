@@ -11,7 +11,7 @@ export function resolveDatabaseWorkspaceSelectedViewId({
 }: {
   selectedViewId: string;
   availableViewIds: readonly string[];
-  persistedViewId: string | null;
+  persistedViewId: string | null | undefined;
   defaultViewId: string | null | undefined;
 }): string {
   if (selectedViewId) {

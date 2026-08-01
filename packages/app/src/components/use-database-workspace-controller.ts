@@ -17,6 +17,7 @@ export function useDatabaseWorkspaceController(props: DatabaseTableDialogProps) 
     onCreationCancelled,
     initialTarget,
     initialAction,
+    initialViewAction,
     creationExperience = 'admin',
     presentation = 'dialog',
   } = props;
@@ -73,6 +74,7 @@ export function useDatabaseWorkspaceController(props: DatabaseTableDialogProps) 
     onOpenAgentRuns,
     onOpenContextInspector,
     onCreationCancelled,
+    initialViewAction,
     selectedView: structureCommands.selectedView,
     personLabels: { agent: t`agent`, inactive: t`inactive` },
   });
