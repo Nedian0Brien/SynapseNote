@@ -4083,11 +4083,18 @@ function registerIpcHandlers() {
   registerProjectIntegrationsSettingsIpc();
   // Lifecycle IPC is owned and armed independently. Every remaining request
   // channel must be registered exactly once by the static registrar map.
+  const expectedStaticChannels = new Set<string>();
   registerDesktopIpcRegistrars((channel) => {
+    expectedStaticChannels.add(channel);
     if (!registeredStaticChannels.has(channel)) {
       throw new Error(`desktop IPC registrar did not install ${channel}`);
     }
   });
+  for (const channel of registeredStaticChannels) {
+    if (!expectedStaticChannels.has(channel)) {
+      throw new Error(`desktop IPC handler has no static registrar owner: ${channel}`);
+    }
+  }
 }
 
 /**
