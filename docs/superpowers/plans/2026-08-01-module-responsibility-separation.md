@@ -1,6 +1,6 @@
 # Module Responsibility Separation Delivery Plan
 
-**Status:** In progress; Milestones 1–7 complete, final integration pending.
+**Status:** Complete; Milestones 1–7 and final integration verified.
 **Prepared:** 2026-08-01
 **Predecessor:** `docs/rfcs/0011-post-v2-refactoring-plan.md`
 
@@ -44,18 +44,18 @@ one runnable smoke surface. Repository-wide gates are reserved for the final int
 
 Rules for every extraction:
 
-- [ ] Preserve runtime behavior, persisted bytes, public exports, route/channel names, and error shapes.
-- [ ] Add or identify a behavior-defining test before moving production code.
-- [ ] Move one cohesive responsibility per commit; do not mix extraction with cleanup or redesign.
-- [ ] Do not create a replacement `*Runtime`, `manager`, `utils`, or `helpers` megamodule.
-- [ ] Give every new module one owner sentence and a near-current size budget.
-- [ ] Keep facades declarative: imports, hook/service composition, and returned/rendered surface only.
-- [ ] Lower the source monolith's size budget in the same commit as each extraction.
-- [ ] Keep dependency direction one-way; leaf modules may receive callbacks but may not import their
+- [x] Preserve runtime behavior, persisted bytes, public exports, route/channel names, and error shapes.
+- [x] Add or identify a behavior-defining test before moving production code.
+- [x] Move one cohesive responsibility per commit; do not mix extraction with cleanup or redesign.
+- [x] Do not create a replacement `*Runtime`, `manager`, `utils`, or `helpers` megamodule.
+- [x] Give every new module one owner sentence and a near-current size budget.
+- [x] Keep facades declarative: imports, hook/service composition, and returned/rendered surface only.
+- [x] Lower the source monolith's size budget in the same commit as each extraction.
+- [x] Keep dependency direction one-way; leaf modules may receive callbacks but may not import their
       former controller/facade.
-- [ ] Run only focused checks during a milestone and stop once changed behavior is covered.
-- [ ] Require one review at the end of each package wave, not after every extraction commit.
-- [ ] Add a changeset only if an extraction causes an intentional user-visible behavior change.
+- [x] Run only focused checks during a milestone and stop once changed behavior is covered.
+- [x] Require one review at the end of each package wave, not after every extraction commit.
+- [x] Add a changeset only if an extraction causes an intentional user-visible behavior change.
 
 ## 2. Target dependency shape
 
@@ -434,27 +434,33 @@ owner and one implementation owner.
 Run these only after all approved milestones are implemented. Counts may legitimately increase as
 new tests are added; zero failures and exit code are authoritative.
 
-- [ ] `rg` and Biome scan all changed source files without binary-file truncation.
-- [ ] `MODULE_SIZE_BUDGETS` covers every new app module and all entries are green.
-- [ ] `LEGACY_MODULE_EXCEPTIONS` is empty and guarded as empty.
-- [ ] `SERVER_MODULE_SIZE_BUDGETS` contains exact, monotonically reduced ceilings.
-- [ ] Desktop has an equivalent module-size/dependency guard.
-- [ ] No production `*Runtime` replacement megamodule was introduced.
-- [ ] No leaf imports its former facade/controller.
-- [ ] No route name, IPC channel, schema version, plan hash, storage version, or error envelope changed.
-- [ ] `typeof refreshNow === 'function'` remains in the mutation command path.
-- [ ] Core focused/affected tests pass with zero failures.
-- [ ] App non-DOM and DOM affected suites pass with zero failures.
-- [ ] Server database, API, upload, rename, and manifest checks pass with zero failures.
-- [ ] Desktop affected tests and `check:desktop` pass with zero failures.
-- [ ] `bun run typecheck` succeeds for all packages.
-- [ ] Biome reports zero errors for the complete change set; pre-existing unrelated repository
+- [x] `rg` and Biome scan all changed source files without binary-file truncation.
+- [x] `MODULE_SIZE_BUDGETS` covers every new app module and all entries are green.
+- [x] `LEGACY_MODULE_EXCEPTIONS` is empty and guarded as empty.
+- [x] `SERVER_MODULE_SIZE_BUDGETS` contains exact, monotonically reduced ceilings.
+- [x] Desktop has an equivalent module-size/dependency guard.
+- [x] No production `*Runtime` replacement megamodule was introduced.
+- [x] No leaf imports its former facade/controller.
+- [x] No route name, IPC channel, schema version, plan hash, storage version, or error envelope changed.
+- [x] `typeof refreshNow === 'function'` remains in the mutation command path.
+- [x] Core focused/affected tests pass with zero failures.
+- [x] App non-DOM and DOM affected suites pass with zero failures.
+- [x] Server database, API, upload, rename, and manifest checks pass with zero failures.
+- [x] Desktop affected tests and `check:desktop` pass with zero failures.
+- [x] `bun run typecheck` succeeds for all packages.
+- [x] Biome reports zero errors for the complete change set; pre-existing unrelated repository
       diagnostics are recorded separately rather than silently expanded into this plan.
-- [ ] One final Sol integration review reports no blocking ownership, security, or contract defects.
-- [ ] Behavior-neutral milestones have no changeset; any intentional behavior change has a focused
+- [x] One final Sol integration review reports no blocking ownership, security, or contract defects.
+- [x] Behavior-neutral milestones have no changeset; any intentional behavior change has a focused
       changeset and separate user approval.
-- [ ] Branch is pushed and the web editor is launched from the task worktree for user verification.
-- [ ] Worktree and branch remain recoverable until the user explicitly approves merge and cleanup.
+- [x] Branch is pushed and the web editor is launched from the task worktree for user verification.
+- [x] Worktree and branch remain recoverable until the user explicitly approves merge and cleanup.
+
+Final integration evidence (2026-08-02): `bun run check` completed 19/19 Turbo tasks with zero
+failures; `bun run check:desktop` completed 2,496 tests with two intentional skips and zero failures;
+the app/server/desktop module-boundary suites completed 29 tests with zero failures; the final Sol
+review found no blocking ownership, security, or public-contract defects. The web editor responded
+with HTTP 200 at `http://localhost:5174/` from this task worktree.
 
 ## 11. Review and commit policy
 
