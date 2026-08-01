@@ -1,42 +1,21 @@
-import { plural, t } from '@lingui/core/macro';
+import { plural } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react/macro';
 import {
   CreateFolderSuccessSchema,
   CreatePageSuccessSchema,
   DeletePathSuccessSchema,
-  type HandoffOutcome,
-  type HandoffTarget,
-  type InstallState,
   isDocumentOverOpenByteLimit,
-  type OkignoreBinding,
   RenamePathSuccessSchema,
   TrashCleanupSuccessSchema,
   UploadAssetSuccessSchema,
   WorkspaceSuccessSchema,
 } from '@nedian0brien/synapsenote-core';
 import {
-  type ContextMenuItem,
-  type ContextMenuOpenContext,
   FILE_TREE_TAG_NAME,
   type FileTreeDropResult,
   type FileTreeRenameEvent,
-  type FileTree as PierreFileTreeModel,
 } from '@pierre/trees';
 import { FileTree as PierreFileTree, useFileTree } from '@pierre/trees/react';
-import {
-  Copy,
-  CopyPlus,
-  EyeOff,
-  FilePlus,
-  FolderOpen,
-  FolderPlus,
-  FoldVertical,
-  Pencil,
-  Share2,
-  SquarePen,
-  Trash2,
-  UnfoldVertical,
-} from 'lucide-react';
 import { useTheme } from 'next-themes';
 import {
   type DragEvent as ReactDragEvent,
@@ -67,18 +46,15 @@ import {
   folderPathToTreeDirectoryPath,
   isExternalFileDrag,
   normalizeTreePathForKind,
-  relativePathForTreeItem,
   treeDirectoryPathToFolderPath,
   treeFilePathToDocName,
   treeFilePathToDocumentDocName,
-  treeItemToTarget,
   treePathSignature,
   treePathToAppPath,
   uploadedPathForSidebarDrop,
 } from '@/components/file-tree-adapter';
 import { createFileTreeStyle } from '@/components/file-tree-density';
 import { applyExtensionBadges } from '@/components/file-tree-extension-badge';
-import { buildOkignorePatternFromTarget } from '@/components/file-tree-okignore';
 import {
   applyDeleteToDocuments,
   applyRenameToDocuments,
@@ -122,28 +98,12 @@ import {
 } from '@/components/navigation-targets';
 import { usePageList } from '@/components/PageListContext';
 import {
-  appendPattern,
-  parseOkignoreDoc,
-  serializeOkignoreDoc,
-} from '@/components/settings/okignore-doc';
-import {
   coerceTrashFailureReason,
   type TrashFailedTarget,
   TrashFailureModal,
 } from '@/components/TrashFailureModal';
-import { TemplateMenuRows } from '@/components/template-menu-rows';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { asDirectoryHandle, useSelectionMirror } from '@/components/use-selection-mirror';
 import { getEditorForDoc } from '@/editor/active-editor';
 import { useDocumentCollaboration } from '@/editor/document-context/useDocumentCollaboration';
@@ -152,8 +112,6 @@ import { useDocumentTabs } from '@/editor/document-context/useDocumentTabs';
 import { captureRenameSnapshots } from '@/editor/editor-cache';
 import { assetTabId, docTabId, folderTabId, remapPathForFolderRenames } from '@/editor/editor-tabs';
 import { useConflicts } from '@/hooks/use-conflicts';
-import { useFolderConfig } from '@/hooks/use-folder-config';
-import { useGitSyncStatusDetailed } from '@/hooks/use-git-sync-status';
 import { useConfigContext } from '@/lib/config-provider';
 import {
   hashFromAssetPath,
@@ -173,15 +131,8 @@ import {
 } from '@/lib/page-header-rename-events';
 import { parseServerResponse, parseSuccessOrWarn } from '@/lib/parse-server-response';
 import { getRelaunchInFlightSnapshot, useRelaunchInFlight } from '@/lib/relaunch-store';
-import { scheduleClipboardWrite } from '@/lib/share/clipboard-adapter';
-import {
-  buildDocShareInput,
-  buildFolderShareInput,
-  runShareAction,
-  type ShareTargetInput,
-} from '@/lib/share/run-share-action';
 import { cn } from '@/lib/utils';
-import { joinWorkspacePath } from '@/lib/workspace-paths';
+import { FileTreeMenu } from './file-tree/FileTreeMenu';
 import {
   AGENT_DECORATION_ICON_ID,
   FILE_TREE_CREATION_CLEARED_ATTR,
@@ -203,7 +154,6 @@ import {
   isEditableKeyboardTarget,
   resolveDuplicableKeyboardTarget,
   resolveKeyboardDeleteTargets,
-  selectedTreePathsToDeleteTargets,
 } from './file-tree/file-tree-commands';
 import type { FileTreeProps } from './file-tree/file-tree-types';
 import {
@@ -216,13 +166,7 @@ import {
 } from './file-tree/useFileTreeDragAndDrop';
 import { createDuplicateFileTreeMutation } from './file-tree/useFileTreeMutations';
 import { useFileTreeShowAll } from './file-tree/useFileTreeShowAll';
-import { OpenInAgentContextSubmenu } from './handoff/OpenInAgentContextSubmenu';
-import {
-  buildFolderHandoffInput,
-  buildHandoffInput,
-  type HandoffDispatchInput,
-  useHandoffDispatch,
-} from './handoff/useHandoffDispatch';
+import { useHandoffDispatch } from './handoff/useHandoffDispatch';
 import { useInstalledAgents } from './handoff/useInstalledAgents';
 import { cancelHoverPrewarm, scheduleHoverPrewarm } from './sidebar-hover-prewarm';
 import { useSidebar } from './ui/sidebar';
@@ -251,21 +195,6 @@ function focusEditorAfterRename(docName: string): void {
       // Editor view may be mid-transition; focus is best-effort.
     }
   });
-}
-
-// Module-level functions can't call `useLingui()`, so this file uses the
-// `@lingui/core/macro` `t` (and `plural`) for any localizable string outside a
-// React component; the `t` from `useLingui()` is used inside components.
-async function copyToClipboard(text: string, kind: 'full' | 'relative'): Promise<void> {
-  try {
-    await navigator.clipboard.writeText(text);
-    toast.success(kind === 'full' ? t`Copied full path` : t`Copied relative path`, {
-      description: text,
-    });
-  } catch (err) {
-    console.warn('[FileTree] clipboard write failed:', err);
-    toast.error(kind === 'full' ? t`Could not copy full path` : t`Could not copy relative path`);
-  }
 }
 
 const CONNECTIVITY_RECONNECT_RETRY_MS = 2000;
@@ -308,578 +237,6 @@ interface TrashFailureRequest {
 interface WorkspaceInfo {
   contentDir: string;
   pathSeparator: '/' | '\\';
-}
-
-/**
- * Platform-specific label for the file-manager reveal action. Mirrors VS Code's copy.
- * Linux verb asymmetry (Open vs Reveal) is intentional — no stable Linux file-manager
- * brand to "Reveal in"; a normalizing fix to "Reveal in Files" would be incorrect on
- * most distros.
- */
-function revealInFileManagerLabel(platform: 'darwin' | 'win32' | 'linux'): string {
-  if (platform === 'darwin') return t`Reveal in Finder`;
-  if (platform === 'win32') return t`Reveal in File Explorer`;
-  return t`Open containing folder`;
-}
-
-/**
- * File-tree menu row that opens the OS file manager with the target file/folder
- * selected. Hidden entirely on the web variant (no useful no-op without a host
- * filesystem) — the disabled-with-hint pattern used by `OpenInAgentContextSubmenu`
- * doesn't apply here because reveal has no cross-host fallback. When present but
- * the workspace metadata hasn't resolved yet, renders disabled with a "No workspace"
- * affordance mirroring the handoff submenu's pattern.
- */
-function RevealInFileManagerMenuItem({
-  item,
-  workspace,
-  onClose,
-}: {
-  item: ContextMenuItem;
-  workspace: WorkspaceInfo | null;
-  onClose: () => void;
-}) {
-  const { t } = useLingui();
-  const bridge = typeof window !== 'undefined' ? window.okDesktop : undefined;
-  if (!bridge) return null;
-  const platform = bridge.platform;
-  const label = revealInFileManagerLabel(platform);
-  const hint = !workspace ? t`No workspace` : null;
-  // Per-platform aria-label so the catalog entry carries the literal label
-  // (e.g. `Reveal in Finder, {hint}`) — `t`${label}, ${hint}`` would extract
-  // a context-free `{label}, {hint}` that translators can't render naturally.
-  const ariaLabel =
-    platform === 'darwin'
-      ? hint
-        ? t`Reveal in Finder, ${hint}`
-        : t`Reveal in Finder`
-      : platform === 'win32'
-        ? hint
-          ? t`Reveal in File Explorer, ${hint}`
-          : t`Reveal in File Explorer`
-        : hint
-          ? t`Open containing folder, ${hint}`
-          : t`Open containing folder`;
-  return (
-    <DropdownMenuItem
-      disabled={!workspace}
-      onSelect={() => {
-        if (!workspace) return;
-        onClose();
-        const full = joinWorkspacePath(
-          workspace.contentDir,
-          relativePathForTreeItem(item),
-          workspace.pathSeparator,
-        );
-        void bridge.shell.showItemInFolder(full);
-      }}
-      aria-label={ariaLabel}
-    >
-      <FolderOpen aria-hidden="true" />
-      <span className="flex-1">{label}</span>
-      {hint ? (
-        <span aria-hidden="true" className="ml-2 text-muted-foreground text-xs">
-          {hint}
-        </span>
-      ) : null}
-    </DropdownMenuItem>
-  );
-}
-
-interface FileTreeMenuProps {
-  item: ContextMenuItem;
-  context: ContextMenuOpenContext;
-  anyActionBusy: boolean;
-  workspace: WorkspaceInfo | null;
-  handoff: {
-    readonly installStates: Record<HandoffTarget, InstallState>;
-    readonly isElectronHost: boolean;
-    readonly dispatch: (
-      target: HandoffTarget,
-      input: HandoffDispatchInput,
-    ) => Promise<HandoffOutcome>;
-  };
-  model: PierreFileTreeModel;
-  okignoreBinding: OkignoreBinding | null;
-  onStartCreating: (kind: 'file' | 'folder', parentDir: string) => void;
-  /** Inline create-from-template for the given parent dir + template name —
-   *  same inline-rename fast path as `onStartCreating`, seeded from a template.
-   *  Drives the folder menu's "New from template" hover submenu. */
-  onCreateFromTemplate: (parentDir: string, templateName: string) => void;
-  onDuplicate: (target: FileTreeTarget) => void;
-  onDelete: (targets: FileTreeTarget[]) => void;
-  onExpandSubtree: (treePath: string) => void;
-  onCollapseSubtree: (treePath: string) => void;
-  /**
-   * Folder tree paths used to hide the subtree Expand/Collapse-All items
-   * when their action would be a no-op — mirrors the toolbar's Tree View
-   * Options dropdown (FileSidebar.tsx). Iterated through the same predicate
-   * `expandSubtree`/`collapseSubtree` use so the visibility matches the
-   * action surface exactly.
-   */
-  folderTreePaths: readonly string[];
-  isAsset: boolean;
-  /** Authoritative document list — sourced for `docExt` when Pierre's tree
-   *  path has lost its extension after a basename-only commit. See `treeItemToTarget`. */
-  documents: readonly FileEntry[];
-}
-
-function FileTreeMenu({
-  item,
-  context,
-  anyActionBusy,
-  workspace,
-  handoff,
-  model,
-  okignoreBinding,
-  onStartCreating,
-  onCreateFromTemplate,
-  onDuplicate,
-  onDelete,
-  onExpandSubtree,
-  onCollapseSubtree,
-  folderTreePaths,
-  isAsset,
-  documents,
-}: FileTreeMenuProps) {
-  const { t } = useLingui();
-  const target = treeItemToTarget(item, documents);
-  const isFolder = item.kind === 'directory';
-  // Revealed `.ok` rows are inspect-only: no create/rename/delete/duplicate/
-  // hide affordances (creates into `.ok` are server-refused; mutation of
-  // OK-managed state belongs to its canonical editors). Path/tree actions
-  // (Reveal, Copy path, Expand/Collapse) stay.
-  const isOkRow = hasOkPathSegment(item.path);
-  const okignoreTarget = target.kind === 'asset' ? null : target;
-  const canHide = okignoreTarget !== null && okignoreBinding !== null;
-  const hideLabel = isFolder ? t`Hide folder` : t`Hide this file`;
-  // Drives the smart-hide of the folder menu's "New from template" submenu.
-  // Only folder rows can fetch (null → idle, no request) and the menu mounts
-  // on-demand per right-click, so this fetch fires once when the menu opens —
-  // not eagerly for every tree row. Optimistic-true while loading mirrors the
-  // toolbar + empty-space gates in FileSidebar: hide the submenu only once we
-  // KNOW the resolved cascade is empty, so a slow cold fetch doesn't flicker
-  // the entry out from under the cursor.
-  const folderConfig = useFolderConfig(isFolder ? treeDirectoryPathToFolderPath(item.path) : null);
-  const folderHasTemplates =
-    folderConfig.state.status === 'ready'
-      ? (folderConfig.state.data.folder.templates_available?.length ?? 0) > 0
-      : true;
-  const selectedTreePaths = model.getSelectedPaths();
-  const selectedDeleteTargets = selectedTreePaths.includes(target.treePath)
-    ? selectedTreePathsToDeleteTargets(selectedTreePaths, documents)
-    : [];
-  const deleteTargets = selectedDeleteTargets.length > 1 ? selectedDeleteTargets : [target];
-  const deleteCount = deleteTargets.length;
-  const deleteLabel = plural(deleteCount, { one: 'Delete', other: 'Delete # items' });
-  // Per-row-type handoff input shape:
-  //   asset  → null (assets still suppress the submenu via the render-time
-  //             `!isAsset` gate below; the helper short-circuits so the
-  //             submenu's `inputMissing` branch never runs for an asset that
-  //             was never going to render anyway)
-  //   folder → folder-scoped helper; cwd lands at `workspace.contentDir`
-  //             (project root) — folder focus rides on the directive prompt
-  //   file   → today's doc-scoped helper
-  const handoffInput: HandoffDispatchInput | null = isAsset
-    ? null
-    : isFolder
-      ? buildFolderHandoffInput({
-          // Relative path is the discriminator — dispatch hook picks
-          // `composeFolderPrompt(folderRelativePath)` for the directive.
-          folderRelativePath: relativePathForTreeItem(item),
-          workspace,
-        })
-      : buildHandoffInput({
-          docName: treeFilePathToDocumentDocName(item.path, documents),
-          workspace,
-        });
-
-  const closeForInlineSurface = () => context.close({ restoreFocus: false });
-  const close = () => context.close();
-
-  // Share is offered for folders and real docs (never assets) and only with a
-  // GitHub remote; no-remote falls back to an explanatory toast.
-  const { status: gitSyncStatus } = useGitSyncStatusDetailed();
-  const hasRemote = gitSyncStatus?.hasRemote === true;
-  const shareInput: ShareTargetInput | null =
-    isAsset || target.kind === 'asset'
-      ? null
-      : isFolder
-        ? buildFolderShareInput(treeDirectoryPathToFolderPath(item.path))
-        : buildDocShareInput(treeFilePathToDocumentDocName(item.path, documents));
-  const canShare = hasRemote && shareInput !== null;
-  const handleShare = () => {
-    if (!shareInput) return;
-    // No popover here (unlike the header button), so let every toast through.
-    void runShareAction(
-      {
-        ...shareInput,
-        hasRemote,
-        onClickWhenNoRemote: () => {
-          toast.error(t`Connect this project to GitHub to share.`);
-        },
-      },
-      {
-        clipboardWrite: scheduleClipboardWrite,
-        toastSuccess: (msg) => toast.success(msg),
-        toastError: (msg) => toast.error(msg),
-        logEvent: (msg) => console.log(msg),
-      },
-    );
-  };
-  // Shared Share item — rendered in both the folder and file menu branches.
-  const shareMenuItem = canShare ? (
-    <DropdownMenuItem
-      data-testid="file-tree-menu-share"
-      onSelect={() => {
-        close();
-        handleShare();
-      }}
-    >
-      <Share2 aria-hidden="true" />
-      <Trans>Share</Trans>
-    </DropdownMenuItem>
-  ) : null;
-
-  // Smart-hide for the subtree Expand/Collapse-All items — counts folders
-  // under the right-clicked folder (root + descendants) using the same
-  // `folderPath === root || folderPath.startsWith(root)` predicate that
-  // `expandSubtree`/`collapseSubtree` apply, so visibility tracks the
-  // action surface exactly. Mirrors the toolbar dropdown's hide rule:
-  // hide "Expand all" when every folder is already expanded; hide
-  // "Collapse all" when none are expanded.
-  let subtreeFolderCount = 0;
-  let subtreeExpandedCount = 0;
-  if (isFolder) {
-    const root = folderPathToTreeDirectoryPath(item.path);
-    for (const folderPath of folderTreePaths) {
-      if (folderPath === root || folderPath.startsWith(root)) {
-        subtreeFolderCount++;
-        if (asDirectoryHandle(model.getItem(folderPath))?.isExpanded()) {
-          subtreeExpandedCount++;
-        }
-      }
-    }
-  }
-  const showSubtreeExpandAll = isFolder && subtreeExpandedCount < subtreeFolderCount;
-  const showSubtreeCollapseAll = isFolder && subtreeExpandedCount > 0;
-
-  return (
-    <DropdownMenu
-      open
-      modal={false}
-      onOpenChange={(open) => {
-        if (!open) close();
-      }}
-    >
-      <DropdownMenuTrigger asChild>
-        <span
-          aria-hidden="true"
-          data-file-tree-context-menu-root="true"
-          className="block size-px"
-        />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        sideOffset={0}
-        align="start"
-        data-file-tree-context-menu-root="true"
-        className="min-w-52"
-      >
-        {isFolder ? (
-          <>
-            {!isOkRow ? (
-              <>
-                <DropdownMenuItem
-                  disabled={anyActionBusy}
-                  onSelect={() => {
-                    closeForInlineSurface();
-                    onStartCreating('file', treeDirectoryPathToFolderPath(item.path));
-                  }}
-                >
-                  <SquarePen aria-hidden="true" />
-                  <Trans>New file</Trans>
-                </DropdownMenuItem>
-                {folderHasTemplates ? (
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger disabled={anyActionBusy}>
-                      <FilePlus aria-hidden="true" />
-                      <Trans>New from template</Trans>
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent>
-                      <TemplateMenuRows
-                        parentDir={treeDirectoryPathToFolderPath(item.path)}
-                        onSelectTemplate={(templateName) => {
-                          closeForInlineSurface();
-                          onCreateFromTemplate(
-                            treeDirectoryPathToFolderPath(item.path),
-                            templateName,
-                          );
-                        }}
-                        ItemComponent={DropdownMenuItem}
-                      />
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
-                ) : null}
-                <DropdownMenuItem
-                  disabled={anyActionBusy}
-                  onSelect={() => {
-                    closeForInlineSurface();
-                    onStartCreating('folder', treeDirectoryPathToFolderPath(item.path));
-                  }}
-                >
-                  <FolderPlus aria-hidden="true" />
-                  <Trans>New folder</Trans>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-              </>
-            ) : null}
-            <RevealInFileManagerMenuItem item={item} workspace={workspace} onClose={close} />
-            <OpenInAgentContextSubmenu
-              input={handoffInput}
-              installStates={handoff.installStates}
-              isElectronHost={handoff.isElectronHost}
-              dispatch={handoff.dispatch}
-            />
-            {shareMenuItem}
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <Copy aria-hidden="true" />
-                <Trans>Copy path</Trans>
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                <DropdownMenuItem
-                  disabled={!workspace}
-                  onSelect={() => {
-                    if (!workspace) return;
-                    close();
-                    const full = joinWorkspacePath(
-                      workspace.contentDir,
-                      relativePathForTreeItem(item),
-                      workspace.pathSeparator,
-                    );
-                    void copyToClipboard(full, 'full');
-                  }}
-                >
-                  <Trans>Full path</Trans>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={() => {
-                    close();
-                    void copyToClipboard(relativePathForTreeItem(item), 'relative');
-                  }}
-                >
-                  <Trans>Relative path</Trans>
-                </DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-            {/* Subtree-scoped Expand/Collapse, smart-hidden. The divider only
-                renders when the section is non-empty so a fully-expanded or
-                fully-collapsed subtree collapses to a single divider before
-                the destructive section instead of an empty double rule. */}
-            {showSubtreeExpandAll || showSubtreeCollapseAll ? <DropdownMenuSeparator /> : null}
-            {showSubtreeExpandAll ? (
-              <DropdownMenuItem
-                onSelect={() => {
-                  close();
-                  onExpandSubtree(item.path);
-                }}
-              >
-                <UnfoldVertical aria-hidden="true" />
-                <Trans>Expand all</Trans>
-              </DropdownMenuItem>
-            ) : null}
-            {showSubtreeCollapseAll ? (
-              <DropdownMenuItem
-                onSelect={() => {
-                  close();
-                  onCollapseSubtree(item.path);
-                }}
-              >
-                <FoldVertical aria-hidden="true" />
-                <Trans>Collapse all</Trans>
-              </DropdownMenuItem>
-            ) : null}
-            {/* Destructive section (hidden for inspect-only .ok rows). Rename
-                sits with Hide/Delete here (not at the top with creation) so
-                the menu's read order is create → act → tree →
-                mutate-or-remove. */}
-            {!isOkRow ? (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  disabled={anyActionBusy}
-                  onSelect={() => {
-                    if (target.kind === 'asset') return;
-                    close();
-                    onDuplicate(target);
-                  }}
-                >
-                  <CopyPlus aria-hidden="true" />
-                  <Trans>Duplicate</Trans>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={anyActionBusy}
-                  onSelect={() => {
-                    closeForInlineSurface();
-                    model.startRenaming(item.path);
-                  }}
-                >
-                  <Pencil aria-hidden="true" />
-                  <Trans>Rename</Trans>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  data-testid="file-tree-menu-hide"
-                  disabled={!canHide}
-                  onSelect={() => {
-                    if (!okignoreBinding || !okignoreTarget) return;
-                    close();
-                    const pattern = buildOkignorePatternFromTarget(okignoreTarget);
-                    const current = okignoreBinding.current();
-                    const doc = parseOkignoreDoc(current);
-                    // appendPattern returns the same doc reference for whitespace-only
-                    // input AND for duplicates; skip the patch on both no-ops so we
-                    // don't churn the Y.Text with identical bytes.
-                    const updated = appendPattern(doc, pattern);
-                    if (updated === doc) return;
-                    okignoreBinding.patch(serializeOkignoreDoc(updated));
-                    const basename = okignoreTarget.path.split('/').pop() || okignoreTarget.path;
-                    toast.success(t`Hidden folder “${basename}”`, {
-                      description: t`Manage hidden files in Settings → Ignore patterns.`,
-                      duration: 5000,
-                    });
-                  }}
-                >
-                  <EyeOff aria-hidden="true" />
-                  {hideLabel}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  variant="destructive"
-                  disabled={anyActionBusy}
-                  onSelect={() => {
-                    close();
-                    onDelete(deleteTargets);
-                  }}
-                >
-                  <Trash2 aria-hidden="true" />
-                  {deleteLabel}
-                </DropdownMenuItem>
-              </>
-            ) : null}
-          </>
-        ) : (
-          <>
-            <RevealInFileManagerMenuItem item={item} workspace={workspace} onClose={close} />
-            {!isAsset && (
-              <OpenInAgentContextSubmenu
-                input={handoffInput}
-                installStates={handoff.installStates}
-                isElectronHost={handoff.isElectronHost}
-                dispatch={handoff.dispatch}
-              />
-            )}
-            {shareMenuItem}
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <Copy aria-hidden="true" />
-                <Trans>Copy path</Trans>
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                <DropdownMenuItem
-                  disabled={!workspace}
-                  onSelect={() => {
-                    if (!workspace) return;
-                    close();
-                    const full = joinWorkspacePath(
-                      workspace.contentDir,
-                      relativePathForTreeItem(item),
-                      workspace.pathSeparator,
-                    );
-                    void copyToClipboard(full, 'full');
-                  }}
-                >
-                  <Trans>Full path</Trans>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={() => {
-                    close();
-                    void copyToClipboard(relativePathForTreeItem(item), 'relative');
-                  }}
-                >
-                  <Trans>Relative path</Trans>
-                </DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-            {/* Mutate section (hidden for inspect-only .ok rows). */}
-            {!isOkRow ? (
-              <>
-                <DropdownMenuSeparator />
-                {!isAsset ? (
-                  <DropdownMenuItem
-                    disabled={anyActionBusy}
-                    onSelect={() => {
-                      close();
-                      onDuplicate(target);
-                    }}
-                  >
-                    <CopyPlus aria-hidden="true" />
-                    <Trans>Duplicate</Trans>
-                  </DropdownMenuItem>
-                ) : null}
-                <DropdownMenuItem
-                  disabled={anyActionBusy}
-                  onSelect={() => {
-                    closeForInlineSurface();
-                    model.startRenaming(item.path);
-                  }}
-                >
-                  <Pencil aria-hidden="true" />
-                  <Trans>Rename</Trans>
-                </DropdownMenuItem>
-                {okignoreTarget ? (
-                  <DropdownMenuItem
-                    data-testid="file-tree-menu-hide"
-                    disabled={!canHide}
-                    onSelect={() => {
-                      if (!okignoreBinding) return;
-                      close();
-                      const pattern = buildOkignorePatternFromTarget(okignoreTarget);
-                      const current = okignoreBinding.current();
-                      const doc = parseOkignoreDoc(current);
-                      // appendPattern returns the same doc reference for whitespace-only
-                      // input AND for duplicates; skip the patch on both no-ops so we
-                      // don't churn the Y.Text with identical bytes.
-                      const updated = appendPattern(doc, pattern);
-                      if (updated === doc) return;
-                      okignoreBinding.patch(serializeOkignoreDoc(updated));
-                      const basename = okignoreTarget.path.split('/').pop() || okignoreTarget.path;
-                      toast.success(t`Hidden “${basename}”`, {
-                        description: t`Manage hidden files in Settings → Ignore patterns.`,
-                        duration: 5000,
-                      });
-                    }}
-                  >
-                    <EyeOff aria-hidden="true" />
-                    {hideLabel}
-                  </DropdownMenuItem>
-                ) : null}
-                <DropdownMenuItem
-                  variant="destructive"
-                  disabled={anyActionBusy}
-                  onSelect={() => {
-                    close();
-                    onDelete(deleteTargets);
-                  }}
-                >
-                  <Trash2 aria-hidden="true" />
-                  {deleteLabel}
-                </DropdownMenuItem>
-              </>
-            ) : null}
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
 }
 
 /**
