@@ -1,6 +1,6 @@
 # Module Responsibility Separation Delivery Plan
 
-**Status:** In progress; Milestones 1–5 complete, Milestones 6–8 pending.
+**Status:** In progress; Milestones 1–6 complete, Milestone 7 and final integration pending.
 **Prepared:** 2026-08-01
 **Predecessor:** `docs/rfcs/0011-post-v2-refactoring-plan.md`
 
@@ -359,14 +359,14 @@ needs. It must not import renderer state or create hidden process-wide singleton
 
 Checklist:
 
-- [ ] Add a registry test that asserts every canonical IPC channel is registered exactly once.
-- [ ] Extract one registrar per commit, starting with terminal and asset handlers with existing tests.
-- [ ] Validate untrusted payloads at each registrar boundary.
-- [ ] Preserve caller-window and project-scope derivation in main, never from renderer input.
-- [ ] Keep destructive filesystem handlers behind existing containment/membership checks.
-- [ ] Reduce `registerIpcHandlers()` to registrar composition, target 150 lines or fewer.
-- [ ] Reduce `main/index.ts` below 4,000 lines without moving boot orchestration wholesale.
-- [ ] Add desktop module budgets and dependency-direction tests.
+- [x] Add a registry test that asserts every canonical IPC channel is registered exactly once.
+- [x] Extract one registrar per commit, starting with terminal and asset handlers with existing tests.
+- [x] Validate untrusted payloads at each registrar boundary.
+- [x] Preserve caller-window and project-scope derivation in main, never from renderer input.
+- [x] Keep destructive filesystem handlers behind existing containment/membership checks.
+- [x] Reduce `registerIpcHandlers()` to registrar composition, target 150 lines or fewer.
+- [x] Reduce `main/index.ts` below 4,000 lines without moving boot orchestration wholesale.
+- [x] Add desktop module budgets and dependency-direction tests.
 
 Verification:
 
