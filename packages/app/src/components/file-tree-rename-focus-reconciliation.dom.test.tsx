@@ -15,7 +15,7 @@
  */
 import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from 'bun:test';
 import { cleanup, render, waitFor } from '@testing-library/react';
-import type { MouseEventHandler, ReactNode } from 'react';
+import { createContext, type MouseEventHandler, type ReactNode } from 'react';
 import type { FileEntry } from './file-tree-utils';
 
 type MenuItemProps = {
@@ -306,8 +306,8 @@ mock.module('next-themes', () => ({
   useTheme: () => ({ resolvedTheme: 'light' }),
 }));
 
-mock.module('@/editor/DocumentContext', () => ({
-  useDocumentContext: () => ({
+mock.module('@/editor/document-context/context', () => ({
+  DocumentContext: createContext({
     activeDocName: 'foo',
     activeTarget: { kind: 'doc', target: 'foo', docName: 'foo' },
     closeTabs: closeTabsMock,
