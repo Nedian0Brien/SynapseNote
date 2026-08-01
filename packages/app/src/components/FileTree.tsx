@@ -12,7 +12,6 @@ import {
   useState,
 } from 'react';
 import { toast } from 'sonner';
-import { DeleteConfirmationDialog } from '@/components/DeleteConfirmationDialog';
 import { FileTreeFilteredToZeroNotice } from '@/components/FileTreeFilteredToZeroNotice';
 import {
   docNameToTreePath,
@@ -27,7 +26,6 @@ import type {
   RenamedFolderMapping,
 } from '@/components/file-tree-operations';
 import { getFileExtension } from '@/components/file-tree-rename-validation';
-import { selectTrashConfirmCopy, trashTargetDisplayName } from '@/components/file-tree-trash-copy';
 import {
   classifyEmptyTree,
   type DocumentEntry,
@@ -35,14 +33,8 @@ import {
   isAssetEntry,
   isDocumentEntry,
 } from '@/components/file-tree-utils';
-import { NewItemDialog } from '@/components/NewItemDialog';
-import {
-  coerceTrashFailureReason,
-  type TrashFailedTarget,
-  TrashFailureModal,
-} from '@/components/TrashFailureModal';
+import { coerceTrashFailureReason, type TrashFailedTarget } from '@/components/TrashFailureModal';
 import { Button } from '@/components/ui/button';
-import { Dialog } from '@/components/ui/dialog';
 import { asDirectoryHandle } from '@/components/use-selection-mirror';
 import { getEditorForDoc } from '@/editor/active-editor';
 import { useDocumentCollaboration } from '@/editor/document-context/useDocumentCollaboration';
@@ -56,6 +48,7 @@ import type { PageHeaderRenameResult } from '@/lib/page-header-rename-events';
 import { parseSuccessOrWarn } from '@/lib/parse-server-response';
 import { cn } from '@/lib/utils';
 import { applyRenamedDocuments as reconcileRenamedDocuments } from './file-tree/apply-renamed-documents';
+import { FileTreeDialogs } from './file-tree/FileTreeDialogs';
 import { FileTreeMenu } from './file-tree/FileTreeMenu';
 import { FileTreeHeaderNotice, FileTreeSkeleton } from './file-tree/FileTreePresentation';
 import { FileTreeViewport } from './file-tree/FileTreeViewport';
@@ -1011,7 +1004,6 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
   }
 
   const anyActionBusy = busyPath !== null;
-  const primaryDeleteTarget = deleteRequest?.targets[0] ?? null;
   // Sidebar files come from the disk walk, not the search index, so the
   // guidance must not point at search. Under lazy depth-1 loading the cap
   // applies per fetched level, so the count describes the truncated folder's
@@ -1073,91 +1065,18 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
           />
         )}
       />
-      <Dialog
-        open={!!deleteRequest}
-        onOpenChange={(open) => {
-          if (!open && !busyPath) setDeleteRequest(null);
-        }}
-      >
-        {deleteRequest && primaryDeleteTarget && (
-          <DeleteConfirmationDialog
-            // Trash flow on Electron uses VSCode-verbatim copy;
-            // web mode (no OS Trash) keeps today's hard-delete copy.
-            {...(() => {
-              const variant: 'electron' | 'web' =
-                typeof window !== 'undefined' && window.okDesktop != null ? 'electron' : 'web';
-              const copy = selectTrashConfirmCopy(variant, deleteRequest.targets);
-              if (copy) {
-                return {
-                  customTitle: copy.title,
-                  customDescription: '',
-                  customDetail: copy.detail,
-                  customConfirmLabel: copy.confirmLabel,
-                  customConfirmLabelBusy: copy.confirmLabelBusy,
-                  children: copy.listedTargets ? (
-                    <ul className="flex flex-col gap-1 font-mono text-foreground text-xs">
-                      {copy.listedTargets.map((target) => (
-                        <li key={`${target.kind}:${target.path}`} data-testid="delete-target-row">
-                          {trashTargetDisplayName(target)}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null,
-                };
-              }
-              // Web mode — preserve today's copy.
-              const targetCount = deleteRequest.targets.length;
-              const folderName = primaryDeleteTarget.name;
-              return {
-                itemName:
-                  targetCount === 1
-                    ? primaryDeleteTarget.kind === 'folder'
-                      ? `${primaryDeleteTarget.name}/`
-                      : primaryDeleteTarget.kind === 'file'
-                        ? `${primaryDeleteTarget.name}${primaryDeleteTarget.docExt ?? '.md'}`
-                        : primaryDeleteTarget.name
-                    : undefined,
-                customTitle: targetCount > 1 ? t`Delete selected items` : undefined,
-                customDescription:
-                  targetCount > 1
-                    ? t`Are you sure you want to delete ${targetCount} selected items? Folders and all files inside them will be deleted. This action cannot be undone.`
-                    : primaryDeleteTarget.kind === 'folder'
-                      ? t`Are you sure you want to delete ${folderName}/ and all files inside? This action cannot be undone.`
-                      : undefined,
-              };
-            })()}
-            isSubmitting={busyPath !== null}
-            onDelete={() => handleDeleteTargets(deleteRequest.targets)}
-          />
-        )}
-      </Dialog>
-      <Dialog
-        open={!!trashFailure}
-        onOpenChange={(open) => {
-          if (!open && !busyPath) setTrashFailure(null);
-        }}
-      >
-        {trashFailure && (
-          <TrashFailureModal
-            failedTargets={trashFailure.failed}
-            isSubmitting={busyPath !== null}
-            onDeletePermanently={handleTrashFailureDeletePermanently}
-            onRetry={handleTrashFailureRetry}
-            onCancel={() => setTrashFailure(null)}
-          />
-        )}
-      </Dialog>
-      <NewItemDialog
-        open={newItemRequest !== null}
-        onOpenChange={(open) => {
-          if (!open) setNewItemRequest(null);
-        }}
-        kind="file"
-        initialDir={newItemRequest?.parentDir ?? ''}
-        // This dialog is only opened via `startCreatingFromTemplate` (the
-        // native macOS File → "New from Template…" item), so default the
-        // picker to the first resolved template rather than Blank note.
-        defaultToTemplate
+      <FileTreeDialogs
+        deleteRequest={deleteRequest}
+        busy={busyPath !== null}
+        onCloseDelete={() => setDeleteRequest(null)}
+        onDelete={handleDeleteTargets}
+        trashFailure={trashFailure}
+        onCloseTrashFailure={() => setTrashFailure(null)}
+        onDeletePermanently={handleTrashFailureDeletePermanently}
+        onRetry={handleTrashFailureRetry}
+        newItemOpen={newItemRequest !== null}
+        newItemInitialDir={newItemRequest?.parentDir ?? ''}
+        onCloseNewItem={() => setNewItemRequest(null)}
       />
     </>
   );
