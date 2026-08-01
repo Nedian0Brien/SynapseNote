@@ -31,22 +31,16 @@ import {
   FolderOpen,
   FolderPlus,
   FoldVertical,
-  Info,
   Pencil,
-  RefreshCw,
   Share2,
   SquarePen,
   Trash2,
-  TriangleAlert,
   UnfoldVertical,
 } from 'lucide-react';
-import { __iconNode as botIcon } from 'lucide-react/dist/esm/icons/bot';
-import { __iconNode as link2Icon } from 'lucide-react/dist/esm/icons/link-2';
 import { useTheme } from 'next-themes';
 import {
   type DragEvent as ReactDragEvent,
   type MouseEvent as ReactMouseEvent,
-  type ReactNode,
   startTransition,
   useEffect,
   useImperativeHandle,
@@ -57,10 +51,6 @@ import {
 import { toast } from 'sonner';
 import { DeleteConfirmationDialog } from '@/components/DeleteConfirmationDialog';
 import { FileTreeFilteredToZeroNotice } from '@/components/FileTreeFilteredToZeroNotice';
-import {
-  MARKDOWN_FILE_ICON_PATH_D,
-  MARKDOWN_FILE_ICON_VIEWBOX,
-} from '@/components/file-entry-icon';
 import {
   appendSidebarUploadFields,
   collectTreeFolderPathsFromDocuments,
@@ -86,16 +76,8 @@ import {
   treePathToAppPath,
   uploadedPathForSidebarDrop,
 } from '@/components/file-tree-adapter';
-import {
-  createFileTreeStyle,
-  FILE_TREE_DENSITY_OPTIONS,
-  FILE_TREE_INDENT_GUIDE_CSS,
-  FILE_TREE_STICKY_HEADER_CSS,
-} from '@/components/file-tree-density';
-import {
-  applyExtensionBadges,
-  FILE_TREE_EXT_BADGE_CSS,
-} from '@/components/file-tree-extension-badge';
+import { createFileTreeStyle } from '@/components/file-tree-density';
+import { applyExtensionBadges } from '@/components/file-tree-extension-badge';
 import { buildOkignorePatternFromTarget } from '@/components/file-tree-okignore';
 import {
   applyDeleteToDocuments,
@@ -110,10 +92,7 @@ import {
   type RenamedFolderMapping,
   remapActiveDocName,
 } from '@/components/file-tree-operations';
-import {
-  applyRenameInputAffordance,
-  FILE_TREE_RENAME_INPUT_CSS,
-} from '@/components/file-tree-rename-chip';
+import { applyRenameInputAffordance } from '@/components/file-tree-rename-chip';
 import {
   getFileExtension,
   hasSupportedDocumentExtension,
@@ -165,7 +144,6 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Skeleton } from '@/components/ui/skeleton';
 import { asDirectoryHandle, useSelectionMirror } from '@/components/use-selection-mirror';
 import { getEditorForDoc } from '@/editor/active-editor';
 import { useDocumentCollaboration } from '@/editor/document-context/useDocumentCollaboration';
@@ -205,6 +183,19 @@ import {
 import { cn } from '@/lib/utils';
 import { joinWorkspacePath } from '@/lib/workspace-paths';
 import {
+  AGENT_DECORATION_ICON_ID,
+  FILE_TREE_CREATION_CLEARED_ATTR,
+  FILE_TREE_DECORATION_SPRITE_SHEET,
+  FILE_TREE_DENSITY_OPTIONS,
+  FILE_TREE_UNSAFE_CSS,
+  FileTreeHeaderNotice,
+  FileTreeSkeleton,
+  isAgentTreePath,
+  LINK_DECORATION_ICON_ID,
+  MARKDOWN_FILE_ICON_ID,
+  MARKDOWN_FILE_ICON_VIEWBOX,
+} from './file-tree/FileTreePresentation';
+import {
   alternateMarkdownTreePath,
   collectTabsToCloseForDelete,
   deleteTargetCoversPendingCreate,
@@ -219,8 +210,6 @@ import {
   clickIsInTreeContentArea,
   clickIsInTreeItemSection,
   FILE_TREE_EXTERNAL_FILE_DROP_BUSY_PATH,
-  FILE_TREE_EXTERNAL_FILE_DROP_ROOT_ATTR,
-  FILE_TREE_EXTERNAL_FILE_DROP_TARGET_ATTR,
   findTreeItemElement,
   findTreeItemPath,
   useFileTreeDragAndDrop,
@@ -279,138 +268,7 @@ async function copyToClipboard(text: string, kind: 'full' | 'relative'): Promise
   }
 }
 
-const AGENT_FILE_NAMES = new Set(['agents', 'agent', 'claude', 'skill']);
-const LINK_DECORATION_ICON_ID = 'ok-file-tree-link-decoration';
-const AGENT_DECORATION_ICON_ID = 'ok-file-tree-agent-decoration';
-const MARKDOWN_FILE_ICON_ID = 'ok-file-tree-markdown';
-// Custom Markdown file glyph (document with an "MD" label) overriding Pierre's
-// built-in `complete`-set markdown glyph. `fill="currentColor"` lets
-// `--trees-file-icon-color-markdown` (set in createFileTreeStyle, see
-// file-tree-density.ts) color it.
-const MARKDOWN_FILE_ICON_SYMBOL = `<symbol id="${MARKDOWN_FILE_ICON_ID}" viewBox="${MARKDOWN_FILE_ICON_VIEWBOX}" fill="currentColor"><path d="${MARKDOWN_FILE_ICON_PATH_D}"/></symbol>`;
-
-type IconNode = [string, Record<string, string>][];
-
-function iconNodeToSvg(iconNode: IconNode): string {
-  return (
-    iconNode
-      // remove React key
-      .map(([tag, { key: _, ...attrs }]) => {
-        const attrString = Object.entries(attrs)
-          .map(([k, v]) => `${k}="${v}"`)
-          .join(' ');
-        return `<${tag} ${attrString} />`;
-      })
-      .join('')
-  );
-}
-
-function createLucideSpriteSymbol(id: string, iconNode: IconNode): string {
-  const symbolContent = iconNodeToSvg(iconNode);
-  return `<symbol id="${id}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${symbolContent}</symbol>`;
-}
-
-const FILE_TREE_DECORATION_SPRITE_SHEET = `<svg data-icon-sprite aria-hidden="true" width="0" height="0">
-  ${createLucideSpriteSymbol(LINK_DECORATION_ICON_ID, link2Icon)}
-  ${createLucideSpriteSymbol(AGENT_DECORATION_ICON_ID, botIcon)}
-  ${MARKDOWN_FILE_ICON_SYMBOL}
-</svg>`;
-
-// Drop-to-root affordance. The patched `@pierre/trees` sets
-// `data-file-tree-root-drag-target="true"` on the virtualized root while an
-// in-tree drag hovers empty content area (or a top-level file) — i.e. when the
-// drop would promote the dragged item to the project root. The library has no
-// row to highlight for a root target, so we paint a container-level ring + tint
-// here. An `::after` overlay (not `outline`) is required: the root carries an
-// inline `outline: none` that a stylesheet rule can't beat without `!important`,
-// and the opaque virtualized-list child would cover an inset box-shadow on the
-// root itself. `pointer-events: none` keeps the overlay out of drop hit-testing.
-const FILE_TREE_ROOT_DROP_CSS = `
-  [data-file-tree-virtualized-root][data-file-tree-root-drag-target="true"] {
-    position: relative;
-  }
-  [data-file-tree-virtualized-root][data-file-tree-root-drag-target="true"]::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 20;
-    border-radius: 0.375rem;
-    box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--color-primary) 80%, transparent);
-    background: color-mix(in oklab, var(--color-primary) 6%, transparent);
-    pointer-events: none;
-  }
-  /* Forced-colors (Windows High Contrast) suppresses box-shadow and overrides
-     color-mix backgrounds, so the ring above would vanish. Borders survive
-     forced-colors — fall back to a system Highlight border (mirrors the JSX
-     in-range halo fallback in styles/editor/component-chrome.css). */
-  @media (forced-colors: active) {
-    [data-file-tree-virtualized-root][data-file-tree-root-drag-target="true"]::after {
-      border: 2px solid Highlight;
-    }
-  }
-`;
-
-// Cadence for re-attempting the listing fetch while a desktop auto-update
-// relaunch is in flight. The server is intentionally torn down (up to 10s)
-// before `quitAndInstall`, so a steady retry lets the panel self-heal the
-// moment the server returns — e.g. when a relaunch aborts and the app keeps
-// running — instead of latching a stale error until the next focus/CC1 refresh.
 const CONNECTIVITY_RECONNECT_RETRY_MS = 2000;
-const FILE_TREE_EXTERNAL_FILE_DROP_CSS = `
-  [data-type="item"][${FILE_TREE_EXTERNAL_FILE_DROP_TARGET_ATTR}="true"] {
-    background: color-mix(in oklab, var(--color-primary) 10%, transparent);
-    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-primary) 72%, transparent);
-  }
-  [data-file-tree-virtualized-root][${FILE_TREE_EXTERNAL_FILE_DROP_ROOT_ATTR}="true"] {
-    position: relative;
-  }
-  [data-file-tree-virtualized-root][${FILE_TREE_EXTERNAL_FILE_DROP_ROOT_ATTR}="true"]::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 20;
-    border-radius: 0.375rem;
-    box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--color-primary) 80%, transparent);
-    background: color-mix(in oklab, var(--color-primary) 6%, transparent);
-    pointer-events: none;
-  }
-  @media (forced-colors: active) {
-    [data-type="item"][${FILE_TREE_EXTERNAL_FILE_DROP_TARGET_ATTR}="true"] {
-      outline: 2px solid Highlight;
-      outline-offset: -2px;
-    }
-    [data-file-tree-virtualized-root][${FILE_TREE_EXTERNAL_FILE_DROP_ROOT_ATTR}="true"]::after {
-      border: 2px solid Highlight;
-    }
-  }
-`;
-
-// When the creation target is cleared (empty-space click), the active row is
-// deselected but Pierre keeps it DOM-focused (roving focus restores focus to
-// its focused row, so blurring it doesn't stick) — leaving a lingering focus
-// ring. The host carries `data-ok-creation-cleared` while cleared; neutralize
-// the ring color on the focused row so the row reads as fully deselected. The
-// ring redraws the instant a row is selected or navigation re-couples (the
-// attribute drops). `:host([…])` matches the attribute the React wrapper
-// forwards onto the `<file-tree-container>` host.
-const FILE_TREE_CREATION_CLEARED_ATTR = 'data-ok-creation-cleared';
-const FILE_TREE_CREATION_CLEARED_CSS = `
-  :host([${FILE_TREE_CREATION_CLEARED_ATTR}]) [data-item-focused="true"] {
-    --trees-focus-ring-color: transparent;
-  }
-`;
-
-// Pierre's per-extension icon color (specificity 0,1,0 on the inner [data-icon-token]
-// element) wins over the inherited selected-fg color from the parent row, so the
-// markdown icon stays gray when its row is selected. The full styling block lives
-// alongside the badge-injection processor in file-tree-extension-badge.ts so the
-// CSS + DOM-mutation contract stays in one place.
-const FILE_TREE_UNSAFE_CSS = `${FILE_TREE_EXT_BADGE_CSS}\n${FILE_TREE_RENAME_INPUT_CSS}\n${FILE_TREE_ROOT_DROP_CSS}\n${FILE_TREE_EXTERNAL_FILE_DROP_CSS}\n${FILE_TREE_CREATION_CLEARED_CSS}\n${FILE_TREE_INDENT_GUIDE_CSS}\n${FILE_TREE_STICKY_HEADER_CSS}`;
-
-function isAgentTreePath(treePath: string): boolean {
-  const name = treePath.split('/').pop()?.replace(/\.md$/i, '').toLowerCase();
-  return !!name && AGENT_FILE_NAMES.has(name);
-}
 
 interface PendingCreate {
   kind: 'file' | 'folder';
@@ -3899,72 +3757,5 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
         defaultToTemplate
       />
     </>
-  );
-}
-
-// Cold-start sidebar fallback. Mimics the row shape of the file tree (chevron
-// + icon affordance + label) so the sidebar feels intentional during the
-// `ready`-gated `/api/documents` round-trip rather than flashing the prior
-// "No files yet" empty-state CTA. Widths are varied to read as a real list.
-const FILE_TREE_SKELETON_ROW_WIDTHS = ['w-3/4', 'w-2/3', 'w-4/5', 'w-1/2', 'w-3/5', 'w-2/3'];
-
-function FileTreeSkeleton() {
-  const { t } = useLingui();
-  return (
-    <div
-      className="flex flex-1 flex-col gap-1 px-2 py-2"
-      role="status"
-      aria-busy="true"
-      aria-label={t`Loading files`}
-    >
-      {FILE_TREE_SKELETON_ROW_WIDTHS.map((width, index) => (
-        <div
-          // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length static decoration list
-          key={index}
-          className="flex h-6 items-center gap-2"
-        >
-          <Skeleton className="h-3 w-3 shrink-0 rounded-sm" />
-          <Skeleton className={`h-3 ${width}`} />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/**
- * Contained notice row for the tree header slot: icon + text in a muted
- * rounded box. `error` renders an assertive `role="alert"` with a warning
- * icon and destructive tone; `info` renders a polite `role="status"` (the
- * Show All truncation affordance); `reconnecting` renders a polite
- * `role="status"` with a spinning icon and muted tone (the desktop-relaunch
- * self-heal notice). Keep children non-interactive — the row is an aria-live
- * region, and focusable descendants inside one diverge from what screen
- * readers announce.
- */
-function FileTreeHeaderNotice({
-  kind,
-  children,
-}: {
-  kind: 'error' | 'info' | 'reconnecting';
-  children: ReactNode;
-}) {
-  const Icon = kind === 'error' ? TriangleAlert : kind === 'reconnecting' ? RefreshCw : Info;
-  return (
-    <span
-      role={kind === 'error' ? 'alert' : 'status'}
-      className={cn(
-        'mx-2 mb-1 flex items-start gap-1.5 rounded-md bg-muted/50 px-2 py-1.5 text-xs leading-snug',
-        kind === 'error' ? 'text-destructive' : 'text-muted-foreground',
-      )}
-    >
-      <Icon
-        aria-hidden="true"
-        className={cn(
-          'mt-0.5 size-3.5 shrink-0',
-          kind === 'reconnecting' && 'animate-spin motion-reduce:animate-none',
-        )}
-      />
-      <span className="min-w-0">{children}</span>
-    </span>
   );
 }
