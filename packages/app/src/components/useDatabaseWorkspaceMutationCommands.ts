@@ -44,9 +44,49 @@ import { getServerInstanceId } from '@/lib/server-instance-store';
 
 import { searchDatabaseRelationRecords } from './DatabaseTableGrid';
 
-import type { DatabaseWorkspaceControllerContext } from './database-workspace-context';
+import type { DatabaseDescription } from '@/lib/database-catalog-client';
+import type { useDatabaseWorkspaceControllerState } from './use-database-workspace-controller-state';
 
-export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceControllerContext) {
+type DatabaseWorkspaceControllerState = ReturnType<typeof useDatabaseWorkspaceControllerState>;
+
+export interface DatabaseWorkspaceMutationCommandsContext
+  extends Pick<
+    DatabaseWorkspaceControllerState,
+    | 'setMutationStatus'
+    | 'setRelationCandidates'
+    | 'setMutationError'
+    | 'setMutationConflict'
+    | 'setOfflineQueueMessage'
+    | 'setSaveFeedback'
+    | 'setMutationProgressVisible'
+    | 'setMutationReviewMode'
+    | 'setGhost'
+    | 'setLastUndoToken'
+    | 'setLastRedoToken'
+    | 'setSelectedRecordIds'
+    | 'setRefresh'
+    | 'refreshNow'
+    | 'setOptimisticCellValues'
+    | 'setRecordPatches'
+    | 'selection'
+    | 'setOfflineQueue'
+    | 'buttonStatus'
+    | 'setButtonStatus'
+    | 'setButtonPlan'
+    | 'buttonPlan'
+    | 'mutationStatus'
+    | 'offlineQueue'
+  > {
+  open: boolean;
+  reviewResolver: DatabaseWorkspaceControllerState['reviewResolverRef'];
+  description: DatabaseDescription | null;
+  locallyHandledRecordIdsRef: DatabaseWorkspaceControllerState['locallyHandledRecordIdsRef'];
+  queueReconciliationRunning: DatabaseWorkspaceControllerState['queueReconciliationRunningRef'];
+}
+
+export function useDatabaseWorkspaceMutationCommands(
+  context: DatabaseWorkspaceMutationCommandsContext & Record<string, unknown>,
+) {
   'use no memo';
   const {
     open,
@@ -210,7 +250,7 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
           options.onCommitted?.(outcome);
         }
         if (options.optimisticCellKey) {
-          setOptimisticCellValues((current: ReadonlyMap<string, DatabaseValue | undefined>) => {
+              setOptimisticCellValues((current) => {
             if (!current.has(options.optimisticCellKey as string)) return current;
             const next = new Map(current);
             next.delete(options.optimisticCellKey as string);
@@ -225,7 +265,7 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
           locallyHandledRecordIdsRef.current.delete(options.recordRefresh.recordId);
         }
         if (options.optimisticCellKey) {
-          setOptimisticCellValues((current: ReadonlyMap<string, DatabaseValue | undefined>) => {
+              setOptimisticCellValues((current) => {
             if (!current.has(options.optimisticCellKey as string)) return current;
             const next = new Map(current);
             next.delete(options.optimisticCellKey as string);
@@ -302,7 +342,7 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
     void executeDatabaseMutation({ storage: 'markdown_table', mutation })
       .then((outcome) => {
         if (options.optimisticCellKey) {
-          setOptimisticCellValues((current: ReadonlyMap<string, DatabaseValue | undefined>) => {
+        setOptimisticCellValues((current) => {
             if (!current.has(options.optimisticCellKey as string)) return current;
             const next = new Map(current);
             next.delete(options.optimisticCellKey as string);
@@ -320,7 +360,7 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
       })
       .catch((cause: unknown) => {
         if (options.optimisticCellKey) {
-          setOptimisticCellValues((current: ReadonlyMap<string, DatabaseValue | undefined>) => {
+        setOptimisticCellValues((current) => {
             if (!current.has(options.optimisticCellKey as string)) return current;
             const next = new Map(current);
             next.delete(options.optimisticCellKey as string);
