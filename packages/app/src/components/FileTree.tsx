@@ -43,7 +43,6 @@ import {
   treePathToAppPath,
   uploadedPathForSidebarDrop,
 } from '@/components/file-tree-adapter';
-import { applyExtensionBadges } from '@/components/file-tree-extension-badge';
 import type {
   FileTreeTarget,
   RenamedAssetMapping,
@@ -51,7 +50,6 @@ import type {
   RenamedDocMapping,
   RenamedFolderMapping,
 } from '@/components/file-tree-operations';
-import { applyRenameInputAffordance } from '@/components/file-tree-rename-chip';
 import {
   getFileExtension,
   hasSupportedDocumentExtension,
@@ -144,6 +142,7 @@ import {
 import { useFileTreeKeyboard } from './file-tree/useFileTreeKeyboard';
 import { createDuplicateFileTreeMutation } from './file-tree/useFileTreeMutations';
 import { createFileTreeRenameHandlers } from './file-tree/useFileTreeRename';
+import { useFileTreeRowPresentation } from './file-tree/useFileTreeRowPresentation';
 import { useFileTreeSelection } from './file-tree/useFileTreeSelection';
 import { useFileTreeShowAll } from './file-tree/useFileTreeShowAll';
 import { createFileTreeTrashHandlers } from './file-tree/useFileTreeTrash';
@@ -1222,90 +1221,11 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     setDeleteRequest,
   });
 
-  // `@pierre/trees` renders rows inside an open shadow root and exposes no
-  // per-row attribute hook, so the full-path `title` is stamped imperatively
-  // here. It must also be stamped on the floating `[data-type=context-menu-anchor]`
-  // overlay: @pierre/trees positions that `···` ("Options") trigger over the
-  // hovered row's right edge as a *sibling* of the row, not a descendant — so
-  // the row's own `title` doesn't resolve when the cursor rests there.
-  useEffect(() => {
-    if (loading || documents.length === 0) return;
-    const shadow = fileTreeHostRef.current?.querySelector(FILE_TREE_TAG_NAME)?.shadowRoot;
-    if (!shadow) return;
-    const toTitle = (treePath: string) =>
-      treePath.endsWith('/') ? treePath.slice(0, -1) : treePath;
-    const stampTitles = () => {
-      for (const row of shadow.querySelectorAll<HTMLElement>('[data-item-path]')) {
-        const treePath = row.dataset.itemPath;
-        if (!treePath) continue;
-        const title = toTitle(treePath);
-        if (row.title !== title) row.title = title;
-      }
-      const anchor = shadow.querySelector<HTMLElement>('[data-type="context-menu-anchor"]');
-      if (anchor) {
-        const hoveredPath = shadow.querySelector<HTMLElement>(
-          '[data-item-context-hover="true"][data-item-path]',
-        )?.dataset.itemPath;
-        const title = hoveredPath ? toTitle(hoveredPath) : '';
-        if (anchor.title !== title) anchor.title = title;
-      }
-    };
-    stampTitles();
-    const observer = new MutationObserver(stampTitles);
-    observer.observe(shadow, {
-      subtree: true,
-      childList: true,
-      attributes: true,
-      attributeFilter: ['data-item-path', 'data-item-context-hover'],
-    });
-    return () => observer.disconnect();
-  }, [loading, documents.length]);
-
-  // Replace Pierre's trailing-dot artifact with an always-visible uppercase
-  // extension badge. Same shadow-root + MutationObserver pattern as
-  // stampTitles above — kept as a separate observer so the watch scope
-  // (textual mutations) doesn't widen stampTitles's attribute-only filter.
-  useEffect(() => {
-    if (loading || documents.length === 0) return;
-    const shadow = fileTreeHostRef.current?.querySelector(FILE_TREE_TAG_NAME)?.shadowRoot;
-    if (!shadow) return;
-    const apply = () => applyExtensionBadges(shadow);
-    apply();
-    const observer = new MutationObserver(apply);
-    observer.observe(shadow, {
-      subtree: true,
-      childList: true,
-      characterData: true,
-      attributes: true,
-      attributeFilter: ['data-item-path'],
-    });
-    return () => observer.disconnect();
-  }, [loading, documents.length]);
-
-  // Select Pierre's rename-input stem while keeping the extension visible and
-  // editable. Kept separate from the badge observer because the watched event
-  // (childList: the rename input mounting) is structurally different from the
-  // badge's attribute/text watch.
-  //
-  // `data-item-path` attribute observation is needed for the stale-marker
-  // sweep: Pierre's optimistic commit changes the path attribute
-  // without a childList ripple, and the disk-truth refresh that restores
-  // the extension is also an attribute-only mutation.
-  useEffect(() => {
-    if (loading || documents.length === 0) return;
-    const shadow = fileTreeHostRef.current?.querySelector(FILE_TREE_TAG_NAME)?.shadowRoot;
-    if (!shadow) return;
-    const apply = () => applyRenameInputAffordance(shadow);
-    apply();
-    const observer = new MutationObserver(apply);
-    observer.observe(shadow, {
-      subtree: true,
-      childList: true,
-      attributes: true,
-      attributeFilter: ['data-item-path'],
-    });
-    return () => observer.disconnect();
-  }, [loading, documents.length]);
+  useFileTreeRowPresentation({
+    hostRef: fileTreeHostRef,
+    loading,
+    documentCount: documents.length,
+  });
 
   // Snapshot cache for getFolderState() — keeps the returned object
   // reference-stable when {folderCount, expandedCount} are unchanged so
