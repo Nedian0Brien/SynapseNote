@@ -2,6 +2,7 @@ import type {
   DatabaseCalculationFunction,
   DatabaseFilter,
   DatabaseProperty,
+  DatabaseQueryResult,
   DatabaseSource,
   DatabaseValue,
   DatabaseView,
@@ -44,7 +45,46 @@ import {
 import { classifyDatabaseUiProblem, databaseConflictProblem } from '@/lib/database-ui-problem';
 import type { DatabaseInitialRecordAction } from './DatabaseTableGrid';
 
-import type { DatabaseWorkspaceControllerContext } from './database-workspace-context';
+import type { DatabaseDescription } from '@/lib/database-catalog-client';
+import type { useDatabaseWorkspaceControllerState } from './use-database-workspace-controller-state';
+import type { useDatabaseWorkspaceMutationCommands } from './useDatabaseWorkspaceMutationCommands';
+
+type DatabaseWorkspaceControllerState = ReturnType<typeof useDatabaseWorkspaceControllerState>;
+type DatabaseWorkspaceMutationCommands = ReturnType<typeof useDatabaseWorkspaceMutationCommands>;
+
+export interface DatabaseWorkspaceRecordCommandsContext
+  extends Pick<
+    DatabaseWorkspaceControllerState,
+    | 'mutationStatus'
+    | 'setOptimisticCellValues'
+    | 'setMutationError'
+    | 'setMutationStatus'
+    | 'setGhost'
+    | 'setLastUndoToken'
+    | 'setLastRedoToken'
+    | 'setRefresh'
+    | 'newRecordTitle'
+    | 'newRecordTemplateId'
+    | 'tableCalculations'
+    | 'setNewRecordOpen'
+    | 'setNewRecordTitle'
+    | 'setNewRecordFocusRequest'
+    | 'setMoveRecord'
+    | 'setMoveTargetSourceId'
+    | 'moveRecord'
+    | 'moveTargetSourceId'
+  > {
+  description: DatabaseDescription | null;
+  runMutation: DatabaseWorkspaceMutationCommands['runMutation'];
+  runMarkdownTable: DatabaseWorkspaceMutationCommands['runMarkdownTable'];
+  selectedView: DatabaseView | undefined;
+  itemNoun: 'page' | 'record';
+  open: boolean;
+  initialRecordAction: DatabaseInitialRecordAction | undefined;
+  result: DatabaseQueryResult | null;
+  reviewResolver: DatabaseWorkspaceControllerState['reviewResolverRef'];
+  handledInitialRecordAction: DatabaseWorkspaceControllerState['handledInitialRecordActionRef'];
+}
 
 function filterReferencesProperty(filter: DatabaseFilter, propertyId: string): boolean {
   if ('and' in filter) return filter.and.some((item) => filterReferencesProperty(item, propertyId));
@@ -68,7 +108,9 @@ function canPatchSelectRecordLocally(
   return calculations[propertyId] === undefined;
 }
 
-export function useDatabaseWorkspaceRecordCommands(context: DatabaseWorkspaceControllerContext) {
+export function useDatabaseWorkspaceRecordCommands(
+  context: DatabaseWorkspaceRecordCommandsContext & Record<string, unknown>,
+) {
   const {
     description,
     mutationStatus,
