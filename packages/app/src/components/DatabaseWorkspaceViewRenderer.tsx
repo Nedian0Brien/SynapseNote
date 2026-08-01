@@ -1,4 +1,3 @@
-/* biome-ignore-all lint/suspicious/noExplicitAny: layout plugins expose heterogeneous record payloads. */
 import { Trans } from '@lingui/react/macro';
 import { Loader2 } from 'lucide-react';
 import { DatabaseBoard } from '@/components/DatabaseBoard';
@@ -13,12 +12,12 @@ import { DatabaseMap } from '@/components/DatabaseMap';
 import { DatabaseTimeline } from '@/components/DatabaseTimeline';
 import { Button } from '@/components/ui/button';
 import { DatabaseTable } from './DatabaseTableGrid';
-import type { DatabaseWorkspaceRenderContext } from './database-workspace-context';
+import type { DatabaseWorkspaceSuccessContext } from './database-workspace-context';
 
 export function DatabaseWorkspaceViewRenderer({
   context,
 }: {
-  context: DatabaseWorkspaceRenderContext;
+  context: DatabaseWorkspaceSuccessContext;
 }) {
   const {
     result,

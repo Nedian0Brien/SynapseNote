@@ -1,4 +1,3 @@
-/* biome-ignore-all lint/suspicious/noExplicitAny: record action payloads retain the existing dynamic schema shape. */
 import { Trans } from '@lingui/react/macro';
 import { Copy, Loader2 } from 'lucide-react';
 import { DatabaseFilesCellEditor } from '@/components/DatabaseFilesCellEditor';
@@ -16,12 +15,12 @@ import {
 } from '@/components/ui/select';
 import { isDatabaseCellEditable } from '@/lib/database-cell-mutation';
 import { initialCellDraft, multiSelectDraftValues } from './database-table-utils';
-import type { DatabaseWorkspaceRenderContext } from './database-workspace-context';
+import type { DatabaseWorkspaceResultContext } from './database-workspace-context';
 
 export function DatabaseWorkspaceRecordActions({
   context,
 }: {
-  context: DatabaseWorkspaceRenderContext;
+  context: DatabaseWorkspaceResultContext;
 }) {
   const {
     isPagePresentation,

@@ -1,4 +1,3 @@
-/* biome-ignore-all lint/suspicious/noExplicitAny: toolbar values mirror the existing dynamic database schema. */
 import { Trans, useLingui } from '@lingui/react/macro';
 import type { DatabaseSource } from '@nedian0brien/synapsenote-core';
 import {
@@ -44,9 +43,9 @@ import {
 } from '@/components/ui/select';
 import { createDatabaseDefaultViewChangeDesiredState } from '@/lib/database-cell-mutation';
 import { cn } from '@/lib/utils';
-import type { DatabaseWorkspaceRenderContext } from './database-workspace-context';
+import type { DatabaseWorkspaceSuccessContext } from './database-workspace-context';
 
-export function DatabaseWorkspaceToolbar({ context }: { context: DatabaseWorkspaceRenderContext }) {
+export function DatabaseWorkspaceToolbar({ context }: { context: DatabaseWorkspaceSuccessContext }) {
   const { t } = useLingui();
   const {
     isPagePresentation,

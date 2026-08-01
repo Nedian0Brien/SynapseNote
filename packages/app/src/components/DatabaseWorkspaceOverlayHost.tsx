@@ -130,7 +130,7 @@ export function DatabaseWorkspaceOverlayHost({
       <DatabaseCreationDialog
         key={creationInstanceKey}
         open={open && creationOpen}
-        presentation={isCanvasPresentation ? 'page' : presentation}
+        presentation={presentation === 'canvas' ? 'page' : presentation}
         agentComposer={<CreatePromptComposer scenario="new-project" databasePreview />}
         onOpenChange={(nextOpen, reason) => {
           setCreationOpen(nextOpen);

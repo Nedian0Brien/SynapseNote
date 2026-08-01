@@ -1,4 +1,3 @@
-/* biome-ignore-all lint/suspicious/noExplicitAny: status payloads are supplied by the controller's compatibility context. */
 import { Trans } from '@lingui/react/macro';
 import { Loader2 } from 'lucide-react';
 import { DatabaseConflictResolutionNotice } from '@/components/DatabaseConflictResolutionNotice';
@@ -8,12 +7,12 @@ import { Button } from '@/components/ui/button';
 import { databaseIndexProblem } from '@/lib/database-ui-problem';
 import { DatabaseAtomicApprovalScope, DatabaseStateNotice } from './DatabaseTableGrid';
 import { databasePlanHumanSummary } from './database-table-utils';
-import type { DatabaseWorkspaceRenderContext } from './database-workspace-context';
+import type { DatabaseWorkspaceSuccessContext } from './database-workspace-context';
 
 export function DatabaseWorkspaceStatusPanel({
   context,
 }: {
-  context: DatabaseWorkspaceRenderContext;
+  context: DatabaseWorkspaceSuccessContext;
 }) {
   const {
     description,
