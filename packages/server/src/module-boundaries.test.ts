@@ -86,7 +86,7 @@ describe('RFC 0011 server module boundary guard', () => {
     const src = serverSourceRoot(import.meta.filename);
     const leaves = databaseExtractionLeaves(src);
     const budgetedPaths = new Set(SERVER_MODULE_SIZE_BUDGETS.map(({ path }) => path));
-    expect(leaves.length).toBe(47);
+    expect(leaves.length).toBe(52);
     for (const modulePath of leaves) {
       expect(budgetedPaths.has(modulePath), `${modulePath} must have a size budget`).toBe(true);
       const budget = SERVER_MODULE_SIZE_BUDGETS.find((candidate) => candidate.path === modulePath);
@@ -156,6 +156,22 @@ describe('RFC 0011 server module boundary guard', () => {
     expect(policy).toContain('export function createDatabaseDeletionDraftPolicy');
     expect(policy).toContain('export function createDatabaseVerificationDraftPolicy');
     expect(policy).toContain('export function compileDatabaseDeletionPlanPolicy');
+  });
+
+  test('plan engine delegates normalization through bounded policy stages', () => {
+    const src = serverSourceRoot(import.meta.filename);
+    const facade = readFileSync(resolveServerModule(src, 'database-plan.ts'), 'utf8');
+    const normalizer = readFileSync(
+      resolveServerModule(src, 'database-plan-normalizer.ts'),
+      'utf8',
+    );
+
+    expect(facade).toContain('normalizeDatabasePlanDesiredState(');
+    expect(facade).not.toContain('#normalize(desiredState');
+    expect(normalizer).toContain('resolveDatabasePlanNormalizationIdentity');
+    expect(normalizer).toContain('normalizeDatabasePlanSources');
+    expect(normalizer).toContain('composeDatabasePlanSchema');
+    expect(normalizer).toContain('normalizeDatabasePlanRecords');
   });
 
   test('database facade budgets reject one additional source line', () => {
