@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { relative, resolve, sep } from 'node:path';
 import {
@@ -32,7 +32,6 @@ import {
   parseDatabaseMarkdownOwner,
   reshapeDatabaseMarkdownOwnerColumns,
   serializeDatabaseManifestYaml,
-  serializeDatabaseMarkdownOwnerMarker,
   updateDatabaseManifestYaml,
   validateDatabasePropertyConstraints,
 } from '@nedian0brien/synapsenote-core';
@@ -55,6 +54,20 @@ import {
   type DatabaseWriteGuardSnapshot,
   type ResolveDatabaseWriteGuards,
 } from './database-plan-artifacts.ts';
+import {
+  cloneDatabasePlanValue as clone,
+  compactDatabasePlanUuid as compactUuid,
+  databasePlanObjectMap as databaseObjectMap,
+  createEmptyDatabaseMarkdownOwnerTable as emptyMarkdownOwnerTable,
+  databasePlanErrorCode as errno,
+  databasePlanExpiry as expiry,
+  hashDatabasePlanValue as hash,
+  databaseRecordNeedsPersonRewrite as recordNeedsPersonRewrite,
+  databaseRecordNeedsSourceRewrite as recordNeedsSourceRewrite,
+  sameDatabasePlanValue as same,
+  databaseSourceNeedsRecordRewrite as sourceNeedsRecordRewrite,
+  stableDatabasePlanValue as stable,
+} from './database-plan-convergence-policy.ts';
 import {
   DatabaseAutomationEventValueDraftSchema,
   type DatabaseDesiredStateDraft,
@@ -230,259 +243,6 @@ const DatabaseWriteGuardSnapshotSchema = z
     ),
   })
   .strict();
-
-function stable(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(stable).join(',')}]`;
-  if (value && typeof value === 'object') {
-    return `{${Object.entries(value as Record<string, unknown>)
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([key, entry]) => `${JSON.stringify(key)}:${stable(entry)}`)
-      .join(',')}}`;
-  }
-  return JSON.stringify(value);
-}
-
-function hash(value: unknown): string {
-  return `sha256:${createHash('sha256').update(stable(value)).digest('hex')}`;
-}
-
-function compactUuid(generateUuid: () => string): string {
-  return generateUuid().replaceAll('-', '');
-}
-
-function expiry(now: Date, ttlSeconds: number): string {
-  return new Date(now.getTime() + ttlSeconds * 1_000).toISOString();
-}
-
-function clone<T>(value: T): T {
-  return structuredClone(value);
-}
-
-function emptyMarkdownOwnerTable(
-  definition: DatabaseDefinition,
-  source: DatabaseDefinition['sources'][number],
-): string {
-  const storage = source.storage;
-  if (!storage || storage.kind !== 'markdown_table') {
-    throw new Error(`Source "${source.id}" has no Markdown owner-table storage`);
-  }
-  const marker = serializeDatabaseMarkdownOwnerMarker({
-    version: 2,
-    databaseId: definition.id,
-    sourceId: source.id,
-    blockId: storage.owner.blockId,
-    columns: storage.storedPropertyIds,
-  });
-  const headers = storage.storedPropertyIds.map((propertyId) => {
-    const name =
-      source.properties.find((property) => property.id === propertyId)?.name ?? propertyId;
-    return encodeDatabaseMarkdownCellText(name.replace(/[\r\n]+/gu, ' '));
-  });
-  const row = (values: readonly string[]) => `| ${values.join(' | ')} |`;
-  return [marker, '', row(headers), row(headers.map(() => '---')), ''].join('\n');
-}
-
-function errno(error: unknown): string | undefined {
-  return error && typeof error === 'object' && 'code' in error
-    ? String((error as { code?: unknown }).code)
-    : undefined;
-}
-
-function same(left: unknown, right: unknown): boolean {
-  return stable(left) === stable(right);
-}
-
-function databaseObjectMap(definition: DatabaseDefinition | null): Map<string, unknown> {
-  const objects = new Map<string, unknown>();
-  if (!definition) return objects;
-  for (const person of definition.people) objects.set(person.id, person);
-  for (const source of definition.sources) {
-    objects.set(source.id, source);
-    for (const property of source.properties) objects.set(property.id, property);
-  }
-  for (const view of definition.views) objects.set(view.id, view);
-  for (const template of definition.templates) objects.set(template.id, template);
-  for (const button of definition.buttons) objects.set(button.id, button);
-  for (const automation of definition.automations) objects.set(automation.id, automation);
-  return objects;
-}
-
-function propertyStorageShape(
-  property: DatabaseDefinition['sources'][number]['properties'][number],
-): unknown {
-  return {
-    id: property.id,
-    key: property.key,
-    type: property.type,
-    required: property.required,
-    constraints: property.semantics.constraints,
-    defaultValue: property.semantics.defaultValue,
-    ...(property.type === 'select' || property.type === 'status' || property.type === 'multi_select'
-      ? {
-          options: property.options
-            .map((option) => ({ id: option.id, key: option.key }))
-            .sort((left, right) => left.id.localeCompare(right.id)),
-        }
-      : {}),
-    ...(property.type === 'relation'
-      ? {
-          targetSourceId: property.targetSourceId,
-          cardinality: property.cardinality,
-          pairedPropertyId: property.pairedPropertyId,
-        }
-      : {}),
-    ...(property.type === 'person' ? { multiple: property.multiple } : {}),
-    ...(property.type === 'formula' ? { source: property.source, ast: property.ast } : {}),
-    ...(property.type === 'rollup'
-      ? {
-          relationPropertyId: property.relationPropertyId,
-          targetPropertyId: property.targetPropertyId,
-          function: property.function,
-          targetValueType: property.targetValueType,
-          targetItemType: property.targetItemType,
-        }
-      : {}),
-    ...(property.type === 'button'
-      ? {
-          label: property.label,
-          confirmation: property.confirmation,
-          actions: property.actions,
-        }
-      : {}),
-    ...(property.type === 'unique_id' ? { storage: 'positive_integer' } : {}),
-    ...(property.type === 'place' ? { storage: 'place_v1' } : {}),
-  };
-}
-
-function optionStorageMatches(
-  current: Extract<
-    DatabaseDefinition['sources'][number]['properties'][number],
-    { type: 'select' | 'status' | 'multi_select' }
-  >,
-  desired: Extract<
-    DatabaseDefinition['sources'][number]['properties'][number],
-    { type: 'select' | 'status' | 'multi_select' }
-  >,
-  optionId: string,
-): boolean {
-  const before = current.options.find((option) => option.id === optionId);
-  const after = desired.options.find((option) => option.id === optionId);
-  return Boolean(before && after && before.key === after.key);
-}
-
-function recordNeedsSourceRewrite(
-  current: DatabaseDefinition['sources'][number],
-  desired: DatabaseDefinition['sources'][number],
-  values: Readonly<Record<string, unknown>>,
-): boolean {
-  if (
-    current.folder !== desired.folder ||
-    current.includeSubfolders !== desired.includeSubfolders
-  ) {
-    return true;
-  }
-  const desiredProperties = new Map(desired.properties.map((property) => [property.id, property]));
-  for (const before of current.properties) {
-    const value = values[before.id];
-    const after = desiredProperties.get(before.id);
-    if (!after) {
-      if (value !== undefined) return true;
-      continue;
-    }
-    if (same(propertyStorageShape(before), propertyStorageShape(after))) continue;
-    if (value === undefined) {
-      if (after.required) return true;
-      continue;
-    }
-    if (
-      before.type === 'select' &&
-      after.type === 'select' &&
-      typeof value === 'string' &&
-      before.key === after.key &&
-      same(before.semantics, after.semantics) &&
-      optionStorageMatches(before, after, value)
-    ) {
-      continue;
-    }
-    if (
-      before.type === 'status' &&
-      after.type === 'status' &&
-      typeof value === 'string' &&
-      before.key === after.key &&
-      same(before.semantics, after.semantics) &&
-      optionStorageMatches(before, after, value)
-    ) {
-      continue;
-    }
-    if (
-      before.type === 'multi_select' &&
-      after.type === 'multi_select' &&
-      Array.isArray(value) &&
-      before.key === after.key &&
-      same(before.semantics, after.semantics) &&
-      value.every(
-        (optionId) => typeof optionId === 'string' && optionStorageMatches(before, after, optionId),
-      )
-    ) {
-      continue;
-    }
-    return true;
-  }
-  const currentIds = new Set(current.properties.map((property) => property.id));
-  return desired.properties.some(
-    (property) =>
-      (property.required || property.type === 'unique_id') &&
-      !currentIds.has(property.id) &&
-      values[property.id] === undefined,
-  );
-}
-
-function sourceNeedsRecordRewrite(
-  current: DatabaseDefinition['sources'][number],
-  desired: DatabaseDefinition['sources'][number],
-): boolean {
-  if (
-    current.folder !== desired.folder ||
-    current.includeSubfolders !== desired.includeSubfolders
-  ) {
-    return true;
-  }
-  const currentProperties = new Map(current.properties.map((property) => [property.id, property]));
-  const desiredPropertyIds = new Set(desired.properties.map((property) => property.id));
-  if (current.properties.some((property) => !desiredPropertyIds.has(property.id))) return true;
-  return desired.properties.some((property) => {
-    const before = currentProperties.get(property.id);
-    if (!before) return property.required || property.type === 'unique_id';
-    return !same(propertyStorageShape(before), propertyStorageShape(property));
-  });
-}
-
-function recordNeedsPersonRewrite(
-  current: DatabaseDefinition,
-  desired: DatabaseDefinition,
-  sourceId: string,
-  values: Readonly<Record<string, unknown>>,
-): boolean {
-  const currentSource = current.sources.find((source) => source.id === sourceId);
-  if (!currentSource) return false;
-  const currentPeople = new Map(current.people.map((person) => [person.id, person.key] as const));
-  const desiredPeople = new Map(desired.people.map((person) => [person.id, person.key] as const));
-  for (const property of currentSource.properties) {
-    if (property.type !== 'person') continue;
-    const value = values[property.id];
-    if (!Array.isArray(value)) continue;
-    if (
-      value.some(
-        (personId) =>
-          typeof personId === 'string' &&
-          currentPeople.get(personId) !== desiredPeople.get(personId),
-      )
-    ) {
-      return true;
-    }
-  }
-  return false;
-}
 
 function filterWithPropertyIds(
   filter: unknown,

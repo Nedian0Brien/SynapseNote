@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { createDatabasePlanEngine, DatabasePlanError } from './database-plan.ts';
 import { DatabasePlanApprovalCodeSchema as extractedApprovalCodeSchema } from './database-plan-artifacts.ts';
+import { hashDatabasePlanValue } from './database-plan-convergence-policy.ts';
 import { DatabaseDesiredStateDraftSchema as extractedDraftSchema } from './database-plan-draft-contracts.ts';
 import { createDatabaseRecordIndex } from './database-record-index.ts';
 import { createDatabaseStore } from './database-store.ts';
@@ -188,6 +189,12 @@ describe('DatabasePlanEngine ephemeral desired state', () => {
 
   test('exposes immutable plan approval contracts from their dedicated module', () => {
     expect(extractedApprovalCodeSchema.parse('alter_schema')).toBe('alter_schema');
+  });
+
+  test('keeps plan hash canonicalization in the pure convergence policy', () => {
+    expect(hashDatabasePlanValue({ b: 1, a: 2 })).toBe(
+      'sha256:d3626ac30a87e6f7a6428233b3c68299976865fa5508e4267c5415c76af7a772',
+    );
   });
 
   test('classifies every user-resolvable area touched by an exact plan', () => {
