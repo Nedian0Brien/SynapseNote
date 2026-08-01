@@ -127,6 +127,19 @@ function layoutPropertyIds(view: DatabaseView | null): string[] {
 }
 
 function viewReferencedPropertyIds(view: DatabaseView): string[] {
+  const formQuestionPropertyIds =
+    view.layout.type === 'form'
+      ? (() => {
+          const questions = view.layout.configuration.questions;
+          return questions.flatMap((question) => [
+            question.propertyId,
+            ...(question.visibleWhen?.conditions.flatMap(({ questionId }) => {
+              const dependency = questions.find(({ id }) => id === questionId);
+              return dependency ? [dependency.propertyId] : [];
+            }) ?? []),
+          ]);
+        })()
+      : [];
   return [
     ...filterPropertyIds(view.where),
     ...view.sort.map(({ propertyId }) => propertyId),
@@ -134,17 +147,7 @@ function viewReferencedPropertyIds(view: DatabaseView): string[] {
     ...view.projection.propertyIds,
     ...conditionalColorPropertyIds(view),
     ...layoutPropertyIds(view),
-    ...(view.layout.type === 'form'
-      ? view.layout.configuration.questions.flatMap((question) => [
-          question.propertyId,
-          ...(question.visibleWhen?.conditions.flatMap(({ questionId }) => {
-            const dependency = view.layout.configuration.questions.find(
-              ({ id }) => id === questionId,
-            );
-            return dependency ? [dependency.propertyId] : [];
-          }) ?? []),
-        ])
-      : []),
+    ...formQuestionPropertyIds,
   ];
 }
 

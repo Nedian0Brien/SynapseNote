@@ -1,4 +1,8 @@
-import type { DatabasePermissionAction, DatabaseSource } from '@nedian0brien/synapsenote-core';
+import type {
+  DatabasePermissionAction,
+  DatabaseSource,
+  DatabaseValue,
+} from '@nedian0brien/synapsenote-core';
 import {
   createDatabaseMarkdownTableExport,
   type DatabaseMarkdownTableExport,
@@ -72,7 +76,7 @@ interface DatabaseMarkdownTableExportPort {
     records: readonly {
       id: string;
       path: string;
-      values: Record<string, unknown>;
+      values: Record<string, DatabaseValue>;
       computedResults?: Record<string, unknown>;
     }[];
   };

@@ -379,6 +379,18 @@ export interface DatabaseQueryDelta {
   isComplete: boolean;
 }
 
+export interface DatabaseDataPlaneQueryInput {
+  databaseId: string;
+  sourceId: string;
+  viewId?: string;
+  agentViewId?: string;
+  viewOverrides?: DatabaseLinkedViewSettings;
+  query?: unknown;
+  deltaSince?: DatabaseQueryDeltaReceipt;
+  /** Internal cooperative cancellation seam; never part of the wire schema. */
+  throwIfCancelled?: () => void;
+}
+
 export interface CreateDatabaseDataPlaneOptions {
   databaseStore: DatabaseStore;
   databaseRecordIndex: DatabaseRecordIndex;
@@ -1515,17 +1527,7 @@ export class DatabaseDataPlane {
     };
   }
 
-  query(input: {
-    databaseId: string;
-    sourceId: string;
-    viewId?: string;
-    agentViewId?: string;
-    viewOverrides?: DatabaseLinkedViewSettings;
-    query?: unknown;
-    deltaSince?: DatabaseQueryDeltaReceipt;
-    /** Internal cooperative cancellation seam; never part of the wire schema. */
-    throwIfCancelled?: () => void;
-  }): DatabaseDataPlaneQueryResult {
+  query(input: DatabaseDataPlaneQueryInput): DatabaseDataPlaneQueryResult {
     this.#assertReadable();
     const storeSnapshot = this.#databaseStore.snapshot();
     const database = storeSnapshot.databases.find((candidate) => candidate.id === input.databaseId);
@@ -2595,7 +2597,7 @@ export class DatabaseDataPlane {
       publicShare: () => this.#publicShare.getStore(),
       now: this.#now,
       formStateStore: this.#formStateStore,
-      recordById: this.#databaseRecordIndex.getById.bind(this.#databaseRecordIndex),
+      recordById: (recordId: string) => this.#databaseRecordIndex.getById(recordId) ?? undefined,
       query: (input: unknown) => this.query(input as DatabaseDataPlaneQueryInput),
       databaseDefinitionDraftBase,
       withTrustedMutation: <T>(operation: () => T): T =>
