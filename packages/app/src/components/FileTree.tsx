@@ -130,9 +130,6 @@ import { FileTreeViewport } from './file-tree/FileTreeViewport';
 import {
   alternateMarkdownTreePath,
   hasSameStemMarkdownSiblingTreePath,
-  isEditableKeyboardTarget,
-  resolveDuplicableKeyboardTarget,
-  resolveKeyboardDeleteTargets,
 } from './file-tree/file-tree-commands';
 import type { FileTreeProps } from './file-tree/file-tree-types';
 import { useFileTreeCreation } from './file-tree/useFileTreeCreation';
@@ -144,6 +141,7 @@ import {
   findTreeItemPath,
   useFileTreeDragAndDrop,
 } from './file-tree/useFileTreeDragAndDrop';
+import { useFileTreeKeyboard } from './file-tree/useFileTreeKeyboard';
 import { createDuplicateFileTreeMutation } from './file-tree/useFileTreeMutations';
 import { createFileTreeRenameHandlers } from './file-tree/useFileTreeRename';
 import { useFileTreeSelection } from './file-tree/useFileTreeSelection';
@@ -1210,90 +1208,19 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     handleDropCompleteRef.current = handleDropComplete;
   });
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const isPlatformShortcut = (event.metaKey || event.ctrlKey) && !event.altKey;
-      const key = event.key.toLowerCase();
-      const isSelectAll = isPlatformShortcut && key === 'a';
-      const isDuplicate = isPlatformShortcut && !event.shiftKey && key === 'd';
-      const isCopy = isPlatformShortcut && !event.shiftKey && key === 'c';
-      const isPaste = isPlatformShortcut && !event.shiftKey && key === 'v';
-      const isDelete =
-        !event.altKey &&
-        !event.shiftKey &&
-        ((event.metaKey && !event.ctrlKey && key === 'backspace') ||
-          (!event.metaKey && !event.ctrlKey && key === 'delete'));
-      if (!isSelectAll && !isDuplicate && !isCopy && !isPaste && !isDelete) return;
-      if (isEditableKeyboardTarget(event.target)) return;
-
-      const host = fileTreeHostRef.current;
-      const target = event.target;
-      const activeElement = document.activeElement;
-      const eventStartedInTree = target instanceof Node && host?.contains(target);
-      const focusIsInTree = activeElement instanceof Node && host?.contains(activeElement);
-      if (!eventStartedInTree && !focusIsInTree) return;
-
-      if (isCopy) {
-        const copiedTarget = resolveDuplicableKeyboardTarget(
-          model,
-          documentsRef.current,
-          assetTreePathsRef.current,
-        );
-        if (!copiedTarget) return;
-        copiedKeyboardTargetRef.current = copiedTarget;
-        event.preventDefault();
-        event.stopPropagation();
-        return;
-      }
-
-      if (isPaste) {
-        const copiedTarget = copiedKeyboardTargetRef.current;
-        if (!copiedTarget) return;
-        void handleDuplicateTargetRef.current(copiedTarget);
-        event.preventDefault();
-        event.stopPropagation();
-        return;
-      }
-
-      if (isDuplicate) {
-        const duplicateTarget = resolveDuplicableKeyboardTarget(
-          model,
-          documentsRef.current,
-          assetTreePathsRef.current,
-        );
-        if (!duplicateTarget) return;
-        void handleDuplicateTargetRef.current(duplicateTarget);
-        event.preventDefault();
-        event.stopPropagation();
-        return;
-      }
-
-      if (isDelete) {
-        if (busyPathRef.current !== null) return;
-        const targets = resolveKeyboardDeleteTargets(model, documentsRef.current);
-        if (targets.length === 0) return;
-        setDeleteRequest({ targets });
-        event.preventDefault();
-        event.stopPropagation();
-        return;
-      }
-
-      const selectedPaths = new Set([...folderTreePathsRef.current, ...treePathsRef.current]);
-      suppressSelectionRef.current = true;
-      for (const treePath of selectedPaths) {
-        if (!treePath) continue;
-        model.getItem(treePath)?.select();
-      }
-      queueMicrotask(() => {
-        suppressSelectionRef.current = false;
-      });
-      event.preventDefault();
-      event.stopPropagation();
-    };
-
-    document.addEventListener('keydown', handleKeyDown, true);
-    return () => document.removeEventListener('keydown', handleKeyDown, true);
-  }, [model]);
+  useFileTreeKeyboard({
+    model,
+    hostRef: fileTreeHostRef,
+    documentsRef,
+    assetTreePathsRef,
+    folderTreePathsRef,
+    treePathsRef,
+    busyPathRef,
+    copiedTargetRef: copiedKeyboardTargetRef,
+    duplicateTargetRef: handleDuplicateTargetRef,
+    suppressSelectionRef,
+    setDeleteRequest,
+  });
 
   // `@pierre/trees` renders rows inside an open shadow root and exposes no
   // per-row attribute hook, so the full-path `title` is stamped imperatively
