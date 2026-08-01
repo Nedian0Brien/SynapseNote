@@ -10,12 +10,17 @@ import { createDefaultDatabaseQueryAccessResolver } from './database-access-poli
 import { databaseDesiredStateBase } from './database-button.ts';
 import type { DatabaseCommitEngine } from './database-commit.ts';
 import { createDatabaseCommitEngine } from './database-commit.ts';
-import { createDatabaseDataPlane, DatabaseDataPlaneError } from './database-data-plane.ts';
+import {
+  createDatabaseDataPlane,
+  DatabaseDataPlaneError,
+  type ResolveDatabaseQueryAccess,
+} from './database-data-plane.ts';
 import {
   DatabaseComputedPropertyPreviewResponseSchema,
   DatabaseDescribeResponseSchema,
   DatabaseQueryResponseSchema,
 } from './database-data-plane-api.ts';
+import { previewDatabaseComputedProperty } from './database-data-plane-computed-preview.ts';
 import { createDatabaseFormRetentionService } from './database-form-retention.ts';
 import { createDatabaseFormStateStore } from './database-form-state-store.ts';
 import { createDatabasePlanEngine } from './database-plan.ts';
@@ -2289,15 +2294,16 @@ External edit remains canonical.
       databaseStore: store,
     });
     await index.rebuild();
+    const resolveQueryAccess: ResolveDatabaseQueryAccess = ({ source }) => ({
+      policyId: `computed-${source.key}`,
+      policyRevision: `sha256:${(source.id === 'ds_computed_tasks' ? 'c' : 'd').repeat(64)}`,
+      allowedRecordIds: source.id === 'ds_computed_projects' ? ['rec_computed_visible'] : null,
+      allowedPropertyIds: null,
+    });
     const dataPlane = createDatabaseDataPlane({
       databaseStore: store,
       databaseRecordIndex: index,
-      resolveQueryAccess: ({ source }) => ({
-        policyId: `computed-${source.key}`,
-        policyRevision: `sha256:${(source.id === 'ds_computed_tasks' ? 'c' : 'd').repeat(64)}`,
-        allowedRecordIds: source.id === 'ds_computed_projects' ? ['rec_computed_visible'] : null,
-        allowedPropertyIds: null,
-      }),
+      resolveQueryAccess,
     });
     const result = dataPlane.query({
       databaseId: computed.id,
@@ -2357,6 +2363,32 @@ External edit remains canonical.
     });
     expect(preview.permissionRevision).toMatch(/^sha256:/);
     expect(DatabaseComputedPropertyPreviewResponseSchema.safeParse(preview).success).toBe(true);
+
+    const taskSource = computed.sources.find((source) => source.id === 'ds_computed_tasks');
+    if (!taskSource) throw new Error('Computed task fixture missing');
+    const direct = previewDatabaseComputedProperty(
+      {
+        describeCanonical: () => ({
+          manifestRevision: store.snapshot().revision,
+          schemaRevision: 'test-schema-revision',
+          database: structuredClone(computed),
+          source: structuredClone(taskSource),
+          index: index.status(),
+          storageCapabilities: [],
+          allowedOperations: ['catalog', 'describe', 'find', 'query', 'pack'],
+        }),
+        listRecords: index.list.bind(index),
+        resolveQueryAccess,
+        currentAccessPrincipal: () => ({ kind: 'user', id: 'user:local-owner' }),
+      },
+      {
+        databaseId: computed.id,
+        sourceId: 'ds_computed_tasks',
+        recordId: 'rec_computed_task',
+        property: { ...rollup, function: 'count_all' },
+      },
+    );
+    expect(direct).toEqual(preview);
 
     const cached = dataPlane.query({
       databaseId: computed.id,
