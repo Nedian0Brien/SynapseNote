@@ -73,7 +73,9 @@ function firstHeading(body: string): string | null {
       continue;
     }
     if (opening) {
-      fence = opening[1]![0] as '`' | '~';
+      const openingFence = opening[1];
+      if (!openingFence) throw new Error('Markdown fence capture unexpectedly missing');
+      fence = openingFence[0] as '`' | '~';
       cursor = end;
       continue;
     }
@@ -154,7 +156,9 @@ export function replaceDatabaseDocumentTitle(
       continue;
     }
     if (opening) {
-      fence = opening[1]![0] as '`' | '~';
+      const openingFence = opening[1];
+      if (!openingFence) throw new Error('Markdown fence capture unexpectedly missing');
+      fence = openingFence[0] as '`' | '~';
       cursor = end;
       continue;
     }

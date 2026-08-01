@@ -119,7 +119,10 @@ describe('v1 to v2 migration logical equivalence', () => {
     expect(plan.status).toBe('ready');
     if (plan.status !== 'ready' || !plan.definition) return;
     const ownerMarkdown = plan.ownerDocuments['tasks.md'];
-    expect(ownerMarkdown).toBeDefined();
+    if (!ownerMarkdown) throw new Error('Migration fixture owner document is missing');
+    const v1Source = definition.sources[0];
+    const v2Source = plan.definition.sources[0];
+    if (!v1Source || !v2Source) throw new Error('Migration fixture source is missing');
     const linked = Object.entries(plan.linkedDocuments).map(([path, markdown]) => {
       const identity = parseDatabaseDocumentIdentity(markdown);
       if (!identity.ok) throw new Error(`Migration fixture lost document identity for ${path}`);
@@ -127,8 +130,8 @@ describe('v1 to v2 migration logical equivalence', () => {
     });
     const materialized = materializeDatabaseMarkdownOwner({
       databaseId: 'db_tasks',
-      source: plan.definition.sources[0]!,
-      markdown: ownerMarkdown!,
+      source: v2Source,
+      markdown: ownerMarkdown,
       resolveDocument: (link) => {
         const target = link.target.replace(/\.(?:md|mdx)$/iu, '');
         const document = linked.find(
@@ -141,7 +144,9 @@ describe('v1 to v2 migration logical equivalence', () => {
     if (!('rows' in materialized)) return;
     const expected = v1.map((result, index) => {
       if (!result.ok) throw new Error('v1 fixture did not materialize');
-      const legacyId = records[index]!.markdown.match(/record_id:\s*(\S+)/u)?.[1];
+      const record = records[index];
+      if (!record) throw new Error('v1 fixture record unexpectedly missing');
+      const legacyId = record.markdown.match(/record_id:\s*(\S+)/u)?.[1];
       const alias = plan.aliases.find((candidate) => candidate.legacyRecordId === legacyId);
       if (!alias) throw new Error(`Migration fixture lost alias for ${legacyId}`);
       return {
@@ -151,6 +156,7 @@ describe('v1 to v2 migration logical equivalence', () => {
       };
     });
     const actual = materialized.rows.map((row) => {
+      if (!row.recordId) throw new Error('materialized row record ID is missing');
       const values = { ...row.values } as Record<string, unknown>;
       const document = linked.find((candidate) => candidate.documentId === row.documentId);
       if (
@@ -163,7 +169,7 @@ describe('v1 to v2 migration logical equivalence', () => {
         values.prop_title = resolveDatabaseDocumentTitle(document.markdown, document.path).value;
       }
       return {
-        canonicalRecordId: row.recordId!,
+        canonicalRecordId: row.recordId,
         sourceId: 'ds_tasks',
         values,
       };
@@ -174,6 +180,9 @@ describe('v1 to v2 migration logical equivalence', () => {
 
     const v1Records = v1.flatMap((result) => (result.ok ? [result.record] : []));
     const v2Records = materialized.rows.map((row) => {
+      if (!row.recordId || !row.documentPath) {
+        throw new Error('materialized row identity is missing');
+      }
       const values = { ...row.values } as Record<string, DatabaseValue>;
       const document = linked.find((candidate) => candidate.documentId === row.documentId);
       if (
@@ -186,10 +195,10 @@ describe('v1 to v2 migration logical equivalence', () => {
         values.prop_title = resolveDatabaseDocumentTitle(document.markdown, document.path).value;
       }
       return {
-        id: row.recordId!,
+        id: row.recordId,
         databaseId: 'db_tasks',
         sourceId: 'ds_tasks',
-        path: row.documentPath!,
+        path: row.documentPath,
         revision: null,
         values,
         body: document?.markdown ?? '',
@@ -202,13 +211,13 @@ describe('v1 to v2 migration logical equivalence', () => {
       page: { limit: 1 },
     };
     const v1Query = queryDatabaseRecords({
-      source: definition.sources[0]!,
+      source: v1Source,
       records: v1Records,
       query: differentialQuery,
       snapshotRevision: 'migration-differential-fixture',
     });
     const v2Query = queryDatabaseRecords({
-      source: plan.definition.sources[0]!,
+      source: v2Source,
       records: v2Records,
       query: differentialQuery,
       snapshotRevision: 'migration-differential-fixture',

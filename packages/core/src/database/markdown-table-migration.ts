@@ -517,14 +517,14 @@ export function planDatabaseMarkdownV2Migration(input: {
         continue;
       }
       rows.push(encoded.values);
+      const documentId = documentIds.get(materializedRecord.id);
+      if (!documentId)
+        throw new Error(`Migration document ID missing for ${materializedRecord.id}`);
       const alias: DatabaseMarkdownV2MigrationAlias = {
         legacyRecordId: materializedRecord.id,
         sourceId: source.id,
-        documentId: documentIds.get(materializedRecord.id)!,
-        canonicalRecordId: createDatabaseMarkdownRecordId(
-          source.id,
-          documentIds.get(materializedRecord.id)!,
-        ),
+        documentId,
+        canonicalRecordId: createDatabaseMarkdownRecordId(source.id, documentId),
       };
       const createdTime = source.properties.find((property) => property.type === 'created_time');
       const lastEditedTime = source.properties.find(

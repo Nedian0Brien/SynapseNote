@@ -60,7 +60,8 @@ describe('database derived contract', () => {
 
   test('surfaces formula source/AST drift before commit', () => {
     const value = definition();
-    const source = value.sources[0]!;
+    const source = value.sources[0];
+    if (!source) throw new Error('fixture source missing');
     const formula = source.properties.find((property) => property.type === 'formula');
     if (!formula || formula.type !== 'formula') throw new Error('fixture formula missing');
     formula.source = 'prop("score") + 1';
@@ -72,7 +73,8 @@ describe('database derived contract', () => {
 
   test('surfaces cross-property cycles with an exact dependency path', () => {
     const value = definition();
-    const source = value.sources[0]!;
+    const source = value.sources[0];
+    if (!source) throw new Error('fixture source missing');
     const formula = source.properties.find((property) => property.type === 'formula');
     if (!formula || formula.type !== 'formula') throw new Error('fixture formula missing');
     formula.source = 'prop("double") + 1';

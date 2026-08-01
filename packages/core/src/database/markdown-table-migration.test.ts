@@ -200,8 +200,10 @@ describe('planDatabaseMarkdownV2Migration', () => {
 
   test('blocks a v1 Title/document-title conflict instead of choosing a destructive default', () => {
     const conflictDefinition = definition();
-    const conflictSource = conflictDefinition.sources[0]!;
-    const conflictTitle = conflictSource.properties[0]!;
+    const conflictSource = conflictDefinition.sources[0];
+    if (!conflictSource) throw new Error('conflict fixture source missing');
+    const conflictTitle = conflictSource.properties[0];
+    if (!conflictTitle) throw new Error('conflict fixture title property missing');
     conflictSource.properties[0] = {
       ...conflictTitle,
       key: 'record_title',
@@ -228,8 +230,10 @@ describe('planDatabaseMarkdownV2Migration', () => {
 
   test('applies an explicit title choice to both the document title and first wikilink alias', () => {
     const conflictDefinition = definition();
-    const conflictSource = conflictDefinition.sources[0]!;
-    const conflictTitle = conflictSource.properties[0]!;
+    const conflictSource = conflictDefinition.sources[0];
+    if (!conflictSource) throw new Error('conflict fixture source missing');
+    const conflictTitle = conflictSource.properties[0];
+    if (!conflictTitle) throw new Error('conflict fixture title property missing');
     conflictSource.properties[0] = {
       ...conflictTitle,
       key: 'record_title',
@@ -277,8 +281,10 @@ describe('planDatabaseMarkdownV2Migration', () => {
 
   test('blocks an invalid custom title choice before generating any files', () => {
     const conflictDefinition = definition();
-    const conflictSource = conflictDefinition.sources[0]!;
-    const conflictTitle = conflictSource.properties[0]!;
+    const conflictSource = conflictDefinition.sources[0];
+    if (!conflictSource) throw new Error('conflict fixture source missing');
+    const conflictTitle = conflictSource.properties[0];
+    if (!conflictTitle) throw new Error('conflict fixture title property missing');
     conflictSource.properties[0] = {
       ...conflictTitle,
       key: 'record_title',

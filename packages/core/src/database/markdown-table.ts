@@ -236,7 +236,9 @@ function findOwnerMarker(source: string): MarkerMatch | null {
       continue;
     }
     if (opening) {
-      fence = { character: opening[1]![0] as '`' | '~', length: opening[1]!.length };
+      const openingFence = opening[1];
+      if (!openingFence) throw new Error('Markdown fence capture unexpectedly missing');
+      fence = { character: openingFence[0] as '`' | '~', length: openingFence.length };
       cursor = end;
       continue;
     }

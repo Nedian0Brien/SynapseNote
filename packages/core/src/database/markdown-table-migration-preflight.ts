@@ -32,8 +32,7 @@ export interface DatabaseMigrationOwnerSelectionResult {
 
 function safeRelativeMarkdownPath(path: string): boolean {
   return Boolean(
-    path &&
-      path.endsWith('.md') &&
+    path.endsWith('.md') &&
       !path.includes('\0') &&
       !path.includes('\\') &&
       !path.startsWith('/') &&

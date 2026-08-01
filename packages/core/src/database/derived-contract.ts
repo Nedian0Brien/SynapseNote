@@ -154,7 +154,8 @@ export function assertDatabaseDerivedContract(
 ): DatabaseDerivedContract {
   const contract = compileDatabaseDerivedContract(definition);
   if (contract.diagnostics.length > 0) {
-    const first = contract.diagnostics[0]!;
+    const first = contract.diagnostics[0];
+    if (!first) throw new Error('derived contract diagnostics unexpectedly missing');
     throw new Error(first.message);
   }
   return contract;

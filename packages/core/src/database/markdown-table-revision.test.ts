@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+import type { ParsedDatabaseMarkdownOwner } from './markdown-table.ts';
 import { parseDatabaseMarkdownOwner } from './markdown-table.ts';
 import {
   createDatabaseMarkdownOwnerScopedRevisions,
@@ -9,6 +10,18 @@ import {
 } from './markdown-table-revision.ts';
 
 const source = `<!-- synapsenote:database\nversion=2\ndatabase=db_demo\nsource=ds_demo\nblock=dbb_owner\ncolumns=prop_title,prop_value\n-->\n\n| Title | Value |\n| --- | --- |\n| [[alpha]] | 1 |\n`;
+
+function fixtureRow(owner: ParsedDatabaseMarkdownOwner) {
+  const row = owner.rows[0];
+  if (!row) throw new Error('fixture row is missing');
+  return row;
+}
+
+function fixtureCell(owner: ParsedDatabaseMarkdownOwner, columnIndex: number) {
+  const cell = fixtureRow(owner).cells[columnIndex];
+  if (!cell) throw new Error('fixture cell is missing');
+  return cell;
+}
 
 describe('database Markdown semantic revisions', () => {
   test('separates owner bytes from table/row/cell semantics', () => {
@@ -25,9 +38,11 @@ describe('database Markdown semantic revisions', () => {
     });
     expect(revisions.owner).toMatch(/^sha256:[a-f0-9]{64}$/);
     expect(revisions.table).toMatch(/^sha256:[a-f0-9]{64}$/);
-    expect(revisions.rows.rec_alpha).toBe(databaseMarkdownTableRowRevision(parsed.owner.rows[0]!));
+    expect(revisions.rows.rec_alpha).toBe(
+      databaseMarkdownTableRowRevision(fixtureRow(parsed.owner)),
+    );
     expect(revisions.cells['rec_alpha:0']).toBe(
-      databaseMarkdownTableCellRevision(parsed.owner.rows[0]!.cells[0]!),
+      databaseMarkdownTableCellRevision(fixtureCell(parsed.owner, 0)),
     );
     expect(revisions.derived).toBe('sha256:derived');
   });
@@ -38,11 +53,11 @@ describe('database Markdown semantic revisions', () => {
     const parsedB = parseDatabaseMarkdownOwner(padded);
     expect(parsedA.ok && parsedB.ok).toBe(true);
     if (!parsedA.ok || !parsedB.ok) return;
-    expect(databaseMarkdownTableRowRevision(parsedA.owner.rows[0]!)).toBe(
-      databaseMarkdownTableRowRevision(parsedB.owner.rows[0]!),
+    expect(databaseMarkdownTableRowRevision(fixtureRow(parsedA.owner))).toBe(
+      databaseMarkdownTableRowRevision(fixtureRow(parsedB.owner)),
     );
-    expect(databaseMarkdownTableCellRevision(parsedA.owner.rows[0]!.cells[1]!)).toBe(
-      databaseMarkdownTableCellRevision(parsedB.owner.rows[0]!.cells[1]!),
+    expect(databaseMarkdownTableCellRevision(fixtureCell(parsedA.owner, 1))).toBe(
+      databaseMarkdownTableCellRevision(fixtureCell(parsedB.owner, 1)),
     );
   });
 
@@ -73,14 +88,14 @@ describe('database Markdown semantic revisions', () => {
     const rowParsed = parseDatabaseMarkdownOwner(row);
     expect(proseParsed.ok && rowParsed.ok).toBe(true);
     if (!proseParsed.ok || !rowParsed.ok) return;
-    expect(databaseMarkdownTableRowRevision(parsed.owner.rows[0]!)).toBe(
-      databaseMarkdownTableRowRevision(proseParsed.owner.rows[0]!),
+    expect(databaseMarkdownTableRowRevision(fixtureRow(parsed.owner))).toBe(
+      databaseMarkdownTableRowRevision(fixtureRow(proseParsed.owner)),
     );
-    expect(databaseMarkdownTableCellRevision(parsed.owner.rows[0]!.cells[1]!)).toBe(
-      databaseMarkdownTableCellRevision(proseParsed.owner.rows[0]!.cells[1]!),
+    expect(databaseMarkdownTableCellRevision(fixtureCell(parsed.owner, 1))).toBe(
+      databaseMarkdownTableCellRevision(fixtureCell(proseParsed.owner, 1)),
     );
-    expect(databaseMarkdownTableCellRevision(parsed.owner.rows[0]!.cells[1]!)).not.toBe(
-      databaseMarkdownTableCellRevision(rowParsed.owner.rows[0]!.cells[1]!),
+    expect(databaseMarkdownTableCellRevision(fixtureCell(parsed.owner, 1))).not.toBe(
+      databaseMarkdownTableCellRevision(fixtureCell(rowParsed.owner, 1)),
     );
   });
 });

@@ -67,6 +67,12 @@ function parseOwner(source: string): ParsedDatabaseMarkdownOwner | null {
   return parsed.ok ? parsed.owner : null;
 }
 
+function requireOwnerAfterMutation(source: string): ParsedDatabaseMarkdownOwner {
+  const owner = parseOwner(source);
+  if (!owner) throw new Error('database table mutation produced an invalid owner');
+  return owner;
+}
+
 /**
  * Extracts semantic operations without treating unrelated prose or Markdown
  * formatting as a value change. Row keys default to the Title wikilink, which
@@ -113,7 +119,8 @@ export function diffDatabaseMarkdownTables(
       });
       continue;
     }
-    const nextRow = nextRows.get(rowKey)!;
+    const nextRow = nextRows.get(rowKey);
+    if (!nextRow) throw new Error('next row unexpectedly missing after membership check');
     const columns = Math.min(row.cells.length, nextRow.cells.length);
     for (let columnIndex = 0; columnIndex < columns; columnIndex += 1) {
       const before = row.cells[columnIndex]?.value ?? '';
@@ -344,7 +351,7 @@ export function mergeDatabaseMarkdownTables(
   for (const [rowKey, row] of baseEntries) {
     if (!mergedRows.has(rowKey)) {
       merged = deleteDatabaseMarkdownTableRow(merged, owner, row.rowIndex);
-      owner = parseOwner(merged)!;
+      owner = requireOwnerAfterMutation(merged);
     }
   }
   for (const [rowKey, values] of mergedRows) {
@@ -356,7 +363,7 @@ export function mergeDatabaseMarkdownTables(
         owner.rows.length,
         values.map(encodeDatabaseMarkdownCellText),
       );
-      owner = parseOwner(merged)!;
+      owner = requireOwnerAfterMutation(merged);
       continue;
     }
     for (let columnIndex = values.length - 1; columnIndex >= 0; columnIndex -= 1) {
@@ -369,7 +376,7 @@ export function mergeDatabaseMarkdownTables(
           columnIndex,
           encodeDatabaseMarkdownCellText(values[columnIndex] ?? ''),
         );
-        owner = parseOwner(merged)!;
+        owner = requireOwnerAfterMutation(merged);
       }
     }
   }

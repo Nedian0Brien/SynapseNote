@@ -257,6 +257,8 @@ export function planDatabaseMarkdownIdentityRepair(input: {
       }
     }
     if (aliasReplacements.length > 0) {
+      const firstReplacement = aliasReplacements[0];
+      if (!firstReplacement) throw new Error('title alias replacement unexpectedly missing');
       const rewrittenOwnerMarkdown = [...aliasReplacements]
         .sort((left, right) => right.rowIndex - left.rowIndex)
         .reduce(
@@ -273,7 +275,7 @@ export function planDatabaseMarkdownIdentityRepair(input: {
       actions.push({
         kind: 'rewrite_title_alias',
         ownerPath: owner.document.path,
-        rowIndex: aliasReplacements[0]!.rowIndex,
+        rowIndex: firstReplacement.rowIndex,
         beforeSha256: digest(owner.document.markdown),
         afterSha256: digest(rewrittenOwnerMarkdown),
         afterMarkdown: rewrittenOwnerMarkdown,

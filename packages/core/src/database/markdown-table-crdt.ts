@@ -134,7 +134,10 @@ export function classifyDatabaseMarkdownCrdtDocumentConflicts(
   const conflicts: DatabaseMarkdownCrdtConflict[] = [];
   for (let left = 0; left < mutations.length; left += 1) {
     for (let right = left + 1; right < mutations.length; right += 1) {
-      const conflict = classifyDatabaseMarkdownCrdtConflict(mutations[left]!, mutations[right]!);
+      const ours = mutations[left];
+      const theirs = mutations[right];
+      if (!ours || !theirs) throw new Error('CRDT mutation index unexpectedly missing');
+      const conflict = classifyDatabaseMarkdownCrdtConflict(ours, theirs);
       if (conflict) conflicts.push(conflict);
     }
   }

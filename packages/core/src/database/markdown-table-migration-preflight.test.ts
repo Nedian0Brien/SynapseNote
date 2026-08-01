@@ -30,7 +30,9 @@ function definitions() {
       },
     ],
   });
-  (tasks.sources[0]!.properties as unknown as Array<Record<string, unknown>>).push({
+  const tasksSource = tasks.sources[0];
+  if (!tasksSource) throw new Error('Tasks fixture source is missing');
+  (tasksSource.properties as unknown as Array<Record<string, unknown>>).push({
     id: 'prop_project',
     key: 'project',
     name: 'Project',
