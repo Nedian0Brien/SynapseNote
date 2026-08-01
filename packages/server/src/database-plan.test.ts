@@ -1,17 +1,25 @@
 import { afterEach, describe, expect, test } from 'bun:test';
-import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { createDatabasePlanEngine, DatabasePlanError } from './database-plan.ts';
 import { DatabasePlanApprovalCodeSchema as extractedApprovalCodeSchema } from './database-plan-artifacts.ts';
 import { hashDatabasePlanValue } from './database-plan-convergence-policy.ts';
 import { DatabaseDesiredStateDraftSchema as extractedDraftSchema } from './database-plan-draft-contracts.ts';
+import { compileDatabasePlan } from './database-plan-manifest-record-compiler.ts';
 import { normalizeDatabaseSampleValue } from './database-plan-normalization-policy.ts';
 import { DatabaseWriteGuardSnapshotSchema } from './database-plan-write-guards.ts';
 import { createDatabaseRecordIndex } from './database-record-index.ts';
 import { createDatabaseStore } from './database-store.ts';
 
 const tempDirs: string[] = [];
+
+test('delegates manifest and record conflict compilation to its dedicated compiler', () => {
+  const engineSource = readFileSync(new URL('./database-plan.ts', import.meta.url), 'utf8');
+
+  expect(compileDatabasePlan).toBeFunction();
+  expect(engineSource).toContain('const plan = compileDatabasePlan(');
+});
 
 afterEach(() => {
   for (const dir of tempDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
