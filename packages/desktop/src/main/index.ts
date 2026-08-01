@@ -27,7 +27,6 @@
  */
 
 import { spawn } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
 import {
   closeSync,
   existsSync,
@@ -36,16 +35,14 @@ import {
   openSync,
   readFileSync,
   realpathSync,
-  statSync,
   writeFileSync,
 } from 'node:fs';
-import { homedir as osHomedir, hostname as osHostname, release as osRelease } from 'node:os';
+import { homedir as osHomedir, hostname as osHostname } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import {
   ALL_EDITOR_IDS,
   addOkPathsToGitExclude,
   classifyExistingMcpEntry,
-  defaultBugReportZipPath,
   detectInstalledEditors,
   EDITOR_TARGETS,
   getOkArtifactPaths,
@@ -55,9 +52,7 @@ import {
   readExistingMcpEntry,
   removeUserGlobalSkillBundle,
   repairMcpConfigs,
-  runStop,
   type TrackedRefusal,
-  validateLocalFolderForShare,
   writeEditorMcpConfig,
   writeProjectAiIntegrations,
   writeUserMcpConfigs,
@@ -71,17 +66,12 @@ import {
 import {
   assertGitAvailable,
   BUNDLE_SKILL_NAME,
-  classifyFsPath,
   createEphemeralProjectDir,
   discoverLockDirs,
   ensureProjectGit,
-  findEnclosingGitRoot,
-  findEnclosingProjectRoot,
   getLocalDir,
-  getMeter,
   initContent,
   isProcessAlive,
-  normalizeFsPath,
   prepareSingleFileOpen,
   RUNTIME_VERSION,
   readBundleDecision,
@@ -89,9 +79,7 @@ import {
   readServerPackageVersion,
   recordSkillInstallEvent,
   resolveBundledSkillDir,
-  resolveLockDir,
   USER_GLOBAL_BUNDLE_IDS,
-  withSpan,
   writeBundleDecision,
   writeTargetVersion,
 } from '@nedian0brien/synapsenote-server';
@@ -99,7 +87,6 @@ import type { BrowserWindowConstructorOptions, MessageBoxOptions } from 'electro
 import {
   app,
   BrowserWindow,
-  clipboard,
   crashReporter,
   dialog,
   autoUpdater as electronAutoUpdater,
@@ -113,20 +100,17 @@ import {
   utilityProcess,
 } from 'electron';
 import type { OkMenuAction } from '../shared/bridge-contract.ts';
-import { type EntryPoint, isEntryPoint } from '../shared/entry-point.ts';
+import type { EntryPoint } from '../shared/entry-point.ts';
 import type {
   EditorActiveTargetSnapshot,
   EditorViewMenuStateSnapshot,
   McpWiringEditorId,
   OnboardingShowPayload,
 } from '../shared/ipc-channels.ts';
-import { createHandler } from '../shared/ipc-handler.ts';
 import { registerPendingDelivery, sendToRenderer } from '../shared/ipc-send.ts';
-import { resolveShell } from '../utility/pty-host.ts';
 import { buildAboutPanelOptions } from './about-panel.ts';
 import { appendOkIgnoreSync } from './append-okignore.ts';
-import { openAssetSafely, revealAssetSafely } from './asset-allowlist.ts';
-import { popAssetMenu } from './asset-menu.ts';
+import { openAssetSafely } from './asset-allowlist.ts';
 import {
   bootAutoUpdater,
   channelFromVersion,
@@ -134,13 +118,6 @@ import {
 } from './auto-updater.ts';
 import { resolveBootRestoreDecision } from './boot-restore-decision.ts';
 import { runBootstrap } from './bootstrap.ts';
-import {
-  type BranchInfoProxyDeps,
-  proxyAwaitBranchSwitched,
-  proxyFetchBranchInfo,
-  proxyRunCheckout,
-  proxyShareTargetStatus,
-} from './branch-info-proxy.ts';
 import { wrapperPathInBundle } from './bundle-paths.ts';
 import {
   type BundleReplaceWatcherHandle,
@@ -148,21 +125,16 @@ import {
 } from './bundle-replace-detector.ts';
 import { cascadePosition } from './cascade-position.ts';
 import { checkTargetExists as checkTargetExistsImpl } from './check-target-exists.ts';
-import { runLoginShellProbe } from './claude-readiness.ts';
 import { requestUserConsent, walkExceedsCap } from './consent-dialog.ts';
 import {
   type CrashDetection,
   createCrashDetection,
   startLocalCrashReporter,
 } from './crash-detection.ts';
-import {
-  CreateNewProjectError,
-  folderState,
-  resolveDefaultProjectsRoot,
-  runCreateNew,
-} from './create-new-project.ts';
 import { createDebugIpc, type DebugIpcHandle } from './debug-ipc.ts';
+import { registerDesktopIpcHandlers } from './desktop-ipc-composition.ts';
 import { flushDesktopLogger, getLogger, getRootDesktopLogger } from './desktop-logger.ts';
+import { createDesktopTerminalCapabilities } from './desktop-terminal-capabilities.ts';
 import {
   buildDesktopUninstallNoticeHtml,
   buildDesktopUninstallProgressHtml,
@@ -183,7 +155,6 @@ import {
   resolveDesktopUninstallProjectSelection,
   runDesktopUninstallCleanup,
 } from './desktop-uninstall.ts';
-import { promptForExistingFolder } from './dialog-helpers.ts';
 import {
   type DriverUtilityLike,
   isDriverBootSmokeMode,
@@ -195,32 +166,6 @@ import { ensureGitAvailable } from './git-preflight-handler.ts';
 import { readCanonicalGitHubRemoteUrl } from './git-remote.ts';
 import { formatInstanceAppName, resolveInstanceLabel } from './instance-identity.ts';
 import { deriveInstanceUserDataDir } from './instance-isolation.ts';
-import { registerAppStateIpc } from './ipc/app-state-registrar.ts';
-import { registerAssetIpcHandlers } from './ipc/asset-registrar.ts';
-import { registerBugLocalOpsIpc } from './ipc/bug-local-ops-registrar.ts';
-import {
-  handleBugReportCrashAck,
-  handleBugReportCreate,
-  handleBugReportSend,
-} from './ipc/bug-report.ts';
-import {
-  registerIntegrationsSettingsIpc,
-  registerProjectIntegrationsSettingsIpc,
-} from './ipc/integrations-settings-registrar.ts';
-import { registerProjectCreateIpcHandlers } from './ipc/project-create-registrar.ts';
-import { registerProjectIpcHandlers } from './ipc/project-registrar.ts';
-import { registerDesktopIpcRegistrars } from './ipc/registrar-registry.ts';
-import { handleSeedApply, handleSeedListPacks, handleSeedPlan } from './ipc/seed.ts';
-import { handleSharingSetMode, handleSharingStatus } from './ipc/sharing.ts';
-import { registerTerminalPtyIpc } from './ipc/terminal-pty-registrar.ts';
-import {
-  detectProtocol as detectProtocolImpl,
-  recordHandoff as recordHandoffImpl,
-  showItemInFolder as showItemInFolderImpl,
-  spawnCursor as spawnCursorImpl,
-  trashItem as trashItemImpl,
-} from './ipc-handlers.ts';
-import { logIpcError } from './ipc-log.ts';
 import { createDesktopKeepaliveFactory, toKeepaliveLogger } from './keepalive.ts';
 import {
   checkAndRepairMcpWiringOnStartup,
@@ -232,42 +177,35 @@ import {
 } from './mcp-wiring.ts';
 import { installApplicationMenu } from './menu.ts';
 import { createNavigatorWindow, tryCloseNavigator } from './navigator-window.ts';
-import { runOkInit } from './ok-init.ts';
-import {
-  type OnboardingFlowKind,
-  recordCreateNewBannerShown,
-  recordOnboardingFlow,
-} from './onboarding-telemetry.ts';
+import { type OnboardingFlowKind, recordOnboardingFlow } from './onboarding-telemetry.ts';
 import {
   computePathInstallDescriptor,
-  computePathLeg,
   type EnsureCliOnPathResult,
   ensureCliOnPath,
 } from './path-install.ts';
-import { savePdfAssetSafely } from './pdf-asset-save.ts';
-import { exportWebContentsToPdf } from './pdf-export.ts';
 import { installStdioBrokenPipeGuard } from './process-safety-net.ts';
 import {
   checkAndRepairProjectMcpOnProjectOpen,
   type ProjectMcpReclaimCliSurface,
 } from './project-mcp-reclaim.ts';
-import { readHeadBranch as readHeadBranchImpl } from './read-head-branch.ts';
 import {
   applyReducedTransparency,
   type BrowserWindowVibrancyTarget,
   type ReducedTransparencyDeps,
   type VibrancyMaterial,
 } from './reduced-transparency-handler.ts';
-import { removeGitFolder } from './remove-git-folder.ts';
 import { attachRendererConsoleCapture } from './renderer-console-capture.ts';
 import { resolveDetachedSpawnArgs } from './resolve-detached-spawn-args.ts';
 import { resolveShareTarget as resolveShareTargetMain } from './resolve-share-target.ts';
-import { handleRevealExternal } from './reveal-external.ts';
 import { handleShellOpenExternal } from './shell-allowlist.ts';
 import { createShowGateRegistry, type ShowGateRegistry } from './show-gate.ts';
 import { reclaimProjectSkillsOnProjectOpen, reclaimUserSkillsOnLaunch } from './skill-reclaim.ts';
 import { attachSpellcheckContextMenu } from './spellcheck-context-menu.ts';
 import { popSpellcheckMenu } from './spellcheck-menu.ts';
+import {
+  dispatchStartupReclaimToastWhenReady,
+  pickLoadedRendererForMcpDialog,
+} from './startup-reclaim-toast.ts';
 import { beginRoot, childSpan, endRoot, injectTraceparent } from './startup-trace.ts';
 import { type RendererMarks, StartupWaterfall } from './startup-waterfall.ts';
 import {
@@ -276,41 +214,25 @@ import {
   annotateMissing,
   emptyState,
   evaluateSchemaCompatibility,
-  getProjectSessionState,
   MAX_SUPPORTED_SCHEMA_VERSION,
   type PersistedWindowBounds,
   parseAppState,
-  removeRecentProject,
   type SchemaIncompatibilityDiagnostic,
   saveAppStateToDir,
-  setLastUsedProjectParent,
-  setProjectSessionState,
   setProjectWindowBounds,
   setSpellCheckEnabled as setSpellCheckEnabledState,
   type UpdateChannel,
 } from './state-store.ts';
-import { createTerminalCapabilities } from './terminal-capabilities.ts';
 import { type TerminalReaper, wireWindowTerminalReap } from './terminal-lifecycle.ts';
-import { createTerminalManager, type PtyUtilityLike } from './terminal-manager.ts';
-import {
-  recordConcurrentSessions,
-  recordShellExit,
-  recordTerminalSession,
-  recordTerminalWindowOpened,
-} from './terminal-telemetry.ts';
+import { recordTerminalWindowOpened } from './terminal-telemetry.ts';
 import {
   createTerminalWindow,
   resolveTerminalWindowProject,
   type TerminalBrowserWindow,
 } from './terminal-window.ts';
-import { getTerminalWindowContext, resolvePtyProjectRoot } from './terminal-window-registry.ts';
+import { getTerminalWindowContext } from './terminal-window-registry.ts';
 import { applyThemeApplied } from './theme-applied-handler.ts';
 import { applyThemeSource, isOkThemeSource } from './theme-handler.ts';
-import {
-  applyResetIncompatible,
-  applyStateQuery,
-  type UpdateStateHandlerDeps,
-} from './update-state-handlers.ts';
 import {
   registerProtocolHandler,
   type ScreenTarget,
@@ -324,7 +246,6 @@ import {
   createDefaultEditorViewMenuState,
   mergeViewMenuState,
 } from './view-menu-state.ts';
-import { fetchWebPreviewMetadata } from './web-preview-metadata.ts';
 import {
   type BrowserWindowLike,
   setWindowInstanceLabel,
@@ -333,16 +254,7 @@ import {
 } from './window-manager.ts';
 import { WINDOW_MIN_SIZE } from './window-min-size.ts';
 import { resolveRestoredPlacement, sortByFocusSequence } from './window-placement.ts';
-import {
-  classifyRecentGit,
-  classifyRecentGitAsync,
-  readWorktreeBranchAsync,
-} from './worktree-recents.ts';
-import {
-  checkoutShareBranchWorktree,
-  createWorktree,
-  listWorktreeSelector,
-} from './worktree-service.ts';
+import { classifyRecentGit } from './worktree-recents.ts';
 
 // Modern macOS chrome treatment. Three architectural facts the field set
 // encodes:
@@ -2853,394 +2765,19 @@ function formatUnknownError(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
-/**
- * Run a login-shell `command -v <bin>` probe in the real shell (the same
- * `resolveShell` the PTY spawns), with `spawn` + timers wired to the OS. Shared
- * by the Claude readiness path and the generic non-Claude CLI path; the
- * timeout/exit-code routing is unit-tested in claude-readiness.test.ts via an
- * injected spawn. `args` selects the binary (`cliProbeArgs(bin)`); it defaults
- * to the `claude` probe.
- */
-function probeLoginShellOnPath(args?: readonly string[]): Promise<number | null> {
-  return runLoginShellProbe(
-    (file, spawnArgs) => {
-      const child = spawn(file, [...spawnArgs], { stdio: 'ignore', shell: false });
-      return {
-        onExit: (cb) => {
-          child.on('exit', (code) => cb(code));
-        },
-        onError: (cb) => {
-          child.on('error', (err) => cb(err));
-        },
-        kill: () => {
-          child.kill('SIGKILL');
-        },
-      };
-    },
-    resolveShell(process.env),
-    {
-      setTimer: (cb, ms) => setTimeout(cb, ms),
-      clearTimer: (token) => clearTimeout(token as ReturnType<typeof setTimeout>),
-    },
-    undefined,
-    args,
-  );
-}
-
-const terminalCapabilities = createTerminalCapabilities({
-  homeDir: osHomedir,
-  probeLoginShell: probeLoginShellOnPath,
+const terminalCapabilities = createDesktopTerminalCapabilities({
   classifyClaudeMcp: () =>
     createMcpWiringCliSurface().classifyExistingMcpEntry('claude', osHomedir()).kind,
 });
 
-/**
- * Window to receive an immediate `ok:mcp-wiring:show` on the File-menu
- * re-trigger. Focused window preferred (the dialog appears where the user
- * just clicked the menu), any loaded window otherwise. Still-loading
- * windows are excluded — their renderer hasn't subscribed yet, but its
- * module-init `signalReady` will deliver the dialog via the armed
- * mount-ack fallback once it loads.
- */
-function pickLoadedRendererForMcpDialog(): McpWiringDispatchTarget | undefined {
-  const isUsable = (win: BrowserWindow): boolean =>
-    !win.isDestroyed() && !win.webContents.isLoading();
-  const focused = BrowserWindow.getFocusedWindow();
-  if (focused && isUsable(focused)) return focused.webContents;
-  return BrowserWindow.getAllWindows().find(isUsable)?.webContents;
-}
-
-function dispatchStartupReclaimToastWhenReady(results: {
-  mcp: McpStartupRepairResult;
-  path: EnsureCliOnPathResult;
-}): void {
-  const { mcp, path } = results;
-  const pathLeg = computePathLeg(path);
-  if (mcp.status === 'failed') {
-    dispatchToastWhenReady({
-      kind: 'startup-reclaim',
-      mcp: { status: 'failed', editors: mcp.failedEditors.map((f) => f.editor) },
-      path: pathLeg,
-    });
-    return;
-  }
-  const hasMcp = mcp.status === 'repaired';
-  if (!hasMcp && pathLeg.status === 'none') return;
-  dispatchToastWhenReady({
-    kind: 'startup-reclaim',
-    mcp: hasMcp ? { status: 'repaired', editors: mcp.repairedEditors } : { status: 'none' },
-    path: pathLeg,
-  });
-}
-
-function dispatchToastWhenReady(payload: {
-  readonly kind: 'startup-reclaim';
-  readonly mcp:
-    | { readonly status: 'none' }
-    | { readonly status: 'repaired'; readonly editors: readonly string[] }
-    | { readonly status: 'failed'; readonly editors: readonly string[] };
-  readonly path:
-    | { readonly status: 'none' }
-    | { readonly status: 'installed'; readonly summary: string }
-    | { readonly status: 'failed'; readonly summary: string };
-}): void {
-  let dispatched = false;
-  // After `did-finish-load` fires, the page has dispatched its `onload` event —
-  // module-init listeners (like `installOnboardingToastListener`) are registered
-  // and `webContents.send` is deliverable. Send directly without re-checking
-  // `isLoading()`: Electron emits `did-finish-load` BEFORE `did-stop-loading`
-  // flips `isLoading()` to false, so a same-navigation re-check returns true
-  // and would re-arm a `once('did-finish-load')` listener that never fires
-  // again on the same navigation. That race is what caused the empirically
-  // observed 60s-watchdog-without-dispatch.
-  const send = (win: Electron.BrowserWindow): void => {
-    if (dispatched || win.isDestroyed()) return;
-    try {
-      sendToRenderer(win.webContents, 'ok:onboarding:toast', payload);
-      dispatched = true;
-    } catch (err) {
-      console.warn('[main] startup reclaim toast send failed', {
-        err: err instanceof Error ? err.message : String(err),
-      });
-    }
-  };
-  const tryDispatch = (win: Electron.BrowserWindow): void => {
-    if (dispatched || win.isDestroyed()) return;
-    if (win.webContents.isLoading()) {
-      win.webContents.once('did-finish-load', () => send(win));
-      return;
-    }
-    send(win);
-  };
-  for (const win of BrowserWindow.getAllWindows()) {
-    tryDispatch(win);
-    if (dispatched) return;
-  }
-  const onCreated = (_event: Electron.Event, win: Electron.BrowserWindow) => {
-    win.webContents.once('did-finish-load', () => {
-      send(win);
-      if (dispatched) app.off('browser-window-created', onCreated);
-    });
-  };
-  app.on('browser-window-created', onCreated);
-  setTimeout(() => {
-    app.off('browser-window-created', onCreated);
-  }, 60_000);
-}
-
-function registerIpcHandlers() {
-  const rawHandle = createHandler(ipcMain);
-  const registeredStaticChannels = new Set<string>();
-  const handle: typeof rawHandle = (channel, handler) => {
-    if (registeredStaticChannels.has(channel)) {
-      throw new Error(`duplicate desktop IPC handler registration: ${channel}`);
-    }
-    registeredStaticChannels.add(channel);
-    rawHandle(channel, handler);
-  };
-
-  // Terminal ownership stays sender-scoped: the resolver derives its root from the
-  // BrowserWindow/WindowManager mapping, never from renderer payload.
-  const terminalManager = createTerminalManager({
-    forkPtyHost: () =>
-      utilityProcess.fork(join(__dirname, 'utility/pty-host.js')) as unknown as PtyUtilityLike,
-    sendData: (wc, payload) => sendToRenderer(wc, 'ok:pty:data', payload),
-    sendExit: (wc, payload) => sendToRenderer(wc, 'ok:pty:exit', payload),
-    newPtyId: () => randomUUID(),
-    setTimer: (cb, ms) => setTimeout(cb, ms),
-    clearTimer: (token) => clearTimeout(token as ReturnType<typeof setTimeout>),
-    logger: { warn: (data) => getLogger('terminal').warn(data, 'unexpected pty-host message') },
-    recordShellExit,
-    recordTerminalSession,
-    recordConcurrentSessions,
-  });
-  terminalReaper = terminalManager;
-  const resolveTerminalProjectRoot = (event: Electron.IpcMainInvokeEvent): string | null => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    const editorCtx =
-      win && wm ? wm.getContextForBrowserWindow(win as unknown as BrowserWindowLike) : null;
-    return resolvePtyProjectRoot({
-      editorProjectPath: editorCtx?.projectPath ?? null,
-      terminalWindow: win ? getTerminalWindowContext(win.id) : undefined,
-      homedir: osHomedir(),
-    });
-  };
-  registerTerminalPtyIpc({
-    handle,
-    terminalManager,
-    resolveProjectRoot: resolveTerminalProjectRoot,
-    isProjectClaudeMcpOwn: terminalCapabilities.isProjectClaudeMcpOwn,
-    resolveClaudeReadiness: terminalCapabilities.resolveClaudeReadiness,
-    rewireClaudeMcp: async (event) => {
-      if (process.platform !== 'darwin' || !app.isPackaged) return undefined;
-      const win = BrowserWindow.fromWebContents(event.sender);
-      mcpWiringHandle?.destroy();
-      mcpWiringHandle = null;
-      try {
-        mcpWiringHandle = armMcpWiring({
-          forceShow: true,
-          immediateDispatchTarget: win?.webContents,
-        });
-        return undefined;
-      } catch (err) {
-        const rewireError = formatUnknownError(err);
-        getLogger('terminal').warn({ err: rewireError }, 'claude mcp rewire failed');
-        return rewireError;
-      }
+function registerIpcHandlers(): void {
+  registerDesktopIpcHandlers({
+    getWindowManager: () => wm,
+    getAppState: () => appState,
+    setAppState: (state) => {
+      appState = state;
     },
-    getDockVisible: (windowId) => dockVisibleForWindow.get(windowId) ?? false,
-    resolveCliOnPath: terminalCapabilities.resolveCliOnPath,
-    resolveCliInstalledMap: terminalCapabilities.resolveCliInstalledMap,
-  });
-
-  handle('ok:dialog:open-folder', async (_event, opts) => {
-    return promptForExistingFolder(dialog, opts);
-  });
-
-  registerAssetIpcHandlers({
-    register: handle as unknown as import('./ipc/asset-registrar.ts').AssetIpcRegistrar,
-    platform: process.platform,
-    getWindowForWebContents: (sender) =>
-      BrowserWindow.fromWebContents(sender as Electron.WebContents) ?? undefined,
-    getProjectPath: (window) =>
-      wm?.getContextForBrowserWindow(window as BrowserWindowLike)?.projectPath,
-    openExternal: (url) => shell.openExternal(url),
-    fetchWebPreviewMetadata,
-    detectProtocol: (scheme) =>
-      detectProtocolImpl(
-        {
-          platform: process.platform,
-          getApplicationInfoForProtocol: (url) => app.getApplicationInfoForProtocol(url),
-        },
-        scheme,
-      ),
-    spawnCursor: async (projectPath, path) =>
-      spawnCursorImpl(
-        {
-          platform: process.platform,
-          projectPath,
-          getApplicationInfoForProtocol: (url) => app.getApplicationInfoForProtocol(url),
-          spawn: (exec, args, timeoutMs) =>
-            new Promise((resolve) => {
-              try {
-                const child = spawn(exec, [...args], {
-                  shell: false,
-                  timeout: timeoutMs,
-                  stdio: ['ignore', 'ignore', 'pipe'],
-                });
-                child.stderr?.on('data', () => {});
-                child.once('spawn', () => resolve({ ok: true }));
-                child.once('error', () => resolve({ ok: false, reason: 'spawn-error' }));
-              } catch {
-                resolve({ ok: false, reason: 'spawn-error' });
-              }
-            }),
-        },
-        path,
-      ),
-    recordHandoff: (line) =>
-      recordHandoffImpl(
-        {
-          homedir: osHomedir,
-          appendFile: (path, content) => fsPromises.appendFile(path, content, 'utf-8'),
-          mkdir: (path) => fsPromises.mkdir(path, { recursive: true }).then(() => undefined),
-        },
-        line,
-      ),
-    openAsset: (projectPath, relPath) =>
-      openAssetSafely(
-        {
-          projectPath,
-          platform: process.platform,
-          openPath: (canonical) => shell.openPath(canonical),
-        },
-        relPath,
-      ),
-    savePdfAsset: (projectPath, relPath, bytes) =>
-      savePdfAssetSafely({ projectPath, platform: process.platform }, relPath, bytes),
-    exportPdf: (sender, suggestedName) => {
-      const callerWin = BrowserWindow.fromWebContents(sender as Electron.WebContents);
-      if (!callerWin) return Promise.resolve({ ok: false, reason: 'print-failed' } as const);
-      return exportWebContentsToPdf(
-        {
-          showSaveDialog: (options) => dialog.showSaveDialog(callerWin, options),
-          printToPDF: (options) => (sender as Electron.WebContents).printToPDF(options),
-          writeFile: (path, bytes) => fsPromises.writeFile(path, bytes),
-        },
-        suggestedName,
-      );
-    },
-    revealAsset: (projectPath, relPath) =>
-      revealAssetSafely(
-        {
-          projectPath,
-          platform: process.platform,
-          showItemInFolder: (canonical) => shell.showItemInFolder(canonical),
-        },
-        relPath,
-      ),
-    popAssetMenu: (window, params) =>
-      popAssetMenu({ Menu, window: window as Electron.BrowserWindow }, params),
-    copyText: (text) => clipboard.writeText(text),
-    showItemInFolder: (projectPath, allowedRoots, path) =>
-      showItemInFolderImpl(
-        {
-          projectPath,
-          allowedRoots,
-          platform: process.platform,
-          showItemInFolder: (candidate) => shell.showItemInFolder(candidate),
-        },
-        path,
-      ),
-    defaultBugReportZipPath,
-    revealExternal: (absPath, callerWindow) =>
-      handleRevealExternal(absPath, {
-        probe: (path) => {
-          try {
-            statSync(path);
-            return 'exists';
-          } catch (err) {
-            return (err as NodeJS.ErrnoException).code === 'ENOENT' ? 'missing' : 'unreadable';
-          }
-        },
-        confirmReveal: async (path) => {
-          const options: MessageBoxOptions = {
-            type: 'question',
-            buttons: ['Reveal in Finder', 'Cancel'],
-            defaultId: 0,
-            cancelId: 1,
-            message: `"${basename(path)}" is outside your project`,
-            detail: `${path}\n\nReveal it in Finder?`,
-          };
-          const window = callerWindow as Electron.BrowserWindow | undefined;
-          const { response } = window
-            ? await dialog.showMessageBox(window, options)
-            : await dialog.showMessageBox(options);
-          return response === 0;
-        },
-        showItemInFolder: (path) => shell.showItemInFolder(path),
-      }),
-    logIpcError,
-    warn: (message, details) => console.warn(message, details),
-  });
-
-  handle('ok:shell:trash-item', async (event, absPath) => {
-    const callerWin = BrowserWindow.fromWebContents(event.sender);
-    const callerProjectPath =
-      callerWin && wm
-        ? wm.getContextForBrowserWindow(callerWin as unknown as BrowserWindowLike)?.projectPath
-        : undefined;
-    // Path normalization happens at span-creation time using the renderer
-    // input (pre-realpath). The post-realpath canonical path is what we'd
-    // emit to logs/index — but it may include the user home prefix, so we
-    // normalize-to-tail-two-segments to stay inside the cardinality budget
-    // (`fs.*` span attribute STOP rule). Outcome attribute is set AFTER
-    // dispatch so Tempo can filter ok-vs-failure span volume.
-    const start = performance.now();
-    const result = await withSpan(
-      'ok.shell.trash_item',
-      {
-        attributes: {
-          'ok.shell.path': normalizeFsPath(absPath),
-          'ok.shell.path.role': classifyFsPath(absPath),
-        },
-      },
-      async (span) => {
-        const outcome = await trashItemImpl(
-          {
-            platform: process.platform,
-            projectPath: callerProjectPath,
-            realpath: (p) => realpathSync(p),
-            trashItem: (p) => shell.trashItem(p),
-          },
-          absPath,
-        );
-        span.setAttribute('ok.shell.outcome', outcome.ok ? 'ok' : 'failure');
-        if (!outcome.ok) {
-          span.setAttribute('ok.shell.reason', outcome.reason);
-        }
-        return outcome;
-      },
-    );
-    const elapsedMs = performance.now() - start;
-    _trashItemDurationHist().record(elapsedMs, {
-      'ok.shell.outcome': result.ok ? 'ok' : 'failure',
-    });
-    if (!result.ok) {
-      _trashItemFailureCounter().add(1, { 'ok.shell.reason': result.reason });
-      // Main-side breadcrumb so a renderer-side toast failure-mode is
-      // diagnosable from the desktop console — mirror of the
-      // `show-item-in-folder refused` warn pattern above.
-      console.warn('[main] trash-item refused', {
-        reason: result.reason,
-        detail: result.detail,
-      });
-    }
-    return result;
-  });
-
-  registerAppStateIpc({
-    handle,
+    refreshApplicationMenu,
     activeTargetChanged: (target) => {
       editorActiveTarget = target;
       refreshApplicationMenu();
@@ -3248,12 +2785,11 @@ function registerIpcHandlers() {
     viewMenuStateChanged: (event, state) => {
       editorViewMenuState = mergeViewMenuState(editorViewMenuState, state);
       if (state.terminalVisible !== undefined) {
-        const win = BrowserWindow.fromWebContents(event.sender);
-        if (win) dockVisibleForWindow.set(win.id, state.terminalVisible);
+        const window = BrowserWindow.fromWebContents(event.sender);
+        if (window) dockVisibleForWindow.set(window.id, state.terminalVisible);
       }
       refreshApplicationMenu();
     },
-    writeClipboard: (text) => clipboard.writeText(text),
     setThemeSource: (source) =>
       applyThemeSource(
         {
@@ -3269,7 +2805,7 @@ function registerIpcHandlers() {
     themeApplied: (event, options) =>
       applyThemeApplied(
         {
-          fireThemeApplied: (win) => showGate.fireThemeApplied(win as BrowserWindowLike),
+          fireThemeApplied: (window) => showGate.fireThemeApplied(window as BrowserWindowLike),
           applyReducedTransparency: (reduced) =>
             applyReducedTransparency(reducedTransparencyDeps, reduced),
           warn: (line) => console.warn(line),
@@ -3278,279 +2814,45 @@ function registerIpcHandlers() {
         options,
       ),
     ingestRendererStartupMarks,
-  });
-
-  const projectWindowForSender = (sender: unknown) =>
-    BrowserWindow.fromWebContents(sender as Electron.WebContents) ?? undefined;
-  const projectContextForWindow = (window: BrowserWindowLike | undefined) =>
-    window && wm ? wm.getContextForBrowserWindow(window) : undefined;
-  const branchInfoProxyDeps: BranchInfoProxyDeps = {
-    readServerLock: (lockDir) => readServerLock(lockDir),
-    isProcessAlive,
-    fetch: globalThis.fetch,
-    log: { warn: (message, meta) => console.warn(message, meta ?? {}) },
-  };
-  registerProjectIpcHandlers({
-    handle,
-    getWindowForWebContents: projectWindowForSender,
-    getProjectContext: projectContextForWindow,
-    getE2eSmoke: () => process.env.OK_DESKTOP_E2E_SMOKE === '1',
-    getAppState: () => appState,
-    setAppState: (state) => {
-      appState = state;
-    },
-    saveAppState,
-    refreshApplicationMenu,
-    annotateMissing,
-    classifyRecentGit: classifyRecentGitAsync,
-    readWorktreeBranch: readWorktreeBranchAsync,
-    removeRecentProject,
-    getProjectSessionState,
-    setProjectSessionState,
-    isEntryPoint,
-    openProject: openProjectOrFallbackToNavigator,
-    focusWindowForProject: (path) => wm?.focusWindowForProject(path) ?? null,
-    sendToRenderer,
-    checkTargetExists: checkTargetExistsImpl,
-    realpath: realpathSync,
-    listWorktrees: listWorktreeSelector,
-    checkoutWorktree: checkoutShareBranchWorktree,
-    createWorktree,
-    validateLocalFolderForShare,
-    readHeadBranch: readHeadBranchImpl,
-    branchInfoProxyDeps,
-    proxyFetchBranchInfo,
-    proxyRunCheckout,
-    proxyShareTargetStatus,
-    proxyAwaitBranchSwitched,
-    runOkInit,
-    closeProjectWindow: (path) => wm?.closeProjectWindow(path) ?? false,
-    restartAttachedServer: (path, opts) =>
-      wm
-        ? wm.restartAttachedServer(path, opts)
-        : Promise.resolve({ ok: false, reason: 'other' as const }),
-    resolveLocalOpCliArgs,
-    logIpcError,
-  });
-  registerProjectCreateIpcHandlers({
-    handle,
-    getAppState: () => appState,
-    setAppState: (state) => {
-      appState = state;
-    },
-    saveAppState,
-    getDocumentsPath: () => app.getPath('documents'),
-    resolveDefaultProjectsRoot,
-    folderState,
-    findEnclosingProjectRoot,
-    findEnclosingGitRoot,
-    stopWorktreeServer: (gitRoot) => {
+    rewireClaudeMcp: async (event) => {
+      if (process.platform !== 'darwin' || !app.isPackaged) return undefined;
+      const window = BrowserWindow.fromWebContents(event.sender);
+      mcpWiringHandle?.destroy();
+      mcpWiringHandle = null;
       try {
-        const outcome = runStop({
-          lockDir: resolveLockDir(gitRoot),
-          log: (msg) => getLogger('project').info({ gitRoot }, `[remove-git-folder] ${msg}`),
+        mcpWiringHandle = armMcpWiring({
+          forceShow: true,
+          immediateDispatchTarget: window?.webContents,
         });
-        getLogger('project').info(
-          { gitRoot, stopped: outcome.stopped.length, hadTargets: outcome.hadTargets },
-          'remove-git-folder: stopped worktree server before .git removal',
-        );
-      } catch (err) {
-        getLogger('project').warn(
-          { gitRoot, err: err instanceof Error ? err.message : String(err) },
-          'remove-git-folder: worktree server stop failed',
-        );
+        return undefined;
+      } catch (error) {
+        const rewireError = formatUnknownError(error);
+        getLogger('terminal').warn({ err: rewireError }, 'claude mcp rewire failed');
+        return rewireError;
       }
     },
-    removeGitFolder: (gitRoot, allowedGitRoots) => removeGitFolder(gitRoot, { allowedGitRoots }),
-    runCreateNew,
-    isCreateNewProjectError: (err): err is CreateNewProjectError =>
-      err instanceof CreateNewProjectError,
-    logAiIntegrationOutcomes,
-    setLastUsedProjectParent,
-    recordOnboardingFlow,
-    logCreatedProject: (result) =>
-      getLogger('create-new').info(
-        {
-          projectDir: result.projectDir,
-          target: result.target,
-          variant: result.variant,
-          gitRootPromoted: result.gitRootPromoted,
-        },
-        'created project',
-      ),
-    openProject: (path) => openProjectOrFallbackToNavigator(path, 'create-new'),
-    recordCreateNewBannerShown,
-    openNavigator,
-    logIpcError,
-  });
-
-  // OK config sharing mode — read + toggle the sharing posture for
-  // the active project window. Project scope flows from the WM context, so
-  // the renderer cannot target a different project than the one its
-  // window owns.
-  handle('ok:sharing:dispatch', async (event, request) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    if (!win) throw new Error('webContents has no parent BrowserWindow');
-    const ctx = wm?.getContextForBrowserWindow(win as unknown as BrowserWindowLike);
-    if (!ctx) throw new Error('No project context for this window');
-    if (request.kind === 'status') {
-      return handleSharingStatus(ctx.projectPath);
-    }
-    const mode: 'shared' | 'local-only' = request.mode === 'local-only' ? 'local-only' : 'shared';
-    return handleSharingSetMode(ctx.projectPath, mode);
-  });
-
-  // In-app bug reporting — build the redacted diagnostic bundle for the
-  // sender window's project, upload a reviewed bundle to the private intake,
-  // or acknowledge a crash-detected invitation. Unlike the sibling
-  // project-scoped channels, a window with no project context (Navigator) is
-  // NOT refused: the bundle degrades to system-wide (user logs + sysinfo),
-  // labeled via `summary.systemWide`.
-  handle('ok:bug-report:dispatch', async (event, request) => {
-    if (request.kind === 'crash-ack') {
-      return handleBugReportCrashAck(
-        { ackCrashEvent: (eventId) => crashDetection?.ack(eventId) },
-        request,
-      );
-    }
-    if (request.kind === 'send') {
-      return handleBugReportSend(
-        {
-          intakeBaseUrl: process.env.OK_BUG_REPORT_INTAKE_URL,
-          appVersion: app.getVersion(),
-          platform: `${process.platform} ${osRelease()}`,
-          // Same containment root the Reveal handler whitelists above — only
-          // zips `create` produced may be read and uploaded.
-          bugReportsRoot: dirname(defaultBugReportZipPath()),
-        },
-        request,
-      );
-    }
-    const win = BrowserWindow.fromWebContents(event.sender);
-    const ctx =
-      win && wm ? wm.getContextForBrowserWindow(win as unknown as BrowserWindowLike) : null;
-    return handleBugReportCreate(
-      {
-        projectDir: ctx?.projectPath ?? null,
-        desktopMeta: {
-          version: app.getVersion(),
-          packaged: app.isPackaged,
-          channel: channelFromVersion(app.getVersion()),
-        },
-        newestMinidumpPath: () => crashDetection?.newestMinidumpPath() ?? null,
-        logger: getLogger('bug-report'),
-      },
-      request,
-    );
-  });
-
-  // ── Create-new-project dialog cascade IPC ─────────────────────────────────
-  // Four read-only `ok:fs:*` probes + the `ok:project:create-new` writer.
-  // Renderer-side cascade (`CreateProjectDialog`) calls the probes reactively
-  // to render the inline banner; the writer re-runs every check server-side
-  // as defense-in-depth (renderer is untrusted at the IPC boundary).
-
-  // Schema-incompatibility IPC handlers. The pure handler bodies live in
-  // `update-state-handlers.ts` so the unit tier can pin the composition
-  // (persist → clear pending, including rollback on saveAppState failure).
-  // The deps factory captures the live closures over `appState` /
-  // `pendingSchemaIncompatibility`. `getBuildChannel` derives the channel
-  // purely from the running binary's version string (no persisted
-  // preference), so `ok:state:query` always matches the installed DMG.
-  const updateStateDeps = (): UpdateStateHandlerDeps => ({
-    getAppState: () => appState,
-    setAppState: (s) => {
-      appState = s;
+    isProjectClaudeMcpOwn: terminalCapabilities.isProjectClaudeMcpOwn,
+    resolveClaudeReadiness: terminalCapabilities.resolveClaudeReadiness,
+    resolveCliOnPath: terminalCapabilities.resolveCliOnPath,
+    resolveCliInstalledMap: terminalCapabilities.resolveCliInstalledMap,
+    getDockVisible: (windowId) => dockVisibleForWindow.get(windowId) ?? false,
+    setTerminalReaper: (reaper) => {
+      terminalReaper = reaper;
     },
-    saveAppState,
-    getBuildChannel: () => channelFromVersion(app.getVersion()),
+    openProject: openProjectOrFallbackToNavigator,
+    openNavigator: () => openNavigator(),
+    logAiIntegrationOutcomes,
     getPendingSchemaIncompatibility,
     clearPendingSchemaIncompatibility,
-  });
-  handle('ok:state:reset-incompatible', async () => applyResetIncompatible(updateStateDeps()));
-  handle('ok:state:query', async () => applyStateQuery(updateStateDeps()));
-
-  handle('ok:debug:keyring-smoke', async (event) => {
-    return ensureDebugIpc().requestKeyringSmoke(event.sender);
-  });
-
-  // `ok seed` — project-level scaffolder. Pure plan/apply handlers scoped to
-  // the invoking window's ProjectContext (same pattern as `ok:shell:spawn-cursor`).
-  // See packages/desktop/src/main/ipc/seed.ts.
-  const resolveSeedProjectRoot = (event: Electron.IpcMainInvokeEvent): string | undefined => {
-    const callerWin = BrowserWindow.fromWebContents(event.sender);
-    return callerWin && wm
-      ? wm.getContextForBrowserWindow(callerWin as unknown as BrowserWindowLike)?.projectPath
-      : undefined;
-  };
-  handle('ok:seed:plan', async (event, options) => {
-    const result = await handleSeedPlan(
-      { resolveProjectRoot: () => resolveSeedProjectRoot(event) },
-      options,
-    );
-    if (!result.ok) {
-      logIpcError({
-        event: 'ipc.error',
-        channel: 'ok:seed:plan',
-        reason: result.error.kind,
-        handler: 'handleSeedPlan',
-        cause: { message: result.error.message },
-      });
-    }
-    return result;
-  });
-  handle('ok:seed:apply', async (event, plan, options) => {
-    const result = await handleSeedApply(
-      { resolveProjectRoot: () => resolveSeedProjectRoot(event) },
-      plan,
-      options,
-    );
-    if (!result.ok) {
-      logIpcError({
-        event: 'ipc.error',
-        channel: 'ok:seed:apply',
-        reason: result.error.kind,
-        handler: 'handleSeedApply',
-        cause: { message: result.error.message },
-      });
-    }
-    return result;
-  });
-  handle('ok:seed:list-packs', async () => handleSeedListPacks());
-
-  registerBugLocalOpsIpc({ handle, app, shell, resolveCliArgs: resolveLocalOpCliArgs });
-
-  const integrationsSettingsDeps = {
-    app,
-    ipcMain,
-    platform: process.platform,
-    env: process.env,
-    homeDir: osHomedir,
-    getLogger,
+    saveAppState,
+    getBuildChannel: () => channelFromVersion(app.getVersion()),
+    requestKeyringSmoke: (sender) => ensureDebugIpc().requestKeyringSmoke(sender),
+    resolveLocalOpCliArgs,
+    getCrashDetection: () => crashDetection,
     pathInstallLogger,
     buildEnsureCliOnPathOpts,
     buildReclaimUserSkillsOpts,
-    getWindowForWebContents: (sender: Electron.WebContents) =>
-      BrowserWindow.fromWebContents(sender),
-    getProjectPath: (window: BrowserWindow) =>
-      wm.getContextForBrowserWindow(window as unknown as BrowserWindowLike)?.projectPath,
-  };
-  registerIntegrationsSettingsIpc(integrationsSettingsDeps);
-  registerProjectIntegrationsSettingsIpc(integrationsSettingsDeps);
-  // Lifecycle IPC is owned and armed independently. Every remaining request
-  // channel must be registered exactly once by the static registrar map.
-  const expectedStaticChannels = new Set<string>();
-  registerDesktopIpcRegistrars((channel) => {
-    expectedStaticChannels.add(channel);
-    if (!registeredStaticChannels.has(channel)) {
-      throw new Error(`desktop IPC registrar did not install ${channel}`);
-    }
   });
-  for (const channel of registeredStaticChannels) {
-    if (!expectedStaticChannels.has(channel)) {
-      throw new Error(`desktop IPC handler has no static registrar owner: ${channel}`);
-    }
-  }
 }
 
 /**
@@ -4566,31 +3868,3 @@ function bootPrimaryInstance(): void {
     }
   });
 } // end bootPrimaryInstance
-
-// ── OTel metric caches for sidebar shell IPCs ───────────────────────────────
-// Lazy initialization mirrors the file-watcher / rename-log patterns so the
-// SDK-disabled default build pays no cost beyond a single null-check per
-// dispatch. Histogram + counter co-exist with the span emission in the
-// `ok:shell:trash-item` handler — the span feeds traces (Tempo), the
-// histogram feeds duration distributions (Prometheus), and the counter
-// feeds failure-rate dashboards keyed by reason. Reason set is closed
-// (path-escape / not-found / permission-denied / system-error) so the
-// label cardinality is bounded by design.
-let _trashItemDurationHistCache: ReturnType<ReturnType<typeof getMeter>['createHistogram']> | null =
-  null;
-function _trashItemDurationHist() {
-  _trashItemDurationHistCache ||= getMeter().createHistogram('ok.shell.trash_item.duration_ms', {
-    description: 'Duration of ok:shell:trash-item IPC dispatches in milliseconds',
-    unit: 'ms',
-  });
-  return _trashItemDurationHistCache;
-}
-
-let _trashItemFailureCounterCache: ReturnType<ReturnType<typeof getMeter>['createCounter']> | null =
-  null;
-function _trashItemFailureCounter() {
-  _trashItemFailureCounterCache ||= getMeter().createCounter('ok.shell.trash_item.failures', {
-    description: 'Count of ok:shell:trash-item handler failures, labeled by reason',
-  });
-  return _trashItemFailureCounterCache;
-}
