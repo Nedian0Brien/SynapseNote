@@ -1,14 +1,11 @@
 import { plural } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react/macro';
 import { WorkspaceSuccessSchema } from '@nedian0brien/synapsenote-core';
-import type { FileTreeDropResult, FileTreeRenameEvent } from '@pierre/trees';
 import { useTheme } from 'next-themes';
 import { startTransition, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { fileEntryToTreePath, folderPathToTreeDirectoryPath } from '@/components/file-tree-adapter';
-import type { FileTreeTarget } from '@/components/file-tree-operations';
-import { type FileEntry, isAssetEntry } from '@/components/file-tree-utils';
-import { coerceTrashFailureReason, type TrashFailedTarget } from '@/components/TrashFailureModal';
+import { folderPathToTreeDirectoryPath } from '@/components/file-tree-adapter';
+import { coerceTrashFailureReason } from '@/components/TrashFailureModal';
 import { asDirectoryHandle } from '@/components/use-selection-mirror';
 import { useDocumentCollaboration } from '@/editor/document-context/useDocumentCollaboration';
 import { useDocumentTabs } from '@/editor/document-context/useDocumentTabs';
@@ -16,7 +13,6 @@ import { assetTabId, docTabId, folderTabId } from '@/editor/editor-tabs';
 import { useConflicts } from '@/hooks/use-conflicts';
 import { useConfigContext } from '@/lib/config-provider';
 import { emitDocumentsChanged } from '@/lib/documents-events';
-import type { PageHeaderRenameResult } from '@/lib/page-header-rename-events';
 import { parseSuccessOrWarn } from '@/lib/parse-server-response';
 import { FileTreeDialogs } from './file-tree/FileTreeDialogs';
 import { FileTreeSurface } from './file-tree/FileTreeSurface';
@@ -24,8 +20,10 @@ import type { FileTreeProps } from './file-tree/file-tree-types';
 import { useFileTreeCommandSubscriptions } from './file-tree/useFileTreeCommandSubscriptions';
 import { useFileTreeConnectivity } from './file-tree/useFileTreeConnectivity';
 import { useFileTreeCreation } from './file-tree/useFileTreeCreation';
+import { useFileTreeDocumentState } from './file-tree/useFileTreeDocumentState';
 import { useFileTreeDragAndDrop } from './file-tree/useFileTreeDragAndDrop';
 import { useFileTreeImperativeHandle } from './file-tree/useFileTreeImperativeHandle';
+import { useFileTreeInteractionState } from './file-tree/useFileTreeInteractionState';
 import { useFileTreeKeyboard } from './file-tree/useFileTreeKeyboard';
 import { useFileTreeModel } from './file-tree/useFileTreeModel';
 import { createDuplicateFileTreeMutation } from './file-tree/useFileTreeMutations';
@@ -42,28 +40,6 @@ import { useHandoffDispatch } from './handoff/useHandoffDispatch';
 import { useInstalledAgents } from './handoff/useInstalledAgents';
 
 export type { FileTreeHandle } from './file-tree/file-tree-types';
-
-interface FileTreeDeleteRequest {
-  targets: FileTreeTarget[];
-}
-
-/**
- * Per-target state retained across a failed Trash IPC so the
- * `TrashFailureModal` can offer Retry — re-runs Step 1 against the original
- * targets — and Delete Permanently — calls today's `POST /api/delete-path`
- * hard-delete against the targets that failed.
- *
- * The full original target shape is preserved (not just the path) so the
- * fallback hard-delete + tab-close cascade has the same data shape today's
- * single-step delete uses. Cancel dismisses without action; the user's
- * editor tabs are still open (tab-close only fires after a successful Step 1
- * trash).
- */
-interface TrashFailureRequest {
-  failed: TrashFailedTarget[];
-  /** Originals — re-fed to Retry; failed targets re-fed to Delete Permanently. */
-  originalTargets: FileTreeTarget[];
-}
 
 interface WorkspaceInfo {
   contentDir: string;
@@ -83,9 +59,34 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
   const { okignoreBinding, merged } = useConfigContext();
   const sidebarDocumentTabBehavior =
     merged?.editor?.sidebarOpenBehavior === 'current-tab' ? 'replace-active' : 'append';
-  const [documents, setDocuments] = useState<FileEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    documents,
+    setDocuments,
+    loading,
+    setLoading,
+    error,
+    setError,
+    truncatedShownCount,
+    setTruncatedShownCount,
+    unfilteredRootEntryCount,
+    setUnfilteredRootEntryCount,
+    busyPath,
+    setBusyPath,
+    documentsRef,
+    assetTreePaths,
+    assetTreePathsRef,
+    busyPathRef,
+    recentLocalAddsRef,
+    lazyLoadedDirTreePathsRef,
+    lazyChildFetchControllersRef,
+    lazyChildFetchGenerationRef,
+    prevExpandedFolderTreePathsRef,
+    showHiddenFilesRef,
+    showOnlyMarkdownFilesRef,
+    showOkFoldersRef,
+    treeVisibilityFromRefs,
+    refreshDocsScheduleRef,
+  } = useFileTreeDocumentState();
   const {
     activeDocName,
     activeTarget,
@@ -100,23 +101,6 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     navigateToAssetWithPulse,
     activateTreePath,
   } = useFileTreeNavigation({ documents, sidebarDocumentTabBehavior });
-  // Count of entries the server returned when the showAll walk hit its entry
-  // cap (so the list is a partial prefix); null when the list is complete.
-  const [truncatedShownCount, setTruncatedShownCount] = useState<number | null>(null);
-  // Pre-filter size of the most recent depth-1 root listing, captured where
-  // the listing lands. The filtered `documents` state can't distinguish an
-  // empty project from filters hiding everything (raw listings aren't
-  // retained), so the empty slot's classifier reads this signal instead.
-  const [unfilteredRootEntryCount, setUnfilteredRootEntryCount] = useState(0);
-  const [busyPath, setBusyPath] = useState<string | null>(null);
-  const [deleteRequest, setDeleteRequest] = useState<FileTreeDeleteRequest | null>(null);
-  /**
-   * Set when `shell.trashItem` returns `{ ok: false }` for one or more
-   * targets during the Step 1 trash flow. Drives the rendering of
-   * `TrashFailureModal`. Cleared on Cancel; cleared on Delete Permanently /
-   * Retry after the follow-up flow completes.
-   */
-  const [trashFailure, setTrashFailure] = useState<TrashFailureRequest | null>(null);
   // Tracks the project-level conflict list so delete/move-to-trash can refuse
   // up front when a target (or any child of a target folder) is conflicted.
   // The HTTP `handleDeletePath` already gates conflicts; the Electron Move-
@@ -124,103 +108,37 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
   // refuse here before the file leaves disk.
   const { conflicts: activeConflicts } = useConflicts();
   const [workspace, setWorkspace] = useState<WorkspaceInfo | null>(null);
-  // Clicking the tree's empty content area "deselects" the active row *for
-  // creation purposes only*: New file / New folder land at the project root
-  // instead of next to the open doc, while the editor keeps showing whatever
-  // was open (activeTarget is untouched). When set, `activeTreePath` resolves
-  // to null so `useSelectionMirror` drops the row highlight; it re-couples the
-  // moment the active target changes (open a row / navigate elsewhere) or the
-  // user selects another row. FileSidebar reads this via the imperative handle
-  // to route the create parent dir to ''.
-  const [creationDirCleared, setCreationDirCleared] = useState(false);
-  const creationDirClearedRef = useRef(creationDirCleared);
-  // Active-document ancestors expand automatically when navigation reveals a
-  // document, but a later disclosure click is authoritative: the user may
-  // collapse that ancestor without changing the open document. Remember only
-  // collapsed *active* ancestors so refreshes do not immediately reopen them;
-  // navigation clears this set and reveals the next active target normally.
-  const [userCollapsedActiveAncestorPaths, setUserCollapsedActiveAncestorPaths] = useState<
-    ReadonlySet<string>
-  >(() => new Set());
-  const userCollapsedActiveAncestorPathsRef = useRef<ReadonlySet<string>>(new Set());
-  // Imperative-handle subscribers (FileSidebar) that need to react to
-  // `creationDirCleared` changes — Pierre's `model.subscribe` only fires on
-  // tree-model mutations, not React state, so the handle multiplexes both.
-  const handleListenersRef = useRef<Set<() => void>>(new Set());
-
-  const documentsRef = useRef(documents);
-  const pageMetaRef = useRef(pageMeta);
-  const pendingExactFileSelectionRef = useRef<string | null>(null);
-  const activeDocNameRef = useRef(activeDocName);
-  const assetTreePaths = new Set(
-    documents.filter(isAssetEntry).map((entry) => fileEntryToTreePath(entry)),
-  );
-  const assetTreePathsRef = useRef(assetTreePaths);
-  const hoveredPrewarmDocRef = useRef<string | null>(null);
-  const suppressSelectionRef = useRef(false);
-  const sidebarDragInProgressRef = useRef(false);
-  const sidebarDragClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const externalFileDropTargetRef = useRef<{ row: HTMLElement | null; root: HTMLElement | null }>({
-    row: null,
-    root: null,
-  });
-  const uploadExternalFilesRef = useRef<
-    (files: readonly File[], parentDir: string, busyPath: string) => void
-  >(() => {});
-  const busyPathRef = useRef<string | null>(null);
-  const copiedKeyboardTargetRef = useRef<FileTreeTarget | null>(null);
-  // Tracks locally-added tree paths (file/folder creates) with the timestamp
-  // when they were optimistically inserted into `documents` state. Used by
-  // `refreshDocs` to preserve entries the server's file-watcher index has not
-  // yet picked up — without this, the `setDocuments(serverResponse)` call below
-  // overwrites local optimistic state, dropping the new entry and breaking the
-  // adjacent right-click context-menu flow. The underlying race class is
-  // parcel-watcher inotify-event delivery lag on Linux CI. Entries expire
-  // after STALE_REFRESH_PRESERVE_WINDOW_MS or when the server confirms.
-  const recentLocalAddsRef = useRef<Map<string, number>>(new Map());
-  // Lazy Show All expansion (client half): folders fetch their
-  // children on first expand via `?showAll=true&dir=<folder>&depth=1`. All
-  // three refs key by folder TREE path ('team/'). The loaded-dirs cache and
-  // any in-flight child fetches are scoped to one refresh cycle — refreshDocs
-  // aborts the fetches, clears the cache, and bumps the generation stamp so a
-  // child response racing a root re-seed is discarded instead of splicing
-  // stale entries.
-  const lazyLoadedDirTreePathsRef = useRef<Set<string>>(new Set());
-  const lazyChildFetchControllersRef = useRef<Map<string, AbortController>>(new Map());
-  const lazyChildFetchGenerationRef = useRef(0);
-  // Snapshot the expanded-folder diff compares against to detect newly
-  // expanded folders. Pierre has no expand callback, so the model-subscribe
-  // diff is the one mechanism covering row clicks, ArrowRight, drag-hover
-  // auto-open, and programmatic expansion alike.
-  const prevExpandedFolderTreePathsRef = useRef<ReadonlySet<string>>(new Set());
-  // The async fetch closures in the docs refresh effect are created once at
-  // mount; reading the visibility toggles directly would capture their
-  // mount-time values. The refs let a closure read the latest toggle state
-  // when the response actually lands. Initialized to `false` (matches the
-  // cold-start defaults before config loads); synced in the bulk
-  // useLayoutEffect below.
-  const showHiddenFilesRef = useRef<boolean>(false);
-  const showOnlyMarkdownFilesRef = useRef<boolean>(false);
-  const showOkFoldersRef = useRef<boolean>(false);
-  const treeVisibilityFromRefs = () => ({
-    showHiddenFiles: showHiddenFilesRef.current,
-    showOnlyMarkdownFiles: showOnlyMarkdownFilesRef.current,
-    showOkFolders: showOkFoldersRef.current,
-  });
-  // Hoists the docs scheduler's `request()` out of its effect closure so
-  // the showHiddenFiles-flip effect can re-fetch without re-mounting the
-  // listener / scheduler. Set to a callable in the docs effect; cleared on
-  // unmount.
-  const refreshDocsScheduleRef = useRef<(() => void) | null>(null);
-  const fileTreeHostRef = useRef<HTMLDivElement | null>(null);
-  const handleSelectionChangeRef = useRef<(selectedPaths: readonly string[]) => void>(() => {});
-  const handleRenameRef = useRef<(event: FileTreeRenameEvent) => Promise<PageHeaderRenameResult>>(
-    async () => ({ ok: false, message: 'Rename is unavailable' }),
-  );
-  const handleRenameErrorRef = useRef<(message: string) => void>((message) => toast.error(message));
-  const handleDropCompleteRef = useRef<(event: FileTreeDropResult) => void>(() => {});
-  const activeTargetRef = useRef(activeTarget);
-  const [emptyExternalFileDropActive, setEmptyExternalFileDropActive] = useState(false);
+  const {
+    deleteRequest,
+    setDeleteRequest,
+    trashFailure,
+    setTrashFailure,
+    creationDirCleared,
+    setCreationDirCleared,
+    creationDirClearedRef,
+    userCollapsedActiveAncestorPaths,
+    setUserCollapsedActiveAncestorPaths,
+    userCollapsedActiveAncestorPathsRef,
+    handleListenersRef,
+    pageMetaRef,
+    pendingExactFileSelectionRef,
+    activeDocNameRef,
+    hoveredPrewarmDocRef,
+    suppressSelectionRef,
+    sidebarDragInProgressRef,
+    sidebarDragClearTimerRef,
+    externalFileDropTargetRef,
+    uploadExternalFilesRef,
+    copiedKeyboardTargetRef,
+    fileTreeHostRef,
+    handleSelectionChangeRef,
+    handleRenameRef,
+    handleRenameErrorRef,
+    handleDropCompleteRef,
+    activeTargetRef,
+    emptyExternalFileDropActive,
+    setEmptyExternalFileDropActive,
+  } = useFileTreeInteractionState({ pageMeta, activeDocName, activeTarget });
 
   const {
     reconnecting,
@@ -473,6 +391,7 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
   // Bridge `creationDirCleared` (React state) to the imperative handle's
   // subscribers (FileSidebar) — Pierre's model.subscribe doesn't observe React
   // state, so notify the handle listeners explicitly on change.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: both refs are stable lifecycle holders returned by the interaction-state hook.
   useEffect(() => {
     creationDirClearedRef.current = creationDirCleared;
     for (const listener of handleListenersRef.current) listener();
