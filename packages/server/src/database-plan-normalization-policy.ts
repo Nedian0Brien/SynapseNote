@@ -3,10 +3,13 @@ import {
   canonicalizeDatabaseDateValue,
   canonicalizeDatabasePlaceValue,
   type DatabaseDefinition,
+  type DatabaseDocumentId,
   DatabaseFilesValueSchema,
+  type DatabaseFileValue,
   type DatabaseFilter,
   type DatabasePerson,
   DatabaseRecordIdSchema,
+  type DatabaseRecordPageLayoutOverride,
   databaseFileIdentity,
   findDatabasePersonByReference,
   isSafeDatabaseAssetPath,
@@ -14,6 +17,7 @@ import {
   validateDatabasePropertyConstraints,
 } from '@nedian0brien/synapsenote-core';
 import type { DatabaseNormalizedRecordMutationOperation } from './database-plan-artifacts.ts';
+import type { DatabaseDesiredStateDraft } from './database-plan-draft-contracts.ts';
 
 export function normalizeDatabaseFilter(
   filter: unknown,

@@ -25,6 +25,8 @@ export { DatabaseRecordMutationSchema };
 
 import {
   type DatabaseDraftArtifact,
+  type DatabasePlanArtifact,
+  type DatabasePlanConflict,
   DatabasePlanError,
   type DatabaseTargetResolution,
   type DatabaseVerificationDraftResult,
