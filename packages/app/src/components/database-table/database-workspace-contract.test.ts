@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'bun:test';
 import {
+  createDatabaseWorkspaceRenderContext,
+  resolveDatabaseWorkspaceSelectedViewId,
+} from '../database-workspace-controller-boundaries';
+import {
   commandFailure,
   databaseTableIdentity,
   deriveDatabaseTablePhase,
@@ -41,6 +45,40 @@ describe('database workspace state contract', () => {
     expect(commandFailure('unsupported', 'This command is not available.', true)).toEqual({
       ok: false,
       error: { code: 'unsupported', message: 'This command is not available.', retryable: true },
+    });
+  });
+
+  test('restores a persisted saved view only when the current selection is empty', () => {
+    expect(
+      resolveDatabaseWorkspaceSelectedViewId({
+        selectedViewId: '',
+        availableViewIds: ['view_table', 'view_board'],
+        persistedViewId: 'view_board',
+        defaultViewId: 'view_table',
+      }),
+    ).toBe('view_board');
+    expect(
+      resolveDatabaseWorkspaceSelectedViewId({
+        selectedViewId: 'removed_view',
+        availableViewIds: ['view_table', 'view_board'],
+        persistedViewId: 'view_board',
+        defaultViewId: 'view_table',
+      }),
+    ).toBe('');
+  });
+
+  test('builds render context without dropping route identity or callbacks', () => {
+    const onOpenChange = () => {};
+    const context = createDatabaseWorkspaceRenderContext({
+      selection: { databaseId: 'db_tasks', sourceId: 'ds_tasks' },
+      selectedViewId: 'view_table',
+      onOpenChange,
+    });
+
+    expect(context).toEqual({
+      selection: { databaseId: 'db_tasks', sourceId: 'ds_tasks' },
+      selectedViewId: 'view_table',
+      onOpenChange,
     });
   });
 });

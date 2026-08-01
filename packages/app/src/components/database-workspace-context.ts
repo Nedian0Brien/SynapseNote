@@ -1,4 +1,4 @@
-import type { useDatabaseWorkspaceController } from './use-database-workspace-controller-runtime';
+import type { useDatabaseWorkspaceController } from './use-database-workspace-controller';
 
 /**
  * Render context shared by workspace presentation slices.
