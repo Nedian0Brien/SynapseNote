@@ -1,5 +1,6 @@
 import type {
   DatabaseProperty,
+  DatabaseQueryResult,
   DatabaseSource,
   DatabaseSourceMapping,
   DatabaseView,
@@ -30,13 +31,95 @@ import {
 import { duplicateDatabaseView } from '@/lib/database-view-lifecycle';
 import { saveDatabaseLastOpenedView } from '@/lib/database-view-state';
 import { subscribeToDatabaseChanged } from '@/lib/documents-events';
-import type { DatabaseSelectProperty } from './DatabaseTableGrid';
+import type { DatabaseSelectProperty, LoadStatus } from './DatabaseTableGrid';
 
 import { databaseSchemaMutationPolicy, isDatabaseSelectProperty } from './DatabaseTableGrid';
 
-import type { DatabaseWorkspaceControllerContext } from './database-workspace-context';
+import type { DatabaseDescription } from '@/lib/database-catalog-client';
+import type { DatabaseWorkspaceReadModel } from '@/lib/use-database-workspace-read-model';
+import type { DatabaseTableDialogProps } from './database-workspace-types';
+import type { useDatabaseWorkspaceControllerState } from './use-database-workspace-controller-state';
+import type { useDatabaseWorkspaceMutationCommands } from './useDatabaseWorkspaceMutationCommands';
 
-export function useDatabaseWorkspaceViewCommands(context: DatabaseWorkspaceControllerContext) {
+type DatabaseWorkspaceControllerState = ReturnType<typeof useDatabaseWorkspaceControllerState>;
+type DatabaseWorkspaceMutationCommands = ReturnType<typeof useDatabaseWorkspaceMutationCommands>;
+
+export interface DatabaseWorkspaceViewCommandsContext
+  extends Pick<
+    DatabaseWorkspaceControllerState,
+    | 'selectedViewId'
+    | 'pageStatus'
+    | 'setPageStatus'
+    | 'setPageCursor'
+    | 'setRefresh'
+    | 'locallyHandledRecordIdsRef'
+    | 'mutationStatus'
+    | 'optionId'
+    | 'optimisticViewOrder'
+    | 'selection'
+    | 'agentScopeOverride'
+    | 'setAgentMenuOpen'
+    | 'setSelectedViewId'
+    | 'setTableCalculations'
+    | 'setFilterDialogOpen'
+    | 'setViewSettingsOpen'
+    | 'setViewManagerOpen'
+    | 'setSelectedRecordIds'
+    | 'pageTitleDraft'
+    | 'setPageTitleEditing'
+    | 'setMutationError'
+    | 'setViewRenameTarget'
+    | 'setPageError'
+    | 'undoStatus'
+    | 'redoStatus'
+    | 'lastUndoToken'
+    | 'lastRedoToken'
+    | 'setGhost'
+    | 'setMutationStatus'
+    | 'setButtonPlan'
+    | 'setButtonStatus'
+    | 'setOptimisticViewOrder'
+    | 'setDraggedViewId'
+    | 'setDragOverViewId'
+    | 'optionPropertyId'
+    | 'setOptionPropertyId'
+    | 'setOptionId'
+    | 'setOptionName'
+    | 'setOptionColor'
+    | 'setOptionMergeTargetId'
+    | 'setOptionPreview'
+    | 'setSelectOptionsOpen'
+    | 'computedPropertyId'
+    | 'uniqueIdPropertyId'
+    | 'placePropertyId'
+    | 'buttonPropertyId'
+    | 'conversionPropertyId'
+    | 'selectedRecordIds'
+    | 'setAgentScopeOverride'
+    | 'setPropertyFilterTargetId'
+    | 'setPropertySortTargetId'
+    | 'viewRenameTarget'
+    | 'setAppearanceOpen'
+    | 'preserveSelectionOnRefreshRef'
+  > {
+  description: DatabaseDescription | null;
+  result: DatabaseQueryResult | null;
+  commitDefaultViewChange: DatabaseWorkspaceMutationCommands['commitDefaultViewChange'];
+  databasePageTitle: string;
+  runMutation: DatabaseWorkspaceMutationCommands['runMutation'];
+  isPagePresentation: boolean;
+  open: boolean;
+  onOpenChange: DatabaseTableDialogProps['onOpenChange'];
+  redoLastChange: () => void;
+  undoLastChange: () => void;
+  reviewResolver: DatabaseWorkspaceControllerState['reviewResolverRef'];
+  catalogStatus: DatabaseWorkspaceReadModel['catalogStatus'];
+  tableStatus: LoadStatus;
+}
+
+export function useDatabaseWorkspaceViewCommands(
+  context: DatabaseWorkspaceViewCommandsContext & Record<string, unknown>,
+) {
   const {
     description,
     selectedViewId,
