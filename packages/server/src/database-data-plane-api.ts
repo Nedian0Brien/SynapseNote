@@ -10,7 +10,6 @@ import {
   DatabaseDefinitionSchema,
   DatabaseFormValueSchema,
   DatabaseGroupMembershipsSchema,
-  DatabaseLinkedViewSettingsSchema,
   DatabaseMarkdownRecordRevisionSetSchema,
   DatabasePlaceValueSchema,
   DatabasePropertySchema,
@@ -36,15 +35,8 @@ import {
   type DatabaseAgentPromptRetentionStore,
 } from './database-agent-prompt-retention.ts';
 import type { DatabaseAgentRunStore } from './database-agent-run-store.ts';
-import {
-  DatabaseAutomationEventSchema,
-  DatabaseAutomationRunSchema,
-  type DatabaseAutomationService,
-} from './database-automation.ts';
-import {
-  DatabaseAutomationNotificationSchema,
-  type DatabaseAutomationNotificationStore,
-} from './database-automation-notification-store.ts';
+import type { DatabaseAutomationService } from './database-automation.ts';
+import type { DatabaseAutomationNotificationStore } from './database-automation-notification-store.ts';
 import type { DatabaseAutonomyStore } from './database-autonomy-store.ts';
 import { DatabaseButtonPlanInputSchema } from './database-button.ts';
 import {
@@ -93,10 +85,7 @@ import { DatabaseTaskSchema } from './database-task-contract.ts';
 import { type DatabaseTaskService, DatabaseTaskServiceError } from './database-task-service.ts';
 import type { DatabaseTaskStore } from './database-task-store.ts';
 import { getDatabaseTelemetry } from './database-telemetry.ts';
-import {
-  DatabaseTemplateRunSchema,
-  type DatabaseTemplateScheduler,
-} from './database-template-scheduler.ts';
+import type { DatabaseTemplateScheduler } from './database-template-scheduler.ts';
 import { errorResponse } from './http/error-response.ts';
 import { withValidation } from './http/request-validation.ts';
 import { successResponse } from './http/success-response.ts';
@@ -106,372 +95,69 @@ export {
   DATABASE_API_SCHEMA_VERSION_HEADER,
 } from './database-data-plane-api-response.ts';
 
-export const DatabaseTemplateRunsRequestSchema = z
-  .object({
-    databaseId: z.string().startsWith('db_').optional(),
-    templateId: z.string().startsWith('tpl_').optional(),
-    limit: z.number().int().min(1).max(500).default(100),
-  })
-  .strict();
-export const DatabaseTemplateRunsResponseSchema = z
-  .object({ runs: z.array(DatabaseTemplateRunSchema).max(500) })
-  .strict();
+import {
+  DatabaseAutomationRequestSchema,
+  DatabaseAutomationResponseSchema,
+  DatabaseTemplateRunsRequestSchema,
+  DatabaseTemplateRunsResponseSchema,
+} from './database-data-plane-api-contracts-automation.ts';
 
-const DatabaseAutomationTestEventSchema = z
-  .object({
-    deduplicationKey: z.string().min(1).max(256),
-    databaseId: z.string().startsWith('db_'),
-    kind: z.enum([
-      'record_added',
-      'property_changed',
-      'schedule',
-      'form_submitted',
-      'button_invoked',
-    ]),
-    occurredAt: z.string().datetime().optional(),
-    sourceId: z.string().startsWith('ds_').nullable().optional(),
-    recordId: z.string().startsWith('rec_').nullable().optional(),
-    recordRevision: z
-      .string()
-      .regex(/^sha256:[a-f0-9]{64}$/)
-      .nullable()
-      .optional(),
-    propertyId: z.string().startsWith('prop_').nullable().optional(),
-    viewId: z.string().startsWith('view_').nullable().optional(),
-    buttonId: z.string().startsWith('dbbtn_').nullable().optional(),
-    scheduledFor: z.string().datetime().nullable().optional(),
-  })
-  .strict();
+export type {
+  DatabaseAutomationRequest,
+  DatabaseAutomationResponse,
+  DatabaseTemplateRunsRequest,
+  DatabaseTemplateRunsResponse,
+} from './database-data-plane-api-contracts-automation.ts';
+export {
+  DatabaseAutomationRequestSchema,
+  DatabaseAutomationResponseSchema,
+  DatabaseTemplateRunsRequestSchema,
+  DatabaseTemplateRunsResponseSchema,
+} from './database-data-plane-api-contracts-automation.ts';
 
-export const DatabaseAutomationRequestSchema = z.discriminatedUnion('action', [
-  z
-    .object({
-      action: z.literal('list'),
-      databaseId: z.string().startsWith('db_').optional(),
-      automationId: z.string().startsWith('auto_').optional(),
-      limit: z.number().int().min(1).max(500).default(100),
-    })
-    .strict(),
-  z
-    .object({
-      action: z.literal('dry_run'),
-      databaseId: z.string().startsWith('db_'),
-      automationId: z.string().startsWith('auto_'),
-      event: DatabaseAutomationTestEventSchema,
-    })
-    .strict(),
-  z
-    .object({
-      action: z.literal('test_event'),
-      databaseId: z.string().startsWith('db_'),
-      automationId: z.string().startsWith('auto_'),
-      event: DatabaseAutomationTestEventSchema,
-    })
-    .strict(),
-  z
-    .object({
-      action: z.literal('notifications'),
-      recipientId: z.string().startsWith('person_').optional(),
-      unreadOnly: z.boolean().default(false),
-      limit: z.number().int().min(1).max(500).default(100),
-    })
-    .strict(),
-  z
-    .object({
-      action: z.literal('mark_notification_read'),
-      notificationId: z.string().startsWith('autonote_'),
-    })
-    .strict(),
-]);
+import {
+  DATABASE_INTERNAL_ERROR_EXTENSIONS,
+  DatabaseCatalogRequestSchema,
+  DatabaseComputedPropertyPreviewRequestSchema,
+  DatabaseContextInspectionRequestSchema,
+  DatabaseContextPackRequestSchema,
+  DatabaseDescribeRequestSchema,
+  DatabaseEmptyRequestSchema,
+  DatabaseFindRequestSchema,
+  DatabaseFormSubmitRequestSchema,
+  DatabaseMarkdownTableExportRequestSchema,
+  DatabaseQueryRequestSchema,
+  DatabaseRecordRequestSchema,
+  DatabaseRetrieveRequestSchema,
+} from './database-data-plane-api-contracts-read-requests.ts';
 
-const DatabaseAutomationPlanSummarySchema = z
-  .object({
-    automationId: z.string().startsWith('auto_'),
-    automationVersion: z.number().int().positive(),
-    internalPlan: z
-      .object({
-        id: z.string().startsWith('plan_'),
-        hash: z.string().regex(/^sha256:[a-f0-9]{64}$/),
-        committable: z.boolean(),
-        migrationRequired: z.boolean(),
-        risk: z.object({
-          level: z.enum(['low', 'medium', 'high']),
-          reasons: z.array(z.string()),
-        }),
-        records: z
-          .object({
-            creates: z.number().int().nonnegative(),
-            updates: z.number().int().nonnegative(),
-          })
-          .strict(),
-      })
-      .strict()
-      .nullable(),
-    notifications: z.array(
-      z
-        .object({
-          actionId: z.string(),
-          recipientIds: z.array(z.string()),
-          title: z.string(),
-        })
-        .strict(),
-    ),
-    external: z.array(
-      z
-        .object({
-          actionId: z.string(),
-          kind: z.enum(['external_webhook', 'external_email']),
-          connectionId: z.string().startsWith('conn_'),
-          egressBytes: z.number().int().nonnegative(),
-          policyId: z.string(),
-          policyRevision: z.string(),
-        })
-        .strict(),
-    ),
-  })
-  .strict();
+export type {
+  DatabaseCatalogRequest,
+  DatabaseComputedPropertyPreviewRequest,
+  DatabaseContextInspectionRequest,
+  DatabaseContextPackRequest,
+  DatabaseDescribeRequest,
+  DatabaseFindRequest,
+  DatabaseFormSubmitRequest,
+  DatabaseMarkdownTableExportRequest,
+  DatabaseQueryRequest,
+  DatabaseRecordRequest,
+  DatabaseRetrieveRequest,
+} from './database-data-plane-api-contracts-read-requests.ts';
 
-export const DatabaseAutomationResponseSchema = z.discriminatedUnion('action', [
-  z
-    .object({
-      action: z.literal('list'),
-      runs: z.array(DatabaseAutomationRunSchema).max(500),
-    })
-    .strict(),
-  z
-    .object({
-      action: z.literal('dry_run'),
-      plan: DatabaseAutomationPlanSummarySchema,
-    })
-    .strict(),
-  z
-    .object({
-      action: z.literal('test_event'),
-      event: DatabaseAutomationEventSchema,
-      runs: z.array(DatabaseAutomationRunSchema).max(500),
-    })
-    .strict(),
-  z
-    .object({
-      action: z.literal('notifications'),
-      notifications: z.array(DatabaseAutomationNotificationSchema).max(500),
-    })
-    .strict(),
-  z
-    .object({
-      action: z.literal('mark_notification_read'),
-      notificationId: z.string().startsWith('autonote_'),
-    })
-    .strict(),
-]);
-
-const DatabaseEmptyRequestSchema = z.object({}).strict();
-export const DatabaseCatalogRequestSchema = z
-  .object({
-    q: z.string().trim().max(2_000).optional(),
-    ifCatalogRevision: z
-      .string()
-      .regex(/^sha256:[a-f0-9]{64}$/)
-      .optional(),
-  })
-  .strict();
-export const DatabaseContextInspectionRequestSchema = z
-  .object({
-    packId: z.string().startsWith('pack_').optional(),
-    databaseId: z.string().startsWith('db_').optional(),
-    sourceId: z.string().startsWith('ds_').optional(),
-    viewId: z.string().startsWith('view_').optional(),
-    recordId: z.string().startsWith('rec_').optional(),
-    recordIds: z
-      .string()
-      .refine(
-        (value) =>
-          value.trim().length > 0 &&
-          value.split(',').every((recordId) => /^rec_[a-zA-Z0-9_-]+$/.test(recordId.trim())),
-        'recordIds must be a comma-separated list of record IDs',
-      )
-      .optional(),
-    propertyIds: z
-      .string()
-      .refine(
-        (value) =>
-          value.trim().length > 0 &&
-          value.split(',').every((propertyId) => /^prop_[a-zA-Z0-9_-]+$/.test(propertyId.trim())),
-        'propertyIds must be a comma-separated list of property IDs',
-      )
-      .optional(),
-  })
-  .strict();
-const DATABASE_INTERNAL_ERROR_EXTENSIONS = databaseProblemExtensions('internal_error');
-export const DatabaseDescribeRequestSchema = z
-  .object({
-    databaseId: z.string().min(1).optional(),
-    databaseKey: z.string().min(1).optional(),
-    sourceId: z.string().min(1).optional(),
-    ifSchemaRevision: z.string().startsWith('sha256:').optional(),
-  })
-  .strict()
-  .refine((value) => value.databaseId !== undefined || value.databaseKey !== undefined, {
-    message: 'databaseId or databaseKey is required',
-  });
-export const DatabaseRecordRequestSchema = z
-  .object({
-    databaseId: z.string().startsWith('db_'),
-    sourceId: z.string().startsWith('ds_'),
-    recordId: z.string().startsWith('rec_'),
-  })
-  .strict();
-export const DatabaseMarkdownTableExportRequestSchema = z
-  .object({
-    databaseId: z.string().startsWith('db_'),
-    sourceId: z.string().startsWith('ds_'),
-    mode: z.enum(['canonical_markdown', 'computed_snapshot']),
-    query: DatabaseQuerySchema.optional(),
-  })
-  .strict();
-const DatabaseComputedPropertySchema = DatabasePropertySchema.refine(
-  (property) => property.type === 'formula' || property.type === 'rollup',
-  { message: 'property must be a Formula or Rollup property' },
-);
-export const DatabaseComputedPropertyPreviewRequestSchema = z
-  .object({
-    databaseId: z.string().startsWith('db_'),
-    sourceId: z.string().startsWith('ds_'),
-    recordId: z.string().startsWith('rec_'),
-    property: DatabaseComputedPropertySchema,
-  })
-  .strict();
-export const DatabaseQueryRequestSchema = z
-  .object({
-    databaseId: z.string().min(1),
-    sourceId: z.string().min(1),
-    viewId: z.string().startsWith('view_').optional(),
-    agentViewId: z.string().startsWith('view_').optional(),
-    viewOverrides: DatabaseLinkedViewSettingsSchema.optional(),
-    query: DatabaseQuerySchema.optional(),
-    deltaSince: z
-      .object({
-        queryId: z.string().startsWith('qry_'),
-        recordRevisions: z.record(z.string(), z.string().nullable()),
-        isComplete: z.boolean(),
-      })
-      .strict()
-      .optional(),
-  })
-  .strict()
-  .refine((value) => value.viewOverrides === undefined || value.viewId !== undefined, {
-    message: 'viewOverrides requires a saved viewId',
-    path: ['viewOverrides'],
-  });
-export const DatabaseFormSubmitRequestSchema = z
-  .object({
-    databaseId: z.string().startsWith('db_'),
-    sourceId: z.string().startsWith('ds_'),
-    viewId: z.string().startsWith('view_'),
-    submissionId: z.string().regex(/^sub_[A-Za-z0-9][A-Za-z0-9_-]{6,127}$/),
-    startedAt: z.string().datetime({ offset: true }),
-    answers: z.record(z.string().startsWith('prop_'), DatabaseFormValueSchema),
-    honeypot: z.string().max(500).optional(),
-  })
-  .strict();
-export const DatabaseFindRequestSchema = z
-  .object({
-    databaseId: z.string().min(1),
-    sourceId: z.string().min(1),
-    text: z.string().trim().min(1).max(2_000),
-    limit: z.number().int().min(1).max(500).optional(),
-  })
-  .strict();
-export const DatabaseRetrieveRequestSchema = z
-  .object({
-    databaseId: z.string().startsWith('db_'),
-    sourceId: z.string().startsWith('ds_'),
-    text: z.string().trim().min(1).max(2_000),
-    mode: z.enum(['lexical', 'semantic', 'hybrid']),
-    propertyIds: z.array(z.string().startsWith('prop_')).max(200).optional(),
-    includeBody: z.boolean().optional(),
-    lexicalWeight: z.number().finite().min(0).max(100).optional(),
-    semanticWeight: z.number().finite().min(0).max(100).optional(),
-    requireSemantic: z.boolean().optional(),
-    limit: z.number().int().min(1).max(100).optional(),
-  })
-  .strict()
-  .superRefine((input, context) => {
-    if (input.mode === 'hybrid' && (input.lexicalWeight ?? 1) + (input.semanticWeight ?? 1) <= 0) {
-      context.addIssue({
-        code: 'custom',
-        path: ['lexicalWeight'],
-        message: 'Hybrid lexical and semantic weights cannot both be zero',
-      });
-    }
-  });
-export const DatabaseContextPackRequestSchema = z
-  .object({
-    databaseId: z.string().min(1),
-    sourceId: z.string().min(1),
-    agentViewId: z.string().startsWith('view_').optional(),
-    goal: z.string().trim().min(1).max(2_000),
-    query: DatabaseQuerySchema.omit({ page: true, aggregate: true }).optional(),
-    propertyIds: z.array(z.string().min(1)).max(200).optional(),
-    maxTokens: z.number().int().min(128).max(100_000).optional(),
-    reserveTokens: z.number().int().min(0).max(50_000).optional(),
-    tokenizer: z.enum(['utf8_bytes_div3', 'utf8_bytes_div2']).optional(),
-    encoding: z.enum(['object_rows', 'columnar_dictionary']).optional(),
-    disclosure: z
-      .discriminatedUnion('level', [
-        z.object({ level: z.literal('records') }).strict(),
-        z
-          .object({
-            level: z.literal('evidence'),
-            searchText: z.string().trim().min(1).max(2_000),
-          })
-          .strict(),
-        z.object({ level: z.literal('full_body') }).strict(),
-      ])
-      .optional(),
-    relationExpansion: z
-      .object({
-        maxDepth: z.number().int().min(1).max(3),
-        maxRecords: z.number().int().min(1).max(500),
-        maxRecordsPerRelation: z.number().int().min(1).max(50),
-        projections: z
-          .array(
-            z
-              .object({
-                sourceId: z.string().min(1),
-                propertyIds: z.array(z.string().min(1)).min(1).max(200),
-              })
-              .strict(),
-          )
-          .max(100)
-          .optional(),
-      })
-      .strict()
-      .optional(),
-    cursor: z.string().min(1).optional(),
-  })
-  .strict()
-  .superRefine((value, ctx) => {
-    if (
-      value.agentViewId === undefined &&
-      (value.maxTokens === undefined ||
-        value.tokenizer === undefined ||
-        value.encoding === undefined)
-    ) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['maxTokens'],
-        message: 'maxTokens, tokenizer, and encoding are required when agentViewId is not provided',
-      });
-    }
-    if (value.maxTokens !== undefined && (value.reserveTokens ?? 0) >= value.maxTokens) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['reserveTokens'],
-        message: 'reserveTokens must be smaller than maxTokens',
-      });
-    }
-  });
+export {
+  DatabaseCatalogRequestSchema,
+  DatabaseComputedPropertyPreviewRequestSchema,
+  DatabaseContextInspectionRequestSchema,
+  DatabaseContextPackRequestSchema,
+  DatabaseDescribeRequestSchema,
+  DatabaseFindRequestSchema,
+  DatabaseFormSubmitRequestSchema,
+  DatabaseMarkdownTableExportRequestSchema,
+  DatabaseQueryRequestSchema,
+  DatabaseRecordRequestSchema,
+  DatabaseRetrieveRequestSchema,
+} from './database-data-plane-api-contracts-read-requests.ts';
 export const DatabasePlanRequestSchema = z.discriminatedUnion('action', [
   z
     .object({
