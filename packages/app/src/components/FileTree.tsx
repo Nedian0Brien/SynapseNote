@@ -10,7 +10,7 @@ import {
   type FileTreeDropResult,
   type FileTreeRenameEvent,
 } from '@pierre/trees';
-import { FileTree as PierreFileTree, useFileTree } from '@pierre/trees/react';
+import { useFileTree } from '@pierre/trees/react';
 import { useTheme } from 'next-themes';
 import {
   type DragEvent as ReactDragEvent,
@@ -43,7 +43,6 @@ import {
   treePathToAppPath,
   uploadedPathForSidebarDrop,
 } from '@/components/file-tree-adapter';
-import { createFileTreeStyle } from '@/components/file-tree-density';
 import { applyExtensionBadges } from '@/components/file-tree-extension-badge';
 import type {
   FileTreeTarget,
@@ -117,7 +116,6 @@ import { applyRenamedDocuments as reconcileRenamedDocuments } from './file-tree/
 import { FileTreeMenu } from './file-tree/FileTreeMenu';
 import {
   AGENT_DECORATION_ICON_ID,
-  FILE_TREE_CREATION_CLEARED_ATTR,
   FILE_TREE_DECORATION_SPRITE_SHEET,
   FILE_TREE_DENSITY_OPTIONS,
   FILE_TREE_UNSAFE_CSS,
@@ -128,6 +126,7 @@ import {
   MARKDOWN_FILE_ICON_ID,
   MARKDOWN_FILE_ICON_VIEWBOX,
 } from './file-tree/FileTreePresentation';
+import { FileTreeViewport } from './file-tree/FileTreeViewport';
 import {
   alternateMarkdownTreePath,
   hasSameStemMarkdownSiblingTreePath,
@@ -950,65 +949,6 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     normalizeSelectionPath,
     activateTreePath,
   });
-
-  // Feed the parent pane the tree's true content height so a short tree sits
-  // flush above the Skills section (no bottom-dock / header overlap) and a long
-  // one virtualizes + scrolls internally under the 70vh cap.
-  //
-  // The honest content height is the virtualizer's total-size, which it writes
-  // as an inline `height` on `[data-file-tree-virtualized-list]`. We can NOT use
-  // the scroller's scrollHeight / clientHeight: the shadow stylesheet stretches
-  // the list to `min-height: 100%` (so the drop target fills the pane), so every
-  // box metric clamps to the current pane height — feeding that back ratchets
-  // the pane to its 50vh bootstrap and never shrinks (the bug this fixes). The
-  // inline style is the only metric that reflects rows, not the container.
-  //
-  // Because the list's border-box stays clamped, a ResizeObserver never fires on
-  // content changes — watch the inline `style` attribute with a MutationObserver
-  // instead, plus model events (expand / collapse / add / remove) and resize.
-  useEffect(() => {
-    if (!onContentHeightChange) return;
-    let raf = 0;
-    let attachRaf = 0;
-    const getList = () =>
-      (fileTreeHostRef.current
-        ?.querySelector(FILE_TREE_TAG_NAME)
-        ?.shadowRoot?.querySelector('[data-file-tree-virtualized-list]') as HTMLElement | null) ??
-      null;
-    const report = () => {
-      const list = getList();
-      if (!list) return;
-      // Report 0 for a genuinely empty tree (collapses the pane so Skills sits
-      // flush); skip only the pre-paint state where the virtualizer hasn't set
-      // a height yet (the MutationObserver re-fires once it does).
-      const h = Number.parseFloat(list.style.height);
-      if (Number.isFinite(h)) onContentHeightChange(h);
-    };
-    const measure = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(report);
-    };
-    const mo = new MutationObserver(report);
-    const tryAttach = () => {
-      const list = getList();
-      if (list) {
-        mo.observe(list, { attributes: true, attributeFilter: ['style'] });
-        report();
-      } else {
-        attachRaf = requestAnimationFrame(tryAttach);
-      }
-    };
-    tryAttach();
-    const unsub = model.subscribe(measure);
-    window.addEventListener('resize', measure);
-    return () => {
-      cancelAnimationFrame(raf);
-      cancelAnimationFrame(attachRaf);
-      mo.disconnect();
-      unsub();
-      window.removeEventListener('resize', measure);
-    };
-  }, [onContentHeightChange, model]);
 
   // Bridge `creationDirCleared` (React state) to the imperative handle's
   // subscribers (FileSidebar) — Pierre's model.subscribe doesn't observe React
@@ -1985,54 +1925,52 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
   }
   return (
     <>
-      <div ref={fileTreeHostRef} className="flex min-h-0 flex-1 flex-col">
-        <PierreFileTree
-          header={
-            (error || reconnectNotice !== null || truncationNotice !== null) && (
-              <>
-                {reconnectNotice !== null ? (
-                  <FileTreeHeaderNotice kind="reconnecting">{reconnectNotice}</FileTreeHeaderNotice>
-                ) : (
-                  error && <FileTreeHeaderNotice kind="error">{error}</FileTreeHeaderNotice>
-                )}
-                {truncationNotice !== null && (
-                  <FileTreeHeaderNotice kind="info">{truncationNotice}</FileTreeHeaderNotice>
-                )}
-              </>
-            )
-          }
-          model={model}
-          style={createFileTreeStyle(resolvedTheme)}
-          // Forwarded onto the <file-tree-container> host; drives the
-          // focus-ring suppression in FILE_TREE_CREATION_CLEARED_CSS.
-          {...{ [FILE_TREE_CREATION_CLEARED_ATTR]: creationDirCleared ? '' : undefined }}
-          onClickCapture={handleTreeClickCapture}
-          onMouseMove={handleTreeMouseMove}
-          onMouseLeave={cancelCurrentHoverPrewarm}
-          renderContextMenu={(item, context) => (
-            <FileTreeMenu
-              item={item}
-              context={context}
-              anyActionBusy={anyActionBusy}
-              workspace={workspace}
-              handoff={handoff}
-              model={model}
-              okignoreBinding={okignoreBinding}
-              onStartCreating={startCreating}
-              onCreateFromTemplate={(parentDir, templateName) =>
-                startCreating('file', parentDir, { template: templateName })
-              }
-              onDuplicate={handleDuplicateTarget}
-              onDelete={(targets) => setDeleteRequest({ targets })}
-              onExpandSubtree={expandSubtree}
-              onCollapseSubtree={collapseSubtree}
-              folderTreePaths={folderTreePaths}
-              isAsset={assetTreePaths.has(item.path)}
-              documents={documents}
-            />
-          )}
-        />
-      </div>
+      <FileTreeViewport
+        hostRef={fileTreeHostRef}
+        model={model}
+        resolvedTheme={resolvedTheme}
+        creationDirCleared={creationDirCleared}
+        onContentHeightChange={onContentHeightChange}
+        header={
+          (error || reconnectNotice !== null || truncationNotice !== null) && (
+            <>
+              {reconnectNotice !== null ? (
+                <FileTreeHeaderNotice kind="reconnecting">{reconnectNotice}</FileTreeHeaderNotice>
+              ) : (
+                error && <FileTreeHeaderNotice kind="error">{error}</FileTreeHeaderNotice>
+              )}
+              {truncationNotice !== null && (
+                <FileTreeHeaderNotice kind="info">{truncationNotice}</FileTreeHeaderNotice>
+              )}
+            </>
+          )
+        }
+        onClickCapture={handleTreeClickCapture}
+        onMouseMove={handleTreeMouseMove}
+        onMouseLeave={cancelCurrentHoverPrewarm}
+        renderContextMenu={(item, context) => (
+          <FileTreeMenu
+            item={item}
+            context={context}
+            anyActionBusy={anyActionBusy}
+            workspace={workspace}
+            handoff={handoff}
+            model={model}
+            okignoreBinding={okignoreBinding}
+            onStartCreating={startCreating}
+            onCreateFromTemplate={(parentDir, templateName) =>
+              startCreating('file', parentDir, { template: templateName })
+            }
+            onDuplicate={handleDuplicateTarget}
+            onDelete={(targets) => setDeleteRequest({ targets })}
+            onExpandSubtree={expandSubtree}
+            onCollapseSubtree={collapseSubtree}
+            folderTreePaths={folderTreePaths}
+            isAsset={assetTreePaths.has(item.path)}
+            documents={documents}
+          />
+        )}
+      />
       <Dialog
         open={!!deleteRequest}
         onOpenChange={(open) => {
