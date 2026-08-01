@@ -86,7 +86,7 @@ describe('RFC 0011 server module boundary guard', () => {
     const src = serverSourceRoot(import.meta.filename);
     const leaves = databaseExtractionLeaves(src);
     const budgetedPaths = new Set(SERVER_MODULE_SIZE_BUDGETS.map(({ path }) => path));
-    expect(leaves.length).toBe(45);
+    expect(leaves.length).toBe(46);
     for (const modulePath of leaves) {
       expect(budgetedPaths.has(modulePath), `${modulePath} must have a size budget`).toBe(true);
       const budget = SERVER_MODULE_SIZE_BUDGETS.find((candidate) => candidate.path === modulePath);
@@ -118,6 +118,27 @@ describe('RFC 0011 server module boundary guard', () => {
       ),
     );
     expect(actual).toEqual([]);
+  });
+
+  test('HTTP handler port has exact family contracts rather than broad aliases', () => {
+    const src = serverSourceRoot(import.meta.filename);
+    const contract = readFileSync(
+      resolveServerModule(src, 'database-data-plane-api-handler-contracts.ts'),
+      'utf8',
+    );
+    const publicContract = readFileSync(
+      resolveServerModule(src, 'database-data-plane-contracts.ts'),
+      'utf8',
+    );
+
+    expect(contract).toContain('DatabaseDataPlaneReadHandlerPort');
+    expect(contract).toContain('DatabaseDataPlanePlanHandlerPort');
+    expect(contract).toContain('DatabaseDataPlaneMutationHandlerPort');
+    expect(contract).toContain('DatabaseDataPlaneAccessHandlerPort');
+    expect(contract).not.toMatch(/\.\.\.args:\s*\w*\[\]/);
+    expect(contract).not.toMatch(/\bany\b/);
+    expect(publicContract).not.toMatch(/DatabaseDataPlaneHandlerArguments/);
+    expect(publicContract).not.toMatch(/DatabaseDataPlaneHandlerResult/);
   });
 
   test('database facade budgets reject one additional source line', () => {

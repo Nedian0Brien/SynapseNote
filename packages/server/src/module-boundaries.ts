@@ -121,7 +121,7 @@ export const SERVER_MODULE_SIZE_BUDGETS: readonly ServerModuleSizeBudget[] = [
   },
   {
     path: 'database-data-plane.ts',
-    maxLines: 1_739,
+    maxLines: 1_744,
     owner: 'Owns database data-plane domain composition.',
   },
   {
@@ -226,7 +226,7 @@ export const SERVER_MODULE_SIZE_BUDGETS: readonly ServerModuleSizeBudget[] = [
   },
   {
     path: 'database-data-plane-commit-automation.ts',
-    maxLines: 268,
+    maxLines: 273,
     owner: 'Owns database commit automation coordination.',
   },
   {
@@ -236,8 +236,13 @@ export const SERVER_MODULE_SIZE_BUDGETS: readonly ServerModuleSizeBudget[] = [
   },
   {
     path: 'database-data-plane-contracts.ts',
-    maxLines: 323,
-    owner: 'Owns public database data-plane query, retrieval, and handler contracts.',
+    maxLines: 258,
+    owner: 'Owns public database data-plane query and retrieval contracts.',
+  },
+  {
+    path: 'database-data-plane-api-handler-contracts.ts',
+    maxLines: 231,
+    owner: 'Owns exact database API handler capability contracts.',
   },
   {
     path: 'database-data-plane-context-search-projection.ts',
@@ -261,7 +266,7 @@ export const SERVER_MODULE_SIZE_BUDGETS: readonly ServerModuleSizeBudget[] = [
   },
   {
     path: 'database-data-plane-markdown-adapters.ts',
-    maxLines: 263,
+    maxLines: 264,
     owner: 'Owns Markdown-table mutation and export adapters.',
   },
   {

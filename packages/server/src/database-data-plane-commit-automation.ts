@@ -14,7 +14,10 @@ import {
   type DatabaseMarkdownTableMutationRequest,
   mutateDatabaseMarkdownTable,
 } from './database-data-plane-markdown-adapters.ts';
-import type { DatabaseMarkdownTableWriter } from './database-markdown-table-writer.ts';
+import type {
+  DatabaseMarkdownTableMutationResult,
+  DatabaseMarkdownTableWriter,
+} from './database-markdown-table-writer.ts';
 import type { DatabasePlanArtifact, DatabasePlanEnginePort } from './database-plan-artifacts.ts';
 import type { DatabaseRecordIndex } from './database-record-index.ts';
 import type {
@@ -204,7 +207,9 @@ export function createDatabaseCommitAutomationCoordinator(port: CommitAutomation
       return result;
     },
 
-    async mutateMarkdownTable(input: DatabaseMarkdownTableMutationRequest): Promise<unknown> {
+    async mutateMarkdownTable(
+      input: DatabaseMarkdownTableMutationRequest,
+    ): Promise<DatabaseMarkdownTableMutationResult> {
       return mutateDatabaseMarkdownTable(
         {
           assertMutationAllowed: port.assertMutationAllowed,

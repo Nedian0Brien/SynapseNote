@@ -318,8 +318,8 @@ export function createDatabaseMutationCommitHandlers({
           DatabaseMarkdownTableMutationResponseSchema,
           {
             operation: body.operation,
-            ...(result as Record<string, unknown>),
-            ...slimMarkdownTableReceipt(result as { receipt?: unknown }),
+            ...result,
+            ...slimMarkdownTableReceipt(result),
           },
           {
             handler: 'database-markdown-table-mutation',

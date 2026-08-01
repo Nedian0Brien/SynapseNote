@@ -13,6 +13,7 @@ import {
   type DatabaseMarkdownTableCellMutationInput,
   type DatabaseMarkdownTableDocumentMoveInput,
   type DatabaseMarkdownTableLifecycleMutationInput,
+  type DatabaseMarkdownTableMutationResult,
   type DatabaseMarkdownTableRowCopyInput,
   type DatabaseMarkdownTableRowCreateInput,
   type DatabaseMarkdownTableRowMutationInput,
@@ -167,7 +168,7 @@ interface DatabaseMarkdownTableMutationPort {
 export async function mutateDatabaseMarkdownTable(
   port: DatabaseMarkdownTableMutationPort,
   input: DatabaseMarkdownTableMutationRequest,
-): Promise<unknown> {
+): Promise<DatabaseMarkdownTableMutationResult> {
   port.assertMutationAllowed();
   const writer = port.writer;
   if (!writer) {

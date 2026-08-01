@@ -102,7 +102,10 @@ import {
   createDatabaseFormStateStore,
   type DatabaseFormStateStore,
 } from './database-form-state-store.ts';
-import type { DatabaseMarkdownTableWriter } from './database-markdown-table-writer.ts';
+import type {
+  DatabaseMarkdownTableMutationResult,
+  DatabaseMarkdownTableWriter,
+} from './database-markdown-table-writer.ts';
 import {
   createDatabasePlanEngine,
   type DatabaseDesiredStateDraftInput,
@@ -1624,7 +1627,9 @@ export class DatabaseDataPlane {
     return createDatabaseCommitAutomationCoordinator(this.#commitAutomationPort()).commit(input);
   }
 
-  async mutateMarkdownTable(input: DatabaseMarkdownTableMutationRequest): Promise<unknown> {
+  async mutateMarkdownTable(
+    input: DatabaseMarkdownTableMutationRequest,
+  ): Promise<DatabaseMarkdownTableMutationResult> {
     return createDatabaseCommitAutomationCoordinator(
       this.#commitAutomationPort(),
     ).mutateMarkdownTable(input);
