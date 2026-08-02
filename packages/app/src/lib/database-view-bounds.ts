@@ -2,7 +2,7 @@ import type { DatabaseView } from '@nedian0brien/synapsenote-core';
 
 export const DATABASE_TABLE_LOADED_RECORD_LIMIT = 5_000;
 export const DATABASE_CARD_VIEW_LOADED_RECORD_LIMIT = 500;
-export const DATABASE_BROWSER_PAGE_SIZE = 100;
+const DATABASE_BROWSER_PAGE_SIZE = 100;
 
 export function databaseBrowserLoadedRecordLimit(
   layoutType: DatabaseView['layout']['type'] | undefined,

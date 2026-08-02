@@ -1,5 +1,4 @@
 import type { DatabaseValue } from '@nedian0brien/synapsenote-core';
-import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-server';
 import {
   type ExecuteDatabaseUiMutationInput,
   type ExecuteDatabaseUiMutationResult,
@@ -14,7 +13,7 @@ import {
  * mutation families should depend on this module rather than reaching into
  * the HTTP client directly.
  */
-export type DatabaseMutationTarget = {
+type DatabaseMutationTarget = {
   databaseId: string;
   sourceId?: string;
   recordId?: string;
@@ -67,8 +66,4 @@ export function clearOptimisticCellValues(
   return next;
 }
 
-export type {
-  DatabaseDesiredStateDraftInput,
-  ExecuteDatabaseUiMutationInput,
-  ExecuteDatabaseUiMutationResult,
-};
+export type { ExecuteDatabaseUiMutationResult };

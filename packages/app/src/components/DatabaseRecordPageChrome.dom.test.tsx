@@ -9,12 +9,12 @@ import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react
 import { PropertyProvider } from '@/components/PropertyContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { DatabaseCatalogClientError } from '@/lib/database-catalog-client';
-import { DatabaseQueryClientError } from '@/lib/database-query-client';
-import { useDatabaseRecordHeader } from '@/lib/database-record-header';
 import type {
   DatabaseCommentRequest,
   DatabaseCommentSnapshot,
 } from '@/lib/database-comments-client';
+import { DatabaseQueryClientError } from '@/lib/database-query-client';
+import { useDatabaseRecordHeader } from '@/lib/database-record-header';
 import { emitDatabaseChanged } from '@/lib/documents-events';
 import type { DatabaseRecordPageServices } from './DatabaseRecordPageChrome';
 import { DatabaseRecordPageChrome } from './DatabaseRecordPageChrome';

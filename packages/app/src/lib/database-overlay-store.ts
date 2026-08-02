@@ -6,7 +6,7 @@ import type {
 import { createContext, use, useSyncExternalStore } from 'react';
 import { recordDatabaseInteractionTrace } from './database-interaction-trace';
 
-export type DatabaseRecordPeekMode = 'side_peek' | 'center_peek';
+type DatabaseRecordPeekMode = 'side_peek' | 'center_peek';
 export type DatabaseOverlayDismissReason = 'explicit' | 'escape' | 'outside' | 'navigation';
 
 export interface DatabaseRecordPeekOverlay {
@@ -44,7 +44,7 @@ function notify() {
   for (const listener of listeners) listener();
 }
 
-export function subscribeDatabaseOverlay(listener: () => void): () => void {
+function subscribeDatabaseOverlay(listener: () => void): () => void {
   listeners.add(listener);
   return () => listeners.delete(listener);
 }

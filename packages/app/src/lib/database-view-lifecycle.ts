@@ -25,7 +25,7 @@ export function createUniqueDatabaseViewKey(
   throw new Error('Unable to allocate a unique saved view key');
 }
 
-export function createDatabaseViewId(uuid: string): string {
+function createDatabaseViewId(uuid: string): string {
   const compact = uuid.replaceAll('-', '');
   return `view_${compact}`;
 }
@@ -258,7 +258,7 @@ export function createDefaultDatabaseChartView(input: {
   });
 }
 
-export function defaultDatabaseFormProperties(source: DatabaseSource) {
+function defaultDatabaseFormProperties(source: DatabaseSource) {
   return source.properties.filter(
     (property) =>
       ![
@@ -378,7 +378,7 @@ export function defaultDatabaseFeedChronologyProperty(source: DatabaseSource) {
   );
 }
 
-export function defaultDatabaseFeedAuthorProperty(source: DatabaseSource) {
+function defaultDatabaseFeedAuthorProperty(source: DatabaseSource) {
   return source.properties.find((property) =>
     ['last_edited_by', 'created_by', 'person'].includes(property.type),
   );

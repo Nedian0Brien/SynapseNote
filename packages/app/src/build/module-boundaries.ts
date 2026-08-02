@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join, normalize, relative } from 'node:path';
+import { join, normalize, relative } from 'node:path';
 
 export interface ModuleSizeBudget {
   path: string;
@@ -303,10 +303,6 @@ export const DATABASE_BOUNDARY_CONTRACT = [
   'components/database-saved-view-settings/database-saved-view-settings-utils.ts',
   'components/database-record-page/database-record-page-utils.ts',
 ] as const;
-
-export function appSourceRoot(moduleFile: string): string {
-  return join(dirname(moduleFile), '..');
-}
 
 export function moduleLineCount(file: string): number {
   return readFileSync(file, 'utf8').split(/\r?\n/).length;

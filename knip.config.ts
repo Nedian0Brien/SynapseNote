@@ -41,11 +41,13 @@ export default {
     // Golden fixture read at runtime by golden-fixtures.test.ts via readFile,
     // so knip's import graph cannot see it.
     'packages/core/src/database/fixtures/**': ['files'],
-    // RFC 0002 leaf/coordinator scaffolding for the database table split. These
-    // are registered in packages/app/src/build/module-boundaries.ts with size
-    // budgets and owners, and are deliberately not wired up yet.
-    'packages/app/src/components/database-table/DatabaseTable{Shell,Viewport,Header,Body,InteractionLayer}.tsx':
-      ['files'],
+    // RFC 0002 leaf/coordinator scaffolding for the database table split. The
+    // components are registered in packages/app/src/build/module-boundaries.ts
+    // with size budgets and owners and are deliberately not wired up yet; the
+    // geometry and state-contract modules beside them are the API those
+    // components are being built against, so their exports read as unused
+    // until the split lands.
+    'packages/app/src/components/database-table/**': ['files', 'exports', 'types'],
     'packages/server/src/http/request-validation.ts': ['exports', 'types'],
     'packages/server/src/http/error-response.ts': ['exports'],
     'packages/app/src/editor/http-client.ts': ['types'],

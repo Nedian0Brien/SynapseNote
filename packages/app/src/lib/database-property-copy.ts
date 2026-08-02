@@ -1,12 +1,12 @@
 import type { DatabasePropertyType } from '@nedian0brien/synapsenote-core';
 
-export type DatabasePropertyCopy = {
+type DatabasePropertyCopy = {
   label: string;
   example: string;
 };
 
 /** Human-facing labels/examples for the stable property type vocabulary. */
-export const DATABASE_PROPERTY_TYPE_COPY: Record<DatabasePropertyType, DatabasePropertyCopy> = {
+const DATABASE_PROPERTY_TYPE_COPY: Record<DatabasePropertyType, DatabasePropertyCopy> = {
   title: { label: 'Title', example: 'The page name' },
   text: { label: 'Text', example: 'Short notes or descriptions' },
   number: { label: 'Number', example: 'Amount, score, or estimate' },
@@ -33,7 +33,7 @@ export const DATABASE_PROPERTY_TYPE_COPY: Record<DatabasePropertyType, DatabaseP
   rollup: { label: 'Rollup', example: 'A value summarized from related pages' },
 };
 
-export function databasePropertyTypeCopy(type: DatabasePropertyType): DatabasePropertyCopy {
+function databasePropertyTypeCopy(type: DatabasePropertyType): DatabasePropertyCopy {
   return DATABASE_PROPERTY_TYPE_COPY[type];
 }
 

@@ -130,7 +130,7 @@ function computedRuntimeValueToClipboard(value: FormulaPersistedRuntimeValue): s
   return value.id;
 }
 
-export function databaseComputedResultToClipboard(result: FormulaComputedResult): string {
+function databaseComputedResultToClipboard(result: FormulaComputedResult): string {
   return result.kind === 'error'
     ? `#ERROR(${result.problem.code}): ${result.problem.message}`
     : computedRuntimeValueToClipboard(result.value);

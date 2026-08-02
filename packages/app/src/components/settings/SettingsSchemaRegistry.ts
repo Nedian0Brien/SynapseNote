@@ -1,7 +1,7 @@
 import { msg } from '@lingui/core/macro';
 import type { SettingsFieldDef, SettingsTranslate } from './settings-types';
 
-export function chatModelLabel(value: string): string {
+function chatModelLabel(value: string): string {
   if (value === 'gpt-5.6-sol') return 'GPT-5.6 Sol';
   if (value === 'gpt-5.6-terra') return 'GPT-5.6 Terra';
   if (value === 'gpt-5.6-luna') return 'GPT-5.6 Luna';
@@ -12,7 +12,7 @@ export function chatModelLabel(value: string): string {
   return value;
 }
 
-export function sidebarOpenBehaviorLabel(value: string, translate: SettingsTranslate): string {
+function sidebarOpenBehaviorLabel(value: string, translate: SettingsTranslate): string {
   if (value === 'new-tab') return translate(msg`New tab`);
   if (value === 'current-tab') return translate(msg`Current tab`);
   return value;

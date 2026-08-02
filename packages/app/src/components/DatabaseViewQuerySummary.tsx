@@ -82,7 +82,7 @@ export function databaseFilterRuleCount(filter: DatabaseFilter): number {
   return 1;
 }
 
-export function databaseFilterSummary(filter: DatabaseFilter, source: DatabaseSource): string {
+function databaseFilterSummary(filter: DatabaseFilter, source: DatabaseSource): string {
   return filterSummaryNode(filter, source);
 }
 

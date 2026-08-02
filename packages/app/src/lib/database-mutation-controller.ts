@@ -5,7 +5,7 @@ import { databaseUiMutationReviewMode } from './database-mutation-policy';
 import { executeDatabaseMutation } from './database-mutations/database-mutation-gateway';
 import { classifyDatabaseUiProblem, databaseMutationUiMessage } from './database-ui-problem';
 
-export type DatabaseMutationOperation =
+type DatabaseMutationOperation =
   | 'cell'
   | 'title'
   | 'record-create'

@@ -3,11 +3,9 @@ import type {
   DatabaseQueryResult,
   DatabaseValue,
   DatabaseView,
-  ProjectedDatabaseRecord,
 } from '@nedian0brien/synapsenote-core';
 import type { DatabaseViewManagerInitialAction } from '@/components/DatabaseViewManagerDialog';
 import type { DatabaseViewTabAction } from '@/components/DatabaseViewTabMenu';
-import type { DatabaseDescription } from '@/lib/database-catalog-client';
 
 export function databaseViewTabActionToInitialAction(
   view: Pick<DatabaseView, 'id' | 'favorite'>,
@@ -45,21 +43,6 @@ export function linkedViewSettingsFromView(view: DatabaseView): DatabaseLinkedVi
     projection: structuredClone(view.projection),
     ...(view.openBehavior ? { openBehavior: view.openBehavior } : {}),
   };
-}
-
-export function inlineDatabaseRecordMatchesSearch(
-  record: ProjectedDatabaseRecord,
-  source: DatabaseDescription['source'],
-  query: string,
-): boolean {
-  const needle = query.trim().toLowerCase();
-  if (!needle) return true;
-  const readableValues =
-    source?.properties.map((property) => {
-      const value = record.values[property.id];
-      return `${property.name} ${typeof value === 'string' ? value : JSON.stringify(value ?? '')}`;
-    }) ?? [];
-  return [record.path, ...readableValues].join('\n').toLowerCase().includes(needle);
 }
 
 export function applyInlineOptimisticValues(

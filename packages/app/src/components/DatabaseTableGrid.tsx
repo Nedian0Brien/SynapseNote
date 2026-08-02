@@ -15,10 +15,8 @@ export {
   searchDatabaseRelationRecords,
 } from './DatabaseTableRuntime';
 export type {
-  DatabaseCellMenu,
   DatabaseInitialRecordAction,
   DatabaseSelectProperty,
-  DatabaseTableProps,
   DatabaseTableSelection,
   DatabaseTableTarget,
   DatabaseTableViewState,

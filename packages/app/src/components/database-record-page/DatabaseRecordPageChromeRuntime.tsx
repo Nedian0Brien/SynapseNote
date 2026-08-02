@@ -70,11 +70,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { subscribeToDatabaseAgentRunChanged } from '@/lib/database-agent-run-events';
-import type {
-  DatabaseCommentRequest,
-  DatabaseCommentSnapshot,
-} from '@/lib/database-comments-client';
-import { publishDatabaseRecordHeader } from '@/lib/database-record-header';
 import { describeDatabase } from '@/lib/database-catalog-client';
 import {
   createDatabaseCellMutationDesiredState,
@@ -85,6 +80,10 @@ import {
   createDatabaseRecordMoveDesiredState,
   createDatabaseRecordPageLayoutOverrideDesiredState,
 } from '@/lib/database-cell-mutation';
+import type {
+  DatabaseCommentRequest,
+  DatabaseCommentSnapshot,
+} from '@/lib/database-comments-client';
 import {
   DatabasePlanExecutionError,
   executeDatabaseUiMutation,
@@ -92,6 +91,7 @@ import {
 import { resolveDatabasePageLayout } from '@/lib/database-page-layout';
 import { useDatabasePresenceTarget, useRemoteDatabasePresence } from '@/lib/database-presence';
 import { fetchDatabaseRecord } from '@/lib/database-query-client';
+import { publishDatabaseRecordHeader } from '@/lib/database-record-header';
 import {
   type DatabaseRecordNavigationState,
   readDatabaseRecordNavigation,

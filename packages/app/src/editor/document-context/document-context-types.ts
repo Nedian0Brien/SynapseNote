@@ -6,9 +6,4 @@
  * does not require touching every navigation, tab, panel, or collaboration
  * consumer.
  */
-export type {
-  CloseTabsOptions,
-  DocumentContextValue,
-  OpenTargetOptions,
-  PoolEntrySnapshot,
-} from '../DocumentContext';
+export type { DocumentContextValue } from '../DocumentContext';

@@ -27,7 +27,7 @@ const listeners = new Set<() => void>();
  * it is intentionally excluded from navigation history: jumping between
  * headings in one document should not consume Back/Forward entries.
  */
-export function navigationRouteFromHash(hash: string): string | null {
+function navigationRouteFromHash(hash: string): string | null {
   if (!hash.startsWith('#/')) return null;
   const anchorIndex = hash.indexOf('#', 1);
   return anchorIndex < 0 ? hash : hash.slice(0, anchorIndex);

@@ -8,11 +8,6 @@ import {
   DATABASE_TABLE_DEFAULT_TITLE_WIDTH,
 } from './database-table-geometry';
 
-export {
-  DATABASE_TABLE_COLUMN_MAX_WIDTH,
-  DATABASE_TABLE_COLUMN_MIN_WIDTH,
-} from './database-table-geometry';
-
 export type DatabaseTableRowHeight = 'compact' | 'standard' | 'tall';
 
 export interface DatabaseTableLayoutState {

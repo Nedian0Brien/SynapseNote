@@ -62,7 +62,7 @@ export function getElementJsxAttrs(attrs: Record<string, unknown>): ElementJsxAt
  * this selector in the pure utility module makes the event boundary testable
  * without mounting the complete editor.
  */
-export const JSX_INTERACTIVE_TARGET_SELECTOR = [
+const JSX_INTERACTIVE_TARGET_SELECTOR = [
   'a[href]',
   'button',
   'input',
