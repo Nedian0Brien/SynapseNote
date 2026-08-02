@@ -8,7 +8,7 @@
  * browser assertions exercise the production surface rather than fixtures.
  */
 
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './_helpers';
 
 async function openDatabasesDialog(page: Page) {
@@ -49,6 +49,22 @@ async function openDatabase(
   await expect(page.getByRole('grid')).toBeVisible({ timeout: 10_000 });
 }
 
+/**
+ * Assert the workspace finished saving.
+ *
+ * The indicator unmounts once a commit settles, so asserting that it is present
+ * with `saved` races the unmount. Gate on the in-flight and failed states being
+ * absent instead: that holds whether or not the badge is still mounted.
+ */
+async function expectSaved(page: Page) {
+  await expect(
+    page.locator('[data-database-save-indicator][data-database-save-state="saving"]'),
+  ).toHaveCount(0, { timeout: 15_000 });
+  await expect(
+    page.locator('[data-database-save-indicator][data-database-save-state="failed"]'),
+  ).toHaveCount(0);
+}
+
 function taskDatabase(name: string, key: string) {
   return {
     database: {
@@ -79,6 +95,64 @@ function taskDatabase(name: string, key: string) {
               { key: 'done', name: 'Done' },
             ],
           },
+        ],
+      },
+    ],
+    views: [
+      {
+        key: 'all-tasks',
+        name: 'All tasks',
+        sourceKey: 'tasks',
+        openBehavior: 'side_peek',
+        layout: { type: 'table', configuration: { rowHeight: 'compact' } },
+      },
+    ],
+    policy: { mode: 'review', allowedOperations: [], maxRecordsPerCommit: 20 },
+  };
+}
+
+/**
+ * Separate schema for the typed-editor journey.
+ *
+ * The shared `taskDatabase` shape is asserted positionally by the other tests
+ * in this file, so the extra columns live in their own fixture rather than
+ * widening that one. Property order here fixes the `aria-colindex` values the
+ * test uses to address non-Title cells: Title 1, Status 2, Estimate 3, Due 4,
+ * Shipped 5 (the notion surface offsets the index by one).
+ */
+function typedTaskDatabase(name: string, key: string) {
+  return {
+    database: {
+      key,
+      name,
+      contract: {
+        purpose: 'Focused browser journey coverage',
+        canonicality: 'canonical',
+        vocabulary: ['task'],
+        freshness: { expectation: 'realtime', maxAgeSeconds: 60 },
+        sensitivity: 'internal',
+      },
+    },
+    sources: [
+      {
+        key: 'tasks',
+        name: 'Tasks',
+        recordMeaning: 'One task',
+        folder: key,
+        properties: [
+          { key: 'title', name: 'Title', type: 'title' },
+          {
+            key: 'status',
+            name: 'Status',
+            type: 'select',
+            options: [
+              { key: 'todo', name: 'Todo' },
+              { key: 'done', name: 'Done' },
+            ],
+          },
+          { key: 'estimate', name: 'Estimate', type: 'number' },
+          { key: 'due', name: 'Due', type: 'date' },
+          { key: 'shipped', name: 'Shipped', type: 'checkbox' },
         ],
       },
     ],
@@ -137,11 +211,7 @@ test.describe('database primary browser journeys', () => {
     ).toBeVisible({
       timeout: 10_000,
     });
-    await expect(page.getByTestId('database-save-indicator')).toHaveAttribute(
-      'data-database-save-state',
-      'saved',
-      { timeout: 10_000 },
-    );
+    await expectSaved(page);
 
     await page.getByRole('button', { name: 'More database actions' }).click();
     await page.getByRole('menuitem', { name: 'Undo last change' }).click();
@@ -160,11 +230,7 @@ test.describe('database primary browser journeys', () => {
     ).toBeVisible({
       timeout: 10_000,
     });
-    await expect(page.getByTestId('database-save-indicator')).toHaveAttribute(
-      'data-database-save-state',
-      'saved',
-      { timeout: 10_000 },
-    );
+    await expectSaved(page);
 
     await page.reload();
     await expect(
@@ -234,11 +300,7 @@ test.describe('database primary browser journeys', () => {
         timeout: 10_000,
       },
     );
-    await expect(page.getByTestId('database-save-indicator')).toHaveAttribute(
-      'data-database-save-state',
-      'saved',
-      { timeout: 10_000 },
-    );
+    await expectSaved(page);
 
     await page.getByRole('button', { name: 'More database actions' }).click();
     await page.getByRole('menuitem', { name: 'Undo last change' }).click();
@@ -303,11 +365,7 @@ test.describe('database primary browser journeys', () => {
     ).toBeVisible();
     await savedViewSettings.getByRole('button', { name: 'Review view settings' }).click();
     await expect(savedViewSettings).toHaveCount(0, { timeout: 10_000 });
-    await expect(page.getByTestId('database-save-indicator')).toHaveAttribute(
-      'data-database-save-state',
-      'saved',
-      { timeout: 10_000 },
-    );
+    await expectSaved(page);
 
     await page.getByRole('button', { name: 'View options for Renamed list' }).click();
     await page.getByRole('menuitem', { name: 'Duplicate' }).click();
@@ -320,11 +378,7 @@ test.describe('database primary browser journeys', () => {
     await page.getByRole('menuitem', { name: 'Move left' }).click();
     const viewTabs = page.getByRole('navigation', { name: 'Database views' }).locator('fieldset');
     await expect(viewTabs.nth(1)).toContainText('Renamed list copy', { timeout: 10_000 });
-    await expect(page.getByTestId('database-save-indicator')).toHaveAttribute(
-      'data-database-save-state',
-      'saved',
-      { timeout: 10_000 },
-    );
+    await expectSaved(page);
 
     await page.getByRole('button', { name: 'View options for Renamed list copy' }).click();
     await page.getByRole('menuitem', { name: 'Delete' }).click();
@@ -376,4 +430,121 @@ test.describe('database primary browser journeys', () => {
       page.getByRole('button', { name: 'Filters: Status is Todo', exact: true }),
     ).toBeVisible({ timeout: 10_000 });
   });
+
+  // UX-1104 typed editors. Each type gets its own database and commits exactly
+  // one value: a canonical commit blocks reads while its transaction verifies,
+  // so chaining several cell commits in one journey leaves the grid showing the
+  // recoverable "Database is still updating" snapshot instead of the new rows.
+  // Splitting them keeps each assertion about the editor under test.
+  for (const scenario of [
+    {
+      label: 'Select',
+      key: 'e2e-typed-select',
+      async edit(page: Page, row: Locator) {
+        await row.locator('[role="gridcell"][aria-colindex="2"]').press('Enter');
+        await page.getByRole('combobox', { name: 'Edit Status' }).fill('Done');
+        await page.getByRole('option', { name: 'Done', exact: true }).click();
+      },
+      async expectValue(page: Page, row: Locator) {
+        void row;
+        await expect(
+          page.getByRole('button', { name: 'Edit Status for page Typed task: Done', exact: true }),
+        ).toBeVisible({ timeout: 15_000 });
+      },
+    },
+    {
+      label: 'Number',
+      key: 'e2e-typed-number',
+      async edit(page: Page, row: Locator) {
+        await row.locator('[role="gridcell"][aria-colindex="3"]').press('Enter');
+        // The inline scalar editor keeps Save/Cancel `sr-only` and commits on
+        // Enter, so drive the same keystroke the Title editor uses.
+        await page.getByRole('spinbutton', { name: 'Edit Estimate' }).fill('5');
+        await page.getByRole('spinbutton', { name: 'Edit Estimate' }).press('Enter');
+      },
+      async expectValue(page: Page, row: Locator) {
+        void page;
+        await expect(row.locator('[role="gridcell"][aria-colindex="3"]')).toHaveAttribute(
+          'title',
+          '5',
+          { timeout: 15_000 },
+        );
+      },
+    },
+    {
+      label: 'Date',
+      key: 'e2e-typed-date',
+      async edit(page: Page, row: Locator) {
+        await row.locator('[role="gridcell"][aria-colindex="4"]').press('Enter');
+        const start = page.getByLabel('Start Due', { exact: true });
+        await page.getByLabel('Include time for Due', { exact: true }).click();
+        // Enabling time swaps the control from `date` to `datetime-local`;
+        // filling before that swap lands writes into the old input and is lost.
+        await expect(start).toHaveAttribute('type', 'datetime-local');
+        await start.fill('2026-09-01T09:00');
+        await expect(start).toHaveValue('2026-09-01T09:00');
+        // A composite editor rather than a scalar input, so Save is a real
+        // visible control here.
+        await page.getByRole('button', { name: 'Save cell edit' }).click();
+      },
+      async expectValue(page: Page, row: Locator) {
+        void page;
+        // The cell projects the stored ISO value through the display format.
+        await expect(row.locator('[role="gridcell"][aria-colindex="4"]')).toHaveAttribute(
+          'title',
+          /Sep 1, 2026/,
+          { timeout: 15_000 },
+        );
+      },
+    },
+    {
+      label: 'Checkbox',
+      key: 'e2e-typed-checkbox',
+      async edit(page: Page, row: Locator) {
+        void row;
+        // The notion surface commits straight from the display control without
+        // opening a cell editor at all.
+        await page.getByRole('checkbox', { name: 'Toggle Shipped for page Typed task' }).click();
+      },
+      async expectValue(page: Page, row: Locator) {
+        void row;
+        await expect(
+          page.getByRole('checkbox', { name: 'Toggle Shipped for page Typed task' }),
+        ).toBeChecked({ timeout: 15_000 });
+      },
+    },
+  ]) {
+    test(`edits a typed ${scenario.label} cell and persists it across reload`, async ({
+      page,
+      api,
+    }) => {
+      const name = `E2E Primary Typed ${scenario.label} Journey`;
+      const target = await api.createDatabase({
+        ...typedTaskDatabase(name, scenario.key),
+        sampleRecords: [
+          {
+            sourceKey: 'tasks',
+            // Only Title and Status are seeded, so every other editor is
+            // exercised from an empty value.
+            values: { title: 'Typed task', status: 'todo' },
+          },
+        ],
+      });
+
+      await openDatabase(page, name, target);
+      const row = page.locator('tr[data-record-id]').filter({ hasText: 'Typed task' });
+      await expect(row).toBeVisible({ timeout: 10_000 });
+
+      await scenario.edit(page, row);
+      await scenario.expectValue(page, row);
+
+      // The value must survive a reload from canonical Markdown, not just the
+      // optimistic render.
+      await page.reload();
+      await expect(page.getByRole('grid')).toBeVisible({ timeout: 20_000 });
+      const reloadedRow = page.locator('tr[data-record-id]').filter({ hasText: 'Typed task' });
+      await expect(reloadedRow).toBeVisible({ timeout: 10_000 });
+      await scenario.expectValue(page, reloadedRow);
+    });
+  }
 });
