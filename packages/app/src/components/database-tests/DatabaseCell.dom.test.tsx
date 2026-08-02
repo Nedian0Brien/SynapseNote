@@ -19,7 +19,7 @@ describe('database focused cell suite', () => {
       </div>,
     );
     const statusCell = document.querySelector<HTMLElement>(
-      '[data-database-cell-row="0"][data-property-id="status"]',
+      '[data-database-cell-row="0"][data-property-id="prop_status"]',
     );
     if (!statusCell) throw new Error('status cell was not rendered');
 
@@ -39,7 +39,7 @@ describe('database focused cell suite', () => {
       />,
     );
     const statusCell = document.querySelector<HTMLElement>(
-      '[data-database-cell-row="0"][data-property-id="status"]',
+      '[data-database-cell-row="0"][data-property-id="prop_status"]',
     );
     if (!statusCell) throw new Error('status cell was not rendered');
 
@@ -58,7 +58,7 @@ describe('database focused cell suite', () => {
         result={
           {
             ...fixture.result,
-            records: [{ ...fixture.record, values: { title: 'First task' } }],
+            records: [{ ...fixture.record, values: { prop_title: 'First task' } }],
           } as never
         }
         notionSurface
@@ -68,13 +68,13 @@ describe('database focused cell suite', () => {
     fireEvent.click(screen.getByLabelText('Edit Status for page First task: empty'));
     expect(screen.getByRole('combobox', { name: 'Edit Status' })).toBeTruthy();
     fireEvent.click(screen.getByRole('option', { name: 'Active' }));
-    expect(edits).toEqual(['active']);
+    expect(edits).toEqual(['opt_active']);
   });
 
   test('renders a number editor as the inline cell surface instead of a nested field', () => {
     const fixture = createDatabaseTestFixture();
     const numberProperty = {
-      id: 'estimate',
+      id: 'prop_estimate',
       key: 'estimate',
       name: 'Estimate',
       type: 'number' as const,
@@ -94,7 +94,7 @@ describe('database focused cell suite', () => {
               records: [
                 {
                   ...fixture.record,
-                  values: { ...fixture.record.values, estimate: 123 },
+                  values: { ...fixture.record.values, prop_estimate: 123 },
                 },
               ],
             } as never
@@ -105,7 +105,7 @@ describe('database focused cell suite', () => {
       </div>,
     );
     const numberCell = document.querySelector<HTMLElement>(
-      '[data-database-cell-row="0"][data-property-id="estimate"]',
+      '[data-database-cell-row="0"][data-property-id="prop_estimate"]',
     );
     if (!numberCell) throw new Error('number cell was not rendered');
 

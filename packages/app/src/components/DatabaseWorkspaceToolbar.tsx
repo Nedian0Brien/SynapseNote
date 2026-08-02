@@ -1,6 +1,5 @@
-/* biome-ignore-all lint/suspicious/noExplicitAny: toolbar values mirror the existing dynamic database schema. */
 import { Trans, useLingui } from '@lingui/react/macro';
-import type { DatabaseSource } from '@nedian0brien/synapsenote-core';
+import type { DatabaseSource, DatabaseView } from '@nedian0brien/synapsenote-core';
 import {
   Archive,
   ArrowDownAZ,
@@ -99,6 +98,10 @@ export function DatabaseWorkspaceToolbar({ context }: { context: DatabaseWorkspa
     redoLastChange,
   } = context;
 
+  // Mounted by DatabaseWorkspaceSuccessContent only once `description?.source`
+  // resolves; restate that precondition so the branches below can rely on it.
+  if (!description?.source) return null;
+
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div>
@@ -126,7 +129,7 @@ export function DatabaseWorkspaceToolbar({ context }: { context: DatabaseWorkspa
               {isPagePresentation ? <Trans>All pages</Trans> : <Trans>All records</Trans>}
             </Button>
           ) : null}
-          {sourceViews.map((view: any, index: number) => (
+          {sourceViews.map((view: DatabaseView, index: number) => (
             <fieldset
               key={view.id}
               aria-label={`${view.name} view tab controls`}
@@ -221,7 +224,7 @@ export function DatabaseWorkspaceToolbar({ context }: { context: DatabaseWorkspa
         <DatabasePresenceBadges
           scope="schema"
           entries={remotePresence.filter(
-            (entry: any) =>
+            (entry) =>
               entry.databaseId === description.database.id &&
               entry.sourceId === description.source?.id &&
               entry.scope === 'schema',
@@ -240,7 +243,7 @@ export function DatabaseWorkspaceToolbar({ context }: { context: DatabaseWorkspa
                   {isPagePresentation ? <Trans>All pages</Trans> : <Trans>All records</Trans>}
                 </SelectItem>
               ) : null}
-              {sourceViews.map((view: any) => (
+              {sourceViews.map((view: DatabaseView) => (
                 <SelectItem key={view.id} value={view.id}>
                   {view.favorite === true ? '★ ' : ''}
                   {view.name}
@@ -251,12 +254,12 @@ export function DatabaseWorkspaceToolbar({ context }: { context: DatabaseWorkspa
         </div>
         {description.database.buttons
           .filter(
-            (button: any) =>
+            (button) =>
               button.placement.kind === 'database' ||
               (button.placement.kind === 'source' &&
                 button.placement.sourceId === description.source?.id),
           )
-          .map((button: any) => (
+          .map((button) => (
             <Button
               key={button.id}
               variant="outline"
@@ -356,7 +359,7 @@ export function DatabaseWorkspaceToolbar({ context }: { context: DatabaseWorkspa
             size="sm"
             disabled={mutationStatus !== 'idle'}
             aria-pressed={showArchived}
-            onClick={() => setShowArchived((value: any) => !value)}
+            onClick={() => setShowArchived((value) => !value)}
           >
             <Archive />
             {showArchived ? <Trans>Hide archived</Trans> : <Trans>Show archived</Trans>}
@@ -481,7 +484,7 @@ export function DatabaseWorkspaceToolbar({ context }: { context: DatabaseWorkspa
             {isCanvasPresentation ? (
               <DropdownMenuItem
                 disabled={mutationStatus !== 'idle'}
-                onSelect={() => setShowArchived((value: any) => !value)}
+                onSelect={() => setShowArchived((value) => !value)}
               >
                 <Archive aria-hidden="true" />
                 {showArchived ? <Trans>Hide archived</Trans> : <Trans>Show archived</Trans>}

@@ -75,7 +75,6 @@ export function DatabaseWorkspaceOverlayHost({
     setMutationError,
     creationInstanceKey,
     creationOpen,
-    isCanvasPresentation,
     onCreationCancelled,
     setCreationInstanceKey,
     setSelection,
@@ -119,6 +118,10 @@ export function DatabaseWorkspaceOverlayHost({
   } = context;
   const hasRootOverlayHost = useDatabaseOverlayProvider();
   const { recordPeek } = useDatabaseOverlayState();
+  // Narrow on `presentation` itself rather than an equivalent boolean flag so
+  // 'canvas' is provably excluded from the creation dialog's narrower
+  // 'page' | 'dialog' prop.
+  const creationPresentation = presentation === 'canvas' ? 'page' : presentation;
 
   return (
     <>
@@ -126,7 +129,7 @@ export function DatabaseWorkspaceOverlayHost({
       <DatabaseCreationDialog
         key={creationInstanceKey}
         open={open && creationOpen}
-        presentation={isCanvasPresentation ? 'page' : presentation}
+        presentation={creationPresentation}
         agentComposer={<CreatePromptComposer scenario="new-project" databasePreview />}
         onOpenChange={(nextOpen, reason) => {
           setCreationOpen(nextOpen);

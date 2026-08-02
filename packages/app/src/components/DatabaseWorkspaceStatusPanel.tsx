@@ -1,4 +1,3 @@
-/* biome-ignore-all lint/suspicious/noExplicitAny: status payloads are supplied by the controller's compatibility context. */
 import { Trans } from '@lingui/react/macro';
 import { Loader2 } from 'lucide-react';
 import { DatabaseConflictResolutionNotice } from '@/components/DatabaseConflictResolutionNotice';
@@ -36,6 +35,10 @@ export function DatabaseWorkspaceStatusPanel({
     onOpenChange,
     loadMore,
   } = context;
+
+  // Mounted by DatabaseWorkspaceSuccessContent only once `description?.source`
+  // resolves; restate that precondition so the branches below can rely on it.
+  if (!description?.source) return null;
 
   return (
     <>
@@ -104,7 +107,7 @@ export function DatabaseWorkspaceStatusPanel({
             {buttonPlan.internalPlan?.diff.records.length ?? 0} database record changes ·{' '}
             {buttonPlan.externalSteps.length} external actions
           </div>
-          {buttonPlan.externalSteps.map((step: any) => (
+          {buttonPlan.externalSteps.map((step) => (
             <div key={step.actionId} className="rounded border bg-background p-2 text-xs">
               <div className="font-medium">
                 {step.eventName} → {step.connectionId}
@@ -182,7 +185,7 @@ export function DatabaseWorkspaceStatusPanel({
             <DatabaseAtomicApprovalScope approvals={ghost.approvals} />
             {ghost.risk.reasons.length > 0 ? (
               <ul className="mt-1 list-disc pl-5 text-xs" aria-label="Change risks">
-                {ghost.risk.reasons.map((reason: any) => (
+                {ghost.risk.reasons.map((reason) => (
                   <li key={reason}>{reason}</li>
                 ))}
               </ul>
