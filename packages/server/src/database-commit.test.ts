@@ -231,7 +231,29 @@ async function fixture(input?: {
 }
 
 describe('DatabaseCommitEngine', () => {
-  test('holds a read barrier for the complete commit transaction lifecycle', async () => {
+  test('raises the read barrier at the first canonical write, not before it', async () => {
+    const barrierAtSnapshot: boolean[] = [];
+    let engineRef: { isTransactionActive(): boolean } | null = null;
+    const { engine, commitInput } = await fixture({
+      onSnapshot: () => {
+        barrierAtSnapshot.push(engineRef?.isTransactionActive() ?? false);
+      },
+    });
+    engineRef = engine;
+
+    await engine.commit(commitInput());
+
+    // The base checkpoint snapshot runs before any canonical file is touched,
+    // so no read can observe a partial transaction and the barrier must still
+    // be open: holding it there froze the whole surface for ~7 git processes
+    // and protected nothing. The result snapshot runs after the rename loop,
+    // where a rollback can still restore the previous bytes, so it must be
+    // closed.
+    expect(barrierAtSnapshot).toEqual([false, true]);
+    expect(engine.isTransactionActive()).toBe(false);
+  });
+
+  test('keeps the read barrier closed across a gated post-write snapshot', async () => {
     let releaseSnapshot!: () => void;
     let enteredSnapshot!: () => void;
     const snapshotGate = new Promise<void>((resolve) => {
@@ -240,14 +262,25 @@ describe('DatabaseCommitEngine', () => {
     const entered = new Promise<void>((resolve) => {
       enteredSnapshot = resolve;
     });
+    let snapshots = 0;
+    let engineRef: { isTransactionActive(): boolean } | null = null;
+    let barrierAtResultSnapshot: boolean | null = null;
     const { engine, commitInput } = await fixture({
       snapshotGate,
-      onSnapshot: enteredSnapshot,
+      onSnapshot: () => {
+        snapshots += 1;
+        if (snapshots === 2) {
+          barrierAtResultSnapshot = engineRef?.isTransactionActive() ?? false;
+          enteredSnapshot();
+        }
+      },
     });
+    engineRef = engine;
+
     const pending = engine.commit(commitInput());
-    await entered;
-    expect(engine.isTransactionActive()).toBe(true);
     releaseSnapshot();
+    await entered;
+    expect(barrierAtResultSnapshot).toBe(true);
     await pending;
     expect(engine.isTransactionActive()).toBe(false);
   });

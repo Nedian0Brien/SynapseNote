@@ -947,7 +947,13 @@ export class DatabaseCommitEngine {
             planned: draft.normalized.sampleRecords.length,
           });
         }
-        this.#transactionActive = true;
+        // The read barrier opens at the first canonical write, not here.
+        // `#execute` raises it immediately before the rename loop; everything
+        // before that point — assertions, the base checkpoint snapshot, and
+        // staging writes into a private directory — leaves the canonical tree
+        // untouched, so a concurrent read sees the same committed state it
+        // would have seen a moment earlier. The `finally` still clears the flag
+        // on every path, including a failure before it was ever raised.
         try {
           if (agentRunId) {
             try {
@@ -2008,6 +2014,12 @@ export class DatabaseCommitEngine {
           });
         }
       }
+      // First canonical write: from here a read could observe a partially
+      // applied transaction, so the barrier goes up now rather than around the
+      // whole commit. The base checkpoint snapshot above is ~7 git processes
+      // against an unchanged tree; holding the barrier across it made every
+      // row add freeze the surface for no protection.
+      this.#transactionActive = true;
       for (const target of targets) {
         await this.#fs.mkdir(resolve(target.absolutePath, '..'));
         let backupPath: string | null = null;
