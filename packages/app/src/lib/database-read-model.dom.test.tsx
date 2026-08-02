@@ -298,6 +298,70 @@ describe('useDatabaseReadModel', () => {
     });
   });
 
+  test('re-reads on its own until a still-settling index resolves', async () => {
+    const initial = description('settling-index');
+    let describeCalls = 0;
+    globalThis.fetch = mock((input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path === '/api/databases/describe') {
+        describeCalls += 1;
+        // Calls 2-6 spend the whole in-read retry budget, so the settling
+        // problem reaches the read model instead of being absorbed inside one
+        // read. That is the state a second canonical commit produces.
+        if (describeCalls >= 2 && describeCalls <= 6) {
+          return Promise.resolve(
+            Response.json(
+              {
+                type: 'https://synapsenote.local/problems/transaction-in-progress',
+                title: 'Database is still updating',
+                status: 409,
+                detail: 'A canonical commit is still being verified',
+                code: 'transaction_in_progress',
+                retryable: true,
+                recovery: { action: 'retry', retryAfterMs: 0 },
+              },
+              { status: 409 },
+            ),
+          );
+        }
+        return Promise.resolve(Response.json(initial));
+      }
+      if (path === '/api/databases/query') {
+        return Promise.resolve(Response.json(queryResult(initial.source?.id ?? '')));
+      }
+      return Promise.resolve(Response.json({ detail: 'unexpected request' }, { status: 500 }));
+    }) as typeof fetch;
+    const target: DatabaseReadModelTarget = {
+      databaseId: initial.database.id,
+      sourceId: initial.source?.id ?? '',
+      viewId: initial.database.views[0]?.id ?? '',
+      mode: 'inline',
+    };
+    const { rerender } = render(<Harness target={target} />);
+    await waitFor(() =>
+      expect(screen.getByTestId('read-model-state').getAttribute('data-status')).toBe('ready'),
+    );
+
+    rerender(<Harness target={{ ...target, refreshKey: 1 }} />);
+    await waitFor(() =>
+      expect(screen.getByTestId('read-model-state').getAttribute('data-refresh-problem')).toBe(
+        'stale_index',
+      ),
+    );
+
+    // No user action and no new refreshKey: the surface must recover by itself,
+    // otherwise a committed edit stays hidden behind the recovery button.
+    await waitFor(
+      () => {
+        const surface = screen.getByTestId('read-model-state');
+        expect(surface.getAttribute('data-status')).toBe('ready');
+        expect(surface.getAttribute('data-refresh-problem')).toBeNull();
+      },
+      { timeout: 5_000 },
+    );
+    expect(describeCalls).toBeGreaterThan(6);
+  });
+
   test('uses the blocking error state when the first read has no compatible snapshot', async () => {
     const initial = description('initial-failure');
     globalThis.fetch = mock((input: RequestInfo | URL) => {
