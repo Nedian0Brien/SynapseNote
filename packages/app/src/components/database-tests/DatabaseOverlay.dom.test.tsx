@@ -28,7 +28,7 @@ describe('database focused overlay suite', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Database page' });
     expect(dialog.getAttribute('aria-describedby')).toBeTruthy();
     expect(dialog.getAttribute('role')).toBe('dialog');
-    expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Close page preview' })).toBeTruthy();
     await user.tab();
     expect(document.activeElement).toBeTruthy();
     await user.keyboard('{Escape}');

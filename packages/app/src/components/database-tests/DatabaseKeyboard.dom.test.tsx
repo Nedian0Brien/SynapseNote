@@ -49,7 +49,7 @@ describe('database pointer and keyboard suite', () => {
         result={
           {
             ...fixture.result,
-            records: [{ ...fixture.record, values: { title: 'First task' } }],
+            records: [{ ...fixture.record, values: { prop_title: 'First task' } }],
           } as never
         }
         notionSurface
@@ -58,7 +58,7 @@ describe('database pointer and keyboard suite', () => {
       />,
     );
     const cell = document.querySelector<HTMLElement>(
-      '[data-database-cell-row="0"][data-property-id="status"]',
+      '[data-database-cell-row="0"][data-property-id="prop_status"]',
     );
     if (!cell) throw new Error('status cell was not rendered');
     act(() => {

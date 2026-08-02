@@ -1,4 +1,4 @@
-/* biome-ignore-all lint/suspicious/noExplicitAny: record action payloads retain the existing dynamic schema shape. */
+/* biome-ignore-all lint/suspicious/noExplicitAny: the remaining `any` params read from values the controller command bag still supplies untyped (selectedOptionProperty, selectProperties, bulkProperty, compatibleMoveTargets). Everything sourced from the render context is typed; these resolve once DatabaseWorkspaceControllerContext is typed too. */
 import { Trans } from '@lingui/react/macro';
 import { Copy, Loader2 } from 'lucide-react';
 import { DatabaseFilesCellEditor } from '@/components/DatabaseFilesCellEditor';
@@ -82,6 +82,11 @@ export function DatabaseWorkspaceRecordActions({
     setSelectedRecordIds,
   } = context;
 
+  // DatabaseWorkspaceSuccessContent mounts this slice only once
+  // `description?.source` resolves and a `result` page exists; restate both
+  // preconditions so the branches below can rely on them.
+  if (!description?.source || !result) return null;
+
   return (
     <>
       {newRecordOpen ? (
@@ -115,11 +120,11 @@ export function DatabaseWorkspaceRecordActions({
               </SelectItem>
               {description.database.templates
                 .filter(
-                  (template: any) =>
+                  (template) =>
                     template.sourceId === description.source?.id && template.archivedAt === null,
                 )
-                .sort((left: any, right: any) => left.order - right.order)
-                .map((template: any) => (
+                .sort((left, right) => left.order - right.order)
+                .map((template) => (
                   <SelectItem key={template.id} value={template.id}>
                     {template.name}
                   </SelectItem>
@@ -426,7 +431,7 @@ export function DatabaseWorkspaceRecordActions({
                 </div>
                 {optionPreview.preview.conflicts.length > 0 ? (
                   <ul className="list-disc pl-5 text-destructive" role="alert">
-                    {optionPreview.preview.conflicts.map((conflict: any) => (
+                    {optionPreview.preview.conflicts.map((conflict) => (
                       <li key={conflict.code}>{conflict.message}</li>
                     ))}
                   </ul>
@@ -465,7 +470,7 @@ export function DatabaseWorkspaceRecordActions({
           </div>
           <fieldset className="flex flex-wrap gap-2">
             <legend className="sr-only">Import header mappings</legend>
-            {importPreview.inspection.mappings.map((mapping: any) => (
+            {importPreview.inspection.mappings.map((mapping) => (
               <Badge key={mapping.propertyId} variant="gray">
                 {mapping.header} → {mapping.propertyName} ({mapping.propertyType})
               </Badge>
@@ -473,7 +478,7 @@ export function DatabaseWorkspaceRecordActions({
           </fieldset>
           {importPreview.inspection.preview.length > 0 ? (
             <div className="max-h-36 overflow-auto rounded border bg-background p-2 font-mono text-xs">
-              {importPreview.inspection.preview.map((row: any) => (
+              {importPreview.inspection.preview.map((row) => (
                 <div key={row.recordId} className="break-all">
                   {row.recordId}: {JSON.stringify(row.values)}
                 </div>
@@ -486,7 +491,7 @@ export function DatabaseWorkspaceRecordActions({
                 <Trans>Fix import values before planning</Trans>
               </div>
               <ul className="list-disc pl-5">
-                {importPreview.inspection.issues.slice(0, 20).map((issue: any) => (
+                {importPreview.inspection.issues.slice(0, 20).map((issue) => (
                   <li key={`${issue.row}:${issue.header}:${issue.message}`}>
                     Row {issue.row}, {issue.header}: {issue.message}
                   </li>
@@ -560,7 +565,7 @@ export function DatabaseWorkspaceRecordActions({
             value={bulkPropertyId}
             onValueChange={(propertyId) => {
               const property = description.source?.properties.find(
-                (candidate: any) => candidate.id === propertyId,
+                (candidate) => candidate.id === propertyId,
               );
               setBulkPropertyId(propertyId);
               setBulkDraft(property ? initialCellDraft(property) : '');
@@ -570,7 +575,7 @@ export function DatabaseWorkspaceRecordActions({
               <SelectValue placeholder="Choose property" />
             </SelectTrigger>
             <SelectContent>
-              {description.source.properties.filter(isDatabaseCellEditable).map((property: any) => (
+              {description.source.properties.filter(isDatabaseCellEditable).map((property) => (
                 <SelectItem key={property.id} value={property.id}>
                   {property.name}
                 </SelectItem>
@@ -632,8 +637,8 @@ export function DatabaseWorkspaceRecordActions({
             <fieldset className="flex flex-wrap gap-2">
               <legend className="sr-only">Bulk people</legend>
               {description.database.people
-                .filter((person: any) => person.active)
-                .map((person: any) => {
+                .filter((person) => person.active)
+                .map((person) => {
                   const selected = multiSelectDraftValues(bulkDraft);
                   return (
                     <div key={person.id} className="flex items-center gap-1 text-xs">
@@ -662,7 +667,7 @@ export function DatabaseWorkspaceRecordActions({
               draft={bulkDraft}
               propertyName={bulkProperty.name}
               parentDocName={
-                result.records.find((record: any) => selectedRecordIds.has(record.id))?.path ??
+                result.records.find((record) => selectedRecordIds.has(record.id))?.path ??
                 `${description.source.folder}/database-record.md`
               }
               fileStates={result.fileStates}
@@ -674,7 +679,7 @@ export function DatabaseWorkspaceRecordActions({
               draft={bulkDraft}
               knownRecords={[
                 ...new Map(
-                  [...relationCandidates, ...(result.relationRecords ?? [])].map((record: any) => [
+                  [...relationCandidates, ...(result.relationRecords ?? [])].map((record) => [
                     record.id,
                     record,
                   ]),

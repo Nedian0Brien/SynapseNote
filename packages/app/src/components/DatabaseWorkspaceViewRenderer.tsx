@@ -1,4 +1,3 @@
-/* biome-ignore-all lint/suspicious/noExplicitAny: layout plugins expose heterogeneous record payloads. */
 import { Trans } from '@lingui/react/macro';
 import { Loader2 } from 'lucide-react';
 import { DatabaseBoard } from '@/components/DatabaseBoard';
@@ -82,6 +81,11 @@ export function DatabaseWorkspaceViewRenderer({
     loadMore,
   } = context;
 
+  // DatabaseWorkspaceSuccessContent only mounts this renderer once
+  // `description?.source` resolves. Restating that precondition here makes the
+  // invariant visible to every branch below instead of leaving it implicit.
+  if (!description?.source) return null;
+
   if (selectedView?.layout.type === 'form') {
     return (
       <DatabaseForm
@@ -122,7 +126,7 @@ export function DatabaseWorkspaceViewRenderer({
       selectedView?.layout.type !== 'table' &&
       selectedView?.layout.type !== undefined &&
       !ghost?.diff.records.some(
-        (record: any) => record.action === 'create' && record.sourceId === description.source?.id,
+        (record) => record.action === 'create' && record.sourceId === description.source?.id,
       ) ? (
         <div
           className="flex min-h-64 items-center justify-center rounded-md border border-dashed text-muted-foreground text-sm"
@@ -144,7 +148,7 @@ export function DatabaseWorkspaceViewRenderer({
           notionSurface={isPagePresentation}
           relationRecords={[
             ...new Map(
-              [...relationCandidates, ...(result.relationRecords ?? [])].map((record: any) => [
+              [...relationCandidates, ...(result.relationRecords ?? [])].map((record) => [
                 record.id,
                 record,
               ]),
@@ -375,7 +379,7 @@ export function DatabaseWorkspaceViewRenderer({
           onSelectionChange={handleSelectionChange}
           onPaste={planTablePaste}
           onCalculationChange={(propertyId, calculation) =>
-            setTableCalculations((current: any) => {
+            setTableCalculations((current) => {
               if (calculation === null) {
                 const next = { ...current };
                 delete next[propertyId];

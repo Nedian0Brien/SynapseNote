@@ -31,6 +31,10 @@ blob-report/
 .mirror-output/
 /test-doc.md
 
+# Database records created in the repository root during local UI verification.
+# Keep the records on disk without exposing user data through this public repository.
+/untitled_database_*/
+
 # Env files (keep .env.example committed)
 .env
 .env.local
