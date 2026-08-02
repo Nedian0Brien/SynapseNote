@@ -154,6 +154,7 @@
     "1t_NnN": ["Reject"],
     "1vaMx1": ["Default Codex chat model"],
     "2-Dvfi": ["Database diagnostics"],
+    "20fqc-": ["Page options"],
     "2277Tu": ["Collapse graph"],
     "22KnfO": ["Related properties"],
     "237hSL": ["Ended"],
@@ -170,7 +171,6 @@
     "2BBAbc": ["List"],
     "2FIjLb": ["Pink"],
     "2FYpfJ": ["More"],
-    "2FoHU3": ["Resolve"],
     "2GT3Hf": ["Global"],
     "2IYGkU": ["This doc has unpushed changes. Recipients will see the last pushed version."],
     "2IlttO": ["Preview the current revision before reversing this run."],
@@ -1120,7 +1120,6 @@
     "IgTwLt": ["Open this document in the editor and collapse the graph."],
     "Ik-gP0": ["Heading H", ["level"], ": ", ["text"]],
     "IlvD-L": ["Show source details"],
-    "ImOQa9": ["Reply"],
     "Iq8zdU": ["Close terminal"],
     "IrB5AK": [
       "Server-side cleanup failed for ",
@@ -1251,7 +1250,6 @@
     "LQwqIa": ["Accept form submissions"],
     "LRgZAt": [["owner"], "/", ["name"], " already exists"],
     "LTv5gP": ["This database link is unavailable"],
-    "LU1mtx": ["Discuss this record or a property value without changing the page body."],
     "LXdWeS": ["Medium section heading."],
     "LXfNU-": ["Navigation and suggestions"],
     "LYufDw": ["Failed to enable semantic search — ", ["detail"]],
@@ -1295,7 +1293,6 @@
     "M5_9s2": ["Sending report"],
     "M5mfAe": ["Add tag"],
     "M73whl": ["Context"],
-    "M7SqjM": ["Reopen"],
     "M9597s": ["Preparing share URL..."],
     "MCjC9A": ["Delete ", ["deleteDescriptorLabel"]],
     "MDZSJe": ["When the agent runs its scheduled work."],
@@ -1486,7 +1483,6 @@
       "Add, remove, and reorder this database's schema properties. Every change compiles into a reviewed, undoable plan before it commits."
     ],
     "P6gXB-": ["Replace ", ["keyName"]],
-    "P6itO-": ["Comment on"],
     "P6lAT3": ["Folder target: ", ["linkTitle"], ". Click to open the overview."],
     "P8yDjG": ["Name can’t be empty, \".\", \"..\", or contain / or \\"],
     "PB4upl": ["Find previous match"],
@@ -1537,7 +1533,6 @@
     "Q7W-mC": ["Same folder as current file"],
     "Q7mGh-": ["Proposed deletion"],
     "Q8A-U_": ["Connected to"],
-    "Q8eIK_": ["No comments yet."],
     "QAi7Q9": [
       "Branch <0>",
       ["trimmed"],
@@ -2910,7 +2905,6 @@
       "A key is set, but the embeddings provider rejected it or was unreachable — search fell back to keyword matching. Check the key in <0>Settings → Account</0> and the embeddings endpoint setting."
     ],
     "oFTgFf": ["no continuation"],
-    "oFsfkI": ["Add comment"],
     "oGlwk-": ["Unfavorite"],
     "oJl7eO": ["Unknown component: ", ["componentName"], " — source editable below"],
     "oKBnk5": ["More requests were blocked."],
@@ -3198,7 +3192,6 @@
     "tQ-GT7": [
       "This removes the property from the schema and clears its values from canonical records. Review the impact before opening the exact commit plan."
     ],
-    "tR1uEq": ["Loading comments"],
     "tUvUfp": ["Use a folder you already have."],
     "tVFeu9": ["Next result"],
     "tViRUw": ["Move record"],
