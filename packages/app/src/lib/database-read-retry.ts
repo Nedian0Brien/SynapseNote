@@ -1,5 +1,6 @@
 import {
   classifyDatabaseUiProblem,
+  databaseProblemRetryAfterMs,
   isDatabaseTransactionInProgress,
 } from './database-ui-problem.ts';
 
@@ -74,8 +75,12 @@ export async function withDatabaseReadRetry<T>(
     } catch (cause) {
       attempt += 1;
       if (attempt >= maxAttempts || !shouldRetry(cause)) throw cause;
-      const delayMs = Math.min(initialDelayMs * 2 ** (attempt - 1), maxDelayMs);
-      await waitForRetry(delayMs, options.signal);
+      // The Data Plane states how long the condition needs (`retryAfterMs`).
+      // Honour it as a floor — retrying sooner just spends an attempt while the
+      // server is still returning the same problem.
+      const backoffMs = Math.min(initialDelayMs * 2 ** (attempt - 1), maxDelayMs);
+      const serverDelayMs = databaseProblemRetryAfterMs(cause) ?? 0;
+      await waitForRetry(Math.min(Math.max(backoffMs, serverDelayMs), maxDelayMs), options.signal);
     }
   }
 }

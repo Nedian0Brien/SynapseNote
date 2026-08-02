@@ -29,15 +29,21 @@ function problemMetadata(value: unknown): {
   code: string | null;
   type: string | null;
   recoveryAction: string | null;
+  retryAfterMs: number | null;
   retryable: boolean | null;
   hasSchemaIssues: boolean;
 } {
   const problem = record(value);
   const recovery = record(problem?.recovery);
+  const retryAfterMs = recovery?.retryAfterMs;
   return {
     code: typeof problem?.code === 'string' ? problem.code : null,
     type: typeof problem?.type === 'string' ? problem.type : null,
     recoveryAction: typeof recovery?.action === 'string' ? recovery.action : null,
+    retryAfterMs:
+      typeof retryAfterMs === 'number' && Number.isFinite(retryAfterMs) && retryAfterMs >= 0
+        ? retryAfterMs
+        : null,
     retryable: typeof problem?.retryable === 'boolean' ? problem.retryable : null,
     hasSchemaIssues: Array.isArray(problem?.issues),
   };
@@ -159,6 +165,18 @@ export function classifyDatabaseUiProblem(cause: unknown, fallback: string): Dat
 export function isDatabaseTransactionInProgress(cause: unknown): boolean {
   const error = cause instanceof Error ? (cause as ErrorWithProblem) : null;
   return problemMetadata(error?.problem).code === 'transaction_in_progress';
+}
+
+/**
+ * The Data Plane states how long a retryable problem needs before it can settle
+ * (`recovery.retryAfterMs`). Callers that retry should wait at least that long:
+ * a shorter local backoff spends the retry budget while the server is still
+ * telling us the same thing, and surfaces a terminal error over what the
+ * response documented as recoverable.
+ */
+export function databaseProblemRetryAfterMs(cause: unknown): number | null {
+  const error = cause instanceof Error ? (cause as ErrorWithProblem) : null;
+  return problemMetadata(error?.problem).retryAfterMs;
 }
 
 export function databaseConflictProblem(message: string): DatabaseUiProblem {
