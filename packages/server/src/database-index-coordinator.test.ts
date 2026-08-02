@@ -251,4 +251,66 @@ describe('DatabaseIndexCoordinator', () => {
       { kind: 'index', phase: 'error', reasons: ['git-sync'] },
     ]);
   });
+
+  test('re-drives a failed rebuild until the index watermark recovers', async () => {
+    const { contentDir, databaseRecordIndex } = await fixture();
+    const coordinator = createDatabaseIndexCoordinator({
+      contentDir,
+      databaseRecordIndex,
+      recoveryDelayMs: 5,
+    });
+    writeFileSync(join(contentDir, 'tasks', 'task.md'), record('After'));
+    const originalRebuild = databaseRecordIndex.rebuild.bind(databaseRecordIndex);
+    let rebuilds = 0;
+    databaseRecordIndex.rebuild = async () => {
+      rebuilds += 1;
+      if (rebuilds === 1) throw new Error('rebuild failed');
+      return originalRebuild();
+    };
+
+    // The caller still sees the failure; the work must not be dropped with it.
+    await expect(coordinator.refresh('schema-change')).rejects.toThrow('rebuild failed');
+
+    // The counter advances when a rebuild starts, so poll the indexed content
+    // rather than the count.
+    const deadline = Date.now() + 2_000;
+    while (!databaseRecordIndex.getById('rec_task') && Date.now() < deadline) {
+      await new Promise((resolve) => {
+        setTimeout(resolve, 5);
+      });
+    }
+    expect(rebuilds).toBe(2);
+    expect(databaseRecordIndex.getById('rec_task')?.values).toEqual({ prop_title: 'After' });
+    expect(coordinator.pendingReasons()).toEqual([]);
+    coordinator.dispose();
+  });
+
+  test('stops re-driving a rebuild that never succeeds', async () => {
+    const { contentDir, databaseRecordIndex } = await fixture();
+    const coordinator = createDatabaseIndexCoordinator({
+      contentDir,
+      databaseRecordIndex,
+      recoveryDelayMs: 1,
+      maxRecoveryAttempts: 2,
+    });
+    let rebuilds = 0;
+    databaseRecordIndex.rebuild = async () => {
+      rebuilds += 1;
+      throw new Error('rebuild failed');
+    };
+
+    await expect(coordinator.refresh('schema-change')).rejects.toThrow('rebuild failed');
+
+    const deadline = Date.now() + 500;
+    while (Date.now() < deadline) {
+      await new Promise((resolve) => {
+        setTimeout(resolve, 10);
+      });
+    }
+    // One caller-driven rebuild plus the bounded recovery budget, then it stops
+    // rather than polling a broken index forever.
+    expect(rebuilds).toBe(3);
+    expect(coordinator.pendingReasons()).toEqual(['schema-change']);
+    coordinator.dispose();
+  });
 });

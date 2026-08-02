@@ -18,6 +18,9 @@ export type DatabaseIndexRefreshReason =
 
 const DATABASE_INDEX_MAX_QUEUED_EVENTS = 1_000;
 const DATABASE_INDEX_MAX_CHANGE_LISTENERS = 256;
+const DATABASE_INDEX_MAX_RECOVERY_ATTEMPTS = 5;
+const DATABASE_INDEX_RECOVERY_DELAY_MS = 250;
+const DATABASE_INDEX_MAX_RECOVERY_DELAY_MS = 4_000;
 
 export interface CreateDatabaseIndexCoordinatorOptions {
   contentDir: string;
@@ -26,6 +29,10 @@ export interface CreateDatabaseIndexCoordinatorOptions {
   maxQueuedEvents?: number;
   /** Test seam; production uses DATABASE_INDEX_MAX_CHANGE_LISTENERS. */
   maxChangeListeners?: number;
+  /** Test seam; production uses DATABASE_INDEX_MAX_RECOVERY_ATTEMPTS. */
+  maxRecoveryAttempts?: number;
+  /** Test seam; production uses DATABASE_INDEX_RECOVERY_DELAY_MS. */
+  recoveryDelayMs?: number;
 }
 
 export type DatabaseIndexChangeEvent =
@@ -58,16 +65,24 @@ export class DatabaseIndexCoordinator {
   readonly #changeListeners = new Set<DatabaseIndexChangeListener>();
   readonly #maxQueuedEvents: number;
   readonly #maxChangeListeners: number;
+  readonly #maxRecoveryAttempts: number;
+  readonly #recoveryDelayMs: number;
   #queueOverflowed = false;
   #refreshRequested = false;
   #activeRefresh: Promise<DatabaseRecordIndexRebuildResult> | null = null;
+  #recoveryAttempt = 0;
+  #recoveryTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
 
   constructor(options: CreateDatabaseIndexCoordinatorOptions) {
     if (
       !Number.isSafeInteger(options.maxQueuedEvents ?? DATABASE_INDEX_MAX_QUEUED_EVENTS) ||
       (options.maxQueuedEvents ?? DATABASE_INDEX_MAX_QUEUED_EVENTS) < 1 ||
       !Number.isSafeInteger(options.maxChangeListeners ?? DATABASE_INDEX_MAX_CHANGE_LISTENERS) ||
-      (options.maxChangeListeners ?? DATABASE_INDEX_MAX_CHANGE_LISTENERS) < 1
+      (options.maxChangeListeners ?? DATABASE_INDEX_MAX_CHANGE_LISTENERS) < 1 ||
+      !Number.isSafeInteger(options.maxRecoveryAttempts ?? DATABASE_INDEX_MAX_RECOVERY_ATTEMPTS) ||
+      (options.maxRecoveryAttempts ?? DATABASE_INDEX_MAX_RECOVERY_ATTEMPTS) < 0 ||
+      !Number.isSafeInteger(options.recoveryDelayMs ?? DATABASE_INDEX_RECOVERY_DELAY_MS) ||
+      (options.recoveryDelayMs ?? DATABASE_INDEX_RECOVERY_DELAY_MS) < 0
     ) {
       throw new RangeError('Database index coordinator limits must be positive safe integers');
     }
@@ -75,6 +90,54 @@ export class DatabaseIndexCoordinator {
     this.#databaseRecordIndex = options.databaseRecordIndex;
     this.#maxQueuedEvents = options.maxQueuedEvents ?? DATABASE_INDEX_MAX_QUEUED_EVENTS;
     this.#maxChangeListeners = options.maxChangeListeners ?? DATABASE_INDEX_MAX_CHANGE_LISTENERS;
+    this.#maxRecoveryAttempts = options.maxRecoveryAttempts ?? DATABASE_INDEX_MAX_RECOVERY_ATTEMPTS;
+    this.#recoveryDelayMs = options.recoveryDelayMs ?? DATABASE_INDEX_RECOVERY_DELAY_MS;
+  }
+
+  /**
+   * Stops any scheduled recovery rebuild. Long-lived servers never need this;
+   * tests and short-lived processes use it so a pending retry cannot outlive
+   * the coordinator.
+   */
+  dispose(): void {
+    this.#clearRecoveryTimer();
+  }
+
+  #clearRecoveryTimer(): void {
+    if (this.#recoveryTimer === null) return;
+    globalThis.clearTimeout(this.#recoveryTimer);
+    this.#recoveryTimer = null;
+  }
+
+  /**
+   * Re-drives a failed rebuild.
+   *
+   * The record index only advances its manifest watermark inside a successful
+   * `rebuild()`, and the Data Plane refuses every read while that watermark
+   * trails the manifest. Dropping the work on failure therefore does not just
+   * lose a refresh — it leaves the whole database surface unreadable until some
+   * unrelated event happens to trigger a successful rebuild. Retry on a bounded
+   * backoff so the watermark recovers on its own.
+   */
+  #scheduleRecoveryRefresh(): void {
+    if (this.#recoveryTimer !== null) return;
+    if (this.#recoveryAttempt >= this.#maxRecoveryAttempts) return;
+    const attempt = this.#recoveryAttempt;
+    this.#recoveryAttempt = attempt + 1;
+    const delayMs = Math.min(
+      this.#recoveryDelayMs * 2 ** attempt,
+      DATABASE_INDEX_MAX_RECOVERY_DELAY_MS,
+    );
+    const timer = globalThis.setTimeout(() => {
+      this.#recoveryTimer = null;
+      const [reason] = [...this.#pendingReasons];
+      if (!reason) return;
+      // A rejection here schedules the next attempt through the same path.
+      void this.refresh(reason).catch(() => undefined);
+    }, delayMs);
+    // A pending retry must not keep a short-lived process alive on its own.
+    (timer as { unref?: () => void }).unref?.();
+    this.#recoveryTimer = timer;
   }
 
   applyDiskEvent(event: DiskEvent): void {
@@ -135,10 +198,12 @@ export class DatabaseIndexCoordinator {
 
   async #drainRefreshes(): Promise<DatabaseRecordIndexRebuildResult> {
     let result: DatabaseRecordIndexRebuildResult | null = null;
+    let attemptedReasons: readonly DatabaseIndexRefreshReason[] = [];
     try {
       do {
         this.#refreshRequested = false;
         const reasons = [...this.#pendingReasons].sort((left, right) => left.localeCompare(right));
+        attemptedReasons = reasons;
         this.#pendingReasons.clear();
         const rebuildStartedAt = performance.now();
         const rebuilding = this.#databaseRecordIndex.rebuild();
@@ -162,13 +227,21 @@ export class DatabaseIndexCoordinator {
         }
         this.#publish({ kind: 'index', phase: 'ready', reasons });
       } while (this.#refreshRequested);
+      // The watermark is current again, so the next failure starts with a full
+      // recovery budget.
+      this.#recoveryAttempt = 0;
+      this.#clearRecoveryTimer();
     } catch (error) {
       // A future successful canonical rebuild subsumes all queued incremental
       // events. Applying them against a failed/stale schema would be unsafe.
       this.#queuedEvents.splice(0, this.#queuedEvents.length);
-      this.#pendingReasons.clear();
-      this.#refreshRequested = false;
       this.#queueOverflowed = false;
+      this.#refreshRequested = false;
+      // Keep the reasons: the caller is told about the failure, but the work
+      // itself must not be dropped. Nothing else re-drives a failed rebuild,
+      // and reads stay refused until one succeeds.
+      for (const reason of attemptedReasons) this.#pendingReasons.add(reason);
+      this.#scheduleRecoveryRefresh();
       throw error;
     }
 
