@@ -1,2 +1,6 @@
 [test]
-preload = ["./tests/integration/idb-preload.ts", "./tests/lingui-macro-preload.ts"]
+preload = [
+  "./tests/integration/idb-preload.ts",
+  "./tests/lingui-macro-preload.ts",
+  "./tests/static-asset-preload.ts",
+]
