@@ -8,6 +8,7 @@ import {
   waitFor,
 } from '@testing-library/react';
 import { StrictMode } from 'react';
+import { resetDatabaseLinkedViewCacheForTests } from '@/lib/database-linked-view-cache';
 import { DatabaseView, databaseViewTabActionToInitialAction } from './DatabaseView';
 import { JsxComponentHostProvider } from './jsx-host-context';
 
@@ -98,6 +99,10 @@ function expectInlineHistoryAction(name: 'Undo change' | 'Redo change'): void {
 
 afterEach(() => {
   cleanup();
+  // The linked-view cache is module state that useDatabaseReadModel seeds from
+  // on mount, so one test's snapshot otherwise arrives as the next test's
+  // initial state. DatabaseTableDialog and database-read-model reset it too.
+  resetDatabaseLinkedViewCacheForTests();
   globalThis.fetch = originalFetch;
   window.location.hash = originalHash;
 });
