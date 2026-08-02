@@ -2,7 +2,7 @@
 
 export const DATABASE_AGENT_RUN_CHANGED_EVENT = 'synapsenote:database-agent-run-changed';
 
-export type DatabaseAgentRunChangeAction = 'undo' | 'retry' | 'resume';
+type DatabaseAgentRunChangeAction = 'undo' | 'retry' | 'resume';
 
 export interface DatabaseAgentRunChangedDetail {
   action: DatabaseAgentRunChangeAction;

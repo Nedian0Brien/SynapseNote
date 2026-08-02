@@ -23,7 +23,7 @@ import {
 
 type DatabaseOnboardingFlow = 'onboarding' | 'source-identity-migration';
 
-export function databaseOnboardingItemIsBlocked(item: DatabaseOnboardingItem): boolean {
+function databaseOnboardingItemIsBlocked(item: DatabaseOnboardingItem): boolean {
   return (
     item.action === 'reject' ||
     (item.action === 'modify' &&

@@ -2,7 +2,6 @@ import type {
   DatabaseCalculationFunction,
   DatabaseDateValue,
   DatabaseProperty,
-  DatabasePropertyType,
   DatabaseQueryResult,
   DatabaseValue,
   FormulaComputedResult,
@@ -190,7 +189,7 @@ export function displayValue(
   return JSON.stringify(value);
 }
 
-export function displayComputedRuntimeValue(value: FormulaPersistedRuntimeValue): string {
+function displayComputedRuntimeValue(value: FormulaPersistedRuntimeValue): string {
   if (value === null) return '—';
   if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
     return String(value);
@@ -431,5 +430,3 @@ export const DATABASE_CONDITIONAL_COLOR_CLASSES: Record<
   pink: 'bg-pink-500/15 dark:bg-pink-400/15',
   red: 'bg-red-500/15 dark:bg-red-400/15',
 };
-
-export type { DatabasePropertyType };

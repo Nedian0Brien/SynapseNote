@@ -10,7 +10,7 @@ export function readInitialSnapshot(provider: HocuspocusProvider): FrontmatterSn
   return { map, keys: readFmKeys(source), parseError };
 }
 
-export type DatabaseRecordPageProblemKind = 'missing' | 'permission' | 'error';
+type DatabaseRecordPageProblemKind = 'missing' | 'permission' | 'error';
 
 export interface DatabaseRecordPageProblem {
   kind: DatabaseRecordPageProblemKind;

@@ -14,8 +14,6 @@ import { DatabaseTableCellEditingContent } from './DatabaseTableCellEditingConte
 import type { DatabaseTableCellEditing } from './database-table-cell-types';
 import type { DatabaseTableProps } from './database-table-types';
 
-export type { DatabaseTableCellEditing } from './database-table-cell-types';
-
 type ComputedResult = NonNullable<ProjectedDatabaseRecord['computedResults']>[string];
 type VerificationProjection = NonNullable<
   ProjectedDatabaseRecord['verificationProjections']

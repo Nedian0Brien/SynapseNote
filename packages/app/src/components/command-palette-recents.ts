@@ -4,7 +4,7 @@ interface FileFolderRecentEntry {
   lastOpenedAt: string;
 }
 
-export interface DatabaseRecentEntry {
+interface DatabaseRecentEntry {
   kind: 'database';
   path: string;
   lastOpenedAt: string;

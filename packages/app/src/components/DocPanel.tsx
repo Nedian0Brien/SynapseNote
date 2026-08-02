@@ -14,9 +14,9 @@ import { useSingleFileMode } from '@/lib/single-file-mode';
 export type DocumentPanelTab = 'outline' | 'memo' | 'links' | 'graph' | 'timeline';
 export type PdfPanelTab = 'pages' | 'annotations' | 'outline' | 'links';
 export type PanelTab = 'chat' | DocumentPanelTab | PdfPanelTab;
-export type PanelSurface = 'document' | 'pdf';
+type PanelSurface = 'document' | 'pdf';
 
-export const DOCUMENT_TABS: { id: PanelTab; icon: typeof ListTree }[] = [
+const DOCUMENT_TABS: { id: PanelTab; icon: typeof ListTree }[] = [
   { id: 'chat', icon: MessageSquare },
   { id: 'outline', icon: ListTree },
   { id: 'memo', icon: Highlighter },
@@ -25,7 +25,7 @@ export const DOCUMENT_TABS: { id: PanelTab; icon: typeof ListTree }[] = [
   { id: 'timeline', icon: Clock },
 ];
 
-export const PDF_TABS: { id: PanelTab; icon: typeof ListTree }[] = [
+const PDF_TABS: { id: PanelTab; icon: typeof ListTree }[] = [
   { id: 'chat', icon: MessageSquare },
   { id: 'pages', icon: Files },
   { id: 'annotations', icon: Highlighter },

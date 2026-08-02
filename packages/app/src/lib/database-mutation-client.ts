@@ -249,7 +249,7 @@ function undoFromResponse(
   return result as unknown as DatabaseUndoResult;
 }
 
-export async function createDatabaseMutationDraft(
+async function createDatabaseMutationDraft(
   desiredState: DatabaseDesiredStateDraftInput,
   options: DatabaseMutationClientOptions = {},
 ): Promise<DatabaseDraftArtifact> {
@@ -259,7 +259,7 @@ export async function createDatabaseMutationDraft(
   );
 }
 
-export async function createDatabaseMutationPlan(
+async function createDatabaseMutationPlan(
   draftId: string,
   options: DatabaseMutationClientOptions = {},
 ): Promise<DatabasePlanArtifact> {
@@ -380,7 +380,7 @@ export async function executeDatabaseButtonPlan(
   };
 }
 
-export async function commitReviewedDatabasePlan(
+async function commitReviewedDatabasePlan(
   input: {
     plan: DatabasePlanArtifact;
     actor: DatabaseUiActor;

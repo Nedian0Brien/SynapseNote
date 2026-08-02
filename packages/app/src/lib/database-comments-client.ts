@@ -54,7 +54,7 @@ export type DatabaseCommentRequest =
       mentionedPersonIds?: string[];
     });
 
-export class DatabaseCommentsClientError extends Error {
+class DatabaseCommentsClientError extends Error {
   constructor(
     message: string,
     readonly status: number,

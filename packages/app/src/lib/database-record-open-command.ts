@@ -16,7 +16,7 @@ import {
 import { closeDatabaseRecordPeek, openDatabaseRecordPeek } from './database-overlay-store';
 import { rememberDatabaseRecordNavigation } from './database-record-navigation';
 
-export type DatabaseRecordOpenOrigin = 'inline' | 'workspace' | 'peek';
+type DatabaseRecordOpenOrigin = 'inline' | 'workspace' | 'peek';
 
 export interface DatabaseRecordOpenIntent {
   database: DatabaseDefinition;

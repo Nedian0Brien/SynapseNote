@@ -55,5 +55,3 @@ export function useDatabaseTableInteractionState() {
     editFocusRef,
   };
 }
-
-export type DatabaseTableInteractionState = ReturnType<typeof useDatabaseTableInteractionState>;

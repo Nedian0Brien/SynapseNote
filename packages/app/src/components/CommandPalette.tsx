@@ -116,7 +116,7 @@ import { useInstalledAgents } from './handoff/useInstalledAgents';
 import { basenameOf } from './project-switcher-recents';
 
 export type { CommandPaletteProps } from './command-palette/command-palette-types';
-export { computeVisibleSearchResults, runWithToast } from './command-palette/command-palette-utils';
+export { runWithToast } from './command-palette/command-palette-utils';
 
 const COMMAND_PALETTE_SEARCH_TIMEOUT_MS = 3000;
 // Re-poll cadence while the server reports the search index is still warming

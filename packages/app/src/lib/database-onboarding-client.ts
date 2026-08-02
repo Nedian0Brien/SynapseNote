@@ -5,7 +5,7 @@ export interface DatabaseOnboardingClientOptions {
   signal?: AbortSignal;
 }
 
-export class DatabaseOnboardingClientError extends Error {
+class DatabaseOnboardingClientError extends Error {
   readonly status: number;
   readonly problem: unknown;
 

@@ -14,7 +14,7 @@ import * as pathPosix from 'node:path/posix';
 import * as pathWin32 from 'node:path/win32';
 import { isPathWithinProject } from './ipc-handlers.ts';
 
-export const MAX_PDF_SAVE_BYTES = 512 * 1024 * 1024;
+const MAX_PDF_SAVE_BYTES = 512 * 1024 * 1024;
 
 export type PdfAssetSaveResult =
   | { ok: true }

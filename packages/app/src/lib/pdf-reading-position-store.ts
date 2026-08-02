@@ -1,4 +1,4 @@
-export const PDF_READING_POSITION_KEY_PREFIX = 'ok-pdf-reading-position-v1:';
+const PDF_READING_POSITION_KEY_PREFIX = 'ok-pdf-reading-position-v1:';
 
 export interface PdfReadingPosition {
   pageNumber: number;

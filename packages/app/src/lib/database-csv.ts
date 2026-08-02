@@ -10,7 +10,7 @@ import {
   databaseValueToClipboard,
 } from './database-tsv.ts';
 
-export const DATABASE_CSV_RECORD_ID_HEADER = 'record_id';
+const DATABASE_CSV_RECORD_ID_HEADER = 'record_id';
 export const DATABASE_CSV_IMPORT_RECORD_LIMIT = 100;
 
 function csvCell(value: string): string {
@@ -160,8 +160,8 @@ export function databaseDelimitedRecordIds(
   return parseDatabaseCsv(source, contents, delimiter).rows.map((row) => row.recordId);
 }
 
-export type DatabaseImportEncoding = 'utf-8' | 'utf-16le' | 'utf-16be' | 'windows-1252';
-export type DatabaseImportDelimiter = ',' | '\t' | ';';
+type DatabaseImportEncoding = 'utf-8' | 'utf-16le' | 'utf-16be' | 'windows-1252';
+type DatabaseImportDelimiter = ',' | '\t' | ';';
 
 export interface DatabaseImportInspection {
   encoding: DatabaseImportEncoding;

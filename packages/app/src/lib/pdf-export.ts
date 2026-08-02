@@ -1,6 +1,6 @@
 import type { Editor } from '@tiptap/core';
 
-export const PDF_PRINT_ROOT_ID = 'ok-pdf-export-root';
+const PDF_PRINT_ROOT_ID = 'ok-pdf-export-root';
 export const PDF_BLOCK_MATH_FORMULA_ATTRIBUTE = 'data-pdf-math-formula';
 export const PDF_MERMAID_CHART_ATTRIBUTE = 'data-pdf-mermaid-chart';
 const PDF_BLOCK_MATH_SELECTOR = [
@@ -260,7 +260,7 @@ export async function materializePdfMath(root: HTMLElement): Promise<void> {
  * exporting an empty async placeholder, the editor's dark theme, or the
  * reader's current interactive zoom/pan transform.
  */
-export async function materializePdfMermaid(root: HTMLElement): Promise<void> {
+async function materializePdfMermaid(root: HTMLElement): Promise<void> {
   const targets = [...root.querySelectorAll<HTMLElement>(`[${PDF_MERMAID_CHART_ATTRIBUTE}]`)];
   if (targets.length === 0) return;
 

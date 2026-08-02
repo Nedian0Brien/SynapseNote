@@ -8,10 +8,7 @@ import type { FileTreeTarget } from '@/components/file-tree-operations';
 import type { FileEntry } from '@/components/file-tree-utils';
 import { hasOkPathSegment, isAssetEntry, isDocumentEntry } from '@/components/file-tree-utils';
 
-export function treePathToTarget(
-  treePath: string,
-  documents: readonly FileEntry[],
-): FileTreeTarget {
+function treePathToTarget(treePath: string, documents: readonly FileEntry[]): FileTreeTarget {
   return treeItemToTarget(
     {
       kind: treePath.endsWith('/') ? 'directory' : 'file',
@@ -38,7 +35,7 @@ export function hasSameStemMarkdownSiblingTreePath(
   return alternate !== null && treePaths.includes(alternate);
 }
 
-export function isTreePathInsideFolder(treePath: string, folderTreePath: string): boolean {
+function isTreePathInsideFolder(treePath: string, folderTreePath: string): boolean {
   return treePath !== folderTreePath && treePath.startsWith(folderTreePath);
 }
 
@@ -58,7 +55,7 @@ export function selectedTreePathsToDeleteTargets(
     .map((treePath) => treePathToTarget(treePath, documents));
 }
 
-export function normalizeTreePathFromModel(model: PierreFileTreeModel, treePath: string): string {
+function normalizeTreePathFromModel(model: PierreFileTreeModel, treePath: string): string {
   const selectedItem =
     model.getItem(treePath) ?? model.getItem(folderPathToTreeDirectoryPath(treePath));
   return selectedItem?.isDirectory()
@@ -66,7 +63,7 @@ export function normalizeTreePathFromModel(model: PierreFileTreeModel, treePath:
     : treePath;
 }
 
-export function focusedOrFirstSelectedTreePath(model: PierreFileTreeModel): string | null {
+function focusedOrFirstSelectedTreePath(model: PierreFileTreeModel): string | null {
   const selectedPath = model.getFocusedPath() ?? model.getSelectedPaths()[0] ?? null;
   return selectedPath ? normalizeTreePathFromModel(model, selectedPath) : null;
 }
@@ -98,7 +95,7 @@ export function resolveKeyboardDeleteTargets(
   return selectedTreePathsToDeleteTargets(paths, documents);
 }
 
-export function isPathAtOrInsideFolder(path: string, folderPath: string): boolean {
+function isPathAtOrInsideFolder(path: string, folderPath: string): boolean {
   return path === folderPath || path.startsWith(`${folderPath}/`);
 }
 

@@ -2,7 +2,7 @@ import type { Dispatch, SetStateAction } from 'react';
 // biome-ignore lint/style/noRestrictedImports: this hook publishes callbacks to long-lived subscriptions, so stable identities are part of its contract.
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-export const DATABASE_REFRESH_COALESCE_MS = 75;
+const DATABASE_REFRESH_COALESCE_MS = 75;
 
 /**
  * Converts refresh invalidations into a generation consumed by the database

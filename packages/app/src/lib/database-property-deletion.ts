@@ -6,7 +6,7 @@ import type {
 } from '@nedian0brien/synapsenote-core';
 import { collectFormulaPropertyDependencies } from '@nedian0brien/synapsenote-core';
 
-export type DatabasePropertyDeletionDependency = {
+type DatabasePropertyDeletionDependency = {
   id: string;
   name: string;
   kind: 'property' | 'view';

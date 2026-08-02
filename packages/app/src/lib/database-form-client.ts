@@ -19,7 +19,7 @@ export const DatabaseFormSubmitResponseSchema = z
 
 export type DatabaseFormSubmitResult = z.infer<typeof DatabaseFormSubmitResponseSchema>;
 
-export class DatabaseFormSubmitError extends Error {
+class DatabaseFormSubmitError extends Error {
   readonly status: number;
   readonly problem: unknown;
 

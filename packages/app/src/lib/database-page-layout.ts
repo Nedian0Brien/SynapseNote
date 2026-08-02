@@ -5,7 +5,7 @@ import type {
   DatabaseSource,
 } from '@nedian0brien/synapsenote-core';
 
-export interface ResolvedDatabasePageLayoutGroup {
+interface ResolvedDatabasePageLayoutGroup {
   id: string;
   key: string;
   name: string;
@@ -13,7 +13,7 @@ export interface ResolvedDatabasePageLayoutGroup {
   properties: DatabaseProperty[];
 }
 
-export interface ResolvedDatabasePageLayoutSection {
+interface ResolvedDatabasePageLayoutSection {
   id: string;
   key: string;
   name: string;

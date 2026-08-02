@@ -42,16 +42,3 @@ export function writeTerminalWidth(px: number, storage?: TerminalWidthStorage): 
     // quota exceeded — in-memory state holds for the session (mirrors sidebar-pin-store)
   }
 }
-
-export function getInitialTerminalWidth(): number {
-  // `typeof localStorage` is not safe when localStorage is a property getter that
-  // throws on access (file:// protocol, Safari private mode SecurityError,
-  // sandboxed iframes). Wrap the whole dispatch so the synchronous-init contract
-  // survives any storage-restricted host.
-  try {
-    if (typeof localStorage === 'undefined') return DEFAULT_TERMINAL_WIDTH;
-    return readTerminalWidth();
-  } catch {
-    return DEFAULT_TERMINAL_WIDTH;
-  }
-}

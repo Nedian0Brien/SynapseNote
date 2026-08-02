@@ -8,7 +8,7 @@ import { withDatabaseReadRetry } from './database-read-retry.ts';
 
 const RevisionSchema = z.string().regex(/^sha256:[a-f0-9]{64}$/);
 
-export const DatabaseCatalogCandidateSchema = z
+const DatabaseCatalogCandidateSchema = z
   .object({
     id: z.string().startsWith('db_'),
     key: z.string().min(1),

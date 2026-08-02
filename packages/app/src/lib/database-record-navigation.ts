@@ -97,7 +97,7 @@ export function readDatabaseRecordNavigation(
   return state?.paths[state.index] === currentPath ? state : null;
 }
 
-export function updateDatabaseRecordNavigationIndex(
+function updateDatabaseRecordNavigationIndex(
   state: DatabaseRecordNavigationState,
   index: number,
 ): DatabaseRecordNavigationState | null {

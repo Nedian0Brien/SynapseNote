@@ -1,7 +1,6 @@
 import type { DocumentNavigation } from '@/editor/document-context/useDocumentNavigation';
 import { hashFromDocName } from '@/lib/doc-hash';
 import { runWithToast as runWithToastBase } from '@/lib/error-state';
-import type { OmnibarRecentEntry } from '../command-palette-recents';
 import type { WorkspaceEntry, WorkspaceSearchEntry } from '../command-palette-search';
 import { defaultInitialDir } from '../file-tree-utils';
 
@@ -44,5 +43,3 @@ export function computeVisibleSearchResults({
   if (searchStatus === 'success') return [];
   return fallbackSearchResults;
 }
-
-export type CommandPaletteNavigationEntry = WorkspaceEntry | OmnibarRecentEntry;

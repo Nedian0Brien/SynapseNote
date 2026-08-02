@@ -1805,7 +1805,7 @@ function memoRectForSelection(rect: {
   };
 }
 
-export function pdfAssetPathFromSource(src: string): string | null {
+function pdfAssetPathFromSource(src: string): string | null {
   try {
     const url = new URL(src, 'http://synapsenote.local');
     if (url.pathname !== '/api/asset') return null;

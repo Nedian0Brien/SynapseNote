@@ -6,7 +6,7 @@ import { cacheDatabaseCatalog, readCachedDatabaseCatalog } from './database-offl
 import { type DatabaseReadModelState, useDatabaseReadModel } from './database-read-model';
 import { classifyDatabaseUiProblem, type DatabaseUiProblem } from './database-ui-problem';
 
-export interface DatabaseWorkspaceSelection {
+interface DatabaseWorkspaceSelection {
   databaseId: string;
   sourceId: string;
 }

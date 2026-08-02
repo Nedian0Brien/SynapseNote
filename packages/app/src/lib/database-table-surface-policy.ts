@@ -15,8 +15,8 @@ export interface DatabaseTableSurfacePolicy {
   rowHandleGap: number;
 }
 
-export const DATABASE_TABLE_INTERACTION_RAIL_WIDTH = 44;
-export const DATABASE_TABLE_ROW_HANDLE_GAP = INTERACTION_HANDLE_TABLE_GAP;
+const DATABASE_TABLE_INTERACTION_RAIL_WIDTH = 44;
+const DATABASE_TABLE_ROW_HANDLE_GAP = INTERACTION_HANDLE_TABLE_GAP;
 
 export function databaseTableSurfacePolicy(
   mode: DatabaseTableSurfaceMode,

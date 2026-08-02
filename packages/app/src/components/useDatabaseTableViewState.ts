@@ -41,5 +41,3 @@ export function useDatabaseTableViewState({
     updateViewState,
   };
 }
-
-export type DatabaseTableViewStateModel = ReturnType<typeof useDatabaseTableViewState>;

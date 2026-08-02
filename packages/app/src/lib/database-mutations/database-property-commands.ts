@@ -9,7 +9,8 @@ import { DatabaseDefinitionSchema } from '@nedian0brien/synapsenote-core';
 import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-server';
 
 import { databaseDraftBase } from './database-desired-state-base';
-export function databasePropertyKeyFromName(name: string, existingKeys: readonly string[]): string {
+
+function databasePropertyKeyFromName(name: string, existingKeys: readonly string[]): string {
   const base =
     name
       .trim()

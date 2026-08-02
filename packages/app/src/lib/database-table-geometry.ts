@@ -1,7 +1,6 @@
 import type { DatabaseProperty } from '@nedian0brien/synapsenote-core';
 import type { DatabaseTableLayoutState } from './database-table-layout';
 import {
-  DATABASE_TABLE_INTERACTION_RAIL_WIDTH,
   type DatabaseTableSurfaceMode,
   type DatabaseTableSurfacePolicy,
   databaseTableSurfacePolicy,
@@ -17,18 +16,12 @@ export const DATABASE_TABLE_SELECTOR_WIDTH = {
   canonical: databaseTableSurfacePolicy('canonical').selectorTrackWidth,
   notion: databaseTableSurfacePolicy('inline').selectorTrackWidth,
 } as const;
-/**
- * Interaction controls on the inline surface are a sibling overlay, not a
- * table track or scroll-owner inset. The property grid therefore starts at
- * Title while the add/grip controls float in the document-side gutter.
- */
-export const DATABASE_TABLE_INTERACTION_GUTTER_WIDTH = DATABASE_TABLE_INTERACTION_RAIL_WIDTH;
 export const DATABASE_TABLE_ACTIONS_WIDTH = {
   canonical: databaseTableSurfacePolicy('canonical').actionsTrackWidth,
   notion: databaseTableSurfacePolicy('inline').actionsTrackWidth,
 } as const;
 
-export interface DatabaseTablePropertyTrack {
+interface DatabaseTablePropertyTrack {
   propertyId: string;
   width: number;
 }
