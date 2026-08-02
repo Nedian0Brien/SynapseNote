@@ -19,7 +19,7 @@ import {
   textResult,
 } from './shared.ts';
 
-export const DESCRIPTION = [
+const DESCRIPTION = [
   '[Requires: Hocuspocus server; apply requires user approval] Preview and repair stale database identities, invalid values, missing or duplicate Unique IDs, missing indexed records, and orphaned index entries.',
   '',
   'Always call action=preview first. The immutable plan reports every exact file rewrite, Unique ID allocation and watermark advance, before/after hash, lossy value change, derived-index rebuild, blocker, snapshot revision, expiry, and plan hash. Required values without a safe default remain blocked for explicit input.',

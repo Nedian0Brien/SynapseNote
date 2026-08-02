@@ -19,7 +19,7 @@ import {
   textResult,
 } from './shared.ts';
 
-export const DESCRIPTION = [
+const DESCRIPTION = [
   '[Requires: Hocuspocus server; apply requires user approval] Preview or safely reverse a database mutation by its opaque undo token.',
   '',
   'Use action=preview first. It compares the current snapshot and every touched file hash with the committed receipt and returns canApply plus explicit conflicts without changing files. Use action=apply only when canApply=true; provide a unique idempotencyKey and attributed actor.',

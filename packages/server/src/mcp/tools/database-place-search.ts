@@ -16,7 +16,7 @@ import {
   textResult,
 } from './shared.ts';
 
-export const DESCRIPTION = [
+const DESCRIPTION = [
   '[Requires: Hocuspocus server] Submit one address/place query to the operator-configured geocoder.',
   '',
   'This is an external egress operation: the exact query and optional locale/country filters leave the device. Set consent=true only after the user or governing policy explicitly authorizes that disclosure. SynapseNote never performs per-keystroke autocomplete and has no public provider enabled by default.',

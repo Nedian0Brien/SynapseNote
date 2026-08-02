@@ -191,14 +191,14 @@ const StateSchema = z
   })
   .strict();
 
-export interface DatabaseAutomationPermissionDecision {
+interface DatabaseAutomationPermissionDecision {
   allowed: boolean;
   policyId: string;
   policyRevision: string;
   reason?: string;
 }
 
-export interface DatabaseAutomationExternalDecision extends DatabaseAutomationPermissionDecision {
+interface DatabaseAutomationExternalDecision extends DatabaseAutomationPermissionDecision {
   maxEgressBytes: number;
 }
 

@@ -16,8 +16,8 @@ export type DatabaseIndexRefreshReason =
   | 'transaction'
   | 'watcher-overflow';
 
-export const DATABASE_INDEX_MAX_QUEUED_EVENTS = 1_000;
-export const DATABASE_INDEX_MAX_CHANGE_LISTENERS = 256;
+const DATABASE_INDEX_MAX_QUEUED_EVENTS = 1_000;
+const DATABASE_INDEX_MAX_CHANGE_LISTENERS = 256;
 
 export interface CreateDatabaseIndexCoordinatorOptions {
   contentDir: string;

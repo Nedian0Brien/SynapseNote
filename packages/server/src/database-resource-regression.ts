@@ -6,7 +6,7 @@ import {
 } from './database-benchmark-corpus.ts';
 import { createDatabaseContextPack } from './database-context-pack.ts';
 
-export const DATABASE_RESOURCE_REGRESSION_BUDGETS = Object.freeze({
+const DATABASE_RESOURCE_REGRESSION_BUDGETS = Object.freeze({
   retainedMemoryBytes: 320 * 1024 * 1024,
   indexBytes: 128 * 1024 * 1024,
   contextTokens: 7_500,

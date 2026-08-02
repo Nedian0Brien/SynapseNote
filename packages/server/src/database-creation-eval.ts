@@ -8,12 +8,7 @@
  * successful database creation.
  */
 
-import type {
-  DatabaseDesiredStateDraftInput,
-  DatabaseDraftArtifact,
-  DatabasePlanArtifact,
-  DatabasePlanEngine,
-} from './database-plan.ts';
+import type { DatabaseDraftArtifact, DatabasePlanEngine } from './database-plan.ts';
 
 export interface DatabaseCreationEvalCase {
   id: string;
@@ -25,7 +20,7 @@ export interface DatabaseCreationEvalCase {
   };
 }
 
-export interface DatabasePromptPlannerResult {
+interface DatabasePromptPlannerResult {
   desiredState: unknown;
   /** Number of schema-repair turns performed before returning the result. */
   repairAttempts?: number;
@@ -36,7 +31,7 @@ export type DatabasePromptPlanner = (
   context: { caseId: string },
 ) => DatabasePromptPlannerResult | unknown;
 
-export interface DatabaseCreationEvalOutcome {
+interface DatabaseCreationEvalOutcome {
   case: DatabaseCreationEvalCase;
   validWithoutRepair: boolean;
   repairAttempts: number;
@@ -103,7 +98,7 @@ function errorCode(error: unknown): string {
   return error instanceof Error ? error.name : 'unknown_error';
 }
 
-export function evaluateDatabaseCreationCase(
+function evaluateDatabaseCreationCase(
   engine: Pick<DatabasePlanEngine, 'createDraft' | 'createPlan'>,
   planner: DatabasePromptPlanner,
   evalCase: DatabaseCreationEvalCase,
@@ -183,7 +178,3 @@ export function runDatabaseCreationEval(
     outcomes,
   };
 }
-
-/** Reusable type aliases for consumers that want to persist an eval result. */
-export type DatabaseCreationEvalDraft = DatabaseDesiredStateDraftInput;
-export type DatabaseCreationEvalPlan = DatabasePlanArtifact;

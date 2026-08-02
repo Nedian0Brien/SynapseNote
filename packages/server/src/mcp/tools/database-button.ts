@@ -15,7 +15,7 @@ import {
   textResult,
 } from './shared.ts';
 
-export const DESCRIPTION = [
+const DESCRIPTION = [
   '[Requires: Hocuspocus server] Plan, execute, or inspect durable runs for one database Button.',
   '',
   'For a database/source Button, pass databaseId plus buttonId. For a Button property, pass databaseId, sourceId, recordId, propertyId, and the expectedRecordRevision returned by data(action=query) or data(action=record). The result binds every configured step to stable scope and permission-policy revisions. Review internalPlan.diff plus each externalSteps connectionId, eventName, exact payload fields/body disclosure, and egressBytes.',

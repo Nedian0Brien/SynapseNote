@@ -33,7 +33,7 @@ import {
   skillHostDir,
 } from './skill-projection.ts';
 
-export const LEGACY_PACK_SKILL_PREFIX = 'open-knowledge-pack-';
+const LEGACY_PACK_SKILL_PREFIX = 'open-knowledge-pack-';
 
 export interface LegacyPackSkillMigrationResult {
   migrated: Array<{ fromName: string; toName: string; hosts: string[] }>;
