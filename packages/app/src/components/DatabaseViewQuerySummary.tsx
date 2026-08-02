@@ -7,6 +7,7 @@ import type {
 } from '@nedian0brien/synapsenote-core';
 import { ArrowDownAZ, ArrowUpAZ, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { isDatabaseSelectProperty } from './database-table-types';
 
 const FILTER_OPERATOR_LABELS: Record<DatabaseQueryOperator, string> = {
   eq: 'is',
@@ -39,6 +40,23 @@ function propertyName(source: DatabaseSource, propertyId: string): string {
   return source.properties.find((property) => property.id === propertyId)?.name ?? propertyId;
 }
 
+/**
+ * Select filters store the option's stable id. Showing that id verbatim leaves
+ * the summary reading "Status is opt_35c9c65a…", so resolve it back to the
+ * option name the user picked.
+ */
+function filterValueLabel(
+  source: DatabaseSource,
+  propertyId: string,
+  value: string | number | boolean | string[] | number[] | boolean[],
+): string | number | boolean | string[] | number[] | boolean[] {
+  const property = source.properties.find((candidate) => candidate.id === propertyId);
+  if (!property || !isDatabaseSelectProperty(property)) return value;
+  const label = (item: string | number | boolean) =>
+    property.options.find((option) => option.id === item)?.name ?? String(item);
+  return Array.isArray(value) ? value.map((item) => label(item)) : label(value);
+}
+
 function filterSummaryNode(filter: DatabaseFilter, source: DatabaseSource): string {
   if ('and' in filter) {
     return filter.and.map((child) => filterSummaryNode(child, source)).join(' AND ');
@@ -49,7 +67,9 @@ function filterSummaryNode(filter: DatabaseFilter, source: DatabaseSource): stri
   if ('not' in filter) return `NOT (${filterSummaryNode(filter.not, source)})`;
   const operator = FILTER_OPERATOR_LABELS[filter.operator];
   return 'value' in filter
-    ? `${propertyName(source, filter.propertyId)} ${operator} ${compactFilterValue(filter.value)}`
+    ? `${propertyName(source, filter.propertyId)} ${operator} ${compactFilterValue(
+        filterValueLabel(source, filter.propertyId, filter.value),
+      )}`
     : `${propertyName(source, filter.propertyId)} ${operator}`;
 }
 

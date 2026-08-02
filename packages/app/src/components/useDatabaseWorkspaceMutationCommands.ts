@@ -58,6 +58,7 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
     setSaveFeedback,
     setMutationProgressVisible,
     setMutationReviewMode,
+    setPendingMutations,
     setGhost,
     setLastUndoToken,
     setLastRedoToken,
@@ -153,6 +154,10 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
       setMutationReviewMode(reviewMode);
       setMutationStatus('planning');
     }
+    // Counted for background writes too: `mutationStatus` stays idle for those,
+    // but undo must not offer the previous commit's token while this one is
+    // still in flight.
+    setPendingMutations((current: number) => current + 1);
     const localRecordStartedAt = options.recordRefresh ? Date.now() : null;
     if (options.recordRefresh && localRecordStartedAt !== null) {
       locallyHandledRecordIdsRef.current.set(options.recordRefresh.recordId, localRecordStartedAt);
@@ -296,6 +301,7 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
       })
       .finally(() => {
         if (!background) activeMutationRef.current = false;
+        setPendingMutations((current: number) => Math.max(0, current - 1));
       });
   };
 

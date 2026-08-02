@@ -365,11 +365,15 @@ test.describe('database primary browser journeys', () => {
     await page.getByRole('option', { name: 'Status', exact: true }).click();
     await filters.getByRole('combobox', { name: 'Filter operator' }).click();
     await page.getByRole('option', { name: 'eq', exact: true }).click();
-    await filters.getByRole('textbox', { name: 'Filter value for Status' }).fill('todo');
+    // Select filters compare against the option id, so the dialog offers the
+    // options themselves rather than a free-text box.
+    await filters.getByRole('combobox', { name: 'Filter value for Status' }).click();
+    await page.getByRole('option', { name: 'Todo', exact: true }).click();
     await filters.getByRole('button', { name: 'Review filter change' }).click();
     await expect(filters).toHaveCount(0, { timeout: 10_000 });
     await expect(
-      page.getByRole('button', { name: 'Filters: Status is todo', exact: true }),
+      // The summary resolves the stored option id back to the option's name.
+      page.getByRole('button', { name: 'Filters: Status is Todo', exact: true }),
     ).toBeVisible({ timeout: 10_000 });
   });
 });

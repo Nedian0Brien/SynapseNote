@@ -87,7 +87,15 @@ test.describe('database schema property management', () => {
     await expect(databaseNav.getByText('E2E Manage Properties Add', { exact: true })).toBeVisible({
       timeout: 10_000,
     });
-    await databaseNav.getByRole('button').filter({ hasText: 'Tasks' }).click();
+    // Both tests in this file seed a source called "Tasks", and they share a
+    // worker (and therefore a server). Scope to this test's database section so
+    // the earlier test's database does not make the locator ambiguous.
+    await databaseNav
+      .locator('section')
+      .filter({ hasText: 'E2E Manage Properties Add' })
+      .getByRole('button')
+      .filter({ hasText: 'Tasks' })
+      .click();
     await expect(page.getByRole('gridcell', { name: 'Seeded task' })).toBeVisible({
       timeout: 10_000,
     });
@@ -157,8 +165,12 @@ test.describe('database schema property management', () => {
 
     await page.goto('/');
     await openDatabasesDialog(page);
+    // Scoped for the same reason as the add case: the sibling test's database
+    // is still present on this worker's server.
     await page
       .getByRole('navigation', { name: 'Databases' })
+      .locator('section')
+      .filter({ hasText: 'E2E Manage Properties Delete' })
       .getByRole('button')
       .filter({ hasText: 'Tasks' })
       .click();
