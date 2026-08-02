@@ -96,6 +96,7 @@ export function DatabaseWorkspaceToolbar({ context }: { context: DatabaseWorkspa
     undoLastChange,
     lastRedoToken,
     redoLastChange,
+    pendingMutations,
   } = context;
 
   // Mounted by DatabaseWorkspaceSuccessContent only once `description?.source`
@@ -571,7 +572,9 @@ export function DatabaseWorkspaceToolbar({ context }: { context: DatabaseWorkspa
             </DropdownMenuItem>
             {lastUndoToken ? (
               <DropdownMenuItem
-                disabled={mutationStatus !== 'idle' || undoStatus !== 'idle'}
+                disabled={
+                  mutationStatus !== 'idle' || undoStatus !== 'idle' || pendingMutations > 0
+                }
                 onSelect={undoLastChange}
               >
                 {undoStatus !== 'idle' ? (
@@ -582,7 +585,9 @@ export function DatabaseWorkspaceToolbar({ context }: { context: DatabaseWorkspa
             ) : null}
             {lastRedoToken ? (
               <DropdownMenuItem
-                disabled={mutationStatus !== 'idle' || redoStatus !== 'idle'}
+                disabled={
+                  mutationStatus !== 'idle' || redoStatus !== 'idle' || pendingMutations > 0
+                }
                 onSelect={redoLastChange}
               >
                 {redoStatus !== 'idle' ? (

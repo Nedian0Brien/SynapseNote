@@ -128,7 +128,10 @@ test.describe('database primary browser journeys', () => {
     const createdTitle = page.locator('[role="gridcell"][data-property-id][title="Created task"]');
     await createdTitle.press('Enter');
     await page.getByRole('textbox', { name: 'Edit Title' }).fill('Renamed task');
-    await page.getByRole('button', { name: 'Save cell edit' }).click();
+    // The inline scalar editor keeps Save/Cancel as `sr-only` controls and
+    // commits on Enter (DatabaseTableCellEditingContent), so drive the same
+    // keystroke a user would rather than clicking a visually hidden button.
+    await page.getByRole('textbox', { name: 'Edit Title' }).press('Enter');
     await expect(
       page.locator('[role="gridcell"][data-property-id][title="Renamed task"]'),
     ).toBeVisible({
@@ -204,14 +207,15 @@ test.describe('database primary browser journeys', () => {
 
     await openDatabase(page, name, target);
     const rows = page.locator('tr[data-record-id]');
-    await rows
-      .nth(0)
-      .getByRole('checkbox', { name: /Select page/ })
-      .click();
-    await rows
-      .nth(1)
-      .getByRole('checkbox', { name: /Select page/ })
-      .click();
+    // The row selection checkbox lives in DatabaseTableInteractionLayer — a
+    // single floating handle appended to the table host and positioned over the
+    // hovered row, not a child of the <tr>. Scoping the locator to the row can
+    // never resolve it; hover the row to reveal the handle, then click it.
+    const selectRow = page.getByRole('checkbox', { name: /^Select page checkbox / });
+    await rows.nth(0).hover();
+    await selectRow.click();
+    await rows.nth(1).hover();
+    await selectRow.click();
     await expect(page.getByTestId('database-bulk-toolbar')).toBeVisible();
 
     await page.getByRole('combobox', { name: 'Bulk property' }).click();
@@ -361,11 +365,15 @@ test.describe('database primary browser journeys', () => {
     await page.getByRole('option', { name: 'Status', exact: true }).click();
     await filters.getByRole('combobox', { name: 'Filter operator' }).click();
     await page.getByRole('option', { name: 'eq', exact: true }).click();
-    await filters.getByRole('textbox', { name: 'Filter value for Status' }).fill('todo');
+    // Select filters compare against the option id, so the dialog offers the
+    // options themselves rather than a free-text box.
+    await filters.getByRole('combobox', { name: 'Filter value for Status' }).click();
+    await page.getByRole('option', { name: 'Todo', exact: true }).click();
     await filters.getByRole('button', { name: 'Review filter change' }).click();
     await expect(filters).toHaveCount(0, { timeout: 10_000 });
     await expect(
-      page.getByRole('button', { name: 'Filters: Status is todo', exact: true }),
+      // The summary resolves the stored option id back to the option's name.
+      page.getByRole('button', { name: 'Filters: Status is Todo', exact: true }),
     ).toBeVisible({ timeout: 10_000 });
   });
 });

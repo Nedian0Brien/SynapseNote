@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { isDatabaseSelectProperty } from './database-table-types';
 
 type EditorNode =
   | { id: string; kind: 'rule'; propertyId: string; operator: DatabaseQueryOperator; value: string }
@@ -177,6 +178,11 @@ function FilterNodeEditor({
       source.properties[0];
     const operators = property ? databaseQueryOperatorsForProperty(property) : [];
     const hasValue = node.operator !== 'is_empty' && node.operator !== 'is_not_empty';
+    // `in` still takes a JSON array, so it keeps the free-text editor.
+    const optionChoices =
+      property && isDatabaseSelectProperty(property) && node.operator !== 'in'
+        ? property.options.filter((option) => option.archived !== true)
+        : null;
     return (
       <div
         className="flex flex-wrap items-center gap-2 rounded border bg-background p-2"
@@ -224,7 +230,27 @@ function FilterNodeEditor({
             ))}
           </SelectContent>
         </Select>
-        {hasValue ? (
+        {hasValue && optionChoices ? (
+          // Select filters compare against the option's stable id, not its name
+          // or key. A free-text box cannot be filled correctly without knowing
+          // the internal `opt_…` id, so offer the options themselves.
+          <Select value={node.value} onValueChange={(value) => onChange({ ...node, value })}>
+            <SelectTrigger
+              size="sm"
+              className="min-w-48 flex-1"
+              aria-label={`Filter value for ${property?.name ?? 'property'}`}
+            >
+              <SelectValue placeholder="Value" />
+            </SelectTrigger>
+            <SelectContent>
+              {optionChoices.map((option) => (
+                <SelectItem key={option.id} value={option.id}>
+                  {option.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : hasValue ? (
           <Input
             className="h-8 min-w-48 flex-1"
             aria-label={`Filter value for ${property?.name ?? 'property'}`}

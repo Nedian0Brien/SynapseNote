@@ -154,7 +154,15 @@ test.describe('document-native database browser journeys', () => {
     // opening one must not select the enclosing JSX node or mount the full
     // administration workspace. This is intentionally a real Chromium check
     // because the NodeView/portal event path is not represented by DOM tests.
-    await inline.getByRole('button', { name: 'Filters' }).click();
+    // The bare `Filters`/`Sort` buttons in InlineDatabaseToolbar are positioned
+    // popover anchors — `pointer-events-none opacity-0 size-px tabIndex={-1}` —
+    // so a click passes straight through them to the New page control beneath.
+    // Users reach these through the view actions menu, so drive that instead.
+    const inlineViewActions = inline.getByRole('button', {
+      name: /^Database view actions for /,
+    });
+    await inlineViewActions.click();
+    await page.getByRole('menuitem', { name: 'Filters', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Filters' })).toBeVisible();
     await expect(page.locator('[data-database-workspace]')).toHaveCount(0);
     expect(
@@ -163,16 +171,19 @@ test.describe('document-native database browser journeys', () => {
     await page.keyboard.press('Escape');
     await expect(page.getByRole('heading', { name: 'Filters' })).toBeHidden();
 
-    await inline.getByRole('button', { name: 'Sort' }).click();
+    await inlineViewActions.click();
+    await page.getByRole('menuitem', { name: 'Sort', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Sort' })).toBeVisible();
     await expect(page.locator('[data-database-workspace]')).toHaveCount(0);
     await page.keyboard.press('Escape');
     await expect(page.getByRole('heading', { name: 'Sort' })).toBeHidden();
 
-    await inline.getByRole('button', { name: 'Properties' }).click();
+    await inlineViewActions.click();
+    await page.getByRole('menuitem', { name: 'Properties', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Properties' })).toBeVisible();
     await expect(page.locator('[data-database-workspace]')).toHaveCount(0);
-    await inline.getByRole('button', { name: 'Properties' }).click();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('heading', { name: 'Properties' })).toBeHidden();
 
     await inline.getByRole('button', { name: /^Open full database:/ }).click();
     await expect(page).toHaveURL(/#database\//, { timeout: 10_000 });
@@ -262,6 +273,19 @@ test.describe('document-native database browser journeys', () => {
           { key: 'status', name: 'Status', type: 'text' as const },
         ],
       })),
+      // This journey covers the saved-view lifecycle, which lives in the linked
+      // view tab strip. InlineDatabaseHeader only renders that strip when the
+      // source has more than one view or the active view is not a table, so a
+      // single-table-view fixture would hide the controls under test.
+      views: [
+        ...inlineControlsDatabase.views,
+        {
+          key: 'open-tasks',
+          name: 'Open tasks',
+          sourceKey: 'tasks',
+          layout: { type: 'table', configuration: { rowHeight: 'compact' } },
+        },
+      ],
       sampleRecords: [
         {
           sourceKey: 'tasks',
@@ -326,12 +350,15 @@ test.describe('document-native database browser journeys', () => {
     await page.keyboard.press('Escape');
     await expect(addPropertyTrigger).toBeFocused();
 
-    const filtersTrigger = inline.getByRole('button', { name: 'Filters', exact: true });
     const grid = inline.getByRole('grid');
     await grid.evaluate((element) => {
       element.setAttribute('data-render-continuity-probe', 'preserved');
     });
-    await filtersTrigger.click();
+    // Open Filters the way a user does — the bare `Filters` button is a
+    // `pointer-events-none` popover anchor, so clicking it hits whatever sits
+    // underneath instead of opening the popover.
+    await actionsTrigger.click();
+    await page.getByRole('menuitem', { name: 'Filters', exact: true }).click();
     const filterInput = page.getByRole('textbox', { name: 'Filter value for Title' });
     await expect(filterInput).toBeVisible();
     await filterInput.fill('Document-native control task');
@@ -345,15 +372,15 @@ test.describe('document-native database browser journeys', () => {
       scriptRequests.filter((url) => /DatabaseWorkspace|DatabaseTableDialog/i.test(url)),
     ).toEqual([]);
 
-    const searchTrigger = inline.getByRole('button', { name: /Search pages in Tasks/ });
-    await searchTrigger.click();
+    await actionsTrigger.click();
+    await page.getByRole('menuitem', { name: 'Search', exact: true }).click();
     const searchInput = page.getByRole('textbox', { name: 'Search pages' });
     await searchInput.fill('control task');
     await expect(page.getByText(/1 page in this view/)).toBeVisible({ timeout: 10_000 });
     await page.keyboard.press('Escape');
 
-    const propertiesTrigger = inline.getByRole('button', { name: 'Properties', exact: true });
-    await propertiesTrigger.click();
+    await actionsTrigger.click();
+    await page.getByRole('menuitem', { name: 'Properties', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Properties' })).toBeVisible();
     const statusCheckbox = page.getByRole('checkbox', { name: 'Show Status' });
     await expect(statusCheckbox).toBeChecked();
@@ -366,7 +393,11 @@ test.describe('document-native database browser journeys', () => {
     await expect(grid).toHaveAttribute('data-render-continuity-probe', 'preserved');
     await expect(page.locator('[data-database-workspace]')).toHaveCount(0);
     await page.keyboard.press('Escape');
-    await expect(propertiesTrigger).toBeFocused();
+    // Opened from the view actions menu, this popover is anchored to the hidden
+    // `tabIndex={-1}` trigger, so focus does not land on a meaningful control.
+    // Assert the popover actually closed instead; menu focus restoration is
+    // already covered where `actionsTrigger` is exercised above.
+    await expect(page.getByRole('heading', { name: 'Properties' })).toBeHidden();
 
     const viewManagerTrigger = inline.getByRole('button', {
       name: 'New database view for Tasks · All tasks',

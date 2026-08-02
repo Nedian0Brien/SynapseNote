@@ -1,4 +1,4 @@
-import { autoUpdate, computePosition, offset } from '@floating-ui/dom';
+import { autoUpdate, computePosition, offset, shift } from '@floating-ui/dom';
 import type { RefObject } from 'react';
 import { useEffect, useRef } from 'react';
 import { createInteractionHandleElement } from '@/editor/interaction-handle/create-interaction-handle-element';
@@ -177,7 +177,19 @@ export function DatabaseTableInteractionLayer({
       void computePosition(row, container, {
         strategy: 'absolute',
         placement: 'left-start',
-        middleware: [offset({ mainAxis: INTERACTION_HANDLE_TABLE_GAP })],
+        middleware: [
+          offset({ mainAxis: INTERACTION_HANDLE_TABLE_GAP }),
+          // The handle sits outside the row's left edge. With the workspace
+          // sidebar expanded there is not always room for it there, and an
+          // unclamped placement slides it underneath the sidebar, which then
+          // swallows the click. Clamp it back into the scroll container so the
+          // control stays reachable at every viewport width.
+          shift({
+            boundary: scrollOwner,
+            crossAxis: true,
+            padding: INTERACTION_HANDLE_TABLE_GAP,
+          }),
+        ],
       }).then(({ x, y }) => {
         if (frame !== positioningFrame || activeRow !== row) return;
         const rowRect = row.getBoundingClientRect();

@@ -53,6 +53,15 @@ export function useDatabaseWorkspaceControllerState({
     'required',
   );
   const [mutationProgressVisible, setMutationProgressVisible] = useState(true);
+  /**
+   * Writes still in flight, including the silent background ones (cell edits)
+   * that deliberately leave `mutationStatus` idle so the table does not flash a
+   * progress state per keystroke. Undo still has to respect them: the undo
+   * token only points at the newest commit once that commit lands, so offering
+   * "Undo last change" mid-write would revert the mutation *before* the one the
+   * user just made.
+   */
+  const [pendingMutations, setPendingMutations] = useState(0);
   const [saveFeedback, setSaveFeedback] = useState<'saved' | 'queued' | 'failed' | null>(null);
   const [optimisticCellValues, setOptimisticCellValues] = useState<
     Map<string, DatabaseValue | undefined>
@@ -189,6 +198,8 @@ export function useDatabaseWorkspaceControllerState({
     setMutationReviewMode,
     mutationProgressVisible,
     setMutationProgressVisible,
+    pendingMutations,
+    setPendingMutations,
     saveFeedback,
     setSaveFeedback,
     optimisticCellValues,
