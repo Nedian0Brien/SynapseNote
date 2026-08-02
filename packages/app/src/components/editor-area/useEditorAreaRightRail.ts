@@ -118,6 +118,10 @@ export function useEditorAreaRightRail({
   const terminalWriteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [groupContainerEl, setGroupContainerEl] = useState<HTMLDivElement | null>(null);
   const groupContainerElRef = useRef<HTMLDivElement | null>(null);
+  const [setGroupContainer] = useState(() => (node: HTMLDivElement | null) => {
+    setGroupContainerEl(node);
+    groupContainerElRef.current = node;
+  });
   const groupRef = useGroupRef();
 
   const writeSharedRightRailWidth = (px: number) => {
@@ -347,10 +351,7 @@ export function useEditorAreaRightRail({
     setPdfPanelContainer,
     setBottomTerminalContainer,
     setTerminalEditorRegion,
-    setGroupContainer: (node) => {
-      setGroupContainerEl(node);
-      groupContainerElRef.current = node;
-    },
+    setGroupContainer,
     toggleDocumentRightPanel,
     onDocPanelHandlePointerDown,
     onDocPanelResize,

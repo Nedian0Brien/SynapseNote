@@ -1,8 +1,6 @@
-import { Trans, useLingui } from '@lingui/react/macro';
+import { Trans } from '@lingui/react/macro';
 import { parseManagedArtifactName } from '@nedian0brien/synapsenote-core';
-import { Search } from 'lucide-react';
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -31,8 +29,7 @@ interface EditorHeaderProps {
   onOpenSearch?: () => void;
 }
 
-export function EditorHeader({ onSignIn, onSetIdentity, onOpenSearch }: EditorHeaderProps) {
-  const { t } = useLingui();
+export function EditorHeader({ onSignIn, onSetIdentity }: EditorHeaderProps) {
   const { activeDocName, activeTarget } = useDocumentContext();
   // Managed-artifact tabs (skills/templates) are ordinary docs but carry their
   // own header treatment: neither skills nor templates are shareable (the
@@ -46,7 +43,6 @@ export function EditorHeader({ onSignIn, onSetIdentity, onOpenSearch }: EditorHe
   // doc-scoped actions (Share / sync / agent handoff) intact.
   const singleFile = useSingleFileMode();
   const sidebarShortcut = formatShortcut('toggle-files-sidebar');
-  const searchShortcut = formatShortcut('command-palette');
   const [publishOpen, setPublishOpen] = useState(false);
   // Share input for the header button: folder → folder-scope, doc → doc-scope,
   // empty editor → project root; non-shareable surfaces yield null (disabled).
@@ -137,28 +133,6 @@ export function EditorHeader({ onSignIn, onSetIdentity, onOpenSearch }: EditorHe
               </TooltipContent>
             </Tooltip>
             <EditorNavigationButtons isElectronHost={isElectronHost} />
-            {isCollapsed && onOpenSearch && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={onOpenSearch}
-                    aria-label={t`Search (${searchShortcut})`}
-                    data-telemetry-event="ok.editor_header.search.click"
-                    className={cn(
-                      'shrink-0 text-muted-foreground',
-                      isElectronHost && '[-webkit-app-region:no-drag]',
-                    )}
-                  >
-                    <Search aria-hidden="true" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <Trans>Search ({searchShortcut})</Trans>
-                </TooltipContent>
-              </Tooltip>
-            )}
             <Separator
               orientation="vertical"
               className="mr-1 h-4 shrink-0 data-vertical:self-center"

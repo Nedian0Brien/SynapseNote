@@ -8,7 +8,6 @@ import { MemoPanel } from '@/components/MemoPanel';
 import { OutlinePanel } from '@/components/OutlinePanel';
 import { TimelineContent } from '@/components/TimelinePanel';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSingleFileMode } from '@/lib/single-file-mode';
 
 export type DocumentPanelTab = 'outline' | 'memo' | 'links' | 'graph' | 'timeline';
@@ -151,21 +150,13 @@ export function DocPanel({
                   id={`tab-${id}`}
                   aria-controls={`panel-${id}`}
                   aria-label={label}
+                  title={label}
                   className="size-8 shrink-0 p-0"
                 >
                   <Icon className="size-4" />
                 </ToggleGroupItem>
               );
-              return tabs.length === 1 ? (
-                <span key={id} className="contents">
-                  {item}
-                </span>
-              ) : (
-                <Tooltip key={id}>
-                  <TooltipTrigger asChild>{item}</TooltipTrigger>
-                  <TooltipContent side="bottom">{label}</TooltipContent>
-                </Tooltip>
-              );
+              return item;
             })}
           </ToggleGroup>
         </div>

@@ -263,6 +263,24 @@ mock.module('@/lib/use-settings-route', () => ({
 }));
 
 const { EditorArea } = await import('./EditorArea');
+const { useEditorAreaRightRail } = await import('./editor-area/useEditorAreaRightRail');
+
+function RightRailRefProbe({
+  onRef,
+}: {
+  onRef: (ref: (node: HTMLDivElement | null) => void) => void;
+}) {
+  const rail = useEditorAreaRightRail({
+    terminalBridge: undefined,
+    terminalVisible: false,
+    terminalDock: 'bottom',
+    onTerminalVisibleChange: undefined,
+    docPanelExpandSignal: 0,
+    onActiveTabChange: () => {},
+  });
+  onRef(rail.setGroupContainer);
+  return null;
+}
 
 function renderEditorArea() {
   return render(
@@ -274,6 +292,18 @@ function renderEditorArea() {
     />,
   );
 }
+
+describe('EditorArea right-rail callback refs', () => {
+  test('keeps the group-container ref stable across parent rerenders', () => {
+    const refs: Array<(node: HTMLDivElement | null) => void> = [];
+    const view = render(<RightRailRefProbe onRef={(ref) => refs.push(ref)} />);
+    const initialRef = refs.at(-1);
+
+    view.rerender(<RightRailRefProbe onRef={(ref) => refs.push(ref)} />);
+
+    expect(refs.at(-1)).toBe(initialRef);
+  });
+});
 
 describe('EditorArea SettingsDialogPortal runtime wiring', () => {
   beforeEach(() => {

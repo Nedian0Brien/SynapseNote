@@ -3,7 +3,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { AlertTriangle, PinIcon, XIcon } from 'lucide-react';
-import type { HTMLAttributes, KeyboardEvent, ReactNode, Ref } from 'react';
+import type { HTMLAttributes, KeyboardEvent, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   ContextMenu,
@@ -56,15 +56,15 @@ export function SortableTab({
   className,
   tabId,
   disabled,
+  contextMenuTrigger = false,
   onKeyDown,
-  ref: outerRef,
   style: outerStyle,
   ...rest
 }: {
   activateFromKeyboard?: () => void;
   tabId: string;
   disabled?: boolean;
-  ref?: Ref<HTMLDivElement>;
+  contextMenuTrigger?: boolean;
 } & HTMLAttributes<HTMLDivElement>) {
   const { attributes, listeners, rect, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: tabId, disabled });
@@ -75,11 +75,6 @@ export function SortableTab({
     transform,
     transition,
   });
-  function composedRef(node: HTMLDivElement | null) {
-    setNodeRef(node);
-    if (typeof outerRef === 'function') outerRef(node);
-    else if (outerRef && 'current' in outerRef) outerRef.current = node;
-  }
   const sortableKeyDown = listeners?.onKeyDown;
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     onKeyDown?.(event);
@@ -96,10 +91,10 @@ export function SortableTab({
     }
     sortableKeyDown?.(event);
   }
-  return (
+  const sortableTab = (
     // biome-ignore lint/a11y/noStaticElementInteractions: dnd-kit attributes inject role and tabIndex; this composes the sortable key listener.
     <div
-      ref={composedRef}
+      ref={setNodeRef}
       data-editor-tab-sortable=""
       className={getSortableTabClassName({ className, isDragging })}
       style={style}
@@ -108,6 +103,11 @@ export function SortableTab({
       {...listeners}
       onKeyDown={handleKeyDown}
     />
+  );
+  return contextMenuTrigger ? (
+    <ContextMenuTrigger asChild>{sortableTab}</ContextMenuTrigger>
+  ) : (
+    sortableTab
   );
 }
 
@@ -143,7 +143,7 @@ export function EditorTabContextMenu({
   const closableTabIds = filterClosableTabIds(openTabs, pinnedTabIds);
   return (
     <ContextMenu>
-      <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+      {children}
       <ContextMenuContent className="min-w-40">
         <ContextMenuItem disabled={isPinned} onSelect={() => closeTab(tabId)}>
           <Trans>Close</Trans>

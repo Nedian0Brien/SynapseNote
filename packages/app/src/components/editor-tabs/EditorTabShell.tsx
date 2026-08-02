@@ -58,6 +58,7 @@ export function TabShell({
     >
       <SortableTab
         tabId={tabId}
+        contextMenuTrigger={!disabled}
         activateFromKeyboard={activateFromKeyboard}
         disabled={disabled}
         aria-current={active ? 'page' : undefined}

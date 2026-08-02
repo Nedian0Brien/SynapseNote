@@ -2,7 +2,7 @@ import { Trans, useLingui } from '@lingui/react/macro';
 import { parseManagedArtifactName, type SkillScope } from '@nedian0brien/synapsenote-core';
 import { ListPlus } from 'lucide-react';
 import { Fragment, lazy, Suspense } from 'react';
-import { Button } from '@/components/ui/button.tsx';
+import { buttonVariants } from '@/components/ui/button.tsx';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { EditorModeValue } from '@/editor/use-editor-mode.ts';
 import { parseProjectSkillContentDocName } from '@/lib/managed-artifact-doc-name';
@@ -84,18 +84,14 @@ export function EditorToolbar({
             <ExportPdfButton docName={activeDocName && !managed ? activeDocName : null} />
             {showAddPropertyButton ? (
               <Tooltip>
-                <Button
-                  variant="ghost"
-                  size="icon"
+                <TooltipTrigger
                   aria-label={t`Add properties`}
                   onClick={onAddProperty}
                   data-testid="add-properties-button"
-                  asChild
+                  className={buttonVariants({ variant: 'ghost', size: 'icon' })}
                 >
-                  <TooltipTrigger>
-                    <ListPlus />
-                  </TooltipTrigger>
-                </Button>
+                  <ListPlus />
+                </TooltipTrigger>
                 <TooltipContent side="bottom">
                   <Trans>Add properties</Trans>
                 </TooltipContent>
