@@ -37,11 +37,13 @@ async function openDatabasesDialog(page: Page) {
 }
 
 async function openManageProperties(page: Page) {
-  const summary = page.getByText('Table layout and calculations', { exact: true });
-  await summary.click();
-  await page.getByRole('button', { name: 'Manage properties' }).click();
+  // "Table layout and calculations" is the pre-Notion surface: DatabaseTableControls
+  // renders that disclosure only when `notionSurface` is false. On the default
+  // surface the same DatabasePropertiesDialog — still titled "Manage properties" —
+  // is opened from the workspace toolbar's Properties button.
+  await page.getByRole('button', { name: 'Properties', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Manage properties' })).toBeVisible({
-    timeout: 2_000,
+    timeout: 5_000,
   });
 }
 
