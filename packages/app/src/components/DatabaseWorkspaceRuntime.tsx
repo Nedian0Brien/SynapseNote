@@ -5,19 +5,6 @@ import {
 import { Dialog, DialogBody, DialogContent } from '@/components/ui/dialog';
 import { databasePageTargetToHash, replaceDatabaseHash } from '@/lib/database-navigation';
 import { cn } from '@/lib/utils';
-import type {
-  DatabaseInitialRecordAction,
-  DatabaseSelectProperty,
-  DatabaseTableSelection,
-  DatabaseTableTarget,
-  DatabaseTableViewState,
-  LoadStatus,
-} from './DatabaseTableGrid';
-import {
-  DatabaseAtomicApprovalScope,
-  DatabaseStateNotice,
-  DatabaseTable,
-} from './DatabaseTableGrid';
 import { DatabaseWorkspaceHeader } from './DatabaseWorkspaceHeader';
 import { DatabaseWorkspaceOverlayHost } from './DatabaseWorkspaceOverlayHost';
 import { DatabaseWorkspaceReadState } from './DatabaseWorkspaceReadState';
@@ -27,15 +14,6 @@ import { useDatabaseWorkspaceController } from './database-workspace/useDatabase
 import type { DatabaseTableDialogProps } from './database-workspace-types';
 
 export type { DatabaseTableDialogProps } from './database-workspace-types';
-export type {
-  DatabaseInitialRecordAction,
-  DatabaseSelectProperty,
-  DatabaseTableSelection,
-  DatabaseTableTarget,
-  DatabaseTableViewState,
-  LoadStatus,
-};
-export { DatabaseAtomicApprovalScope, DatabaseStateNotice, DatabaseTable };
 
 function DatabaseTableSurface(props: DatabaseTableDialogProps) {
   const {
