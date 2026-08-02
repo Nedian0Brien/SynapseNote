@@ -214,6 +214,13 @@ function NavigationHandler() {
   const { clearTarget, openTabs, syncOpenTabsWithKnownTargets, tabSessionLoaded } =
     useDocumentContext();
   const { openTargetTransition } = useDocumentTransition();
+  // Pool snapshots intentionally re-render the document context whenever an
+  // existing entry is touched. Keep hash navigation bound to the latest
+  // transition command without treating that command's render-time identity as
+  // a navigation input: calling `pool.open()` from an effect retriggered by
+  // that identity would itself touch the pool and form a render loop.
+  const openTargetTransitionEvent = useEffectEvent(openTargetTransition);
+  const clearTargetEvent = useEffectEvent(clearTarget);
   // Reconcile open skill tabs against the live skills list: an agent/MCP/server-
   // side scope move only broadcasts `files` (never retargets the client tab),
   // leaving an open skill tab pointing at a doc that no longer exists.
@@ -270,7 +277,7 @@ function NavigationHandler() {
         const assetExt = assetPath.split('.').pop() ?? '';
         const mediaKind = mediaKindForSidebarAssetExtension(assetExt);
         mark('ok/nav/hash-change', { docName: null, kind: 'asset' });
-        openTargetTransition({
+        openTargetTransitionEvent({
           kind: 'asset',
           target: assetPath,
           assetPath,
@@ -281,7 +288,7 @@ function NavigationHandler() {
       const skillFile = skillFileFromHash(window.location.hash);
       if (skillFile) {
         mark('ok/nav/hash-change', { docName: null, kind: 'skill-file' });
-        openTargetTransition({
+        openTargetTransitionEvent({
           kind: 'skill-file',
           target: `${skillFile.scope}/${skillFile.name}/${skillFile.path}`,
           scope: skillFile.scope,
@@ -298,13 +305,13 @@ function NavigationHandler() {
       // sentinel check must run BEFORE the null-docName clear.
       if (isContentRootHash(window.location.hash)) {
         mark('ok/nav/hash-change', { docName: null, kind: 'folder' });
-        openTargetTransition({ kind: 'folder', target: '', folderPath: '' });
+        openTargetTransitionEvent({ kind: 'folder', target: '', folderPath: '' });
         return;
       }
       const docName = docNameFromHash(window.location.hash);
       if (!docName) {
         mark('ok/nav/hash-change', { docName: null, kind: 'clear' });
-        clearTarget();
+        clearTargetEvent();
         return;
       }
       if (loading) {
@@ -325,15 +332,13 @@ function NavigationHandler() {
       }
       const target = withLargeFileOpenGuard(downgradeFolderIndexForHashNav(resolved), pageMeta);
       mark('ok/nav/hash-change', { docName, kind: target.kind });
-      openTargetTransition(target);
+      openTargetTransitionEvent(target);
     }
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, [
-    clearTarget,
     folderPaths,
     loading,
-    openTargetTransition,
     openTabs,
     pageMeta,
     pages,

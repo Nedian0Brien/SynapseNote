@@ -412,6 +412,26 @@ describe('App runtime wiring', () => {
     expect(openTargetTransitionMock).not.toHaveBeenCalledWith(resolved);
   });
 
+  test('hash navigation does not reopen a document when the transition callback identity changes', async () => {
+    setHash('#/reports/index');
+    const rendered = renderApp();
+
+    await waitFor(() => {
+      expect(openTargetTransitionMock).toHaveBeenCalledTimes(1);
+    });
+
+    const replacementTransition = mock((_: NavigationTarget) => {});
+    const replacementClearTarget = mock(() => {});
+    openTargetTransitionMock = replacementTransition;
+    clearTargetMock = replacementClearTarget;
+    rendered.rerender(<App />);
+
+    await act(async () => {});
+
+    expect(replacementTransition).not.toHaveBeenCalled();
+    expect(replacementClearTarget).not.toHaveBeenCalled();
+  });
+
   test('hash navigation keeps an open extension-qualified markdown tab exact', async () => {
     openTabs = ['docs/guide.mdx'];
     resolveNavigationTargetMock = mock(() => ({
