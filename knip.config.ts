@@ -14,7 +14,6 @@ export default {
     '@lingui/format-po',
     'micromark',
   ],
-  ignoreBinaries: ['printf'],
   ignoreIssues: {
     'packages/app/src/locales/**': ['files'],
     'packages/app/src/components/ui/*': ['exports'],
