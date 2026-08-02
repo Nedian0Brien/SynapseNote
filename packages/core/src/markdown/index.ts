@@ -293,10 +293,7 @@ function withInlineCodeData(
   return { ...node, data: dataEntry } as unknown as MdastNodes;
 }
 
-export function wrapAsInlineCode(
-  children: MdastNodes[],
-  data?: InlineCodeFidelityData,
-): MdastNodes {
+function wrapAsInlineCode(children: MdastNodes[], data?: InlineCodeFidelityData): MdastNodes {
   if (children.length === 0) {
     return withInlineCodeData({ type: 'inlineCode', value: '' }, data);
   }

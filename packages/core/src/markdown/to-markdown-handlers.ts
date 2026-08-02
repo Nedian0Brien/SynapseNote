@@ -783,7 +783,7 @@ function emitLinkTitle(
   return `${separator}"${title.replace(/"/g, '\\"')}"`;
 }
 
-export function formatLinkUrl(url: string): string {
+function formatLinkUrl(url: string): string {
   if (!url) return '';
 
   let depth = 0;

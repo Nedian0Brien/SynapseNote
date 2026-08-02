@@ -5,10 +5,6 @@ import { protectPattern } from './entity-ref-guard.ts';
 
 const BACKSLASH_ESCAPE_PUA_MARK = '';
 
-export const BACKSLASH_GUARD_SUBSTITUTIONS: ReadonlyArray<{ from: string; to: string }> = [
-  { from: '\\', to: BACKSLASH_ESCAPE_PUA_MARK },
-];
-
 const BACKSLASH_ESCAPE_RE = /\\</g;
 
 export function encodeBackslashEscapes(source: string): string {

@@ -36,7 +36,6 @@ export {
   DatabaseAutomationIdSchema,
   type DatabaseId,
   DatabaseIdSchema,
-  type DatabaseOptionId,
   DatabaseOptionIdSchema,
   type DatabasePropertyId,
   DatabasePropertyIdSchema,
@@ -48,7 +47,6 @@ export {
   type DatabaseTemplateId,
   DatabaseTemplateIdSchema,
   type DatabaseViewId,
-  DatabaseViewIdSchema,
   type DataSourceId,
   DataSourceIdSchema,
 } from './stable-ids.ts';
@@ -229,7 +227,7 @@ const DatabasePropertyDefaultValueSchema = z.union([
   DatabasePlaceValueSchema,
 ]);
 
-export const DatabasePropertySemanticsSchema = z
+const DatabasePropertySemanticsSchema = z
   .object({
     constraints: z
       .object({
@@ -255,7 +253,7 @@ export const DatabasePropertySemanticsSchema = z
   })
   .strict();
 
-export type DatabasePropertySemantics = z.infer<typeof DatabasePropertySemanticsSchema>;
+type DatabasePropertySemantics = z.infer<typeof DatabasePropertySemanticsSchema>;
 
 const propertyBaseShape = {
   id: DatabasePropertyIdSchema,
@@ -1523,7 +1521,7 @@ export const DatabaseSourceMappingSchema = z
 
 export type DatabaseSourceMapping = z.infer<typeof DatabaseSourceMappingSchema>;
 
-export const DATABASE_VIEW_LAYOUTS = [
+const DATABASE_VIEW_LAYOUTS = [
   'table',
   'board',
   'timeline',
@@ -2484,7 +2482,7 @@ function collectFilterPropertyIds(filter: DatabaseFilter): string[] {
   return [filter.propertyId];
 }
 
-export const DatabaseMachineContractSchema = z
+const DatabaseMachineContractSchema = z
   .object({
     purpose: z.string().trim().min(1).max(2_000),
     canonicality: z.enum(['canonical', 'mirror', 'derived']),
@@ -2499,8 +2497,6 @@ export const DatabaseMachineContractSchema = z
     sensitivity: z.enum(['public', 'internal', 'confidential', 'restricted']),
   })
   .strict();
-
-export type DatabaseMachineContract = z.infer<typeof DatabaseMachineContractSchema>;
 
 export const DatabaseTemplateRepeatSchema = z
   .object({

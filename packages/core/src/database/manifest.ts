@@ -18,7 +18,7 @@ import {
   DatabaseDefinitionSchema,
 } from './schema.ts';
 
-export type DatabaseManifestDiagnosticCode =
+type DatabaseManifestDiagnosticCode =
   | 'manifest_too_large'
   | 'manifest_structure_limit'
   | 'yaml_parse_error'
@@ -26,7 +26,7 @@ export type DatabaseManifestDiagnosticCode =
   | 'unknown_manifest_version'
   | 'schema_validation_error';
 
-export interface DatabaseManifestDiagnostic {
+interface DatabaseManifestDiagnostic {
   code: DatabaseManifestDiagnosticCode;
   message: string;
   path: readonly (string | number)[];
@@ -34,7 +34,7 @@ export interface DatabaseManifestDiagnostic {
   column: number | null;
 }
 
-export interface UnsupportedDatabaseObject {
+interface UnsupportedDatabaseObject {
   kind: 'property' | 'view';
   type: string;
   path: readonly (string | number)[];

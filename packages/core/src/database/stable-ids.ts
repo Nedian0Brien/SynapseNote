@@ -27,7 +27,6 @@ export const DatabaseStableKeySchema = z.string().min(1).max(128).regex(STABLE_K
 export type DatabaseId = z.infer<typeof DatabaseIdSchema>;
 export type DataSourceId = z.infer<typeof DataSourceIdSchema>;
 export type DatabasePropertyId = z.infer<typeof DatabasePropertyIdSchema>;
-export type DatabaseOptionId = z.infer<typeof DatabaseOptionIdSchema>;
 export type DatabaseStatusGroupId = z.infer<typeof DatabaseStatusGroupIdSchema>;
 export type DatabaseRecordId = z.infer<typeof DatabaseRecordIdSchema>;
 export type DatabaseViewId = z.infer<typeof DatabaseViewIdSchema>;

@@ -14,7 +14,6 @@ export default {
     '@lingui/format-po',
     'micromark',
   ],
-  ignoreBinaries: ['printf'],
   ignoreIssues: {
     'packages/app/src/locales/**': ['files'],
     'packages/app/src/components/ui/*': ['exports'],
@@ -37,6 +36,16 @@ export default {
     'packages/app/src/editor/typing-burst-detector.ts': ['exports', 'types'],
     'packages/server/src/bridge-intake.ts': ['types'],
     'packages/core/src/schemas/api.type-tests.ts': ['files'],
+    // Compile-time type assertions: checked by tsc, imported by nothing.
+    'packages/cli/src/database-public-types.type-tests.ts': ['files'],
+    // Golden fixture read at runtime by golden-fixtures.test.ts via readFile,
+    // so knip's import graph cannot see it.
+    'packages/core/src/database/fixtures/**': ['files'],
+    // RFC 0002 leaf/coordinator scaffolding for the database table split. These
+    // are registered in packages/app/src/build/module-boundaries.ts with size
+    // budgets and owners, and are deliberately not wired up yet.
+    'packages/app/src/components/database-table/DatabaseTable{Shell,Viewport,Header,Body,InteractionLayer}.tsx':
+      ['files'],
     'packages/server/src/http/request-validation.ts': ['exports', 'types'],
     'packages/server/src/http/error-response.ts': ['exports'],
     'packages/app/src/editor/http-client.ts': ['types'],

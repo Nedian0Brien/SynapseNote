@@ -7,11 +7,6 @@ import { visit } from 'unist-util-visit';
 const ENTITY_REF_PUA_OPEN = '';
 const ENTITY_REF_PUA_CLOSE = '';
 
-export const ENTITY_REF_GUARD_SUBSTITUTIONS: ReadonlyArray<{ from: string; to: string }> = [
-  { from: '&', to: ENTITY_REF_PUA_OPEN },
-  { from: ';', to: ENTITY_REF_PUA_CLOSE },
-];
-
 const ENTITY_REF_RE = /&(?:[A-Za-z][A-Za-z0-9]*|#[0-9]+|#[xX][0-9A-Fa-f]+);/g;
 
 function countPrecedingBackslashes(source: string, before: number): number {

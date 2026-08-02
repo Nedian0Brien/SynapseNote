@@ -6,19 +6,9 @@
  * orchestration so existing route imports remain stable during the split.
  */
 
-export type {
-  DatabaseInitialRecordAction,
-  DatabaseSelectProperty,
-  DatabaseTableDialogProps,
-  DatabaseTableSelection,
-  DatabaseTableTarget,
-  DatabaseTableViewState,
-  LoadStatus,
-} from './DatabaseWorkspaceRuntime';
-export {
-  DatabaseAtomicApprovalScope,
-  DatabaseStateNotice,
-  DatabaseTable,
-  DatabaseTableDialog,
-  DatabaseWorkspacePage,
-} from './DatabaseWorkspaceRuntime';
+// The grid symbols this barrel used to forward (DatabaseTable,
+// DatabaseStateNotice, DatabaseAtomicApprovalScope and the table types) reach
+// their consumers through DatabaseTableDialog's own re-export from
+// DatabaseTableGrid. Forwarding them here as well was a second, unused path.
+export type { DatabaseTableDialogProps } from './DatabaseWorkspaceRuntime';
+export { DatabaseTableDialog, DatabaseWorkspacePage } from './DatabaseWorkspaceRuntime';

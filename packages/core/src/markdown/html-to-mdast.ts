@@ -37,7 +37,7 @@ export class HtmlPayloadTooLargeError extends Error {
   }
 }
 
-export const cleanupPlugins: Plugin[] = [
+const cleanupPlugins: Plugin[] = [
   rehypeStripGdocsWrapper as Plugin,
   rehypeStripMsoStyles as Plugin,
   rehypeStripCocoaMeta as Plugin,
