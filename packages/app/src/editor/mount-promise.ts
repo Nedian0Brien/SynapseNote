@@ -274,6 +274,17 @@ function emitStalledOnce(entry: MountPromiseEntry, docName: string, now: number)
 }
 
 const cache = new Map<string, MountPromiseEntry>();
+const resolutionListeners = new Set<() => void>();
+
+function emitMountPromiseResolution(): void {
+  for (const listener of resolutionListeners) listener();
+}
+
+/** Subscribe React-facing readiness consumers to successful mount resolution. */
+export function subscribeMountPromiseResolution(listener: () => void): () => void {
+  resolutionListeners.add(listener);
+  return () => resolutionListeners.delete(listener);
+}
 
 // ---------------------------------------------------------------------------
 // Stalled subscriber registry (consumed by FW13 affordance)
@@ -733,6 +744,7 @@ async function runMountBody(params: MountBodyParams): Promise<void> {
     // marks the cache-layer event, and `ok/mount/resolve` / `ok/mount/reject`
     // mark settle on the MISS path.
     resolveFn(v2HitEntry);
+    emitMountPromiseResolution();
     return;
   }
 
@@ -888,6 +900,7 @@ async function runMountBody(params: MountBodyParams): Promise<void> {
   // contract says startSpan/end must not throw, but an opt-in SDK fault
   // would otherwise block the user path.
   resolveFn(v2MissEntry);
+  emitMountPromiseResolution();
   // Emit ok.mount-promise as a descendant of the ok.cold-mount root for
   // this cycle. Cold-mount root is lazily created if absent — typical on
   // a fresh cold mount when sync-resolve has not yet finalized it. No-op

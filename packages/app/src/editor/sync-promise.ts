@@ -159,6 +159,17 @@ interface CacheEntry {
 }
 
 const cache = new Map<string, CacheEntry>();
+const resolutionListeners = new Set<() => void>();
+
+function emitSyncPromiseResolution(): void {
+  for (const listener of resolutionListeners) listener();
+}
+
+/** Subscribe React-facing readiness consumers to successful sync resolution. */
+export function subscribeSyncPromiseResolution(listener: () => void): () => void {
+  resolutionListeners.add(listener);
+  return () => resolutionListeners.delete(listener);
+}
 
 /**
  * Visibility-change handler installed lazily on first pending entry. Browsers
@@ -415,6 +426,7 @@ export function syncPromise(docName: string, provider: HocuspocusProvider): Prom
     // contract says startSpan/end must not throw, but an opt-in SDK fault
     // would otherwise block the user path. Keep entry in cache.
     entry.resolve();
+    emitSyncPromiseResolution();
     // Startup waterfall: the first doc to finish its cold-mount sync this
     // session is the launch's active/initial document, so its resolve is the
     // first-content checkpoint. `firstContent` is idempotent — later doc syncs

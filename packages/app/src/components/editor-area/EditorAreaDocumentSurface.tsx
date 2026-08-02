@@ -1,8 +1,9 @@
 import { useLingui } from '@lingui/react/macro';
+import { useSyncExternalStore } from 'react';
 import { useProperties } from '@/components/PropertyContext';
 import { FindReplaceController } from '@/editor/find-replace/FindReplaceController';
-import { mountPromiseHasResolved } from '@/editor/mount-promise';
-import { syncPromiseHasResolved } from '@/editor/sync-promise';
+import { mountPromiseHasResolved, subscribeMountPromiseResolution } from '@/editor/mount-promise';
+import { subscribeSyncPromiseResolution, syncPromiseHasResolved } from '@/editor/sync-promise';
 import { useDocumentStats } from '@/hooks/use-document-stats';
 import { useLifecycleStatus } from '@/hooks/use-lifecycle-status';
 import { useSelectionStats } from '@/hooks/use-selection-stats';
@@ -54,6 +55,16 @@ export function EditorAreaDocumentSurface() {
     if (activeDocName != null) requestAddProperty(activeDocName);
   };
   const editorActivityDocName = deferredActiveDocName ?? activeDocName;
+  const mountResolved = useSyncExternalStore(
+    subscribeMountPromiseResolution,
+    () => activeDocName !== null && mountPromiseHasResolved(activeDocName),
+    () => false,
+  );
+  const syncResolved = useSyncExternalStore(
+    subscribeSyncPromiseResolution,
+    () => activeDocName !== null && syncPromiseHasResolved(activeDocName),
+    () => false,
+  );
   // EditorAreaPrimaryView only mounts this surface for a live document.
   if (activeDocName == null || editorActivityDocName == null) return null;
 
@@ -73,8 +84,8 @@ export function EditorAreaDocumentSurface() {
           {shouldPaintOverlay({
             activeDocName,
             deferredActiveDocName,
-            mountResolved: activeDocName !== null && mountPromiseHasResolved(activeDocName),
-            syncResolved: activeDocName !== null && syncPromiseHasResolved(activeDocName),
+            mountResolved,
+            syncResolved,
           }) ? (
             <div className="absolute inset-0 z-10 bg-background">
               <EditorSkeleton />

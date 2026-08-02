@@ -30,6 +30,7 @@ import {
   SyncTimeoutError,
   syncPromise,
   syncPromiseHasResolved,
+  subscribeSyncPromiseResolution,
 } from './sync-promise';
 
 const DUMMY_WS = 'ws://localhost:1/collab';
@@ -409,13 +410,19 @@ describe('syncPromiseHasResolved (warm-reopen overlay gate)', () => {
 
   test('returns false while pending, true after onSynced fires', () => {
     const provider = track(makeProvider('cold-doc'));
+    let notifications = 0;
+    const unsubscribe = subscribeSyncPromiseResolution(() => {
+      notifications++;
+    });
     Object.defineProperty(provider, 'synced', { value: false, configurable: true });
     syncPromise('cold-doc', provider);
     expect(syncPromiseHasResolved('cold-doc')).toBe(false);
     // Fire synced — listener resolves and flips resolved=true.
     // biome-ignore lint/suspicious/noExplicitAny: protected emit() needs reach for tests
     (provider as any).emit('synced', { state: false });
+    unsubscribe();
     expect(syncPromiseHasResolved('cold-doc')).toBe(true);
+    expect(notifications).toBe(1);
   });
 
   test('returns false on rejected promise (settled but not resolved)', () => {

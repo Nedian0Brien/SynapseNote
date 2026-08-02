@@ -118,4 +118,16 @@ describe('computeStickyRepinLayout', () => {
     expect(next['doc-panel']).toBeCloseTo(30, 6);
     expect(next.editor).toBeCloseTo(70, 6);
   });
+
+  test('returns the current layout when pinned percentages only differ by floating-point noise', () => {
+    const input = { editor: 66.6666667, 'doc-panel': 33.3333333 };
+    expect(
+      computeStickyRepinLayout({
+        currentLayout: input,
+        containerPx: 900,
+        pinnedPx: { 'doc-panel': 300 },
+        residualId: 'editor',
+      }),
+    ).toBe(input);
+  });
 });

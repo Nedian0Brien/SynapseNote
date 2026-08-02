@@ -31,6 +31,7 @@ import {
   MountAbortError,
   mountPromiseHasResolved,
   mountTiptapEditorPromise,
+  subscribeMountPromiseResolution,
   subscribeMountStalled,
 } from './mount-promise';
 
@@ -1246,12 +1247,18 @@ describe('mountPromiseHasResolved (warm-reopen overlay gate)', () => {
 
   test('returns true after a successful V2 cache MISS resolve', async () => {
     const h = makeHarness('resolved-miss-doc');
+    let notifications = 0;
+    const unsubscribe = subscribeMountPromiseResolution(() => {
+      notifications++;
+    });
     await mountTiptapEditorPromise({
       docName: h.docName,
       mountId: 'test-id',
       construct: h.construct,
     });
+    unsubscribe();
     expect(mountPromiseHasResolved(h.docName)).toBe(true);
+    expect(notifications).toBe(1);
   });
 
   test('returns true after a V2 cache HIT short-circuit resolve', async () => {

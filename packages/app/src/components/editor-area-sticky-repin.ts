@@ -1,5 +1,7 @@
 import type { Layout } from 'react-resizable-panels';
 
+const STICKY_LAYOUT_EPSILON = 1e-6;
+
 interface StickyRepinParams {
   /** The group's current layout: panel id -> percentage (0..100), from `getLayout()`. */
   currentLayout: Layout;
@@ -55,5 +57,11 @@ export function computeStickyRepinLayout(params: StickyRepinParams): Layout {
   const residualPct = 100 - pinnedPctSum - otherPctSum;
   if (residualPct < 0) return currentLayout;
   next[residualId] = residualPct;
+
+  const isEffectivelyEqual = Object.keys(currentLayout).every(
+    (id) => Math.abs(next[id] - currentLayout[id]) <= STICKY_LAYOUT_EPSILON,
+  );
+  if (isEffectivelyEqual) return currentLayout;
+
   return next;
 }
