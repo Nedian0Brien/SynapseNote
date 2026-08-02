@@ -22,7 +22,7 @@ import {
 const ACTIONS = ['list', 'get', 'retry', 'resume'] as const;
 type Action = (typeof ACTIONS)[number];
 
-export const DESCRIPTION = [
+const DESCRIPTION = [
   '[Requires: Hocuspocus server] Inspect and recover database Agent Runs without loading the current editor view.',
   '',
   'Use action=list for compact history or action=get for one exact scope/diff/receipt. For a failed agent run, action=retry or action=resume creates an independent attempt from the same immutable plan; pass the source revision, a unique idempotencyKey, and either approvalToken=approve:<planHash> or an autonomySessionToken. The original failed run remains in audit history.',

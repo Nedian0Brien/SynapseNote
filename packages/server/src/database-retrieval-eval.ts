@@ -48,7 +48,7 @@ export function loadDatabaseRetrievalEvalSet(): DatabaseRetrievalEvalSet {
   ) as DatabaseRetrievalEvalSet;
 }
 
-export interface DatabaseRetrievalOutcome {
+interface DatabaseRetrievalOutcome {
   pair: DatabaseRetrievalEvalPair;
   returnedRecordIds: string[];
   recall: number;
@@ -60,7 +60,7 @@ export interface DatabaseRetrievalOutcome {
   truncationReason: 'token_budget' | 'query_page' | null;
 }
 
-export function evaluateDatabaseRetrievalPair(
+function evaluateDatabaseRetrievalPair(
   dataPlane: DatabaseDataPlane,
   databaseId: string,
   sourceId: string,

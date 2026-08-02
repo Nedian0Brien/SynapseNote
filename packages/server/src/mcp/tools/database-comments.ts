@@ -56,7 +56,7 @@ function invalid(args: Args, cwd: string, message: string) {
   return databaseToolInputError('invalid_request', message, { action: args.action, cwd });
 }
 
-export const DESCRIPTION = [
+const DESCRIPTION = [
   '[Requires: Hocuspocus server] Read and participate in page- or property-level database record comment threads.',
   '',
   'Start with action=read and keep the returned revision. Every mutation requires that exact expectedRevision, so concurrent human or agent discussion is never overwritten. Use stable IDs from data(kind=describe/query). Property comments are accepted only for assigned supported values; Title, Formula, Rollup, Button, and Unique ID properties intentionally reject anchors.',

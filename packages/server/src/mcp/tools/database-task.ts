@@ -25,7 +25,7 @@ import {
   textResult,
 } from './shared.ts';
 
-export const DESCRIPTION = [
+const DESCRIPTION = [
   '[Requires: Hocuspocus server] Preview source onboarding and manifest migration, or launch, list, inspect, cancel, retry, and resume durable database import, migration, and bulk jobs.',
   '',
   'Use action=preview_import before import to inspect every included, excluded, modified, or rejected path without changing files. Use action=preview_migration with a current manifest revision and target version before migration; it reports every selected manifest, canonical migration IDs, loss classification, and blocker. Then use action=start with operation=bulk and an exact approved data_commit request, operation=import with that database/source and current manifest revision, or operation=migration with the same current manifest revision and target version. Start, retry, and resume may mutate canonical database files and require user approval. Use action=list to discover stable task IDs and current revisions, action=get for exact progress, and cancel/retry/resume with the latest expectedRevision.',

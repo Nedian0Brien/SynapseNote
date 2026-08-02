@@ -4,9 +4,7 @@ import { textPlusStructured } from './shared.ts';
 
 export const DatabaseToolProblemOutputSchema = z.record(z.string(), z.unknown());
 
-export function databaseToolProblemPayload(
-  result: Record<string, unknown>,
-): Record<string, unknown> {
+function databaseToolProblemPayload(result: Record<string, unknown>): Record<string, unknown> {
   const { ok: _ok, httpStatus, error, ...problem } = result;
   const title = typeof error === 'string' ? error : 'Database request failed.';
   if (

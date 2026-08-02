@@ -22,7 +22,7 @@ import {
   textResult,
 } from './shared.ts';
 
-export const DESCRIPTION = [
+const DESCRIPTION = [
   '[Requires: Hocuspocus server; requires user approval] Commit an exact database plan atomically.',
   '',
   'Call data_plan(action=create_plan), review its exact diff, conflicts, approvals, and postconditions, then pass the unchanged planId, planHash, snapshotRevision, and approvalToken=approve:<planHash>. The commit aborts if the plan, snapshot, assertions, or any target changed. If approvalCodes is supplied, every required scope must be included because this exact plan is one atomic group.',

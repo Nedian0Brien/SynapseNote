@@ -53,7 +53,7 @@ export function loadDatabaseDiscoveryEvalSet(): DatabaseDiscoveryEvalSet {
  *  `held`-split pairs pass — that would defeat the point of the split. */
 export const DEFAULT_AMBIGUITY_MARGIN = 10;
 
-export interface DatabaseDiscoveryOutcome {
+interface DatabaseDiscoveryOutcome {
   pair: DatabaseDiscoveryEvalPair;
   candidateIds: readonly string[];
   candidateScores: readonly number[];
@@ -63,7 +63,7 @@ export interface DatabaseDiscoveryOutcome {
   ambiguityCorrect: boolean;
 }
 
-export function isAmbiguousCatalogResult(
+function isAmbiguousCatalogResult(
   candidateScores: readonly number[],
   margin = DEFAULT_AMBIGUITY_MARGIN,
 ): boolean {
@@ -72,7 +72,7 @@ export function isAmbiguousCatalogResult(
   return first - second <= margin;
 }
 
-export function evaluateDatabaseDiscoveryPair(
+function evaluateDatabaseDiscoveryPair(
   dataPlane: DatabaseDataPlane,
   pair: DatabaseDiscoveryEvalPair,
   margin = DEFAULT_AMBIGUITY_MARGIN,

@@ -474,7 +474,7 @@ export const DatabaseDesiredStateDraftSchema = z
 export type DatabaseDesiredStateDraftInput = z.input<typeof DatabaseDesiredStateDraftSchema>;
 export type DatabaseDesiredStateDraft = z.output<typeof DatabaseDesiredStateDraftSchema>;
 
-export interface DatabaseTargetResolution {
+interface DatabaseTargetResolution {
   kind:
     | 'database'
     | 'person'
@@ -622,7 +622,7 @@ function deletionDesiredState(definition: DatabaseDefinition): DatabaseDesiredSt
   });
 }
 
-export type DatabaseNormalizedRecordMutationOperation =
+type DatabaseNormalizedRecordMutationOperation =
   | { kind: 'set'; propertyId: string; value: unknown }
   | { kind: 'unset'; propertyId: string }
   | { kind: 'add' | 'remove'; propertyId: string; value: string }
@@ -716,7 +716,7 @@ export interface DatabaseVerificationDraftResult {
   };
 }
 
-export type DatabaseConvergenceAction = 'create' | 'update' | 'noop';
+type DatabaseConvergenceAction = 'create' | 'update' | 'noop';
 
 export const DatabasePlanApprovalCodeSchema = z.enum([
   'create_database',

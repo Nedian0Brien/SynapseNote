@@ -55,7 +55,7 @@ export const DatabaseCommentRequestSchema = z.discriminatedUnion('action', [
   }).strict(),
 ]);
 
-export const DatabaseCommentResponseSchema = z
+const DatabaseCommentResponseSchema = z
   .object({ revision: RevisionSchema, document: DatabaseRecordCommentsSchema })
   .strict();
 

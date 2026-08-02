@@ -56,7 +56,7 @@ const RepairEntrySchema = z
   .strict();
 
 export type DurableDatabaseCommitEntry = z.infer<typeof CommitEntrySchema>;
-export type DurableDatabaseRedoEntry = z.infer<typeof RedoEntrySchema>;
+type DurableDatabaseRedoEntry = z.infer<typeof RedoEntrySchema>;
 export type DurableDatabaseUndoEntry = z.infer<typeof UndoEntrySchema>;
 export type DurableDatabaseRepairEntry = z.infer<typeof RepairEntrySchema>;
 

@@ -1099,8 +1099,8 @@ interface UploadResult {
   byteLength: number;
 }
 
-export const UPLOAD_FILE_MAX_BYTES = 100 * 1024 * 1024;
-export const DATABASE_FORM_UPLOAD_FILE_MAX_BYTES = 25 * 1024 * 1024;
+const UPLOAD_FILE_MAX_BYTES = 100 * 1024 * 1024;
+const DATABASE_FORM_UPLOAD_FILE_MAX_BYTES = 25 * 1024 * 1024;
 
 /**
  * Stream multipart upload body to a tempfile while hashing on-the-fly.

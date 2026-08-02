@@ -131,7 +131,7 @@ const DatabaseAutomationTestEventSchema = z
   })
   .strict();
 
-export const DatabaseAutomationRequestSchema = z.discriminatedUnion('action', [
+const DatabaseAutomationRequestSchema = z.discriminatedUnion('action', [
   z
     .object({
       action: z.literal('list'),
@@ -218,7 +218,7 @@ const DatabaseAutomationPlanSummarySchema = z
   })
   .strict();
 
-export const DatabaseAutomationResponseSchema = z.discriminatedUnion('action', [
+const DatabaseAutomationResponseSchema = z.discriminatedUnion('action', [
   z
     .object({
       action: z.literal('list'),
@@ -301,7 +301,7 @@ export const DatabaseDescribeRequestSchema = z
   .refine((value) => value.databaseId !== undefined || value.databaseKey !== undefined, {
     message: 'databaseId or databaseKey is required',
   });
-export const DatabaseRecordRequestSchema = z
+const DatabaseRecordRequestSchema = z
   .object({
     databaseId: z.string().startsWith('db_'),
     sourceId: z.string().startsWith('ds_'),
@@ -342,7 +342,7 @@ export const DatabaseQueryRequestSchema = z
     message: 'viewOverrides requires a saved viewId',
     path: ['viewOverrides'],
   });
-export const DatabaseFormSubmitRequestSchema = z
+const DatabaseFormSubmitRequestSchema = z
   .object({
     databaseId: z.string().startsWith('db_'),
     sourceId: z.string().startsWith('ds_'),
@@ -520,8 +520,8 @@ export const DatabaseButtonRequestSchema = z.union([
     })
     .strict(),
 ]);
-export const DatabasePlaceSearchRequestSchema = DatabasePlaceSearchInputSchema;
-export const DatabasePlaceSearchResponseSchema = z
+const DatabasePlaceSearchRequestSchema = DatabasePlaceSearchInputSchema;
+const DatabasePlaceSearchResponseSchema = z
   .object({
     status: z.enum(['ok', 'unavailable']),
     providerId: z.string().min(1).nullable(),
@@ -537,7 +537,7 @@ export const DatabasePlaceSearchResponseSchema = z
     offlineFallback: z.literal(true),
   })
   .strict();
-export const DatabasePropertyConversionRequestSchema = z
+const DatabasePropertyConversionRequestSchema = z
   .object({
     databaseId: z.string().startsWith('db_'),
     sourceId: z.string().startsWith('ds_'),
@@ -565,7 +565,7 @@ const DatabasePropertyConversionChangeSchema = z
     reason: z.string().min(1).optional(),
   })
   .strict();
-export const DatabasePropertyConversionResponseSchema = z
+const DatabasePropertyConversionResponseSchema = z
   .object({
     databaseId: z.string().startsWith('db_'),
     sourceId: z.string().startsWith('ds_'),
@@ -762,7 +762,7 @@ const DatabasePermissionUpsertRequestSchema = z
       });
     }
   });
-export const DatabasePermissionsRequestSchema = z.discriminatedUnion('action', [
+const DatabasePermissionsRequestSchema = z.discriminatedUnion('action', [
   z
     .object({
       action: z.literal('list'),
@@ -997,7 +997,7 @@ export const DatabaseDescribeResponseSchema = z.union([
 ]);
 
 const DatabaseValueSchema = CoreDatabaseValueSchema;
-export const DatabaseRecordResponseSchema = z
+const DatabaseRecordResponseSchema = z
   .object({
     databaseId: z.string().startsWith('db_'),
     sourceId: z.string().startsWith('ds_'),
@@ -1357,7 +1357,7 @@ export const DatabaseQueryResponseSchema = z
     records: z.array(ProjectedDatabaseRecordSchema),
   })
   .strict();
-export const DatabaseFormSubmitResponseSchema = z
+const DatabaseFormSubmitResponseSchema = z
   .object({
     status: z.literal('created'),
     recordId: z.string().startsWith('rec_'),
@@ -2147,7 +2147,7 @@ export const DatabaseAutonomyResponseSchema = z.discriminatedUnion('action', [
     })
     .strict(),
 ]);
-export const DatabasePermissionsResponseSchema = z.discriminatedUnion('action', [
+const DatabasePermissionsResponseSchema = z.discriminatedUnion('action', [
   z
     .object({
       action: z.literal('list'),
