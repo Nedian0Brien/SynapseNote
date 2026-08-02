@@ -251,7 +251,7 @@ const wikiLinkEmbedConstruct: Construct = {
   tokenize: tokenizeWikiLinkEmbed,
 };
 
-export function wikiLinkSyntax(): Extension {
+function wikiLinkSyntax(): Extension {
   return {
     text: {
       [CODE_LBRACKET]: wikiLinkConstruct,
@@ -334,7 +334,7 @@ function exitWikiLinkEmbed(this: CompileContext, token: Token) {
   this.exit(token);
 }
 
-export const wikiLinkFromMarkdown: FromMarkdownExtension = {
+const wikiLinkFromMarkdown: FromMarkdownExtension = {
   enter: {
     wikiLink: enterWikiLink,
     wikiLinkEmbed: enterWikiLinkEmbed,
@@ -374,7 +374,7 @@ const wikiLinkEmbedHandler: ToMarkdownHandle = (node) => {
   return `${out}]]`;
 };
 
-export const wikiLinkToMarkdown: {
+const wikiLinkToMarkdown: {
   handlers: Record<string, ToMarkdownHandle>;
   unsafe: Array<{ character: string; inConstruct: string[] }>;
 } = {

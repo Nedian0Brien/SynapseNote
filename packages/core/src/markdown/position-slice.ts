@@ -1,6 +1,4 @@
-import type { Nodes, Root } from 'mdast';
-import { visit } from 'unist-util-visit';
-import type { VFile } from 'vfile';
+import type { Nodes } from 'mdast';
 
 const ESCAPABLE_CHARS = new Set('!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'.split(''));
 
@@ -9,7 +7,7 @@ interface EscapedChar {
   char: string;
 }
 
-export function splitGfmCellSegments(rowSrc: string): string[] {
+function splitGfmCellSegments(rowSrc: string): string[] {
   const segments: string[] = [];
   let cur = '';
   for (let i = 0; i < rowSrc.length; i++) {
@@ -541,17 +539,4 @@ export function applyPositionSliceToNode(
       break;
     }
   }
-}
-
-export function positionSlicePlugin() {
-  return (tree: Root, file: VFile) => {
-    const source = typeof file.value === 'string' ? file.value : '';
-    if (!source) return;
-
-    const debug = typeof process !== 'undefined' && process.env?.OK_DEBUG_POSITION_SLICE === '1';
-
-    visit(tree, (node: Nodes, _index, parent) => {
-      applyPositionSliceToNode(node, source, debug, parent ?? undefined);
-    });
-  };
 }

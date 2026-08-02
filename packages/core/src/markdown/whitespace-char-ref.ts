@@ -17,7 +17,7 @@ export function isInlineWhitespaceNumericCharRef(ref: string): boolean {
   return code !== null && INLINE_WHITESPACE_BY_CODE.has(code);
 }
 
-export function decodeInlineWhitespaceNumericCharRef(ref: string): string | null {
+function decodeInlineWhitespaceNumericCharRef(ref: string): string | null {
   const code = numericCharRefCodePoint(ref);
   return code === null ? null : (INLINE_WHITESPACE_BY_CODE.get(code) ?? null);
 }
