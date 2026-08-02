@@ -3186,4 +3186,48 @@ describe('DatabaseCommitEngine', () => {
       expect(({} as any).polluted).toBeUndefined();
     });
   });
+
+  test('reflects a record-only commit incrementally instead of rebuilding the index', async () => {
+    const { index, plans, draft, engine, commitInput } = await fixture();
+    await engine.commit(commitInput());
+    const record = index.list(draft.normalized.definition.id)[0];
+    if (!record?.revision) throw new Error('expected committed record');
+
+    const originalRebuild = index.rebuild.bind(index);
+    let rebuilds = 0;
+    index.rebuild = async () => {
+      rebuilds += 1;
+      return originalRebuild();
+    };
+
+    const updateState = stableDesiredState(draft);
+    updateState.sampleRecords = [];
+    updateState.recordMutations = [
+      {
+        id: record.id,
+        expectedRevision: record.revision,
+        sourceKey: 'tasks',
+        operations: [{ op: 'set', propertyKey: 'status', value: 'done' }],
+      },
+    ];
+    const updateDraft = plans.createDraft(updateState);
+    const updatePlan = plans.createPlan(updateDraft.id);
+    await engine.commit({
+      planId: updatePlan.id,
+      planHash: updatePlan.hash,
+      expectedSnapshotRevision: updatePlan.snapshotRevision,
+      idempotencyKey: 'record-only-incremental-0001',
+      approvalToken: engine.expectedApprovalToken(updatePlan.hash),
+      actor: { principalId: 'agent:codex', kind: 'agent' },
+      assertions: { databaseAbsent: false },
+    });
+
+    // A full rebuild re-reads every record file under every source folder and
+    // runs inside the read barrier that refuses every read, so an ordinary
+    // cell write must not pay it. Only a manifest write needs the rebuild, to
+    // advance the index watermark.
+    expect(rebuilds).toBe(0);
+    // The index still reflects the write, incrementally.
+    expect(index.getById(record.id)?.revision).not.toBe(record.revision);
+  });
 });
