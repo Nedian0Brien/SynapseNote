@@ -894,10 +894,6 @@ msgstr ""
 msgid "Add color rule"
 msgstr ""
 
-#: src/components/DatabaseCommentsDialog.tsx
-msgid "Add comment"
-msgstr ""
-
 #: src/lib/keyboard-shortcuts.ts
 msgid "Add cursors or select matching occurrences through CodeMirror."
 msgstr ""
@@ -2260,12 +2256,6 @@ msgstr ""
 msgid "Commands run with the full access of your macOS user account on this machine. Turn this off to disable the shell."
 msgstr ""
 
-#: src/components/DatabaseCommentsDialog.tsx
-msgid "Comment on"
-msgstr ""
-
-#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
-#: src/components/DatabaseCommentsDialog.tsx
 #: src/components/DatabaseRecordPeekComments.tsx
 msgid "Comments"
 msgstr ""
@@ -3294,7 +3284,6 @@ msgstr ""
 msgid "Dashboard layout"
 msgstr ""
 
-#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 #: src/components/DatabaseContextInspectorDialog.tsx
 #: src/components/DatabaseWorkspaceHeader.tsx
 #: src/components/NewItemDialog.tsx
@@ -3682,10 +3671,6 @@ msgstr ""
 
 #: src/components/settings/AccountSection.tsx
 msgid "Disconnecting"
-msgstr ""
-
-#: src/components/DatabaseCommentsDialog.tsx
-msgid "Discuss this record or a property value without changing the page body."
 msgstr ""
 
 #: src/components/ClaudeReadinessBanner.tsx
@@ -5834,10 +5819,6 @@ msgstr ""
 msgid "Loading branch state"
 msgstr ""
 
-#: src/components/DatabaseCommentsDialog.tsx
-msgid "Loading comments"
-msgstr ""
-
 #: src/components/DiffViewBoundary.tsx
 msgid "Loading conflict for {filePath}"
 msgstr ""
@@ -6627,10 +6608,6 @@ msgstr ""
 
 #: src/components/ConnectingBanner.tsx
 msgid "No collab server for this worktree — run <0>ok start</0> here, or reopen the project."
-msgstr ""
-
-#: src/components/DatabaseCommentsDialog.tsx
-msgid "No comments yet."
 msgstr ""
 
 #: src/components/DatabaseContextInspectorDialog.tsx
@@ -7662,6 +7639,10 @@ msgstr ""
 msgid "Page number"
 msgstr ""
 
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
+msgid "Page options"
+msgstr ""
+
 #: src/editor/components/PdfEmbed.tsx
 msgid "Page thumbnails"
 msgstr ""
@@ -8358,7 +8339,6 @@ msgstr ""
 msgid "Reconnecting…"
 msgstr ""
 
-#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "Record"
 msgstr ""
@@ -8667,10 +8647,6 @@ msgstr ""
 msgid "Renew"
 msgstr ""
 
-#: src/components/DatabaseCommentsDialog.tsx
-msgid "Reopen"
-msgstr ""
-
 #: src/lib/keyboard-shortcuts.ts
 msgid "Reopen closed tab"
 msgstr ""
@@ -8734,10 +8710,6 @@ msgstr ""
 
 #: src/components/DatabaseConflictResolutionNotice.tsx
 msgid "Replan my change"
-msgstr ""
-
-#: src/components/DatabaseCommentsDialog.tsx
-msgid "Reply"
 msgstr ""
 
 #: src/components/CommandPalette.tsx
@@ -8818,10 +8790,6 @@ msgstr ""
 
 #: src/editor/components/ResizeHandles.tsx
 msgid "Resize {handleKey}"
-msgstr ""
-
-#: src/components/DatabaseCommentsDialog.tsx
-msgid "Resolve"
 msgstr ""
 
 #: src/components/DatabaseConflictResolutionNotice.tsx
@@ -9994,7 +9962,6 @@ msgstr ""
 msgid "Sort by property"
 msgstr ""
 
-#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 #: src/components/DatabaseContextInspectorDialog.tsx
 #: src/components/DatabaseWorkspaceHeader.tsx
 #: src/components/MermaidFileViewer.tsx

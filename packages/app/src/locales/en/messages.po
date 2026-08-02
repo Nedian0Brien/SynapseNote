@@ -899,10 +899,6 @@ msgstr "Add at least one letter or number."
 msgid "Add color rule"
 msgstr "Add color rule"
 
-#: src/components/DatabaseCommentsDialog.tsx
-msgid "Add comment"
-msgstr "Add comment"
-
 #: src/lib/keyboard-shortcuts.ts
 msgid "Add cursors or select matching occurrences through CodeMirror."
 msgstr "Add cursors or select matching occurrences through CodeMirror."
@@ -2265,12 +2261,6 @@ msgstr "Commands"
 msgid "Commands run with the full access of your macOS user account on this machine. Turn this off to disable the shell."
 msgstr "Commands run with the full access of your macOS user account on this machine. Turn this off to disable the shell."
 
-#: src/components/DatabaseCommentsDialog.tsx
-msgid "Comment on"
-msgstr "Comment on"
-
-#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
-#: src/components/DatabaseCommentsDialog.tsx
 #: src/components/DatabaseRecordPeekComments.tsx
 msgid "Comments"
 msgstr "Comments"
@@ -3299,7 +3289,6 @@ msgstr "Customize this record"
 msgid "Dashboard layout"
 msgstr "Dashboard layout"
 
-#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 #: src/components/DatabaseContextInspectorDialog.tsx
 #: src/components/DatabaseWorkspaceHeader.tsx
 #: src/components/NewItemDialog.tsx
@@ -3688,10 +3677,6 @@ msgstr "Disconnect"
 #: src/components/settings/AccountSection.tsx
 msgid "Disconnecting"
 msgstr "Disconnecting"
-
-#: src/components/DatabaseCommentsDialog.tsx
-msgid "Discuss this record or a property value without changing the page body."
-msgstr "Discuss this record or a property value without changing the page body."
 
 #: src/components/ClaudeReadinessBanner.tsx
 #: src/components/NavigatorApp.tsx
@@ -5839,10 +5824,6 @@ msgstr "Loading Agent Runs"
 msgid "Loading branch state"
 msgstr "Loading branch state"
 
-#: src/components/DatabaseCommentsDialog.tsx
-msgid "Loading comments"
-msgstr "Loading comments"
-
 #: src/components/DiffViewBoundary.tsx
 msgid "Loading conflict for {filePath}"
 msgstr "Loading conflict for {filePath}"
@@ -6633,10 +6614,6 @@ msgstr "No changes"
 #: src/components/ConnectingBanner.tsx
 msgid "No collab server for this worktree — run <0>ok start</0> here, or reopen the project."
 msgstr "No collab server for this worktree — run <0>ok start</0> here, or reopen the project."
-
-#: src/components/DatabaseCommentsDialog.tsx
-msgid "No comments yet."
-msgstr "No comments yet."
 
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "No Context Packs yet"
@@ -7667,6 +7644,10 @@ msgstr "Page not found"
 msgid "Page number"
 msgstr "Page number"
 
+#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
+msgid "Page options"
+msgstr "Page options"
+
 #: src/editor/components/PdfEmbed.tsx
 msgid "Page thumbnails"
 msgstr "Page thumbnails"
@@ -8363,7 +8344,6 @@ msgstr "Reconnecting after server restart"
 msgid "Reconnecting…"
 msgstr "Reconnecting…"
 
-#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "Record"
 msgstr "Record"
@@ -8672,10 +8652,6 @@ msgstr "Renaming changes the file on disk and the id agents use to pick this tem
 msgid "Renew"
 msgstr "Renew"
 
-#: src/components/DatabaseCommentsDialog.tsx
-msgid "Reopen"
-msgstr "Reopen"
-
 #: src/lib/keyboard-shortcuts.ts
 msgid "Reopen closed tab"
 msgstr "Reopen closed tab"
@@ -8740,10 +8716,6 @@ msgstr "Replace the active match from the replace field."
 #: src/components/DatabaseConflictResolutionNotice.tsx
 msgid "Replan my change"
 msgstr "Replan my change"
-
-#: src/components/DatabaseCommentsDialog.tsx
-msgid "Reply"
-msgstr "Reply"
 
 #: src/components/CommandPalette.tsx
 #: src/components/ReportBugDialogBody.tsx
@@ -8824,10 +8796,6 @@ msgstr "Reset view filters"
 #: src/editor/components/ResizeHandles.tsx
 msgid "Resize {handleKey}"
 msgstr "Resize {handleKey}"
-
-#: src/components/DatabaseCommentsDialog.tsx
-msgid "Resolve"
-msgstr "Resolve"
 
 #: src/components/DatabaseConflictResolutionNotice.tsx
 msgid "Resolve concurrent database changes"
@@ -9999,7 +9967,6 @@ msgstr "Sort"
 msgid "Sort by property"
 msgstr "Sort by property"
 
-#: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 #: src/components/DatabaseContextInspectorDialog.tsx
 #: src/components/DatabaseWorkspaceHeader.tsx
 #: src/components/MermaidFileViewer.tsx
