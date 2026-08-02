@@ -386,6 +386,18 @@ export interface CommitWipOptions {
    * ambiguously and would otherwise need a >1s wall-clock wait between them.
    */
   date?: string;
+  /**
+   * Return the existing ref head instead of recording a commit when staging
+   * produces the tree the ref already points at.
+   *
+   * Opt-in because most callers want an unconditional checkpoint. The database
+   * transaction's *base* checkpoint is the case this exists for: it runs before
+   * any write, so whenever nothing has changed since the last snapshot it
+   * records a commit whose tree equals its parent's. Skipping it saves two git
+   * processes on the latency path of every row add and keeps no-op commits out
+   * of the shadow history.
+   */
+  skipWhenUnchanged?: boolean;
 }
 
 export async function commitWip(
@@ -404,7 +416,16 @@ export async function commitWip(
         'shadow.branch': branch,
       },
     },
-    async () => commitWipInner(shadow, writer, contentRoot, message, branch, opts?.date),
+    async () =>
+      commitWipInner(
+        shadow,
+        writer,
+        contentRoot,
+        message,
+        branch,
+        opts?.date,
+        opts?.skipWhenUnchanged ?? false,
+      ),
   );
 }
 
@@ -415,17 +436,28 @@ async function commitWipInner(
   message: string,
   branch = 'main',
   date?: string,
+  skipWhenUnchanged = false,
 ): Promise<string> {
   const tmpIndex = resolve(shadow.gitDir, `index-wip-${writer.id}`);
   const ref = `refs/wip/${branch}/${writer.id}`;
   const sg = shadowGit(shadow);
   const gitPathspecs = shadowAddPathspecs(contentRoot);
+  // Head and tree come from one `rev-parse`: git accepts both revisions in a
+  // single call and every saved process is ~13ms on the commit latency path.
+  let refHead: string | null = null;
+  let refTreeSha: string | null = null;
 
   try {
     // Seed index from current ref state (if exists)
     try {
-      const refTree = (await sg.raw('rev-parse', `${ref}^{tree}`)).trim();
-      await sg.env({ GIT_DIR: shadow.gitDir, GIT_INDEX_FILE: tmpIndex }).raw('read-tree', refTree);
+      const [head, tree] = (await sg.raw('rev-parse', ref, `${ref}^{tree}`))
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
+      if (!head || !tree) throw new Error(`unknown revision ${ref}`);
+      refHead = head;
+      refTreeSha = tree;
+      await sg.env({ GIT_DIR: shadow.gitDir, GIT_INDEX_FILE: tmpIndex }).raw('read-tree', tree);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       if (msg.includes('unknown revision') || msg.includes('bad revision')) {
@@ -448,18 +480,16 @@ async function commitWipInner(
       await sg.env({ GIT_DIR: shadow.gitDir, GIT_INDEX_FILE: tmpIndex }).raw('write-tree')
     ).trim();
 
-    // Find parent
-    let parentSha: string | null = null;
-    try {
-      parentSha = (await sg.raw('rev-parse', ref)).trim();
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (!msg.includes('unknown revision') && !msg.includes('bad revision')) {
-        console.error(`[shadow-repo] Unexpected error resolving ${ref}:`, e);
-        throw e;
-      }
-      // Expected: no parent — first commit on this ref
+    // Nothing changed since the ref: recording it would append a commit whose
+    // tree equals its parent's. Hand back the existing head instead of paying
+    // `commit-tree` and `update-ref`.
+    if (skipWhenUnchanged && refHead !== null && refTreeSha === treeSha) {
+      return refHead;
     }
+
+    // The parent is the head resolved during seeding; only a ref that did not
+    // exist then needs no parent.
+    const parentSha: string | null = refHead;
 
     // Create commit with writer identity
     const args = ['commit-tree', treeSha, '-m', message];

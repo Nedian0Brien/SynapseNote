@@ -276,7 +276,11 @@ const DEFAULT_FS: CommitFs = {
 };
 
 interface CommitGit {
-  snapshot(writer: WriterIdentity, message: string): Promise<string>;
+  snapshot(
+    writer: WriterIdentity,
+    message: string,
+    opts?: { skipWhenUnchanged?: boolean },
+  ): Promise<string>;
   hashBlob(path: string): Promise<string>;
 }
 
@@ -1704,7 +1708,8 @@ export class DatabaseCommitEngine {
       );
     }
     return {
-      snapshot: (identity, message) => commitWip(shadow, identity, '', message, this.#branch()),
+      snapshot: (identity, message, opts) =>
+        commitWip(shadow, identity, '', message, this.#branch(), opts),
       hashBlob: async (path) => {
         const oid = (await shadowGit(shadow).raw('hash-object', '-w', '--', path)).trim();
         return `sha1:${oid}`;
@@ -1956,9 +1961,15 @@ export class DatabaseCommitEngine {
         }
         await this.#assertTargetState(target);
       }
+      // The base checkpoint exists to record the pre-transaction state, and
+      // `baseGitHead` is only written into the audit receipt — undo restores
+      // from the receipt's captured bytes, not from Git. When nothing has
+      // changed since the last snapshot the existing head already *is* that
+      // state, so recording an identical-tree commit buys nothing.
       baseGitHead = await git.snapshot(
         writer,
         `checkpoint: database transaction base ${mutationId}`,
+        { skipWhenUnchanged: true },
       );
       await this.#fs.mkdir(stagingRoot);
       const staged = new Map<string, string>();

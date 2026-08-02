@@ -210,6 +210,29 @@ describe('commitWip', () => {
     shadow = await initShadowRepo(projectRoot);
   });
 
+  test('skipWhenUnchanged returns the existing head instead of a no-op commit', async () => {
+    writeFileSync(resolve(contentDir, 'intro.md'), '# Hello\n');
+    const first = await commitWip(shadow, writer, 'content/docs', 'WIP: intro');
+
+    // Nothing changed since the first snapshot.
+    const skipped = await commitWip(shadow, writer, 'content/docs', 'WIP: no-op', 'main', {
+      skipWhenUnchanged: true,
+    });
+    expect(skipped).toBe(first);
+
+    const sg = shadowGit(shadow);
+    const count = (await sg.raw('rev-list', '--count', `refs/wip/main/${writer.id}`)).trim();
+    expect(count).toBe('1');
+
+    // A real change still records a commit even with the option on.
+    writeFileSync(resolve(contentDir, 'intro.md'), '# Hello again\n');
+    const second = await commitWip(shadow, writer, 'content/docs', 'WIP: changed', 'main', {
+      skipWhenUnchanged: true,
+    });
+    expect(second).not.toBe(first);
+    expect((await sg.raw('rev-list', '--count', `refs/wip/main/${writer.id}`)).trim()).toBe('2');
+  });
+
   test('creates commit on refs/wip/<branch>/<writer-id>', async () => {
     writeFileSync(resolve(contentDir, 'intro.md'), '# Hello\n');
 
