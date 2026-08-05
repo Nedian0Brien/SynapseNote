@@ -154,7 +154,7 @@ export function DatabasePlaceCellEditor({
         <SelectTrigger size="sm" aria-label={`${propertyName} coordinate privacy`}>
           <SelectValue />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent data-database-cell-editor-surface="">
           <SelectItem value="exact">Exact coordinates</SelectItem>
           <SelectItem value="approximate">Approximate area (rounded before storage)</SelectItem>
         </SelectContent>

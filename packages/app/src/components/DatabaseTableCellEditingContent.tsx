@@ -184,7 +184,7 @@ export function DatabaseTableCellEditingContent({
           <SelectTrigger size="sm" aria-label={`Edit ${property.name}`}>
             <SelectValue placeholder="Choose an option" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent data-database-cell-editor-surface="">
             {property.options
               .filter((option) => option.archived !== true || option.id === editing.draft)
               .map((option) => (

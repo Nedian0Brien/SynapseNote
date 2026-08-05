@@ -300,6 +300,92 @@ export function DatabaseTable({
     }
   };
 
+  // The first pointer interaction outside an active cell editor only closes
+  // that editor. Capture it at the window boundary so neither another cell nor
+  // an unrelated control can also handle the same interaction. Portaled
+  // surfaces owned by an editor opt in through the shared data attribute.
+  useEffect(() => {
+    if (!editing) return;
+    let dismissed = false;
+
+    const isInsideEditor = (target: EventTarget | null) =>
+      target instanceof Element &&
+      Boolean(
+        target.closest('[data-database-cell-editing="true"], [data-database-cell-editor-surface]'),
+      );
+    const blockEvent = (event: Event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+    };
+    const dismissEditor = () => {
+      if (dismissed) return;
+      dismissed = true;
+      const record = result.records.find((candidate) => candidate.id === editing.recordId);
+      const property = properties.find((candidate) => candidate.id === editing.propertyId);
+      if (!record || !property) {
+        setEditing(null);
+        setEditError(null);
+        return;
+      }
+      editFocusRef.current = { recordId: record.id, propertyId: property.id };
+      if (editing.draft === editing.initialDraft) {
+        setEditing(null);
+        setEditError(null);
+        setGridAnnouncement(`Edit cancelled for ${property.name}.`);
+        return;
+      }
+      try {
+        const value = parseDatabaseCellDraft(property, editing.draft, people);
+        setRecentlySavedCellValues((current) => {
+          const next = new Map(current);
+          next.set(`${record.id}:${property.id}`, value);
+          return next;
+        });
+        setEditing(null);
+        setEditError(null);
+        onEdit?.(record, property, value);
+        setGridAnnouncement(`Edit saved for ${property.name}.`);
+      } catch (cause) {
+        setEditError(errorMessage(cause, 'Invalid cell value'));
+      }
+    };
+    const handlePointerDown = (event: PointerEvent) => {
+      if (isInsideEditor(event.target)) return;
+      blockEvent(event);
+
+      // Pointer cancellation does not consistently suppress the subsequent
+      // synthetic click in every browser. Keep a short-lived capture fence even
+      // if the state update unmounts this effect before that click arrives.
+      const blockFollowingClick = (clickEvent: MouseEvent) => blockEvent(clickEvent);
+      window.addEventListener('click', blockFollowingClick, { capture: true, once: true });
+      window.setTimeout(() => window.removeEventListener('click', blockFollowingClick, true), 500);
+      dismissEditor();
+    };
+    const handleClickWithoutPointer = (event: MouseEvent) => {
+      if (dismissed || isInsideEditor(event.target)) return;
+      blockEvent(event);
+      dismissEditor();
+    };
+
+    window.addEventListener('pointerdown', handlePointerDown, true);
+    window.addEventListener('click', handleClickWithoutPointer, true);
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDown, true);
+      window.removeEventListener('click', handleClickWithoutPointer, true);
+    };
+  }, [
+    editFocusRef,
+    editing,
+    onEdit,
+    people,
+    properties,
+    result.records,
+    setEditError,
+    setEditing,
+    setGridAnnouncement,
+  ]);
+
   const createSelectOption = (
     record: ProjectedDatabaseRecord,
     property: Extract<DatabaseProperty, { type: 'select' | 'multi_select' }>,

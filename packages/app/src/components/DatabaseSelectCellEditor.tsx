@@ -181,6 +181,7 @@ export function DatabaseSelectCellEditor({
         className="w-[min(19rem,calc(100vw-2rem))] overflow-hidden rounded-md p-0"
         aria-label={`Edit ${property.name}`}
         data-database-select-picker={property.id}
+        data-database-cell-editor-surface=""
         onOpenAutoFocus={(event) => event.preventDefault()}
         onInteractOutside={finishClose}
         onEscapeKeyDown={(event) => {

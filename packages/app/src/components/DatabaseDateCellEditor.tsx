@@ -176,7 +176,7 @@ export function DatabaseDateCellEditor({
               >
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent data-database-cell-editor-surface="">
                 <SelectItem value="start">
                   <Trans>Start</Trans>
                 </SelectItem>

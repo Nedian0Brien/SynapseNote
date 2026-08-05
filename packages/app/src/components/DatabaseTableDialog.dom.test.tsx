@@ -2513,6 +2513,102 @@ describe('DatabaseTableDialog', () => {
     expect(edits).toEqual([false, ['opt_bug', 'opt_feature']]);
   });
 
+  test('uses the first outside pointer only to finish an inline cell editor', async () => {
+    const edits: unknown[] = [];
+    const view = render(
+      <DatabaseTable
+        source={source as never}
+        result={{ ...queryResult(), isComplete: true, nextCursor: null } as never}
+        onEdit={(_record, property, value) => edits.push([property.id, value])}
+      />,
+    );
+    const budgetCell = view.container.querySelector<HTMLElement>(
+      '[data-record-id="rec_first"] [data-property-id="prop_budget"]',
+    );
+    if (!budgetCell) throw new Error('expected budget cell');
+
+    fireEvent.click(screen.getByLabelText('Edit Title for record rec_first'));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Edit Title' }), {
+      target: { value: 'Finished outside' },
+    });
+    fireEvent.pointerDown(budgetCell, { button: 0, pointerType: 'mouse' });
+    fireEvent.pointerUp(budgetCell, { button: 0, pointerType: 'mouse' });
+    await act(() => new Promise((resolve) => setTimeout(resolve, 0)));
+    fireEvent.click(budgetCell);
+
+    expect(screen.queryByRole('textbox', { name: 'Edit Title' })).toBeNull();
+    expect(screen.queryByRole('spinbutton', { name: 'Edit Budget' })).toBeNull();
+    expect(edits).toEqual([['prop_title', 'Finished outside']]);
+
+    fireEvent.click(budgetCell);
+    expect(screen.getByRole('spinbutton', { name: 'Edit Budget' })).toBeTruthy();
+  });
+
+  test('keeps editor portal interactions inside and consumes its first outside pointer', async () => {
+    const tagsProperty = {
+      id: 'prop_tags',
+      key: 'tags',
+      name: 'Tags',
+      type: 'multi_select' as const,
+      options: [
+        { id: 'opt_bug', key: 'bug', name: 'Bug' },
+        { id: 'opt_feature', key: 'feature', name: 'Feature' },
+      ],
+    };
+    const structuredSource = {
+      ...source,
+      properties: [source.properties[0], tagsProperty, source.properties[5]],
+    };
+    const edits: unknown[] = [];
+    const view = render(
+      <DatabaseTable
+        source={structuredSource as never}
+        result={
+          {
+            ...queryResult(),
+            isComplete: true,
+            nextCursor: null,
+            records: [
+              {
+                id: 'rec_first',
+                path: 'tasks/first.md',
+                revision: hash,
+                values: {
+                  prop_title: 'First task',
+                  prop_tags: ['opt_bug'],
+                  prop_budget: 100,
+                },
+              },
+            ],
+          } as never
+        }
+        onEdit={(_record, property, value) => edits.push([property.id, value])}
+      />,
+    );
+    const budgetCell = view.container.querySelector<HTMLElement>(
+      '[data-record-id="rec_first"] [data-property-id="prop_budget"]',
+    );
+    if (!budgetCell) throw new Error('expected budget cell');
+
+    fireEvent.click(screen.getByLabelText('Edit Tags for record rec_first'));
+    fireEvent.click(screen.getByRole('option', { name: 'Feature' }));
+    expect(screen.getByRole('option', { name: 'Feature' }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
+
+    fireEvent.pointerDown(budgetCell, { button: 0, pointerType: 'mouse' });
+    fireEvent.pointerUp(budgetCell, { button: 0, pointerType: 'mouse' });
+    await act(() => new Promise((resolve) => setTimeout(resolve, 0)));
+    fireEvent.click(budgetCell);
+
+    expect(screen.queryByRole('combobox', { name: 'Edit Tags' })).toBeNull();
+    expect(screen.queryByRole('spinbutton', { name: 'Edit Budget' })).toBeNull();
+    expect(edits).toEqual([['prop_tags', ['opt_bug', 'opt_feature']]]);
+
+    fireEvent.click(budgetCell);
+    expect(screen.getByRole('spinbutton', { name: 'Edit Budget' })).toBeTruthy();
+  });
+
   test('edits Person values across active, inactive, and agent identities', () => {
     const people = [
       {
