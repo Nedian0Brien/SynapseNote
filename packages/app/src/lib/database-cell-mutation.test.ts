@@ -1021,7 +1021,13 @@ describe('database cell mutation compiler', () => {
     const tags = source?.properties[2];
     if (!source || !title || !score || !tags) throw new Error('invalid fixture');
     expect(() => parseDatabaseCellDraft(score, 'not-a-number')).toThrow(/finite number/);
-    expect(() => parseDatabaseCellDraft(title, '')).toThrow(/cannot be empty/);
+    expect(parseDatabaseCellDraft(title, '')).toBe('');
+    expect(() =>
+      parseDatabaseCellDraft(
+        { id: 'prop_required', key: 'required', name: 'Required', type: 'text', required: true },
+        '',
+      ),
+    ).toThrow(/cannot be empty/);
     expect(
       parseDatabaseCellDraft(
         { id: 'prop_url', key: 'url', name: 'URL', type: 'url' },
@@ -1118,9 +1124,15 @@ describe('database cell mutation compiler', () => {
     ]);
     expect(desired.recordMutations).toEqual([]);
     expect(DatabaseDesiredStateDraftSchema.safeParse(desired).success).toBe(true);
-    expect(() => createDatabaseRecordDesiredState({ database, source, title: '  ' })).toThrow(
-      /cannot be empty/,
-    );
+    const blankDesired = createDatabaseRecordDesiredState({ database, source, title: '  ' });
+    expect(blankDesired.sampleRecords).toEqual([
+      {
+        sourceKey: 'tasks',
+        values: { title: '', status: 'opt_todo' },
+        body: '## Checklist\n',
+      },
+    ]);
+    expect(DatabaseDesiredStateDraftSchema.safeParse(blankDesired).success).toBe(true);
   });
 
   test('compiles an exact revision-bound record deletion', () => {
@@ -1177,6 +1189,26 @@ describe('database cell mutation compiler', () => {
       },
     ]);
     expect(DatabaseDesiredStateDraftSchema.safeParse(desired).success).toBe(true);
+
+    const blankDesired = createDatabaseRecordCopyDesiredState({
+      database,
+      source,
+      record: {
+        id: 'rec_blank',
+        path: 'tasks/blank.md',
+        revision: `sha256:${'b'.repeat(64)}`,
+        values: { prop_title: '' },
+      },
+    });
+    expect(blankDesired.recordCopies).toEqual([
+      {
+        id: 'rec_blank',
+        expectedRevision: `sha256:${'b'.repeat(64)}`,
+        sourceKey: 'tasks',
+        title: '',
+      },
+    ]);
+    expect(DatabaseDesiredStateDraftSchema.safeParse(blankDesired).success).toBe(true);
   });
 
   test('compiles archive and restore as exact canonical state transitions', () => {

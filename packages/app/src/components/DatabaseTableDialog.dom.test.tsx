@@ -3149,7 +3149,8 @@ describe('DatabaseTableDialog', () => {
     render(<DatabaseTable source={source} result={emptyResult} notionSurface onEdit={onEdit} />);
 
     const emptyCell = screen.getByLabelText('Edit Status for page First task: empty');
-    expect(emptyCell.textContent).toBe('—');
+    expect(emptyCell.textContent).toBe('');
+    expect(emptyCell.querySelector('[data-database-empty-cell]')).toBeTruthy();
     fireEvent.click(emptyCell);
 
     expect(screen.getByRole('combobox', { name: 'Edit Status' })).toBeTruthy();
@@ -4470,6 +4471,7 @@ describe('DatabaseTableDialog', () => {
 
   test('renders the canonical database workspace in the caller canvas without a portal', async () => {
     let catalogCalls = 0;
+    let plannedNewPageTitle: unknown = Symbol('not planned');
     const user = userEvent.setup();
     const tableView = {
       id: 'view_table',
@@ -4481,7 +4483,7 @@ describe('DatabaseTableDialog', () => {
       groups: [],
       projection: { propertyIds: ['prop_title'], body: 'hidden' as const },
     };
-    globalThis.fetch = mock(async (input: RequestInfo | URL) => {
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = String(input);
       if (path.startsWith('/api/databases/catalog')) {
         catalogCalls += 1;
@@ -4491,6 +4493,16 @@ describe('DatabaseTableDialog', () => {
         return Response.json({ ...description(), database: { ...database, views: [tableView] } });
       }
       if (path === '/api/databases/query') return Response.json(queryResult());
+      if (path === '/api/databases/plan') {
+        const body = JSON.parse(String(init?.body)) as {
+          action?: string;
+          desiredState?: { sampleRecords?: Array<{ values?: Record<string, unknown> }> };
+        };
+        if (body.action === 'create_draft') {
+          plannedNewPageTitle = body.desiredState?.sampleRecords?.[0]?.values?.title;
+        }
+        return Response.json({ detail: 'Stop after observing the draft request' }, { status: 503 });
+      }
       return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
     }) as typeof fetch;
 
@@ -4538,10 +4550,8 @@ describe('DatabaseTableDialog', () => {
     expect(screen.getByRole('menuitem', { name: 'Refresh' })).toBeTruthy();
     await user.keyboard('{Escape}');
     fireEvent.click(screen.getByRole('button', { name: 'New page' }));
-    expect(
-      screen.getAllByRole('textbox', { name: 'New page title' }).length,
-    ).toBeGreaterThanOrEqual(2);
-    expect(screen.getByRole('button', { name: 'Add page' })).toBeTruthy();
+    await waitFor(() => expect(plannedNewPageTitle).toBe(''));
+    expect(screen.queryByRole('button', { name: 'Add page' })).toBeNull();
   });
 
   test('closes the nested creation form when its host surface closes', async () => {
@@ -5525,7 +5535,7 @@ describe('DatabaseTableDialog', () => {
     expect(document.querySelector('[data-database-state="error"]')).not.toBeNull();
   });
 
-  test('keeps an invalid cell draft local and explains how to fix it', async () => {
+  test('submits an explicitly blank Title as a valid cell mutation', async () => {
     const requestedPaths: string[] = [];
     globalThis.fetch = mock(async (input: RequestInfo | URL) => {
       const path = String(input);
@@ -5542,10 +5552,10 @@ describe('DatabaseTableDialog', () => {
       target: { value: '' },
     });
     fireEvent.click(screen.getByLabelText('Save cell edit'));
-    expect(await screen.findByText('Title cannot be empty')).not.toBeNull();
-    expect(document.querySelector('[data-database-state="invalid_value"]')).not.toBeNull();
-    expect(screen.getByLabelText('Edit Title')).not.toBeNull();
-    expect(requestedPaths).not.toContain('/api/databases/plan');
+    await waitFor(() => expect(requestedPaths).toContain('/api/databases/plan'));
+    expect(screen.queryByText('Title cannot be empty')).toBeNull();
+    expect(document.querySelector('[data-database-state="invalid_value"]')).toBeNull();
+    expect(screen.queryByLabelText('Edit Title')).toBeNull();
   });
 
   test('reconciles a Select cell without a save indicator or full database query', async () => {

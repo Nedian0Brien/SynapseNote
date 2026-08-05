@@ -2590,7 +2590,8 @@ describe('DatabaseView', () => {
     expect(screen.getByText('Use the row below to add a page.')).toBeTruthy();
   });
 
-  test('starts record creation in the inline new-page row', async () => {
+  test('creates a blank record immediately from the inline New page control', async () => {
+    let plannedTitle: unknown = Symbol('not planned');
     globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = String(input);
       const body = init?.body
@@ -2666,6 +2667,17 @@ describe('DatabaseView', () => {
           aggregation: null,
         });
       }
+      if (path === '/api/databases/plan' && body?.action === 'create_draft') {
+        plannedTitle = (
+          body.desiredState as {
+            sampleRecords?: Array<{ values?: Record<string, unknown> }>;
+          }
+        ).sampleRecords?.[0]?.values?.title;
+        return Response.json(
+          { detail: 'Stop after observing the create request' },
+          { status: 503 },
+        );
+      }
       return Response.json({ detail: `unexpected request: ${path}`, body }, { status: 500 });
     }) as typeof fetch;
 
@@ -2673,13 +2685,10 @@ describe('DatabaseView', () => {
       <DatabaseView databaseId={database.id} sourceId={source.id} viewId={view.id} mode="inline" />,
     );
     const newPageButton = await screen.findByRole('button', { name: 'New page' });
-    fireEvent.click(newPageButton);
     const newPageTitle = await screen.findByLabelText('New page title');
-    await waitFor(() => expect(document.activeElement).toBe(newPageTitle));
-    newPageButton.focus();
-    expect(document.activeElement).toBe(newPageButton);
     fireEvent.click(newPageButton);
-    await waitFor(() => expect(document.activeElement).toBe(newPageTitle));
+    await waitFor(() => expect(plannedTitle).toBe(''));
+    expect(document.activeElement).not.toBe(newPageTitle);
     expect(document.querySelector('[data-database-workspace]')).toBeNull();
   });
 

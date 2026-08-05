@@ -75,14 +75,9 @@ export function DatabaseTableNewRecordRow({
                   if (event.key === 'Enter') {
                     event.preventDefault();
                     const title = event.currentTarget.value.trim();
-                    if (title) {
-                      event.currentTarget.value = '';
-                      onCreateRecord(title);
-                    } else {
-                      setEditError(
-                        notionSurface ? t`A page title is required` : t`A record title is required`,
-                      );
-                    }
+                    event.currentTarget.value = '';
+                    setEditError(null);
+                    onCreateRecord(title);
                   }
                   if (event.key === 'Escape') {
                     event.currentTarget.value = '';

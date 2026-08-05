@@ -77,7 +77,7 @@ export function DatabaseWorkspaceToolbar({ context }: { context: DatabaseWorkspa
     runMutation,
     setFilterDialogOpen,
     setViewSettingsOpen,
-    setNewRecordOpen,
+    createRecord,
     reorderSavedViewTo,
     handleSavedViewTabAction,
     remotePresence,
@@ -278,7 +278,7 @@ export function DatabaseWorkspaceToolbar({ context }: { context: DatabaseWorkspa
               size="sm"
               disabled={mutationStatus !== 'idle'}
               aria-label="New page"
-              onClick={() => setNewRecordOpen(true)}
+              onClick={() => createRecord('')}
             >
               <Plus aria-hidden="true" /> <Trans>New</Trans>
             </Button>
@@ -348,7 +348,7 @@ export function DatabaseWorkspaceToolbar({ context }: { context: DatabaseWorkspa
             size="sm"
             disabled={mutationStatus !== 'idle'}
             aria-label={isPagePresentation ? t`New page` : undefined}
-            onClick={() => setNewRecordOpen(true)}
+            onClick={() => createRecord('')}
           >
             <Plus />
             {isPagePresentation ? <Trans>New</Trans> : <Trans>New record</Trans>}

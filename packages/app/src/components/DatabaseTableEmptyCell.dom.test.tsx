@@ -105,6 +105,36 @@ describe('database empty-cell editor matrix', () => {
     expect(edits).toEqual(['New note']);
   });
 
+  test('saves an explicitly blank Title while record identity stays internal', () => {
+    const edits: unknown[] = [];
+    const creates: string[] = [];
+    const view = render(
+      <DatabaseTable
+        source={source as never}
+        result={result() as never}
+        notionSurface
+        onEdit={(_record, _property, value) => edits.push(value)}
+        onCreateRecord={(title) => creates.push(title)}
+      />,
+    );
+
+    const titleCell = view.container.querySelector<HTMLElement>(
+      '[data-record-id="record_first"] [data-property-id="title"]',
+    );
+    if (!titleCell) throw new Error('Expected the Title cell');
+    fireEvent.click(titleCell);
+    fireEvent.change(screen.getByLabelText('Edit Title'), { target: { value: '' } });
+    fireEvent.keyDown(screen.getByLabelText('Edit Title'), { key: 'Enter' });
+
+    expect(edits).toEqual(['']);
+    expect(titleCell.textContent).not.toContain('—');
+    expect(titleCell.querySelector('[data-database-empty-cell]')).toBeTruthy();
+
+    const newTitle = screen.getByTestId('database-new-row-title');
+    fireEvent.keyDown(newTitle, { key: 'Enter' });
+    expect(creates).toEqual(['']);
+  });
+
   test('dismisses an unchanged Select picker without emitting an edit', async () => {
     const edits: unknown[] = [];
     render(

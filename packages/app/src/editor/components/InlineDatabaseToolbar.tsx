@@ -140,7 +140,7 @@ interface InlineDatabaseToolbarProps {
   onInlineViewChange: (change: DatabaseViewLifecycleChange) => void;
   onInlineDefaultViewChange: (viewId?: string) => void;
   onInlineViewSelect: (viewId: string) => void;
-  focusInlineNewRecord: () => void;
+  createBlankInlineRecord: () => void;
   persistLinkedViewOverrides: (next: DatabaseLinkedViewSettings | undefined) => void;
   addInlineProperty: (input: { name: string; type: DatabasePropertyType }) => void;
   onOpenAdvancedProperties: (propertyId?: string) => void;
@@ -203,7 +203,7 @@ export function InlineDatabaseToolbar({
   onInlineViewChange,
   onInlineDefaultViewChange,
   onInlineViewSelect,
-  focusInlineNewRecord,
+  createBlankInlineRecord,
   persistLinkedViewOverrides,
   addInlineProperty,
   onOpenAdvancedProperties,
@@ -406,7 +406,7 @@ export function InlineDatabaseToolbar({
             className="rounded-r-none px-3 font-semibold shadow-none"
             aria-label="New page"
             disabled={state.status !== 'ready'}
-            onClick={focusInlineNewRecord}
+            onClick={createBlankInlineRecord}
           >
             <Plus aria-hidden="true" /> <Trans>New</Trans>
           </Button>

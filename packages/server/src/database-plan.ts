@@ -114,7 +114,7 @@ const DatabaseRecordCopySchema = z
       .string()
       .regex(/^rec_[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/)
       .optional(),
-    title: z.string().trim().min(1),
+    title: z.string().trim(),
   })
   .strict();
 

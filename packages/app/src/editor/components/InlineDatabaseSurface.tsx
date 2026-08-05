@@ -105,7 +105,6 @@ export function InlineDatabaseSurface({
     inlineSearchQuery,
     setInlineSearchQuery,
     focusInlineNewRecordRequest,
-    setFocusInlineNewRecordRequest,
     inlineSaveFeedback,
     inlineOptimisticCellValues,
     inlineSelectedRecordIds,
@@ -315,7 +314,7 @@ export function InlineDatabaseSurface({
         setInlineViewManagerOpen(false);
         setInlineViewManagerInitialAction(undefined);
       }}
-      focusInlineNewRecord={() => setFocusInlineNewRecordRequest((current) => (current ?? 0) + 1)}
+      createBlankInlineRecord={() => createInlineRecord('')}
       persistLinkedViewOverrides={(next) =>
         persistLinkedViewOverrides(next ? { ...localViewOverrides, ...next } : undefined)
       }

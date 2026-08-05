@@ -1815,6 +1815,21 @@ describe('DatabasePlanEngine ephemeral desired state', () => {
     if (!titleProperty) throw new Error('expected title property');
     expect(plan.diff.records[0]?.after?.values[titleProperty.id]).toBe('Original copy');
 
+    const blankTitleState = structuredClone(state);
+    blankTitleState.recordCopies = [
+      {
+        id: existing.id,
+        expectedRevision: existing.revision,
+        sourceKey: source.key,
+        newId: 'rec_blank_copy_target',
+        title: '',
+      },
+    ];
+    const blankTitlePlan = engine.createPlan(engine.createDraft(blankTitleState).id);
+    expect(blankTitlePlan.committable).toBe(true);
+    expect(blankTitlePlan.diff.records[0]?.recordId).toBe('rec_blank_copy_target');
+    expect(blankTitlePlan.diff.records[0]?.after?.values[titleProperty.id]).toBe('');
+
     const stale = structuredClone(state);
     const staleCopy = stale.recordCopies[0];
     if (!staleCopy) throw new Error('expected copy fixture');

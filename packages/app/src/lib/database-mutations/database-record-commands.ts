@@ -68,7 +68,6 @@ export function createDatabaseRecordDesiredState(input: {
   const titleProperty = input.source.properties.find((property) => property.type === 'title');
   if (!titleProperty) throw new Error('The selected source has no title property');
   const title = input.title.trim();
-  if (!title) throw new Error(`${titleProperty.name} cannot be empty`);
   const applied = applyDatabaseTemplate(input.database, {
     sourceId: input.source.id,
     ...(input.templateId ? { templateId: input.templateId } : {}),
@@ -219,9 +218,8 @@ export function createDatabaseRecordCopyDesiredState(input: {
   const titleProperty = input.source.properties.find((property) => property.type === 'title');
   if (!titleProperty) throw new Error('The selected source has no title property');
   const title = input.record.values[titleProperty.id];
-  if (typeof title !== 'string' || !title.trim()) {
+  if (typeof title !== 'string')
     throw new Error('The source record has no valid title to duplicate');
-  }
   return {
     ...databaseDraftBase(input.database),
     sampleRecords: [],
@@ -231,7 +229,7 @@ export function createDatabaseRecordCopyDesiredState(input: {
         id: input.record.id,
         expectedRevision: input.record.revision,
         sourceKey: input.source.key,
-        title: `${title} copy`,
+        title: title.trim() === '' ? '' : `${title} copy`,
       },
     ],
   };

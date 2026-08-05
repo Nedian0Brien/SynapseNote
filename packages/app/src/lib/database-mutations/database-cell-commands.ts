@@ -41,7 +41,11 @@ export function parseDatabaseCellDraft(
     return value;
   };
   if (draft === '') {
-    if (property.type === 'title' || property.required) {
+    // Title remains a required property, but an explicitly stored empty string
+    // is a valid user-facing label. Stable record IDs and record paths own the
+    // internal identity independently of the visible Title value.
+    if (property.type === 'title') return '';
+    if (property.required) {
       throw new Error(`${property.name} cannot be empty`);
     }
     return undefined;
