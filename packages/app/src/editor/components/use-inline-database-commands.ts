@@ -1,7 +1,8 @@
-import type {
-  DatabaseProperty,
-  DatabaseValue,
-  ProjectedDatabaseRecord,
+import {
+  createDatabaseRecordId,
+  type DatabaseProperty,
+  type DatabaseValue,
+  type ProjectedDatabaseRecord,
 } from '@nedian0brien/synapsenote-core';
 import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-server';
 import type { DatabaseViewManagerInitialAction } from '@/components/DatabaseViewManagerDialog';
@@ -91,6 +92,7 @@ export function useInlineDatabaseCommands({
     setLinkedFilterOpen,
     setInlineViewManagerInitialAction,
     setInlineViewManagerOpen,
+    setFocusInlineCreatedRecordRequest,
   } = controller;
   const { state, linkedSource, linkedDatabase, linkedView, activeLinkedView, renderedResult } =
     read;
@@ -254,14 +256,23 @@ export function useInlineDatabaseCommands({
   const createInlineRecord = (title: string) => {
     if (state.status !== 'ready' || !linkedSource || !linkedDatabase) return;
     try {
+      const recordId = createDatabaseRecordId();
       runInlineMutation(
         createDatabaseRecordDesiredState({
           database: linkedDatabase,
           source: linkedSource,
+          recordId,
           title,
           viewId: referenceData.viewId,
         }),
-        { operation: 'record-create' },
+        {
+          operation: 'record-create',
+          onCommitted: () =>
+            setFocusInlineCreatedRecordRequest((current) => ({
+              recordId,
+              requestId: (current?.requestId ?? 0) + 1,
+            })),
+        },
       );
     } catch (cause) {
       setInlineMutationErrorFromCause(cause, 'Unable to create the inline database page');

@@ -761,6 +761,34 @@ describe('DatabaseTableDialog', () => {
     await waitFor(() => expect(document.activeElement).toBe(button));
   });
 
+  test('opens and focuses the title editor for the requested created record', async () => {
+    render(
+      <DatabaseTable
+        databaseId={database.id}
+        source={source}
+        result={{
+          ...queryResult(),
+          records: [
+            {
+              id: 'rec_created',
+              path: 'tasks/created.md',
+              revision: hash,
+              values: { prop_title: '' },
+            },
+          ],
+        }}
+        onCreateRecord={() => {}}
+        onEdit={() => {}}
+        focusNewRecordRequest={1}
+        focusCreatedRecordRequest={{ recordId: 'rec_created', requestId: 1 }}
+      />,
+    );
+
+    const titleEditor = await screen.findByRole('textbox', { name: 'Edit Title' });
+    await waitFor(() => expect(document.activeElement).toBe(titleEditor));
+    expect((titleEditor as HTMLInputElement).value).toBe('');
+  });
+
   test('surfaces schema property management only when the host wires it up', () => {
     const { rerender } = render(
       <DatabaseTable databaseId={database.id} source={source} result={queryResult()} />,
@@ -5709,6 +5737,7 @@ describe('DatabaseTableDialog', () => {
 
   test('creates a new record directly and refreshes the canonical table', async () => {
     let commitCalls = 0;
+    let createdRecordId: string | null = null;
     let releaseDraft: (() => void) | undefined;
     const draftGate = new Promise<void>((resolve) => {
       releaseDraft = resolve;
@@ -5731,7 +5760,7 @@ describe('DatabaseTableDialog', () => {
             commitCalls > 0
               ? [
                   {
-                    id: 'rec_created',
+                    id: createdRecordId ?? 'rec_missing',
                     path: 'tasks/created.md',
                     revision: hash,
                     values: { prop_title: '' },
@@ -5741,6 +5770,12 @@ describe('DatabaseTableDialog', () => {
         });
       }
       if (path === '/api/databases/plan' && body.action === 'create_draft') {
+        createdRecordId =
+          (
+            body as {
+              desiredState?: { sampleRecords?: Array<{ id?: string }> };
+            }
+          ).desiredState?.sampleRecords?.[0]?.id ?? null;
         draftStarted = true;
         await draftGate;
         return Response.json({
@@ -5759,7 +5794,12 @@ describe('DatabaseTableDialog', () => {
             snapshotRevision: hash,
             createdAt: '2026-07-20T00:00:00.000Z',
             expiresAt: '2026-07-20T01:00:00.000Z',
-            immutableTargetSet: ['db_tasks', 'ds_tasks', 'prop_title', 'rec_created'],
+            immutableTargetSet: [
+              'db_tasks',
+              'ds_tasks',
+              'prop_title',
+              createdRecordId ?? 'rec_missing',
+            ],
             writeGuards: { permissions: [], querySnapshots: [] },
             targetResolutions: [],
             normalizedOperations: [],
@@ -5768,14 +5808,14 @@ describe('DatabaseTableDialog', () => {
               sourceIds: ['ds_tasks'],
               propertyIds: ['prop_title'],
               viewIds: [],
-              recordIds: ['rec_created'],
+              recordIds: [createdRecordId ?? 'rec_missing'],
             },
             diff: {
               mode: 'exact',
               manifests: [],
               records: [
                 {
-                  recordId: 'rec_created',
+                  recordId: createdRecordId ?? 'rec_missing',
                   sourceId: 'ds_tasks',
                   path: 'tasks/created.md',
                   action: 'create',
@@ -5829,18 +5869,19 @@ describe('DatabaseTableDialog', () => {
     expect(screen.queryByTestId('database-save-indicator')).toBeNull();
     releaseDraft?.();
     await waitFor(() => expect(commitCalls).toBe(1));
-    await waitFor(() =>
-      expect(document.activeElement).toBe(screen.getByTestId('database-new-row-create')),
-    );
+    expect(createdRecordId).toMatch(/^rec_[a-f0-9]{32}$/);
+    const titleEditor = await screen.findByRole('textbox', { name: 'Edit Title' });
+    await waitFor(() => expect(document.activeElement).toBe(titleEditor));
     await waitFor(() =>
       expect(
-        document.querySelector('[data-record-id="rec_created"]')?.getAttribute('data-canonical'),
+        document
+          .querySelector(`[data-record-id="${createdRecordId}"]`)
+          ?.getAttribute('data-canonical'),
       ).toBe('true'),
     );
-    const createdRow = document.querySelector('[data-record-id="rec_created"]');
-    expect(createdRow?.querySelector('[data-property-id="prop_title"] button')?.textContent).toBe(
-      '',
-    );
+    const createdRow = document.querySelector(`[data-record-id="${createdRecordId}"]`);
+    expect(createdRow?.querySelector('[data-property-id="prop_title"] input')).toBe(titleEditor);
+    expect((titleEditor as HTMLInputElement).value).toBe('');
   });
 
   test('keeps deletion as a discardable ghost row until exact-plan commit', async () => {

@@ -316,7 +316,7 @@ export function DatabaseWorkspaceViewRenderer({
           ghost={ghost}
           optimisticCellValues={optimisticCellValues}
           mutationLocked={mutationStatus !== 'idle' || buttonStatus !== 'idle'}
-          focusNewRecordRequest={newRecordFocusRequest}
+          focusCreatedRecordRequest={newRecordFocusRequest}
           selectedRecordIds={selectedRecordIds}
           calculations={tableCalculations}
           initialViewState={tableViewStates.get(tableViewStateKey)}

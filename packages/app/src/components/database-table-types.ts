@@ -70,6 +70,11 @@ export type DatabaseTableViewState = {
   focusedCell?: { recordId: string; propertyId: string };
 };
 
+export interface DatabaseCreatedRecordFocusRequest {
+  recordId: string;
+  requestId: number;
+}
+
 export interface DatabaseTableProps {
   /** Canonical database ID; optional only for isolated component harnesses. */
   databaseId?: string;
@@ -90,6 +95,8 @@ export interface DatabaseTableProps {
   autoFocusNewRecord?: boolean;
   /** Monotonic request token used to restore focus after a committed table-row create. */
   focusNewRecordRequest?: number | null;
+  /** Identifies a committed blank row whose title editor should receive keyboard focus. */
+  focusCreatedRecordRequest?: DatabaseCreatedRecordFocusRequest | null;
   selectedRecordIds?: ReadonlySet<string>;
   calculations?: Readonly<Record<string, DatabaseCalculationFunction>>;
   viewPropertyIds?: readonly string[];

@@ -7,6 +7,7 @@
  */
 
 export type {
+  DatabaseCreatedRecordFocusRequest,
   DatabaseInitialRecordAction,
   DatabaseSelectProperty,
   DatabaseTableSelection,

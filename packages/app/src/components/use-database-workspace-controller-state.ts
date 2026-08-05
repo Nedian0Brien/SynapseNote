@@ -21,7 +21,11 @@ import type { DatabaseSourceOnboardingTarget } from '@/lib/database-onboarding-c
 import type { DatabasePropertyDeletionPreview } from '@/lib/database-property-deletion';
 import type { DatabaseUiProblem } from '@/lib/database-ui-problem';
 import { useDatabaseRefreshScheduler } from '@/lib/use-database-refresh-scheduler';
-import type { DatabaseTableSelection, DatabaseTableViewState } from './DatabaseTableGrid';
+import type {
+  DatabaseCreatedRecordFocusRequest,
+  DatabaseTableSelection,
+  DatabaseTableViewState,
+} from './DatabaseTableGrid';
 
 export interface UseDatabaseWorkspaceControllerStateOptions {
   initialDatabaseId?: string;
@@ -81,7 +85,8 @@ export function useDatabaseWorkspaceControllerState({
   const [pageCursor, setPageCursor] = useState<string | null>(null);
   const [newRecordOpen, setNewRecordOpen] = useState(false);
   const [newRecordTemplateId, setNewRecordTemplateId] = useState('__auto__');
-  const [newRecordFocusRequest, setNewRecordFocusRequest] = useState<number | null>(null);
+  const [newRecordFocusRequest, setNewRecordFocusRequest] =
+    useState<DatabaseCreatedRecordFocusRequest | null>(null);
   const [creationOpen, setCreationOpen] = useState(false);
   const [creationInstanceKey, setCreationInstanceKey] = useState(0);
   const [creationPreview, setCreationPreview] = useState<DatabaseDesiredStateDraftInput | null>(

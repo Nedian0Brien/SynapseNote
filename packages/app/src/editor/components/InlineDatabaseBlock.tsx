@@ -19,6 +19,7 @@ import { DatabaseGallery } from '@/components/DatabaseGallery';
 import { DatabaseList } from '@/components/DatabaseList';
 import { DatabaseMap } from '@/components/DatabaseMap';
 import type {
+  DatabaseCreatedRecordFocusRequest,
   DatabaseInitialRecordAction,
   DatabaseTableViewState,
 } from '@/components/DatabaseTableGrid';
@@ -49,6 +50,7 @@ export interface InlineDatabaseBlockProps {
   searchNeedle: string;
   inlineMutationLocked: boolean;
   focusInlineNewRecordRequest: number | null;
+  focusInlineCreatedRecordRequest: DatabaseCreatedRecordFocusRequest | null;
   inlineSelectedRecordIds: Set<string>;
   inlineTableViewStatesRef: MutableRefObject<Map<string, DatabaseTableViewState>>;
   inlineTableViewStates: ReadonlyMap<string, DatabaseTableViewState>;
@@ -103,6 +105,7 @@ export function InlineDatabaseBlock(props: InlineDatabaseBlockProps) {
     searchNeedle,
     inlineMutationLocked,
     focusInlineNewRecordRequest,
+    focusInlineCreatedRecordRequest,
     inlineSelectedRecordIds,
     inlineTableViewStatesRef,
     inlineTableViewStates,
@@ -361,6 +364,7 @@ export function InlineDatabaseBlock(props: InlineDatabaseBlockProps) {
               focusNewRecordRequest={
                 reference.data.mode === 'inline' ? focusInlineNewRecordRequest : null
               }
+              focusCreatedRecordRequest={focusInlineCreatedRecordRequest}
               selectedRecordIds={inlineSelectedRecordIds}
               initialViewState={inlineTableViewStates.get(activeLinkedView.id)}
               onViewStateChange={(nextState) => {

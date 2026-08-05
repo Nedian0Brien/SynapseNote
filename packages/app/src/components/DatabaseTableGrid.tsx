@@ -15,6 +15,7 @@ export {
   searchDatabaseRelationRecords,
 } from './DatabaseTableRuntime';
 export type {
+  DatabaseCreatedRecordFocusRequest,
   DatabaseInitialRecordAction,
   DatabaseSelectProperty,
   DatabaseTableSelection,

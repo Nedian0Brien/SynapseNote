@@ -58,6 +58,7 @@ export function databasePropertyPrecondition(
 export function createDatabaseRecordDesiredState(input: {
   database: DatabaseDefinition;
   source: DatabaseSource;
+  recordId?: string;
   title: string;
   body?: string;
   templateId?: string;
@@ -81,6 +82,7 @@ export function createDatabaseRecordDesiredState(input: {
     ...databaseDraftBase(input.database),
     sampleRecords: [
       {
+        ...(input.recordId ? { id: input.recordId } : {}),
         sourceKey: input.source.key,
         values: Object.fromEntries(
           Object.entries(applied.values).map(([propertyId, value]) => {

@@ -105,6 +105,7 @@ export function InlineDatabaseSurface({
     inlineSearchQuery,
     setInlineSearchQuery,
     focusInlineNewRecordRequest,
+    focusInlineCreatedRecordRequest,
     inlineSaveFeedback,
     inlineOptimisticCellValues,
     inlineSelectedRecordIds,
@@ -489,6 +490,7 @@ export function InlineDatabaseSurface({
             inlineRedoStatus !== 'idle'
           }
           focusInlineNewRecordRequest={focusInlineNewRecordRequest}
+          focusInlineCreatedRecordRequest={focusInlineCreatedRecordRequest}
           inlineSelectedRecordIds={inlineSelectedRecordIds}
           inlineTableViewStatesRef={inlineTableViewStatesRef}
           inlineTableViewStates={inlineTableViewStates}

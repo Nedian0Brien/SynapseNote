@@ -1133,6 +1133,17 @@ describe('database cell mutation compiler', () => {
       },
     ]);
     expect(DatabaseDesiredStateDraftSchema.safeParse(blankDesired).success).toBe(true);
+
+    const identifiedBlankDesired = createDatabaseRecordDesiredState({
+      database,
+      source,
+      recordId: 'rec_018f7f3d90ab7ccd8123456789abcdef',
+      title: '',
+    });
+    expect(identifiedBlankDesired.sampleRecords?.[0]?.id).toBe(
+      'rec_018f7f3d90ab7ccd8123456789abcdef',
+    );
+    expect(DatabaseDesiredStateDraftSchema.safeParse(identifiedBlankDesired).success).toBe(true);
   });
 
   test('compiles an exact revision-bound record deletion', () => {

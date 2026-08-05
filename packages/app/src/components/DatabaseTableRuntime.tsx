@@ -46,6 +46,7 @@ export function DatabaseTable({
   searchQuery = '',
   autoFocusNewRecord = false,
   focusNewRecordRequest = null,
+  focusCreatedRecordRequest = null,
   selectedRecordIds = new Set<string>(),
   calculations = {},
   viewPropertyIds,
@@ -159,6 +160,7 @@ export function DatabaseTable({
     onCreateRecord,
     autoFocusNewRecord,
     focusNewRecordRequest,
+    focusCreatedRecordRequest,
   });
   const reorder = useDatabaseTableReorder({
     result,

@@ -1,6 +1,7 @@
 import type { DatabaseLinkedViewSettings, DatabaseValue } from '@nedian0brien/synapsenote-core';
 import { useEffect, useRef, useState } from 'react';
 import type {
+  DatabaseCreatedRecordFocusRequest,
   DatabaseInitialRecordAction,
   DatabaseTableViewState,
 } from '@/components/DatabaseTableDialog';
@@ -82,6 +83,8 @@ export function useInlineDatabaseControllerState(input: {
   const [focusInlineNewRecordRequest, setFocusInlineNewRecordRequest] = useState<number | null>(
     null,
   );
+  const [focusInlineCreatedRecordRequest, setFocusInlineCreatedRecordRequest] =
+    useState<DatabaseCreatedRecordFocusRequest | null>(null);
   const [inlineSaveFeedback, setInlineSaveFeedback] = useState<
     'saved' | 'undone' | 'redone' | null
   >(null);
@@ -170,6 +173,8 @@ export function useInlineDatabaseControllerState(input: {
     setInlineSearchPageCursor,
     focusInlineNewRecordRequest,
     setFocusInlineNewRecordRequest,
+    focusInlineCreatedRecordRequest,
+    setFocusInlineCreatedRecordRequest,
     inlineSaveFeedback,
     setInlineSaveFeedback,
     inlineOptimisticCellValues,

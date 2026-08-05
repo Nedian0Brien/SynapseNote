@@ -1,11 +1,12 @@
-import type {
-  DatabaseCalculationFunction,
-  DatabaseFilter,
-  DatabaseProperty,
-  DatabaseSource,
-  DatabaseValue,
-  DatabaseView,
-  ProjectedDatabaseRecord,
+import {
+  createDatabaseRecordId,
+  type DatabaseCalculationFunction,
+  type DatabaseFilter,
+  type DatabaseProperty,
+  type DatabaseSource,
+  type DatabaseValue,
+  type DatabaseView,
+  type ProjectedDatabaseRecord,
 } from '@nedian0brien/synapsenote-core';
 import { useEffect, useEffectEvent } from 'react';
 import {
@@ -32,7 +33,10 @@ import {
   createDatabaseRecordMoveDesiredState,
 } from '@/lib/database-mutations/database-record-commands';
 import { classifyDatabaseUiProblem, databaseConflictProblem } from '@/lib/database-ui-problem';
-import type { DatabaseInitialRecordAction } from './DatabaseTableGrid';
+import type {
+  DatabaseCreatedRecordFocusRequest,
+  DatabaseInitialRecordAction,
+} from './DatabaseTableGrid';
 
 import type { DatabaseWorkspaceControllerContext } from './database-workspace-context';
 
@@ -267,9 +271,12 @@ export function useDatabaseWorkspaceRecordCommands(context: DatabaseWorkspaceCon
   const createRecord = (title = newRecordTitle, options: { focusAfterCreate?: boolean } = {}) => {
     if (!description?.source || mutationStatus !== 'idle') return;
     try {
+      const recordId = createDatabaseRecordId();
+      const focusAfterCreate = options.focusAfterCreate ?? title.trim().length === 0;
       const desiredState = createDatabaseRecordDesiredState({
         database: description.database,
         source: description.source,
+        recordId,
         title,
         ...(newRecordTemplateId === '__auto__'
           ? { viewId: selectedView?.id }
@@ -283,8 +290,12 @@ export function useDatabaseWorkspaceRecordCommands(context: DatabaseWorkspaceCon
         policy: { operation: 'record-create', actor: 'human', principalId: 'user:local' },
         background: true,
         presentation: 'silent',
-        onCommitted: options.focusAfterCreate
-          ? () => setNewRecordFocusRequest((current: number | null) => (current ?? 0) + 1)
+        onCommitted: focusAfterCreate
+          ? () =>
+              setNewRecordFocusRequest((current: DatabaseCreatedRecordFocusRequest | null) => ({
+                recordId,
+                requestId: (current?.requestId ?? 0) + 1,
+              }))
           : undefined,
       });
     } catch (cause) {

@@ -5,7 +5,11 @@ import { useDatabasePresenceTarget, useRemoteDatabasePresence } from '@/lib/data
 import { createDatabaseTableGeometry } from '@/lib/database-table-geometry';
 import { databaseTableRowHeightPixels } from '@/lib/database-table-layout';
 import type { DatabaseTableProps } from './database-table-types';
-import { normalizedCellRange, projectedGhostValues } from './database-table-utils';
+import {
+  initialCellDraft,
+  normalizedCellRange,
+  projectedGhostValues,
+} from './database-table-utils';
 import { createDatabaseTableVirtualRows } from './database-table-virtual-rows';
 import { useDatabaseTableInteractionState } from './useDatabaseTableInteractionState';
 import { useDatabaseTableLayoutModel } from './useDatabaseTableLayoutModel';
@@ -31,6 +35,7 @@ type RuntimeStateOptions = Pick<
   | 'onCreateRecord'
   | 'autoFocusNewRecord'
   | 'focusNewRecordRequest'
+  | 'focusCreatedRecordRequest'
 >;
 
 /**
@@ -55,6 +60,7 @@ export function useDatabaseTableRuntimeState({
   onCreateRecord,
   autoFocusNewRecord = false,
   focusNewRecordRequest = null,
+  focusCreatedRecordRequest = null,
 }: RuntimeStateOptions) {
   const { i18n, t } = useLingui();
   const personLabels = { agent: t`agent`, inactive: t`inactive` };
@@ -173,6 +179,7 @@ export function useDatabaseTableRuntimeState({
     scrollContainerRef,
     viewStateRef,
     autoFocusNewRecordConsumedRef,
+    focusCreatedRecordConsumedRef,
     restoredViewStateRef,
     updateViewState,
   } = useDatabaseTableViewState({ initialViewState, onViewStateChange });
@@ -276,7 +283,12 @@ export function useDatabaseTableRuntimeState({
         setScrollLeft(nextScrollLeft);
         updateViewState({ scrollTop: nextScrollTop, scrollLeft: nextScrollLeft });
       }
-      if (autoFocusNewRecord || focusNewRecordRequest !== null) return;
+      if (
+        autoFocusNewRecord ||
+        focusNewRecordRequest !== null ||
+        focusCreatedRecordRequest !== null
+      )
+        return;
       const focusedCell = initialViewState.focusedCell;
       if (!focusedCell) return;
       const rowIndex = result.records.findIndex((record) => record.id === focusedCell.recordId);
@@ -291,7 +303,14 @@ export function useDatabaseTableRuntimeState({
         ?.focus();
     });
     return () => cancelAnimationFrame(frame);
-  }, [autoFocusNewRecord, focusNewRecordRequest, initialViewState, properties, result.records]);
+  }, [
+    autoFocusNewRecord,
+    focusCreatedRecordRequest,
+    focusNewRecordRequest,
+    initialViewState,
+    properties,
+    result.records,
+  ]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: ref-backed focus request is consumed once per request.
   useEffect(() => {
@@ -299,6 +318,7 @@ export function useDatabaseTableRuntimeState({
       autoFocusNewRecordConsumedRef.current = null;
       return;
     }
+    if (focusCreatedRecordRequest !== null) return;
     const focusRequest = autoFocusNewRecord
       ? 'inline'
       : focusNewRecordRequest === null || focusNewRecordRequest === undefined
@@ -322,7 +342,63 @@ export function useDatabaseTableRuntimeState({
       autoFocusNewRecordConsumedRef.current = focusRequest;
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [autoFocusNewRecord, focusNewRecordRequest, mutationLocked, onCreateRecord]);
+  }, [
+    autoFocusNewRecord,
+    focusCreatedRecordRequest,
+    focusNewRecordRequest,
+    mutationLocked,
+    onCreateRecord,
+  ]);
+
+  // A committed blank-page create carries its stable record identity so the
+  // table can open the exact Title editor after the canonical refresh lands.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: serialized record IDs and the request identity define this handoff boundary.
+  useEffect(() => {
+    if (!focusCreatedRecordRequest) return;
+    const focusToken = `${focusCreatedRecordRequest.recordId}:${focusCreatedRecordRequest.requestId}`;
+    if (focusCreatedRecordConsumedRef.current === focusToken || mutationLocked) return;
+    const record = result.records.find(
+      (candidate) => candidate.id === focusCreatedRecordRequest.recordId,
+    );
+    const renderedTitleProperty = properties.find((property) => property.type === 'title');
+    if (!record || !renderedTitleProperty) return;
+
+    const rowIndex = result.records.findIndex((candidate) => candidate.id === record.id);
+    const rowHeight = notionSurface
+      ? layout.rowHeight === 'tall'
+        ? 72
+        : layout.rowHeight === 'compact'
+          ? 30
+          : 34
+      : databaseTableRowHeightPixels(layout.rowHeight);
+    const container = scrollContainerRef.current;
+    if (container && rowIndex >= 0) {
+      const rowTop = rowIndex * rowHeight;
+      const rowBottom = rowTop + rowHeight;
+      const viewportBottom = container.scrollTop + container.clientHeight;
+      if (rowTop < container.scrollTop || rowBottom > viewportBottom) {
+        const nextScrollTop = Math.max(0, rowBottom - container.clientHeight);
+        container.scrollTop = nextScrollTop;
+        setScrollTop(nextScrollTop);
+        updateViewState({ scrollTop: nextScrollTop });
+      }
+    }
+
+    setEditError(null);
+    setEditing({
+      recordId: record.id,
+      propertyId: renderedTitleProperty.id,
+      draft: initialCellDraft(renderedTitleProperty, record.values[renderedTitleProperty.id]),
+    });
+    focusCreatedRecordConsumedRef.current = focusToken;
+  }, [
+    focusCreatedRecordRequest,
+    mutationLocked,
+    notionSurface,
+    properties,
+    resultRecordIdsKey,
+    sourcePropertyIdsKey,
+  ]);
 
   const allLoadedSelected =
     result.records.length > 0 &&

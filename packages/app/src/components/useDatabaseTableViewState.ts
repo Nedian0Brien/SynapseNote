@@ -19,6 +19,7 @@ export function useDatabaseTableViewState({
     ...(initialViewState?.focusedCell ? { focusedCell: initialViewState.focusedCell } : {}),
   });
   const autoFocusNewRecordConsumedRef = useRef<string | number | null>(null);
+  const focusCreatedRecordConsumedRef = useRef<string | null>(null);
   const restoredViewStateRef = useRef(false);
 
   const updateViewState = useEffectEvent((patch: Partial<DatabaseTableViewState>) => {
@@ -37,6 +38,7 @@ export function useDatabaseTableViewState({
     scrollContainerRef,
     viewStateRef,
     autoFocusNewRecordConsumedRef,
+    focusCreatedRecordConsumedRef,
     restoredViewStateRef,
     updateViewState,
   };
