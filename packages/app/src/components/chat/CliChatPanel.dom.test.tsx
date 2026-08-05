@@ -11,7 +11,24 @@ afterEach(() => {
   localStorage.clear();
 });
 
-function makeBridge() {
+function makeBridge(
+  options: {
+    readonly codexPresent?: boolean;
+    readonly transcript?: {
+      readonly cli: 'codex' | 'claude';
+      readonly sessionId: string;
+      readonly title: string;
+      readonly updatedAt: number;
+      readonly preview: string;
+      readonly messageCount: number;
+      readonly entries: readonly {
+        readonly role: 'user' | 'assistant';
+        readonly text: string;
+        readonly timestamp?: number;
+      }[];
+    } | null;
+  } = {},
+) {
   const dataSubscribers: Array<(message: OkPtyData) => void> = [];
   const exitSubscribers: Array<(message: OkPtyExit) => void> = [];
   const input = mock((_ptyId: string, _data: string) => {});
@@ -40,6 +57,7 @@ function makeBridge() {
     imageDataUrl: 'data:image/png;base64,AQI=',
     faviconDataUrl: 'data:image/png;base64,AwQ=',
   }));
+  const loadChatSession = mock(async () => options.transcript ?? null);
   const bridge = {
     shell: { fetchWebPreview },
     terminal: {
@@ -53,12 +71,15 @@ function makeBridge() {
         exitSubscribers.push(callback);
         return () => {};
       },
-      cliPreflight: async () => ({ onPath: 'present' as const }),
+      cliPreflight: async () => ({
+        onPath: options.codexPresent === false ? ('missing' as const) : ('present' as const),
+      }),
       claudePreflight: async () => ({
         claude: 'present' as const,
         mcp: 'wired' as const,
         mcpPreApprovable: true,
       }),
+      loadChatSession,
     },
   } as unknown as OkDesktopBridge;
   return {
@@ -66,6 +87,7 @@ function makeBridge() {
     input,
     chatSend,
     fetchWebPreview,
+    loadChatSession,
     pushData(data: string) {
       for (const callback of dataSubscribers) callback({ ptyId: 'pty-1', data });
     },
@@ -73,6 +95,155 @@ function makeBridge() {
 }
 
 describe('CliChatPanel', () => {
+  test('hydrates a previous native transcript before allowing a continuation', async () => {
+    const transcript = {
+      cli: 'codex' as const,
+      sessionId: 'thread-previous',
+      title: 'Previous research',
+      updatedAt: 2,
+      preview: 'Previous answer',
+      messageCount: 2,
+      entries: [
+        { role: 'user' as const, text: 'Previous question', timestamp: 1 },
+        { role: 'assistant' as const, text: 'Previous answer', timestamp: 2 },
+      ],
+    };
+    const { bridge, chatSend, loadChatSession } = makeBridge({ transcript });
+    render(
+      <CliChatPanel
+        bridge={bridge}
+        cli="codex"
+        ptyId="pty-1"
+        initialPrompt={null}
+        initialSessionId="thread-previous"
+      />,
+    );
+
+    expect(screen.getByText('Loading previous chat…')).toBeTruthy();
+    expect(await screen.findByText('Previous answer')).toBeTruthy();
+    expect(screen.getByText('Previous question')).toBeTruthy();
+    expect(loadChatSession).toHaveBeenCalledWith({
+      cli: 'codex',
+      sessionId: 'thread-previous',
+    });
+    expect(chatSend).not.toHaveBeenCalled();
+  });
+
+  test('keeps an unavailable CLI prompt editable without adding a duplicate turn', async () => {
+    const { bridge, chatSend } = makeBridge({ codexPresent: false });
+    render(<CliChatPanel bridge={bridge} cli="codex" ptyId="pty-1" initialPrompt={null} />);
+
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Keep this draft' } });
+    fireEvent.click(screen.getByLabelText('Send'));
+
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Codex CLI is not available on PATH.',
+    );
+    expect((screen.getByLabelText('Message') as HTMLTextAreaElement).value).toBe('Keep this draft');
+    expect(screen.queryByLabelText('You')).toBeNull();
+    expect(chatSend).not.toHaveBeenCalled();
+  });
+
+  test('queues one follow-up and sends it exactly once after the active response', async () => {
+    const { bridge, chatSend, pushData } = makeBridge();
+    render(<CliChatPanel bridge={bridge} cli="codex" ptyId="pty-1" initialPrompt={null} />);
+
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'First request' } });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(chatSend).toHaveBeenCalledTimes(1));
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Follow up' } });
+    fireEvent.click(screen.getByLabelText('Send after current response'));
+    expect(screen.getByText('Up next')).toBeTruthy();
+
+    act(() => {
+      pushData(
+        '{"type":"item.completed","item":{"type":"agent_message","text":"First answer"}}\r\n' +
+          '{"type":"turn.completed"}\r\n',
+      );
+    });
+    await waitFor(() => expect(chatSend).toHaveBeenCalledTimes(2));
+    expect(chatSend.mock.calls[1]?.[1].prompt).toBe('Follow up');
+    expect(screen.queryByText('Up next')).toBeNull();
+  });
+
+  test('edits a user message and regenerates the latest response without duplicating the turn', async () => {
+    const { bridge, chatSend, pushData } = makeBridge();
+    render(<CliChatPanel bridge={bridge} cli="codex" ptyId="pty-1" initialPrompt={null} />);
+
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Original request' } });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(chatSend).toHaveBeenCalledTimes(1));
+    act(() => {
+      pushData(
+        '{"type":"item.completed","item":{"type":"agent_message","text":"Original answer"}}\r\n' +
+          '{"type":"turn.completed"}\r\n',
+      );
+    });
+
+    fireEvent.click(await screen.findByLabelText('Edit message'));
+    expect((screen.getByLabelText('Message') as HTMLTextAreaElement).value).toBe(
+      'Original request',
+    );
+    fireEvent.click(screen.getByLabelText('Regenerate response'));
+    await waitFor(() => expect(chatSend).toHaveBeenCalledTimes(2));
+    expect(screen.getAllByLabelText('You')).toHaveLength(1);
+    expect(screen.queryByText('Original answer')).toBeNull();
+  });
+
+  test('branches from a message with a bounded transcript context', async () => {
+    const onBranchFromMessage = mock((_prompt: string, _displayPrompt: string) => {});
+    const { bridge, chatSend, pushData } = makeBridge();
+    render(
+      <CliChatPanel
+        bridge={bridge}
+        cli="codex"
+        ptyId="pty-1"
+        initialPrompt={null}
+        onBranchFromMessage={onBranchFromMessage}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Branch this' } });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(chatSend).toHaveBeenCalledTimes(1));
+    act(() => {
+      pushData(
+        '{"type":"item.completed","item":{"type":"agent_message","text":"Branch answer"}}\r\n' +
+          '{"type":"turn.completed"}\r\n',
+      );
+    });
+
+    fireEvent.click((await screen.findAllByLabelText('Branch from message')).at(-1) as HTMLElement);
+    expect(onBranchFromMessage).toHaveBeenCalledTimes(1);
+    expect(onBranchFromMessage.mock.calls[0]?.[0]).toContain('Assistant:\nBranch answer');
+  });
+
+  test('applies an assistant message to the active document or selection', async () => {
+    const onInsertInDocument = mock((_text: string) => {});
+    const onReplaceSelection = mock((_text: string) => {});
+    const { bridge, pushData } = makeBridge();
+    render(
+      <CliChatPanel
+        bridge={bridge}
+        cli="codex"
+        ptyId="pty-1"
+        initialPrompt={null}
+        onInsertInDocument={onInsertInDocument}
+        onReplaceSelection={onReplaceSelection}
+      />,
+    );
+
+    act(() => {
+      pushData(
+        '{"type":"item.completed","item":{"type":"agent_message","text":"Applied answer"}}\r\n',
+      );
+    });
+
+    fireEvent.click(screen.getByLabelText('Insert into document'));
+    fireEvent.click(screen.getByLabelText('Replace selection'));
+    expect(onInsertInDocument).toHaveBeenCalledWith('Applied answer');
+    expect(onReplaceSelection).toHaveBeenCalledWith('Applied answer');
+  });
+
   test('shows context, sends immediately, and accumulates a structured response', async () => {
     const { bridge, chatSend, pushData } = makeBridge();
     render(
@@ -91,7 +262,7 @@ describe('CliChatPanel', () => {
     expect(document.querySelector('[data-chat-composer-context="true"]')).not.toBeNull();
     fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Summarize this' } });
     fireEvent.click(screen.getByLabelText('Send'));
-    const userBubble = screen.getByLabelText('You');
+    const userBubble = await screen.findByLabelText('You');
     expect(userBubble.textContent).toContain('Summarize this');
     expect(userBubble.getAttribute('data-chat-motion')).toBe('send');
     expect(userBubble.className).toContain('animate-chat-send');
@@ -351,6 +522,8 @@ describe('CliChatPanel', () => {
 
     fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Inspect it' } });
     fireEvent.click(screen.getByLabelText('Send'));
+
+    await screen.findByLabelText('You');
 
     act(() => pushData('{"type":"turn.started"}\r\n'));
     const thinking = screen.getByRole('log').querySelector('[data-chat-activity-state="working"]');
@@ -630,7 +803,8 @@ describe('CliChatPanel', () => {
     expect(userMessage.contains(sentContext)).toBe(false);
     const messageGroup = userMessage.closest('[data-chat-message-group="selection"]');
     expect(messageGroup?.firstElementChild?.contains(sentContext)).toBe(true);
-    expect(messageGroup?.lastElementChild).toBe(userMessage);
+    expect(messageGroup?.children[1]).toBe(userMessage);
+    expect(messageGroup?.lastElementChild?.getAttribute('data-chat-message-actions')).toBe('true');
     expect(sentContext.textContent).toContain('Work Log');
     expect(sentContext.textContent).toContain('2 lines selected');
     expect(sentContext.textContent).toContain('brain/log.md:10-11');

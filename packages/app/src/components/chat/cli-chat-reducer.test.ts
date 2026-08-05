@@ -2,6 +2,51 @@ import { describe, expect, test } from 'bun:test';
 import { cliChatReducer, initialCliChatState } from './cli-chat-reducer';
 
 describe('cliChatReducer', () => {
+  test('hydrates a resumable transcript without starting a new turn', () => {
+    const state = cliChatReducer(initialCliChatState, {
+      type: 'hydrate',
+      entries: [
+        { role: 'user', text: 'Previous question', timestamp: 1 },
+        { role: 'assistant', text: 'Previous answer', timestamp: 2 },
+      ],
+    });
+
+    expect(state.running).toBe(false);
+    expect(state.timeline).toEqual([
+      {
+        id: 'history-message-1',
+        type: 'message',
+        role: 'user',
+        text: 'Previous question',
+        timestamp: 1,
+      },
+      {
+        id: 'history-message-2',
+        type: 'message',
+        role: 'assistant',
+        text: 'Previous answer',
+        timestamp: 2,
+      },
+    ]);
+  });
+
+  test('retries a failed user turn in place without duplicating its message', () => {
+    const sent = cliChatReducer(initialCliChatState, { type: 'send', text: 'Try this' });
+    const failed = cliChatReducer(sent, {
+      type: 'events',
+      events: [
+        { type: 'error', message: 'CLI missing' },
+        { type: 'done', exitCode: 127 },
+      ],
+    });
+    const retried = cliChatReducer(failed, { type: 'retry', messageId: 'message-1' });
+
+    expect(retried.running).toBe(true);
+    expect(retried.timeline).toEqual([
+      { id: 'message-1', type: 'message', role: 'user', text: 'Try this' },
+    ]);
+  });
+
   test('accumulates streaming deltas into one assistant message', () => {
     const sent = cliChatReducer(initialCliChatState, { type: 'send', text: 'Hello' });
     const streamed = cliChatReducer(sent, {

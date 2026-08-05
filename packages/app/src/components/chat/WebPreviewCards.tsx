@@ -7,9 +7,11 @@ import type { WebPreviewLink } from './web-preview-links';
 export function WebPreviewCards({
   links,
   bridge,
+  showHeading = true,
 }: {
   readonly links: readonly WebPreviewLink[];
   readonly bridge: OkDesktopBridge;
+  readonly showHeading?: boolean;
 }) {
   const { t } = useLingui();
   const linkUrls = links.map((link) => link.url).join('\n');
@@ -38,9 +40,11 @@ export function WebPreviewCards({
 
   return (
     <section aria-label={t`Web sources`} data-chat-web-previews="true" className="w-full px-1 pt-1">
-      <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-        {t`Sources`}
-      </div>
+      {showHeading ? (
+        <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+          {t`Sources`}
+        </div>
+      ) : null}
       <div className="grid gap-2">
         {links.map((link) => {
           const metadata = metadataByUrl[link.url];

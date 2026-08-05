@@ -3,9 +3,16 @@ import {
   CheckIcon,
   ChevronDownIcon,
   CircleAlertIcon,
+  CopyIcon,
   FileCode2Icon,
+  FileInputIcon,
+  GitBranchIcon,
   Globe2Icon,
   LoaderCircleIcon,
+  PencilIcon,
+  RefreshCcwIcon,
+  ReplaceIcon,
+  SparklesIcon,
   SquareTerminalIcon,
   TextQuoteIcon,
   WorkflowIcon,
@@ -16,14 +23,35 @@ import { Button } from '@/components/ui/button';
 import type { OkDesktopBridge } from '@/lib/desktop-bridge-types';
 import { cn } from '@/lib/utils';
 import { ChatMarkdown } from './ChatMarkdown';
-import type { ChatActivity, ChatTimelineEntry, CliChatSelectionContext } from './cli-chat-types';
-import { WebPreviewCards } from './WebPreviewCards';
-import { extractWebPreviewLinks } from './web-preview-links';
+import { ChatSourceExplorer } from './ChatSourceExplorer';
+import { collectChatSources } from './chat-sources';
+import type {
+  ChatActivity,
+  ChatMessage,
+  ChatTimelineEntry,
+  CliChatSelectionContext,
+} from './cli-chat-types';
 
 interface ChatMessageListProps {
   readonly timeline: readonly ChatTimelineEntry[];
   readonly running: boolean;
   readonly bridge: OkDesktopBridge;
+  readonly historyLoading?: boolean;
+  readonly historyError?: boolean;
+  readonly onRetryHistory?: () => void;
+  readonly onRetryMessage?: (message: ChatMessage) => void;
+  readonly onEditMessage?: (message: ChatMessage) => void;
+  readonly onBranchMessage?: (message: ChatMessage) => void;
+  readonly onInsertInDocument?: (text: string) => void;
+  readonly onReplaceSelection?: (text: string) => void;
+  readonly progressLabel?: string;
+  readonly elapsedSeconds?: number;
+  readonly toolProgress?: string;
+  readonly emptyDocumentTitle?: string;
+  readonly emptyHasSelection?: boolean;
+  readonly emptyAgentLabel?: string;
+  readonly emptyPermissionLabel?: string;
+  readonly onChooseStarter?: (prompt: string) => void;
 }
 
 type ActivityVisualState = 'working' | 'completed' | 'failed' | 'idle';
@@ -327,10 +355,138 @@ function SentSelectionContext({ selection }: { selection: CliChatSelectionContex
   );
 }
 
-export function ChatMessageList({ timeline, running, bridge }: ChatMessageListProps) {
+function MessageActions({
+  message,
+  retryable,
+  onRetry,
+  onEdit,
+  onBranch,
+  onInsertInDocument,
+  onReplaceSelection,
+}: {
+  readonly message: ChatMessage;
+  readonly retryable: boolean;
+  readonly onRetry?: (message: ChatMessage) => void;
+  readonly onEdit?: (message: ChatMessage) => void;
+  readonly onBranch?: (message: ChatMessage) => void;
+  readonly onInsertInDocument?: (text: string) => void;
+  readonly onReplaceSelection?: (text: string) => void;
+}) {
+  const { t } = useLingui();
+  const [copied, setCopied] = useState(false);
+
+  function copyMessage() {
+    void navigator.clipboard
+      .writeText(message.text)
+      .then(() => setCopied(true))
+      .catch(() => setCopied(false));
+  }
+
+  return (
+    <div
+      data-chat-message-actions="true"
+      className="flex items-center gap-0.5 px-1 opacity-70 transition-opacity hover:opacity-100 focus-within:opacity-100"
+    >
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-xs"
+        onClick={copyMessage}
+        aria-label={copied ? t`Copied` : t`Copy message`}
+      >
+        {copied ? <CheckIcon aria-hidden="true" /> : <CopyIcon aria-hidden="true" />}
+      </Button>
+      {message.role === 'user' && onEdit !== undefined ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          onClick={() => onEdit(message)}
+          aria-label={t`Edit message`}
+        >
+          <PencilIcon aria-hidden="true" />
+        </Button>
+      ) : null}
+      {message.role === 'assistant' && onInsertInDocument !== undefined ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          onClick={() => onInsertInDocument(message.text)}
+          aria-label={t`Insert into document`}
+        >
+          <FileInputIcon aria-hidden="true" />
+        </Button>
+      ) : null}
+      {message.role === 'assistant' && onReplaceSelection !== undefined ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          onClick={() => onReplaceSelection(message.text)}
+          aria-label={t`Replace selection`}
+        >
+          <ReplaceIcon aria-hidden="true" />
+        </Button>
+      ) : null}
+      {retryable && onRetry !== undefined ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          onClick={() => onRetry(message)}
+          aria-label={message.role === 'assistant' ? t`Regenerate response` : t`Retry message`}
+        >
+          <RefreshCcwIcon aria-hidden="true" />
+        </Button>
+      ) : null}
+      {onBranch !== undefined ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          onClick={() => onBranch(message)}
+          aria-label={t`Branch from message`}
+        >
+          <GitBranchIcon aria-hidden="true" />
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
+export function ChatMessageList({
+  timeline,
+  running,
+  bridge,
+  historyLoading = false,
+  historyError = false,
+  onRetryHistory,
+  onRetryMessage,
+  onEditMessage,
+  onBranchMessage,
+  onInsertInDocument,
+  onReplaceSelection,
+  progressLabel,
+  elapsedSeconds = 0,
+  toolProgress,
+  emptyDocumentTitle,
+  emptyHasSelection = false,
+  emptyAgentLabel,
+  emptyPermissionLabel,
+  onChooseStarter,
+}: ChatMessageListProps) {
   const { t } = useLingui();
   const endRef = useRef<HTMLDivElement | null>(null);
   const lastEntry = timeline.at(-1);
+  let latestUserIndex = -1;
+  for (let index = timeline.length - 1; index >= 0; index -= 1) {
+    const candidate = timeline[index];
+    if (candidate?.type === 'message' && candidate.role === 'user') {
+      latestUserIndex = index;
+      break;
+    }
+  }
   const lastEntryContent = `${lastEntry?.id ?? ''}:${
     lastEntry?.type === 'message'
       ? lastEntry.text
@@ -344,9 +500,77 @@ export function ChatMessageList({ timeline, running, bridge }: ChatMessageListPr
   }, [lastEntryContent]);
 
   if (!timeline.some((entry) => entry.type === 'message')) {
+    if (historyLoading) {
+      return (
+        <div
+          role="status"
+          className="flex min-h-0 flex-1 items-center justify-center gap-2 p-8 text-center text-sm text-muted-foreground"
+        >
+          <LoaderCircleIcon aria-hidden="true" className="size-4 animate-spin" />
+          {t`Loading previous chat…`}
+        </div>
+      );
+    }
+    if (historyError) {
+      return (
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 p-8 text-center text-sm text-muted-foreground">
+          <CircleAlertIcon aria-hidden="true" className="size-5 text-destructive" />
+          <p>{t`This previous chat could not be loaded.`}</p>
+          <Button type="button" variant="outline" size="sm" onClick={onRetryHistory}>
+            {t`Try again`}
+          </Button>
+        </div>
+      );
+    }
+    const starterPrompts = emptyHasSelection
+      ? [t`Explain the selected passage`, t`Check the selected claims and sources`]
+      : emptyDocumentTitle === undefined
+        ? [t`Find related notes in this project`, t`Summarize recent project context`]
+        : [
+            t`Summarize the current document`,
+            t`Find related notes`,
+            t`Check claims and sources`,
+            t`Suggest focused improvements`,
+          ];
     return (
-      <div className="flex min-h-0 flex-1 items-center justify-center p-8 text-center text-sm text-muted-foreground">
-        {t`Ask about your current document or project.`}
+      <div className="flex min-h-0 flex-1 items-center justify-center p-6">
+        <div className="w-full max-w-sm text-center">
+          <span className="mx-auto flex size-9 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <SparklesIcon aria-hidden="true" className="size-4" />
+          </span>
+          <h3 className="mt-3 text-sm font-medium text-foreground">
+            {emptyDocumentTitle === undefined
+              ? t`Ask about this project`
+              : t`Ask about ${emptyDocumentTitle}`}
+          </h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {emptyHasSelection
+              ? t`The selected passage will be included with your message.`
+              : t`Choose a starting point or write your own request.`}
+          </p>
+          {emptyAgentLabel === undefined ? null : (
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              {emptyAgentLabel}
+              {emptyPermissionLabel === undefined ? '' : ` · ${emptyPermissionLabel}`}
+            </p>
+          )}
+          {onChooseStarter === undefined ? null : (
+            <div className="mt-4 grid gap-2 text-left">
+              {starterPrompts.map((prompt) => (
+                <Button
+                  key={prompt}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-auto justify-start whitespace-normal py-2 text-xs"
+                  onClick={() => onChooseStarter(prompt)}
+                >
+                  {prompt}
+                </Button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -354,25 +578,15 @@ export function ChatMessageList({ timeline, running, bridge }: ChatMessageListPr
   return (
     <div
       role="log"
-      aria-live="polite"
+      aria-live={running ? 'off' : 'polite'}
+      aria-busy={running}
       aria-label={t`Conversation`}
       className="min-h-0 flex-1 overflow-y-auto px-4 py-5"
     >
       <div className="mx-auto flex min-w-0 w-full max-w-3xl flex-col gap-3">
         {timeline.map((entry, index) => {
           if (entry.type === 'message') {
-            let followsWebSearch = false;
-            if (entry.role === 'assistant') {
-              for (let cursor = index - 1; cursor >= 0; cursor -= 1) {
-                const prior = timeline[cursor];
-                if (prior?.type === 'message' && prior.role === 'user') break;
-                if (prior?.type === 'activity' && prior.category === 'web_search') {
-                  followsWebSearch = true;
-                  break;
-                }
-              }
-            }
-            const previewLinks = followsWebSearch ? extractWebPreviewLinks(entry.text) : [];
+            const sources = entry.role === 'assistant' ? collectChatSources(timeline, index) : [];
             const generating =
               entry.role === 'assistant' && running && index === timeline.length - 1;
             const messageBubble = (
@@ -396,6 +610,36 @@ export function ChatMessageList({ timeline, running, bridge }: ChatMessageListPr
                 ) : null}
               </article>
             );
+            let precedingUser: ChatMessage | undefined = entry.role === 'user' ? entry : undefined;
+            if (entry.role === 'assistant') {
+              for (let cursor = index - 1; cursor >= 0; cursor -= 1) {
+                const candidate = timeline[cursor];
+                if (candidate?.type === 'message' && candidate.role === 'user') {
+                  precedingUser = candidate;
+                  break;
+                }
+              }
+            }
+            const retryTarget = entry.role === 'assistant' ? precedingUser : entry;
+            const retryable =
+              !running &&
+              retryTarget !== undefined &&
+              timeline.indexOf(retryTarget) === latestUserIndex;
+            const messageActions = (
+              <MessageActions
+                message={entry}
+                retryable={retryable}
+                onRetry={
+                  retryable && retryTarget !== undefined && onRetryMessage !== undefined
+                    ? () => onRetryMessage(retryTarget)
+                    : undefined
+                }
+                onEdit={onEditMessage}
+                onBranch={onBranchMessage}
+                onInsertInDocument={onInsertInDocument}
+                onReplaceSelection={onReplaceSelection}
+              />
+            );
             if (entry.role === 'user' && entry.selectionContext !== undefined) {
               return (
                 <div
@@ -407,10 +651,11 @@ export function ChatMessageList({ timeline, running, bridge }: ChatMessageListPr
                     <SentSelectionContext selection={entry.selectionContext} />
                   </div>
                   {messageBubble}
+                  {messageActions}
                 </div>
               );
             }
-            if (entry.role === 'assistant' && previewLinks.length > 0) {
+            if (entry.role === 'assistant' && sources.length > 0) {
               return (
                 <div
                   key={entry.id}
@@ -418,16 +663,50 @@ export function ChatMessageList({ timeline, running, bridge }: ChatMessageListPr
                   className="mr-auto flex w-full max-w-[88%] flex-col items-start gap-1"
                 >
                   {messageBubble}
-                  <WebPreviewCards links={previewLinks} bridge={bridge} />
+                  {messageActions}
+                  <ChatSourceExplorer sources={sources} bridge={bridge} />
                 </div>
               );
             }
-            return <div key={entry.id}>{messageBubble}</div>;
+            return (
+              <div
+                key={entry.id}
+                className={cn(
+                  'flex flex-col gap-0.5',
+                  entry.role === 'user' ? 'items-end' : 'items-start',
+                )}
+              >
+                {messageBubble}
+                {messageActions}
+              </div>
+            );
           }
 
           const visualState = activityVisualState(entry, index, timeline.length, running);
           return <ChatActivityEntry key={entry.id} entry={entry} visualState={visualState} />;
         })}
+        {running && progressLabel !== undefined ? (
+          <div
+            role="status"
+            aria-live="polite"
+            data-chat-turn-progress="true"
+            className="mr-auto flex items-center gap-1.5 rounded-full bg-muted/60 px-2.5 py-1 text-[11px] text-muted-foreground"
+          >
+            <LoaderCircleIcon
+              aria-hidden="true"
+              className="size-3 animate-spin motion-reduce:animate-none"
+            />
+            <span>{progressLabel}</span>
+            <span aria-hidden="true">·</span>
+            <time>{`${Math.floor(elapsedSeconds / 60)}:${String(elapsedSeconds % 60).padStart(2, '0')}`}</time>
+            {toolProgress === undefined ? null : (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>{t`${toolProgress} tools`}</span>
+              </>
+            )}
+          </div>
+        ) : null}
         <div ref={endRef} />
       </div>
     </div>

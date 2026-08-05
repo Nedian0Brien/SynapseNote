@@ -1,5 +1,6 @@
-import type { TerminalCli } from '@nedian0brien/synapsenote-core';
+import { markdownToHtml, type TerminalCli } from '@nedian0brien/synapsenote-core';
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
+import { getEditorForDoc } from '@/editor/active-editor';
 import { TagDialog } from '@/editor/components/TagDialog';
 import { useDocumentContext } from '@/editor/DocumentContext';
 import { RAW_MDX_NAV_EVENT, type RawMdxNavDetail } from '@/editor/extensions/raw-mdx-nav-event';
@@ -586,6 +587,16 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
     setPersistedMode(mode);
   }
 
+  function applyChatResponseToEditor(text: string, replaceSelection: boolean) {
+    if (activeDocName === null || editorMode !== 'wysiwyg') return;
+    const editor = getEditorForDoc(activeDocName);
+    if (editor === null) return;
+    const html = markdownToHtml(text);
+    const chain = editor.chain().focus();
+    if (!replaceSelection) chain.setTextSelection(editor.state.selection.to);
+    chain.insertContent(html).run();
+  }
+
   return (
     <>
       <EditorHeader
@@ -635,6 +646,16 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
           }}
           documentContext={chatDocumentContext}
           selectionContext={chatSelectionContext}
+          onInsertChatResponse={
+            activeDocName !== null && editorMode === 'wysiwyg'
+              ? (text) => applyChatResponseToEditor(text, false)
+              : undefined
+          }
+          onReplaceChatSelection={
+            activeDocName !== null && editorMode === 'wysiwyg' && activeBodySelection !== null
+              ? (text) => applyChatResponseToEditor(text, true)
+              : undefined
+          }
         />
       ) : null}
       <AuthModal

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { listNativeCliChatSessions } from './cli-chat-sessions';
+import { listNativeCliChatSessions, loadNativeCliChatSession } from './cli-chat-sessions';
 
 const temporaryDirectories: string[] = [];
 
@@ -133,5 +133,110 @@ describe('listNativeCliChatSessions', () => {
     expect(listNativeCliChatSessions({ homeDir, projectRoot })[0]?.title).toBe(
       'A title that is deliberately much l…',
     );
+  });
+
+  test('loads a normalized Codex transcript without duplicating mirrored messages', () => {
+    const homeDir = temporaryHome();
+    const projectRoot = '/workspace/current';
+    writeJsonLines(join(homeDir, '.codex', 'sessions', '2026', '07', '18', 'current.jsonl'), [
+      {
+        type: 'session_meta',
+        timestamp: '2026-07-18T00:00:00Z',
+        payload: { id: 'codex-current', cwd: projectRoot },
+      },
+      {
+        type: 'event_msg',
+        timestamp: '2026-07-18T00:01:00Z',
+        payload: { type: 'user_message', message: 'Inspect the current note' },
+      },
+      {
+        type: 'response_item',
+        timestamp: '2026-07-18T00:01:00Z',
+        payload: {
+          type: 'message',
+          role: 'user',
+          content: [{ type: 'input_text', text: 'Inspect the current note' }],
+        },
+      },
+      {
+        type: 'response_item',
+        timestamp: '2026-07-18T00:02:00Z',
+        payload: {
+          type: 'message',
+          role: 'assistant',
+          content: [{ type: 'output_text', text: 'The note is grounded.' }],
+        },
+      },
+    ]);
+
+    expect(
+      loadNativeCliChatSession({
+        homeDir,
+        projectRoot,
+        cli: 'codex',
+        sessionId: 'codex-current',
+      }),
+    ).toMatchObject({
+      cli: 'codex',
+      sessionId: 'codex-current',
+      preview: 'The note is grounded.',
+      messageCount: 2,
+      entries: [
+        { role: 'user', text: 'Inspect the current note' },
+        { role: 'assistant', text: 'The note is grounded.' },
+      ],
+    });
+  });
+
+  test('loads Claude text blocks and refuses a session owned by another project', () => {
+    const homeDir = temporaryHome();
+    const projectRoot = '/workspace/current';
+    writeJsonLines(join(homeDir, '.claude', 'projects', '-workspace-current', 'claude-log.jsonl'), [
+      {
+        type: 'user',
+        sessionId: 'claude-current',
+        cwd: projectRoot,
+        timestamp: '2026-07-18T02:00:00Z',
+        message: { content: [{ type: 'text', text: 'Compare the sources' }] },
+      },
+      {
+        type: 'assistant',
+        sessionId: 'claude-current',
+        cwd: projectRoot,
+        timestamp: '2026-07-18T02:01:00Z',
+        message: {
+          content: [
+            { type: 'thinking', thinking: 'private' },
+            { type: 'text', text: 'The sources disagree on timing.' },
+          ],
+        },
+      },
+      {
+        type: 'user',
+        sessionId: 'claude-other',
+        cwd: '/workspace/other',
+        message: { content: 'Do not expose this' },
+      },
+    ]);
+
+    expect(
+      loadNativeCliChatSession({
+        homeDir,
+        projectRoot,
+        cli: 'claude',
+        sessionId: 'claude-current',
+      })?.entries,
+    ).toEqual([
+      expect.objectContaining({ role: 'user', text: 'Compare the sources' }),
+      expect.objectContaining({ role: 'assistant', text: 'The sources disagree on timing.' }),
+    ]);
+    expect(
+      loadNativeCliChatSession({
+        homeDir,
+        projectRoot,
+        cli: 'claude',
+        sessionId: 'claude-other',
+      }),
+    ).toBeNull();
   });
 });

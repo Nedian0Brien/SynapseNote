@@ -19,6 +19,15 @@ export type CliChatAction =
       readonly selectionContext?: CliChatSelectionContext;
     }
   | { readonly type: 'events'; readonly events: readonly ChatEvent[] }
+  | {
+      readonly type: 'hydrate';
+      readonly entries: readonly {
+        readonly role: 'user' | 'assistant';
+        readonly text: string;
+        readonly timestamp?: number;
+      }[];
+    }
+  | { readonly type: 'retry'; readonly messageId: string }
   | { readonly type: 'interrupt' };
 
 export const initialCliChatState: CliChatState = {
@@ -50,6 +59,31 @@ function findToolActivity(timeline: readonly ChatTimelineEntry[], sourceId: stri
 }
 
 export function cliChatReducer(state: CliChatState, action: CliChatAction): CliChatState {
+  if (action.type === 'hydrate') {
+    if (state.running || state.timeline.length > 0) return state;
+    return {
+      ...state,
+      timeline: action.entries.map((entry, index) => ({
+        id: `history-message-${index + 1}`,
+        type: 'message' as const,
+        role: entry.role,
+        text: entry.text,
+        ...(entry.timestamp === undefined ? {} : { timestamp: entry.timestamp }),
+      })),
+      nextId: action.entries.length + 1,
+    };
+  }
+  if (action.type === 'retry') {
+    const messageIndex = state.timeline.findIndex(
+      (entry) => entry.type === 'message' && entry.role === 'user' && entry.id === action.messageId,
+    );
+    if (messageIndex < 0 || state.running) return state;
+    return {
+      ...state,
+      timeline: state.timeline.slice(0, messageIndex + 1),
+      running: true,
+    };
+  }
   if (action.type === 'send') {
     return {
       ...state,

@@ -9,6 +9,18 @@ export interface NativeCliChatSession {
   readonly sessionId: string;
   readonly title: string;
   readonly updatedAt: number;
+  readonly preview: string;
+  readonly messageCount: number;
+}
+
+export interface NativeCliChatTranscriptEntry {
+  readonly role: 'user' | 'assistant';
+  readonly text: string;
+  readonly timestamp?: number;
+}
+
+export interface NativeCliChatTranscript extends NativeCliChatSession {
+  readonly entries: readonly NativeCliChatTranscriptEntry[];
 }
 
 interface SessionTitle {
@@ -52,6 +64,84 @@ function shortTitle(value: unknown): string | null {
   return characters.length <= MAX_TITLE_LENGTH
     ? normalized
     : `${characters.slice(0, MAX_TITLE_LENGTH - 1).join('')}…`;
+}
+
+function normalizedText(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim();
+  return normalized === '' ? null : normalized;
+}
+
+function contentText(content: unknown): string | null {
+  if (typeof content === 'string') return normalizedText(content);
+  if (!Array.isArray(content)) return null;
+  const parts = content.flatMap((candidate) => {
+    const item = record(candidate);
+    if (item === null) return [];
+    const type = item.type;
+    if (type !== 'text' && type !== 'input_text' && type !== 'output_text') return [];
+    const text = normalizedText(item.text);
+    return text === null ? [] : [text];
+  });
+  return parts.length === 0 ? null : parts.join('\n\n');
+}
+
+function appendTranscriptEntry(
+  entries: NativeCliChatTranscriptEntry[],
+  role: NativeCliChatTranscriptEntry['role'],
+  text: string | null,
+  at?: number,
+): void {
+  if (text === null) return;
+  const previous = entries.at(-1);
+  if (previous?.role === role && previous.text === text) return;
+  entries.push({ role, text, ...(at === undefined || at === 0 ? {} : { timestamp: at }) });
+}
+
+function codexTranscript(rows: readonly Record<string, unknown>[]): NativeCliChatTranscriptEntry[] {
+  const entries: NativeCliChatTranscriptEntry[] = [];
+  for (const row of rows) {
+    const at = timestamp(row.timestamp);
+    const payload = record(row.payload);
+    if (payload === null) continue;
+    if (row.type === 'event_msg') {
+      if (payload.type === 'user_message') {
+        appendTranscriptEntry(entries, 'user', normalizedText(payload.message), at);
+      } else if (payload.type === 'agent_message') {
+        appendTranscriptEntry(entries, 'assistant', normalizedText(payload.message), at);
+      }
+      continue;
+    }
+    if (row.type !== 'response_item' || payload.type !== 'message') continue;
+    const role = payload.role;
+    if (role !== 'user' && role !== 'assistant') continue;
+    appendTranscriptEntry(entries, role, contentText(payload.content), at);
+  }
+  return entries;
+}
+
+function claudeTranscript(
+  rows: readonly Record<string, unknown>[],
+): NativeCliChatTranscriptEntry[] {
+  const entries: NativeCliChatTranscriptEntry[] = [];
+  for (const row of rows) {
+    if (row.type !== 'user' && row.type !== 'assistant') continue;
+    const message = record(row.message);
+    if (message === null) continue;
+    appendTranscriptEntry(
+      entries,
+      row.type,
+      contentText(message.content),
+      timestamp(row.timestamp),
+    );
+  }
+  return entries;
+}
+
+function transcriptPreview(entries: readonly NativeCliChatTranscriptEntry[]): string {
+  const last = entries.at(-1)?.text.replace(/\s+/g, ' ').trim() ?? '';
+  const characters = Array.from(last);
+  return characters.length <= 88 ? last : `${characters.slice(0, 87).join('')}…`;
 }
 
 function sameProject(candidate: unknown, projectRoot: string): boolean {
@@ -120,11 +210,14 @@ function codexSessions(homeDir: string, projectRoot: string): NativeCliChatSessi
         firstPrompt = shortTitle(event.message);
       }
     }
+    const entries = codexTranscript(rows);
     sessions.set(sessionId, {
       cli: 'codex',
       sessionId,
       title: indexed?.title ?? firstPrompt ?? 'Codex chat',
       updatedAt: latest,
+      preview: transcriptPreview(entries),
+      messageCount: entries.length,
     });
   }
   return [...sessions.values()];
@@ -132,17 +225,7 @@ function codexSessions(homeDir: string, projectRoot: string): NativeCliChatSessi
 
 function claudeMessageText(message: unknown): string | null {
   const value = record(message);
-  const content = value?.content;
-  if (typeof content === 'string') return shortTitle(content);
-  if (!Array.isArray(content)) return null;
-  for (const part of content) {
-    const item = record(part);
-    if (item?.type === 'text') {
-      const text = shortTitle(item.text);
-      if (text !== null) return text;
-    }
-  }
-  return null;
+  return shortTitle(contentText(value?.content));
 }
 
 interface ClaudeCandidate {
@@ -152,6 +235,7 @@ interface ClaudeCandidate {
   lastPrompt: string | null;
   updatedAt: number;
   matchesProject: boolean;
+  entries: NativeCliChatTranscriptEntry[];
 }
 
 function claudeSessions(homeDir: string, projectRoot: string): NativeCliChatSession[] {
@@ -166,6 +250,7 @@ function claudeSessions(homeDir: string, projectRoot: string): NativeCliChatSess
       lastPrompt: null,
       updatedAt: 0,
       matchesProject: false,
+      entries: [],
     };
     candidates.set(sessionId, created);
     return created;
@@ -183,9 +268,11 @@ function claudeSessions(homeDir: string, projectRoot: string): NativeCliChatSess
   const projectDirectory = projectRoot.replace(/[\\/]/g, '-');
   for (const path of jsonlFiles(join(homeDir, '.claude', 'projects', projectDirectory))) {
     const fallbackTime = fileModifiedAt(path);
-    for (const raw of parseJsonLines(path)) {
-      const row = record(raw);
-      if (typeof row?.sessionId !== 'string') continue;
+    const rows = parseJsonLines(path)
+      .map(record)
+      .filter((row) => row !== null);
+    for (const row of rows) {
+      if (typeof row.sessionId !== 'string') continue;
       const candidate = ensure(row.sessionId);
       candidate.matchesProject ||= sameProject(row.cwd, projectRoot);
       candidate.updatedAt = Math.max(candidate.updatedAt, timestamp(row.timestamp, fallbackTime));
@@ -195,6 +282,15 @@ function claudeSessions(homeDir: string, projectRoot: string): NativeCliChatSess
       }
       if (row.type === 'user' && candidate.firstPrompt === null) {
         candidate.firstPrompt = claudeMessageText(row.message);
+      }
+      if (row.type === 'user' || row.type === 'assistant') {
+        const message = record(row.message);
+        appendTranscriptEntry(
+          candidate.entries,
+          row.type,
+          contentText(message?.content),
+          timestamp(row.timestamp, fallbackTime),
+        );
       }
     }
   }
@@ -212,6 +308,8 @@ function claudeSessions(homeDir: string, projectRoot: string): NativeCliChatSess
               candidate.lastPrompt ??
               'Claude chat',
             updatedAt: candidate.updatedAt,
+            preview: transcriptPreview(candidate.entries),
+            messageCount: candidate.entries.length,
           },
         ]
       : [],
@@ -229,4 +327,52 @@ export function listNativeCliChatSessions(options: {
   ]
     .sort((left, right) => right.updatedAt - left.updatedAt)
     .slice(0, MAX_SESSIONS);
+}
+
+/** Load a normalized, read-only transcript for one project-owned native session. */
+export function loadNativeCliChatSession(options: {
+  readonly homeDir: string;
+  readonly projectRoot: string;
+  readonly cli: 'codex' | 'claude';
+  readonly sessionId: string;
+}): NativeCliChatTranscript | null {
+  const session = listNativeCliChatSessions(options).find(
+    (candidate) => candidate.cli === options.cli && candidate.sessionId === options.sessionId,
+  );
+  if (session === undefined) return null;
+
+  if (options.cli === 'codex') {
+    for (const path of jsonlFiles(join(options.homeDir, '.codex', 'sessions'))) {
+      const rows = parseJsonLines(path)
+        .map(record)
+        .filter((row) => row !== null);
+      const meta = rows.find((row) => row.type === 'session_meta');
+      const payload = record(meta?.payload);
+      const sessionId =
+        typeof payload?.id === 'string'
+          ? payload.id
+          : typeof payload?.session_id === 'string'
+            ? payload.session_id
+            : null;
+      if (sessionId !== options.sessionId || !sameProject(payload?.cwd, options.projectRoot)) {
+        continue;
+      }
+      return { ...session, entries: codexTranscript(rows) };
+    }
+    return null;
+  }
+
+  const projectDirectory = options.projectRoot.replace(/[\\/]/g, '-');
+  const rows = jsonlFiles(join(options.homeDir, '.claude', 'projects', projectDirectory)).flatMap(
+    (path) =>
+      parseJsonLines(path)
+        .map(record)
+        .filter(
+          (row): row is Record<string, unknown> =>
+            row !== null &&
+            row.sessionId === options.sessionId &&
+            (row.cwd === undefined || sameProject(row.cwd, options.projectRoot)),
+        ),
+  );
+  return { ...session, entries: claudeTranscript(rows) };
 }

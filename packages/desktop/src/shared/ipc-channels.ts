@@ -54,6 +54,8 @@
  * native Codex/Claude sessions (`ok:terminal:cli-chat-sessions`); this is a
  * filesystem read with a distinct result shape and lifecycle from PTY inventory
  * and CLI installation probes, so folding it into either would mix contracts.
+ * Transcript loading widens this same project-scoped discovery channel with an
+ * optional session request instead of consuming another hand-rolled slot.
  */
 
 import type {
@@ -88,6 +90,7 @@ import type {
   CliReadiness,
   HeadBranchInfo,
   OkCliChatSession,
+  OkCliChatTranscript,
   OkDesktopConfig,
   OkLocalOpAuthReposResponse,
   OkLocalOpAuthStatusResponse,
@@ -1521,8 +1524,8 @@ export interface RequestChannels {
   };
   /** Native Codex/Claude conversations scoped to the sender window's project. */
   'ok:terminal:cli-chat-sessions': {
-    args: [];
-    result: OkCliChatSession[];
+    args: [] | [req: { cli: 'codex' | 'claude'; sessionId: string }];
+    result: OkCliChatSession[] | OkCliChatTranscript | null;
   };
   /**
    * Reload-rehydration adopt: re-bind a surviving session to the reloaded

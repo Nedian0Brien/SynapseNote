@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { type CliChatHeaderSession, CliChatSession } from './chat/CliChatSession';
 import {
   type CliChatDocumentContext,
+  type CliChatId,
   type CliChatSelectionContext,
   isCliChatId,
 } from './chat/cli-chat-types';
@@ -154,6 +155,10 @@ interface TerminalSessionsHostProps {
   readonly documentContext?: CliChatDocumentContext | null;
   /** Live editor passage offered to chat composers as a removable attachment. */
   readonly selectionContext?: CliChatSelectionContext | null;
+  /** Apply an assistant response at the active editor selection/caret. */
+  readonly onInsertChatResponse?: (text: string) => void;
+  /** Replace the active editor selection with an assistant response. */
+  readonly onReplaceChatSelection?: (text: string) => void;
 }
 
 /**
@@ -180,6 +185,8 @@ export function TerminalSessionsHost({
   onActiveSessionCliChange,
   documentContext = null,
   selectionContext = null,
+  onInsertChatResponse,
+  onReplaceChatSelection,
 }: TerminalSessionsHostProps) {
   const { t } = useLingui();
 
@@ -361,6 +368,16 @@ export function TerminalSessionsHost({
       },
       previousTitle,
     );
+  }
+
+  function openBranchedChatSession(cli: CliChatId, prompt: string, displayPrompt: string) {
+    stripLaunchNonceRef.current += 1;
+    openSession({
+      prompt,
+      displayPrompt,
+      cli,
+      nonce: stripLaunchNonceRef.current,
+    });
   }
 
   // Primary click: launch the current pick — a bare shell when Terminal is the
@@ -832,6 +849,9 @@ export function TerminalSessionsHost({
               cli: entry.cli,
               title: entry.title,
               resumeSessionId: entry.sessionId,
+              updatedAt: entry.updatedAt,
+              preview: entry.preview,
+              messageCount: entry.messageCount,
             },
           ],
     ),
@@ -929,6 +949,9 @@ export function TerminalSessionsHost({
                 onNativeSessionId={(chatSessionId) =>
                   setSessionChatSessionId(session.id, chatSessionId)
                 }
+                onBranchChat={openBranchedChatSession}
+                onInsertChatResponse={onInsertChatResponse}
+                onReplaceChatSelection={onReplaceChatSelection}
               />
             ) : (
               <TerminalGate

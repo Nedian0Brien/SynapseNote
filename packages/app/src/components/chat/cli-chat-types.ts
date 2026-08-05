@@ -137,11 +137,12 @@ export interface ParsedChunk {
   readonly state: ParserState;
 }
 
-interface ChatMessage {
+export interface ChatMessage {
   readonly id: string;
   readonly type: 'message';
   readonly role: 'user' | 'assistant';
   readonly text: string;
+  readonly timestamp?: number;
   readonly selectionContext?: CliChatSelectionContext;
 }
 

@@ -68,4 +68,40 @@ describe('CliChatSession', () => {
     expect(onNewChat).toHaveBeenCalledWith('codex');
     expect(terminalMounts).toHaveBeenCalledTimes(1);
   });
+
+  test('searches previous chats by title or transcript preview', async () => {
+    const user = userEvent.setup();
+    render(
+      <CliChatSession
+        bridge={{ terminal: { setMeta: () => {} } } as unknown as OkDesktopBridge}
+        cli="codex"
+        launch={{ prompt: null, cli: 'codex', nonce: 1 }}
+        sessionId="current"
+        sessions={[
+          { id: 'current', cli: 'codex', title: 'Current chat' },
+          {
+            id: 'research',
+            cli: 'codex',
+            title: 'Research notes',
+            preview: 'Evidence about citations',
+            updatedAt: Date.UTC(2026, 7, 5),
+            messageCount: 4,
+          },
+          {
+            id: 'planning',
+            cli: 'claude',
+            title: 'Release planning',
+            preview: 'Milestone checklist',
+            updatedAt: Date.UTC(2026, 7, 4),
+            messageCount: 2,
+          },
+        ]}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Load previous chat' }));
+    await user.type(screen.getByRole('textbox', { name: 'Search previous chats' }), 'citations');
+    expect(screen.getByText('Research notes')).toBeTruthy();
+    expect(screen.queryByText('Release planning')).toBeNull();
+  });
 });

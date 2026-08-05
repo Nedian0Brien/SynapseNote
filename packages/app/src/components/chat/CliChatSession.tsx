@@ -10,6 +10,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import type { OkDesktopBridge } from '@/lib/desktop-bridge-types';
 import type { TerminalLaunchIntent } from '../EditorPane';
 import { cliIconTargetId } from '../handoff/terminal-cli-display';
@@ -23,6 +24,9 @@ export interface CliChatHeaderSession {
   readonly title: string;
   readonly openSessionId?: string;
   readonly resumeSessionId?: string;
+  readonly updatedAt?: number;
+  readonly preview?: string;
+  readonly messageCount?: number;
 }
 
 interface CliChatSessionProps {
@@ -42,6 +46,9 @@ interface CliChatSessionProps {
   readonly onReloadSessions?: () => void;
   readonly onNewChat?: (cli: CliChatId) => void;
   readonly onNativeSessionId?: (sessionId: string) => void;
+  readonly onBranchChat?: (cli: CliChatId, prompt: string, displayPrompt: string) => void;
+  readonly onInsertChatResponse?: (text: string) => void;
+  readonly onReplaceChatSelection?: (text: string) => void;
 }
 
 export function CliChatSession({
@@ -61,11 +68,23 @@ export function CliChatSession({
   onReloadSessions,
   onNewChat,
   onNativeSessionId,
+  onBranchChat,
+  onInsertChatResponse,
+  onReplaceChatSelection,
 }: CliChatSessionProps) {
   const { t } = useLingui();
   const [ptyId, setPtyId] = useState<string | null>(null);
+  const [historyQuery, setHistoryQuery] = useState('');
   const fallbackTitle = cli === 'codex' ? t`Codex chat` : t`Claude chat`;
   const previousSessions = sessions.filter((session) => session.id !== sessionId);
+  const normalizedHistoryQuery = historyQuery.trim().toLocaleLowerCase();
+  const filteredPreviousSessions = previousSessions.filter((session) =>
+    normalizedHistoryQuery === ''
+      ? true
+      : `${session.title} ${session.preview ?? ''}`
+          .toLocaleLowerCase()
+          .includes(normalizedHistoryQuery),
+  );
 
   function reportPtyId(next: string | null) {
     setPtyId(next);
@@ -87,17 +106,55 @@ export function CliChatSession({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-64">
             <DropdownMenuLabel>{t`Previous chats`}</DropdownMenuLabel>
+            {previousSessions.length > 0 ? (
+              <div className="px-2 pb-2">
+                <Input
+                  value={historyQuery}
+                  onChange={(event) => setHistoryQuery(event.target.value)}
+                  onKeyDown={(event) => event.stopPropagation()}
+                  placeholder={t`Search chats`}
+                  aria-label={t`Search previous chats`}
+                  className="h-8 text-xs"
+                />
+              </div>
+            ) : null}
             {previousSessions.length === 0 ? (
               <DropdownMenuItem disabled>{t`No previous chats`}</DropdownMenuItem>
+            ) : filteredPreviousSessions.length === 0 ? (
+              <DropdownMenuItem disabled>{t`No matching chats`}</DropdownMenuItem>
             ) : (
-              previousSessions.map((session) => (
-                <DropdownMenuItem key={session.id} onSelect={() => onSelectSession?.(session.id)}>
+              filteredPreviousSessions.map((session) => (
+                <DropdownMenuItem
+                  key={session.id}
+                  className="items-start"
+                  onSelect={() => onSelectSession?.(session.id)}
+                >
                   <TargetIcon
                     id={cliIconTargetId(session.cli)}
-                    className="size-4"
+                    className="mt-0.5 size-4"
                     aria-hidden="true"
                   />
-                  <span className="min-w-0 flex-1 truncate">{session.title}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="min-w-0 flex-1 truncate">{session.title}</span>
+                      {session.updatedAt === undefined ? null : (
+                        <time
+                          className="shrink-0 text-[10px] text-muted-foreground"
+                          dateTime={new Date(session.updatedAt).toISOString()}
+                        >
+                          {new Intl.DateTimeFormat(undefined, {
+                            month: 'short',
+                            day: 'numeric',
+                          }).format(session.updatedAt)}
+                        </time>
+                      )}
+                    </span>
+                    {session.preview ? (
+                      <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">
+                        {session.preview}
+                      </span>
+                    ) : null}
+                  </span>
                 </DropdownMenuItem>
               ))
             )}
@@ -130,6 +187,11 @@ export function CliChatSession({
               onNativeSessionId?.(sessionId);
             }}
             onTitleChange={onTitleChange}
+            onBranchFromMessage={(prompt, displayPrompt) =>
+              onBranchChat?.(cli, prompt, displayPrompt)
+            }
+            onInsertInDocument={onInsertChatResponse}
+            onReplaceSelection={onReplaceChatSelection}
           />
         </div>
         <div className="invisible pointer-events-none absolute inset-0" inert>

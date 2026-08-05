@@ -578,6 +578,10 @@ msgstr "{templateCount, plural, one {template} other {templates}}"
 msgid "{tokens, plural, one {token} other {tokens}}"
 msgstr "{tokens, plural, one {token} other {tokens}}"
 
+#: src/components/chat/ChatMessageList.tsx
+msgid "{toolProgress} tools"
+msgstr "{toolProgress} tools"
+
 #: src/components/FileTree.tsx
 msgid "{truncatedShownCount, plural, one {Showing the first item in one folder — the rest of that folder is hidden.} other {Showing the first {formattedCount} items in one folder — the rest of that folder is hidden.}}"
 msgstr "{truncatedShownCount, plural, one {Showing the first item in one folder — the rest of that folder is hidden.} other {Showing the first {formattedCount} items in one folder — the rest of that folder is hidden.}}"
@@ -715,10 +719,6 @@ msgstr "A newer version may have been deployed since this tab opened."
 msgid "A non-empty folder already exists at this path. Pick a different folder."
 msgstr "A non-empty folder already exists at this path. Pick a different folder."
 
-#: src/components/DatabaseTableNewRecordRow.tsx
-msgid "A page title is required"
-msgstr "A page title is required"
-
 #: src/components/CreateProjectDialog.tsx
 msgid "A project already exists at this location. Pick a different parent folder."
 msgstr "A project already exists at this location. Pick a different parent folder."
@@ -730,10 +730,6 @@ msgstr "A pull quote stands out from the surrounding text."
 #: src/components/settings/TerminalSection.tsx
 msgid "A real shell is off for this project. Turning it on runs commands with the full access of your macOS user account."
 msgstr "A real shell is off for this project. Turning it on runs commands with the full access of your macOS user account."
-
-#: src/components/DatabaseTableNewRecordRow.tsx
-msgid "A record title is required"
-msgstr "A record title is required"
 
 #: src/components/ReportBugDialogBody.tsx
 msgid "A report helps us find the cause. Nothing is sent until you review it."
@@ -1296,8 +1292,12 @@ msgid "Ask {0} CLI"
 msgstr "Ask {0} CLI"
 
 #: src/components/chat/ChatMessageList.tsx
-msgid "Ask about your current document or project."
-msgstr "Ask about your current document or project."
+msgid "Ask about {emptyDocumentTitle}"
+msgstr "Ask about {emptyDocumentTitle}"
+
+#: src/components/chat/ChatMessageList.tsx
+msgid "Ask about this project"
+msgstr "Ask about this project"
 
 #: src/components/DatabaseTableRowMenu.tsx
 #: src/components/DatabaseWorkspaceToolbar.tsx
@@ -1601,6 +1601,10 @@ msgstr "Branch <0>{shareBranch}</0> is checked out in:"
 msgid "Branch <0>{trimmed}</0> already has a worktree — it'll open in its own window."
 msgstr "Branch <0>{trimmed}</0> already has a worktree — it'll open in its own window."
 
+#: src/components/chat/ChatMessageList.tsx
+msgid "Branch from message"
+msgstr "Branch from message"
+
 #: src/components/NewWorktreeDialog.tsx
 msgid "Branch name"
 msgstr "Branch name"
@@ -1781,6 +1785,10 @@ msgstr "Cancel"
 msgid "Cancel memo"
 msgstr "Cancel memo"
 
+#: src/components/chat/CliChatPanel.tsx
+msgid "Cancel queued message"
+msgstr "Cancel queued message"
+
 #: src/components/DatabasePermissionsDialog.tsx
 msgid "Cancel review"
 msgstr "Cancel review"
@@ -1842,6 +1850,10 @@ msgstr "Chat"
 msgid "Check again"
 msgstr "Check again"
 
+#: src/components/chat/ChatMessageList.tsx
+msgid "Check claims and sources"
+msgstr "Check claims and sources"
+
 #: src/components/DatabaseTablePrimitives.tsx
 msgid "Check index again"
 msgstr "Check index again"
@@ -1853,6 +1865,10 @@ msgstr "Check out remote branch"
 #: src/components/NewWorktreeDialog.tsx
 msgid "Check out worktree"
 msgstr "Check out worktree"
+
+#: src/components/chat/ChatMessageList.tsx
+msgid "Check the selected claims and sources"
+msgstr "Check the selected claims and sources"
 
 #: src/components/PropertyWidgets.tsx
 msgid "Checkbox"
@@ -1917,6 +1933,10 @@ msgstr "Choose a name and type for the new column."
 #: src/components/DatabaseRecordPeekPropertyPopover.tsx
 msgid "Choose a name and type for the new property."
 msgstr "Choose a name and type for the new property."
+
+#: src/components/chat/ChatMessageList.tsx
+msgid "Choose a starting point or write your own request."
+msgstr "Choose a starting point or write your own request."
 
 #: src/components/BottomComposer.tsx
 #: src/components/empty-state/CreatePromptComposer.tsx
@@ -2034,6 +2054,10 @@ msgstr "Click <0>+</0> <1/> <2>Create skill</2> <3/> <4>Upload skill</4>."
 #: src/components/ActivityModeContent.tsx
 msgid "Click an agent's avatar in the presence bar to view their session."
 msgstr "Click an agent's avatar in the presence bar to view their session."
+
+#: src/components/DatabaseTableNewRecordRow.tsx
+msgid "Click to add"
+msgstr "Click to add"
 
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "Clipboard is unavailable. Select the preview and copy it manually."
@@ -2521,6 +2545,11 @@ msgstr "Continuation"
 msgid "continuation available"
 msgstr "continuation available"
 
+#. placeholder {0}: message.text.slice(0, 48)
+#: src/components/chat/CliChatPanel.tsx
+msgid "Continue from {0}"
+msgstr "Continue from {0}"
+
 #: src/components/DatabasePropertyDeletionPreviewDialog.tsx
 msgid "Continue to review"
 msgstr "Continue to review"
@@ -2549,6 +2578,7 @@ msgstr "Convert to full page"
 msgid "Convert to inline view"
 msgstr "Convert to inline view"
 
+#: src/components/chat/ChatMessageList.tsx
 #: src/components/DatabaseContextInspectorDialog.tsx
 #: src/components/empty-state/CopyablePromptList.tsx
 #: src/components/InstallInClaudeDesktopDialog.tsx
@@ -2619,6 +2649,10 @@ msgstr "Copy full path"
 #: src/components/FileSidebar.tsx
 msgid "Copy full path, No workspace"
 msgstr "Copy full path, No workspace"
+
+#: src/components/chat/ChatMessageList.tsx
+msgid "Copy message"
+msgstr "Copy message"
 
 #: src/components/FileTree.tsx
 msgid "Copy path"
@@ -3940,6 +3974,10 @@ msgstr "Edit markdown link"
 msgid "Edit memo"
 msgstr "Edit memo"
 
+#: src/components/chat/ChatMessageList.tsx
+msgid "Edit message"
+msgstr "Edit message"
+
 #: src/editor/components/PdfSelectionMenu.tsx
 msgid "Edit PDF highlight memo"
 msgstr "Edit PDF highlight memo"
@@ -3951,6 +3989,10 @@ msgstr "Edit PDF memo"
 #: src/components/DatabaseAgentCreationPlanPreview.tsx
 msgid "Edit properties"
 msgstr "Edit properties"
+
+#: src/components/chat/CliChatPanel.tsx
+msgid "Edit queued message"
+msgstr "Edit queued message"
 
 #: src/editor/extensions/CodeBlockView.tsx
 msgid "Edit source"
@@ -4224,6 +4266,10 @@ msgstr "Expires in {timeLabel}"
 #: src/components/SeedDialog.tsx
 msgid "Explain how your codebase works so teammates and AI agents can find their way around. Good for documenting the architecture, the main parts, and the questions new contributors always ask."
 msgstr "Explain how your codebase works so teammates and AI agents can find their way around. Good for documenting the architecture, the main parts, and the questions new contributors always ask."
+
+#: src/components/chat/ChatMessageList.tsx
+msgid "Explain the selected passage"
+msgstr "Explain the selected passage"
 
 #: src/components/GraphPanel.tsx
 msgid "Explore"
@@ -4663,6 +4709,14 @@ msgstr "Find next match"
 msgid "Find previous match"
 msgstr "Find previous match"
 
+#: src/components/chat/ChatMessageList.tsx
+msgid "Find related notes"
+msgstr "Find related notes"
+
+#: src/components/chat/ChatMessageList.tsx
+msgid "Find related notes in this project"
+msgstr "Find related notes in this project"
+
 #: src/components/NewItemDialog.tsx
 msgid "First file name"
 msgstr "First file name"
@@ -4812,6 +4866,7 @@ msgstr "From template"
 msgid "Frontmatter every document created from this template starts with. Values are YAML — a list is <0>[a, b]</0>; <1>{{date}}</1> fills in on create."
 msgstr "Frontmatter every document created from this template starts with. Values are YAML — a list is <0>[a, b]</0>; <1>{{date}}</1> fills in on create."
 
+#: src/components/chat/CliChatPanel.tsx
 #: src/components/chat/CliChatPermissionMenu.tsx
 msgid "Full access"
 msgstr "Full access"
@@ -5409,6 +5464,10 @@ msgstr "Insert a footnote reference + matching definition stub."
 msgid "Insert a markdown hard break."
 msgstr "Insert a markdown hard break."
 
+#: src/components/chat/ChatMessageList.tsx
+msgid "Insert into document"
+msgstr "Insert into document"
+
 #: src/components/DatabasePropertyMenu.tsx
 msgid "Insert left"
 msgstr "Insert left"
@@ -5899,6 +5958,10 @@ msgstr "Loading permissions"
 #: src/components/SeedDialog.tsx
 msgid "Loading preview"
 msgstr "Loading preview"
+
+#: src/components/chat/ChatMessageList.tsx
+msgid "Loading previous chat…"
+msgstr "Loading previous chat…"
 
 #: src/components/DatabasePublicSharesSection.tsx
 msgid "Loading public links"
@@ -6515,13 +6578,10 @@ msgstr "New project"
 msgid "New property name"
 msgstr "New property name"
 
+#: src/components/DatabaseTableNewRecordRow.tsx
 #: src/components/DatabaseWorkspaceToolbar.tsx
 msgid "New record"
 msgstr "New record"
-
-#: src/components/DatabaseTableNewRecordRow.tsx
-msgid "New record title"
-msgstr "New record title"
 
 #: src/components/NewSkillDialog.tsx
 #: src/components/settings/SkillsManagerSection.tsx
@@ -6770,6 +6830,10 @@ msgstr "No matches. Some files are excluded from search (hidden or ignored files
 #: src/components/NewWorktreeDialog.tsx
 msgid "No matching branches."
 msgstr "No matching branches."
+
+#: src/components/chat/CliChatSession.tsx
+msgid "No matching chats"
+msgstr "No matching chats"
 
 #: src/components/CommandPalette.tsx
 msgid "No matching commands."
@@ -7920,14 +7984,6 @@ msgstr "Preparing search"
 msgid "Preparing share URL..."
 msgstr "Preparing share URL..."
 
-#: src/components/DatabaseTableNewRecordRow.tsx
-msgid "Press Enter to add"
-msgstr "Press Enter to add"
-
-#: src/components/DatabaseTableNewRecordRow.tsx
-msgid "Press Enter to create page"
-msgstr "Press Enter to create page"
-
 #: src/components/DatabaseRecordPeekEditor.tsx
 msgid "Press Enter to start writing on this page."
 msgstr "Press Enter to start writing on this page."
@@ -8280,6 +8336,7 @@ msgstr "Re-authenticate with GitHub"
 msgid "Read and edit this project"
 msgstr "Read and edit this project"
 
+#: src/components/chat/CliChatPanel.tsx
 #: src/components/chat/CliChatPermissionMenu.tsx
 msgid "Read only"
 msgstr "Read only"
@@ -8416,6 +8473,10 @@ msgstr "Refresh paused. The current database view remains available."
 #: src/components/DatabaseOnboardingDialog.tsx
 msgid "Refresh preview"
 msgstr "Refresh preview"
+
+#: src/components/chat/ChatMessageList.tsx
+msgid "Regenerate response"
+msgstr "Regenerate response"
 
 #: src/components/InstallInClaudeDesktopDialog.tsx
 #: src/components/settings/SettingsDialogBody.tsx
@@ -8713,6 +8774,10 @@ msgstr "Replace current match from field"
 msgid "Replace key"
 msgstr "Replace key"
 
+#: src/components/chat/ChatMessageList.tsx
+msgid "Replace selection"
+msgstr "Replace selection"
+
 #: src/lib/keyboard-shortcuts.ts
 msgid "Replace the active match from the replace field."
 msgstr "Replace the active match from the replace field."
@@ -8932,6 +8997,10 @@ msgstr "Retry attempts"
 msgid "Retry loading databases"
 msgstr "Retry loading databases"
 
+#: src/components/chat/ChatMessageList.tsx
+msgid "Retry message"
+msgstr "Retry message"
+
 #: src/components/DatabaseTemplatesDialog.tsx
 msgid "Retry multiplier"
 msgstr "Retry multiplier"
@@ -9122,6 +9191,10 @@ msgstr "Run Button"
 msgid "Run this in your terminal"
 msgstr "Run this in your terminal"
 
+#: src/components/chat/CliChatPanel.tsx
+msgid "Running a command"
+msgstr "Running a command"
+
 #: src/components/settings/SettingsDialogBody.tsx
 msgid "Same folder as current file"
 msgstr "Same folder as current file"
@@ -9287,6 +9360,10 @@ msgstr "Search branches..."
 msgid "Search by meaning"
 msgstr "Search by meaning"
 
+#: src/components/chat/CliChatSession.tsx
+msgid "Search chats"
+msgstr "Search chats"
+
 #: src/components/PageHeaderWidgets.tsx
 msgid "Search emoji"
 msgstr "Search emoji"
@@ -9322,6 +9399,10 @@ msgstr "Search pages, databases, or commands"
 #: src/editor/components/PdfEmbed.tsx
 msgid "Search PDF"
 msgstr "Search PDF"
+
+#: src/components/chat/CliChatSession.tsx
+msgid "Search previous chats"
+msgstr "Search previous chats"
 
 #: src/components/ProjectSwitcher.tsx
 msgid "Search projects"
@@ -9367,6 +9448,10 @@ msgstr "Searching docs"
 #: src/components/DatabaseRelationCellEditor.tsx
 msgid "Searching related records"
 msgstr "Searching related records"
+
+#: src/components/chat/CliChatPanel.tsx
+msgid "Searching the web"
+msgstr "Searching the web"
 
 #: src/editor/slash-command/items.tsx
 msgid "Second item"
@@ -9523,6 +9608,10 @@ msgstr "Semantic search is on, but no API key is set — search falls back to ke
 #: src/components/chat/CliChatPanel.tsx
 msgid "Send"
 msgstr "Send"
+
+#: src/components/chat/CliChatPanel.tsx
+msgid "Send after current response"
+msgstr "Send after current response"
 
 #: src/components/ReportBugDialogBody.tsx
 msgid "Send report"
@@ -10017,6 +10106,11 @@ msgstr "Source undo or redo"
 msgid "Sources"
 msgstr "Sources"
 
+#. placeholder {0}: sources.length
+#: src/components/chat/ChatSourceExplorer.tsx
+msgid "Sources {0}"
+msgstr "Sources {0}"
+
 #: src/components/chat/CliChatModelMenu.tsx
 msgid "Speed"
 msgstr "Speed"
@@ -10130,6 +10224,10 @@ msgstr "Still loading"
 msgid "Stop"
 msgstr "Stop"
 
+#: src/components/chat/CliChatPanel.tsx
+msgid "Stop and send queued message now"
+msgstr "Stop and send queued message now"
+
 #: src/components/settings/ProjectTemplatesSection.tsx
 msgid "Stored at <0>.ok/templates/</0> in this project. Available in every folder (folder-scoped templates can override by filename)."
 msgstr "Stored at <0>.ok/templates/</0> in this project. Available in every folder (folder-scoped templates can override by filename)."
@@ -10179,6 +10277,10 @@ msgstr "Subscribing..."
 msgid "Subscriptions aren't available right now."
 msgstr "Subscriptions aren't available right now."
 
+#: src/components/chat/ChatMessageList.tsx
+msgid "Suggest focused improvements"
+msgstr "Suggest focused improvements"
+
 #: src/components/DatabaseAgentCreationPlanPreview.tsx
 msgid "Suggested name"
 msgstr "Suggested name"
@@ -10198,6 +10300,14 @@ msgstr "Suggestion menu open"
 #: src/components/BottomComposer.tsx
 msgid "Summarize everything I changed this week"
 msgstr "Summarize everything I changed this week"
+
+#: src/components/chat/ChatMessageList.tsx
+msgid "Summarize recent project context"
+msgstr "Summarize recent project context"
+
+#: src/components/chat/ChatMessageList.tsx
+msgid "Summarize the current document"
+msgstr "Summarize the current document"
 
 #: src/components/ShareBranchSwitchDialog.tsx
 msgid "Switch and update branch"
@@ -10638,6 +10748,10 @@ msgstr "The repository was moved, renamed, or deleted."
 msgid "The scan reached its {0} entry limit. No partial onboarding can start."
 msgstr "The scan reached its {0} entry limit. No partial onboarding can start."
 
+#: src/components/chat/ChatMessageList.tsx
+msgid "The selected passage will be included with your message."
+msgstr "The selected passage will be included with your message."
+
 #: src/components/TemplateProperties.tsx
 msgid "The template's filename (without `.md`)."
 msgstr "The template's filename (without `.md`)."
@@ -10679,6 +10793,10 @@ msgstr "There's no project folder for this window, so a terminal can't start her
 #: src/components/DatabaseCreationDialog.tsx
 msgid "These example rows will open in the editable table after commit."
 msgstr "These example rows will open in the editable table after commit."
+
+#: src/components/chat/CliChatPanel.tsx
+msgid "Thinking"
+msgstr "Thinking"
 
 #: src/components/share-receive-miss-content.tsx
 msgid "This {targetNoun} has been moved, renamed, or deleted in your local copy of branch <0>{branch}</0>, and that change hasn't synced yet."
@@ -10871,6 +10989,10 @@ msgstr "This permanently removes {0}. Agents that invoke this skill by name will
 #: src/components/TemplateDeleteDialog.tsx
 msgid "This permanently removes {path}. Agents that reference this template by name will fail until it's recreated or replaced by one in a parent folder."
 msgstr "This permanently removes {path}. Agents that reference this template by name will fail until it's recreated or replaced by one in a parent folder."
+
+#: src/components/chat/ChatMessageList.tsx
+msgid "This previous chat could not be loaded."
+msgstr "This previous chat could not be loaded."
 
 #: src/components/settings/SettingsDialogShell.tsx
 msgid "This project"
@@ -11116,6 +11238,7 @@ msgid "Try a prompt"
 msgstr "Try a prompt"
 
 #: src/components/AppErrorBoundary.tsx
+#: src/components/chat/ChatMessageList.tsx
 #: src/components/DocumentErrorBoundary.tsx
 #: src/components/InstallInClaudeDesktopDialog.tsx
 #: src/components/ReportBugDialogBody.tsx
@@ -11338,6 +11461,10 @@ msgstr "Unsupported link"
 msgid "Unverify"
 msgstr "Unverify"
 
+#: src/components/chat/CliChatPanel.tsx
+msgid "Up next"
+msgstr "Up next"
+
 #: src/components/SkillUpdateDialog.tsx
 msgid "Update"
 msgstr "Update"
@@ -11534,6 +11661,10 @@ msgstr "Used when you start a new Codex chat. You can still change the model in 
 #: src/components/settings/SettingsDialogShell.tsx
 msgid "User"
 msgstr "User"
+
+#: src/components/chat/CliChatPanel.tsx
+msgid "Using a tool"
+msgstr "Using a tool"
 
 #: src/components/settings/EmbeddingsKeySection.tsx
 msgid "Using the <0>OK_EMBEDDINGS_API_KEY</0> environment variable (managed outside SynapseNote)."
@@ -11793,10 +11924,15 @@ msgstr "Word wrap"
 msgid "Working"
 msgstr "Working"
 
+#: src/components/chat/CliChatPanel.tsx
+msgid "Working with documents"
+msgstr "Working with documents"
+
 #: src/lib/keyboard-shortcuts.ts
 msgid "Workspace"
 msgstr "Workspace"
 
+#: src/components/chat/CliChatPanel.tsx
 #: src/components/chat/CliChatPermissionMenu.tsx
 msgid "Workspace access"
 msgstr "Workspace access"
@@ -11841,6 +11977,10 @@ msgstr "Writes a project-MCP config for each selected tool."
 #: src/components/ActivityPanelFileRow.tsx
 msgid "writing"
 msgstr "writing"
+
+#: src/components/chat/CliChatPanel.tsx
+msgid "Writing response"
+msgstr "Writing response"
 
 #: src/editor/components/PdfSelectionMenu.tsx
 msgid "Yellow"

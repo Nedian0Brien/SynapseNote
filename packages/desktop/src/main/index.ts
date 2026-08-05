@@ -172,7 +172,7 @@ import {
   buildCliChatShellCommand,
   isCliChatLaunchInput,
 } from './cli-chat-command.ts';
-import { listNativeCliChatSessions } from './cli-chat-sessions.ts';
+import { listNativeCliChatSessions, loadNativeCliChatSession } from './cli-chat-sessions.ts';
 import { requestUserConsent, walkExceedsCap } from './consent-dialog.ts';
 import {
   type CrashDetection,
@@ -3280,7 +3280,7 @@ function registerIpcHandlers() {
     const win = BrowserWindow.fromWebContents(event.sender);
     return win ? terminalManager.listSessions(win.id) : [];
   });
-  handle('ok:terminal:cli-chat-sessions', async (event) => {
+  handle('ok:terminal:cli-chat-sessions', async (event, req?) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     const editorCtx =
       win && wm ? wm.getContextForBrowserWindow(win as unknown as BrowserWindowLike) : null;
@@ -3289,9 +3289,16 @@ function registerIpcHandlers() {
       terminalWindow: win ? getTerminalWindowContext(win.id) : undefined,
       homedir: osHomedir(),
     });
-    return projectPath === null
-      ? []
-      : listNativeCliChatSessions({ homeDir: osHomedir(), projectRoot: projectPath });
+    if (projectPath === null) return req === undefined ? [] : null;
+    if (req === undefined) {
+      return listNativeCliChatSessions({ homeDir: osHomedir(), projectRoot: projectPath });
+    }
+    return loadNativeCliChatSession({
+      homeDir: osHomedir(),
+      projectRoot: projectPath,
+      cli: req.cli,
+      sessionId: req.sessionId,
+    });
   });
   handle('ok:pty:adopt', async (event, req) => {
     const win = BrowserWindow.fromWebContents(event.sender);

@@ -796,6 +796,18 @@ export interface OkCliChatSession {
   readonly sessionId: string;
   readonly title: string;
   readonly updatedAt: number;
+  readonly preview: string;
+  readonly messageCount: number;
+}
+
+export interface OkCliChatTranscriptEntry {
+  readonly role: 'user' | 'assistant';
+  readonly text: string;
+  readonly timestamp?: number;
+}
+
+export interface OkCliChatTranscript extends OkCliChatSession {
+  readonly entries: readonly OkCliChatTranscriptEntry[];
 }
 
 /** Result of `terminal.adopt`. Canonical JSDoc in `bridge-contract.ts`; mirrored verbatim (drift-tested). */
@@ -1467,6 +1479,11 @@ export interface OkDesktopBridge {
     ): void;
     /** List native Codex/Claude sessions whose working directory is this project. */
     listChatSessions(): Promise<OkCliChatSession[]>;
+    /** Load one normalized transcript after re-validating project ownership in main. */
+    loadChatSession(input: {
+      cli: 'codex' | 'claude';
+      sessionId: string;
+    }): Promise<OkCliChatTranscript | null>;
     resize(ptyId: string, cols: number, rows: number): void;
     kill(ptyId: string): Promise<void>;
     drain(ptyId: string, bytes: number): void;

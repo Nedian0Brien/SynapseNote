@@ -13,7 +13,6 @@
     "-5jISU": [["0", "plural", { "one": ["#", " template"], "other": ["#", " templates"] }]],
     "-8PP0T": ["Match case"],
     "-9ErB5": ["Copied report reference"],
-    "-CQK2k": ["A page title is required"],
     "-EGAB8": ["Manage saved views"],
     "-K0AvT": ["Disconnect"],
     "-KmfTn": ["Freshness and truncation"],
@@ -256,6 +255,7 @@
     "3m2GBo": ["Searching docs"],
     "3mFsc3": ["Restore with remote changes"],
     "3o3tur": ["Starter content"],
+    "3oEwsh": ["Branch from message"],
     "3oh0nQ": ["Nested .okignore error in ", ["path"]],
     "3pU8e-": ["Pin tab"],
     "3pVQwo": ["Create a new database page with a Name column and a first-row affordance."],
@@ -299,6 +299,7 @@
     "4P7uZZ": [["0"], " of ", ["1"], " fields selected"],
     "4PY0lp": ["🗂️ or assets/database-icon.png"],
     "4PYsOz": ["Hide Files (", ["sidebarShortcutLabel"], ")"],
+    "4QIjKu": ["Explain the selected passage"],
     "4Sxexw": ["Source undo or redo"],
     "4Tp89V": ["No matching options."],
     "4TzU0n": ["Initialize"],
@@ -357,6 +358,7 @@
     ],
     "5DpQ29": ["Expand attached context"],
     "5EPYrh": ["Select one record. Showing up to 100 permission-visible matches."],
+    "5EkyPm": ["Working with documents"],
     "5F5HYj": [["ahead"], " ahead, ", ["behind"], " behind"],
     "5GKMSz": ["Indent or outdent the current list item."],
     "5IFmzH": ["Database breadcrumbs"],
@@ -413,6 +415,7 @@
       ]
     ],
     "5qUPzr": ["Checking undo safety"],
+    "5soCUZ": ["Edit queued message"],
     "5t8Gqn": ["No extractive citations were included in this pack."],
     "5vhM1Q": ["Open permission-visible Relation targets without creating Markdown links."],
     "5wV2qQ": ["and more"],
@@ -645,7 +648,6 @@
     "AItsE5": ["Open it there"],
     "AKxFtn": [["openedWorktreeCount", "plural", { "one": ["worktree"], "other": ["worktrees"] }]],
     "ALhMYW": ["Terminal"],
-    "AN0DBJ": ["Press Enter to add"],
     "AQ-Lfg": ["Couldn't load templates"],
     "AQGtjK": [
       "Commands run with the full access of your macOS user account on this machine. Turn this off to disable the shell."
@@ -654,6 +656,7 @@
     "AUNzsj": [
       "Adds the SynapseNote skill to the <0>Claude Desktop App</0> so it's available in Chat and Cowork sessions."
     ],
+    "AUV-TY": ["Thinking"],
     "AVW-K9": ["Failed to load orphan pages"],
     "AWOSPo": ["Zoom in"],
     "AaaESH": [
@@ -689,6 +692,7 @@
     "AsqRE_": ["Default location for new attachments"],
     "AtBdnD": ["Couldn't delete skill: ", ["error"]],
     "AwEQaN": ["Markdown formatting"],
+    "AyoeWR": ["Searching the web"],
     "AzBkWG": ["Proposed database · not saved"],
     "B11p-O": ["Edit markdown link"],
     "B1gLDj": ["Recovery receipt"],
@@ -705,10 +709,10 @@
     ],
     "B9Nyu-": ["Index rebuilds"],
     "BAH4qX": ["Selected graph item"],
+    "BBFiAV": ["Ask about this project"],
     "BBqGS9": ["Desktop"],
     "BD0XSC": ["Failed to load project templates"],
     "BE6eVB": [["label"], " on page ", ["0"]],
-    "BEHssh": ["Press Enter to create page"],
     "BEkF-P": [
       ["userName"],
       ", ",
@@ -918,6 +922,7 @@
     "EhDLBx": ["You modified <0>", ["filePath"], "</0> locally, but it was deleted upstream."],
     "Ehkru0": ["Open, navigate, accept, or dismiss CodeMirror completion suggestions."],
     "EiVgl5": ["You don't have permission to push to this repo."],
+    "Eim2x8": ["Send after current response"],
     "Eji13z": ["Toggle highlight formatting."],
     "EkH9pt": ["Update"],
     "El7NbA": ["Heading 2"],
@@ -1020,6 +1025,7 @@
     "G_efLf": ["Installed into"],
     "G_mWXb": ["Filter languages"],
     "GamjcN": ["Template saved"],
+    "GcDj3e": ["Find related notes in this project"],
     "GddclO": ["Open databases"],
     "GemPfn": ["Failed to parse forward-links error response (HTTP ", ["status"], ")"],
     "GfcoKl": ["Choose a compatible relation, target property, and aggregation."],
@@ -1153,6 +1159,7 @@
     "JLzQi_": ["Close ", ["accessibleLabel"]],
     "JM_aq-": ["Use an https:// URL — http:// is only allowed for localhost."],
     "JOcPqH": ["Bring a remote repository onto this machine."],
+    "JRvAg-": ["Sources ", ["0"]],
     "JWsZlx": ["Open a project to edit."],
     "JY5Oyv": ["Database"],
     "JZ4Z7I": ["Context Packs truncated"],
@@ -1162,6 +1169,7 @@
     "JfPuv7": [["shareBranch"], " isn't a valid branch name."],
     "Jhj_lh": ["Modify the link target, anchor, and display label."],
     "JiLsSJ": ["Database templates"],
+    "JjFfPv": ["Continue from ", ["0"]],
     "JkCD2u": ["Sync paused — you don't have permission to push to this repo"],
     "JlFcis": ["Send"],
     "JmfgFc": ["(a worktree of ", ["0"], ")"],
@@ -1176,6 +1184,7 @@
     "K1ckLX": ["Failed to create folder"],
     "K4Eslg": ["Add color rule"],
     "K5Dgu_": ["Databases"],
+    "K5sH-g": ["Summarize the current document"],
     "K64FJx": ["Anchor"],
     "K6MQQk": ["Sync is failing. See the sync status for details."],
     "K6jjWB": [["packName"], " was already set up. Nothing to do."],
@@ -1251,6 +1260,7 @@
     "LQwqIa": ["Accept form submissions"],
     "LRgZAt": [["owner"], "/", ["name"], " already exists"],
     "LTv5gP": ["This database link is unavailable"],
+    "LURrxR": ["Loading previous chat…"],
     "LXdWeS": ["Medium section heading."],
     "LXfNU-": ["Navigation and suggestions"],
     "LYufDw": ["Failed to enable semantic search — ", ["detail"]],
@@ -1443,6 +1453,7 @@
     "OUA8Dd": [
       "Choose whether selecting a document in the left sidebar opens a new tab or replaces the current tab."
     ],
+    "OULqLs": ["Cancel queued message"],
     "OVjNeX": ["Terminal ", ["0"]],
     "OX2Neh": ["Inline code"],
     "OXb_Df": ["Settings content"],
@@ -1524,11 +1535,11 @@
     "Prefix": ["Prefix"],
     "PrhzDE": ["Pan up"],
     "Pv0md3": ["Change property type"],
+    "PxadCJ": [["toolProgress"], " tools"],
     "PyP1TM": ["Commits"],
     "Pyp1NA": ["Restore to this point?"],
     "PzUvDM": ["Bug report ", ["reference"]],
     "Q2fWEn": ["Export JSON"],
-    "Q3ziUd": ["Ask about your current document or project."],
     "Q5fqMz": ["Connection error — try again"],
     "Q6hhn8": ["Preferences"],
     "Q7W-mC": ["Same folder as current file"],
@@ -1555,6 +1566,7 @@
     "QcpeeE": ["Navigate to ", ["docName"]],
     "QfFBdJ": ["The template's filename (without `.md`)."],
     "Qj4RL5": ["Completed:"],
+    "QjH-ZX": ["Edit message"],
     "QlxHAH": ["Showing results for \"", ["semanticResultsLabel"], "\""],
     "QnjpOq": ["What do you want to build?"],
     "QqBQu1": ["Label <0>(visible link text)</0>"],
@@ -1586,6 +1598,7 @@
     ],
     "R8snaK": ["Review and edit this shape before the agent prepares the exact plan."],
     "R9IDFz": ["Renames the folder on disk and the id agents use to invoke it."],
+    "RBcmtQ": ["Using a tool"],
     "RDIgVA": ["Global filters"],
     "RDjuBN": ["Setup"],
     "RDrXh4": ["Configure user, project, and integration settings."],
@@ -1691,6 +1704,7 @@
     "SqERVU": ["Unsaved Rollup preview · UTC · permission-scoped · evaluated at ", ["0"]],
     "SrC3nz": ["Loading verified database properties"],
     "SrOuyg": ["Document panels"],
+    "SrfROI": ["Up next"],
     "SsQ6kV": ["No records in this Map view have a location."],
     "T-654M": ["Loading PDF"],
     "T0OVm7": ["The default branch is protected — pushes need a pull request."],
@@ -1796,6 +1810,7 @@
     "VIwCaD": ["Entry"],
     "VL5vJy": ["Open record"],
     "VM7H66": ["This file is binary and can't be shown as text."],
+    "VNHcCr": ["Stop and send queued message now"],
     "VNgKZz": ["Advanced settings"],
     "VPxUGR": ["Fit image"],
     "VQKQi7": ["Exact plan details"],
@@ -2089,6 +2104,7 @@
     "a0kX_2": ["Copy TSV"],
     "a3H_MR": ["Open and focus the Ask AI composer for the current editor selection."],
     "a4Cv3m": ["Property placement"],
+    "a4xYoA": ["Search chats"],
     "a5Gha5": ["Local changes blocked the merge"],
     "a5W0q0": [
       "Are you sure you want to delete ",
@@ -2230,6 +2246,7 @@
     "ct2kv5": ["No headings in ", ["pageTarget"]],
     "cuA8QW": ["Organize specs"],
     "cvYqKz": ["Resume run"],
+    "d-Anlo": ["Running a command"],
     "d1JjXo": [
       "Your local copy of branch <0>",
       ["branch"],
@@ -2341,6 +2358,7 @@
     "emgiet": ["Authoritative content; mirrored verbatim everywhere it's referenced."],
     "empT7O": ["Insert property to the right"],
     "eneWvv": ["Draft"],
+    "eoxU7b": ["Retry message"],
     "epuNYK": [
       "Mark a block as the source of truth. Mirrors elsewhere update live as you edit it."
     ],
@@ -2450,6 +2468,7 @@
     "gp3I7-": ["Before syncing, set your identity for git commits:"],
     "gt7daN": ["No database agent runs yet."],
     "gtEbeW": ["Highlight"],
+    "gul7is": ["Regenerate response"],
     "gvApb7": [
       "Turn the things you read into clear, trusted articles. Save a source, figure out what it means, then keep the final version so you can rely on it later."
     ],
@@ -2493,6 +2512,7 @@
     "hItdtk": ["Browse folder"],
     "hK0yOg": ["Export all CSV"],
     "hLy8b1": ["Updated to Version ", ["version"]],
+    "hP586r": ["Check claims and sources"],
     "hQQBXX": ["Fit cover"],
     "hQXiDc": ["Search branches..."],
     "hSBIG-": ["A title, description, tags — anything that describes this folder."],
@@ -2508,6 +2528,7 @@
     "habOU_": ["Failed to update the auto-approve setting — ", ["detail"]],
     "hatl27": ["Board cards and limits"],
     "hchgKp": ["Each selected tool gets an SynapseNote MCP entry."],
+    "hdaz_5": ["Choose a starting point or write your own request."],
     "he3ygx": ["Copy"],
     "hjO0Mq": ["Add tab"],
     "hlG1JC": ["Review create"],
@@ -2517,6 +2538,7 @@
     "hnq8fP": ["Remove ", ["label"], " from context"],
     "hpDtUm": ["External wiki link"],
     "hpzRlK": ["Reopen closed tab"],
+    "hsWIeV": ["Suggest focused improvements"],
     "hvdp4C": ["Proposed · not saved"],
     "hwFOFD": ["Settings failed to load"],
     "hwJL1g": ["checks"],
@@ -2612,6 +2634,7 @@
     "jdGUeI": ["Couldn't create template: ", ["error"]],
     "jerqF0": ["Loading branch state"],
     "jhtG3I": [" Your selection has been restored."],
+    "jjkp3n": ["Summarize recent project context"],
     "jjtmV_": ["First file name"],
     "jkZFIw": ["No memo text"],
     "jol95m": ["Failed to open Project Navigator."],
@@ -2661,6 +2684,7 @@
     ],
     "kNiQp6": ["Pinned"],
     "kNqMMd": ["Folder"],
+    "kPOw9O": ["Copy message"],
     "kUn-CN": ["Sync off"],
     "kV2YZv": [
       "Don't see <0>Skills</0>? Enable <1>Settings <2/> Capabilities <3/> Code execution and file creation</1> first."
@@ -2671,7 +2695,6 @@
     "k_60h_": [
       "You picked your home directory. SynapseNote will index everything in your home tree — large and may surface personal files."
     ],
-    "k_iZh-": ["New record title"],
     "k_pade": ["Config sharing is now shared. Commit the OK files to share with your team."],
     "k_yIIc": ["Will be created at: <0>", ["targetPreview"], "</0>"],
     "kdzzOK": ["Off — search ranks by keyword only. No content leaves this computer."],
@@ -2679,6 +2702,7 @@
     "kfkThN": ["No dependent properties or saved views were found."],
     "kj9pAE": ["Creating page"],
     "kknhfj": ["No changes"],
+    "klO-qa": ["Click to add"],
     "kmKqZg": ["Clusters"],
     "knjOzA": ["Tag value"],
     "kolRU1": ["Do you want to permanently delete instead?"],
@@ -2877,6 +2901,7 @@
     "nxY1ht": ["Resulting page preview"],
     "nzHlj8": ["Close ", ["0"]],
     "nzaV6Q": ["Page thumbnails"],
+    "o-lpDw": ["Find related notes"],
     "o2yoFu": ["Reveal in Finder, No workspace"],
     "o49mDZ": ["Loading timeline history"],
     "o4dcAf": ["Reveal in File Explorer, ", ["hint"]],
@@ -2933,7 +2958,6 @@
     "otE4aj": ["Show external URL nodes"],
     "ou1hFW": ["Toggle an ordered list."],
     "outYNy": ["Duplicate name \"", ["keyName"], "\""],
-    "ovAd75": ["A record title is required"],
     "ovIGrT": [
       "Local collaboration data for \"",
       ["docName"],
@@ -3080,6 +3104,7 @@
     "rXc5AN": ["Selected record"],
     "rXz97P": ["Numbered list of items."],
     "rZ9HZq": ["To do"],
+    "rZFw4s": ["Writing response"],
     "rZVMkf": ["Visual editor replace input focused"],
     "rageVb": ["Custom HTML with a live preview pane (sandboxed iframe)."],
     "rbxdmM": ["Root records"],
@@ -3154,6 +3179,7 @@
       "Open an additional terminal tab. With text selected, stage it in the new tab's AI input."
     ],
     "sizDhz": ["Discard preview"],
+    "sj6h15": ["Ask about ", ["emptyDocumentTitle"]],
     "skf5Ix": ["Indent or outdent source editor lines."],
     "sn5BEU": [
       ["sizeText"],
@@ -3220,6 +3246,7 @@
     "tsH-oX": [
       "Use a stable user principal ID. Agent access remains limited by its own capability and session."
     ],
+    "tsIL-G": ["This previous chat could not be loaded."],
     "tsiTqO": ["Paste your API key"],
     "tsj0c6": ["CSV or TSV file"],
     "tstmZe": ["Manage views without leaving the document."],
@@ -3265,6 +3292,7 @@
     "u_lS4C": ["Clone complete — opening project"],
     "uaUc6t": ["Restart server"],
     "ubMwcO": ["The terminal session ended (signal ", ["0"], ")."],
+    "ugOsUS": ["Search previous chats"],
     "ugoTXs": ["folder"],
     "uhJEA2": [
       [
@@ -3321,6 +3349,7 @@
     "vLyv1R": ["Hide"],
     "vNhgNE": ["Insert property to the left"],
     "vQIVHc": ["Folder properties"],
+    "vS8IF2": ["The selected passage will be included with your message."],
     "vVJWTJ": ["Submit response"],
     "vVkJqG": ["Refresh preview"],
     "vWc9a0": ["Type to edit; <0>⌘ Enter</0> saves, <1>Esc</1> cancels."],
@@ -3506,6 +3535,7 @@
     "y_5CE8": ["Item ", ["0"]],
     "y_K0Dz": ["What happened?"],
     "yaPGPa": ["Open a project to manage its AI tool connections."],
+    "ydGP0o": ["Insert into document"],
     "yf5r22": [
       ["keyName"],
       " type: ",
@@ -3545,12 +3575,14 @@
     "zL0LPh": ["Global outside text fields"],
     "zLGXna": ["No starter packs available."],
     "zLak8b": ["Activate new tab"],
+    "zMdyPJ": ["No matching chats"],
     "zQBg2C": ["Move the current block up or down one position."],
     "zQ_oUF": ["Workspace grant"],
     "zUhPuR": ["Open containing folder, ", ["hint"]],
     "zVzslF": ["PDF save failed. Retry"],
     "zXY8th": ["Review required"],
     "zXj1rA": ["Search by meaning"],
+    "zYO4DG": ["Replace selection"],
     "zZ_I5K": ["Open project menu"],
     "zZksLX": ["Customize layout"],
     "zaXlhf": [
@@ -3579,6 +3611,7 @@
     "zu19Zf": ["Loading agent context"],
     "zwBp5t": ["Private"],
     "zwMa6j": ["Keep the stable view identity and review the new display name."],
+    "zxaIp3": ["Check the selected claims and sources"],
     "zyCVZy": ["Schema revisions"],
     "zyKa-I": ["Star us on GitHub"]
   }
