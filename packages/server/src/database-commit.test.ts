@@ -136,6 +136,7 @@ async function fixture(input?: {
   createResolveAutonomyPolicy?: (projectDir: string) => ResolveDatabaseCommitAutonomyPolicy;
   createAgentRunStore?: (projectDir: string) => DatabaseAgentRunStore;
   commitNow?: () => Date;
+  useTransactionGit?: boolean;
 }) {
   const projectDir = mkdtempSync(join(tmpdir(), 'synapsenote-database-commit-'));
   const contentDir = join(projectDir, 'content');
@@ -164,6 +165,7 @@ async function fixture(input?: {
   const snapshotOptions: Array<
     { skipWhenUnchanged?: boolean; paths?: readonly string[] } | undefined
   > = [];
+  let transactionCount = 0;
   let renameCount = 0;
   const engine = createDatabaseCommitEngine({
     projectDir,
@@ -182,6 +184,15 @@ async function fixture(input?: {
         return String(++snapshotCount).repeat(40).slice(0, 40);
       },
       hashBlob: async () => `sha1:${'a'.repeat(40)}`,
+      ...(input?.useTransactionGit
+        ? {
+            prepareTransaction: async () => 'b'.repeat(40),
+            transaction: async () => {
+              transactionCount += 1;
+              return { baseSha: 'b'.repeat(40), resultSha: 'c'.repeat(40) };
+            },
+          }
+        : {}),
     },
     resolveAutonomyPolicy:
       input?.resolveAutonomyPolicy ?? input?.createResolveAutonomyPolicy?.(projectDir),
@@ -232,6 +243,7 @@ async function fixture(input?: {
     snapshotCount: () => snapshotCount,
     snapshotMessages,
     snapshotOptions,
+    transactionCount: () => transactionCount,
   };
 }
 
@@ -248,12 +260,11 @@ describe('DatabaseCommitEngine', () => {
 
     await engine.commit(commitInput());
 
-    // The base checkpoint snapshot runs before any canonical file is touched,
-    // so no read can observe a partial transaction and the barrier must still
-    // be open: holding it there froze the whole surface for ~7 git processes
-    // and protected nothing. The result snapshot runs after the rename loop,
+    // The injected fallback adapter snapshots before any canonical file is
+    // touched, so no read can observe a partial transaction and the barrier
+    // must still be open. The result snapshot runs after the rename loop,
     // where a rollback can still restore the previous bytes, so it must be
-    // closed.
+    // closed. Production uses the bounded transaction adapter tested below.
     expect(barrierAtSnapshot).toEqual([false, true]);
     expect(engine.isTransactionActive()).toBe(false);
   });
@@ -369,6 +380,19 @@ describe('DatabaseCommitEngine', () => {
     expect(replay.idempotentReplay).toBe(true);
     expect(replay.mutationId).toBe(mutationId);
     expect(snapshotCount()).toBe(2);
+  });
+
+  test('uses the bounded Git transaction path instead of two snapshots when available', async () => {
+    const { engine, commitInput, snapshotCount, transactionCount } = await fixture({
+      useTransactionGit: true,
+    });
+
+    const result = await engine.commit(commitInput());
+
+    expect(snapshotCount()).toBe(0);
+    expect(transactionCount()).toBe(1);
+    expect(result.auditReceipt.base.gitHead).toBe(`sha1:${'b'.repeat(40)}`);
+    expect(result.auditReceipt.result.gitHead).toBe(`sha1:${'c'.repeat(40)}`);
   });
 
   test("R-015: the record materialized on disk exactly matches the plan's proposed diff, not just a plausible file", async () => {

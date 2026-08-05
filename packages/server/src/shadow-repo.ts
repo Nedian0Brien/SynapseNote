@@ -24,7 +24,8 @@
  *     silently rename-migrated in-place once per repo (legacy-rename shim below).
  */
 
-import { randomUUID } from 'node:crypto';
+import { spawn } from 'node:child_process';
+import { createHash, randomUUID } from 'node:crypto';
 import { existsSync, lstatSync, readdirSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
@@ -64,6 +65,17 @@ export interface WriterIdentity {
   id: string;
   name: string;
   email: string;
+}
+
+export interface WipTransactionFile {
+  path: string;
+  before: string | null;
+  after: string | null;
+}
+
+export interface WipTransactionResult {
+  baseSha: string;
+  resultSha: string;
 }
 
 /**
@@ -457,6 +469,232 @@ export async function commitWip(
         opts?.paths,
       ),
   );
+}
+
+function gitBlobOid(content: string): string {
+  const bytes = Buffer.from(content, 'utf8');
+  return createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
+}
+
+function fastImportPath(path: string): string {
+  return JSON.stringify(path);
+}
+
+function fastImportIdentity(value: string): string {
+  const safe = [...value]
+    .map((character) => {
+      const code = character.charCodeAt(0);
+      return code <= 31 || code === 127 || character === '<' || character === '>' ? ' ' : character;
+    })
+    .join('')
+    .trim();
+  return safe || 'synapsenote';
+}
+
+function appendFastImportData(parts: string[], value: string): void {
+  parts.push(`data ${Buffer.byteLength(value, 'utf8')}\n`, value, '\n');
+}
+
+function appendFastImportFiles(
+  parts: string[],
+  files: readonly WipTransactionFile[],
+  side: 'before' | 'after',
+): void {
+  for (const file of files) {
+    const content = file[side];
+    if (content === null) {
+      parts.push(`D ${fastImportPath(file.path)}\n`);
+      continue;
+    }
+    parts.push(`M 100644 inline ${fastImportPath(file.path)}\n`);
+    appendFastImportData(parts, content);
+  }
+}
+
+async function runFastImport(shadow: ShadowHandle, input: string): Promise<string[]> {
+  return new Promise((resolveOutput, reject) => {
+    const child = spawn('git', ['fast-import', '--quiet'], {
+      cwd: shadow.workTree,
+      env: {
+        ...process.env,
+        GIT_DIR: shadow.gitDir,
+        GIT_WORK_TREE: shadow.workTree,
+      },
+      stdio: ['pipe', 'pipe', 'pipe'],
+      windowsHide: true,
+    });
+    const stdout: Buffer[] = [];
+    const stderr: Buffer[] = [];
+    let timedOut = false;
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      child.kill('SIGKILL');
+    }, GIT_TIMEOUT_MS);
+    child.stdout.on('data', (chunk: Buffer) => stdout.push(chunk));
+    child.stderr.on('data', (chunk: Buffer) => stderr.push(chunk));
+    // A rejected import can close stdin before the buffered payload drains.
+    // The process close/error handlers below surface the real Git failure.
+    child.stdin.on('error', () => undefined);
+    child.once('error', (error) => {
+      clearTimeout(timeout);
+      reject(error);
+    });
+    child.once('close', (code, signal) => {
+      clearTimeout(timeout);
+      if (code !== 0) {
+        const detail = Buffer.concat(stderr).toString('utf8').trim();
+        reject(
+          new Error(
+            timedOut
+              ? `git fast-import timed out after ${GIT_TIMEOUT_MS}ms`
+              : `git fast-import failed (${code ?? signal ?? 'unknown'}): ${detail}`,
+          ),
+        );
+        return;
+      }
+      resolveOutput(
+        Buffer.concat(stdout)
+          .toString('utf8')
+          .split('\n')
+          .map((line) => line.trim())
+          .filter((line) => /^[a-f0-9]{40}$/.test(line)),
+      );
+    });
+    child.stdin.end(input);
+  });
+}
+
+/**
+ * Commit an exact database before/after transaction without constructing two
+ * temporary indexes. The ordinary snapshot spine needs several Git processes
+ * per tree (`rev-parse`, `read-tree`, `ls-files`, `add`, `write-tree`,
+ * `commit-tree`, `update-ref`). This path resolves the parent once, verifies
+ * whether it already represents the transaction base, then streams any needed
+ * base commit and the result commit through one `git fast-import` process.
+ *
+ * The returned object IDs are real shadow-repository commits, so transaction
+ * receipts and timeline readers retain their existing immediate consistency.
+ */
+export async function commitWipTransaction(
+  shadow: ShadowHandle,
+  writer: WriterIdentity,
+  baseMessage: string,
+  resultMessage: string,
+  files: readonly WipTransactionFile[],
+  branch = 'main',
+  preparedBaselineSha?: string,
+): Promise<WipTransactionResult> {
+  if (files.length === 0) throw new Error('A WIP transaction requires at least one file');
+  const paths = normalizedSnapshotPaths(files.map((file) => file.path));
+  if (paths.length !== files.length) throw new Error('WIP transaction paths must be unique');
+  const sg = shadowGit(shadow);
+  const baselineSha =
+    preparedBaselineSha ?? (await prepareWipTransaction(shadow, writer, baseMessage, branch));
+
+  const treeEntries = new Map<string, string>();
+  if (paths.length > 0) {
+    const raw = await sg.raw(
+      'ls-tree',
+      '-z',
+      baselineSha,
+      '--',
+      ...literalSnapshotPathspecs(paths),
+    );
+    for (const entry of raw.split('\0').filter(Boolean)) {
+      const match = /^\d+\s+blob\s+([a-f0-9]{40})\t(.+)$/.exec(entry);
+      if (match?.[1] && match[2]) treeEntries.set(match[2], match[1]);
+    }
+  }
+  const baselineMatches = files.every((file) => {
+    const oid = treeEntries.get(file.path);
+    return file.before === null ? oid === undefined : oid === gitBlobOid(file.before);
+  });
+  return commitWipTransactionFromBaseline(
+    shadow,
+    writer,
+    baseMessage,
+    resultMessage,
+    files,
+    branch,
+    baselineSha,
+    baselineMatches,
+  );
+}
+
+/** Resolve the writer's exact pre-transaction parent before canonical files change. */
+export async function prepareWipTransaction(
+  shadow: ShadowHandle,
+  writer: WriterIdentity,
+  baseMessage: string,
+  branch = 'main',
+): Promise<string> {
+  const ref = `refs/wip/${branch}/${writer.id}`;
+  const sg = shadowGit(shadow);
+  const refs = (
+    await sg.raw(
+      'for-each-ref',
+      '--sort=-committerdate',
+      '--format=%(refname)%00%(objectname)',
+      `refs/wip/${branch}/`,
+    )
+  )
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [refname = '', sha = ''] = line.split('\0');
+      return { refname, sha };
+    })
+    .filter((entry) => /^[a-f0-9]{40}$/.test(entry.sha));
+  const baseline = refs.find((entry) => entry.refname === ref) ?? refs[0];
+  if (baseline) return baseline.sha;
+
+  // A genuinely cold branch needs one full-tree seed while the canonical
+  // files still represent the transaction base. Every later edit is bounded
+  // to its exact changed paths.
+  return commitWip(shadow, writer, '', baseMessage, branch, undefined);
+}
+
+async function commitWipTransactionFromBaseline(
+  shadow: ShadowHandle,
+  writer: WriterIdentity,
+  baseMessage: string,
+  resultMessage: string,
+  files: readonly WipTransactionFile[],
+  branch: string,
+  baselineSha: string,
+  baselineMatches: boolean,
+): Promise<WipTransactionResult> {
+  const ref = `refs/wip/${branch}/${writer.id}`;
+  const timestamp = `${Math.floor(Date.now() / 1_000)} +0000`;
+  const author = `${fastImportIdentity(writer.name)} <${fastImportIdentity(writer.email)}> ${timestamp}`;
+  const committer = `synapsenote <noreply@synapsenote.local> ${timestamp}`;
+  const parts: string[] = [];
+  let baseSha = baselineSha;
+  let resultMark = ':1';
+  if (!baselineMatches) {
+    parts.push(`commit ${ref}\nmark :1\nauthor ${author}\ncommitter ${committer}\n`);
+    appendFastImportData(parts, baseMessage);
+    parts.push(`from ${baselineSha}\n`);
+    appendFastImportFiles(parts, files, 'before');
+    parts.push('get-mark :1\n');
+    resultMark = ':2';
+  }
+  parts.push(`commit ${ref}\nmark ${resultMark}\nauthor ${author}\ncommitter ${committer}\n`);
+  appendFastImportData(parts, resultMessage);
+  parts.push(`from ${baselineMatches ? baselineSha : ':1'}\n`);
+  appendFastImportFiles(parts, files, 'after');
+  parts.push(`get-mark ${resultMark}\ndone\n`);
+  const marks = await runFastImport(shadow, parts.join(''));
+  if (baselineMatches) {
+    if (!marks[0]) throw new Error('git fast-import did not return the result commit mark');
+    return { baseSha, resultSha: marks[0] };
+  }
+  if (!marks[0] || !marks[1]) {
+    throw new Error('git fast-import did not return both transaction commit marks');
+  }
+  baseSha = marks[0];
+  return { baseSha, resultSha: marks[1] };
 }
 
 async function commitWipInner(

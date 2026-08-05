@@ -41,7 +41,14 @@ import {
   createDatabaseTransactionJournal,
   type DatabaseTransactionJournal,
 } from './database-transaction-journal.ts';
-import { commitWip, type ShadowHandle, shadowGit, type WriterIdentity } from './shadow-repo.ts';
+import {
+  commitWip,
+  commitWipTransaction,
+  prepareWipTransaction,
+  type ShadowHandle,
+  type WipTransactionFile,
+  type WriterIdentity,
+} from './shadow-repo.ts';
 import { RUNTIME_VERSION } from './version-constants.ts';
 
 export interface DatabaseCommitInput {
@@ -282,6 +289,14 @@ interface CommitGit {
     opts?: { skipWhenUnchanged?: boolean; paths?: readonly string[] },
   ): Promise<string>;
   hashBlob(path: string): Promise<string>;
+  prepareTransaction?(writer: WriterIdentity, baseMessage: string): Promise<string>;
+  transaction?(
+    writer: WriterIdentity,
+    baseMessage: string,
+    resultMessage: string,
+    files: readonly WipTransactionFile[],
+    preparedBaselineSha: string,
+  ): Promise<{ baseSha: string; resultSha: string }>;
 }
 
 export interface DatabaseCommitAutonomyPolicy {
@@ -401,6 +416,12 @@ function compactUuid(generateUuid: () => string): string {
 
 function sha256(value: string | Buffer): string {
   return `sha256:${createHash('sha256').update(value).digest('hex')}`;
+}
+
+function gitBlobId(value: string | Buffer): string {
+  const bytes = typeof value === 'string' ? Buffer.from(value, 'utf8') : value;
+  const oid = createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
+  return `sha1:${oid}`;
 }
 
 function stable(value: unknown): string {
@@ -1713,9 +1734,20 @@ export class DatabaseCommitEngine {
       snapshot: (identity, message, opts) =>
         commitWip(shadow, identity, '', message, this.#branch(), opts),
       hashBlob: async (path) => {
-        const oid = (await shadowGit(shadow).raw('hash-object', '-w', '--', path)).trim();
-        return `sha1:${oid}`;
+        return gitBlobId(await this.#fs.readFile(path));
       },
+      prepareTransaction: (identity, baseMessage) =>
+        prepareWipTransaction(shadow, identity, baseMessage, this.#branch()),
+      transaction: (identity, baseMessage, resultMessage, files, preparedBaselineSha) =>
+        commitWipTransaction(
+          shadow,
+          identity,
+          baseMessage,
+          resultMessage,
+          files,
+          this.#branch(),
+          preparedBaselineSha,
+        ),
     };
   }
 
@@ -1936,7 +1968,17 @@ export class DatabaseCommitEngine {
     }
     const snapshotPaths = [...new Set(targets.map((target) => target.projectPath))].sort();
     const moved: Array<{ target: CommitTarget; backupPath: string | null }> = [];
+    const baseGitMessage = `checkpoint: database transaction base ${mutationId}`;
+    const resultGitMessage = databaseTimelineCommitMessage({
+      actor: input.actor,
+      summary: auditIntentSummary(plan),
+      docs: databaseTimelineDocumentNames(
+        targets.map((target) => target.projectPath),
+        contentRelative,
+      ),
+    });
     let baseGitHead = '';
+    let preparedBaselineSha: string | null = null;
     try {
       for (const target of targets) {
         if (!this.#isAllowedContentPath(target.absolutePath)) {
@@ -1946,16 +1988,17 @@ export class DatabaseCommitEngine {
         }
         await this.#assertTargetState(target);
       }
-      // The base checkpoint exists to record the pre-transaction state, and
-      // `baseGitHead` is only written into the audit receipt — undo restores
-      // from the receipt's captured bytes, not from Git. When nothing has
-      // changed since the last snapshot the existing head already *is* that
-      // state, so recording an identical-tree commit buys nothing.
-      baseGitHead = await git.snapshot(
-        writer,
-        `checkpoint: database transaction base ${mutationId}`,
-        { skipWhenUnchanged: true, paths: snapshotPaths },
-      );
+      // Production resolves the baseline with one bounded ref query and emits
+      // the exact base/result pair together after the canonical write. Custom
+      // adapters retain the two-snapshot fallback used by isolated tests.
+      if (git.transaction && git.prepareTransaction) {
+        preparedBaselineSha = await git.prepareTransaction(writer, baseGitMessage);
+      } else {
+        baseGitHead = await git.snapshot(writer, baseGitMessage, {
+          skipWhenUnchanged: true,
+          paths: snapshotPaths,
+        });
+      }
       await this.#fs.mkdir(stagingRoot);
       const staged = new Map<string, string>();
       for (const target of targets) {
@@ -2012,9 +2055,8 @@ export class DatabaseCommitEngine {
       }
       // First canonical write: from here a read could observe a partially
       // applied transaction, so the barrier goes up now rather than around the
-      // whole commit. The base checkpoint snapshot above is ~7 git processes
-      // against an unchanged tree; holding the barrier across it made every
-      // row add freeze the surface for no protection.
+      // whole commit. Baseline preparation stays outside the barrier because
+      // it does not touch canonical bytes.
       this.#transactionActive = true;
       for (const target of targets) {
         await this.#fs.mkdir(resolve(target.absolutePath, '..'));
@@ -2039,18 +2081,24 @@ export class DatabaseCommitEngine {
           checks,
         });
       }
-      const resultGitHead = await git.snapshot(
-        writer,
-        databaseTimelineCommitMessage({
-          actor: input.actor,
-          summary: auditIntentSummary(plan),
-          docs: databaseTimelineDocumentNames(
-            targets.map((target) => target.projectPath),
-            contentRelative,
-          ),
-        }),
-        { paths: snapshotPaths },
-      );
+      let resultGitHead: string;
+      if (git.transaction && preparedBaselineSha) {
+        const transaction = await git.transaction(
+          writer,
+          baseGitMessage,
+          resultGitMessage,
+          targets.map((target) => ({
+            path: target.projectPath,
+            before: target.beforeContent,
+            after: target.content,
+          })),
+          preparedBaselineSha,
+        );
+        baseGitHead = transaction.baseSha;
+        resultGitHead = transaction.resultSha;
+      } else {
+        resultGitHead = await git.snapshot(writer, resultGitMessage, { paths: snapshotPaths });
+      }
       const receipt = DatabaseTransactionReceiptSchema.parse({
         version: 1,
         mutationId,

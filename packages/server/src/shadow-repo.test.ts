@@ -14,6 +14,7 @@ import {
   buildWipTree,
   commitUpstreamImport,
   commitWip,
+  commitWipTransaction,
   DEFAULT_CHECKPOINT_RETENTION,
   GIT_UPSTREAM_WRITER,
   type InMemoryCheckpointParams,
@@ -21,6 +22,7 @@ import {
   listRescueCheckpoints,
   type ParkableDoc,
   parkBranch,
+  prepareWipTransaction,
   readParkedState,
   resetFoldedWipRefs,
   SERVICE_WRITER,
@@ -311,6 +313,66 @@ describe('commitWip', () => {
     expect(names).toContain(baselinePath);
     expect(names).not.toContain(createPath);
     expect(names).not.toContain(unrelatedPath);
+  });
+
+  test('commits an exact database before/result pair through the fast transaction path', async () => {
+    const updatePath = 'content/docs/update.md';
+    const createPath = 'content/docs/create.md';
+    const deletePath = 'content/docs/delete.md';
+    const unrelatedPath = 'content/docs/unrelated.md';
+    writeFileSync(resolve(projectRoot, updatePath), '# Stale baseline\n');
+    writeFileSync(resolve(projectRoot, deletePath), '# Delete me\n');
+    writeFileSync(resolve(projectRoot, unrelatedPath), '# Preserve me\n');
+    await commitWip(shadow, writer, '', 'WIP: baseline');
+
+    // The canonical bytes can advance outside this writer ref. The transaction
+    // must still materialize an exact base commit before its result commit.
+    writeFileSync(resolve(projectRoot, updatePath), '# Transaction base\n');
+    const prepared = await prepareWipTransaction(shadow, writer, 'checkpoint: base');
+    writeFileSync(resolve(projectRoot, updatePath), '# Transaction result\n');
+    writeFileSync(resolve(projectRoot, createPath), '# Created\n');
+    rmSync(resolve(projectRoot, deletePath));
+
+    const result = await commitWipTransaction(
+      shadow,
+      writer,
+      'checkpoint: base',
+      'database: result',
+      [
+        {
+          path: updatePath,
+          before: '# Transaction base\n',
+          after: '# Transaction result\n',
+        },
+        { path: createPath, before: null, after: '# Created\n' },
+        { path: deletePath, before: '# Delete me\n', after: null },
+      ],
+      'main',
+      prepared,
+    );
+
+    const sg = shadowGit(shadow);
+    expect((await sg.raw('show', `${result.baseSha}:${updatePath}`)).trim()).toBe(
+      '# Transaction base',
+    );
+    expect((await sg.raw('show', `${result.baseSha}:${deletePath}`)).trim()).toBe('# Delete me');
+    await expect(
+      Promise.resolve(sg.raw('show', `${result.baseSha}:${createPath}`)),
+    ).rejects.toThrow();
+    expect((await sg.raw('show', `${result.resultSha}:${updatePath}`)).trim()).toBe(
+      '# Transaction result',
+    );
+    expect((await sg.raw('show', `${result.resultSha}:${createPath}`)).trim()).toBe('# Created');
+    await expect(
+      Promise.resolve(sg.raw('show', `${result.resultSha}:${deletePath}`)),
+    ).rejects.toThrow();
+    expect((await sg.raw('show', `${result.resultSha}:${unrelatedPath}`)).trim()).toBe(
+      '# Preserve me',
+    );
+    expect((await sg.raw('log', '-1', '--format=%P', result.resultSha)).trim()).toBe(
+      result.baseSha,
+    );
+    expect((await sg.raw('rev-parse', `refs/wip/main/${writer.id}`)).trim()).toBe(result.resultSha);
   });
 
   test('creates commit on refs/wip/<branch>/<writer-id>', async () => {
