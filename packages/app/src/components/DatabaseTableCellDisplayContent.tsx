@@ -423,14 +423,16 @@ export function DatabaseTableCellDisplayContent({
               type="button"
               variant="ghost"
               disabled={mutationLocked || proposed}
-              className="h-auto min-w-0 max-w-full flex-1 justify-start truncate rounded-none px-0 py-0 text-left font-inherit hover:bg-transparent"
+              className="h-auto min-w-0 max-w-full flex-1 justify-start truncate rounded-none px-0 py-0 text-left font-inherit font-medium text-foreground text-sm hover:bg-transparent hover:text-foreground disabled:opacity-100"
               aria-label={`Edit ${property.name} for ${notionSurface ? 'page' : 'record'} ${recordLabel}`}
               onClick={() => onBeginEdit(record, property)}
             >
               <span className="truncate">{displayedText}</span>
             </Button>
           ) : (
-            <span className="min-w-0 flex-1 truncate">{displayedText}</span>
+            <span className="min-w-0 flex-1 truncate font-medium text-foreground text-sm">
+              {displayedText}
+            </span>
           )}
         </div>
       ) : isDatabaseCellEditable(property) && onEdit && !ghostCreated ? (

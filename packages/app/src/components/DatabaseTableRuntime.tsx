@@ -253,13 +253,15 @@ export function DatabaseTable({
     const invalid = record.invalidValues?.[property.id];
     if (!onEdit || mutationLocked || !isDatabaseCellEditable(property)) return;
     setEditError(null);
+    const draft =
+      invalid === undefined
+        ? initialCellDraft(property, current)
+        : invalidExternalValueText(invalid);
     setEditing({
       recordId: record.id,
       propertyId: property.id,
-      draft:
-        invalid === undefined
-          ? initialCellDraft(property, current)
-          : invalidExternalValueText(invalid),
+      draft,
+      initialDraft: draft,
     });
     setGridAnnouncement(`Editing ${property.name}. Press Enter to save or Escape to cancel.`);
   };

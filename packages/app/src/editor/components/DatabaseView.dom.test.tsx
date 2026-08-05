@@ -8,9 +8,18 @@ import {
   waitFor,
 } from '@testing-library/react';
 import { StrictMode } from 'react';
+import * as actualSonner from 'sonner';
 import { resetDatabaseLinkedViewCacheForTests } from '@/lib/database-linked-view-cache';
 import { DatabaseView, databaseViewTabActionToInitialAction } from './DatabaseView';
 import { JsxComponentHostProvider } from './jsx-host-context';
+
+const toastError = mock(() => {});
+const toastMock = Object.assign(
+  mock(() => ''),
+  actualSonner.toast,
+  { error: toastError },
+);
+mock.module('sonner', () => ({ ...actualSonner, toast: toastMock }));
 
 const originalFetch = globalThis.fetch;
 const originalHash = window.location.hash;
@@ -99,6 +108,7 @@ function expectInlineHistoryAction(name: 'Undo change' | 'Redo change'): void {
 
 afterEach(() => {
   cleanup();
+  toastError.mockClear();
   // The linked-view cache is module state that useDatabaseReadModel seeds from
   // on mount, so one test's snapshot otherwise arrives as the next test's
   // initial state. DatabaseTableDialog and database-read-model reset it too.
@@ -2205,9 +2215,17 @@ describe('DatabaseView', () => {
     undoBlocked = true;
     clickInlineHistoryAction('Undo change');
     await waitFor(() => expect(undoCalls).toBe(9));
-    expect((await screen.findByRole('alert')).textContent).toContain(
-      'The database changed while this action was in progress. Reload the latest state.',
+    await waitFor(() =>
+      expect(toastError).toHaveBeenCalledWith(
+        'The database changed while this action was in progress. Reload the latest state.',
+        { id: 'inline-database-mutation-error' },
+      ),
     );
+    expect(
+      screen.queryByText(
+        'The database changed while this action was in progress. Reload the latest state.',
+      ),
+    ).toBeNull();
     expect(screen.getByTestId('inline-save-feedback')).toBeTruthy();
     undoBlocked = false;
     const titleCell = document.querySelector(

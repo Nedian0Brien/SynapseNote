@@ -385,10 +385,12 @@ export function useDatabaseTableRuntimeState({
     }
 
     setEditError(null);
+    const draft = initialCellDraft(renderedTitleProperty, record.values[renderedTitleProperty.id]);
     setEditing({
       recordId: record.id,
       propertyId: renderedTitleProperty.id,
-      draft: initialCellDraft(renderedTitleProperty, record.values[renderedTitleProperty.id]),
+      draft,
+      initialDraft: draft,
     });
     focusCreatedRecordConsumedRef.current = focusToken;
   }, [

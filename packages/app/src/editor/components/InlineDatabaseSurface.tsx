@@ -4,6 +4,8 @@ import {
   type DatabaseLinkedViewSettings,
 } from '@nedian0brien/synapsenote-core';
 import { Braces, ListChecks, X } from 'lucide-react';
+import { useEffect } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { databaseUiProblemMessage } from '@/lib/database-ui-problem';
 import { cn } from '@/lib/utils';
@@ -170,6 +172,10 @@ export function InlineDatabaseSurface({
   const inlinePropertiesOpen = inlineOverlayPropertiesOpen;
   const inlineSortTargetId = inlineOverlaySortTargetId;
   const inlineFilterTargetId = inlineOverlayFilterTargetId;
+  useEffect(() => {
+    if (!inlineMutationError) return;
+    toast.error(inlineMutationError, { id: 'inline-database-mutation-error' });
+  }, [inlineMutationError]);
   if (!reference.success) {
     const autoCreateBlank = create === 'blank';
     return (
@@ -445,14 +451,6 @@ export function InlineDatabaseSurface({
             : inlineSaveFeedback === 'undone'
               ? 'Undone'
               : 'Redone'}
-        </div>
-      ) : null}
-      {inlineMutationError ? (
-        <div
-          className="border-b border-destructive/30 bg-destructive/5 px-4 py-2 text-destructive text-xs"
-          role="alert"
-        >
-          {inlineMutationError}
         </div>
       ) : null}
       {replacementPickerOpen ? (

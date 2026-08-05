@@ -3155,17 +3155,27 @@ describe('DatabaseTableDialog', () => {
     const titleOpenButton = document.querySelector<HTMLButtonElement>(
       '[data-record-title-open="rec_first"]',
     );
+    const titleEditButton = screen.getByRole('button', {
+      name: 'Edit Title for page First task',
+    });
     const row = document.querySelector<HTMLElement>('[data-record-id="rec_first"]');
     const rowHeightBeforeEdit = row?.style.height;
     expect(titleOpenButton?.getAttribute('data-variant')).toBe('ghost');
     expect(titleOpenButton?.className).toContain('size-5');
     expect(titleOpenButton?.querySelector('[aria-hidden="true"]')).toBeTruthy();
+    expect(titleEditButton.className).toContain('text-sm');
+    expect(titleEditButton.className).toContain('font-medium');
+    expect(titleEditButton.className).toContain('text-foreground');
+    expect(titleEditButton.className).toContain('disabled:opacity-100');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit Title for page First task' }));
+    fireEvent.click(titleEditButton);
     const titleEditor = screen.getByRole('textbox', { name: 'Edit Title' });
     await waitFor(() => expect(document.activeElement).toBe(titleEditor));
     expect(titleEditor.className).toContain('h-5');
     expect(titleEditor.className).not.toContain('h-8');
+    expect(titleEditor.className).toContain('text-sm');
+    expect(titleEditor.className).toContain('font-medium');
+    expect(titleEditor.className).toContain('text-foreground');
     expect(row?.style.height).toBe(rowHeightBeforeEdit);
     expect(document.querySelector('[data-title-cell-editing]')).toBeTruthy();
     expect(
@@ -3564,6 +3574,30 @@ describe('DatabaseTableDialog', () => {
 
     await waitFor(() => expect(screen.queryByRole('textbox', { name: 'Edit Title' })).toBeNull());
     expect(edits).toEqual(['Saved on blur']);
+  });
+
+  test('closes an unchanged title editor on blur without saving', async () => {
+    const edits: unknown[] = [];
+    const view = render(
+      <DatabaseTable
+        source={source}
+        result={queryResult()}
+        notionSurface
+        onOpen={() => {}}
+        onEdit={(_record, _property, value) => edits.push(value)}
+      />,
+    );
+    const budgetCell = view.container.querySelector<HTMLElement>(
+      '[data-record-id="rec_first"] [data-property-id="prop_budget"]',
+    );
+    if (!budgetCell) throw new Error('expected budget cell');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Title for page First task' }));
+    const input = screen.getByRole('textbox', { name: 'Edit Title' });
+    fireEvent.blur(input, { relatedTarget: budgetCell });
+
+    await waitFor(() => expect(screen.queryByRole('textbox', { name: 'Edit Title' })).toBeNull());
+    expect(edits).toEqual([]);
   });
 
   test('does not double-save when focus moves to a control inside the title editor', () => {

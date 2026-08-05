@@ -271,6 +271,10 @@ export function DatabaseTableCellEditingContent({
             const editingContainer = event.currentTarget.closest('[data-title-cell-editing]');
             const nextTarget = event.relatedTarget;
             if (nextTarget instanceof Node && editingContainer?.contains(nextTarget)) return;
+            if (event.currentTarget.value === editing.initialDraft) {
+              setEditing(null);
+              return;
+            }
             onSaveEdit(record, property, event.currentTarget.value);
           }}
           onKeyDown={(event) => {
@@ -280,7 +284,7 @@ export function DatabaseTableCellEditingContent({
           }}
           className={cn(
             property.type === 'title'
-              ? 'h-5 min-w-0 flex-1 rounded-none border-0 bg-transparent px-0 py-0 font-inherit leading-5 shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent'
+              ? 'h-5 min-w-0 flex-1 rounded-none border-0 bg-transparent px-0 py-0 font-inherit font-medium text-foreground text-sm leading-5 shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent'
               : 'h-8',
             notionSurface &&
               property.type !== 'title' &&
