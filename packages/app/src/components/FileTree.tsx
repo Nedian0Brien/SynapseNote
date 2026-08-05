@@ -43,7 +43,7 @@ import {
   UnfoldVertical,
 } from 'lucide-react';
 import { __iconNode as botIcon } from 'lucide-react/dist/esm/icons/bot';
-import { __iconNode as layoutDashboardIcon } from 'lucide-react/dist/esm/icons/layout-dashboard';
+import { __iconNode as folderInputIcon } from 'lucide-react/dist/esm/icons/folder-input';
 import { __iconNode as link2Icon } from 'lucide-react/dist/esm/icons/link-2';
 import { useTheme } from 'next-themes';
 import {
@@ -353,7 +353,7 @@ function createLucideSpriteSymbol(id: string, iconNode: IconNode): string {
 const FILE_TREE_DECORATION_SPRITE_SHEET = `<svg data-icon-sprite aria-hidden="true" width="0" height="0">
   ${createLucideSpriteSymbol(LINK_DECORATION_ICON_ID, link2Icon)}
   ${createLucideSpriteSymbol(AGENT_DECORATION_ICON_ID, botIcon)}
-  ${createLucideSpriteSymbol(FOLDER_OVERVIEW_ICON_ID, layoutDashboardIcon)}
+  ${createLucideSpriteSymbol(FOLDER_OVERVIEW_ICON_ID, folderInputIcon)}
   ${MARKDOWN_FILE_ICON_SYMBOL}
 </svg>`;
 
