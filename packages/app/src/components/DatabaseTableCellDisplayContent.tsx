@@ -393,46 +393,45 @@ export function DatabaseTableCellDisplayContent({
             fileTags
           );
         })()
-      ) : property.type === 'title' && onOpen ? (
+      ) : property.type === 'title' ? (
         <div
           className="flex min-w-0 max-w-full items-center gap-1 overflow-hidden"
           data-title-cell-content
         >
-          <Button
-            type="button"
-            variant={notionSurface ? 'ghost' : 'link'}
-            disabled={proposedRecord !== undefined}
-            className={cn(
-              'h-auto min-w-0 max-w-full flex-1 justify-start truncate px-1 py-0.5 text-left font-inherit',
-              notionSurface && 'text-foreground hover:bg-transparent hover:underline',
-            )}
-            aria-label={recordActionLabel('Open')}
-            data-record-title-link={record.id}
-            onClick={(event) => {
-              event.stopPropagation();
-              onOpen(record);
-            }}
-          >
-            {notionSurface ? (
-              <FileText
-                className="mr-1.5 size-3.5 shrink-0 text-muted-foreground"
-                aria-hidden="true"
-              />
-            ) : null}
-            {displayedText}
-          </Button>
-          {onEdit && !ghostCreated && !notionSurface ? (
+          {onOpen ? (
             <Button
               type="button"
               variant="ghost"
               size="icon-sm"
+              disabled={proposedRecord !== undefined}
+              className="size-5 shrink-0 p-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
+              aria-label={recordActionLabel('Open')}
+              data-record-title-link={record.id}
+              data-record-title-open={record.id}
+              onClick={(event) => {
+                event.stopPropagation();
+                onOpen(record);
+              }}
+            >
+              <FileText className="size-3.5 shrink-0" aria-hidden="true" />
+            </Button>
+          ) : notionSurface ? (
+            <FileText className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+          ) : null}
+          {onEdit && !ghostCreated ? (
+            <Button
+              type="button"
+              variant="ghost"
               disabled={mutationLocked || proposed}
+              className="h-auto min-w-0 max-w-full flex-1 justify-start truncate rounded-none px-0 py-0 text-left font-inherit hover:bg-transparent"
               aria-label={`Edit ${property.name} for ${notionSurface ? 'page' : 'record'} ${recordLabel}`}
               onClick={() => onBeginEdit(record, property)}
             >
-              <Pencil />
+              <span className="truncate">{displayedText}</span>
             </Button>
-          ) : null}
+          ) : (
+            <span className="min-w-0 flex-1 truncate">{displayedText}</span>
+          )}
         </div>
       ) : isDatabaseCellEditable(property) && onEdit && !ghostCreated ? (
         <Button

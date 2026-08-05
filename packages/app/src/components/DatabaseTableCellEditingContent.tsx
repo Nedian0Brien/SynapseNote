@@ -5,7 +5,7 @@ import type {
   ProjectedDatabaseRecord,
   ProjectedDatabaseRelationRecord,
 } from '@nedian0brien/synapsenote-core';
-import { Check, X } from 'lucide-react';
+import { Check, FileText, X } from 'lucide-react';
 import type { Dispatch, SetStateAction } from 'react';
 import { DatabaseDateCellEditor } from '@/components/DatabaseDateCellEditor';
 import { DatabaseFilesCellEditor } from '@/components/DatabaseFilesCellEditor';
@@ -31,7 +31,7 @@ import { multiSelectDraftValues } from './database-table-utils';
 interface DatabaseTableCellEditingContentProps
   extends Pick<
     DatabaseTableProps,
-    'onRelationSearch' | 'onCreateSelectOption' | 'onReorderSelectOptions'
+    'onRelationSearch' | 'onCreateSelectOption' | 'onReorderSelectOptions' | 'onOpen'
   > {
   property: DatabaseProperty;
   record: ProjectedDatabaseRecord;
@@ -40,6 +40,7 @@ interface DatabaseTableCellEditingContentProps
   relationRecords: readonly ProjectedDatabaseRelationRecord[];
   fileStates: DatabaseQueryResult['fileStates'];
   personLabels: { agent: string; inactive: string };
+  recordLabel: string;
   editing: DatabaseTableCellEditing;
   onSaveEdit: (
     record: ProjectedDatabaseRecord,
@@ -59,10 +60,12 @@ export function DatabaseTableCellEditingContent({
   relationRecords,
   fileStates,
   personLabels,
+  recordLabel,
   editing,
   onRelationSearch,
   onCreateSelectOption,
   onReorderSelectOptions,
+  onOpen,
   onSaveEdit,
   onCancelEdit,
   setEditing,
@@ -94,7 +97,35 @@ export function DatabaseTableCellEditingContent({
   }
 
   return (
-    <div className={cn('flex min-w-56 items-center gap-1', notionSurface && 'w-full min-w-0')}>
+    <div
+      className={cn(
+        'flex min-w-56 items-center gap-1',
+        notionSurface && 'w-full min-w-0',
+        property.type === 'title' && 'w-full min-w-0 max-w-full overflow-hidden',
+      )}
+      data-title-cell-content={property.type === 'title' ? '' : undefined}
+      data-title-cell-editing={property.type === 'title' ? '' : undefined}
+    >
+      {property.type === 'title' ? (
+        onOpen ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="size-5 shrink-0 p-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
+            aria-label={`Open ${notionSurface ? 'page' : 'record'} ${recordLabel}`}
+            data-record-title-open={record.id}
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpen(record);
+            }}
+          >
+            <FileText className="size-3.5 shrink-0" aria-hidden="true" />
+          </Button>
+        ) : notionSurface ? (
+          <FileText className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+        ) : null
+      ) : null}
       {property.type === 'checkbox' ? (
         <Checkbox
           autoFocus
@@ -241,8 +272,11 @@ export function DatabaseTableCellEditingContent({
             if (event.key === 'Escape') onCancelEdit(record, property);
           }}
           className={cn(
-            'h-8',
+            property.type === 'title'
+              ? 'h-5 min-w-0 flex-1 rounded-none border-0 bg-transparent px-0 py-0 font-inherit leading-5 shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent'
+              : 'h-8',
             notionSurface &&
+              property.type !== 'title' &&
               'rounded-none border-0 bg-transparent px-0 shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent',
           )}
         />

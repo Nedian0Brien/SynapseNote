@@ -106,10 +106,12 @@ export function DatabaseTableCellContent({
           relationRecords={relationRecords}
           fileStates={fileStates}
           personLabels={personLabels}
+          recordLabel={recordLabel}
           editing={editing}
           onRelationSearch={onRelationSearch}
           onCreateSelectOption={onCreateSelectOption}
           onReorderSelectOptions={onReorderSelectOptions}
+          onOpen={onOpen}
           onSaveEdit={onSaveEdit}
           onCancelEdit={onCancelEdit}
           setEditing={setEditing}

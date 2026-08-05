@@ -3076,18 +3076,21 @@ describe('DatabaseTableDialog', () => {
     });
   });
 
-  test('opens the canonical record from a title cell while keeping title editing explicit', () => {
+  test('edits a title from its text and opens the record only from the document icon', () => {
     const onOpen = mock(() => {});
     render(
       <DatabaseTable source={source} result={queryResult()} onOpen={onOpen} onEdit={() => {}} />,
     );
-    const titleLink = document.querySelector<HTMLButtonElement>(
-      '[data-record-title-link="rec_first"]',
+    const openButton = document.querySelector<HTMLButtonElement>(
+      '[data-record-title-open="rec_first"]',
     );
-    expect(titleLink?.textContent).toBe('First task');
-    expect(screen.getByLabelText('Edit Title for record rec_first')).toBeTruthy();
-    if (!titleLink) throw new Error('canonical title link is missing');
-    fireEvent.click(titleLink);
+    expect(openButton?.querySelector('[aria-hidden="true"]')).toBeTruthy();
+    fireEvent.click(screen.getByLabelText('Edit Title for record rec_first'));
+    expect(onOpen).not.toHaveBeenCalled();
+    expect(screen.getByRole('textbox', { name: 'Edit Title' })).toBeTruthy();
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Edit Title' }), { key: 'Escape' });
+    if (!openButton) throw new Error('canonical title document button is missing');
+    fireEvent.click(screen.getByLabelText('Open record rec_first'));
     expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'rec_first' }));
   });
 
@@ -3139,18 +3142,35 @@ describe('DatabaseTableDialog', () => {
     expect(screen.getByRole('columnheader', { name: 'TitleTitle' })).toBeTruthy();
   });
 
-  test('uses document-native title treatment for inline page links', () => {
+  test('keeps the inline document icon and row geometry while editing the title in place', async () => {
     render(
-      <DatabaseTable source={source} result={queryResult()} notionSurface onOpen={() => {}} />,
+      <DatabaseTable
+        source={source}
+        result={queryResult()}
+        notionSurface
+        onOpen={() => {}}
+        onEdit={() => {}}
+      />,
     );
-    const titleLink = document.querySelector<HTMLButtonElement>(
-      '[data-record-title-link="rec_first"]',
+    const titleOpenButton = document.querySelector<HTMLButtonElement>(
+      '[data-record-title-open="rec_first"]',
     );
-    expect(titleLink?.getAttribute('data-variant')).toBe('ghost');
-    expect(titleLink?.className).toContain('text-foreground');
-    expect(titleLink?.className).toContain('hover:underline');
-    expect(screen.queryByRole('button', { name: 'Edit Title for page First task' })).toBeNull();
-    expect(titleLink?.querySelector('[aria-hidden="true"]')).toBeTruthy();
+    const row = document.querySelector<HTMLElement>('[data-record-id="rec_first"]');
+    const rowHeightBeforeEdit = row?.style.height;
+    expect(titleOpenButton?.getAttribute('data-variant')).toBe('ghost');
+    expect(titleOpenButton?.className).toContain('size-5');
+    expect(titleOpenButton?.querySelector('[aria-hidden="true"]')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Title for page First task' }));
+    const titleEditor = screen.getByRole('textbox', { name: 'Edit Title' });
+    await waitFor(() => expect(document.activeElement).toBe(titleEditor));
+    expect(titleEditor.className).toContain('h-5');
+    expect(titleEditor.className).not.toContain('h-8');
+    expect(row?.style.height).toBe(rowHeightBeforeEdit);
+    expect(document.querySelector('[data-title-cell-editing]')).toBeTruthy();
+    expect(
+      document.querySelector('[data-title-cell-editing] [data-record-title-open="rec_first"]'),
+    ).toBeTruthy();
   });
 
   test('renders inline select values as compact page-property tags', () => {
