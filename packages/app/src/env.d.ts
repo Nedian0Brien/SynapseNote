@@ -18,7 +18,7 @@ declare module 'lucide-react/dist/esm/icons/bot' {
   export const __iconNode: [string, Record<string, string>][];
 }
 
-declare module 'lucide-react/dist/esm/icons/info' {
+declare module 'lucide-react/dist/esm/icons/layout-dashboard' {
   export const __iconNode: [string, Record<string, string>][];
 }
 

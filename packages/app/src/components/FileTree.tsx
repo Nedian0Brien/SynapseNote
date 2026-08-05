@@ -43,7 +43,7 @@ import {
   UnfoldVertical,
 } from 'lucide-react';
 import { __iconNode as botIcon } from 'lucide-react/dist/esm/icons/bot';
-import { __iconNode as infoIcon } from 'lucide-react/dist/esm/icons/info';
+import { __iconNode as layoutDashboardIcon } from 'lucide-react/dist/esm/icons/layout-dashboard';
 import { __iconNode as link2Icon } from 'lucide-react/dist/esm/icons/link-2';
 import { useTheme } from 'next-themes';
 import {
@@ -353,7 +353,7 @@ function createLucideSpriteSymbol(id: string, iconNode: IconNode): string {
 const FILE_TREE_DECORATION_SPRITE_SHEET = `<svg data-icon-sprite aria-hidden="true" width="0" height="0">
   ${createLucideSpriteSymbol(LINK_DECORATION_ICON_ID, link2Icon)}
   ${createLucideSpriteSymbol(AGENT_DECORATION_ICON_ID, botIcon)}
-  ${createLucideSpriteSymbol(FOLDER_OVERVIEW_ICON_ID, infoIcon)}
+  ${createLucideSpriteSymbol(FOLDER_OVERVIEW_ICON_ID, layoutDashboardIcon)}
   ${MARKDOWN_FILE_ICON_SYMBOL}
 </svg>`;
 
@@ -447,7 +447,7 @@ const FILE_TREE_CREATION_CLEARED_CSS = `
 
 const FILE_TREE_FOLDER_OVERVIEW_CSS = `
   [data-item-type="folder"] > [data-item-section="action"] {
-    width: calc(var(--trees-action-lane-width) * 2);
+    width: calc(var(--trees-action-lane-width) * 2 + 4px);
   }
   [data-type="folder-overview-trigger"] {
     all: unset;
@@ -455,10 +455,9 @@ const FILE_TREE_FOLDER_OVERVIEW_CSS = `
     justify-content: center;
     width: var(--trees-action-lane-width);
     height: calc(var(--trees-row-height) - var(--trees-focus-ring-width) * 2);
-    margin: var(--trees-focus-ring-width) 0 var(--trees-focus-ring-width)
+    margin: var(--trees-focus-ring-width) 4px var(--trees-focus-ring-width)
       var(--trees-focus-ring-width);
-    border-top-left-radius: var(--trees-border-radius);
-    border-bottom-left-radius: var(--trees-border-radius);
+    border-radius: var(--trees-border-radius);
     color: var(--trees-fg-muted);
     fill: currentColor;
     cursor: pointer;
@@ -475,6 +474,9 @@ const FILE_TREE_FOLDER_OVERVIEW_CSS = `
   }
   [data-type="folder-overview-trigger"][hidden] {
     display: none;
+  }
+  [data-type="context-menu-trigger"] {
+    border-radius: var(--trees-border-radius);
   }
 `;
 
