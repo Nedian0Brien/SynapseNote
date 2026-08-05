@@ -5699,6 +5699,11 @@ describe('DatabaseTableDialog', () => {
 
   test('creates a new record directly and refreshes the canonical table', async () => {
     let commitCalls = 0;
+    let releaseDraft: (() => void) | undefined;
+    const draftGate = new Promise<void>((resolve) => {
+      releaseDraft = resolve;
+    });
+    let draftStarted = false;
     globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = String(input);
       const body = init?.body ? (JSON.parse(String(init.body)) as { action?: string }) : {};
@@ -5726,6 +5731,8 @@ describe('DatabaseTableDialog', () => {
         });
       }
       if (path === '/api/databases/plan' && body.action === 'create_draft') {
+        draftStarted = true;
+        await draftGate;
         return Response.json({
           action: 'create_draft',
           draft: { id: 'draft_create', revision: hash },
@@ -5809,6 +5816,10 @@ describe('DatabaseTableDialog', () => {
       target: { value: 'Created task' },
     });
     fireEvent.keyDown(newRowTitle, { key: 'Enter' });
+    await waitFor(() => expect(draftStarted).toBe(true));
+    expect((screen.getByTestId('database-new-row-title') as HTMLInputElement).disabled).toBe(false);
+    expect(screen.queryByTestId('database-save-indicator')).toBeNull();
+    releaseDraft?.();
     await waitFor(() => expect(commitCalls).toBe(1));
     await waitFor(() =>
       expect(document.activeElement).toBe(screen.getByTestId('database-new-row-title')),

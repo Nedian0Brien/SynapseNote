@@ -153,6 +153,7 @@ export function useDatabaseWorkspaceRecordCommands(context: DatabaseWorkspaceCon
       });
       runMutation(desiredState, 'ui-option-create', 'Create and assign Select option failed', {
         policy: { operation: 'option-create', actor: 'human', principalId: 'user:local' },
+        background: true,
         presentation: 'silent',
       });
       return true;
@@ -180,6 +181,7 @@ export function useDatabaseWorkspaceRecordCommands(context: DatabaseWorkspaceCon
       });
       runMutation(desiredState, 'ui-option-reorder', 'Reorder Select options failed', {
         policy: { operation: 'option-reorder', actor: 'human', principalId: 'user:local' },
+        background: true,
         presentation: 'silent',
       });
       return true;
@@ -279,6 +281,8 @@ export function useDatabaseWorkspaceRecordCommands(context: DatabaseWorkspaceCon
       setNewRecordTitle('');
       runMutation(desiredState, 'ui-record-create', `Database ${itemNoun} creation failed`, {
         policy: { operation: 'record-create', actor: 'human', principalId: 'user:local' },
+        background: true,
+        presentation: 'silent',
         onCommitted: options.focusAfterCreate
           ? () => setNewRecordFocusRequest((current: number | null) => (current ?? 0) + 1)
           : undefined,
