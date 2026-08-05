@@ -1905,6 +1905,8 @@ describe('DatabaseView', () => {
     let commitCalls = 0;
     let undoCalls = 0;
     let undoBlocked = false;
+    let canonicalFirstTitle = 'First task';
+    let releaseTitleRefresh: (() => void) | undefined;
     globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = String(input);
       if (path.startsWith('/api/document?docName=tasks%2Ffirst')) {
@@ -1972,33 +1974,43 @@ describe('DatabaseView', () => {
       if (path === '/api/databases/query') {
         const includeArchived =
           (body.query as { includeArchived?: boolean } | undefined)?.includeArchived === true;
-        return Response.json({
-          sourceId: source.id,
-          snapshotRevision: hash,
-          matched: 2,
-          returned: 2,
-          isComplete: true,
-          nextCursor: null,
-          truncatedBy: null,
-          indexFreshness: 'snapshot',
-          records: [
-            {
-              id: 'rec_first',
-              path: 'tasks/first.md',
-              revision: hash,
-              values: { prop_title: 'First task', prop_status: 'open' },
-              ...(includeArchived ? { archivedAt: '2026-07-20T00:00:00.000Z' } : {}),
-            },
-            {
-              id: 'rec_second',
-              path: 'tasks/second.md',
-              revision: hash,
-              values: { prop_title: 'Second task', prop_status: 'open' },
-              ...(includeArchived ? { archivedAt: '2026-07-20T00:00:00.000Z' } : {}),
-            },
-          ],
-          aggregation: null,
-        });
+        const queryResponse = () =>
+          Response.json({
+            sourceId: source.id,
+            snapshotRevision: hash,
+            matched: 2,
+            returned: 2,
+            isComplete: true,
+            nextCursor: null,
+            truncatedBy: null,
+            indexFreshness: 'snapshot',
+            records: [
+              {
+                id: 'rec_first',
+                path: 'tasks/first.md',
+                revision: hash,
+                values: { prop_title: canonicalFirstTitle, prop_status: 'open' },
+                ...(includeArchived ? { archivedAt: '2026-07-20T00:00:00.000Z' } : {}),
+              },
+              {
+                id: 'rec_second',
+                path: 'tasks/second.md',
+                revision: hash,
+                values: { prop_title: 'Second task', prop_status: 'open' },
+                ...(includeArchived ? { archivedAt: '2026-07-20T00:00:00.000Z' } : {}),
+              },
+            ],
+            aggregation: null,
+          });
+        if (commitCalls === 2 && canonicalFirstTitle === 'First task') {
+          return new Promise<Response>((resolve) => {
+            releaseTitleRefresh = () => {
+              canonicalFirstTitle = 'Renamed task';
+              resolve(queryResponse());
+            };
+          });
+        }
+        return queryResponse();
       }
       if (path === '/api/databases/plan') {
         const action = (body as { action?: string }).action;
@@ -2024,6 +2036,7 @@ describe('DatabaseView', () => {
       }
       if (path === '/api/databases/commit') {
         commitCalls += 1;
+        if (commitCalls === 4) canonicalFirstTitle = 'Pasted task';
         return Response.json({
           mutationId: 'mut_inline_edit',
           planId: 'plan_inline_edit',
@@ -2188,6 +2201,13 @@ describe('DatabaseView', () => {
     fireEvent.change(titleInput, { target: { value: 'Renamed task' } });
     fireEvent.keyDown(titleInput, { key: 'Enter' });
     await waitFor(() => expect(commitCalls).toBe(2));
+    await waitFor(() => expect(releaseTitleRefresh).toBeFunction());
+    expect(screen.getByLabelText('Edit Title for page Renamed task')).toBeTruthy();
+    expect(screen.queryByLabelText('Edit Title for page First task')).toBeNull();
+    act(() => releaseTitleRefresh?.());
+    await waitFor(() =>
+      expect(screen.getByLabelText('Edit Title for page Renamed task')).toBeTruthy(),
+    );
     expect(await screen.findByTestId('inline-save-feedback')).toBeTruthy();
     const inlineSurfaceAfterSave = document.querySelector<HTMLElement>(
       '[data-database-inline-surface]',
@@ -2249,7 +2269,7 @@ describe('DatabaseView', () => {
     await waitFor(() => expect(screen.queryByTestId('database-ghost-review')).toBeNull());
     fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0] as HTMLElement);
     await waitFor(() => expect(document.querySelector('[data-database-workspace]')).toBeNull());
-    expect(screen.queryByLabelText('More actions for page First task')).toBeNull();
+    expect(screen.queryByLabelText('More actions for page Pasted task')).toBeNull();
     fireEvent.click(
       screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
     );
@@ -2333,7 +2353,7 @@ describe('DatabaseView', () => {
     );
     if (workspaceClose) fireEvent.click(workspaceClose);
     await waitFor(() => expect(document.querySelector('[data-database-workspace]')).toBeNull());
-    fireEvent.click(screen.getByLabelText('Open page First task'));
+    fireEvent.click(screen.getByLabelText('Open page Pasted task'));
     expect(await screen.findByText('Linked canonical body.')).toBeTruthy();
     expect(window.location.hash).toBe(originalHash);
     fireEvent.click(screen.getByRole('button', { name: 'Open full page' }));
@@ -2343,7 +2363,7 @@ describe('DatabaseView', () => {
       screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
     );
     fireEvent.click(screen.getByRole('menuitem', { name: 'Show archived' }));
-    expect(screen.queryByLabelText('More actions for page First task')).toBeNull();
+    expect(screen.queryByLabelText('More actions for page Pasted task')).toBeNull();
     await waitFor(() =>
       expect(
         requests.filter((request) => request.path === '/api/databases/query').at(-1)?.body,

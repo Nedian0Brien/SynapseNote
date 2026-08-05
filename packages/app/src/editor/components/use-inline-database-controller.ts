@@ -71,6 +71,33 @@ export function useInlineDatabaseController({
     mode,
     controller: controllerState,
   });
+  // A successful commit and the canonical refresh are separate requests. Keep
+  // each optimistic cell visible until the refreshed query contains that exact
+  // value; clearing it when commit returns exposes the preceding title for one
+  // render. Failure paths still clear their optimistic keys immediately in the
+  // mutation controller.
+  useEffect(() => {
+    if (read.state.status !== 'ready' || !read.state.result || !read.linkedSource) return;
+    const canonicalValues = new Map<string, unknown>();
+    for (const record of read.state.result.records) {
+      for (const property of read.linkedSource.properties) {
+        canonicalValues.set(`${record.id}:${property.id}`, record.values[property.id]);
+      }
+    }
+    setInlineOptimisticCellValues((current) => {
+      if (current.size === 0) return current;
+      const next = new Map(current);
+      for (const [key, value] of current) {
+        if (
+          canonicalValues.has(key) &&
+          JSON.stringify(canonicalValues.get(key)) === JSON.stringify(value)
+        ) {
+          next.delete(key);
+        }
+      }
+      return next.size === current.size ? current : next;
+    });
+  }, [read.linkedSource, read.state, setInlineOptimisticCellValues]);
   const conflictRefreshObservedRef = useRef(false);
   useEffect(() => {
     if (mutation.errorKind !== 'conflict') {

@@ -94,7 +94,6 @@ export function useDatabaseMutationController({
           policy.onFailed?.();
           return;
         }
-        clearOptimistic();
         // The history model is the single owner of exact server tokens. A
         // forward mutation installs the returned undo token and invalidates
         // redo as part of the same state transition.
