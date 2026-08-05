@@ -279,7 +279,7 @@ interface CommitGit {
   snapshot(
     writer: WriterIdentity,
     message: string,
-    opts?: { skipWhenUnchanged?: boolean },
+    opts?: { skipWhenUnchanged?: boolean; paths?: readonly string[] },
   ): Promise<string>;
   hashBlob(path: string): Promise<string>;
 }
@@ -1545,6 +1545,7 @@ export class DatabaseCommitEngine {
         );
       }
       const git = this.#gitForActor();
+      const snapshotPaths = [...new Set(entry.receipt.files.map((file) => file.path))].sort();
       const resultGitHead = await git.snapshot(
         this.#writerForActor(input.actor),
         databaseTimelineCommitMessage({
@@ -1555,6 +1556,7 @@ export class DatabaseCommitEngine {
             relative(this.#projectDir, this.#contentDir).split(sep).join('/'),
           ),
         }),
+        { paths: snapshotPaths },
       );
       const receipt = DatabaseUndoReceiptSchema.parse({
         version: 1,
@@ -1725,26 +1727,8 @@ export class DatabaseCommitEngine {
     draft: ReturnType<DatabasePlanEngine['getDraft']>;
   }): Promise<DatabaseCommitResult> {
     const { input, plan, idempotencyKeyHash, requestFingerprint, draft } = context;
-    const shadow = this.#gitOverride ? null : this.#getShadow();
-    if (!this.#gitOverride && !shadow) {
-      throw new DatabaseCommitError(
-        'commit_unavailable',
-        'Database commit requires the shadow Git repository',
-      );
-    }
     const writer = databaseWriterIdentity(input.actor);
-    const git: CommitGit =
-      this.#gitOverride ??
-      ({
-        snapshot: (identity, message) =>
-          commitWip(shadow as ShadowHandle, identity, '', message, this.#branch()),
-        hashBlob: async (path) => {
-          const oid = (
-            await shadowGit(shadow as ShadowHandle).raw('hash-object', '-w', '--', path)
-          ).trim();
-          return `sha1:${oid}`;
-        },
-      } satisfies CommitGit);
+    const git = this.#gitForActor();
     const mutationId = `mut_${compactUuid(this.#generateUuid)}`;
     const undoTokenId = `undo_${compactUuid(this.#generateUuid)}`;
     const undoToken = `${undoTokenId}.${compactUuid(this.#generateUuid)}`;
@@ -1950,6 +1934,7 @@ export class DatabaseCommitEngine {
         operation: recordDiff.action,
       });
     }
+    const snapshotPaths = [...new Set(targets.map((target) => target.projectPath))].sort();
     const moved: Array<{ target: CommitTarget; backupPath: string | null }> = [];
     let baseGitHead = '';
     try {
@@ -1969,7 +1954,7 @@ export class DatabaseCommitEngine {
       baseGitHead = await git.snapshot(
         writer,
         `checkpoint: database transaction base ${mutationId}`,
-        { skipWhenUnchanged: true },
+        { skipWhenUnchanged: true, paths: snapshotPaths },
       );
       await this.#fs.mkdir(stagingRoot);
       const staged = new Map<string, string>();
@@ -2064,6 +2049,7 @@ export class DatabaseCommitEngine {
             contentRelative,
           ),
         }),
+        { paths: snapshotPaths },
       );
       const receipt = DatabaseTransactionReceiptSchema.parse({
         version: 1,

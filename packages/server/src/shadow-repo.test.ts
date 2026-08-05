@@ -233,6 +233,68 @@ describe('commitWip', () => {
     expect((await sg.raw('rev-list', '--count', `refs/wip/main/${writer.id}`)).trim()).toBe('2');
   });
 
+  test('path-scoped snapshots capture only the requested files', async () => {
+    const targetPath = 'content/docs/target.md';
+    const unrelatedPath = 'content/docs/unrelated.md';
+    writeFileSync(resolve(projectRoot, targetPath), '# Target v1\n');
+    writeFileSync(resolve(projectRoot, unrelatedPath), '# Unrelated v1\n');
+    await commitWip(shadow, writer, 'content/docs', 'WIP: initial');
+
+    writeFileSync(resolve(projectRoot, targetPath), '# Target v2\n');
+    writeFileSync(resolve(projectRoot, unrelatedPath), '# Unrelated on disk only\n');
+    const options = { paths: [targetPath] } as Parameters<typeof commitWip>[5] & {
+      paths: string[];
+    };
+    const updated = await commitWip(shadow, writer, '', 'WIP: targeted update', 'main', options);
+    const sg = shadowGit(shadow);
+    expect((await sg.raw('show', `${updated}:${targetPath}`)).trim()).toBe('# Target v2');
+    expect((await sg.raw('show', `${updated}:${unrelatedPath}`)).trim()).toBe('# Unrelated v1');
+
+    rmSync(resolve(projectRoot, targetPath));
+    const deleted = await commitWip(shadow, writer, '', 'WIP: targeted delete', 'main', options);
+    const names = (await sg.raw('ls-tree', '-r', '--name-only', deleted)).trim().split('\n');
+    expect(names).not.toContain(targetPath);
+    expect((await sg.raw('show', `${deleted}:${unrelatedPath}`)).trim()).toBe('# Unrelated v1');
+  });
+
+  test('rejects a path-scoped snapshot that escapes the project root', async () => {
+    await expect(
+      commitWip(shadow, writer, '', 'WIP: invalid scope', 'main', {
+        paths: ['../outside.md'],
+      }),
+    ).rejects.toThrow('project-relative');
+    await expect(
+      commitWip(shadow, writer, '', 'WIP: invalid Windows scope', 'main', {
+        paths: ['content\\..\\outside.md'],
+      }),
+    ).rejects.toThrow('project-relative');
+  });
+
+  test('path-scoped base snapshots keep a borrowed branch baseline for absent creates', async () => {
+    const baselineWriter: WriterIdentity = {
+      id: 'git-upstream',
+      name: 'Git Upstream',
+      email: 'git-upstream@synapsenote.local',
+    };
+    const baselinePath = 'content/docs/baseline.md';
+    const createPath = 'content/docs/new-record.md';
+    const unrelatedPath = 'content/docs/unrelated.md';
+    writeFileSync(resolve(projectRoot, baselinePath), '# Baseline\n');
+    await commitWip(shadow, baselineWriter, 'content/docs', 'WIP: baseline');
+    writeFileSync(resolve(projectRoot, unrelatedPath), '# Must not be scanned\n');
+
+    const base = await commitWip(shadow, writer, '', 'WIP: base', 'main', {
+      paths: [createPath],
+      skipWhenUnchanged: true,
+    });
+    const names = (await shadowGit(shadow).raw('ls-tree', '-r', '--name-only', base))
+      .trim()
+      .split('\n');
+    expect(names).toContain(baselinePath);
+    expect(names).not.toContain(createPath);
+    expect(names).not.toContain(unrelatedPath);
+  });
+
   test('creates commit on refs/wip/<branch>/<writer-id>', async () => {
     writeFileSync(resolve(contentDir, 'intro.md'), '# Hello\n');
 

@@ -2,4 +2,4 @@
 '@nedian0brien/synapsenote': patch
 ---
 
-Make database edits faster and more reliable, including during index refreshes and rapid updates.
+Make database edits faster and more reliable, including during index refreshes and rapid updates. Git snapshots now scale with changed database files instead of repository size.

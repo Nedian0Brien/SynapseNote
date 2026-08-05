@@ -25,7 +25,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import { existsSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, lstatSync, readdirSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
   type AutoConsolidationTrigger,
@@ -398,6 +398,35 @@ export interface CommitWipOptions {
    * of the shadow history.
    */
   skipWhenUnchanged?: boolean;
+  /**
+   * Exact project-relative paths to snapshot. Scoped snapshots preserve every
+   * other entry from the writer's current tree, so unrelated working-tree
+   * changes cannot enter a database transaction's audit history.
+   */
+  paths?: readonly string[];
+}
+
+function normalizedSnapshotPaths(paths: readonly string[]): readonly string[] {
+  const unique = new Set<string>();
+  for (const path of paths) {
+    if (
+      path.length === 0 ||
+      path === '.' ||
+      path.startsWith('/') ||
+      path.startsWith('\\') ||
+      /^[A-Za-z]:[\\/]/.test(path) ||
+      path.includes('\0') ||
+      path.split(/[\\/]/).some((part) => part === '..')
+    ) {
+      throw new Error('Path-scoped snapshots require exact project-relative paths');
+    }
+    unique.add(path);
+  }
+  return [...unique].sort();
+}
+
+function literalSnapshotPathspecs(paths: readonly string[]): readonly string[] {
+  return paths.map((path) => `:(literal)${path}`);
 }
 
 export async function commitWip(
@@ -425,6 +454,7 @@ export async function commitWip(
         branch,
         opts?.date,
         opts?.skipWhenUnchanged ?? false,
+        opts?.paths,
       ),
   );
 }
@@ -437,11 +467,13 @@ async function commitWipInner(
   branch = 'main',
   date?: string,
   skipWhenUnchanged = false,
+  paths?: readonly string[],
 ): Promise<string> {
   const tmpIndex = resolve(shadow.gitDir, `index-wip-${writer.id}`);
   const ref = `refs/wip/${branch}/${writer.id}`;
   const sg = shadowGit(shadow);
-  const gitPathspecs = shadowAddPathspecs(contentRoot);
+  const scopedPaths = paths === undefined ? null : normalizedSnapshotPaths(paths);
+  const scopedPathspecs = scopedPaths === null ? null : literalSnapshotPathspecs(scopedPaths);
   // Head and tree come from one `rev-parse`: git accepts both revisions in a
   // single call and every saved process is ~13ms on the commit latency path.
   let refHead: string | null = null;
@@ -457,7 +489,6 @@ async function commitWipInner(
       if (!head || !tree) throw new Error(`unknown revision ${ref}`);
       refHead = head;
       refTreeSha = tree;
-      await sg.env({ GIT_DIR: shadow.gitDir, GIT_INDEX_FILE: tmpIndex }).raw('read-tree', tree);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       if (msg.includes('unknown revision') || msg.includes('bad revision')) {
@@ -468,14 +499,65 @@ async function commitWipInner(
       }
     }
 
-    // Stage content files
-    await sg
-      .env({
-        GIT_DIR: shadow.gitDir,
-        GIT_WORK_TREE: shadow.workTree,
-        GIT_INDEX_FILE: tmpIndex,
-      })
-      .raw('add', '--all', '--', ...gitPathspecs);
+    // An empty scoped base checkpoint cannot change an existing writer tree.
+    // Return before reading the worktree, which is the common row-edit path.
+    if (scopedPathspecs?.length === 0 && refHead !== null) return refHead;
+
+    // A new writer's scoped transaction must begin with a complete tree.
+    // Usually git-upstream provides this baseline at boot; on a genuinely cold
+    // branch, fall back to the historical full scan below to create one.
+    if (refTreeSha === null && scopedPathspecs !== null) {
+      const baselineHead = (
+        await sg.raw(
+          'for-each-ref',
+          '--sort=-committerdate',
+          '--format=%(objectname)',
+          `refs/wip/${branch}/`,
+        )
+      )
+        .split('\n')
+        .map((line) => line.trim())
+        .find(Boolean);
+      if (baselineHead) {
+        refTreeSha = (await sg.raw('rev-parse', `${baselineHead}^{tree}`)).trim();
+      }
+    }
+
+    if (refTreeSha !== null) {
+      await sg
+        .env({ GIT_DIR: shadow.gitDir, GIT_INDEX_FILE: tmpIndex })
+        .raw('read-tree', refTreeSha);
+    }
+
+    // Scoped mode stages only literal project-relative file paths. Without a
+    // branch baseline, retain full-root staging to establish a valid first tree.
+    const git = sg.env({
+      GIT_DIR: shadow.gitDir,
+      GIT_WORK_TREE: shadow.workTree,
+      GIT_INDEX_FILE: tmpIndex,
+    });
+    if (scopedPaths !== null && scopedPathspecs !== null && refTreeSha !== null) {
+      const trackedPaths = new Set(
+        scopedPaths.length === 0
+          ? []
+          : (await git.raw('ls-files', '-z', '--', ...scopedPathspecs)).split('\0').filter(Boolean),
+      );
+      const stagedPathspecs = scopedPaths
+        .filter((path) => {
+          const absolutePath = resolve(shadow.workTree, path);
+          if (!existsSync(absolutePath)) return trackedPaths.has(path);
+          if (lstatSync(absolutePath).isDirectory()) {
+            throw new Error('Path-scoped snapshots require exact file paths');
+          }
+          return true;
+        })
+        .map((path) => `:(literal)${path}`);
+      if (stagedPathspecs.length > 0) {
+        await git.raw('add', '--all', '--', ...stagedPathspecs);
+      }
+    } else {
+      await git.raw('add', '--all', '--', ...shadowAddPathspecs(contentRoot));
+    }
     const treeSha = (
       await sg.env({ GIT_DIR: shadow.gitDir, GIT_INDEX_FILE: tmpIndex }).raw('write-tree')
     ).trim();

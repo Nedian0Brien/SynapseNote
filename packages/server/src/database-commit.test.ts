@@ -161,6 +161,9 @@ async function fixture(input?: {
   const plan = plans.createPlan(draft.id);
   let snapshotCount = 0;
   const snapshotMessages: string[] = [];
+  const snapshotOptions: Array<
+    { skipWhenUnchanged?: boolean; paths?: readonly string[] } | undefined
+  > = [];
   let renameCount = 0;
   const engine = createDatabaseCommitEngine({
     projectDir,
@@ -171,8 +174,9 @@ async function fixture(input?: {
     now: input?.commitNow ?? (() => new Date('2026-07-19T10:05:00.000Z')),
     generateUuid,
     git: {
-      snapshot: async (_identity, message) => {
+      snapshot: async (_identity, message, options) => {
         snapshotMessages.push(message);
+        snapshotOptions.push(options);
         input?.onSnapshot?.();
         if (input?.snapshotGate) await input.snapshotGate;
         return String(++snapshotCount).repeat(40).slice(0, 40);
@@ -227,6 +231,7 @@ async function fixture(input?: {
     commitInput,
     snapshotCount: () => snapshotCount,
     snapshotMessages,
+    snapshotOptions,
   };
 }
 
@@ -297,6 +302,7 @@ describe('DatabaseCommitEngine', () => {
       commitInput,
       snapshotCount,
       snapshotMessages,
+      snapshotOptions,
     } = await fixture();
     const result = await engine.commit(commitInput());
     const mutationId = result.mutationId;
@@ -319,6 +325,11 @@ describe('DatabaseCommitEngine', () => {
       result.actualDiff.every((delta) => delta.after?.gitBlob === `sha1:${'a'.repeat(40)}`),
     ).toBe(true);
     expect(snapshotCount()).toBe(2);
+    const expectedSnapshotPaths = result.actualDiff.map((file) => file.path).sort();
+    expect(snapshotOptions).toEqual([
+      { skipWhenUnchanged: true, paths: expectedSnapshotPaths },
+      { paths: expectedSnapshotPaths },
+    ]);
     expect(snapshotMessages[0]).toMatch(/^checkpoint: database transaction base mut_/);
     expect(parseContributors(snapshotMessages[1] ?? '')).toEqual([
       expect.objectContaining({
@@ -2622,6 +2633,7 @@ describe('DatabaseCommitEngine', () => {
       engine,
       commitInput,
       snapshotCount,
+      snapshotOptions,
     } = await fixture();
     const committed = await engine.commit(commitInput());
     const preview = await engine.undo({ action: 'preview', undoToken: committed.undoToken });
@@ -2659,6 +2671,9 @@ describe('DatabaseCommitEngine', () => {
     expect(store.getById(draft.normalized.definition.id)).toBeNull();
     expect(index.list(draft.normalized.definition.id)).toEqual([]);
     expect(snapshotCount()).toBe(3);
+    expect(snapshotOptions[2]).toEqual({
+      paths: committed.actualDiff.map((file) => file.path).sort(),
+    });
 
     const replay = await engine.undo(applyInput);
     expect(replay.idempotentReplay).toBe(true);
