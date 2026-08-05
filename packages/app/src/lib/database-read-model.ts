@@ -11,7 +11,36 @@ import { type DatabaseDescription, describeDatabase } from './database-catalog-c
 import { readDatabaseLinkedView, rememberDatabaseLinkedView } from './database-linked-view-cache';
 import { cacheDatabaseSnapshot, readCachedDatabaseSnapshot } from './database-offline-cache';
 import { appendDatabaseQueryPage, queryDatabase } from './database-query-client';
-import { classifyDatabaseUiProblem, type DatabaseUiProblem } from './database-ui-problem';
+import {
+  classifyDatabaseUiProblem,
+  type DatabaseUiProblem,
+  databaseProblemRetryAfterMs,
+} from './database-ui-problem';
+
+/**
+ * Self-recovery budget for a read that lands on a still-settling index.
+ *
+ * `withDatabaseReadRetry` already absorbs the short window inside one read. A
+ * second canonical commit can reopen that window after the in-read budget is
+ * spent, which leaves the surface holding the last verified snapshot and a
+ * problem the Data Plane marked recoverable. Nothing else re-reads, so without
+ * this the user has to press the recovery action to see their own committed
+ * edit. Retry a bounded number of times, then keep the visible action as the
+ * final fallback.
+ *
+ * The budget is deliberately generous: verification is fast on an idle machine
+ * but can take many seconds on a loaded one, and giving up early is exactly the
+ * failure this exists to prevent. The delay cap keeps a condition that never
+ * settles at a cheap slow poll rather than a spin, and the recoverable banner
+ * with its explicit action stays visible for the whole window.
+ */
+const SETTLE_RETRY_MAX_ATTEMPTS = 8;
+const SETTLE_RETRY_INITIAL_DELAY_MS = 250;
+const SETTLE_RETRY_MAX_DELAY_MS = 3_000;
+
+function isSelfRecoverableReadProblem(problem: DatabaseUiProblem): boolean {
+  return problem.kind === 'stale_index' && problem.retryable;
+}
 
 export interface DatabaseReadModelTarget {
   databaseId: string;
@@ -166,15 +195,54 @@ export function useDatabaseReadModel(
       : null,
   );
   const refreshKey = target?.refreshKey ?? 0;
+  const [settleKey, setSettleKey] = useState(0);
+  const settleAttemptRef = useRef(0);
+  const settleScopeRef = useRef<string | null>(null);
+  const settleTimerRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
 
   // requestKey is the canonical serialized target identity. Depending on the
   // target object itself would restart the read on every parent render.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: requestKey and refreshKey cover every target field and intentionally control this effect.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: requestKey, refreshKey, and settleKey cover every target field and intentionally control this effect.
   useEffect(() => {
+    const clearSettleTimer = () => {
+      if (settleTimerRef.current === null) return;
+      globalThis.clearTimeout(settleTimerRef.current);
+      settleTimerRef.current = null;
+    };
+    // A new target or an explicit user refresh starts a fresh recovery budget;
+    // a settle retry of the same read keeps spending the current one.
+    const settleScope = `${requestKey ?? ''}|${refreshKey}`;
+    if (settleScopeRef.current !== settleScope) {
+      settleScopeRef.current = settleScope;
+      settleAttemptRef.current = 0;
+    }
+    const scheduleSettleRetry = (cause: unknown, problem: DatabaseUiProblem) => {
+      if (!isSelfRecoverableReadProblem(problem)) return;
+      if (settleAttemptRef.current >= SETTLE_RETRY_MAX_ATTEMPTS) return;
+      const attempt = settleAttemptRef.current;
+      settleAttemptRef.current = attempt + 1;
+      const backoffMs = Math.min(
+        SETTLE_RETRY_INITIAL_DELAY_MS * 2 ** attempt,
+        SETTLE_RETRY_MAX_DELAY_MS,
+      );
+      // The Data Plane states how long the condition needs; honour it as a
+      // floor so a retry does not spend the budget on the same answer.
+      const serverDelayMs = databaseProblemRetryAfterMs(cause) ?? 0;
+      clearSettleTimer();
+      settleTimerRef.current = globalThis.setTimeout(
+        () => {
+          settleTimerRef.current = null;
+          setSettleKey((current) => current + 1);
+        },
+        Math.min(Math.max(backoffMs, serverDelayMs), SETTLE_RETRY_MAX_DELAY_MS),
+      );
+    };
     if (!target || !requestKey) {
       surfaceKeyRef.current = null;
       readyStateRef.current = null;
       lastResultRef.current = null;
+      settleAttemptRef.current = 0;
+      clearSettleTimer();
       setState({ status: 'loading' });
       return;
     }
@@ -273,6 +341,10 @@ export function useDatabaseReadModel(
           refreshing: false,
         };
         readyStateRef.current = { surfaceKey, state: nextState };
+        // A verified read ends the settling window, so the next one starts with
+        // a full recovery budget.
+        settleAttemptRef.current = 0;
+        clearSettleTimer();
         setState(nextState);
       })
       .catch((cause: unknown) => {
@@ -297,6 +369,11 @@ export function useDatabaseReadModel(
           };
           readyStateRef.current = { surfaceKey, state: nextState };
           setState(nextState);
+          // The surface is showing the last verified snapshot behind a
+          // recoverable problem. Re-read so a commit that is still verifying
+          // resolves on its own instead of stranding the user's own edit
+          // behind the recovery action.
+          scheduleSettleRetry(cause, problem);
           return;
         }
         const cached = readDatabaseLinkedView(cacheKey);
@@ -330,9 +407,13 @@ export function useDatabaseReadModel(
           return;
         }
         setState({ status: 'error', problem });
+        scheduleSettleRetry(cause, problem);
       });
-    return () => controller.abort();
-  }, [requestKey, refreshKey]);
+    return () => {
+      controller.abort();
+      clearSettleTimer();
+    };
+  }, [requestKey, refreshKey, settleKey]);
 
   return state;
 }

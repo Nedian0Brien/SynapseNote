@@ -276,7 +276,11 @@ const DEFAULT_FS: CommitFs = {
 };
 
 interface CommitGit {
-  snapshot(writer: WriterIdentity, message: string): Promise<string>;
+  snapshot(
+    writer: WriterIdentity,
+    message: string,
+    opts?: { skipWhenUnchanged?: boolean },
+  ): Promise<string>;
   hashBlob(path: string): Promise<string>;
 }
 
@@ -947,7 +951,13 @@ export class DatabaseCommitEngine {
             planned: draft.normalized.sampleRecords.length,
           });
         }
-        this.#transactionActive = true;
+        // The read barrier opens at the first canonical write, not here.
+        // `#execute` raises it immediately before the rename loop; everything
+        // before that point — assertions, the base checkpoint snapshot, and
+        // staging writes into a private directory — leaves the canonical tree
+        // untouched, so a concurrent read sees the same committed state it
+        // would have seen a moment earlier. The `finally` still clears the flag
+        // on every path, including a failure before it was ever raised.
         try {
           if (agentRunId) {
             try {
@@ -1237,6 +1247,54 @@ export class DatabaseCommitEngine {
         this.#transactionActive = false;
       }
     });
+  }
+
+  /**
+   * Content-relative record path for a committed file, or null when the write
+   * is not a Markdown record under the content directory.
+   */
+  #committedRecordPath(absolutePath: string): string | null {
+    const relativePath = relative(this.#contentDir, absolutePath).split(sep).join('/');
+    if (relativePath === '' || relativePath === '..' || relativePath.startsWith('../')) return null;
+    if (isAbsolute(relativePath)) return null;
+    if (!relativePath.endsWith('.md') && !relativePath.endsWith('.mdx')) return null;
+    return relativePath;
+  }
+
+  /**
+   * Reflects a committed write in the record index before postconditions run.
+   *
+   * A full rebuild re-reads every record file under every source folder — the
+   * lifecycle benchmark measures ~3.2s at a thousand records against ~3ms for
+   * the incremental path — and it runs inside the transaction window, where
+   * `#assertReadable` refuses every read. Paying that for an ordinary row add
+   * is what makes the whole surface go inert after each edit.
+   *
+   * Only a manifest write needs the rebuild. The index advances its manifest
+   * watermark solely inside `rebuild()`, and reads are refused while that
+   * watermark trails the store; a record-only commit leaves the manifest bytes
+   * untouched, so the store revision is unchanged and the watermark still
+   * matches. Anything that is not a Markdown record under the content
+   * directory therefore falls back to the full refresh.
+   */
+  async #reflectCommittedTargets(targets: readonly CommitTarget[]): Promise<void> {
+    const recordChanges: { recordPath: string; operation: CommitTarget['operation'] }[] = [];
+    for (const target of targets) {
+      const recordPath = this.#committedRecordPath(target.absolutePath);
+      if (recordPath === null) {
+        await this.#refreshDatabaseIndex();
+        return;
+      }
+      recordChanges.push({ recordPath, operation: target.operation });
+    }
+    for (const change of recordChanges) {
+      if (change.operation === 'delete') {
+        this.#databaseRecordIndex.deletePath(change.recordPath);
+        continue;
+      }
+      const markdown = await this.#fs.readFile(resolve(this.#contentDir, change.recordPath));
+      this.#databaseRecordIndex.upsertPath(change.recordPath, markdown.toString('utf-8'));
+    }
   }
 
   async #refreshJournal(): Promise<void> {
@@ -1650,7 +1708,8 @@ export class DatabaseCommitEngine {
       );
     }
     return {
-      snapshot: (identity, message) => commitWip(shadow, identity, '', message, this.#branch()),
+      snapshot: (identity, message, opts) =>
+        commitWip(shadow, identity, '', message, this.#branch(), opts),
       hashBlob: async (path) => {
         const oid = (await shadowGit(shadow).raw('hash-object', '-w', '--', path)).trim();
         return `sha1:${oid}`;
@@ -1902,9 +1961,15 @@ export class DatabaseCommitEngine {
         }
         await this.#assertTargetState(target);
       }
+      // The base checkpoint exists to record the pre-transaction state, and
+      // `baseGitHead` is only written into the audit receipt — undo restores
+      // from the receipt's captured bytes, not from Git. When nothing has
+      // changed since the last snapshot the existing head already *is* that
+      // state, so recording an identical-tree commit buys nothing.
       baseGitHead = await git.snapshot(
         writer,
         `checkpoint: database transaction base ${mutationId}`,
+        { skipWhenUnchanged: true },
       );
       await this.#fs.mkdir(stagingRoot);
       const staged = new Map<string, string>();
@@ -1960,6 +2025,12 @@ export class DatabaseCommitEngine {
           });
         }
       }
+      // First canonical write: from here a read could observe a partially
+      // applied transaction, so the barrier goes up now rather than around the
+      // whole commit. The base checkpoint snapshot above is ~7 git processes
+      // against an unchanged tree; holding the barrier across it made every
+      // row add freeze the surface for no protection.
+      this.#transactionActive = true;
       for (const target of targets) {
         await this.#fs.mkdir(resolve(target.absolutePath, '..'));
         let backupPath: string | null = null;
@@ -1976,7 +2047,7 @@ export class DatabaseCommitEngine {
         if (target.operation === 'create') moved.push({ target, backupPath: null });
       }
       const storeSnapshot = await this.#databaseStore.reload();
-      await this.#refreshDatabaseIndex();
+      await this.#reflectCommittedTargets(targets);
       const checks = this.#verify(plan, draft, input.assertions);
       if (checks.some((check) => check.status === 'failed')) {
         throw new DatabaseCommitError('transaction_failed', 'Database postcondition failed', {

@@ -231,7 +231,29 @@ async function fixture(input?: {
 }
 
 describe('DatabaseCommitEngine', () => {
-  test('holds a read barrier for the complete commit transaction lifecycle', async () => {
+  test('raises the read barrier at the first canonical write, not before it', async () => {
+    const barrierAtSnapshot: boolean[] = [];
+    let engineRef: { isTransactionActive(): boolean } | null = null;
+    const { engine, commitInput } = await fixture({
+      onSnapshot: () => {
+        barrierAtSnapshot.push(engineRef?.isTransactionActive() ?? false);
+      },
+    });
+    engineRef = engine;
+
+    await engine.commit(commitInput());
+
+    // The base checkpoint snapshot runs before any canonical file is touched,
+    // so no read can observe a partial transaction and the barrier must still
+    // be open: holding it there froze the whole surface for ~7 git processes
+    // and protected nothing. The result snapshot runs after the rename loop,
+    // where a rollback can still restore the previous bytes, so it must be
+    // closed.
+    expect(barrierAtSnapshot).toEqual([false, true]);
+    expect(engine.isTransactionActive()).toBe(false);
+  });
+
+  test('keeps the read barrier closed across a gated post-write snapshot', async () => {
     let releaseSnapshot!: () => void;
     let enteredSnapshot!: () => void;
     const snapshotGate = new Promise<void>((resolve) => {
@@ -240,14 +262,25 @@ describe('DatabaseCommitEngine', () => {
     const entered = new Promise<void>((resolve) => {
       enteredSnapshot = resolve;
     });
+    let snapshots = 0;
+    let engineRef: { isTransactionActive(): boolean } | null = null;
+    let barrierAtResultSnapshot: boolean | null = null;
     const { engine, commitInput } = await fixture({
       snapshotGate,
-      onSnapshot: enteredSnapshot,
+      onSnapshot: () => {
+        snapshots += 1;
+        if (snapshots === 2) {
+          barrierAtResultSnapshot = engineRef?.isTransactionActive() ?? false;
+          enteredSnapshot();
+        }
+      },
     });
+    engineRef = engine;
+
     const pending = engine.commit(commitInput());
-    await entered;
-    expect(engine.isTransactionActive()).toBe(true);
     releaseSnapshot();
+    await entered;
+    expect(barrierAtResultSnapshot).toBe(true);
     await pending;
     expect(engine.isTransactionActive()).toBe(false);
   });
@@ -3185,5 +3218,49 @@ describe('DatabaseCommitEngine', () => {
       // biome-ignore lint/suspicious/noExplicitAny: verifying no global prototype pollution occurred
       expect(({} as any).polluted).toBeUndefined();
     });
+  });
+
+  test('reflects a record-only commit incrementally instead of rebuilding the index', async () => {
+    const { index, plans, draft, engine, commitInput } = await fixture();
+    await engine.commit(commitInput());
+    const record = index.list(draft.normalized.definition.id)[0];
+    if (!record?.revision) throw new Error('expected committed record');
+
+    const originalRebuild = index.rebuild.bind(index);
+    let rebuilds = 0;
+    index.rebuild = async () => {
+      rebuilds += 1;
+      return originalRebuild();
+    };
+
+    const updateState = stableDesiredState(draft);
+    updateState.sampleRecords = [];
+    updateState.recordMutations = [
+      {
+        id: record.id,
+        expectedRevision: record.revision,
+        sourceKey: 'tasks',
+        operations: [{ op: 'set', propertyKey: 'status', value: 'done' }],
+      },
+    ];
+    const updateDraft = plans.createDraft(updateState);
+    const updatePlan = plans.createPlan(updateDraft.id);
+    await engine.commit({
+      planId: updatePlan.id,
+      planHash: updatePlan.hash,
+      expectedSnapshotRevision: updatePlan.snapshotRevision,
+      idempotencyKey: 'record-only-incremental-0001',
+      approvalToken: engine.expectedApprovalToken(updatePlan.hash),
+      actor: { principalId: 'agent:codex', kind: 'agent' },
+      assertions: { databaseAbsent: false },
+    });
+
+    // A full rebuild re-reads every record file under every source folder and
+    // runs inside the read barrier that refuses every read, so an ordinary
+    // cell write must not pay it. Only a manifest write needs the rebuild, to
+    // advance the index watermark.
+    expect(rebuilds).toBe(0);
+    // The index still reflects the write, incrementally.
+    expect(index.getById(record.id)?.revision).not.toBe(record.revision);
   });
 });
