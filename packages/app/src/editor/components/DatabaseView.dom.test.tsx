@@ -2246,6 +2246,10 @@ describe('DatabaseView', () => {
         'The database changed while this action was in progress. Reload the latest state.',
       ),
     ).toBeNull();
+    await waitFor(() => expect(toastError).toHaveBeenCalledTimes(1));
+    fireEvent.click(inlineActionsTrigger());
+    expect(screen.queryByRole('menuitem', { name: 'Undo change' })).toBeNull();
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
     expect(screen.getByTestId('inline-save-feedback')).toBeTruthy();
     undoBlocked = false;
     const titleCell = document.querySelector(

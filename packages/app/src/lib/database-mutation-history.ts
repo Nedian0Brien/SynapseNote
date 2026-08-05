@@ -74,10 +74,12 @@ export function useDatabaseMutationHistory({
         const isStaleHistory =
           cause instanceof Error && cause.message.includes('changed while this action');
         const problem = classifyDatabaseUiProblem(cause, 'The database undo could not be applied.');
-        // Keep the token after a recoverable failure so the user can retry the
-        // exact operation without silently losing history.
         if (isStaleHistory) {
+          // A rejected preview proves this exact token can no longer apply to
+          // the current revision. Retrying it only repeats the same conflict.
+          setUndoToken(null);
           onError(databaseMutationUiMessage('conflict'));
+          onRefresh();
         } else {
           onError(databaseMutationUiMessage(problem.kind));
         }
@@ -118,6 +120,10 @@ export function useDatabaseMutationHistory({
         const isStaleHistory =
           cause instanceof Error && cause.message.includes('changed while this action');
         const problem = classifyDatabaseUiProblem(cause, 'The database redo could not be applied.');
+        if (isStaleHistory) {
+          setRedoToken(null);
+          onRefresh();
+        }
         onError(databaseMutationUiMessage(isStaleHistory ? 'conflict' : problem.kind));
       })
       .finally(() => setRedoStatus('idle'));

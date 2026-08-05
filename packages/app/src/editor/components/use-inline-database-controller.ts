@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useDatabaseMutationController } from '@/lib/database-mutation-controller';
 import type { InlineDatabaseReference, InlineDatabaseReferenceData } from './inline-database-types';
 import { useInlineDatabaseCommands } from './use-inline-database-commands';
@@ -98,21 +98,19 @@ export function useInlineDatabaseController({
       return next.size === current.size ? current : next;
     });
   }, [read.linkedSource, read.state, setInlineOptimisticCellValues]);
-  const conflictRefreshObservedRef = useRef(false);
   useEffect(() => {
-    if (mutation.errorKind !== 'conflict') {
-      conflictRefreshObservedRef.current = false;
+    if (
+      mutation.errorKind !== 'conflict' ||
+      read.state.status !== 'ready' ||
+      read.state.refreshing ||
+      read.state.refreshProblem ||
+      read.state.stale
+    )
       return;
-    }
-    if (read.state.status !== 'ready') return;
-    if (read.state.refreshing) {
-      conflictRefreshObservedRef.current = true;
-      return;
-    }
-    if (conflictRefreshObservedRef.current && !read.state.refreshProblem && !read.state.stale) {
-      mutation.setError(null);
-      conflictRefreshObservedRef.current = false;
-    }
+    // The conflict is presented as a one-shot toast. Do not require React to
+    // render the transient `refreshing` frame before clearing it: a fast cached
+    // refresh can otherwise leave the same error resident across remounts.
+    mutation.setError(null);
   }, [mutation.errorKind, mutation.setError, read.state]);
   const commands = useInlineDatabaseCommands({
     referenceData,
