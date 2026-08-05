@@ -257,6 +257,24 @@ describe('commitWip', () => {
     expect((await sg.raw('show', `${deleted}:${unrelatedPath}`)).trim()).toBe('# Unrelated v1');
   });
 
+  test('path-scoped snapshots capture an exact file inside an ignored database folder', async () => {
+    const baselinePath = 'content/docs/baseline.md';
+    const recordPath = 'untitled_database_local/rec_created.md';
+    writeFileSync(resolve(projectRoot, baselinePath), '# Baseline\n');
+    writeFileSync(resolve(projectRoot, '.gitignore'), '/untitled_database_*/\n');
+    await commitWip(shadow, writer, '', 'WIP: initial');
+
+    mkdirSync(resolve(projectRoot, 'untitled_database_local'), { recursive: true });
+    writeFileSync(resolve(projectRoot, recordPath), '# Created row\n');
+    const sha = await commitWip(shadow, writer, '', 'WIP: ignored database record', 'main', {
+      paths: [recordPath],
+    });
+
+    const sg = shadowGit(shadow);
+    expect((await sg.raw('show', `${sha}:${recordPath}`)).trim()).toBe('# Created row');
+    expect((await sg.raw('show', `${sha}:${baselinePath}`)).trim()).toBe('# Baseline');
+  });
+
   test('rejects a path-scoped snapshot that escapes the project root', async () => {
     await expect(
       commitWip(shadow, writer, '', 'WIP: invalid scope', 'main', {

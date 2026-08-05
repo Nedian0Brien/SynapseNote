@@ -553,7 +553,12 @@ async function commitWipInner(
         })
         .map((path) => `:(literal)${path}`);
       if (stagedPathspecs.length > 0) {
-        await git.raw('add', '--all', '--', ...stagedPathspecs);
+        // Database record folders may be intentionally ignored by the public
+        // repository while still belonging in SynapseNote's private shadow
+        // history. Scoped callers have already supplied validated exact file
+        // paths, so force only those paths; general WIP snapshots continue to
+        // respect the project's ignore rules below.
+        await git.raw('add', '--all', '--force', '--', ...stagedPathspecs);
       }
     } else {
       await git.raw('add', '--all', '--', ...shadowAddPathspecs(contentRoot));
