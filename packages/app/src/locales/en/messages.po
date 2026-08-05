@@ -7314,6 +7314,10 @@ msgstr "Open folder"
 msgid "Open folder on disk"
 msgstr "Open folder on disk"
 
+#: src/components/FileTree.tsx
+msgid "Open folder overview"
+msgstr "Open folder overview"
+
 #: src/editor/components/use-inline-database-read-state.ts
 msgid "Open full database"
 msgstr "Open full database"

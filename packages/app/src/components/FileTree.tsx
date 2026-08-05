@@ -43,6 +43,7 @@ import {
   UnfoldVertical,
 } from 'lucide-react';
 import { __iconNode as botIcon } from 'lucide-react/dist/esm/icons/bot';
+import { __iconNode as infoIcon } from 'lucide-react/dist/esm/icons/info';
 import { __iconNode as link2Icon } from 'lucide-react/dist/esm/icons/link-2';
 import { useTheme } from 'next-themes';
 import {
@@ -99,6 +100,7 @@ import {
   applyExtensionBadges,
   FILE_TREE_EXT_BADGE_CSS,
 } from '@/components/file-tree-extension-badge';
+import { attachFolderOverviewButton } from '@/components/file-tree-folder-overview-button';
 import { buildOkignorePatternFromTarget } from '@/components/file-tree-okignore';
 import {
   applyDeleteToDocuments,
@@ -320,6 +322,7 @@ const AGENT_FILE_NAMES = new Set(['agents', 'agent', 'claude', 'skill']);
 const LINK_DECORATION_ICON_ID = 'ok-file-tree-link-decoration';
 const AGENT_DECORATION_ICON_ID = 'ok-file-tree-agent-decoration';
 const MARKDOWN_FILE_ICON_ID = 'ok-file-tree-markdown';
+const FOLDER_OVERVIEW_ICON_ID = 'ok-file-tree-folder-overview';
 // Custom Markdown file glyph (document with an "MD" label) overriding Pierre's
 // built-in `complete`-set markdown glyph. `fill="currentColor"` lets
 // `--trees-file-icon-color-markdown` (set in createFileTreeStyle, see
@@ -350,6 +353,7 @@ function createLucideSpriteSymbol(id: string, iconNode: IconNode): string {
 const FILE_TREE_DECORATION_SPRITE_SHEET = `<svg data-icon-sprite aria-hidden="true" width="0" height="0">
   ${createLucideSpriteSymbol(LINK_DECORATION_ICON_ID, link2Icon)}
   ${createLucideSpriteSymbol(AGENT_DECORATION_ICON_ID, botIcon)}
+  ${createLucideSpriteSymbol(FOLDER_OVERVIEW_ICON_ID, infoIcon)}
   ${MARKDOWN_FILE_ICON_SYMBOL}
 </svg>`;
 
@@ -441,12 +445,45 @@ const FILE_TREE_CREATION_CLEARED_CSS = `
   }
 `;
 
+const FILE_TREE_FOLDER_OVERVIEW_CSS = `
+  [data-item-type="folder"] > [data-item-section="action"] {
+    width: calc(var(--trees-action-lane-width) * 2);
+  }
+  [data-type="folder-overview-trigger"] {
+    all: unset;
+    align-items: center;
+    justify-content: center;
+    width: var(--trees-action-lane-width);
+    height: calc(var(--trees-row-height) - var(--trees-focus-ring-width) * 2);
+    margin: var(--trees-focus-ring-width) 0 var(--trees-focus-ring-width)
+      var(--trees-focus-ring-width);
+    border-top-left-radius: var(--trees-border-radius);
+    border-bottom-left-radius: var(--trees-border-radius);
+    color: var(--trees-fg-muted);
+    fill: currentColor;
+    cursor: pointer;
+    display: flex;
+    transition: color 120ms ease;
+  }
+  [data-type="folder-overview-trigger"]:hover,
+  [data-type="folder-overview-trigger"]:focus-visible {
+    color: var(--trees-fg);
+  }
+  [data-type="folder-overview-trigger"]:focus-visible {
+    outline: var(--trees-focus-ring-width) solid var(--trees-focus-ring-color);
+    outline-offset: calc(var(--trees-focus-ring-width) * -1);
+  }
+  [data-type="folder-overview-trigger"][hidden] {
+    display: none;
+  }
+`;
+
 // Pierre's per-extension icon color (specificity 0,1,0 on the inner [data-icon-token]
 // element) wins over the inherited selected-fg color from the parent row, so the
 // markdown icon stays gray when its row is selected. The full styling block lives
 // alongside the badge-injection processor in file-tree-extension-badge.ts so the
 // CSS + DOM-mutation contract stays in one place.
-const FILE_TREE_UNSAFE_CSS = `${FILE_TREE_EXT_BADGE_CSS}\n${FILE_TREE_RENAME_INPUT_CSS}\n${FILE_TREE_ROOT_DROP_CSS}\n${FILE_TREE_EXTERNAL_FILE_DROP_CSS}\n${FILE_TREE_CREATION_CLEARED_CSS}\n${FILE_TREE_INDENT_GUIDE_CSS}\n${FILE_TREE_STICKY_HEADER_CSS}`;
+const FILE_TREE_UNSAFE_CSS = `${FILE_TREE_EXT_BADGE_CSS}\n${FILE_TREE_RENAME_INPUT_CSS}\n${FILE_TREE_ROOT_DROP_CSS}\n${FILE_TREE_EXTERNAL_FILE_DROP_CSS}\n${FILE_TREE_CREATION_CLEARED_CSS}\n${FILE_TREE_FOLDER_OVERVIEW_CSS}\n${FILE_TREE_INDENT_GUIDE_CSS}\n${FILE_TREE_STICKY_HEADER_CSS}`;
 
 function isAgentTreePath(treePath: string): boolean {
   const name = treePath.split('/').pop()?.replace(/\.md$/i, '').toLowerCase();
@@ -1175,6 +1212,10 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     replaceHashWithoutNavigation(nextHash);
     notifySidebarFileSelected();
   }
+  const folderOverviewNavigationRef = useRef(navigateToFolderWithPulse);
+  useEffect(() => {
+    folderOverviewNavigationRef.current = navigateToFolderWithPulse;
+  });
   const [documents, setDocuments] = useState<FileEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -3322,6 +3363,23 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     return () => observer.disconnect();
   }, [loading, documents.length]);
 
+  // Pierre owns the row action lane inside an open shadow root and renders a
+  // single floating Options trigger. Add the folder-overview action to that
+  // same anchor so ordinary folder-row clicks can be dedicated to disclosure.
+  useEffect(() => {
+    if (loading || documents.length === 0) return;
+    const shadow = fileTreeHostRef.current?.querySelector(FILE_TREE_TAG_NAME)?.shadowRoot;
+    if (!shadow) return;
+    const controller = attachFolderOverviewButton(shadow, {
+      iconId: FOLDER_OVERVIEW_ICON_ID,
+      label: t`Open folder overview`,
+      onOpen: (treeDirectoryPath) => {
+        folderOverviewNavigationRef.current(treeDirectoryPathToFolderPath(treeDirectoryPath));
+      },
+    });
+    return () => controller.dispose();
+  }, [loading, documents.length, t]);
+
   // Replace Pierre's trailing-dot artifact with an always-visible uppercase
   // extension badge. Same shadow-root + MutationObserver pattern as
   // stampTitles above — kept as a separate observer so the watch scope
@@ -4102,32 +4160,17 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
       item.dataset.itemType === 'folder' ? folderPathToTreeDirectoryPath(rawPath) : rawPath;
 
     if (item.dataset.itemType === 'folder') {
-      const folderPath = treeDirectoryPathToFolderPath(path);
       const folderItem = asDirectoryHandle(model.getItem(path));
-      // The leading chevron is a disclosure control only. Intercept Pierre's
-      // whole-row toggle before it selects/navigates so expanding or collapsing
-      // a folder leaves the current document and tree selection untouched.
-      if (clickIsInTreeItemSection(event.nativeEvent, 'icon')) {
-        event.preventDefault();
-        event.stopPropagation();
-        if (!folderItem) return;
-        if (folderItem.isExpanded()) folderItem.collapse();
-        else folderItem.expand();
-        return;
-      }
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      // Every other part of the folder row is navigation only. Stop Pierre's
-      // default whole-row disclosure toggle, including when this folder is
-      // already selected and navigation itself is a no-op.
+      // Folder rows are disclosure controls. The separate overview action in
+      // the floating action lane is now the only pointer path that navigates
+      // to the folder overview, so clicking the label or chevron consistently
+      // expands/collapses without disturbing document navigation or selection.
       event.preventDefault();
       event.stopPropagation();
-      if (!wasSelected) {
-        queueMicrotask(() => navigateToFolderWithPulse(folderPath));
-        return;
-      }
-      if (model.getSelectedPaths().length !== 1) return;
-      if (window.location.hash === hashFromFolderPath(folderPath)) return;
-      queueMicrotask(() => navigateToFolderWithPulse(folderPath));
+      if (!folderItem) return;
+      if (folderItem.isExpanded()) folderItem.collapse();
+      else folderItem.expand();
       return;
     }
 
@@ -4424,15 +4467,6 @@ function findTreeItemElement(event: MouseEvent): HTMLElement | null {
     }
   }
   return null;
-}
-
-function clickIsInTreeItemSection(event: MouseEvent, section: string): boolean {
-  for (const entry of event.composedPath()) {
-    if (entry instanceof HTMLElement && entry.dataset.itemSection === section) {
-      return true;
-    }
-  }
-  return false;
 }
 
 function findTreeVirtualizedRootElement(event: MouseEvent): HTMLElement | null {

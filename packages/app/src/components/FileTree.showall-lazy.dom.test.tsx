@@ -533,10 +533,10 @@ describe('FileTree showAll lazy root seed', () => {
     );
   });
 
-  test('clicking a folder label opens the folder without changing expansion', async () => {
+  test('clicking a folder label toggles expansion without opening the overview', async () => {
     showAllResponseFactory = () =>
       jsonResponse({
-        documents: [docEntry('foo'), folderEntry('docs', true), docEntry('docs/nested')],
+        documents: [docEntry('foo'), folderEntry('docs', false)],
         truncated: false,
       });
     const view = render(<FileTree />);
@@ -548,18 +548,14 @@ describe('FileTree showAll lazy root seed', () => {
     const row = screen.getByRole('treeitem', { name: 'docs/' });
     fireEvent.click(row);
 
-    await waitFor(() =>
-      expect(openTargetMock).toHaveBeenCalledWith(
-        {
-          kind: 'folder',
-          target: 'docs',
-          folderPath: 'docs',
-        },
-        { tabBehavior: 'replace-active' },
-      ),
-    );
-    expect(window.location.hash).toBe('#/docs/');
+    expect(model.getItem('docs/')?.isExpanded()).toBe(true);
+    expect(model.selectedPaths).toEqual(['foo.md']);
+    expect(window.location.hash).toBe('');
+    expect(openTargetMock).not.toHaveBeenCalled();
+
+    fireEvent.click(row);
     expect(model.getItem('docs/')?.isExpanded()).toBe(false);
+    expect(openTargetMock).not.toHaveBeenCalled();
   });
 
   test('clicking a folder disclosure toggles expansion without navigating', async () => {
