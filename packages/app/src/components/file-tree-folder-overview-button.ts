@@ -9,9 +9,9 @@ function createFolderOverviewIcon(iconId: string): SVGSVGElement {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('aria-hidden', 'true');
   svg.setAttribute('data-icon-name', iconId);
-  svg.setAttribute('height', '16');
+  svg.setAttribute('height', '14');
   svg.setAttribute('viewBox', '0 0 24 24');
-  svg.setAttribute('width', '16');
+  svg.setAttribute('width', '14');
 
   const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
   use.setAttribute('href', `#${iconId}`);

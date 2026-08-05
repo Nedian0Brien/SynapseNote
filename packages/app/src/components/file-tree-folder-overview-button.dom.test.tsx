@@ -44,6 +44,9 @@ describe('folder overview button', () => {
     expect(overviewButton?.tabIndex).toBe(0);
     expect(overviewButton?.getAttribute('aria-label')).toBe('Open folder overview');
     expect(overviewButton?.title).toBe('Open folder overview');
+    const overviewIcon = overviewButton?.querySelector('svg');
+    expect(overviewIcon?.getAttribute('height')).toBe('14');
+    expect(overviewIcon?.getAttribute('width')).toBe('14');
 
     const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true, composed: true });
     expect(overviewButton?.dispatchEvent(clickEvent)).toBe(false);
