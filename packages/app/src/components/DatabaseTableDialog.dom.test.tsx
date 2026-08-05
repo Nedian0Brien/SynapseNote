@@ -3538,6 +3538,54 @@ describe('DatabaseTableDialog', () => {
     await waitFor(() =>
       expect(document.activeElement?.getAttribute('data-property-id')).toBe('prop_title'),
     );
+    expect(edits).toEqual(['Committed task']);
+  });
+
+  test('saves a changed title when keyboard focus leaves the inline editor', async () => {
+    const edits: unknown[] = [];
+    const view = render(
+      <DatabaseTable
+        source={source}
+        result={queryResult()}
+        notionSurface
+        onOpen={() => {}}
+        onEdit={(_record, _property, value) => edits.push(value)}
+      />,
+    );
+    const titleCell = view.container.querySelector<HTMLElement>(
+      '[data-record-id="rec_first"] [data-property-id="prop_title"]',
+    );
+    if (!titleCell) throw new Error('expected title cell');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Title for page First task' }));
+    const input = screen.getByRole('textbox', { name: 'Edit Title' });
+    fireEvent.change(input, { target: { value: 'Saved on blur' } });
+    fireEvent.blur(input, { relatedTarget: titleCell });
+
+    await waitFor(() => expect(screen.queryByRole('textbox', { name: 'Edit Title' })).toBeNull());
+    expect(edits).toEqual(['Saved on blur']);
+  });
+
+  test('does not double-save when focus moves to a control inside the title editor', () => {
+    const edits: unknown[] = [];
+    render(
+      <DatabaseTable
+        source={source}
+        result={queryResult()}
+        notionSurface
+        onOpen={() => {}}
+        onEdit={(_record, _property, value) => edits.push(value)}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Title for page First task' }));
+    const input = screen.getByRole('textbox', { name: 'Edit Title' });
+    const openButton = screen.getByRole('button', { name: 'Open page First task' });
+    fireEvent.change(input, { target: { value: 'Still editing' } });
+    fireEvent.blur(input, { relatedTarget: openButton });
+
+    expect(screen.getByRole('textbox', { name: 'Edit Title' })).toBeTruthy();
+    expect(edits).toEqual([]);
   });
 
   test('preserves Unicode text and does not commit Enter during IME composition', () => {

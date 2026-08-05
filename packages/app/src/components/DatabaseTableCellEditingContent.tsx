@@ -266,6 +266,13 @@ export function DatabaseTableCellEditingContent({
           aria-label={`Edit ${property.name}`}
           data-database-cell-editor-control="true"
           onChange={(event) => setEditing({ ...editing, draft: event.currentTarget.value })}
+          onBlur={(event) => {
+            if (property.type !== 'title') return;
+            const editingContainer = event.currentTarget.closest('[data-title-cell-editing]');
+            const nextTarget = event.relatedTarget;
+            if (nextTarget instanceof Node && editingContainer?.contains(nextTarget)) return;
+            onSaveEdit(record, property, event.currentTarget.value);
+          }}
           onKeyDown={(event) => {
             if (event.nativeEvent.isComposing) return;
             if (event.key === 'Enter') onSaveEdit(record, property);
