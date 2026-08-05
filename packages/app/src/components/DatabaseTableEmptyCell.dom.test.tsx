@@ -60,6 +60,51 @@ function result(values: Record<string, unknown> = {}) {
 afterEach(cleanup);
 
 describe('database empty-cell editor matrix', () => {
+  test('renders empty property values as blank click targets instead of em dashes', () => {
+    const view = render(
+      <DatabaseTable
+        source={source as never}
+        result={result() as never}
+        notionSurface
+        onEdit={() => {}}
+      />,
+    );
+
+    for (const label of [
+      'Edit Status for page First task: empty',
+      'Edit Tags for page First task: empty',
+      'Edit Notes for page First task',
+      'Edit Score for page First task',
+      'Edit Due for page First task',
+    ]) {
+      const target = screen.getByLabelText(label);
+      expect(target.textContent).not.toContain('—');
+      expect(target.querySelector('[data-database-empty-cell]')).toBeTruthy();
+    }
+    expect(view.container.textContent).not.toContain('—');
+  });
+
+  test('keeps the saved value visible while the parent optimistic update catches up', () => {
+    const edits: unknown[] = [];
+    render(
+      <DatabaseTable
+        source={source as never}
+        result={result({ notes: 'Old note' }) as never}
+        notionSurface
+        onEdit={(_record, _property, value) => edits.push(value)}
+      />,
+    );
+
+    fireEvent.click(screen.getByLabelText('Edit Notes for page First task'));
+    fireEvent.change(screen.getByLabelText('Edit Notes'), { target: { value: 'New note' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    const savedCell = screen.getByLabelText('Edit Notes for page First task');
+    expect(savedCell.textContent).toContain('New note');
+    expect(savedCell.textContent).not.toContain('Old note');
+    expect(edits).toEqual(['New note']);
+  });
+
   test('dismisses an unchanged Select picker without emitting an edit', async () => {
     const edits: unknown[] = [];
     render(

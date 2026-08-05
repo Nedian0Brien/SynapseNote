@@ -1,4 +1,4 @@
-import { autoUpdate, computePosition, offset, shift } from '@floating-ui/dom';
+import { autoUpdate } from '@floating-ui/dom';
 import type { RefObject } from 'react';
 import { useEffect, useRef } from 'react';
 import { createInteractionHandleElement } from '@/editor/interaction-handle/create-interaction-handle-element';
@@ -11,6 +11,8 @@ import {
   DATABASE_SELECTION_CONTROL_SIZE,
   DATABASE_SELECTION_RAIL_SLOP,
 } from './database-table-selection-geometry';
+
+const DATABASE_INTERACTION_HANDLE_WIDTH = 64;
 
 export interface DatabaseTableInteractionLayerProps {
   enabled: boolean;
@@ -97,7 +99,6 @@ export function DatabaseTableInteractionLayer({
 
     let activeRow: HTMLTableRowElement | null = null;
     let hideTimer: number | undefined;
-    let positioningFrame = 0;
     let stopAutoUpdate: (() => void) | undefined;
 
     const clearHide = () => {
@@ -173,30 +174,21 @@ export function DatabaseTableInteractionLayer({
         return;
       }
       const row = activeRow;
-      const frame = ++positioningFrame;
-      void computePosition(row, container, {
-        strategy: 'absolute',
-        placement: 'left-start',
-        middleware: [
-          offset({ mainAxis: INTERACTION_HANDLE_TABLE_GAP }),
-          // The handle sits outside the row's left edge. With the workspace
-          // sidebar expanded there is not always room for it there, and an
-          // unclamped placement slides it underneath the sidebar, which then
-          // swallows the click. Clamp it back into the scroll container so the
-          // control stays reachable at every viewport width.
-          shift({
-            boundary: scrollOwner,
-            crossAxis: true,
-            padding: INTERACTION_HANDLE_TABLE_GAP,
-          }),
-        ],
-      }).then(({ x, y }) => {
-        if (frame !== positioningFrame || activeRow !== row) return;
-        const rowRect = row.getBoundingClientRect();
-        const handleHeight = container.getBoundingClientRect().height || INTERACTION_HANDLE_HEIGHT;
-        container.style.left = `${Math.round(x)}px`;
-        container.style.top = `${Math.round(y + Math.max(0, (rowRect.height - handleHeight) / 2))}px`;
-      });
+      const hostRect = host.getBoundingClientRect();
+      const viewportRect = scrollOwner.getBoundingClientRect();
+      const rowRect = row.getBoundingClientRect();
+      const handleRect = container.getBoundingClientRect();
+      const handleWidth = handleRect.width || DATABASE_INTERACTION_HANDLE_WIDTH;
+      const handleHeight = handleRect.height || INTERACTION_HANDLE_HEIGHT;
+      // The rail and its pointer hit-testing share the same left gutter. Use
+      // host-relative geometry directly so an overflow boundary can never
+      // shift the controls over the sticky title column.
+      container.style.left = `${Math.round(
+        viewportRect.left - hostRect.left - handleWidth - INTERACTION_HANDLE_TABLE_GAP,
+      )}px`;
+      container.style.top = `${Math.round(
+        rowRect.top - hostRect.top + Math.max(0, (rowRect.height - handleHeight) / 2),
+      )}px`;
     };
 
     const show = (row: HTMLTableRowElement) => {
@@ -340,7 +332,6 @@ export function DatabaseTableInteractionLayer({
       clearHide();
       stopAutoUpdate?.();
       stopAutoUpdate = undefined;
-      if (positioningFrame) positioningFrame += 1;
       host.removeEventListener('pointerover', onPointerOver);
       host.removeEventListener('pointerout', onPointerOut);
       host.ownerDocument.removeEventListener('pointermove', onDocumentPointerMove);

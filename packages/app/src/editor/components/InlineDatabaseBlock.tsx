@@ -83,7 +83,11 @@ export interface InlineDatabaseBlockProps {
   onPasteInlineCells: (changes: readonly DatabasePasteChange[]) => void;
   onOpenInlineAgentScope: (scope: DatabaseAgentScope) => void;
   onAddInlineProperty: (input: { name: string; type: DatabaseProperty['type'] }) => void;
-  onOpenInlineDatabaseSurface: (surface: 'properties' | 'options', propertyId?: string) => void;
+  onOpenInlineDatabaseSurface: (
+    surface: 'properties' | 'options',
+    propertyId?: string,
+    options?: { advanced?: boolean },
+  ) => void;
   onSetReplacementPickerOpen: (open: boolean) => void;
   onRefresh: () => void;
 }
@@ -420,6 +424,9 @@ export function InlineDatabaseBlock(props: InlineDatabaseBlockProps) {
               }
               onManageProperties={(propertyId) =>
                 onOpenInlineDatabaseSurface('properties', propertyId)
+              }
+              onRemoveProperty={() =>
+                onOpenInlineDatabaseSurface('properties', undefined, { advanced: true })
               }
               onDuplicate={(record) => {
                 onSetInitialRecordAction({ kind: 'duplicate', recordId: record.id });

@@ -1,4 +1,8 @@
-import type { DatabaseProperty, ProjectedDatabaseRecord } from '@nedian0brien/synapsenote-core';
+import type {
+  DatabaseProperty,
+  DatabaseValue,
+  ProjectedDatabaseRecord,
+} from '@nedian0brien/synapsenote-core';
 import { useEffect, useState } from 'react';
 import { isDatabaseCellEditable, parseDatabaseCellDraft } from '@/lib/database-cell-mutation';
 import { databaseRangeToTsv, planDatabaseTsvPaste } from '@/lib/database-tsv';
@@ -177,6 +181,39 @@ export function DatabaseTable({
     type: DatabaseProperty['type'];
     existingPropertyIds: ReadonlySet<string>;
   } | null>(null);
+  const [recentlySavedCellValues, setRecentlySavedCellValues] = useState<
+    ReadonlyMap<string, DatabaseValue | undefined>
+  >(new Map());
+
+  const displayedCellValues =
+    recentlySavedCellValues.size === 0
+      ? optimisticCellValues
+      : new Map([...(optimisticCellValues ?? []), ...recentlySavedCellValues]);
+
+  // Closing an editor and publishing the workspace's optimistic mutation are
+  // separate React updates. Retain the parsed value locally until either the
+  // parent optimistic layer or the refreshed canonical record contains it, so
+  // the previous value cannot flash between those updates.
+  useEffect(() => {
+    setRecentlySavedCellValues((current) => {
+      if (current.size === 0) return current;
+      const next = new Map(current);
+      for (const [key, value] of current) {
+        const optimisticSettled =
+          optimisticCellValues?.has(key) &&
+          JSON.stringify(optimisticCellValues.get(key)) === JSON.stringify(value);
+        const canonicalSettled = result.records.some((record) =>
+          source.properties.some(
+            (property) =>
+              `${record.id}:${property.id}` === key &&
+              JSON.stringify(record.values[property.id]) === JSON.stringify(value),
+          ),
+        );
+        if (optimisticSettled || canonicalSettled) next.delete(key);
+      }
+      return next.size === current.size ? current : next;
+    });
+  }, [optimisticCellValues, result.records, source.properties]);
 
   // Keep the Notion-style picker open until the canonical schema contains the
   // requested property. A mutation may settle before the refresh scheduler
@@ -245,6 +282,11 @@ export function DatabaseTable({
     try {
       const value = parseDatabaseCellDraft(property, draftOverride ?? editing.draft, people);
       rememberEditFocus(record, property);
+      setRecentlySavedCellValues((current) => {
+        const next = new Map(current);
+        next.set(`${record.id}:${property.id}`, value);
+        return next;
+      });
       setEditing(null);
       setEditError(null);
       onEdit?.(record, property, value);
@@ -491,7 +533,7 @@ export function DatabaseTable({
     relationRecords,
     notionSurface,
     ghost,
-    optimisticCellValues,
+    optimisticCellValues: displayedCellValues,
     mutationLocked,
     properties,
     titleProperty,

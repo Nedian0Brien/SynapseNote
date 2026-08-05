@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useRef } from 'react';
 import { DatabaseTableInteractionLayer } from './DatabaseTableInteractionLayer';
 
@@ -67,5 +67,22 @@ describe('DatabaseTableInteractionLayer', () => {
     expect(
       (checkbox.closest('[data-database-table-interaction-layer]') as HTMLElement).style.visibility,
     ).toBe('visible');
+  });
+
+  test('positions the row controls in the left gutter instead of the first column', async () => {
+    render(<InteractionLayerHarness />);
+
+    const host = screen.getByTestId('table-host');
+    const scrollOwner = screen.getByTestId('scroll-owner');
+    const row = screen.getByRole('row');
+    host.getBoundingClientRect = () => rect(100, 20, 300, 120);
+    scrollOwner.getBoundingClientRect = () => rect(100, 20, 300, 120);
+    row.getBoundingClientRect = () => rect(100, 40, 300, 40);
+
+    fireEvent.pointerOver(row);
+
+    const layer = document.querySelector<HTMLElement>('[data-database-table-interaction-layer]');
+    expect(layer).toBeTruthy();
+    await waitFor(() => expect(Number.parseFloat(layer?.style.left ?? 'NaN')).toBeLessThan(0));
   });
 });

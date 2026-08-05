@@ -509,8 +509,8 @@ export function InlineDatabaseSurface({
           onPasteInlineCells={pasteInlineCells}
           onOpenInlineAgentScope={openInlineAgentScope}
           onAddInlineProperty={addInlineProperty}
-          onOpenInlineDatabaseSurface={(surface, propertyId) =>
-            openInlineDatabaseSurface(surface, propertyId)
+          onOpenInlineDatabaseSurface={(surface, propertyId, options) =>
+            openInlineDatabaseSurface(surface, propertyId, undefined, options)
           }
           onSetReplacementPickerOpen={setReplacementPickerOpen}
           onRefresh={refreshNow}

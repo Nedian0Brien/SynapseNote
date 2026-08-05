@@ -176,6 +176,13 @@ export function DatabaseTableDataCell({
                 missingFileLabel,
                 locale,
               );
+  const emptyShownValue =
+    invalidValue === undefined &&
+    computedResult === undefined &&
+    (shownValue === undefined ||
+      shownValue === null ||
+      shownValue === '' ||
+      (Array.isArray(shownValue) && shownValue.length === 0));
   const cellEditing = editing?.recordId === record.id && editing.propertyId === property.id;
   const cellPresence = remotePresence.filter(
     (entry) =>
@@ -218,7 +225,7 @@ export function DatabaseTableDataCell({
       data-conditional-color={effectiveColorRule?.color}
       data-conditional-color-rule={effectiveColorRule?.id}
       data-canonical={proposed ? 'false' : 'true'}
-      title={shownText}
+      title={emptyShownValue ? undefined : shownText}
       data-computed-state={computedResult?.kind}
       data-computed-error-code={
         computedResult?.kind === 'error' ? computedResult.problem.code : undefined

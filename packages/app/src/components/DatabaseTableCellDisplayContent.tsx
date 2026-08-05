@@ -22,6 +22,25 @@ export type DatabaseTableCellDisplayContentProps = Omit<
   'editing' | 'cellEditing' | 'cellPresence' | 'setEditing' | 'onSaveEdit' | 'onCancelEdit'
 >;
 
+function databaseCellIsEmpty(value: unknown): boolean {
+  return (
+    value === undefined ||
+    value === null ||
+    value === '' ||
+    (Array.isArray(value) && value.length === 0)
+  );
+}
+
+function EmptyCellTarget() {
+  return (
+    <span
+      aria-hidden="true"
+      className="inline-block min-h-4 min-w-3 align-middle"
+      data-database-empty-cell
+    />
+  );
+}
+
 /** Read-only display families. Editors and mutation lifecycle stay in the dispatcher. */
 export function DatabaseTableCellDisplayContent({
   property,
@@ -49,6 +68,9 @@ export function DatabaseTableCellDisplayContent({
 }: DatabaseTableCellDisplayContentProps) {
   const linkHref = databaseLinkHref(property, shownValue);
   const invalidValue = record.invalidValues?.[property.id];
+  const emptyCell =
+    invalidValue === undefined && computedResult === undefined && databaseCellIsEmpty(shownValue);
+  const displayedText = emptyCell ? <EmptyCellTarget /> : shownText;
   const recordActionLabel = (action: string) =>
     `${action} ${notionSurface ? 'page' : 'record'} ${recordLabel}`;
 
@@ -248,11 +270,11 @@ export function DatabaseTableCellDisplayContent({
                 aria-label={`Edit ${property.name} for page ${recordLabel}: ${tagValues.length > 0 ? tagValues.map((value) => property.options.find((option) => option.id === String(value))?.name ?? String(value)).join(', ') : 'empty'}`}
                 onClick={() => onBeginEdit(record, property)}
               >
-                {tagValues.length > 0 ? tags : <span className="text-muted-foreground">—</span>}
+                {tagValues.length > 0 ? tags : <EmptyCellTarget />}
               </Button>
             );
           }
-          return tagValues.length > 0 ? tags : '—';
+          return tagValues.length > 0 ? tags : <EmptyCellTarget />;
         })()
       ) : notionSurface && property.type === 'relation' ? (
         (() => {
@@ -277,7 +299,7 @@ export function DatabaseTableCellDisplayContent({
                 ))}
               </span>
             ) : (
-              '—'
+              <EmptyCellTarget />
             );
           return onEdit && !ghostCreated ? (
             <Button
@@ -316,7 +338,7 @@ export function DatabaseTableCellDisplayContent({
                 ))}
               </span>
             ) : (
-              '—'
+              <EmptyCellTarget />
             );
           return onEdit && !ghostCreated ? (
             <Button
@@ -355,7 +377,7 @@ export function DatabaseTableCellDisplayContent({
                 ))}
               </span>
             ) : (
-              '—'
+              <EmptyCellTarget />
             );
           return onEdit && !ghostCreated ? (
             <Button
@@ -397,7 +419,7 @@ export function DatabaseTableCellDisplayContent({
                 aria-hidden="true"
               />
             ) : null}
-            {shownText}
+            {displayedText}
           </Button>
           {onEdit && !ghostCreated && !notionSurface ? (
             <Button
@@ -428,11 +450,11 @@ export function DatabaseTableCellDisplayContent({
               property.type === 'text' ? 'line-clamp-3 whitespace-pre-wrap text-left' : 'truncate',
             )}
           >
-            {shownText}
+            {displayedText}
           </span>
         </Button>
       ) : (
-        shownText
+        displayedText
       )}
     </>
   );
