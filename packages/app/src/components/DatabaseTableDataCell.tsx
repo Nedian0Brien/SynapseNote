@@ -7,6 +7,7 @@ import type { DatabaseTableGeometry } from '@/lib/database-table-geometry';
 import { cn } from '@/lib/utils';
 import { DatabaseTableCellContent } from './DatabaseTableCellContent';
 import type { DatabaseTableBodyProps } from './database-table-body-types';
+import { DATABASE_RECORD_DRAG_MIME } from './database-table-types';
 import {
   cellIsInRange,
   DATABASE_CONDITIONAL_COLOR_CLASSES,
@@ -385,11 +386,13 @@ export function DatabaseTableDataCell({
         event.dataTransfer.setData('text/plain', rangeTsv(rowIndex, propertyIndex));
       }}
       onDragOver={(event) => {
+        if (Array.from(event.dataTransfer.types).includes(DATABASE_RECORD_DRAG_MIME)) return;
         if (!onPaste || mutationLocked || ghostCreated || cellEditing) return;
         event.preventDefault();
         event.dataTransfer.dropEffect = 'copy';
       }}
       onDrop={(event) => {
+        if (Array.from(event.dataTransfer.types).includes(DATABASE_RECORD_DRAG_MIME)) return;
         if (!onPaste || mutationLocked || ghostCreated || cellEditing) return;
         event.preventDefault();
         applyTsvAtCell(record, property, event.dataTransfer.getData('text/plain'));

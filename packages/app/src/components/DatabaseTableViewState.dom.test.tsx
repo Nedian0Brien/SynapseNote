@@ -47,6 +47,7 @@ describe('DatabaseTable view state', () => {
   test('uses native block controls outside Title and persists row-handle reordering', async () => {
     const onSelectionChange = mock(() => {});
     const onReorderRecords = mock(() => {});
+    const onPaste = mock(() => {});
     const onDuplicate = mock(() => {});
     const rendered = render(
       <DatabaseTable
@@ -56,6 +57,7 @@ describe('DatabaseTable view state', () => {
         onCreateRecord={mock(() => {})}
         onSelectionChange={onSelectionChange}
         onReorderRecords={onReorderRecords}
+        onPaste={onPaste}
         onDuplicate={onDuplicate}
       />,
     );
@@ -90,19 +92,28 @@ describe('DatabaseTable view state', () => {
     fireEvent.click(firstSelection);
     expect(onSelectionChange).toHaveBeenLastCalledWith(new Set(['rec_one']));
 
+    const transferValues = new Map<string, string>();
     const dataTransfer = {
       effectAllowed: 'none',
       dropEffect: 'none',
-      setData: mock(() => {}),
-      getData: mock(() => 'rec_one'),
+      get types() {
+        return [...transferValues.keys()];
+      },
+      setData: mock((type: string, value: string) => transferValues.set(type, value)),
+      getData: mock((type: string) => transferValues.get(type) ?? ''),
     } as unknown as DataTransfer;
     fireEvent.dragStart(firstHandle, { dataTransfer });
     const secondRow = rendered.container.querySelector(
       'tbody tr[data-record-id="rec_two"]',
     ) as HTMLTableRowElement;
-    fireEvent.dragOver(secondRow, { clientY: 1, dataTransfer });
-    fireEvent.drop(secondRow, { clientY: 1, dataTransfer });
+    const secondTitleCell = secondRow.querySelector(
+      '[data-property-id="prop_title"]',
+    ) as HTMLTableCellElement;
+    fireEvent.dragOver(secondTitleCell, { clientY: 1, dataTransfer });
+    fireEvent.drop(secondTitleCell, { clientY: 1, dataTransfer });
     expect(onReorderRecords).toHaveBeenLastCalledWith(['rec_two', 'rec_one']);
+    expect(onPaste).not.toHaveBeenCalled();
+    expect(dataTransfer.getData('text/plain')).toBe('');
 
     fireEvent.click(rendered.getByRole('button', { name: 'Add page below' }));
     await waitFor(() =>

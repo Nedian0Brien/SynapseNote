@@ -11,6 +11,7 @@ import {
   DATABASE_SELECTION_CONTROL_SIZE,
   DATABASE_SELECTION_RAIL_SLOP,
 } from './database-table-selection-geometry';
+import { DATABASE_RECORD_DRAG_MIME } from './database-table-types';
 
 const DATABASE_INTERACTION_HANDLE_WIDTH = 64;
 
@@ -296,8 +297,7 @@ export function DatabaseTableInteractionLayer({
       event.stopPropagation();
       if (!event.dataTransfer) return;
       event.dataTransfer.effectAllowed = 'move';
-      event.dataTransfer.setData('application/x-synapsenote-database-record', recordId);
-      event.dataTransfer.setData('text/plain', recordId);
+      event.dataTransfer.setData(DATABASE_RECORD_DRAG_MIME, recordId);
       latest.current.onRecordDragStart?.(recordId, event);
     };
     const onGripDragEnd = () => latest.current.onRecordDragEnd?.();

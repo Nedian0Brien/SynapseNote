@@ -58,6 +58,8 @@ export function isDatabaseSelectProperty(
 }
 
 export const DATABASE_EXPORT_RECORD_LIMIT = 10_000;
+/** Distinguishes native row reordering from the grid's TSV cell drag payload. */
+export const DATABASE_RECORD_DRAG_MIME = 'application/x-synapsenote-database-record';
 /** Keeps the interactive grid DOM bounded even for imported wide schemas. */
 export const DATABASE_TABLE_RENDERED_COLUMN_LIMIT = 100;
 
