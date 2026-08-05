@@ -378,16 +378,6 @@ export function DatabaseTable({
     focusRenderedCell();
   };
 
-  const focusNewRecordInput = () => {
-    requestAnimationFrame(() => {
-      const input = tableHostRef.current?.querySelector<HTMLInputElement>(
-        '[data-testid="database-new-row-title"]',
-      );
-      input?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-      input?.focus();
-    });
-  };
-
   const rangeTsv = (fallbackRow: number, fallbackColumn: number): string => {
     const range = cellIsInRange(cellRange, fallbackRow, fallbackColumn)
       ? cellRange
@@ -651,7 +641,7 @@ export function DatabaseTable({
         canCreatePage: Boolean(onCreateRecord),
         selectedRecordIds,
         rowMenuRecordId: rowMenu?.recordId,
-        onAddPage: onCreateRecord ? focusNewRecordInput : undefined,
+        onAddPage: onCreateRecord ? () => onCreateRecord('') : undefined,
         onToggleSelection: onSelectionChange
           ? (recordId) => {
               const next = new Set(selectedRecordIds);

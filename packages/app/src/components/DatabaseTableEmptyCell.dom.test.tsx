@@ -130,8 +130,7 @@ describe('database empty-cell editor matrix', () => {
     expect(titleCell.textContent).not.toContain('—');
     expect(titleCell.querySelector('[data-database-empty-cell]')).toBeTruthy();
 
-    const newTitle = screen.getByTestId('database-new-row-title');
-    fireEvent.keyDown(newTitle, { key: 'Enter' });
+    fireEvent.click(screen.getByTestId('database-new-row-create'));
     expect(creates).toEqual(['']);
   });
 

@@ -746,7 +746,7 @@ describe('DatabaseTableDialog', () => {
     expect(screen.queryByText('First task')).toBeNull();
   });
 
-  test('focuses the inline new-record title after creation handoff', async () => {
+  test('focuses the inline new-record button after creation handoff', async () => {
     render(
       <DatabaseTable
         databaseId={database.id}
@@ -757,8 +757,8 @@ describe('DatabaseTableDialog', () => {
       />,
     );
 
-    const input = screen.getByTestId('database-new-row-title');
-    await waitFor(() => expect(document.activeElement).toBe(input));
+    const button = screen.getByTestId('database-new-row-create');
+    await waitFor(() => expect(document.activeElement).toBe(button));
   });
 
   test('surfaces schema property management only when the host wires it up', () => {
@@ -5734,7 +5734,7 @@ describe('DatabaseTableDialog', () => {
                     id: 'rec_created',
                     path: 'tasks/created.md',
                     revision: hash,
-                    values: { prop_title: 'Created task' },
+                    values: { prop_title: '' },
                   },
                 ]
               : [],
@@ -5780,7 +5780,7 @@ describe('DatabaseTableDialog', () => {
                   path: 'tasks/created.md',
                   action: 'create',
                   before: null,
-                  after: { values: { prop_title: 'Created task' }, body: '' },
+                  after: { values: { prop_title: '' }, body: '' },
                 },
               ],
               templates: [],
@@ -5821,26 +5821,26 @@ describe('DatabaseTableDialog', () => {
 
     render(<DatabaseTableDialog open={true} onOpenChange={() => {}} />);
     await screen.findByText('No records in this source.');
-    const newRowTitle = screen.getByTestId('database-new-row-title');
-    fireEvent.change(newRowTitle, {
-      target: { value: 'Created task' },
-    });
-    fireEvent.keyDown(newRowTitle, { key: 'Enter' });
+    fireEvent.click(screen.getByTestId('database-new-row-create'));
     await waitFor(() => expect(draftStarted).toBe(true));
-    expect((screen.getByTestId('database-new-row-title') as HTMLInputElement).disabled).toBe(false);
+    expect((screen.getByTestId('database-new-row-create') as HTMLButtonElement).disabled).toBe(
+      false,
+    );
     expect(screen.queryByTestId('database-save-indicator')).toBeNull();
     releaseDraft?.();
     await waitFor(() => expect(commitCalls).toBe(1));
     await waitFor(() =>
-      expect(document.activeElement).toBe(screen.getByTestId('database-new-row-title')),
+      expect(document.activeElement).toBe(screen.getByTestId('database-new-row-create')),
     );
-    expect(
-      (await screen.findByText('Created task')).closest('tr')?.getAttribute('data-canonical'),
-    ).toBe('true');
-    const escapeInput = screen.getByTestId('database-new-row-title');
-    fireEvent.change(escapeInput, { target: { value: 'Discarded draft' } });
-    fireEvent.keyDown(escapeInput, { key: 'Escape' });
-    expect((escapeInput as HTMLInputElement).value).toBe('');
+    await waitFor(() =>
+      expect(
+        document.querySelector('[data-record-id="rec_created"]')?.getAttribute('data-canonical'),
+      ).toBe('true'),
+    );
+    const createdRow = document.querySelector('[data-record-id="rec_created"]');
+    expect(createdRow?.querySelector('[data-property-id="prop_title"] button')?.textContent).toBe(
+      '',
+    );
   });
 
   test('keeps deletion as a discardable ghost row until exact-plan commit', async () => {

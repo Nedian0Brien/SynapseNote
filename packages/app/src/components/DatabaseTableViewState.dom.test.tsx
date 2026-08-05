@@ -49,12 +49,13 @@ describe('DatabaseTable view state', () => {
     const onReorderRecords = mock(() => {});
     const onPaste = mock(() => {});
     const onDuplicate = mock(() => {});
+    const onCreateRecord = mock(() => {});
     const rendered = render(
       <DatabaseTable
         source={source}
         result={result}
         notionSurface
-        onCreateRecord={mock(() => {})}
+        onCreateRecord={onCreateRecord}
         onSelectionChange={onSelectionChange}
         onReorderRecords={onReorderRecords}
         onPaste={onPaste}
@@ -116,9 +117,7 @@ describe('DatabaseTable view state', () => {
     expect(dataTransfer.getData('text/plain')).toBe('');
 
     fireEvent.click(rendered.getByRole('button', { name: 'Add page below' }));
-    await waitFor(() =>
-      expect(document.activeElement?.getAttribute('data-testid')).toBe('database-new-row-title'),
-    );
+    expect(onCreateRecord).toHaveBeenLastCalledWith('');
   });
 
   test('applies a changed linked-view projection without remounting the table', async () => {

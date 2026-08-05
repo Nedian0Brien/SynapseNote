@@ -1,7 +1,7 @@
 import { t } from '@lingui/core/macro';
 import type { DatabaseProperty } from '@nedian0brien/synapsenote-core';
 import { Plus } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { TableCell, TableRow } from '@/components/ui/table';
 import type { DatabaseTableGeometry } from '@/lib/database-table-geometry';
 import type { DatabaseTableLayoutState } from '@/lib/database-table-layout';
@@ -56,45 +56,31 @@ export function DatabaseTableNewRecordRow({
           style={index === 0 ? { left: `${geometry.titleStickyInset}px` } : undefined}
         >
           {index === 0 && property.type === 'title' ? (
-            <div
-              className={cn('flex items-center', notionSurface && 'gap-1 text-muted-foreground')}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              data-testid="database-new-row-create"
+              aria-label={notionSurface ? 'Add new page' : 'Add new record'}
+              disabled={mutationLocked}
+              className={cn(
+                'w-full justify-start px-0 font-normal text-muted-foreground',
+                notionSurface ? 'h-[42px]' : 'h-8',
+              )}
+              onClick={() => {
+                setEditError(null);
+                onCreateRecord('');
+              }}
             >
-              {notionSurface ? <Plus className="size-4 shrink-0" aria-hidden="true" /> : null}
-              <Input
-                data-testid="database-new-row-title"
-                aria-label={notionSurface ? 'New page title' : 'New row title'}
-                placeholder={notionSurface ? t`New page` : t`New record title`}
-                disabled={mutationLocked}
-                className={cn(
-                  notionSurface ? 'h-[42px]' : 'h-8',
-                  notionSurface &&
-                    '!bg-transparent border-0 px-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0',
-                )}
-                onKeyDown={(event) => {
-                  if (event.nativeEvent.isComposing) return;
-                  if (event.key === 'Enter') {
-                    event.preventDefault();
-                    const title = event.currentTarget.value.trim();
-                    event.currentTarget.value = '';
-                    setEditError(null);
-                    onCreateRecord(title);
-                  }
-                  if (event.key === 'Escape') {
-                    event.currentTarget.value = '';
-                    setEditError(null);
-                    event.currentTarget.blur();
-                  }
-                }}
-              />
-            </div>
+              <Plus className="size-4 shrink-0" aria-hidden="true" />
+              {notionSurface ? t`New page` : t`New record`}
+            </Button>
           ) : null}
         </TableCell>
       ))}
       {notionSurface ? (
         <>
-          <TableCell role="gridcell" aria-colindex={properties.length + 1} className="p-0">
-            <span className="sr-only">{t`Press Enter to create page`}</span>
-          </TableCell>
+          <TableCell role="gridcell" aria-colindex={properties.length + 1} className="p-0" />
           <TableCell
             role="presentation"
             aria-hidden="true"
@@ -115,7 +101,7 @@ export function DatabaseTableNewRecordRow({
             aria-colindex={properties.length + 3}
             className="sticky right-0 z-10"
           >
-            <span className="text-muted-foreground text-xs">{t`Press Enter to add`}</span>
+            <span className="text-muted-foreground text-xs">{t`Click to add`}</span>
           </TableCell>
         </>
       )}

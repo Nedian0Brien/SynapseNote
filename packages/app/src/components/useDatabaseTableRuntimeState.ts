@@ -314,11 +314,11 @@ export function useDatabaseTableRuntimeState({
     }
     let frame = 0;
     frame = window.requestAnimationFrame(() => {
-      const input = tableHostRef.current?.querySelector<HTMLInputElement>(
-        '[data-testid="database-new-row-title"]',
+      const button = tableHostRef.current?.querySelector<HTMLButtonElement>(
+        '[data-testid="database-new-row-create"]',
       );
-      if (!input || mutationLocked) return;
-      input.focus();
+      if (!button || mutationLocked) return;
+      button.focus();
       autoFocusNewRecordConsumedRef.current = focusRequest;
     });
     return () => window.cancelAnimationFrame(frame);

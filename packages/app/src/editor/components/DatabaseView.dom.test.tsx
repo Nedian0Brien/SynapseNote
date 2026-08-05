@@ -2114,7 +2114,7 @@ describe('DatabaseView', () => {
     expect(inlineSurface?.getAttribute('data-view-id')).toBe(view.id);
     expect(document.querySelector('[data-record-id="rec_first"]')).toBeTruthy();
     expect(screen.getByLabelText('Open page First task')).toBeTruthy();
-    expect(screen.getByTestId('database-new-row-title')).toBeTruthy();
+    expect(screen.getByTestId('database-new-row-create')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'More actions for page First task' })).toBeNull();
     fireEvent.pointerDown(screen.getByRole('button', { name: 'Property options for Title' }));
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Inspect property context' }));
@@ -2188,9 +2188,6 @@ describe('DatabaseView', () => {
     expect(screen.queryByText('One database change can be undone')).toBeNull();
     expectInlineHistoryAction('Undo change');
     expect(inlineSurfaceAfterSave?.getBoundingClientRect().height).toBe(heightBeforeFeedbackExpiry);
-    const textInput = await screen.findByTestId('database-new-row-title');
-    fireEvent.keyDown(textInput, { key: 'z', ctrlKey: true });
-    expect(undoCalls).toBe(0);
     clickInlineHistoryAction('Undo change');
     await waitFor(() => expect(undoCalls).toBe(2));
     expectInlineHistoryAction('Redo change');
@@ -2203,9 +2200,7 @@ describe('DatabaseView', () => {
     await waitFor(() => expect(undoCalls).toBe(6));
     fireEvent.keyDown(inlineRoot as HTMLElement, { key: 'z', ctrlKey: true, shiftKey: true });
     await waitFor(() => expect(undoCalls).toBe(8));
-    const newRowTitle = await screen.findByTestId('database-new-row-title');
-    fireEvent.change(newRowTitle, { target: { value: 'Inline page' } });
-    fireEvent.keyDown(newRowTitle, { key: 'Enter' });
+    fireEvent.click(await screen.findByTestId('database-new-row-create'));
     await waitFor(() => expect(commitCalls).toBe(3));
     undoBlocked = true;
     clickInlineHistoryAction('Undo change');
@@ -2584,7 +2579,7 @@ describe('DatabaseView', () => {
       <DatabaseView databaseId={database.id} sourceId={source.id} viewId={view.id} mode="inline" />,
     );
 
-    expect(await screen.findByTestId('database-new-row-title')).toBeTruthy();
+    expect(await screen.findByTestId('database-new-row-create')).toBeTruthy();
     expect(document.querySelector('[data-database-state="empty"]')).toBeTruthy();
     expect(screen.getByText('No pages in this source.')).toBeTruthy();
     expect(screen.getByText('Use the row below to add a page.')).toBeTruthy();
@@ -2685,10 +2680,10 @@ describe('DatabaseView', () => {
       <DatabaseView databaseId={database.id} sourceId={source.id} viewId={view.id} mode="inline" />,
     );
     const newPageButton = await screen.findByRole('button', { name: 'New page' });
-    const newPageTitle = await screen.findByLabelText('New page title');
+    const newRowButton = await screen.findByTestId('database-new-row-create');
     fireEvent.click(newPageButton);
     await waitFor(() => expect(plannedTitle).toBe(''));
-    expect(document.activeElement).not.toBe(newPageTitle);
+    expect(document.activeElement).not.toBe(newRowButton);
     expect(document.querySelector('[data-database-workspace]')).toBeNull();
   });
 
