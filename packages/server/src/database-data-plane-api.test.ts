@@ -1959,7 +1959,10 @@ describe('database data plane HTTP handlers', () => {
       relationExpansion: null,
       retrieval: {
         query: { filter: null, includeArchived: false },
-        ranking: { strategy: 'typed_sort_then_record_id', tieBreakers: ['record_id'] },
+        ranking: {
+          strategy: 'typed_sort_then_created_at_then_record_id',
+          tieBreakers: ['created_at', 'record_id'],
+        },
         result: { matched: 1, returned: 1, complete: true, continuationAvailable: false },
         evidence: { mode: 'records', searchText: null },
       },
@@ -2010,7 +2013,7 @@ describe('database data plane HTTP handlers', () => {
       tokenCount: { estimated: expect.any(Number), max: 1_000, reserve: 100 },
       retrieval: {
         query: { includeArchived: false },
-        ranking: { strategy: 'typed_sort_then_record_id' },
+        ranking: { strategy: 'typed_sort_then_created_at_then_record_id' },
         result: { matched: 1, returned: 1, complete: true, continuationAvailable: false },
       },
       redactions: { evaluated: true },

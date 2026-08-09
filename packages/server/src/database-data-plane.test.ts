@@ -1880,15 +1880,15 @@ Body
           propertyIds: ['prop_customer_feedback_score'],
         },
         ranking: {
-          strategy: 'typed_sort_then_record_id',
+          strategy: 'typed_sort_then_created_at_then_record_id',
           sort: [{ propertyId: 'prop_customer_feedback_score', direction: 'desc' }],
           semantics: {
-            version: 1,
+            version: 2,
             locale: 'und',
             naturalNumbers: 'ascii_decimal_runs',
             emptyValues: 'last_regardless_of_direction',
           },
-          tieBreakers: ['record_id'],
+          tieBreakers: ['created_at', 'record_id'],
         },
         truncation: {
           cause: null,

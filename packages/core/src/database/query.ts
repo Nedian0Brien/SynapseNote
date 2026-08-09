@@ -153,7 +153,7 @@ export const DatabaseQuerySchema = z
 export type DatabaseQuery = z.infer<typeof DatabaseQuerySchema>;
 
 export const DATABASE_QUERY_SORT_SEMANTICS = {
-  version: 1,
+  version: 2,
   locale: 'und',
   normalization: 'NFKD',
   collation: 'unicode_code_point',
@@ -162,7 +162,7 @@ export const DATABASE_QUERY_SORT_SEMANTICS = {
   naturalNumbers: 'ascii_decimal_runs',
   emptyValues: 'last_regardless_of_direction',
   arrays: 'sorted_elements_then_lexicographic',
-  tieBreaker: 'record_id',
+  tieBreaker: 'created_at_then_record_id',
 } as const;
 
 export type DatabaseQueryErrorCode =
@@ -1038,6 +1038,18 @@ function compareForSort(
   return compareTextForSort(String(left), String(right));
 }
 
+function compareRecordCreationOrder(left: DatabaseRecord, right: DatabaseRecord): number {
+  const leftCreatedAt = left.createdAt ? Date.parse(left.createdAt) : Number.NaN;
+  const rightCreatedAt = right.createdAt ? Date.parse(right.createdAt) : Number.NaN;
+  const leftHasCreatedAt = Number.isFinite(leftCreatedAt);
+  const rightHasCreatedAt = Number.isFinite(rightCreatedAt);
+  if (leftHasCreatedAt && rightHasCreatedAt && leftCreatedAt !== rightCreatedAt) {
+    return leftCreatedAt - rightCreatedAt;
+  }
+  if (leftHasCreatedAt !== rightHasCreatedAt) return leftHasCreatedAt ? 1 : -1;
+  return codePointCompare(left.id, right.id);
+}
+
 const UNIVERSAL_CALCULATIONS = [
   'count_values',
   'count_unique',
@@ -1602,7 +1614,7 @@ export function queryDatabaseRecords(input: QueryDatabaseRecordsInput): Database
         return sort.direction === 'asc' ? compared : -compared;
       }
     }
-    return codePointCompare(left.id, right.id);
+    return compareRecordCreationOrder(left, right);
   });
 
   const fingerprint = cursorFingerprint(input.source.id, input.snapshotRevision, query);

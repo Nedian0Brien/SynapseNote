@@ -686,7 +686,7 @@ describe('queryDatabaseRecords', () => {
   test('uses deterministic natural Unicode collation and keeps empty values last', () => {
     const matrixSource = allTypeSource();
     expect(DATABASE_QUERY_SORT_SEMANTICS).toEqual({
-      version: 1,
+      version: 2,
       locale: 'und',
       normalization: 'NFKD',
       collation: 'unicode_code_point',
@@ -695,7 +695,7 @@ describe('queryDatabaseRecords', () => {
       naturalNumbers: 'ascii_decimal_runs',
       emptyValues: 'last_regardless_of_direction',
       arrays: 'sorted_elements_then_lexicographic',
-      tieBreaker: 'record_id',
+      tieBreaker: 'created_at_then_record_id',
     });
     const sortable = [
       ['rec_upper', 'Item 2'],
@@ -737,6 +737,33 @@ describe('queryDatabaseRecords', () => {
       'rec_upper',
       'rec_empty',
       'rec_missing',
+    ]);
+  });
+
+  test('keeps a newly created page last when explicit sort values are equal or absent', () => {
+    const matrixSource = allTypeSource();
+    const older = {
+      ...record('rec_z_older', { prop_all_title: '', prop_all_text: '' }),
+      sourceId: matrixSource.id,
+      createdAt: '2026-08-09T01:00:00.000Z',
+    };
+    const newer = {
+      ...record('rec_a_newer', { prop_all_title: '', prop_all_text: '' }),
+      sourceId: matrixSource.id,
+      createdAt: '2026-08-09T02:00:00.000Z',
+    };
+    const ids = (sort: Array<{ propertyId: string; direction: 'asc' }>) =>
+      queryDatabaseRecords({
+        source: matrixSource,
+        records: [newer, older],
+        snapshotRevision: 'snapshot:creation-order',
+        query: { sort },
+      }).records.map((entry) => entry.id);
+
+    expect(ids([])).toEqual(['rec_z_older', 'rec_a_newer']);
+    expect(ids([{ propertyId: 'prop_all_text', direction: 'asc' }])).toEqual([
+      'rec_z_older',
+      'rec_a_newer',
     ]);
   });
 

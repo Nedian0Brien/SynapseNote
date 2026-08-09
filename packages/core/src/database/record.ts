@@ -52,6 +52,8 @@ export interface DatabaseRecord {
   sourceId: string;
   path: string;
   revision: string | null;
+  /** Immutable creation time used to keep otherwise-equal records in insertion order. */
+  createdAt?: string;
   /** Semantic revision of body and non-Verification values; stable across badge-only changes. */
   evidenceRevision?: string | null;
   values: Record<string, DatabaseValue>;
@@ -570,6 +572,9 @@ export function materializeDatabaseRecord(
       sourceId: source.id,
       path: input.path,
       revision: input.revision ?? null,
+      ...((metadata.data.created_at ?? input.fileCreatedAt)
+        ? { createdAt: metadata.data.created_at ?? input.fileCreatedAt }
+        : {}),
       values,
       ...(Object.keys(invalidValues).length > 0 ? { invalidValues } : {}),
       ...(issues.length > 0 ? { issues } : {}),

@@ -356,10 +356,10 @@ export interface DatabaseQueryExplainTrace {
   agentView: AppliedDatabaseAgentView | null;
   filter: { expression: DatabaseFilter | null; propertyIds: readonly string[] };
   ranking: {
-    strategy: 'typed_sort_then_record_id';
+    strategy: 'typed_sort_then_created_at_then_record_id';
     sort: DatabaseQuery['sort'];
     semantics: typeof DATABASE_QUERY_SORT_SEMANTICS;
-    tieBreakers: readonly ['record_id'];
+    tieBreakers: readonly ['created_at', 'record_id'];
   };
   projection: {
     requestedPropertyIds: readonly string[];
@@ -2949,10 +2949,10 @@ export class DatabaseDataPlane {
         propertyIds: [...new Set(filterPropertyIds(parsedQuery.where))],
       },
       ranking: {
-        strategy: 'typed_sort_then_record_id',
+        strategy: 'typed_sort_then_created_at_then_record_id',
         sort: structuredClone(parsedQuery.sort),
         semantics: DATABASE_QUERY_SORT_SEMANTICS,
-        tieBreakers: ['record_id'],
+        tieBreakers: ['created_at', 'record_id'],
       },
       projection: {
         requestedPropertyIds: [...requestedProjection],

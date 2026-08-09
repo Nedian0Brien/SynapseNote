@@ -169,6 +169,26 @@ Exact customer evidence.
     expect(result.record.values).not.toHaveProperty('unrelated');
   });
 
+  test('retains creation time even when the source does not expose a Created time property', () => {
+    const result = materializeDatabaseRecord({
+      definition: definition(),
+      sourceId: 'ds_feedback',
+      path: 'feedback/created.md',
+      markdown: `---
+_sn:
+  database_id: db_feedback
+  source_id: ds_feedback
+  record_id: rec_created
+  created_at: 2026-08-09T01:02:03.000Z
+title: Created
+---
+`,
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.record.createdAt).toBe('2026-08-09T01:02:03.000Z');
+  });
+
   test('materializes canonical archive state from _sn metadata', () => {
     const result = materializeDatabaseRecord({
       definition: definition(),

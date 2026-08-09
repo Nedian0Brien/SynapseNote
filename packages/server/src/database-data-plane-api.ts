@@ -1267,11 +1267,11 @@ export const DatabaseQueryResponseSchema = z
           .strict(),
         ranking: z
           .object({
-            strategy: z.literal('typed_sort_then_record_id'),
+            strategy: z.literal('typed_sort_then_created_at_then_record_id'),
             sort: DatabaseQuerySchema.shape.sort,
             semantics: z
               .object({
-                version: z.literal(1),
+                version: z.literal(2),
                 locale: z.literal('und'),
                 normalization: z.literal('NFKD'),
                 collation: z.literal('unicode_code_point'),
@@ -1280,10 +1280,10 @@ export const DatabaseQueryResponseSchema = z
                 naturalNumbers: z.literal('ascii_decimal_runs'),
                 emptyValues: z.literal('last_regardless_of_direction'),
                 arrays: z.literal('sorted_elements_then_lexicographic'),
-                tieBreaker: z.literal('record_id'),
+                tieBreaker: z.literal('created_at_then_record_id'),
               })
               .strict(),
-            tieBreakers: z.tuple([z.literal('record_id')]),
+            tieBreakers: z.tuple([z.literal('created_at'), z.literal('record_id')]),
           })
           .strict(),
         projection: z
@@ -1574,9 +1574,9 @@ const DatabaseContextRetrievalSchema = z
     filters: z.object({ propertyIds: z.array(z.string().min(1)) }).strict(),
     ranking: z
       .object({
-        strategy: z.literal('typed_sort_then_record_id'),
+        strategy: z.literal('typed_sort_then_created_at_then_record_id'),
         sort: z.array(z.record(z.string(), z.unknown())),
-        tieBreakers: z.tuple([z.literal('record_id')]),
+        tieBreakers: z.tuple([z.literal('created_at'), z.literal('record_id')]),
       })
       .strict(),
     projection: z
