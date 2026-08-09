@@ -124,13 +124,58 @@ describe('Paragraph indent shortcuts', () => {
     expect(editor.state.doc.firstChild?.textContent).toBe('body text');
   });
 
-  test('Tab mid-sentence stays inert instead of dropping a stray tab', () => {
+  test('Tab mid-sentence indents the line and leaves the caret where it was', () => {
     const editor = mountEditor('body text');
     caretInParagraph(editor, 0, 4);
 
-    // TabFocusTrap consumes it (true), but the document is untouched.
     expect(press(editor, 'Tab')).toBe(true);
-    expect(editor.state.doc.firstChild?.textContent).toBe('body text');
+    // The tab joins the head of the line, not the caret's own position — a tab
+    // between "body" and " text" would be neither an indent nor round-trippable.
+    expect(editor.state.doc.firstChild?.textContent).toBe('\tbody text');
+    // Caret still sits between "body" and " text": offset 4 of the old text is
+    // offset 5 of the new one.
+    expect(editor.state.selection.from).toBe(6);
+  });
+
+  test('Shift-Tab mid-sentence outdents the line', () => {
+    // Built by keystroke rather than from source text: a raw leading tab in
+    // markdown is an indented code block, not an indented paragraph.
+    const editor = mountEditor('body text');
+    caretInParagraph(editor, 0);
+    press(editor, 'Tab');
+    press(editor, 'Tab');
+    expect(editor.state.doc.firstChild?.textContent).toBe('\t\tbody text');
+
+    caretInParagraph(editor, 0, 7);
+    expect(press(editor, 'Tab', true)).toBe(true);
+    expect(editor.state.doc.firstChild?.textContent).toBe('\tbody text');
+  });
+
+  test('Tab with text selected inside one paragraph indents it', () => {
+    const editor = mountEditor('body text');
+    const start = 1;
+    editor.view.dispatch(
+      editor.state.tr.setSelection(TextSelection.create(editor.state.doc, start + 5, start + 9)),
+    );
+
+    expect(press(editor, 'Tab')).toBe(true);
+    expect(editor.state.doc.firstChild?.textContent).toBe('\tbody text');
+    // The selection rides along instead of being replaced by the tab.
+    expect(
+      editor.state.doc.textBetween(editor.state.selection.from, editor.state.selection.to),
+    ).toBe('text');
+  });
+
+  test('Tab across a multi-block selection is left alone', () => {
+    const editor = mountEditor('first para\n\nsecond para');
+    editor.view.dispatch(
+      editor.state.tr.setSelection(TextSelection.create(editor.state.doc, 2, 15)),
+    );
+
+    // Spanning blocks is a different gesture; TabFocusTrap consumes the key and
+    // the document is untouched.
+    expect(press(editor, 'Tab')).toBe(true);
+    expect(editor.state.doc.textContent).toBe('first parasecond para');
   });
 
   test('the indent round-trips through markdown as an escaped leading tab', () => {

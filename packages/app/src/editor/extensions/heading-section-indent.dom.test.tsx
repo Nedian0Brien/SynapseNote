@@ -247,12 +247,14 @@ describe('Heading section indent', () => {
     }
   });
 
-  test('Tab mid-heading stays inert instead of indenting from the middle of a word', () => {
+  test('Tab from the middle of a heading indents it just the same', () => {
     const editor = mountEditor('## 제목');
     editor.view.dispatch(editor.state.tr.setSelection(TextSelection.create(editor.state.doc, 3)));
 
     expect(press(editor, 'Tab')).toBe(true);
-    expect(headingIndent(editor)).toBe(null);
+    expect(headingIndent(editor)).toBe(1);
+    // Caret keeps its place — the indent lives in the node's attrs, not the text.
+    expect(editor.state.selection.from).toBe(3);
   });
 
   test('a paragraph Tab still composes on top of the inherited section indent', () => {

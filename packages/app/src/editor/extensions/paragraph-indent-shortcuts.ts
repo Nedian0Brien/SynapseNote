@@ -11,16 +11,15 @@
  *
  * Policy:
  *
- * - Tab, with the caret inside the paragraph's leading whitespace run
- *   (offset 0 included, so the very first press qualifies), inserts one tab
- *   character. Pressing it again deepens the indent, because the caret is
- *   still inside the run.
+ * - Tab, with the caret anywhere in the paragraph, adds one tab character to
+ *   the paragraph's leading run. Pressing it again deepens the indent. The
+ *   character always joins the run at the head of the line, never the caret's
+ *   own position: a tab dropped mid-sentence is not an indent, and only a
+ *   leading run survives the markdown round-trip.
  * - Shift-Tab pulls one indent level back off the same run: a whole tab, or
  *   up to `SPACE_INDENT_WIDTH` trailing spaces when the paragraph was
  *   indented with spaces (what the markdown pipeline produces for a
  *   `&#x20;`-escaped leading run).
- * - The caret must sit in the leading run. Tab mid-sentence stays trapped —
- *   a stray tab inside a line is never what the keystroke meant.
  *
  * Why a literal character and not a block attribute: markdown has no
  * paragraph-indent construct, so an attribute would need an invented
@@ -46,7 +45,7 @@
  */
 
 import { Extension } from '@tiptap/core';
-import type { Node as PmNode, ResolvedPos } from '@tiptap/pm/model';
+import type { Node as PmNode } from '@tiptap/pm/model';
 import { Plugin, PluginKey, TextSelection } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 
@@ -168,27 +167,30 @@ function outdentWidth(indent: string): number {
 }
 
 /**
- * Resolve the caret when it sits inside the leading indent run of a plain
- * paragraph — the only position where Tab means "indent this line".
+ * Resolve the paragraph Tab should indent.
+ *
+ * Anywhere inside it counts. Indenting is a statement about the line, not
+ * about the character the caret happens to rest on, so requiring the start
+ * would only make authors navigate before they can use the key. A selection
+ * qualifies while it stays within one paragraph; spanning blocks is a
+ * different gesture and is left to fall through.
  */
-function indentCaret(
+function indentTarget(
   editor: import('@tiptap/core').Editor,
-): { $cursor: ResolvedPos; indentLength: number } | null {
+): { runStart: number; indentLength: number } | null {
   const { selection } = editor.state;
   if (!(selection instanceof TextSelection)) return null;
-  const { $cursor } = selection;
-  if ($cursor === null || $cursor.parent.type.name !== INDENTABLE_BLOCK) return null;
+  const { $from, $to } = selection;
+  if ($from.parent !== $to.parent || $from.parent.type.name !== INDENTABLE_BLOCK) return null;
 
   // Inside a list item Tab already means "nest this item". ListEditingShortcuts
   // runs first and returns false when the item cannot sink (a first item at the
   // top level); indenting its text instead would rewrite the marker line.
-  for (let depth = $cursor.depth - 1; depth > 0; depth -= 1) {
-    if ($cursor.node(depth).type.name === 'listItem') return null;
+  for (let depth = $from.depth - 1; depth > 0; depth -= 1) {
+    if ($from.node(depth).type.name === 'listItem') return null;
   }
 
-  const indentLength = leadingIndentLength($cursor.parent);
-  if ($cursor.parentOffset > indentLength) return null;
-  return { $cursor, indentLength };
+  return { runStart: $from.start(), indentLength: leadingIndentLength($from.parent) };
 }
 
 export const ParagraphIndentShortcuts = Extension.create({
@@ -198,27 +200,36 @@ export const ParagraphIndentShortcuts = Extension.create({
   addKeyboardShortcuts() {
     return {
       Tab: () => {
-        const caret = indentCaret(this.editor);
-        if (caret === null) return false;
+        const target = indentTarget(this.editor);
+        if (target === null) return false;
 
         const { state, view } = this.editor;
-        const { pos } = caret.$cursor;
+        const { selection } = state;
+        // Grow the existing run rather than dropping a tab wherever the caret
+        // sits — a tab in the middle of a sentence is never the indent the
+        // author asked for, and only a LEADING run survives the round-trip.
+        const at = target.runStart + target.indentLength;
         // replaceWith (not insertText) so the tab carries no marks: inheriting
         // a neighbouring `sourceLiteral` would fold two tabs under one
         // `&#x9;` sourceRaw and drop an indent level on serialize.
-        const tr = state.tr.replaceWith(pos, pos, state.schema.text(INDENT_UNIT));
-        tr.setSelection(TextSelection.create(tr.doc, pos + INDENT_UNIT.length));
+        const tr = state.tr.replaceWith(at, at, state.schema.text(INDENT_UNIT));
+        // Typing must never land text before the run, which would strand the
+        // tabs mid-line and lose the indent. A caret inside the run (the empty
+        // paragraph included) therefore comes to rest just past it; a caret out
+        // in the sentence keeps its own place through the mapping.
+        if (selection.empty && selection.from <= at) {
+          tr.setSelection(TextSelection.create(tr.doc, at + INDENT_UNIT.length));
+        }
         view.dispatch(tr.scrollIntoView());
         return true;
       },
       'Shift-Tab': () => {
-        const caret = indentCaret(this.editor);
-        if (caret === null || caret.indentLength === 0) return false;
+        const target = indentTarget(this.editor);
+        if (target === null || target.indentLength === 0) return false;
 
         const { state, view } = this.editor;
-        const runStart = caret.$cursor.start();
-        const runEnd = runStart + caret.indentLength;
-        const removed = outdentWidth(state.doc.textBetween(runStart, runEnd));
+        const runEnd = target.runStart + target.indentLength;
+        const removed = outdentWidth(state.doc.textBetween(target.runStart, runEnd));
         view.dispatch(state.tr.delete(runEnd - removed, runEnd).scrollIntoView());
         return true;
       },
