@@ -146,7 +146,7 @@ export function FolderDocumentCard({
     return () => controller.abort();
   }, [cacheKey, entry.path, entry.title, shouldLoad]);
 
-  const height = mode === 'preview' ? folderDocumentCardHeight(entry.size, entry.path) : 272;
+  const height = mode === 'preview' ? folderDocumentCardHeight(entry.size, entry.path) : 232;
 
   return (
     <article

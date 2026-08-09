@@ -65,6 +65,7 @@ describe('folderDocumentCardHeight', () => {
     expect(folderDocumentCardHeight(6_000, 'notes/a')).toBeGreaterThan(
       folderDocumentCardHeight(100, 'notes/a'),
     );
-    expect(folderDocumentCardHeight(100_000, 'notes/a')).toBeLessThanOrEqual(388);
+    expect(folderDocumentCardHeight(0, 'notes/a')).toBeGreaterThanOrEqual(188);
+    expect(folderDocumentCardHeight(100_000, 'notes/a')).toBeLessThanOrEqual(260);
   });
 });

@@ -130,13 +130,13 @@ export function buildFolderDocumentPreview(
 }
 
 /**
- * Craft-like paper cards use more vertical space for longer notes while small
- * notes remain compact. The path adds only a small deterministic variation so
- * equal-sized notes do not form an artificial horizontal grid in masonry view.
+ * Craft-like paper cards stay within the compact height range shown by the
+ * reference gallery. Content size and path add restrained deterministic
+ * variation so the masonry view does not collapse into a uniform grid.
  */
 export function folderDocumentCardHeight(size: number, path: string): number {
   const safeSize = Math.max(0, size);
   const contentBand = safeSize < 350 ? 0 : safeSize < 1_200 ? 1 : safeSize < 4_000 ? 2 : 3;
   const variation = [...path].reduce((sum, character) => sum + (character.codePointAt(0) ?? 0), 0);
-  return Math.min(388, 216 + contentBand * 48 + (variation % 3) * 16);
+  return Math.min(260, 188 + contentBand * 12 + (variation % 4) * 12);
 }
