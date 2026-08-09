@@ -224,6 +224,9 @@ export const ProblemTypeSchema = z.enum([
   // per-server cap was hit before the inbound write could allocate a new
   // session — surfaced as 503 so SDK consumers know to retry-after.
   'urn:ok:error:reserved-doc-name',
+  // Ordinary file operations cannot rename/delete paths whose lifecycle is
+  // owned by a database manifest.
+  'urn:ok:error:database-owned-path',
   'urn:ok:error:target-not-found',
   'urn:ok:error:stale-target',
   'urn:ok:error:frontmatter-edit-not-supported',

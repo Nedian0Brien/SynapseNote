@@ -1938,6 +1938,7 @@ export function createServer(options: ServerOptions): ServerInstance {
       sessionManager,
       contentDir,
       databaseDataPlane,
+      databaseStore,
       databaseCommentStore,
       databaseTaskStore,
       databaseAgentRunStore,

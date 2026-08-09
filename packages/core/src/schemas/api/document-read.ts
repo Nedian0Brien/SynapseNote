@@ -96,6 +96,21 @@ export const DocumentListEntrySchema = z
     // affordance for each child folder without walking the subtree. Absent on
     // document/asset entries and on the recursive (`?showAll=true`) walk.
     hasChildren: z.boolean().optional(),
+    // Folder-only database ownership. Managed database folders remain visible
+    // in the ordinary explorer but route to the full database page instead of
+    // the generic folder overview.
+    databaseFolder: z
+      .object({
+        databaseId: z.string().min(1),
+        sourceId: z.string().min(1),
+        viewId: z.string().min(1).optional(),
+        title: z.string().min(1),
+      })
+      .strict()
+      .optional(),
+    // Folder-only deletion guard. True on an ancestor of at least one
+    // database-owned folder, even when that child has not been lazy-loaded.
+    containsDatabaseFolder: z.boolean().optional(),
   })
   .loose()
   // Variant constraint enforced via `.refine()` rather than `.discriminatedUnion()`
@@ -113,7 +128,9 @@ export const DocumentListEntrySchema = z
           entry.assetExt === undefined &&
           entry.mediaKind === undefined &&
           entry.referencedBy === undefined &&
-          entry.hasChildren === undefined
+          entry.hasChildren === undefined &&
+          entry.databaseFolder === undefined &&
+          entry.containsDatabaseFolder === undefined
         );
       }
       if (entry.kind === 'folder') {
@@ -141,7 +158,9 @@ export const DocumentListEntrySchema = z
           entry.path !== undefined &&
           entry.mediaKind === undefined &&
           entry.referencedBy === undefined &&
-          entry.hasChildren === undefined
+          entry.hasChildren === undefined &&
+          entry.databaseFolder === undefined &&
+          entry.containsDatabaseFolder === undefined
         );
       }
       // kind === 'asset' requires path + assetExt + referencedBy. mediaKind
@@ -153,7 +172,9 @@ export const DocumentListEntrySchema = z
         entry.path !== undefined &&
         entry.assetExt !== undefined &&
         entry.referencedBy !== undefined &&
-        entry.hasChildren === undefined
+        entry.hasChildren === undefined &&
+        entry.databaseFolder === undefined &&
+        entry.containsDatabaseFolder === undefined
       );
     },
     {

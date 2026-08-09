@@ -180,6 +180,31 @@ function fixture() {
 }
 
 describe('DatabasePlanEngine ephemeral desired state', () => {
+  test('allocates readable managed folders and record filenames with human collision suffixes', () => {
+    const { engine, contentDir } = fixture();
+    mkdirSync(join(contentDir, '문서', '프로젝트 일정'), { recursive: true });
+    const state = desiredState();
+    const source = state.sources[0] as (typeof state.sources)[number] & {
+      folderOwnership: 'database';
+    };
+    source.folder = '문서/프로젝트 일정';
+    source.folderOwnership = 'database';
+    state.sampleRecords = [
+      { sourceKey: 'tasks', values: { title: '첫 번째 작업', status: 'todo' }, body: '' },
+      { sourceKey: 'tasks', values: { title: '첫 번째 작업', status: 'todo' }, body: '' },
+    ];
+
+    const draft = engine.createDraft(state);
+    const plan = engine.createPlan(draft.id);
+
+    expect(draft.normalized.definition.sources[0]?.folder).toBe('문서/프로젝트 일정 (2)');
+    expect(plan.diff.records.map((record) => record.path)).toEqual([
+      '문서/프로젝트 일정 (2)/첫 번째 작업.md',
+      '문서/프로젝트 일정 (2)/첫 번째 작업 (2).md',
+    ]);
+    expect(plan.diff.records.every((record) => !record.path.includes(record.recordId))).toBe(true);
+  });
+
   test('classifies every user-resolvable area touched by an exact plan', () => {
     const { engine } = fixture();
     const state = desiredState() as ReturnType<typeof desiredState> & { automations: unknown[] };

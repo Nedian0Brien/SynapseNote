@@ -1,8 +1,10 @@
+import { databaseManagedSourceFolder } from '@nedian0brien/synapsenote-core';
 import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-server';
 import { Loader2, Plus } from 'lucide-react';
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useOptionalDocumentContext } from '@/editor/DocumentContext';
 import { createBlankDatabaseDesiredState, createNotionDatabaseKey } from '@/lib/database-creation';
 import { executeDatabaseUiMutation } from '@/lib/database-mutation-client';
 import { databaseUiMutationReviewMode } from '@/lib/database-mutation-policy';
@@ -25,6 +27,7 @@ export function InlineDatabaseCreationDialog({
   onCreated,
   autoStart = false,
 }: InlineDatabaseCreationDialogProps) {
+  const documentContext = useOptionalDocumentContext();
   const [name, setName] = useState('');
   const [status, setStatus] = useState<'idle' | 'creating'>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -37,8 +40,14 @@ export function InlineDatabaseCreationDialog({
 
   const submit = () => {
     if (status !== 'idle') return;
+    const visibleName = name.trim() || 'Untitled database';
+    const activeDocName = documentContext?.activeDocName ?? '';
+    const parentFolder = activeDocName.includes('/')
+      ? activeDocName.slice(0, activeDocName.lastIndexOf('/'))
+      : '';
     const desiredState: DatabaseDesiredStateDraftInput = createBlankDatabaseDesiredState({
-      name: name.trim() || 'Untitled database',
+      name: visibleName,
+      folder: databaseManagedSourceFolder(parentFolder, visibleName),
       ...(autoStart ? { key: inlineDatabaseKey } : {}),
     });
     const policy = {

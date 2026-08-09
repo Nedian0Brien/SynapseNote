@@ -53,6 +53,15 @@ export interface FolderEntry {
   isSymlink?: boolean;
   /** Canonical-relative on-disk path of the symlink target (when isSymlink). */
   targetPath?: string | null;
+  /** Database route for folders whose lifecycle is owned by a database manifest. */
+  databaseFolder?: {
+    databaseId: string;
+    sourceId: string;
+    viewId?: string;
+    title: string;
+  };
+  /** True when a not-yet-loaded descendant is a database-owned folder. */
+  containsDatabaseFolder?: boolean;
 }
 
 export type FileEntry = DocumentEntry | AssetEntry | FolderEntry;
@@ -162,6 +171,8 @@ export function toFileEntries(entries: readonly DocumentListEntry[]): FileEntry[
           hasChildren: entry.hasChildren,
           isSymlink: entry.isSymlink,
           targetPath: entry.targetPath,
+          ...(entry.databaseFolder ? { databaseFolder: entry.databaseFolder } : {}),
+          ...(entry.containsDatabaseFolder ? { containsDatabaseFolder: true } : {}),
         });
         break;
       default: {

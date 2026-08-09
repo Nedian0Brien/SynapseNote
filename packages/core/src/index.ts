@@ -1887,6 +1887,13 @@ export { type BasenameIndex, createBasenameIndex } from './utils/path-resolve.ts
 export { type ResolvedInternalHref, resolveInternalHref } from './utils/resolve-internal-href.ts';
 export { sanitizeFolderName } from './utils/sanitize-folder-name.ts';
 export {
+  databaseFolderNameFromTitle,
+  databaseManagedSourceFolder,
+  databasePathNameWithCollisionSuffix,
+  databaseRecordNameFromTitle,
+  databaseTitlePathSegment,
+} from './database/path-names.ts';
+export {
   disambiguateSlug,
   getHeadingSlug,
   type HeadingEntry,

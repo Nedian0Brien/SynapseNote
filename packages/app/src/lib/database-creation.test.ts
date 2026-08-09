@@ -20,7 +20,8 @@ describe('database creation desired state', () => {
       sources: [
         {
           key: 'project_tasks',
-          folder: 'project_tasks',
+          folder: 'Project Tasks',
+          folderOwnership: 'database',
           properties: [{ key: 'title', type: 'title', required: true }],
         },
       ],
@@ -36,7 +37,14 @@ describe('database creation desired state', () => {
     expect(key).toBe('untitled_database_test_42');
     expect(desired).toMatchObject({
       database: { key, name: 'Untitled database' },
-      sources: [{ key, folder: key, name: 'Untitled database' }],
+      sources: [
+        {
+          key,
+          folder: 'Untitled database',
+          folderOwnership: 'database',
+          name: 'Untitled database',
+        },
+      ],
     });
   });
 
@@ -99,6 +107,7 @@ describe('database creation desired state', () => {
     expect(DatabaseDesiredStateDraftSchema.safeParse(desired).success).toBe(true);
     expect(desired.sources[0]).toMatchObject({
       folder: 'research/notes',
+      folderOwnership: 'linked',
       includeSubfolders: false,
     });
     expect(desired.sampleRecords).toEqual([]);
@@ -172,7 +181,7 @@ describe('database creation desired state', () => {
       ),
     ).toEqual({
       recordMeaning: 'One Launch Plan record',
-      canonicalFolder: 'launch_plan',
+      canonicalFolder: 'Launch Plan',
       stableKey: 'launch_plan',
       initialView: 'Table',
       propertyNames: ['Task', 'Status', 'Priority', 'Due', 'Assignee'],

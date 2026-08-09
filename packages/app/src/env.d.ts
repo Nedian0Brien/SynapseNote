@@ -18,6 +18,10 @@ declare module 'lucide-react/dist/esm/icons/bot' {
   export const __iconNode: [string, Record<string, string>][];
 }
 
+declare module 'lucide-react/dist/esm/icons/database' {
+  export const __iconNode: [string, Record<string, string>][];
+}
+
 declare module 'lucide-react/dist/esm/icons/folder-input' {
   export const __iconNode: [string, Record<string, string>][];
 }

@@ -125,6 +125,7 @@ type CallApiOptions = {
   signalChannel?: Parameters<typeof createApiExtension>[0]['signalChannel'];
   projectDir?: string;
   contentFilter?: ContentFilter;
+  databaseStore?: Parameters<typeof createApiExtension>[0]['databaseStore'];
 };
 
 async function createTestApiExtension(contentDir: string, options?: CallApiOptions) {
@@ -155,6 +156,7 @@ async function createTestApiExtension(contentDir: string, options?: CallApiOptio
     signalChannel: options?.signalChannel,
     projectDir: options?.projectDir,
     contentFilter: options?.contentFilter,
+    databaseStore: options?.databaseStore,
   });
 }
 
@@ -2914,6 +2916,82 @@ describe('file operation API routes', () => {
     expect(body.documents).toContainEqual(
       expect.objectContaining({ kind: 'folder', path: 'empty' }),
     );
+  });
+
+  test('decorates and protects database-owned folders while leaving routing metadata stable', async () => {
+    const dir = setupTmpDir();
+    mkdirSync(join(dir, '문서', '프로젝트 일정'), { recursive: true });
+    const databaseStore = {
+      list: () => [
+        {
+          id: 'db_projects',
+          sources: [
+            {
+              id: 'src_projects',
+              name: '프로젝트 일정',
+              folder: '문서/프로젝트 일정',
+              folderOwnership: 'database',
+              defaultViewId: 'view_table',
+            },
+          ],
+          views: [{ id: 'view_table', sourceId: 'src_projects' }],
+        },
+      ],
+    } as unknown as NonNullable<CallApiOptions['databaseStore']>;
+
+    const listed = await callApi(dir, '/api/documents', 'GET', undefined, { databaseStore });
+    expect(listed.status).toBe(200);
+    expect(JSON.parse(listed.body)).toMatchObject({
+      documents: expect.arrayContaining([
+        expect.objectContaining({
+          kind: 'folder',
+          path: '문서',
+          containsDatabaseFolder: true,
+        }),
+        expect.objectContaining({
+          kind: 'folder',
+          path: '문서/프로젝트 일정',
+          databaseFolder: {
+            databaseId: 'db_projects',
+            sourceId: 'src_projects',
+            viewId: 'view_table',
+            title: '프로젝트 일정',
+          },
+        }),
+      ]),
+    });
+
+    const deleted = await callApi(
+      dir,
+      '/api/delete-path',
+      'POST',
+      {
+        kind: 'folder',
+        path: '문서/프로젝트 일정',
+      },
+      { databaseStore },
+    );
+    expect(deleted.status).toBe(409);
+    expect(JSON.parse(deleted.body)).toMatchObject({
+      type: 'urn:ok:error:database-owned-path',
+    });
+    expect(existsSync(join(dir, '문서', '프로젝트 일정'))).toBe(true);
+
+    const renamed = await callApi(
+      dir,
+      '/api/rename-path',
+      'POST',
+      {
+        kind: 'folder',
+        fromPath: '문서/프로젝트 일정',
+        toPath: '문서/새 이름',
+      },
+      { databaseStore },
+    );
+    expect(renamed.status).toBe(409);
+    expect(JSON.parse(renamed.body)).toMatchObject({
+      type: 'urn:ok:error:database-owned-path',
+    });
   });
 
   test('renames an empty folder on disk', async () => {

@@ -27,6 +27,9 @@ describe('ProblemTypeSchema cluster C URN tokens', () => {
       true,
     );
   });
+  test('database-owned-path is valid', () => {
+    expect(ProblemTypeSchema.safeParse('urn:ok:error:database-owned-path').success).toBe(true);
+  });
 });
 
 // ─── read endpoint success schemas ────────────────────────────
@@ -220,6 +223,33 @@ describe('DocumentListEntrySchema', () => {
         modified: '2026-04-30T00:00:00Z',
       }).success,
     ).toBe(true);
+  });
+  test('parses database navigation metadata only on folder entries', () => {
+    const databaseFolder = {
+      databaseId: 'db_tasks',
+      sourceId: 'src_tasks',
+      viewId: 'view_table',
+      title: '프로젝트 일정',
+    };
+    expect(
+      DocumentListEntrySchema.safeParse({
+        kind: 'folder',
+        path: '문서/프로젝트 일정',
+        size: 0,
+        modified: '2026-04-30T00:00:00Z',
+        databaseFolder,
+        containsDatabaseFolder: false,
+      }).success,
+    ).toBe(true);
+    expect(
+      DocumentListEntrySchema.safeParse({
+        kind: 'document',
+        docName: '문서/프로젝트 일정/첫 번째 작업',
+        size: 1,
+        modified: '2026-04-30T00:00:00Z',
+        databaseFolder,
+      }).success,
+    ).toBe(false);
   });
   test('rejects a folder entry with docName present', () => {
     // Folder rows aren't documents — admitting `docName` on the folder

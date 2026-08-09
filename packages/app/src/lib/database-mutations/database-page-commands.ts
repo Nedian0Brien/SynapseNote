@@ -7,6 +7,7 @@ import type {
 } from '@nedian0brien/synapsenote-core';
 import {
   DatabaseDefinitionSchema,
+  databaseManagedSourceFolder,
   databaseRecordPageLayoutOverrideIssues,
 } from '@nedian0brien/synapsenote-core';
 import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-server';
@@ -26,11 +27,29 @@ export function createDatabasePageTitleDesiredState(input: {
   if (!name) throw new Error('A database page title is required');
   const source = input.database.sources.find((candidate) => candidate.id === input.source.id);
   if (!source) throw new Error('The selected source is outside the database');
+  const folderName = source.folder.split('/').at(-1) ?? source.folder;
+  const legacyInlineFolder =
+    folderName === source.key && /^untitled_database_[A-Za-z0-9_-]+$/.test(source.key);
+  const followsDatabaseTitle = source.folderOwnership === 'database' || legacyInlineFolder;
+  const parentFolder = source.folder.includes('/')
+    ? source.folder.slice(0, source.folder.lastIndexOf('/'))
+    : '';
   const definition = DatabaseDefinitionSchema.parse({
     ...input.database,
     ...(input.database.name === source.name ? { name } : {}),
     sources: input.database.sources.map((candidate) =>
-      candidate.id === source.id ? { ...candidate, name } : candidate,
+      candidate.id === source.id
+        ? {
+            ...candidate,
+            name,
+            ...(followsDatabaseTitle
+              ? {
+                  folder: databaseManagedSourceFolder(parentFolder, name),
+                  folderOwnership: 'database' as const,
+                }
+              : {}),
+          }
+        : candidate,
     ),
   });
   return {

@@ -43,6 +43,7 @@ import {
   UnfoldVertical,
 } from 'lucide-react';
 import { __iconNode as botIcon } from 'lucide-react/dist/esm/icons/bot';
+import { __iconNode as databaseIcon } from 'lucide-react/dist/esm/icons/database';
 import { __iconNode as folderInputIcon } from 'lucide-react/dist/esm/icons/folder-input';
 import { __iconNode as link2Icon } from 'lucide-react/dist/esm/icons/link-2';
 import { useTheme } from 'next-themes';
@@ -186,6 +187,7 @@ import { useConflicts } from '@/hooks/use-conflicts';
 import { useFolderConfig } from '@/hooks/use-folder-config';
 import { useGitSyncStatusDetailed } from '@/hooks/use-git-sync-status';
 import { useConfigContext } from '@/lib/config-provider';
+import { databasePageTargetToHash, navigateToDatabaseHash } from '@/lib/database-navigation';
 import {
   hashFromAssetPath,
   hashFromDocName,
@@ -321,6 +323,7 @@ async function copyToClipboard(text: string, kind: 'full' | 'relative'): Promise
 const AGENT_FILE_NAMES = new Set(['agents', 'agent', 'claude', 'skill']);
 const LINK_DECORATION_ICON_ID = 'ok-file-tree-link-decoration';
 const AGENT_DECORATION_ICON_ID = 'ok-file-tree-agent-decoration';
+const DATABASE_FOLDER_DECORATION_ICON_ID = 'ok-file-tree-database-decoration';
 const MARKDOWN_FILE_ICON_ID = 'ok-file-tree-markdown';
 const FOLDER_OVERVIEW_ICON_ID = 'ok-file-tree-folder-overview';
 // Custom Markdown file glyph (document with an "MD" label) overriding Pierre's
@@ -353,6 +356,7 @@ function createLucideSpriteSymbol(id: string, iconNode: IconNode): string {
 const FILE_TREE_DECORATION_SPRITE_SHEET = `<svg data-icon-sprite aria-hidden="true" width="0" height="0">
   ${createLucideSpriteSymbol(LINK_DECORATION_ICON_ID, link2Icon)}
   ${createLucideSpriteSymbol(AGENT_DECORATION_ICON_ID, botIcon)}
+  ${createLucideSpriteSymbol(DATABASE_FOLDER_DECORATION_ICON_ID, databaseIcon)}
   ${createLucideSpriteSymbol(FOLDER_OVERVIEW_ICON_ID, folderInputIcon)}
   ${MARKDOWN_FILE_ICON_SYMBOL}
 </svg>`;
@@ -672,6 +676,15 @@ function FileTreeMenu({
   // OK-managed state belongs to its canonical editors). Path/tree actions
   // (Reveal, Copy path, Expand/Collapse) stay.
   const isOkRow = hasOkPathSegment(item.path);
+  const isDatabaseFolder =
+    isFolder &&
+    documents.some(
+      (entry) =>
+        isFolderEntry(entry) &&
+        entry.path === treeDirectoryPathToFolderPath(item.path) &&
+        entry.databaseFolder !== undefined,
+    );
+  const isManagedRow = isOkRow || isDatabaseFolder;
   const okignoreTarget = target.kind === 'asset' ? null : target;
   const canHide = okignoreTarget !== null && okignoreBinding !== null;
   const hideLabel = isFolder ? t`Hide folder` : t`Hide this file`;
@@ -809,7 +822,7 @@ function FileTreeMenu({
       >
         {isFolder ? (
           <>
-            {!isOkRow ? (
+            {!isManagedRow ? (
               <>
                 <DropdownMenuItem
                   disabled={anyActionBusy}
@@ -925,7 +938,7 @@ function FileTreeMenu({
                 sits with Hide/Delete here (not at the top with creation) so
                 the menu's read order is create → act → tree →
                 mutate-or-remove. */}
-            {!isOkRow ? (
+            {!isManagedRow ? (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -1032,7 +1045,7 @@ function FileTreeMenu({
               </DropdownMenuSubContent>
             </DropdownMenuSub>
             {/* Mutate section (hidden for inspect-only .ok rows). */}
-            {!isOkRow ? (
+            {!isManagedRow ? (
               <>
                 <DropdownMenuSeparator />
                 {!isAsset ? (
@@ -1289,6 +1302,16 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
   const pageMetaRef = useRef(pageMeta);
   const pendingExactFileSelectionRef = useRef<string | null>(null);
   function activateTreePath(treePath: string, entries: readonly FileEntry[] = documents) {
+    const databaseFolder = entries.find(
+      (entry): entry is FolderEntry =>
+        isFolderEntry(entry) &&
+        folderPathToTreeDirectoryPath(entry.path) === folderPathToTreeDirectoryPath(treePath) &&
+        entry.databaseFolder !== undefined,
+    )?.databaseFolder;
+    if (databaseFolder) {
+      navigateToDatabaseHash(databasePageTargetToHash(databaseFolder));
+      return;
+    }
     const action = resolveFileTreeSelectionAction(treePath, entries);
     if (action.kind === 'none') {
       console.debug(
@@ -1711,6 +1734,12 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
         return {
           icon: LINK_DECORATION_ICON_ID,
           title: targetPath ? t`Symlink to ${targetPath}` : t`Symlink`,
+        };
+      }
+      if (folder?.databaseFolder) {
+        return {
+          icon: DATABASE_FOLDER_DECORATION_ICON_ID,
+          title: t`Database: ${folder.databaseFolder.title}`,
         };
       }
       return null;
@@ -3378,6 +3407,13 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
       onOpen: (treeDirectoryPath) => {
         folderOverviewNavigationRef.current(treeDirectoryPathToFolderPath(treeDirectoryPath));
       },
+      shouldShow: (treeDirectoryPath) => {
+        const folderPath = treeDirectoryPathToFolderPath(treeDirectoryPath);
+        return !documentsRef.current.some(
+          (entry) =>
+            isFolderEntry(entry) && entry.path === folderPath && entry.databaseFolder !== undefined,
+        );
+      },
     });
     return () => controller.dispose();
   }, [loading, documents.length, t]);
@@ -3783,6 +3819,30 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     // moves files to the OS Trash BEFORE the server's reserved-path guard can
     // refuse, so read-only `.ok` targets are dropped here regardless of which
     // entry surface produced them.
+    const managedFolders = documentsRef.current.filter(
+      (entry): entry is FolderEntry =>
+        isFolderEntry(entry) &&
+        (entry.databaseFolder !== undefined || entry.containsDatabaseFolder === true),
+    );
+    const protectedTarget = targets.find((target) =>
+      managedFolders.some((folder) => {
+        if (folder.databaseFolder) {
+          return (
+            target.path === folder.path ||
+            target.path.startsWith(`${folder.path}/`) ||
+            folder.path.startsWith(`${target.path}/`)
+          );
+        }
+        return target.path === folder.path || folder.path.startsWith(`${target.path}/`);
+      }),
+    );
+    if (protectedTarget) {
+      setDeleteRequest(null);
+      toast.error(t`Database folders cannot be deleted from the file explorer`, {
+        description: t`Delete the database from its database page instead.`,
+      });
+      return;
+    }
     const deleteTargets = targets
       .filter((target) => !hasOkPathSegment(target.path))
       .map((target) => canonicalizeAssetTargetForDelete(target, documentsRef.current));
@@ -4162,6 +4222,18 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
       item.dataset.itemType === 'folder' ? folderPathToTreeDirectoryPath(rawPath) : rawPath;
 
     if (item.dataset.itemType === 'folder') {
+      const folderPath = treeDirectoryPathToFolderPath(path);
+      const databaseFolder = documentsRef.current.find(
+        (entry): entry is FolderEntry =>
+          isFolderEntry(entry) && entry.path === folderPath && entry.databaseFolder !== undefined,
+      )?.databaseFolder;
+      if (databaseFolder) {
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        event.stopPropagation();
+        navigateToDatabaseHash(databasePageTargetToHash(databaseFolder));
+        return;
+      }
       const folderItem = asDirectoryHandle(model.getItem(path));
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       // Folder rows are disclosure controls. The separate overview action in

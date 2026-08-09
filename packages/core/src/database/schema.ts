@@ -1296,6 +1296,12 @@ export const DatabaseSourceSchema = z
     folder: z.string().max(1_024).refine(isSafeSourceFolder, {
       message: 'Source folder must be relative and must not contain empty or parent segments',
     }),
+    /**
+     * Database-owned folders may follow the database title and are protected
+     * by the ordinary file APIs. Linked folders remain user-owned paths whose
+     * names and lifecycle are independent from the database page title.
+     */
+    folderOwnership: z.enum(['database', 'linked']).default('linked'),
     includeSubfolders: z.boolean().default(true),
     defaultViewId: DatabaseViewIdSchema.optional(),
     pageLayout: DatabasePageLayoutSchema.optional(),

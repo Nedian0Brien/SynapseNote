@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import type { Stats } from 'node:fs';
-import { lstat, mkdir, readFile, rename, rm, unlink, writeFile } from 'node:fs/promises';
-import { isAbsolute, relative, resolve, sep } from 'node:path';
+import { lstat, mkdir, readFile, rename, rm, rmdir, unlink, writeFile } from 'node:fs/promises';
+import { basename, isAbsolute, relative, resolve, sep } from 'node:path';
 import {
   type DatabaseAutonomyDecision,
   type DatabaseAutonomyMode,
@@ -263,6 +263,7 @@ interface CommitFs {
   rename(from: string, to: string): Promise<void>;
   unlink(path: string): Promise<void>;
   rm(path: string): Promise<void>;
+  rmdir(path: string): Promise<void>;
   readFile(path: string): Promise<Buffer>;
 }
 
@@ -279,6 +280,7 @@ const DEFAULT_FS: CommitFs = {
   rm: async (path) => {
     await rm(path, { recursive: true, force: true });
   },
+  rmdir,
   readFile,
 };
 
@@ -1838,13 +1840,10 @@ export class DatabaseCommitEngine {
       }${recordDiff.path}`;
       const absolutePath = resolve(this.#projectDir, projectPath);
       if (recordDiff.action === 'move') {
-        const move = draft.normalized.recordMoves.find(
-          (candidate) => candidate.recordId === recordDiff.recordId,
-        );
         const previousSource = currentDefinition?.sources.find(
-          (candidate) => candidate.id === move?.sourceId,
+          (candidate) => candidate.id === (recordDiff.beforeSourceId ?? recordDiff.sourceId),
         );
-        if (!move || !previousSource || !recordDiff.targetPath) {
+        if (!previousSource || !recordDiff.targetPath || !recordDiff.before || !recordDiff.after) {
           throw new DatabaseCommitError(
             'transaction_failed',
             'Move target no longer resolves to its immutable draft',
@@ -1852,11 +1851,11 @@ export class DatabaseCommitEngine {
           );
         }
         const beforeContent = (await this.#fs.readFile(absolutePath)).toString('utf8');
-        if (sha256(beforeContent) !== move.expectedRevision) {
+        if (sha256(beforeContent) !== recordDiff.before.revision) {
           throw new DatabaseCommitError(
             'target_changed',
             `Record "${recordDiff.recordId}" changed after move planning`,
-            { path: projectPath, expectedRevision: move.expectedRevision },
+            { path: projectPath, expectedRevision: recordDiff.before.revision },
           );
         }
         const targetProjectPath = `${
@@ -1876,13 +1875,13 @@ export class DatabaseCommitEngine {
             draft.normalized.definition,
             source,
             {
-              id: move.recordId,
-              sourceId: move.targetSourceId,
-              values: move.values,
-              body: move.body,
+              id: recordDiff.recordId,
+              sourceId: recordDiff.sourceId,
+              values: recordDiff.after.values,
+              body: recordDiff.after.body,
               expectedRevision: null,
-              archivedAt: move.archivedAt,
-              pageLayoutOverride: move.pageLayoutOverride,
+              archivedAt: recordDiff.after.archivedAt ?? null,
+              pageLayoutOverride: recordDiff.after.pageLayoutOverride ?? null,
             },
             { markdown: beforeContent, source: previousSource },
             commitTimestamp,
@@ -2072,6 +2071,27 @@ export class DatabaseCommitEngine {
         if (!stagePath) throw new Error('staged target missing');
         await this.#fs.rename(stagePath, target.absolutePath);
         if (target.operation === 'create') moved.push({ target, backupPath: null });
+      }
+      // Empty managed databases still own a real sidebar-visible folder. When
+      // a managed database title changes, remove only the now-empty previous
+      // folder; never recursively remove residual user content.
+      for (const source of draft.normalized.definition.sources) {
+        if (source.folderOwnership !== 'database' || source.folder === '.') continue;
+        await this.#fs.mkdir(resolve(this.#contentDir, source.folder));
+        const previousSource = currentDefinition?.sources.find(
+          (candidate) => candidate.id === source.id,
+        );
+        if (!previousSource || previousSource.folder === source.folder) continue;
+        const legacyGeneratedFolder =
+          basename(previousSource.folder) === previousSource.key &&
+          /^untitled_database_[A-Za-z0-9_-]+$/.test(previousSource.key);
+        if (previousSource.folderOwnership !== 'database' && !legacyGeneratedFolder) continue;
+        try {
+          await this.#fs.rmdir(resolve(this.#contentDir, previousSource.folder));
+        } catch (error) {
+          const code = errno(error);
+          if (code !== 'ENOENT' && code !== 'ENOTEMPTY') throw error;
+        }
       }
       const storeSnapshot = await this.#databaseStore.reload();
       await this.#reflectCommittedTargets(targets);

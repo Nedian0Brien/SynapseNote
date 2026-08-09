@@ -30,6 +30,7 @@ export function attachFolderOverviewButton(
     iconId: string;
     label: string;
     onOpen: (treeDirectoryPath: string) => void;
+    shouldShow?: (treeDirectoryPath: string) => boolean;
   },
 ): FolderOverviewButtonController {
   let button = shadowRoot.querySelector<HTMLButtonElement>(
@@ -70,7 +71,7 @@ export function attachFolderOverviewButton(
       shadowRoot.querySelector<HTMLElement>('[data-item-focused="true"][data-item-path]');
     const treeDirectoryPath =
       activeRow?.dataset.itemType === 'folder' ? activeRow.dataset.itemPath : undefined;
-    if (treeDirectoryPath) {
+    if (treeDirectoryPath && (options.shouldShow?.(treeDirectoryPath) ?? true)) {
       if (nextButton.dataset.folderOverviewPath !== treeDirectoryPath) {
         nextButton.dataset.folderOverviewPath = treeDirectoryPath;
       }

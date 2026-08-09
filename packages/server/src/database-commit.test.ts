@@ -248,6 +248,86 @@ async function fixture(input?: {
 }
 
 describe('DatabaseCommitEngine', () => {
+  test('moves managed database folders and record files with their visible titles', async () => {
+    const initial = desiredState() as ReturnType<typeof desiredState> & {
+      sources: Array<
+        ReturnType<typeof desiredState>['sources'][number] & {
+          folderOwnership: 'database';
+        }
+      >;
+    };
+    const initialSource = initial.sources[0];
+    if (!initialSource) throw new Error('managed source fixture is missing');
+    initialSource.folder = '문서/Committed tasks';
+    initialSource.folderOwnership = 'database';
+    const { contentDir, draft, plan, engine, commitInput, plans, index } = await fixture({
+      desiredState: initial,
+    });
+
+    await engine.commit(commitInput());
+    expect(plan.diff.records[0]?.path).toBe('문서/Committed tasks/Atomic commit.md');
+
+    const folderRename = stableDesiredState(draft) as ReturnType<typeof stableDesiredState> & {
+      sampleRecords: unknown[];
+    };
+    folderRename.database.name = '프로젝트 일정';
+    const renamedSource = folderRename.sources[0];
+    if (!renamedSource) throw new Error('renamed source fixture is missing');
+    renamedSource.name = '프로젝트 일정';
+    renamedSource.folder = '문서/프로젝트 일정';
+    renamedSource.folderOwnership = 'database';
+    folderRename.sampleRecords = [];
+    const folderDraft = plans.createDraft(folderRename);
+    const folderPlan = plans.createPlan(folderDraft.id);
+    expect(folderPlan.diff.records[0]).toMatchObject({
+      action: 'move',
+      path: '문서/Committed tasks/Atomic commit.md',
+      targetPath: '문서/프로젝트 일정/Atomic commit.md',
+    });
+    await engine.commit({
+      planId: folderPlan.id,
+      planHash: folderPlan.hash,
+      expectedSnapshotRevision: folderPlan.snapshotRevision,
+      idempotencyKey: 'managed-folder-rename-0002',
+      approvalToken: engine.expectedApprovalToken(folderPlan.hash),
+      actor: { principalId: 'agent:codex', kind: 'agent', sessionId: 'managed-folder' },
+    });
+    expect(existsSync(join(contentDir, '문서', 'Committed tasks'))).toBe(false);
+    expect(existsSync(join(contentDir, '문서', '프로젝트 일정', 'Atomic commit.md'))).toBe(true);
+
+    const indexed = index.list(draft.normalized.definition.id)[0];
+    if (!indexed?.revision) throw new Error('renamed record fixture is missing');
+    const recordRename = stableDesiredState(folderDraft) as ReturnType<
+      typeof stableDesiredState
+    > & { sampleRecords: unknown[]; recordMutations: unknown[] };
+    recordRename.sampleRecords = [];
+    recordRename.recordMutations = [
+      {
+        id: indexed.id,
+        expectedRevision: indexed.revision,
+        sourceKey: renamedSource.key,
+        operations: [{ op: 'set', propertyKey: 'title', value: '새 작업' }],
+      },
+    ];
+    const recordDraft = plans.createDraft(recordRename);
+    const recordPlan = plans.createPlan(recordDraft.id);
+    expect(recordPlan.diff.records[0]).toMatchObject({
+      action: 'move',
+      path: '문서/프로젝트 일정/Atomic commit.md',
+      targetPath: '문서/프로젝트 일정/새 작업.md',
+    });
+    await engine.commit({
+      planId: recordPlan.id,
+      planHash: recordPlan.hash,
+      expectedSnapshotRevision: recordPlan.snapshotRevision,
+      idempotencyKey: 'managed-record-rename-0003',
+      approvalToken: engine.expectedApprovalToken(recordPlan.hash),
+      actor: { principalId: 'agent:codex', kind: 'agent', sessionId: 'managed-record' },
+    });
+    expect(existsSync(join(contentDir, '문서', '프로젝트 일정', 'Atomic commit.md'))).toBe(false);
+    expect(existsSync(join(contentDir, '문서', '프로젝트 일정', '새 작업.md'))).toBe(true);
+  });
+
   test('raises the read barrier at the first canonical write, not before it', async () => {
     const barrierAtSnapshot: boolean[] = [];
     let engineRef: { isTransactionActive(): boolean } | null = null;

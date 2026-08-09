@@ -304,6 +304,7 @@ import { type DatabaseDataPlane, DatabaseDataPlaneError } from './database-data-
 import { createDatabaseDataPlaneApiHandlers } from './database-data-plane-api.ts';
 import type { DatabasePermissionStore } from './database-permission-store.ts';
 import { createDatabasePlaceSearchServiceFromEnv } from './database-place-search.ts';
+import type { DatabaseStore } from './database-store.ts';
 import type { DatabaseTaskService } from './database-task-service.ts';
 import type { DatabaseTaskStore } from './database-task-store.ts';
 import type { DatabaseTemplateScheduler } from './database-template-scheduler.ts';
@@ -2515,6 +2516,8 @@ export interface ApiExtensionOptions {
   contentDir: string;
   /** Optional agent-oriented database read plane. Production server boots wire this. */
   databaseDataPlane?: DatabaseDataPlane;
+  /** Database manifest store used to decorate and protect database-owned paths. */
+  databaseStore?: DatabaseStore;
   /** Optional revision-safe database comment store. */
   databaseCommentStore?: DatabaseCommentStore;
   /** Optional durable database task lifecycle store. */
@@ -2933,6 +2936,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     sessionManager,
     contentDir,
     databaseDataPlane,
+    databaseStore,
     databaseCommentStore,
     databaseTaskStore,
     databaseTaskService,
@@ -2987,6 +2991,18 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     embeddingsSecretsFile,
     ephemeral = false,
   } = options;
+
+  const overlapsDatabaseOwnedPath = (candidatePath: string): boolean =>
+    (databaseStore?.list() ?? []).some((database) =>
+      database.sources.some((source) => {
+        if (source.folderOwnership !== 'database' || source.folder === '.') return false;
+        return (
+          candidatePath === source.folder ||
+          candidatePath.startsWith(`${source.folder}/`) ||
+          source.folder.startsWith(`${candidatePath}/`)
+        );
+      }),
+    );
 
   // Concurrency guard: at most 1 in-flight request per local-op endpoint
   const localOpGuard = createConcurrencyGuard();
@@ -6082,6 +6098,35 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           }
         }
 
+        const databaseFolders = new Map<string, NonNullable<DocumentListEntry['databaseFolder']>>();
+        for (const database of databaseStore?.list() ?? []) {
+          for (const source of database.sources) {
+            if (source.folderOwnership !== 'database' || source.folder === '.') continue;
+            const defaultView = source.defaultViewId
+              ? database.views.find((view) => view.id === source.defaultViewId)
+              : database.views.find((view) => view.sourceId === source.id);
+            databaseFolders.set(source.folder, {
+              databaseId: database.id,
+              sourceId: source.id,
+              ...(defaultView ? { viewId: defaultView.id } : {}),
+              title: source.name,
+            });
+          }
+        }
+        const databaseFolderPaths = [...databaseFolders.keys()];
+        const decorateDatabaseFolder = (entry: DocumentListEntry): DocumentListEntry => {
+          if (entry.kind !== 'folder' || !entry.path) return entry;
+          const databaseFolder = databaseFolders.get(entry.path);
+          const containsDatabaseFolder = databaseFolderPaths.some((folder) =>
+            folder.startsWith(`${entry.path}/`),
+          );
+          return {
+            ...entry,
+            ...(databaseFolder ? { databaseFolder } : {}),
+            ...(containsDatabaseFolder ? { containsDatabaseFolder: true } : {}),
+          };
+        };
+
         // Streaming Show All Files: when the client negotiates
         // NDJSON, stream the on-demand disk walk one entry per line instead of
         // buffering the whole listing. `streamShowAllEntries` yields one entry
@@ -6139,7 +6184,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
             let count = 0;
             let next = await generator.next();
             while (!next.done) {
-              await writeNdjsonLine(`${JSON.stringify(next.value)}\n`);
+              await writeNdjsonLine(`${JSON.stringify(decorateDatabaseFolder(next.value))}\n`);
               count += 1;
               next = await generator.next();
             }
@@ -6219,6 +6264,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
                 showOk,
                 signal: controller.signal,
               });
+              for (let index = 0; index < documents.length; index += 1) {
+                documents[index] = decorateDatabaseFolder(documents[index]);
+              }
               documents.sort((a, b) => {
                 const aPath = a.kind === 'folder' ? (a.path ?? '') : (a.docName ?? a.path ?? '');
                 const bPath = b.kind === 'folder' ? (b.path ?? '') : (b.docName ?? b.path ?? '');
@@ -6324,19 +6372,21 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         // the array. Empty folders show up only via this index.
         for (const [folderPath, entry] of folderIndex) {
           if (dir && !folderPath.startsWith(`${dir}/`) && folderPath !== dir) continue;
-          documents.push({
-            kind: 'folder',
-            path: folderPath,
-            size: 0,
-            modified: entry.modified,
-            // DocumentListEntry's defaults will resolve the rest; folder entries
-            // intentionally omit docName / docExt / asset fields per the
-            // refined schema.
-            docExt: '.md',
-            isSymlink: false,
-            canonicalDocName: null,
-            targetPath: null,
-          });
+          documents.push(
+            decorateDatabaseFolder({
+              kind: 'folder',
+              path: folderPath,
+              size: 0,
+              modified: entry.modified,
+              // DocumentListEntry's defaults will resolve the rest; folder entries
+              // intentionally omit docName / docExt / asset fields per the
+              // refined schema.
+              docExt: '.md',
+              isSymlink: false,
+              canonicalDocName: null,
+              targetPath: null,
+            }),
+          );
         }
 
         // Asset references: emit referenced sidebar assets alongside
@@ -10265,6 +10315,16 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           );
           return;
         }
+        if (overlapsDatabaseOwnedPath(fromPath) || overlapsDatabaseOwnedPath(toPath)) {
+          errorResponse(
+            res,
+            409,
+            'urn:ok:error:database-owned-path',
+            'Database-owned folders and pages must be renamed from the database.',
+            { handler: 'rename-path' },
+          );
+          return;
+        }
         if (fromPath === toPath) {
           successResponse(
             res,
@@ -10600,6 +10660,16 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
             400,
             'urn:ok:error:reserved-doc-name',
             '.ok and .git are reserved directories.',
+            { handler: 'delete-path' },
+          );
+          return;
+        }
+        if (overlapsDatabaseOwnedPath(operationPath)) {
+          errorResponse(
+            res,
+            409,
+            'urn:ok:error:database-owned-path',
+            'Database-owned folders and pages must be deleted from the database.',
             { handler: 'delete-path' },
           );
           return;

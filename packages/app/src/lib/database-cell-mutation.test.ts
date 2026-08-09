@@ -489,6 +489,26 @@ describe('database cell mutation compiler', () => {
     );
   });
 
+  test('moves only database-owned source folders with the visible page title', () => {
+    const managedSource = {
+      ...database.sources[0],
+      folder: '문서/Tasks',
+      folderOwnership: 'database' as const,
+    };
+    if (!managedSource) throw new Error('invalid managed page title fixture');
+    const managedDatabase = { ...database, sources: [managedSource] };
+    const desired = createDatabasePageTitleDesiredState({
+      database: managedDatabase,
+      source: managedSource,
+      name: '프로젝트 일정',
+    });
+    expect(desired.sources[0]).toMatchObject({
+      id: managedSource.id,
+      folder: '문서/프로젝트 일정',
+      folderOwnership: 'database',
+    });
+  });
+
   test('persists page icon and cover metadata without changing stable identities', () => {
     const source = database.sources[0];
     if (!source) throw new Error('invalid page appearance fixture');

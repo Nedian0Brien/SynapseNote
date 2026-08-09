@@ -26,6 +26,8 @@ import {
   type DatabaseVerificationValue,
   DatabaseVerificationValueSchema,
   databaseFileIdentity,
+  databasePathNameWithCollisionSuffix,
+  databaseRecordNameFromTitle,
   databaseRecordPageLayoutOverrideIssues,
   findDatabasePersonByReference,
   isSafeDatabaseAssetPath,
@@ -2571,6 +2573,47 @@ export class DatabasePlanEngine {
         }
       }
     }
+    const occupiedRecordPaths = new Set(
+      (this.#databaseRecordIndex?.list(definition.id) ?? []).map((record) => record.path),
+    );
+    const allocatedRecordPaths = new Set<string>();
+    const allocateRecordPath = (
+      source: DatabaseDefinition['sources'][number],
+      sample: (typeof draft.normalized.sampleRecords)[number],
+      existingPath: string | null,
+    ): string => {
+      if (source.folderOwnership !== 'database') {
+        return existingPath ?? `${source.folder === '.' ? '' : `${source.folder}/`}${sample.id}.md`;
+      }
+      const titleProperty = source.properties.find((property) => property.type === 'title');
+      const baseName = databaseRecordNameFromTitle(
+        titleProperty ? sample.values[titleProperty.id] : undefined,
+      );
+      const prefix = source.folder === '.' ? '' : `${source.folder}/`;
+      for (let index = 1; index <= 10_000; index += 1) {
+        const path = `${prefix}${databasePathNameWithCollisionSuffix(baseName, index)}.md`;
+        if (allocatedRecordPaths.has(path)) continue;
+        if (occupiedRecordPaths.has(path) && path !== existingPath) continue;
+        if (this.#contentDir && path !== existingPath) {
+          try {
+            this.#readFile(resolve(this.#contentDir, path));
+            continue;
+          } catch (error) {
+            if (errno(error) !== 'ENOENT') {
+              conflicts.push({
+                code: 'planning_io_unavailable',
+                message: `Record target path "${path}" could not be inspected safely`,
+                targetId: sample.id,
+                sampleRecordId: sample.id,
+              });
+            }
+          }
+        }
+        allocatedRecordPaths.add(path);
+        return path;
+      }
+      throw new Error(`Unable to allocate a readable record path for "${baseName}"`);
+    };
     const recordPlans = draft.normalized.sampleRecords.map((sample) => {
       const source = definition.sources.find((candidate) => candidate.id === sample.sourceId);
       if (!source) throw new Error('Normalized sample source is missing');
@@ -2605,7 +2648,8 @@ export class DatabasePlanEngine {
               ? recordNeedsPersonRewrite(byId, definition, currentSource.id, existing.values)
               : false)
           : false;
-        const action: DatabaseConvergenceAction =
+        const targetPath = allocateRecordPath(source, sample, existing.path);
+        const contentChanged = !(
           !storageContractChanged &&
           same(existing.values, sample.values) &&
           existing.body === sample.body &&
@@ -2613,9 +2657,21 @@ export class DatabasePlanEngine {
             (existing.archivedAt ?? null) === sample.archivedAt) &&
           (sample.pageLayoutOverride === undefined ||
             same(existing.pageLayoutOverride ?? null, sample.pageLayoutOverride))
-            ? 'noop'
-            : 'update';
-        return { sample, source, existing, path: existing.path, action };
+        );
+        const action =
+          targetPath !== existing.path
+            ? ('move' as const)
+            : contentChanged
+              ? ('update' as const)
+              : ('noop' as const);
+        return {
+          sample,
+          source,
+          existing,
+          path: existing.path,
+          ...(targetPath !== existing.path ? { targetPath } : {}),
+          action,
+        };
       }
       if (sample.expectedRevision) {
         conflicts.push({
@@ -2625,28 +2681,7 @@ export class DatabasePlanEngine {
           sampleRecordId: sample.id,
         });
       }
-      const path = `${source.folder === '.' ? '' : `${source.folder}/`}${sample.id}.md`;
-      if (this.#contentDir) {
-        try {
-          this.#readFile(resolve(this.#contentDir, path));
-          conflicts.push({
-            code: 'record_path_occupied',
-            message: `Record target path "${path}" is already occupied by an unmanaged file`,
-            targetId: sample.id,
-            sampleRecordId: sample.id,
-          });
-        } catch (error) {
-          if (errno(error) !== 'ENOENT') {
-            conflicts.push({
-              code: 'planning_io_unavailable',
-              message: `Record target path "${path}" could not be inspected safely`,
-              targetId: sample.id,
-              sampleRecordId: sample.id,
-            });
-          }
-          // ENOENT is expected for a new record. Commit rechecks under the write lock.
-        }
-      }
+      const path = allocateRecordPath(source, sample, null);
       return { sample, source, existing: null, path, action: 'create' as const };
     });
 
@@ -2695,16 +2730,24 @@ export class DatabasePlanEngine {
             });
             continue;
           }
-          if (
-            currentSource.folder !== desiredSource.folder ||
-            currentSource.includeSubfolders !== desiredSource.includeSubfolders
-          ) {
+          if (currentSource.includeSubfolders !== desiredSource.includeSubfolders) {
             conflicts.push({
               code: 'source_record_migration_required',
               message: `Source "${currentSource.id}" changes record path ownership; use a migration operation before altering its folder contract`,
               targetId: currentSource.id,
             });
             continue;
+          }
+          if (currentSource.folder !== desiredSource.folder) {
+            const omitted = records.filter((record) => !upsertIds.has(record.id));
+            if (desiredSource.folderOwnership !== 'database' || omitted.length > 0) {
+              conflicts.push({
+                code: 'source_record_migration_required',
+                message: `Source "${currentSource.id}" changes record path ownership; include every database-owned record in the title-folder migration`,
+                targetId: currentSource.id,
+              });
+              continue;
+            }
           }
           const personStorageChanged = records.some((record) =>
             recordNeedsPersonRewrite(byId, definition, currentSource.id, record.values),
@@ -3070,7 +3113,9 @@ export class DatabasePlanEngine {
                 sourceId: source.id,
                 recordIds,
                 created: sourceRecords.filter((record) => record.action === 'create').length,
-                updated: sourceRecords.filter((record) => record.action === 'update').length,
+                updated: sourceRecords.filter(
+                  (record) => record.action === 'update' || record.action === 'move',
+                ).length,
                 unchanged: sourceRecords.filter((record) => record.action === 'noop').length,
               },
             ]
@@ -3179,8 +3224,14 @@ export class DatabasePlanEngine {
             .map((record) => ({
               recordId: record.sample.id,
               sourceId: record.sample.sourceId,
+              ...(record.action === 'move'
+                ? {
+                    beforeSourceId: record.existing?.sourceId ?? record.sample.sourceId,
+                    targetPath: record.targetPath,
+                  }
+                : {}),
               path: record.path,
-              action: record.action as 'create' | 'update',
+              action: record.action as 'create' | 'update' | 'move',
               before: record.existing
                 ? {
                     revision: record.existing.revision ?? 'sha256:missing',
@@ -3663,13 +3714,48 @@ export class DatabasePlanEngine {
       }
       propertyIdsBySource.set(source.key, propertyIds);
     }
+    const reservedSourceFolders = new Set(
+      this.#databaseStore
+        .list()
+        .flatMap((database) => database.sources.map((source) => source.folder)),
+    );
+    const allocateManagedFolder = (source: (typeof desiredState.sources)[number]): string => {
+      const currentSource = currentSourceByDesiredKey.get(source.key);
+      if (
+        source.folderOwnership !== 'database' ||
+        (currentSource && currentSource.folder === source.folder)
+      ) {
+        return source.folder;
+      }
+      const slash = source.folder.lastIndexOf('/');
+      const parent = slash >= 0 ? source.folder.slice(0, slash) : '';
+      const name = slash >= 0 ? source.folder.slice(slash + 1) : source.folder;
+      for (let index = 1; index <= 10_000; index += 1) {
+        const candidateName = databasePathNameWithCollisionSuffix(name, index);
+        const candidate = parent ? `${parent}/${candidateName}` : candidateName;
+        if (reservedSourceFolders.has(candidate)) continue;
+        if (this.#contentDir) {
+          try {
+            this.#readFile(resolve(this.#contentDir, candidate));
+            continue;
+          } catch (error) {
+            if (errno(error) !== 'ENOENT' && errno(error) !== 'EISDIR') throw error;
+            if (errno(error) === 'EISDIR') continue;
+          }
+        }
+        reservedSourceFolders.add(candidate);
+        return candidate;
+      }
+      throw new Error(`Unable to allocate database folder "${source.folder}"`);
+    };
     const normalizedSources = desiredState.sources.map((source) => ({
       id: sourceIdByKey.get(source.key),
       key: source.key,
       name: source.name,
       ...(typeof source.description === 'string' ? { description: source.description } : {}),
       recordMeaning: source.recordMeaning,
-      folder: source.folder,
+      folder: allocateManagedFolder(source),
+      folderOwnership: source.folderOwnership ?? 'linked',
       includeSubfolders:
         typeof source.includeSubfolders === 'boolean' ? source.includeSubfolders : true,
       ...(typeof source.defaultViewId === 'string' ? { defaultViewId: source.defaultViewId } : {}),
@@ -4930,6 +5016,37 @@ export class DatabasePlanEngine {
       };
     });
     const explicitSampleIds = new Set(explicitSampleRecords.map((record) => record.id));
+    const folderMigrationRecords = definition.sources.flatMap((source) => {
+      const currentSource = currentDefinition?.sources.find(
+        (candidate) => candidate.id === source.id,
+      );
+      if (
+        source.folderOwnership !== 'database' ||
+        !currentSource ||
+        currentSource.folder === source.folder
+      ) {
+        return [];
+      }
+      return (this.#databaseRecordIndex?.list(databaseId, source.id) ?? [])
+        .filter((record) => !explicitSampleIds.has(record.id))
+        .map((record) => {
+          if (!record.revision) {
+            throw new Error(`Folder migration record "${record.id}" has no stable revision`);
+          }
+          return {
+            id: record.id,
+            sourceId: source.id,
+            values: structuredClone(record.values) as Record<string, unknown>,
+            body: record.body,
+            expectedRevision: record.revision,
+            archivedAt: record.archivedAt ?? null,
+            ...(record.pageLayoutOverride
+              ? { pageLayoutOverride: structuredClone(record.pageLayoutOverride) }
+              : {}),
+          };
+        });
+    });
+    const implicitMigrationIds = new Set(folderMigrationRecords.map((record) => record.id));
     const uniqueIdBackfillRecords = definition.sources.flatMap((source) => {
       const currentSource = currentDefinition?.sources.find(
         (candidate) => candidate.id === source.id,
@@ -4942,7 +5059,9 @@ export class DatabasePlanEngine {
       );
       if (!addsUniqueId) return [];
       return (this.#databaseRecordIndex?.list(databaseId, source.id) ?? [])
-        .filter((record) => !explicitSampleIds.has(record.id))
+        .filter(
+          (record) => !explicitSampleIds.has(record.id) && !implicitMigrationIds.has(record.id),
+        )
         .map((record) => {
           if (!record.revision) {
             throw new Error(`Unique ID backfill record "${record.id}" has no stable revision`);
@@ -5041,6 +5160,36 @@ export class DatabasePlanEngine {
         },
       };
     });
+    const reservedMoveTargetPaths = new Set(
+      (this.#databaseRecordIndex?.list(databaseId) ?? []).map((record) => record.path),
+    );
+    const allocateMoveTargetPath = (
+      target: DatabaseDefinition['sources'][number],
+      values: Readonly<Record<string, unknown>>,
+      recordId: string,
+    ): string => {
+      const prefix = target.folder === '.' ? '' : `${target.folder}/`;
+      if (target.folderOwnership !== 'database') return `${prefix}${recordId}.md`;
+      const titleProperty = target.properties.find((property) => property.type === 'title');
+      const baseName = databaseRecordNameFromTitle(
+        titleProperty ? values[titleProperty.id] : undefined,
+      );
+      for (let index = 1; index <= 10_000; index += 1) {
+        const candidate = `${prefix}${databasePathNameWithCollisionSuffix(baseName, index)}.md`;
+        if (reservedMoveTargetPaths.has(candidate)) continue;
+        if (this.#contentDir) {
+          try {
+            this.#readFile(resolve(this.#contentDir, candidate));
+            continue;
+          } catch (error) {
+            if (errno(error) !== 'ENOENT') throw error;
+          }
+        }
+        reservedMoveTargetPaths.add(candidate);
+        return candidate;
+      }
+      throw new Error(`Unable to allocate a readable move target for record "${recordId}"`);
+    };
     const recordMoves = desiredState.recordMoves.map((move, moveIndex) => {
       const source = definition.sources.find((candidate) => candidate.key === move.sourceKey);
       const target = definition.sources.find((candidate) => candidate.key === move.targetSourceKey);
@@ -5125,7 +5274,7 @@ export class DatabasePlanEngine {
           values[targetProperty.id] = sourceValue;
         }
       }
-      const targetPath = `${target.folder === '.' ? '' : `${target.folder}/`}${record.id}.md`;
+      const targetPath = allocateMoveTargetPath(target, values, record.id);
       targetResolutions.push({
         kind: 'record',
         selector: `recordMoves.${moveIndex}.id`,
@@ -5147,6 +5296,7 @@ export class DatabasePlanEngine {
     });
     const sampleRecords = [
       ...explicitSampleRecords,
+      ...folderMigrationRecords,
       ...uniqueIdBackfillRecords,
       ...recordCopies.map((copy) => copy.sample),
       ...recordArchives.map((archive) => archive.sample),

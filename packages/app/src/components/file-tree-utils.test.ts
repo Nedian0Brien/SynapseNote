@@ -523,7 +523,19 @@ describe('toFileEntries', () => {
         size: 9,
         modified,
       },
-      { kind: 'folder', path: 'team', size: 0, modified, hasChildren: true },
+      {
+        kind: 'folder',
+        path: 'team',
+        size: 0,
+        modified,
+        hasChildren: true,
+        databaseFolder: {
+          databaseId: 'db_team',
+          sourceId: 'src_team',
+          viewId: 'view_table',
+          title: 'Team',
+        },
+      },
     ].map((entry) => DocumentListEntrySchema.parse(entry));
 
     expect(toFileEntries(wire)).toEqual([
@@ -554,6 +566,12 @@ describe('toFileEntries', () => {
         hasChildren: true,
         isSymlink: false,
         targetPath: null,
+        databaseFolder: {
+          databaseId: 'db_team',
+          sourceId: 'src_team',
+          viewId: 'view_table',
+          title: 'Team',
+        },
       },
     ]);
   });

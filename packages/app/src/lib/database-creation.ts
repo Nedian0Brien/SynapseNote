@@ -1,4 +1,4 @@
-import { isDatabaseDateOnly } from '@nedian0brien/synapsenote-core';
+import { databaseManagedSourceFolder, isDatabaseDateOnly } from '@nedian0brien/synapsenote-core';
 import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-server';
 import { DATABASE_CSV_IMPORT_RECORD_LIMIT, parseDelimited } from './database-csv.ts';
 
@@ -234,6 +234,7 @@ function baseDesiredState(input: {
   name: string;
   key?: string;
   folder?: string;
+  folderOwnership?: 'database' | 'linked';
   includeSubfolders?: boolean;
   properties: readonly CreationProperty[];
   records?: readonly Record<string, unknown>[];
@@ -242,7 +243,7 @@ function baseDesiredState(input: {
   const name = input.name.trim();
   if (!name) throw new Error('Database name is required');
   const key = stableKey(input.key ?? name, 'database');
-  const folder = input.folder?.trim() || key;
+  const folder = input.folder?.trim() || databaseManagedSourceFolder('', name);
   const records = input.records ?? [];
   return {
     database: {
@@ -262,6 +263,7 @@ function baseDesiredState(input: {
         name,
         recordMeaning: `One ${name} record`,
         folder,
+        folderOwnership: input.folderOwnership ?? 'database',
         includeSubfolders: input.includeSubfolders ?? true,
         properties: input.properties.map((property) => ({ ...property })),
       },
@@ -310,6 +312,7 @@ export function createExistingFolderDatabaseDesiredState(input: {
   if (!input.folder.trim()) throw new Error('Existing folder is required');
   return baseDesiredState({
     ...input,
+    folderOwnership: 'linked',
     properties: [{ key: 'title', name: 'Title', type: 'title', required: true }],
   });
 }
