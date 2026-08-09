@@ -268,18 +268,16 @@ describe('DatabaseRecordPageChrome', () => {
     const view = render(
       <TooltipProvider>
         <PropertyProvider>
-          <>
-            <DatabaseRecordPageChrome
-              provider={recordProvider}
-              docName="records/rec_first"
-              docExt=".md"
-              fallbackTitle="rec_first"
-              body={<div data-testid="record-body-editor">Editable record body</div>}
-              services={services}
-              commentsRequest={commentsRequest}
-            />
-            <DatabaseRecordHeaderProbe docName="records/rec_first" />
-          </>
+          <DatabaseRecordPageChrome
+            provider={recordProvider}
+            docName="records/rec_first"
+            docExt=".md"
+            fallbackTitle="rec_first"
+            body={<div data-testid="record-body-editor">Editable record body</div>}
+            services={services}
+            commentsRequest={commentsRequest}
+          />
+          <DatabaseRecordHeaderProbe docName="records/rec_first" />
         </PropertyProvider>
       </TooltipProvider>,
     );

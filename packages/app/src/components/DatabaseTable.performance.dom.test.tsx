@@ -10,6 +10,21 @@ import { DATABASE_TABLE_RENDERED_COLUMN_LIMIT, DatabaseTable } from './DatabaseT
 
 const VIEW_RENDER_BUDGET_MS = DATABASE_UX_LATENCY_BUDGETS_MS.viewSwitch;
 const SAMPLE_COUNT = 5;
+/**
+ * Renders performed and thrown away before timing starts.
+ *
+ * The first render of this tree pays costs a user only pays once per process —
+ * module evaluation, React/JIT warmup, the initial virtualizer measurement — and
+ * they dwarf the steady-state cost this budget exists to protect. Measured cold,
+ * sample 1 came in at ~370ms against ~190-220ms for samples 2-5 on an idle
+ * machine, and ~669ms against ~244ms inside the full DOM tier, where the heap is
+ * already loaded from hundreds of other files. Because `percentile(…, 0.95)`
+ * over 5 samples resolves to the maximum, that one cold sample WAS the assertion:
+ * the budget failed in-tier and passed alone while steady-state render cost never
+ * moved. Discarding warmup keeps the same budget and the same tail statistic —
+ * it just stops charging a one-time cost against a per-interaction budget.
+ */
+const WARMUP_COUNT = 2;
 
 const source: DatabaseSource = {
   id: 'ds_benchmark_view',
@@ -60,10 +75,13 @@ afterEach(cleanup);
 describe('database table render performance', () => {
   test('renders a virtualized 1k-row, 30-property view within budget', () => {
     const timings: number[] = [];
-    for (let sample = 0; sample < SAMPLE_COUNT; sample += 1) {
+    for (let sample = 0; sample < WARMUP_COUNT + SAMPLE_COUNT; sample += 1) {
       const started = performance.now();
       const view = render(<DatabaseTable source={source} result={result} />);
-      timings.push(performance.now() - started);
+      const elapsedMs = performance.now() - started;
+      if (sample >= WARMUP_COUNT) timings.push(elapsedMs);
+      // Virtualization is asserted on every render, warmup included — a warm-up
+      // pass that mounted all 1000 rows would still be a defect.
       expect(view.container.querySelectorAll('[data-record-id]').length).toBeLessThan(40);
       expect(view.container.querySelector('[data-record-id="rec_view_0999"]')).toBeNull();
       view.unmount();
@@ -75,9 +93,11 @@ describe('database table render performance', () => {
         records: 1_000,
         properties: 30,
         samples: SAMPLE_COUNT,
+        warmup: WARMUP_COUNT,
         budgetMs: VIEW_RENDER_BUDGET_MS,
         p50Ms: Math.round(percentile(timings, 0.5) * 1_000) / 1_000,
         p95Ms: Math.round(p95 * 1_000) / 1_000,
+        samplesMs: timings.map((value) => Math.round(value * 1_000) / 1_000),
         passed: p95 < VIEW_RENDER_BUDGET_MS,
       })}\n`,
     );

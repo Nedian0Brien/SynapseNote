@@ -201,9 +201,7 @@ describe('issue #351 — the terminal dock rehydrates surviving sessions after a
     // shows one tab per live shell. RED today — the dock ignores them and seeds a
     // single fresh session from the `visible` prop (TerminalDock.tsx), so
     // this settles at 1 tab and never reaches 2.
-    await waitFor(() => expect(screen.getAllByTestId('terminal-session')).toHaveLength(2), {
-      timeout: 2000,
-    });
+    await waitFor(() => expect(screen.getAllByTestId('terminal-session')).toHaveLength(2));
 
     // Exactly one of the recovered tabs is active (the dock restores a focused tab,
     // it does not leave the strip with zero or many active).
@@ -224,9 +222,7 @@ describe('issue #351 — the terminal dock rehydrates surviving sessions after a
 
     renderDock(bridge, true);
 
-    await waitFor(() => expect(screen.getAllByTestId('terminal-session')).toHaveLength(3), {
-      timeout: 2000,
-    });
+    await waitFor(() => expect(screen.getAllByTestId('terminal-session')).toHaveLength(3));
 
     // Tabs come back in main's returned (reordered) order with the custom names
     // restored; the un-named survivor falls back to its RESTORED sticky ordinal
@@ -243,9 +239,7 @@ describe('issue #351 — the terminal dock rehydrates surviving sessions after a
     const user = userEvent.setup();
 
     renderDock(bridge, true);
-    await waitFor(() => expect(screen.getAllByTestId('terminal-session')).toHaveLength(1), {
-      timeout: 2000,
-    });
+    await waitFor(() => expect(screen.getAllByTestId('terminal-session')).toHaveLength(1));
 
     // Rename the tab: double-click -> inline input -> Enter. This is the push path
     // that keeps the custom name alive across a future reload; it is optional-chained
@@ -279,9 +273,7 @@ describe('issue #351 — the terminal dock rehydrates surviving sessions after a
     // The user opens the dock: the gated cold-start path was released by the
     // settle, so this seeds exactly one fresh session.
     rerender(dockUi(bridge, true));
-    await waitFor(() => expect(screen.getAllByTestId('terminal-session')).toHaveLength(1), {
-      timeout: 2000,
-    });
+    await waitFor(() => expect(screen.getAllByTestId('terminal-session')).toHaveLength(1));
   });
 
   test('a rejecting list() still settles so a later open cold-starts (no hang on IPC error)', async () => {
@@ -307,9 +299,7 @@ describe('issue #351 — the terminal dock rehydrates surviving sessions after a
     rerender(dockUi(bridge, true));
     // If settling had moved inside the try, the rejection would leave the gate
     // closed forever and this open would seed nothing.
-    await waitFor(() => expect(screen.getAllByTestId('terminal-session')).toHaveLength(1), {
-      timeout: 2000,
-    });
+    await waitFor(() => expect(screen.getAllByTestId('terminal-session')).toHaveLength(1));
   });
 
   test('an Ask-AI selection reuses a reload-rehydrated (adopted) session via a direct PTY write', async () => {
@@ -318,9 +308,7 @@ describe('issue #351 — the terminal dock rehydrates surviving sessions after a
 
     // Rehydration recovers exactly one adopted tab, which reports its adopted PTY
     // id up (the stub mirrors the real attachSession → onPtyId path).
-    await waitFor(() => expect(screen.getAllByTestId('terminal-session')).toHaveLength(1), {
-      timeout: 2000,
-    });
+    await waitFor(() => expect(screen.getAllByTestId('terminal-session')).toHaveLength(1));
     await act(async () => {}); // flush the onPtyId report into the host's reuse map
 
     // The selection-bubble "Ask AI" fires while the recovered survivor is the

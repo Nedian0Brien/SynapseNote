@@ -11,8 +11,6 @@ import type { KeepaliveHandle, KeepaliveOptions } from '@nedian0brien/synapsenot
 import { act, cleanup, render, waitFor } from '@testing-library/react';
 import { type UseServerKeepaliveOptions, useServerKeepalive } from './use-server-keepalive';
 
-const ASYNC_EFFECT_TIMEOUT_MS = 1000;
-
 interface FakeKeepalive {
   start: (opts: KeepaliveOptions) => KeepaliveHandle;
   readonly calls: ReadonlyArray<KeepaliveOptions>;
@@ -63,12 +61,9 @@ describe('useServerKeepalive (Tier-3 mount)', () => {
       />,
     );
 
-    await waitFor(
-      () => {
-        expect(fake.calls.length).toBe(1);
-      },
-      { timeout: ASYNC_EFFECT_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(fake.calls.length).toBe(1);
+    });
 
     const opts = fake.calls[0];
     // Presence-invisible: no identity triplet, no connectionId, no pid.
@@ -90,12 +85,9 @@ describe('useServerKeepalive (Tier-3 mount)', () => {
       />,
     );
 
-    await waitFor(
-      () => {
-        expect(fake.calls.length).toBe(1);
-      },
-      { timeout: ASYNC_EFFECT_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(fake.calls.length).toBe(1);
+    });
     expect(await fake.calls[0].resolveWsUrl()).toBeUndefined();
   });
 
@@ -122,12 +114,9 @@ describe('useServerKeepalive (Tier-3 mount)', () => {
       <HookProbe collabUrl="ws://localhost:1111/collab" options={options} />,
     );
 
-    await waitFor(
-      () => {
-        expect(fake.calls.length).toBe(1);
-      },
-      { timeout: ASYNC_EFFECT_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(fake.calls.length).toBe(1);
+    });
     expect(await fake.calls[0].resolveWsUrl()).toBe('ws://localhost:1111');
 
     // Simulate a server respawn on a new port: collabUrl re-resolves.
@@ -150,12 +139,9 @@ describe('useServerKeepalive (Tier-3 mount)', () => {
       />,
     );
 
-    await waitFor(
-      () => {
-        expect(fake.calls.length).toBe(1);
-      },
-      { timeout: ASYNC_EFFECT_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(fake.calls.length).toBe(1);
+    });
 
     unmount();
     expect(fake.closeCount()).toBe(1);

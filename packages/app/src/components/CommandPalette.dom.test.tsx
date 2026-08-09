@@ -170,10 +170,28 @@ mock.module('@/components/PageListContext', () => ({
     filePaths: new Set<string>(),
     loading: pageListLoading,
   }),
+  // Nullable variant of the hook above — see the DocumentContext note; an
+  // omitted re-export fails the whole file at load, not just this query.
+  useOptionalPageList: () => ({
+    pages: new Set<string>(),
+    pageTitles: new Map<string, string>(),
+    pageMeta: new Map<string, unknown>(),
+    folderPaths: new Set<string>(),
+    filePaths: new Set<string>(),
+    loading: pageListLoading,
+  }),
 }));
 
 mock.module('@/editor/DocumentContext', () => ({
   useDocumentContext: () => ({
+    activeDocName,
+    activeTarget,
+  }),
+  // Nullable variant of the hook above. `mock.module` replaces the WHOLE
+  // module, so a consumer in this tree importing it by name gets an
+  // unresolvable import and the file dies at load. Same stub: the provider
+  // here is a passthrough, so the context reads as present.
+  useOptionalDocumentContext: () => ({
     activeDocName,
     activeTarget,
   }),
@@ -699,7 +717,7 @@ describe('CommandPalette DOM behavior', () => {
 
     // The poll re-fires the search; once it reports ready, the preparing state
     // clears without the user re-typing.
-    await waitFor(() => expect(searchCalls).toBeGreaterThanOrEqual(2), { timeout: 3000 });
+    await waitFor(() => expect(searchCalls).toBeGreaterThanOrEqual(2));
     await waitFor(() =>
       expect(screen.queryByTestId('command-palette-search-preparing')).toBeNull(),
     );
@@ -771,7 +789,7 @@ describe('CommandPalette DOM behavior', () => {
 
     // The error on call #2 must not abandon to "Search failed." — warming keeps
     // polling, and call #3 (ready) clears the preparing state.
-    await waitFor(() => expect(call).toBeGreaterThanOrEqual(3), { timeout: 3000 });
+    await waitFor(() => expect(call).toBeGreaterThanOrEqual(3));
     expect(screen.queryByText('Search failed.')).toBeNull();
     await waitFor(() =>
       expect(screen.queryByTestId('command-palette-search-preparing')).toBeNull(),

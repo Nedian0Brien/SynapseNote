@@ -127,3 +127,20 @@ if (typeof (globalThis as { MessageChannel?: unknown }).MessageChannel === 'unde
   }
   (globalThis as { MessageChannel?: unknown }).MessageChannel = MinimalMessageChannel;
 }
+
+// Testing-library's 1s default async timeout is a browser-interaction budget; it
+// is not a fit for this tier. `test:dom` runs 283 files at `--max-concurrency 1`
+// under `--isolate`, so a wait that resolves in ~200ms alone can take multiple
+// seconds mid-run — and some waits are structurally long even when idle (a read
+// that ends in an offline/stale banner first spends its whole settling retry
+// budget before the banner can render). The result was a class of assertions
+// that passed per-file and failed in the tier, which reads as a product fault
+// and is not one. Raising the ceiling costs passing tests nothing — a wait
+// returns the moment its condition holds — and only lets a genuinely broken
+// wait take longer to report. Kept well under the 30s per-test timeout so a
+// stuck wait still fails as itself rather than as a test timeout.
+// Imported here, not at the top of the file: `@testing-library/dom` binds
+// `screen` to `document` at module-evaluation time, so loading it before the
+// globals above are installed leaves every query pointed at nothing.
+const { configure } = await import('@testing-library/dom');
+configure({ asyncUtilTimeout: 10_000 });

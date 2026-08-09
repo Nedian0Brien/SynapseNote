@@ -55,8 +55,6 @@ if (globalWithDomShims.ResizeObserver === undefined) {
   globalWithDomShims.ResizeObserver = NoopResizeObserver;
 }
 
-const ASYNC_TIMEOUT_MS = 2000;
-
 type MenuActionLike =
   | 'new-project'
   | 'new-doc'
@@ -170,12 +168,9 @@ describe('NavigatorApp new-project menu-action subscription', () => {
 
     stub.fire('new-project');
 
-    await waitFor(
-      () => {
-        expect(screen.queryByTestId('create-project-dialog') !== null).toBe(true);
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(screen.queryByTestId('create-project-dialog') !== null).toBe(true);
+    });
   });
 
   test('unrelated menu actions do not open CreateProjectDialog', async () => {
@@ -203,12 +198,9 @@ describe('NavigatorApp new-project menu-action subscription', () => {
 
     stub.fire('report-bug');
 
-    await waitFor(
-      () => {
-        expect(screen.queryByRole('dialog', { name: 'Report a bug' })).not.toBeNull();
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Report a bug' })).not.toBeNull();
+    });
     // The Navigator has no project, so the compose summary must carry the
     // system-wide labeling rather than the project-scoped line.
     expect(screen.getByText(/no project is open/)).not.toBeNull();

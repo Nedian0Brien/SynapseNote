@@ -98,6 +98,11 @@ mock.module('@/components/AuthModal', () => ({
 
 mock.module('@/editor/DocumentContext', () => ({
   useDocumentContext: () => ({ activeDocName }),
+  // Nullable variant of the hook above. `mock.module` replaces the WHOLE
+  // module, so a consumer in this tree importing it by name gets an
+  // unresolvable import and the file dies at load. Same stub: the provider
+  // here is a passthrough, so the context reads as present.
+  useOptionalDocumentContext: () => ({ activeDocName }),
 }));
 
 mock.module('@/lib/use-workspace', () => ({
@@ -164,14 +169,9 @@ async function renderDialog() {
 }
 
 async function waitForAvailableNameCheck() {
-  await waitFor(
-    () => {
-      expect(screen.getByTestId('publish-name-check').getAttribute('data-status')).toBe(
-        'available',
-      );
-    },
-    { timeout: 1500 },
-  );
+  await waitFor(() => {
+    expect(screen.getByTestId('publish-name-check').getAttribute('data-status')).toBe('available');
+  });
 }
 
 describe('PublishToGitHubDialog runtime behavior', () => {

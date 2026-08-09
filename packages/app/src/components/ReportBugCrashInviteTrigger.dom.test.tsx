@@ -40,8 +40,6 @@ if (globalWithDomShims.ResizeObserver === undefined) {
   globalWithDomShims.ResizeObserver = NoopResizeObserver;
 }
 
-const ASYNC_TIMEOUT_MS = 2000;
-
 const INVITE: OkBugReportCrashDetectedEvent = {
   eventId: 'boot:1751871600000',
   kind: 'boot',
@@ -110,12 +108,9 @@ describe('ReportBugCrashInviteTrigger', () => {
 
     stub.fire(INVITE);
 
-    await waitFor(
-      () => {
-        expect(screen.queryByRole('dialog')).not.toBeNull();
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeNull();
+    });
     expect(screen.getByText('SynapseNote quit unexpectedly last time.')).not.toBeNull();
   });
 
@@ -126,12 +121,9 @@ describe('ReportBugCrashInviteTrigger', () => {
 
     render(<ReportBugCrashInviteTrigger bridge={stub.bridge} />);
 
-    await waitFor(
-      () => {
-        expect(screen.queryByRole('dialog')).not.toBeNull();
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeNull();
+    });
   });
 
   test('Not now acks the crash event and closes the invitation', async () => {
@@ -139,21 +131,15 @@ describe('ReportBugCrashInviteTrigger', () => {
     uninstall = crashInviteStore.install({ bridge: stub.bridge });
     render(<ReportBugCrashInviteTrigger bridge={stub.bridge} />);
     stub.fire(INVITE);
-    await waitFor(
-      () => {
-        expect(screen.queryByRole('dialog')).not.toBeNull();
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeNull();
+    });
 
     await userEvent.click(screen.getByRole('button', { name: 'Not now' }));
 
-    await waitFor(
-      () => {
-        expect(screen.queryByRole('dialog')).toBeNull();
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
     expect(stub.acked).toEqual(['boot:1751871600000']);
   });
 
@@ -162,21 +148,15 @@ describe('ReportBugCrashInviteTrigger', () => {
     uninstall = crashInviteStore.install({ bridge: stub.bridge });
     render(<ReportBugCrashInviteTrigger bridge={stub.bridge} />);
     stub.fire(INVITE);
-    await waitFor(
-      () => {
-        expect(screen.queryByRole('dialog')).not.toBeNull();
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeNull();
+    });
 
     await userEvent.keyboard('{Escape}');
 
-    await waitFor(
-      () => {
-        expect(screen.queryByRole('dialog')).toBeNull();
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
     expect(stub.acked).toEqual(['boot:1751871600000']);
   });
 });

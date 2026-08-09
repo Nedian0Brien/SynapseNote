@@ -45,8 +45,6 @@ if (globalWithDomShims.ResizeObserver === undefined) {
   globalWithDomShims.ResizeObserver = NoopResizeObserver;
 }
 
-const ASYNC_TIMEOUT_MS = 2000;
-
 interface MenuActionBridgeStub {
   bridge: OkDesktopBridge;
   /** Invoke the most recently subscribed onMenuAction callback. */
@@ -107,12 +105,9 @@ describe('ReportBugMenuTrigger', () => {
 
     stub.fire('report-bug');
 
-    await waitFor(
-      () => {
-        expect(screen.queryByRole('dialog')).not.toBeNull();
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeNull();
+    });
     // The dialog title confirms it's the report-a-bug surface.
     expect(screen.getByRole('dialog', { name: 'Report a bug' })).not.toBeNull();
   });
