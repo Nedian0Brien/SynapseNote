@@ -142,8 +142,16 @@ function buildCalloutElement(
 
   const rawBody = blockquote.children.slice(1);
   const openerLineNumber = blockquote.position?.start.line;
+  // The opener line leaves a residual paragraph behind whenever the marker is
+  // its own block — `> [!TYPE]\n>\n> body`, which is exactly the shape the
+  // `GFMCallout` serializer in `registry/built-ins.ts` emits after any edit
+  // inside a callout. Dropping it is NOT conditional on a title: an untitled
+  // callout leaves the same residual, and keeping it meant a saved-and-
+  // reopened callout showed a blank first line the author never typed. The
+  // position check is the real discriminator — only a paragraph occupying the
+  // opener line alone can be this artifact, and a body paragraph can never sit
+  // there (trailing text on the opener line parses as the title instead).
   const body =
-    title &&
     rawBody.length > 0 &&
     openerLineNumber !== undefined &&
     isResidualTitleParagraph(rawBody[0], openerLineNumber)
