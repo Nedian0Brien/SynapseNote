@@ -112,9 +112,9 @@ export const sharedExtensions = [
   // Backspace at the marker boundary converts the item to a plain paragraph.
   ListEditingShortcuts,
   // Prose indentation for the blocks the list/table/code Tab handlers don't
-  // own: Tab in a paragraph's leading whitespace writes a tab character,
-  // Shift-Tab takes one back. Priority 10 — after every intentional Tab
-  // handler, before the trap below.
+  // own: Tab anywhere in a paragraph grows its leading tab run, Shift-Tab
+  // takes one back. Priority 10 — after every intentional Tab handler,
+  // before the trap below.
   ParagraphIndentShortcuts,
   // Section indentation: Tab at a heading's start moves the heading and every
   // block under it (to the next same-or-higher heading). The heading's ATX

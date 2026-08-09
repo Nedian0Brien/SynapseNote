@@ -198,20 +198,21 @@ function animateSectionIndentPlugin(): Plugin {
 }
 
 /**
- * Resolve the caret when it sits at the very start of a top-level heading —
- * the only position where Tab means "indent this section". Headings have no
- * leading whitespace run to sit inside (the format cannot store one), so the
- * start is exactly offset 0.
+ * Resolve the heading Tab should indent.
+ *
+ * Anywhere inside it counts, matching the prose handler: the gesture is about
+ * the heading, not about which character the caret rests on. A selection
+ * qualifies while it stays within the one heading.
  */
 function headingCaret(editor: import('@tiptap/core').Editor): { pos: number; node: PmNode } | null {
   const { selection } = editor.state;
   if (!(selection instanceof TextSelection)) return null;
-  const { $cursor } = selection;
-  if ($cursor === null || $cursor.parentOffset !== 0) return null;
+  const { $from, $to } = selection;
+  if ($from.parent !== $to.parent) return null;
   // Depth 1 keeps this to headings the section walk actually paints; a heading
   // nested in a blockquote or list item would store an indent nothing renders.
-  if ($cursor.depth !== 1 || $cursor.parent.type.name !== 'heading') return null;
-  return { pos: $cursor.before(1), node: $cursor.parent };
+  if ($from.depth !== 1 || $from.parent.type.name !== 'heading') return null;
+  return { pos: $from.before(1), node: $from.parent };
 }
 
 /** Write the heading's own indent, normalizing 0 back to the absent form. */

@@ -20,8 +20,8 @@
  * Priority is set to `1` (well below stock TipTap defaults of 100 and the
  * fidelity overrides at 60) so this extension runs LAST in the keymap
  * chain. The intentional handlers — `ListItem` (sink/lift), `Table` (next
- * cell), `ParagraphIndentShortcuts` (priority 10, first-line indent when
- * the caret is in a paragraph's leading whitespace), suggestion plugins
+ * cell), `ParagraphIndentShortcuts` and `HeadingSectionIndent` (priority
+ * 10, indent from anywhere in a paragraph or heading), suggestion plugins
  * (`slash-command` / `wiki-link-suggestion` / `tag-suggestion`, which
  * intercept via `handleKeyDown` ProseMirror plugin paths at higher
  * precedence than `addKeyboardShortcuts`) — all get first crack. We catch
@@ -30,9 +30,10 @@
  * What "trap" does: `return true` from the handler so Tiptap calls
  * `preventDefault` on the underlying event. No edit, no selection change —
  * cursor stays put, focus stays in the editor. Indenting body prose belongs
- * to `ParagraphIndentShortcuts` and is deliberately scoped there to the
- * leading whitespace run: a tab dropped mid-sentence is never what the
- * keystroke meant, so those positions still land here and stay inert.
+ * to `ParagraphIndentShortcuts` / `HeadingSectionIndent`, which claim Tab
+ * from any caret position inside a paragraph or heading; what still lands
+ * here is everything else — selections spanning blocks, node selections, and
+ * blocks with no indent of their own.
  * Auto-converting paragraphs to list items stays out of scope entirely
  * (would silently rewrite the user's block type; the user picked paragraph
  * for a reason).
