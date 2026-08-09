@@ -59,8 +59,38 @@ const INDENT_UNIT = '\t';
 /** Shift-Tab removes at most this many trailing spaces from a space indent. */
 const SPACE_INDENT_WIDTH = 4;
 
-/** A quote moves as a whole so its left rule travels with the text. */
-const QUOTE_BLOCK = 'blockquote';
+/**
+ * Containers that move as a whole when the paragraph opening them is indented.
+ *
+ * Each draws its own left edge — a quote's rule, a callout's tinted box, a
+ * footnote definition's block — so indenting only the text inside would slide
+ * the words out from under their own frame. Each also stores the leading tab
+ * through the round-trip: `> &#x9;` for a quote, `[^1]: &#x9;` for a footnote
+ * definition, and inside the callout's own source bytes.
+ *
+ * `jsxComponent` covers callouts and every other block component. Listing the
+ * type rather than the component name is self-limiting: the rule only fires
+ * when a component's first child paragraph carries an indent, which can only
+ * happen where the component exposes that paragraph for editing.
+ */
+const INDENT_CONTAINERS: ReadonlySet<string> = new Set([
+  'blockquote',
+  'footnoteDefinition',
+  'jsxComponent',
+]);
+
+/**
+ * Ancestors that make Tab mean something else, or make the indent unstorable.
+ *
+ * `listItem` — Tab already means "nest this item"; ListEditingShortcuts runs
+ * first and returns false when the item cannot sink (a first item at the top
+ * level), and indenting its text instead would rewrite the marker line.
+ *
+ * `commentBlock` — an HTML comment body drops the leading run on re-parse
+ * (`<!-- \tbody -->` comes back as `body`), so the edit would vanish on the
+ * next reload. The block is `display: none` in the editor besides.
+ */
+const INDENT_BLOCKED_ANCESTORS: ReadonlySet<string> = new Set(['listItem', 'commentBlock']);
 
 /** Carries the level to `.ProseMirror p.ok-prose-indent` in `prose-base.css`. */
 export const OK_PROSE_INDENT_CLASS = 'ok-prose-indent';
@@ -116,12 +146,12 @@ export function indentLevelOf(run: string): number {
  * whose class collapses it to zero width, and a node one carrying the level.
  *
  * The node decoration usually lands on the paragraph, where it renders as a
- * first-line `text-indent`. When the paragraph opens a blockquote it lands on
- * the QUOTE instead, as a `margin-left`: a quote is drawn with a rule down its
- * left edge, and indenting only the text inside it would slide the words out
- * from under their own bar. Moving the container takes the rule along. Later
- * paragraphs in the same quote keep the first-line treatment — their run is an
- * indent within the quote, not a move of it.
+ * first-line `text-indent`. When the paragraph OPENS one of the containers in
+ * `INDENT_CONTAINERS` it lands on the container instead, as a `margin-left`,
+ * so the frame that container draws down its left edge travels with the words
+ * instead of leaving them behind it. Later paragraphs in the same container
+ * keep the first-line treatment — their run is an indent within the container,
+ * not a move of it.
  *
  * Rebuilt per state transition like `chunkWrapperDecorationPlugin`; the walk
  * stops at inline nodes, so it visits block nodes only.
@@ -139,9 +169,10 @@ export function proseIndentDecorationPlugin(): Plugin {
           if (length === 0) return false;
           const start = pos + 1;
           const level = indentLevelOf(node.textBetween(0, length));
-          const opensQuote = parent?.type.name === QUOTE_BLOCK && index === 0;
+          const opensContainer =
+            parent !== null && INDENT_CONTAINERS.has(parent.type.name) && index === 0;
           // A first child starts one position after its parent's own position.
-          const target = opensQuote
+          const target = opensContainer
             ? { pos: pos - 1, size: parent.nodeSize, class: OK_PROSE_INDENT_CONTAINER_CLASS }
             : { pos, size: node.nodeSize, class: OK_PROSE_INDENT_CLASS };
           decos.push(
@@ -183,11 +214,8 @@ function indentTarget(
   const { $from, $to } = selection;
   if ($from.parent !== $to.parent || $from.parent.type.name !== INDENTABLE_BLOCK) return null;
 
-  // Inside a list item Tab already means "nest this item". ListEditingShortcuts
-  // runs first and returns false when the item cannot sink (a first item at the
-  // top level); indenting its text instead would rewrite the marker line.
   for (let depth = $from.depth - 1; depth > 0; depth -= 1) {
-    if ($from.node(depth).type.name === 'listItem') return null;
+    if (INDENT_BLOCKED_ANCESTORS.has($from.node(depth).type.name)) return null;
   }
 
   return { runStart: $from.start(), indentLength: leadingIndentLength($from.parent) };
