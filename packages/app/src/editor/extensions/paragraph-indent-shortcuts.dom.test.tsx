@@ -21,6 +21,7 @@ import { installDomGlobals } from '../walk-currency-test-harness';
 import {
   indentLevelOf,
   OK_PROSE_INDENT_CLASS,
+  OK_PROSE_INDENT_CONTAINER_CLASS,
   OK_PROSE_INDENT_RUN_CLASS,
 } from './paragraph-indent-shortcuts';
 import { sharedExtensions } from './shared';
@@ -213,6 +214,46 @@ describe('Paragraph indent shortcuts', () => {
     ['\t  ', 1.5],
   ])('a %j run renders as %d level(s)', (run, expected) => {
     expect(indentLevelOf(run as string)).toBe(expected as number);
+  });
+
+  test('Tab at the start of a quote moves the whole quote, rule included', () => {
+    const editor = mountEditor('> quote text');
+    caretInParagraph(editor, 0);
+
+    expect(press(editor, 'Tab')).toBe(true);
+    // The level lands on the blockquote, not the paragraph — indenting only the
+    // text would slide the words out from under the quote's left rule.
+    const quote = editor.view.dom.querySelector('blockquote');
+    expect(quote?.classList.contains(OK_PROSE_INDENT_CONTAINER_CLASS)).toBe(true);
+    expect(quote?.getAttribute('style')).toMatch(/--ok-prose-indent-level:\s*1/);
+    expect(quote?.querySelector(`p.${OK_PROSE_INDENT_CLASS}`)).toBe(null);
+    // Storage is unchanged: still a leading tab in the quote's paragraph.
+    expect(serialize(editor)).toMatch(/^> &#x9;quote text$/m);
+  });
+
+  test('a later paragraph inside a quote keeps the first-line treatment', () => {
+    const editor = mountEditor('> first line\n>\n> second line');
+    caretInParagraph(editor, 1);
+
+    expect(press(editor, 'Tab')).toBe(true);
+    // One quote holding both paragraphs — otherwise the assertions below would
+    // pass by looking at an unrelated first quote.
+    expect(editor.view.dom.querySelectorAll('blockquote').length).toBe(1);
+    const quote = editor.view.dom.querySelector('blockquote');
+    expect(quote?.querySelectorAll('p').length).toBe(2);
+    // The quote itself must not move — only the paragraph that was indented.
+    expect(quote?.classList.contains(OK_PROSE_INDENT_CONTAINER_CLASS)).toBe(false);
+    expect(quote?.querySelectorAll(`p.${OK_PROSE_INDENT_CLASS}`).length).toBe(1);
+  });
+
+  test('Shift-Tab brings the quote back', () => {
+    const editor = mountEditor('> quote text');
+    caretInParagraph(editor, 0);
+    press(editor, 'Tab');
+
+    expect(press(editor, 'Tab', true)).toBe(true);
+    expect(editor.view.dom.querySelector(`.${OK_PROSE_INDENT_CONTAINER_CLASS}`)).toBe(null);
+    expect(serialize(editor).trimEnd()).toBe('> quote text');
   });
 
   test('Tab inside a code block still inserts the code-block indent', () => {
