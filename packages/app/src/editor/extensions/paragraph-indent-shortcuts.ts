@@ -60,8 +60,14 @@ const INDENT_UNIT = '\t';
 /** Shift-Tab removes at most this many trailing spaces from a space indent. */
 const SPACE_INDENT_WIDTH = 4;
 
+/** A quote moves as a whole so its left rule travels with the text. */
+const QUOTE_BLOCK = 'blockquote';
+
 /** Carries the level to `.ProseMirror p.ok-prose-indent` in `prose-base.css`. */
 export const OK_PROSE_INDENT_CLASS = 'ok-prose-indent';
+
+/** Same level, but moving a whole container rather than one first line. */
+export const OK_PROSE_INDENT_CONTAINER_CLASS = 'ok-prose-indent-container';
 
 /** Collapses the stored run so it adds no width of its own. */
 export const OK_PROSE_INDENT_RUN_CLASS = 'ok-prose-indent-run';
@@ -108,10 +114,18 @@ export function indentLevelOf(run: string): number {
  * Draw the indent as a transitionable length.
  *
  * Two decorations per indented paragraph: an inline one over the stored run,
- * whose class collapses it to zero width, and a node one carrying the level
- * for the `text-indent` calc. Rebuilt per state transition like
- * `chunkWrapperDecorationPlugin`; the walk stops at inline nodes, so it visits
- * block nodes only.
+ * whose class collapses it to zero width, and a node one carrying the level.
+ *
+ * The node decoration usually lands on the paragraph, where it renders as a
+ * first-line `text-indent`. When the paragraph opens a blockquote it lands on
+ * the QUOTE instead, as a `margin-left`: a quote is drawn with a rule down its
+ * left edge, and indenting only the text inside it would slide the words out
+ * from under their own bar. Moving the container takes the rule along. Later
+ * paragraphs in the same quote keep the first-line treatment — their run is an
+ * indent within the quote, not a move of it.
+ *
+ * Rebuilt per state transition like `chunkWrapperDecorationPlugin`; the walk
+ * stops at inline nodes, so it visits block nodes only.
  */
 export function proseIndentDecorationPlugin(): Plugin {
   return new Plugin({
@@ -119,17 +133,22 @@ export function proseIndentDecorationPlugin(): Plugin {
     props: {
       decorations(state) {
         const decos: Decoration[] = [];
-        state.doc.descendants((node, pos) => {
+        state.doc.descendants((node, pos, parent, index) => {
           if (node.isInline) return false;
           if (node.type.name !== INDENTABLE_BLOCK) return true;
           const length = leadingIndentLength(node);
           if (length === 0) return false;
           const start = pos + 1;
           const level = indentLevelOf(node.textBetween(0, length));
+          const opensQuote = parent?.type.name === QUOTE_BLOCK && index === 0;
+          // A first child starts one position after its parent's own position.
+          const target = opensQuote
+            ? { pos: pos - 1, size: parent.nodeSize, class: OK_PROSE_INDENT_CONTAINER_CLASS }
+            : { pos, size: node.nodeSize, class: OK_PROSE_INDENT_CLASS };
           decos.push(
             Decoration.inline(start, start + length, { class: OK_PROSE_INDENT_RUN_CLASS }),
-            Decoration.node(pos, pos + node.nodeSize, {
-              class: OK_PROSE_INDENT_CLASS,
+            Decoration.node(target.pos, target.pos + target.size, {
+              class: target.class,
               style: `--ok-prose-indent-level:${level}`,
             }),
           );

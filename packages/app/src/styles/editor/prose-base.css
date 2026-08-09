@@ -36,6 +36,13 @@
   text-indent: calc(var(--ok-prose-indent-level, 0) * var(--ok-indent-step));
 }
 
+/* A quote indents as a whole container. `margin-left` (not `padding-left`,
+   which is the rule-to-text gap in the blockquote rule further down) so the
+   left rule travels with the words instead of leaving them behind it. */
+.ProseMirror .ok-prose-indent-container {
+  margin-left: calc(var(--ok-prose-indent-level, 0) * var(--ok-indent-step));
+}
+
 /* Section indent painted by `heading-section-indent.ts`: a heading carries the
    stored level (its ATX leading indent) and every block in its section inherits
    the same level, so a whole section shifts as one. */
@@ -56,6 +63,12 @@
 @media (prefers-reduced-motion: no-preference) {
   .ProseMirror p {
     transition: text-indent 180ms var(--ease-out-strong, ease);
+  }
+
+  /* The quote's element survives the edit (only its decoration changes), so a
+     transition has a start value here and CSS can carry it. */
+  .ProseMirror blockquote {
+    transition: margin-left 180ms var(--ease-out-strong, ease);
   }
 }
 
