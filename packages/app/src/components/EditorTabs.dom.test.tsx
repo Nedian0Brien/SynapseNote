@@ -200,10 +200,43 @@ mock.module('@/editor/DocumentContext', () => ({
     unpinTab,
     visibleTabIds,
   }),
+  // Nullable variant of the hook above. `mock.module` replaces the WHOLE
+  // module, so a consumer in this tree importing it by name gets an
+  // unresolvable import and the file dies at load. Same stub: the provider
+  // here is a passthrough, so the context reads as present.
+  useOptionalDocumentContext: () => ({
+    activeDocName,
+    activeNewTabId,
+    activeTabId,
+    activeTarget,
+    activateNewTab,
+    activateTab,
+    closeAndClearForRename,
+    closeNewTab,
+    closeTab,
+    closeTabs,
+    getPoolActiveDocName,
+    isNewTabActive,
+    newTabIds,
+    openNewTab,
+    openTabs,
+    pinTab,
+    pinnedTabIds,
+    reopenClosedTab,
+    remapTabsForRename,
+    reorderTabs,
+    unpinTab,
+    visibleTabIds,
+  }),
 }));
 
 mock.module('@/components/PageListContext', () => ({
   usePageList: () => ({
+    pageMeta,
+  }),
+  // Nullable variant of the hook above — see the DocumentContext note; an
+  // omitted re-export fails the whole file at load, not just this query.
+  useOptionalPageList: () => ({
     pageMeta,
   }),
 }));

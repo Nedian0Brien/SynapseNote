@@ -322,10 +322,32 @@ mock.module('@/editor/DocumentContext', () => ({
     prewarm: () => {},
     remapTabsForRename: remapTabsForRenameMock,
   }),
+  // Nullable variant of the hook above. `mock.module` replaces the WHOLE
+  // module, so a consumer in this tree importing it by name gets an
+  // unresolvable import and the file dies at load. Same stub: the provider
+  // here is a passthrough, so the context reads as present.
+  useOptionalDocumentContext: () => ({
+    activeDocName: 'foo',
+    activeTarget: { kind: 'doc', target: 'foo', docName: 'foo' },
+    closeTabs: closeTabsMock,
+    closeDocument: closeDocumentMock,
+    closeAndClearDocument: closeAndClearForRenameMock,
+    closeAndClearForDelete: closeAndClearForRenameMock,
+    closeAndClearForRename: closeAndClearForRenameMock,
+    getPoolActiveDocName: () => 'foo',
+    poolHas: () => true,
+    isNewTabActive: false,
+    openTarget: openTargetMock,
+    prewarm: () => {},
+    remapTabsForRename: remapTabsForRenameMock,
+  }),
 }));
 
 mock.module('@/components/PageListContext', () => ({
   usePageList: () => ({ addPage: addPageMock, pageMeta: new Map() }),
+  // Nullable variant of the hook above — see the DocumentContext note; an
+  // omitted re-export fails the whole file at load, not just this query.
+  useOptionalPageList: () => ({ addPage: addPageMock, pageMeta: new Map() }),
 }));
 
 mock.module('./ui/sidebar', () => ({

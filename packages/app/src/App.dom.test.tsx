@@ -48,11 +48,8 @@ mock.module('@/lib/perf', () => ({
   ProfilerBoundary: ({ children }: { children: ReactNode }) => children,
 }));
 
-mock.module('@/editor/DocumentContext', () => ({
-  DocumentProvider: ({ children }: { children: ReactNode }) => (
-    <div data-testid="document-provider">{children}</div>
-  ),
-  useDocumentContext: () => ({
+function documentContextStub() {
+  return {
     activeDocName: activeTarget?.kind === 'doc' ? activeTarget.docName : null,
     activeTarget,
     clearTarget: clearTargetMock,
@@ -62,29 +59,51 @@ mock.module('@/editor/DocumentContext', () => ({
     // so it issues no `/api/skills` fetch); the real context always supplies them.
     openTabs,
     closeDocument: () => {},
-  }),
+  };
+}
+
+mock.module('@/editor/DocumentContext', () => ({
+  DocumentProvider: ({ children }: { children: ReactNode }) => (
+    <div data-testid="document-provider">{children}</div>
+  ),
+  useOptionalDocumentContext: () => documentContextStub(),
+  useDocumentContext: () => documentContextStub(),
   useDocumentTransition: () => ({
     openTargetTransition: openTargetTransitionMock,
   }),
 }));
 
+const pageListStub = () => ({
+  assetPaths,
+  filePaths,
+  folderPaths,
+  loading,
+  pageMeta,
+  pages,
+  pagesBySlug,
+  pagesByBasename,
+});
+
 mock.module('@/components/PageListContext', () => ({
   PageListProvider: ({ children }: { children: ReactNode }) => (
     <div data-testid="page-list-provider">{children}</div>
   ),
-  usePageList: () => ({
-    assetPaths,
-    filePaths,
-    folderPaths,
-    loading,
-    pageMeta,
-    pages,
-    pagesBySlug,
-    pagesByBasename,
-  }),
+  usePageList: () => pageListStub(),
+  // Same module, nullable variant. Components below this tree pick one or the
+  // other; a mock that ships only `usePageList` leaves the other named import
+  // unresolvable and the file fails to load before any test runs.
+  useOptionalPageList: () => pageListStub(),
 }));
 
+// Partial mock: `mock.module` replaces the WHOLE module, so anything this tree
+// imports by name from here must survive. Spreading the real module keeps its
+// other pure helpers (`largeFileNavigationTarget`, `normalizeTargetPath`, …)
+// resolvable — listing only the three stubbed functions made every one of them
+// an unresolvable named import, which fails the file at load time.
+const actualNavigationTargets = await import('@/components/navigation-targets');
+
 mock.module('@/components/navigation-targets', () => ({
+  ...actualNavigationTargets,
   resolveNavigationTarget: (...args: Parameters<typeof resolveNavigationTargetMock>) =>
     resolveNavigationTargetMock(...args),
   downgradeFolderIndexForHashNav: (target: NavigationTarget) =>
@@ -92,17 +111,25 @@ mock.module('@/components/navigation-targets', () => ({
   withLargeFileOpenGuard: (target: NavigationTarget) => withLargeFileOpenGuardMock(target),
 }));
 
+// AppBody reads `merged.appearance.preview.autoOpen` to compose the
+// "Open in terminal" launch prompt; the ConfigProvider below is a passthrough
+// so the real context is never set. Stub the hook to the cold-start shape.
+const useConfigContextStub = () => ({ merged: null });
+
 mock.module('@/lib/config-provider', () => ({
   ConfigProvider: ({ children }: { children: ReactNode }) => (
     <div data-testid="config-provider">{children}</div>
   ),
+  // config-provider re-exports `useConfigContext`, and consumers reached from
+  // this tree import it from HERE rather than from config-context (FileTree.tsx
+  // does). `mock.module` replaces the whole module, so omitting the re-export
+  // leaves that named import unresolvable and the entire file fails to load
+  // with "Export named 'useConfigContext' not found" before a single test runs.
+  useConfigContext: useConfigContextStub,
 }));
 
-// AppBody reads `merged.appearance.preview.autoOpen` to compose the
-// "Open in terminal" launch prompt; the ConfigProvider above is a passthrough
-// so the real context is never set. Stub the hook to the cold-start shape.
 mock.module('@/lib/config-context', () => ({
-  useConfigContext: () => ({ merged: null }),
+  useConfigContext: useConfigContextStub,
 }));
 
 mock.module('@/lib/api-config', () => ({

@@ -44,6 +44,20 @@ mock.module('@/components/PageListContext', () => ({
     refetch: () => {},
     addPage: () => {},
   }),
+  // Nullable variant of the hook above — see the DocumentContext note; an
+  // omitted re-export fails the whole file at load, not just this query.
+  useOptionalPageList: () => ({
+    assetPaths: new Set<string>(),
+    error: null,
+    folderPaths: new Set<string>(),
+    loading: false,
+    pages: new Set<string>(['docs/Active']),
+    pagesBySlug: new Map<string, string>(),
+    pageMeta: new Map(),
+    pageTitles: new Map([['docs/Active', 'Active']]),
+    refetch: () => {},
+    addPage: () => {},
+  }),
 }));
 
 type ExternalSelection = { kind: 'external'; id: string; label: string; url: string };

@@ -106,6 +106,11 @@ mock.module('@/components/settings/SettingsDialogBodyLazy', () => ({
 mock.module('@/editor/DocumentContext', () => ({
   useDocumentContext: () => ({ collabUrl: mockCollabUrl }),
   DocumentProvider: ({ children }: { children: React.ReactNode }) => children,
+  // Nullable variant of the hook above. `mock.module` replaces the WHOLE
+  // module, so a consumer in this tree importing it by name gets an
+  // unresolvable import and the file dies at load. Same stub: the provider
+  // here is a passthrough, so the context reads as present.
+  useOptionalDocumentContext: () => ({ collabUrl: mockCollabUrl }),
 }));
 
 mock.module('@/lib/config-provider', () => ({

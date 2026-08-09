@@ -47,6 +47,11 @@ mock.module('@/components/ui/skeleton', () => ({
 
 mock.module('@/editor/DocumentContext', () => ({
   useDocumentContext: () => ({ collabUrl: 'ws://test.invalid' }),
+  // Nullable variant of the hook above. `mock.module` replaces the WHOLE
+  // module, so a consumer in this tree importing it by name gets an
+  // unresolvable import and the file dies at load. Same stub: the provider
+  // here is a passthrough, so the context reads as present.
+  useOptionalDocumentContext: () => ({ collabUrl: 'ws://test.invalid' }),
 }));
 
 mock.module('@/lib/config-provider', () => ({

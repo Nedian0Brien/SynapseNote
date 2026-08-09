@@ -143,6 +143,16 @@ mock.module('@/components/PageListContext', () => ({
     ]),
     pages: new Set(['docs/guide', 'drafts/note']),
   }),
+  // Nullable variant of the hook above — see the DocumentContext note; an
+  // omitted re-export fails the whole file at load, not just this query.
+  useOptionalPageList: () => ({
+    assetPaths: new Set(['assets/logo.png']),
+    pageMeta: new Map([
+      ['docs/guide', { docExt: '.md' }],
+      ['drafts/note', { docExt: '.mdx' }],
+    ]),
+    pages: new Set(['docs/guide', 'drafts/note']),
+  }),
 }));
 
 function createBinding(initialText: string) {
