@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { FolderDocumentCard } from '@/components/FolderDocumentCard';
+import { FolderDocumentGallery } from '@/components/FolderDocumentGallery';
 import { FolderPropertiesCard } from '@/components/FolderPropertiesCard';
 import { FolderTimelineCard } from '@/components/FolderTimelineCard';
 import {
@@ -44,7 +45,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useFolderConfig } from '@/hooks/use-folder-config';
 import { hashFromDocName } from '@/lib/doc-hash';
-import { cn } from '@/lib/utils';
 
 type SortKey = 'name' | 'modified';
 type SortDir = 'asc' | 'desc';
@@ -361,14 +361,12 @@ export function FolderOverview({ folderPath }: { folderPath: string }) {
           {documents.length > 0 ? (
             viewMode === 'list' ? (
               <DocumentList entries={documents} ariaLabel={t`Documents`} />
+            ) : viewMode === 'preview' ? (
+              <FolderDocumentGallery entries={documents} ariaLabel={t`Documents`} />
             ) : (
               <section
                 aria-label={t`Documents`}
-                className={cn(
-                  viewMode === 'preview' && 'columns-[11rem] gap-3',
-                  viewMode === 'grid' &&
-                    'grid grid-cols-[repeat(auto-fill,minmax(min(100%,11rem),1fr))] gap-3',
-                )}
+                className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,11rem),1fr))] gap-3"
               >
                 {documents.map((entry) => (
                   <FolderDocumentCard key={entry.path} entry={entry} mode={viewMode} />

@@ -69,6 +69,45 @@ final result: passed
 
 ---
 
+# Folder gallery row-first layout design QA — 2026-08-10
+
+## Visual truth and compared implementation
+
+- Source visual truth: `01-current.png`, the installed `Research/brain` folder before this correction at 1288 × 768 pixels.
+- Installed implementation: `02-row-first.png`, the same folder, viewport, light theme, preview mode, five child folders, and two direct documents after this correction.
+- Full-view comparison: `04-before-after.png` places both 1288 × 768 captures side by side at native scale without density resampling.
+- A focused crop was unnecessary because the complete affected gallery and both document cards are legible in the full-view comparison; no typography, icon, or asset detail changed.
+
+## Findings and comparison history
+
+| Iteration | Severity | Finding | Resolution and post-fix evidence |
+| --- | --- | --- | --- |
+| 1 | P1 | CSS multi-column flow placed the second direct document below the first despite enough horizontal space for both cards. | Replaced column-major flow with explicit responsive grid placement. `02-row-first.png` and `04-before-after.png` show the first two documents occupying adjacent horizontal tracks. Later cards retain masonry packing by choosing the shortest column, while source and keyboard order remain left-to-right. |
+
+## Required fidelity surfaces
+
+- Fonts and typography: unchanged; titles, document preview text, wrapping, weights, line heights, and truncation retain the existing SynapseNote treatment.
+- Spacing and layout rhythm: the two 176 px paper cards now fill the first row with the existing 12 px gap. Folder tiles, page padding, radii, shadows, and vertical rhythm remain unchanged.
+- Colors and visual tokens: unchanged; cards continue to use the existing card, border, foreground, muted, focus, and shadow tokens.
+- Image and asset fidelity: this change introduces no raster, decorative, or custom-drawn assets. Existing icons and live document previews are unchanged.
+- Copy and content: unchanged. `Work Log` and `간단한 메모` preserve their canonical titles and preview text.
+- Responsiveness: the layout contract resolves 364 px to two 176 px cards plus a 12 px gap, and 176 px to one column. The installed wide-screen capture verifies the two-column state.
+
+## Interaction and final assessment
+
+- Verified two direct documents render left-to-right in the installed app.
+- Verified all documents retain source DOM order and later documents choose the shortest available column.
+- Verified Preview, Grid, and List switching remains covered by the focused folder-overview DOM test.
+- Automated evidence: two layout tests and four folder-overview DOM tests passed.
+- Installed bundle revision `35be5e9d` passed revision, code-signature, and ASAR integrity verification.
+- P0 findings: none.
+- Unresolved P1 findings: none.
+- Unresolved P2 findings: none.
+
+final result: passed
+
+---
+
 # Craft-style folder gallery design QA — 2026-08-09/10
 
 ## Visual truth and compared implementation
