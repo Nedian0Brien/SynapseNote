@@ -69,6 +69,53 @@ final result: passed
 
 ---
 
+# Craft-style folder gallery design QA — 2026-08-09/10
+
+## Visual truth and compared implementation
+
+- Source visual truth: `craft-idea-height-reference-2026-08-10.png`, captured read-only from the user's open Craft `Idea` window at 1288 × 768 pixels.
+- Browser-rendered implementation: `synapsenote-compact-card-height-controlled-2026-08-10.png`, captured from the live SynapseNote app at a 1290 × 768 CSS-pixel viewport and 1× browser density.
+- Full-view comparison input: `craft-compact-height-comparison-2026-08-10.png` places the source and implementation side by side without scaling, separated by a 24 px neutral gutter.
+- Focused comparison input: `craft-compact-height-focused-comparison-2026-08-10.png` places the source content canvas and SynapseNote folder canvas together at native scale.
+- State: light theme, `docs/rfcs/` folder, preview mode, Name A–Z sort, search closed, details closed, and the standard SynapseNote Files shell visible.
+
+## Findings and comparison history
+
+| Iteration | Severity | Finding | Resolution and post-fix evidence |
+| --- | --- | --- | --- |
+| 1 | P2 | The first rendered gallery produced four broad document columns, while Craft's reference used five narrower paper columns at the same desktop height. | Reduced the preview column measure to 11 rem. The final 1290 × 768 capture presents five columns with comparable density and a matching staggered paper rhythm. |
+| 1 | P2 | The first toolbar placed search ahead of the view and sort controls, reversing the reference's scan order. | Reordered the controls to view modes, sort, details, then search. The focused comparison shows the same right-aligned control progression as Craft. |
+| 1 | P3 | The title row initially added a separate folder glyph beside the folder name, while the reference used only its circular create action and title. | Removed the redundant title glyph and retained the existing SynapseNote tab breadcrumb as product shell context. |
+| 2 | P2 | List mode rendered the correct rows but did not expose the same named Documents region as preview and grid modes. | Wrapped the list in a labelled semantic section. Live browser QA finds one `Documents` region in all three view modes. |
+| 3 | P2 | Real RFC documents pushed the first implementation's preview cards to 312–388 px, substantially taller than the 200–260 px paper range visible in the user's updated Craft reference. | Rebalanced content-size and deterministic path variation into a compact 188–260 px contract. The live RFC folder now measures 212–260 px in Preview and a fixed 232 px in Grid; the post-fix comparison restores the reference's above-the-fold density. |
+
+## Required fidelity surfaces
+
+- Typography and hierarchy: the implementation uses SynapseNote's existing sans-serif tokens while matching the reference's compact folder title, bold paper titles, muted document copy, and dense preview hierarchy. Real Markdown headings, lists, code, and paragraphs are reduced to safe, readable preview blocks rather than fabricated document images.
+- Spacing and layout: the light canvas, compact header, 11 rem five-column masonry, 12 px card gaps, 13 px paper radii, subtle borders, and low elevation match the Craft reference's density and surface rhythm. Preview cards are bounded to 188–260 px and the current RFC set renders at 212–260 px, replacing the earlier 312–388 px range. Child folders remain compact tiles above documents so canonical folder navigation is preserved.
+- Colors and surfaces: background, cards, borders, foreground, muted text, hover, focus, and dark-mode counterparts all use existing SynapseNote semantic tokens. The source's nearly white canvas and restrained gray shadows are preserved in light mode.
+- Image and asset fidelity: the reference contains document surfaces rather than standalone raster artwork. The implementation renders live SynapseNote document content and uses the project's existing Lucide icons; no placeholder imagery, custom SVG, emoji, CSS illustration, or fake thumbnail was introduced.
+- Copy and content: folder and document names come from the open SynapseNote project. Craft's sample note titles were not copied because they are another application's user data; content density and hierarchy are matched with the current folder's real documents.
+- Icons and controls: preview, grid, list, sort, details, search, create, file, and folder controls use one Lucide stroke family, consistent 32 px targets, visible selected states, accessible names, tooltips, and focus rings.
+- Responsiveness: live checks at 1290, 900, and 720 CSS pixels retained all 24 document cards with no horizontal document overflow. The gallery adapts from five to three columns while the existing application shell applies its compact sidebar behavior.
+
+## Interaction and final assessment
+
+- Verified Preview, Grid, and List modes; each exposes a selected radio state and the same named Documents region.
+- Verified all 24 live Preview cards remain between 212 and 260 px and all Grid cards render at 232 px.
+- Verified title/path search, clear-search restoration, Name A–Z, Name Z–A, recently modified, and oldest modified sorting.
+- Verified Folder details opens the existing properties, templates, and timeline sheet without crowding the main canvas.
+- Verified New document opens the existing creation dialog with `docs/rfcs` as its initial directory; no QA document was created.
+- Verified the live browser emitted zero error-level console entries. One unrelated Claude Desktop integration timeout warning fell back to its existing local-storage guard.
+- Accepted product-shell differences: SynapseNote retains its Files sidebar, document tab bar, Share/Settings/Resources actions, child-folder navigation, and bottom Ask Claude composer. Those surfaces were explicitly preserved while only the folder content view adopted the Craft gallery language.
+- P0 findings: none.
+- Unresolved P1 findings: none.
+- Unresolved P2 findings: none.
+
+final result: passed
+
+---
+
 # Full-page database record breadcrumb design QA
 
 ## Visual truth and compared implementation

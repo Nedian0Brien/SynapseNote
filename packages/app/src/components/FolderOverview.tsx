@@ -1,7 +1,19 @@
-import { t } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react/macro';
-import { ArrowDown, ArrowUp, ArrowUpDown, File, Folder, FolderOpen, Plus } from 'lucide-react';
-import { useState } from 'react';
+import {
+  ArrowDownUp,
+  Columns3,
+  FileText,
+  Folder,
+  FolderOpen,
+  Grid2X2,
+  List,
+  MoreHorizontal,
+  Plus,
+  Search,
+  X,
+} from 'lucide-react';
+import { useRef, useState } from 'react';
+import { FolderDocumentCard } from '@/components/FolderDocumentCard';
 import { FolderPropertiesCard } from '@/components/FolderPropertiesCard';
 import { FolderTimelineCard } from '@/components/FolderTimelineCard';
 import {
@@ -12,35 +24,31 @@ import { NewItemDialog } from '@/components/NewItemDialog';
 import { usePageList } from '@/components/PageListContext';
 import { TemplatesCard } from '@/components/TemplatesCard';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useFolderConfig } from '@/hooks/use-folder-config';
 import { hashFromDocName } from '@/lib/doc-hash';
+import { cn } from '@/lib/utils';
 
 type SortKey = 'name' | 'modified';
 type SortDir = 'asc' | 'desc';
-
-function formatRelativeDate(iso: string): string {
-  if (!iso) return '—';
-  const date = new Date(iso);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60_000);
-  if (diffMin < 1) return t`just now`;
-  if (diffMin < 60) return t`${diffMin}m ago`;
-  const diffHrs = Math.floor(diffMin / 60);
-  if (diffHrs < 24) return t`${diffHrs}h ago`;
-  const diffDays = Math.floor(diffHrs / 24);
-  if (diffDays < 30) return t`${diffDays}d ago`;
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-}
+type ViewMode = 'preview' | 'grid' | 'list';
 
 function sortEntries(
   entries: FolderOverviewEntry[],
@@ -49,54 +57,109 @@ function sortEntries(
 ): FolderOverviewEntry[] {
   return [...entries].sort((a, b) => {
     if (a.kind !== b.kind) return a.kind === 'folder' ? -1 : 1;
-    let cmp = 0;
-    switch (key) {
-      case 'name':
-        cmp = a.title.localeCompare(b.title) || a.name.localeCompare(b.name);
-        break;
-      case 'modified': {
-        const aM = a.kind === 'file' ? a.modified : '';
-        const bM = b.kind === 'file' ? b.modified : '';
-        cmp = aM.localeCompare(bM);
-        break;
-      }
+    let comparison = 0;
+    if (key === 'name') {
+      comparison = a.title.localeCompare(b.title) || a.name.localeCompare(b.name);
+    } else {
+      const aModified = a.kind === 'file' ? a.modified : '';
+      const bModified = b.kind === 'file' ? b.modified : '';
+      comparison = aModified.localeCompare(bModified);
     }
-    return dir === 'asc' ? cmp : -cmp;
+    return dir === 'asc' ? comparison : -comparison;
   });
 }
 
-function SortableHeader({
-  label,
-  sortKey,
-  activeKey,
-  activeDir,
-  onSort,
-}: {
-  label: string;
-  sortKey: SortKey;
-  activeKey: SortKey;
-  activeDir: SortDir;
-  onSort: (key: SortKey) => void;
-}) {
-  const isActive = activeKey === sortKey;
+function formatRelativeDate(iso: string): string {
+  if (!iso) return '—';
+  const date = new Date(iso);
+  const diffMinutes = Math.floor((Date.now() - date.getTime()) / 60_000);
+  if (diffMinutes < 1) return 'now';
+  if (diffMinutes < 60) return `${diffMinutes}m`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 30) return `${diffDays}d`;
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function FolderOverviewSkeleton() {
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="-ml-3 h-8 uppercase font-mono"
-      onClick={() => onSort(sortKey)}
+    <div
+      className="flex min-h-0 flex-1 flex-col overflow-hidden bg-muted/30"
+      role="status"
+      aria-busy="true"
     >
-      {label}
-      {isActive ? (
-        activeDir === 'asc' ? (
-          <ArrowUp className="ml-1 size-3" />
-        ) : (
-          <ArrowDown className="ml-1 size-3" />
-        )
-      ) : (
-        <ArrowUpDown className="ml-1 size-3 text-muted-foreground/50" />
-      )}
-    </Button>
+      <div className="flex items-center justify-between px-6 pt-5 pb-8">
+        <div className="flex items-center gap-2.5">
+          <Skeleton className="size-8 rounded-xl" />
+          <Skeleton className="h-5 w-40" />
+        </div>
+        <Skeleton className="h-8 w-56 rounded-xl" />
+      </div>
+      <div className="subtle-scrollbar min-h-0 flex-1 overflow-y-auto px-5 pb-8">
+        <div className="columns-[11rem] gap-3">
+          {[248, 312, 280, 360, 226, 336, 264, 304].map((height) => (
+            <Skeleton
+              key={height}
+              className="mb-3 inline-block w-full break-inside-avoid rounded-[13px]"
+              style={{ height }}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FolderTiles({ entries }: { entries: Extract<FolderOverviewEntry, { kind: 'folder' }>[] }) {
+  if (entries.length === 0) return null;
+  return (
+    <section aria-label="Folders" className="mb-4">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,11rem),1fr))] gap-2">
+        {entries.map((entry) => (
+          <a
+            key={entry.path}
+            href={hashFromDocName(entry.path)}
+            className="group flex min-w-0 items-center gap-2 rounded-[11px] border border-black/7 bg-card/92 px-3 py-2.5 text-sm shadow-xs transition-[border-color,box-shadow,transform] hover:-translate-y-px hover:border-black/12 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 dark:border-white/9 dark:hover:border-white/16"
+          >
+            <Folder className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+            <span className="truncate font-medium">{entry.title}</span>
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function DocumentList({
+  entries,
+  ariaLabel,
+}: {
+  entries: Extract<FolderOverviewEntry, { kind: 'file' }>[];
+  ariaLabel: string;
+}) {
+  return (
+    <section
+      aria-label={ariaLabel}
+      className="overflow-hidden rounded-[13px] border border-black/7 bg-card/94 shadow-sm dark:border-white/9"
+    >
+      <ul className="divide-y divide-border/65">
+        {entries.map((entry) => (
+          <li key={entry.path}>
+            <a
+              href={hashFromDocName(entry.path)}
+              className="group flex items-center gap-3 px-3.5 py-3 text-sm transition-colors hover:bg-muted/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40"
+            >
+              <FileText className="size-4 shrink-0 text-muted-foreground/65 group-hover:text-foreground" />
+              <span className="min-w-0 flex-1 truncate font-medium">{entry.title}</span>
+              <span className="shrink-0 text-xs text-muted-foreground">
+                {formatRelativeDate(entry.modified)}
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -106,173 +169,268 @@ export function FolderOverview({ folderPath }: { folderPath: string }) {
   const folderConfigHandle = useFolderConfig(folderPath);
   const { state: folderConfig, refresh: refreshFolderConfig } = folderConfigHandle;
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [viewMode, setViewMode] = useState<ViewMode>('preview');
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
-
-  if (loading) {
-    return (
-      <div
-        className="flex min-h-0 flex-1 items-start overflow-y-auto subtle-scrollbar"
-        role="status"
-        aria-busy="true"
-        aria-label={t`Loading folder contents`}
-      >
-        <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-6 py-8">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <Skeleton className="size-5 rounded" />
-              <Skeleton className="h-7 w-48" />
-            </div>
-            <Skeleton className="h-9 w-20 rounded-md" />
-          </div>
-          <div className="rounded-lg border">
-            <div className="flex items-center gap-4 border-b px-4 py-3">
-              <Skeleton className="h-4 w-16" />
-              <div className="ml-auto">
-                <Skeleton className="h-4 w-20" />
-              </div>
-            </div>
-            {['a', 'b', 'c', 'd'].map((id) => (
-              <div key={id} className="flex items-center gap-3 border-b px-4 py-3 last:border-b-0">
-                <Skeleton className="size-4 rounded" />
-                <Skeleton className="h-4 w-40" />
-                <div className="ml-auto">
-                  <Skeleton className="h-4 w-16" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const data = buildFolderOverviewData(folderPath, { pages, pageTitles, pageMeta, folderPaths });
-  const sorted = sortEntries(data.children, sortKey, sortDir);
-  // Content-root has no folder leaf to derive a title from
-  // (`buildFolderOverviewData` returns ''). Fall back to a generic label so
-  // the root overview — reached by in-app root nav and root-folder shares —
-  // never renders a blank heading.
   const heading = data.title || (folderPath === '' ? t`All files` : data.title);
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  const visibleEntries = sortEntries(data.children, sortKey, sortDir).filter((entry) => {
+    if (!normalizedQuery) return true;
+    return `${entry.title} ${entry.path}`.toLocaleLowerCase().includes(normalizedQuery);
+  });
+  const folders = visibleEntries.filter(
+    (entry): entry is Extract<FolderOverviewEntry, { kind: 'folder' }> => entry.kind === 'folder',
+  );
+  const documents = visibleEntries.filter(
+    (entry): entry is Extract<FolderOverviewEntry, { kind: 'file' }> => entry.kind === 'file',
+  );
+  const description =
+    folderConfig.status === 'ready' && typeof folderConfig.data.folder.description === 'string'
+      ? folderConfig.data.folder.description.trim()
+      : '';
 
-  function handleSort(key: SortKey) {
-    if (key === sortKey) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
+  function openSearch() {
+    setSearchOpen(true);
+    window.requestAnimationFrame(() => searchInputRef.current?.focus());
+  }
+
+  function setSort(value: string) {
+    const [key, dir] = value.split('-');
+    if ((key === 'name' || key === 'modified') && (dir === 'asc' || dir === 'desc')) {
       setSortKey(key);
-      setSortDir('asc');
+      setSortDir(dir);
     }
   }
 
+  if (loading) return <FolderOverviewSkeleton />;
+
   return (
     <>
-      <div className="flex min-h-0 flex-1 items-start overflow-y-auto subtle-scrollbar">
-        <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-6 py-8">
-          <div className="flex flex-col gap-6">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <FolderOpen className="size-5 text-muted-foreground" />
-                <h1 className="text-2xl font-light tracking-tight">{heading}</h1>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-muted/30">
+        <header className="relative z-10 flex shrink-0 flex-wrap items-center justify-between gap-3 px-5 pt-4 pb-5 sm:px-6">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-8 rounded-xl border-black/8 bg-card shadow-sm dark:border-white/10"
+              onClick={() => setCreateDialogOpen(true)}
+              aria-label={t`New document`}
+              title={t`New document`}
+            >
+              <Plus className="size-4" />
+            </Button>
+            <h1 className="truncate text-[15px] font-semibold tracking-[-0.01em]">{heading}</h1>
+          </div>
+
+          <div className="ml-auto flex items-center gap-2">
+            {searchOpen || query ? (
+              <div className="order-4 flex h-8 w-[min(16rem,55vw)] items-center gap-1.5 rounded-xl border border-black/8 bg-card px-2 shadow-sm focus-within:ring-2 focus-within:ring-ring/30 dark:border-white/10">
+                <Search className="size-3.5 shrink-0 text-muted-foreground" />
+                <Input
+                  ref={searchInputRef}
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder={t`Search this folder`}
+                  aria-label={t`Search this folder`}
+                  className="h-7 border-0 bg-transparent px-0 text-xs shadow-none focus-visible:ring-0 dark:bg-transparent"
+                />
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  className="size-5 rounded-md"
+                  onClick={() => {
+                    setQuery('');
+                    setSearchOpen(false);
+                  }}
+                  aria-label={t`Close search`}
+                >
+                  <X className="size-3" />
+                </Button>
               </div>
-              <Button onClick={() => setCreateDialogOpen(true)}>
-                <Plus className="size-4" />
-                <Trans>New</Trans>
+            ) : (
+              <Button
+                variant="outline"
+                size="icon"
+                className="order-4 size-8 rounded-xl border-black/8 bg-card shadow-sm dark:border-white/10"
+                onClick={openSearch}
+                aria-label={t`Search this folder`}
+                title={t`Search this folder`}
+              >
+                <Search className="size-3.5" />
               </Button>
-            </div>
+            )}
+
+            <ToggleGroup
+              type="single"
+              value={viewMode}
+              onValueChange={(value) => {
+                if (value === 'preview' || value === 'grid' || value === 'list') setViewMode(value);
+              }}
+              variant="outline"
+              size="sm"
+              className="order-1 h-8 rounded-xl border-black/8 bg-card p-0.5 shadow-sm dark:border-white/10"
+              aria-label={t`Folder view`}
+            >
+              <ToggleGroupItem
+                value="preview"
+                className="size-7 rounded-[9px] border-0 px-0"
+                aria-label={t`Preview view`}
+                title={t`Preview view`}
+              >
+                <Columns3 className="size-3.5" />
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="grid"
+                className="size-7 rounded-[9px] border-0 px-0"
+                aria-label={t`Grid view`}
+                title={t`Grid view`}
+              >
+                <Grid2X2 className="size-3.5" />
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="list"
+                className="size-7 rounded-[9px] border-0 px-0"
+                aria-label={t`List view`}
+                title={t`List view`}
+              >
+                <List className="size-3.5" />
+              </ToggleGroupItem>
+            </ToggleGroup>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="order-2 size-8 rounded-xl border-black/8 bg-card shadow-sm dark:border-white/10"
+                  aria-label={t`Sort folder`}
+                  title={t`Sort folder`}
+                >
+                  <ArrowDownUp className="size-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuLabel>
+                  <Trans>Sort by</Trans>
+                </DropdownMenuLabel>
+                <DropdownMenuRadioGroup value={`${sortKey}-${sortDir}`} onValueChange={setSort}>
+                  <DropdownMenuRadioItem value="name-asc">
+                    <Trans>Name A–Z</Trans>
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="name-desc">
+                    <Trans>Name Z–A</Trans>
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="modified-desc">
+                    <Trans>Recently modified</Trans>
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="modified-asc">
+                    <Trans>Oldest modified</Trans>
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button
+              variant="outline"
+              size="icon"
+              className="order-3 size-8 rounded-xl border-black/8 bg-card shadow-sm dark:border-white/10"
+              onClick={() => setDetailsOpen(true)}
+              aria-label={t`Folder details`}
+              title={t`Folder details`}
+            >
+              <MoreHorizontal className="size-3.5" />
+            </Button>
           </div>
-          <FolderPropertiesCard
-            folderPath={folderPath}
-            state={folderConfig}
-            onChange={refreshFolderConfig}
-          />
-          <TemplatesCard
-            folderPath={folderPath}
-            state={folderConfig}
-            onChange={refreshFolderConfig}
-            folderConfigHandle={folderConfigHandle}
-          />
-          <FolderTimelineCard folderPath={folderPath} />
-          <div className="rounded-lg border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead
-                    aria-sort={
-                      sortKey === 'name' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'
-                    }
-                  >
-                    <SortableHeader
-                      label={t`Name`}
-                      sortKey="name"
-                      activeKey={sortKey}
-                      activeDir={sortDir}
-                      onSort={handleSort}
-                    />
-                  </TableHead>
-                  <TableHead
-                    className="w-32"
-                    aria-sort={
-                      sortKey === 'modified'
-                        ? sortDir === 'asc'
-                          ? 'ascending'
-                          : 'descending'
-                        : 'none'
-                    }
-                  >
-                    <SortableHeader
-                      label={t`Modified`}
-                      sortKey="modified"
-                      activeKey={sortKey}
-                      activeDir={sortDir}
-                      onSort={handleSort}
-                    />
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sorted.length ? (
-                  sorted.map((entry) => (
-                    <TableRow key={entry.path}>
-                      <TableCell>
-                        <a
-                          href={hashFromDocName(entry.path)}
-                          className="flex items-center gap-2 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        >
-                          {entry.kind === 'folder' ? (
-                            <Folder className="size-4 shrink-0 text-muted-foreground" />
-                          ) : (
-                            <File className="size-4 shrink-0 text-muted-foreground" />
-                          )}
-                          <span className="truncate">{entry.title}</span>
-                        </a>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {entry.kind === 'file' ? formatRelativeDate(entry.modified) : '—'}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={2} className="h-24 text-center text-muted-foreground">
-                      <Trans>This folder is empty.</Trans>
-                    </TableCell>
-                  </TableRow>
+        </header>
+
+        <div className="subtle-scrollbar min-h-0 flex-1 overflow-y-auto px-5 pb-10 sm:px-6">
+          {description ? (
+            <p className="mb-5 rounded-[12px] bg-background/48 px-4 py-3 text-center text-xs text-muted-foreground">
+              {description}
+            </p>
+          ) : null}
+
+          <FolderTiles entries={folders} />
+
+          {documents.length > 0 ? (
+            viewMode === 'list' ? (
+              <DocumentList entries={documents} ariaLabel={t`Documents`} />
+            ) : (
+              <section
+                aria-label={t`Documents`}
+                className={cn(
+                  viewMode === 'preview' && 'columns-[11rem] gap-3',
+                  viewMode === 'grid' &&
+                    'grid grid-cols-[repeat(auto-fill,minmax(min(100%,11rem),1fr))] gap-3',
                 )}
-              </TableBody>
-            </Table>
-          </div>
+              >
+                {documents.map((entry) => (
+                  <FolderDocumentCard key={entry.path} entry={entry} mode={viewMode} />
+                ))}
+              </section>
+            )
+          ) : visibleEntries.length === 0 ? (
+            <div className="flex min-h-52 flex-col items-center justify-center gap-2 rounded-[13px] border border-dashed border-border/80 bg-background/28 px-6 text-center">
+              <FolderOpen className="size-5 text-muted-foreground/60" />
+              <p className="text-sm font-medium">
+                {normalizedQuery ? (
+                  <Trans>No matching documents</Trans>
+                ) : (
+                  <Trans>This folder is empty.</Trans>
+                )}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {normalizedQuery ? (
+                  <Trans>Try a different name or path.</Trans>
+                ) : (
+                  <Trans>Create a document to start filling this space.</Trans>
+                )}
+              </p>
+            </div>
+          ) : null}
         </div>
       </div>
+
+      <Sheet open={detailsOpen} onOpenChange={setDetailsOpen}>
+        <SheetContent
+          sizeMode="unconstrained"
+          className="w-[min(94vw,42rem)] gap-0 overflow-y-auto p-0"
+        >
+          <SheetHeader className="border-b border-border/70 pr-14">
+            <SheetTitle>
+              <Trans>Folder details</Trans>
+            </SheetTitle>
+            <SheetDescription>{heading}</SheetDescription>
+          </SheetHeader>
+          <div className="space-y-4 p-4">
+            <FolderPropertiesCard
+              folderPath={folderPath}
+              state={folderConfig}
+              onChange={refreshFolderConfig}
+            />
+            <TemplatesCard
+              folderPath={folderPath}
+              state={folderConfig}
+              onChange={refreshFolderConfig}
+              folderConfigHandle={folderConfigHandle}
+            />
+            <FolderTimelineCard folderPath={folderPath} />
+          </div>
+        </SheetContent>
+      </Sheet>
+
       <NewItemDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         kind="file"
         initialDir={folderPath}
         folderConfig={folderConfigHandle}
-        // Preserve the old dropdown's "Index note" affordance as a low-cost
-        // breadcrumb: the dialog opens with the name pre-filled to `index`
-        // so creating an `index.md` is one Enter away. Users can still rename
-        // before submitting.
         suggestedName="index"
       />
     </>
