@@ -1,0 +1,227 @@
+/**
+ * `ParagraphIndentShortcuts` behavior — Tab indents a plain paragraph's first
+ * line, Shift-Tab takes the indent back, and the indent survives the markdown
+ * round-trip (the serializer escapes the line-leading tab as `&#x9;`, which
+ * would otherwise re-parse as an indented code block).
+ *
+ * Mirrors the harness in `list-editing-shortcuts.dom.test.tsx`: a real Editor
+ * on the full app `sharedExtensions` list, so the keymap-chain precedence
+ * against `ListEditingShortcuts` / `CodeBlockFidelity` / `TabFocusTrap` is
+ * exercised rather than assumed.
+ */
+
+import { afterAll, afterEach, beforeAll, describe, expect, test } from 'bun:test';
+import {
+  sharedExtensions as coreExtensions,
+  MarkdownManager,
+} from '@nedian0brien/synapsenote-core';
+import { Editor, type JSONContent } from '@tiptap/core';
+import { TextSelection } from '@tiptap/pm/state';
+import { installDomGlobals } from '../walk-currency-test-harness';
+import {
+  indentLevelOf,
+  OK_PROSE_INDENT_CLASS,
+  OK_PROSE_INDENT_RUN_CLASS,
+} from './paragraph-indent-shortcuts';
+import { sharedExtensions } from './shared';
+
+const markdown = new MarkdownManager({ extensions: coreExtensions });
+const editors: Editor[] = [];
+let restoreDomGlobals: (() => void) | null = null;
+
+beforeAll(() => {
+  restoreDomGlobals = installDomGlobals();
+});
+
+afterAll(() => {
+  restoreDomGlobals?.();
+  restoreDomGlobals = null;
+});
+
+afterEach(() => {
+  while (editors.length > 0) editors.pop()?.destroy();
+  document.body.replaceChildren();
+});
+
+function mountEditor(source: string): Editor {
+  const host = document.createElement('div');
+  document.body.appendChild(host);
+  const editor = new Editor({
+    element: host,
+    content: markdown.parse(source) as JSONContent,
+    extensions: sharedExtensions,
+  });
+  editors.push(editor);
+  return editor;
+}
+
+function press(editor: Editor, key: string, shiftKey = false): unknown {
+  const event = new KeyboardEvent('keydown', {
+    key,
+    code: key,
+    shiftKey,
+    bubbles: true,
+    cancelable: true,
+  });
+  return editor.view.someProp('handleKeyDown', (handler) => handler(editor.view, event));
+}
+
+function serialize(editor: Editor): string {
+  return markdown.serialize(editor.getJSON() as JSONContent);
+}
+
+/** Put a collapsed caret `offset` characters into the paragraph at `index`. */
+function caretInParagraph(editor: Editor, index: number, offset = 0): void {
+  let seen = 0;
+  let start: number | null = null;
+  editor.state.doc.descendants((node, pos) => {
+    if (start !== null) return false;
+    if (node.type.name !== 'paragraph') return true;
+    if (seen === index) start = pos + 1;
+    seen += 1;
+    return false;
+  });
+  if (start === null) throw new Error(`paragraph ${index} not found`);
+  editor.view.dispatch(
+    editor.state.tr.setSelection(TextSelection.create(editor.state.doc, start + offset)),
+  );
+}
+
+describe('Paragraph indent shortcuts', () => {
+  test('Tab at the start of a plain sentence indents it', () => {
+    const editor = mountEditor('첫 문장입니다.');
+    caretInParagraph(editor, 0);
+
+    expect(press(editor, 'Tab')).toBe(true);
+    expect(editor.state.doc.firstChild?.textContent).toBe('\t첫 문장입니다.');
+    // Caret rides after the inserted tab so typing continues in place.
+    expect(editor.state.selection.from).toBe(2);
+  });
+
+  test('repeated Tab deepens the indent one level per press', () => {
+    const editor = mountEditor('body text');
+    caretInParagraph(editor, 0);
+
+    expect(press(editor, 'Tab')).toBe(true);
+    expect(press(editor, 'Tab')).toBe(true);
+    expect(editor.state.doc.firstChild?.textContent).toBe('\t\tbody text');
+  });
+
+  test('Shift-Tab removes one indent level and stops at column zero', () => {
+    const editor = mountEditor('body text');
+    caretInParagraph(editor, 0);
+    press(editor, 'Tab');
+    press(editor, 'Tab');
+
+    expect(press(editor, 'Tab', true)).toBe(true);
+    expect(editor.state.doc.firstChild?.textContent).toBe('\tbody text');
+    expect(press(editor, 'Tab', true)).toBe(true);
+    expect(editor.state.doc.firstChild?.textContent).toBe('body text');
+    // Nothing left to outdent — falls through to TabFocusTrap, which consumes
+    // the key so focus never escapes the editor.
+    expect(press(editor, 'Tab', true)).toBe(true);
+    expect(editor.state.doc.firstChild?.textContent).toBe('body text');
+  });
+
+  test('Tab mid-sentence stays inert instead of dropping a stray tab', () => {
+    const editor = mountEditor('body text');
+    caretInParagraph(editor, 0, 4);
+
+    // TabFocusTrap consumes it (true), but the document is untouched.
+    expect(press(editor, 'Tab')).toBe(true);
+    expect(editor.state.doc.firstChild?.textContent).toBe('body text');
+  });
+
+  test('the indent round-trips through markdown as an escaped leading tab', () => {
+    const editor = mountEditor('body text');
+    caretInParagraph(editor, 0);
+    press(editor, 'Tab');
+
+    const output = serialize(editor);
+    // A raw leading tab would re-parse as an indented code block; the
+    // byte-fidelity serializer emits the numeric char-ref instead.
+    expect(output).toMatch(/^&#x9;body text$/m);
+
+    const reparsed = mountEditor(output);
+    expect(reparsed.state.doc.firstChild?.type.name).toBe('paragraph');
+    expect(reparsed.state.doc.firstChild?.textContent).toBe('\tbody text');
+    expect(serialize(reparsed)).toBe(output);
+  });
+
+  test('a second Tab on a re-parsed indent adds a level instead of folding into the char-ref', () => {
+    const editor = mountEditor('&#x9;body text');
+    caretInParagraph(editor, 0, 1);
+
+    expect(press(editor, 'Tab')).toBe(true);
+    expect(editor.state.doc.firstChild?.textContent).toBe('\t\tbody text');
+    const reparsed = mountEditor(serialize(editor));
+    expect(reparsed.state.doc.firstChild?.textContent).toBe('\t\tbody text');
+  });
+
+  test('Shift-Tab pulls back a space indent as one 4-column step', () => {
+    const editor = mountEditor('&#x20;   body text');
+    expect(editor.state.doc.firstChild?.textContent).toBe('    body text');
+    caretInParagraph(editor, 0, 4);
+
+    expect(press(editor, 'Tab', true)).toBe(true);
+    expect(editor.state.doc.firstChild?.textContent).toBe('body text');
+  });
+
+  test('Tab inside a list item still nests the item rather than indenting its text', () => {
+    const editor = mountEditor('- one\n- two');
+    caretInParagraph(editor, 1);
+
+    expect(press(editor, 'Tab')).toBe(true);
+    expect(serialize(editor)).toMatch(/^ {2}- two$/m);
+    expect(editor.state.doc.textContent).not.toContain('\t');
+  });
+
+  test('Tab on a top-level list item the list commands cannot sink leaves the text alone', () => {
+    // ListEditingShortcuts returns false here (no previous sibling to nest
+    // under). The paragraph handler must decline too, or the marker line would
+    // become `- \tone`.
+    const editor = mountEditor('- one\n- two');
+    caretInParagraph(editor, 0);
+
+    expect(press(editor, 'Tab')).toBe(true);
+    expect(serialize(editor).trimEnd()).toBe('- one\n- two');
+  });
+
+  test('the indent reaches the DOM as a transitionable level, not as glyph width', () => {
+    const editor = mountEditor('body text');
+    caretInParagraph(editor, 0);
+    press(editor, 'Tab');
+    press(editor, 'Tab');
+
+    // The stored run is collapsed to nothing and the same distance is redrawn
+    // as `text-indent`, which CSS can transition; a tab glyph's width cannot.
+    const paragraph = editor.view.dom.querySelector(`p.${OK_PROSE_INDENT_CLASS}`);
+    expect(paragraph?.getAttribute('style')).toMatch(/--ok-prose-indent-level:\s*2/);
+    expect(paragraph?.querySelector(`.${OK_PROSE_INDENT_RUN_CLASS}`)?.textContent).toBe('\t\t');
+  });
+
+  test('an unindented paragraph carries no indent decoration at all', () => {
+    const editor = mountEditor('body text');
+    expect(editor.view.dom.querySelector(`.${OK_PROSE_INDENT_CLASS}`)).toBe(null);
+  });
+
+  test.each([
+    ['\t', 1],
+    ['\t\t', 2],
+    ['    ', 1],
+    ['  ', 0.5],
+    ['\t  ', 1.5],
+  ])('a %j run renders as %d level(s)', (run, expected) => {
+    expect(indentLevelOf(run as string)).toBe(expected as number);
+  });
+
+  test('Tab inside a code block still inserts the code-block indent', () => {
+    const editor = mountEditor('```ts\nconst a = 1;\n```');
+    const code = editor.state.doc.firstChild;
+    expect(code?.type.name).toBe('codeBlock');
+    editor.view.dispatch(editor.state.tr.setSelection(TextSelection.create(editor.state.doc, 1)));
+
+    expect(press(editor, 'Tab')).toBe(true);
+    expect(editor.state.doc.firstChild?.textContent).toBe('  const a = 1;');
+  });
+});

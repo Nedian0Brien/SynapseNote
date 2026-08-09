@@ -20,18 +20,22 @@
  * Priority is set to `1` (well below stock TipTap defaults of 100 and the
  * fidelity overrides at 60) so this extension runs LAST in the keymap
  * chain. The intentional handlers — `ListItem` (sink/lift), `Table` (next
- * cell), suggestion plugins (`slash-command` / `wiki-link-suggestion` /
- * `tag-suggestion`, which intercept via `handleKeyDown` ProseMirror plugin
- * paths at higher precedence than `addKeyboardShortcuts`) — all get first
- * crack. We catch only the fall-through.
+ * cell), `ParagraphIndentShortcuts` (priority 10, first-line indent when
+ * the caret is in a paragraph's leading whitespace), suggestion plugins
+ * (`slash-command` / `wiki-link-suggestion` / `tag-suggestion`, which
+ * intercept via `handleKeyDown` ProseMirror plugin paths at higher
+ * precedence than `addKeyboardShortcuts`) — all get first crack. We catch
+ * only the fall-through.
  *
  * What "trap" does: `return true` from the handler so Tiptap calls
  * `preventDefault` on the underlying event. No edit, no selection change —
- * cursor stays put, focus stays in the editor. Intentionally NOT inserting
- * a literal tab character (markdown semantics would treat `\t` ambiguously
- * and most rich-text editors don't insert literal tabs in body prose) and
- * NOT auto-converting paragraphs to list items (would silently rewrite the
- * user's block type; the user picked paragraph for a reason).
+ * cursor stays put, focus stays in the editor. Indenting body prose belongs
+ * to `ParagraphIndentShortcuts` and is deliberately scoped there to the
+ * leading whitespace run: a tab dropped mid-sentence is never what the
+ * keystroke meant, so those positions still land here and stay inert.
+ * Auto-converting paragraphs to list items stays out of scope entirely
+ * (would silently rewrite the user's block type; the user picked paragraph
+ * for a reason).
  *
  * Shift-Tab is trapped symmetrically — without it, Shift-Tab in plain text
  * falls through to browser-default reverse focus traversal, the same

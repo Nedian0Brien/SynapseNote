@@ -2,6 +2,9 @@
   outline: none;
   min-height: 200px;
   line-height: 1.7;
+  /* One indent level, shared by the paragraph first-line tab stop below and
+     the heading section indent so both keyboard paths step by the same width. */
+  --ok-indent-step: 1.5rem;
   /* Extend hit area into left margin so the gap between text and the drag handle
      does not prematurely hide it. padding-left compensates so text is unchanged. */
   margin-left: -2.5rem;
@@ -11,6 +14,49 @@
 
 .ProseMirror p {
   margin-bottom: 0.5em;
+  /* Multiple spaces inside a line are real content in markdown; `pre-wrap` is
+     also what ProseMirror asks for, so DOM offsets stay unambiguous. Scoped to
+     `p` (not `.ProseMirror`) so only body prose changes whitespace handling.
+     `tab-size` governs tabs INSIDE a line — the leading indent run is drawn by
+     the two rules below, not by glyph width. */
+  white-space: pre-wrap;
+  tab-size: var(--ok-indent-step);
+}
+
+/* Prose indent painted by `paragraph-indent-shortcuts.ts`. The stored leading
+   tab/space run is collapsed to nothing and the same distance is redrawn as
+   `text-indent`, because glyph advance is not a CSS property and so cannot be
+   transitioned. `white-space: normal` on a run that sits at the start of its
+   line is exactly the "drop this whitespace" rule. */
+.ProseMirror .ok-prose-indent-run {
+  white-space: normal;
+}
+
+.ProseMirror p.ok-prose-indent {
+  text-indent: calc(var(--ok-prose-indent-level, 0) * var(--ok-indent-step));
+}
+
+/* Section indent painted by `heading-section-indent.ts`: a heading carries the
+   stored level (its ATX leading indent) and every block in its section inherits
+   the same level, so a whole section shifts as one. */
+.ProseMirror .ok-section-indent {
+  padding-left: calc(var(--ok-section-indent-level, 0) * var(--ok-indent-step));
+}
+
+/* Prose indent / outdent glides instead of snapping. Declared on the plain `p`
+   selector, not on `.ok-prose-indent` — outdent removes that class, and a
+   transition that lives only on the decorated rule has nothing to animate on
+   the way back.
+
+   The SECTION indent is deliberately absent here: indenting a heading changes
+   its node attrs, so ProseMirror rebuilds the element and a transition has no
+   start value to run from. `heading-section-indent.ts` animates padding-left
+   through Web Animations instead, and a transition on the same property would
+   only fight it. */
+@media (prefers-reduced-motion: no-preference) {
+  .ProseMirror p {
+    transition: text-indent 180ms var(--ease-out-strong, ease);
+  }
 }
 
 /* The bottom "Ask AI" composer reuses a ProseMirror view but is a slim prompt
