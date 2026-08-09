@@ -160,14 +160,16 @@
     }
   }
 
+  /* Full-width assistant prose has no bubble edge to scale, so it settles with
+     a plain fade and rise; scaling would visibly shear the text column. */
   @keyframes chat-assistant-in {
     0% {
       opacity: 0;
-      transform: translate3d(0, 8px, 0) scale(0.985);
+      transform: translate3d(0, 8px, 0);
     }
     100% {
       opacity: 1;
-      transform: translate3d(0, 0, 0) scale(1);
+      transform: translate3d(0, 0, 0);
     }
   }
 

@@ -84,7 +84,6 @@ if (globalWithDomShims.ResizeObserver === undefined) {
 // Wide enough timeouts to absorb the dialog's internal 180 ms cascade
 // debounce + jsdom microtask drain + React batch settle, without making
 // a healthy run drag.
-const ASYNC_TIMEOUT_MS = 2000;
 
 const PARENT = '/Users/test/Projects';
 const PROJECT_NAME = 'Andrew Brain';
@@ -214,12 +213,9 @@ async function typeName(value: string) {
 }
 
 async function waitForLocation(expected = PARENT) {
-  await waitFor(
-    () => {
-      expect(screen.getByTestId('create-location-display').textContent).toContain(expected);
-    },
-    { timeout: ASYNC_TIMEOUT_MS },
-  );
+  await waitFor(() => {
+    expect(screen.getByTestId('create-location-display').textContent).toContain(expected);
+  });
 }
 
 describe('CreateProjectDialog cascade staleness (Tier-3 mount)', () => {
@@ -244,21 +240,16 @@ describe('CreateProjectDialog cascade staleness (Tier-3 mount)', () => {
 
     // The Name input is the new contract. Pin its presence here so a
     // regression that drops it surfaces immediately.
-    const nameInput = await screen.findByTestId('create-name', undefined, {
-      timeout: ASYNC_TIMEOUT_MS,
-    });
+    const nameInput = await screen.findByTestId('create-name', undefined);
     expect(nameInput.tagName).toBe('INPUT');
 
     await waitForLocation();
 
     // Type the name → cascade probes → confirm-git banner appears.
     await typeName(PROJECT_NAME);
-    await waitFor(
-      () => {
-        expect(screen.queryByTestId('create-banner-git-confirm')).not.toBeNull();
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(screen.queryByTestId('create-banner-git-confirm')).not.toBeNull();
+    });
 
     // Step 2. Mutate the live FS (in-test): the user has just deleted
     // `.git` outside the app. Subsequent live probes return null.
@@ -277,13 +268,10 @@ describe('CreateProjectDialog cascade staleness (Tier-3 mount)', () => {
     // banner-absent assertion below is ambiguous — "absent because the
     // fresh probe returned null" looks identical to "absent because the
     // cascade is still in idle/pending and no probe fired at all."
-    await waitFor(
-      () => {
-        const delta = stub.findGitCalls.length - probesBeforeRetype;
-        expect(delta).toBeGreaterThanOrEqual(1);
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      const delta = stub.findGitCalls.length - probesBeforeRetype;
+      expect(delta).toBeGreaterThanOrEqual(1);
+    });
 
     // The contract assertion. Live FS no longer has `.git`, so the
     // cascade should now be `free` → banner absent. A stale-cache or
@@ -296,13 +284,10 @@ describe('CreateProjectDialog cascade staleness (Tier-3 mount)', () => {
     // wall-clock at 30+ seconds even though the assertion itself is
     // sub-millisecond. Boolean coercion keeps the failure message a
     // single line.
-    await waitFor(
-      () => {
-        const stillShowingStaleBanner = screen.queryByTestId('create-banner-git-confirm') !== null;
-        expect(stillShowingStaleBanner).toBe(false);
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      const stillShowingStaleBanner = screen.queryByTestId('create-banner-git-confirm') !== null;
+      expect(stillShowingStaleBanner).toBe(false);
+    });
   });
 
   test('S2: window focus event triggers a re-probe — banner clears when FS resolves while dialog stays open', async () => {
@@ -313,16 +298,13 @@ describe('CreateProjectDialog cascade staleness (Tier-3 mount)', () => {
     // right now."
     const stub = makeStubBridge(FIRST_GIT_RESULT, PARENT);
     render(<CreateProjectDialog open={true} onOpenChange={() => {}} bridge={stub.bridge} />);
-    await screen.findByTestId('create-name', undefined, { timeout: ASYNC_TIMEOUT_MS });
+    await screen.findByTestId('create-name', undefined);
     await waitForLocation();
 
     await typeName(PROJECT_NAME);
-    await waitFor(
-      () => {
-        expect(screen.queryByTestId('create-banner-git-confirm')).not.toBeNull();
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(screen.queryByTestId('create-banner-git-confirm')).not.toBeNull();
+    });
 
     // FS mutates underneath; form is untouched.
     stub.setEnclosingGitResult(null);
@@ -332,20 +314,14 @@ describe('CreateProjectDialog cascade staleness (Tier-3 mount)', () => {
     // re-runs against the same (location, name) but with the new probeNonce dep.
     fireEvent(window, new Event('focus'));
 
-    await waitFor(
-      () => {
-        const delta = stub.findGitCalls.length - callCountBeforeFocus;
-        expect(delta).toBeGreaterThanOrEqual(1);
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
-    await waitFor(
-      () => {
-        const stillShowing = screen.queryByTestId('create-banner-git-confirm') !== null;
-        expect(stillShowing).toBe(false);
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      const delta = stub.findGitCalls.length - callCountBeforeFocus;
+      expect(delta).toBeGreaterThanOrEqual(1);
+    });
+    await waitFor(() => {
+      const stillShowing = screen.queryByTestId('create-banner-git-confirm') !== null;
+      expect(stillShowing).toBe(false);
+    });
   });
 
   test('S3: remove-.git button: confirm → IPC called → re-probe → banner clears (terminal case, no higher .git)', async () => {
@@ -357,16 +333,13 @@ describe('CreateProjectDialog cascade staleness (Tier-3 mount)', () => {
     });
 
     render(<CreateProjectDialog open={true} onOpenChange={() => {}} bridge={stub.bridge} />);
-    await screen.findByTestId('create-name', undefined, { timeout: ASYNC_TIMEOUT_MS });
+    await screen.findByTestId('create-name', undefined);
     await waitForLocation();
 
     await typeName(PROJECT_NAME);
-    await waitFor(
-      () => {
-        expect(screen.queryByTestId('create-banner-git-confirm')).not.toBeNull();
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(screen.queryByTestId('create-banner-git-confirm')).not.toBeNull();
+    });
 
     // Stage 1: click the inline "Remove" button → confirmation flips on.
     fireEvent.click(screen.getByTestId('create-banner-git-remove'));
@@ -385,25 +358,16 @@ describe('CreateProjectDialog cascade staleness (Tier-3 mount)', () => {
     // CI runners. Same pattern as S1's probe-delta wait.
     const findGitCallCountBeforeRemove = stub.findGitCalls.length;
     fireEvent.click(screen.getByTestId('create-banner-git-remove-confirm-button'));
-    await waitFor(
-      () => {
-        expect(stub.removeGitCalls).toEqual([FIRST_GIT_RESULT.gitRoot]);
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
-    await waitFor(
-      () => {
-        const delta = stub.findGitCalls.length - findGitCallCountBeforeRemove;
-        expect(delta).toBeGreaterThanOrEqual(1);
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
-    await waitFor(
-      () => {
-        expect(screen.queryByTestId('create-banner-git-confirm')).toBeNull();
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(stub.removeGitCalls).toEqual([FIRST_GIT_RESULT.gitRoot]);
+    });
+    await waitFor(() => {
+      const delta = stub.findGitCalls.length - findGitCallCountBeforeRemove;
+      expect(delta).toBeGreaterThanOrEqual(1);
+    });
+    await waitFor(() => {
+      expect(screen.queryByTestId('create-banner-git-confirm')).toBeNull();
+    });
   });
 
   test('S4: remove-.git button: when a higher .git exists, banner repaints with the new gitRoot and the user can climb', async () => {
@@ -424,18 +388,15 @@ describe('CreateProjectDialog cascade staleness (Tier-3 mount)', () => {
     });
 
     render(<CreateProjectDialog open={true} onOpenChange={() => {}} bridge={stub.bridge} />);
-    await screen.findByTestId('create-name', undefined, { timeout: ASYNC_TIMEOUT_MS });
+    await screen.findByTestId('create-name', undefined);
     await waitForLocation();
     await typeName(PROJECT_NAME);
 
     // Banner shows pointing at the first (lowest) gitRoot.
-    await waitFor(
-      () => {
-        const banner = screen.queryByTestId('create-banner-git-confirm');
-        expect(banner?.textContent?.includes(FIRST.gitRoot)).toBe(true);
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      const banner = screen.queryByTestId('create-banner-git-confirm');
+      expect(banner?.textContent?.includes(FIRST.gitRoot)).toBe(true);
+    });
 
     // First Remove → reveals the higher gitRoot in a fresh banner.
     // Same event-driven settle wait as S3 — wait for the re-probe to fire
@@ -444,35 +405,26 @@ describe('CreateProjectDialog cascade staleness (Tier-3 mount)', () => {
     const findGitCallCountBeforeRemove1 = stub.findGitCalls.length;
     fireEvent.click(screen.getByTestId('create-banner-git-remove'));
     fireEvent.click(screen.getByTestId('create-banner-git-remove-confirm-button'));
-    await waitFor(
-      () => {
-        expect(stub.removeGitCalls).toEqual([FIRST.gitRoot]);
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
-    await waitFor(
-      () => {
-        const delta = stub.findGitCalls.length - findGitCallCountBeforeRemove1;
-        expect(delta).toBeGreaterThanOrEqual(1);
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
-    await waitFor(
-      () => {
-        const banner = screen.queryByTestId('create-banner-git-confirm');
-        expect(banner?.textContent?.includes(HIGHER.gitRoot)).toBe(true);
-        // The probe must have actually settled to HIGHER — not still
-        // showing FIRST. `'/Users/test'.includes('/Users')` is true, so
-        // the positive substring above alone is satisfied even when the
-        // banner still reflects FIRST. Add a negative assertion to
-        // disambiguate: under the SettledCascade + ProbeLifecycle split,
-        // cascade transitions FIRST → HIGHER directly (no intermediate
-        // null-render via 'pending'), so this waitFor needs a strict
-        // discriminator.
-        expect(banner?.textContent?.includes(FIRST.gitRoot)).toBe(false);
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(stub.removeGitCalls).toEqual([FIRST.gitRoot]);
+    });
+    await waitFor(() => {
+      const delta = stub.findGitCalls.length - findGitCallCountBeforeRemove1;
+      expect(delta).toBeGreaterThanOrEqual(1);
+    });
+    await waitFor(() => {
+      const banner = screen.queryByTestId('create-banner-git-confirm');
+      expect(banner?.textContent?.includes(HIGHER.gitRoot)).toBe(true);
+      // The probe must have actually settled to HIGHER — not still
+      // showing FIRST. `'/Users/test'.includes('/Users')` is true, so
+      // the positive substring above alone is satisfied even when the
+      // banner still reflects FIRST. Add a negative assertion to
+      // disambiguate: under the SettledCascade + ProbeLifecycle split,
+      // cascade transitions FIRST → HIGHER directly (no intermediate
+      // null-render via 'pending'), so this waitFor needs a strict
+      // discriminator.
+      expect(banner?.textContent?.includes(FIRST.gitRoot)).toBe(false);
+    });
 
     // The inline confirmation must be RESET — the user is now looking at
     // a different gitRoot, so they should see the initial "Remove" button
@@ -484,25 +436,16 @@ describe('CreateProjectDialog cascade staleness (Tier-3 mount)', () => {
     const findGitCallCountBeforeRemove2 = stub.findGitCalls.length;
     fireEvent.click(screen.getByTestId('create-banner-git-remove'));
     fireEvent.click(screen.getByTestId('create-banner-git-remove-confirm-button'));
-    await waitFor(
-      () => {
-        expect(stub.removeGitCalls).toEqual([FIRST.gitRoot, HIGHER.gitRoot]);
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
-    await waitFor(
-      () => {
-        const delta = stub.findGitCalls.length - findGitCallCountBeforeRemove2;
-        expect(delta).toBeGreaterThanOrEqual(1);
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
-    await waitFor(
-      () => {
-        expect(screen.queryByTestId('create-banner-git-confirm')).toBeNull();
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(stub.removeGitCalls).toEqual([FIRST.gitRoot, HIGHER.gitRoot]);
+    });
+    await waitFor(() => {
+      const delta = stub.findGitCalls.length - findGitCallCountBeforeRemove2;
+      expect(delta).toBeGreaterThanOrEqual(1);
+    });
+    await waitFor(() => {
+      expect(screen.queryByTestId('create-banner-git-confirm')).toBeNull();
+    });
   });
 
   test('S6: cascade probes folderState against the sanitized creation target, not the raw typed name', async () => {
@@ -522,7 +465,7 @@ describe('CreateProjectDialog cascade staleness (Tier-3 mount)', () => {
 
     const stub = makeStubBridge(null, PARENT);
     render(<CreateProjectDialog open={true} onOpenChange={() => {}} bridge={stub.bridge} />);
-    await screen.findByTestId('create-name', undefined, { timeout: ASYNC_TIMEOUT_MS });
+    await screen.findByTestId('create-name', undefined);
     await waitForLocation();
 
     await typeName(RAW_NAME);
@@ -531,12 +474,9 @@ describe('CreateProjectDialog cascade staleness (Tier-3 mount)', () => {
     // the sanitized target, not the raw typed path — the server creates
     // the project at `resolve(parent, sanitized)`, so probing the raw
     // would folderState-check a different directory than the one created.
-    await waitFor(
-      () => {
-        expect(stub.folderStateCalls.length).toBeGreaterThanOrEqual(1);
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(stub.folderStateCalls.length).toBeGreaterThanOrEqual(1);
+    });
 
     // The cascade probed the sanitized target — same path the server-side
     // handler creates the project at via `resolve(parent, sanitized)`.
@@ -551,25 +491,19 @@ describe('CreateProjectDialog cascade staleness (Tier-3 mount)', () => {
     });
 
     render(<CreateProjectDialog open={true} onOpenChange={() => {}} bridge={stub.bridge} />);
-    await screen.findByTestId('create-name', undefined, { timeout: ASYNC_TIMEOUT_MS });
+    await screen.findByTestId('create-name', undefined);
     await waitForLocation();
     await typeName(PROJECT_NAME);
-    await waitFor(
-      () => {
-        expect(screen.queryByTestId('create-banner-git-confirm')).not.toBeNull();
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(screen.queryByTestId('create-banner-git-confirm')).not.toBeNull();
+    });
 
     fireEvent.click(screen.getByTestId('create-banner-git-remove'));
     fireEvent.click(screen.getByTestId('create-banner-git-remove-confirm-button'));
-    await waitFor(
-      () => {
-        const errorNode = screen.queryByTestId('create-banner-git-remove-error');
-        expect(errorNode?.textContent?.includes('EACCES')).toBe(true);
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      const errorNode = screen.queryByTestId('create-banner-git-remove-error');
+      expect(errorNode?.textContent?.includes('EACCES')).toBe(true);
+    });
     // The .git is still there; the banner is still up. The user can click
     // Remove again to retry. (The two-stage flow resets so they re-confirm.)
     expect(screen.queryByTestId('create-banner-git-confirm')).not.toBeNull();
@@ -596,15 +530,13 @@ describe('CreateProjectDialog cascade staleness (Tier-3 mount)', () => {
     stub.setFindEnclosingProjectRootImpl(async (_path) => ({ rootPath: nestedRoot }));
 
     render(<CreateProjectDialog open={true} onOpenChange={() => {}} bridge={stub.bridge} />);
-    await screen.findByTestId('create-name', undefined, { timeout: ASYNC_TIMEOUT_MS });
+    await screen.findByTestId('create-name', undefined);
     await waitForLocation();
 
     // Step 1: type a name → block-nested banner appears. This is the
     // steady state the user is "looking at" when they keep typing.
     await typeName('Plant');
-    const initialBanner = await screen.findByTestId('create-banner-nested', undefined, {
-      timeout: ASYNC_TIMEOUT_MS,
-    });
+    const initialBanner = await screen.findByTestId('create-banner-nested', undefined);
     const bannerParent = initialBanner.parentElement;
     expect(bannerParent !== null).toBe(true);
 
@@ -638,22 +570,16 @@ describe('CreateProjectDialog cascade staleness (Tier-3 mount)', () => {
     // Step 4: wait — event-driven — for the debounced re-probe to fire.
     // Without this precondition, "banner not removed" could be trivially
     // satisfied by a future bail-out that skips the probe entirely.
-    await waitFor(
-      () => {
-        const delta = stub.findGitCalls.length - probesBefore;
-        expect(delta).toBeGreaterThanOrEqual(1);
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      const delta = stub.findGitCalls.length - probesBefore;
+      expect(delta).toBeGreaterThanOrEqual(1);
+    });
 
     // Step 5: wait for cascade to re-settle to block-nested (banner
     // still present).
-    await waitFor(
-      () => {
-        expect(screen.queryByTestId('create-banner-nested')).not.toBeNull();
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(screen.queryByTestId('create-banner-nested')).not.toBeNull();
+    });
 
     observer.disconnect();
 
@@ -691,19 +617,16 @@ describe('CreateProjectDialog cascade staleness (Tier-3 mount)', () => {
     // one).
     const stub = makeStubBridge(null, PARENT);
     render(<CreateProjectDialog open={true} onOpenChange={() => {}} bridge={stub.bridge} />);
-    await screen.findByTestId('create-name', undefined, { timeout: ASYNC_TIMEOUT_MS });
+    await screen.findByTestId('create-name', undefined);
     await waitForLocation();
 
     // Step 1: type a name → cascade settles to 'free' (initial nullable
     // findEnclosingGitRoot, default folderState='free'). canSubmit → true.
     await typeName('Plant Care');
     const submitButton = screen.getByTestId('create-submit') as HTMLButtonElement;
-    await waitFor(
-      () => {
-        expect(submitButton.disabled).toBe(false);
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(submitButton.disabled).toBe(false);
+    });
 
     // Step 2: install a controllable deferred on findEnclosingGitRoot so
     // the next debounced probe stays in-flight indefinitely until the
@@ -729,28 +652,19 @@ describe('CreateProjectDialog cascade staleness (Tier-3 mount)', () => {
     // Contract assertion: submit is disabled while the probe is
     // in-flight. Under the bug shape this guard prevents, this expect
     // would fail — submit would re-enable on the in-flight render.
-    await waitFor(
-      () => {
-        expect(probeCallCount).toBeGreaterThan(probesBefore);
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
-    await waitFor(
-      () => {
-        expect(submitButton.disabled).toBe(true);
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(probeCallCount).toBeGreaterThan(probesBefore);
+    });
+    await waitFor(() => {
+      expect(submitButton.disabled).toBe(true);
+    });
 
     // Step 4: resolve the deferred → probe settles → cascade re-renders
     // to a terminal verdict → canSubmit re-enables.
     resolveDeferred(null);
-    await waitFor(
-      () => {
-        expect(submitButton.disabled).toBe(false);
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(submitButton.disabled).toBe(false);
+    });
   });
 
   test('PRD-6649: 5 s polling skips probeNonce bump while a probe is in-flight (race-prevention gate)', async () => {
@@ -791,19 +705,16 @@ describe('CreateProjectDialog cascade staleness (Tier-3 mount)', () => {
 
     try {
       render(<CreateProjectDialog open={true} onOpenChange={() => {}} bridge={stub.bridge} />);
-      await screen.findByTestId('create-name', undefined, { timeout: ASYNC_TIMEOUT_MS });
+      await screen.findByTestId('create-name', undefined);
       await waitForLocation();
 
       // Step 1: type a name → cascade probes → settles to confirm-git.
       // The polling effect (cascade.kind === 'confirm-git') mounts and
       // calls setInterval with the gated callback.
       await typeName(PROJECT_NAME);
-      await waitFor(
-        () => {
-          expect(screen.queryByTestId('create-banner-git-confirm')).not.toBeNull();
-        },
-        { timeout: ASYNC_TIMEOUT_MS },
-      );
+      await waitFor(() => {
+        expect(screen.queryByTestId('create-banner-git-confirm')).not.toBeNull();
+      });
 
       // Step 2: capture the polling callback. The polling setInterval
       // is the only one in the dialog with a 5 s interval. Bun's spyOn
@@ -834,12 +745,9 @@ describe('CreateProjectDialog cascade staleness (Tier-3 mount)', () => {
       // → 180 ms debounce → probe fires → stays in-flight (Promise never
       // resolves until we resolve it).
       await typeName(`${PROJECT_NAME} (v2)`);
-      await waitFor(
-        () => {
-          expect(probeCallCount).toBeGreaterThanOrEqual(1);
-        },
-        { timeout: ASYNC_TIMEOUT_MS },
-      );
+      await waitFor(() => {
+        expect(probeCallCount).toBeGreaterThanOrEqual(1);
+      });
       const probeCountWhileInFlight = probeCallCount;
 
       // (a) THE GATE — invoke the polling callback while the probe is
@@ -870,12 +778,9 @@ describe('CreateProjectDialog cascade staleness (Tier-3 mount)', () => {
       // .then might overwrite cascade to a different terminal verdict
       // briefly during in-flight). The findGitCallCount stays constant
       // because no NEW probe has fired yet.
-      await waitFor(
-        () => {
-          expect(screen.queryByTestId('create-banner-git-confirm')).not.toBeNull();
-        },
-        { timeout: ASYNC_TIMEOUT_MS },
-      );
+      await waitFor(() => {
+        expect(screen.queryByTestId('create-banner-git-confirm')).not.toBeNull();
+      });
 
       // Now invoke the polling callback again. Probe should be 'idle';
       // the gate should NOT block. probeNonce bumps → cascade-probe
@@ -884,12 +789,9 @@ describe('CreateProjectDialog cascade staleness (Tier-3 mount)', () => {
       pollingCallback();
 
       // Wait for the new probe to actually fire.
-      await waitFor(
-        () => {
-          expect(probeCallCount).toBeGreaterThan(probeCountBeforeIdleTick);
-        },
-        { timeout: ASYNC_TIMEOUT_MS },
-      );
+      await waitFor(() => {
+        expect(probeCallCount).toBeGreaterThan(probeCountBeforeIdleTick);
+      });
 
       // Resolve so the test cleanup doesn't leave a dangling Promise.
       resolveDeferred(FIRST_GIT_RESULT);
@@ -920,7 +822,7 @@ describe('CreateProjectDialog cascade staleness (Tier-3 mount)', () => {
       throw new Error('Simulated IPC failure');
     });
     render(<CreateProjectDialog open={true} onOpenChange={() => {}} bridge={stub.bridge} />);
-    await screen.findByTestId('create-name', undefined, { timeout: ASYNC_TIMEOUT_MS });
+    await screen.findByTestId('create-name', undefined);
     await waitForLocation();
 
     // Type a name → cascade-probe fires → Promise.all rejects → .catch
@@ -934,11 +836,8 @@ describe('CreateProjectDialog cascade staleness (Tier-3 mount)', () => {
     //   - setCascade({ kind: 'free' }) → cascade.kind matches the AND-arm
     //   - setProbeLifecycle('idle') → probeLifecycle gate matches
     // A regression that removed EITHER would leave submit disabled.
-    await waitFor(
-      () => {
-        expect(submitButton.disabled).toBe(false);
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(submitButton.disabled).toBe(false);
+    });
   });
 });

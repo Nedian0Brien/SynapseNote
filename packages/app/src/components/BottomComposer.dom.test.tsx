@@ -170,6 +170,9 @@ mock.module('@/hooks/use-selection-context', () => ({
 
 mock.module('@/components/PageListContext', () => ({
   usePageList: () => ({ pageMeta }),
+  // Nullable variant of the hook above — see the DocumentContext note; an
+  // omitted re-export fails the whole file at load, not just this query.
+  useOptionalPageList: () => ({ pageMeta }),
 }));
 
 const recordAskedAiSpy = mock(() => {});

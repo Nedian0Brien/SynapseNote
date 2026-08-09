@@ -11,7 +11,10 @@ export const DATABASE_TOOLBAR_CAPABILITIES = [
   {
     id: 'new-record',
     label: 'New',
-    handler: 'focusInlineNewRecord',
+    // The toolbar's "New page" button calls this directly. `focusInlineNewRecord`
+    // named an older wiring and now survives only as the
+    // `focusInlineNewRecordRequest` signal in the surface, not as the click owner.
+    handler: 'createBlankInlineRecord',
     owner: 'InlineDatabaseToolbar.tsx',
   },
   {

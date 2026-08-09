@@ -14,6 +14,11 @@ mock.module('@/components/PageListContext', () => ({
   usePageList: () => ({
     addPage: mock(() => {}),
   }),
+  // Nullable variant of the hook above — see the DocumentContext note; an
+  // omitted re-export fails the whole file at load, not just this query.
+  useOptionalPageList: () => ({
+    addPage: mock(() => {}),
+  }),
 }));
 
 mock.module('@/hooks/use-folder-config', () => ({

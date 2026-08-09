@@ -39,6 +39,9 @@ mock.module('@/lib/config-context', () => ({
 
 mock.module('@/components/PageListContext', () => ({
   usePageList: () => ({ pageMeta: new Map() }),
+  // Nullable variant of the hook above — see the DocumentContext note; an
+  // omitted re-export fails the whole file at load, not just this query.
+  useOptionalPageList: () => ({ pageMeta: new Map() }),
 }));
 
 mock.module('@/components/handoff/OpenInAgentMenuItem', () => ({

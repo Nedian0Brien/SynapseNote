@@ -654,9 +654,7 @@ describe('TerminalPanel', () => {
 
     // The trailing PTY resize lands after the interval so the shell settles at
     // the final drag size (PTY_RESIZE_THROTTLE_MS = 100).
-    await waitFor(() => expect(terminal.resize.mock.calls.length - resizesBefore).toBe(2), {
-      timeout: 1000,
-    });
+    await waitFor(() => expect(terminal.resize.mock.calls.length - resizesBefore).toBe(2));
   });
 
   test('a grid-changing fit repaints synchronously in the same frame (no blank-frame flash)', async () => {

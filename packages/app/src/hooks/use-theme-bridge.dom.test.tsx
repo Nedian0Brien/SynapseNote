@@ -28,8 +28,6 @@ import { act, cleanup, render, waitFor } from '@testing-library/react';
 import type { OkDesktopBridge } from '@/lib/desktop-bridge-types';
 import { useThemeBridge } from './use-theme-bridge';
 
-const ASYNC_EFFECT_TIMEOUT_MS = 1000;
-
 interface StubBridge {
   setThemeSource: (value: string) => Promise<{ ok: true }>;
   signalThemeApplied: (payload: { reducedTransparency: boolean }) => void;
@@ -185,12 +183,9 @@ describe('useThemeBridge (Tier-3 mount)', () => {
     const stubBridge = makeStubBridge();
     render(<HookProbe bridge={stubBridge as unknown as OkDesktopBridge} themeValue="system" />);
 
-    await waitFor(
-      () => {
-        expect(stubBridge.setThemeSourceCalls.length).toBe(1);
-      },
-      { timeout: ASYNC_EFFECT_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(stubBridge.setThemeSourceCalls.length).toBe(1);
+    });
     expect(stubBridge.setThemeSourceCalls[0]).toBe('system');
   });
 
@@ -198,12 +193,9 @@ describe('useThemeBridge (Tier-3 mount)', () => {
     const stubBridge = makeStubBridge();
     render(<HookProbe bridge={stubBridge as unknown as OkDesktopBridge} themeValue="dark" />);
 
-    await waitFor(
-      () => {
-        expect(stubBridge.signalThemeAppliedCalls.length).toBe(1);
-      },
-      { timeout: ASYNC_EFFECT_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(stubBridge.signalThemeAppliedCalls.length).toBe(1);
+    });
     expect(stubBridge.signalThemeAppliedCalls[0]).toEqual({
       reducedTransparency: false,
     });
@@ -239,12 +231,9 @@ describe('useThemeBridge (Tier-3 mount)', () => {
       <HookProbe bridge={stubBridge as unknown as OkDesktopBridge} themeValue="system" />,
     );
 
-    await waitFor(
-      () => {
-        expect(stubBridge.setThemeSourceCalls.length).toBe(1);
-      },
-      { timeout: ASYNC_EFFECT_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(stubBridge.setThemeSourceCalls.length).toBe(1);
+    });
     expect(stubBridge.setThemeSourceCalls[0]).toBe('system');
 
     rerender(<HookProbe bridge={stubBridge as unknown as OkDesktopBridge} themeValue="system" />);
@@ -272,23 +261,17 @@ describe('useThemeBridge (Tier-3 mount)', () => {
       <HookProbe bridge={stubBridge as unknown as OkDesktopBridge} themeValue="system" />,
     );
 
-    await waitFor(
-      () => {
-        expect(stubBridge.signalThemeAppliedCalls.length).toBe(1);
-      },
-      { timeout: ASYNC_EFFECT_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(stubBridge.signalThemeAppliedCalls.length).toBe(1);
+    });
     expect(stubBridge.setThemeSourceCalls.length).toBe(1);
     expect(stubBridge.setThemeSourceCalls[0]).toBe('system');
 
     rerender(<HookProbe bridge={stubBridge as unknown as OkDesktopBridge} themeValue="dark" />);
 
-    await waitFor(
-      () => {
-        expect(stubBridge.setThemeSourceCalls.length).toBe(2);
-      },
-      { timeout: ASYNC_EFFECT_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(stubBridge.setThemeSourceCalls.length).toBe(2);
+    });
     expect(stubBridge.setThemeSourceCalls[1]).toBe('dark');
     expect(stubBridge.signalThemeAppliedCalls.length).toBe(2);
   });
@@ -306,12 +289,9 @@ describe('useThemeBridge (Tier-3 mount)', () => {
     // Gate-release contract: signal fires even on the rejection path.
     // waitFor polls the whole rejection → .catch → .finally chain until
     // signalThemeApplied lands.
-    await waitFor(
-      () => {
-        expect(stubBridge.signalThemeAppliedCalls.length).toBe(1);
-      },
-      { timeout: ASYNC_EFFECT_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(stubBridge.signalThemeAppliedCalls.length).toBe(1);
+    });
 
     expect(stubBridge.setThemeSourceCalls.length).toBe(1);
     expect(stubBridge.signalThemeAppliedCalls[0]).toEqual({
@@ -339,12 +319,9 @@ describe('useThemeBridge (Tier-3 mount)', () => {
         <HookProbe bridge={stubBridge as unknown as OkDesktopBridge} themeValue="system" />,
       );
 
-      await waitFor(
-        () => {
-          expect(stubBridge.signalThemeAppliedCalls.length).toBe(1);
-        },
-        { timeout: ASYNC_EFFECT_TIMEOUT_MS },
-      );
+      await waitFor(() => {
+        expect(stubBridge.signalThemeAppliedCalls.length).toBe(1);
+      });
       expect(media.queries).toContain('(prefers-reduced-transparency: reduce)');
       expect(media.listenerCount).toBe(1);
 

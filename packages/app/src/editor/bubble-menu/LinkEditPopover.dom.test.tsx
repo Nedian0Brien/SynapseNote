@@ -17,6 +17,13 @@ mock.module('@/components/PageListContext', () => ({
     loading: false,
     pages: new Set(['guides/install']),
   }),
+  // Nullable variant of the hook above — see the DocumentContext note; an
+  // omitted re-export fails the whole file at load, not just this query.
+  useOptionalPageList: () => ({
+    folderPaths: new Set(['guides']),
+    loading: false,
+    pages: new Set(['guides/install']),
+  }),
 }));
 
 const { LinkEditPopover } = await import('./LinkEditPopover');

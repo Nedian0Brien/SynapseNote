@@ -8,6 +8,7 @@ import {
   databaseLinkedViewCacheKey,
   useDatabaseReadModel,
 } from './database-read-model';
+import { DATABASE_READ_MAX_ATTEMPTS } from './database-read-retry';
 
 const originalFetch = globalThis.fetch;
 const revision = `sha256:${'b'.repeat(64)}`;
@@ -301,14 +302,21 @@ describe('useDatabaseReadModel', () => {
   test('re-reads on its own until a still-settling index resolves', async () => {
     const initial = description('settling-index');
     let describeCalls = 0;
+    // Phase-driven, not call-indexed: once the refresh starts, fail exactly one
+    // full in-read retry budget so the settling problem reaches the read model
+    // instead of being absorbed inside a single read. That is the state a second
+    // canonical commit produces. Counting absolute calls instead ties the
+    // fixture to how many describes the initial mount happens to issue — when
+    // that shifted, the window landed off by one, every failure was absorbed,
+    // and the test asserted a state it could no longer reach.
+    let settling = false;
+    let settlingFailures = 0;
     globalThis.fetch = mock((input: RequestInfo | URL) => {
       const path = String(input);
       if (path === '/api/databases/describe') {
         describeCalls += 1;
-        // Calls 2-6 spend the whole in-read retry budget, so the settling
-        // problem reaches the read model instead of being absorbed inside one
-        // read. That is the state a second canonical commit produces.
-        if (describeCalls >= 2 && describeCalls <= 6) {
+        if (settling && settlingFailures < DATABASE_READ_MAX_ATTEMPTS) {
+          settlingFailures += 1;
           return Promise.resolve(
             Response.json(
               {
@@ -342,6 +350,8 @@ describe('useDatabaseReadModel', () => {
       expect(screen.getByTestId('read-model-state').getAttribute('data-status')).toBe('ready'),
     );
 
+    const describesBeforeRefresh = describeCalls;
+    settling = true;
     rerender(<Harness target={{ ...target, refreshKey: 1 }} />);
     await waitFor(() =>
       expect(screen.getByTestId('read-model-state').getAttribute('data-refresh-problem')).toBe(
@@ -351,15 +361,16 @@ describe('useDatabaseReadModel', () => {
 
     // No user action and no new refreshKey: the surface must recover by itself,
     // otherwise a committed edit stays hidden behind the recovery button.
-    await waitFor(
-      () => {
-        const surface = screen.getByTestId('read-model-state');
-        expect(surface.getAttribute('data-status')).toBe('ready');
-        expect(surface.getAttribute('data-refresh-problem')).toBeNull();
-      },
-      { timeout: 5_000 },
-    );
-    expect(describeCalls).toBeGreaterThan(6);
+    await waitFor(() => {
+      const surface = screen.getByTestId('read-model-state');
+      expect(surface.getAttribute('data-status')).toBe('ready');
+      expect(surface.getAttribute('data-refresh-problem')).toBeNull();
+    });
+    // The budget was spent AND the surface re-read past it on its own — the
+    // point of the test. Anchored to the pre-refresh count so it stays exact
+    // however many describes the initial mount issues.
+    expect(settlingFailures).toBe(DATABASE_READ_MAX_ATTEMPTS);
+    expect(describeCalls).toBeGreaterThan(describesBeforeRefresh + DATABASE_READ_MAX_ATTEMPTS);
   });
 
   test('uses the blocking error state when the first read has no compatible snapshot', async () => {

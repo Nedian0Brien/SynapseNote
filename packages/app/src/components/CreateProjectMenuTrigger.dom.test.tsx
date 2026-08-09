@@ -45,8 +45,6 @@ if (globalWithDomShims.ResizeObserver === undefined) {
   globalWithDomShims.ResizeObserver = NoopResizeObserver;
 }
 
-const ASYNC_TIMEOUT_MS = 2000;
-
 interface MenuActionBridgeStub {
   bridge: OkDesktopBridge;
   /** Invoke the most recently subscribed onMenuAction callback. */
@@ -127,12 +125,9 @@ describe('CreateProjectMenuTrigger', () => {
 
     stub.fire('new-project');
 
-    await waitFor(
-      () => {
-        expect(screen.queryByTestId('create-project-dialog') !== null).toBe(true);
-      },
-      { timeout: ASYNC_TIMEOUT_MS },
-    );
+    await waitFor(() => {
+      expect(screen.queryByTestId('create-project-dialog') !== null).toBe(true);
+    });
     // The dialog title confirms it's the create-new-project surface.
     expect(screen.queryByText('Create new project') !== null).toBe(true);
   });

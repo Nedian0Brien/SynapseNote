@@ -397,9 +397,12 @@ describe('CliChatPanel', () => {
     expect(assistant.querySelector('[data-chat-generation-dots="true"]')).toBeNull();
   });
 
-  test('renders markdown inside constrained message bubbles', async () => {
+  test('renders assistant markdown full width while user turns stay bubbled', async () => {
     const { bridge, pushData } = makeBridge();
     render(<CliChatPanel bridge={bridge} cli="codex" ptyId="pty-1" initialPrompt={null} />);
+
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Summarize this' } });
+    fireEvent.click(screen.getByLabelText('Send'));
 
     act(() => {
       pushData(
@@ -410,10 +413,22 @@ describe('CliChatPanel', () => {
     expect(await screen.findByRole('heading', { level: 2, name: 'Summary' })).toBeTruthy();
     expect(screen.getByText('Bold').tagName).toBe('STRONG');
     expect(screen.getByText('const value = 1').tagName).toBe('CODE');
-    const bubble = screen.getByLabelText('Assistant');
-    expect(bubble.className).toContain('min-w-0');
-    expect(bubble.className).toContain('overflow-hidden');
-    expect(bubble.querySelector('[data-chat-markdown="true"]')).not.toBeNull();
+
+    // Long assistant answers span the whole column with no bubble chrome.
+    const assistant = screen.getByLabelText('Assistant');
+    expect(assistant.className).toContain('min-w-0');
+    expect(assistant.className).toContain('w-full');
+    expect(assistant.className).not.toContain('rounded-2xl');
+    expect(assistant.className).not.toContain('bg-muted');
+    expect(assistant.className).not.toContain('border');
+    expect(assistant.querySelector('[data-chat-markdown="true"]')).not.toBeNull();
+
+    // Short user turns keep the right-aligned, clipped bubble.
+    const userBubble = screen.getByLabelText('You');
+    expect(userBubble.className).toContain('rounded-2xl');
+    expect(userBubble.className).toContain('bg-primary');
+    expect(userBubble.className).toContain('overflow-hidden');
+    expect(userBubble.className).toContain('ml-auto');
   });
 
   test('places the composer actions below the message field', () => {

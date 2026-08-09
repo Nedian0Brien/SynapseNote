@@ -12,7 +12,13 @@ export interface DatabaseReadRetryOptions {
   shouldRetry?: (cause: unknown) => boolean;
 }
 
-const DEFAULT_MAX_ATTEMPTS = 5;
+/**
+ * Attempts one read spends before its problem reaches the caller. Exported so
+ * tests can size a settling window against the real budget instead of
+ * hard-coding a call count — a duplicated literal here silently stops
+ * exercising the exhaustion path the moment the budget moves.
+ */
+export const DATABASE_READ_MAX_ATTEMPTS = 5;
 const DEFAULT_INITIAL_DELAY_MS = 50;
 const DEFAULT_MAX_DELAY_MS = 1_000;
 
@@ -56,7 +62,7 @@ export async function withDatabaseReadRetry<T>(
   operation: (attempt: number) => Promise<T>,
   options: DatabaseReadRetryOptions = {},
 ): Promise<T> {
-  const maxAttempts = Math.max(1, Math.floor(options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS));
+  const maxAttempts = Math.max(1, Math.floor(options.maxAttempts ?? DATABASE_READ_MAX_ATTEMPTS));
   const initialDelayMs = Math.max(0, options.initialDelayMs ?? DEFAULT_INITIAL_DELAY_MS);
   const maxDelayMs = Math.max(initialDelayMs, options.maxDelayMs ?? DEFAULT_MAX_DELAY_MS);
   const shouldRetry =

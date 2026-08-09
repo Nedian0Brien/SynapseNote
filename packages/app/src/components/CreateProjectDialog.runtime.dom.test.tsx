@@ -150,12 +150,9 @@ async function renderDialog(stub = makeBridge()) {
 }
 
 async function waitForLocationHydrate(expected = PARENT) {
-  await waitFor(
-    () => {
-      expect(screen.getByTestId('create-location-display').textContent).toContain(expected);
-    },
-    { timeout: 2000 },
-  );
+  await waitFor(() => {
+    expect(screen.getByTestId('create-location-display').textContent).toContain(expected);
+  });
 }
 
 async function typeProjectName(value: string) {
@@ -164,12 +161,9 @@ async function typeProjectName(value: string) {
 }
 
 async function waitForSubmitEnabled() {
-  await waitFor(
-    () => {
-      expect((screen.getByTestId('create-submit') as HTMLButtonElement).disabled).toBe(false);
-    },
-    { timeout: 2000 },
-  );
+  await waitFor(() => {
+    expect((screen.getByTestId('create-submit') as HTMLButtonElement).disabled).toBe(false);
+  });
 }
 
 describe('CreateProjectDialog runtime wiring', () => {
@@ -284,12 +278,9 @@ describe('CreateProjectDialog runtime wiring', () => {
     // Browse picks the parent — display updates, name is untouched.
     stub.setPickedParent(SECOND_PARENT);
     fireEvent.click(screen.getByTestId('create-browse'));
-    await waitFor(
-      () => {
-        expect(screen.getByTestId('create-location-display').textContent).toContain(SECOND_PARENT);
-      },
-      { timeout: 2000 },
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId('create-location-display').textContent).toContain(SECOND_PARENT);
+    });
     expect((screen.getByTestId('create-name') as HTMLInputElement).value).toBe('');
 
     // Browse passed the prior location as the picker's defaultPath hint.
@@ -305,23 +296,17 @@ describe('CreateProjectDialog runtime wiring', () => {
     expect(caption.textContent ?? '').toBe('');
 
     await typeProjectName('Plant Care');
-    await waitFor(
-      () => {
-        expect(screen.getByTestId('create-target-caption').textContent).toContain(
-          `${PARENT}/Plant Care`,
-        );
-      },
-      { timeout: 2000 },
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId('create-target-caption').textContent).toContain(
+        `${PARENT}/Plant Care`,
+      );
+    });
 
     // Clearing the name hides the caption again.
     await typeProjectName('');
-    await waitFor(
-      () => {
-        expect(screen.getByTestId('create-target-caption').textContent ?? '').toBe('');
-      },
-      { timeout: 2000 },
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId('create-target-caption').textContent ?? '').toBe('');
+    });
   });
 
   test('Create stays enabled with an empty name; click toasts hint and does not submit', async () => {
@@ -407,13 +392,10 @@ describe('CreateProjectDialog runtime wiring', () => {
 
     await typeProjectName(TAKEN_NAME);
 
-    await waitFor(
-      () => {
-        expect(screen.queryByTestId('create-name-error-taken')).not.toBeNull();
-        expect((screen.getByTestId('create-submit') as HTMLButtonElement).disabled).toBe(true);
-      },
-      { timeout: 2000 },
-    );
+    await waitFor(() => {
+      expect(screen.queryByTestId('create-name-error-taken')).not.toBeNull();
+      expect((screen.getByTestId('create-submit') as HTMLButtonElement).disabled).toBe(true);
+    });
     // No standalone subfolder-rescue mounts.
     expect(screen.queryByTestId('create-subfolder-rescue')).toBeNull();
     // Telemetry still fires for the nonempty banner kind.
@@ -421,12 +403,9 @@ describe('CreateProjectDialog runtime wiring', () => {
 
     // Typing a different name clears the inline error.
     await typeProjectName('Fresh Name');
-    await waitFor(
-      () => {
-        expect(screen.queryByTestId('create-name-error-taken')).toBeNull();
-      },
-      { timeout: 2000 },
-    );
+    await waitFor(() => {
+      expect(screen.queryByTestId('create-name-error-taken')).toBeNull();
+    });
   });
 
   test('name that sanitizes to empty shows inline sanitize-erased error and disables Create', async () => {
@@ -434,13 +413,10 @@ describe('CreateProjectDialog runtime wiring', () => {
     await waitForLocationHydrate();
 
     await typeProjectName('....');
-    await waitFor(
-      () => {
-        expect(screen.queryByTestId('create-name-error-erased')).not.toBeNull();
-        expect((screen.getByTestId('create-submit') as HTMLButtonElement).disabled).toBe(true);
-      },
-      { timeout: 2000 },
-    );
+    await waitFor(() => {
+      expect(screen.queryByTestId('create-name-error-erased')).not.toBeNull();
+      expect((screen.getByTestId('create-submit') as HTMLButtonElement).disabled).toBe(true);
+    });
   });
 
   test('name field a11y: aria-invalid and aria-describedby compose the validation announcement', async () => {
@@ -512,14 +488,11 @@ describe('CreateProjectDialog runtime wiring', () => {
     // while Create stays usable (the divergence is informational, not a block).
     await typeProjectName('Plant/Care');
 
-    await waitFor(
-      () => {
-        const hint = screen.queryByTestId('create-name-hint-diverged');
-        expect(hint).not.toBeNull();
-        expect(hint?.textContent).toContain('Plant-Care');
-      },
-      { timeout: 2000 },
-    );
+    await waitFor(() => {
+      const hint = screen.queryByTestId('create-name-hint-diverged');
+      expect(hint).not.toBeNull();
+      expect(hint?.textContent).toContain('Plant-Care');
+    });
     // The caption shows the sanitized target and submit is not blocked.
     expect(screen.getByTestId('create-target-caption').textContent).toContain(
       `${PARENT}/Plant-Care`,
@@ -542,12 +515,9 @@ describe('CreateProjectDialog runtime wiring', () => {
 
     // Clearing the name removes the hint.
     await typeProjectName('');
-    await waitFor(
-      () => {
-        expect(screen.queryByTestId('create-name-hint-diverged')).toBeNull();
-      },
-      { timeout: 2000 },
-    );
+    await waitFor(() => {
+      expect(screen.queryByTestId('create-name-hint-diverged')).toBeNull();
+    });
   });
 
   test('Location shows actionable copy (not a stuck spinner) when defaultProjectsRoot rejects; Browse still works', async () => {
@@ -558,24 +528,18 @@ describe('CreateProjectDialog runtime wiring', () => {
     // Once the rejected probe settles, the field must stop claiming it is
     // still "Resolving" — that present-participle implies in-flight work that
     // has actually finished and failed. It shows actionable empty-state copy.
-    await waitFor(
-      () => {
-        const display = screen.getByTestId('create-location-display').textContent ?? '';
-        expect(display).not.toContain('Resolving default location');
-        expect(display).toContain('No location selected');
-      },
-      { timeout: 2000 },
-    );
+    await waitFor(() => {
+      const display = screen.getByTestId('create-location-display').textContent ?? '';
+      expect(display).not.toContain('Resolving default location');
+      expect(display).toContain('No location selected');
+    });
 
     // Browse is still usable from the empty Location and updates the field.
     stub.setPickedParent(SECOND_PARENT);
     fireEvent.click(screen.getByTestId('create-browse'));
-    await waitFor(
-      () => {
-        expect(screen.getByTestId('create-location-display').textContent).toContain(SECOND_PARENT);
-      },
-      { timeout: 2000 },
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId('create-location-display').textContent).toContain(SECOND_PARENT);
+    });
   });
 
   test('createNew failure surfaces the inline error strip, keeps the dialog open, and re-enables Create', async () => {

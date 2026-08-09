@@ -182,7 +182,11 @@ function makeBridge() {
         viewMenuPushes.push(state);
       },
     },
-    terminal: { create, kill, input },
+    // `onData`/`onExit` are required by CliChatPanel's subscription effect. The
+    // `as unknown as` cast below hides their absence from tsc, so leaving them
+    // off throws inside a passive effect, unmounts the root mid-render, and
+    // cascades into unrelated "terminal-session not found" failures.
+    terminal: { create, kill, input, onData: () => () => {}, onExit: () => () => {} },
   } as unknown as OkDesktopBridge;
   return {
     bridge,
@@ -292,15 +296,17 @@ function activePanelId(): string | null {
   return active?.getAttribute('data-terminal-session') ?? null;
 }
 
-// The launch nonce the session in a given panel was handed ('none' when it
-// carries no launch). The stub surfaces it via `data-launch` so the dock's
-// launch→new-tab routing is observable per session.
-function launchNonceOf(panelId: string | null): string | null {
-  if (panelId === null) return null;
+// Whether a panel is a CLI *chat* tab. A launch carrying a chat-capable `cli`
+// (claude/codex, no stagePaste) routes to CliChatSession, which owns the prompt
+// as CliChatPanel's `initialPrompt` and hands its hidden TerminalGate
+// `launch={null}` — so the gate stub's `data-launch` reads 'none' for these by
+// design. This is the intent probe for a CLI launch; `data-launch` (asserted
+// directly in the bare-launch tests) remains the probe for a promptless one.
+function isChatPanel(panelId: string | null): boolean {
+  if (panelId === null) return false;
   return (
-    document
-      .querySelector(`[data-terminal-session="${panelId}"] [data-testid="terminal-session"]`)
-      ?.getAttribute('data-launch') ?? null
+    document.querySelector(`[data-terminal-session="${panelId}"] [data-chat-composer="true"]`) !==
+    null
   );
 }
 
@@ -836,7 +842,7 @@ describe('TerminalDock multi-session', () => {
     expect(sessions).toHaveLength(2);
     const launchedId = activePanelId();
     expect(launchedId).not.toBe(runningId);
-    expect(launchNonceOf(launchedId)).toBe('1');
+    expect(isChatPanel(launchedId)).toBe(true);
     expect(view.input).not.toHaveBeenCalled();
   });
 
@@ -893,8 +899,12 @@ describe('TerminalDock multi-session', () => {
     await addTerminalTab(user);
     expect(cliReports.at(-1)).toBe(false);
 
-    // Switch back to the CLI tab → report flips true again.
-    await user.click(screen.getByRole('tab', { name: 'Terminal 1' }));
+    // Switch back to the CLI tab → report flips true again. A chat session is
+    // never "Terminal <ordinal>": sessionLabel() prefers the title CliChatPanel
+    // reports, which is derived from the launch prompt ('work' here). Matched as
+    // a substring because the tab also renders a titled CLI glyph that folds
+    // into its accessible name.
+    await user.click(screen.getByRole('tab', { name: /work/ }));
     expect(cliReports.at(-1)).toBe(true);
   });
 
@@ -933,7 +943,7 @@ describe('TerminalDock multi-session', () => {
     expect(screen.getAllByTestId('terminal-session')).toHaveLength(2);
     const launchedId = activePanelId();
     expect(launchedId).not.toBe(seedId);
-    expect(launchNonceOf(launchedId)).toBe('1');
+    expect(isChatPanel(launchedId)).toBe(true);
   });
 
   test('distinct launches each open their own tab', async () => {

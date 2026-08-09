@@ -497,16 +497,22 @@ describe('EmbedPDF viewer integration', () => {
     expect(screen.queryByTestId('render-page-3')).toBeNull();
     expect(document.querySelector('.ok-pdf-text-layer')).toBeNull();
 
-    const scrollRegistration = registrations.find(({ packageName }) => packageName === 'scroll');
-    const selectionRegistration = registrations.find(
-      ({ packageName }) => packageName === 'selection',
-    );
-    const searchRegistration = registrations.find(({ packageName }) => packageName === 'search');
-    expect(scrollRegistration?.config).toMatchObject({ defaultBufferSize: 2 });
-    expect(searchRegistration?.config).toMatchObject({ showAllResults: true });
-    expect(selectionRegistration?.config).toMatchObject({
-      maxCachedGeometries: 12,
-      marquee: { enabled: false },
+    // Plugin registration lands independently of the scroller mount awaited
+    // above, so these are read under waitFor rather than synchronously: gating
+    // on the scroller alone raced the registration under tier load and the
+    // matcher received an undefined `config`.
+    await waitFor(() => {
+      const scrollRegistration = registrations.find(({ packageName }) => packageName === 'scroll');
+      const selectionRegistration = registrations.find(
+        ({ packageName }) => packageName === 'selection',
+      );
+      const searchRegistration = registrations.find(({ packageName }) => packageName === 'search');
+      expect(scrollRegistration?.config).toMatchObject({ defaultBufferSize: 2 });
+      expect(searchRegistration?.config).toMatchObject({ showAllResults: true });
+      expect(selectionRegistration?.config).toMatchObject({
+        maxCachedGeometries: 12,
+        marquee: { enabled: false },
+      });
     });
     expect(screen.getByTestId('search-page-1')).not.toBeNull();
 

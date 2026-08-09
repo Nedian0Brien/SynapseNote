@@ -162,7 +162,7 @@ function ChatActivityEntry({
   visualState: ActivityVisualState;
 }) {
   const activityClassName = cn(
-    'mr-auto min-w-0 max-w-[88%] animate-chat-activity border-l border-border py-0.5 pl-2 text-xs text-muted-foreground transition-[border-color,color,opacity] duration-200 motion-reduce:animate-none motion-reduce:transition-none',
+    'w-full min-w-0 animate-chat-activity border-l border-border py-0.5 pl-2 text-xs text-muted-foreground transition-[border-color,color,opacity] duration-200 motion-reduce:animate-none motion-reduce:transition-none',
     visualState === 'working' && 'border-primary/50 text-foreground/80',
     visualState === 'failed' && 'border-destructive/60 text-destructive',
   );
@@ -375,6 +375,8 @@ export function ChatMessageList({ timeline, running, bridge }: ChatMessageListPr
             const previewLinks = followsWebSearch ? extractWebPreviewLinks(entry.text) : [];
             const generating =
               entry.role === 'assistant' && running && index === timeline.length - 1;
+            // User turns stay in a compact bubble; assistant turns are long-form
+            // prose, so they drop the bubble and read across the full column.
             const messageBubble = (
               <article
                 data-chat-entry="message"
@@ -382,10 +384,10 @@ export function ChatMessageList({ timeline, running, bridge }: ChatMessageListPr
                 data-chat-generating={generating ? 'true' : undefined}
                 aria-label={entry.role === 'user' ? t`You` : t`Assistant`}
                 className={cn(
-                  'min-w-0 w-fit max-w-[88%] transform-gpu overflow-hidden rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed motion-reduce:animate-none',
+                  'min-w-0 transform-gpu text-sm leading-relaxed motion-reduce:animate-none',
                   entry.role === 'user'
-                    ? 'ml-auto max-w-full origin-bottom-right animate-chat-send bg-primary text-primary-foreground'
-                    : 'mr-auto origin-bottom-left animate-chat-assistant border border-border bg-muted/40 text-foreground',
+                    ? 'ml-auto w-fit max-w-[88%] origin-bottom-right animate-chat-send overflow-hidden rounded-2xl bg-primary px-3.5 py-2.5 text-primary-foreground'
+                    : 'w-full max-w-full animate-chat-assistant py-1 text-foreground',
                 )}
               >
                 <ChatMarkdown text={entry.text} bridge={bridge} />
@@ -401,7 +403,7 @@ export function ChatMessageList({ timeline, running, bridge }: ChatMessageListPr
                 <div
                   key={entry.id}
                   data-chat-message-group="selection"
-                  className="ml-auto flex w-full max-w-[88%] flex-col items-end gap-1.5"
+                  className="flex w-full min-w-0 flex-col items-end gap-1.5"
                 >
                   <div className="w-full min-w-0">
                     <SentSelectionContext selection={entry.selectionContext} />
@@ -415,7 +417,7 @@ export function ChatMessageList({ timeline, running, bridge }: ChatMessageListPr
                 <div
                   key={entry.id}
                   data-chat-message-group="assistant-with-sources"
-                  className="mr-auto flex w-full max-w-[88%] flex-col items-start gap-1"
+                  className="flex w-full min-w-0 flex-col items-start gap-1"
                 >
                   {messageBubble}
                   <WebPreviewCards links={previewLinks} bridge={bridge} />
