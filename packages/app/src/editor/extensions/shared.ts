@@ -30,11 +30,13 @@ import { BlockDragHandle } from './drag-handle';
 import { FootnoteAnchorScroll } from './footnote-anchor-scroll';
 import { FormattingShortcuts } from './formatting-shortcuts';
 import { HeadingAnchors } from './heading-anchors';
+import { HeadingSectionIndent } from './heading-section-indent';
 import { ImageInlineZoom } from './image-inline-zoom';
 import { InternalLink } from './internal-link';
 import { JsxComponent } from './jsx-component';
 import { ListEditingShortcuts } from './list-editing-shortcuts';
 import { MathInline } from './math-inline';
+import { ParagraphIndentShortcuts } from './paragraph-indent-shortcuts';
 import { RawMdxFallback } from './raw-mdx-fallback';
 import { SelectionStatePlugin } from './selection-state-plugin';
 import { SlashCommand } from './slash-command';
@@ -109,9 +111,19 @@ export const sharedExtensions = [
   // App authoring policy for list-shaped markdown: Tab changes nesting and
   // Backspace at the marker boundary converts the item to a plain paragraph.
   ListEditingShortcuts,
+  // Prose indentation for the blocks the list/table/code Tab handlers don't
+  // own: Tab in a paragraph's leading whitespace writes a tab character,
+  // Shift-Tab takes one back. Priority 10 — after every intentional Tab
+  // handler, before the trap below.
+  ParagraphIndentShortcuts,
+  // Section indentation: Tab at a heading's start moves the heading and every
+  // block under it (to the next same-or-higher heading). The heading's ATX
+  // leading indent is the only stored value; children inherit it for render.
+  HeadingSectionIndent,
   // TabFocusTrap — fall-through Tab / Shift-Tab handler. Runs LAST in the
   // keymap chain (priority 1) so ListItem (100, sink/lift), Table (60, next
-  // cell), and the suggestion plugins all get first crack. Without this,
+  // cell), ParagraphIndentShortcuts (10) and the suggestion plugins all get
+  // first crack. Without this,
   // Tab inside plain text falls through to browser-default focus traversal,
   // moving keyboard focus OUT of the editor. Pair with KeyboardNav's Escape
   // handler for the keyboard exit (WCAG 2.1.2 "No Keyboard Trap").
