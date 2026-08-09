@@ -15,7 +15,11 @@
  */
 
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import type { TerminalCli } from '@nedian0brien/synapsenote-core';
+import {
+  MCP_SERVER_NAME,
+  OK_GATED_TOOL_NAMES,
+  type TerminalCli,
+} from '@nedian0brien/synapsenote-core';
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { ConfigContext, type ConfigContextValue } from '@/lib/config-context';
@@ -168,8 +172,17 @@ function launchInputWrites(inputMock: ReturnType<typeof mock>): string[] {
  * gated-tool deny-list. Both ride the same `mcpPreApprovable` gate, so a
  * foreign/unverified entry bakes neither (the "bare" tests below). Codex/Cursor
  * never carry it, so this prefix is claude-only.
+ *
+ * The deny array is derived from core's `OK_GATED_TOOL_NAMES` rather than spelled
+ * out: that list grows whenever a destructive tool is added, and a hand-copied
+ * duplicate here silently rots (it did — it still listed only the original four
+ * after the `data_*` tools were gated). Everything else stays literal so the flag
+ * name, JSON shape, allow-list, and quoting remain pinned.
  */
-const CLAUDE_PRE = `--settings '{"enabledMcpjsonServers":["synapsenote"],"permissions":{"allow":["mcp__synapsenote","Bash(ok open:*)"],"deny":["mcp__synapsenote__delete","mcp__synapsenote__move","mcp__synapsenote__share_link","mcp__synapsenote__install"]}}'`;
+const CLAUDE_DENY = JSON.stringify(
+  OK_GATED_TOOL_NAMES.map((tool) => `mcp__${MCP_SERVER_NAME}__${tool}`),
+);
+const CLAUDE_PRE = `--settings '{"enabledMcpjsonServers":["synapsenote"],"permissions":{"allow":["mcp__synapsenote","Bash(ok open:*)"],"deny":${CLAUDE_DENY}}}'`;
 
 /** What a WIRED Claude launch bakes once the user turns the auto-approve toggle
  *  OFF: server trust survives (it is a separate opt-in), the permissions block
@@ -242,9 +255,7 @@ describe('TerminalPanel "Open in terminal" launch (baked into the PTY spawn)', (
     expect(bakedLaunch(terminal.create)).toBe(`claude ${CLAUDE_PRE}`);
     // The staged passage lands via `input` after the settle beat — soft trailing
     // newlines intact, no `\r` anywhere (nothing submitted).
-    await waitFor(() => expect(terminal.input).toHaveBeenCalledWith('pty-1', staged), {
-      timeout: 2_000,
-    });
+    await waitFor(() => expect(terminal.input).toHaveBeenCalledWith('pty-1', staged));
     expect(terminal.input.mock.calls.every((c) => !(c[1] as string).includes('\r'))).toBe(true);
   });
 

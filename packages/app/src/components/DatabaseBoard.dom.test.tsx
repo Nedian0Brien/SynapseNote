@@ -231,8 +231,11 @@ describe('DatabaseBoard', () => {
         ],
       }),
     );
+    // The announcement names the record by its title (not its id) and lists every
+    // target property, including the swimlane subgroup — see `movedTitle` in
+    // DatabaseBoard.tsx. A screen reader reading "rec_first" would be useless.
     expect(screen.getByRole('status').textContent).toContain(
-      'Moved record rec_first to Status: Done',
+      'Moved record First task to Status: Done, Area: Frontend',
     );
 
     onTransition.mockClear();
