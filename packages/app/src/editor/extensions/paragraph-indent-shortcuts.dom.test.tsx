@@ -301,6 +301,39 @@ describe('Paragraph indent shortcuts', () => {
     expect(serialize(editor).trimEnd()).toBe('> quote text');
   });
 
+  test('Tab at the start of a footnote definition moves the whole definition', () => {
+    const editor = mountEditor('ref[^1]\n\n[^1]: footnote body');
+    caretInParagraph(editor, 1);
+
+    expect(press(editor, 'Tab')).toBe(true);
+    const definition = editor.view.dom.querySelector('[data-footnote-def]');
+    expect(definition?.classList.contains(OK_PROSE_INDENT_CONTAINER_CLASS)).toBe(true);
+    expect(definition?.querySelector(`p.${OK_PROSE_INDENT_CLASS}`)).toBe(null);
+    expect(serialize(editor)).toMatch(/^\[\^1\]: &#x9;footnote body$/m);
+  });
+
+  test('Tab at the start of a callout moves the whole callout', () => {
+    const editor = mountEditor('> [!NOTE]\n> callout body');
+    caretInParagraph(editor, 0);
+
+    expect(press(editor, 'Tab')).toBe(true);
+    const callout = editor.view.dom.querySelector('[data-jsx-component]');
+    expect(callout?.classList.contains(OK_PROSE_INDENT_CONTAINER_CLASS)).toBe(true);
+    expect(callout?.getAttribute('style')).toMatch(/--ok-prose-indent-level:\s*1/);
+    expect(callout?.querySelector(`p.${OK_PROSE_INDENT_CLASS}`)).toBe(null);
+  });
+
+  test('Tab inside a comment block is refused rather than stored and lost', () => {
+    // `<!-- \tbody -->` re-parses as `body`: the run would vanish on the next
+    // reload, so the keystroke must not write it in the first place.
+    const editor = mountEditor('<!-- comment body -->');
+    caretInParagraph(editor, 0);
+
+    expect(press(editor, 'Tab')).toBe(true); // consumed by TabFocusTrap
+    expect(editor.state.doc.textContent).toBe('comment body');
+    expect(editor.view.dom.querySelector(`.${OK_PROSE_INDENT_CLASS}`)).toBe(null);
+  });
+
   test('Tab inside a code block still inserts the code-block indent', () => {
     const editor = mountEditor('```ts\nconst a = 1;\n```');
     const code = editor.state.doc.firstChild;
