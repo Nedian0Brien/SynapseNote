@@ -13,7 +13,6 @@
     "-5jISU": [["0", "plural", { "one": ["#", " template"], "other": ["#", " templates"] }]],
     "-8PP0T": ["Match case"],
     "-9ErB5": ["Copied report reference"],
-    "-CQK2k": ["A page title is required"],
     "-EGAB8": ["Manage saved views"],
     "-K0AvT": ["Disconnect"],
     "-KmfTn": ["Freshness and truncation"],
@@ -348,6 +347,7 @@
     "59beLO": ["Identity assignment task queued"],
     "5ALjdr": ["Move through visual-editor find results from the find field."],
     "5Ajb15": ["The formula <0>c = √(a² + b²)</0> renders inline."],
+    "5CE-vF": ["Empty note"],
     "5ClEAu": ["Inline hashtag for cross-doc grouping."],
     "5D3Ior": ["Hide folder"],
     "5D6ZiF": [
@@ -367,6 +367,7 @@
       ["path"],
       ". Agents that reference this template by name will fail until it's recreated or replaced by one in a parent folder."
     ],
+    "5NZpX8": ["List view"],
     "5OTgC7": ["Open and focus the bottom Ask AI prompt composer."],
     "5OqaJi": ["Enter a project name"],
     "5PHgV2": ["You can also create one from a terminal with <0>ok bug-report</0>."],
@@ -383,6 +384,7 @@
       "<0>ok</0> won't run in external terminals until you add it later from the File menu. SynapseNote's built-in terminal and AI tools keep working."
     ],
     "5gAdeA": ["Plan move"],
+    "5gqNQl": ["Grid view"],
     "5gr_ev": [
       "Becomes the document's content when someone creates a doc from this template. Type <0>",
       ["dateToken"],
@@ -592,6 +594,7 @@
     "9bCiQ8": ["No pages are missing incoming graph links."],
     "9cDpsw": ["Permissions"],
     "9clcD5": ["Open documents tagged #", ["chip"]],
+    "9cyMNe": ["Try a different name or path."],
     "9dHQ7r": ["No visible related records."],
     "9dw5bW": ["Create with ", ["0"]],
     "9euN0m": [
@@ -645,7 +648,6 @@
     "AItsE5": ["Open it there"],
     "AKxFtn": [["openedWorktreeCount", "plural", { "one": ["worktree"], "other": ["worktrees"] }]],
     "ALhMYW": ["Terminal"],
-    "AN0DBJ": ["Press Enter to add"],
     "AQ-Lfg": ["Couldn't load templates"],
     "AQGtjK": [
       "Commands run with the full access of your macOS user account on this machine. Turn this off to disable the shell."
@@ -708,7 +710,6 @@
     "BBqGS9": ["Desktop"],
     "BD0XSC": ["Failed to load project templates"],
     "BE6eVB": [["label"], " on page ", ["0"]],
-    "BEHssh": ["Press Enter to create page"],
     "BEkF-P": [
       ["userName"],
       ", ",
@@ -761,6 +762,7 @@
     "C7zMja": ["Fix import values before planning"],
     "C8x1iq": ["Current view"],
     "C9TBvF": ["No Outgoing"],
+    "CCMPW8": ["Oldest modified"],
     "CCTop_": ["Recent"],
     "CFnavk": ["This project isn't a git repository, so worktrees aren't available."],
     "CKyk7Q": ["Go back"],
@@ -810,6 +812,7 @@
     "D12vtS": ["(detached)"],
     "D1CRlg": ["No pages link to this PDF yet."],
     "D4H2N6": ["Remove ", ["tag"]],
+    "D5OsIE": ["No matching documents"],
     "D8OV7J": ["Only collaborators"],
     "D960fB": ["All pages"],
     "DDTdLl": ["Code block settings"],
@@ -901,6 +904,7 @@
       ["targetName"],
       "\" to the Trash. Do you want to permanently delete instead?"
     ],
+    "E_muDO": ["Documents"],
     "E_tNGD": ["Connected as @", ["login"]],
     "Ea1prf": ["Choose which editors every skill in this project installs into."],
     "EarrCe": ["Search emoji"],
@@ -953,6 +957,7 @@
     "F6MhhC": [
       "Using the <0>OK_EMBEDDINGS_API_KEY</0> environment variable (managed outside SynapseNote)."
     ],
+    "F6Swsc": ["Recently modified"],
     "F6pfE9": ["Active"],
     "F8DaWi": ["View only"],
     "F9h_1R": [
@@ -983,6 +988,7 @@
     "FvMSms": ["Renaming changes the file on disk and the id agents use to pick this template."],
     "FvigyN": ["Workspace access"],
     "FvpFSZ": ["Reveal in Finder, ", ["hint"]],
+    "Fvs451": ["Sort folder"],
     "Fxf4jq": ["Description (optional)"],
     "Fy4GgU": [
       "Explain how your codebase works so teammates and AI agents can find their way around. Good for documenting the architecture, the main parts, and the questions new contributors always ask."
@@ -1185,6 +1191,7 @@
     "KDuPiY": ["Uploading ", ["fileName"]],
     "KDw4GX": ["Try again"],
     "KGJb9_": ["Conflicts"],
+    "KH4k7k": ["Create a document to start filling this space."],
     "KOZud0": [
       "Build a competitor research knowledge base. Start with an overview page, then add cross-linked pages for each competitor, their products and pricing, and the sources behind every claim."
     ],
@@ -1193,6 +1200,7 @@
     "KRJ6xh": ["No tags yet. Continue typing to create one."],
     "KWL_Ih": ["Blog post"],
     "KX1MZR": ["Your repositories"],
+    "KXEqqb": ["Name Z–A"],
     "KYSocE": ["Research the extinction of flightless birds"],
     "KYcZ6Y": ["Above"],
     "KZLdgR": ["See <0>#design-docs</0> for the latest specs."],
@@ -1360,6 +1368,7 @@
     "NBpHVb": [
       "Helps your coding agent recognize SynapseNote projects and route reads and writes through it."
     ],
+    "NEO5Cy": ["Preview view"],
     "NEzPEh": ["Create a new branch, or check out an existing one, in its own window."],
     "NF_Wcg": ["Show skills section"],
     "NIWAux": ["No docs registered under #", ["tagDocsName"], "."],
@@ -1372,7 +1381,6 @@
     "NOHyEE": ["Retry push"],
     "NORKZU": ["Pattern warnings: ", ["summary"]],
     "NQ8llq": ["Add item"],
-    "NRSLBe": [["diffMin"], "m ago"],
     "NSnIUP": ["Two-page (even)"],
     "NUr4kz": ["A reusable starting point for new documents in this folder."],
     "NXn85g": ["archived"],
@@ -1381,6 +1389,7 @@
     "N_7kkF": [
       "Read through this codebase and draft a technical spec for the most complex module: an overview, the architecture, key files, and open questions, all linked from a specs index page."
     ],
+    "NbpHpm": ["Folder view"],
     "NcurBF": ["Pan down"],
     "Ndl4nx": ["This PDF does not contain external links."],
     "NiWCgJ": ["Show weekends"],
@@ -1539,7 +1548,6 @@
       ["trimmed"],
       "</0> already has a worktree — it'll open in its own window."
     ],
-    "QDZbvN": [["diffDays"], "d ago"],
     "QI01g8": ["Invalid values"],
     "QId_xk": ["Inspect context"],
     "QJ8HBJ": ["Schema"],
@@ -1569,6 +1577,7 @@
     "QyCqHT": ["Yellow"],
     "QyUT_d": ["Effort"],
     "QyioBP": ["Move up"],
+    "R-VYph": ["Hide panel (", ["shortcut"], ")"],
     "R0cyYB": [
       [
         "0",
@@ -1580,6 +1589,7 @@
       ]
     ],
     "R0jJzV": ["Paste URL, owner/repo, or search your repos"],
+    "R1Mjca": ["Search this folder"],
     "R3y75Z": ["Edit source"],
     "R65q-K": [
       "A real shell is off for this project. Turning it on runs commands with the full access of your macOS user account."
@@ -1634,6 +1644,7 @@
     "S-fr80": [
       "Available in the SynapseNote desktop app. From a terminal, use<0> ok config-sharing status</0> / <1>share</1> / <2>unshare</2>."
     ],
+    "S143FN": ["Name A–Z"],
     "S33tz3": ["Not connected"],
     "S34Vju": ["Have something else in mind?"],
     "S43MVF": ["Request access or use fields available to your current policy."],
@@ -1903,7 +1914,6 @@
     "X7u0xR": [["0"], " templates available"],
     "X8kjQX": ["Re-authenticate with GitHub"],
     "X91DRJ": ["Show recovery receipt"],
-    "X9VpsP": ["Loading folder contents"],
     "XAb5o5": ["Claude chat"],
     "XAyxsa": ["Check out remote branch"],
     "XByYym": ["Go to annotation in document"],
@@ -2059,6 +2069,7 @@
     "_BWVsb": ["Agent permissions"],
     "_FLBbi": [["sizeText"], " · secrets redacted · crash dump not redacted"],
     "_G-oC7": ["Reload database setup"],
+    "_HgF9q": ["Sort by"],
     "_NX6gG": ["Managing project AI tools is unavailable in this build."],
     "_OdHqe": ["Database is still updating"],
     "_PACVa": ["Release notes"],
@@ -2481,7 +2492,6 @@
     "hCOLSd": [
       "Keep a written record of how your product gets built. A home for proposing ideas, recording decisions, writing specs, and capturing what you learned after something broke."
     ],
-    "hDKtoF": [["diffHrs"], "h ago"],
     "hDaDnV": ["This Calendar view has an invalid Date mapping."],
     "hDoLrm": ["Remove ", ["projectName"], " from recent projects"],
     "hFS-af": ["Suggested starter:"],
@@ -2671,7 +2681,6 @@
     "k_60h_": [
       "You picked your home directory. SynapseNote will index everything in your home tree — large and may surface personal files."
     ],
-    "k_iZh-": ["New record title"],
     "k_pade": ["Config sharing is now shared. Commit the OK files to share with your team."],
     "k_yIIc": ["Will be created at: <0>", ["targetPreview"], "</0>"],
     "kdzzOK": ["Off — search ranks by keyword only. No content leaves this computer."],
@@ -2679,6 +2688,7 @@
     "kfkThN": ["No dependent properties or saved views were found."],
     "kj9pAE": ["Creating page"],
     "kknhfj": ["No changes"],
+    "klO-qa": ["Click to add"],
     "kmKqZg": ["Clusters"],
     "knjOzA": ["Tag value"],
     "kolRU1": ["Do you want to permanently delete instead?"],
@@ -2933,7 +2943,6 @@
     "otE4aj": ["Show external URL nodes"],
     "ou1hFW": ["Toggle an ordered list."],
     "outYNy": ["Duplicate name \"", ["keyName"], "\""],
-    "ovAd75": ["A record title is required"],
     "ovIGrT": [
       "Local collaboration data for \"",
       ["docName"],
@@ -2942,6 +2951,7 @@
     "ow3G5y": ["Run Button"],
     "ozCH_H": ["Index state"],
     "p0Iq25": ["Insert link"],
+    "p6y5jE": ["New document"],
     "p7_fS2": ["Selection"],
     "p9J4lB": ["Open records in"],
     "p9sdCy": ["New ignore pattern"],
@@ -2954,6 +2964,7 @@
     "pEWmAn": ["Toggle selected"],
     "pFagOn": ["Source editing"],
     "pHYP6v": ["Open <0>Customize</0> in the sidebar <1/> <2>Skills</2>."],
+    "pK37Ff": ["Show panel (", ["shortcut"], ")"],
     "pKKQV0": ["Manage properties"],
     "pOrdK6": [
       "Couldn't restart the server — another process owns it. Quit other SynapseNote windows for this project, then try again."
@@ -3027,6 +3038,7 @@
       "This path is on an external volume (/Volumes/...). SynapseNote will lose track of files when the drive ejects."
     ],
     "qgBQyb": ["Detected format"],
+    "qgeLHI": ["Folder details"],
     "qi1F96": ["Reveal in File Explorer"],
     "qiRoLb": ["Summarize everything I changed this week"],
     "qioCwA": ["Jump to page ", ["pageNumber"]],
@@ -3207,7 +3219,6 @@
     "tfi40B": ["Failed to create page"],
     "tgNl4E": ["Searching related records"],
     "tgWLFJ": ["Redo last change"],
-    "tgWuMB": ["Modified"],
     "thjuYY": ["Offline write queue"],
     "thnPBX": ["Activate the next editor tab."],
     "ti6aF_": ["Ask ", ["0"], " CLI"],
