@@ -18,6 +18,8 @@ function renderStrip(props?: {
   draggable?: boolean;
   /** Omit the rename handler to assert the affordance is inert without it. */
   renameDisabled?: boolean;
+  /** Supplying these turns on the strip-level "previous chats" control. */
+  previousChats?: readonly { id: string; cli: 'claude' | 'codex'; title: string }[];
 }) {
   const onSelect = mock((_id: string) => {});
   const onTabActivate = mock((_id: string) => {});
@@ -28,6 +30,8 @@ function renderStrip(props?: {
   const onRename = mock((_id: string, _label: string) => {});
   const onToggleDock = mock(() => {});
   const onCollapse = mock(() => {});
+  const onReloadPreviousChats = mock(() => {});
+  const onSelectPreviousChat = mock((_id: string) => {});
   const view = render(
     // The app mounts a root TooltipProvider (main.tsx); the strip's control
     // tooltips need that context, so the isolated render supplies its own.
@@ -48,6 +52,9 @@ function renderStrip(props?: {
         dockPosition={props?.draggable ? undefined : (props?.dockPosition ?? 'bottom')}
         onToggleDock={props?.draggable ? undefined : onToggleDock}
         onCollapse={props?.draggable ? undefined : onCollapse}
+        previousChats={props?.previousChats}
+        onReloadPreviousChats={onReloadPreviousChats}
+        onSelectPreviousChat={props?.previousChats ? onSelectPreviousChat : undefined}
         draggable={props?.draggable}
       />
     </TooltipProvider>,
@@ -62,12 +69,36 @@ function renderStrip(props?: {
     onRename,
     onToggleDock,
     onCollapse,
+    onReloadPreviousChats,
+    onSelectPreviousChat,
     rerender: view.rerender,
   };
 }
 
 describe('TerminalTabStrip', () => {
   afterEach(() => cleanup());
+
+  test('offers previous chats from the strip, not from each session', async () => {
+    // This control used to live in every CliChatSession's own header row, which
+    // repeated the active tab's title and stacked a third band on the rail. It
+    // is a verb on the chat surface as a whole, so it belongs beside the dock
+    // and collapse controls.
+    const user = userEvent.setup();
+    const { onReloadPreviousChats, onSelectPreviousChat } = renderStrip({
+      previousChats: [{ id: 'older', cli: 'claude', title: 'Compare source arguments' }],
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Load previous chat' }));
+    // The native session list is re-read as the menu opens, not on every render.
+    expect(onReloadPreviousChats).toHaveBeenCalledTimes(1);
+    await user.click(await screen.findByRole('menuitem', { name: 'Compare source arguments' }));
+    expect(onSelectPreviousChat).toHaveBeenCalledWith('older');
+  });
+
+  test('hides the previous-chats control when the host supplies no handler', () => {
+    renderStrip();
+    expect(screen.queryByRole('button', { name: 'Load previous chat' })).toBeNull();
+  });
 
   test('renders one tab per session inside a labeled tablist', () => {
     renderStrip();

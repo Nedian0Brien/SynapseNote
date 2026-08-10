@@ -13,8 +13,7 @@ import { Pdf } from '@/editor/components/Pdf';
 interface AssetPreviewProps {
   assetPath: string;
   mediaKind: InlineAssetMediaKind | null;
-  rightPanelOpen?: boolean;
-  onToggleRightPanel?: () => void;
+  showViewerHeader?: boolean;
   pdfPanelContainer?: HTMLElement | null;
   activePdfPanelTab?: PdfPanelTab;
 }
@@ -44,8 +43,7 @@ function assetTextUrl(assetPath: string): string {
 export function AssetPreview({
   assetPath,
   mediaKind,
-  rightPanelOpen,
-  onToggleRightPanel,
+  showViewerHeader,
   pdfPanelContainer,
   activePdfPanelTab,
 }: AssetPreviewProps) {
@@ -63,8 +61,7 @@ export function AssetPreview({
         <AssetPreviewBody
           assetPath={assetPath}
           mediaKind={mediaKind}
-          rightPanelOpen={rightPanelOpen}
-          onToggleRightPanel={onToggleRightPanel}
+          showViewerHeader={showViewerHeader}
           pdfPanelContainer={pdfPanelContainer}
           activePdfPanelTab={activePdfPanelTab}
         />
@@ -76,8 +73,7 @@ export function AssetPreview({
 function AssetPreviewBody({
   assetPath,
   mediaKind,
-  rightPanelOpen,
-  onToggleRightPanel,
+  showViewerHeader,
   pdfPanelContainer,
   activePdfPanelTab,
 }: AssetPreviewProps) {
@@ -115,8 +111,7 @@ function AssetPreviewBody({
             title={fileName}
             fillContainer
             selectionDocumentName={assetPath}
-            rightPanelOpen={rightPanelOpen}
-            onToggleRightPanel={onToggleRightPanel}
+            showViewerHeader={showViewerHeader}
             panelContainer={pdfPanelContainer}
             activePanelTab={activePdfPanelTab}
           />

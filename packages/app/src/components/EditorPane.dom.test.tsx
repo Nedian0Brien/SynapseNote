@@ -130,6 +130,22 @@ mock.module('./EditorHeader', () => ({
 // state. The EditorArea mock is a bare stand-in; the TerminalSessionsHost mock
 // (below) surfaces the threaded `visible` + `launch` props so these tests keep
 // asserting EditorPane's wiring across the prop boundary.
+// The rail is a sibling layout that owns the panel group; these tests exercise
+// what sits INSIDE it, so a passthrough keeps the real resize engine (and the
+// live DocPanel it hosts) out of the way.
+mock.module('@/components/RightRail', () => ({
+  RightRailLayout: ({ children }: { children: ReactNode }) => (
+    <div data-testid="right-rail-layout">{children}</div>
+  ),
+  useRightRail: () => ({
+    isCollapsed: false,
+    toggle: () => {},
+    controlsId: 'right-rail',
+    pdfPanelContainer: null,
+    rightTerminalContainer: null,
+  }),
+}));
+
 mock.module('./EditorArea', () => ({
   EditorArea: ({ activeTab }: { activeTab: string }) => (
     <div data-testid="editor-area" data-active-tab={activeTab} />

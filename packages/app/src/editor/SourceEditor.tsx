@@ -47,9 +47,9 @@ import { attachTypingBurstDetector } from './typing-burst-detector';
 // so the `scroll-pt-[84px]` on ScrollPreservingContainer in
 // components/EditorActivityPool.tsx does not reach source mode. EditorView.scrollMargins
 // is CM6's native equivalent — restate the inset here. Keep in sync with
-// `pt-[84px]` / `scroll-pt-[84px]` in components/EditorActivityPool.tsx; rendered height from
+// `pt-[44px]` / `scroll-pt-[44px]` in components/EditorActivityPool.tsx; rendered height from
 // components/EditorToolbar.tsx.
-const TOOLBAR_OVERLAP_PX = 84;
+const TOOLBAR_OVERLAP_PX = 44;
 
 interface SourceEditorProps {
   docName: string;

@@ -93,8 +93,9 @@
    opacity flip reveals it while frozen. The wrapper's own overflow clips the
    block at the table's top edge, so it never covers content above the table.
    ±1px horizontal overlap closes the seams over collapsed cell borders.
-   height must stay >= TOOLBAR_HEIGHT (84px, frozen-table-headers.ts) so the
-   block spans the whole toolbar-fade slot; 80px adds margin. */
+   height must stay >= TOOLBAR_HEIGHT (44px, frozen-table-headers.ts) so the
+   block spans the whole toolbar-fade slot; the value here keeps generous
+   margin over it, and over-tall is free — the wrapper clips it. */
 .ProseMirror .tableWrapper > table > tbody > tr:first-child > th::before {
   content: "";
   position: absolute;

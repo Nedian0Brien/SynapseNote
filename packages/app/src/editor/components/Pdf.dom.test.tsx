@@ -777,32 +777,16 @@ describe('EmbedPDF viewer integration', () => {
     );
   });
 
-  test('exposes the shared right-panel toggle in the route-level PDF toolbar', async () => {
-    const onToggleRightPanel = mock(() => {});
-    const view = render(
-      <Pdf
-        src="/api/asset?path=assets%2Freport.pdf"
-        title="report.pdf"
-        rightPanelOpen={false}
-        onToggleRightPanel={onToggleRightPanel}
-      />,
-    );
+  test('renders the shared identity row for the route-level viewer', async () => {
+    // The rail's collapse control moved up to the editor header, beside the
+    // file-sidebar trigger, so this row no longer carries a panel toggle of its
+    // own — `showViewerHeader` is what marks the route-level viewer now.
+    render(<Pdf src="/api/asset?path=assets%2Freport.pdf" title="report.pdf" showViewerHeader />);
 
     await screen.findByTestId('virtual-scroller');
-    fireEvent.click(screen.getByRole('button', { name: 'Show panel' }));
-    expect(onToggleRightPanel).toHaveBeenCalledTimes(1);
-
-    view.rerender(
-      <Pdf
-        src="/api/asset?path=assets%2Freport.pdf"
-        title="report.pdf"
-        rightPanelOpen
-        onToggleRightPanel={onToggleRightPanel}
-      />,
-    );
-    expect(screen.getByRole('button', { name: 'Hide panel' }).getAttribute('aria-expanded')).toBe(
-      'true',
-    );
+    expect(screen.getByTestId('document-viewer-header')).not.toBeNull();
+    expect(screen.queryByRole('button', { name: 'Show panel' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Hide panel' })).toBeNull();
   });
 
   test('portals Pages, Annotations, Outline, and Links into the route-level PDF rail', async () => {
@@ -907,12 +891,7 @@ describe('EmbedPDF viewer integration', () => {
 
   test('uses a full-width standalone tool row instead of a floating PDF control pill', async () => {
     const { container } = render(
-      <Pdf
-        src="/api/asset?path=assets%2Freport.pdf"
-        title="report.pdf"
-        rightPanelOpen
-        onToggleRightPanel={() => {}}
-      />,
+      <Pdf src="/api/asset?path=assets%2Freport.pdf" title="report.pdf" showViewerHeader />,
     );
 
     await screen.findByTestId('virtual-scroller');

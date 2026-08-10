@@ -10,6 +10,7 @@ import type { TerminalCli } from '@nedian0brien/synapsenote-core';
 import {
   ChevronDownIcon,
   ChevronRightIcon,
+  HistoryIcon,
   PanelBottomIcon,
   PanelRightIcon,
   XIcon,
@@ -17,6 +18,13 @@ import {
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { TargetIcon } from '@/components/handoff/OpenInAgentMenuItem';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { InputGroup, InputGroupInput } from '@/components/ui/input-group';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -93,6 +101,13 @@ export interface TerminalTabDescriptor {
   readonly cli?: TerminalCli | null;
 }
 
+/** One entry in the strip's "previous chats" menu. */
+export interface PreviousChat {
+  readonly id: string;
+  readonly cli: TerminalCli;
+  readonly title: string;
+}
+
 interface TerminalTabStripProps {
   /** Open sessions, in tab order. */
   readonly sessions: readonly TerminalTabDescriptor[];
@@ -148,6 +163,17 @@ interface TerminalTabStripProps {
   /** Fires when the user flips the dock between bottom and right. The toggle
    *  button renders only when provided. */
   readonly onToggleDock?: () => void;
+  /**
+   * Chats the user can return to — open sessions and resumable native ones.
+   * Strip-level, not per-session: "load a previous chat" is a verb on the chat
+   * surface as a whole. It used to live in each session's own header row, which
+   * is what made the rail stack three header bands before any message.
+   * The control renders only when {@link onSelectPreviousChat} is provided.
+   */
+  readonly previousChats?: readonly PreviousChat[];
+  /** Re-read the native session list as the menu opens. */
+  readonly onReloadPreviousChats?: () => void;
+  readonly onSelectPreviousChat?: (id: string) => void;
   /** Fires when the user collapses (hides) the terminal — sessions stay alive.
    *  The collapse button renders only when provided. */
   readonly onCollapse?: () => void;
@@ -215,6 +241,9 @@ export function TerminalTabStrip({
   onDragActiveChange,
   dockPosition,
   onToggleDock,
+  previousChats = [],
+  onReloadPreviousChats,
+  onSelectPreviousChat,
   onCollapse,
   children,
   className,
@@ -519,6 +548,48 @@ export function TerminalTabStrip({
         />
         {/* Spacer pushes the trailing controls to the far right. */}
         <div className="flex-1" />
+        {onSelectPreviousChat != null ? (
+          <DropdownMenu onOpenChange={(open) => open && onReloadPreviousChats?.()}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-xs"
+                    aria-label={t`Load previous chat`}
+                    className={cn(
+                      'shrink-0 cursor-pointer text-muted-foreground hover:text-foreground',
+                      draggable && '[-webkit-app-region:no-drag]',
+                    )}
+                  >
+                    <HistoryIcon aria-hidden="true" />
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={8}>
+                <Trans>Load previous chat</Trans>
+              </TooltipContent>
+            </Tooltip>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuLabel>{t`Previous chats`}</DropdownMenuLabel>
+              {previousChats.length === 0 ? (
+                <DropdownMenuItem disabled>{t`No previous chats`}</DropdownMenuItem>
+              ) : (
+                previousChats.map((chat) => (
+                  <DropdownMenuItem key={chat.id} onSelect={() => onSelectPreviousChat(chat.id)}>
+                    <TargetIcon
+                      id={cliIconTargetId(chat.cli)}
+                      className="size-4"
+                      aria-hidden="true"
+                    />
+                    <span className="min-w-0 flex-1 truncate">{chat.title}</span>
+                  </DropdownMenuItem>
+                ))
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null}
         {onToggleDock != null ? (
           <Tooltip>
             <TooltipTrigger asChild>

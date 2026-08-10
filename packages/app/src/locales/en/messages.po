@@ -387,18 +387,6 @@ msgstr "{descriptorLabel} — render error, source editable below"
 msgid "{detail} - {kind} \"{createdPath}\" still exists on disk"
 msgstr "{detail} - {kind} \"{createdPath}\" still exists on disk"
 
-#: src/components/FolderOverview.tsx
-msgid "{diffDays}d ago"
-msgstr "{diffDays}d ago"
-
-#: src/components/FolderOverview.tsx
-msgid "{diffHrs}h ago"
-msgstr "{diffHrs}h ago"
-
-#: src/components/FolderOverview.tsx
-msgid "{diffMin}m ago"
-msgstr "{diffMin}m ago"
-
 #: src/components/TerminalCliMissingBanner.tsx
 msgid "{displayName} ({bin}) isn't installed or on your PATH."
 msgstr "{displayName} ({bin}) isn't installed or on your PATH."
@@ -715,10 +703,6 @@ msgstr "A newer version may have been deployed since this tab opened."
 msgid "A non-empty folder already exists at this path. Pick a different folder."
 msgstr "A non-empty folder already exists at this path. Pick a different folder."
 
-#: src/components/DatabaseTableNewRecordRow.tsx
-msgid "A page title is required"
-msgstr "A page title is required"
-
 #: src/components/CreateProjectDialog.tsx
 msgid "A project already exists at this location. Pick a different parent folder."
 msgstr "A project already exists at this location. Pick a different parent folder."
@@ -730,10 +714,6 @@ msgstr "A pull quote stands out from the surrounding text."
 #: src/components/settings/TerminalSection.tsx
 msgid "A real shell is off for this project. Turning it on runs commands with the full access of your macOS user account."
 msgstr "A real shell is off for this project. Turning it on runs commands with the full access of your macOS user account."
-
-#: src/components/DatabaseTableNewRecordRow.tsx
-msgid "A record title is required"
-msgstr "A record title is required"
 
 #: src/components/ReportBugDialogBody.tsx
 msgid "A report helps us find the cause. Nothing is sent until you review it."
@@ -2035,6 +2015,10 @@ msgstr "Click <0>+</0> <1/> <2>Create skill</2> <3/> <4>Upload skill</4>."
 msgid "Click an agent's avatar in the presence bar to view their session."
 msgstr "Click an agent's avatar in the presence bar to view their session."
 
+#: src/components/DatabaseTableNewRecordRow.tsx
+msgid "Click to add"
+msgstr "Click to add"
+
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "Clipboard is unavailable. Select the preview and copy it manually."
 msgstr "Clipboard is unavailable. Select the preview and copy it manually."
@@ -2135,6 +2119,7 @@ msgstr "Close new tab"
 msgid "Close others"
 msgstr "Close others"
 
+#: src/components/FolderOverview.tsx
 #: src/editor/components/PdfEmbed.tsx
 msgid "Close search"
 msgstr "Close search"
@@ -3045,6 +3030,10 @@ msgstr "Create a database in this page and edit its rows without leaving the doc
 msgid "Create a document from {label}"
 msgstr "Create a document from {label}"
 
+#: src/components/FolderOverview.tsx
+msgid "Create a document to start filling this space."
+msgstr "Create a document to start filling this space."
+
 #: src/lib/keyboard-shortcuts.ts
 msgid "Create a file from the current document or folder context."
 msgstr "Create a file from the current document or folder context."
@@ -3753,6 +3742,10 @@ msgstr "Document statistics"
 msgid "Document the architecture of this repo: create an overview page that links to a page per major module describing its responsibilities and entry points."
 msgstr "Document the architecture of this repo: create an overview page that links to a page per major module describing its responsibilities and entry points."
 
+#: src/components/FolderOverview.tsx
+msgid "Documents"
+msgstr "Documents"
+
 #: src/components/FileTree.tsx
 msgid "Documents response did not match expected shape."
 msgstr "Documents response did not match expected shape."
@@ -4065,6 +4058,10 @@ msgstr "empty"
 #: src/components/PropertyWidgets.tsx
 msgid "Empty"
 msgstr "Empty"
+
+#: src/components/FolderDocumentCard.tsx
+msgid "Empty note"
+msgstr "Empty note"
 
 #: src/components/NewItemDialog.tsx
 msgid "Empty starting content"
@@ -4723,6 +4720,10 @@ msgstr "folder"
 msgid "Folder"
 msgstr "Folder"
 
+#: src/components/FolderOverview.tsx
+msgid "Folder details"
+msgstr "Folder details"
+
 #: src/components/FileTree.tsx
 msgid "Folder duplicated"
 msgstr "Folder duplicated"
@@ -4742,6 +4743,10 @@ msgstr "Folder properties"
 #: src/components/LinksPanel.tsx
 msgid "Folder target: {linkTitle}. Click to open the overview."
 msgstr "Folder target: {linkTitle}. Click to open the overview."
+
+#: src/components/FolderOverview.tsx
+msgid "Folder view"
+msgstr "Folder view"
 
 #: src/components/settings/AiToolsSection.tsx
 #: src/components/settings/ProjectAiToolsSection.tsx
@@ -4939,6 +4944,10 @@ msgstr "Green"
 msgid "Grid of rows and columns with a header row."
 msgstr "Grid of rows and columns with a header row."
 
+#: src/components/FolderOverview.tsx
+msgid "Grid view"
+msgstr "Grid view"
+
 #: src/components/DatabaseAdvancedFilterDialog.tsx
 msgid "Group"
 msgstr "Group"
@@ -5079,6 +5088,10 @@ msgstr "Hide HTML preview"
 #: src/components/DocumentViewerHeader.tsx
 msgid "Hide panel"
 msgstr "Hide panel"
+
+#: src/components/EditorHeader.tsx
+msgid "Hide panel ({shortcut})"
+msgstr "Hide panel ({shortcut})"
 
 #: src/editor/find-replace/FindReplaceBar.tsx
 msgid "Hide replace"
@@ -5631,7 +5644,6 @@ msgstr "Jump to page {pageNumber}"
 msgid "Jump to tab 1-8"
 msgstr "Jump to tab 1-8"
 
-#: src/components/FolderOverview.tsx
 #: src/components/FolderTimelineCard.tsx
 #: src/components/SyncStatusBadge.tsx
 #: src/components/TimelinePanel.tsx
@@ -5782,6 +5794,10 @@ msgstr "List"
 msgid "List hierarchy and display"
 msgstr "List hierarchy and display"
 
+#: src/components/FolderOverview.tsx
+msgid "List view"
+msgstr "List view"
+
 #: src/components/DatabaseWorkspaceViewRenderer.tsx
 msgid "Load more pages"
 msgstr "Load more pages"
@@ -5808,7 +5824,6 @@ msgstr "Loading {fileName}"
 
 #: src/components/ActivityModeContent.tsx
 #: src/components/DocPanel.tsx
-#: src/components/EditorArea.tsx
 msgid "Loading agent activity"
 msgstr "Loading agent activity"
 
@@ -5862,10 +5877,6 @@ msgstr "Loading exact Context Pack"
 msgid "Loading files"
 msgstr "Loading files"
 
-#: src/components/FolderOverview.tsx
-msgid "Loading folder contents"
-msgstr "Loading folder contents"
-
 #: src/components/DocPanel.tsx
 msgid "Loading graph"
 msgstr "Loading graph"
@@ -5896,6 +5907,7 @@ msgstr "Loading PDF"
 msgid "Loading permissions"
 msgstr "Loading permissions"
 
+#: src/components/FolderDocumentCard.tsx
 #: src/components/SeedDialog.tsx
 msgid "Loading preview"
 msgstr "Loading preview"
@@ -6185,10 +6197,6 @@ msgstr "Model settings"
 msgid "Model settings: {modelLabel}, effort {effortLabel}, speed {speedLabel}"
 msgstr "Model settings: {modelLabel}, effort {effortLabel}, speed {speedLabel}"
 
-#: src/components/FolderOverview.tsx
-msgid "Modified"
-msgstr "Modified"
-
 #: src/editor/extensions/WikiLinkPropPanel.tsx
 msgid "Modify the link target, anchor, and display label."
 msgstr "Modify the link target, anchor, and display label."
@@ -6330,7 +6338,6 @@ msgstr "name"
 #: src/components/AuthModal.tsx
 #: src/components/DatabaseTemplatesDialog.tsx
 #: src/components/DatabaseWorkspaceRecordActions.tsx
-#: src/components/FolderOverview.tsx
 #: src/components/NewSkillDialog.tsx
 #: src/components/SkillRenameDialog.tsx
 #: src/editor/slash-command/items.tsx
@@ -6340,6 +6347,10 @@ msgstr "Name"
 #: src/components/AuthModal.tsx
 msgid "Name (e.g. {login})"
 msgstr "Name (e.g. {login})"
+
+#: src/components/FolderOverview.tsx
+msgid "Name A–Z"
+msgstr "Name A–Z"
 
 #: src/components/EditorTabs.tsx
 msgid "Name can’t be empty, \".\", \"..\", or contain / or \\"
@@ -6354,6 +6365,10 @@ msgstr "Name cannot be empty"
 #: src/components/PropertyPanel.tsx
 msgid "Name is required"
 msgstr "Name is required"
+
+#: src/components/FolderOverview.tsx
+msgid "Name Z–A"
+msgstr "Name Z–A"
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Navigate CodeMirror source search results or dismiss the search panel."
@@ -6407,7 +6422,6 @@ msgstr "Never"
 
 #: src/components/DatabaseAutomationsDialog.tsx
 #: src/components/DatabaseWorkspaceToolbar.tsx
-#: src/components/FolderOverview.tsx
 #: src/editor/components/InlineDatabaseToolbar.tsx
 #: src/editor/tag-suggestion/TagSuggestionMenu.tsx
 msgid "New"
@@ -6459,6 +6473,10 @@ msgstr "New database view"
 #: src/editor/components/use-inline-database-read-state.ts
 msgid "New database view for {inlineDatabaseContext}"
 msgstr "New database view for {inlineDatabaseContext}"
+
+#: src/components/FolderOverview.tsx
+msgid "New document"
+msgstr "New document"
 
 #: src/components/CommandPalette.tsx
 #: src/components/FileSidebar.tsx
@@ -6515,13 +6533,10 @@ msgstr "New project"
 msgid "New property name"
 msgstr "New property name"
 
+#: src/components/DatabaseTableNewRecordRow.tsx
 #: src/components/DatabaseWorkspaceToolbar.tsx
 msgid "New record"
 msgstr "New record"
-
-#: src/components/DatabaseTableNewRecordRow.tsx
-msgid "New record title"
-msgstr "New record title"
 
 #: src/components/NewSkillDialog.tsx
 #: src/components/settings/SkillsManagerSection.tsx
@@ -6778,6 +6793,10 @@ msgstr "No matching commands."
 #: src/editor/composer-mention/ComposerMentionMenu.tsx
 msgid "No matching docs"
 msgstr "No matching docs"
+
+#: src/components/FolderOverview.tsx
+msgid "No matching documents"
+msgstr "No matching documents"
 
 #: src/components/DatabaseSelectCellEditor.tsx
 msgid "No matching options."
@@ -7117,6 +7136,10 @@ msgstr "OK Desktop"
 msgid "ok ui responded but server.lock has no port yet"
 msgstr "ok ui responded but server.lock has no port yet"
 
+#: src/components/FolderOverview.tsx
+msgid "Oldest modified"
+msgstr "Oldest modified"
+
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "Omissions"
 msgstr "Omissions"
@@ -7175,8 +7198,10 @@ msgstr "Only the current document uses <0>#{tag}</0>."
 msgid "Open"
 msgstr "Open"
 
+#. placeholder {0}: entry.title
 #. placeholder {0}: link.title
 #: src/components/chat/WebPreviewCards.tsx
+#: src/components/FolderDocumentCard.tsx
 msgid "Open {0}"
 msgstr "Open {0}"
 
@@ -7920,14 +7945,6 @@ msgstr "Preparing search"
 msgid "Preparing share URL..."
 msgstr "Preparing share URL..."
 
-#: src/components/DatabaseTableNewRecordRow.tsx
-msgid "Press Enter to add"
-msgstr "Press Enter to add"
-
-#: src/components/DatabaseTableNewRecordRow.tsx
-msgid "Press Enter to create page"
-msgstr "Press Enter to create page"
-
 #: src/components/DatabaseRecordPeekEditor.tsx
 msgid "Press Enter to start writing on this page."
 msgstr "Press Enter to start writing on this page."
@@ -7995,6 +8012,10 @@ msgstr "Preview the current revision before reversing this run."
 #: src/components/ConsentDialogBody.tsx
 msgid "Preview unavailable: {errorDetail}"
 msgstr "Preview unavailable: {errorDetail}"
+
+#: src/components/FolderOverview.tsx
+msgid "Preview view"
+msgstr "Preview view"
 
 #. js-lingui-explicit-id
 #: src/components/DatabaseUniqueIdPropertyDialog.tsx
@@ -8327,6 +8348,10 @@ msgstr "Recent runs"
 #: src/components/DatabaseDiagnosticsDialog.tsx
 msgid "Recent tasks"
 msgstr "Recent tasks"
+
+#: src/components/FolderOverview.tsx
+msgid "Recently modified"
+msgstr "Recently modified"
 
 #: src/components/CommandPalette.tsx
 msgid "Recently opened"
@@ -9343,6 +9368,10 @@ msgstr "Search settings not yet loaded — try again in a moment"
 msgid "Search templates"
 msgstr "Search templates"
 
+#: src/components/FolderOverview.tsx
+msgid "Search this folder"
+msgstr "Search this folder"
+
 #: src/components/RecentProjectsMenu.tsx
 msgid "Search worktrees"
 msgstr "Search worktrees"
@@ -9791,6 +9820,10 @@ msgstr "Show or hide terminal"
 msgid "Show panel"
 msgstr "Show panel"
 
+#: src/components/EditorHeader.tsx
+msgid "Show panel ({shortcut})"
+msgstr "Show panel ({shortcut})"
+
 #: src/components/DatabaseAgentRunsDialog.tsx
 msgid "Show plan details"
 msgstr "Show plan details"
@@ -9967,9 +10000,17 @@ msgstr "Something went wrong. Please try again."
 msgid "Sort"
 msgstr "Sort"
 
+#: src/components/FolderOverview.tsx
+msgid "Sort by"
+msgstr "Sort by"
+
 #: src/components/DatabasePropertyMenu.tsx
 msgid "Sort by property"
 msgstr "Sort by property"
+
+#: src/components/FolderOverview.tsx
+msgid "Sort folder"
+msgstr "Sort folder"
 
 #: src/components/DatabaseContextInspectorDialog.tsx
 #: src/components/DatabaseWorkspaceHeader.tsx
@@ -11110,6 +11151,10 @@ msgstr "Truncated"
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "Truncation"
 msgstr "Truncation"
+
+#: src/components/FolderOverview.tsx
+msgid "Try a different name or path."
+msgstr "Try a different name or path."
 
 #: src/components/empty-state/CreatePromptComposer.tsx
 msgid "Try a prompt"

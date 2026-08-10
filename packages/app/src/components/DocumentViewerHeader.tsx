@@ -11,7 +11,14 @@ interface DocumentViewerHeaderProps {
   fileType: 'MD' | 'PDF';
   showBreadcrumb?: boolean;
   breadcrumbSegments?: readonly (string | EditorBreadcrumbSegment)[];
-  centerContent?: ReactNode;
+  /**
+   * Renderer-specific contextual tools, inlined into this row rather than
+   * stacked under it. Markdown's formatting controls live here; giving them
+   * their own 40px band made the viewer read as three header bars (tab strip,
+   * identity, tools) before any content. The slot takes the flexible middle
+   * column and is expected to scroll internally when the row is tight.
+   */
+  toolbar?: ReactNode;
   leadingAccessory?: ReactNode;
   actions?: ReactNode;
   panelToggle?: {
@@ -36,7 +43,7 @@ export function DocumentViewerHeader({
   fileType,
   showBreadcrumb = true,
   breadcrumbSegments,
-  centerContent,
+  toolbar,
   leadingAccessory,
   actions,
   panelToggle,
@@ -53,8 +60,11 @@ export function DocumentViewerHeader({
       data-file-type={fileType.toLowerCase()}
       className={cn(
         'grid h-11 shrink-0 items-center border-b bg-background px-3',
-        centerContent
-          ? 'grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]'
+        // With tools inlined the identity hugs its content and the tool band
+        // takes the slack, so a long title can't starve the toolbar (and a wide
+        // toolbar can't push the actions off the row — it scrolls instead).
+        toolbar
+          ? 'grid-cols-[minmax(0,auto)_minmax(0,1fr)_auto] gap-2'
           : 'grid-cols-[minmax(0,1fr)_auto]',
         className,
       )}
@@ -78,9 +88,7 @@ export function DocumentViewerHeader({
         {leadingAccessory}
       </div>
 
-      {centerContent ? (
-        <div className="flex min-w-0 items-center justify-center px-3">{centerContent}</div>
-      ) : null}
+      {toolbar ? <div className="flex min-w-0 items-center">{toolbar}</div> : null}
 
       <div className="flex min-w-0 items-center justify-end gap-1">
         {actions}

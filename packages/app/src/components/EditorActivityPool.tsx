@@ -636,12 +636,14 @@ function ScrollPreservingContainer({
       ref={ref}
       data-testid="editor-scroll-container"
       data-pdf-export-active={isActive ? 'true' : 'false'}
-      // Toolbar exclusion zone = 84px (44px identity row + 40px Markdown
-      // context toolbar). Four
+      // Toolbar exclusion zone = 44px — the single identity row. The Markdown
+      // formatting controls used to sit in their own 40px band below it; they
+      // are now inlined into that row's `toolbar` slot, so the reserve is one
+      // row tall. Four
       // load-bearing constants must move together if the toolbar height changes:
-      //   - `pt-[84px]` (here): initial-paint content reserve so doc content doesn't
+      //   - `pt-[44px]` (here): initial-paint content reserve so doc content doesn't
       //     start behind the absolute-positioned EditorToolbar overlay.
-      //   - `scroll-pt-[84px]` (here): scroll-padding-top for native
+      //   - `scroll-pt-[44px]` (here): scroll-padding-top for native
       //     Element.scrollIntoView alignment — TiptapEditor outline-click +
       //     wiki-link anchor navigation, and editor/extensions/footnote-anchor-scroll.ts.
       //   - TOOLBAR_HEIGHT in editor/extensions/frozen-table-headers.ts: the
@@ -656,7 +658,7 @@ function ScrollPreservingContainer({
       //     a `scrollMargins` contribution in the shared factory would mis-align
       //     nested CM scrolls if they ever become scrollable.
       // The toolbar itself: components/EditorToolbar.tsx.
-      className="editor-doc-scroll subtle-scrollbar h-full overflow-y-auto pt-[84px] scroll-pt-[84px]"
+      className="editor-doc-scroll subtle-scrollbar h-full overflow-y-auto pt-[44px] scroll-pt-[44px]"
       style={{ overflowAnchor: 'auto' }}
     >
       {children}

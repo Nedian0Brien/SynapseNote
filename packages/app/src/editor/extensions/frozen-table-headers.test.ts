@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { buildShiftKeyframes, computeFreezeRange } from './frozen-table-headers.ts';
+import { buildShiftKeyframes, computeFreezeRange, TOOLBAR_HEIGHT } from './frozen-table-headers.ts';
 
 describe('computeFreezeRange (scroll-driven animation ranges)', () => {
   // The scroll-driven animation maps scrollTop ∈ [startOffset, endOffset]
@@ -13,23 +13,28 @@ describe('computeFreezeRange (scroll-driven animation ranges)', () => {
   });
 
   it('places startOffset where the table top meets the toolbar boundary', () => {
-    // At scrollTop 0, table top sits 100px below the toolbar line
-    // (containerTop 0 + TOOLBAR_HEIGHT 84 = 84; tableTop 184).
-    const range = computeFreezeRange(0, 0, 184, 1000, 40);
+    // At scrollTop 0 the table top sits TOOLBAR_HEIGHT + 100 down the document,
+    // so the freeze begins 100px into the scroll. Derived from the exported
+    // constant rather than a literal: the toolbar's height is a product
+    // decision (it changed when the Markdown tools were inlined into the
+    // identity row) and this geometry must follow it, not restate it.
+    const tableDocTop = TOOLBAR_HEIGHT + 100;
+    const range = computeFreezeRange(0, 0, tableDocTop, 1000, 40);
     expect(range).toEqual({ startOffset: 100, endOffset: 1060, maxShift: 960 });
   });
 
   it('is invariant to the scroll position at which geometry is measured', () => {
     // Same table measured at scrollTop 0 and after scrolling 300px (its
     // viewport-space top is 300px higher) must produce identical ranges.
-    const atTop = computeFreezeRange(0, 0, 184, 1000, 40);
-    const scrolled = computeFreezeRange(300, 0, 184 - 300, 1000, 40);
+    const tableDocTop = TOOLBAR_HEIGHT + 100;
+    const atTop = computeFreezeRange(0, 0, tableDocTop, 1000, 40);
+    const scrolled = computeFreezeRange(300, 0, tableDocTop - 300, 1000, 40);
     expect(scrolled).toEqual(atTop);
   });
 
   it('agrees with the per-frame shift formula across the whole scroll range', () => {
     const containerTop = 0;
-    const tableDocTop = 184; // table top in document space (scrollTop 0 measurement)
+    const tableDocTop = TOOLBAR_HEIGHT + 100; // table top in document space (scrollTop 0 measurement)
     const tableHeight = 1000;
     const headerHeight = 40;
     const range = computeFreezeRange(0, containerTop, tableDocTop, tableHeight, headerHeight);
@@ -40,16 +45,16 @@ describe('computeFreezeRange (scroll-driven animation ranges)', () => {
       const tableTop = tableDocTop - scrollTop;
       const expected = Math.max(
         0,
-        Math.min(containerTop + 84 - tableTop, tableHeight - headerHeight),
+        Math.min(containerTop + TOOLBAR_HEIGHT - tableTop, tableHeight - headerHeight),
       );
       expect(animShift).toBe(expected);
     }
   });
 
   it('yields a negative startOffset for a table starting under the toolbar', () => {
-    // Table top at 30px while the toolbar boundary is at 84px: the header is
-    // already partially frozen at scrollTop 0 (progress > 0 via fill: both).
-    const range = computeFreezeRange(0, 0, 30, 400, 40);
+    // Table top 54px above the toolbar boundary: the header is already
+    // partially frozen at scrollTop 0 (progress > 0 via fill: both).
+    const range = computeFreezeRange(0, 0, TOOLBAR_HEIGHT - 54, 400, 40);
     expect(range?.startOffset).toBe(-54);
   });
 });

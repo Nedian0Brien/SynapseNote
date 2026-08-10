@@ -1,38 +1,28 @@
-import { Trans, useLingui } from '@lingui/react/macro';
+import { useLingui } from '@lingui/react/macro';
 import { detectEmbeddedHostFromBrowser } from '@nedian0brien/synapsenote-core';
-import { useTheme } from 'next-themes';
 import {
-  lazy,
   type ReactNode,
-  Suspense,
   useDeferredValue,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
   useSyncExternalStore,
 } from 'react';
-import { useGroupRef, usePanelRef } from 'react-resizable-panels';
 import { AssetPreview } from '@/components/AssetPreview';
-import { DocPanel, type PanelTab, type PdfPanelTab } from '@/components/DocPanel';
-import {
-  consumePendingDocPanelTabRequest,
-  subscribeToDocPanelTabRequests,
-} from '@/components/doc-panel-events';
+import type { PanelTab, PdfPanelTab } from '@/components/DocPanel';
 import { EditorSkeleton } from '@/components/EditorSkeleton';
 import { EmptyEditorState } from '@/components/EmptyEditorState';
 import { FolderOverview } from '@/components/FolderOverview';
 import { LargeFileEditorState } from '@/components/LargeFileEditorState';
 import { MountStalledAffordance } from '@/components/MountStalledAffordance';
 import { PropertyProvider, useProperties } from '@/components/PropertyContext';
+import { useRightRail } from '@/components/RightRail';
 import { ShareReceiveMissPanel } from '@/components/ShareReceiveMissPanel';
 import { SkillFileViewer } from '@/components/SkillFileViewer';
 import { SettingsDialogShell } from '@/components/settings/SettingsDialogShell';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { useDocumentTransition } from '@/editor/DocumentContext';
 import { useDocumentCollaboration } from '@/editor/document-context/useDocumentCollaboration';
 import { useDocumentNavigation } from '@/editor/document-context/useDocumentNavigation';
-import { useDocumentPanels } from '@/editor/document-context/useDocumentPanels';
 import { FindReplaceController } from '@/editor/find-replace/FindReplaceController';
 import { mountPromiseHasResolved } from '@/editor/mount-promise';
 import { syncPromiseHasResolved } from '@/editor/sync-promise';
@@ -41,19 +31,13 @@ import { useLifecycleStatus } from '@/hooks/use-lifecycle-status';
 import { useSelectionStats } from '@/hooks/use-selection-stats';
 import type { OkDesktopBridge } from '@/lib/desktop-bridge-types';
 import { docNameFromHash, hashFromDocName } from '@/lib/doc-hash';
-import { getInitialDocPanelWidth, writeDocPanelWidth } from '@/lib/doc-panel-width-store';
-import { matchesKeyboardShortcut } from '@/lib/keyboard-shortcuts';
 import { ProfilerBoundary } from '@/lib/perf';
 import {
   matchesShareReceiveMiss,
   pendingReceiveNavStore,
 } from '@/lib/share/pending-receive-nav-store';
-import { RIGHT_COLLAPSE_THRESHOLD, resolvePartition } from '@/lib/sidebar-partition';
-import { applyToggle, readPins, resolveEffectiveState } from '@/lib/sidebar-pin-store';
 import type { TerminalDockPosition } from '@/lib/terminal-dock-store';
-import { MIN_TERMINAL_WIDTH, writeTerminalWidth } from '@/lib/terminal-width-store';
 import { useSettingsRoute } from '@/lib/use-settings-route';
-import { cn } from '@/lib/utils';
 import { useSyncStatus } from '@/presence/use-sync-status';
 import { BottomComposer } from './BottomComposer';
 import { shouldShowBottomComposer, shouldShowFolderComposer } from './bottom-composer-gate';
@@ -62,26 +46,7 @@ import { EditorFooter } from './EditorFooter';
 import type { EditorMode } from './EditorPane';
 import { EditorToolbar } from './EditorToolbar';
 import { shouldPaintOverlay } from './editor-area-overlay';
-import { computeStickyRepinLayout } from './editor-area-sticky-repin';
 import { TerminalDock } from './TerminalDock';
-import { xtermThemeForMode } from './terminal-theme';
-
-const LazyActivityModeContent = lazy(async () => {
-  const mod = await import('@/components/ActivityModeContent');
-  return { default: mod.ActivityModeContent };
-});
-
-// Shared doc-panel sizing — referenced by both the live `id="doc-panel"` and the
-// hash-load placeholder that mirrors it, so the two stay structurally linked and
-// their min/max can't drift apart.
-const DOC_PANEL_MIN_SIZE = '300px';
-const DOC_PANEL_MAX_SIZE = '600px';
-
-// The right-side panels the horizontal group can render. The editor column is the
-// residual absorber and intentionally has no id (an explicit id on it changes how
-// the library redistributes an imperative resize), so the right-rail layout assert
-// finds it as the one live panel id that is not one of these.
-const RIGHT_PANEL_IDS = new Set(['doc-panel', 'terminal-column', 'agent-panel']);
 
 /**
  * Where + whether the terminal should attach right now. EditorArea computes this
@@ -104,16 +69,16 @@ export interface TerminalPlacement {
 interface EditorAreaProps {
   editorMode: EditorMode;
   onModeChange: (mode: EditorMode) => void;
+  /** Selects which PDF tool the viewer mirrors; the rail owns the selection. */
   activeTab: PanelTab;
-  onActiveTabChange: (tab: PanelTab) => void;
   /**
    * Desktop bridge for the docked terminal — `null` on the web host (no shell).
    * When present, the terminal docks either under the editor (bottom, via
-   * `TerminalDock`'s vertical split) or as its own resizable column to the right
-   * (`#terminal-column`, the far-right column past the doc/agent panel). The live
-   * session host is owned by EditorPane and portals into whichever container is
-   * active, so the PTY survives tab switches, view-kind changes, and dock moves.
-   * State is owned by EditorPane and threaded down via these props.
+   * `TerminalDock`'s vertical split) or as the Chat tool inside the right rail
+   * (`#right-rail`). The live session host is owned by EditorPane and portals
+   * into whichever container is active, so the PTY survives tab switches,
+   * view-kind changes, and dock moves. State is owned by EditorPane and
+   * threaded down via these props.
    */
   terminalBridge?: OkDesktopBridge | null;
   terminalVisible?: boolean;
@@ -179,7 +144,6 @@ function EditorAreaInner({
   editorMode,
   onModeChange,
   activeTab,
-  onActiveTabChange,
   terminalBridge,
   terminalVisible = false,
   onTerminalVisibleChange,
@@ -187,18 +151,10 @@ function EditorAreaInner({
   onTerminalPlacement,
 }: EditorAreaProps) {
   const { t } = useLingui();
-  const { resolvedTheme } = useTheme();
-  // Paint the right-docked terminal column with the xterm canvas color so the tab
-  // strip + chrome read as one continuous surface with the terminal — matching the
-  // bottom dock (TerminalDock applies the same fill). Without it the strip shows
-  // the app background and reads as a black seam above the terminal.
-  const xtermBackground = xtermThemeForMode(resolvedTheme).background;
   const { activeDocName, activeTarget } = useDocumentNavigation();
   const { activeProvider, recycleDocument } = useDocumentCollaboration();
-  const { docPanelMode, docPanelAgentId, docPanelExpandSignal } = useDocumentPanels();
   const activePdfAsset =
     activeTarget?.kind === 'asset' && activeTarget.mediaKind === 'pdf' ? activeTarget : null;
-  const [pdfPanelContainer, setPdfPanelContainer] = useState<HTMLElement | null>(null);
   const activePdfPanelTab: PdfPanelTab =
     activeTab === 'pages' ||
     activeTab === 'annotations' ||
@@ -260,34 +216,13 @@ function EditorAreaInner({
   // a second time on mount — both are lazy-initializer stable, but the
   // double-detect was pure waste).
   const isEmbedded = embeddedHost !== null;
-  const [rightPartition, setRightPartition] = useState(() =>
-    resolvePartition(embeddedHost, window.innerWidth, 'right'),
-  );
-  // Read in callbacks (togglePanel, ResizeObserver) so we always see the live
-  // partition value even if togglePanel is re-bound from an effect that hasn't
-  // re-subscribed with the latest closure yet. Mirrors the openRef pattern.
-  const rightPartitionRef = useRef(rightPartition);
-  useEffect(() => {
-    rightPartitionRef.current = rightPartition;
-  }, [rightPartition]);
-  const panelRef = usePanelRef();
-  // Independent ref for the terminal column (MD | PANE | TERMINAL). Bound only
-  // while that column is mounted (right-docked + visible); the sticky-width RO
-  // pins it the same way it pins the doc panel.
-  const terminalColumnPanelRef = usePanelRef();
-  const [initialRightCollapsed] = useState(() => {
-    const pins = readPins();
-    return resolveEffectiveState('right', rightPartition, pins) === 'collapsed';
-  });
-  const [isCollapsed, setIsCollapsed] = useState(initialRightCollapsed);
-  // Ref mirror so the ResizeObserver callback can gate without re-creating
-  // the observer on every isCollapsed flip.
-  const isCollapsedRef = useRef(isCollapsed);
 
-  // The terminal's right-dock mount point — a dedicated column to the right of the
-  // doc panels (MD | PANE | TERMINAL). The session host portals into this element
-  // when the terminal is right-docked and visible.
-  const [rightTerminalContainer, setRightTerminalContainer] = useState<HTMLDivElement | null>(null);
+  // The toolbox lives OUTSIDE this component — it is a sibling of the whole
+  // content column (header included), owned by `RightRailLayout`, and its
+  // collapse control lives in `EditorHeader` beside the file-sidebar trigger.
+  // All this view needs from it is the two portal targets it exposes.
+  const { pdfPanelContainer, rightTerminalContainer } = useRightRail();
+
   // The bottom-dock mount + the editor-region focus target, reported up by
   // TerminalDock (the bottom shell). The session host portals into the active
   // container and returns focus to the editor region when the terminal hides.
@@ -298,16 +233,11 @@ function EditorAreaInner({
 
   // Terminal placement, computed early (before the view branches) so it can be
   // reported up to EditorPane regardless of which branch renders. When right-
-  // docked the terminal is its own far-right column past the doc panels, present
-  // across EVERY view kind (the column just has no doc panel beside it on
-  // asset / large-file / empty views). This is why the dock stays on the right
-  // even when there's nothing else to put there.
+  // docked the terminal is the rail's Chat tool, available across EVERY view
+  // kind. This is why the dock stays on the right even when there's nothing
+  // else to put there.
   const rightDocked = terminalDock === 'right';
   const terminalDockPosition: TerminalDockPosition = rightDocked ? 'right' : 'bottom';
-  // Whether the far-right terminal column participates in the panel group this
-  // render. Drives the panel-set-change layout assert below and the collapsed
-  // doc-panel neutralization — compute it up here so effects can depend on it.
-  const terminalColumnPresent = terminalBridge != null && rightDocked && terminalVisible;
   const rightTerminalShowing = rightDocked && terminalVisible && rightTerminalContainer != null;
   const activeTerminalContainer = rightTerminalShowing
     ? rightTerminalContainer
@@ -330,369 +260,6 @@ function EditorAreaInner({
     terminalShowing,
     terminalDockPosition,
     terminalEditorRegion,
-  ]);
-
-  useEffect(() => {
-    isCollapsedRef.current = isCollapsed;
-  }, [isCollapsed]);
-  const [isDraggingDocHandle, setIsDraggingDocHandle] = useState(false);
-  // Ref mirror so the ResizeObserver callback can skip while the user is
-  // actively dragging (would otherwise race the in-flight drag).
-  const isDraggingDocHandleRef = useRef(false);
-
-  // Sticky pixel width for the right doc-panel. The library is percent-based
-  // internally; without correction the panel would grow proportionally with
-  // the container. We track the user's last-set pixel width in a ref and
-  // re-apply it via `panelRef.resize("Npx")` whenever the container resizes
-  // (window resize, left sidebar collapse). Persisted to localStorage so the
-  // value survives reload.
-  //
-  // Pattern: `useState` lazy initializer snapshots the initial pixel width
-  // (read once at mount, stable across renders — React Compiler forbids reading
-  // refs during render, so we cannot use `docPanelWidthPxRef.current` in the
-  // `defaultSize` JSX below). The ref carries the running value updated by
-  // `onResize` during user drag; only callbacks/effects read it.
-  const [initialDocPanelWidthPx] = useState(() => getInitialDocPanelWidth());
-  const docPanelWidthPxRef = useRef(initialDocPanelWidthPx);
-  const writeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  function debouncedWriteDocPanelWidth(px: number) {
-    if (writeTimerRef.current != null) clearTimeout(writeTimerRef.current);
-    writeTimerRef.current = setTimeout(() => {
-      writeDocPanelWidth(px);
-      writeTimerRef.current = null;
-    }, 100);
-  }
-
-  // Chat and document tools are two states of the same visible right rail. Use
-  // one canonical width so switching Chat ↔ Pages/Outline/Links never makes the
-  // rail jump between the old terminal and document defaults.
-  const initialTerminalWidthPx = initialDocPanelWidthPx;
-  const terminalWidthPxRef = useRef(initialDocPanelWidthPx);
-  const [isDraggingTerminalHandle, setIsDraggingTerminalHandle] = useState(false);
-  const isDraggingTerminalHandleRef = useRef(false);
-  const terminalWriteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  function debouncedWriteTerminalWidth(px: number) {
-    if (terminalWriteTimerRef.current != null) clearTimeout(terminalWriteTimerRef.current);
-    terminalWriteTimerRef.current = setTimeout(() => {
-      writeTerminalWidth(px);
-      terminalWriteTimerRef.current = null;
-    }, 100);
-  }
-
-  function rememberSharedRightRailWidth(px: number) {
-    docPanelWidthPxRef.current = px;
-    terminalWidthPxRef.current = px;
-    debouncedWriteDocPanelWidth(px);
-    debouncedWriteTerminalWidth(px);
-  }
-
-  useEffect(
-    () => () => {
-      if (writeTimerRef.current != null) clearTimeout(writeTimerRef.current);
-      if (terminalWriteTimerRef.current != null) clearTimeout(terminalWriteTimerRef.current);
-    },
-    [],
-  );
-
-  // Group container element — the ResizeObserver target. Container width
-  // changes when the WINDOW resizes or the LEFT sidebar collapses/expands; it
-  // does NOT change when the right doc-panel collapses (that's internal flex
-  // redistribution). State-callback ref (not useRef) so the RO effect re-runs
-  // when the element mounts — early returns for skeleton/empty-state mean the
-  // ref isn't attached until the main JSX renders, and useRef wouldn't notify.
-  const [groupContainerEl, setGroupContainerEl] = useState<HTMLDivElement | null>(null);
-  // Plain-ref mirror for callbacks created before the element mounts (event
-  // subscribers with narrow deps would otherwise close over the initial null).
-  const groupContainerElRef = useRef<HTMLDivElement | null>(null);
-
-  // Group-level imperative handle. Layout corrections MUST go through
-  // `setLayout` (the whole layout in one shot): the per-panel imperative APIs
-  // (`resize`/`collapse`/`expand`) always exchange space with the panel's flex
-  // NEIGHBOR, and in the EDITOR | doc-panel | terminal-column order that
-  // neighbor is never the editor — a doc-panel collapse dumps its width into
-  // the terminal, and re-pinning the terminal hands it right back to the doc
-  // panel. Only a full-layout write can route deltas to the editor. The layout
-  // math lives in `computeStickyRepinLayout` (unit-tested).
-  const groupRef = useGroupRef();
-  // Live mirror of `terminalColumnPresent` for subscribers with narrow deps.
-  const terminalColumnPresentRef = useRef(terminalColumnPresent);
-  useEffect(() => {
-    terminalColumnPresentRef.current = terminalColumnPresent;
-  }, [terminalColumnPresent]);
-
-  // Pixel basis for px→% conversion in `assertRightRailLayout`. Layout
-  // percentages are relative to the group's panel space; derive the basis from
-  // a panel whose percentage and pixel width are both known (immune to the
-  // separator widths the container includes), falling back to the container.
-  function resolveGroupPxWidth(): number | null {
-    for (const ref of [panelRef, terminalColumnPanelRef]) {
-      const size = ref.current?.getSize();
-      // The `> 1` floor excludes collapsed/near-zero panels: px / ~0% diverges
-      // (Infinity at exactly 0), which would corrupt every layout assertion
-      // built on the basis.
-      if (size != null && size.asPercentage > 1 && size.inPixels > 0) {
-        return (size.inPixels / size.asPercentage) * 100;
-      }
-    }
-    const el = groupContainerElRef.current;
-    return el != null && el.offsetWidth > 0 ? el.offsetWidth : null;
-  }
-
-  // Write the intended right-rail layout in one `setLayout` call: the doc
-  // panel at its persisted width (or pinned shut at 0 when collapsed), the
-  // terminal column at its persisted width, other rail panels (agent-panel)
-  // untouched, and the EDITOR absorbing the remainder. This is the single
-  // correction primitive for every path where the library would otherwise
-  // misroute space.
-  function assertRightRailLayout(docCollapsed: boolean) {
-    if (isDraggingDocHandleRef.current || isDraggingTerminalHandleRef.current) return;
-    const group = groupRef.current;
-    if (group == null) return;
-    // The imperative handles throw once their group/panel has unregistered,
-    // and this can run from a deferred microtask racing a view-kind remount —
-    // a torn-down group just means there is no layout left to correct.
-    try {
-      const containerPx = resolveGroupPxWidth();
-      if (containerPx == null) return;
-      const layout = group.getLayout();
-      const ids = Object.keys(layout);
-      if (ids.length === 0) return;
-      const residualId = ids.find((id) => !RIGHT_PANEL_IDS.has(id));
-      if (residualId == null) return;
-      const pinnedPx: Record<string, number> = {};
-      if ('doc-panel' in layout) {
-        pinnedPx['doc-panel'] = docCollapsed ? 0 : docPanelWidthPxRef.current;
-      }
-      if ('terminal-column' in layout) {
-        pinnedPx['terminal-column'] = terminalWidthPxRef.current;
-      }
-      if (Object.keys(pinnedPx).length === 0) return;
-      const next = computeStickyRepinLayout({
-        currentLayout: layout,
-        containerPx,
-        pinnedPx,
-        residualId,
-      });
-      if (next !== layout) group.setLayout(next);
-    } catch {
-      // Group or panel unregistered mid-flight — nothing to assert against.
-    }
-  }
-
-  // Latest-ref mirror of the assert for effects that must NOT re-run on render
-  // (the ResizeObserver below re-fires on `observe()` — recreating it per
-  // render would re-assert the layout on every render instead of only on
-  // container resizes). Event-listener effects re-subscribe instead (cheap, no
-  // initial-fire semantics); mirrors the codebase's openRef pattern.
-  const assertRightRailLayoutRef = useRef(assertRightRailLayout);
-  useEffect(() => {
-    assertRightRailLayoutRef.current = assertRightRailLayout;
-  });
-
-  // Expand the doc panel from a non-toggle path (tab request, avatar click,
-  // width-threshold crossing). Same routing rule as togglePanel: with the
-  // terminal column mounted, go through the full-layout assert so the width
-  // comes from the editor rather than the terminal.
-  function expandDocPanel() {
-    if (terminalColumnPresentRef.current) {
-      assertRightRailLayout(false);
-    } else {
-      panelRef.current?.expand();
-    }
-  }
-
-  function togglePanel() {
-    // Folder / asset views render a different tree with no doc panel, so
-    // panelRef is unbound there. Bail before applyToggle so the global ⌥⌘B
-    // handler doesn't write a spurious 'right' pin for a panel that can't move.
-    if (panelRef.current == null) return;
-    // Read partition from the ref (live value) — `rightPartition` captured by
-    // the closure at render time goes stale if the user crosses the 1280px
-    // threshold and immediately invokes the toggle before React commits the
-    // new partition.
-    const partition = rightPartitionRef.current;
-    // With the terminal column mounted, expand/collapse must route through the
-    // full-layout assert so the space comes from / returns to the editor — the
-    // per-panel APIs would exchange it with the terminal column instead.
-    if (isCollapsed) {
-      applyToggle('right', partition, 'open');
-      if (terminalColumnPresentRef.current) {
-        assertRightRailLayout(false);
-      } else {
-        panelRef.current?.expand();
-      }
-    } else {
-      applyToggle('right', partition, 'collapsed');
-      if (terminalColumnPresentRef.current) {
-        assertRightRailLayout(true);
-      } else {
-        panelRef.current?.collapse();
-      }
-    }
-  }
-
-  function toggleDocumentRightPanel() {
-    if (terminalColumnPresent) {
-      onTerminalVisibleChange?.(false);
-      return;
-    }
-    togglePanel();
-  }
-
-  useEffect(() => {
-    const mql = window.matchMedia(`(min-width: ${RIGHT_COLLAPSE_THRESHOLD}px)`);
-    const onChange = () => {
-      const newPartition = resolvePartition(embeddedHost, window.innerWidth, 'right');
-      setRightPartition(newPartition);
-      const pins = readPins();
-      const effective = resolveEffectiveState('right', newPartition, pins);
-      const nextCollapsed = effective === 'collapsed';
-      // Sync React state imperatively (mirrors sidebar.tsx's _setOpen pattern
-      // for the left toggle). The library's onResize will also fire eventually,
-      // but until it does any effect reading `isCollapsed` (focus-safety,
-      // notifyViewMenuStateChanged) would see the pre-collapse value.
-      setIsCollapsed(nextCollapsed);
-      if (terminalColumnPresentRef.current) {
-        assertRightRailLayout(nextCollapsed);
-      } else if (nextCollapsed) {
-        panelRef.current?.collapse();
-      } else {
-        panelRef.current?.expand();
-      }
-    };
-    mql.addEventListener('change', onChange);
-    return () => mql.removeEventListener('change', onChange);
-  }, [
-    embeddedHost,
-    panelRef,
-    // biome-ignore lint/correctness/useExhaustiveDependencies: assertRightRailLayout is render-bound; re-subscribing keeps the handler fresh (mirrors the ⌥⌘B menu effect below)
-    assertRightRailLayout,
-  ]);
-
-  // Sticky pixel-width re-pin on container-size changes. The container widens on
-  // a window resize or a LEFT-sidebar collapse — not on a right-panel collapse,
-  // which is internal flex redistribution. react-resizable-panels sizes every
-  // panel as a percentage of the group, so without correction the pixel-sized
-  // doc panel and terminal column grow proportionally with the container (the
-  // terminal measured 480px → 673px on a left-sidebar collapse). One full-layout
-  // write restores both pins with the container delta flowing to the editor;
-  // sequential per-panel `resize` calls would fight each other — each one
-  // re-balances against its flex neighbor, knocking the other off its pin.
-  // Gates: skip the embedded host (drag is disabled below, and the resolver
-  // typically keeps the panel collapsed anyway); the assert skips during a live
-  // drag (the drag owns the width).
-  useEffect(() => {
-    if (groupContainerEl == null) return;
-    if (isEmbedded) return;
-    // Reads the assert through its latest-ref: a ResizeObserver fires once on
-    // `observe()`, so this effect must have STABLE deps — recreating the
-    // observer per render would re-assert the layout on every render.
-    const ro = new ResizeObserver(() => {
-      assertRightRailLayoutRef.current(isCollapsedRef.current);
-    });
-    ro.observe(groupContainerEl);
-    return () => ro.disconnect();
-  }, [groupContainerEl, isEmbedded]);
-
-  // Expand-on-avatar-click. `docPanelExpandSignal` is a monotonic counter
-  // incremented by `DocumentContext.openActivityPanel` (called from
-  // `PresenceBar` avatar clicks and the mode-toggle button). When it
-  // increments, expand/open the panel in whichever layout mode is active.
-  // Initial 0 → 0 transition (mount) is harmless — calling `expand` when
-  // already expanded is a no-op in react-resizable-panels.
-  useEffect(() => {
-    const openRequestedTab = (tab: PanelTab) => {
-      onActiveTabChange(tab);
-      expandDocPanel();
-    };
-
-    const pendingTab = consumePendingDocPanelTabRequest();
-    if (pendingTab) {
-      openRequestedTab(pendingTab);
-    }
-
-    return subscribeToDocPanelTabRequests((tab) => {
-      consumePendingDocPanelTabRequest();
-      openRequestedTab(tab);
-    });
-  }, [
-    onActiveTabChange,
-    // biome-ignore lint/correctness/useExhaustiveDependencies: expandDocPanel is render-bound; re-subscribing keeps the handler fresh
-    expandDocPanel,
-  ]);
-
-  useEffect(() => {
-    if (docPanelExpandSignal === 0) return;
-    expandDocPanel();
-  }, [
-    docPanelExpandSignal,
-    // biome-ignore lint/correctness/useExhaustiveDependencies: expandDocPanel is render-bound; re-running keeps the closure fresh
-    expandDocPanel,
-  ]);
-
-  // react-resizable-panels caches layouts keyed by the panel-ID set and
-  // restores the cached layout whenever the set changes — so mounting or
-  // unmounting the terminal column would resurrect whatever doc-panel state the
-  // OTHER panel set last saw (e.g. hiding the terminal re-opened a doc panel
-  // the user had closed while it was up). Re-assert the intended layout on
-  // every panel-set change: the doc panel keeps its pre-change collapsed state,
-  // both rail widths stay pinned, and the editor absorbs the difference. The
-  // library's restore runs synchronously in the re-registration render that a
-  // panel-set change triggers, so the correction is deferred one microtask to
-  // land after it (still ahead of paint — `setLayout` notifies the panels'
-  // external stores synchronously).
-  const prevTerminalColumnPresentRef = useRef(terminalColumnPresent);
-  useLayoutEffect(() => {
-    if (prevTerminalColumnPresentRef.current === terminalColumnPresent) return;
-    prevTerminalColumnPresentRef.current = terminalColumnPresent;
-    const docCollapsed = isCollapsed;
-    queueMicrotask(() => {
-      assertRightRailLayoutRef.current(docCollapsed);
-    });
-  }, [terminalColumnPresent, isCollapsed]);
-
-  useLayoutEffect(() => {
-    if (!isCollapsed) return;
-    const panelEl = document.getElementById('doc-panel');
-    if (!panelEl?.contains(document.activeElement)) return;
-    const toggle = document.querySelector<HTMLElement>('[data-doc-panel-toggle]');
-    if (toggle) {
-      toggle.focus();
-      return;
-    }
-    document.querySelector<HTMLElement>('[data-sidebar="trigger"]')?.focus();
-  }, [isCollapsed]);
-
-  useEffect(() => {
-    if (window.okDesktop == null) return;
-    window.okDesktop.editor.notifyViewMenuStateChanged({ docPanelVisible: !isCollapsed });
-  }, [isCollapsed]);
-
-  useEffect(() => {
-    if (window.okDesktop == null) return;
-    return window.okDesktop.onMenuAction((action) => {
-      if (action === 'toggle-doc-panel') {
-        togglePanel();
-      }
-    });
-  }, [
-    // biome-ignore lint/correctness/useExhaustiveDependencies: togglePanel is render-bound; re-subscribing keeps the handler fresh (mirrors sidebar.tsx ⌥⌘S effect)
-    togglePanel,
-  ]);
-
-  useEffect(() => {
-    if (window.okDesktop != null) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (matchesKeyboardShortcut(event, 'toggle-document-panel')) {
-        event.preventDefault();
-        togglePanel();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [
-    // biome-ignore lint/correctness/useExhaustiveDependencies: togglePanel is render-bound; re-subscribing keeps the handler fresh (mirrors sidebar.tsx ⌥⌘S effect)
-    togglePanel,
   ]);
 
   // Track the prior active docName for DocumentErrorBoundary's
@@ -730,18 +297,14 @@ function EditorAreaInner({
     }
   }
 
-  // Resolve the active view's content (the left/primary column) and any
-  // right-side panel (doc panel for docs, agent panel for a folder + agent
-  // view). The docked terminal lives in the left column BELOW `viewContent`, so
-  // it sits beside the right panel rather than spanning under it, and stays at
-  // one stable React position across view kinds so the PTY survives tab switches
-  // and view-kind changes.
+  // Resolve what the CONTENT surface shows. These branches no longer build a
+  // right-side panel of their own — the toolbox is assembled once below and is
+  // the same panel whatever is on the left. The docked terminal lives in the
+  // left column BELOW `viewContent`, so it sits beside the rail rather than
+  // spanning under it, and stays at one stable React position across view kinds
+  // so the PTY survives tab switches and view-kind changes.
   let viewContent: ReactNode;
-  let rightPanel: ReactNode = null;
 
-  // The terminal column (when right-docked + visible) is rendered once at the
-  // panel-group level below, to the right of `rightPanel`, so the branches here
-  // only resolve the view content and its own doc/agent panel.
   if (activeTarget?.kind === 'large-file') {
     viewContent = (
       <LargeFileEditorState
@@ -783,36 +346,10 @@ function EditorAreaInner({
         {showFolderComposer ? <BottomComposer folderPath={activeTarget.folderPath} /> : null}
       </div>
     );
-    const showAgentPanel = docPanelMode === 'agent' && docPanelAgentId !== null;
-    if (showAgentPanel && !terminalColumnPresent) {
-      rightPanel = (
-        <>
-          <ResizableHandle withHandle />
-          {/* Non-collapsible — folder view has no toolbar toggle; dismiss via avatar re-click. */}
-          <ResizablePanel
-            id="agent-panel"
-            defaultSize="25%"
-            minSize="300px"
-            maxSize="40%"
-            className="flex flex-col bg-muted/20"
-          >
-            <Suspense
-              fallback={
-                <div
-                  role="status"
-                  aria-busy="true"
-                  className="flex h-full items-center justify-center text-sm text-muted-foreground"
-                >
-                  <Trans>Loading agent activity</Trans>
-                </div>
-              }
-            >
-              <LazyActivityModeContent showBackButton={false} />
-            </Suspense>
-          </ResizablePanel>
-        </>
-      );
-    }
+    // Agent activity is a tool in the rail (DocPanel's `'agent'` mode), not a
+    // panel the folder view builds for itself. The old bespoke `agent-panel`
+    // was the only right-side panel that could not be collapsed — an accident
+    // of being owned by a view that had no toggle to offer it.
   } else if (activeTarget?.kind === 'asset') {
     // `key={assetPath}` forces a fresh `AssetPreview` instance on every asset
     // navigation so the in-pane `forceText` toggle (from the "View as text"
@@ -824,72 +361,11 @@ function EditorAreaInner({
         key={activeTarget.assetPath}
         assetPath={activeTarget.assetPath}
         mediaKind={activeTarget.mediaKind}
-        rightPanelOpen={terminalColumnPresent || (activePdfAsset !== null && !isCollapsed)}
-        onToggleRightPanel={
-          activePdfAsset !== null && terminalBridge != null ? toggleDocumentRightPanel : undefined
-        }
+        showViewerHeader={activePdfAsset !== null && terminalBridge != null}
         pdfPanelContainer={pdfPanelContainer}
         activePdfPanelTab={activePdfPanelTab}
       />
     );
-    if (activePdfAsset !== null && !terminalColumnPresent) {
-      rightPanel = (
-        <>
-          <ResizableHandle
-            withHandle={!isCollapsed}
-            disabled={isCollapsed}
-            onPointerDown={() => {
-              setIsDraggingDocHandle(true);
-              isDraggingDocHandleRef.current = true;
-              const handleUp = () => {
-                setIsDraggingDocHandle(false);
-                isDraggingDocHandleRef.current = false;
-                window.removeEventListener('pointerup', handleUp);
-              };
-              window.addEventListener('pointerup', handleUp);
-            }}
-          />
-          <ResizablePanel
-            id="doc-panel"
-            panelRef={panelRef}
-            defaultSize={initialRightCollapsed ? 0 : `${initialDocPanelWidthPx}px`}
-            minSize={DOC_PANEL_MIN_SIZE}
-            maxSize={DOC_PANEL_MAX_SIZE}
-            collapsible
-            collapsedSize={0}
-            onResize={(size) => {
-              setIsCollapsed(size.asPercentage === 0);
-              if (size.inPixels > 0 && isDraggingDocHandleRef.current) {
-                rememberSharedRightRailWidth(size.inPixels);
-              }
-            }}
-            inert={isCollapsed}
-            className={cn(
-              'flex flex-col bg-muted/20',
-              !isDraggingDocHandle &&
-                'transition-[flex-grow] duration-200 ease-out motion-reduce:transition-none motion-reduce:duration-0',
-            )}
-          >
-            <DocPanel
-              docName={null}
-              isSourceMode={false}
-              activeTab={activeTab}
-              onActiveTabChange={onActiveTabChange}
-              mode="doc"
-              surface="pdf"
-              showChatTab={terminalBridge != null}
-              pdfContent={
-                <div
-                  ref={setPdfPanelContainer}
-                  data-testid="pdf-panel-host"
-                  className="h-full min-h-0 overflow-hidden bg-background"
-                />
-              }
-            />
-          </ResizablePanel>
-        </>
-      );
-    }
   } else if (activeTarget?.kind === 'skill-file') {
     // A skill bundle file (global refs + scripts of any scope). Read-only,
     // backed by the scope-aware `/api/skill-file` read. Keyed by the three
@@ -922,49 +398,18 @@ function EditorAreaInner({
         // already names the next doc. Render the load skeleton THROUGH the shared
         // group (not a bare early return) so the persistent left column, and the
         // docked TerminalDock + its live PTY inside it, stay mounted across the
-        // gap instead of unmounting and resetting the terminal. The doc-panel
-        // sibling holds the panel count at 3 (we only reach this branch in doc
-        // context; folder/asset/large-file are handled above), so the
-        // sticky-width restore is not corrupted by a 1→3 transition.
+        // gap instead of unmounting and resetting the terminal.
+        //
+        // The rail needs no placeholder here any more: it is rendered once below
+        // for every branch, so its id and pixel width are already continuous
+        // across skeleton → doc. The old ref-free `doc-panel` stand-in existed
+        // only to hold the panel count steady while the real panel was owned by
+        // a branch that this one didn't reach.
         viewContent = <EditorSkeleton />;
-        // A ref-free placeholder that mirrors the doc-panel's id + sizing so
-        // react-resizable-panels treats it as the same `id="doc-panel"` element
-        // across skeleton → doc and preserves its pixel width. It carries no
-        // panelRef/onResize/drag handlers — those read refs and the load window
-        // is brief and non-interactive — which also keeps this off the React
-        // Compiler's "ref passed to a render-time function" path.
-        if (!terminalColumnPresent) {
-          rightPanel = (
-            <>
-              <ResizableHandle withHandle disabled />
-              <ResizablePanel
-                id="doc-panel"
-                defaultSize={initialRightCollapsed ? 0 : `${initialDocPanelWidthPx}px`}
-                minSize={DOC_PANEL_MIN_SIZE}
-                maxSize={DOC_PANEL_MAX_SIZE}
-                collapsible
-                collapsedSize={0}
-                inert
-                className="flex flex-col bg-muted/20"
-              >
-                {/* Visual-only filler. `inert` removes this subtree from the a11y
-                    tree + focus order, so a live-region role/aria-busy here would
-                    be dead ARIA — the skeleton in the left column is the announced
-                    loading state. Mirrors the real doc-panel (no ARIA on children
-                    under its own `inert`). */}
-                <div className="min-h-0 flex-1" />
-              </ResizablePanel>
-            </>
-          );
-        }
       } else {
-        // Genuine cold start (group never mounted; no docked terminal alive yet)
-        // or the web host (no dock to preserve): keep the standalone early return
-        // OUTSIDE the shared horizontal panel group, so when the doc lands its
-        // group mounts fresh with the doc panel already present. Routing it
-        // through the group here would render one panel and then ADD the doc
-        // panel — a 1→3 panel-count transition that corrupts react-resizable-
-        // panels' doc-panel pixel-width sticky restore.
+        // Genuine cold start: the group has never mounted and there is no docked
+        // terminal to preserve, so a bare early return costs nothing and lets the
+        // group mount fresh — with the rail already present — when the doc lands.
         return <EditorSkeleton />;
       }
     } else {
@@ -980,8 +425,6 @@ function EditorAreaInner({
   } else {
     const isSourceMode = editorMode === 'source';
     const sourceDisabled = !isConnected;
-
-    const isPanelCollapsed = isCollapsed;
 
     function openAddPropertyForm() {
       if (!activeDocName) return;
@@ -1087,9 +530,6 @@ function EditorAreaInner({
               onModeChange={onModeChange}
               showAddPropertyButton={!isSourceMode}
               onAddProperty={openAddPropertyForm}
-              isPanelCollapsed={terminalColumnPresent ? false : isPanelCollapsed}
-              onTogglePanel={toggleDocumentRightPanel}
-              panelControlsId={terminalColumnPresent ? 'terminal-column' : 'doc-panel'}
             />
           )}
           {/* Floats over the bottom of the scroll area (an absolute overlay, like
@@ -1121,73 +561,6 @@ function EditorAreaInner({
     );
 
     viewContent = editorContent;
-    // Chat and document information share one right-rail position. While the
-    // right-docked Chat host is visible, omit the document panel entirely; closing
-    // Chat restores this same panel with its prior tab and collapse preference.
-    rightPanel = terminalColumnPresent ? null : (
-      <>
-        <ResizableHandle
-          // No visible grip while collapsed — there is nothing to drag.
-          withHandle={!isCollapsed}
-          // A collapsed panel is not drag-resizable: the toolbar toggle and
-          // ⌥⌘B are its single open mechanism (mirrors TerminalDock's
-          // hidden-dock handle and the terminal column, which unmounts its
-          // handle entirely when hidden). Disabling while collapsed also
-          // keeps this handle from overlapping the right-docked terminal's
-          // handle at the same pixel seam, and from being a misclick target
-          // under embedded AI-editor hosts whose own container chrome sits at
-          // the iframe edge.
-          disabled={isCollapsed}
-          onPointerDown={() => {
-            setIsDraggingDocHandle(true);
-            isDraggingDocHandleRef.current = true;
-            const handleUp = () => {
-              setIsDraggingDocHandle(false);
-              isDraggingDocHandleRef.current = false;
-              window.removeEventListener('pointerup', handleUp);
-            };
-            window.addEventListener('pointerup', handleUp);
-          }}
-        />
-        <ResizablePanel
-          id="doc-panel"
-          panelRef={panelRef}
-          defaultSize={initialRightCollapsed ? 0 : `${initialDocPanelWidthPx}px`}
-          minSize={DOC_PANEL_MIN_SIZE}
-          maxSize={DOC_PANEL_MAX_SIZE}
-          collapsible
-          collapsedSize={0}
-          onResize={(size) => {
-            setIsCollapsed(size.asPercentage === 0);
-            // Persist only when this resize came from a user drag — RO-driven
-            // recomputes (sticky width restoration) also fire onResize, but
-            // they're replaying the persisted value and must NOT overwrite it.
-            if (size.inPixels > 0 && isDraggingDocHandleRef.current) {
-              rememberSharedRightRailWidth(size.inPixels);
-            }
-          }}
-          // react-resizable-panels does NOT apply inert/aria-hidden/display:none when
-          // a panel collapses (verified against the installed runtime) — children stay
-          // in DOM, in Tab order, and announced by screen readers. `inert` removes the
-          // collapsed subtree from the a11y tree and focus order without remounting.
-          inert={isCollapsed}
-          className={cn(
-            'flex flex-col bg-muted/20',
-            !isDraggingDocHandle &&
-              'transition-[flex-grow] duration-200 ease-out motion-reduce:transition-none motion-reduce:duration-0',
-          )}
-        >
-          <DocPanel
-            docName={activeDocName}
-            isSourceMode={isSourceMode}
-            activeTab={activeTab}
-            onActiveTabChange={onActiveTabChange}
-            mode={docPanelMode}
-            showChatTab={terminalBridge != null}
-          />
-        </ResizablePanel>
-      </>
-    );
   }
 
   // A single TerminalDock wraps the active view's left column. The skeleton
@@ -1213,138 +586,9 @@ function EditorAreaInner({
       viewContent
     );
 
-  // The right-docked Chat host occupies the same right-rail position as the
-  // document panel. The document panel is omitted above while this is mounted,
-  // so Markdown and PDF both resolve to VIEWER | CHAT rather than a three-column
-  // VIEWER | INFO | CHAT layout.
-  // The mount div is a callback ref so the session host (owned in EditorPane)
-  // portals into it; it unmounts to null when the terminal hides or bottom-docks.
-  const terminalColumn = terminalColumnPresent ? (
-    <>
-      <ResizableHandle
-        withHandle
-        onPointerDown={() => {
-          setIsDraggingTerminalHandle(true);
-          isDraggingTerminalHandleRef.current = true;
-          const handleUp = () => {
-            setIsDraggingTerminalHandle(false);
-            isDraggingTerminalHandleRef.current = false;
-            window.removeEventListener('pointerup', handleUp);
-            // Drag-to-close: releasing with the column snapped shut hides the
-            // terminal (unmounting the column), mirroring the doc panel's
-            // drag-to-close affordance. Deferred to pointerup — hiding
-            // mid-drag would unmount the separator under the active drag.
-            if (terminalColumnPanelRef.current?.isCollapsed()) {
-              onTerminalVisibleChange?.(false);
-            }
-          };
-          window.addEventListener('pointerup', handleUp);
-        }}
-      />
-      <ResizablePanel
-        id="terminal-column"
-        panelRef={terminalColumnPanelRef}
-        // Paint the column with the xterm canvas color so the tab strip reads as
-        // one surface with the terminal (mirrors TerminalDock's bottom panel).
-        style={{ backgroundColor: xtermBackground }}
-        defaultSize={`${initialTerminalWidthPx}px`}
-        minSize={`${MIN_TERMINAL_WIDTH}px`}
-        // The terminal can be dragged wide — up to 95% of the group — leaving the
-        // editor a 5% sliver (its panel `minSize` while this column is mounted).
-        // Pair the two: the terminal's max plus the editor's min must sum to 100%
-        // or the drag can't reach it. Mirrors the bottom dock's 95%/5% split.
-        maxSize="95%"
-        // Collapsible so a drag past half the min width snaps the column shut —
-        // the pointerup handler above turns that into a real hide.
-        collapsible
-        collapsedSize={0}
-        onResize={(size) => {
-          // Persist only on a user drag — the sticky-width RO replays the
-          // persisted value through onResize too and must not overwrite it.
-          if (size.inPixels > 0 && isDraggingTerminalHandleRef.current) {
-            rememberSharedRightRailWidth(size.inPixels);
-          }
-        }}
-        className={cn(
-          'flex flex-col',
-          !isDraggingTerminalHandle &&
-            'transition-[flex-grow] duration-200 ease-out motion-reduce:transition-none motion-reduce:duration-0',
-        )}
-      >
-        <DocPanel
-          docName={
-            activeProvider != null &&
-            activeDocName != null &&
-            (activeTarget?.kind === 'doc' || activeTarget?.kind === 'missing')
-              ? activeDocName
-              : null
-          }
-          isSourceMode={editorMode === 'source'}
-          activeTab={activeTab}
-          onActiveTabChange={onActiveTabChange}
-          mode="doc"
-          surface={activePdfAsset !== null ? 'pdf' : 'document'}
-          showChatTab
-          chatContent={
-            <div
-              ref={setRightTerminalContainer}
-              data-testid="right-chat-host"
-              className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background"
-            />
-          }
-        />
-      </ResizablePanel>
-    </>
-  ) : null;
-
-  // The editor absorbs the residual width whenever something on the right claims
-  // space — the doc panel (when present and not collapsed) or the terminal column.
-  const editorAbsorbsResidual =
-    (rightPanel != null && !initialRightCollapsed) || terminalColumnPresent;
-
-  // Order: EDITOR | doc/agent panel | terminal column. The terminal is the
-  // far-right column when right-docked, so it renders AFTER `rightPanel`.
-  return (
-    <div
-      className="relative flex min-h-0 flex-1"
-      ref={(el) => {
-        setGroupContainerEl(el);
-        groupContainerElRef.current = el;
-      }}
-    >
-      <ResizablePanelGroup
-        orientation="horizontal"
-        groupRef={groupRef}
-        data-dragging={isDraggingDocHandle || isDraggingTerminalHandle || undefined}
-      >
-        <ResizablePanel
-          // No explicit id: an id here changed how react-resizable-panels
-          // redistributes on imperative resize and broke the doc-panel
-          // pixel-width sticky restore. The
-          // left panel is always the first child, so React keeps it mounted
-          // across right-side toggles without one (the terminal still persists).
-          //
-          // With the terminal column mounted the editor yields to a 5% sliver so
-          // the terminal can be dragged near-full width without ever fully
-          // eclipsing the editor — the horizontal mirror of the bottom dock's
-          // 95%/5% split (see the terminal column's maxSize below; the pair must
-          // sum to 100% or the drag can't reach the max). Without the terminal
-          // the 30% floor keeps the editor usable against the doc panel.
-          minSize={terminalColumnPresent ? '5%' : '30%'}
-          // Editor takes full width only when nothing on the right claims space;
-          // otherwise it absorbs the residual while the pixel-sized doc panel and
-          // terminal column hold their widths.
-          {...(editorAbsorbsResidual ? {} : { defaultSize: '100%' })}
-          className={cn(
-            !(isDraggingDocHandle || isDraggingTerminalHandle) &&
-              'transition-[flex-grow] duration-200 ease-out motion-reduce:transition-none motion-reduce:duration-0',
-          )}
-        >
-          {leftColumn}
-        </ResizablePanel>
-        {rightPanel}
-        {terminalColumn}
-      </ResizablePanelGroup>
-    </div>
-  );
+  // The content surface, and nothing else. The toolbox is a sibling of this
+  // component's whole column — header included — assembled by `RightRailLayout`
+  // one level up, which is what lets it run the full height of the window like
+  // the file sidebar opposite it.
+  return <div className="relative flex min-h-0 flex-1 flex-col">{leftColumn}</div>;
 }

@@ -736,9 +736,9 @@ test.describe('non-embedded UA', () => {
     api,
   }) => {
     // Seed a known pixel width so the assertion has a definite target.
-    // The store clamps to [300, 600]; pick 340 so it's not on either boundary.
+    // The store clamps to [320, 720]; pick 340 so it's not on either boundary.
     await page.addInitScript((value: string) => {
-      localStorage.setItem('ok-doc-panel-width-v1', value);
+      localStorage.setItem('ok-right-rail-width-v1', value);
     }, '340');
     await seedDoc(api, 'qa-041');
     await page.setViewportSize({ width: 1400, height: 800 });
@@ -792,7 +792,7 @@ test.describe('non-embedded UA', () => {
     // Second behavior: user drag persists to localStorage. The initial-seed
     // path (steps above) already exercises read-from-localStorage, so we
     // don't need to reload to verify restore — that's redundant with the
-    // doc-panel-width-store unit tests + the 1400-viewport initial paint.
+    // right-rail-width-store unit tests + the 1400-viewport initial paint.
     // Here we just verify drag → onResize → debounced write reaches storage.
     await page.setViewportSize({ width: 1400, height: 800 });
     await expect.poll(() => page.evaluate(() => window.innerWidth), { timeout: 2000 }).toBe(1400);
@@ -835,12 +835,12 @@ test.describe('non-embedded UA', () => {
       )
       .toBeGreaterThanOrEqual(420);
     // Poll until debounced localStorage write has landed — proves the
-    // onResize → writeDocPanelWidth wire fires from a user drag.
+    // onResize → writeRightRailWidth wire fires from a user drag.
     await expect
       .poll(
         () =>
           page.evaluate(() =>
-            Number.parseInt(localStorage.getItem('ok-doc-panel-width-v1') ?? '0', 10),
+            Number.parseInt(localStorage.getItem('ok-right-rail-width-v1') ?? '0', 10),
           ),
         {
           timeout: 3000,
