@@ -1,7 +1,8 @@
 import { Trans, useLingui } from '@lingui/react/macro';
 import { parseManagedArtifactName } from '@nedian0brien/synapsenote-core';
-import { Search } from 'lucide-react';
+import { PanelRightClose, PanelRightOpen, Search } from 'lucide-react';
 import { useState } from 'react';
+import { useRightRail } from '@/components/RightRail';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
@@ -29,6 +30,47 @@ interface EditorHeaderProps {
   onSignIn?: () => void;
   onSetIdentity?: () => void;
   onOpenSearch?: () => void;
+}
+
+/**
+ * The right rail's collapse control — the mirror of {@link SidebarTrigger} at
+ * the opposite edge of the same header row.
+ */
+function RightRailTrigger() {
+  const { t } = useLingui();
+  const { isCollapsed, toggle, controlsId } = useRightRail();
+  const shortcut = formatShortcut('toggle-document-panel');
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          data-doc-panel-toggle=""
+          variant="ghost"
+          size="icon-sm"
+          // `-mr-1` mirrors the SidebarTrigger's `-ml-1`, so both triggers sit
+          // the same 8px from their edge of the content card.
+          className="-mr-1 shrink-0 text-muted-foreground"
+          onClick={toggle}
+          aria-expanded={!isCollapsed}
+          aria-controls={controlsId}
+          aria-label={isCollapsed ? t`Show panel (${shortcut})` : t`Hide panel (${shortcut})`}
+        >
+          {isCollapsed ? (
+            <PanelRightOpen aria-hidden="true" />
+          ) : (
+            <PanelRightClose aria-hidden="true" />
+          )}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>
+        {isCollapsed ? (
+          <Trans>Show panel ({shortcut})</Trans>
+        ) : (
+          <Trans>Hide panel ({shortcut})</Trans>
+        )}
+      </TooltipContent>
+    </Tooltip>
+  );
 }
 
 export function EditorHeader({ onSignIn, onSetIdentity, onOpenSearch }: EditorHeaderProps) {
@@ -197,6 +239,12 @@ export function EditorHeader({ onSignIn, onSetIdentity, onOpenSearch }: EditorHe
         {/* Settings is unavailable in single-file mode (config editing is inert). */}
         {!singleFile && <SettingsButton />}
         <HelpPopover />
+        {/* The rail toggle closes the row the SidebarTrigger opens: same header,
+            same height, one at each edge of the content card. It used to sit in
+            the viewer's identity row a level below — so the two controls for the
+            two sidebars lived on different rows and only one of them existed on
+            folder, asset, and empty views. */}
+        <RightRailTrigger />
       </div>
     </header>
   );

@@ -13,7 +13,6 @@ import {
   Quote,
   Table2,
 } from 'lucide-react';
-import type { ReactNode } from 'react';
 import { useSyncExternalStore } from 'react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -24,14 +23,17 @@ import { LinkEditPopover } from '@/editor/bubble-menu/LinkEditPopover';
 interface MarkdownFormatToolbarProps {
   activeDocName: string | null;
   isSourceMode: boolean;
-  trailingContent?: ReactNode;
 }
 
-export function MarkdownFormatToolbar({
-  activeDocName,
-  isSourceMode,
-  trailingContent,
-}: MarkdownFormatToolbarProps) {
+/**
+ * Markdown's contextual formatting controls.
+ *
+ * A bare control group, not a row: it renders into `DocumentViewerHeader`'s
+ * `toolbar` slot so the viewer has ONE header band instead of an identity row
+ * with a tool band stacked beneath it. It therefore owns no height, border,
+ * background, or horizontal padding — the header row supplies all of those.
+ */
+export function MarkdownFormatToolbar({ activeDocName, isSourceMode }: MarkdownFormatToolbarProps) {
   const { t } = useLingui();
   const editor = useSyncExternalStore(
     subscribeEditorRegistry,
@@ -42,28 +44,23 @@ export function MarkdownFormatToolbar({
   return (
     <div
       data-testid="markdown-format-toolbar"
-      className="pointer-events-auto flex h-10 min-w-0 shrink-0 items-center border-b bg-background px-3"
+      className="pointer-events-auto flex min-w-0 items-center"
       role="toolbar"
       aria-label={t`Markdown formatting`}
     >
-      <div className="flex min-w-0 flex-1 items-center">
-        {isSourceMode ? (
-          <span className="text-xs text-muted-foreground">
-            <Trans>Markdown source</Trans>
-          </span>
-        ) : editor && !editor.isDestroyed ? (
-          <MarkdownFormatActions editor={editor} />
-        ) : (
-          <div className="flex items-center gap-1" aria-hidden="true">
-            {['heading', 'inline', 'list', 'task', 'quote', 'link', 'table'].map((slot) => (
-              <span key={slot} className="size-8 rounded-md bg-muted/35" />
-            ))}
-          </div>
-        )}
-      </div>
-      {trailingContent ? (
-        <div className="ml-auto shrink-0 border-l pl-2">{trailingContent}</div>
-      ) : null}
+      {isSourceMode ? (
+        <span className="text-xs text-muted-foreground">
+          <Trans>Markdown source</Trans>
+        </span>
+      ) : editor && !editor.isDestroyed ? (
+        <MarkdownFormatActions editor={editor} />
+      ) : (
+        <div className="flex items-center gap-1" aria-hidden="true">
+          {['heading', 'inline', 'list', 'task', 'quote', 'link', 'table'].map((slot) => (
+            <span key={slot} className="size-8 rounded-md bg-muted/35" />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -27,9 +27,6 @@ interface EditorToolbarProps {
   onModeChange: (mode: EditorModeValue) => void;
   showAddPropertyButton: boolean;
   onAddProperty: () => void;
-  isPanelCollapsed: boolean;
-  onTogglePanel: () => void;
-  panelControlsId?: string;
 }
 
 export function EditorToolbar({
@@ -39,9 +36,6 @@ export function EditorToolbar({
   onModeChange,
   showAddPropertyButton,
   onAddProperty,
-  isPanelCollapsed,
-  onTogglePanel,
-  panelControlsId = 'doc-panel',
 }: EditorToolbarProps) {
   const { t } = useLingui();
   // Skills carry install/uninstall + history chrome in this per-doc toolbar
@@ -100,8 +94,16 @@ export function EditorToolbar({
             />
           )
         }
+        toolbar={
+          <MarkdownFormatToolbar activeDocName={activeDocName} isSourceMode={isSourceMode} />
+        }
         actions={
           <Fragment>
+            <EditorModeToggle
+              isSourceMode={isSourceMode}
+              onModeChange={onModeChange}
+              sourceDisabled={sourceDisabled}
+            />
             {activeSkill ? (
               <Suspense fallback={null}>
                 <SkillEditorActions scope={activeSkill.scope} name={activeSkill.name} />
@@ -129,23 +131,7 @@ export function EditorToolbar({
             ) : null}
           </Fragment>
         }
-        panelToggle={{
-          open: !isPanelCollapsed,
-          onToggle: onTogglePanel,
-          controlsId: panelControlsId,
-        }}
         className="pointer-events-auto"
-      />
-      <MarkdownFormatToolbar
-        activeDocName={activeDocName}
-        isSourceMode={isSourceMode}
-        trailingContent={
-          <EditorModeToggle
-            isSourceMode={isSourceMode}
-            onModeChange={onModeChange}
-            sourceDisabled={sourceDisabled}
-          />
-        }
       />
     </div>
   );

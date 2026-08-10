@@ -17,6 +17,22 @@ const MISSING_DOC_CTX = {
 };
 let docCtx: typeof MISSING_DOC_CTX = MISSING_DOC_CTX;
 
+// The rail is a sibling layout that owns the panel group; these tests exercise
+// what sits INSIDE it, so a passthrough keeps the real resize engine (and the
+// live DocPanel it hosts) out of the way.
+mock.module('@/components/RightRail', () => ({
+  RightRailLayout: ({ children }: { children: ReactNode }) => (
+    <div data-testid="right-rail-layout">{children}</div>
+  ),
+  useRightRail: () => ({
+    isCollapsed: false,
+    toggle: () => {},
+    controlsId: 'right-rail',
+    pdfPanelContainer: null,
+    rightTerminalContainer: null,
+  }),
+}));
+
 mock.module('@/lib/perf', () => ({
   mark: () => {},
   ProfilerBoundary: ({ children }: { children: ReactNode }) => children,

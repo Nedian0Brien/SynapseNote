@@ -163,7 +163,11 @@ mock.module('@/components/ui/resizable', () => ({
   ResizablePanelGroup: ({ children }: { children: ReactNode }) => (
     <div data-testid="resizable-group">{children}</div>
   ),
-  ResizablePanel: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  // Forward `id` so the panel-ID set is observable: the rail's whole promise is
+  // that the set does not move when the active tool changes.
+  ResizablePanel: ({ children, id }: { children: ReactNode; id?: string }) => (
+    <div data-panel-id={id}>{children}</div>
+  ),
   // Forward onPointerDown so drag-lifecycle behavior (the terminal handle's
   // drag-to-close pointerup check) is exercisable; drop non-DOM props.
   ResizableHandle: ({ onPointerDown }: { onPointerDown?: (e: unknown) => void }) => (
@@ -207,20 +211,13 @@ mock.module('./BottomComposer', () => ({
 mock.module('@/components/AssetPreview', () => ({
   AssetPreview: ({
     assetPath,
-    rightPanelOpen,
-    onToggleRightPanel,
+    showViewerHeader,
   }: {
     assetPath: string;
-    rightPanelOpen?: boolean;
-    onToggleRightPanel?: () => void;
+    showViewerHeader?: boolean;
   }) => (
-    <div data-testid="asset-preview" data-right-panel-open={rightPanelOpen ? 'true' : 'false'}>
+    <div data-testid="asset-preview" data-viewer-header={showViewerHeader ? 'true' : 'false'}>
       {assetPath}
-      {onToggleRightPanel ? (
-        <button type="button" onClick={onToggleRightPanel}>
-          Toggle PDF panel
-        </button>
-      ) : null}
     </div>
   ),
 }));
@@ -245,7 +242,30 @@ mock.module('@/lib/use-settings-route', () => ({
   }),
 }));
 
-const { EditorArea } = await import('./EditorArea');
+const { EditorArea: EditorAreaView } = await import('./EditorArea');
+const { RightRailLayout } = await import('./RightRail');
+
+/**
+ * EditorArea reads the rail's collapse state and portal targets from
+ * `useRightRail()`, so it only renders under the layout that owns them. Every
+ * test here drives the pair — which is also what makes the panel-ID set
+ * observable, since the rail (not the view) builds the panel group.
+ */
+function EditorArea(props: Record<string, unknown>) {
+  return (
+    <RightRailLayout
+      activeTab={(props.activeTab as never) ?? 'timeline'}
+      onActiveTabChange={(props.onActiveTabChange as never) ?? (() => {})}
+      isSourceMode={props.editorMode === 'source'}
+      terminalBridge={props.terminalBridge as never}
+      terminalVisible={props.terminalVisible as never}
+      onTerminalVisibleChange={props.onTerminalVisibleChange as never}
+      terminalDock={props.terminalDock as never}
+    >
+      <EditorAreaView {...(props as never)} />
+    </RightRailLayout>
+  );
+}
 
 function renderEditorArea() {
   return render(
@@ -366,14 +386,17 @@ describe('EditorArea empty-state terminal host', () => {
   });
 });
 
-describe('EditorArea right-rail layout assert on terminal-column mount/unmount', () => {
+describe('EditorArea right rail is one stable panel across tool changes', () => {
   // react-resizable-panels caches layouts per panel-ID set and restores the
-  // cached layout whenever the set changes — so before the corrective assert,
-  // hiding the right-docked terminal resurrected a doc panel the user had
-  // closed while it was up (and revealing it restored equally stale state).
-  // These pin the assert: on every terminal-column presence flip, EditorArea
-  // writes one full corrected layout through the group handle, preserving the
-  // doc panel's pre-flip state and routing the difference to the editor.
+  // cached layout whenever the set changes. That is why showing/hiding the
+  // right-docked terminal used to resurrect a doc panel the user had closed —
+  // chat and the document tools were two panels (`terminal-column` and
+  // `doc-panel`) swapping places, so every toggle moved the set and needed a
+  // corrective full-layout write to undo the library's restore.
+  //
+  // The rail is now one panel whose CONTENT changes. These pin that: the
+  // panel-ID set is invariant across tool changes and across content-surface
+  // changes, so there is no stale layout to correct and no correction fires.
   const setViewportWidth = (px: number) => {
     Object.defineProperty(window, 'innerWidth', {
       value: px,
@@ -392,10 +415,6 @@ describe('EditorArea right-rail layout assert on terminal-column mount/unmount',
     onTerminalVisibleChange: () => {},
   } as const;
 
-  // px→% conversion basis fixed by the panel mock: 340px at 25% → 1360px.
-  const MOCK_GROUP_PX = 1360;
-  const pctOf = (px: number) => (px / MOCK_GROUP_PX) * 100;
-
   beforeEach(() => {
     cleanup();
     docCtx = EMPTY_DOC_CTX;
@@ -404,46 +423,50 @@ describe('EditorArea right-rail layout assert on terminal-column mount/unmount',
     panelIsCollapsed = false;
   });
 
-  test('hiding the terminal re-asserts the collapsed doc panel over the stale panel-set restore', async () => {
-    // Below 1280px the doc panel starts collapsed (no pin), so the intended
-    // post-hide state is "collapsed" even though the cached two-panel layout
-    // (mimicked) says expanded.
-    setViewportWidth(1024);
+  const railIds = () =>
+    Array.from(document.querySelectorAll('[data-panel-id]')).map((el) =>
+      el.getAttribute('data-panel-id'),
+    );
+
+  test('showing and hiding chat leaves the panel-ID set untouched', async () => {
+    setViewportWidth(1400);
     const view = render(<EditorArea {...baseProps} terminalVisible />);
+    expect(railIds()).toEqual(['right-rail']);
     expect(groupSetLayoutCalls).toHaveLength(0);
-    // The stale two-panel layout the library restores on unmount: doc panel
-    // expanded to 30% — the resurrection this assert corrects.
-    groupLayout = { 'editor-main': 70, 'doc-panel': 30 };
+
+    // The layout the library would restore if the set moved. It must never be
+    // consulted: hiding chat swaps the rail's CONTENT, not the panel.
+    groupLayout = { 'editor-main': 70, 'right-rail': 30 };
     view.rerender(<EditorArea {...baseProps} terminalVisible={false} />);
-    // Flush the microtask-deferred assert.
+    // Flush the microtask the presence-change assert would have deferred.
     await act(async () => {});
-    const corrected = groupSetLayoutCalls.at(-1);
-    expect(corrected).toBeDefined();
-    expect(corrected?.['doc-panel']).toBe(0);
-    expect(corrected?.['editor-main']).toBe(100);
+
+    expect(railIds()).toEqual(['right-rail']);
+    // No panel-set change means no stale restore, so no correction is written.
+    expect(groupSetLayoutCalls).toHaveLength(0);
   });
 
-  test('revealing the terminal keeps the open doc panel open despite a stale cached layout', async () => {
-    // At 1400px the doc panel starts open. A stale three-panel cached layout
-    // could say anything; the assert must restore the pre-reveal state (open)
-    // at the persisted width, with the terminal at its own persisted width.
+  test('the rail keeps its id while the content surface changes underneath it', async () => {
     setViewportWidth(1400);
-    const view = render(<EditorArea {...baseProps} terminalVisible={false} />);
-    groupLayout = { 'editor-main': 45, 'doc-panel': 25, 'terminal-column': 30 };
+    docCtx = FOLDER_LIVE_CTX;
+    const view = render(<EditorArea {...baseProps} terminalVisible />);
+    // The toolbox is available over the folder view too — it used to be built
+    // per view kind, and the folder branch built none unless an agent was
+    // scoped (and then a bespoke, uncollapsible `agent-panel`).
+    expect(railIds()).toEqual(['right-rail']);
+
+    docCtx = DOC_COLD_CTX;
     view.rerender(<EditorArea {...baseProps} terminalVisible />);
     await act(async () => {});
-    const corrected = groupSetLayoutCalls.at(-1);
-    expect(corrected).toBeDefined();
-    // Chat and document tools are states of one right rail, so both columns
-    // restore the same persisted 320px width and the editor absorbs the rest.
-    expect(corrected?.['doc-panel']).toBeCloseTo(pctOf(320), 3);
-    expect(corrected?.['terminal-column']).toBeCloseTo(pctOf(320), 3);
-    expect(corrected?.['editor-main']).toBeCloseTo(100 - pctOf(320) - pctOf(320), 3);
+    // Mid-session cold navigation used to need a ref-free `doc-panel`
+    // placeholder here purely to hold the panel count steady.
+    expect(railIds()).toEqual(['right-rail']);
+    expect(groupSetLayoutCalls).toHaveLength(0);
   });
 
-  test('releasing a terminal-handle drag with the column snapped shut hides the terminal', async () => {
-    // Drag-to-close: the pointerup handler checks the terminal panel's
-    // isCollapsed() and turns a snapped-shut column into a real hide.
+  test('releasing a rail drag with the panel snapped shut stands the chat session down', async () => {
+    // Drag-to-close: the pointerup handler checks the rail's isCollapsed() and
+    // turns a snapped-shut rail into a real hide of the live chat session.
     setViewportWidth(1400);
     const visibleChanges: boolean[] = [];
     render(
@@ -455,7 +478,7 @@ describe('EditorArea right-rail layout assert on terminal-column mount/unmount',
         }}
       />,
     );
-    // The empty view renders no doc panel, so the only handle is the terminal's.
+    // One rail means one handle, whatever the content surface is.
     const handle = screen.getByTestId('resizable-handle');
     act(() => {
       fireEvent.pointerDown(handle);
@@ -467,7 +490,7 @@ describe('EditorArea right-rail layout assert on terminal-column mount/unmount',
     expect(visibleChanges.at(-1)).toBe(false);
   });
 
-  test('releasing a terminal-handle drag with the column still open does NOT hide the terminal', async () => {
+  test('releasing a rail drag with the panel still open does NOT hide the terminal', async () => {
     setViewportWidth(1400);
     const visibleChanges: boolean[] = [];
     render(
@@ -625,9 +648,12 @@ describe('EditorArea asset-view terminal host', () => {
     expect(requestedTabs).toEqual(['chat']);
   });
 
-  test('closes the open PDF Chat rail from the same control', () => {
+  test('marks the PDF viewer as the route-level one so it renders its identity row', () => {
+    // The rail's collapse control now lives in the editor header beside the
+    // file-sidebar trigger, so the viewer takes a plain flag instead of an
+    // open-state + toggle pair. Standing the chat session down on close is
+    // covered by the rail's own drag-to-close test above.
     docCtx = PDF_ASSET_DOC_CTX;
-    const visibility: boolean[] = [];
     render(
       <TooltipProvider>
         <EditorArea
@@ -637,14 +663,13 @@ describe('EditorArea asset-view terminal host', () => {
           onActiveTabChange={() => {}}
           terminalBridge={{} as never}
           terminalVisible
-          onTerminalVisibleChange={(visible) => visibility.push(visible)}
+          onTerminalVisibleChange={() => {}}
         />
       </TooltipProvider>,
     );
 
-    expect(screen.getByTestId('asset-preview').getAttribute('data-right-panel-open')).toBe('true');
-    fireEvent.click(screen.getByRole('button', { name: 'Toggle PDF panel' }));
-    expect(visibility).toEqual([false]);
+    expect(screen.getByTestId('asset-preview').getAttribute('data-viewer-header')).toBe('true');
+    expect(screen.getByTestId('right-chat-host')).toBeTruthy();
   });
 });
 
@@ -695,15 +720,13 @@ describe('EditorArea terminal persists across view-kind switches', () => {
   });
 });
 
-// Locks the fix for the COLD-START path: on first load (no provider has
-// ever been active), a hash-driven doc load renders the skeleton as a standalone
-// early-return, NOT inside the shared panel group. Routing it through the group
-// renders one panel and then adds the doc panel when the doc lands — a 1→3
-// panel-count transition that corrupts react-resizable-panels' doc-panel
-// sticky-width restore. (The e2e qa-sidebar also covers this; this is the
-// fast guard.) The MID-SESSION counterpart — where the dock must persist — is
-// the next describe block.
-describe('EditorArea hash-load skeleton renders outside the panel group (cold start)', () => {
+// Locks the COLD-START path: on first load (no provider has ever been active),
+// a hash-driven doc load renders the skeleton as a standalone early-return with
+// no terminal dock around it — nothing spawns a PTY that the landing document
+// would inherit. (The e2e qa-sidebar also covers this; this is the fast guard.)
+// The MID-SESSION counterpart — where the dock must persist — is the next
+// describe block.
+describe('EditorArea hash-load skeleton renders bare on cold start', () => {
   beforeEach(() => {
     cleanup();
     // A doc target whose provider has not loaded — the actual hash-load scenario
@@ -733,8 +756,10 @@ describe('EditorArea hash-load skeleton renders outside the panel group (cold st
     );
 
     expect(screen.getByTestId('editor-skeleton')).toBeTruthy();
-    // Early return: no shared horizontal group and no terminal dock around it.
-    expect(screen.queryByTestId('resizable-group')).toBeNull();
+    // Early return: no terminal dock around it, so nothing spawns a PTY the
+    // landing document would immediately have to inherit. The panel group is no
+    // longer part of this claim — the rail owns it one level up and is a sibling
+    // of the whole content column, so it is present on every render.
     expect(screen.queryByTestId('terminal-dock')).toBeNull();
   });
 });
@@ -788,19 +813,17 @@ describe('EditorArea terminal persists across a mid-session cold navigation', ()
     expect(dock.querySelector('[data-testid="editor-skeleton"]')).not.toBeNull();
     // No remount across the cold navigation — the PTY survives.
     expect(terminalDockMounts).toBe(mountsAfterInitial);
-    // Mid-session skeleton routes THROUGH the shared group (not a bare
-    // early-return) — the symmetric guard to the cold-start group-absent
-    // assertion. Pins that the placeholder holds the panel count inside the
-    // group, so a future refactor that lifts the dock outside the group can't
-    // silently revert the 1→3 invariant while keeping the dock mounted.
+    // The shared group is present throughout — the rail owns it, above the
+    // view branches, so a mid-session provider gap can't change the panel set.
     expect(screen.getByTestId('resizable-group')).toBeTruthy();
   });
 
   test('web host keeps the bare early-return on mid-session cold nav (no dock to preserve)', () => {
     // No terminalBridge → the mid-session route-through gate
     // (`terminalBridge != null && everHadProvider`) is false regardless of
-    // `everHadProvider`, so the skeleton stays a bare early-return outside the
-    // group. Pins that the desktop-only fix does not change web-host behavior.
+    // `everHadProvider`, so the skeleton stays a bare early-return with no dock
+    // around it. Pins that the desktop-only fix does not change web-host
+    // behavior.
     const webProps = {
       editorMode: 'wysiwyg' as const,
       onModeChange: () => {},
@@ -818,7 +841,6 @@ describe('EditorArea terminal persists across a mid-session cold navigation', ()
     rerender(<EditorArea {...webProps} />);
 
     expect(screen.getByTestId('editor-skeleton')).toBeTruthy();
-    expect(screen.queryByTestId('resizable-group')).toBeNull();
     expect(screen.queryByTestId('terminal-dock')).toBeNull();
   });
 });

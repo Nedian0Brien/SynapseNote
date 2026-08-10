@@ -22,6 +22,18 @@ let isDraggingRail = false;
 // Captures the `input` prop EditorHeader hands to ShareButton.
 let lastShareInput: unknown;
 
+// The rail's collapse trigger lives in this header now, so the header reads the
+// rail context. These tests cover header layout, not rail behavior.
+mock.module('@/components/RightRail', () => ({
+  useRightRail: () => ({
+    isCollapsed: false,
+    toggle: () => {},
+    controlsId: 'right-rail',
+    pdfPanelContainer: null,
+    rightTerminalContainer: null,
+  }),
+}));
+
 mock.module('@/editor/DocumentContext', () => ({
   useDocumentContext: () => ({ activeDocName, activeTarget }),
   // Nullable variant of the hook above. `mock.module` replaces the WHOLE

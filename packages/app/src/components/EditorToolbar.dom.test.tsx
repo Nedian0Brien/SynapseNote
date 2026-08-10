@@ -126,12 +126,21 @@ describe('EditorToolbar runtime layout', () => {
     expect(screen.getByTestId('editor-breadcrumb-probe').textContent).toBe('Untitled database');
   });
 
-  test('mode toggle sits in the Markdown tool row so the identity row keeps its width', async () => {
+  test('the Markdown tools are inlined into the identity row, not stacked under it', async () => {
     await renderToolbar();
 
+    const header = screen.getByTestId('document-viewer-header');
+    const formatToolbar = screen.getByTestId('markdown-format-toolbar');
+    // One header band: the formatting controls live inside the identity row's
+    // toolbar slot. They used to own a second 40px row, which made the viewer
+    // read as three stacked header bars under the tab strip.
+    expect(header.contains(formatToolbar)).toBe(true);
+
+    // The mode toggle moved with them — into the row's actions, beside the
+    // other document-level controls rather than trailing the tool row.
     const sourceButton = screen.getByRole('radio', { name: 'Markdown source' });
-    expect(screen.getByTestId('markdown-format-toolbar').contains(sourceButton)).toBe(true);
-    expect(screen.getByTestId('document-viewer-header').contains(sourceButton)).toBe(false);
+    expect(header.contains(sourceButton)).toBe(true);
+    expect(formatToolbar.contains(sourceButton)).toBe(false);
   });
 
   test('places PDF export immediately before Add properties in the identity row', async () => {

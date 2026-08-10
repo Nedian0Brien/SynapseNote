@@ -23,8 +23,8 @@ export interface PdfProps {
   /** Asset identity used when publishing a dragged passage to chat. */
   selectionDocumentName?: string;
   /** Route-level viewer control for the shared Chat right rail. */
-  rightPanelOpen?: boolean;
-  onToggleRightPanel?: () => void;
+  /** Route-level viewer: render the shared identity row above the document. */
+  showViewerHeader?: boolean;
   /** Right-rail mount owned by the route-level viewer shell. */
   panelContainer?: HTMLElement | null;
   activePanelTab?: PdfPanelTab;
@@ -47,7 +47,7 @@ export function Pdf(props: PdfProps) {
         : `${DEFAULT_HEIGHT_PX}px`;
   const documentPath = props.selectionDocumentName ?? props.title ?? 'PDF';
   const title = viewerTitleFromPath(props.title ?? documentPath);
-  const standaloneViewer = Boolean(props.fillContainer || props.onToggleRightPanel);
+  const standaloneViewer = Boolean(props.fillContainer || props.showViewerHeader);
 
   return (
     <div
@@ -56,20 +56,7 @@ export function Pdf(props: PdfProps) {
       data-standalone={standaloneViewer || undefined}
     >
       {standaloneViewer ? (
-        <DocumentViewerHeader
-          documentPath={documentPath}
-          title={title}
-          fileType="PDF"
-          panelToggle={
-            props.onToggleRightPanel
-              ? {
-                  open: Boolean(props.rightPanelOpen),
-                  onToggle: props.onToggleRightPanel,
-                  controlsId: 'terminal-column',
-                }
-              : undefined
-          }
-        />
+        <DocumentViewerHeader documentPath={documentPath} title={title} fileType="PDF" />
       ) : null}
       <div className="ok-pdf-content flex min-h-0 flex-1 flex-col">
         {props.src ? (

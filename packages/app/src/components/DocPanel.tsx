@@ -126,9 +126,14 @@ export function DocPanel({
       {/* In `'doc'` mode: the info sub-tabs render as the panel header.
           In `'agent'` mode: no header row — `ActivityModeContent` owns its
           own header (avatar + back-arrow), which eliminates the empty-row
-          footprint the standalone back-arrow used to have. */}
+          footprint the standalone back-arrow used to have.
+
+          The strip carries no background of its own: the rail owns the surface
+          (the shell tint, or the xterm canvas color while Chat is live) and
+          this row has to sit on whichever it is. A hardcoded `bg-background`
+          made it a white band across the top of an otherwise tinted rail. */}
       {showTabStrip ? (
-        <div className="flex h-10 shrink-0 flex-row items-center justify-center bg-background">
+        <div className="flex h-10 shrink-0 flex-row items-center justify-center">
           <ToggleGroup
             type="single"
             variant="outline"

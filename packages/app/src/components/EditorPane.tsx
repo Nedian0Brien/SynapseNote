@@ -41,6 +41,7 @@ import {
 } from './handoff/terminal-input-events';
 import { subscribeToTerminalLaunchRequests } from './handoff/terminal-launch-events';
 import { usePageList } from './PageListContext';
+import { RightRailLayout } from './RightRail';
 import { TerminalSessionsHost } from './TerminalSessionsHost';
 
 /**
@@ -588,33 +589,48 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
 
   return (
     <>
-      <EditorHeader
-        onSignIn={() => {
-          setAuthInitialStep('auth');
-          setAuthModalOpen(true);
-        }}
-        onSetIdentity={() => {
-          setAuthInitialStep('identity');
-          setAuthModalOpen(true);
-        }}
-        onOpenSearch={onOpenSearch}
-      />
-      {/* The terminal docks to the right of the doc panel (its own column) or
-          under the editor/file column. EditorArea owns the layout; the dock
-          position, visibility, and the dock-toggle/collapse controls' state stay
-          owned here and are threaded down — to EditorArea (placement) and to the
-          session host (which renders the tab strip's controls via its portal). */}
-      <EditorArea
-        editorMode={editorMode}
-        onModeChange={handleModeChange}
+      {/* CONTENT | TOOLBOX. The rail is a sibling of the whole content column —
+          editor header included — so it runs the full height of the window, the
+          mirror of the file sidebar on the left. It owns its own collapse,
+          width, and active tool; `EditorArea` and the viewer toolbars reach that
+          state through `useRightRail()` rather than being handed it.
+
+          The terminal is the rail's Chat tool when right-docked, or a bottom
+          dock under the content column. Dock position, visibility, and the
+          dock-toggle/collapse controls' state stay owned here and are threaded
+          down — to the rail (which hosts the chat portal target), to EditorArea
+          (placement), and to the session host. */}
+      <RightRailLayout
         activeTab={activeTab}
         onActiveTabChange={handleActiveTabChange}
+        isSourceMode={editorMode === 'source'}
         terminalBridge={desktopBridge}
         terminalVisible={terminalVisible}
         onTerminalVisibleChange={handleTerminalVisibleChange}
         terminalDock={terminalDock}
-        onTerminalPlacement={setTerminalPlacement}
-      />
+      >
+        <EditorHeader
+          onSignIn={() => {
+            setAuthInitialStep('auth');
+            setAuthModalOpen(true);
+          }}
+          onSetIdentity={() => {
+            setAuthInitialStep('identity');
+            setAuthModalOpen(true);
+          }}
+          onOpenSearch={onOpenSearch}
+        />
+        <EditorArea
+          editorMode={editorMode}
+          onModeChange={handleModeChange}
+          activeTab={activeTab}
+          terminalBridge={desktopBridge}
+          terminalVisible={terminalVisible}
+          onTerminalVisibleChange={handleTerminalVisibleChange}
+          terminalDock={terminalDock}
+          onTerminalPlacement={setTerminalPlacement}
+        />
+      </RightRailLayout>
       {/* The `desktopBridge != null` clause re-narrows the bridge to non-null for
           the prop — the derived `terminalAvailable` boolean can't narrow it. */}
       {terminalAvailable && desktopBridge != null ? (
