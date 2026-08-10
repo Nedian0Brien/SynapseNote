@@ -21,6 +21,25 @@ export function graphFolderNodeId(path: string): string {
   return `${GRAPH_FOLDER_NODE_PREFIX}${path}`;
 }
 
+/**
+ * The project itself, as a node, with every top-level folder and page hanging
+ * off it. Pinned at the origin by the view.
+ *
+ * Left out at first, on the theory that one root hub would just re-merge the
+ * graph into the blob folders exist to break up. It does the opposite: without
+ * it the folder tree is not a tree at all but a scatter of unconnected
+ * components, and a force layout has nothing holding them together, so they
+ * drift apart until the graph reads as debris. The original SynapseNote pinned
+ * a vault-root node at the origin for exactly this reason.
+ */
+export const GRAPH_ROOT_FOLDER_PATH = '';
+export const GRAPH_ROOT_NODE_ID = graphFolderNodeId(GRAPH_ROOT_FOLDER_PATH);
+export const GRAPH_ROOT_NODE_LABEL = '/';
+
+export function isGraphRootFolderNode(node: { kind?: unknown; id?: unknown }): boolean {
+  return node.kind === 'folder' && node.id === GRAPH_ROOT_NODE_ID;
+}
+
 /** The directory a doc sits in, or `null` when it sits at the project root. */
 export function graphFolderPathOf(docName: string): string | null {
   const index = docName.lastIndexOf('/');
@@ -46,31 +65,22 @@ interface FolderTreeEntry {
 }
 
 /**
- * Containment springs are shorter and stiffer than authored links: the folder
- * has to win against the pages' own links, or the grouping never forms. Both are
- * factors on the user's Forces sliders rather than absolutes, so turning link
- * distance up still spreads the whole graph.
+ * How hard a containment spring pulls. FLAT — not derived from either end's
+ * degree, and not stiffer than an authored link.
+ *
+ * This is the one number that decides whether a folder reads as a place or as a
+ * blot, and the original SynapseNote graph got it right by not having it at
+ * all: it ran one `spring_layout` where every edge was the same spring, and let
+ * the mutual repulsion of a folder's pages decide how much room they took. A
+ * disc holding N pages then inflates to radius ∝ √N on its own, for free.
+ *
+ * d3's per-link default would ruin that. It is `1 / min(degree(source),
+ * degree(target))`, so a leaf page hanging off a four-hundred-page folder gets
+ * `1/1` — maximum stiffness — and every one of those four hundred is clamped to
+ * exactly the same radius. That is a shell, not a cluster, and it is what "too
+ * dense with its own children" was.
  */
-export const GRAPH_FOLDER_LINK_DISTANCE_FACTOR = 0.55;
-export const GRAPH_FOLDER_LINK_STRENGTH_MULTIPLIER = 2.2;
-
-/**
- * How much harder a folder pushes on everything else than a page does. A folder
- * has to clear room for everything it holds, so the multiplier grows with its
- * membership — logarithmically, and capped, because a repulsion that scales
- * linearly with a 400-page folder blows the rest of the graph off screen.
- */
-export function getGraphFolderChargeMultiplier(memberCount: number): number {
-  return 1 + Math.min(Math.log2(Math.max(memberCount, 0) + 1) * 0.9, 5);
-}
-
-/** The member count of a folder node, or `null` for anything else. */
-export function getGraphFolderMemberCount(node: unknown): number | null {
-  if (node === null || typeof node !== 'object') return null;
-  const candidate = node as { kind?: unknown; memberCount?: unknown };
-  if (candidate.kind !== 'folder' || typeof candidate.memberCount !== 'number') return null;
-  return candidate.memberCount;
-}
+export const GRAPH_FOLDER_LINK_STRENGTH = 0.25;
 
 /**
  * Containment is marked on the link rather than inferred from its endpoints: a
@@ -150,7 +160,7 @@ export function buildGraphFolderNodes(
     authoredPairs.add(`${target}\n${source}`);
   }
 
-  const folderLinks: GraphLink[] = [];
+  const pending: Array<{ parentPath: string; parentId: string; childId: string }> = [];
   const memberCounts = new Map<string, number>();
   const connected = new Set<string>();
 
@@ -168,7 +178,7 @@ export function buildGraphFolderNodes(
     // An authored link already joins these two. Drawing containment on top of it
     // would double the edge and double the spring.
     if (authoredPairs.has(key)) return;
-    folderLinks.push({ source: parentId, target: childId, kind: 'containment' });
+    pending.push({ parentPath, parentId, childId });
   };
 
   for (const path of keptPaths) {
@@ -181,7 +191,39 @@ export function buildGraphFolderNodes(
     if (parent !== null) connect(parent, nodeIdForPath(path));
   }
 
+  // Everything with no folder above it hangs off the project root — the
+  // top-level folders and the pages that sit beside them.
+  // De-duplicated: a folder note is both a top-level folder and a root-level
+  // page, and counting it twice would conjure a root for a one-item project.
+  const topLevel = new Set([
+    ...[...keptPaths].filter((path) => nearestKeptAncestor(path) === null).map(nodeIdForPath),
+    ...nodes.flatMap((node) =>
+      node.kind === 'doc' && graphFolderPathOf(node.docName) === null ? [node.id] : [],
+    ),
+  ]);
+  // One top-level item means the root would explain nothing — the same rule
+  // that collapses a single-child folder into its child.
+  const hasRoot = topLevel.size > 1 && !existingIds.has(GRAPH_ROOT_NODE_ID);
+  if (hasRoot) {
+    for (const childId of topLevel) connect(GRAPH_ROOT_FOLDER_PATH, childId);
+  }
+
+  const folderLinks: GraphLink[] = pending.map(({ parentId, childId }) => ({
+    source: parentId,
+    target: childId,
+    kind: 'containment',
+  }));
+
   const folderNodes: GraphNode[] = [];
+  if (hasRoot) {
+    folderNodes.push({
+      kind: 'folder',
+      id: GRAPH_ROOT_NODE_ID,
+      label: GRAPH_ROOT_NODE_LABEL,
+      path: GRAPH_ROOT_FOLDER_PATH,
+      memberCount: memberCounts.get(GRAPH_ROOT_FOLDER_PATH) ?? 0,
+    });
+  }
   for (const path of [...keptPaths].sort()) {
     if (existingIds.has(path)) continue;
     const parent = nearestKeptAncestor(path);

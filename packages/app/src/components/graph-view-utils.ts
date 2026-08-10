@@ -429,6 +429,12 @@ export function resolveGraphNodeClickAction(
   }
 
   if (node.kind === 'folder') {
+    // The project root (empty path, see `GRAPH_ROOT_FOLDER_PATH`) is there to
+    // hold the tree together, not to be opened — there is no folder view above
+    // the project. Compared literally rather than imported, so this module
+    // stays free of a dependency on the folder synthesizer that depends on it.
+    if (node.path === '') return { kind: 'none' };
+
     if (docClickBehavior === 'select') {
       return {
         kind: 'select',

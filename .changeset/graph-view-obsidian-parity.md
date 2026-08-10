@@ -46,6 +46,7 @@ and clicking a folder opens its overview. Nested folders nest, a chain of
 single-child folders collapses into one node the way a file tree collapses it,
 and a page named after its folder becomes that folder's node rather than a
 second dot for the same place. Containment is drawn faintly and carries no
-arrow: it is the shape of your vault, not a link you wrote. Turn it off under
-**Filters → Folders** — on by default for the project graph, off for the rail's
-local one.
+arrow: it is the shape of your vault, not a link you wrote. The project itself
+is a node too, pinned at the centre, so the whole tree holds together instead of
+drifting into separate islands. Turn it off under **Filters → Folders** — on by
+default for the project graph, off for the rail's local one.

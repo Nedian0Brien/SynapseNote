@@ -2,11 +2,11 @@ import { describe, expect, test } from 'bun:test';
 import {
   buildGraphFolderNodes,
   GRAPH_FOLDER_NODE_PREFIX,
-  getGraphFolderChargeMultiplier,
-  getGraphFolderMemberCount,
+  GRAPH_ROOT_NODE_ID,
   graphFolderNodeId,
   graphFolderPathOf,
   isGraphFolderLink,
+  isGraphRootFolderNode,
 } from './graph-folders';
 import type { GraphLink, GraphNode } from './graph-view-utils';
 
@@ -62,13 +62,27 @@ describe('buildGraphFolderNodes', () => {
     expect(result.links.every(isGraphFolderLink)).toBe(true);
   });
 
+  test('gives every containment edge the same shape — the layout tunes none of them', () => {
+    // One spring for every edge is what the original SynapseNote layout did,
+    // and per-link tuning here is what packed folders into balls.
+    const result = build(['notes/A', 'notes/B', 'notes/C']);
+    for (const link of result.links) {
+      expect(Object.keys(link).sort()).toEqual(['kind', 'source', 'target']);
+    }
+  });
+
   test('counts direct members, which is what sizes the node', () => {
     const [folder] = build(['notes/A', 'notes/B', 'notes/C']).nodes;
     expect(folder.kind === 'folder' && folder.memberCount).toBe(3);
   });
 
-  test('root-level pages get no folder — a single root hub would just re-merge the graph', () => {
-    expect(build(['README', 'CHANGELOG'])).toEqual({ nodes: [], links: [] });
+  test('hangs root-level pages off the project root', () => {
+    const result = build(['README', 'CHANGELOG']);
+    expect(paths(result)).toEqual(['']);
+    expect(edges(result)).toEqual([
+      `${GRAPH_ROOT_NODE_ID}>CHANGELOG`,
+      `${GRAPH_ROOT_NODE_ID}>README`,
+    ]);
   });
 
   test('nests folders, so the tree shows as a tree', () => {
@@ -95,6 +109,41 @@ describe('buildGraphFolderNodes', () => {
       { kind: 'external', id: 'external:https://x.test', url: 'https://x.test', label: 'x' },
     ];
     expect(edges(buildGraphFolderNodes(nodes, []))).toEqual(['folder:notes>notes/A']);
+  });
+});
+
+describe('buildGraphFolderNodes — the project root', () => {
+  test('ties otherwise unrelated top-level folders into one tree', () => {
+    // This is what stops the graph reading as debris: without the root the
+    // folder tree is a scatter of separate components with nothing holding
+    // them together, and the layout lets them drift apart.
+    const result = build(['docs/A', 'notes/B', 'src/C']);
+    expect(edges(result)).toContain(`${GRAPH_ROOT_NODE_ID}>folder:docs`);
+    expect(edges(result)).toContain(`${GRAPH_ROOT_NODE_ID}>folder:notes`);
+    expect(edges(result)).toContain(`${GRAPH_ROOT_NODE_ID}>folder:src`);
+  });
+
+  test('is skipped when there is only one top-level item, which it would not explain', () => {
+    // Same rule that collapses a single-child folder into its child.
+    expect(paths(build(['notes/A', 'notes/B']))).toEqual(['notes']);
+  });
+
+  test('counts a folder note once, rather than as both a folder and a root page', () => {
+    // `notes.md` beside `notes/` is one top-level item, so no root appears.
+    const result = buildGraphFolderNodes([doc('notes'), doc('notes/A')], []);
+    expect(result.nodes).toEqual([]);
+  });
+
+  test('is recognizable to the view, which pins it at the origin', () => {
+    const [root] = build(['docs/A', 'notes/B']).nodes;
+    expect(isGraphRootFolderNode(root)).toBe(true);
+    expect(isGraphRootFolderNode({ kind: 'folder', id: 'folder:docs' })).toBe(false);
+    expect(isGraphRootFolderNode(doc('notes/A'))).toBe(false);
+  });
+
+  test('carries no path, so clicking it cannot try to open a folder above the project', () => {
+    const [root] = build(['docs/A', 'notes/B']).nodes;
+    expect(root.kind === 'folder' && root.path).toBe('');
   });
 });
 
@@ -192,29 +241,6 @@ describe('isGraphFolderLink', () => {
     // carries the `folder:` prefix — the mark is the only reliable signal.
     expect(isGraphFolderLink({ kind: 'containment' })).toBe(true);
     expect(isGraphFolderLink({ source: 'notes', target: 'notes/A' })).toBe(false);
-  });
-});
-
-describe('getGraphFolderMemberCount', () => {
-  test('is the count for a folder node and null for everything else', () => {
-    expect(getGraphFolderMemberCount({ kind: 'folder', memberCount: 7 })).toBe(7);
-    expect(getGraphFolderMemberCount(doc('notes/A'))).toBeNull();
-    expect(getGraphFolderMemberCount(null)).toBeNull();
-    expect(getGraphFolderMemberCount({ kind: 'folder' })).toBeNull();
-  });
-});
-
-describe('getGraphFolderChargeMultiplier', () => {
-  test('an empty folder pushes exactly as hard as a page', () => {
-    expect(getGraphFolderChargeMultiplier(0)).toBe(1);
-  });
-
-  test('grows with membership, so a big folder claims more room', () => {
-    expect(getGraphFolderChargeMultiplier(20)).toBeGreaterThan(getGraphFolderChargeMultiplier(4));
-  });
-
-  test('is capped, so one huge folder cannot blow the rest off screen', () => {
-    expect(getGraphFolderChargeMultiplier(100_000)).toBeLessThanOrEqual(6);
   });
 });
 

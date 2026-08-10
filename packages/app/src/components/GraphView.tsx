@@ -17,11 +17,9 @@ import { getGraphCardNeighbors } from './GraphCardDeck';
 import { applyGraphFilters } from './graph-filter';
 import {
   buildGraphFolderNodes,
-  GRAPH_FOLDER_LINK_DISTANCE_FACTOR,
-  GRAPH_FOLDER_LINK_STRENGTH_MULTIPLIER,
-  getGraphFolderChargeMultiplier,
-  getGraphFolderMemberCount,
+  GRAPH_FOLDER_LINK_STRENGTH,
   isGraphFolderLink,
+  isGraphRootFolderNode,
 } from './graph-folders';
 import { matchGraphGroup, resolveGraphGroupColor } from './graph-groups';
 import {
@@ -834,45 +832,40 @@ export function GraphView({
     if (!fg) return;
 
     const charge = fg.d3Force('charge');
-    // Stored as a magnitude; d3 wants a negative strength to push apart. A
-    // folder pushes harder than a page, because it has to clear room for
-    // everything hanging off it — that extra shove is what separates one folder
-    // from the next instead of stacking them.
-    charge?.strength?.((node: unknown) => {
-      const memberCount = getGraphFolderMemberCount(node);
-      return (
-        -repelStrength * (memberCount === null ? 1 : getGraphFolderChargeMultiplier(memberCount))
-      );
-    });
+    // Stored as a magnitude; d3 wants a negative strength to push apart. Flat:
+    // folder nodes used to push several times harder here, to clear room for
+    // what they hold. That room is the containment spring's job — it is sized
+    // by membership below — and doing it with repulsion instead shoved the
+    // neighboring clusters to the far side of the canvas.
+    charge?.strength?.(-repelStrength);
 
     const center = fg.d3Force('center');
     center?.strength?.(centerStrength);
 
     const link = fg.d3Force('link');
     if (link) {
-      link.distance?.((candidate: { kind?: unknown }) =>
-        isGraphFolderLink(candidate)
-          ? linkDistance * GRAPH_FOLDER_LINK_DISTANCE_FACTOR
-          : linkDistance,
-      );
+      // One length for every edge, containment included. Giving containment its
+      // own shorter (or longer) distance was an invention, and it is what made
+      // folders either pack into a ball or spill their pages across the canvas.
+      link.distance?.(linkDistance);
       // d3's own default is `1 / min(degree(source), degree(target))`, computed
       // once at initialize. Reproducing it here rather than passing a flat
       // number keeps a multiplier of 1 a true no-op: a flat strength would
       // stiffen hub edges that d3 deliberately slackens.
       const degrees = buildGraphDegreeMap(displayLinks);
       link.strength?.((candidate: { source: unknown; target: unknown; kind?: unknown }) => {
+        // Containment opts out of the degree rule entirely — see
+        // GRAPH_FOLDER_LINK_STRENGTH. Under `1 / min(degree)` a leaf page gets
+        // the stiffest spring in the graph, which is what welds a big folder
+        // into a shell instead of letting it breathe out to the radius its
+        // members' own repulsion asks for.
+        if (isGraphFolderLink(candidate)) return GRAPH_FOLDER_LINK_STRENGTH * linkStrength;
+
         const source = resolveGraphLinkEndpointId(candidate.source);
         const target = resolveGraphLinkEndpointId(candidate.target);
         const sourceDegree = source === null ? 1 : (degrees.get(source) ?? 1);
         const targetDegree = target === null ? 1 : (degrees.get(target) ?? 1);
-        const base = 1 / Math.max(1, Math.min(sourceDegree, targetDegree));
-        // Containment has to out-pull the page's own links or the folder never
-        // gathers. Capped at 1 so a leaf page — where d3's base is already 1 —
-        // is not handed a spring stiff enough to fling it.
-        const stiffened = isGraphFolderLink(candidate)
-          ? Math.min(base * GRAPH_FOLDER_LINK_STRENGTH_MULTIPLIER, 1)
-          : base;
-        return stiffened * linkStrength;
+        return (1 / Math.max(1, Math.min(sourceDegree, targetDegree))) * linkStrength;
       });
     }
 
@@ -921,6 +914,24 @@ export function GraphView({
       neighbors: getGraphCardNeighbors(selectedNodeId, displayData.nodes, adjacency),
     });
   }, [interactionMode, selectedNodeId, displayData.nodes, adjacency, onCardModeChange]);
+
+  // Nail the project root to the origin. The original SynapseNote ran its
+  // layout with the vault root fixed for the same reason: with the whole folder
+  // tree hanging off one immovable point, the layout has a centre to organize
+  // around and the branches settle around it instead of wandering off as
+  // separate drifting components.
+  useEffect(() => {
+    const root = displayData.nodes.find(isGraphRootFolderNode) as
+      | (GraphNode & { fx?: number | null; fy?: number | null })
+      | undefined;
+    if (!root) return;
+    root.fx = 0;
+    root.fy = 0;
+    return () => {
+      root.fx = null;
+      root.fy = null;
+    };
+  }, [displayData.nodes]);
 
   // Pin the selected node while it is being read up close, and release it the
   // moment focus ends. Without this the simulation keeps nudging the very node
