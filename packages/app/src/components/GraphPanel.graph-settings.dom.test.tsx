@@ -100,7 +100,7 @@ describe('GraphPanel graph settings', () => {
 
   test('hands the renderer a complete preset before the user touches anything', async () => {
     await renderPanel();
-    expect(probe.settings?.display.maxLabels).toBe(18);
+    expect(probe.settings?.display.maxLabels).toBe(30);
     expect(probe.settings?.filters.showExternalNodes).toBe(false);
     // Reading a preset must not write one — an untouched install stays clean.
     expect(window.localStorage.getItem(DOCKED_KEY)).toBeNull();
@@ -148,7 +148,7 @@ describe('GraphPanel graph settings', () => {
     // The 2-hop neighborhood is the whole point of the rail panel — if this
     // flips to `global` the rail silently becomes a second project graph.
     expect(probe.scope).toBe('local');
-    expect(probe.settings?.display.maxLabels).toBe(18);
+    expect(probe.settings?.display.maxLabels).toBe(30);
   });
 
   test('the expand button routes to the graph surface instead of inflating the rail', async () => {
@@ -166,7 +166,7 @@ describe('GraphPanel graph settings', () => {
   test('falls back to defaults when the stored preset is corrupt', async () => {
     window.localStorage.setItem(DOCKED_KEY, 'not json');
     await renderPanel();
-    expect(probe.settings?.display.maxLabels).toBe(18);
+    expect(probe.settings?.display.maxLabels).toBe(30);
     expect(screen.getByTestId('graph-view')).toBeTruthy();
   });
 });

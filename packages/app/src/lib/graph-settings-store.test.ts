@@ -1,6 +1,4 @@
 import { describe, expect, test } from 'bun:test';
-import { GRAPH_COLLISION_PADDING } from '@/components/graph-folders';
-import { getGraphNodeCanvasRadius } from '@/components/graph-view-utils';
 import {
   clampGraphSettings,
   GRAPH_FORCE_DEFAULTS,
@@ -35,23 +33,20 @@ describe('getDefaultGraphSettings', () => {
     // every existing user's graph on upgrade.
     const docked = getDefaultGraphSettings('docked');
     expect(docked.display.textFadeThreshold).toBe(1.8);
-    expect(docked.display.maxLabels).toBe(18);
     expect(docked.filters.showExternalNodes).toBe(false);
     expect(docked.forces).toEqual(GRAPH_FORCE_DEFAULTS);
   });
 
-  test('keeps link distance clear of the collision force’s reach', () => {
-    // Collision holds page centres ~34 units apart. d3's default distance of 30
-    // sits under that, so every spring is compressed at all times and the graph
-    // collapses to a packed disc. This is the one invariant to preserve if the
-    // padding or the node radius ever changes.
-    const collisionReach = 2 * (getGraphNodeCanvasRadius('default') + GRAPH_COLLISION_PADDING);
-    expect(GRAPH_FORCE_DEFAULTS.linkDistance).toBeGreaterThan(collisionReach);
+  test('budgets labels generously, leaving overlap to the collision planner', () => {
+    // A budget of 10 on a canvas showing sixty nodes left it unreadable: the
+    // planner already refuses to place a label that would collide, so this is
+    // only a ceiling on the work, not the thing preventing a mess.
+    expect(getDefaultGraphSettings('fullscreen').display.maxLabels).toBe(60);
+    expect(getDefaultGraphSettings('docked').display.maxLabels).toBe(30);
   });
 
-  test('gives the fullscreen scope a tighter label budget than the docked scope', () => {
-    expect(getDefaultGraphSettings('fullscreen').display.maxLabels).toBe(10);
-    expect(getDefaultGraphSettings('docked').display.maxLabels).toBe(18);
+  test('leaves arrowheads off, as Obsidian does', () => {
+    expect(getDefaultGraphSettings('fullscreen').display.showArrows).toBe(false);
   });
 
   test('shows folder nodes only on the whole-project view', () => {
@@ -111,7 +106,7 @@ describe('clampGraphSettings', () => {
     );
     expect(result.display.nodeSize).toBe(1);
     expect(result.display.linkThickness).toBe(1);
-    expect(result.display.maxLabels).toBe(18);
+    expect(result.display.maxLabels).toBe(30);
     expect(result.filters.showOrphans).toBe(true);
     expect(result.filters.query).toBe('');
   });

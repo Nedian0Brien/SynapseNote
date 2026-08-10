@@ -83,42 +83,31 @@ const LEGACY_URL_NODES_KEYS: Record<GraphSettingsScope, string> = {
 };
 
 /**
- * `linkDistance` has to clear the collision force's reach, or the layout
- * degenerates.
+ * d3-force's own defaults, so a multiplier of 1 is a true no-op:
+ * `forceManyBody().strength(-30)`, `forceLink().distance(30)`,
+ * `forceCenter().strength(1)`.
  *
- * Collision keeps node centres at least `2 × (radius + GRAPH_COLLISION_PADDING)`
- * apart — about 34 units for an ordinary page. d3's default link distance is 30,
- * BELOW that: every link in the graph is then compressed past its rest length at
- * all times, the springs all pull inward at once, and what you get is a
- * uniformly packed disc with the high-degree nodes squeezed out to the rim. That
- * was the blob. 95 is the value the original SynapseNote used, and its ratio to
- * its own collision reach was the same ~2.5×.
- *
- * Repulsion stays at d3's -30. The original's -200 does not carry over — with
- * collision already doing the local separating, that much charge flings the
- * loosely-attached nodes into a sunburst.
- *
- * `centerStrength` is low because the pinned project root already does the
- * centring. d3's default of 1 translates the entire graph so its centroid lands
- * on the origin on EVERY tick, and the pinned root then snaps back — the two
- * fight, and the layout spends its energy sliding around instead of settling.
- * 0.04 is what the original SynapseNote ran, and it pinned its root too.
- *
- * `linkStrength` is a MULTIPLIER on d3's per-link default, so 1 is a true no-op.
+ * The original SynapseNote ran 95 / -200 / 0.04 alongside a collision force.
+ * Porting those numbers here did not transfer — with or without collision they
+ * produced a uniformly packed disc rather than the separated clusters they give
+ * over there — so this stays on the values the rest of the view was built
+ * against until the layout is understood rather than guessed at.
  */
 export const GRAPH_FORCE_DEFAULTS: GraphForceSettings = {
-  centerStrength: 0.04,
+  centerStrength: 1,
   repelStrength: 30,
   linkStrength: 1,
-  linkDistance: 95,
+  linkDistance: 30,
 };
 
-// The label budget is the one default that differs by scope: the fullscreen view
-// shows the whole project, so it deliberately runs a tighter budget than the
-// docked 2-hop neighborhood to avoid flooding the canvas.
+// The planner already refuses to place a label that would collide with one it
+// has placed, so overlap is handled and this is only a ceiling on the work.
+// It used to be 10 for the whole project, which meant a canvas showing sixty
+// nodes and ten names — you could not tell what you were looking at. A generous
+// budget lets collision decide, which is the thing that actually knows.
 const DEFAULT_MAX_LABELS: Record<GraphSettingsScope, number> = {
-  docked: 18,
-  fullscreen: 10,
+  docked: 30,
+  fullscreen: 60,
 };
 
 // Folder nodes exist to break a large graph into places. The fullscreen view is
@@ -161,7 +150,10 @@ export function getDefaultGraphSettings(scope: GraphSettingsScope): GraphSetting
     display: {
       nodeSize: 1,
       linkThickness: 1,
-      showArrows: true,
+      // Off, as in Obsidian. An arrowhead per edge is a lot of ink for a fact
+      // you rarely need, and at any density it is the difference between a
+      // graph and a thicket.
+      showArrows: false,
       // 1.8 is the zoom scale the pre-settings build hardcoded.
       textFadeThreshold: 1.8,
       maxLabels: DEFAULT_MAX_LABELS[scope],

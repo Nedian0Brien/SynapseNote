@@ -50,3 +50,12 @@ arrow: it is the shape of your vault, not a link you wrote. The project itself
 is a node too, pinned at the centre, so the whole tree holds together instead of
 drifting into separate islands. Turn it off under **Filters → Folders** — on by
 default for the project graph, off for the rail's local one.
+
+Each folder now also paints a soft tinted territory behind everything it holds,
+with its name written across it, so you can tell which part of the vault you are
+looking at without reading a single node label. Names are drawn at full weight
+rather than whispered, far more of them appear at once, a page has to be
+genuinely well-connected before it draws as a numbered hub, and arrowheads are
+off by default — the graph should tell you what things ARE before it tells you
+how many links they have.
+

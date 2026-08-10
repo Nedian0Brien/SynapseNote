@@ -66,73 +66,15 @@ interface FolderTreeEntry {
 
 /**
  * How hard a containment spring pulls. FLAT — not derived from either end's
- * degree.
+ * degree. Low, so the folder tethers its pages rather than clamping them: their own
+ * mutual repulsion is what decides how much room the cluster takes.
  *
- * `0.7` is the value the original SynapseNote graph used, and it used it for
- * every edge in the simulation. d3's per-link default would be `1 /
- * min(degree(source), degree(target))`, which hands a leaf page hanging off a
- * four-hundred-page folder `1/1` — the stiffest spring in the graph — and
- * clamps all four hundred to one identical radius.
- *
- * Note this only holds together next to a collision force. A spring this firm
- * with nothing forbidding overlap is exactly what welds a big folder into a
- * ball; see `getGraphCollisionRadius`.
+ * d3's per-link default would be `1 / min(degree(source), degree(target))`,
+ * which hands a leaf page hanging off a four-hundred-page folder `1/1` — the
+ * stiffest spring in the graph — and clamps all four hundred to one identical
+ * radius.
  */
-export const GRAPH_FOLDER_LINK_STRENGTH = 0.7;
-
-/**
- * Minimum breathing room around every node, in graph units, on top of its own
- * drawn radius.
- *
- * The simulation had no collision force at all, which is the real reason a
- * folder's pages piled into a solid disc of ink: nothing in a spring layout
- * stops two nodes occupying the same point, so a few hundred of them at the
- * same distance from one hub simply stack. The original graph ran
- * `forceCollide().radius(nodeRadius + 12).strength(0.58)` and its clusters read
- * as clusters because of it.
- */
-export const GRAPH_COLLISION_PADDING = 12;
-export const GRAPH_COLLISION_STRENGTH = 0.58;
-
-/**
- * How far a folder's pages sit from it: exactly far enough that they fit around
- * it without overlapping.
- *
- * Collision and link distance are a pair, and getting one without the other is
- * what produced both earlier failures. Collision alone, with every spring at the
- * same length, is unsatisfiable — four hundred pages need a disc of radius ~357
- * around their folder and the spring insists on 95, so collision wins, the whole
- * graph packs into one uniform disc, and every spring pulls inward at once. A
- * long spring alone, with nothing forbidding overlap, lets the pages scatter
- * instead of packing.
- *
- * So the distance is not tuned, it is measured: the radius of a hexagonally
- * packed disc of `memberCount` circles of `collisionRadius` (packing density
- * π/√12 ≈ 0.9069, hence the 1.05). Small folders fall below the user's link
- * distance and simply use it.
- */
-export function getGraphFolderLinkDistance(
-  baseDistance: number,
-  memberCount: number,
-  collisionRadius: number,
-): number {
-  const packedRadius = collisionRadius * 1.05 * Math.sqrt(Math.max(memberCount, 1));
-  return Math.max(baseDistance, packedRadius);
-}
-
-/**
- * Direct members of the folder a containment link hangs from, or `null` for any
- * other link.
- *
- * Read off the LINK rather than off its source node: a folder note hangs its
- * members off an ordinary page node, which carries no membership of its own.
- */
-export function getGraphFolderLinkMemberCount(link: unknown): number | null {
-  if (link === null || typeof link !== 'object') return null;
-  const candidate = link as { kind?: unknown; memberCount?: unknown };
-  if (candidate.kind !== 'containment' || typeof candidate.memberCount !== 'number') return null;
-  return candidate.memberCount;
-}
+export const GRAPH_FOLDER_LINK_STRENGTH = 0.25;
 
 /**
  * Containment is marked on the link rather than inferred from its endpoints: a
@@ -261,7 +203,7 @@ export function buildGraphFolderNodes(
   }
 
   // Emitted last, once every membership is counted: the layout reads the count
-  // off the link to size the folder's disc (`getGraphFolderLinkDistance`).
+  // off the link, for anything that wants to know how big a folder is.
   const folderLinks: GraphLink[] = pending.map(({ parentPath, parentId, childId }) => ({
     source: parentId,
     target: childId,

@@ -107,8 +107,9 @@ describe('GraphSettingsPopover — display and forces', () => {
     await openSection('Display');
     await userEvent.click(screen.getByRole('switch', { name: 'Arrows' }));
 
+    // Arrowheads ship off, so the first click turns them on.
     const next = lastCall(onSettingsChange);
-    expect(next.display.showArrows).toBe(false);
+    expect(next.display.showArrows).toBe(true);
     expect(next.display.nodeSize).toBe(1);
   });
 
@@ -245,7 +246,7 @@ describe('GraphSettingsPopover — restore defaults', () => {
   test('restores the docked label budget, not the fullscreen one', async () => {
     const { onSettingsChange } = await openPopover();
     await userEvent.click(screen.getByRole('button', { name: 'Restore defaults' }));
-    expect(lastCall(onSettingsChange).display.maxLabels).toBe(18);
+    expect(lastCall(onSettingsChange).display.maxLabels).toBe(30);
   });
 });
 

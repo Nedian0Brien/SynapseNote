@@ -1,6 +1,5 @@
 import { Trans, useLingui } from '@lingui/react/macro';
 import { LinkGraphSuccessSchema, ProblemDetailsSchema } from '@nedian0brien/synapsenote-core';
-import { forceCollide } from 'd3-force';
 import { useTheme } from 'next-themes';
 import { useEffect, useImperativeHandle, useRef, useState } from 'react';
 import ForceGraph2D, {
@@ -15,14 +14,19 @@ import { openExternalUrl } from '@/lib/external-link';
 import type { GraphSettings } from '@/lib/graph-settings-store';
 import { cn } from '@/lib/utils';
 import { getGraphCardNeighbors } from './GraphCardDeck';
+import {
+  buildGraphAreas,
+  type GraphArea,
+  type GraphAreaBounds,
+  getGraphAreaBounds,
+  getGraphAreaFillAlpha,
+  getGraphAreaLabelSizePx,
+} from './graph-areas';
+import { GRAPH_COLOR_PAIRS } from './graph-colors';
 import { applyGraphFilters } from './graph-filter';
 import {
   buildGraphFolderNodes,
-  GRAPH_COLLISION_PADDING,
-  GRAPH_COLLISION_STRENGTH,
   GRAPH_FOLDER_LINK_STRENGTH,
-  getGraphFolderLinkDistance,
-  getGraphFolderLinkMemberCount,
   isGraphFolderLink,
   isGraphRootFolderNode,
 } from './graph-folders';
@@ -78,6 +82,7 @@ const FINAL_SETTLE_DRIFT_PX = 28;
 const BACKGROUND_CLICK_TOLERANCE_PX = 5;
 const ZOOM_TO_FIT_PADDING_PX = 40;
 const EMPTY_GRAPH_DATA: GraphData = { nodes: [], links: [] };
+const EMPTY_GRAPH_AREAS: GraphArea[] = [];
 
 interface FocusState {
   key: string;
@@ -232,21 +237,20 @@ function drawGraphLabelPlacements({
   ctx,
   placements,
   labelColor,
-  labelFaintColor,
 }: {
   ctx: CanvasRenderingContext2D;
   placements: GraphLabelPlacement[];
   labelColor: string;
-  labelFaintColor: string;
 }): void {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
 
+  // Plain text, no chip, and every name at full weight. They used to be faint
+  // for everything except the active document, which left a canvas of
+  // anonymous circles with a scattering of digits — the names are the one
+  // thing on screen that says what you are looking at.
+  ctx.fillStyle = labelColor;
   for (const placement of placements) {
-    // Plain text, no chip. The chip was there to keep labels readable over a
-    // loud canvas; with the node encoding calmed down it was the loudest thing
-    // left. The active document's label is the only one drawn at full weight.
-    ctx.fillStyle = placement.isActive ? labelColor : labelFaintColor;
     ctx.fillText(placement.text, placement.textX, placement.textY);
   }
 }
@@ -806,18 +810,18 @@ export function GraphView({
       displayState: getGraphNodeDisplayState({ node, navigationIntentByNodeId }),
       visualState: getGraphNodeVisualState(node, { activeDocName, selectedNodeId }),
     }).scale;
-  // The room a node claims in the LAYOUT. Deliberately independent of the Node
-  // size slider and of what is selected: spacing is a property of the graph, and
-  // neither making the dots bigger nor clicking one should reflow it.
-  const graphCollisionRadius = (node: GraphNode): number =>
-    getGraphNodeCanvasRadius('default') *
-      getGraphNodeStyle({
-        node,
-        degree: degreeByNodeId.get(node.id) ?? 0,
-        displayState: getGraphNodeDisplayState({ node, navigationIntentByNodeId }),
-        visualState: 'default',
-      }).scale +
-    GRAPH_COLLISION_PADDING;
+  // Folder territories, and where each one currently sits. The bounds follow
+  // the simulation, so they are recomputed once per frame in the pre-render
+  // hook and reused by the post-render hook that writes the region names —
+  // walking every member twice a frame is the one thing here that would cost.
+  const areas = settings.filters.showFolderNodes
+    ? buildGraphAreas(displayData.nodes, displayData.links)
+    : EMPTY_GRAPH_AREAS;
+  const areaBoundsRef = useRef<Map<string, GraphAreaBounds>>(new Map());
+  const areaColor = (area: GraphArea): string => {
+    const pair = GRAPH_COLOR_PAIRS[area.colorIndex % GRAPH_COLOR_PAIRS.length];
+    return isDark ? pair.dark : pair.light;
+  };
 
   // Alpha applied to everything outside the hover highlight. Dimmed rather than
   // hidden: the surrounding shape is what makes the highlighted subgraph legible.
@@ -845,8 +849,6 @@ export function GraphView({
   // Depending on the four scalars rather than on `settings.forces` keeps a
   // filter-box keystroke (which rebuilds the settings object) from reheating
   // the simulation; `displayLinks` is memoized above for the same reason.
-  //
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `graphCollisionRadius` is a function of the degrees, which are a function of `displayLinks` — already a dependency. Listing the closure instead would reheat the layout on any render whose identity the compiler happens not to preserve, which is the scatter-on-hover bug all over again.
   useEffect(() => {
     const fg = fgRef.current;
     if (!fg) return;
@@ -862,33 +864,11 @@ export function GraphView({
     const center = fg.d3Force('center');
     center?.strength?.(centerStrength);
 
-    // force-graph ships link + charge + center and no collision, so nothing in
-    // the simulation forbids two nodes occupying the same point. A few hundred
-    // pages hanging off one folder at one distance therefore just stack, which
-    // is the solid ball of ink a big folder used to draw as. Registered here
-    // rather than once at mount so the radii track the degrees.
-    fg.d3Force(
-      'collide',
-      forceCollide<NodeObject<GraphNode>>()
-        .radius(graphCollisionRadius)
-        .strength(GRAPH_COLLISION_STRENGTH),
-    );
-
     const link = fg.d3Force('link');
     if (link) {
-      // A folder's pages sit at the radius they physically need in order to fit
-      // around it without overlapping — derived from the collision radius, not
-      // tuned. Every other edge uses the user's distance.
-      link.distance?.((candidate: { kind?: unknown; memberCount?: unknown }) => {
-        const memberCount = getGraphFolderLinkMemberCount(candidate);
-        return memberCount === null
-          ? linkDistance
-          : getGraphFolderLinkDistance(
-              linkDistance,
-              memberCount,
-              getGraphNodeCanvasRadius('default') + GRAPH_COLLISION_PADDING,
-            );
-      });
+      // One length for every edge, containment included, as the original
+      // SynapseNote layout had it.
+      link.distance?.(linkDistance);
       // d3's own default is `1 / min(degree(source), degree(target))`, computed
       // once at initialize. Reproducing it here rather than passing a flat
       // number keeps a multiplier of 1 a true no-op: a flat strength would
@@ -1283,13 +1263,14 @@ export function GraphView({
           <ForceGraph2D
             ref={fgRef}
             graphData={displayData}
-            // Unpacking is iterative: the collision force separates overlapping
-            // nodes a little per tick, so a folder holding hundreds of pages
-            // needs a few hundred ticks to finish opening out. 150 stopped the
-            // whole-project graph mid-unpack and left it looking packed. The
-            // rail's 2-hop neighborhood has nothing to unpack and keeps the
-            // shorter budget.
-            cooldownTicks={scope === 'global' ? 400 : 150}
+            // KNOWN ISSUE, recorded so the next person does not "fix" it by
+            // raising this: run the whole-project layout to convergence (~400
+            // ticks) and it anneals into a uniform hexagonally packed disc — the
+            // force configuration's true minimum is a blob. The structure you
+            // see at 150 is the layout caught in flight. That is where the
+            // original SynapseNote's clustering comes from and ours does not,
+            // and it is a layout problem, not a tick-budget one.
+            cooldownTicks={150}
             onEngineTick={() => {
               simulationSettledRef.current = false;
               // The camera stops chasing the ACTIVE document once the user has
@@ -1459,10 +1440,14 @@ export function GraphView({
 
               // The edge count, inside the ring. Only drawn once the ring is
               // physically big enough on screen to hold a digit.
-              if (style.showDegree && radius * globalScale >= 9) {
-                const fontPx = Math.min(radius * 1.05, 9 / globalScale);
-                ctx.font = `600 ${fontPx}px system-ui, sans-serif`;
+              // Quiet: the count is metadata about a node, not its identity.
+              // Drawn bold and dark it was the loudest thing on the canvas while
+              // the names were the faintest — exactly backwards.
+              if (style.showDegree && radius * globalScale >= 11) {
+                const fontPx = Math.min(radius * 0.85, 8 / globalScale);
+                ctx.font = `400 ${fontPx}px system-ui, sans-serif`;
                 ctx.fillStyle = color;
+                ctx.globalAlpha = nodeAlpha(node.id) * 0.5;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(String(degree), node.x, node.y);
@@ -1505,7 +1490,61 @@ export function GraphView({
               ctx.fillStyle = color;
               ctx.fill();
             }}
+            onRenderFramePre={(ctx: CanvasRenderingContext2D) => {
+              // Territories, painted under the links and nodes. Blurred, so they
+              // read as ground the graph sits on rather than as shapes drawn in
+              // it — the blur is what separates this from the hard grey
+              // ellipses that were tried and reverted earlier.
+              const bounds = areaBoundsRef.current;
+              bounds.clear();
+              if (areas.length === 0) return;
+
+              const positionById = new Map(
+                (displayData.nodes as Array<GraphNode & { x?: number; y?: number }>).map((node) => [
+                  node.id,
+                  node,
+                ]),
+              );
+
+              ctx.save();
+              ctx.filter = 'blur(18px)';
+              for (const area of areas) {
+                const box = getGraphAreaBounds(area, positionById);
+                if (!box) continue;
+                bounds.set(area.id, box);
+                ctx.beginPath();
+                ctx.ellipse(box.cx, box.cy, box.rx, box.ry, 0, 0, 2 * Math.PI);
+                ctx.globalAlpha = getGraphAreaFillAlpha(area.depth);
+                ctx.fillStyle = areaColor(area);
+                ctx.fill();
+              }
+              ctx.restore();
+            }}
             onRenderFramePost={(ctx: CanvasRenderingContext2D, globalScale: number) => {
+              const areaFg = areas.length > 0 ? fgRef.current : null;
+              if (areaFg) {
+                // Region names, in screen space so they stay readable at any
+                // zoom. They are the legend you navigate by, so they are drawn
+                // before the node labels and yield to them: strong when you are
+                // far enough out that node labels are gone, receding once you
+                // are close enough to read individual pages.
+                ctx.save();
+                const pxRatio = window.devicePixelRatio || 1;
+                ctx.setTransform(pxRatio, 0, 0, pxRatio, 0, 0);
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = palette.label;
+                ctx.globalAlpha = globalScale >= settings.display.textFadeThreshold ? 0.22 : 0.45;
+                for (const area of areas) {
+                  const box = areaBoundsRef.current.get(area.id);
+                  if (!box) continue;
+                  const screen = areaFg.graph2ScreenCoords(box.cx, box.cy);
+                  ctx.font = `italic ${getGraphAreaLabelSizePx(area.depth)}px Georgia, "Times New Roman", serif`;
+                  ctx.fillText(area.name, screen.x, screen.y);
+                }
+                ctx.restore();
+              }
+
               // No single cutoff any more: hubs earn a label further out than
               // leaves do, so the planner decides per node and this only skips
               // the work when not even the most permissive tier qualifies.
@@ -1558,12 +1597,7 @@ export function GraphView({
                 },
               });
 
-              drawGraphLabelPlacements({
-                ctx,
-                placements,
-                labelColor,
-                labelFaintColor: palette.labelFaint,
-              });
+              drawGraphLabelPlacements({ ctx, placements, labelColor });
               ctx.restore();
             }}
             linkColor={(link: LinkObject<GraphNode, GraphLink>) => {

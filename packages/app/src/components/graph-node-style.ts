@@ -44,8 +44,16 @@ export interface GraphNodeStyle {
   showDegree: boolean;
 }
 
-/** At or above this many edges a page is drawn as a hub. */
-export const GRAPH_HUB_DEGREE = 4;
+/**
+ * At or above this many edges a page is drawn as a hub.
+ *
+ * 8, matching the label tiers' idea of a landmark. It was 4, which in a vault of
+ * any maturity is most pages — so nearly every node drew as a ring with a count
+ * in it, and a hierarchy where everything is a hub is not a hierarchy. It also
+ * meant the canvas was covered in digits while only a handful of nodes showed
+ * their name, which is the wrong thing to be able to read.
+ */
+export const GRAPH_HUB_DEGREE = 8;
 
 export function getGraphNodeStyle({
   node,
