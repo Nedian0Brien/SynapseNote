@@ -157,6 +157,72 @@ export function tabParts(
   };
 }
 
+/**
+ * The shortest path prefix that tells each tab apart from the others open
+ * beside it, keyed by tab id.
+ *
+ * {@link tabParts} gives every tab its FULL parent path, which is right for the
+ * breadcrumb and for a tab's accessible name but wrong for its visible label: a
+ * run of tabs under one folder repeated that folder on every one of them —
+ * `brain/wiki/` three times over — and the repeated segments are exactly the
+ * part carrying no information. They also ate the width the distinguishing part
+ * needed, so the strip overflowed and scrolled the leftmost tab out of view.
+ *
+ * A basename unique among the open tabs needs no prefix at all. When tabs share
+ * one, each gets the fewest trailing folder segments that separate it from the
+ * rest — the rule VS Code and Zed use. Note the result depends on WHICH tabs are
+ * open, so a label can grow a prefix when a colliding tab opens and lose it
+ * again when that tab closes; the full path stays in the tooltip and the
+ * accessible name either way.
+ *
+ * Pass the same string each tab hands to {@link tabParts}. An empty path (a tab
+ * whose label is not path-derived, like a skill) simply yields no prefix.
+ */
+export function computeTabDisplayPrefixes(
+  labelPaths: ReadonlyMap<string, string>,
+): Map<string, string> {
+  const segmentsById = new Map<string, string[]>();
+  const idsByBaseName = new Map<string, string[]>();
+  for (const [id, path] of labelPaths) {
+    const segments = path.split('/').filter(Boolean);
+    segmentsById.set(id, segments);
+    const baseName = segments.at(-1) ?? '';
+    const group = idsByBaseName.get(baseName);
+    if (group) group.push(id);
+    else idsByBaseName.set(baseName, [id]);
+  }
+
+  const prefixes = new Map<string, string>();
+  for (const ids of idsByBaseName.values()) {
+    if (ids.length === 1) {
+      prefixes.set(ids[0] as string, '');
+      continue;
+    }
+    // Grow the prefix one folder at a time until every tab in the group reads
+    // differently. Bounded by the deepest path in the group: at that depth each
+    // label is its own full path, which is unique because tab ids are.
+    const maxDepth = Math.max(...ids.map((id) => (segmentsById.get(id)?.length ?? 1) - 1));
+    let depth = 1;
+    while (depth < maxDepth) {
+      const rendered = new Set(
+        ids.map((id) => trailingDirectories(segmentsById.get(id) ?? [], depth).join('/')),
+      );
+      if (rendered.size === ids.length) break;
+      depth += 1;
+    }
+    for (const id of ids) {
+      const directories = trailingDirectories(segmentsById.get(id) ?? [], depth);
+      prefixes.set(id, directories.length > 0 ? `${directories.join('/')}/` : '');
+    }
+  }
+  return prefixes;
+}
+
+function trailingDirectories(segments: readonly string[], depth: number): string[] {
+  const directories = segments.slice(0, -1);
+  return depth >= directories.length ? directories : directories.slice(directories.length - depth);
+}
+
 export function tabIdForNavigationTarget(
   target:
     | { kind: 'doc'; docName: string }

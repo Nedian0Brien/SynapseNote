@@ -1943,7 +1943,6 @@ msgid "Claude"
 msgstr ""
 
 #: src/components/chat/CliChatPanel.tsx
-#: src/components/chat/CliChatSession.tsx
 #: src/components/TerminalSessionsHost.tsx
 msgid "Claude chat"
 msgstr ""
@@ -2152,7 +2151,6 @@ msgid "Code expired — please try again"
 msgstr ""
 
 #: src/components/chat/CliChatPanel.tsx
-#: src/components/chat/CliChatSession.tsx
 #: src/components/TerminalSessionsHost.tsx
 msgid "Codex chat"
 msgstr ""
@@ -5801,7 +5799,7 @@ msgstr ""
 msgid "Load more records"
 msgstr ""
 
-#: src/components/chat/CliChatSession.tsx
+#: src/components/TerminalTabStrip.tsx
 msgid "Load previous chat"
 msgstr ""
 
@@ -6443,14 +6441,6 @@ msgstr ""
 msgid "New chat"
 msgstr ""
 
-#: src/components/chat/CliChatSession.tsx
-msgid "New Claude chat"
-msgstr ""
-
-#: src/components/chat/CliChatSession.tsx
-msgid "New Codex chat"
-msgstr ""
-
 #: src/components/CommandPalette.tsx
 #: src/components/DatabaseCreationDialog.tsx
 #: src/components/empty-state/CreateView.tsx
@@ -6890,7 +6880,7 @@ msgstr ""
 msgid "No permission exclusions"
 msgstr ""
 
-#: src/components/chat/CliChatSession.tsx
+#: src/components/TerminalTabStrip.tsx
 msgid "No previous chats"
 msgstr ""
 
@@ -7228,6 +7218,26 @@ msgstr ""
 
 #: src/components/PublishToGitHubDialog.tsx
 msgid "Open a doc to share its URL."
+msgstr ""
+
+#: src/components/DocPanel.tsx
+msgid "Open a document to see its annotations."
+msgstr ""
+
+#: src/components/DocPanel.tsx
+msgid "Open a document to see its headings."
+msgstr ""
+
+#: src/components/DocPanel.tsx
+msgid "Open a document to see its history."
+msgstr ""
+
+#: src/components/DocPanel.tsx
+msgid "Open a document to see its neighbors."
+msgstr ""
+
+#: src/components/DocPanel.tsx
+msgid "Open a document to see what it links to."
 msgstr ""
 
 #: src/components/settings/SettingsDialogShell.tsx
@@ -8017,7 +8027,7 @@ msgstr ""
 msgid "Unique ID preview"
 msgstr ""
 
-#: src/components/chat/CliChatSession.tsx
+#: src/components/TerminalTabStrip.tsx
 msgid "Previous chats"
 msgstr ""
 

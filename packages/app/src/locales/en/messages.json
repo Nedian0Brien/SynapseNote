@@ -688,6 +688,7 @@
     "AqhssK": ["No unread automation notifications."],
     "AqnqMJ": ["API key set"],
     "ArBWJf": ["Undo last edit"],
+    "ArvAc9": ["Open a document to see its headings."],
     "AsqRE_": ["Default location for new attachments"],
     "AtBdnD": ["Couldn't delete skill: ", ["error"]],
     "AwEQaN": ["Markdown formatting"],
@@ -878,6 +879,7 @@
     "E3fyvT": ["Database index is not current"],
     "E4XYYH": ["Enable terminal for this project"],
     "E5WeIy": ["Reopen the most recently closed editor tab."],
+    "E77phs": ["Open a document to see its annotations."],
     "E7BhZn": ["Blank note"],
     "E9bKSA": ["Creating"],
     "EBVbtP": ["Could not duplicate item"],
@@ -1852,6 +1854,7 @@
     "W3Xlpc": [
       "Set the auto-sync default for users opening this project for the first time. This setting is committed to your repository."
     ],
+    "W4DgIe": ["Open a document to see its history."],
     "W4XBZm": ["Preview restore option"],
     "W5A0Ly": ["An unexpected error occurred."],
     "W6240X": ["Fast on"],
@@ -2262,7 +2265,6 @@
       ["currentBaseLabel"],
       "</1>, in its own worktree under <2>.ok/worktrees/</2>."
     ],
-    "dGhNXs": ["New Codex chat"],
     "dIYSqk": ["remote"],
     "dJw2_7": ["Saved with the project for your team."],
     "dKps4W": [
@@ -2455,7 +2457,6 @@
     "gla9Gg": ["Save failed"],
     "gljvbT": [["words", "plural", { "one": ["word"], "other": ["words"] }]],
     "glzsS_": ["Pan right"],
-    "gmC_fw": ["New Claude chat"],
     "gmJ0An": ["Failed to open folder."],
     "goO4Ll": ["Editor status bar"],
     "gp3I7-": ["Before syncing, set your identity for git commits:"],
@@ -3195,6 +3196,7 @@
     ],
     "t67_m6": ["Clear saved filters"],
     "t6w1cq": ["Open a blank editor tab."],
+    "t8NXFa": ["Open a document to see its neighbors."],
     "tAPZEx": ["Below"],
     "tB9C7X": ["Unverify"],
     "tCHy2K": ["Manage the GitHub account SynapseNote uses to browse and sync your repositories."],
@@ -3297,6 +3299,7 @@
       ["2"],
       " full bodies omitted."
     ],
+    "uulnA4": ["Open a document to see what it links to."],
     "uuoHOU": ["Command failed."],
     "uyBDJ_": ["This Board view has no valid primary group."],
     "uynXup": [["tokens", "plural", { "one": ["token"], "other": ["tokens"] }]],

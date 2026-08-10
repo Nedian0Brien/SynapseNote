@@ -56,6 +56,7 @@ import { useDocumentNavigation } from '@/editor/document-context/useDocumentNavi
 import { useDocumentTabs } from '@/editor/document-context/useDocumentTabs';
 import { captureRenameSnapshots } from '@/editor/editor-cache';
 import {
+  computeTabDisplayPrefixes,
   docTabId,
   filterClosableTabIds,
   parseEditorTabId,
@@ -709,6 +710,24 @@ export function EditorTabs() {
   // top band and trailing space. Web mode (no `window.okDesktop`) is unchanged.
   const isElectronHost = typeof window !== 'undefined' && window.okDesktop != null;
   const newTabIdSet = new Set(newTabIds);
+  // Visible prefixes are a property of the OPEN SET, not of any one tab: a tab
+  // shows only as much of its path as it needs to be told apart from its
+  // neighbours. Computed once per render for the whole strip, then applied to
+  // each label below; `tabParts`' full prefix still backs the tooltip and the
+  // accessible name.
+  const tabDisplayPrefixes = computeTabDisplayPrefixes(
+    new Map(
+      visibleTabIds
+        .filter((tabId) => !newTabIdSet.has(tabId))
+        .map((tabId) => {
+          const tab = parseEditorTabId(tabId);
+          if (tab.kind === 'folder') return [tabId, tab.folderPath] as const;
+          if (tab.kind === 'asset') return [tabId, tab.assetPath] as const;
+          if (tab.kind === 'skill-file') return [tabId, tab.path] as const;
+          return [tabId, tab.docName] as const;
+        }),
+    ),
+  );
   const tabReorderModifiers = [createTabReorderModifier(tabReorderBounds)];
 
   function closeVisibleTabs(tabIds: readonly string[]) {
@@ -990,6 +1009,8 @@ export function EditorTabs() {
               if (tab.kind === 'folder') {
                 const { baseName, label, prefix } = tabParts(tab.folderPath, '/');
                 const accessibleLabel = `${prefix}${label}`;
+                const displayPrefix =
+                  prefix === '' ? '' : (tabDisplayPrefixes.get(tabId) ?? prefix);
                 return (
                   <EditorTabContextMenu
                     key={tabId}
@@ -1032,20 +1053,20 @@ export function EditorTabs() {
                         }}
                         tabIndex={-1}
                       >
-                        {prefix && (
+                        {displayPrefix && (
                           <span
                             className={cn(
                               'min-w-0 flex-1 truncate',
                               isActive && 'text-muted-foreground',
                             )}
                           >
-                            {prefix}
+                            {displayPrefix}
                           </span>
                         )}
                         <span
                           className={cn(
                             'flex min-w-0 items-center',
-                            prefix ? 'max-w-[70%] shrink-0' : 'flex-1',
+                            displayPrefix ? 'max-w-[70%] shrink-0' : 'flex-1',
                           )}
                         >
                           <span className="min-w-0 truncate">{baseName}</span>
@@ -1074,6 +1095,8 @@ export function EditorTabs() {
                 const labelPath = tab.kind === 'asset' ? tab.assetPath : tab.path;
                 const { baseName, label, prefix } = tabParts(labelPath, '');
                 const accessibleLabel = `${prefix}${label}`;
+                const displayPrefix =
+                  prefix === '' ? '' : (tabDisplayPrefixes.get(tabId) ?? prefix);
                 return (
                   <EditorTabContextMenu
                     key={tabId}
@@ -1115,20 +1138,20 @@ export function EditorTabs() {
                         }}
                         tabIndex={-1}
                       >
-                        {prefix ? (
+                        {displayPrefix ? (
                           <span
                             className={cn(
                               'min-w-0 flex-1 truncate text-muted-foreground/60',
                               isActive && 'text-muted-foreground',
                             )}
                           >
-                            {prefix}
+                            {displayPrefix}
                           </span>
                         ) : null}
                         <span
                           className={cn(
                             'min-w-0 truncate',
-                            prefix ? 'max-w-[70%] shrink-0' : 'flex-1',
+                            displayPrefix ? 'max-w-[70%] shrink-0' : 'flex-1',
                           )}
                         >
                           {baseName}
@@ -1152,6 +1175,8 @@ export function EditorTabs() {
               const docName = tab.docName;
               const docExt = pageMeta.get(docName)?.docExt ?? '.md';
               const { baseName, extension, label, prefix } = tabParts(docName, docExt);
+              // Doc tabs render the basename alone (DocumentTabButton takes no
+              // prefix), so only the accessible name needs the full path here.
               const accessibleLabel = `${prefix}${label}`;
               const hideDocExtension = docExt === '.md' || docExt === '.mdx';
               const isRenaming = renamingTab?.tabId === tabId;

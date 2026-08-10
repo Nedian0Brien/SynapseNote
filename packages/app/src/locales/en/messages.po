@@ -1948,7 +1948,6 @@ msgid "Claude"
 msgstr "Claude"
 
 #: src/components/chat/CliChatPanel.tsx
-#: src/components/chat/CliChatSession.tsx
 #: src/components/TerminalSessionsHost.tsx
 msgid "Claude chat"
 msgstr "Claude chat"
@@ -2157,7 +2156,6 @@ msgid "Code expired — please try again"
 msgstr "Code expired — please try again"
 
 #: src/components/chat/CliChatPanel.tsx
-#: src/components/chat/CliChatSession.tsx
 #: src/components/TerminalSessionsHost.tsx
 msgid "Codex chat"
 msgstr "Codex chat"
@@ -5806,7 +5804,7 @@ msgstr "Load more pages"
 msgid "Load more records"
 msgstr "Load more records"
 
-#: src/components/chat/CliChatSession.tsx
+#: src/components/TerminalTabStrip.tsx
 msgid "Load previous chat"
 msgstr "Load previous chat"
 
@@ -6448,14 +6446,6 @@ msgstr "New branch <0>{trimmed}</0> will be created from the current commit, in 
 msgid "New chat"
 msgstr "New chat"
 
-#: src/components/chat/CliChatSession.tsx
-msgid "New Claude chat"
-msgstr "New Claude chat"
-
-#: src/components/chat/CliChatSession.tsx
-msgid "New Codex chat"
-msgstr "New Codex chat"
-
 #: src/components/CommandPalette.tsx
 #: src/components/DatabaseCreationDialog.tsx
 #: src/components/empty-state/CreateView.tsx
@@ -6895,7 +6885,7 @@ msgstr "No patterns yet. Type a folder or file name below to start hiding files.
 msgid "No permission exclusions"
 msgstr "No permission exclusions"
 
-#: src/components/chat/CliChatSession.tsx
+#: src/components/TerminalTabStrip.tsx
 msgid "No previous chats"
 msgstr "No previous chats"
 
@@ -7234,6 +7224,26 @@ msgstr "Open a blank editor tab."
 #: src/components/PublishToGitHubDialog.tsx
 msgid "Open a doc to share its URL."
 msgstr "Open a doc to share its URL."
+
+#: src/components/DocPanel.tsx
+msgid "Open a document to see its annotations."
+msgstr "Open a document to see its annotations."
+
+#: src/components/DocPanel.tsx
+msgid "Open a document to see its headings."
+msgstr "Open a document to see its headings."
+
+#: src/components/DocPanel.tsx
+msgid "Open a document to see its history."
+msgstr "Open a document to see its history."
+
+#: src/components/DocPanel.tsx
+msgid "Open a document to see its neighbors."
+msgstr "Open a document to see its neighbors."
+
+#: src/components/DocPanel.tsx
+msgid "Open a document to see what it links to."
+msgstr "Open a document to see what it links to."
 
 #: src/components/settings/SettingsDialogShell.tsx
 msgid "Open a project to edit."
@@ -8022,7 +8032,7 @@ msgstr "Preview view"
 msgid "Unique ID preview"
 msgstr "Preview: {value}"
 
-#: src/components/chat/CliChatSession.tsx
+#: src/components/TerminalTabStrip.tsx
 msgid "Previous chats"
 msgstr "Previous chats"
 

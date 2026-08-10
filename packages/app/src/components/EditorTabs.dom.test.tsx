@@ -368,13 +368,16 @@ describe('EditorTabs runtime behavior', () => {
     const { assetId, folderId, newId } = defaultTabs();
     await renderEditorTabs();
 
+    // `team` and `cat.png` are unique across the open tabs, so neither label
+    // carries a prefix — the accessible name (what `tabButton` matches on) and
+    // the title keep the full path.
     const folderTab = tabButton('docs/team/');
-    expect(folderTab.textContent).toBe('docs/team/');
+    expect(folderTab.textContent).toBe('team/');
     fireEvent.click(folderTab);
     expect(activateTab).toHaveBeenCalledWith(folderId);
 
     const assetTab = tabButton('images/cat.png');
-    expect(assetTab.textContent).toBe('images/cat.png');
+    expect(assetTab.textContent).toBe('cat.png');
     fireEvent.click(assetTab);
     expect(activateTab).toHaveBeenCalledWith(assetId);
 
@@ -386,6 +389,24 @@ describe('EditorTabs runtime behavior', () => {
 
     fireEvent.click(screen.getByTestId('editor-new-tab-button'));
     expect(openNewTab).toHaveBeenCalledTimes(1);
+  });
+
+  test('a folder label grows only the folders that tell it from a colliding tab', async () => {
+    // Two sibling folders whose leaf names match: the label shows the least it
+    // can and still be unambiguous. Before this, every folder tab carried its
+    // whole parent path, so a run under one directory repeated that directory
+    // on each tab and pushed the distinguishing part out of view.
+    const wikiId = folderTabId('brain/wiki/index');
+    const rawId = folderTabId('brain/raw/index');
+    openTabs = [wikiId, rawId];
+    visibleTabIds = [wikiId, rawId];
+    activeTabId = wikiId;
+    await renderEditorTabs();
+
+    expect(tabButton('brain/wiki/index/').textContent).toBe('wiki/index/');
+    expect(tabButton('brain/raw/index/').textContent).toBe('raw/index/');
+    // The full path stays reachable for pointer and screen-reader users.
+    expect(tabButton('brain/wiki/index/').getAttribute('title')).toBe('brain/wiki/index/');
   });
 
   test('Electron host applies drag only to the strip root and no-drag to the content wrapper', async () => {
