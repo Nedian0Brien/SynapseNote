@@ -1,3 +1,4 @@
+import { GRAPH_TAG_NODE_PREFIX } from './graph-filter';
 import type { GraphLink } from './graph-view-utils';
 import { resolveGraphLinkEndpointId } from './graph-view-utils';
 
@@ -45,6 +46,27 @@ export function getGraphHighlightSet(
     highlighted.add(neighbor);
   }
   return highlighted;
+}
+
+/**
+ * Whether both ends of a link are real pages.
+ *
+ * A page-to-page link is the structure the graph exists to show. A link to a
+ * tag or an external URL is annotation hanging off that structure, and drawing
+ * both at the same weight buries the first under the second — in a project
+ * whose pages each carry a handful of tags, the annotations outnumber the
+ * structure several times over.
+ */
+export function isStructuralGraphLink(link: Pick<GraphLink, 'source' | 'target'>): boolean {
+  for (const endpoint of [link.source, link.target]) {
+    const id = resolveGraphLinkEndpointId(endpoint);
+    // Both non-page kinds are namespaced by prefix at their source: `external:`
+    // by the server, `tag:` by the client-side synthesizer.
+    if (id === null || id.startsWith('external:') || id.startsWith(GRAPH_TAG_NODE_PREFIX)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 /**

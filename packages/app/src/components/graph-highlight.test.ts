@@ -3,6 +3,7 @@ import {
   buildGraphAdjacency,
   getGraphHighlightSet,
   isGraphLinkHighlighted,
+  isStructuralGraphLink,
 } from './graph-highlight';
 
 const LINKS = [
@@ -94,5 +95,34 @@ describe('isGraphLinkHighlighted', () => {
 
   test('reads endpoints that the simulation replaced with node objects', () => {
     expect(isGraphLinkHighlighted({ source: { id: 'a' }, target: { id: 'b' } }, 'a')).toBe(true);
+  });
+});
+
+describe('isStructuralGraphLink', () => {
+  test('is true only when both ends are real pages', () => {
+    expect(isStructuralGraphLink({ source: 'notes/A', target: 'notes/B' })).toBe(true);
+  });
+
+  test('is false for the annotation kinds, from either end', () => {
+    // Tags and external URLs hang off the structure; drawn at the same weight
+    // they bury it, because a tagged project has more of them than of pages.
+    expect(isStructuralGraphLink({ source: 'notes/A', target: 'tag:idea' })).toBe(false);
+    expect(isStructuralGraphLink({ source: 'tag:idea', target: 'notes/A' })).toBe(false);
+    expect(isStructuralGraphLink({ source: 'notes/A', target: 'external:https://x.test' })).toBe(
+      false,
+    );
+  });
+
+  test('is false when an endpoint cannot be resolved', () => {
+    expect(isStructuralGraphLink({ source: 'notes/A', target: null })).toBe(false);
+  });
+
+  test('reads endpoints the simulation replaced with node objects', () => {
+    expect(isStructuralGraphLink({ source: { id: 'notes/A' }, target: { id: 'notes/B' } })).toBe(
+      true,
+    );
+    expect(isStructuralGraphLink({ source: { id: 'notes/A' }, target: { id: 'tag:x' } })).toBe(
+      false,
+    );
   });
 });

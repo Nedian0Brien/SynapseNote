@@ -29,7 +29,12 @@ centering force released, so the neighborhood stays where you can read and click
 it. Keep zooming and the neighbors become **cards** with their titles, paths, and
 tags at full size; zoom back out and you return to exactly the view you left.
 
-Labels follow the same idea: a page's name now appears at a zoom that matches
-how connected it is, so zooming out thins the graph down to its landmarks
-instead of clearing every name at once. Unresolved-link markers also stop
-swelling into large discs when the graph is zoomed out.
+The graph is also redrawn to read calmly at scale. Meaning is carried by weight
+rather than by color: well-linked pages are open rings with their link count
+inside, ordinary pages are soft dots, and things that are referenced but are not
+pages — unresolved links, tags, external URLs — recede into faint outlines
+instead of being painted in alarm red. Page-to-page links are drawn more firmly
+than links to tags and URLs, and color is spent on one thing only: the document
+you came from. Labels sit as plain text under their node and appear at a zoom
+that matches how connected the page is, so zooming out thins the graph down to
+its landmarks instead of clearing every name at once.

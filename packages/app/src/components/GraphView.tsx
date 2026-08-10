@@ -14,10 +14,13 @@ import { openExternalUrl } from '@/lib/external-link';
 import type { GraphSettings } from '@/lib/graph-settings-store';
 import { cn } from '@/lib/utils';
 import { getGraphCardNeighbors } from './GraphCardDeck';
-import { clusterColor } from './graph-colors';
 import { applyGraphFilters } from './graph-filter';
 import { matchGraphGroup, resolveGraphGroupColor } from './graph-groups';
-import { buildGraphAdjacency, isGraphLinkHighlighted } from './graph-highlight';
+import {
+  buildGraphAdjacency,
+  isGraphLinkHighlighted,
+  isStructuralGraphLink,
+} from './graph-highlight';
 import {
   type GraphInteractionMode,
   getGraphAlphaDecay,
@@ -33,6 +36,7 @@ import {
 } from './graph-label-layout';
 import { MIN_GRAPH_LABEL_ZOOM_FACTOR } from './graph-label-tiers';
 import { buildGraphLabelDescriptors } from './graph-label-utils';
+import { type GraphNodeEmphasis, getGraphNodeStyle } from './graph-node-style';
 import {
   buildGraphDegreeMap,
   buildGraphLinkSignature,
@@ -217,30 +221,21 @@ function drawGraphLabelPlacements({
   ctx,
   placements,
   labelColor,
-  chipColor,
-  chipBorderColor,
+  labelFaintColor,
 }: {
   ctx: CanvasRenderingContext2D;
   placements: GraphLabelPlacement[];
   labelColor: string;
-  chipColor: string;
-  chipBorderColor: string;
+  labelFaintColor: string;
 }): void {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
 
   for (const placement of placements) {
-    const width = placement.rect.right - placement.rect.left;
-    const height = placement.rect.bottom - placement.rect.top;
-
-    ctx.fillStyle = chipColor;
-    ctx.fillRect(placement.rect.left, placement.rect.top, width, height);
-
-    ctx.strokeStyle = chipBorderColor;
-    ctx.lineWidth = 1;
-    ctx.strokeRect(placement.rect.left, placement.rect.top, width, height);
-
-    ctx.fillStyle = labelColor;
+    // Plain text, no chip. The chip was there to keep labels readable over a
+    // loud canvas; with the node encoding calmed down it was the loudest thing
+    // left. The active document's label is the only one drawn at full weight.
+    ctx.fillStyle = placement.isActive ? labelColor : labelFaintColor;
     ctx.fillText(placement.text, placement.textX, placement.textY);
   }
 }
@@ -501,7 +496,6 @@ export function GraphView({
   onSelectNode,
   onBackgroundClick,
   onStatsChange,
-  onClustersChange,
   onCardModeChange,
 }: {
   activeDocName: string;
@@ -518,7 +512,6 @@ export function GraphView({
   onSelectNode?: (selection: GraphNodeSelection) => void;
   onBackgroundClick?: () => void;
   onStatsChange?: (nodes: number, links: number, loading: boolean) => void;
-  onClustersChange?: (clusters: string[]) => void;
   /**
    * The neighbor deck to show, or null when the user is not zoomed in that far.
    * One callback rather than a raw mode plus a separate neighbor query: the
@@ -666,28 +659,45 @@ export function GraphView({
   );
 
   const isDark = resolvedTheme === 'dark';
-  const bgColor = isDark ? 'hsl(0 0% 4%)' : 'hsl(0 0% 100%)';
-  const defaultNodeColor = isDark ? '#6b7280' : '#9ca3af';
-  const activeNodeColor = isDark ? '#69a3ff' : '#3784ff';
-  const selectedNodeColor = isDark ? '#34d399' : '#059669';
-  const activeSelectedNodeColor = isDark ? '#c084fc' : '#7c3aed';
-  const externalNodeColor = isDark ? '#f59e0b' : '#c2410c';
-  const tagNodeColor = isDark ? '#22d3ee' : '#164e63';
-  const tagNodeRingColor = isDark ? 'rgba(34,211,238,0.5)' : 'rgba(22,78,99,0.3)';
-  const folderNodeColor = isDark ? '#a78bfa' : '#7c3aed';
-  const missingNodeColor = isDark ? '#f87171' : '#dc2626';
-  const edgeColor = isDark ? 'rgba(75,85,99,0.6)' : 'rgba(209,213,219,0.8)';
-  // Edges outside a hover highlight. Baked as a color rather than a globalAlpha
-  // because force-graph draws links itself — there is no per-link canvas hook.
-  const dimmedEdgeColor = isDark ? 'rgba(75,85,99,0.12)' : 'rgba(209,213,219,0.18)';
-  const labelColor = isDark ? '#f3f4f6' : '#111827';
-  const activeNodeRingColor = isDark ? 'rgba(105,163,255,0.45)' : 'rgba(55,132,255,0.3)';
-  const folderNodeRingColor = isDark ? 'rgba(167,139,250,0.38)' : 'rgba(124,58,237,0.22)';
-  const missingNodeRingColor = isDark ? 'rgba(248,113,113,0.58)' : 'rgba(220,38,38,0.38)';
-  const selectedNodeRingColor = isDark ? 'rgba(52,211,153,0.5)' : 'rgba(5,150,105,0.3)';
-  const activeSelectedNodeRingColor = isDark ? 'rgba(192,132,252,0.5)' : 'rgba(124,58,237,0.35)';
-  const labelChipColor = isDark ? 'rgba(3,7,18,0.92)' : 'rgba(255,255,255,0.94)';
-  const labelChipBorderColor = isDark ? 'rgba(243,244,246,0.08)' : 'rgba(17,24,39,0.08)';
+  // The graph reads in the app's own chord: the neutral greyscale ramp from
+  // `tokens.css` plus the one sky-blue `--primary`. Weight carries the
+  // hierarchy (see `graph-node-style.ts`); hue is spent only on the active
+  // document, so it is the single thing on screen that can claim the eye.
+  const palette = isDark
+    ? {
+        background: 'oklch(0.145 0 0)',
+        accent: '#69a3ff',
+        strong: 'oklch(0.90 0 0)',
+        normal: 'oklch(0.62 0 0)',
+        faint: 'oklch(0.42 0 0)',
+        label: 'oklch(0.78 0 0)',
+        labelFaint: 'oklch(0.55 0 0)',
+        edgeStrong: 'rgba(255,255,255,0.20)',
+        edgeSoft: 'rgba(255,255,255,0.10)',
+        edgeDim: 'rgba(255,255,255,0.045)',
+      }
+    : {
+        background: 'oklch(1 0 0)',
+        accent: '#3784ff',
+        strong: 'oklch(0.32 0 0)',
+        normal: 'oklch(0.68 0 0)',
+        faint: 'oklch(0.86 0 0)',
+        label: 'oklch(0.38 0 0)',
+        labelFaint: 'oklch(0.62 0 0)',
+        edgeStrong: 'rgba(23,23,23,0.20)',
+        edgeSoft: 'rgba(23,23,23,0.10)',
+        edgeDim: 'rgba(23,23,23,0.045)',
+      };
+  const bgColor = palette.background;
+  const labelColor = palette.label;
+  const emphasisColor = (emphasis: GraphNodeEmphasis): string =>
+    emphasis === 'accent'
+      ? palette.accent
+      : emphasis === 'selected' || emphasis === 'strong'
+        ? palette.strong
+        : emphasis === 'faint'
+          ? palette.faint
+          : palette.normal;
   const focusZoom = scope === 'global' ? 1.6 : 2.35;
   const maxLabelWidthPx = scope === 'global' ? 220 : 150;
 
@@ -749,6 +759,7 @@ export function GraphView({
   const pinSelectedNode = physics.pinSelectedNode;
 
   const adjacency = buildGraphAdjacency(displayData.links);
+  const degreeByNodeId = buildGraphDegreeMap(displayData.links);
   // Alpha applied to everything outside the hover highlight. Dimmed rather than
   // hidden: the surrounding shape is what makes the highlighted subgraph legible.
   const dimAlpha = isDark ? 0.16 : 0.12;
@@ -762,17 +773,6 @@ export function GraphView({
   useEffect(() => {
     onStatsChange?.(displayData.nodes.length, displayData.links.length, loading);
   }, [displayData, loading, onStatsChange]);
-
-  useEffect(() => {
-    if (!onClustersChange) return;
-    const seen = new Set<string>();
-    for (const node of graphData.nodes) {
-      if (node.kind === 'doc' && node.cluster) {
-        seen.add(node.cluster);
-      }
-    }
-    onClustersChange(Array.from(seen).sort());
-  }, [graphData, onClustersChange]);
 
   useEffect(() => {
     graphNodesRef.current = graphData.nodes;
@@ -1261,91 +1261,93 @@ export function GraphView({
                 node,
                 navigationIntentByNodeId,
               });
-              const isFolderTarget = displayState === 'folder';
-              const isMissingTarget = displayState === 'missing';
-              const nodeRadius = getGraphNodeCanvasRadius(state) * settings.display.nodeSize;
-              const pointerRadius =
-                getGraphNodeInteractiveRadius({
-                  state,
-                  displayState,
-                  globalScale,
-                }) * settings.display.nodeSize;
+              const degree = degreeByNodeId.get(node.id) ?? 0;
+              const style = getGraphNodeStyle({ node, degree, displayState, visualState: state });
+              const radius =
+                getGraphNodeCanvasRadius(state) * settings.display.nodeSize * style.scale;
 
+              // A user-defined group is an explicit instruction and outranks the
+              // weight scale; the auto-assigned cluster hue does NOT, because a
+              // graph that colors every node by cluster is the confetti this
+              // encoding exists to replace. Clusters still drive the legend.
               const group = matchGraphGroup(node, settings.groups);
-              const docCluster = node.kind === 'doc' ? node.cluster : undefined;
-              // A user-defined group outranks the auto-assigned cluster color:
-              // the group is an explicit instruction, the cluster a fallback.
-              const baseFill = group
+              const color = group
                 ? resolveGraphGroupColor(group.color, isDark)
-                : docCluster
-                  ? clusterColor(docCluster, isDark)
-                  : defaultNodeColor;
+                : emphasisColor(style.emphasis);
 
               ctx.save();
               ctx.globalAlpha = nodeAlpha(node.id);
-              ctx.beginPath();
-              ctx.arc(node.x, node.y, nodeRadius, 0, 2 * Math.PI, false);
-              ctx.fillStyle =
-                state === 'active'
-                  ? activeNodeColor
-                  : state === 'active-selected'
-                    ? activeSelectedNodeColor
-                    : state === 'external' || state === 'external-selected'
-                      ? externalNodeColor
-                      : state === 'tag' || state === 'tag-selected'
-                        ? tagNodeColor
-                        : isMissingTarget
-                          ? missingNodeColor
-                          : state === 'selected'
-                            ? selectedNodeColor
-                            : isFolderTarget
-                              ? folderNodeColor
-                              : baseFill;
-              ctx.fill();
 
-              if (pointerRadius > nodeRadius) {
+              const strokeWidth = screenOffsetInGraphUnits(1.5, globalScale, radius);
+              if (style.shape === 'filled') {
                 ctx.beginPath();
-                ctx.arc(node.x, node.y, pointerRadius, 0, 2 * Math.PI, false);
-                ctx.strokeStyle = isMissingTarget
-                  ? missingNodeRingColor
-                  : state === 'active'
-                    ? activeNodeRingColor
-                    : state === 'tag-selected'
-                      ? tagNodeRingColor
-                      : state === 'selected' || state === 'external-selected'
-                        ? selectedNodeRingColor
-                        : activeSelectedNodeRingColor;
-                // Same screen-space-to-graph-units cap as the radius above: an
-                // uncapped 1.75/scale stroke swallows the node when zoomed out.
-                ctx.lineWidth = screenOffsetInGraphUnits(
-                  isMissingTarget ? 1.75 : 2,
-                  globalScale,
-                  nodeRadius,
-                );
-                ctx.setLineDash(
-                  isMissingTarget
-                    ? [
-                        screenOffsetInGraphUnits(3, globalScale, nodeRadius),
-                        screenOffsetInGraphUnits(2, globalScale, nodeRadius),
-                      ]
-                    : [],
-                );
+                ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);
+                ctx.fillStyle = color;
+                ctx.fill();
+              } else if (style.shape === 'ring') {
+                // Hollow, so the fill has to be the background rather than
+                // nothing — links are drawn first and would otherwise show
+                // straight through the node.
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);
+                ctx.fillStyle = bgColor;
+                ctx.fill();
+                ctx.lineWidth = strokeWidth;
+                ctx.strokeStyle = color;
+                ctx.stroke();
+              } else if (style.shape === 'ghost') {
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);
+                ctx.fillStyle = bgColor;
+                ctx.fill();
+                ctx.lineWidth = strokeWidth;
+                ctx.strokeStyle = color;
+                ctx.setLineDash([
+                  screenOffsetInGraphUnits(2.5, globalScale, radius),
+                  screenOffsetInGraphUnits(2, globalScale, radius),
+                ]);
                 ctx.stroke();
                 ctx.setLineDash([]);
-              } else if (isFolderTarget) {
+              } else {
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);
+                ctx.fillStyle = color;
+                ctx.fill();
+              }
+
+              // Selection is a halo OUTSIDE the node rather than a fill change,
+              // so a selected node keeps whatever weight its role gave it.
+              if (state !== 'default' && state !== 'external' && state !== 'tag') {
                 ctx.beginPath();
                 ctx.arc(
                   node.x,
                   node.y,
-                  nodeRadius + screenOffsetInGraphUnits(2, globalScale, nodeRadius),
+                  radius + screenOffsetInGraphUnits(3, globalScale, radius),
                   0,
                   2 * Math.PI,
                   false,
                 );
-                ctx.strokeStyle = folderNodeRingColor;
-                ctx.lineWidth = screenOffsetInGraphUnits(1.5, globalScale, nodeRadius);
+                ctx.lineWidth = screenOffsetInGraphUnits(1.5, globalScale, radius);
+                ctx.strokeStyle =
+                  state === 'active' || state === 'active-selected'
+                    ? palette.accent
+                    : palette.strong;
+                ctx.globalAlpha = nodeAlpha(node.id) * 0.45;
                 ctx.stroke();
+                ctx.globalAlpha = nodeAlpha(node.id);
               }
+
+              // The edge count, inside the ring. Only drawn once the ring is
+              // physically big enough on screen to hold a digit.
+              if (style.showDegree && radius * globalScale >= 9) {
+                const fontPx = Math.min(radius * 1.05, 9 / globalScale);
+                ctx.font = `600 ${fontPx}px system-ui, sans-serif`;
+                ctx.fillStyle = color;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(String(degree), node.x, node.y);
+              }
+
               ctx.restore();
             }}
             nodePointerAreaPaint={(
@@ -1437,17 +1439,21 @@ export function GraphView({
                 ctx,
                 placements,
                 labelColor,
-                chipColor: labelChipColor,
-                chipBorderColor: labelChipBorderColor,
+                labelFaintColor: palette.labelFaint,
               });
               ctx.restore();
             }}
-            linkColor={(link: LinkObject<GraphNode, GraphLink>) =>
-              hoveredNodeIdRef.current === null ||
-              isGraphLinkHighlighted(link, hoveredNodeIdRef.current)
-                ? edgeColor
-                : dimmedEdgeColor
-            }
+            linkColor={(link: LinkObject<GraphNode, GraphLink>) => {
+              if (
+                hoveredNodeIdRef.current !== null &&
+                !isGraphLinkHighlighted(link, hoveredNodeIdRef.current)
+              ) {
+                return palette.edgeDim;
+              }
+              // A page-to-page link is the graph's real structure; a link to a
+              // tag or an external URL is annotation, and recedes behind it.
+              return isStructuralGraphLink(link) ? palette.edgeStrong : palette.edgeSoft;
+            }}
             linkDirectionalArrowLength={settings.display.showArrows ? 3 : 0}
             linkDirectionalArrowRelPos={1}
             linkWidth={(link: LinkObject<GraphNode, GraphLink>) =>

@@ -269,7 +269,6 @@ export function GraphSurface({ activeDocName }: { activeDocName: string | null }
   const [orphanMode, setOrphanMode] = useState<OrphanMode>('both');
   const [selectedNode, setSelectedNode] = useState<GraphNodeSelection | null>(null);
   const [stats, setStats] = useState<{ nodes: number; links: number } | null>(null);
-  const [clusters, setClusters] = useState<string[]>([]);
   const [cardDeck, setCardDeck] = useState<{
     centerNode: GraphNode;
     neighbors: GraphNode[];
@@ -489,10 +488,9 @@ export function GraphSurface({ activeDocName }: { activeDocName: string | null }
               }
               setStats({ nodes, links });
             }}
-            onClustersChange={setClusters}
             onCardModeChange={setCardDeck}
           />
-          <GraphLegend clusters={clusters} groups={settings.groups} variant="fullscreen" />
+          <GraphLegend groups={settings.groups} variant="fullscreen" />
           {cardDeck ? (
             <GraphCardDeck
               centerNode={cardDeck.centerNode}

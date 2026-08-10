@@ -29,7 +29,6 @@ const GRAPH_SETTINGS_SCOPE = 'docked' as const;
 export function GraphPanel({ activeDocName }: { activeDocName: string }) {
   const { t } = useLingui();
   const [stats, setStats] = useState<{ nodes: number; links: number } | null>(null);
-  const [clusters, setClusters] = useState<string[]>([]);
   const graphViewRef = useRef<GraphViewHandle>(null);
   const [settings, setSettings] = useState<GraphSettings>(() =>
     getInitialGraphSettings(GRAPH_SETTINGS_SCOPE),
@@ -156,9 +155,8 @@ export function GraphPanel({ activeDocName }: { activeDocName: string }) {
             }
             setStats({ nodes, links });
           }}
-          onClustersChange={setClusters}
         />
-        <GraphLegend clusters={clusters} groups={settings.groups} variant="docked" />
+        <GraphLegend groups={settings.groups} variant="docked" />
       </div>
     </Panel>
   );
