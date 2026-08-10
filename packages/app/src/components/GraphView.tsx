@@ -17,6 +17,7 @@ import { getGraphCardNeighbors } from './GraphCardDeck';
 import {
   buildGraphAreas,
   GRAPH_AREA_BLUR_PX,
+  GRAPH_AREA_LAYER_SCALE,
   GRAPH_AREA_TINT_ALPHA,
   type GraphArea,
   type GraphAreaBounds,
@@ -271,18 +272,19 @@ function paintGraphAreaPartition({
   width: number;
   height: number;
 }): void {
-  const pxRatio = window.devicePixelRatio || 1;
-  const pixelWidth = Math.max(1, Math.round(width * pxRatio));
-  const pixelHeight = Math.max(1, Math.round(height * pxRatio));
-  // Assigning width/height also clears the canvas and resets its state, so it
-  // is only done on a real resize; otherwise clear explicitly.
-  if (layer.width !== pixelWidth || layer.height !== pixelHeight) {
-    layer.width = pixelWidth;
-    layer.height = pixelHeight;
+  // Deliberately low resolution — see GRAPH_AREA_LAYER_SCALE. Assigning
+  // width/height also clears the canvas and resets its state, so it is only
+  // done on a real resize; otherwise clear explicitly.
+  const layerWidth = Math.max(1, Math.round(width * GRAPH_AREA_LAYER_SCALE));
+  const layerHeight = Math.max(1, Math.round(height * GRAPH_AREA_LAYER_SCALE));
+  if (layer.width !== layerWidth || layer.height !== layerHeight) {
+    layer.width = layerWidth;
+    layer.height = layerHeight;
   }
   const layerCtx = layer.getContext('2d');
   if (!layerCtx) return;
-  layerCtx.setTransform(pxRatio, 0, 0, pxRatio, 0, 0);
+  // Ellipses are still placed in CSS pixels; the transform does the shrinking.
+  layerCtx.setTransform(GRAPH_AREA_LAYER_SCALE, 0, 0, GRAPH_AREA_LAYER_SCALE, 0, 0);
   layerCtx.clearRect(0, 0, width, height);
   layerCtx.globalCompositeOperation = 'destination-over';
 
@@ -304,8 +306,12 @@ function paintGraphAreaPartition({
     layerCtx.fill();
   }
 
+  const pxRatio = window.devicePixelRatio || 1;
   ctx.save();
   ctx.setTransform(pxRatio, 0, 0, pxRatio, 0, 0);
+  // The upscale is the first smoothing pass and the blur is the second.
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
   ctx.filter = `blur(${GRAPH_AREA_BLUR_PX}px)`;
   ctx.globalAlpha = GRAPH_AREA_TINT_ALPHA;
   ctx.drawImage(layer, 0, 0, width, height);

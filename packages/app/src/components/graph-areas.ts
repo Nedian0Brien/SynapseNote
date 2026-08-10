@@ -171,7 +171,19 @@ export const GRAPH_AREA_TINT_ALPHA = 0.16;
  * to each region. Blurring them individually would feather the boundaries back
  * into one another and undo the partition.
  */
-export const GRAPH_AREA_BLUR_PX = 22;
+export const GRAPH_AREA_BLUR_PX = 30;
+
+/**
+ * Resolution the territory layer is rasterized at, as a fraction of the canvas.
+ *
+ * The layer exists only to be soft, so there is no reason to draw it sharp and
+ * then spend a full-resolution blur destroying that sharpness. Rasterizing it
+ * small and scaling back up IS a smoothing pass — bilinear interpolation across
+ * a 4-5x upscale rounds every boundary on its own — and it costs a fraction of
+ * what blurring the full canvas each frame does. The blur on top finishes the
+ * job.
+ */
+export const GRAPH_AREA_LAYER_SCALE = 0.22;
 
 /** Region names are the map's legend: large when far out, smaller further in. */
 export function getGraphAreaLabelSizePx(depth: number): number {
