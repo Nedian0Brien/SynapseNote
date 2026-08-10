@@ -121,14 +121,28 @@ describe('DocPanel — single-file tab gating', () => {
     ]);
   });
 
-  test('viewer-only surfaces render the icon-only Chat tab without unavailable document tabs', () => {
+  test('keeps every tool in the rail on a surface with no document', () => {
+    // The document tools used to be filtered out whenever `docName` was null,
+    // so navigating to a folder or an asset collapsed the rail to a single
+    // floating Chat icon and the whole strip reflowed. A toolbox you can only
+    // reach for on some screens is not one you can reach for — the tools stay
+    // and say why they are empty instead.
     renderPanel('chat', { showChatTab: true, docName: null });
-    expect(screen.getAllByRole('tab')).toHaveLength(1);
-    const chatTab = screen.getByRole('tab', { name: 'Chat' });
-    expect(chatTab).toBeTruthy();
-    expect(chatTab.textContent).toBe('');
+    expect(screen.getAllByRole('tab').map((tab) => tab.getAttribute('aria-label'))).toEqual([
+      'Chat',
+      'Outline',
+      'Annotations',
+      'Links',
+      'Graph',
+      'Timeline',
+    ]);
     expect(screen.getByTestId('chat-panel')).toBeTruthy();
+  });
+
+  test('a document tool with no document open explains itself instead of rendering blank', () => {
+    renderPanel('outline', { showChatTab: true, docName: null });
     expect(screen.queryByTestId('outline-panel')).toBeNull();
+    expect(screen.getByText('Open a document to see its headings.')).toBeTruthy();
   });
 
   test('PDF surfaces order Chat, Pages, Annotations, Outline, and Links', () => {

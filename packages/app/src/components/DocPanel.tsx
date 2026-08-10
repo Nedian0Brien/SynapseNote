@@ -45,6 +45,23 @@ function tabLabel(id: PanelTab): string {
   return t`Timeline`;
 }
 
+/** What each doc-scoped tool says when no document is open. */
+function emptyToolCopy(id: PanelTab): string {
+  if (id === 'outline') return t`Open a document to see its headings.`;
+  if (id === 'memo') return t`Open a document to see its annotations.`;
+  if (id === 'links') return t`Open a document to see what it links to.`;
+  if (id === 'graph') return t`Open a document to see its neighbors.`;
+  return t`Open a document to see its history.`;
+}
+
+function NoDocumentState({ tab }: { tab: PanelTab }) {
+  return (
+    <div className="flex h-full items-center justify-center px-6 text-center">
+      <p className="text-xs text-muted-foreground">{emptyToolCopy(tab)}</p>
+    </div>
+  );
+}
+
 /**
  * Top-level mode for the DocPanel container. Two values:
  *   - `'doc'`:   existing per-document info tabs (outline / links / …).
@@ -113,14 +130,19 @@ export function DocPanel({
   const tabs = sourceTabs.filter((tab) => {
     if (tab.id === 'chat') return showChatTab;
     if (surface === 'pdf') return true;
-    if (docName === null) return false;
     return !singleFile || tab.id === 'outline' || tab.id === 'memo';
   });
   const effectiveTab: PanelTab = tabs.some((tab) => tab.id === activeTab)
     ? activeTab
     : (tabs[0]?.id ?? 'outline');
-  const viewerOnlyChat = docName === null && tabs.length === 1 && tabs[0]?.id === 'chat';
-  const showTabStrip = mode === 'doc' && (tabs.length > 1 || viewerOnlyChat);
+  // A doc-scoped tool with nothing to describe. It renders its own empty state
+  // rather than being dropped from the rail: a toolbox whose tools come and go
+  // as you navigate is not one you can reach for, and the vanishing tab strip
+  // made the whole rail reflow every time the content surface changed to a
+  // folder or an asset.
+  const docToolWithoutDocument =
+    surface === 'document' && effectiveTab !== 'chat' && docName === null;
+  const showTabStrip = mode === 'doc' && tabs.length > 1;
   return (
     <>
       {/* In `'doc'` mode: the info sub-tabs render as the panel header.
@@ -192,6 +214,7 @@ export function DocPanel({
         >
           {effectiveTab === 'chat' && chatContent}
           {surface === 'pdf' && effectiveTab !== 'chat' && pdfContent}
+          {docToolWithoutDocument && <NoDocumentState tab={effectiveTab} />}
           {surface === 'document' && effectiveTab === 'outline' && docName !== null && (
             <OutlinePanel docName={docName} isSourceMode={isSourceMode} />
           )}

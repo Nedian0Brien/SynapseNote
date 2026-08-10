@@ -253,17 +253,23 @@ const { RightRailLayout } = await import('./RightRail');
  */
 function EditorArea(props: Record<string, unknown>) {
   return (
-    <RightRailLayout
-      activeTab={(props.activeTab as never) ?? 'timeline'}
-      onActiveTabChange={(props.onActiveTabChange as never) ?? (() => {})}
-      isSourceMode={props.editorMode === 'source'}
-      terminalBridge={props.terminalBridge as never}
-      terminalVisible={props.terminalVisible as never}
-      onTerminalVisibleChange={props.onTerminalVisibleChange as never}
-      terminalDock={props.terminalDock as never}
-    >
-      <EditorAreaView {...(props as never)} />
-    </RightRailLayout>
+    // The rail is always mounted now, so its tool strip (and the tooltips on
+    // it) render in every test — including the ones that used to get a bare
+    // tree because no rail existed on the web host. Nested providers are inert,
+    // so the handful of tests that wrap explicitly still work.
+    <TooltipProvider>
+      <RightRailLayout
+        activeTab={(props.activeTab as never) ?? 'timeline'}
+        onActiveTabChange={(props.onActiveTabChange as never) ?? (() => {})}
+        isSourceMode={props.editorMode === 'source'}
+        terminalBridge={props.terminalBridge as never}
+        terminalVisible={props.terminalVisible as never}
+        onTerminalVisibleChange={props.onTerminalVisibleChange as never}
+        terminalDock={props.terminalDock as never}
+      >
+        <EditorAreaView {...(props as never)} />
+      </RightRailLayout>
+    </TooltipProvider>
   );
 }
 
@@ -598,7 +604,12 @@ describe('EditorArea asset-view terminal host', () => {
       <EditorArea
         editorMode="wysiwyg"
         onModeChange={() => {}}
-        activeTab="timeline"
+        // Revealing a right-docked terminal selects the Chat tool — EditorPane
+        // does this on every path that opens it. The chat host is rendered by
+        // the selected tool's slot, so the pair has to be stated together. It
+        // used to be implicit: an asset view had no document, so every other
+        // tool was filtered out of the rail and Chat won by default.
+        activeTab="chat"
         onActiveTabChange={() => {}}
         terminalBridge={{} as never}
         terminalVisible

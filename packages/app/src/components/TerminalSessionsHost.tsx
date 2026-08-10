@@ -871,6 +871,19 @@ export function TerminalSessionsHost({
         }}
         dockPosition={dockPosition}
         onToggleDock={onToggleDock}
+        // Every chat except the one on screen: open sessions activate, native
+        // ones resume into a new session.
+        previousChats={chatHeaderSessions.filter((entry) => entry.id !== activeSessionId)}
+        onReloadPreviousChats={reloadNativeChatSessions}
+        onSelectPreviousChat={(id: string) => {
+          const target = chatHeaderSessions.find((entry) => entry.id === id);
+          if (target?.openSessionId != null) {
+            setActiveSessionId(target.openSessionId);
+            queueMicrotask(() => focusTerminalSession(target.openSessionId ?? ''));
+          } else if (target?.resumeSessionId != null) {
+            openNewChatSession(target.cli, target.resumeSessionId);
+          }
+        }}
         // Collapse hides the terminal but keeps every session alive (hide is not
         // kill), exactly like the ⌘J toggle — the next reveal restores the tabs.
         // The window has no collapse (closing the window is the OS affordance).
@@ -911,20 +924,6 @@ export function TerminalSessionsHost({
                 onClose={() => closeSession(session.id)}
                 documentContext={documentContext}
                 selectionContext={selectionContext}
-                sessionId={session.id}
-                title={sessionLabel(session)}
-                sessions={chatHeaderSessions}
-                onReloadSessions={reloadNativeChatSessions}
-                onSelectSession={(id) => {
-                  const target = chatHeaderSessions.find((entry) => entry.id === id);
-                  if (target?.openSessionId != null) {
-                    setActiveSessionId(target.openSessionId);
-                    queueMicrotask(() => focusTerminalSession(target.openSessionId ?? ''));
-                  } else if (target?.resumeSessionId != null) {
-                    openNewChatSession(target.cli, target.resumeSessionId);
-                  }
-                }}
-                onNewChat={openNewChatSession}
                 onTitleChange={(title) => setSessionTitle(session.id, title)}
                 onNativeSessionId={(chatSessionId) =>
                   setSessionChatSessionId(session.id, chatSessionId)

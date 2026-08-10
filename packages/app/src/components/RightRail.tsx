@@ -20,12 +20,16 @@ import { useDocumentCollaboration } from '@/editor/document-context/useDocumentC
 import { useDocumentNavigation } from '@/editor/document-context/useDocumentNavigation';
 import { useDocumentPanels } from '@/editor/document-context/useDocumentPanels';
 import type { OkDesktopBridge } from '@/lib/desktop-bridge-types';
-import { getInitialDocPanelWidth, writeDocPanelWidth } from '@/lib/doc-panel-width-store';
 import { matchesKeyboardShortcut } from '@/lib/keyboard-shortcuts';
+import {
+  getInitialRightRailWidth,
+  MAX_RIGHT_RAIL_WIDTH,
+  MIN_RIGHT_RAIL_WIDTH,
+  writeRightRailWidth,
+} from '@/lib/right-rail-width-store';
 import { RIGHT_COLLAPSE_THRESHOLD, resolvePartition } from '@/lib/sidebar-partition';
 import { applyToggle, readPins, resolveEffectiveState } from '@/lib/sidebar-pin-store';
 import type { TerminalDockPosition } from '@/lib/terminal-dock-store';
-import { MIN_TERMINAL_WIDTH, writeTerminalWidth } from '@/lib/terminal-width-store';
 import { cn } from '@/lib/utils';
 import { computeStickyRepinLayout } from './editor-area-sticky-repin';
 import { xtermThemeForMode } from './terminal-theme';
@@ -34,13 +38,13 @@ import { xtermThemeForMode } from './terminal-theme';
  * The right rail is a TOOLBOX, not a view.
  *
  * It sits beside the whole content column — header included — the mirror of the
- * left file sidebar, and it spans the window top to bottom. Its presence is
- * derived from which tools exist (a terminal bridge, an open document), never
- * from what the content surface happens to be showing. That is what keeps the
- * panel-ID set stable across navigation: react-resizable-panels caches layouts
- * keyed by that set and restores the cached layout whenever it changes, which
- * was the root of the doc-panel/terminal-column resurrection bugs this single
- * id retires.
+ * left file sidebar, and it spans the window top to bottom. It is ALWAYS
+ * mounted: a tool with nothing to describe renders its own empty state (see
+ * `DocPanel`) rather than leaving the box. That makes the panel-ID set
+ * immutable for the life of the app, which is what retires the whole class of
+ * doc-panel/terminal-column resurrection bugs — react-resizable-panels caches
+ * layouts keyed by that set and restores the cached one whenever it changes.
+ * Collapse, not unmount, is how the rail gets out of the way.
  *
  * The content column is the residual absorber and intentionally has no id (an
  * explicit id on it changes how the library redistributes an imperative
@@ -49,15 +53,10 @@ import { xtermThemeForMode } from './terminal-theme';
  */
 const RIGHT_RAIL_ID = 'right-rail';
 
-// One floor for the whole toolbox — the widest tool's minimum wins. The
-// document tools were usable from 300px, but a CLI chat reflows badly below
-// ~92 columns, so `MIN_TERMINAL_WIDTH` is the floor that keeps every tool
-// usable at the rail's narrowest.
-const RAIL_MIN_SIZE = `${MIN_TERMINAL_WIDTH}px`;
-// One ceiling for the whole toolbox. A toolbox does not take the window: chat
-// used to be allowed 95% (with the content surface squeezed to a 5% sliver),
-// which made the rail read as a second content surface rather than a drawer.
-const RAIL_MAX_SIZE = '720px';
+// One floor and one ceiling for the whole toolbox, both owned by the width
+// store alongside the persisted value they clamp.
+const RAIL_MIN_SIZE = `${MIN_RIGHT_RAIL_WIDTH}px`;
+const RAIL_MAX_SIZE = `${MAX_RIGHT_RAIL_WIDTH}px`;
 
 interface RightRailContextValue {
   /** Whether the toolbox is put away. Drives the viewer toggles' pressed state. */
@@ -124,14 +123,9 @@ export function RightRailLayout({
 
   // The document the rail's doc-scoped tools describe. Folder, skill-file and
   // large-file views have no document, so those tools render their own empty
-  // state rather than being removed from the box.
+  // state (see `DocPanel`) rather than being removed from the box.
   const railDocName =
     activeTarget?.kind === 'doc' || activeTarget?.kind === 'missing' ? activeDocName : null;
-  // The toolbox exists when at least one tool does. On desktop the Chat tool
-  // ships with the bridge, so this is true for the whole session and the
-  // panel-ID set never moves. The web host has only document tools, so there
-  // the box can genuinely come and go.
-  const railPresent = terminalBridge != null || railDocName != null || activePdfAsset !== null;
 
   const [embeddedHost] = useState(() => detectEmbeddedHostFromBrowser());
   const isEmbedded = embeddedHost !== null;
@@ -177,20 +171,15 @@ export function RightRailLayout({
   // refs during render, so we cannot use the ref in the `defaultSize` JSX
   // below). The ref carries the running value updated by `onResize` during a
   // user drag; only callbacks/effects read it.
-  const [initialRailWidthPx] = useState(() => getInitialDocPanelWidth());
+  const [initialRailWidthPx] = useState(() => getInitialRightRailWidth());
   const railWidthPxRef = useRef(initialRailWidthPx);
   const writeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // The rail has ONE width. Both legacy stores are still written so an app
-  // rolled back to the two-column build finds its width where it expects it;
-  // the read side already collapsed to `getInitialDocPanelWidth()`. Merging the
-  // two stores into one `right-rail` key is the last step of the promotion.
   function rememberRailWidth(px: number) {
     railWidthPxRef.current = px;
     if (writeTimerRef.current != null) clearTimeout(writeTimerRef.current);
     writeTimerRef.current = setTimeout(() => {
-      writeDocPanelWidth(px);
-      writeTerminalWidth(px);
+      writeRightRailWidth(px);
       writeTimerRef.current = null;
     }, 100);
   }
@@ -389,28 +378,6 @@ export function RightRailLayout({
     expandRail,
   ]);
 
-  // react-resizable-panels caches layouts keyed by the panel-ID set and restores
-  // the cached layout whenever the set changes. Showing or hiding chat used to
-  // swap `doc-panel` for `terminal-column` and so resurrected whatever state the
-  // OTHER panel set last saw. One rail retires that entirely: switching tools is
-  // now a change of CONTENT inside a stable panel.
-  //
-  // The set can still change once, on hosts where the toolbox itself comes and
-  // goes (web, where the only tools are document tools and there may be no doc
-  // open). Re-assert there so the rail keeps its pre-change collapsed state. The
-  // library's restore runs synchronously in the re-registration render, so the
-  // correction is deferred one microtask to land after it (still ahead of paint
-  // — `setLayout` notifies the panels' external stores synchronously).
-  const prevRailPresentRef = useRef(railPresent);
-  useLayoutEffect(() => {
-    if (prevRailPresentRef.current === railPresent) return;
-    prevRailPresentRef.current = railPresent;
-    const railCollapsed = isCollapsed;
-    queueMicrotask(() => {
-      assertRailLayoutRef.current(railCollapsed);
-    });
-  }, [railPresent, isCollapsed]);
-
   // Focus safety: a collapsed panel keeps its subtree in the DOM (the library
   // applies no inert of its own), so move focus out before `inert` strands it.
   useLayoutEffect(() => {
@@ -456,7 +423,7 @@ export function RightRailLayout({
   ]);
 
   // The content column absorbs the residual width whenever the rail claims space.
-  const contentAbsorbsResidual = railPresent && !initialRightCollapsed;
+  const contentAbsorbsResidual = !initialRightCollapsed;
 
   return (
     <RightRailContext
@@ -512,112 +479,108 @@ export function RightRailLayout({
             {children}
           </ResizablePanel>
 
-          {railPresent ? (
-            <>
-              <ResizableHandle
-                // No visible grip while collapsed — there is nothing to drag. A
-                // collapsed rail is not drag-resizable either: the toolbar
-                // toggle and ⌥⌘B are its single open mechanism. Disabling it
-                // while collapsed also keeps it from being a misclick target
-                // under embedded AI-editor hosts whose own container chrome sits
-                // at the iframe edge.
-                withHandle={!isCollapsed}
-                disabled={isCollapsed}
-                // A gutter, not a rule. The default 1px `bg-border` line was the
-                // hard seam that gave away that content and rail were one
-                // surface; an 8px transparent gap matches the gutter between the
-                // file sidebar and the card on the other side.
-                className="w-2 bg-transparent"
-                onPointerDown={() => {
-                  setIsDraggingRail(true);
-                  isDraggingRailRef.current = true;
-                  const handleUp = () => {
-                    setIsDraggingRail(false);
-                    isDraggingRailRef.current = false;
-                    window.removeEventListener('pointerup', handleUp);
-                    // Drag-to-close: releasing with the rail snapped shut stands
-                    // the live chat session down, the same as closing it from
-                    // the toggle. Deferred to pointerup — reacting mid-drag
-                    // would pull the separator out from under the pointer.
-                    if (panelRef.current?.isCollapsed()) standDownChatIfLive();
-                  };
-                  window.addEventListener('pointerup', handleUp);
-                }}
-              />
-              <ResizablePanel
-                id={RIGHT_RAIL_ID}
-                panelRef={panelRef}
-                // Paint the surface with the xterm canvas color while chat is
-                // the live tool so its tab strip reads as one surface with the
-                // terminal (mirrors TerminalDock's bottom panel); the document
-                // tools keep the app tint.
-                style={chatToolLive ? { backgroundColor: xtermBackground } : undefined}
-                defaultSize={initialRightCollapsed ? 0 : `${initialRailWidthPx}px`}
-                minSize={RAIL_MIN_SIZE}
-                maxSize={RAIL_MAX_SIZE}
-                collapsible
-                collapsedSize={0}
-                onResize={(size) => {
-                  setIsCollapsed(size.asPercentage === 0);
-                  // Persist only when this resize came from a user drag —
-                  // RO-driven recomputes (sticky width restoration) also fire
-                  // onResize, but they're replaying the persisted value and must
-                  // NOT overwrite it.
-                  if (size.inPixels > 0 && isDraggingRailRef.current) {
-                    rememberRailWidth(size.inPixels);
-                  }
-                }}
-                // react-resizable-panels does NOT apply
-                // inert/aria-hidden/display:none when a panel collapses
-                // (verified against the installed runtime) — children stay in
-                // DOM, in Tab order, and announced by screen readers. `inert`
-                // removes the collapsed subtree from the a11y tree and focus
-                // order without remounting.
-                inert={isCollapsed}
-                className={cn(
-                  // Flat, on the shell tint — the same treatment as the file
-                  // sidebar. No card, no shadow, no rounding: the rail is
-                  // chrome, and only the content surface is a card.
-                  'flex flex-col',
-                  !chatToolLive && 'bg-sidebar',
-                  !isDraggingRail &&
-                    'transition-[flex-grow] duration-200 ease-out motion-reduce:transition-none motion-reduce:duration-0',
-                )}
-              >
-                <DocPanel
-                  docName={activeProvider != null ? railDocName : null}
-                  isSourceMode={isSourceMode}
-                  activeTab={activeTab}
-                  onActiveTabChange={onActiveTabChange}
-                  // Agent activity is a drill-in on the whole box, so it applies
-                  // over any content surface — not just the folder view that
-                  // used to own its own panel. Falls back to the tool rail when
-                  // no agent is scoped.
-                  mode={docPanelMode === 'agent' && docPanelAgentId !== null ? 'agent' : 'doc'}
-                  surface={activePdfAsset !== null ? 'pdf' : 'document'}
-                  showChatTab={terminalBridge != null}
-                  chatContent={
-                    chatToolLive ? (
-                      <div
-                        ref={setRightTerminalContainer}
-                        data-testid="right-chat-host"
-                        className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background"
-                      />
-                    ) : null
-                  }
-                  pdfContent={
-                    activePdfAsset !== null ? (
-                      <div
-                        ref={setPdfPanelContainer}
-                        data-testid="pdf-panel-host"
-                        className="h-full min-h-0 overflow-hidden bg-background"
-                      />
-                    ) : null
-                  }
-                />
-              </ResizablePanel>
-            </>
-          ) : null}
+          <ResizableHandle
+            // No visible grip while collapsed — there is nothing to drag. A
+            // collapsed rail is not drag-resizable either: the toolbar
+            // toggle and ⌥⌘B are its single open mechanism. Disabling it
+            // while collapsed also keeps it from being a misclick target
+            // under embedded AI-editor hosts whose own container chrome sits
+            // at the iframe edge.
+            withHandle={!isCollapsed}
+            disabled={isCollapsed}
+            // A gutter, not a rule. The default 1px `bg-border` line was the
+            // hard seam that gave away that content and rail were one
+            // surface; an 8px transparent gap matches the gutter between the
+            // file sidebar and the card on the other side.
+            className="w-2 bg-transparent"
+            onPointerDown={() => {
+              setIsDraggingRail(true);
+              isDraggingRailRef.current = true;
+              const handleUp = () => {
+                setIsDraggingRail(false);
+                isDraggingRailRef.current = false;
+                window.removeEventListener('pointerup', handleUp);
+                // Drag-to-close: releasing with the rail snapped shut stands
+                // the live chat session down, the same as closing it from
+                // the toggle. Deferred to pointerup — reacting mid-drag
+                // would pull the separator out from under the pointer.
+                if (panelRef.current?.isCollapsed()) standDownChatIfLive();
+              };
+              window.addEventListener('pointerup', handleUp);
+            }}
+          />
+          <ResizablePanel
+            id={RIGHT_RAIL_ID}
+            panelRef={panelRef}
+            // Paint the surface with the xterm canvas color while chat is
+            // the live tool so its tab strip reads as one surface with the
+            // terminal (mirrors TerminalDock's bottom panel); the document
+            // tools keep the app tint.
+            style={chatToolLive ? { backgroundColor: xtermBackground } : undefined}
+            defaultSize={initialRightCollapsed ? 0 : `${initialRailWidthPx}px`}
+            minSize={RAIL_MIN_SIZE}
+            maxSize={RAIL_MAX_SIZE}
+            collapsible
+            collapsedSize={0}
+            onResize={(size) => {
+              setIsCollapsed(size.asPercentage === 0);
+              // Persist only when this resize came from a user drag —
+              // RO-driven recomputes (sticky width restoration) also fire
+              // onResize, but they're replaying the persisted value and must
+              // NOT overwrite it.
+              if (size.inPixels > 0 && isDraggingRailRef.current) {
+                rememberRailWidth(size.inPixels);
+              }
+            }}
+            // react-resizable-panels does NOT apply
+            // inert/aria-hidden/display:none when a panel collapses
+            // (verified against the installed runtime) — children stay in
+            // DOM, in Tab order, and announced by screen readers. `inert`
+            // removes the collapsed subtree from the a11y tree and focus
+            // order without remounting.
+            inert={isCollapsed}
+            className={cn(
+              // Flat, on the shell tint — the same treatment as the file
+              // sidebar. No card, no shadow, no rounding: the rail is
+              // chrome, and only the content surface is a card.
+              'flex flex-col',
+              !chatToolLive && 'bg-sidebar',
+              !isDraggingRail &&
+                'transition-[flex-grow] duration-200 ease-out motion-reduce:transition-none motion-reduce:duration-0',
+            )}
+          >
+            <DocPanel
+              docName={activeProvider != null ? railDocName : null}
+              isSourceMode={isSourceMode}
+              activeTab={activeTab}
+              onActiveTabChange={onActiveTabChange}
+              // Agent activity is a drill-in on the whole box, so it applies
+              // over any content surface — not just the folder view that
+              // used to own its own panel. Falls back to the tool rail when
+              // no agent is scoped.
+              mode={docPanelMode === 'agent' && docPanelAgentId !== null ? 'agent' : 'doc'}
+              surface={activePdfAsset !== null ? 'pdf' : 'document'}
+              showChatTab={terminalBridge != null}
+              chatContent={
+                chatToolLive ? (
+                  <div
+                    ref={setRightTerminalContainer}
+                    data-testid="right-chat-host"
+                    className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background"
+                  />
+                ) : null
+              }
+              pdfContent={
+                activePdfAsset !== null ? (
+                  <div
+                    ref={setPdfPanelContainer}
+                    data-testid="pdf-panel-host"
+                    className="h-full min-h-0 overflow-hidden bg-background"
+                  />
+                ) : null
+              }
+            />
+          </ResizablePanel>
         </ResizablePanelGroup>
       </div>
     </RightRailContext>
