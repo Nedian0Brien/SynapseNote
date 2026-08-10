@@ -22,3 +22,14 @@ view.
 The local and project graphs keep separate settings, so tuning one leaves the
 other alone. Both are remembered between sessions, and "Restore defaults" puts
 either back the way it was.
+
+Zoom now drives the project graph rather than just scaling it. Select a node and
+zoom in and the graph **stops drifting** — the selection is pinned and the
+centering force released, so the neighborhood stays where you can read and click
+it. Keep zooming and the neighbors become **cards** with their titles, paths, and
+tags at full size; zoom back out and you return to exactly the view you left.
+
+Labels and folders follow the same idea. A page's name now appears at a zoom
+that matches how connected it is, so zooming out thins the graph down to its
+landmarks instead of clearing every name at once. Folders are drawn as named
+regions behind the nodes that live in them, giving the graph the shape of a map.

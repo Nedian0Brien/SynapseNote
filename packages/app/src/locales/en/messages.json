@@ -254,6 +254,7 @@
     "3oh0nQ": ["Nested .okignore error in ", ["path"]],
     "3pU8e-": ["Pin tab"],
     "3pVQwo": ["Create a new database page with a Name column and a first-row affordance."],
+    "3qQBVr": ["Close neighbor cards"],
     "3rzMXB": [
       "This table shows the first ",
       ["DATABASE_TABLE_RENDERED_COLUMN_LIMIT"],
@@ -1036,6 +1037,7 @@
     "GamjcN": ["Template saved"],
     "GddclO": ["Open databases"],
     "GemPfn": ["Failed to parse forward-links error response (HTTP ", ["status"], ")"],
+    "GfMdN6": ["Neighbors of ", ["0"]],
     "GfcoKl": ["Choose a compatible relation, target property, and aggregation."],
     "Gfr4fu": ["Server can't open documents"],
     "Gg4tFh": ["Preview move up"],
@@ -1999,6 +2001,7 @@
     "YlDuro": ["Fit height"],
     "YoGdcv": ["Discard queued writes"],
     "YqbZSs": ["Database pages share their content with every linked view."],
+    "Yr74Ht": ["Neighbors"],
     "Yr8Yhw": ["Save appearance"],
     "YsEYYS": [
       ["behind", "plural", { "one": ["#", " commit behind"], "other": ["#", " commits behind"] }]
@@ -2102,6 +2105,7 @@
     "_XWY2J": ["Terminal disabled"],
     "_cxklM": ["Insert property"],
     "_eguJc": ["Uploading"],
+    "_gY2VH": ["Filter by ", ["0"]],
     "_gkGSK": ["deleted template"],
     "_hPpdX": ["Skill renamed"],
     "_lc6JP": ["That folder isn't an SynapseNote project yet. Initialize it and open?"],
@@ -2344,6 +2348,7 @@
     "e8zRrb": ["Show Files"],
     "e8zYa8": ["Could not open ", ["shareBranch"], " in a worktree. Try again."],
     "eBIT9h": ["Paste failed.", ["restoreSuffix"]],
+    "eDKkoK": ["This page has no links yet."],
     "eFJkVt": ["Clone failed: ", ["cloneError"]],
     "eG8Jsg": ["Toggle source tab focus mode"],
     "eGUbmF": ["Copy selected file or folder"],

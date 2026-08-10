@@ -13,10 +13,12 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, ArrowUpRight, CheckCircle2, Globe, Hash, Scan } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { GraphCardDeck } from '@/components/GraphCardDeck';
 import { GraphLegend } from '@/components/GraphLegend';
 import { GraphSettingsPopover } from '@/components/GraphSettingsPopover';
 import { GraphView, type GraphViewHandle } from '@/components/GraphView';
 import {
+  type GraphNode,
   type GraphNodeSelection,
   getHashForGraphDocSelection,
 } from '@/components/graph-view-utils';
@@ -268,6 +270,10 @@ export function GraphSurface({ activeDocName }: { activeDocName: string | null }
   const [selectedNode, setSelectedNode] = useState<GraphNodeSelection | null>(null);
   const [stats, setStats] = useState<{ nodes: number; links: number } | null>(null);
   const [clusters, setClusters] = useState<string[]>([]);
+  const [cardDeck, setCardDeck] = useState<{
+    centerNode: GraphNode;
+    neighbors: GraphNode[];
+  } | null>(null);
   const graphViewRef = useRef<GraphViewHandle>(null);
   const [settings, setSettings] = useState<GraphSettings>(() =>
     getInitialGraphSettings(GRAPH_SETTINGS_SCOPE),
@@ -484,9 +490,30 @@ export function GraphSurface({ activeDocName }: { activeDocName: string | null }
               setStats({ nodes, links });
             }}
             onClustersChange={setClusters}
+            onCardModeChange={setCardDeck}
           />
           <GraphLegend clusters={clusters} groups={settings.groups} variant="fullscreen" />
-          {selectedNode !== null && selectedNodeState ? (
+          {cardDeck ? (
+            <GraphCardDeck
+              centerNode={cardDeck.centerNode}
+              neighbors={cardDeck.neighbors}
+              onOpenDoc={(node) =>
+                window.location.assign(hashFromDocName(node.docName, node.anchor))
+              }
+              onFilterByTag={(tag) => {
+                updateSettings({
+                  ...settings,
+                  filters: { ...settings.filters, query: `tag:${tag}` },
+                });
+                setSelectedNode(null);
+              }}
+              // Dropping the selection drops the deck with it: the mode is
+              // derived from (selection, zoom), so this is the one lever that
+              // does not fight the user's camera.
+              onDismiss={() => setSelectedNode(null)}
+            />
+          ) : null}
+          {cardDeck === null && selectedNode !== null && selectedNodeState ? (
             <div className="pointer-events-none absolute inset-x-4 top-4 z-10 flex justify-center">
               <div
                 role="status"

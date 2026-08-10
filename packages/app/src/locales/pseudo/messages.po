@@ -2120,6 +2120,10 @@ msgstr ""
 msgid "Close find"
 msgstr ""
 
+#: src/components/GraphCardDeck.tsx
+msgid "Close neighbor cards"
+msgstr ""
+
 #: src/components/EditorTabs.tsx
 msgid "Close new tab"
 msgstr ""
@@ -4624,6 +4628,11 @@ msgstr ""
 msgid "Files sidebar"
 msgstr ""
 
+#. placeholder {0}: node.label
+#: src/components/GraphCardDeck.tsx
+msgid "Filter by {0}"
+msgstr ""
+
 #: src/components/DatabasePropertyMenu.tsx
 msgid "Filter by property"
 msgstr ""
@@ -6462,6 +6471,15 @@ msgstr ""
 msgid "Navigation history"
 msgstr ""
 
+#: src/components/GraphCardDeck.tsx
+msgid "Neighbors"
+msgstr ""
+
+#. placeholder {0}: centerNode.label
+#: src/components/GraphCardDeck.tsx
+msgid "Neighbors of {0}"
+msgstr ""
+
 #: src/components/settings/OkignoreSection.tsx
 msgid "Nested .okignore error in {path}"
 msgstr ""
@@ -7272,8 +7290,10 @@ msgstr ""
 
 #. placeholder {0}: entry.title
 #. placeholder {0}: link.title
+#. placeholder {0}: node.label
 #: src/components/chat/WebPreviewCards.tsx
 #: src/components/FolderDocumentCard.tsx
+#: src/components/GraphCardDeck.tsx
 msgid "Open {0}"
 msgstr ""
 
@@ -10530,6 +10550,7 @@ msgstr ""
 msgid "Table layout and calculations"
 msgstr ""
 
+#: src/components/GraphCardDeck.tsx
 #: src/editor/slash-command/component-items.tsx
 msgid "Tag"
 msgstr ""
@@ -11021,6 +11042,10 @@ msgstr ""
 
 #: src/components/LinksPanel.tsx
 msgid "This page doesn't link to anything yet."
+msgstr ""
+
+#: src/components/GraphCardDeck.tsx
+msgid "This page has no links yet."
 msgstr ""
 
 #: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx

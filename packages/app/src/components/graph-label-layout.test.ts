@@ -13,6 +13,11 @@ function plan({
   viewport = { width: 200, height: 120 },
   maxLabels = 8,
   maxLabelWidthPx = 120,
+  // These cases are about PLACEMENT, so the tier gate is held open by default:
+  // a zoom above the leaf threshold admits every candidate. The gate itself is
+  // covered in graph-label-tiers.test.ts, and by the case below.
+  zoomScale = 10,
+  leafLabelThreshold = 1.8,
 }: {
   nodes: GraphLabelLayoutNode[];
   links?: GraphLabelLayoutLink[];
@@ -20,6 +25,8 @@ function plan({
   viewport?: { width: number; height: number };
   maxLabels?: number;
   maxLabelWidthPx?: number;
+  zoomScale?: number;
+  leafLabelThreshold?: number;
 }) {
   return planGraphLabels({
     nodes,
@@ -28,12 +35,66 @@ function plan({
     viewport,
     maxLabels,
     maxLabelWidthPx,
+    zoomScale,
+    leafLabelThreshold,
     labelDescriptors: buildGraphLabelDescriptors(nodes),
     measureTextWidthPx: (text) => text.length * 6,
     projectToScreen: (x, y) => ({ x, y }),
     getNodeRadiusPx: () => 6,
   });
 }
+
+describe('planGraphLabels — label tiers', () => {
+  const nodes: GraphLabelLayoutNode[] = [
+    { kind: 'doc', id: 'hub', docName: 'hub', anchor: null, label: 'hub', x: 20, y: 20 },
+    { kind: 'doc', id: 'leaf', docName: 'leaf', anchor: null, label: 'leaf', x: 150, y: 90 },
+  ];
+  // `hub` gets 8 edges (the hub cutoff); `leaf` gets one of them.
+  const links: GraphLabelLayoutLink[] = [
+    { source: 'hub', target: 'leaf' },
+    ...Array.from({ length: 7 }, (_, index) => ({ source: 'hub', target: `other-${index}` })),
+  ];
+
+  test('drops the leaf but keeps the hub at an intermediate zoom', () => {
+    // This is the whole point: zooming out thins labels down to the landmarks
+    // instead of clearing the canvas of names entirely.
+    const placements = plan({ nodes, links, zoomScale: 1.0, leafLabelThreshold: 1.8 });
+    expect(placements.map((placement) => placement.nodeId)).toEqual(['hub']);
+  });
+
+  test('keeps both once the zoom passes the leaf threshold', () => {
+    const placements = plan({ nodes, links, zoomScale: 1.8, leafLabelThreshold: 1.8 });
+    expect(placements.map((placement) => placement.nodeId).sort()).toEqual(['hub', 'leaf']);
+  });
+
+  test('drops both when even the hub tier has not been reached', () => {
+    expect(plan({ nodes, links, zoomScale: 0.3, leafLabelThreshold: 1.8 })).toEqual([]);
+  });
+
+  test('keeps the active document at a zoom that hides everything else', () => {
+    const placements = plan({
+      nodes,
+      links,
+      activeDocName: 'leaf',
+      zoomScale: 0.3,
+      leafLabelThreshold: 1.8,
+    });
+    expect(placements.map((placement) => placement.nodeId)).toEqual(['leaf']);
+  });
+
+  test('spends the whole label budget on the tiers that survive the gate', () => {
+    // The gate runs before the cap, so a budget of 1 at low zoom goes to the
+    // hub rather than being consumed by a leaf that then gets filtered out.
+    const placements = plan({
+      nodes,
+      links,
+      maxLabels: 1,
+      zoomScale: 1.0,
+      leafLabelThreshold: 1.8,
+    });
+    expect(placements.map((placement) => placement.nodeId)).toEqual(['hub']);
+  });
+});
 
 describe('planGraphLabels', () => {
   test('returns empty array for degenerate inputs', () => {

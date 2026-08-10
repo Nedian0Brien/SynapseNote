@@ -2125,6 +2125,10 @@ msgstr "Close all unpinned"
 msgid "Close find"
 msgstr "Close find"
 
+#: src/components/GraphCardDeck.tsx
+msgid "Close neighbor cards"
+msgstr "Close neighbor cards"
+
 #: src/components/EditorTabs.tsx
 msgid "Close new tab"
 msgstr "Close new tab"
@@ -4629,6 +4633,11 @@ msgstr "Files"
 msgid "Files sidebar"
 msgstr "Files sidebar"
 
+#. placeholder {0}: node.label
+#: src/components/GraphCardDeck.tsx
+msgid "Filter by {0}"
+msgstr "Filter by {0}"
+
 #: src/components/DatabasePropertyMenu.tsx
 msgid "Filter by property"
 msgstr "Filter by property"
@@ -6467,6 +6476,15 @@ msgstr "Navigation and suggestions"
 msgid "Navigation history"
 msgstr "Navigation history"
 
+#: src/components/GraphCardDeck.tsx
+msgid "Neighbors"
+msgstr "Neighbors"
+
+#. placeholder {0}: centerNode.label
+#: src/components/GraphCardDeck.tsx
+msgid "Neighbors of {0}"
+msgstr "Neighbors of {0}"
+
 #: src/components/settings/OkignoreSection.tsx
 msgid "Nested .okignore error in {path}"
 msgstr "Nested .okignore error in {path}"
@@ -7277,8 +7295,10 @@ msgstr "Open"
 
 #. placeholder {0}: entry.title
 #. placeholder {0}: link.title
+#. placeholder {0}: node.label
 #: src/components/chat/WebPreviewCards.tsx
 #: src/components/FolderDocumentCard.tsx
+#: src/components/GraphCardDeck.tsx
 msgid "Open {0}"
 msgstr "Open {0}"
 
@@ -10535,6 +10555,7 @@ msgstr "Table"
 msgid "Table layout and calculations"
 msgstr "Table layout and calculations"
 
+#: src/components/GraphCardDeck.tsx
 #: src/editor/slash-command/component-items.tsx
 msgid "Tag"
 msgstr "Tag"
@@ -11027,6 +11048,10 @@ msgstr "This page doesn't exist yet. Open it to create the page in the editor."
 #: src/components/LinksPanel.tsx
 msgid "This page doesn't link to anything yet."
 msgstr "This page doesn't link to anything yet."
+
+#: src/components/GraphCardDeck.tsx
+msgid "This page has no links yet."
+msgstr "This page has no links yet."
 
 #: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 msgid "This page is archived. Restore it from More page actions."

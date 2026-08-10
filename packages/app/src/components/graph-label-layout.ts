@@ -1,3 +1,4 @@
+import { isGraphLabelVisibleAtZoom } from './graph-label-tiers';
 import { type GraphLabelDescriptor, pickGraphLabelText } from './graph-label-utils';
 import { buildGraphDegreeMap, type GraphNode } from './graph-view-utils';
 
@@ -45,6 +46,10 @@ interface PlanGraphLabelsInput {
   viewport: GraphViewport;
   maxLabels: number;
   maxLabelWidthPx: number;
+  /** Current canvas zoom, against which each candidate's tier threshold is read. */
+  zoomScale: number;
+  /** The user's "Text fade threshold" — the LEAF tier's cutoff. */
+  leafLabelThreshold: number;
   labelDescriptors: Map<string, GraphLabelDescriptor>;
   measureTextWidthPx: (text: string) => number;
   projectToScreen: (x: number, y: number) => { x: number; y: number };
@@ -90,6 +95,8 @@ export function planGraphLabels(input: PlanGraphLabelsInput): GraphLabelPlacemen
     viewport,
     maxLabels,
     maxLabelWidthPx,
+    zoomScale,
+    leafLabelThreshold,
     labelDescriptors,
     measureTextWidthPx,
     projectToScreen,
@@ -140,7 +147,18 @@ export function planGraphLabels(input: PlanGraphLabelsInput): GraphLabelPlacemen
         ),
       };
     })
-    .filter((candidate): candidate is LabelCandidate => candidate !== null);
+    .filter((candidate): candidate is LabelCandidate => candidate !== null)
+    // Tier gate: a hub earns its label further out than a leaf does, so zooming
+    // out thins the labels down to the landmarks instead of clearing them all.
+    // Applied before the budget so the surviving tiers get the whole budget.
+    .filter((candidate) =>
+      isGraphLabelVisibleAtZoom({
+        degree: candidate.degree,
+        isActive: candidate.isActive,
+        zoomScale,
+        leafThreshold: leafLabelThreshold,
+      }),
+    );
 
   candidates.sort(compareCandidates);
 

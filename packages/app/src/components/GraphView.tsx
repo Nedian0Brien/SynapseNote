@@ -13,6 +13,14 @@ import { subscribeToDocumentsChanged } from '@/lib/documents-events';
 import { openExternalUrl } from '@/lib/external-link';
 import type { GraphSettings } from '@/lib/graph-settings-store';
 import { cn } from '@/lib/utils';
+import { getGraphCardNeighbors } from './GraphCardDeck';
+import {
+  buildGraphAreas,
+  type GraphArea,
+  getGraphAreaBounds,
+  getGraphAreaLabelZoomThreshold,
+  isGraphAreaVisibleAtZoom,
+} from './graph-areas';
 import { clusterColor } from './graph-colors';
 import { applyGraphFilters } from './graph-filter';
 import { matchGraphGroup, resolveGraphGroupColor } from './graph-groups';
@@ -22,11 +30,19 @@ import {
   isGraphLinkHighlighted,
 } from './graph-highlight';
 import {
+  type GraphInteractionMode,
+  getGraphAlphaDecay,
+  getGraphInteractionMode,
+  getGraphPhysicsProfile,
+  isGraphFocusMode,
+} from './graph-interaction-mode';
+import {
   type GraphLabelLayoutLink,
   type GraphLabelLayoutNode,
   type GraphLabelPlacement,
   planGraphLabels,
 } from './graph-label-layout';
+import { MIN_GRAPH_LABEL_ZOOM_FACTOR } from './graph-label-tiers';
 import { buildGraphLabelDescriptors } from './graph-label-utils';
 import {
   buildGraphDegreeMap,
@@ -203,6 +219,74 @@ function maybeFocusActiveGraphNode({
     lastY: coords.y,
     lastAt: now,
   };
+}
+
+/**
+ * Folder regions, painted UNDER the nodes (`onRenderFramePre`) in graph space.
+ *
+ * Drawn shallow-first so a nested folder reads as sitting inside its parent
+ * rather than punching a hole in it, and stroked as well as filled so adjacent
+ * regions stay distinguishable where their tints overlap.
+ */
+function drawGraphAreas({
+  ctx,
+  areas,
+  nodes,
+  globalScale,
+  leafLabelThreshold,
+  fillColor,
+  labelColor,
+}: {
+  ctx: CanvasRenderingContext2D;
+  areas: GraphArea[];
+  nodes: GraphNode[];
+  globalScale: number;
+  leafLabelThreshold: number;
+  fillColor: string;
+  labelColor: string;
+}): void {
+  if (areas.length === 0 || !isGraphAreaVisibleAtZoom(globalScale, leafLabelThreshold)) return;
+
+  const positionById = new Map(
+    nodes.flatMap((node) => {
+      const { x, y } = node as GraphNode & { x?: number; y?: number };
+      return typeof x === 'number' && typeof y === 'number' ? [[node.id, { x, y }] as const] : [];
+    }),
+  );
+
+  ctx.save();
+  for (const area of areas) {
+    // Padding is in graph units, so it must shrink as the user zooms in or the
+    // region would balloon away from the nodes it is meant to enclose.
+    const bounds = getGraphAreaBounds(area, positionById, 24 / Math.max(globalScale, 0.2));
+    if (!bounds) continue;
+
+    ctx.beginPath();
+    ctx.ellipse(bounds.centerX, bounds.centerY, bounds.radiusX, bounds.radiusY, 0, 0, 2 * Math.PI);
+    // Only nested regions are filled. A top-level folder spans most of the
+    // graph, so filling it tints the whole canvas instead of marking a
+    // territory — it gets an outline and a name, and the fill is reserved for
+    // the regions small enough for it to mean something.
+    if (area.depth > 0) {
+      ctx.fillStyle = fillColor;
+      ctx.fill();
+    }
+    ctx.lineWidth = 1 / globalScale;
+    ctx.strokeStyle = fillColor;
+    ctx.stroke();
+
+    if (globalScale < getGraphAreaLabelZoomThreshold(area.depth, leafLabelThreshold)) continue;
+
+    // Sized in graph units so the label holds a constant SCREEN size as the
+    // user zooms — a region name is chrome, not part of the drawing.
+    const fontPx = (area.depth === 0 ? 15 : 12) / globalScale;
+    ctx.font = `600 ${fontPx}px system-ui, sans-serif`;
+    ctx.fillStyle = labelColor;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(area.label, bounds.centerX, bounds.centerY - bounds.radiusY - fontPx * 0.6);
+  }
+  ctx.restore();
 }
 
 function drawGraphLabelPlacements({
@@ -494,6 +578,7 @@ export function GraphView({
   onBackgroundClick,
   onStatsChange,
   onClustersChange,
+  onCardModeChange,
 }: {
   activeDocName: string;
   settings: GraphSettings;
@@ -510,6 +595,12 @@ export function GraphView({
   onBackgroundClick?: () => void;
   onStatsChange?: (nodes: number, links: number, loading: boolean) => void;
   onClustersChange?: (clusters: string[]) => void;
+  /**
+   * The neighbor deck to show, or null when the user is not zoomed in that far.
+   * One callback rather than a raw mode plus a separate neighbor query: the
+   * node list and adjacency live here, and the surface only needs the result.
+   */
+  onCardModeChange?: (deck: { centerNode: GraphNode; neighbors: GraphNode[] } | null) => void;
 }) {
   // force-graph mutates the objects it receives in-place during layout, so we compare
   // incoming API payloads against separate signatures before replacing graphData.
@@ -534,6 +625,12 @@ export function GraphView({
   // force-graph fires onNodeHover only on enter/leave of a pointer area, not on
   // every mouse move, so driving React state from it is cheap.
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  // Zoom drives the interaction mode. `onZoom` fires per wheel step, so the
+  // scale itself lives in a ref (read during canvas paint) and only a MODE
+  // CHANGE reaches React state — a re-render per wheel tick would be wasteful
+  // and would fight the simulation.
+  const zoomScaleRef = useRef(1);
+  const [interactionMode, setInteractionMode] = useState<GraphInteractionMode>('browse');
   const [dimensions, setDimensions] = useState({ width: 320, height: 400 });
   const { t } = useLingui();
   const { resolvedTheme } = useTheme();
@@ -663,6 +760,10 @@ export function GraphView({
   const activeSelectedNodeRingColor = isDark ? 'rgba(192,132,252,0.5)' : 'rgba(124,58,237,0.35)';
   const labelChipColor = isDark ? 'rgba(3,7,18,0.92)' : 'rgba(255,255,255,0.94)';
   const labelChipBorderColor = isDark ? 'rgba(243,244,246,0.08)' : 'rgba(17,24,39,0.08)';
+  // Folder regions sit behind everything, so they are far fainter than any node
+  // tint — the boundary should register peripherally, not compete for attention.
+  const areaFillColor = isDark ? 'rgba(148,163,184,0.055)' : 'rgba(100,116,139,0.05)';
+  const areaLabelColor = isDark ? 'rgba(148,163,184,0.55)' : 'rgba(71,85,105,0.5)';
   const focusZoom = scope === 'global' ? 1.6 : 2.35;
   const maxLabelWidthPx = scope === 'global' ? 220 : 150;
 
@@ -708,9 +809,16 @@ export function GraphView({
   const labelDescriptors = buildGraphLabelDescriptors(displayData.nodes);
   const focusKey = `${activeDocName}|${focusZoom}`;
   const displayLinks = displayData.links;
-  const { centerStrength, repelStrength, linkStrength, linkDistance } = settings.forces;
+  const physics = getGraphPhysicsProfile(interactionMode, settings.forces);
+  const { centerStrength, repelStrength, linkStrength, linkDistance } = physics;
+  const alphaDecay = getGraphAlphaDecay(interactionMode);
+  const pinSelectedNode = physics.pinSelectedNode;
+  // Folder regions are derived from docName prefixes, so they change only when
+  // the visible node set does.
+  const areas = buildGraphAreas(displayData.nodes);
 
-  const highlightSet = getGraphHighlightSet(hoveredNodeId, buildGraphAdjacency(displayData.links));
+  const adjacency = buildGraphAdjacency(displayData.links);
+  const highlightSet = getGraphHighlightSet(hoveredNodeId, adjacency);
   // Alpha applied to everything outside the hover highlight. Dimmed rather than
   // hidden: the surrounding shape is what makes the highlighted subgraph legible.
   const dimAlpha = isDark ? 0.16 : 0.12;
@@ -774,6 +882,67 @@ export function GraphView({
 
     fg.d3ReheatSimulation();
   }, [centerStrength, repelStrength, linkStrength, linkDistance, displayLinks]);
+
+  const canSelect = docClickBehavior === 'select';
+  const syncInteractionMode = () => {
+    setInteractionMode((previousMode) => {
+      const next = getGraphInteractionMode({
+        selectedNodeId,
+        zoomScale: zoomScaleRef.current,
+        canSelect,
+        previousMode,
+      });
+      return next === previousMode ? previousMode : next;
+    });
+  };
+
+  // Selection can change without any wheel event (clicking a node, clearing on
+  // background click), so the mode is recomputed here too.
+  useEffect(() => {
+    setInteractionMode((previousMode) => {
+      const next = getGraphInteractionMode({
+        selectedNodeId,
+        zoomScale: zoomScaleRef.current,
+        canSelect,
+        previousMode,
+      });
+      return next === previousMode ? previousMode : next;
+    });
+  }, [selectedNodeId, canSelect]);
+
+  useEffect(() => {
+    if (interactionMode !== 'card' || selectedNodeId === null) {
+      onCardModeChange?.(null);
+      return;
+    }
+    const centerNode = displayData.nodes.find((node) => node.id === selectedNodeId);
+    if (!centerNode) {
+      onCardModeChange?.(null);
+      return;
+    }
+    onCardModeChange?.({
+      centerNode,
+      neighbors: getGraphCardNeighbors(selectedNodeId, displayData.nodes, adjacency),
+    });
+  }, [interactionMode, selectedNodeId, displayData.nodes, adjacency, onCardModeChange]);
+
+  // Pin the selected node while it is being read up close, and release it the
+  // moment focus ends. Without this the simulation keeps nudging the very node
+  // the user zoomed in on, and the camera chases it across the canvas.
+  useEffect(() => {
+    const pinned = displayData.nodes.find((node) => node.id === selectedNodeId) as
+      | (GraphNode & { x?: number; y?: number; fx?: number | null; fy?: number | null })
+      | undefined;
+    if (!pinned || !pinSelectedNode) return;
+    if (typeof pinned.x !== 'number' || typeof pinned.y !== 'number') return;
+
+    pinned.fx = pinned.x;
+    pinned.fy = pinned.y;
+    return () => {
+      pinned.fx = null;
+      pinned.fy = null;
+    };
+  }, [pinSelectedNode, selectedNodeId, displayData.nodes]);
 
   useEffect(() => {
     focusStateRef.current = {
@@ -1069,6 +1238,11 @@ export function GraphView({
             cooldownTicks={150}
             onEngineTick={() => {
               simulationSettledRef.current = false;
+              // The camera stops chasing the ACTIVE document once the user has
+              // zoomed in on a SELECTION: they are driving now, and re-centering
+              // on a different node every tick would pull the ground out from
+              // under the neighborhood they are reading.
+              if (isGraphFocusMode(interactionMode)) return;
               focusStateRef.current = maybeFocusActiveGraphNode({
                 fg: fgRef.current,
                 nodes: graphData.nodes,
@@ -1080,6 +1254,7 @@ export function GraphView({
             }}
             onEngineStop={() => {
               simulationSettledRef.current = true;
+              if (isGraphFocusMode(interactionMode)) return;
               const coords = getActiveGraphNodeCoords({
                 nodes: graphData.nodes,
                 activeDocName,
@@ -1252,8 +1427,24 @@ export function GraphView({
               ctx.fillStyle = color;
               ctx.fill();
             }}
+            onRenderFramePre={(ctx: CanvasRenderingContext2D, globalScale: number) => {
+              drawGraphAreas({
+                ctx,
+                areas,
+                nodes: displayData.nodes,
+                globalScale,
+                leafLabelThreshold: settings.display.textFadeThreshold,
+                fillColor: areaFillColor,
+                labelColor: areaLabelColor,
+              });
+            }}
             onRenderFramePost={(ctx: CanvasRenderingContext2D, globalScale: number) => {
-              if (globalScale < settings.display.textFadeThreshold) return;
+              // No single cutoff any more: hubs earn a label further out than
+              // leaves do, so the planner decides per node and this only skips
+              // the work when not even the most permissive tier qualifies.
+              if (globalScale < settings.display.textFadeThreshold * MIN_GRAPH_LABEL_ZOOM_FACTOR) {
+                return;
+              }
 
               const fg = fgRef.current;
               if (!fg) return;
@@ -1271,6 +1462,8 @@ export function GraphView({
                 activeDocName,
                 viewport: dimensions,
                 maxLabels: settings.display.maxLabels,
+                zoomScale: globalScale,
+                leafLabelThreshold: settings.display.textFadeThreshold,
                 maxLabelWidthPx,
                 labelDescriptors,
                 measureTextWidthPx: (text) => ctx.measureText(text).width,
@@ -1318,6 +1511,11 @@ export function GraphView({
               // reads as a shape rather than just a brightness difference.
               settings.display.linkThickness * (isGraphLinkHighlighted(link, hoveredNodeId) ? 2 : 1)
             }
+            d3AlphaDecay={alphaDecay}
+            onZoom={({ k }: { k: number }) => {
+              zoomScaleRef.current = k;
+              syncInteractionMode();
+            }}
             onNodeHover={(node: NodeObject<GraphNode> | null) => {
               setHoveredNodeId(node?.id ?? null);
             }}
