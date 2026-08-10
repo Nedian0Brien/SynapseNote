@@ -6,8 +6,8 @@ import {
 
 describe('folder document gallery layout', () => {
   test('uses the available horizontal space before stacking a small document set', () => {
-    expect(folderGalleryColumnCount(176, 2)).toBe(1);
-    expect(folderGalleryColumnCount(364, 2)).toBe(2);
+    expect(folderGalleryColumnCount(240, 2)).toBe(1);
+    expect(folderGalleryColumnCount(492, 2)).toBe(2);
     expect(folderGalleryColumnCount(1_200, 2)).toBe(2);
 
     const placements = placeFolderGalleryEntries(
@@ -24,18 +24,26 @@ describe('folder document gallery layout', () => {
     ]);
   });
 
-  test('keeps source order while placing later cards in the shortest column', () => {
+  test('keeps source order and starts each new sequence at the leftmost column', () => {
     const entries = [
       { path: 'notes/large', size: 10_000 },
       { path: 'notes/small', size: 10 },
       { path: 'notes/next', size: 500 },
     ];
-    const placements = placeFolderGalleryEntries(entries, 2);
+    const placements = placeFolderGalleryEntries(
+      entries,
+      2,
+      new Map([
+        ['notes/large', 240],
+        ['notes/small', 196],
+        ['notes/next', 210],
+      ]),
+    );
 
     expect(placements.map(({ entry }) => entry.path)).toEqual(entries.map((entry) => entry.path));
     expect(placements[0]?.column).toBe(0);
     expect(placements[1]?.column).toBe(1);
-    expect(placements[2]?.column).toBe(1);
-    expect(placements[2]?.top).toBeGreaterThan(0);
+    expect(placements[2]?.column).toBe(0);
+    expect(placements[2]?.top).toBe(252);
   });
 });

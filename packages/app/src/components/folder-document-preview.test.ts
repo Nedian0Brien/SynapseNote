@@ -1,71 +1,54 @@
 import { describe, expect, test } from 'bun:test';
-import { buildFolderDocumentPreview, folderDocumentCardHeight } from './folder-document-preview';
+import {
+  FOLDER_DOCUMENT_CARD_MAX_HEIGHT,
+  FOLDER_DOCUMENT_CARD_MIN_HEIGHT,
+  folderDocumentEstimatedCardHeight,
+  folderDocumentMeasuredCardHeight,
+  folderDocumentPreviewMarkdown,
+} from './folder-document-preview';
 
-describe('buildFolderDocumentPreview', () => {
-  test('removes frontmatter and the duplicate page title while preserving document structure', () => {
-    const blocks = buildFolderDocumentPreview(
+describe('folderDocumentPreviewMarkdown', () => {
+  test('removes frontmatter and the duplicate page title without flattening Markdown', () => {
+    const markdown = folderDocumentPreviewMarkdown(
       [
         '---',
         'title: Project Plan',
         'tags: [work]',
         '---',
-        '# Project Plan',
+        '# Project **Plan**',
         '',
         'A **short** intro with [a link](https://example.com).',
         '',
         '## Goals',
-        '- Ship the gallery',
+        '- [ ] Ship the gallery',
         '1. Verify the result',
         '',
-        '```ts',
-        'const ready = true;',
-        '```',
+        '![diagram](diagram.png)',
       ].join('\n'),
       'Project Plan',
     );
 
-    expect(blocks).toEqual([
-      { kind: 'paragraph', text: 'A short intro with a link.' },
-      { kind: 'heading', level: 2, text: 'Goals' },
-      { kind: 'list', ordered: false, text: 'Ship the gallery' },
-      { kind: 'list', ordered: true, text: 'Verify the result' },
-      { kind: 'code', text: 'const ready = true;' },
-    ]);
-  });
-
-  test('reduces wiki links, images, blockquotes, and MDX wrappers to readable text', () => {
-    const blocks = buildFolderDocumentPreview(
-      [
-        'import { Callout } from "x";',
-        '<Callout>',
-        '> Read [[Research|the source]] before ![diagram](diagram.png).',
-        '</Callout>',
-      ].join('\n'),
-      'Notes',
-    );
-
-    expect(blocks).toEqual([{ kind: 'paragraph', text: 'Read the source before diagram.' }]);
-  });
-
-  test('honors block and character bounds for large notes', () => {
-    const markdown = Array.from({ length: 40 }, (_, index) => `Paragraph ${index}.\n`).join('\n');
-    const blocks = buildFolderDocumentPreview(markdown, 'Large', {
-      maxBlocks: 3,
-      maxCharacters: 30,
-    });
-
-    expect(blocks).toHaveLength(3);
-    expect(blocks.reduce((total, block) => total + block.text.length, 0)).toBeLessThanOrEqual(30);
+    expect(markdown).not.toContain('title: Project Plan');
+    expect(markdown).not.toContain('# Project **Plan**');
+    expect(markdown).toContain('**short**');
+    expect(markdown).toContain('[a link](https://example.com)');
+    expect(markdown).toContain('- [ ] Ship the gallery');
+    expect(markdown).toContain('![diagram](diagram.png)');
   });
 });
 
-describe('folderDocumentCardHeight', () => {
-  test('is deterministic, bounded, and gives longer documents more paper space', () => {
-    expect(folderDocumentCardHeight(100, 'notes/a')).toBe(folderDocumentCardHeight(100, 'notes/a'));
-    expect(folderDocumentCardHeight(6_000, 'notes/a')).toBeGreaterThan(
-      folderDocumentCardHeight(100, 'notes/a'),
+describe('folder document card height', () => {
+  test('uses content size only as a bounded pre-load estimate', () => {
+    expect(folderDocumentEstimatedCardHeight(0)).toBe(FOLDER_DOCUMENT_CARD_MIN_HEIGHT);
+    expect(folderDocumentEstimatedCardHeight(6_000)).toBeGreaterThan(
+      folderDocumentEstimatedCardHeight(100),
     );
-    expect(folderDocumentCardHeight(0, 'notes/a')).toBeGreaterThanOrEqual(188);
-    expect(folderDocumentCardHeight(100_000, 'notes/a')).toBeLessThanOrEqual(260);
+    expect(folderDocumentEstimatedCardHeight(100_000)).toBe(FOLDER_DOCUMENT_CARD_MAX_HEIGHT);
+  });
+
+  test('clamps the measured rendered page between the reference bounds', () => {
+    expect(folderDocumentMeasuredCardHeight(40, 20)).toBe(FOLDER_DOCUMENT_CARD_MIN_HEIGHT);
+    expect(folderDocumentMeasuredCardHeight(40, 680)).toBe(230);
+    expect(folderDocumentMeasuredCardHeight(60, 1_000)).toBe(FOLDER_DOCUMENT_CARD_MAX_HEIGHT);
   });
 });

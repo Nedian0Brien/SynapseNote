@@ -19,6 +19,9 @@ export function FolderDocumentGallery({
 }) {
   const sectionRef = useRef<HTMLElement>(null);
   const [columnCount, setColumnCount] = useState(1);
+  const [measuredHeights, setMeasuredHeights] = useState<ReadonlyMap<string, number>>(
+    () => new Map(),
+  );
 
   useLayoutEffect(() => {
     const section = sectionRef.current;
@@ -41,10 +44,19 @@ export function FolderDocumentGallery({
   }, [entries.length]);
 
   const effectiveColumnCount = Math.max(1, Math.min(entries.length, columnCount));
-  const placements = placeFolderGalleryEntries(entries, effectiveColumnCount);
+  const placements = placeFolderGalleryEntries(entries, effectiveColumnCount, measuredHeights);
   const galleryWidth =
     effectiveColumnCount * FOLDER_GALLERY_CARD_WIDTH +
     Math.max(0, effectiveColumnCount - 1) * FOLDER_GALLERY_GAP;
+
+  function handleHeightChange(path: string, height: number) {
+    setMeasuredHeights((current) => {
+      if (current.get(path) === height) return current;
+      const next = new Map(current);
+      next.set(path, height);
+      return next;
+    });
+  }
 
   return (
     <section ref={sectionRef} aria-label={ariaLabel} data-folder-document-gallery>
@@ -68,7 +80,12 @@ export function FolderDocumentGallery({
               gridRow: `${top + 1} / span ${height + FOLDER_GALLERY_GAP}`,
             }}
           >
-            <FolderDocumentCard entry={entry} mode="preview" />
+            <FolderDocumentCard
+              entry={entry}
+              mode="preview"
+              height={height}
+              onHeightChange={handleHeightChange}
+            />
           </div>
         ))}
       </div>

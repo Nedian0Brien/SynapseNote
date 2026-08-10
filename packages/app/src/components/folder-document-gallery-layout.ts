@@ -1,6 +1,6 @@
-import { folderDocumentCardHeight } from '@/components/folder-document-preview';
+import { folderDocumentEstimatedCardHeight } from '@/components/folder-document-preview';
 
-export const FOLDER_GALLERY_CARD_WIDTH = 176;
+export const FOLDER_GALLERY_CARD_WIDTH = 240;
 export const FOLDER_GALLERY_GAP = 12;
 
 interface FolderGalleryEntry {
@@ -28,28 +28,22 @@ export function folderGalleryColumnCount(containerWidth: number, entryCount: num
 }
 
 /**
- * Places the first row from left to right, then keeps the paper gallery dense
- * by sending each remaining card to the shortest column. Explicit grid rows
- * let the DOM retain document order, unlike CSS multi-column layout.
+ * Assigns documents across columns from left to right, then starts again at
+ * the leftmost column. Each column stacks independently, matching the visible
+ * Craft ordering while keeping DOM and reading order identical.
  */
 export function placeFolderGalleryEntries<Entry extends FolderGalleryEntry>(
   entries: readonly Entry[],
   requestedColumnCount: number,
+  measuredHeights: ReadonlyMap<string, number> = new Map(),
 ): FolderGalleryPlacement<Entry>[] {
   if (entries.length === 0) return [];
   const columnCount = Math.max(1, Math.min(entries.length, requestedColumnCount));
   const columnHeights = Array.from({ length: columnCount }, () => 0);
 
   return entries.map((entry, index) => {
-    let column = index;
-    if (index >= columnCount) {
-      column = columnHeights.reduce(
-        (shortest, height, candidate) => (height < columnHeights[shortest] ? candidate : shortest),
-        0,
-      );
-    }
-
-    const height = folderDocumentCardHeight(entry.size, entry.path);
+    const column = index % columnCount;
+    const height = measuredHeights.get(entry.path) ?? folderDocumentEstimatedCardHeight(entry.size);
     const top = columnHeights[column] ?? 0;
     columnHeights[column] = top + height + FOLDER_GALLERY_GAP;
     return { column, entry, height, top };
