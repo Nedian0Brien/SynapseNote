@@ -464,17 +464,16 @@ export function RightRailLayout({
             // open.
             minSize="30%"
             {...(contentAbsorbsResidual ? {} : { defaultSize: '100%' })}
-            className={cn(
-              // The content card. The rounding used to live on `SidebarInset`,
-              // which wrapped the rail too — so the seam against the file
-              // sidebar was a rounded edge while the seam against the rail was a
-              // hard 1px line through the middle of one surface. Owning it here
-              // makes the card a discrete surface with the same treatment on
-              // both sides.
-              'flex min-w-0 flex-col overflow-hidden rounded-xl bg-background shadow-sm',
-              !isDraggingRail &&
-                'transition-[flex-grow] duration-200 ease-out motion-reduce:transition-none motion-reduce:duration-0',
-            )}
+            // The content card. The rounding used to live on `SidebarInset`,
+            // which wrapped the rail too — so the seam against the file sidebar
+            // was a rounded edge while the seam against the rail was a hard 1px
+            // line through the middle of one surface. Owning it here makes the
+            // card a discrete surface with the same treatment on both sides.
+            //
+            // The collapse easing is NOT here: the library keeps the sizing on
+            // an outer element this className never reaches. It lives in
+            // `styles/shell/interaction-motion.css`, keyed off `data-slot`.
+            className="flex min-w-0 flex-col overflow-hidden rounded-xl bg-background shadow-sm"
           >
             {children}
           </ResizablePanel>

@@ -269,11 +269,47 @@ button:active:not(:disabled) {
   }
 }
 
+/* ─────────────────────────────────────────────────────────────
+   Resizable panels — collapse/expand easing
+   ───────────────────────────────────────────────────────────── */
+
+/* The left file sidebar eases open and shut (`sidebar-gap` transitions its
+   width), so the right rail and the bottom terminal dock have to match or the
+   two sides of the same window move to different rules.
+
+   This has to be CSS rather than a `className`, because react-resizable-panels
+   splits each panel in two: it writes the sizing (`flex: <grow> 1 0px`) inline
+   on an OUTER element it owns, and puts the consumer's `className` on an INNER
+   one. A `transition-[flex-grow]` utility therefore landed on the element whose
+   flex-grow never changes, and the panel that actually resized had no
+   transition at all — it snapped. `data-slot` is on the outer element, so it is
+   the one hook we have on it.
+
+   200ms linear is not a curve chosen for its own sake — it is the one the
+   sidebar family already runs on (`ui/sidebar.tsx`'s container and gap, and
+   `EditorHeader`'s traffic-light padding, which is explicitly in lockstep with
+   the sidebar's offcanvas slide). Giving the mirror-image panel a different
+   curve would reintroduce exactly the left/right asymmetry this chrome has been
+   converging out of. */
+[data-slot="resizable-panel"] {
+  transition: flex-grow 200ms linear;
+}
+
+/* A live drag must track the pointer exactly — easing there would make the
+   panel lag the cursor and overshoot on release. Both groups set `data-dragging`
+   for the length of the drag. */
+[data-slot="resizable-panel-group"][data-dragging] > [data-slot="resizable-panel"] {
+  transition: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   [data-undo-state="ready"][data-undo-just-enabled="true"] {
     animation: none;
   }
   button:active:not(:disabled) {
     transform: none;
+  }
+  [data-slot="resizable-panel"] {
+    transition: none;
   }
 }

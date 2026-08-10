@@ -4,7 +4,6 @@ import { usePanelRef } from 'react-resizable-panels';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import type { TerminalDockPosition } from '@/lib/terminal-dock-store';
 import { getInitialTerminalHeight, writeTerminalHeight } from '@/lib/terminal-height-store';
-import { cn } from '@/lib/utils';
 import { xtermThemeForMode } from './terminal-theme';
 
 const TERMINAL_PANEL_ID = 'terminal-dock-panel';
@@ -182,11 +181,12 @@ export function TerminalDock({
         // the DOM, tab order, and a11y tree. The explicit `inert` removes the
         // collapsed terminal from focus order.
         inert={isCollapsed}
-        className={cn(
-          'flex flex-col',
-          !isDragging &&
-            'transition-[flex-grow] duration-150 ease-out motion-reduce:transition-none motion-reduce:duration-0',
-        )}
+        // The collapse easing is NOT here: react-resizable-panels keeps the
+        // sizing on an outer element this className never reaches, so the
+        // utility landed on a node whose flex-grow never changes and the dock
+        // snapped. It lives in `styles/shell/interaction-motion.css` now, keyed
+        // off `data-slot` and suppressed while `data-dragging` is set.
+        className="flex flex-col"
       >
         {/* Mount point for the session host's stable host div when bottom-docked. */}
         <div ref={onBottomContainer} className="flex min-h-0 flex-1 flex-col overflow-hidden" />
