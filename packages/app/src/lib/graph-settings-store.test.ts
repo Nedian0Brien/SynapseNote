@@ -1,4 +1,6 @@
 import { describe, expect, test } from 'bun:test';
+import { GRAPH_COLLISION_PADDING } from '@/components/graph-folders';
+import { getGraphNodeCanvasRadius } from '@/components/graph-view-utils';
 import {
   clampGraphSettings,
   GRAPH_FORCE_DEFAULTS,
@@ -36,6 +38,15 @@ describe('getDefaultGraphSettings', () => {
     expect(docked.display.maxLabels).toBe(18);
     expect(docked.filters.showExternalNodes).toBe(false);
     expect(docked.forces).toEqual(GRAPH_FORCE_DEFAULTS);
+  });
+
+  test('keeps link distance clear of the collision force’s reach', () => {
+    // Collision holds page centres ~34 units apart. d3's default distance of 30
+    // sits under that, so every spring is compressed at all times and the graph
+    // collapses to a packed disc. This is the one invariant to preserve if the
+    // padding or the node radius ever changes.
+    const collisionReach = 2 * (getGraphNodeCanvasRadius('default') + GRAPH_COLLISION_PADDING);
+    expect(GRAPH_FORCE_DEFAULTS.linkDistance).toBeGreaterThan(collisionReach);
   });
 
   test('gives the fullscreen scope a tighter label budget than the docked scope', () => {

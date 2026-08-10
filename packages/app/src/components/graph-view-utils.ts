@@ -54,6 +54,11 @@ export interface GraphLink {
    * absent, which is what `isGraphFolderLink` reads.
    */
   kind?: 'containment';
+  /**
+   * Containment edges only: how many members the parent folder has. The layout
+   * sizes the folder's disc from it — see `getGraphFolderLinkDistance`.
+   */
+  memberCount?: number;
 }
 
 export interface GraphData {

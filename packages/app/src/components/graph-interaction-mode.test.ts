@@ -90,7 +90,10 @@ describe('getGraphPhysicsProfile', () => {
   test('shortens links relative to the user value rather than replacing it', () => {
     const wide = { ...FORCES, linkDistance: 200 };
     expect(getGraphPhysicsProfile('focus', wide).linkDistance).toBeCloseTo(172, 5);
-    expect(getGraphPhysicsProfile('focus', FORCES).linkDistance).toBeCloseTo(25.8, 5);
+    expect(getGraphPhysicsProfile('focus', FORCES).linkDistance).toBeCloseTo(
+      FORCES.linkDistance * 0.86,
+      5,
+    );
   });
 
   test('leaves repel and link strength to the user in every mode', () => {

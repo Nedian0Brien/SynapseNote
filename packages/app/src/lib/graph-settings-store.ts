@@ -83,15 +83,34 @@ const LEGACY_URL_NODES_KEYS: Record<GraphSettingsScope, string> = {
 };
 
 /**
- * d3-force's own defaults, reproduced here so a multiplier of 1 is a true no-op:
- * `forceManyBody().strength(-30)`, `forceLink().distance(30)`, `forceCenter().strength(1)`.
- * Diverging from these would silently relayout every existing user's graph.
+ * `linkDistance` has to clear the collision force's reach, or the layout
+ * degenerates.
+ *
+ * Collision keeps node centres at least `2 × (radius + GRAPH_COLLISION_PADDING)`
+ * apart — about 34 units for an ordinary page. d3's default link distance is 30,
+ * BELOW that: every link in the graph is then compressed past its rest length at
+ * all times, the springs all pull inward at once, and what you get is a
+ * uniformly packed disc with the high-degree nodes squeezed out to the rim. That
+ * was the blob. 95 is the value the original SynapseNote used, and its ratio to
+ * its own collision reach was the same ~2.5×.
+ *
+ * Repulsion stays at d3's -30. The original's -200 does not carry over — with
+ * collision already doing the local separating, that much charge flings the
+ * loosely-attached nodes into a sunburst.
+ *
+ * `centerStrength` is low because the pinned project root already does the
+ * centring. d3's default of 1 translates the entire graph so its centroid lands
+ * on the origin on EVERY tick, and the pinned root then snaps back — the two
+ * fight, and the layout spends its energy sliding around instead of settling.
+ * 0.04 is what the original SynapseNote ran, and it pinned its root too.
+ *
+ * `linkStrength` is a MULTIPLIER on d3's per-link default, so 1 is a true no-op.
  */
 export const GRAPH_FORCE_DEFAULTS: GraphForceSettings = {
-  centerStrength: 1,
+  centerStrength: 0.04,
   repelStrength: 30,
   linkStrength: 1,
-  linkDistance: 30,
+  linkDistance: 95,
 };
 
 // The label budget is the one default that differs by scope: the fullscreen view

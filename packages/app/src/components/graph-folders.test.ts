@@ -62,13 +62,11 @@ describe('buildGraphFolderNodes', () => {
     expect(result.links.every(isGraphFolderLink)).toBe(true);
   });
 
-  test('gives every containment edge the same shape — the layout tunes none of them', () => {
-    // One spring for every edge is what the original SynapseNote layout did,
-    // and per-link tuning here is what packed folders into balls.
+  test('stamps each containment edge with the folder’s FINAL member count', () => {
+    // Counted before the edges are emitted, or the first page of a folder would
+    // carry a count of one and be reeled in tighter than its siblings.
     const result = build(['notes/A', 'notes/B', 'notes/C']);
-    for (const link of result.links) {
-      expect(Object.keys(link).sort()).toEqual(['kind', 'source', 'target']);
-    }
+    expect(result.links.map((link) => link.memberCount)).toEqual([3, 3, 3]);
   });
 
   test('counts direct members, which is what sizes the node', () => {

@@ -1,5 +1,6 @@
 import { Trans, useLingui } from '@lingui/react/macro';
 import { LinkGraphSuccessSchema, ProblemDetailsSchema } from '@nedian0brien/synapsenote-core';
+import { forceCollide } from 'd3-force';
 import { useTheme } from 'next-themes';
 import { useEffect, useImperativeHandle, useRef, useState } from 'react';
 import ForceGraph2D, {
@@ -17,7 +18,11 @@ import { getGraphCardNeighbors } from './GraphCardDeck';
 import { applyGraphFilters } from './graph-filter';
 import {
   buildGraphFolderNodes,
+  GRAPH_COLLISION_PADDING,
+  GRAPH_COLLISION_STRENGTH,
   GRAPH_FOLDER_LINK_STRENGTH,
+  getGraphFolderLinkDistance,
+  getGraphFolderLinkMemberCount,
   isGraphFolderLink,
   isGraphRootFolderNode,
 } from './graph-folders';
@@ -801,6 +806,19 @@ export function GraphView({
       displayState: getGraphNodeDisplayState({ node, navigationIntentByNodeId }),
       visualState: getGraphNodeVisualState(node, { activeDocName, selectedNodeId }),
     }).scale;
+  // The room a node claims in the LAYOUT. Deliberately independent of the Node
+  // size slider and of what is selected: spacing is a property of the graph, and
+  // neither making the dots bigger nor clicking one should reflow it.
+  const graphCollisionRadius = (node: GraphNode): number =>
+    getGraphNodeCanvasRadius('default') *
+      getGraphNodeStyle({
+        node,
+        degree: degreeByNodeId.get(node.id) ?? 0,
+        displayState: getGraphNodeDisplayState({ node, navigationIntentByNodeId }),
+        visualState: 'default',
+      }).scale +
+    GRAPH_COLLISION_PADDING;
+
   // Alpha applied to everything outside the hover highlight. Dimmed rather than
   // hidden: the surrounding shape is what makes the highlighted subgraph legible.
   const dimAlpha = isDark ? 0.16 : 0.12;
@@ -827,6 +845,8 @@ export function GraphView({
   // Depending on the four scalars rather than on `settings.forces` keeps a
   // filter-box keystroke (which rebuilds the settings object) from reheating
   // the simulation; `displayLinks` is memoized above for the same reason.
+  //
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `graphCollisionRadius` is a function of the degrees, which are a function of `displayLinks` — already a dependency. Listing the closure instead would reheat the layout on any render whose identity the compiler happens not to preserve, which is the scatter-on-hover bug all over again.
   useEffect(() => {
     const fg = fgRef.current;
     if (!fg) return;
@@ -842,12 +862,33 @@ export function GraphView({
     const center = fg.d3Force('center');
     center?.strength?.(centerStrength);
 
+    // force-graph ships link + charge + center and no collision, so nothing in
+    // the simulation forbids two nodes occupying the same point. A few hundred
+    // pages hanging off one folder at one distance therefore just stack, which
+    // is the solid ball of ink a big folder used to draw as. Registered here
+    // rather than once at mount so the radii track the degrees.
+    fg.d3Force(
+      'collide',
+      forceCollide<NodeObject<GraphNode>>()
+        .radius(graphCollisionRadius)
+        .strength(GRAPH_COLLISION_STRENGTH),
+    );
+
     const link = fg.d3Force('link');
     if (link) {
-      // One length for every edge, containment included. Giving containment its
-      // own shorter (or longer) distance was an invention, and it is what made
-      // folders either pack into a ball or spill their pages across the canvas.
-      link.distance?.(linkDistance);
+      // A folder's pages sit at the radius they physically need in order to fit
+      // around it without overlapping — derived from the collision radius, not
+      // tuned. Every other edge uses the user's distance.
+      link.distance?.((candidate: { kind?: unknown; memberCount?: unknown }) => {
+        const memberCount = getGraphFolderLinkMemberCount(candidate);
+        return memberCount === null
+          ? linkDistance
+          : getGraphFolderLinkDistance(
+              linkDistance,
+              memberCount,
+              getGraphNodeCanvasRadius('default') + GRAPH_COLLISION_PADDING,
+            );
+      });
       // d3's own default is `1 / min(degree(source), degree(target))`, computed
       // once at initialize. Reproducing it here rather than passing a flat
       // number keeps a multiplier of 1 a true no-op: a flat strength would
@@ -1242,7 +1283,13 @@ export function GraphView({
           <ForceGraph2D
             ref={fgRef}
             graphData={displayData}
-            cooldownTicks={150}
+            // Unpacking is iterative: the collision force separates overlapping
+            // nodes a little per tick, so a folder holding hundreds of pages
+            // needs a few hundred ticks to finish opening out. 150 stopped the
+            // whole-project graph mid-unpack and left it looking packed. The
+            // rail's 2-hop neighborhood has nothing to unpack and keeps the
+            // shorter budget.
+            cooldownTicks={scope === 'global' ? 400 : 150}
             onEngineTick={() => {
               simulationSettledRef.current = false;
               // The camera stops chasing the ACTIVE document once the user has
