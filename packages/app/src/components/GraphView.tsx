@@ -16,10 +16,11 @@ import { cn } from '@/lib/utils';
 import { getGraphCardNeighbors } from './GraphCardDeck';
 import {
   buildGraphAreas,
+  GRAPH_AREA_BLUR_PX,
+  GRAPH_AREA_TINT_ALPHA,
   type GraphArea,
   type GraphAreaBounds,
   getGraphAreaBounds,
-  getGraphAreaFillAlpha,
   getGraphAreaLabelSizePx,
 } from './graph-areas';
 import { GRAPH_COLOR_PAIRS } from './graph-colors';
@@ -231,6 +232,84 @@ function maybeFocusActiveGraphNode({
     lastY: coords.y,
     lastAt: now,
   };
+}
+
+/**
+ * Folder territories as a MAP PARTITION: every pixel belongs to exactly one
+ * folder, so the tints can never stack.
+ *
+ * Painting the ellipses straight onto the canvas is what turned a project with
+ * forty folders into mud — alpha accumulates, so a patch covered by four
+ * regions came out four times as dark, and the picture read as depth
+ * information that is not there. The original SynapseNote composited its whole
+ * cloud layer with a `max` blend for the same reason; a partition goes further
+ * and is what a map actually is.
+ *
+ * Regions are painted onto their own layer DEEPEST FIRST with
+ * `destination-over`, so each one only claims pixels no more specific region
+ * has already taken and a nested folder reads as its own place inside its
+ * parent. The finished layer is blurred and composited once, at one opacity.
+ */
+function paintGraphAreaPartition({
+  ctx,
+  layer,
+  areas,
+  boundsById,
+  colorOf,
+  toScreen,
+  globalScale,
+  width,
+  height,
+}: {
+  ctx: CanvasRenderingContext2D;
+  layer: HTMLCanvasElement;
+  areas: readonly GraphArea[];
+  boundsById: ReadonlyMap<string, GraphAreaBounds>;
+  colorOf: (area: GraphArea) => string;
+  toScreen: (x: number, y: number) => { x: number; y: number };
+  globalScale: number;
+  width: number;
+  height: number;
+}): void {
+  const pxRatio = window.devicePixelRatio || 1;
+  const pixelWidth = Math.max(1, Math.round(width * pxRatio));
+  const pixelHeight = Math.max(1, Math.round(height * pxRatio));
+  // Assigning width/height also clears the canvas and resets its state, so it
+  // is only done on a real resize; otherwise clear explicitly.
+  if (layer.width !== pixelWidth || layer.height !== pixelHeight) {
+    layer.width = pixelWidth;
+    layer.height = pixelHeight;
+  }
+  const layerCtx = layer.getContext('2d');
+  if (!layerCtx) return;
+  layerCtx.setTransform(pxRatio, 0, 0, pxRatio, 0, 0);
+  layerCtx.clearRect(0, 0, width, height);
+  layerCtx.globalCompositeOperation = 'destination-over';
+
+  for (const area of [...areas].sort((a, b) => b.depth - a.depth)) {
+    const box = boundsById.get(area.id);
+    if (!box) continue;
+    const center = toScreen(box.cx, box.cy);
+    layerCtx.beginPath();
+    layerCtx.ellipse(
+      center.x,
+      center.y,
+      Math.max(1, box.rx * globalScale),
+      Math.max(1, box.ry * globalScale),
+      0,
+      0,
+      2 * Math.PI,
+    );
+    layerCtx.fillStyle = colorOf(area);
+    layerCtx.fill();
+  }
+
+  ctx.save();
+  ctx.setTransform(pxRatio, 0, 0, pxRatio, 0, 0);
+  ctx.filter = `blur(${GRAPH_AREA_BLUR_PX}px)`;
+  ctx.globalAlpha = GRAPH_AREA_TINT_ALPHA;
+  ctx.drawImage(layer, 0, 0, width, height);
+  ctx.restore();
 }
 
 function drawGraphLabelPlacements({
@@ -818,6 +897,18 @@ export function GraphView({
     ? buildGraphAreas(displayData.nodes, displayData.links)
     : EMPTY_GRAPH_AREAS;
   const areaBoundsRef = useRef<Map<string, GraphAreaBounds>>(new Map());
+  // Offscreen layer the territories are partitioned onto before being
+  // composited in one pass — see `paintGraphAreaPartition`. Created in an
+  // effect rather than lazily on first render: the React Compiler rejects
+  // reading a ref during render, and the render hooks that use it only run
+  // after mount anyway.
+  const areaLayerRef = useRef<HTMLCanvasElement | null>(null);
+  useEffect(() => {
+    areaLayerRef.current = document.createElement('canvas');
+    return () => {
+      areaLayerRef.current = null;
+    };
+  }, []);
   const areaColor = (area: GraphArea): string => {
     const pair = GRAPH_COLOR_PAIRS[area.colorIndex % GRAPH_COLOR_PAIRS.length];
     return isDark ? pair.dark : pair.light;
@@ -1490,7 +1581,7 @@ export function GraphView({
               ctx.fillStyle = color;
               ctx.fill();
             }}
-            onRenderFramePre={(ctx: CanvasRenderingContext2D) => {
+            onRenderFramePre={(ctx: CanvasRenderingContext2D, globalScale: number) => {
               // Territories, painted under the links and nodes. Blurred, so they
               // read as ground the graph sits on rather than as shapes drawn in
               // it — the blur is what separates this from the hard grey
@@ -1506,19 +1597,25 @@ export function GraphView({
                 ]),
               );
 
-              ctx.save();
-              ctx.filter = 'blur(18px)';
               for (const area of areas) {
                 const box = getGraphAreaBounds(area, positionById);
-                if (!box) continue;
-                bounds.set(area.id, box);
-                ctx.beginPath();
-                ctx.ellipse(box.cx, box.cy, box.rx, box.ry, 0, 0, 2 * Math.PI);
-                ctx.globalAlpha = getGraphAreaFillAlpha(area.depth);
-                ctx.fillStyle = areaColor(area);
-                ctx.fill();
+                if (box) bounds.set(area.id, box);
               }
-              ctx.restore();
+
+              const fg = fgRef.current;
+              const layer = areaLayerRef.current;
+              if (!fg || !layer || bounds.size === 0) return;
+              paintGraphAreaPartition({
+                ctx,
+                layer,
+                areas,
+                boundsById: bounds,
+                colorOf: areaColor,
+                toScreen: (x, y) => fg.graph2ScreenCoords(x, y),
+                globalScale,
+                width: dimensions.width,
+                height: dimensions.height,
+              });
             }}
             onRenderFramePost={(ctx: CanvasRenderingContext2D, globalScale: number) => {
               const areaFg = areas.length > 0 ? fgRef.current : null;
@@ -1535,11 +1632,28 @@ export function GraphView({
                 ctx.textBaseline = 'middle';
                 ctx.fillStyle = palette.label;
                 ctx.globalAlpha = globalScale >= settings.display.textFadeThreshold ? 0.22 : 0.45;
-                for (const area of areas) {
+                // Biggest region first, and a name is dropped when its box
+                // would land on one already written. Without this every folder
+                // writes at its own centroid and a dense project stacks a dozen
+                // of them into a smear — which is worse than no name at all.
+                const takenLabelBoxes: Array<[number, number, number, number]> = [];
+                for (const area of [...areas].sort((a, b) => a.depth - b.depth)) {
                   const box = areaBoundsRef.current.get(area.id);
                   if (!box) continue;
                   const screen = areaFg.graph2ScreenCoords(box.cx, box.cy);
-                  ctx.font = `italic ${getGraphAreaLabelSizePx(area.depth)}px Georgia, "Times New Roman", serif`;
+                  const sizePx = getGraphAreaLabelSizePx(area.depth);
+                  ctx.font = `italic ${sizePx}px Georgia, "Times New Roman", serif`;
+                  const halfWidth = ctx.measureText(area.name).width / 2;
+                  const halfHeight = sizePx * 0.55;
+                  const left = screen.x - halfWidth;
+                  const right = screen.x + halfWidth;
+                  const top = screen.y - halfHeight;
+                  const bottom = screen.y + halfHeight;
+                  const collides = takenLabelBoxes.some(
+                    ([l, t, r, b]) => left < r && right > l && top < b && bottom > t,
+                  );
+                  if (collides) continue;
+                  takenLabelBoxes.push([left, top, right, bottom]);
                   ctx.fillText(area.name, screen.x, screen.y);
                 }
                 ctx.restore();

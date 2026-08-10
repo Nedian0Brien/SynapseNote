@@ -155,16 +155,23 @@ export function getGraphAreaBounds(
 }
 
 /**
- * Tint opacity — deliberately tiny.
+ * Opacity of the FINISHED territory layer, applied once at composite time.
  *
- * Alpha ACCUMULATES: a project with forty folders paints forty overlapping
- * ellipses, and at the 0.10 the original used (it had a handful of well-spread
- * regions) they composite into an opaque wash that swallows the graph. This is
- * the budget for the whole stack, not for one region.
+ * There is deliberately no per-region alpha any more. Painting the ellipses
+ * straight onto the canvas made alpha accumulate, so a patch covered by four
+ * folders came out four times as dark — depth information that is not there,
+ * and the muddy wash that made the whole thing unreadable. The regions are
+ * partitioned first (see `paintGraphAreaPartition`) so every pixel carries
+ * exactly one region's colour, and then the whole layer gets this one value.
  */
-export function getGraphAreaFillAlpha(depth: number): number {
-  return 0.035 + Math.min(depth, 3) * 0.008;
-}
+export const GRAPH_AREA_TINT_ALPHA = 0.16;
+
+/**
+ * Softness of the territory edges, applied to the assembled layer rather than
+ * to each region. Blurring them individually would feather the boundaries back
+ * into one another and undo the partition.
+ */
+export const GRAPH_AREA_BLUR_PX = 22;
 
 /** Region names are the map's legend: large when far out, smaller further in. */
 export function getGraphAreaLabelSizePx(depth: number): number {
