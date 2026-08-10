@@ -18,12 +18,15 @@ import {
   ArrowUpRight,
   CheckCircle2,
   Globe,
+  Hash,
   Maximize2,
   Minimize2,
+  Scan,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GraphLegend } from '@/components/GraphLegend';
-import { GraphView } from '@/components/GraphView';
+import { GraphSettingsPopover } from '@/components/GraphSettingsPopover';
+import { GraphView, type GraphViewHandle } from '@/components/GraphView';
 import {
   type GraphNodeSelection,
   getHashForGraphDocSelection,
@@ -44,34 +47,15 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { hashFromDocName } from '@/lib/doc-hash';
 import { openExternalUrl } from '@/lib/external-link';
+import {
+  type GraphSettings,
+  type GraphSettingsScope,
+  getInitialGraphSettings,
+  writeGraphSettings,
+} from '@/lib/graph-settings-store';
 import { cn } from '@/lib/utils';
 
 const FULLSCREEN_HUB_LIMIT = 50;
-
-const GRAPH_URL_NODES_DOCKED_KEY = 'ok-graph-docked-url-nodes-v1';
-const GRAPH_URL_NODES_FULLSCREEN_KEY = 'ok-graph-fullscreen-url-nodes-v1';
-
-function loadBoolPref(key: string): boolean {
-  if (typeof window === 'undefined') return false;
-  try {
-    return window.localStorage.getItem(key) === 'true';
-  } catch {
-    return false;
-  }
-}
-
-function saveBoolPref(key: string, value: boolean): void {
-  if (typeof window === 'undefined') return;
-  try {
-    if (value) {
-      window.localStorage.setItem(key, 'true');
-    } else {
-      window.localStorage.removeItem(key);
-    }
-  } catch {
-    // quota exceeded / private mode — ignore, stays in-memory
-  }
-}
 
 type FullscreenGraphMode = 'explore' | 'orphans' | 'hubs';
 
@@ -295,22 +279,25 @@ export function GraphPanel({ activeDocName }: { activeDocName: string }) {
   const [selectedNode, setSelectedNode] = useState<GraphNodeSelection | null>(null);
   const [stats, setStats] = useState<{ nodes: number; links: number } | null>(null);
   const [clusters, setClusters] = useState<string[]>([]);
-  const [showUrlNodesDocked, setShowUrlNodesDocked] = useState(() =>
-    loadBoolPref(GRAPH_URL_NODES_DOCKED_KEY),
-  );
-  const [showUrlNodesFull, setShowUrlNodesFull] = useState(() =>
-    loadBoolPref(GRAPH_URL_NODES_FULLSCREEN_KEY),
+  const graphViewRef = useRef<GraphViewHandle>(null);
+  // One preset per surface. The docked rail shows a 2-hop neighborhood and the
+  // fullscreen overlay the whole project, so a density or force tuned for one
+  // is usually wrong for the other; both are read once, synchronously.
+  const [settingsByScope, setSettingsByScope] = useState<Record<GraphSettingsScope, GraphSettings>>(
+    () => ({
+      docked: getInitialGraphSettings('docked'),
+      fullscreen: getInitialGraphSettings('fullscreen'),
+    }),
   );
   const nodeCount = stats?.nodes ?? 0;
   const linkCount = stats?.links ?? 0;
 
-  useEffect(() => {
-    saveBoolPref(GRAPH_URL_NODES_DOCKED_KEY, showUrlNodesDocked);
-  }, [showUrlNodesDocked]);
-
-  useEffect(() => {
-    saveBoolPref(GRAPH_URL_NODES_FULLSCREEN_KEY, showUrlNodesFull);
-  }, [showUrlNodesFull]);
+  const settingsScope: GraphSettingsScope = isExpanded ? 'fullscreen' : 'docked';
+  const settings = settingsByScope[settingsScope];
+  const updateSettings = (next: GraphSettings) => {
+    setSettingsByScope((previous) => ({ ...previous, [settingsScope]: next }));
+    writeGraphSettings(settingsScope, next);
+  };
 
   useEffect(() => {
     if (!isExpanded) return;
@@ -334,8 +321,7 @@ export function GraphPanel({ activeDocName }: { activeDocName: string }) {
   }, [fullscreenMode, selectedNode]);
 
   const activeMode = isExpanded ? fullscreenMode : 'explore';
-  const showUrlNodes = isExpanded ? showUrlNodesFull : showUrlNodesDocked;
-  const setShowUrlNodes = isExpanded ? setShowUrlNodesFull : setShowUrlNodesDocked;
+  const showUrlNodes = settings.filters.showExternalNodes;
   const selectedNodeIntent =
     selectedNode?.kind === 'doc' && !pageListLoading
       ? resolveTargetNavigationIntent(selectedNode.docName, {
@@ -394,19 +380,37 @@ export function GraphPanel({ activeDocName }: { activeDocName: string }) {
                   window.location.assign(hash);
                 },
               }
-            : {
-                eyebrow: t`Selected in graph`,
-                description: t`Open this link in a new tab and collapse the graph.`,
-                Icon: ArrowUpRight,
-                actionLabel: t`Open link`,
-                secondaryLabel: selectedNode.url,
-                onAction: () => {
-                  // openExternalUrl gates unsafe schemes internally (a node URL can
-                  // carry any authored scheme), then routes to the OS browser / new tab.
-                  openExternalUrl(selectedNode.url);
-                  setIsExpanded(false);
-                },
-              };
+            : selectedNode.kind === 'tag'
+              ? {
+                  // A tag is a facet, not a page — there is nothing to open. The
+                  // useful move is to narrow the graph to it, which is what the
+                  // Filters search box would do if typed by hand.
+                  eyebrow: t`Selected tag`,
+                  description: t`Narrow the graph to the pages carrying this tag.`,
+                  Icon: Hash,
+                  actionLabel: t`Filter by tag`,
+                  secondaryLabel: `#${selectedNode.tag}`,
+                  onAction: () => {
+                    updateSettings({
+                      ...settings,
+                      filters: { ...settings.filters, query: `tag:${selectedNode.tag}` },
+                    });
+                    setSelectedNode(null);
+                  },
+                }
+              : {
+                  eyebrow: t`Selected in graph`,
+                  description: t`Open this link in a new tab and collapse the graph.`,
+                  Icon: ArrowUpRight,
+                  actionLabel: t`Open link`,
+                  secondaryLabel: selectedNode.url,
+                  onAction: () => {
+                    // openExternalUrl gates unsafe schemes internally (a node URL can
+                    // carry any authored scheme), then routes to the OS browser / new tab.
+                    openExternalUrl(selectedNode.url);
+                    setIsExpanded(false);
+                  },
+                };
 
   return (
     <Panel className={isExpanded ? 'fixed inset-0 z-50 overflow-hidden bg-background' : undefined}>
@@ -496,7 +500,14 @@ export function GraphPanel({ activeDocName }: { activeDocName: string }) {
                     showUrlNodes ? t`Hide external URL nodes` : t`Show external URL nodes`
                   }
                   aria-pressed={showUrlNodes}
-                  onClick={() => setShowUrlNodes((prev) => !prev)}
+                  // A shortcut for the Filters switch of the same name, kept in
+                  // the header because it is the one filter used mid-exploration.
+                  onClick={() =>
+                    updateSettings({
+                      ...settings,
+                      filters: { ...settings.filters, showExternalNodes: !showUrlNodes },
+                    })
+                  }
                 >
                   <Globe
                     className={
@@ -525,6 +536,32 @@ export function GraphPanel({ activeDocName }: { activeDocName: string }) {
                   variant="ghost"
                   size="icon-sm"
                   className="text-muted-foreground hover:text-foreground hover:bg-accent"
+                  aria-label={t`Fit graph to view`}
+                  onClick={() => graphViewRef.current?.zoomToFit()}
+                >
+                  <Scan className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent
+                side="bottom"
+                sideOffset={8}
+                className={isExpanded ? 'z-[9999]' : undefined}
+              >
+                <Trans>Fit to view</Trans>
+              </TooltipContent>
+            </Tooltip>
+            <GraphSettingsPopover
+              scope={settingsScope}
+              settings={settings}
+              isExpanded={isExpanded}
+              onSettingsChange={updateSettings}
+            />
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="text-muted-foreground hover:text-foreground hover:bg-accent"
                   aria-label={isExpanded ? t`Collapse graph` : t`Expand graph`}
                   onClick={() => setIsExpanded((prev) => !prev)}
                 >
@@ -545,10 +582,11 @@ export function GraphPanel({ activeDocName }: { activeDocName: string }) {
       {activeMode === 'explore' ? (
         <div className="relative flex min-h-0 flex-1 flex-col">
           <GraphView
+            ref={graphViewRef}
             activeDocName={activeDocName}
+            settings={settings}
             selectedNodeId={isExpanded ? (selectedNode?.id ?? null) : null}
             isExpanded={isExpanded}
-            showUrlNodes={showUrlNodes}
             className="h-full min-h-0"
             docClickBehavior={isExpanded ? 'select' : 'navigate'}
             onSelectNode={isExpanded ? setSelectedNode : undefined}
@@ -570,7 +608,11 @@ export function GraphPanel({ activeDocName }: { activeDocName: string }) {
             }}
             onClustersChange={setClusters}
           />
-          <GraphLegend clusters={clusters} variant={isExpanded ? 'fullscreen' : 'docked'} />
+          <GraphLegend
+            clusters={clusters}
+            groups={settings.groups}
+            variant={isExpanded ? 'fullscreen' : 'docked'}
+          />
           {isExpanded && activeMode === 'explore' && selectedNode !== null && selectedNodeState ? (
             <div className="pointer-events-none absolute inset-x-4 top-4 z-10 flex justify-center">
               <div

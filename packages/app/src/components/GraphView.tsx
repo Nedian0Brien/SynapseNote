@@ -1,7 +1,7 @@
 import { Trans, useLingui } from '@lingui/react/macro';
 import { LinkGraphSuccessSchema, ProblemDetailsSchema } from '@nedian0brien/synapsenote-core';
 import { useTheme } from 'next-themes';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useImperativeHandle, useRef, useState } from 'react';
 import ForceGraph2D, {
   type ForceGraphMethods,
   type LinkObject,
@@ -11,8 +11,16 @@ import { usePageList } from '@/components/PageListContext';
 import { hashFromDocName } from '@/lib/doc-hash';
 import { subscribeToDocumentsChanged } from '@/lib/documents-events';
 import { openExternalUrl } from '@/lib/external-link';
+import type { GraphSettings } from '@/lib/graph-settings-store';
 import { cn } from '@/lib/utils';
 import { clusterColor } from './graph-colors';
+import { applyGraphFilters } from './graph-filter';
+import { matchGraphGroup, resolveGraphGroupColor } from './graph-groups';
+import {
+  buildGraphAdjacency,
+  getGraphHighlightSet,
+  isGraphLinkHighlighted,
+} from './graph-highlight';
 import {
   type GraphLabelLayoutLink,
   type GraphLabelLayoutNode,
@@ -21,6 +29,7 @@ import {
 } from './graph-label-layout';
 import { buildGraphLabelDescriptors } from './graph-label-utils';
 import {
+  buildGraphDegreeMap,
   buildGraphLinkSignature,
   buildGraphNodeSignature,
   type GraphData,
@@ -30,12 +39,12 @@ import {
   type GraphNode,
   type GraphNodeSelection,
   type GraphNodeVisualState,
-  getGraphLinkEndpointId,
   getGraphNodeCanvasRadius,
   getGraphNodePointerRadius,
   getGraphNodeTooltipLabel,
   getGraphNodeVisualState,
   reconcileGraphData,
+  resolveGraphLinkEndpointId,
   resolveGraphNodeClickAction,
 } from './graph-view-utils';
 import { resolveTargetNavigationIntent } from './target-navigation-intent';
@@ -45,6 +54,7 @@ const FOCUS_RETRY_INTERVAL_MS = 120;
 const FOCUS_RETRY_DISTANCE_PX = 18;
 const FINAL_SETTLE_DRIFT_PX = 28;
 const BACKGROUND_CLICK_TOLERANCE_PX = 5;
+const ZOOM_TO_FIT_PADDING_PX = 40;
 
 interface FocusState {
   key: string;
@@ -425,6 +435,10 @@ function applyGraphNodeClick({
     return;
   }
 
+  // A tag node clicked while the view navigates rather than selects: there is
+  // no page behind a tag, so the click is inert by design.
+  if (action.kind === 'none') return;
+
   onSelectNode?.(action.selection);
 }
 
@@ -462,24 +476,31 @@ function handleGraphPointerTapTarget({
   });
 }
 
+export interface GraphViewHandle {
+  /** Frames every visible node. The only camera control the panel drives directly. */
+  zoomToFit(): void;
+}
+
 export function GraphView({
   activeDocName,
+  settings,
   selectedNodeId = null,
   isExpanded = false,
-  showUrlNodes = true,
   className = '',
   docClickBehavior = 'navigate',
+  ref,
   onSelectNode,
   onBackgroundClick,
   onStatsChange,
   onClustersChange,
 }: {
   activeDocName: string;
+  settings: GraphSettings;
   selectedNodeId?: string | null;
   isExpanded?: boolean;
-  showUrlNodes?: boolean;
   className?: string;
   docClickBehavior?: GraphDocClickBehavior;
+  ref?: React.Ref<GraphViewHandle>;
   onSelectNode?: (selection: GraphNodeSelection) => void;
   onBackgroundClick?: () => void;
   onStatsChange?: (nodes: number, links: number, loading: boolean) => void;
@@ -505,6 +526,9 @@ export function GraphView({
   // canvas-click-at-coord tests can gate on a real settlement signal instead
   // of racing the physics.
   const simulationSettledRef = useRef(false);
+  // force-graph fires onNodeHover only on enter/leave of a pointer area, not on
+  // every mouse move, so driving React state from it is cheap.
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [dimensions, setDimensions] = useState({ width: 320, height: 400 });
   const { t } = useLingui();
   const { resolvedTheme } = useTheme();
@@ -601,6 +625,16 @@ export function GraphView({
     return () => ro.disconnect();
   }, []);
 
+  useImperativeHandle(
+    ref,
+    () => ({
+      zoomToFit: () => {
+        fgRef.current?.zoomToFit(FOCUS_ANIMATION_MS, ZOOM_TO_FIT_PADDING_PX);
+      },
+    }),
+    [],
+  );
+
   const isDark = resolvedTheme === 'dark';
   const bgColor = isDark ? 'hsl(0 0% 4%)' : 'hsl(0 0% 100%)';
   const defaultNodeColor = isDark ? '#6b7280' : '#9ca3af';
@@ -608,9 +642,14 @@ export function GraphView({
   const selectedNodeColor = isDark ? '#34d399' : '#059669';
   const activeSelectedNodeColor = isDark ? '#c084fc' : '#7c3aed';
   const externalNodeColor = isDark ? '#f59e0b' : '#c2410c';
+  const tagNodeColor = isDark ? '#22d3ee' : '#164e63';
+  const tagNodeRingColor = isDark ? 'rgba(34,211,238,0.5)' : 'rgba(22,78,99,0.3)';
   const folderNodeColor = isDark ? '#a78bfa' : '#7c3aed';
   const missingNodeColor = isDark ? '#f87171' : '#dc2626';
   const edgeColor = isDark ? 'rgba(75,85,99,0.6)' : 'rgba(209,213,219,0.8)';
+  // Edges outside a hover highlight. Baked as a color rather than a globalAlpha
+  // because force-graph draws links itself — there is no per-link canvas hook.
+  const dimmedEdgeColor = isDark ? 'rgba(75,85,99,0.12)' : 'rgba(209,213,219,0.18)';
   const labelColor = isDark ? '#f3f4f6' : '#111827';
   const activeNodeRingColor = isDark ? 'rgba(105,163,255,0.45)' : 'rgba(55,132,255,0.3)';
   const folderNodeRingColor = isDark ? 'rgba(167,139,250,0.38)' : 'rgba(124,58,237,0.22)';
@@ -621,30 +660,10 @@ export function GraphView({
   const labelChipBorderColor = isDark ? 'rgba(243,244,246,0.08)' : 'rgba(17,24,39,0.08)';
   const focusZoom = isExpanded ? 1.6 : 2.35;
   const maxLabelWidthPx = isExpanded ? 220 : 150;
-  // Fullscreen shows the whole project graph, so it intentionally uses a tighter
-  // label budget than the docked 2-hop neighborhood view to avoid flooding.
-  const maxVisibleLabels = isExpanded ? 10 : 18;
 
-  const displayData: GraphData = showUrlNodes
-    ? graphData
-    : (() => {
-        const externalNodeIds = new Set(
-          graphData.nodes.filter((n) => n.kind === 'external').map((n) => n.id),
-        );
-        return {
-          nodes: graphData.nodes.filter((n) => n.kind !== 'external'),
-          links: graphData.links.filter((link) => {
-            const srcId = getGraphLinkEndpointId(link.source);
-            const tgtId = getGraphLinkEndpointId(link.target);
-            return !externalNodeIds.has(srcId) && !externalNodeIds.has(tgtId);
-          }),
-        };
-      })();
-
-  const layoutNodes = displayData.nodes as GraphLabelLayoutNode[];
-  const layoutLinks = displayData.links as GraphLabelLayoutLink[];
-  const labelDescriptors = buildGraphLabelDescriptors(displayData.nodes);
-  const focusKey = `${activeDocName}|${focusZoom}`;
+  // Built from the UNFILTERED node set: the missing-node filter reads display
+  // state to decide what to drop, so resolving it after filtering would be
+  // circular.
   const navigationIntentByNodeId = new Map(
     graphData.nodes.flatMap((node) => {
       if (node.kind !== 'doc') return [];
@@ -664,6 +683,35 @@ export function GraphView({
     }),
   );
 
+  // The React Compiler memoizes this, which is what makes `displayData.links`
+  // safe to use as an effect dependency below: its identity changes only when
+  // the graph, the filters, or the active document actually change. Without
+  // that, the forces effect would reheat the simulation on every render.
+  const displayData: GraphData = applyGraphFilters({
+    data: graphData,
+    filters: settings.filters,
+    activeDocName,
+    getDisplayState: (node) =>
+      getGraphNodeDisplayState({
+        node,
+        navigationIntentByNodeId,
+      }),
+  });
+
+  const layoutNodes = displayData.nodes as GraphLabelLayoutNode[];
+  const layoutLinks = displayData.links as GraphLabelLayoutLink[];
+  const labelDescriptors = buildGraphLabelDescriptors(displayData.nodes);
+  const focusKey = `${activeDocName}|${focusZoom}`;
+  const displayLinks = displayData.links;
+  const { centerStrength, repelStrength, linkStrength, linkDistance } = settings.forces;
+
+  const highlightSet = getGraphHighlightSet(hoveredNodeId, buildGraphAdjacency(displayData.links));
+  // Alpha applied to everything outside the hover highlight. Dimmed rather than
+  // hidden: the surrounding shape is what makes the highlighted subgraph legible.
+  const dimAlpha = isDark ? 0.16 : 0.12;
+  const nodeAlpha = (nodeId: string) =>
+    highlightSet === null || highlightSet.has(nodeId) ? 1 : dimAlpha;
+
   useEffect(() => {
     onStatsChange?.(displayData.nodes.length, displayData.links.length, loading);
   }, [displayData, loading, onStatsChange]);
@@ -682,6 +730,45 @@ export function GraphView({
   useEffect(() => {
     graphNodesRef.current = graphData.nodes;
   }, [graphData.nodes]);
+
+  // Push the Forces sliders into the live d3 simulation. force-graph builds the
+  // three standard forces once and keeps them across data updates, so this
+  // re-applies on every settings change and on every topology change — the link
+  // strength below is degree-derived, and degrees move when the data does.
+  //
+  // Depending on the four scalars rather than on `settings.forces` keeps a
+  // filter-box keystroke (which rebuilds the settings object) from reheating
+  // the simulation; `displayLinks` is memoized above for the same reason.
+  useEffect(() => {
+    const fg = fgRef.current;
+    if (!fg) return;
+
+    const charge = fg.d3Force('charge');
+    // Stored as a magnitude; d3 wants a negative strength to push apart.
+    charge?.strength?.(-repelStrength);
+
+    const center = fg.d3Force('center');
+    center?.strength?.(centerStrength);
+
+    const link = fg.d3Force('link');
+    if (link) {
+      link.distance?.(linkDistance);
+      // d3's own default is `1 / min(degree(source), degree(target))`, computed
+      // once at initialize. Reproducing it here rather than passing a flat
+      // number keeps a multiplier of 1 a true no-op: a flat strength would
+      // stiffen hub edges that d3 deliberately slackens.
+      const degrees = buildGraphDegreeMap(displayLinks);
+      link.strength?.((candidate: { source: unknown; target: unknown }) => {
+        const source = resolveGraphLinkEndpointId(candidate.source);
+        const target = resolveGraphLinkEndpointId(candidate.target);
+        const sourceDegree = source === null ? 1 : (degrees.get(source) ?? 1);
+        const targetDegree = target === null ? 1 : (degrees.get(target) ?? 1);
+        return (1 / Math.max(1, Math.min(sourceDegree, targetDegree))) * linkStrength;
+      });
+    }
+
+    fg.d3ReheatSimulation();
+  }, [centerStrength, repelStrength, linkStrength, linkDistance, displayLinks]);
 
   useEffect(() => {
     focusStateRef.current = {
@@ -1029,10 +1116,20 @@ export function GraphView({
                 selectedNodeId,
               });
 
-              if (state === 'active-selected') return 20;
-              if (state === 'active') return 18;
-              if (state === 'selected' || state === 'external-selected') return 12;
-              return 6;
+              const base =
+                state === 'active-selected'
+                  ? 20
+                  : state === 'active'
+                    ? 18
+                    : state === 'selected' ||
+                        state === 'external-selected' ||
+                        state === 'tag-selected'
+                      ? 12
+                      : 6;
+              // nodeVal drives force-graph's own area math (and the drag hit
+              // area), so it scales with the same multiplier as the drawn
+              // radius — squared, since val is an area and nodeSize a length.
+              return base * settings.display.nodeSize ** 2;
             }}
             nodeCanvasObjectMode={() => 'replace'}
             nodeCanvasObject={(
@@ -1052,16 +1149,26 @@ export function GraphView({
               });
               const isFolderTarget = displayState === 'folder';
               const isMissingTarget = displayState === 'missing';
-              const nodeRadius = getGraphNodeCanvasRadius(state);
-              const pointerRadius = getGraphNodeInteractiveRadius({
-                state,
-                displayState,
-                globalScale,
-              });
+              const nodeRadius = getGraphNodeCanvasRadius(state) * settings.display.nodeSize;
+              const pointerRadius =
+                getGraphNodeInteractiveRadius({
+                  state,
+                  displayState,
+                  globalScale,
+                }) * settings.display.nodeSize;
 
+              const group = matchGraphGroup(node, settings.groups);
               const docCluster = node.kind === 'doc' ? node.cluster : undefined;
-              const clusterFill = docCluster ? clusterColor(docCluster, isDark) : defaultNodeColor;
+              // A user-defined group outranks the auto-assigned cluster color:
+              // the group is an explicit instruction, the cluster a fallback.
+              const baseFill = group
+                ? resolveGraphGroupColor(group.color, isDark)
+                : docCluster
+                  ? clusterColor(docCluster, isDark)
+                  : defaultNodeColor;
 
+              ctx.save();
+              ctx.globalAlpha = nodeAlpha(node.id);
               ctx.beginPath();
               ctx.arc(node.x, node.y, nodeRadius, 0, 2 * Math.PI, false);
               ctx.fillStyle =
@@ -1071,13 +1178,15 @@ export function GraphView({
                     ? activeSelectedNodeColor
                     : state === 'external' || state === 'external-selected'
                       ? externalNodeColor
-                      : isMissingTarget
-                        ? missingNodeColor
-                        : state === 'selected'
-                          ? selectedNodeColor
-                          : isFolderTarget
-                            ? folderNodeColor
-                            : clusterFill;
+                      : state === 'tag' || state === 'tag-selected'
+                        ? tagNodeColor
+                        : isMissingTarget
+                          ? missingNodeColor
+                          : state === 'selected'
+                            ? selectedNodeColor
+                            : isFolderTarget
+                              ? folderNodeColor
+                              : baseFill;
               ctx.fill();
 
               if (pointerRadius > nodeRadius) {
@@ -1087,9 +1196,11 @@ export function GraphView({
                   ? missingNodeRingColor
                   : state === 'active'
                     ? activeNodeRingColor
-                    : state === 'selected' || state === 'external-selected'
-                      ? selectedNodeRingColor
-                      : activeSelectedNodeRingColor;
+                    : state === 'tag-selected'
+                      ? tagNodeRingColor
+                      : state === 'selected' || state === 'external-selected'
+                        ? selectedNodeRingColor
+                        : activeSelectedNodeRingColor;
                 ctx.lineWidth = isMissingTarget ? 1.75 / globalScale : 2 / globalScale;
                 ctx.setLineDash(isMissingTarget ? [3 / globalScale, 2 / globalScale] : []);
                 ctx.stroke();
@@ -1101,6 +1212,7 @@ export function GraphView({
                 ctx.lineWidth = 1.5 / globalScale;
                 ctx.stroke();
               }
+              ctx.restore();
             }}
             nodePointerAreaPaint={(
               node: NodeObject<GraphNode>,
@@ -1121,11 +1233,13 @@ export function GraphView({
               ctx.arc(
                 node.x,
                 node.y,
+                // Scaled by the same multiplier as the drawn radius, or the
+                // clickable area would drift away from the visible circle.
                 getGraphNodeInteractiveRadius({
                   state,
                   displayState,
                   globalScale,
-                }),
+                }) * settings.display.nodeSize,
                 0,
                 2 * Math.PI,
                 false,
@@ -1134,7 +1248,7 @@ export function GraphView({
               ctx.fill();
             }}
             onRenderFramePost={(ctx: CanvasRenderingContext2D, globalScale: number) => {
-              if (globalScale < 1.8) return;
+              if (globalScale < settings.display.textFadeThreshold) return;
 
               const fg = fgRef.current;
               if (!fg) return;
@@ -1151,7 +1265,7 @@ export function GraphView({
                 links: layoutLinks,
                 activeDocName,
                 viewport: dimensions,
-                maxLabels: maxVisibleLabels,
+                maxLabels: settings.display.maxLabels,
                 maxLabelWidthPx,
                 labelDescriptors,
                 measureTextWidthPx: (text) => ctx.measureText(text).width,
@@ -1171,6 +1285,7 @@ export function GraphView({
                       displayState,
                       globalScale,
                     }) *
+                      settings.display.nodeSize *
                       globalScale +
                     4
                   );
@@ -1186,12 +1301,24 @@ export function GraphView({
               });
               ctx.restore();
             }}
-            linkColor={() => edgeColor}
-            linkDirectionalArrowLength={3}
+            linkColor={(link: LinkObject<GraphNode, GraphLink>) =>
+              highlightSet === null || isGraphLinkHighlighted(link, hoveredNodeId)
+                ? edgeColor
+                : dimmedEdgeColor
+            }
+            linkDirectionalArrowLength={settings.display.showArrows ? 3 : 0}
             linkDirectionalArrowRelPos={1}
-            linkWidth={1}
+            linkWidth={(link: LinkObject<GraphNode, GraphLink>) =>
+              // A hovered node's own edges thicken, so the highlighted subgraph
+              // reads as a shape rather than just a brightness difference.
+              settings.display.linkThickness * (isGraphLinkHighlighted(link, hoveredNodeId) ? 2 : 1)
+            }
+            onNodeHover={(node: NodeObject<GraphNode> | null) => {
+              setHoveredNodeId(node?.id ?? null);
+            }}
             showPointerCursor={(obj) => Boolean(obj && 'kind' in obj)}
             onNodeClick={(node: NodeObject<GraphNode>) => {
+              if (node.kind === 'tag') return;
               if (node.kind === 'external') {
                 // openExternalUrl gates unsafe schemes internally (a node URL can
                 // carry any authored scheme), then routes to the OS browser / new tab.

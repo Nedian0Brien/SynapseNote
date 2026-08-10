@@ -1,7 +1,9 @@
 import { Trans } from '@lingui/react/macro';
 import { useTheme } from 'next-themes';
+import type { GraphGroup } from '@/lib/graph-settings-store';
 import { cn } from '@/lib/utils';
 import { clusterColor } from './graph-colors';
+import { resolveGraphGroupColor } from './graph-groups';
 
 type GraphLegendVariant = 'fullscreen' | 'docked';
 
@@ -42,19 +44,39 @@ function getGraphLegendLayout(variant: GraphLegendVariant): GraphLegendLayout {
 
 export function GraphLegend({
   clusters,
+  groups = [],
   variant = 'fullscreen',
 }: {
   clusters: string[];
+  /** User-defined color groups. When any exist they replace the cluster legend. */
+  groups?: readonly GraphGroup[];
   variant?: GraphLegendVariant;
 }) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
   const layout = getGraphLegendLayout(variant);
 
-  if (clusters.length === 0) return null;
+  // Groups override cluster coloring on the canvas, so the legend follows: two
+  // legends at once would each describe only part of what is on screen. A group
+  // with no query is inert and colors nothing, so it is left out.
+  const activeGroups = groups.filter((group) => group.query.trim() !== '');
+  const entries =
+    activeGroups.length > 0
+      ? activeGroups.map((group) => ({
+          key: group.id,
+          label: group.query,
+          color: resolveGraphGroupColor(group.color, isDark),
+        }))
+      : clusters.map((cluster) => ({
+          key: cluster,
+          label: cluster,
+          color: clusterColor(cluster, isDark),
+        }));
 
-  const visible = clusters.slice(0, layout.maxEntries);
-  const overflow = clusters.length - visible.length;
+  if (entries.length === 0) return null;
+
+  const visible = entries.slice(0, layout.maxEntries);
+  const overflow = entries.length - visible.length;
 
   return (
     <div
@@ -71,15 +93,15 @@ export function GraphLegend({
           isDark ? 'text-slate-300' : 'text-slate-700',
         )}
       >
-        <Trans>Clusters</Trans>
+        {activeGroups.length > 0 ? <Trans>Groups</Trans> : <Trans>Clusters</Trans>}
       </div>
-      {visible.map((cluster) => (
-        <div key={cluster} className={cn('flex items-center', layout.rowClassName)}>
+      {visible.map((entry) => (
+        <div key={entry.key} className={cn('flex items-center', layout.rowClassName)}>
           <span
             className={cn('inline-block shrink-0 rounded-full', layout.swatchClassName)}
-            style={{ backgroundColor: clusterColor(cluster, isDark) }}
+            style={{ backgroundColor: entry.color }}
           />
-          <span className={cn('truncate', layout.labelClassName)}>{cluster}</span>
+          <span className={cn('truncate', layout.labelClassName)}>{entry.label}</span>
         </div>
       ))}
       {overflow > 0 && (

@@ -18,7 +18,19 @@ interface ExternalGraphNode {
   url: string;
 }
 
-export type GraphNode = DocGraphNode | ExternalGraphNode;
+/**
+ * Synthesized client-side from frontmatter tags — the server's link graph has
+ * no notion of one. It carries no navigation target: a tag is a facet of pages,
+ * not a page, so clicking one selects it but never routes anywhere.
+ */
+interface TagGraphNode {
+  kind: 'tag';
+  id: string;
+  label: string;
+  tag: string;
+}
+
+export type GraphNode = DocGraphNode | ExternalGraphNode | TagGraphNode;
 
 export interface GraphLink {
   source: string;
@@ -62,7 +74,10 @@ export type GraphNodeSelection =
     } & Pick<DocGraphNode, 'id' | 'docName' | 'label' | 'anchor'>)
   | ({
       kind: 'external';
-    } & Pick<ExternalGraphNode, 'id' | 'label' | 'url'>);
+    } & Pick<ExternalGraphNode, 'id' | 'label' | 'url'>)
+  | ({
+      kind: 'tag';
+    } & Pick<TagGraphNode, 'id' | 'label' | 'tag'>);
 
 export type GraphDocClickBehavior = 'navigate' | 'select';
 export type GraphNodeVisualState =
@@ -71,7 +86,9 @@ export type GraphNodeVisualState =
   | 'selected'
   | 'active-selected'
   | 'external-selected'
-  | 'external';
+  | 'external'
+  | 'tag'
+  | 'tag-selected';
 
 const DEFAULT_GRAPH_NODE_RADIUS = 5;
 const SELECTED_GRAPH_NODE_RADIUS = 7;
@@ -93,7 +110,9 @@ const GRAPH_NODE_PHYSICS_KEYS = [
 type GraphNodeClickAction =
   | { kind: 'external'; url: string }
   | { kind: 'navigate'; hash: string }
-  | { kind: 'select'; selection: GraphNodeSelection };
+  | { kind: 'select'; selection: GraphNodeSelection }
+  // A tag node clicked in `navigate` mode: there is nothing to navigate to.
+  | { kind: 'none' };
 
 function copyGraphNodePhysics(nextNode: MutableGraphNode, prevNode: MutableGraphNode): void {
   for (const key of GRAPH_NODE_PHYSICS_KEYS) {
@@ -110,6 +129,39 @@ export function getGraphLinkEndpointId(endpoint: unknown): string {
     return String((endpoint as { id: unknown }).id);
   }
   return '';
+}
+
+/**
+ * Endpoint id as `string | null`, for callers that must distinguish "no id" from
+ * an id that happens to stringify. `getGraphLinkEndpointId` collapses both to
+ * `''` because its callers build signature keys, where the distinction is moot.
+ */
+export function resolveGraphLinkEndpointId(endpoint: unknown): string | null {
+  if (typeof endpoint === 'string') return endpoint;
+  if (endpoint === null || typeof endpoint !== 'object' || !('id' in endpoint)) return null;
+  const { id } = endpoint as { id: unknown };
+  if (typeof id === 'string') return id;
+  if (typeof id === 'number') return String(id);
+  return null;
+}
+
+/**
+ * Undirected degree per node id. Both endpoints of every link count, so a
+ * node's degree is its total edge count regardless of direction — which is
+ * what both the label-placement ranking and the orphan filter want.
+ */
+export function buildGraphDegreeMap(
+  links: ReadonlyArray<{ source: unknown; target: unknown }>,
+): Map<string, number> {
+  const degrees = new Map<string, number>();
+  for (const link of links) {
+    for (const endpoint of [link.source, link.target]) {
+      const id = resolveGraphLinkEndpointId(endpoint);
+      if (id === null) continue;
+      degrees.set(id, (degrees.get(id) ?? 0) + 1);
+    }
+  }
+  return degrees;
 }
 
 export function buildGraphNodeSignature(nodes: GraphNode[]): string {
@@ -168,6 +220,7 @@ export function getGraphNodeTooltipLabel(
   } = {},
 ): string {
   if (node.kind === 'external') return node.url;
+  if (node.kind === 'tag') return `#${node.tag}`;
 
   const title = node.label ?? node.id;
   const displayState = options.displayState ?? 'doc';
@@ -238,6 +291,10 @@ export function getGraphNodeVisualState(
     return isSelected ? 'external-selected' : 'external';
   }
 
+  if (node.kind === 'tag') {
+    return isSelected ? 'tag-selected' : 'tag';
+  }
+
   const isActive = node.docName === activeDocName;
 
   if (isActive && isSelected) {
@@ -256,7 +313,7 @@ export function getGraphNodeCanvasRadius(state: GraphNodeVisualState): number {
   if (state === 'active' || state === 'active-selected') {
     return ACTIVE_GRAPH_NODE_RADIUS;
   }
-  if (state === 'selected' || state === 'external-selected') {
+  if (state === 'selected' || state === 'external-selected' || state === 'tag-selected') {
     return SELECTED_GRAPH_NODE_RADIUS;
   }
   return DEFAULT_GRAPH_NODE_RADIUS;
@@ -271,7 +328,8 @@ export function getGraphNodePointerRadius(
     state === 'active' ||
     state === 'selected' ||
     state === 'active-selected' ||
-    state === 'external-selected'
+    state === 'external-selected' ||
+    state === 'tag-selected'
   ) {
     return baseRadius + 2 / Math.max(globalScale, 0.01);
   }
@@ -299,6 +357,16 @@ export function resolveGraphNodeClickAction(
       };
     }
     return { kind: 'external', url: node.url };
+  }
+
+  if (node.kind === 'tag') {
+    if (docClickBehavior === 'select') {
+      return {
+        kind: 'select',
+        selection: { kind: 'tag', id: node.id, label: node.label, tag: node.tag },
+      };
+    }
+    return { kind: 'none' };
   }
 
   if (docClickBehavior === 'select') {

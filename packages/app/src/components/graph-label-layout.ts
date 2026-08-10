@@ -1,5 +1,5 @@
 import { type GraphLabelDescriptor, pickGraphLabelText } from './graph-label-utils';
-import type { GraphNode } from './graph-view-utils';
+import { buildGraphDegreeMap, type GraphNode } from './graph-view-utils';
 
 export type GraphLabelLayoutNode = GraphNode & {
   x?: number;
@@ -100,7 +100,7 @@ export function planGraphLabels(input: PlanGraphLabelsInput): GraphLabelPlacemen
     return [];
   }
 
-  const degreeByNodeId = buildDegreeMap(links);
+  const degreeByNodeId = buildGraphDegreeMap(links);
   const viewportCenterX = viewport.width / 2;
   const viewportCenterY = viewport.height / 2;
 
@@ -167,37 +167,6 @@ export function planGraphLabels(input: PlanGraphLabelsInput): GraphLabelPlacemen
   }
 
   return placements;
-}
-
-function buildDegreeMap(links: GraphLabelLayoutLink[]): Map<string, number> {
-  const degrees = new Map<string, number>();
-
-  for (const link of links) {
-    const sourceId = getLinkEndpointId(link.source);
-    const targetId = getLinkEndpointId(link.target);
-
-    if (sourceId) {
-      degrees.set(sourceId, (degrees.get(sourceId) ?? 0) + 1);
-    }
-    if (targetId) {
-      degrees.set(targetId, (degrees.get(targetId) ?? 0) + 1);
-    }
-  }
-
-  return degrees;
-}
-
-function getLinkEndpointId(endpoint: GraphLabelLayoutLink['source']): string | null {
-  if (typeof endpoint === 'string') {
-    return endpoint;
-  }
-  if (typeof endpoint?.id === 'string') {
-    return endpoint.id;
-  }
-  if (typeof endpoint?.id === 'number') {
-    return String(endpoint.id);
-  }
-  return null;
 }
 
 function compareCandidates(a: LabelCandidate, b: LabelCandidate): number {

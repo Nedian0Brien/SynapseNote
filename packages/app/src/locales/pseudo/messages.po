@@ -880,6 +880,7 @@ msgstr ""
 
 #: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 #: src/components/DatabasePageLayoutDialog.tsx
+#: src/components/GraphSettingsPopover.tsx
 msgid "Add group"
 msgstr ""
 
@@ -1131,6 +1132,10 @@ msgstr ""
 msgid "Already set up — ok is available in your terminal"
 msgstr ""
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Always"
+msgstr ""
+
 #: src/components/AppErrorBoundary.tsx
 #: src/components/DocumentErrorBoundary.tsx
 msgid "An unexpected error occurred."
@@ -1254,6 +1259,10 @@ msgstr ""
 
 #: src/components/FileTree.tsx
 msgid "Are you sure you want to delete {targetCount} selected items? Folders and all files inside them will be deleted. This action cannot be undone."
+msgstr ""
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Arrows"
 msgstr ""
 
 #: src/components/BottomComposer.tsx
@@ -1792,6 +1801,10 @@ msgstr ""
 msgid "Captured Context Pack"
 msgstr ""
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Center force"
+msgstr ""
+
 #: src/components/DatabasePropertyMenu.tsx
 msgid "Change property type"
 msgstr ""
@@ -2221,6 +2234,10 @@ msgstr ""
 
 #: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Color columns"
+msgstr ""
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Color pages that match a search. The first matching group in the list wins."
 msgstr ""
 
 #: src/components/CommandPalette.tsx
@@ -3673,6 +3690,10 @@ msgstr ""
 msgid "Dismiss notice"
 msgstr ""
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Display"
+msgstr ""
+
 #: src/components/DatabaseFilesCellEditor.tsx
 msgid "Display name"
 msgstr ""
@@ -4247,6 +4268,7 @@ msgstr ""
 msgid "External link"
 msgstr ""
 
+#: src/components/GraphSettingsPopover.tsx
 #: src/editor/components/PdfEmbed.tsx
 msgid "External links"
 msgstr ""
@@ -4617,6 +4639,14 @@ msgstr ""
 msgid "Filter by property"
 msgstr ""
 
+#: src/components/GraphPanel.tsx
+msgid "Filter by tag"
+msgstr ""
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Filter graph"
+msgstr ""
+
 #: src/editor/extensions/CodeBlockView.tsx
 msgid "Filter languages"
 msgstr ""
@@ -4624,6 +4654,7 @@ msgstr ""
 #: src/components/DatabaseContextInspectorDialog.tsx
 #: src/components/DatabaseViewTabMenu.tsx
 #: src/components/DatabaseWorkspaceToolbar.tsx
+#: src/components/GraphSettingsPopover.tsx
 #: src/editor/components/InlineDatabaseToolbar.tsx
 msgid "Filters"
 msgstr ""
@@ -4669,12 +4700,20 @@ msgstr ""
 msgid "Fit cover"
 msgstr ""
 
+#: src/components/GraphPanel.tsx
+msgid "Fit graph to view"
+msgstr ""
+
 #: src/editor/components/PdfEmbed.tsx
 msgid "Fit height"
 msgstr ""
 
 #: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Fit image"
+msgstr ""
+
+#: src/components/GraphPanel.tsx
+msgid "Fit to view"
 msgstr ""
 
 #: src/editor/components/PdfEmbed.tsx
@@ -4760,6 +4799,10 @@ msgstr ""
 
 #: src/editor/slash-command/items.tsx
 msgid "Footnote"
+msgstr ""
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Forces"
 msgstr ""
 
 #: src/components/DatabaseForm.tsx
@@ -4925,6 +4968,10 @@ msgstr ""
 msgid "Graph"
 msgstr ""
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Graph settings"
+msgstr ""
+
 #: src/components/GraphView.tsx
 msgid "Graph visualization of document links"
 msgstr ""
@@ -4949,8 +4996,21 @@ msgstr ""
 msgid "Group and subgroup"
 msgstr ""
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Group color"
+msgstr ""
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Group query"
+msgstr ""
+
 #: src/components/DatabaseRecordLayoutOverrideDialog.tsx
 msgid "Group state overrides"
+msgstr ""
+
+#: src/components/GraphLegend.tsx
+#: src/components/GraphSettingsPopover.tsx
+msgid "Groups"
 msgstr ""
 
 #: src/components/CreatedItemsList.tsx
@@ -5683,6 +5743,10 @@ msgstr ""
 msgid "Label <0>(visible link text)</0>"
 msgstr ""
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Label count"
+msgstr ""
+
 #: src/components/DatabaseDiagnosticsDialog.tsx
 msgid "Last rebuilt"
 msgstr ""
@@ -5735,6 +5799,14 @@ msgstr ""
 msgid "Link copied."
 msgstr ""
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Link distance"
+msgstr ""
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Link force"
+msgstr ""
+
 #: src/editor/slash-command/component-items.tsx
 msgid "Link shared records into this page and choose a saved view."
 msgstr ""
@@ -5745,6 +5817,10 @@ msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Link the selected text, or edit the link under the caret."
+msgstr ""
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Link thickness"
 msgstr ""
 
 #: src/editor/slash-command/component-items.tsx
@@ -6361,6 +6437,10 @@ msgstr ""
 
 #: src/components/FolderOverview.tsx
 msgid "Name Z–A"
+msgstr ""
+
+#: src/components/GraphPanel.tsx
+msgid "Narrow the graph to the pages carrying this tag."
 msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts
@@ -7010,6 +7090,10 @@ msgstr ""
 msgid "No workspace"
 msgstr ""
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Node size"
+msgstr ""
+
 #: src/components/DatabaseContextInspectorDialog.tsx
 #: src/components/settings/SettingsDialogBody.tsx
 msgid "None"
@@ -7590,6 +7674,7 @@ msgid "Orphaned entries"
 msgstr ""
 
 #: src/components/GraphPanel.tsx
+#: src/components/GraphSettingsPopover.tsx
 msgid "Orphans"
 msgstr ""
 
@@ -8578,6 +8663,10 @@ msgstr ""
 msgid "Remove from recent projects"
 msgstr ""
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Remove group"
+msgstr ""
+
 #. placeholder {0}: index + 1
 #: src/components/ArrayOfObjectsWidget.tsx
 msgid "Remove item {0}"
@@ -8716,6 +8805,10 @@ msgstr ""
 
 #: src/components/DatabaseTemplatesDialog.tsx
 msgid "Repeating template history"
+msgstr ""
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Repel force"
 msgstr ""
 
 #: src/editor/find-replace/FindReplaceBar.tsx
@@ -8888,6 +8981,10 @@ msgstr ""
 #: src/components/DatabaseTableRowMenu.tsx
 #: src/components/TimelinePanel.tsx
 msgid "Restore"
+msgstr ""
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Restore defaults"
 msgstr ""
 
 #: src/components/TimelinePanel.tsx
@@ -9373,6 +9470,14 @@ msgstr ""
 msgid "Search templates"
 msgstr ""
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Search terms"
+msgstr ""
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Search terms, -exclude, tag:name"
+msgstr ""
+
 #: src/components/FolderOverview.tsx
 msgid "Search this folder"
 msgstr ""
@@ -9522,6 +9627,10 @@ msgstr ""
 
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "Selected record"
+msgstr ""
+
+#: src/components/GraphPanel.tsx
+msgid "Selected tag"
 msgstr ""
 
 #: src/components/chat/ChatMessageList.tsx
@@ -10428,6 +10537,10 @@ msgstr ""
 msgid "tag-name"
 msgstr ""
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Tags"
+msgstr ""
+
 #: src/components/CommandPalette.tsx
 msgid "Tags matching \"{tagListQuery}\""
 msgstr ""
@@ -10559,6 +10672,10 @@ msgstr ""
 
 #: src/components/PropertyWidgets.tsx
 msgid "Text"
+msgstr ""
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Text fade threshold"
 msgstr ""
 
 #: src/components/DatabaseContextInspectorDialog.tsx
@@ -11238,6 +11355,10 @@ msgstr ""
 
 #: src/components/AutoSyncEnableWarning.tsx
 msgid "Uncommitted changes"
+msgstr ""
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Uncreated pages"
 msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts

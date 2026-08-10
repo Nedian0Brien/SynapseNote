@@ -885,6 +885,7 @@ msgstr "Add cursors or select matching occurrences through CodeMirror."
 
 #: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 #: src/components/DatabasePageLayoutDialog.tsx
+#: src/components/GraphSettingsPopover.tsx
 msgid "Add group"
 msgstr "Add group"
 
@@ -1136,6 +1137,10 @@ msgstr "Already open"
 msgid "Already set up — ok is available in your terminal"
 msgstr "Already set up — ok is available in your terminal"
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Always"
+msgstr "Always"
+
 #: src/components/AppErrorBoundary.tsx
 #: src/components/DocumentErrorBoundary.tsx
 msgid "An unexpected error occurred."
@@ -1260,6 +1265,10 @@ msgstr "Are you sure you want to delete {itemName}? This action cannot be undone
 #: src/components/FileTree.tsx
 msgid "Are you sure you want to delete {targetCount} selected items? Folders and all files inside them will be deleted. This action cannot be undone."
 msgstr "Are you sure you want to delete {targetCount} selected items? Folders and all files inside them will be deleted. This action cannot be undone."
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Arrows"
+msgstr "Arrows"
 
 #: src/components/BottomComposer.tsx
 msgid "Ask"
@@ -1797,6 +1806,10 @@ msgstr "Caption"
 msgid "Captured Context Pack"
 msgstr "Captured Context Pack"
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Center force"
+msgstr "Center force"
+
 #: src/components/DatabasePropertyMenu.tsx
 msgid "Change property type"
 msgstr "Change property type"
@@ -2227,6 +2240,10 @@ msgstr "Color"
 #: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Color columns"
 msgstr "Color columns"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Color pages that match a search. The first matching group in the list wins."
+msgstr "Color pages that match a search. The first matching group in the list wins."
 
 #: src/components/CommandPalette.tsx
 msgid "Command failed."
@@ -3678,6 +3695,10 @@ msgstr "Dismiss"
 msgid "Dismiss notice"
 msgstr "Dismiss notice"
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Display"
+msgstr "Display"
+
 #: src/components/DatabaseFilesCellEditor.tsx
 msgid "Display name"
 msgstr "Display name"
@@ -4252,6 +4273,7 @@ msgstr "External actions run after the verified database commit and use durable 
 msgid "External link"
 msgstr "External link"
 
+#: src/components/GraphSettingsPopover.tsx
 #: src/editor/components/PdfEmbed.tsx
 msgid "External links"
 msgstr "External links"
@@ -4622,6 +4644,14 @@ msgstr "Files sidebar"
 msgid "Filter by property"
 msgstr "Filter by property"
 
+#: src/components/GraphPanel.tsx
+msgid "Filter by tag"
+msgstr "Filter by tag"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Filter graph"
+msgstr "Filter graph"
+
 #: src/editor/extensions/CodeBlockView.tsx
 msgid "Filter languages"
 msgstr "Filter languages"
@@ -4629,6 +4659,7 @@ msgstr "Filter languages"
 #: src/components/DatabaseContextInspectorDialog.tsx
 #: src/components/DatabaseViewTabMenu.tsx
 #: src/components/DatabaseWorkspaceToolbar.tsx
+#: src/components/GraphSettingsPopover.tsx
 #: src/editor/components/InlineDatabaseToolbar.tsx
 msgid "Filters"
 msgstr "Filters"
@@ -4674,6 +4705,10 @@ msgstr "First page preview"
 msgid "Fit cover"
 msgstr "Fit cover"
 
+#: src/components/GraphPanel.tsx
+msgid "Fit graph to view"
+msgstr "Fit graph to view"
+
 #: src/editor/components/PdfEmbed.tsx
 msgid "Fit height"
 msgstr "Fit height"
@@ -4681,6 +4716,10 @@ msgstr "Fit height"
 #: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Fit image"
 msgstr "Fit image"
+
+#: src/components/GraphPanel.tsx
+msgid "Fit to view"
+msgstr "Fit to view"
 
 #: src/editor/components/PdfEmbed.tsx
 msgid "Fit width"
@@ -4766,6 +4805,10 @@ msgstr "Follow us on X"
 #: src/editor/slash-command/items.tsx
 msgid "Footnote"
 msgstr "Footnote"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Forces"
+msgstr "Forces"
 
 #: src/components/DatabaseForm.tsx
 msgid "Form closed"
@@ -4930,6 +4973,10 @@ msgstr "Grant exact actions for {databaseName}. The project owner always retains
 msgid "Graph"
 msgstr "Graph"
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Graph settings"
+msgstr "Graph settings"
+
 #: src/components/GraphView.tsx
 msgid "Graph visualization of document links"
 msgstr "Graph visualization of document links"
@@ -4954,9 +5001,22 @@ msgstr "Group"
 msgid "Group and subgroup"
 msgstr "Group and subgroup"
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Group color"
+msgstr "Group color"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Group query"
+msgstr "Group query"
+
 #: src/components/DatabaseRecordLayoutOverrideDialog.tsx
 msgid "Group state overrides"
 msgstr "Group state overrides"
+
+#: src/components/GraphLegend.tsx
+#: src/components/GraphSettingsPopover.tsx
+msgid "Groups"
+msgstr "Groups"
 
 #: src/components/CreatedItemsList.tsx
 msgid "Guides your AI agents on how to work here."
@@ -5688,6 +5748,10 @@ msgstr "Label <0>(optional display text)</0>"
 msgid "Label <0>(visible link text)</0>"
 msgstr "Label <0>(visible link text)</0>"
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Label count"
+msgstr "Label count"
+
 #: src/components/DatabaseDiagnosticsDialog.tsx
 msgid "Last rebuilt"
 msgstr "Last rebuilt"
@@ -5740,6 +5804,14 @@ msgstr "Link"
 msgid "Link copied."
 msgstr "Link copied."
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Link distance"
+msgstr "Link distance"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Link force"
+msgstr "Link force"
+
 #: src/editor/slash-command/component-items.tsx
 msgid "Link shared records into this page and choose a saved view."
 msgstr "Link shared records into this page and choose a saved view."
@@ -5751,6 +5823,10 @@ msgstr "Link target"
 #: src/lib/keyboard-shortcuts.ts
 msgid "Link the selected text, or edit the link under the caret."
 msgstr "Link the selected text, or edit the link under the caret."
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Link thickness"
+msgstr "Link thickness"
 
 #: src/editor/slash-command/component-items.tsx
 msgid "Link to a page or external URL."
@@ -6367,6 +6443,10 @@ msgstr "Name is required"
 #: src/components/FolderOverview.tsx
 msgid "Name Z–A"
 msgstr "Name Z–A"
+
+#: src/components/GraphPanel.tsx
+msgid "Narrow the graph to the pages carrying this tag."
+msgstr "Narrow the graph to the pages carrying this tag."
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Navigate CodeMirror source search results or dismiss the search panel."
@@ -7015,6 +7095,10 @@ msgstr "No visible related records."
 msgid "No workspace"
 msgstr "No workspace"
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Node size"
+msgstr "Node size"
+
 #: src/components/DatabaseContextInspectorDialog.tsx
 #: src/components/settings/SettingsDialogBody.tsx
 msgid "None"
@@ -7595,6 +7679,7 @@ msgid "Orphaned entries"
 msgstr "Orphaned entries"
 
 #: src/components/GraphPanel.tsx
+#: src/components/GraphSettingsPopover.tsx
 msgid "Orphans"
 msgstr "Orphans"
 
@@ -8583,6 +8668,10 @@ msgstr "Remove from favorites"
 msgid "Remove from recent projects"
 msgstr "Remove from recent projects"
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Remove group"
+msgstr "Remove group"
+
 #. placeholder {0}: index + 1
 #: src/components/ArrayOfObjectsWidget.tsx
 msgid "Remove item {0}"
@@ -8722,6 +8811,10 @@ msgstr "Repeat this template"
 #: src/components/DatabaseTemplatesDialog.tsx
 msgid "Repeating template history"
 msgstr "Repeating template history"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Repel force"
+msgstr "Repel force"
 
 #: src/editor/find-replace/FindReplaceBar.tsx
 #: src/lib/keyboard-shortcuts.ts
@@ -8894,6 +8987,10 @@ msgstr "Restarting the server…"
 #: src/components/TimelinePanel.tsx
 msgid "Restore"
 msgstr "Restore"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Restore defaults"
+msgstr "Restore defaults"
 
 #: src/components/TimelinePanel.tsx
 msgid "Restore failed"
@@ -9378,6 +9475,14 @@ msgstr "Search settings not yet loaded — try again in a moment"
 msgid "Search templates"
 msgstr "Search templates"
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Search terms"
+msgstr "Search terms"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Search terms, -exclude, tag:name"
+msgstr "Search terms, -exclude, tag:name"
+
 #: src/components/FolderOverview.tsx
 msgid "Search this folder"
 msgstr "Search this folder"
@@ -9528,6 +9633,10 @@ msgstr "Selected property"
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "Selected record"
 msgstr "Selected record"
+
+#: src/components/GraphPanel.tsx
+msgid "Selected tag"
+msgstr "Selected tag"
 
 #: src/components/chat/ChatMessageList.tsx
 #: src/components/chat/CliChatPanel.tsx
@@ -10433,6 +10542,10 @@ msgstr "Tag value"
 msgid "tag-name"
 msgstr "tag-name"
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Tags"
+msgstr "Tags"
+
 #: src/components/CommandPalette.tsx
 msgid "Tags matching \"{tagListQuery}\""
 msgstr "Tags matching \"{tagListQuery}\""
@@ -10565,6 +10678,10 @@ msgstr "Terminal settings not yet loaded — try again in a moment"
 #: src/components/PropertyWidgets.tsx
 msgid "Text"
 msgstr "Text"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Text fade threshold"
+msgstr "Text fade threshold"
 
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "Text search"
@@ -11244,6 +11361,10 @@ msgstr "unavailable on this platform"
 #: src/components/AutoSyncEnableWarning.tsx
 msgid "Uncommitted changes"
 msgstr "Uncommitted changes"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Uncreated pages"
+msgstr "Uncreated pages"
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Underline"

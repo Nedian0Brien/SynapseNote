@@ -51,6 +51,34 @@ const LIGHT_PALETTE = [
   '#6b21a8', // Deep Purple   - Interdisciplinary, synthesis
 ] as const;
 
+export interface GraphColorPair {
+  dark: string;
+  light: string;
+}
+
+/**
+ * The palettes zipped into theme pairs, for surfaces that let a user *pick* a
+ * color instead of deriving one from a cluster name.
+ *
+ * A user's pick is stored once and rendered in both themes, so the two palettes
+ * have to stay index-aligned to translate between them. Light entries that
+ * repeat (three hues collapse to a shared deep tone) are dropped rather than
+ * offered twice: in a swatch grid, two chips that look distinct in dark mode and
+ * identical in light mode read as a bug. Cluster coloring is unaffected — it
+ * still hashes across the full 16-entry palettes.
+ */
+export const GRAPH_COLOR_PAIRS: readonly GraphColorPair[] = (() => {
+  const seenLight = new Set<string>();
+  const pairs: GraphColorPair[] = [];
+  for (const [index, dark] of DARK_PALETTE.entries()) {
+    const light = LIGHT_PALETTE[index];
+    if (seenLight.has(light)) continue;
+    seenLight.add(light);
+    pairs.push({ dark, light });
+  }
+  return pairs;
+})();
+
 function stableHash(str: string): number {
   let h = 2;
   for (let i = 0; i < str.length; i++) {
