@@ -57,12 +57,15 @@ import { DatabaseOverlayProvider } from '@/lib/database-overlay-store';
 import {
   assetPathFromHash,
   docNameFromHash,
+  GRAPH_HASH,
   isContentRootHash,
+  isGraphHash,
   ROUTE_NAVIGATION_CHANGE_EVENT,
   skillFileFromHash,
 } from '@/lib/doc-hash';
 import { mark, ProfilerBoundary } from '@/lib/perf';
 import { SingleFileModeProvider, useSingleFileMode } from '@/lib/single-file-mode';
+import { useGraphShortcut } from '@/lib/use-graph-route';
 import { useServerKeepalive } from '@/lib/use-server-keepalive';
 import { isSettingsShortcut, SETTINGS_OPEN_HASH } from '@/lib/use-settings-route';
 
@@ -214,6 +217,10 @@ function NavigationHandler() {
   const { clearTarget, openTabs, syncOpenTabsWithKnownTargets, tabSessionLoaded } =
     useDocumentContext();
   const { openTargetTransition } = useDocumentTransition();
+  // ⌘G sets the graph hash; the hash handler below is what resolves it. Bound
+  // here because this component is already the single mount point for
+  // hash-is-the-route navigation.
+  useGraphShortcut();
   // Reconcile open skill tabs against the live skills list: an agent/MCP/server-
   // side scope move only broadcasts `files` (never retargets the client tab),
   // leaving an open skill tab pointing at a doc that no longer exists.
@@ -263,6 +270,14 @@ function NavigationHandler() {
       // the editor would flash to <EmptyEditorState> behind the
       // dialog on every Cmd-,.
       if (isAuxiliaryDialogHash(window.location.hash)) {
+        return;
+      }
+      // The graph is a surface with no document behind it, so it resolves
+      // before every path-shaped branch below — `docNameFromHash` returns null
+      // for it, which would otherwise land it in the `clearTarget()` branch.
+      if (isGraphHash(window.location.hash)) {
+        mark('ok/nav/hash-change', { docName: null, kind: 'graph' });
+        openTargetTransition({ kind: 'graph', target: GRAPH_HASH });
         return;
       }
       const assetPath = assetPathFromHash(window.location.hash);

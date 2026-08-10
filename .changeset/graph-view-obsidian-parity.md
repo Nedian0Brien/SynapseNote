@@ -2,15 +2,23 @@
 '@nedian0brien/synapsenote': patch
 ---
 
-Give the graph view real controls. A new settings popover in the graph header
-adds four sections: **Filters** (search the graph, and show or hide external
-links, uncreated pages, orphans, and tags as nodes), **Groups** (color pages
-that match a search of your own), **Display** (node size, link thickness,
-arrows, and how far you have to zoom in before labels appear), and **Forces**
-(center, repel, and link strength plus link distance). Hovering a node now
-highlights it and its direct neighbors and dims the rest, and a new button
-frames the whole graph in view.
+Rework the graph view around the split Obsidian uses: the right rail keeps the
+**local** graph — the neighborhood around the page you are writing — and the
+whole-project graph becomes a content surface of its own. Press **⌘G** (Ctrl-G)
+to open it as a tab beside your documents, so the rail stays free for outline,
+links, and chat while you explore. The rail's expand button opens the same tab
+instead of inflating the panel over the window, and Explore / Orphans / Hubs now
+live there.
 
-The docked graph in the right rail and the expanded full-screen graph keep
-separate settings, so tuning one leaves the other alone. Both are remembered
-between sessions, and "Restore defaults" puts either back the way it was.
+Both graphs also gain real controls, in a new settings popover with four
+sections: **Filters** (search the graph, and show or hide external links,
+uncreated pages, orphans, and tags as nodes), **Groups** (color pages that match
+a search of your own), **Display** (node size, link thickness, arrows, and how
+far you have to zoom in before labels appear), and **Forces** (center, repel,
+and link strength plus link distance). Hovering a node highlights it and its
+direct neighbors and dims the rest, and a new button frames the whole graph in
+view.
+
+The local and project graphs keep separate settings, so tuning one leaves the
+other alone. Both are remembered between sessions, and "Restore defaults" puts
+either back the way it was.

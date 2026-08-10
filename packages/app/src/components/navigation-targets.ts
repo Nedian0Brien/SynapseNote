@@ -59,9 +59,23 @@ export type ResolvedNavigationTarget =
       limit: number;
     }
   | {
+      // The link graph, opened as a content surface rather than a rail panel.
+      // A singleton: there is one graph, so `target` is the constant route
+      // instead of a path identifying which one.
+      kind: 'graph';
+      target: string;
+    }
+  | {
       kind: 'missing';
       target: string;
     };
+
+/**
+ * Everything a *link target string* can resolve to. The graph is reachable only
+ * by route (⌘G, `#/__graph__`), never by resolving a path — so it is excluded
+ * here, which keeps link callers from having to carry a dead `graph` branch.
+ */
+export type ResolvedLinkTarget = Exclude<ResolvedNavigationTarget, { kind: 'graph' }>;
 
 interface DocumentSizeMeta {
   size?: number;
@@ -173,7 +187,7 @@ function okReadOnlyAssetPath(docName: string, docExt?: string): string {
 export function okContentNavigationTarget(
   docName: string,
   options: { pages: ReadonlySet<string>; docExt?: string },
-): ResolvedNavigationTarget | null {
+): ResolvedLinkTarget | null {
   if (!hasOkPathSegment(docName)) return null;
   const artifactDocName = managedArtifactDocNameFromContentTarget(docName);
   if (artifactDocName) {
@@ -203,7 +217,7 @@ export function resolveNavigationTarget(
     pagesBySlug?: ReadonlyMap<string, string>;
     pagesByBasename?: ReadonlyMap<string, string>;
   },
-): ResolvedNavigationTarget {
+): ResolvedLinkTarget {
   // Managed-artifact docs (skills/templates) are real docs addressed by their
   // exact synthetic name, but they live OUTSIDE the page list — so the
   // membership checks below would mark them 'missing'. Resolve them directly as
@@ -405,6 +419,8 @@ export function docNameForNavigationTarget(target: ResolvedNavigationTarget): st
     case 'asset':
     case 'skill-file':
     case 'folder':
+    // The graph is a surface, not a place in the file tree.
+    case 'graph':
       return null;
   }
 }

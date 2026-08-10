@@ -11,10 +11,12 @@ import { consumePrewarmClick } from '@/components/prewarm-correlation';
 import {
   assetPathFromHash,
   docNameFromHash,
+  GRAPH_HASH,
   hashFromAssetPath,
   hashFromDocName,
   hashFromFolderPath,
   hashFromSkillFile,
+  isGraphHash,
   skillFileFromHash,
 } from '@/lib/doc-hash';
 import { emitBranchChanged, emitDocumentsChanged } from '@/lib/documents-events';
@@ -35,6 +37,7 @@ import {
   filterClosableTabIds,
   filterOpenTabsForKnownTargets,
   folderTabId,
+  GRAPH_TAB_ID,
   localTabSessionStorageKey,
   nextActiveTabAfterClose,
   nextActiveTabAfterCloseMany,
@@ -498,10 +501,13 @@ function hashFromTabId(tabId: string): string {
       return hashFromAssetPath(tab.assetPath);
     case 'skill-file':
       return hashFromSkillFile({ scope: tab.scope, name: tab.name, path: tab.path });
+    case 'graph':
+      return GRAPH_HASH;
   }
 }
 
 function tabIdFromHash(hash: string): string | null {
+  if (isGraphHash(hash)) return GRAPH_TAB_ID;
   const assetPath = assetPathFromHash(hash);
   if (assetPath) return assetTabId(assetPath);
   const skillFile = skillFileFromHash(hash);
@@ -576,6 +582,9 @@ function navigationTargetKey(target: ResolvedNavigationTarget): string {
       return `large-file:${target.docName}:${target.size}:${target.limit}`;
     case 'missing':
       return `missing:${target.target}`;
+    case 'graph':
+      // A singleton surface: one key, always the same one.
+      return 'graph';
   }
 }
 
@@ -1300,6 +1309,11 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
       });
       const nextHash = hashFromSkillFile({ scope: tab.scope, name: tab.name, path: tab.path });
       if (window.location.hash !== nextHash) window.location.hash = nextHash;
+      return;
+    }
+    if (tab.kind === 'graph') {
+      setActiveTarget({ kind: 'graph', target: GRAPH_HASH });
+      if (window.location.hash !== GRAPH_HASH) window.location.hash = GRAPH_HASH;
       return;
     }
     setActiveTarget({ kind: 'folder', target: tab.folderPath, folderPath: tab.folderPath });

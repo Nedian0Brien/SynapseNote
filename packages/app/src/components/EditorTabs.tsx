@@ -724,6 +724,9 @@ export function EditorTabs() {
           if (tab.kind === 'folder') return [tabId, tab.folderPath] as const;
           if (tab.kind === 'asset') return [tabId, tab.assetPath] as const;
           if (tab.kind === 'skill-file') return [tabId, tab.path] as const;
+          // The graph tab is a fixed label with no path, so it has no prefix to
+          // disambiguate against its siblings.
+          if (tab.kind === 'graph') return [tabId, ''] as const;
           return [tabId, tab.docName] as const;
         }),
     ),
@@ -1088,12 +1091,18 @@ export function EditorTabs() {
                 );
               }
 
-              if (tab.kind === 'asset' || tab.kind === 'skill-file') {
-                // Skill bundle files share the asset tab's read-only chrome.
+              if (tab.kind === 'asset' || tab.kind === 'skill-file' || tab.kind === 'graph') {
+                // Skill bundle files share the asset tab's read-only chrome, and
+                // so does the graph — none of the three is an editable document.
                 // Label off the skill-relative path (`references/x.md`) for the
-                // skill-file case, the asset path otherwise.
-                const labelPath = tab.kind === 'asset' ? tab.assetPath : tab.path;
-                const { baseName, label, prefix } = tabParts(labelPath, '');
+                // skill-file case, the asset path otherwise; the graph is a
+                // singleton surface with a fixed name and no path at all.
+                const labelPath =
+                  tab.kind === 'asset' ? tab.assetPath : tab.kind === 'skill-file' ? tab.path : '';
+                const { baseName, label, prefix } =
+                  tab.kind === 'graph'
+                    ? { baseName: t`Graph`, label: t`Graph`, prefix: '' }
+                    : tabParts(labelPath, '');
                 const accessibleLabel = `${prefix}${label}`;
                 const displayPrefix =
                   prefix === '' ? '' : (tabDisplayPrefixes.get(tabId) ?? prefix);

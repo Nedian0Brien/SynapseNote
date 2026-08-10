@@ -1,7 +1,9 @@
-import { useLingui } from '@lingui/react/macro';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { detectEmbeddedHostFromBrowser } from '@nedian0brien/synapsenote-core';
 import {
+  lazy,
   type ReactNode,
+  Suspense,
   useDeferredValue,
   useEffect,
   useRef,
@@ -47,6 +49,32 @@ import type { EditorMode } from './EditorPane';
 import { EditorToolbar } from './EditorToolbar';
 import { shouldPaintOverlay } from './editor-area-overlay';
 import { TerminalDock } from './TerminalDock';
+
+// The graph pulls in the force-graph canvas engine, which is far too heavy to
+// sit in the main bundle for a surface most sessions never open. Same treatment
+// the rail's local graph gets in DocPanel.
+const GraphSurfaceImpl = lazy(async () => {
+  const mod = await import('@/components/GraphSurface');
+  return { default: mod.GraphSurface };
+});
+
+function LazyGraphSurface({ activeDocName }: { activeDocName: string | null }) {
+  return (
+    <Suspense
+      fallback={
+        <div
+          role="status"
+          aria-busy="true"
+          className="flex h-full items-center justify-center text-sm text-muted-foreground"
+        >
+          <Trans>Loading graph</Trans>
+        </div>
+      }
+    >
+      <GraphSurfaceImpl activeDocName={activeDocName} />
+    </Suspense>
+  );
+}
 
 /**
  * Where + whether the terminal should attach right now. EditorArea computes this
@@ -366,6 +394,11 @@ function EditorAreaInner({
         activePdfPanelTab={activePdfPanelTab}
       />
     );
+  } else if (activeTarget?.kind === 'graph') {
+    // The project graph, as a peer of the editor. `previousDocName` is where
+    // the user came from, so the graph can still mark and center on it — the
+    // graph tab itself has no document behind it.
+    viewContent = <LazyGraphSurface activeDocName={previousDocName} />;
   } else if (activeTarget?.kind === 'skill-file') {
     // A skill bundle file (global refs + scripts of any scope). Read-only,
     // backed by the scope-aware `/api/skill-file` read. Keyed by the three

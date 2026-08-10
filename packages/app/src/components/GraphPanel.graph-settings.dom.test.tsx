@@ -48,12 +48,23 @@ mock.module('@/components/PageListContext', () => ({
   useOptionalPageList: () => PAGE_LIST,
 }));
 
-const probe: { settings?: GraphSettings } = {};
+const probe: { settings?: GraphSettings; scope?: string } = {};
 
 mock.module('@/components/GraphView', () => ({
-  GraphView: ({ settings }: { settings: GraphSettings }) => {
+  GraphView: ({ settings, scope }: { settings: GraphSettings; scope: string }) => {
     probe.settings = settings;
+    probe.scope = scope;
     return <div data-testid="graph-view" />;
+  },
+}));
+
+// `window.location` is readonly under jsdom, so the route entry point is mocked
+// rather than the navigation primitive underneath it.
+const openedGraph = { count: 0 };
+
+mock.module('@/lib/use-graph-route', () => ({
+  openGraphSurface: () => {
+    openedGraph.count += 1;
   },
 }));
 
@@ -78,6 +89,8 @@ describe('GraphPanel graph settings', () => {
   beforeEach(() => {
     window.localStorage.clear();
     probe.settings = undefined;
+    probe.scope = undefined;
+    openedGraph.count = 0;
   });
 
   afterEach(() => {
@@ -120,24 +133,28 @@ describe('GraphPanel graph settings', () => {
     expect(storedSettings(DOCKED_KEY)?.filters.showOrphans).toBe(false);
   });
 
-  test('docked and fullscreen keep independent presets', async () => {
+  test('writes only the docked key, never the surface preset', async () => {
+    // The rail owns the LOCAL graph; the project graph is a content surface
+    // with its own preset. A rail edit must not reach across to it.
     await renderPanel();
-    // Change the docked preset, then expand: the fullscreen surface must still
-    // be at its own defaults rather than inheriting the docked choice.
     await userEvent.click(screen.getByRole('button', { name: 'Show external URL nodes' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Expand graph' }));
 
-    expect(probe.settings?.filters.showExternalNodes).toBe(false);
-    expect(probe.settings?.display.maxLabels).toBe(10);
-
-    // And a fullscreen change writes only the fullscreen key.
-    await userEvent.click(screen.getByRole('button', { name: 'Show external URL nodes' }));
-    expect(storedSettings(FULLSCREEN_KEY)?.filters.showExternalNodes).toBe(true);
     expect(storedSettings(DOCKED_KEY)?.filters.showExternalNodes).toBe(true);
+    expect(window.localStorage.getItem(FULLSCREEN_KEY)).toBeNull();
+  });
 
-    // Collapsing returns the docked preset, unchanged by the fullscreen edit.
-    await userEvent.click(screen.getByRole('button', { name: 'Collapse graph' }));
+  test('renders the local graph, not the whole project', async () => {
+    await renderPanel();
+    // The 2-hop neighborhood is the whole point of the rail panel — if this
+    // flips to `global` the rail silently becomes a second project graph.
+    expect(probe.scope).toBe('local');
     expect(probe.settings?.display.maxLabels).toBe(18);
+  });
+
+  test('the expand button routes to the graph surface instead of inflating the rail', async () => {
+    await renderPanel();
+    await userEvent.click(screen.getByRole('button', { name: 'Open the project graph' }));
+    expect(openedGraph.count).toBe(1);
   });
 
   test('adopts the legacy external-URL toggle from the pre-settings build', async () => {

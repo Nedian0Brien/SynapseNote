@@ -39,6 +39,7 @@ import {
   type GraphNode,
   type GraphNodeSelection,
   type GraphNodeVisualState,
+  type GraphScope,
   getGraphNodeCanvasRadius,
   getGraphNodePointerRadius,
   getGraphNodeTooltipLabel,
@@ -485,7 +486,7 @@ export function GraphView({
   activeDocName,
   settings,
   selectedNodeId = null,
-  isExpanded = false,
+  scope = 'local',
   className = '',
   docClickBehavior = 'navigate',
   ref,
@@ -497,7 +498,11 @@ export function GraphView({
   activeDocName: string;
   settings: GraphSettings;
   selectedNodeId?: string | null;
-  isExpanded?: boolean;
+  /**
+   * `local` fetches a 2-hop neighborhood around the active document and reads
+   * at close range; `global` fetches the whole project graph and reads wide.
+   */
+  scope?: GraphScope;
   className?: string;
   docClickBehavior?: GraphDocClickBehavior;
   ref?: React.Ref<GraphViewHandle>;
@@ -546,7 +551,7 @@ export function GraphView({
     async function load() {
       try {
         const params = new URLSearchParams();
-        if (!isExpanded && activeDocName) {
+        if (scope === 'local' && activeDocName) {
           params.set('docName', activeDocName);
           params.set('degrees', '2');
         }
@@ -610,7 +615,7 @@ export function GraphView({
       window.removeEventListener('visibilitychange', handleResume);
       unsubscribe();
     };
-  }, [activeDocName, isExpanded, t]);
+  }, [activeDocName, scope, t]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -658,8 +663,8 @@ export function GraphView({
   const activeSelectedNodeRingColor = isDark ? 'rgba(192,132,252,0.5)' : 'rgba(124,58,237,0.35)';
   const labelChipColor = isDark ? 'rgba(3,7,18,0.92)' : 'rgba(255,255,255,0.94)';
   const labelChipBorderColor = isDark ? 'rgba(243,244,246,0.08)' : 'rgba(17,24,39,0.08)';
-  const focusZoom = isExpanded ? 1.6 : 2.35;
-  const maxLabelWidthPx = isExpanded ? 220 : 150;
+  const focusZoom = scope === 'global' ? 1.6 : 2.35;
+  const maxLabelWidthPx = scope === 'global' ? 220 : 150;
 
   // Built from the UNFILTERED node set: the missing-node filter reads display
   // state to decide what to drop, so resolving it after filtering would be

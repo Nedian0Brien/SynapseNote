@@ -219,6 +219,23 @@ const KEYBOARD_SHORTCUT_DEFINITIONS = [
     ],
   },
   {
+    id: 'graph-open',
+    category: 'navigation',
+    title: msg`Open the project graph`,
+    description: msg`Open the whole-project link graph as a tab.`,
+    // ⌘G is also `find-next`, which owns the chord whenever the visual-editor
+    // find bar is open. That is the narrower scope, so it wins there and this
+    // binding covers the rest of the time.
+    scope: msg`Global, unless the find bar is open`,
+    bindings: [
+      {
+        mac: '⌘ G',
+        windowsLinux: 'Ctrl G',
+        match: { key: 'g', mod: true },
+      },
+    ],
+  },
+  {
     id: 'tab-new',
     category: 'navigation',
     title: msg`New tab`,

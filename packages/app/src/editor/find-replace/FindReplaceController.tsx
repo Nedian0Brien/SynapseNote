@@ -11,6 +11,7 @@ import { getEditorForDoc, subscribeEditorRegistry } from '@/editor/active-editor
 import { matchesKeyboardShortcut } from '@/lib/keyboard-shortcuts';
 import { getEditorView } from '../utils/get-editor-view';
 import { FindReplaceBar } from './FindReplaceBar';
+import { markFindBarOpen } from './find-bar-open-state';
 import { getFindReplaceState } from './tiptap-find-replace-extension';
 
 interface FindReplaceControllerProps {
@@ -130,6 +131,13 @@ export function FindReplaceController({ activeDocName, isSourceMode }: FindRepla
     }
     previousEditorRef.current = editor;
   }, [editor]);
+
+  // Publish the open state so the global ⌘G handler can stand down: while the
+  // bar is open, ⌘G is find-next. See `find-bar-open-state.ts`.
+  useEffect(() => {
+    if (!findState.open) return;
+    return markFindBarOpen();
+  }, [findState.open]);
 
   useEffect(() => {
     if (!findState.open || !findInputRef.current) return;

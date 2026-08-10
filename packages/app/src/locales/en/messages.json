@@ -155,7 +155,6 @@
     "1vaMx1": ["Default Codex chat model"],
     "2-Dvfi": ["Database diagnostics"],
     "20fqc-": ["Page options"],
-    "2277Tu": ["Collapse graph"],
     "22KnfO": ["Related properties"],
     "237hSL": ["Ended"],
     "25Pw6a": ["Cloning"],
@@ -191,11 +190,6 @@
     "2j1kfc": ["Enter a valid URL (for example https://api.openai.com/v1)."],
     "2mmqoO": ["Anchor time (ISO)"],
     "2myNzt": ["We've filed it with the team and attached your logs."],
-    "2n3oDU": [
-      "Project-level pages ordered by inbound link count, up to ",
-      ["FULLSCREEN_HUB_LIMIT"],
-      " results."
-    ],
     "2q_Q7x": ["Visibility"],
     "2ryd91": ["Failed to rename property"],
     "2tIA1T": ["Duplicate property"],
@@ -433,6 +427,11 @@
     "6AJZZ3": ["Center force"],
     "6Aih4U": ["Offline"],
     "6EKG_c": ["What agents match on to decide when to use the skill."],
+    "6G1dqd": [
+      "Project-level pages ordered by inbound link count, up to ",
+      ["HUB_LIMIT"],
+      " results."
+    ],
     "6HCOwA": ["Failed to open."],
     "6KCH4m": ["Hidden files"],
     "6Ki4Pv": ["Favorite"],
@@ -918,6 +917,7 @@
     "EbE5fX": ["Selected passage"],
     "EbZT7P": ["Toggle the left file sidebar."],
     "EbjWsS": ["Current commit"],
+    "Ec8cG_": ["Open the whole-project link graph as a tab."],
     "EcM3k7": ["Failed to clean up pending ", ["kind"]],
     "EcMWTE": ["Move page"],
     "EcR0fl": ["Checking for installed agents"],
@@ -975,6 +975,7 @@
     "FCxvG5": ["First item"],
     "FEqWFL": ["Guides your AI agents on how to work here."],
     "FEr96N": ["Theme"],
+    "FGk4O1": ["Open this link in a new tab."],
     "FJs2i6": ["file changes"],
     "FMO3vt": ["Reset to source layout"],
     "FNTx6u": ["Search \"", ["semanticSubmitQuery"], "\" by meaning"],
@@ -1131,7 +1132,6 @@
     ],
     "If0crP": ["Open with AI ", ["targetDisplayName"], ", ", ["hint"]],
     "Ifl8_L": ["Preview move down"],
-    "IgTwLt": ["Open this document in the editor and collapse the graph."],
     "Ik-gP0": ["Heading H", ["level"], ": ", ["text"]],
     "IlvD-L": ["Show source details"],
     "Iq8zdU": ["Close terminal"],
@@ -1143,6 +1143,7 @@
     "It9ARY": ["Toggle the right document panel."],
     "Itp02R": ["Effort: ", ["label"]],
     "Ix0K8o": ["Hide external URL nodes"],
+    "Ix1s8T": ["This document is open in another tab. Use Open to switch to it."],
     "Ixxhlr": [
       "SynapseNote stores its configuration and internal files inside a newly created <0>.ok</0> directory in your project root folder."
     ],
@@ -1212,7 +1213,6 @@
     "KYcZ6Y": ["Above"],
     "KZLdgR": ["See <0>#design-docs</0> for the latest specs."],
     "K_vT1F": ["Upstream sync"],
-    "KaFCD3": ["Open this link in a new tab and collapse the graph."],
     "KbI_pz": ["Undoing run"],
     "Kbwvno": ["Memo"],
     "KdvMc-": ["No calculation"],
@@ -1531,7 +1531,6 @@
     "Pgu10b": ["Saved as <0>", ["slug"], ".md</0>"],
     "PgzIpb": ["Move to the previous visual-editor find result."],
     "PiH3UR": ["Copied!"],
-    "PkeYXL": ["Expanded graph mode"],
     "PkgGOu": ["Loading database diagnostics"],
     "Pkw7J9": ["This folder is empty."],
     "PmTCkl": ["Couldn't export the PDF."],
@@ -1861,7 +1860,6 @@
     "W-ntoW": ["heading-slug"],
     "W0i24j": ["Object"],
     "W1DTHC": ["Token budget"],
-    "W1qRuM": ["This document is already active in the editor. Use Open to collapse the graph."],
     "W2kNGA": ["Label count"],
     "W3Xlpc": [
       "Set the auto-sync default for users opening this project for the first time. This setting is committed to your repository."
@@ -1988,6 +1986,7 @@
     "YSFv5w": ["No git repository — config sharing does not apply here."],
     "YTLmTM": ["Remove the parent <0>.git</0> folder"],
     "YTn8Fj": ["No pages in this list."],
+    "YTyNJE": ["Open this document in the editor."],
     "YUGjgn": ["Arrows"],
     "YVfTcD": ["Convert to full page"],
     "YW7Q86": ["Search settings not yet loaded — try again in a moment"],
@@ -2190,6 +2189,7 @@
     "bUUVED": ["Asset"],
     "bV6DJA": ["Who you are, so the agent has your context."],
     "bWLmRK": ["Could not fetch branch. Check your connection."],
+    "ba1THK": ["Graph mode"],
     "ba3vIW": [["templateCount", "plural", { "one": ["template"], "other": ["templates"] }]],
     "baHsV3": [
       "Can't nest projects. An SynapseNote project already exists at <0>",
@@ -2218,6 +2218,7 @@
     ],
     "bz1rog": ["Import CSV/TSV"],
     "bzSI52": ["Discard"],
+    "c-sLRX": ["Global, unless the find bar is open"],
     "c0acMS": ["Advanced filters"],
     "c1LZZH": ["Link copied."],
     "c5f7sm": ["Code block language: ", ["currentLabel"], ". Click to change."],
@@ -2467,9 +2468,6 @@
     "gbHcbI": ["Failed to delete property"],
     "gfdqcY": ["Couldn't apply the change: ", ["0"]],
     "gfohmY": ["Connect tools"],
-    "ggm6JX": [
-      "This page doesn't exist yet. Open it to create the page in the editor and collapse the graph."
-    ],
     "gijbne": ["Failed to rename path"],
     "gk_-qj": ["Couldn't rename template: ", ["0"]],
     "gla9Gg": ["Save failed"],
@@ -2734,6 +2732,7 @@
     ],
     "l75CjT": ["Yes"],
     "l8G3S9": ["Auto-sync is off — you don't have permission to push to this repo"],
+    "l98zVs": ["Open the project graph"],
     "l9wI00": ["Speed"],
     "lAiyU_": ["Only the current document uses <0>#", ["tag"], "</0>."],
     "lCC_D5": ["Subscribing..."],
@@ -2986,6 +2985,7 @@
     "pFagOn": ["Source editing"],
     "pHYP6v": ["Open <0>Customize</0> in the sidebar <1/> <2>Skills</2>."],
     "pK37Ff": ["Show panel (", ["shortcut"], ")"],
+    "pK5QMm": ["This page doesn't exist yet. Open it to create the page in the editor."],
     "pKKQV0": ["Manage properties"],
     "pOrdK6": [
       "Couldn't restart the server — another process owns it. Quit other SynapseNote windows for this project, then try again."
@@ -3572,7 +3572,6 @@
     "yvHDYG": ["Claude Desktop"],
     "yz7wBu": ["Close"],
     "yzF66j": ["Link"],
-    "yzGPkm": ["Expand graph"],
     "z-lawV": ["worktree"],
     "z0a2EA": ["Diagram from Mermaid source — flowchart, sequence, class, state, ER, gantt, pie."],
     "z1uNN0": ["No emoji found."],

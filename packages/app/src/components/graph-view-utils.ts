@@ -80,6 +80,13 @@ export type GraphNodeSelection =
     } & Pick<TagGraphNode, 'id' | 'label' | 'tag'>);
 
 export type GraphDocClickBehavior = 'navigate' | 'select';
+/**
+ * Which graph a view is showing. `local` is the 2-hop neighborhood around the
+ * active document (the right rail); `global` is the whole project (the content
+ * surface). The two differ in what they fetch and how far out they read, not
+ * just in size, so callers name the intent rather than a pixel state.
+ */
+export type GraphScope = 'local' | 'global';
 export type GraphNodeVisualState =
   | 'default'
   | 'active'

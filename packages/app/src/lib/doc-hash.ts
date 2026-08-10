@@ -20,6 +20,8 @@ export function docNameFromHash(hash: string): string | null {
   // Skill bundle files (`#/__skill-file__/…`) are a viewer route, not a doc —
   // they resolve via `skillFileFromHash`, so don't mis-read them as a docName.
   if (hash.startsWith(SKILL_FILE_HASH_PREFIX)) return null;
+  // The graph (`#/__graph__`) is a content surface with no document behind it.
+  if (isGraphHash(hash)) return null;
   // Skill (`#/__skill__/…`) and template (`#/__template__/…`) hashes ARE
   // documents — they open as ordinary editor tabs, so they resolve to their
   // synthetic doc name here like any other `#/<docName>` hash (per-segment
@@ -158,6 +160,22 @@ export function assetPathFromHash(hash: string): string | null {
 
 export function hashFromAssetPath(assetPath: string): string {
   return `${ASSET_HASH_PREFIX}${assetPath.split('/').map(encodeURIComponent).join('/')}`;
+}
+
+/**
+ * The link graph as a content surface. A singleton route — there is one graph,
+ * so unlike every other `#/…` form it carries no body to address an instance.
+ *
+ * It lives in the `#/` namespace (not a bare `#graph`, the shape Settings and
+ * the install dialog use) because it opens as an editor TAB alongside documents
+ * rather than as a modal over whatever is already open.
+ */
+export const GRAPH_HASH = '#/__graph__';
+
+export function isGraphHash(hash: string): boolean {
+  // Tolerate a trailing `/` so a hand-typed or history-normalized variant of
+  // the route still lands on the graph instead of opening a phantom document.
+  return hash === GRAPH_HASH || hash === `${GRAPH_HASH}/`;
 }
 
 const SKILL_FILE_HASH_PREFIX = '#/__skill-file__/';

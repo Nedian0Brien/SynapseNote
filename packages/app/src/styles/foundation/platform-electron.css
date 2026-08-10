@@ -35,7 +35,7 @@ html.electron-mode {
     overlay must reserve enough left padding to clear that footprint.
     78px = trafficLightPosition.x (22) + 3 buttons × ~18px + margin. This
     token is the single source for that reserve — EditorHeader, FileSidebar's
-    SidebarHeader, GraphPanel, and ConnectingBanner all consume it rather than
+    SidebarHeader, and ConnectingBanner all consume it rather than
     re-declaring the literal.
     Web hosts (no `window.okDesktop`) never gain the `electron-mode` class,
     so the variable is undefined there. Consumers MUST use the fallback

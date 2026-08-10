@@ -467,6 +467,7 @@ msgid "{label} on page {0}"
 msgstr ""
 
 #: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "{linkCount, plural, one {# link} other {# links}}"
 msgstr ""
 
@@ -493,6 +494,7 @@ msgid "{name} CLI"
 msgstr ""
 
 #: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "{nodeCount, plural, one {# node} other {# nodes}}"
 msgstr ""
 
@@ -1124,7 +1126,7 @@ msgstr ""
 msgid "Already have a git repository? Add it with <0>git remote add origin <url></0> in this project's folder. This page updates automatically once a remote is detected."
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Already open"
 msgstr ""
 
@@ -1560,7 +1562,7 @@ msgstr ""
 msgid "Bold"
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Both"
 msgstr ""
 
@@ -1609,7 +1611,7 @@ msgstr ""
 msgid "Bring a remote repository onto this machine."
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Broken link"
 msgstr ""
 
@@ -2176,7 +2178,6 @@ msgstr ""
 msgid "Collaborators see your in-progress edits as soon as they sync."
 msgstr ""
 
-#: src/components/GraphPanel.tsx
 #: src/components/MemoPanel.tsx
 msgid "Collapse"
 msgstr ""
@@ -2205,10 +2206,6 @@ msgstr ""
 
 #: src/components/ActivityPanelBurstRow.tsx
 msgid "Collapse burst {burstNumber} diff"
-msgstr ""
-
-#: src/components/GraphPanel.tsx
-msgid "Collapse graph"
 msgstr ""
 
 #: src/components/MemoPanel.tsx
@@ -3104,7 +3101,7 @@ msgstr ""
 msgid "Create new tag #{tagValue}"
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 #: src/editor/extensions/InternalLinkPropPanel.tsx
 #: src/editor/extensions/WikiLinkPropPanel.tsx
 msgid "Create page"
@@ -4216,16 +4213,8 @@ msgstr ""
 msgid "Expand burst {burstNumber} diff"
 msgstr ""
 
-#: src/components/GraphPanel.tsx
-msgid "Expand graph"
-msgstr ""
-
 #: src/components/MemoPanel.tsx
 msgid "Expand original text"
-msgstr ""
-
-#: src/components/GraphPanel.tsx
-msgid "Expanded graph mode"
 msgstr ""
 
 #: src/components/AuthModal.tsx
@@ -4236,7 +4225,7 @@ msgstr ""
 msgid "Explain how your codebase works so teammates and AI agents can find their way around. Good for documenting the architecture, the main parts, and the questions new contributors always ask."
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Explore"
 msgstr ""
 
@@ -4375,11 +4364,11 @@ msgstr ""
 msgid "Failed to load headings"
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Failed to load hub pages"
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Failed to load orphan pages"
 msgstr ""
 
@@ -4639,7 +4628,7 @@ msgstr ""
 msgid "Filter by property"
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Filter by tag"
 msgstr ""
 
@@ -4701,6 +4690,7 @@ msgid "Fit cover"
 msgstr ""
 
 #: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Fit graph to view"
 msgstr ""
 
@@ -4713,6 +4703,7 @@ msgid "Fit image"
 msgstr ""
 
 #: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Fit to view"
 msgstr ""
 
@@ -4935,6 +4926,10 @@ msgstr ""
 msgid "Global Skill"
 msgstr ""
 
+#: src/lib/keyboard-shortcuts.ts
+msgid "Global, unless the find bar is open"
+msgstr ""
+
 #: src/components/DocumentErrorBoundary.tsx
 #: src/components/LargeFileEditorState.tsx
 msgid "Go back"
@@ -4964,8 +4959,14 @@ msgid "Grant exact actions for {databaseName}. The project owner always retains 
 msgstr ""
 
 #: src/components/DocPanel.tsx
+#: src/components/EditorTabs.tsx
 #: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Graph"
+msgstr ""
+
+#: src/components/GraphSurface.tsx
+msgid "Graph mode"
 msgstr ""
 
 #: src/components/GraphSettingsPopover.tsx
@@ -5111,6 +5112,7 @@ msgid "Hide empty"
 msgstr ""
 
 #: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Hide external URL nodes"
 msgstr ""
 
@@ -5251,7 +5253,7 @@ msgstr ""
 msgid "https://github.com/owner/repo or owner/repo"
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Hubs"
 msgstr ""
 
@@ -5947,6 +5949,7 @@ msgid "Loading files"
 msgstr ""
 
 #: src/components/DocPanel.tsx
+#: src/components/EditorArea.tsx
 msgid "Loading graph"
 msgstr ""
 
@@ -6439,7 +6442,7 @@ msgstr ""
 msgid "Name Z–A"
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Narrow the graph to the pages carrying this tag."
 msgstr ""
 
@@ -6736,7 +6739,7 @@ msgstr ""
 msgid "No diff."
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "No disconnected pages. Pages appear here only when they have no incoming and no outgoing graph edges."
 msgstr ""
 
@@ -6812,11 +6815,11 @@ msgstr ""
 msgid "No history yet"
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "No hub pages yet. Hubs appear once pages accumulate inbound graph links."
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "No Incoming"
 msgstr ""
 
@@ -6895,15 +6898,15 @@ msgstr ""
 msgid "No memos have been created from this PDF yet."
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "No Outgoing"
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "No pages are missing incoming graph links."
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "No pages are missing outgoing graph links."
 msgstr ""
 
@@ -7263,7 +7266,7 @@ msgstr ""
 #: src/components/DatabaseGallery.tsx
 #: src/components/DatabaseTableRowActions.tsx
 #: src/components/DatabaseTableRowMenu.tsx
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Open"
 msgstr ""
 
@@ -7461,7 +7464,7 @@ msgstr ""
 msgid "Open it there"
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Open link"
 msgstr ""
 
@@ -7543,16 +7546,25 @@ msgstr ""
 msgid "Open the insert menu in an empty or active text position."
 msgstr ""
 
+#: src/components/GraphPanel.tsx
+#: src/lib/keyboard-shortcuts.ts
+msgid "Open the project graph"
+msgstr ""
+
 #: src/lib/keyboard-shortcuts.ts
 msgid "Open the Project Navigator."
 msgstr ""
 
-#: src/components/GraphPanel.tsx
-msgid "Open this document in the editor and collapse the graph."
+#: src/lib/keyboard-shortcuts.ts
+msgid "Open the whole-project link graph as a tab."
 msgstr ""
 
-#: src/components/GraphPanel.tsx
-msgid "Open this link in a new tab and collapse the graph."
+#: src/components/GraphSurface.tsx
+msgid "Open this document in the editor."
+msgstr ""
+
+#: src/components/GraphSurface.tsx
+msgid "Open this link in a new tab."
 msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts
@@ -7665,7 +7677,7 @@ msgstr ""
 msgid "Original text"
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Orphan mode"
 msgstr ""
 
@@ -7673,8 +7685,8 @@ msgstr ""
 msgid "Orphaned entries"
 msgstr ""
 
-#: src/components/GraphPanel.tsx
 #: src/components/GraphSettingsPopover.tsx
+#: src/components/GraphSurface.tsx
 msgid "Orphans"
 msgstr ""
 
@@ -8191,23 +8203,23 @@ msgstr ""
 msgid "Project templates"
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Project-level disconnected pages"
 msgstr ""
 
-#: src/components/GraphPanel.tsx
-msgid "Project-level pages ordered by inbound link count, up to {FULLSCREEN_HUB_LIMIT} results."
+#: src/components/GraphSurface.tsx
+msgid "Project-level pages ordered by inbound link count, up to {HUB_LIMIT} results."
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Project-level pages with neither incoming nor outgoing graph edges."
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Project-level pages with no incoming graph edges."
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Project-level pages with no outgoing graph edges."
 msgstr ""
 
@@ -9608,11 +9620,11 @@ msgstr ""
 msgid "Selected field preview"
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Selected graph item"
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Selected in graph"
 msgstr ""
 
@@ -9629,7 +9641,7 @@ msgstr ""
 msgid "Selected record"
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Selected tag"
 msgstr ""
 
@@ -9707,7 +9719,7 @@ msgstr ""
 msgid "Server error: {status}"
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 #: src/editor/components/TagDialog.tsx
 msgid "Server error: {status} {statusText}"
 msgstr ""
@@ -9882,6 +9894,7 @@ msgid "Show exact scope"
 msgstr ""
 
 #: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Show external URL nodes"
 msgstr ""
 
@@ -10926,8 +10939,8 @@ msgstr ""
 msgid "This doc isn't on GitHub yet. The link won't work until it's pushed."
 msgstr ""
 
-#: src/components/GraphPanel.tsx
-msgid "This document is already active in the editor. Use Open to collapse the graph."
+#: src/components/GraphSurface.tsx
+msgid "This document is open in another tab. Use Open to switch to it."
 msgstr ""
 
 #: src/components/DatabaseFeed.tsx
@@ -11002,8 +11015,8 @@ msgstr ""
 msgid "This pack is already set up here."
 msgstr ""
 
-#: src/components/GraphPanel.tsx
-msgid "This page doesn't exist yet. Open it to create the page in the editor and collapse the graph."
+#: src/components/GraphSurface.tsx
+msgid "This page doesn't exist yet. Open it to create the page in the editor."
 msgstr ""
 
 #: src/components/LinksPanel.tsx
@@ -11258,7 +11271,7 @@ msgstr ""
 msgid "Token budget"
 msgstr ""
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Top linked pages"
 msgstr ""
 
