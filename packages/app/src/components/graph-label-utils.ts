@@ -21,7 +21,9 @@ export function buildGraphLabelDescriptors(nodes: GraphNode[]): Map<string, Grap
         ? (node.docName ?? node.id)
         : node.kind === 'external'
           ? (node.url ?? node.id)
-          : `#${node.tag}`;
+          : node.kind === 'folder'
+            ? node.path
+            : `#${node.tag}`;
     const pathLabel = compressPathLikeLabel(pathSource);
     const pathLikeLabel = looksPathLikeLabel(cleanedLabel);
     const primaryLabel = pathLikeLabel ? compressPathLikeLabel(cleanedLabel) : cleanedLabel;

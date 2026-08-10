@@ -195,6 +195,40 @@ describe('getGraphNodeTooltipLabel', () => {
   });
 });
 
+describe('resolveGraphNodeClickAction — folder nodes', () => {
+  const folder = {
+    kind: 'folder',
+    id: 'folder:notes/projects',
+    label: 'projects',
+    path: 'notes/projects',
+    memberCount: 4,
+  } as const;
+
+  test('navigates to the folder overview, which is a plain hash route', () => {
+    expect(resolveGraphNodeClickAction(folder, 'navigate')).toEqual({
+      kind: 'navigate',
+      hash: getHashForGraphDocSelection({
+        docName: 'notes/projects',
+        label: 'projects',
+        anchor: null,
+      }),
+    });
+  });
+
+  test('selects with the path, which is what the card needs to open it', () => {
+    expect(resolveGraphNodeClickAction(folder, 'select')).toEqual({
+      kind: 'select',
+      selection: {
+        kind: 'folder',
+        id: 'folder:notes/projects',
+        label: 'projects',
+        path: 'notes/projects',
+        memberCount: 4,
+      },
+    });
+  });
+});
+
 describe('resolveGraphNodeClickAction', () => {
   test('selects fullscreen document nodes without losing anchor metadata', () => {
     expect(
@@ -287,6 +321,23 @@ describe('resolveGraphNodeClickAction', () => {
 });
 
 describe('getGraphNodeVisualState', () => {
+  test('gives a folder its own state, so it never reads as the active document', () => {
+    const folder = {
+      kind: 'folder' as const,
+      id: 'folder:notes',
+      label: 'notes',
+      path: 'notes',
+      memberCount: 3,
+    };
+
+    expect(getGraphNodeVisualState(folder, { activeDocName: 'notes', selectedNodeId: null })).toBe(
+      'folder',
+    );
+    expect(
+      getGraphNodeVisualState(folder, { activeDocName: 'notes', selectedNodeId: 'folder:notes' }),
+    ).toBe('folder-selected');
+  });
+
   test('distinguishes active, selected, and active-and-selected document states', () => {
     const node = {
       kind: 'doc' as const,

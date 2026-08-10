@@ -43,6 +43,13 @@ describe('getDefaultGraphSettings', () => {
     expect(getDefaultGraphSettings('docked').display.maxLabels).toBe(18);
   });
 
+  test('shows folder nodes only on the whole-project view', () => {
+    // The docked graph is a 2-hop neighborhood: there is no blob to break into
+    // places, so a folder node is one more thing crowding a small canvas.
+    expect(getDefaultGraphSettings('fullscreen').filters.showFolderNodes).toBe(true);
+    expect(getDefaultGraphSettings('docked').filters.showFolderNodes).toBe(false);
+  });
+
   test('returns a fresh forces object per call so callers cannot mutate the shared default', () => {
     const first = getDefaultGraphSettings('docked');
     first.forces.repelStrength = 999;
@@ -250,6 +257,7 @@ describe('writeGraphSettings', () => {
       showMissingNodes: false,
       showOrphans: false,
       showTagNodes: true,
+      showFolderNodes: true,
     };
     settings.groups = [{ id: 'g1', query: 'project', color: '#60a5fa' }];
     writeGraphSettings('docked', settings, storage);

@@ -35,7 +35,13 @@ export function matchesGraphQuery(node: GraphNode, query: string): boolean {
   ).map((tag) => tag.toLowerCase());
   const haystack = [
     node.label,
-    node.kind === 'doc' ? node.docName : node.kind === 'external' ? node.url : node.tag,
+    node.kind === 'doc'
+      ? node.docName
+      : node.kind === 'external'
+        ? node.url
+        : node.kind === 'folder'
+          ? node.path
+          : node.tag,
     ...tags,
   ]
     .join('\n')

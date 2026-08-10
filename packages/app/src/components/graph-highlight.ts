@@ -1,4 +1,5 @@
 import { GRAPH_TAG_NODE_PREFIX } from './graph-filter';
+import { isGraphFolderLink } from './graph-folders';
 import type { GraphLink } from './graph-view-utils';
 import { resolveGraphLinkEndpointId } from './graph-view-utils';
 
@@ -57,7 +58,11 @@ export function getGraphHighlightSet(
  * whose pages each carry a handful of tags, the annotations outnumber the
  * structure several times over.
  */
-export function isStructuralGraphLink(link: Pick<GraphLink, 'source' | 'target'>): boolean {
+export function isStructuralGraphLink(
+  link: Pick<GraphLink, 'source' | 'target'> & { kind?: unknown },
+): boolean {
+  // Containment is the folder tree, not a link anyone wrote.
+  if (isGraphFolderLink(link)) return false;
   for (const endpoint of [link.source, link.target]) {
     const id = resolveGraphLinkEndpointId(endpoint);
     // Both non-page kinds are namespaced by prefix at their source: `external:`

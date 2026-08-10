@@ -254,6 +254,11 @@ export function GraphSettingsPopover({
             checked={settings.filters.showTagNodes}
             onCheckedChange={(checked) => patchFilters({ showTagNodes: checked })}
           />
+          <SettingSwitch
+            label={t`Folders`}
+            checked={settings.filters.showFolderNodes}
+            onCheckedChange={(checked) => patchFilters({ showFolderNodes: checked })}
+          />
         </SettingsSection>
 
         <SettingsSection title={t`Groups`}>

@@ -2141,10 +2141,6 @@ msgstr ""
 msgid "Close terminal"
 msgstr ""
 
-#: src/components/GraphLegend.tsx
-msgid "Clusters"
-msgstr ""
-
 #: src/lib/keyboard-shortcuts.ts
 msgid "Code block"
 msgstr ""
@@ -4780,6 +4776,7 @@ msgstr ""
 msgid "Folder view"
 msgstr ""
 
+#: src/components/GraphSettingsPopover.tsx
 #: src/components/settings/AiToolsSection.tsx
 #: src/components/settings/ProjectAiToolsSection.tsx
 msgid "Folders"
@@ -7440,6 +7437,7 @@ msgstr ""
 msgid "Open file"
 msgstr ""
 
+#: src/components/GraphSurface.tsx
 #: src/components/NavigatorApp.tsx
 #: src/components/ProjectSwitcher.tsx
 #: src/lib/keyboard-shortcuts.ts
@@ -7560,6 +7558,10 @@ msgstr ""
 
 #: src/components/DatabaseCreationDialog.tsx
 msgid "Open the agent handoff from the workspace to continue."
+msgstr ""
+
+#: src/components/GraphSurface.tsx
+msgid "Open the folder overview."
 msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts
@@ -9638,6 +9640,10 @@ msgstr ""
 
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "Selected field preview"
+msgstr ""
+
+#: src/components/GraphSurface.tsx
+msgid "Selected folder"
 msgstr ""
 
 #: src/components/GraphSurface.tsx

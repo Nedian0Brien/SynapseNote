@@ -38,6 +38,21 @@ describe('getGraphNodeStyle — weight carries the hierarchy', () => {
     expect(style({ degree: GRAPH_HUB_DEGREE - 1 }).shape).toBe('dot');
   });
 
+  test('a directory node is solid and sized by what it holds', () => {
+    const small = style({
+      node: { kind: 'folder', id: 'folder:notes', label: 'notes', path: 'notes', memberCount: 2 },
+    });
+    const large = style({
+      node: { kind: 'folder', id: 'folder:docs', label: 'docs', path: 'docs', memberCount: 60 },
+    });
+
+    expect(small).toMatchObject({ shape: 'filled', emphasis: 'strong', showDegree: false });
+    expect(large.scale).toBeGreaterThan(small.scale);
+    // Logarithmic and capped, like a hub: a 60-page folder must not be thirty
+    // times the size of a 2-page one.
+    expect(large.scale).toBeLessThanOrEqual(2.2);
+  });
+
   test('a folder target is solid — it is a structural anchor', () => {
     expect(style({ displayState: 'folder' })).toMatchObject({
       shape: 'filled',

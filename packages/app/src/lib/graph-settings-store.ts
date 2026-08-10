@@ -23,6 +23,11 @@ export interface GraphFilterSettings {
   showOrphans: boolean;
   /** Synthesizes a node per frontmatter tag, with an edge to every page carrying it. */
   showTagNodes: boolean;
+  /**
+   * Promotes each directory to a node of the graph, tied to the pages it holds.
+   * This is what makes folders separate spatially — see `graph-folders.ts`.
+   */
+  showFolderNodes: boolean;
 }
 
 export interface GraphDisplaySettings {
@@ -97,6 +102,15 @@ const DEFAULT_MAX_LABELS: Record<GraphSettingsScope, number> = {
   fullscreen: 10,
 };
 
+// Folder nodes exist to break a large graph into places. The fullscreen view is
+// the large graph, so they are on there; the docked view is a 2-hop
+// neighborhood that has no blob to break up, and a folder node in it is one
+// more thing crowding an already small canvas.
+const DEFAULT_SHOW_FOLDER_NODES: Record<GraphSettingsScope, boolean> = {
+  docked: false,
+  fullscreen: true,
+};
+
 export const GRAPH_SETTINGS_BOUNDS = {
   nodeSize: { min: 0.25, max: 3 },
   linkThickness: { min: 0.25, max: 5 },
@@ -123,6 +137,7 @@ export function getDefaultGraphSettings(scope: GraphSettingsScope): GraphSetting
       showMissingNodes: true,
       showOrphans: true,
       showTagNodes: false,
+      showFolderNodes: DEFAULT_SHOW_FOLDER_NODES[scope],
     },
     display: {
       nodeSize: 1,
@@ -200,6 +215,7 @@ export function clampGraphSettings(value: unknown, scope: GraphSettingsScope): G
       showMissingNodes: readBoolean(filters.showMissingNodes, defaults.filters.showMissingNodes),
       showOrphans: readBoolean(filters.showOrphans, defaults.filters.showOrphans),
       showTagNodes: readBoolean(filters.showTagNodes, defaults.filters.showTagNodes),
+      showFolderNodes: readBoolean(filters.showFolderNodes, defaults.filters.showFolderNodes),
     },
     display: {
       nodeSize: clampNumber(

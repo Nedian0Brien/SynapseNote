@@ -11,7 +11,7 @@ import {
   ProblemDetailsSchema,
 } from '@nedian0brien/synapsenote-core';
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, ArrowUpRight, CheckCircle2, Globe, Hash, Scan } from 'lucide-react';
+import { AlertTriangle, ArrowUpRight, CheckCircle2, Folder, Globe, Hash, Scan } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { GraphCardDeck } from '@/components/GraphCardDeck';
 import { GraphLegend } from '@/components/GraphLegend';
@@ -340,34 +340,43 @@ export function GraphSurface({ activeDocName }: { activeDocName: string | null }
                 secondaryLabel: selectedNode.docName,
                 onAction: () => window.location.assign(hashForSelectedNode(selectedNode)),
               }
-            : selectedNode.kind === 'tag'
+            : selectedNode.kind === 'folder'
               ? {
-                  eyebrow: t`Selected tag`,
-                  description: t`Narrow the graph to the pages carrying this tag.`,
-                  Icon: Hash,
-                  actionLabel: t`Filter by tag`,
-                  secondaryLabel: `#${selectedNode.tag}`,
-                  onAction: () => {
-                    updateSettings({
-                      ...settings,
-                      filters: { ...settings.filters, query: `tag:${selectedNode.tag}` },
-                    });
-                    setSelectedNode(null);
-                  },
+                  eyebrow: t`Selected folder`,
+                  description: t`Open the folder overview.`,
+                  Icon: Folder,
+                  actionLabel: t`Open folder`,
+                  secondaryLabel: selectedNode.path,
+                  onAction: () => window.location.assign(hashFromDocName(selectedNode.path, null)),
                 }
-              : {
-                  eyebrow: t`Selected in graph`,
-                  description: t`Open this link in a new tab.`,
-                  Icon: ArrowUpRight,
-                  actionLabel: t`Open link`,
-                  secondaryLabel: selectedNode.url,
-                  onAction: () => {
-                    // openExternalUrl gates unsafe schemes internally (a node URL
-                    // can carry any authored scheme), then routes to the OS
-                    // browser / new tab.
-                    openExternalUrl(selectedNode.url);
-                  },
-                };
+              : selectedNode.kind === 'tag'
+                ? {
+                    eyebrow: t`Selected tag`,
+                    description: t`Narrow the graph to the pages carrying this tag.`,
+                    Icon: Hash,
+                    actionLabel: t`Filter by tag`,
+                    secondaryLabel: `#${selectedNode.tag}`,
+                    onAction: () => {
+                      updateSettings({
+                        ...settings,
+                        filters: { ...settings.filters, query: `tag:${selectedNode.tag}` },
+                      });
+                      setSelectedNode(null);
+                    },
+                  }
+                : {
+                    eyebrow: t`Selected in graph`,
+                    description: t`Open this link in a new tab.`,
+                    Icon: ArrowUpRight,
+                    actionLabel: t`Open link`,
+                    secondaryLabel: selectedNode.url,
+                    onAction: () => {
+                      // openExternalUrl gates unsafe schemes internally (a node URL
+                      // can carry any authored scheme), then routes to the OS
+                      // browser / new tab.
+                      openExternalUrl(selectedNode.url);
+                    },
+                  };
 
   return (
     <div className="flex h-full min-h-0 flex-col">

@@ -38,3 +38,14 @@ than links to tags and URLs, and color is spent on one thing only: the document
 you came from. Labels sit as plain text under their node and appear at a zoom
 that matches how connected the page is, so zooming out thins the graph down to
 its landmarks instead of clearing every name at once.
+
+Folders are now part of the graph. Each directory that holds pages becomes a
+node of its own, and every page it holds is tied to it — so the layout gathers
+each folder into its own region instead of leaving one undifferentiated cloud,
+and clicking a folder opens its overview. Nested folders nest, a chain of
+single-child folders collapses into one node the way a file tree collapses it,
+and a page named after its folder becomes that folder's node rather than a
+second dot for the same place. Containment is drawn faintly and carries no
+arrow: it is the shape of your vault, not a link you wrote. Turn it off under
+**Filters → Folders** — on by default for the project graph, off for the rail's
+local one.

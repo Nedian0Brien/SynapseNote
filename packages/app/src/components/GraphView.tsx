@@ -15,6 +15,14 @@ import type { GraphSettings } from '@/lib/graph-settings-store';
 import { cn } from '@/lib/utils';
 import { getGraphCardNeighbors } from './GraphCardDeck';
 import { applyGraphFilters } from './graph-filter';
+import {
+  buildGraphFolderNodes,
+  GRAPH_FOLDER_LINK_DISTANCE_FACTOR,
+  GRAPH_FOLDER_LINK_STRENGTH_MULTIPLIER,
+  getGraphFolderChargeMultiplier,
+  getGraphFolderMemberCount,
+  isGraphFolderLink,
+} from './graph-folders';
 import { matchGraphGroup, resolveGraphGroupColor } from './graph-groups';
 import {
   buildGraphAdjacency,
@@ -675,6 +683,7 @@ export function GraphView({
         edgeStrong: 'rgba(255,255,255,0.20)',
         edgeSoft: 'rgba(255,255,255,0.10)',
         edgeDim: 'rgba(255,255,255,0.045)',
+        edgeContainment: 'rgba(255,255,255,0.075)',
       }
     : {
         background: 'oklch(1 0 0)',
@@ -687,6 +696,7 @@ export function GraphView({
         edgeStrong: 'rgba(23,23,23,0.20)',
         edgeSoft: 'rgba(23,23,23,0.10)',
         edgeDim: 'rgba(23,23,23,0.045)',
+        edgeContainment: 'rgba(23,23,23,0.085)',
       };
   const bgColor = palette.background;
   const labelColor = palette.label;
@@ -733,6 +743,20 @@ export function GraphView({
         navigationIntentByNodeId,
       }),
   });
+  // Folders are synthesized from what SURVIVED the filters, not from the fetched
+  // graph: containment edges would otherwise defeat the orphan filter (nothing
+  // is an orphan once it has a parent), and the folders drawn would be those of
+  // pages the user just hid.
+  const folderAdditions = settings.filters.showFolderNodes
+    ? buildGraphFolderNodes(filteredData.nodes, filteredData.links)
+    : EMPTY_GRAPH_DATA;
+  const composedData: GraphData =
+    folderAdditions.nodes.length === 0 && folderAdditions.links.length === 0
+      ? filteredData
+      : {
+          nodes: [...filteredData.nodes, ...folderAdditions.nodes],
+          links: [...filteredData.links, ...folderAdditions.links],
+        };
   // force-graph RESTARTS the simulation whenever the `graphData` prop changes
   // identity — its setter reinitializes the layout and resets the cooldown. The
   // filter above returns fresh arrays on every render, so handing its result
@@ -740,11 +764,11 @@ export function GraphView({
   // The signature is the real change signal; `renderData` holds the last value
   // that actually differed, so re-renders that change nothing pass the very same
   // object back and the layout is left alone.
-  const filteredSignature = `${buildGraphNodeSignature(filteredData.nodes)}\u0001${buildGraphLinkSignature(filteredData.links)}`;
+  const filteredSignature = `${buildGraphNodeSignature(composedData.nodes)}\u0001${buildGraphLinkSignature(composedData.links)}`;
   const [renderData, setRenderData] = useState<GraphData>(EMPTY_GRAPH_DATA);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the signature stands in for `filteredData`, whose identity churns every render — depending on it directly is the bug this exists to prevent
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the signature stands in for `composedData`, whose identity churns every render — depending on it directly is the bug this exists to prevent
   useEffect(() => {
-    setRenderData(filteredData);
+    setRenderData(composedData);
   }, [filteredSignature]);
   const displayData = renderData;
 
@@ -759,7 +783,26 @@ export function GraphView({
   const pinSelectedNode = physics.pinSelectedNode;
 
   const adjacency = buildGraphAdjacency(displayData.links);
-  const degreeByNodeId = buildGraphDegreeMap(displayData.links);
+  // Degree means "how many links does this page have", which is what the hub
+  // ring and its printed number claim. Containment is not a link anyone wrote,
+  // so counting it would add one to every page and turn every folder into the
+  // biggest hub on the canvas. Hover highlighting, above, DOES count it — there
+  // the question is "what is this connected to", and a folder's members are.
+  const degreeByNodeId = buildGraphDegreeMap(
+    displayData.links.filter((link) => !isGraphFolderLink(link)),
+  );
+  // The size multiplier `nodeCanvasObject` actually paints with. The label
+  // planner and the pointer hit area have to agree with it: a folder or a big
+  // hub is drawn at twice its base radius, so measuring them at the base puts
+  // their label underneath their own fill and stops their clickable circle
+  // short of the edge you can see.
+  const drawnNodeScale = (node: GraphNode): number =>
+    getGraphNodeStyle({
+      node,
+      degree: degreeByNodeId.get(node.id) ?? 0,
+      displayState: getGraphNodeDisplayState({ node, navigationIntentByNodeId }),
+      visualState: getGraphNodeVisualState(node, { activeDocName, selectedNodeId }),
+    }).scale;
   // Alpha applied to everything outside the hover highlight. Dimmed rather than
   // hidden: the surrounding shape is what makes the highlighted subgraph legible.
   const dimAlpha = isDark ? 0.16 : 0.12;
@@ -791,26 +834,45 @@ export function GraphView({
     if (!fg) return;
 
     const charge = fg.d3Force('charge');
-    // Stored as a magnitude; d3 wants a negative strength to push apart.
-    charge?.strength?.(-repelStrength);
+    // Stored as a magnitude; d3 wants a negative strength to push apart. A
+    // folder pushes harder than a page, because it has to clear room for
+    // everything hanging off it — that extra shove is what separates one folder
+    // from the next instead of stacking them.
+    charge?.strength?.((node: unknown) => {
+      const memberCount = getGraphFolderMemberCount(node);
+      return (
+        -repelStrength * (memberCount === null ? 1 : getGraphFolderChargeMultiplier(memberCount))
+      );
+    });
 
     const center = fg.d3Force('center');
     center?.strength?.(centerStrength);
 
     const link = fg.d3Force('link');
     if (link) {
-      link.distance?.(linkDistance);
+      link.distance?.((candidate: { kind?: unknown }) =>
+        isGraphFolderLink(candidate)
+          ? linkDistance * GRAPH_FOLDER_LINK_DISTANCE_FACTOR
+          : linkDistance,
+      );
       // d3's own default is `1 / min(degree(source), degree(target))`, computed
       // once at initialize. Reproducing it here rather than passing a flat
       // number keeps a multiplier of 1 a true no-op: a flat strength would
       // stiffen hub edges that d3 deliberately slackens.
       const degrees = buildGraphDegreeMap(displayLinks);
-      link.strength?.((candidate: { source: unknown; target: unknown }) => {
+      link.strength?.((candidate: { source: unknown; target: unknown; kind?: unknown }) => {
         const source = resolveGraphLinkEndpointId(candidate.source);
         const target = resolveGraphLinkEndpointId(candidate.target);
         const sourceDegree = source === null ? 1 : (degrees.get(source) ?? 1);
         const targetDegree = target === null ? 1 : (degrees.get(target) ?? 1);
-        return (1 / Math.max(1, Math.min(sourceDegree, targetDegree))) * linkStrength;
+        const base = 1 / Math.max(1, Math.min(sourceDegree, targetDegree));
+        // Containment has to out-pull the page's own links or the folder never
+        // gathers. Capped at 1 so a leaf page — where d3's base is already 1 —
+        // is not handed a spring stiff enough to fling it.
+        const stiffened = isGraphFolderLink(candidate)
+          ? Math.min(base * GRAPH_FOLDER_LINK_STRENGTH_MULTIPLIER, 1)
+          : base;
+        return stiffened * linkStrength;
       });
     }
 
@@ -1375,7 +1437,9 @@ export function GraphView({
                   state,
                   displayState,
                   globalScale,
-                }) * settings.display.nodeSize,
+                }) *
+                  settings.display.nodeSize *
+                  drawnNodeScale(node),
                 0,
                 2 * Math.PI,
                 false,
@@ -1429,6 +1493,7 @@ export function GraphView({
                       globalScale,
                     }) *
                       settings.display.nodeSize *
+                      drawnNodeScale(node) *
                       globalScale +
                     4
                   );
@@ -1450,11 +1515,20 @@ export function GraphView({
               ) {
                 return palette.edgeDim;
               }
+              // Containment is drawn faintest of all. It is scaffolding: it
+              // earns its keep in the LAYOUT, by gathering a folder's pages, and
+              // the ink only has to be enough to show which folder they belong
+              // to — any heavier and it reads as though every page links home.
+              if (isGraphFolderLink(link)) return palette.edgeContainment;
               // A page-to-page link is the graph's real structure; a link to a
               // tag or an external URL is annotation, and recedes behind it.
               return isStructuralGraphLink(link) ? palette.edgeStrong : palette.edgeSoft;
             }}
-            linkDirectionalArrowLength={settings.display.showArrows ? 3 : 0}
+            linkDirectionalArrowLength={(link: LinkObject<GraphNode, GraphLink>) =>
+              // Containment has no direction to point at — a folder does not
+              // link to its pages, it contains them.
+              settings.display.showArrows && !isGraphFolderLink(link) ? 3 : 0
+            }
             linkDirectionalArrowRelPos={1}
             linkWidth={(link: LinkObject<GraphNode, GraphLink>) =>
               // A hovered node's own edges thicken, so the highlighted subgraph
@@ -1473,6 +1547,11 @@ export function GraphView({
             showPointerCursor={(obj) => Boolean(obj && 'kind' in obj)}
             onNodeClick={(node: NodeObject<GraphNode>) => {
               if (node.kind === 'tag') return;
+              if (node.kind === 'folder') {
+                // The folder overview, through the ordinary hash route.
+                window.location.assign(hashFromDocName(node.path, null));
+                return;
+              }
               if (node.kind === 'external') {
                 // openExternalUrl gates unsafe schemes internally (a node URL can
                 // carry any authored scheme), then routes to the OS browser / new tab.

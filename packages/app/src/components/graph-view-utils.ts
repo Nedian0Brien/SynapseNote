@@ -30,11 +30,30 @@ interface TagGraphNode {
   tag: string;
 }
 
-export type GraphNode = DocGraphNode | ExternalGraphNode | TagGraphNode;
+/**
+ * A directory in the note tree, synthesized client-side from doc names — like
+ * tag nodes, the server's link graph has no notion of one. See `graph-folders.ts`
+ * for why it is a node rather than a region drawn behind one.
+ */
+interface FolderGraphNode {
+  kind: 'folder';
+  id: string;
+  label: string;
+  path: string;
+  /** Direct members: pages plus child folders. Drives both size and repulsion. */
+  memberCount: number;
+}
+
+export type GraphNode = DocGraphNode | ExternalGraphNode | TagGraphNode | FolderGraphNode;
 
 export interface GraphLink {
   source: string;
   target: string;
+  /**
+   * Set only on synthesized folder-containment edges. Authored links leave it
+   * absent, which is what `isGraphFolderLink` reads.
+   */
+  kind?: 'containment';
 }
 
 export interface GraphData {
@@ -77,7 +96,10 @@ export type GraphNodeSelection =
     } & Pick<ExternalGraphNode, 'id' | 'label' | 'url'>)
   | ({
       kind: 'tag';
-    } & Pick<TagGraphNode, 'id' | 'label' | 'tag'>);
+    } & Pick<TagGraphNode, 'id' | 'label' | 'tag'>)
+  | ({
+      kind: 'folder';
+    } & Pick<FolderGraphNode, 'id' | 'label' | 'path' | 'memberCount'>);
 
 export type GraphDocClickBehavior = 'navigate' | 'select';
 /**
@@ -95,7 +117,9 @@ export type GraphNodeVisualState =
   | 'external-selected'
   | 'external'
   | 'tag'
-  | 'tag-selected';
+  | 'tag-selected'
+  | 'folder'
+  | 'folder-selected';
 
 const DEFAULT_GRAPH_NODE_RADIUS = 5;
 const SELECTED_GRAPH_NODE_RADIUS = 7;
@@ -228,6 +252,7 @@ export function getGraphNodeTooltipLabel(
 ): string {
   if (node.kind === 'external') return node.url;
   if (node.kind === 'tag') return `#${node.tag}`;
+  if (node.kind === 'folder') return node.path;
 
   const title = node.label ?? node.id;
   const displayState = options.displayState ?? 'doc';
@@ -302,6 +327,10 @@ export function getGraphNodeVisualState(
     return isSelected ? 'tag-selected' : 'tag';
   }
 
+  if (node.kind === 'folder') {
+    return isSelected ? 'folder-selected' : 'folder';
+  }
+
   const isActive = node.docName === activeDocName;
 
   if (isActive && isSelected) {
@@ -320,7 +349,12 @@ export function getGraphNodeCanvasRadius(state: GraphNodeVisualState): number {
   if (state === 'active' || state === 'active-selected') {
     return ACTIVE_GRAPH_NODE_RADIUS;
   }
-  if (state === 'selected' || state === 'external-selected' || state === 'tag-selected') {
+  if (
+    state === 'selected' ||
+    state === 'external-selected' ||
+    state === 'tag-selected' ||
+    state === 'folder-selected'
+  ) {
     return SELECTED_GRAPH_NODE_RADIUS;
   }
   return DEFAULT_GRAPH_NODE_RADIUS;
@@ -353,7 +387,8 @@ export function getGraphNodePointerRadius(
     state === 'selected' ||
     state === 'active-selected' ||
     state === 'external-selected' ||
-    state === 'tag-selected'
+    state === 'tag-selected' ||
+    state === 'folder-selected'
   ) {
     return baseRadius + screenOffsetInGraphUnits(2, globalScale, baseRadius);
   }
@@ -391,6 +426,24 @@ export function resolveGraphNodeClickAction(
       };
     }
     return { kind: 'none' };
+  }
+
+  if (node.kind === 'folder') {
+    if (docClickBehavior === 'select') {
+      return {
+        kind: 'select',
+        selection: {
+          kind: 'folder',
+          id: node.id,
+          label: node.label,
+          path: node.path,
+          memberCount: node.memberCount,
+        },
+      };
+    }
+    // A folder path resolves to the folder overview through the ordinary hash
+    // route — the navigation layer already recognizes it as a folder.
+    return { kind: 'navigate', hash: hashFromDocName(node.path, null) };
   }
 
   if (docClickBehavior === 'select') {

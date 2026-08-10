@@ -113,6 +113,14 @@ describe('isStructuralGraphLink', () => {
     );
   });
 
+  test('is false for a folder-containment edge, which nobody authored', () => {
+    // Checked on the mark rather than the endpoints: a folder note hangs its
+    // members off a PAGE node, so both ends look like ordinary pages.
+    expect(isStructuralGraphLink({ source: 'notes', target: 'notes/A', kind: 'containment' })).toBe(
+      false,
+    );
+  });
+
   test('is false when an endpoint cannot be resolved', () => {
     expect(isStructuralGraphLink({ source: 'notes/A', target: null })).toBe(false);
   });

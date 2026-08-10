@@ -715,6 +715,7 @@
     "BBqGS9": ["Desktop"],
     "BD0XSC": ["Failed to load project templates"],
     "BE6eVB": [["label"], " on page ", ["0"]],
+    "BEBXTV": ["Open the folder overview."],
     "BEkF-P": [
       ["userName"],
       ", ",
@@ -2528,6 +2529,7 @@
     "hLy8b1": ["Updated to Version ", ["version"]],
     "hQQBXX": ["Fit cover"],
     "hQXiDc": ["Search branches..."],
+    "hS573t": ["Selected folder"],
     "hSBIG-": ["A title, description, tags — anything that describes this folder."],
     "hSySVc": ["Install handoff failed: ", ["msg"]],
     "hVPa4O": ["Select an option"],
@@ -2713,7 +2715,6 @@
     "kj9pAE": ["Creating page"],
     "kknhfj": ["No changes"],
     "klO-qa": ["Click to add"],
-    "kmKqZg": ["Clusters"],
     "knjOzA": ["Tag value"],
     "kolRU1": ["Do you want to permanently delete instead?"],
     "kpqWwG": ["This ", ["targetNoun"], " was removed from branch <0>", ["branch"], "</0>."],

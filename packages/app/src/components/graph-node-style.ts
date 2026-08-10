@@ -63,9 +63,24 @@ export function getGraphNodeStyle({
       ? 'accent'
       : visualState === 'selected' ||
           visualState === 'external-selected' ||
-          visualState === 'tag-selected'
+          visualState === 'tag-selected' ||
+          visualState === 'folder-selected'
         ? 'selected'
         : 'normal';
+
+  // A directory. Solid, and sized by how much it holds — the role the original
+  // SynapseNote graph gave its directory nodes, and the reason the folders in
+  // the layout read as places rather than as a stray labelled dot.
+  if (node.kind === 'folder') {
+    return {
+      shape: 'filled',
+      emphasis: emphasis === 'normal' ? 'strong' : emphasis,
+      // Same logarithmic curve as a hub: a 200-page folder is roughly twice a
+      // 4-page one, not fifty times.
+      scale: 1.15 + Math.min(Math.log2(node.memberCount + 1) * 0.22, 1.05),
+      showDegree: false,
+    };
+  }
 
   // A folder target is a structural anchor, so it reads as solid — the same
   // role the original graph gave its directory nodes.

@@ -1,6 +1,7 @@
 import { Trans, useLingui } from '@lingui/react/macro';
-import { ArrowUpRight, Globe, Hash, X } from 'lucide-react';
+import { ArrowUpRight, Folder, Globe, Hash, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { hashFromDocName } from '@/lib/doc-hash';
 import { openExternalUrl } from '@/lib/external-link';
 import { cn } from '@/lib/utils';
 import type { GraphNode } from './graph-view-utils';
@@ -106,14 +107,21 @@ function GraphNeighborCard({
             action: () => onFilterByTag(node.tag),
             actionLabel: t`Filter by ${node.label}`,
           }
-        : {
-            Icon: Globe,
-            secondary: node.url,
-            // openExternalUrl gates unsafe schemes internally (a node URL can
-            // carry any authored scheme), then routes to the OS browser.
-            action: () => openExternalUrl(node.url),
-            actionLabel: t`Open ${node.url}`,
-          };
+        : node.kind === 'folder'
+          ? {
+              Icon: Folder,
+              secondary: node.path,
+              action: () => window.location.assign(hashFromDocName(node.path, null)),
+              actionLabel: t`Open ${node.path}`,
+            }
+          : {
+              Icon: Globe,
+              secondary: node.url,
+              // openExternalUrl gates unsafe schemes internally (a node URL can
+              // carry any authored scheme), then routes to the OS browser.
+              action: () => openExternalUrl(node.url),
+              actionLabel: t`Open ${node.url}`,
+            };
 
   return (
     <Button
