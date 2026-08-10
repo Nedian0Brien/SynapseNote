@@ -29,7 +29,7 @@ centering force released, so the neighborhood stays where you can read and click
 it. Keep zooming and the neighbors become **cards** with their titles, paths, and
 tags at full size; zoom back out and you return to exactly the view you left.
 
-Labels and folders follow the same idea. A page's name now appears at a zoom
-that matches how connected it is, so zooming out thins the graph down to its
-landmarks instead of clearing every name at once. Folders are drawn as named
-regions behind the nodes that live in them, giving the graph the shape of a map.
+Labels follow the same idea: a page's name now appears at a zoom that matches
+how connected it is, so zooming out thins the graph down to its landmarks
+instead of clearing every name at once. Unresolved-link markers also stop
+swelling into large discs when the graph is zoomed out.

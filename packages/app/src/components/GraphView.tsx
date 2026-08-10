@@ -14,21 +14,10 @@ import { openExternalUrl } from '@/lib/external-link';
 import type { GraphSettings } from '@/lib/graph-settings-store';
 import { cn } from '@/lib/utils';
 import { getGraphCardNeighbors } from './GraphCardDeck';
-import {
-  buildGraphAreas,
-  type GraphArea,
-  getGraphAreaBounds,
-  getGraphAreaLabelZoomThreshold,
-  isGraphAreaVisibleAtZoom,
-} from './graph-areas';
 import { clusterColor } from './graph-colors';
 import { applyGraphFilters } from './graph-filter';
 import { matchGraphGroup, resolveGraphGroupColor } from './graph-groups';
-import {
-  buildGraphAdjacency,
-  getGraphHighlightSet,
-  isGraphLinkHighlighted,
-} from './graph-highlight';
+import { buildGraphAdjacency, isGraphLinkHighlighted } from './graph-highlight';
 import {
   type GraphInteractionMode,
   getGraphAlphaDecay,
@@ -63,6 +52,7 @@ import {
   reconcileGraphData,
   resolveGraphLinkEndpointId,
   resolveGraphNodeClickAction,
+  screenOffsetInGraphUnits,
 } from './graph-view-utils';
 import { resolveTargetNavigationIntent } from './target-navigation-intent';
 
@@ -72,6 +62,7 @@ const FOCUS_RETRY_DISTANCE_PX = 18;
 const FINAL_SETTLE_DRIFT_PX = 28;
 const BACKGROUND_CLICK_TOLERANCE_PX = 5;
 const ZOOM_TO_FIT_PADDING_PX = 40;
+const EMPTY_GRAPH_DATA: GraphData = { nodes: [], links: [] };
 
 interface FocusState {
   key: string;
@@ -121,7 +112,8 @@ function getGraphNodeInteractiveRadius({
 }): number {
   const pointerRadius = getGraphNodePointerRadius(state, globalScale);
   if (displayState !== 'missing') return pointerRadius;
-  return Math.max(pointerRadius, getGraphNodeCanvasRadius(state) + 2 / Math.max(globalScale, 0.01));
+  const baseRadius = getGraphNodeCanvasRadius(state);
+  return Math.max(pointerRadius, baseRadius + screenOffsetInGraphUnits(2, globalScale, baseRadius));
 }
 
 function getActiveGraphNodeCoords({
@@ -219,74 +211,6 @@ function maybeFocusActiveGraphNode({
     lastY: coords.y,
     lastAt: now,
   };
-}
-
-/**
- * Folder regions, painted UNDER the nodes (`onRenderFramePre`) in graph space.
- *
- * Drawn shallow-first so a nested folder reads as sitting inside its parent
- * rather than punching a hole in it, and stroked as well as filled so adjacent
- * regions stay distinguishable where their tints overlap.
- */
-function drawGraphAreas({
-  ctx,
-  areas,
-  nodes,
-  globalScale,
-  leafLabelThreshold,
-  fillColor,
-  labelColor,
-}: {
-  ctx: CanvasRenderingContext2D;
-  areas: GraphArea[];
-  nodes: GraphNode[];
-  globalScale: number;
-  leafLabelThreshold: number;
-  fillColor: string;
-  labelColor: string;
-}): void {
-  if (areas.length === 0 || !isGraphAreaVisibleAtZoom(globalScale, leafLabelThreshold)) return;
-
-  const positionById = new Map(
-    nodes.flatMap((node) => {
-      const { x, y } = node as GraphNode & { x?: number; y?: number };
-      return typeof x === 'number' && typeof y === 'number' ? [[node.id, { x, y }] as const] : [];
-    }),
-  );
-
-  ctx.save();
-  for (const area of areas) {
-    // Padding is in graph units, so it must shrink as the user zooms in or the
-    // region would balloon away from the nodes it is meant to enclose.
-    const bounds = getGraphAreaBounds(area, positionById, 24 / Math.max(globalScale, 0.2));
-    if (!bounds) continue;
-
-    ctx.beginPath();
-    ctx.ellipse(bounds.centerX, bounds.centerY, bounds.radiusX, bounds.radiusY, 0, 0, 2 * Math.PI);
-    // Only nested regions are filled. A top-level folder spans most of the
-    // graph, so filling it tints the whole canvas instead of marking a
-    // territory — it gets an outline and a name, and the fill is reserved for
-    // the regions small enough for it to mean something.
-    if (area.depth > 0) {
-      ctx.fillStyle = fillColor;
-      ctx.fill();
-    }
-    ctx.lineWidth = 1 / globalScale;
-    ctx.strokeStyle = fillColor;
-    ctx.stroke();
-
-    if (globalScale < getGraphAreaLabelZoomThreshold(area.depth, leafLabelThreshold)) continue;
-
-    // Sized in graph units so the label holds a constant SCREEN size as the
-    // user zooms — a region name is chrome, not part of the drawing.
-    const fontPx = (area.depth === 0 ? 15 : 12) / globalScale;
-    ctx.font = `600 ${fontPx}px system-ui, sans-serif`;
-    ctx.fillStyle = labelColor;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(area.label, bounds.centerX, bounds.centerY - bounds.radiusY - fontPx * 0.6);
-  }
-  ctx.restore();
 }
 
 function drawGraphLabelPlacements({
@@ -622,9 +546,13 @@ export function GraphView({
   // canvas-click-at-coord tests can gate on a real settlement signal instead
   // of racing the physics.
   const simulationSettledRef = useRef(false);
-  // force-graph fires onNodeHover only on enter/leave of a pointer area, not on
-  // every mouse move, so driving React state from it is cheap.
-  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  // Hover NEVER goes through React state. Any re-render hands ForceGraph2D a new
+  // `graphData` object, and force-graph's setter for that prop reinitializes the
+  // layout and calls `resetCountdown()` — restarting the simulation. Driving
+  // hover from state therefore scattered the graph on every mouseover. The
+  // canvas repaints every frame regardless, so the paint callbacks read this ref
+  // and the highlight lands on the next frame with no render at all.
+  const hoveredNodeIdRef = useRef<string | null>(null);
   // Zoom drives the interaction mode. `onZoom` fires per wheel step, so the
   // scale itself lives in a ref (read during canvas paint) and only a MODE
   // CHANGE reaches React state — a re-render per wheel tick would be wasteful
@@ -760,10 +688,6 @@ export function GraphView({
   const activeSelectedNodeRingColor = isDark ? 'rgba(192,132,252,0.5)' : 'rgba(124,58,237,0.35)';
   const labelChipColor = isDark ? 'rgba(3,7,18,0.92)' : 'rgba(255,255,255,0.94)';
   const labelChipBorderColor = isDark ? 'rgba(243,244,246,0.08)' : 'rgba(17,24,39,0.08)';
-  // Folder regions sit behind everything, so they are far fainter than any node
-  // tint — the boundary should register peripherally, not compete for attention.
-  const areaFillColor = isDark ? 'rgba(148,163,184,0.055)' : 'rgba(100,116,139,0.05)';
-  const areaLabelColor = isDark ? 'rgba(148,163,184,0.55)' : 'rgba(71,85,105,0.5)';
   const focusZoom = scope === 'global' ? 1.6 : 2.35;
   const maxLabelWidthPx = scope === 'global' ? 220 : 150;
 
@@ -789,11 +713,7 @@ export function GraphView({
     }),
   );
 
-  // The React Compiler memoizes this, which is what makes `displayData.links`
-  // safe to use as an effect dependency below: its identity changes only when
-  // the graph, the filters, or the active document actually change. Without
-  // that, the forces effect would reheat the simulation on every render.
-  const displayData: GraphData = applyGraphFilters({
+  const filteredData = applyGraphFilters({
     data: graphData,
     filters: settings.filters,
     activeDocName,
@@ -803,6 +723,20 @@ export function GraphView({
         navigationIntentByNodeId,
       }),
   });
+  // force-graph RESTARTS the simulation whenever the `graphData` prop changes
+  // identity — its setter reinitializes the layout and resets the cooldown. The
+  // filter above returns fresh arrays on every render, so handing its result
+  // straight to the canvas would scatter the graph on any state change at all.
+  // The signature is the real change signal; `renderData` holds the last value
+  // that actually differed, so re-renders that change nothing pass the very same
+  // object back and the layout is left alone.
+  const filteredSignature = `${buildGraphNodeSignature(filteredData.nodes)}\u0001${buildGraphLinkSignature(filteredData.links)}`;
+  const [renderData, setRenderData] = useState<GraphData>(EMPTY_GRAPH_DATA);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the signature stands in for `filteredData`, whose identity churns every render — depending on it directly is the bug this exists to prevent
+  useEffect(() => {
+    setRenderData(filteredData);
+  }, [filteredSignature]);
+  const displayData = renderData;
 
   const layoutNodes = displayData.nodes as GraphLabelLayoutNode[];
   const layoutLinks = displayData.links as GraphLabelLayoutLink[];
@@ -813,17 +747,17 @@ export function GraphView({
   const { centerStrength, repelStrength, linkStrength, linkDistance } = physics;
   const alphaDecay = getGraphAlphaDecay(interactionMode);
   const pinSelectedNode = physics.pinSelectedNode;
-  // Folder regions are derived from docName prefixes, so they change only when
-  // the visible node set does.
-  const areas = buildGraphAreas(displayData.nodes);
 
   const adjacency = buildGraphAdjacency(displayData.links);
-  const highlightSet = getGraphHighlightSet(hoveredNodeId, adjacency);
   // Alpha applied to everything outside the hover highlight. Dimmed rather than
   // hidden: the surrounding shape is what makes the highlighted subgraph legible.
   const dimAlpha = isDark ? 0.16 : 0.12;
-  const nodeAlpha = (nodeId: string) =>
-    highlightSet === null || highlightSet.has(nodeId) ? 1 : dimAlpha;
+  // Resolved at PAINT time from the ref, not precomputed at render time.
+  const nodeAlpha = (nodeId: string) => {
+    const hovered = hoveredNodeIdRef.current;
+    if (hovered === null) return 1;
+    return hovered === nodeId || adjacency.get(hovered)?.has(nodeId) ? 1 : dimAlpha;
+  };
 
   useEffect(() => {
     onStatsChange?.(displayData.nodes.length, displayData.links.length, loading);
@@ -1222,7 +1156,7 @@ export function GraphView({
     >
       {error ? (
         <p className="p-4 text-sm text-destructive">{error}</p>
-      ) : displayData.nodes.length === 0 && !loading ? (
+      ) : graphData.nodes.length === 0 && !loading ? (
         <p className="p-4 text-sm text-muted-foreground">
           <Trans>No links yet. Add wiki links or markdown links to build a graph.</Trans>
         </p>
@@ -1381,15 +1315,35 @@ export function GraphView({
                       : state === 'selected' || state === 'external-selected'
                         ? selectedNodeRingColor
                         : activeSelectedNodeRingColor;
-                ctx.lineWidth = isMissingTarget ? 1.75 / globalScale : 2 / globalScale;
-                ctx.setLineDash(isMissingTarget ? [3 / globalScale, 2 / globalScale] : []);
+                // Same screen-space-to-graph-units cap as the radius above: an
+                // uncapped 1.75/scale stroke swallows the node when zoomed out.
+                ctx.lineWidth = screenOffsetInGraphUnits(
+                  isMissingTarget ? 1.75 : 2,
+                  globalScale,
+                  nodeRadius,
+                );
+                ctx.setLineDash(
+                  isMissingTarget
+                    ? [
+                        screenOffsetInGraphUnits(3, globalScale, nodeRadius),
+                        screenOffsetInGraphUnits(2, globalScale, nodeRadius),
+                      ]
+                    : [],
+                );
                 ctx.stroke();
                 ctx.setLineDash([]);
               } else if (isFolderTarget) {
                 ctx.beginPath();
-                ctx.arc(node.x, node.y, nodeRadius + 2 / globalScale, 0, 2 * Math.PI, false);
+                ctx.arc(
+                  node.x,
+                  node.y,
+                  nodeRadius + screenOffsetInGraphUnits(2, globalScale, nodeRadius),
+                  0,
+                  2 * Math.PI,
+                  false,
+                );
                 ctx.strokeStyle = folderNodeRingColor;
-                ctx.lineWidth = 1.5 / globalScale;
+                ctx.lineWidth = screenOffsetInGraphUnits(1.5, globalScale, nodeRadius);
                 ctx.stroke();
               }
               ctx.restore();
@@ -1426,17 +1380,6 @@ export function GraphView({
               );
               ctx.fillStyle = color;
               ctx.fill();
-            }}
-            onRenderFramePre={(ctx: CanvasRenderingContext2D, globalScale: number) => {
-              drawGraphAreas({
-                ctx,
-                areas,
-                nodes: displayData.nodes,
-                globalScale,
-                leafLabelThreshold: settings.display.textFadeThreshold,
-                fillColor: areaFillColor,
-                labelColor: areaLabelColor,
-              });
             }}
             onRenderFramePost={(ctx: CanvasRenderingContext2D, globalScale: number) => {
               // No single cutoff any more: hubs earn a label further out than
@@ -1500,7 +1443,8 @@ export function GraphView({
               ctx.restore();
             }}
             linkColor={(link: LinkObject<GraphNode, GraphLink>) =>
-              highlightSet === null || isGraphLinkHighlighted(link, hoveredNodeId)
+              hoveredNodeIdRef.current === null ||
+              isGraphLinkHighlighted(link, hoveredNodeIdRef.current)
                 ? edgeColor
                 : dimmedEdgeColor
             }
@@ -1509,7 +1453,8 @@ export function GraphView({
             linkWidth={(link: LinkObject<GraphNode, GraphLink>) =>
               // A hovered node's own edges thicken, so the highlighted subgraph
               // reads as a shape rather than just a brightness difference.
-              settings.display.linkThickness * (isGraphLinkHighlighted(link, hoveredNodeId) ? 2 : 1)
+              settings.display.linkThickness *
+              (isGraphLinkHighlighted(link, hoveredNodeIdRef.current) ? 2 : 1)
             }
             d3AlphaDecay={alphaDecay}
             onZoom={({ k }: { k: number }) => {
@@ -1517,7 +1462,7 @@ export function GraphView({
               syncInteractionMode();
             }}
             onNodeHover={(node: NodeObject<GraphNode> | null) => {
-              setHoveredNodeId(node?.id ?? null);
+              hoveredNodeIdRef.current = node?.id ?? null;
             }}
             showPointerCursor={(obj) => Boolean(obj && 'kind' in obj)}
             onNodeClick={(node: NodeObject<GraphNode>) => {

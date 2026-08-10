@@ -326,6 +326,23 @@ export function getGraphNodeCanvasRadius(state: GraphNodeVisualState): number {
   return DEFAULT_GRAPH_NODE_RADIUS;
 }
 
+/**
+ * A screen-space offset converted to graph units, capped.
+ *
+ * `px / globalScale` is the right conversion, but it is unbounded: zoomed out
+ * to 0.05 a 2px ring becomes 40 graph units, and a radius-5 node paints as a
+ * radius-45 blob. The cap keeps the ring hugging the node at every zoom, at the
+ * cost of it thinning below a couple of pixels when very far out — which is
+ * where it should be invisible anyway.
+ */
+export function screenOffsetInGraphUnits(
+  pixels: number,
+  globalScale: number,
+  baseRadius: number,
+): number {
+  return Math.min(pixels / Math.max(globalScale, 0.01), baseRadius * 0.6);
+}
+
 export function getGraphNodePointerRadius(
   state: GraphNodeVisualState,
   globalScale: number,
@@ -338,7 +355,7 @@ export function getGraphNodePointerRadius(
     state === 'external-selected' ||
     state === 'tag-selected'
   ) {
-    return baseRadius + 2 / Math.max(globalScale, 0.01);
+    return baseRadius + screenOffsetInGraphUnits(2, globalScale, baseRadius);
   }
   return baseRadius;
 }
