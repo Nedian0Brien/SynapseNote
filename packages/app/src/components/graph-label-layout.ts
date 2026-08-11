@@ -21,7 +21,15 @@ interface GraphViewport {
   height: number;
 }
 
-type GraphLabelAnchor = 'bottom' | 'top' | 'right' | 'left';
+/**
+ * A name always sits under its node. There used to be three fallbacks (top,
+ * right, left), tried in turn when the space below was taken — which meant the
+ * same page's name jumped from under the dot to beside it as you zoomed, and
+ * you could not tell at a glance which node a name belonged to because the
+ * relationship changed from label to label. One position, always, is worth more
+ * than a few extra names: a label that does not fit is now simply not drawn.
+ */
+type GraphLabelAnchor = 'bottom';
 
 export interface GraphLabelPlacement {
   nodeId: string;
@@ -86,6 +94,11 @@ const LABEL_PADDING_Y_PX = 4;
 const LABEL_HEIGHT_PX = LABEL_FONT_SIZE_PX + LABEL_PADDING_Y_PX * 2;
 const NODE_COLLISION_PADDING_PX = 2;
 const DISTANCE_EPSILON_PX = 0.001;
+/** How far below the node a blocked name may drop, and in what increments.
+ * Four steps of a label-height reach ~3 rows down, which clears a typical
+ * cluster edge; past that the name is too far from its node to read as its. */
+const BOTTOM_OFFSET_STEPS = 4;
+const BOTTOM_OFFSET_STEP_PX = LABEL_HEIGHT_PX;
 
 export function planGraphLabels(input: PlanGraphLabelsInput): GraphLabelPlacement[] {
   const {
@@ -217,11 +230,23 @@ function placeCandidate(
     positionedNodes: PositionedNode[];
   },
 ): GraphLabelPlacement | null {
-  for (const anchor of ['bottom', 'top', 'right', 'left'] as const) {
-    const placement = buildPlacement(candidate, anchor, priority);
+  // Always below — but not always at the same distance. In a dense patch the
+  // slot directly under a node is usually covered by its neighbour, and
+  // refusing outright cost most of the names in exactly the places you most
+  // need them. Stepping further down keeps the one relationship that matters
+  // (the name hangs beneath its node, never beside it) while letting the label
+  // clear what is in the way.
+  for (let step = 0; step < BOTTOM_OFFSET_STEPS; step += 1) {
+    const placement = buildPlacement(
+      candidate,
+      'bottom',
+      priority,
+      step * BOTTOM_OFFSET_STEP_PX,
+    );
     if (!isRectWithinViewport(placement.rect, viewport)) continue;
-    if (acceptedRects.some((acceptedRect) => rectsIntersect(acceptedRect, placement.rect)))
+    if (acceptedRects.some((acceptedRect) => rectsIntersect(acceptedRect, placement.rect))) {
       continue;
+    }
     if (
       positionedNodes.some(
         (positionedNode) =>
@@ -245,23 +270,12 @@ function buildPlacement(
   candidate: LabelCandidate,
   anchor: GraphLabelAnchor,
   priority: number,
+  extraOffsetPx = 0,
 ): GraphLabelPlacement {
   const labelWidthPx = candidate.textWidthPx + LABEL_PADDING_X_PX * 2;
   const halfWidthPx = labelWidthPx / 2;
-  const halfHeightPx = LABEL_HEIGHT_PX / 2;
-
-  let left = candidate.screenX - halfWidthPx;
-  let top = candidate.screenY + candidate.radiusPx + LABEL_GAP_PX;
-
-  if (anchor === 'top') {
-    top = candidate.screenY - candidate.radiusPx - LABEL_GAP_PX - LABEL_HEIGHT_PX;
-  } else if (anchor === 'right') {
-    left = candidate.screenX + candidate.radiusPx + LABEL_GAP_PX;
-    top = candidate.screenY - halfHeightPx;
-  } else if (anchor === 'left') {
-    left = candidate.screenX - candidate.radiusPx - LABEL_GAP_PX - labelWidthPx;
-    top = candidate.screenY - halfHeightPx;
-  }
+  const left = candidate.screenX - halfWidthPx;
+  const top = candidate.screenY + candidate.radiusPx + LABEL_GAP_PX + extraOffsetPx;
 
   return {
     nodeId: candidate.node.id,

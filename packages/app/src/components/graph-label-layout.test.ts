@@ -45,9 +45,12 @@ function plan({
 }
 
 describe('planGraphLabels — label tiers', () => {
+  // Placed clear of the viewport edges: these cases are about the tier gate,
+  // and a name is only ever drawn below its node, so a node hard against an
+  // edge has nowhere to put one and would fail for the wrong reason.
   const nodes: GraphLabelLayoutNode[] = [
-    { kind: 'doc', id: 'hub', docName: 'hub', anchor: null, label: 'hub', x: 20, y: 20 },
-    { kind: 'doc', id: 'leaf', docName: 'leaf', anchor: null, label: 'leaf', x: 150, y: 90 },
+    { kind: 'doc', id: 'hub', docName: 'hub', anchor: null, label: 'hub', x: 40, y: 20 },
+    { kind: 'doc', id: 'leaf', docName: 'leaf', anchor: null, label: 'leaf', x: 150, y: 60 },
   ];
   // `hub` gets 8 edges (the hub cutoff); `leaf` gets one of them.
   const links: GraphLabelLayoutLink[] = [
@@ -182,7 +185,32 @@ describe('planGraphLabels', () => {
     expect(placements[0]?.nodeId).toBe('hub');
   });
 
-  test('planner chooses a fallback anchor when the preferred anchor would leave the viewport', () => {
+  test('drops a blocked name further down rather than putting it beside the node', () => {
+    // Two nodes stacked close together: the lower one sits exactly where the
+    // upper one's name wants to go.
+    const nodes: GraphLabelLayoutNode[] = [
+      { id: 'upper', label: 'Upper', x: 200, y: 100 },
+      { id: 'blocker', label: 'Blocker', x: 200, y: 118 },
+    ];
+
+    const placements = plan({
+      nodes,
+      activeDocName: 'upper',
+      viewport: { width: 500, height: 400 },
+      maxLabels: 1,
+    });
+
+    expect(placements).toHaveLength(1);
+    expect(placements[0]?.nodeId).toBe('upper');
+    // Still directly under its node, horizontally centred — just lower.
+    expect(placements[0]?.textX).toBeCloseTo(200, 0);
+    expect(placements[0]?.rect.top).toBeGreaterThan(118);
+  });
+
+  test('drops a name rather than moving it above the node to make it fit', () => {
+    // There used to be top/right/left fallbacks. They meant the same page's
+    // name sat under its dot at one zoom and beside it at the next, so you
+    // could not learn to read the pairing. One position, or nothing.
     const nodes: GraphLabelLayoutNode[] = [
       { id: 'bottom-edge', label: 'Near Bottom', x: 60, y: 92 },
     ];
@@ -194,17 +222,41 @@ describe('planGraphLabels', () => {
       maxLabels: 1,
     });
 
-    expect(placements).toHaveLength(1);
-    expect(placements[0]?.anchor).toBe('top');
+    expect(placements).toHaveLength(0);
   });
 
-  test('planner rejects a label that would cover another node circle', () => {
+  test('every name it does place sits below its node', () => {
+    const nodes: GraphLabelLayoutNode[] = [
+      { id: 'a', label: 'Alpha', x: 60, y: 60 },
+      { id: 'b', label: 'Beta', x: 200, y: 140 },
+      { id: 'c', label: 'Gamma', x: 320, y: 220 },
+    ];
+
+    const placements = plan({
+      nodes,
+      activeDocName: 'a',
+      viewport: { width: 500, height: 400 },
+      maxLabels: 10,
+    });
+
+    expect(placements.length).toBeGreaterThan(0);
+    for (const placement of placements) {
+      const node = nodes.find((candidate) => candidate.id === placement.nodeId);
+      expect(placement.anchor).toBe('bottom');
+      expect(placement.rect.top).toBeGreaterThan(node?.y ?? 0);
+    }
+  });
+
+  test('planner rejects a label when every slot below is covered by a node', () => {
+    // A full column of blockers, one per step of the downward budget. Nothing
+    // to the sides matters any more — a name is never put there — so the only
+    // way to refuse one is to occupy the whole run beneath it.
     const nodes: GraphLabelLayoutNode[] = [
       { id: 'active', label: 'Center', x: 100, y: 100 },
-      { id: 'above', label: 'Above', x: 100, y: 81 },
-      { id: 'below', label: 'Below', x: 100, y: 119 },
-      { id: 'left', label: 'Lefty', x: 79, y: 100 },
-      { id: 'right', label: 'Right', x: 121, y: 100 },
+      { id: 'block-1', label: 'One', x: 100, y: 119 },
+      { id: 'block-2', label: 'Two', x: 100, y: 137 },
+      { id: 'block-3', label: 'Three', x: 100, y: 155 },
+      { id: 'block-4', label: 'Four', x: 100, y: 173 },
     ];
 
     const placements = plan({
