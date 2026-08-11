@@ -141,18 +141,45 @@ export function getGraphAreaBounds(
 
   const cx = sumX / count;
   const cy = sumY / count;
-  let halfWidth = MIN_HALF_WIDTH;
-  let halfHeight = MIN_HALF_HEIGHT;
+
+  // A high percentile of the members' distances, NOT the maximum.
+  //
+  // The maximum is decided by whichever single member has wandered furthest,
+  // and in a link graph something always has: one page in `packages` that is
+  // cited from the other end of the vault dragged that region's territory to
+  // one and a half times the width of the whole canvas, while the graph it was
+  // supposed to be a part of fitted inside it. The tint then covered empty
+  // space, and every large region overlapped every other one. A percentile
+  // asks where the members actually ARE and lets the strays fall outside,
+  // which is what a region on a map means anyway.
+  const dxs: number[] = [];
+  const dys: number[] = [];
   for (const id of area.memberIds) {
     const point = positionById.get(id);
     if (typeof point?.x !== 'number' || typeof point?.y !== 'number') continue;
-    halfWidth = Math.max(halfWidth, Math.abs(point.x - cx));
-    halfHeight = Math.max(halfHeight, Math.abs(point.y - cy));
+    dxs.push(Math.abs(point.x - cx));
+    dys.push(Math.abs(point.y - cy));
   }
+  dxs.sort((a, b) => a - b);
+  dys.sort((a, b) => a - b);
+  const at = (sorted: number[]) =>
+    sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * GRAPH_AREA_EXTENT_PERCENTILE))] ??
+    0;
 
   const padding = Math.max(20, 55 - area.depth * 12);
-  return { cx, cy, rx: halfWidth + padding, ry: halfHeight + padding };
+  return {
+    cx,
+    cy,
+    rx: Math.max(MIN_HALF_WIDTH, at(dxs)) + padding,
+    ry: Math.max(MIN_HALF_HEIGHT, at(dys)) + padding,
+  };
 }
+
+/**
+ * Share of a region's members the territory is drawn to cover. The rest are
+ * outliers whose job is to be linked from elsewhere, not to define a place.
+ */
+export const GRAPH_AREA_EXTENT_PERCENTILE = 0.82;
 
 /**
  * Opacity of the FINISHED territory layer, applied once at composite time.
@@ -184,6 +211,43 @@ export const GRAPH_AREA_BLUR_PX = 30;
  * job.
  */
 export const GRAPH_AREA_LAYER_SCALE = 0.22;
+
+/**
+ * How present a region is at the current zoom, from its own on-screen size.
+ *
+ * An atlas does not draw every boundary it knows at every scale — the world map
+ * shows continents, and the districts only appear once you are close enough for
+ * them to mean something. Drawing every folder at every zoom is what turned a
+ * deep vault into a wash of overlapping tints: at the zoom that fits the map,
+ * two hundred nested folders are all painting, and none of them is legible.
+ *
+ * The original solved this with two zoom phases and a `depth >= 2` split, on
+ * absolute zoom thresholds (0.35 / 0.60) tuned to its own coordinate scale. The
+ * thresholds would not survive the port — ours is a different world size — and
+ * depth is the wrong axis anyway: a shallow folder holding three pages is small
+ * on screen and a deep one holding four hundred is not. Region SIZE is the
+ * scale-free statement of the same idea, and it needs no tier at all: as you
+ * zoom, a parent grows past the viewport and fades while its children grow into
+ * the band and take over the naming.
+ *
+ * @param regionWidthPx the territory's on-screen width.
+ * @param viewportPx    the canvas's on-screen width.
+ * @returns 0 when the region should not be drawn, up to 1 when it is the thing
+ *          you are looking at.
+ */
+export function getGraphAreaLodAlpha(regionWidthPx: number, viewportPx: number): number {
+  if (viewportPx <= 0) return 0;
+  const share = regionWidthPx / viewportPx;
+  // Too small to be a place — it is a handful of dots, and its parent already
+  // says where you are.
+  if (share < 0.1) return 0;
+  if (share < 0.18) return (share - 0.1) / 0.08;
+  if (share <= 0.85) return 1;
+  // Past the edges of the screen it stops being a landmark and becomes the
+  // ground you are standing on, which does not need colouring in.
+  if (share < 1.5) return 1 - (share - 0.85) / 0.65;
+  return 0;
+}
 
 /** Below this on-screen width a region has no room for a name at all. */
 export const GRAPH_AREA_LABEL_MIN_REGION_PX = 56;

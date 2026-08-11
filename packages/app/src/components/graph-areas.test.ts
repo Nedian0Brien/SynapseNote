@@ -1,5 +1,10 @@
 import { describe, expect, test } from 'bun:test';
-import { buildGraphAreas, getGraphAreaBounds, getGraphAreaLabelSizePx } from './graph-areas';
+import {
+  buildGraphAreas,
+  getGraphAreaBounds,
+  getGraphAreaLabelSizePx,
+  getGraphAreaLodAlpha,
+} from './graph-areas';
 import { buildGraphFolderNodes } from './graph-folders';
 import type { GraphNode } from './graph-view-utils';
 
@@ -91,6 +96,49 @@ describe('getGraphAreaBounds', () => {
     const bounds = getGraphAreaBounds(area, new Map([['docs/A', { x: 0, y: 0 }]]));
     expect(bounds?.rx).toBeGreaterThan(0);
     expect(bounds?.ry).toBeGreaterThan(0);
+  });
+});
+
+describe('getGraphAreaLodAlpha', () => {
+  const VIEWPORT = 1000;
+
+  test('says nothing about a region that is a handful of pixels wide', () => {
+    // Drawing every folder at every zoom is what made a deep vault a wash: at
+    // the zoom that fits the map, two hundred nested folders all paint.
+    expect(getGraphAreaLodAlpha(40, VIEWPORT)).toBe(0);
+  });
+
+  test('gives full presence to a region that is a comfortable size on screen', () => {
+    expect(getGraphAreaLodAlpha(300, VIEWPORT)).toBe(1);
+  });
+
+  test('fades a region out once it is larger than the screen', () => {
+    // At that point you are inside it — it is the ground, not a landmark.
+    expect(getGraphAreaLodAlpha(1000, VIEWPORT)).toBeLessThan(1);
+    expect(getGraphAreaLodAlpha(1600, VIEWPORT)).toBe(0);
+  });
+
+  test('hands over: a parent is leaving while its child is arriving', () => {
+    // The moment a child becomes readable the parent should be on its way out,
+    // so one name replaces another rather than both shouting.
+    const parentLeaving = getGraphAreaLodAlpha(1100, VIEWPORT);
+    const childArriving = getGraphAreaLodAlpha(170, VIEWPORT);
+    expect(parentLeaving).toBeGreaterThan(0);
+    expect(parentLeaving).toBeLessThan(1);
+    expect(childArriving).toBeGreaterThan(0);
+    expect(childArriving).toBeLessThan(1);
+  });
+
+  test('rises monotonically through the fade-in band', () => {
+    expect(getGraphAreaLodAlpha(120, VIEWPORT)).toBeLessThan(getGraphAreaLodAlpha(160, VIEWPORT));
+  });
+
+  test('is scale-free — the same share of the viewport reads the same', () => {
+    expect(getGraphAreaLodAlpha(300, 1000)).toBe(getGraphAreaLodAlpha(150, 500));
+  });
+
+  test('survives a zero-width canvas rather than dividing by it', () => {
+    expect(getGraphAreaLodAlpha(300, 0)).toBe(0);
   });
 });
 

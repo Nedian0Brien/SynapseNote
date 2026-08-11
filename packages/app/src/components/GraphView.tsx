@@ -24,6 +24,7 @@ import {
   type GraphAreaBounds,
   getGraphAreaBounds,
   getGraphAreaLabelSizePx,
+  getGraphAreaLodAlpha,
 } from './graph-areas';
 import { GRAPH_COLOR_PAIRS } from './graph-colors';
 import { applyGraphFilters } from './graph-filter';
@@ -292,7 +293,15 @@ function paintGraphAreaPartition({
   for (const area of [...areas].sort((a, b) => b.depth - a.depth)) {
     const box = boundsById.get(area.id);
     if (!box) continue;
+    // Only the regions that are a useful size right now. Varying alpha per
+    // region does not bring back the accumulation problem: `destination-over`
+    // still gives each pixel to the deepest region covering it, so a region
+    // half faded in just lets its parent read through the gap — which is the
+    // crossfade you want as one hands naming over to the other.
+    const lod = getGraphAreaLodAlpha(box.rx * globalScale * 2, width);
+    if (lod <= 0) continue;
     const center = toScreen(box.cx, box.cy);
+    layerCtx.globalAlpha = lod;
     layerCtx.beginPath();
     layerCtx.ellipse(
       center.x,
@@ -306,6 +315,7 @@ function paintGraphAreaPartition({
     layerCtx.fillStyle = colorOf(area);
     layerCtx.fill();
   }
+  layerCtx.globalAlpha = 1;
 
   const pxRatio = window.devicePixelRatio || 1;
   ctx.save();
@@ -1649,23 +1659,43 @@ export function GraphView({
                 // writes at its own centroid and a dense project stacks a dozen
                 // of them into a smear — which is worse than no name at all.
                 const takenLabelBoxes: Array<[number, number, number, number]> = [];
-                for (const area of [...areas].sort((a, b) => a.depth - b.depth)) {
-                  const box = areaBoundsRef.current.get(area.id);
-                  if (!box) continue;
-                  const screen = areaFg.graph2ScreenCoords(box.cx, box.cy);
-                  // Size the name to its own territory, and let a region that
-                  // has no room say nothing. Measured on screen rather than in
-                  // graph units so it survives zoom.
-                  const edge = areaFg.graph2ScreenCoords(box.cx + box.rx, box.cy);
-                  const regionWidthPx = Math.abs(edge.x - screen.x) * 2;
-                  if (regionWidthPx < GRAPH_AREA_LABEL_MIN_REGION_PX) continue;
-                  const sizePx = getGraphAreaLabelSizePx(regionWidthPx);
+                const viewportPx = ctx.canvas.width / pxRatio;
+                const baseAlpha = ctx.globalAlpha;
+                // Largest on screen first, not shallowest: with the size-driven
+                // level of detail above, "which region is the landmark right
+                // now" is a question about pixels, and the one that owns the
+                // most of them should get to keep its name.
+                const named = areas
+                  .map((area) => {
+                    const box = areaBoundsRef.current.get(area.id);
+                    if (!box) return null;
+                    const screen = areaFg.graph2ScreenCoords(box.cx, box.cy);
+                    const edge = areaFg.graph2ScreenCoords(box.cx + box.rx, box.cy);
+                    const widthPx = Math.abs(edge.x - screen.x) * 2;
+                    return {
+                      area,
+                      screen,
+                      widthPx,
+                      lod: getGraphAreaLodAlpha(widthPx, viewportPx),
+                    };
+                  })
+                  .filter((entry) => entry !== null)
+                  .filter(
+                    (entry) => entry.lod > 0 && entry.widthPx >= GRAPH_AREA_LABEL_MIN_REGION_PX,
+                  )
+                  .sort((a, b) => b.widthPx - a.widthPx);
+
+                for (const { area, screen, widthPx, lod } of named) {
+                  // Size the name to its own territory. Measured on screen
+                  // rather than in graph units so it survives zoom.
+                  const sizePx = getGraphAreaLabelSizePx(widthPx);
                   ctx.font = `italic ${sizePx}px Georgia, "Times New Roman", serif`;
                   // A name wider than the thing it names is a label for the
                   // whole canvas, not for that region — drop it rather than
                   // write across its neighbours.
-                  if (ctx.measureText(area.name).width > regionWidthPx) continue;
-                  const halfWidth = ctx.measureText(area.name).width / 2;
+                  const textWidth = ctx.measureText(area.name).width;
+                  if (textWidth > widthPx) continue;
+                  const halfWidth = textWidth / 2;
                   const halfHeight = sizePx * 0.55;
                   const left = screen.x - halfWidth;
                   const right = screen.x + halfWidth;
@@ -1676,6 +1706,9 @@ export function GraphView({
                   );
                   if (collides) continue;
                   takenLabelBoxes.push([left, top, right, bottom]);
+                  // A region fading in or out takes its name with it, so the
+                  // handover from parent to child reads as one movement.
+                  ctx.globalAlpha = baseAlpha * lod;
                   ctx.fillText(area.name, screen.x, screen.y);
                 }
                 ctx.restore();
