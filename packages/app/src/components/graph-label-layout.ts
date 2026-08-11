@@ -232,19 +232,30 @@ function compareCandidates(a: LabelCandidate, b: LabelCandidate): number {
     return a.isActive ? -1 : 1;
   }
   // A name already on screen outranks one that is not, whatever the keys below
-  // would have said. Those keys are the right way to choose which names are
-  // worth showing, but every one of them below this line except degree moves
-  // as the view moves, and re-deciding the whole set sixty times a second is
-  // what made the labels flicker. Decide once; revisit only when a name can no
-  // longer be drawn at all.
+  // would have said. Those keys decide which names are worth showing; re-running
+  // them sixty times a second is what made the labels flicker. Decide once;
+  // revisit only when a name can no longer be drawn at all.
   if (a.wasShowing !== b.wasShowing) {
     return a.wasShowing ? -1 : 1;
   }
-  if (Math.abs(a.distanceToCenterPx - b.distanceToCenterPx) > DISTANCE_EPSILON_PX) {
-    return a.distanceToCenterPx - b.distanceToCenterPx;
-  }
+  // Connectedness, and only then position.
+  //
+  // These two were the other way round, and it made the whole thing look
+  // arbitrary. The tier gate above states a rule you can hold in your head —
+  // hubs get named before mid-degree pages, which get named before leaves — but
+  // the gate only decides who is ELIGIBLE. Eligible nodes always outnumber the
+  // label budget, so what you actually see is whoever the budget reached, and
+  // the budget was being spent nearest-to-the-middle-of-the-screen first. The
+  // stated rule was real and simply never got to apply: pan slightly and a
+  // different, equally unexplainable set of names appeared.
   if (a.degree !== b.degree) {
     return b.degree - a.degree;
+  }
+  // Off-screen candidates are rejected outright further down, so everything
+  // still competing here is already in view; distance is a tiebreak between
+  // equals, not a measure of importance.
+  if (Math.abs(a.distanceToCenterPx - b.distanceToCenterPx) > DISTANCE_EPSILON_PX) {
+    return a.distanceToCenterPx - b.distanceToCenterPx;
   }
   if (a.text.length !== b.text.length) {
     return a.text.length - b.text.length;

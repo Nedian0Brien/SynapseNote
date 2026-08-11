@@ -188,6 +188,26 @@ describe('planGraphLabels', () => {
     expect(placements[0]?.nodeId).toBe('hub');
   });
 
+  test('spends a tight budget on the better-connected node, not the nearer one', () => {
+    // The tier gate promises hubs are named before leaves. It only decides who
+    // is ELIGIBLE though, and eligible nodes always outnumber the budget — so
+    // if the budget is spent nearest-the-middle-first, the promise never
+    // actually applies and which names you see looks like nothing at all.
+    const viewport = { width: 400, height: 300 };
+    const nodes: GraphLabelLayoutNode[] = [
+      { id: 'near-leaf', label: 'Near Leaf', x: 200, y: 140 },
+      { id: 'far-hub', label: 'Far Hub', x: 340, y: 40 },
+    ];
+    const links: GraphLabelLayoutLink[] = Array.from({ length: 6 }, (_, index) => ({
+      source: 'far-hub',
+      target: `other-${index}`,
+    }));
+
+    const placements = plan({ nodes, links, viewport, maxLabels: 1 });
+
+    expect(placements.map((placement) => placement.nodeId)).toEqual(['far-hub']);
+  });
+
   test('keeps showing the names it was already showing when the budget is tight', () => {
     // The flicker: `distanceToCenterPx` outranks degree, and it changes on
     // every frame of a zoom, so the greedy accept below kept picking a
