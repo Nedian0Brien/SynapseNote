@@ -17,6 +17,7 @@ import { getGraphCardNeighbors } from './GraphCardDeck';
 import {
   buildGraphAreas,
   GRAPH_AREA_BLUR_PX,
+  GRAPH_AREA_LABEL_MIN_REGION_PX,
   GRAPH_AREA_LAYER_SCALE,
   GRAPH_AREA_TINT_ALPHA,
   type GraphArea,
@@ -1652,8 +1653,18 @@ export function GraphView({
                   const box = areaBoundsRef.current.get(area.id);
                   if (!box) continue;
                   const screen = areaFg.graph2ScreenCoords(box.cx, box.cy);
-                  const sizePx = getGraphAreaLabelSizePx(area.depth);
+                  // Size the name to its own territory, and let a region that
+                  // has no room say nothing. Measured on screen rather than in
+                  // graph units so it survives zoom.
+                  const edge = areaFg.graph2ScreenCoords(box.cx + box.rx, box.cy);
+                  const regionWidthPx = Math.abs(edge.x - screen.x) * 2;
+                  if (regionWidthPx < GRAPH_AREA_LABEL_MIN_REGION_PX) continue;
+                  const sizePx = getGraphAreaLabelSizePx(regionWidthPx);
                   ctx.font = `italic ${sizePx}px Georgia, "Times New Roman", serif`;
+                  // A name wider than the thing it names is a label for the
+                  // whole canvas, not for that region — drop it rather than
+                  // write across its neighbours.
+                  if (ctx.measureText(area.name).width > regionWidthPx) continue;
                   const halfWidth = ctx.measureText(area.name).width / 2;
                   const halfHeight = sizePx * 0.55;
                   const left = screen.x - halfWidth;

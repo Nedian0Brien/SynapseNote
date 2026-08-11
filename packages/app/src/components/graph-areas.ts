@@ -185,7 +185,21 @@ export const GRAPH_AREA_BLUR_PX = 30;
  */
 export const GRAPH_AREA_LAYER_SCALE = 0.22;
 
-/** Region names are the map's legend: large when far out, smaller further in. */
-export function getGraphAreaLabelSizePx(depth: number): number {
-  return Math.max(28, 64 - depth * 14);
+/** Below this on-screen width a region has no room for a name at all. */
+export const GRAPH_AREA_LABEL_MIN_REGION_PX = 56;
+
+/**
+ * A region's name is sized to the region, the way an atlas writes a continent
+ * across the continent and a town in small type beside the town.
+ *
+ * This used to be a function of folder DEPTH alone (28–64px flat), which meant
+ * a territory 40px wide on screen still got a 64px name: it sprawled over
+ * everything around it, several collided into a smear, and a nested folder's
+ * compressed path (`desktop/tests/smoke`) ran the full width of the canvas.
+ * Depth was never the question — how much room the thing has is.
+ *
+ * @param regionWidthPx the territory's on-screen width, not its graph width.
+ */
+export function getGraphAreaLabelSizePx(regionWidthPx: number): number {
+  return Math.max(11, Math.min(regionWidthPx * 0.2, 40));
 }

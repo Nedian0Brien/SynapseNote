@@ -95,11 +95,17 @@ describe('getGraphAreaBounds', () => {
 });
 
 describe('getGraphAreaLabelSizePx', () => {
-  test('writes shallower regions larger, like a map naming continents first', () => {
-    expect(getGraphAreaLabelSizePx(0)).toBeGreaterThan(getGraphAreaLabelSizePx(2));
+  test('writes a wide region larger than a narrow one, as an atlas does', () => {
+    expect(getGraphAreaLabelSizePx(400)).toBeGreaterThan(getGraphAreaLabelSizePx(120));
   });
 
-  test('stops shrinking, so a deep region is still readable', () => {
-    expect(getGraphAreaLabelSizePx(99)).toBeGreaterThanOrEqual(28);
+  test('stops shrinking, so a small region is still legible if it is named', () => {
+    expect(getGraphAreaLabelSizePx(1)).toBeGreaterThanOrEqual(11);
+  });
+
+  test('stops growing, so one huge region cannot write across the canvas', () => {
+    // The bug this replaced: a flat 64px name on a 40px-wide territory sprawled
+    // over every neighbour it had.
+    expect(getGraphAreaLabelSizePx(100_000)).toBeLessThanOrEqual(40);
   });
 });
