@@ -249,6 +249,21 @@ export function getGraphAreaLodAlpha(regionWidthPx: number, viewportPx: number):
   return 0;
 }
 
+/**
+ * Whether the viewer is INSIDE a region rather than looking at it.
+ *
+ * This is the same number the level of detail above starts fading a region out
+ * at, and deliberately so: past it the territory has stopped being a landmark
+ * you navigate by and become the ground you are standing on. That is exactly
+ * the moment its contents should start naming themselves — so a region's name
+ * fading out and its pages' names fading in are one event, and zooming in
+ * walks down the folder tree a level at a time.
+ */
+export function isGraphAreaEntered(regionWidthPx: number, viewportPx: number): boolean {
+  if (viewportPx <= 0) return false;
+  return regionWidthPx / viewportPx >= 0.85;
+}
+
 /** Below this on-screen width a region has no room for a name at all. */
 export const GRAPH_AREA_LABEL_MIN_REGION_PX = 56;
 

@@ -19,6 +19,7 @@ function plan({
   zoomScale = 10,
   leafLabelThreshold = 1.8,
   previousOffsetStepByNodeId,
+  isRegionEnteredForNode,
 }: {
   nodes: GraphLabelLayoutNode[];
   links?: GraphLabelLayoutLink[];
@@ -29,6 +30,7 @@ function plan({
   zoomScale?: number;
   leafLabelThreshold?: number;
   previousOffsetStepByNodeId?: ReadonlyMap<string, number>;
+  isRegionEnteredForNode?: (nodeId: string) => boolean | null;
 }) {
   return planGraphLabels({
     nodes,
@@ -40,6 +42,7 @@ function plan({
     zoomScale,
     leafLabelThreshold,
     previousOffsetStepByNodeId,
+    isRegionEnteredForNode,
     labelDescriptors: buildGraphLabelDescriptors(nodes),
     measureTextWidthPx: (text) => text.length * 6,
     projectToScreen: (x, y) => ({ x, y }),
@@ -186,6 +189,49 @@ describe('planGraphLabels', () => {
 
     expect(placements).toHaveLength(1);
     expect(placements[0]?.nodeId).toBe('hub');
+  });
+
+  test('holds a page’s name back until you have zoomed into its folder', () => {
+    // Zoomed out you should get region names and nothing else; the pages name
+    // themselves only once the folder they live in is the place you are in.
+    const nodes: GraphLabelLayoutNode[] = [
+      { id: 'docs/Intro', label: 'Intro', x: 200, y: 100 },
+      { id: 'docs/Api', label: 'Api', x: 200, y: 200 },
+    ];
+    const viewport = { width: 500, height: 400 };
+
+    expect(
+      plan({ nodes, viewport, isRegionEnteredForNode: () => false }).map((p) => p.nodeId),
+    ).toEqual([]);
+    expect(
+      plan({ nodes, viewport, isRegionEnteredForNode: () => true })
+        .map((p) => p.nodeId)
+        .sort(),
+    ).toEqual(['docs/Api', 'docs/Intro']);
+  });
+
+  test('a page in no folder is left to the degree tiers, as before', () => {
+    const nodes: GraphLabelLayoutNode[] = [{ id: 'README', label: 'Readme', x: 200, y: 100 }];
+    const placements = plan({
+      nodes,
+      viewport: { width: 500, height: 400 },
+      // null means "not inside a region" — the hierarchy gate must not swallow it.
+      isRegionEnteredForNode: () => null,
+    });
+    expect(placements.map((placement) => placement.nodeId)).toEqual(['README']);
+  });
+
+  test('the active document is named even from outside its folder', () => {
+    // It is the one label that says where you came from; hiding it because you
+    // have not zoomed into its folder yet defeats the point.
+    const nodes: GraphLabelLayoutNode[] = [{ id: 'docs/Intro', label: 'Intro', x: 200, y: 100 }];
+    const placements = plan({
+      nodes,
+      activeDocName: 'docs/Intro',
+      viewport: { width: 500, height: 400 },
+      isRegionEnteredForNode: () => false,
+    });
+    expect(placements.map((placement) => placement.nodeId)).toEqual(['docs/Intro']);
   });
 
   test('spends a tight budget on the better-connected node, not the nearer one', () => {

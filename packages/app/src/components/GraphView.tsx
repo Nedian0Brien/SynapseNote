@@ -25,6 +25,7 @@ import {
   getGraphAreaBounds,
   getGraphAreaLabelSizePx,
   getGraphAreaLodAlpha,
+  isGraphAreaEntered,
 } from './graph-areas';
 import { GRAPH_COLOR_PAIRS } from './graph-colors';
 import { applyGraphFilters } from './graph-filter';
@@ -914,6 +915,19 @@ export function GraphView({
     ? buildGraphAreas(displayData.nodes, displayData.links)
     : EMPTY_GRAPH_AREAS;
   const areaBoundsRef = useRef<Map<string, GraphAreaBounds>>(new Map());
+  // The deepest region each node sits in, which is the one whose on-screen size
+  // decides when that node's name is revealed. An area's `memberIds` already
+  // includes its descendants, so the deepest match is the innermost folder.
+  // Built here rather than per frame — it only changes when the areas do.
+  const innermostAreaByNodeId = new Map<string, GraphArea>();
+  for (const area of areas) {
+    for (const memberId of area.memberIds) {
+      const current = innermostAreaByNodeId.get(memberId);
+      if (!current || area.depth > current.depth) {
+        innermostAreaByNodeId.set(memberId, area);
+      }
+    }
+  }
   // Last frame's label decisions, so this frame can keep them — see
   // `previousOffsetStepByNodeId`. Held in a ref rather than state because it is
   // written from the canvas render hook and must never trigger a re-render.
@@ -1769,6 +1783,13 @@ export function GraphView({
                   );
                 },
                 previousOffsetStepByNodeId: labelOffsetStepsRef.current,
+                isRegionEnteredForNode: (nodeId) => {
+                  const area = innermostAreaByNodeId.get(nodeId);
+                  if (!area) return null;
+                  const box = areaBoundsRef.current.get(area.id);
+                  if (!box) return null;
+                  return isGraphAreaEntered(box.rx * globalScale * 2, dimensions.width);
+                },
               });
 
               // Hand this frame's decisions to the next one. Without it the
