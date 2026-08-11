@@ -18,6 +18,7 @@ function plan({
   // covered in graph-label-tiers.test.ts, and by the case below.
   zoomScale = 10,
   leafLabelThreshold = 1.8,
+  previousOffsetStepByNodeId,
 }: {
   nodes: GraphLabelLayoutNode[];
   links?: GraphLabelLayoutLink[];
@@ -27,6 +28,7 @@ function plan({
   maxLabelWidthPx?: number;
   zoomScale?: number;
   leafLabelThreshold?: number;
+  previousOffsetStepByNodeId?: ReadonlyMap<string, number>;
 }) {
   return planGraphLabels({
     nodes,
@@ -37,6 +39,7 @@ function plan({
     maxLabelWidthPx,
     zoomScale,
     leafLabelThreshold,
+    previousOffsetStepByNodeId,
     labelDescriptors: buildGraphLabelDescriptors(nodes),
     measureTextWidthPx: (text) => text.length * 6,
     projectToScreen: (x, y) => ({ x, y }),
@@ -183,6 +186,69 @@ describe('planGraphLabels', () => {
 
     expect(placements).toHaveLength(1);
     expect(placements[0]?.nodeId).toBe('hub');
+  });
+
+  test('keeps showing the names it was already showing when the budget is tight', () => {
+    // The flicker: `distanceToCenterPx` outranks degree, and it changes on
+    // every frame of a zoom, so the greedy accept below kept picking a
+    // different set and names blinked on and off while the view moved.
+    const viewport = { width: 400, height: 300 };
+    // Centre of the viewport is (200, 150). 'a' sits on that vertical, 'b' well
+    // off to the side, so 'a' is unambiguously the nearer.
+    const nodes: GraphLabelLayoutNode[] = [
+      { id: 'a', label: 'Alpha', x: 200, y: 60 },
+      { id: 'b', label: 'Beta', x: 350, y: 60 },
+    ];
+
+    // On a cold plan with room for one, the nearer node wins.
+    const cold = plan({ nodes, viewport, maxLabels: 1 });
+    expect(cold.map((placement) => placement.nodeId)).toEqual(['a']);
+
+    // Now the view moves so 'b' is the nearer one. Without a memory the label
+    // would jump from 'a' to 'b'; with one, 'a' keeps it.
+    const moved: GraphLabelLayoutNode[] = [
+      { id: 'a', label: 'Alpha', x: 60, y: 60 },
+      { id: 'b', label: 'Beta', x: 210, y: 60 },
+    ];
+    expect(plan({ nodes: moved, viewport, maxLabels: 1 })[0]?.nodeId).toBe('b');
+    const warm = plan({
+      nodes: moved,
+      viewport,
+      maxLabels: 1,
+      previousOffsetStepByNodeId: new Map([['a', 0]]),
+    });
+    expect(warm.map((placement) => placement.nodeId)).toEqual(['a']);
+  });
+
+  test('reports the offset it used, so the next frame can reproduce it', () => {
+    const nodes: GraphLabelLayoutNode[] = [{ id: 'solo', label: 'Solo', x: 200, y: 100 }];
+    const placements = plan({ nodes, viewport: { width: 500, height: 400 } });
+    expect(placements[0]?.offsetStep).toBe(0);
+  });
+
+  test('retries a name at the offset it already had before trying others', () => {
+    // Nothing is in the way here, so a cold plan would use step 0. Told the
+    // name was at step 2 last frame, it stays at step 2 rather than snapping up.
+    const nodes: GraphLabelLayoutNode[] = [{ id: 'solo', label: 'Solo', x: 200, y: 100 }];
+    const placements = plan({
+      nodes,
+      viewport: { width: 500, height: 400 },
+      previousOffsetStepByNodeId: new Map([['solo', 2]]),
+    });
+    expect(placements[0]?.offsetStep).toBe(2);
+  });
+
+  test('still places a name whose remembered offset no longer fits', () => {
+    // Close enough to the bottom edge that step 0 fits and step 3 does not.
+    const nodes: GraphLabelLayoutNode[] = [{ id: 'solo', label: 'Solo', x: 200, y: 340 }];
+    const placements = plan({
+      nodes,
+      viewport: { width: 500, height: 400 },
+      // Step 3 would run off the bottom edge; it should fall back to one that fits.
+      previousOffsetStepByNodeId: new Map([['solo', 3]]),
+    });
+    expect(placements).toHaveLength(1);
+    expect(placements[0]?.offsetStep).toBe(0);
   });
 
   test('drops a blocked name further down rather than putting it beside the node', () => {

@@ -35,6 +35,9 @@ export interface GraphLabelPlacement {
   nodeId: string;
   text: string;
   anchor: GraphLabelAnchor;
+  /** How many steps below its node this name ended up. Feed back in as
+   * `previousOffsetStepByNodeId` so the next frame can reproduce it. */
+  offsetStep: number;
   priority: number;
   isActive: boolean;
   rect: {
@@ -62,6 +65,23 @@ interface PlanGraphLabelsInput {
   measureTextWidthPx: (text: string) => number;
   projectToScreen: (x: number, y: number) => { x: number; y: number };
   getNodeRadiusPx: (node: GraphLabelLayoutNode) => number;
+  /**
+   * What the last frame decided: node id → the offset step its name was drawn
+   * at. Supplying it is what makes labels hold still while the view moves.
+   *
+   * This plan is recomputed every frame, and two of its inputs change
+   * continuously during a zoom: a candidate's distance from the centre of the
+   * screen (the second sort key) and, through the node radius, where its name
+   * wants to sit. So the priority order reshuffled on every frame, the greedy
+   * accept below took a different set each time, and names flickered on and
+   * off and traded places — a mess exactly while you were moving, which is
+   * when you are trying to read them.
+   *
+   * Carrying the previous decision forward fixes both halves: a name that was
+   * showing sorts ahead of one that was not, so the set stops churning, and it
+   * is retried at the offset it already had, so it stops hopping.
+   */
+  previousOffsetStepByNodeId?: ReadonlyMap<string, number>;
 }
 
 interface LabelRect {
@@ -84,6 +104,9 @@ interface LabelCandidate extends PositionedNode {
   isActive: boolean;
   degree: number;
   distanceToCenterPx: number;
+  /** Whether the previous frame drew this name, and where. */
+  wasShowing: boolean;
+  previousOffsetStep: number;
 }
 
 const VIEWPORT_PADDING_PX = 8;
@@ -114,6 +137,7 @@ export function planGraphLabels(input: PlanGraphLabelsInput): GraphLabelPlacemen
     measureTextWidthPx,
     projectToScreen,
     getNodeRadiusPx,
+    previousOffsetStepByNodeId,
   } = input;
 
   if (maxLabels <= 0 || viewport.width <= 0 || viewport.height <= 0 || nodes.length === 0) {
@@ -148,6 +172,7 @@ export function planGraphLabels(input: PlanGraphLabelsInput): GraphLabelPlacemen
       const textWidthPx = measureTextWidthPx(text);
       if (textWidthPx <= 0) return null;
 
+      const previousOffsetStep = previousOffsetStepByNodeId?.get(positionedNode.node.id);
       return {
         ...positionedNode,
         text,
@@ -158,6 +183,8 @@ export function planGraphLabels(input: PlanGraphLabelsInput): GraphLabelPlacemen
           positionedNode.screenX - viewportCenterX,
           positionedNode.screenY - viewportCenterY,
         ),
+        wasShowing: previousOffsetStep !== undefined,
+        previousOffsetStep: previousOffsetStep ?? 0,
       };
     })
     .filter((candidate): candidate is LabelCandidate => candidate !== null)
@@ -204,6 +231,15 @@ function compareCandidates(a: LabelCandidate, b: LabelCandidate): number {
   if (a.isActive !== b.isActive) {
     return a.isActive ? -1 : 1;
   }
+  // A name already on screen outranks one that is not, whatever the keys below
+  // would have said. Those keys are the right way to choose which names are
+  // worth showing, but every one of them below this line except degree moves
+  // as the view moves, and re-deciding the whole set sixty times a second is
+  // what made the labels flicker. Decide once; revisit only when a name can no
+  // longer be drawn at all.
+  if (a.wasShowing !== b.wasShowing) {
+    return a.wasShowing ? -1 : 1;
+  }
   if (Math.abs(a.distanceToCenterPx - b.distanceToCenterPx) > DISTANCE_EPSILON_PX) {
     return a.distanceToCenterPx - b.distanceToCenterPx;
   }
@@ -236,13 +272,16 @@ function placeCandidate(
   // need them. Stepping further down keeps the one relationship that matters
   // (the name hangs beneath its node, never beside it) while letting the label
   // clear what is in the way.
-  for (let step = 0; step < BOTTOM_OFFSET_STEPS; step += 1) {
-    const placement = buildPlacement(
-      candidate,
-      'bottom',
-      priority,
-      step * BOTTOM_OFFSET_STEP_PX,
-    );
+  // The step it already had comes first, so a name that is still fine where it
+  // is does not hop to a different row because something else moved.
+  const order = [
+    candidate.previousOffsetStep,
+    ...Array.from({ length: BOTTOM_OFFSET_STEPS }, (_, step) => step),
+  ];
+
+  for (const step of order) {
+    if (step >= BOTTOM_OFFSET_STEPS) continue;
+    const placement = buildPlacement(candidate, 'bottom', priority, step);
     if (!isRectWithinViewport(placement.rect, viewport)) continue;
     if (acceptedRects.some((acceptedRect) => rectsIntersect(acceptedRect, placement.rect))) {
       continue;
@@ -270,17 +309,19 @@ function buildPlacement(
   candidate: LabelCandidate,
   anchor: GraphLabelAnchor,
   priority: number,
-  extraOffsetPx = 0,
+  offsetStep = 0,
 ): GraphLabelPlacement {
   const labelWidthPx = candidate.textWidthPx + LABEL_PADDING_X_PX * 2;
   const halfWidthPx = labelWidthPx / 2;
   const left = candidate.screenX - halfWidthPx;
-  const top = candidate.screenY + candidate.radiusPx + LABEL_GAP_PX + extraOffsetPx;
+  const top =
+    candidate.screenY + candidate.radiusPx + LABEL_GAP_PX + offsetStep * BOTTOM_OFFSET_STEP_PX;
 
   return {
     nodeId: candidate.node.id,
     text: candidate.text,
     anchor,
+    offsetStep,
     priority,
     isActive: candidate.isActive,
     rect: {

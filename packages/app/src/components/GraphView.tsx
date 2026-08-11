@@ -914,6 +914,10 @@ export function GraphView({
     ? buildGraphAreas(displayData.nodes, displayData.links)
     : EMPTY_GRAPH_AREAS;
   const areaBoundsRef = useRef<Map<string, GraphAreaBounds>>(new Map());
+  // Last frame's label decisions, so this frame can keep them — see
+  // `previousOffsetStepByNodeId`. Held in a ref rather than state because it is
+  // written from the canvas render hook and must never trigger a re-render.
+  const labelOffsetStepsRef = useRef<Map<string, number>>(new Map());
   // Offscreen layer the territories are partitioned onto before being
   // composited in one pass — see `paintGraphAreaPartition`. Created in an
   // effect rather than lazily on first render: the React Compiler rejects
@@ -1764,7 +1768,17 @@ export function GraphView({
                     4
                   );
                 },
+                previousOffsetStepByNodeId: labelOffsetStepsRef.current,
               });
+
+              // Hand this frame's decisions to the next one. Without it the
+              // plan is recomputed from scratch against inputs that move with
+              // the view, and the labels shake themselves apart while you zoom.
+              const nextOffsetSteps = new Map<string, number>();
+              for (const placement of placements) {
+                nextOffsetSteps.set(placement.nodeId, placement.offsetStep);
+              }
+              labelOffsetStepsRef.current = nextOffsetSteps;
 
               drawGraphLabelPlacements({ ctx, placements, labelColor });
               ctx.restore();
