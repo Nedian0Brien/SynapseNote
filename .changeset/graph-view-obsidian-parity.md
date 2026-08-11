@@ -51,6 +51,13 @@ is a node too, pinned at the centre, so the whole tree holds together instead of
 drifting into separate islands. Turn it off under **Filters → Folders** — on by
 default for the project graph, off for the rail's local one.
 
+The layout itself is readable at the zoom that fits the whole map. Repulsion
+between nodes now has a range instead of reaching across the entire graph, which
+was quietly crushing every folder into a solid dot while pushing the folders far
+apart — so the map came out many times wider than the gap between neighbouring
+pages, and no zoom level could show you both. Clusters now sit at a size you can
+actually see into, and stay just as well grouped.
+
 Each folder now also paints a soft tinted territory behind everything it holds,
 with its name written across it, so you can tell which part of the vault you are
 looking at without reading a single node label. Names are drawn at full weight

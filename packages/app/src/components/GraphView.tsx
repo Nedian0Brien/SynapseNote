@@ -11,7 +11,7 @@ import { usePageList } from '@/components/PageListContext';
 import { hashFromDocName } from '@/lib/doc-hash';
 import { subscribeToDocumentsChanged } from '@/lib/documents-events';
 import { openExternalUrl } from '@/lib/external-link';
-import type { GraphSettings } from '@/lib/graph-settings-store';
+import { GRAPH_REPEL_RANGE_FACTOR, type GraphSettings } from '@/lib/graph-settings-store';
 import { cn } from '@/lib/utils';
 import { getGraphCardNeighbors } from './GraphCardDeck';
 import {
@@ -957,6 +957,11 @@ export function GraphView({
     // by membership below — and doing it with repulsion instead shoved the
     // neighboring clusters to the far side of the canvas.
     charge?.strength?.(-repelStrength);
+    // Bound the range, or the pressure of every distant node crushes each
+    // cluster to a few pixels across at the zoom that fits the map. Scaled off
+    // the spring length so dragging the Link distance slider keeps the two in
+    // proportion — see GRAPH_REPEL_RANGE_FACTOR for the measurements.
+    charge?.distanceMax?.(linkDistance * GRAPH_REPEL_RANGE_FACTOR);
 
     const center = fg.d3Force('center');
     center?.strength?.(centerStrength);
@@ -1360,14 +1365,14 @@ export function GraphView({
           <ForceGraph2D
             ref={fgRef}
             graphData={displayData}
-            // KNOWN ISSUE, recorded so the next person does not "fix" it by
-            // raising this: run the whole-project layout to convergence (~400
-            // ticks) and it anneals into a uniform hexagonally packed disc — the
-            // force configuration's true minimum is a blob. The structure you
-            // see at 150 is the layout caught in flight. That is where the
-            // original SynapseNote's clustering comes from and ours does not,
-            // and it is a layout problem, not a tick-budget one.
-            cooldownTicks={150}
+            // Enough to converge. This used to be 150 on the belief that the
+            // converged layout was a featureless disc and the structure at 150
+            // was a lucky intermediate. Measuring it says the opposite: at 400
+            // ticks ~71% of a node's six nearest neighbours are from its own
+            // folder, and the radial density is lumpy, not uniform. The disc was
+            // never the layout — it was every cluster crushed into a few pixels
+            // by unbounded repulsion, which distanceMax now bounds.
+            cooldownTicks={400}
             onEngineTick={() => {
               simulationSettledRef.current = false;
               // The camera stops chasing the ACTIVE document once the user has
