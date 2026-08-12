@@ -372,13 +372,19 @@ export function getGraphAreaFocusDepth(
   // the names of the places holding them are noise, and the original dropped
   // them entirely at that point. Extrapolated at the spacing of the last two
   // levels so a zoom keeps moving this at the same rate it did on the way down.
+  // Counted in doublings of the deepest region's on-screen size, NOT in
+  // multiples of the gap between the last two levels.
+  //
+  // The gap version divided by a number that is routinely near zero: two
+  // adjacent levels are often almost the same size on screen — here `packages`
+  // covers 0.59 of the viewport and `app/tests` inside it covers 0.58 — so the
+  // divisor was 0.017 and the first pixel of zoom past the deepest level sent
+  // this from 2 to about 10. Everything keyed off it vanished at once.
+  //
+  // A doubling is a fixed, honest unit: one more level of "inside" per 2x zoom,
+  // whatever the tree happens to look like.
   const deepest = levels[levels.length - 1];
-  const previous = levels[levels.length - 2];
-  // Share FALLS as depth rises, so a level costs this much log-share.
-  const logSharePerLevel = Math.log(previous.share) - Math.log(deepest.share);
-  if (!(logSharePerLevel > 0)) return deepest.depth;
-  const beyond = (Math.log(deepest.share) - Math.log(GRAPH_AREA_FOCUS_SHARE)) / logSharePerLevel;
-  return deepest.depth + Math.max(0, beyond);
+  return deepest.depth + Math.max(0, Math.log2(deepest.share / GRAPH_AREA_FOCUS_SHARE));
 }
 
 /**
@@ -464,8 +470,14 @@ export function getGraphAreaTintWeight(depth: number, focusDepth: number | null)
  * is right: at that distance the place names are competing with the page names
  * for the same pixels, and you already know where you are — you just came from
  * there.
+ *
+ * Two levels — with the overshoot counted in doublings, that is a 4x zoom from
+ * the point where a region is half the screen to the point where its name is
+ * gone. A gentle fade: the last level is the one you spend the most time in,
+ * and having its name evaporate the moment you arrive is worse than carrying
+ * it a little too long.
  */
-const GRAPH_AREA_NAME_RETIRE_LEVELS = 0.9;
+const GRAPH_AREA_NAME_RETIRE_LEVELS = 2;
 
 /**
  * How much of its name a region still writes, given how deep the map has gone.

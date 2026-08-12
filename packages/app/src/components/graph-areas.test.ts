@@ -285,12 +285,12 @@ describe('getGraphAreaNameFade', () => {
     // for the same pixels and you already know where you are.
     expect(getGraphAreaNameFade(2, 2.5)).toBeLessThan(1);
     expect(getGraphAreaNameFade(2, 2.5)).toBeGreaterThan(0);
-    expect(getGraphAreaNameFade(2, 3.2)).toBe(0);
+    expect(getGraphAreaNameFade(2, 4.1)).toBe(0);
   });
 
   test('falls monotonically, so there is no flick on the way out', () => {
     let previous = 1;
-    for (let focus = 2; focus <= 4; focus += 0.05) {
+    for (let focus = 2; focus <= 5; focus += 0.05) {
       const fade = getGraphAreaNameFade(2, focus);
       expect(fade).toBeLessThanOrEqual(previous + 1e-9);
       previous = fade;

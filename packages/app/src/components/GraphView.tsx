@@ -1693,19 +1693,33 @@ export function GraphView({
                 sized.map(({ area, share }) => ({ depth: area.depth, share })),
               );
               focusDepthRef.current = focusDepth;
+              // The TINT never descends past the deepest level there is.
+              //
+              // The crossfade assumes a level below to hand over to; at the
+              // bottom of the tree there is none, so handing over just fades
+              // the last regions to ground and leaves the map blank exactly
+              // where you have arrived. Names still use the true focus depth —
+              // those SHOULD retire once you are reading pages — but the
+              // colour holds.
+              const deepestDepth = sized.reduce(
+                (deepest, { area }) => Math.max(deepest, area.depth),
+                0,
+              );
+              const tintFocus = focusDepth === null ? null : Math.min(focusDepth, deepestDepth);
+
               const alphas = areaAlphaRef.current;
               const nameAlphas = areaNameAlphaRef.current;
               alphas.clear();
               nameAlphas.clear();
               for (const { area, lod } of sized) {
-                const tint = lod * getGraphAreaTintWeight(area.depth, focusDepth);
+                const tint = lod * getGraphAreaTintWeight(area.depth, tintFocus);
                 if (tint > 0) alphas.set(area.id, tint);
                 // Names also retire as the map goes inside them — past that
                 // point they are competing with the page names for the same
                 // pixels, and you already know where you are.
                 const name =
                   lod *
-                  getGraphAreaDepthWeight(area.depth, focusDepth) *
+                  getGraphAreaDepthWeight(area.depth, tintFocus) *
                   getGraphAreaNameFade(area.depth, focusDepth);
                 if (name > 0) nameAlphas.set(area.id, name);
               }
