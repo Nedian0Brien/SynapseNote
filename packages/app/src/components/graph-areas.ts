@@ -26,15 +26,19 @@ export interface GraphArea {
   /** Distance from the project root. Drives size, padding and tint depth. */
   depth: number;
   memberIds: Set<string>;
-  /** Index into the caller's palette; areas cycle through it. */
-  colorIndex: number;
   /**
-   * Which variation on `colorIndex` this region takes, so the regions of one
-   * family that are on screen together are told apart. Counted among the
-   * regions that share both its palette slot and its depth — the ones it is
-   * ever shown beside.
+   * Index into the caller's palette; areas cycle through it.
+   *
+   * One slot per region, NOT inherited from an ancestor. Inheriting it was an
+   * answer to the map repainting itself when one level handed over to the
+   * next, back when levels were mutually exclusive — but the ground weight
+   * (see `GRAPH_AREA_GROUND_WEIGHT`) answers that better, by keeping the
+   * parent's colour underneath instead of restating it on top. With both in
+   * place the inheritance only cost legibility: at this layer's alpha the
+   * shade variation that kept siblings apart was far too fine to survive, and
+   * a screenful of regions came out as one wash of the same pink.
    */
-  shadeIndex: number;
+  colorIndex: number;
 }
 
 export interface GraphAreaBounds {
@@ -127,41 +131,6 @@ export function buildGraphAreas(
     return descendants;
   };
 
-  // Colour is inherited from the topmost named region a folder sits under, not
-  // handed out in enumeration order.
-  //
-  // Only one storey of the tree is drawn at a time, so an index-per-folder
-  // meant every level had an unrelated palette and descending repainted the
-  // whole map in new colours — the one thing that should stay put while you
-  // move. An atlas does the opposite: a province is a shade of its country.
-  // Sharing the ancestor's index means zooming into `packages` keeps you in
-  // the `packages` colour at every depth.
-  const topLevelIndexById = new Map<string, number>();
-  const shadeCountByKey = new Map<string, number>();
-  let nextTopLevelIndex = 0;
-  const topLevelIndexFor = (folderId: string): number => {
-    const chain: string[] = [];
-    let current: string | undefined = folderId;
-    while (current !== undefined) {
-      const known = topLevelIndexById.get(current);
-      if (known !== undefined) {
-        for (const id of chain) topLevelIndexById.set(id, known);
-        return known;
-      }
-      chain.push(current);
-      const parent: string | undefined = parentByChild.get(current);
-      // Stop at the last folder that still has a named region above it; the
-      // parentless root has no territory of its own, so its children are the
-      // continents.
-      if (parent === undefined || !parentByChild.has(parent)) break;
-      current = parent;
-    }
-    const assigned = nextTopLevelIndex;
-    nextTopLevelIndex += 1;
-    for (const id of chain) topLevelIndexById.set(id, assigned);
-    return assigned;
-  };
-
   return (
     folders
       .filter(
@@ -170,28 +139,15 @@ export function buildGraphAreas(
           parentByChild.has(node.id) &&
           (depthById.get(node.id) ?? 0) <= GRAPH_AREA_MAX_DEPTH,
       )
-      // Shallowest first so each ancestor claims its palette slot before its
-      // descendants ask to inherit it.
+      // Shallow regions first, so a nested one paints on top of its parent.
       .sort((a, b) => (depthById.get(a.id) ?? 0) - (depthById.get(b.id) ?? 0))
-      .map((node) => {
-        const depth = depthById.get(node.id) ?? 0;
-        const colorIndex = topLevelIndexFor(node.id);
-        // Siblings of a family are what you see side by side once you have
-        // zoomed into their parent; without a variation between them the
-        // parent's territory just becomes one flat block of its own colour
-        // instead of visibly dividing into its parts.
-        const shadeKey = `${colorIndex}\n${depth}`;
-        const shadeIndex = shadeCountByKey.get(shadeKey) ?? 0;
-        shadeCountByKey.set(shadeKey, shadeIndex + 1);
-        return {
-          id: node.id,
-          name: node.kind === 'folder' ? node.label : node.id,
-          depth,
-          memberIds: new Set([node.id, ...collectDescendants(node.id)]),
-          colorIndex,
-          shadeIndex,
-        };
-      })
+      .map((node, index) => ({
+        id: node.id,
+        name: node.kind === 'folder' ? node.label : node.id,
+        depth: depthById.get(node.id) ?? 0,
+        memberIds: new Set([node.id, ...collectDescendants(node.id)]),
+        colorIndex: index,
+      }))
   );
 }
 

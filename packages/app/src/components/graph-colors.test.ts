@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { clusterColor, shiftGraphColorShade } from './graph-colors';
+import { clusterColor } from './graph-colors';
 
 describe('clusterColor', () => {
   test('returns deterministic output for the same input', () => {
@@ -58,46 +58,5 @@ describe('clusterColor', () => {
     expect(clusterColor('a-very-long-cluster-name-that-goes-on-and-on', false)).toMatch(
       /^#[0-9a-f]{6}$/i,
     );
-  });
-});
-
-describe('shiftGraphColorShade', () => {
-  const BASE = '#60a5fa';
-
-  test('leaves the first sibling on the family colour', () => {
-    expect(shiftGraphColorShade(BASE, 0)).toBe(BASE);
-  });
-
-  test('tells siblings apart, which is what makes a region look divided', () => {
-    const shades = [0, 1, 2, 3, 4].map((index) => shiftGraphColorShade(BASE, index));
-    expect(new Set(shades).size).toBe(shades.length);
-  });
-
-  test('keeps a sibling recognisably in the family rather than a new colour', () => {
-    // Within a modest hue rotation of the base — a province, not another country.
-    const shade = shiftGraphColorShade(BASE, 1);
-    expect(shade).not.toBe(BASE);
-    const channelsOf = (hex: string) =>
-      [1, 3, 5].map((at) => Number.parseInt(hex.slice(at, at + 2), 16));
-    const [r, g, b] = channelsOf(shade);
-    const [br, bg, bb] = channelsOf(BASE);
-    // Still blue-dominant, as the base is.
-    expect(b).toBeGreaterThan(r);
-    expect(bb).toBeGreaterThan(br);
-    expect(Math.abs(g - bg)).toBeLessThan(90);
-  });
-
-  test('stays inside usable lightness however deep the run goes', () => {
-    for (const index of [8, 20, 50]) {
-      const shade = shiftGraphColorShade(BASE, index);
-      const channels = [1, 3, 5].map((at) => Number.parseInt(shade.slice(at, at + 2), 16));
-      const lightness = (Math.max(...channels) + Math.min(...channels)) / 2 / 255;
-      expect(lightness).toBeGreaterThan(0.1);
-      expect(lightness).toBeLessThan(0.9);
-    }
-  });
-
-  test('hands back anything it cannot parse untouched', () => {
-    expect(shiftGraphColorShade('not-a-color', 2)).toBe('not-a-color');
   });
 });

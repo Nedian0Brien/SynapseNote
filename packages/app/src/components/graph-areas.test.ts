@@ -74,22 +74,13 @@ describe('buildGraphAreas', () => {
 });
 
 describe('buildGraphAreas — colour', () => {
-  // Two top-level folders, so the project root exists and `docs` is itself a
-  // region rather than the outermost thing; `api` then nests inside it.
-  const nested = ['docs/api/A', 'docs/api/B', 'docs/Intro', 'notes/N', 'notes/M'];
-
-  test('a nested region takes its colour from the region it sits inside', () => {
-    // Only one storey is drawn at a time, so an index per folder repainted the
-    // whole map every time you descended a level. A province is a shade of its
-    // country.
-    const byName = new Map(areasFor(nested).map((area) => [area.name, area]));
-    expect(byName.get('api')?.depth).toBe(2);
-    expect(byName.get('api')?.colorIndex).toBe(byName.get('docs')?.colorIndex);
-  });
-
-  test('siblings of a family get different shades, so a region divides visibly', () => {
-    // Same colour slot keeps them in the family; the shade is what stops the
-    // parent's territory reading as one flat block once you zoom into it.
+  test('gives every region its own palette slot, so neighbours are told apart', () => {
+    // Colour was briefly inherited from the topmost ancestor, to stop the map
+    // repainting when one level handed over to the next. The ground weight
+    // answers that better — it keeps the parent's colour underneath — and the
+    // inheritance only cost legibility: at this layer's alpha the variation
+    // that kept siblings apart was too fine to survive and a screenful of
+    // regions came out as one wash.
     const areas = areasFor([
       'packages/app/A',
       'packages/app/B',
@@ -100,22 +91,7 @@ describe('buildGraphAreas — colour', () => {
       'docs/X',
       'docs/Y',
     ]);
-    const children = areas.filter((area) => area.depth === 2);
-    expect(children.length).toBeGreaterThanOrEqual(3);
-    expect(new Set(children.map((area) => area.colorIndex)).size).toBe(1);
-    expect(new Set(children.map((area) => area.shadeIndex)).size).toBe(children.length);
-  });
-
-  test('unrelated top-level regions still get different colours', () => {
-    const byName = new Map(areasFor(nested).map((area) => [area.name, area]));
-    expect(byName.get('docs')?.colorIndex).not.toBe(byName.get('notes')?.colorIndex);
-  });
-
-  test('the whole of a deep chain shares one colour', () => {
-    const indices = new Set(
-      areasFor(['a/b/c/One', 'a/b/c/Two', 'a/b/Other', 'a/Top']).map((area) => area.colorIndex),
-    );
-    expect(indices.size).toBe(1);
+    expect(new Set(areas.map((area) => area.colorIndex)).size).toBe(areas.length);
   });
 });
 
