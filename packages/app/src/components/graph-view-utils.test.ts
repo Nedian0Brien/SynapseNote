@@ -624,6 +624,20 @@ describe('capGraphNodeRadius', () => {
     expect(capGraphNodeRadius(5, 10) * 10).toBeCloseTo(capGraphNodeRadius(5, 20) * 20, 5);
   });
 
+  test('caps the BASE, so the size encoding survives the cap', () => {
+    // Capping after the style multiplier collapsed a page, a hub and a
+    // two-hundred-page folder to the same 11px at any zoom past the cap —
+    // deleting the one cue that says which dot anchors a territory, exactly
+    // when you had zoomed in to look at it.
+    const base = capGraphNodeRadius(5, 10);
+    const page = base * 1;
+    const hub = base * 1.6;
+    const folder = base * 2.2;
+    expect(hub).toBeGreaterThan(page);
+    expect(folder).toBeGreaterThan(hub);
+    expect(folder / page).toBeCloseTo(2.2, 5);
+  });
+
   test('survives a zero scale rather than dividing by it', () => {
     expect(capGraphNodeRadius(5, 0)).toBe(5);
   });

@@ -1522,10 +1522,13 @@ export function GraphView({
               });
               const degree = degreeByNodeId.get(node.id) ?? 0;
               const style = getGraphNodeStyle({ node, degree, displayState, visualState: state });
-              const radius = capGraphNodeRadius(
-                getGraphNodeCanvasRadius(state) * settings.display.nodeSize * style.scale,
-                globalScale,
-              );
+              // Cap the base, then scale — so a folder stays proportionally
+              // bigger than a page however far in you are.
+              const radius =
+                capGraphNodeRadius(
+                  getGraphNodeCanvasRadius(state) * settings.display.nodeSize,
+                  globalScale,
+                ) * style.scale;
 
               // A user-defined group is an explicit instruction and outranks the
               // weight scale; the auto-assigned cluster hue does NOT, because a
@@ -1883,10 +1886,10 @@ export function GraphView({
                   return (
                     capGraphNodeRadius(
                       getGraphNodeInteractiveRadius({ state, displayState, globalScale }) *
-                        settings.display.nodeSize *
-                        drawnNodeScale(node),
+                        settings.display.nodeSize,
                       globalScale,
                     ) *
+                      drawnNodeScale(node) *
                       globalScale +
                     4
                   );

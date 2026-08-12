@@ -397,10 +397,20 @@ export function screenOffsetInGraphUnits(
  */
 export const MAX_GRAPH_NODE_SCREEN_RADIUS_PX = 11;
 
-/** Clamp a graph-unit radius so it draws no larger than the screen cap. */
-export function capGraphNodeRadius(radius: number, globalScale: number): number {
-  if (globalScale <= 0) return radius;
-  return Math.min(radius, MAX_GRAPH_NODE_SCREEN_RADIUS_PX / globalScale);
+/**
+ * Clamp the BASE radius — the one a plain page draws at — so it grows no larger
+ * than the screen cap. The caller then applies its own multipliers on top.
+ *
+ * Applying the cap after those multipliers, as this did at first, silently
+ * deleted the whole size encoding: at any zoom past the cap a page, an
+ * eight-link hub and a two-hundred-page folder all clamped to exactly the same
+ * 11px, so the one cue saying which dot anchors a territory disappeared
+ * precisely when you had zoomed in to look at it. Capping the base keeps every
+ * ratio intact and only stops the absolute size running away.
+ */
+export function capGraphNodeRadius(baseRadius: number, globalScale: number): number {
+  if (globalScale <= 0) return baseRadius;
+  return Math.min(baseRadius, MAX_GRAPH_NODE_SCREEN_RADIUS_PX / globalScale);
 }
 
 export function getGraphNodePointerRadius(
