@@ -6,6 +6,7 @@ import {
   getGraphAreaFocusDepth,
   getGraphAreaLabelSizePx,
   getGraphAreaLodAlpha,
+  getGraphAreaTintWeight,
 } from './graph-areas';
 import { buildGraphFolderNodes } from './graph-folders';
 import type { GraphNode } from './graph-view-utils';
@@ -224,6 +225,37 @@ describe('getGraphAreaDepthWeight', () => {
 
   test('draws nothing when there is no focus', () => {
     expect(getGraphAreaDepthWeight(0, null)).toBe(0);
+  });
+});
+
+describe('getGraphAreaTintWeight', () => {
+  test('keeps a level you have passed on as ground instead of going dark', () => {
+    // The original's shallow tint bottomed out at 0.4 and never left. Making
+    // the tint exclusive too dimmed the map to nothing mid-handover.
+    expect(getGraphAreaDepthWeight(0, 2)).toBe(0);
+    expect(getGraphAreaTintWeight(0, 2)).toBeGreaterThan(0);
+  });
+
+  test('still gives the level you are on the most', () => {
+    expect(getGraphAreaTintWeight(2, 2)).toBe(1);
+    expect(getGraphAreaTintWeight(2, 2)).toBeGreaterThan(getGraphAreaTintWeight(1, 2));
+  });
+
+  test('leaves levels you have not reached dark', () => {
+    // Showing them early is the clutter the depth stepping exists to remove.
+    expect(getGraphAreaTintWeight(4, 2)).toBe(0);
+  });
+
+  test('never dips below the ground during a handover', () => {
+    // Sweep the whole descent: the shallowest level must always be painting
+    // something, which is what stops the map going blank between storeys.
+    for (let focus = 0; focus <= 4; focus += 0.1) {
+      expect(getGraphAreaTintWeight(0, focus)).toBeGreaterThan(0);
+    }
+  });
+
+  test('draws nothing when there is no focus at all', () => {
+    expect(getGraphAreaTintWeight(0, null)).toBe(0);
   });
 });
 

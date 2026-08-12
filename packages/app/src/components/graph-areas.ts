@@ -344,6 +344,33 @@ export function getGraphAreaDepthWeight(depth: number, focusDepth: number | null
   return Math.max(0, 1 - Math.abs(depth - focusDepth));
 }
 
+/**
+ * What a level you have already descended past keeps, rather than going dark.
+ *
+ * Ported from the original, whose shallow tint bottomed out at 0.4 and never
+ * left (`p1BgFade = 1 - fadeT * 0.6`). Its "one level at a time" only ever
+ * applied to the NAMES — the tints stacked, with the shallow one staying as
+ * ground under the deep one. Making the tint exclusive too, as this did at
+ * first, is stricter than the original and costs two things: the map dims to
+ * nothing halfway through every handover, and you lose the coarse colour
+ * blocking that tells you which part of the vault you are in while the level
+ * you are reading is still arriving.
+ */
+export const GRAPH_AREA_GROUND_WEIGHT = 0.35;
+
+/**
+ * How much of the tint a level gets — the same crossfade as the names, but a
+ * level ABOVE the one you are on stays on as ground instead of leaving.
+ *
+ * Levels below the current one are still dark: they have not arrived yet, and
+ * showing them early is the clutter the depth stepping exists to remove.
+ */
+export function getGraphAreaTintWeight(depth: number, focusDepth: number | null): number {
+  const weight = getGraphAreaDepthWeight(depth, focusDepth);
+  if (focusDepth === null || depth > focusDepth) return weight;
+  return Math.max(weight, GRAPH_AREA_GROUND_WEIGHT);
+}
+
 /** Below this on-screen width a region has no room for a name at all. */
 export const GRAPH_AREA_LABEL_MIN_REGION_PX = 56;
 

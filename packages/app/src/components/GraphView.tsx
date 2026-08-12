@@ -27,6 +27,7 @@ import {
   getGraphAreaFocusDepth,
   getGraphAreaLabelSizePx,
   getGraphAreaLodAlpha,
+  getGraphAreaTintWeight,
 } from './graph-areas';
 import { GRAPH_COLOR_PAIRS } from './graph-colors';
 import { applyGraphFilters } from './graph-filter';
@@ -943,6 +944,10 @@ export function GraphView({
   // both the tint and the names, so the two can never disagree about which
   // storey of the folder tree is currently on show.
   const areaAlphaRef = useRef<Map<string, number>>(new Map());
+  // Names are stricter than the tint: exactly one level names itself, while a
+  // level you have already passed keeps its colour as ground. That split is
+  // what the original did, and it is why the map never went blank mid-handover.
+  const areaNameAlphaRef = useRef<Map<string, number>>(new Map());
   // Which storey the map has descended to, from the same computation. A page's
   // name is revealed when the map reaches the folder it lives in, so the
   // territories and the node labels are driven by one number rather than two
@@ -1680,10 +1685,14 @@ export function GraphView({
               );
               focusDepthRef.current = focusDepth;
               const alphas = areaAlphaRef.current;
+              const nameAlphas = areaNameAlphaRef.current;
               alphas.clear();
+              nameAlphas.clear();
               for (const { area, lod } of sized) {
-                const weighted = lod * getGraphAreaDepthWeight(area.depth, focusDepth);
-                if (weighted > 0) alphas.set(area.id, weighted);
+                const tint = lod * getGraphAreaTintWeight(area.depth, focusDepth);
+                if (tint > 0) alphas.set(area.id, tint);
+                const name = lod * getGraphAreaDepthWeight(area.depth, focusDepth);
+                if (name > 0) nameAlphas.set(area.id, name);
               }
 
               const fg = fgRef.current;
@@ -1752,7 +1761,7 @@ export function GraphView({
                       area,
                       screen,
                       widthPx,
-                      lod: areaAlphaRef.current.get(area.id) ?? 0,
+                      lod: areaNameAlphaRef.current.get(area.id) ?? 0,
                       wasShown: shownLastFrame.has(area.id),
                     };
                   })
