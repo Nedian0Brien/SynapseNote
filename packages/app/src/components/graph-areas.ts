@@ -49,6 +49,23 @@ const MIN_HALF_WIDTH = 30;
 const MIN_HALF_HEIGHT = 25;
 
 /**
+ * How deep in the folder tree a directory can be and still be a place.
+ *
+ * The original was written for note vaults, which are two or three levels
+ * deep, and drew a territory for every directory it found. Run the same rule
+ * over a codebase and you get storeys nobody thinks in: this repo yields 57
+ * regions, 40 of them at depth 3 or below, and every one of the ten at depth 5
+ * holds exactly two files. A folder with two files in it is not somewhere you
+ * navigate to, and having to descend past four levels of them to reach the
+ * pages is what made the map confusing rather than legible.
+ *
+ * Deeper folders do not lose their pages — a region's members already include
+ * all its descendants, so those pages simply belong to the deepest ANCESTOR
+ * that is still a place.
+ */
+export const GRAPH_AREA_MAX_DEPTH = 3;
+
+/**
  * Regions for every directory that holds something, EXCEPT the ones with no
  * directory above them.
  *
@@ -144,7 +161,10 @@ export function buildGraphAreas(
   return (
     folders
       .filter(
-        (node) => (childrenByParent.get(node.id) ?? []).length > 0 && parentByChild.has(node.id),
+        (node) =>
+          (childrenByParent.get(node.id) ?? []).length > 0 &&
+          parentByChild.has(node.id) &&
+          (depthById.get(node.id) ?? 0) <= GRAPH_AREA_MAX_DEPTH,
       )
       // Shallowest first so each ancestor claims its palette slot before its
       // descendants ask to inherit it.
@@ -420,6 +440,39 @@ export function getGraphAreaTintWeight(depth: number, focusDepth: number | null)
   if (focusDepth === null || depth > focusDepth) return weight;
   return Math.max(weight, GRAPH_AREA_GROUND_WEIGHT);
 }
+
+/**
+ * The territory is painted by stamping a soft disc at every member, not by
+ * drawing one ellipse over the lot.
+ *
+ * An ellipse is a claim about a shape the members do not necessarily have. A
+ * folder whose pages have been pulled into a crescent by their links gets a
+ * fat oval covering a lot of ground that belongs to its neighbours, and the
+ * neighbours get one back — which is most of why the tints read as a wash
+ * rather than as a map.
+ *
+ * Stamping each member and blurring the result gives the same answer a Voronoi
+ * partition would, without any of its costs: the boundary lands where the
+ * density changes, which is roughly the equidistant line between two clusters.
+ * Unlike a Voronoi it follows the members' ACTUAL positions (a crescent folder
+ * gets a crescent), it does not tile empty canvas out to infinity, it keeps
+ * nesting intact, and it cannot jump discontinuously when a region appears —
+ * all three of which would have to be engineered around otherwise.
+ *
+ * @param regionHalfWidthPx the region's on-screen half-width, which stands in
+ *        for how far apart its members are at this zoom.
+ */
+export function getGraphAreaSplatRadiusPx(regionHalfWidthPx: number): number {
+  return Math.max(26, Math.min(regionHalfWidthPx * 0.42, 150));
+}
+
+/**
+ * Cap on discs stamped per region. Past this the members are resampled evenly
+ * across the set — with a blur this wide the field is indistinguishable, and
+ * the largest region here holds 681 members, which is a lot to stamp every
+ * frame for a result you cannot see.
+ */
+export const GRAPH_AREA_MAX_SPLATS = 180;
 
 /** Below this on-screen width a region has no room for a name at all. */
 export const GRAPH_AREA_LABEL_MIN_REGION_PX = 56;
