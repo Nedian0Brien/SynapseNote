@@ -930,6 +930,9 @@ export function GraphView({
   // decides when that node's name is revealed. An area's `memberIds` already
   // includes its descendants, so the deepest match is the innermost folder.
   // Built here rather than per frame — it only changes when the areas do.
+  // A folder node's id IS its region's id, so this is how the dot that anchors
+  // a territory finds the territory's colour.
+  const areaById = new Map(areas.map((area) => [area.id, area]));
   const innermostAreaByNodeId = new Map<string, GraphArea>();
   for (const area of areas) {
     for (const memberId of area.memberIds) {
@@ -1535,9 +1538,21 @@ export function GraphView({
               // graph that colors every node by cluster is the confetti this
               // encoding exists to replace. Clusters still drive the legend.
               const group = matchGraphGroup(node, settings.groups);
+              // The dot that anchors a territory is drawn in that territory's
+              // colour, at full strength against the 16%-alpha wash of the same
+              // hue behind it — so it reads as the thing that OWNS the field
+              // rather than as a grey dot that happens to sit on it. Nothing
+              // else on the canvas ties a region to its folder.
+              //
+              // Below an explicit group, which is a user instruction, and below
+              // the selected/active states, whose whole job is to override the
+              // resting colour.
+              const anchoredArea = state === 'folder' ? areaById.get(node.id) : undefined;
               const color = group
                 ? resolveGraphGroupColor(group.color, isDark)
-                : emphasisColor(style.emphasis);
+                : anchoredArea
+                  ? areaColor(anchoredArea)
+                  : emphasisColor(style.emphasis);
 
               ctx.save();
               ctx.globalAlpha = nodeAlpha(node.id);
