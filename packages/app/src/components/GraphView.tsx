@@ -932,6 +932,8 @@ export function GraphView({
   // `previousOffsetStepByNodeId`. Held in a ref rather than state because it is
   // written from the canvas render hook and must never trigger a re-render.
   const labelOffsetStepsRef = useRef<Map<string, number>>(new Map());
+  // Which region names were written last frame, for the same reason.
+  const areaLabelShownRef = useRef<Set<string>>(new Set());
   // Offscreen layer the territories are partitioned onto before being
   // composited in one pass — see `paintGraphAreaPartition`. Created in an
   // effect rather than lazily on first render: the React Compiler rejects
@@ -1683,6 +1685,15 @@ export function GraphView({
                 // level of detail above, "which region is the landmark right
                 // now" is a question about pixels, and the one that owns the
                 // most of them should get to keep its name.
+                //
+                // Everything below is decided against numbers that move while
+                // you zoom, so — exactly as with the node labels — it is done
+                // with a memory of what was written last frame. Two sibling
+                // folders of near-equal size (`views-25` and `views-200`) kept
+                // swapping rank frame to frame, and the swap handed the
+                // contested spot back and forth: both names strobed the whole
+                // way through a zoom.
+                const shownLastFrame = areaLabelShownRef.current;
                 const named = areas
                   .map((area) => {
                     const box = areaBoundsRef.current.get(area.id);
@@ -1695,24 +1706,36 @@ export function GraphView({
                       screen,
                       widthPx,
                       lod: getGraphAreaLodAlpha(widthPx, viewportPx),
+                      wasShown: shownLastFrame.has(area.id),
                     };
                   })
                   .filter((entry) => entry !== null)
                   .filter(
-                    (entry) => entry.lod > 0 && entry.widthPx >= GRAPH_AREA_LABEL_MIN_REGION_PX,
+                    (entry) =>
+                      entry.lod > 0 &&
+                      // A name already up survives a little below the entry
+                      // size, so a region hovering on the threshold does not
+                      // chatter across it.
+                      entry.widthPx >= GRAPH_AREA_LABEL_MIN_REGION_PX * (entry.wasShown ? 0.85 : 1),
                   )
-                  .sort((a, b) => b.widthPx - a.widthPx);
+                  .sort((a, b) => {
+                    if (a.wasShown !== b.wasShown) return a.wasShown ? -1 : 1;
+                    return b.widthPx - a.widthPx;
+                  });
+                const shownThisFrame = new Set<string>();
 
-                for (const { area, screen, widthPx, lod } of named) {
+                for (const { area, screen, widthPx, lod, wasShown } of named) {
                   // Size the name to its own territory. Measured on screen
                   // rather than in graph units so it survives zoom.
                   const sizePx = getGraphAreaLabelSizePx(widthPx);
                   ctx.font = `italic ${sizePx}px Georgia, "Times New Roman", serif`;
                   // A name wider than the thing it names is a label for the
                   // whole canvas, not for that region — drop it rather than
-                  // write across its neighbours.
+                  // write across its neighbours. Same hysteresis as the size
+                  // gate above: a name already up is given slack before it is
+                  // taken away again.
                   const textWidth = ctx.measureText(area.name).width;
-                  if (textWidth > widthPx) continue;
+                  if (textWidth > widthPx * (wasShown ? 1.15 : 1)) continue;
                   const halfWidth = textWidth / 2;
                   const halfHeight = sizePx * 0.55;
                   const left = screen.x - halfWidth;
@@ -1728,7 +1751,9 @@ export function GraphView({
                   // handover from parent to child reads as one movement.
                   ctx.globalAlpha = baseAlpha * lod;
                   ctx.fillText(area.name, screen.x, screen.y);
+                  shownThisFrame.add(area.id);
                 }
+                areaLabelShownRef.current = shownThisFrame;
                 ctx.restore();
               }
 
