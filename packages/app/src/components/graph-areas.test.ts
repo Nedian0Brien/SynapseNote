@@ -86,6 +86,25 @@ describe('buildGraphAreas — colour', () => {
     expect(byName.get('api')?.colorIndex).toBe(byName.get('docs')?.colorIndex);
   });
 
+  test('siblings of a family get different shades, so a region divides visibly', () => {
+    // Same colour slot keeps them in the family; the shade is what stops the
+    // parent's territory reading as one flat block once you zoom into it.
+    const areas = areasFor([
+      'packages/app/A',
+      'packages/app/B',
+      'packages/core/C',
+      'packages/core/D',
+      'packages/server/E',
+      'packages/server/F',
+      'docs/X',
+      'docs/Y',
+    ]);
+    const children = areas.filter((area) => area.depth === 2);
+    expect(children.length).toBeGreaterThanOrEqual(3);
+    expect(new Set(children.map((area) => area.colorIndex)).size).toBe(1);
+    expect(new Set(children.map((area) => area.shadeIndex)).size).toBe(children.length);
+  });
+
   test('unrelated top-level regions still get different colours', () => {
     const byName = new Map(areasFor(nested).map((area) => [area.name, area]));
     expect(byName.get('docs')?.colorIndex).not.toBe(byName.get('notes')?.colorIndex);

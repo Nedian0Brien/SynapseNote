@@ -28,6 +28,13 @@ export interface GraphArea {
   memberIds: Set<string>;
   /** Index into the caller's palette; areas cycle through it. */
   colorIndex: number;
+  /**
+   * Which variation on `colorIndex` this region takes, so the regions of one
+   * family that are on screen together are told apart. Counted among the
+   * regions that share both its palette slot and its depth — the ones it is
+   * ever shown beside.
+   */
+  shadeIndex: number;
 }
 
 export interface GraphAreaBounds {
@@ -109,6 +116,7 @@ export function buildGraphAreas(
   // Sharing the ancestor's index means zooming into `packages` keeps you in
   // the `packages` colour at every depth.
   const topLevelIndexById = new Map<string, number>();
+  const shadeCountByKey = new Map<string, number>();
   let nextTopLevelIndex = 0;
   const topLevelIndexFor = (folderId: string): number => {
     const chain: string[] = [];
@@ -141,13 +149,25 @@ export function buildGraphAreas(
       // Shallowest first so each ancestor claims its palette slot before its
       // descendants ask to inherit it.
       .sort((a, b) => (depthById.get(a.id) ?? 0) - (depthById.get(b.id) ?? 0))
-      .map((node) => ({
-        id: node.id,
-        name: node.kind === 'folder' ? node.label : node.id,
-        depth: depthById.get(node.id) ?? 0,
-        memberIds: new Set([node.id, ...collectDescendants(node.id)]),
-        colorIndex: topLevelIndexFor(node.id),
-      }))
+      .map((node) => {
+        const depth = depthById.get(node.id) ?? 0;
+        const colorIndex = topLevelIndexFor(node.id);
+        // Siblings of a family are what you see side by side once you have
+        // zoomed into their parent; without a variation between them the
+        // parent's territory just becomes one flat block of its own colour
+        // instead of visibly dividing into its parts.
+        const shadeKey = `${colorIndex}\n${depth}`;
+        const shadeIndex = shadeCountByKey.get(shadeKey) ?? 0;
+        shadeCountByKey.set(shadeKey, shadeIndex + 1);
+        return {
+          id: node.id,
+          name: node.kind === 'folder' ? node.label : node.id,
+          depth,
+          memberIds: new Set([node.id, ...collectDescendants(node.id)]),
+          colorIndex,
+          shadeIndex,
+        };
+      })
   );
 }
 

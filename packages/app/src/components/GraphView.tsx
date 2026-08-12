@@ -30,7 +30,7 @@ import {
   getGraphAreaLodAlpha,
   getGraphAreaTintWeight,
 } from './graph-areas';
-import { GRAPH_COLOR_PAIRS } from './graph-colors';
+import { GRAPH_COLOR_PAIRS, shiftGraphColorShade } from './graph-colors';
 import { applyGraphFilters } from './graph-filter';
 import {
   buildGraphFolderNodes,
@@ -972,7 +972,10 @@ export function GraphView({
   }, []);
   const areaColor = (area: GraphArea): string => {
     const pair = GRAPH_COLOR_PAIRS[area.colorIndex % GRAPH_COLOR_PAIRS.length];
-    return isDark ? pair.dark : pair.light;
+    // Family from the ancestor, variation from the position among siblings —
+    // so zooming into a region divides it into its parts instead of showing
+    // one flat block of the parent's colour.
+    return shiftGraphColorShade(isDark ? pair.dark : pair.light, area.shadeIndex);
   };
 
   // Alpha applied to everything outside the hover highlight. Dimmed rather than
