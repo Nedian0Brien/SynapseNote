@@ -62,8 +62,12 @@ const MIN_HALF_HEIGHT = 25;
  * Deeper folders do not lose their pages — a region's members already include
  * all its descendants, so those pages simply belong to the deepest ANCESTOR
  * that is still a place.
+ *
+ * Two levels, not three: three still left this repo with fourteen depth-3
+ * regions to descend through, and the storeys a reader actually holds in their
+ * head are "which top-level area" and "which part of it".
  */
-export const GRAPH_AREA_MAX_DEPTH = 3;
+export const GRAPH_AREA_MAX_DEPTH = 2;
 
 /**
  * Regions for every directory that holds something, EXCEPT the ones with no
