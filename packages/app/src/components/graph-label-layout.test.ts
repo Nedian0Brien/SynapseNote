@@ -296,29 +296,29 @@ describe('planGraphLabels', () => {
 
   test('retries a name at the offset it already had before trying others', () => {
     // Nothing is in the way here, so a cold plan would use step 0. Told the
-    // name was at step 2 last frame, it stays at step 2 rather than snapping up.
+    // name was one row down last frame, it stays there rather than snapping up.
     const nodes: GraphLabelLayoutNode[] = [{ id: 'solo', label: 'Solo', x: 200, y: 100 }];
     const placements = plan({
       nodes,
       viewport: { width: 500, height: 400 },
-      previousOffsetStepByNodeId: new Map([['solo', 2]]),
+      previousOffsetStepByNodeId: new Map([['solo', 1]]),
     });
-    expect(placements[0]?.offsetStep).toBe(2);
+    expect(placements[0]?.offsetStep).toBe(1);
   });
 
   test('still places a name whose remembered offset no longer fits', () => {
-    // Close enough to the bottom edge that step 0 fits and step 3 does not.
-    const nodes: GraphLabelLayoutNode[] = [{ id: 'solo', label: 'Solo', x: 200, y: 340 }];
+    // Close enough to the bottom edge that step 0 fits and step 1 does not.
+    const nodes: GraphLabelLayoutNode[] = [{ id: 'solo', label: 'Solo', x: 200, y: 350 }];
     const placements = plan({
       nodes,
       viewport: { width: 500, height: 400 },
-      // Step 3 would run off the bottom edge.
-      previousOffsetStepByNodeId: new Map([['solo', 3]]),
+      // Step 1 would run off the bottom edge.
+      previousOffsetStepByNodeId: new Map([['solo', 1]]),
     });
     expect(placements).toHaveLength(1);
-    // The NEAREST row that fits, not the top of the list — a forced move is
-    // one row, so it reads as a nudge rather than a jump.
-    expect(placements[0]?.offsetStep).toBe(1);
+    // The NEAREST row that fits — a forced move is one row, so it reads as a
+    // nudge rather than a jump.
+    expect(placements[0]?.offsetStep).toBe(0);
   });
 
   test('lets a name pass over an ordinary dot, and only goes around a big one', () => {
@@ -328,7 +328,7 @@ describe('planGraphLabels', () => {
     // a hub or a folder is a large filled disc and would swallow it.
     const nodes: GraphLabelLayoutNode[] = [
       { id: 'subject', label: 'Subject', x: 200, y: 100 },
-      { id: 'neighbour', label: 'Neighbour', x: 200, y: 118 },
+      { id: 'neighbour', label: 'Neighbour', x: 200, y: 108 },
     ];
     const viewport = { width: 500, height: 400 };
 
@@ -340,9 +340,9 @@ describe('planGraphLabels', () => {
       activeDocName: 'subject',
       viewport,
       maxLabels: 1,
-      getNodeRadiusPx: (node) => (node.id === 'neighbour' ? 20 : 6),
+      getNodeRadiusPx: (node) => (node.id === 'neighbour' ? 12 : 6),
     });
-    expect(aroundDisc[0]?.offsetStep).toBeGreaterThan(0);
+    expect(aroundDisc[0]?.offsetStep).toBe(1);
   });
 
   test('drops a blocked name further down rather than putting it beside the node', () => {
@@ -350,7 +350,7 @@ describe('planGraphLabels', () => {
     // upper one's name wants to go.
     const nodes: GraphLabelLayoutNode[] = [
       { id: 'upper', label: 'Upper', x: 200, y: 100 },
-      { id: 'blocker', label: 'Blocker', x: 200, y: 118 },
+      { id: 'blocker', label: 'Blocker', x: 200, y: 108 },
     ];
 
     const placements = plan({
@@ -360,14 +360,15 @@ describe('planGraphLabels', () => {
       maxLabels: 1,
       // Only a node that draws much larger than a plain page pushes a name
       // around; a dot of the same size as everything else does not.
-      getNodeRadiusPx: (node) => (node.id === 'blocker' ? 20 : 6),
+      getNodeRadiusPx: (node) => (node.id === 'blocker' ? 12 : 6),
     });
 
     expect(placements).toHaveLength(1);
     expect(placements[0]?.nodeId).toBe('upper');
-    // Still directly under its node, horizontally centred — just lower.
+    // Still directly under its node, horizontally centred — just one row lower.
     expect(placements[0]?.textX).toBeCloseTo(200, 0);
-    expect(placements[0]?.rect.top).toBeGreaterThan(118);
+    expect(placements[0]?.offsetStep).toBe(1);
+    expect(placements[0]?.rect.top).toBeGreaterThan(108);
   });
 
   test('drops a name rather than moving it above the node to make it fit', () => {

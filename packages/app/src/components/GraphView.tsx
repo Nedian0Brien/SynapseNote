@@ -29,6 +29,7 @@ import {
   getGraphAreaFocusDepth,
   getGraphAreaLabelSizePx,
   getGraphAreaLodAlpha,
+  getGraphAreaNameFade,
   getGraphAreaSplatRadiusPx,
   getGraphAreaTintWeight,
 } from './graph-areas';
@@ -1723,7 +1724,13 @@ export function GraphView({
               for (const { area, lod } of sized) {
                 const tint = lod * getGraphAreaTintWeight(area.depth, focusDepth);
                 if (tint > 0) alphas.set(area.id, tint);
-                const name = lod * getGraphAreaDepthWeight(area.depth, focusDepth);
+                // Names also retire as the map goes inside them — past that
+                // point they are competing with the page names for the same
+                // pixels, and you already know where you are.
+                const name =
+                  lod *
+                  getGraphAreaDepthWeight(area.depth, focusDepth) *
+                  getGraphAreaNameFade(area.depth, focusDepth);
                 if (name > 0) nameAlphas.set(area.id, name);
               }
 

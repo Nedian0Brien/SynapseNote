@@ -149,10 +149,16 @@ const NODE_COLLISION_PADDING_PX = 2;
  */
 const BULKY_NODE_RADIUS_FACTOR = 1.35;
 const DISTANCE_EPSILON_PX = 0.001;
-/** How far below the node a blocked name may drop, and in what increments.
- * Four steps of a label-height reach ~3 rows down, which clears a typical
- * cluster edge; past that the name is too far from its node to read as its. */
-const BOTTOM_OFFSET_STEPS = 4;
+/**
+ * How far below the node a blocked name may drop, and in what increments.
+ *
+ * Two, not four. Four rows is ~54px, and once node circles are capped at 11px
+ * a name that far away has visibly stopped belonging to anything — the screen
+ * fills with `views-50 / page-18`-style captions floating in space with no dot
+ * above them. One row of slack recovers most of the names a strict rule would
+ * drop; three rows just relocates the problem.
+ */
+const BOTTOM_OFFSET_STEPS = 2;
 const BOTTOM_OFFSET_STEP_PX = LABEL_HEIGHT_PX;
 
 export function planGraphLabels(input: PlanGraphLabelsInput): GraphLabelPlacement[] {

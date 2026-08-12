@@ -7,6 +7,7 @@ import {
   getGraphAreaFocusDepth,
   getGraphAreaLabelSizePx,
   getGraphAreaLodAlpha,
+  getGraphAreaNameFade,
   getGraphAreaTintWeight,
 } from './graph-areas';
 import { buildGraphFolderNodes } from './graph-folders';
@@ -214,8 +215,13 @@ describe('getGraphAreaFocusDepth', () => {
     expect(getGraphAreaFocusDepth(tree(0.2))).toBe(0);
   });
 
-  test('stops at the deepest level rather than running past it', () => {
-    expect(getGraphAreaFocusDepth(tree(100))).toBe(2);
+  test('keeps counting past the deepest level, so "how far inside" stays readable', () => {
+    // There is no storey below the last one, but the region names need to know
+    // you have gone inside it — once you are reading pages, the names of the
+    // places holding them are noise.
+    const inside = getGraphAreaFocusDepth(tree(100)) ?? 0;
+    expect(inside).toBeGreaterThan(2);
+    expect(getGraphAreaFocusDepth(tree(400)) ?? 0).toBeGreaterThan(inside);
   });
 
   test('is null when nothing is on screen', () => {
@@ -265,6 +271,34 @@ describe('getGraphAreaDepthDensity', () => {
 
   test('caps, so a pathologically deep tree cannot reach full opacity', () => {
     expect(getGraphAreaDepthDensity(40)).toBeLessThanOrEqual(1.67);
+  });
+});
+
+describe('getGraphAreaNameFade', () => {
+  test('writes a name in full while you are still navigating between places', () => {
+    expect(getGraphAreaNameFade(2, 1.4)).toBe(1);
+    expect(getGraphAreaNameFade(2, 2)).toBe(1);
+  });
+
+  test('retires it as the map goes inside, the way the original did', () => {
+    // Once you are reading pages, the place names compete with the page names
+    // for the same pixels and you already know where you are.
+    expect(getGraphAreaNameFade(2, 2.5)).toBeLessThan(1);
+    expect(getGraphAreaNameFade(2, 2.5)).toBeGreaterThan(0);
+    expect(getGraphAreaNameFade(2, 3.2)).toBe(0);
+  });
+
+  test('falls monotonically, so there is no flick on the way out', () => {
+    let previous = 1;
+    for (let focus = 2; focus <= 4; focus += 0.05) {
+      const fade = getGraphAreaNameFade(2, focus);
+      expect(fade).toBeLessThanOrEqual(previous + 1e-9);
+      previous = fade;
+    }
+  });
+
+  test('writes nothing when there is no focus', () => {
+    expect(getGraphAreaNameFade(1, null)).toBe(0);
   });
 });
 

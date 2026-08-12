@@ -363,11 +363,22 @@ export function getGraphAreaFocusDepth(
       return near.depth + between * (far.depth - near.depth);
     }
   }
-  // Outside the range entirely: either everything is still too small (stay at
-  // the shallowest level) or you are inside the deepest one.
-  return levels[0].share < GRAPH_AREA_FOCUS_SHARE
-    ? levels[0].depth
-    : levels[levels.length - 1].depth;
+  // Everything still too small: stay at the shallowest level.
+  if (levels[0].share < GRAPH_AREA_FOCUS_SHARE) return levels[0].depth;
+
+  // Past the deepest level, keep counting rather than saturating. There is no
+  // storey below this one, but "how far INSIDE the last one am I" is still a
+  // real question and the region names need it: once you are reading pages,
+  // the names of the places holding them are noise, and the original dropped
+  // them entirely at that point. Extrapolated at the spacing of the last two
+  // levels so a zoom keeps moving this at the same rate it did on the way down.
+  const deepest = levels[levels.length - 1];
+  const previous = levels[levels.length - 2];
+  // Share FALLS as depth rises, so a level costs this much log-share.
+  const logSharePerLevel = Math.log(previous.share) - Math.log(deepest.share);
+  if (!(logSharePerLevel > 0)) return deepest.depth;
+  const beyond = (Math.log(deepest.share) - Math.log(GRAPH_AREA_FOCUS_SHARE)) / logSharePerLevel;
+  return deepest.depth + Math.max(0, beyond);
 }
 
 /**
@@ -477,6 +488,30 @@ export function getGraphAreaSplatRadiusPx(regionHalfWidthPx: number): number {
  * frame for a result you cannot see.
  */
 export const GRAPH_AREA_MAX_SPLATS = 180;
+
+/**
+ * How far past the deepest level you get before its name stops being written.
+ *
+ * The original dropped every region name once you were close enough to read
+ * pages (its `phase2UpperFade`, zoom 0.52 → 0.68) and kept only the tints. It
+ * is right: at that distance the place names are competing with the page names
+ * for the same pixels, and you already know where you are — you just came from
+ * there. Ours kept writing them, which is most of why a zoomed-in frame reads
+ * as two layers of type fighting each other.
+ */
+const GRAPH_AREA_NAME_RETIRE_LEVELS = 0.9;
+
+/**
+ * How much of its name a region still writes, given how deep the map has gone.
+ * Full while you are navigating between places, gone by the time you are
+ * reading what is in them.
+ */
+export function getGraphAreaNameFade(depth: number, focusDepth: number | null): number {
+  if (focusDepth === null) return 0;
+  const past = focusDepth - depth;
+  if (past <= 0) return 1;
+  return Math.max(0, 1 - past / GRAPH_AREA_NAME_RETIRE_LEVELS);
+}
 
 /** Below this on-screen width a region has no room for a name at all. */
 export const GRAPH_AREA_LABEL_MIN_REGION_PX = 56;
