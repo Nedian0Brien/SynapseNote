@@ -2,6 +2,8 @@ import { describe, expect, test } from 'bun:test';
 import {
   buildGraphAreas,
   getGraphAreaBounds,
+  getGraphAreaDepthWeight,
+  getGraphAreaFocusDepth,
   getGraphAreaLabelSizePx,
   getGraphAreaLodAlpha,
 } from './graph-areas';
@@ -112,21 +114,11 @@ describe('getGraphAreaLodAlpha', () => {
     expect(getGraphAreaLodAlpha(300, VIEWPORT)).toBe(1);
   });
 
-  test('fades a region out once it is larger than the screen', () => {
-    // At that point you are inside it — it is the ground, not a landmark.
-    expect(getGraphAreaLodAlpha(1000, VIEWPORT)).toBeLessThan(1);
-    expect(getGraphAreaLodAlpha(1600, VIEWPORT)).toBe(0);
-  });
-
-  test('hands over: a parent is leaving while its child is arriving', () => {
-    // The moment a child becomes readable the parent should be on its way out,
-    // so one name replaces another rather than both shouting.
-    const parentLeaving = getGraphAreaLodAlpha(1100, VIEWPORT);
-    const childArriving = getGraphAreaLodAlpha(170, VIEWPORT);
-    expect(parentLeaving).toBeGreaterThan(0);
-    expect(parentLeaving).toBeLessThan(1);
-    expect(childArriving).toBeGreaterThan(0);
-    expect(childArriving).toBeLessThan(1);
+  test('does NOT fade a region back out once it fills the screen', () => {
+    // Leaving is the level's business, not the region's — see the focus depth.
+    // Fading for both reasons at once left a blank trough mid-handover.
+    expect(getGraphAreaLodAlpha(1000, VIEWPORT)).toBe(1);
+    expect(getGraphAreaLodAlpha(1600, VIEWPORT)).toBe(1);
   });
 
   test('rises monotonically through the fade-in band', () => {
@@ -139,6 +131,72 @@ describe('getGraphAreaLodAlpha', () => {
 
   test('survives a zero-width canvas rather than dividing by it', () => {
     expect(getGraphAreaLodAlpha(300, 0)).toBe(0);
+  });
+});
+
+describe('getGraphAreaFocusDepth', () => {
+  // Shallow folders are the big ones, so share falls as depth rises. Zooming in
+  // multiplies every share at once.
+  const tree = (zoom: number) => [
+    { depth: 0, share: 0.25 * zoom },
+    { depth: 1, share: 0.1 * zoom },
+    { depth: 2, share: 0.04 * zoom },
+  ];
+
+  test('descends as you zoom in, one storey at a time', () => {
+    const shallow = getGraphAreaFocusDepth(tree(1)) ?? 0;
+    const middle = getGraphAreaFocusDepth(tree(5)) ?? 0;
+    const deep = getGraphAreaFocusDepth(tree(12)) ?? 0;
+    expect(shallow).toBeLessThan(middle);
+    expect(middle).toBeLessThan(deep);
+  });
+
+  test('moves continuously, so the handover has no cut in it', () => {
+    // A hair more zoom must never jump the focus by a whole level.
+    let previous = getGraphAreaFocusDepth(tree(1)) ?? 0;
+    for (let zoom = 1.1; zoom <= 14; zoom += 0.1) {
+      const next = getGraphAreaFocusDepth(tree(zoom)) ?? 0;
+      expect(next - previous).toBeLessThan(0.25);
+      expect(next).toBeGreaterThanOrEqual(previous);
+      previous = next;
+    }
+  });
+
+  test('stays at the shallowest level while everything is still too small', () => {
+    expect(getGraphAreaFocusDepth(tree(0.2))).toBe(0);
+  });
+
+  test('stops at the deepest level rather than running past it', () => {
+    expect(getGraphAreaFocusDepth(tree(100))).toBe(2);
+  });
+
+  test('is null when nothing is on screen', () => {
+    expect(getGraphAreaFocusDepth([])).toBeNull();
+    expect(getGraphAreaFocusDepth([{ depth: 0, share: 0 }])).toBeNull();
+  });
+});
+
+describe('getGraphAreaDepthWeight', () => {
+  test('gives the map to one level when the focus is squarely on it', () => {
+    expect(getGraphAreaDepthWeight(2, 2)).toBe(1);
+    expect(getGraphAreaDepthWeight(1, 2)).toBe(0);
+    expect(getGraphAreaDepthWeight(3, 2)).toBe(0);
+  });
+
+  test('splits it between two adjacent levels mid-handover', () => {
+    expect(getGraphAreaDepthWeight(1, 1.5)).toBeCloseTo(0.5, 5);
+    expect(getGraphAreaDepthWeight(2, 1.5)).toBeCloseTo(0.5, 5);
+  });
+
+  test('never lights three levels at once', () => {
+    for (const focus of [0, 0.3, 1, 1.7, 2, 2.4]) {
+      const lit = [0, 1, 2, 3, 4].filter((depth) => getGraphAreaDepthWeight(depth, focus) > 0);
+      expect(lit.length).toBeLessThanOrEqual(2);
+    }
+  });
+
+  test('draws nothing when there is no focus', () => {
+    expect(getGraphAreaDepthWeight(0, null)).toBe(0);
   });
 });
 

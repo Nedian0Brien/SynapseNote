@@ -23,9 +23,10 @@ import {
   type GraphArea,
   type GraphAreaBounds,
   getGraphAreaBounds,
+  getGraphAreaDepthWeight,
+  getGraphAreaFocusDepth,
   getGraphAreaLabelSizePx,
   getGraphAreaLodAlpha,
-  isGraphAreaEntered,
 } from './graph-areas';
 import { GRAPH_COLOR_PAIRS } from './graph-colors';
 import { applyGraphFilters } from './graph-filter';
@@ -259,6 +260,7 @@ function paintGraphAreaPartition({
   layer,
   areas,
   boundsById,
+  alphaById,
   colorOf,
   toScreen,
   globalScale,
@@ -269,6 +271,7 @@ function paintGraphAreaPartition({
   layer: HTMLCanvasElement;
   areas: readonly GraphArea[];
   boundsById: ReadonlyMap<string, GraphAreaBounds>;
+  alphaById: ReadonlyMap<string, number>;
   colorOf: (area: GraphArea) => string;
   toScreen: (x: number, y: number) => { x: number; y: number };
   globalScale: number;
@@ -299,7 +302,7 @@ function paintGraphAreaPartition({
     // still gives each pixel to the deepest region covering it, so a region
     // half faded in just lets its parent read through the gap — which is the
     // crossfade you want as one hands naming over to the other.
-    const lod = getGraphAreaLodAlpha(box.rx * globalScale * 2, width);
+    const lod = alphaById.get(area.id) ?? 0;
     if (lod <= 0) continue;
     const center = toScreen(box.cx, box.cy);
     layerCtx.globalAlpha = lod;
@@ -934,6 +937,16 @@ export function GraphView({
   const labelOffsetStepsRef = useRef<Map<string, number>>(new Map());
   // Which region names were written last frame, for the same reason.
   const areaLabelShownRef = useRef<Set<string>>(new Set());
+  // Each region's final opacity this frame: its own size-driven fade, times its
+  // depth's share of the map. Computed once in the pre-render hook and read by
+  // both the tint and the names, so the two can never disagree about which
+  // storey of the folder tree is currently on show.
+  const areaAlphaRef = useRef<Map<string, number>>(new Map());
+  // Which storey the map has descended to, from the same computation. A page's
+  // name is revealed when the map reaches the folder it lives in, so the
+  // territories and the node labels are driven by one number rather than two
+  // definitions of "we are inside this now" that could drift apart.
+  const focusDepthRef = useRef<number | null>(null);
   // Offscreen layer the territories are partitioned onto before being
   // composited in one pass — see `paintGraphAreaPartition`. Created in an
   // effect rather than lazily on first render: the React Compiler rejects
@@ -1644,6 +1657,32 @@ export function GraphView({
                 if (box) bounds.set(area.id, box);
               }
 
+              // One storey of the tree at a time: size says how present each
+              // region is, and the depth weighting then keeps whichever level
+              // best fits the screen, crossfading into the next as you descend.
+              const sized = areas.flatMap((area) => {
+                const box = bounds.get(area.id);
+                if (!box) return [];
+                const share = (box.rx * globalScale * 2) / Math.max(1, dimensions.width);
+                return [
+                  {
+                    area,
+                    share,
+                    lod: getGraphAreaLodAlpha(box.rx * globalScale * 2, dimensions.width),
+                  },
+                ];
+              });
+              const focusDepth = getGraphAreaFocusDepth(
+                sized.map(({ area, share }) => ({ depth: area.depth, share })),
+              );
+              focusDepthRef.current = focusDepth;
+              const alphas = areaAlphaRef.current;
+              alphas.clear();
+              for (const { area, lod } of sized) {
+                const weighted = lod * getGraphAreaDepthWeight(area.depth, focusDepth);
+                if (weighted > 0) alphas.set(area.id, weighted);
+              }
+
               const fg = fgRef.current;
               const layer = areaLayerRef.current;
               if (!fg || !layer || bounds.size === 0) return;
@@ -1652,6 +1691,7 @@ export function GraphView({
                 layer,
                 areas,
                 boundsById: bounds,
+                alphaById: alphas,
                 colorOf: areaColor,
                 toScreen: (x, y) => fg.graph2ScreenCoords(x, y),
                 globalScale,
@@ -1673,13 +1713,17 @@ export function GraphView({
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillStyle = palette.label;
-                ctx.globalAlpha = globalScale >= settings.display.textFadeThreshold ? 0.22 : 0.45;
+                // 0.45/0.22 was too faint to read — these names are the map's
+                // legend, not a watermark, and the original carried them at
+                // 0.82. They can afford the ink now that the level of detail
+                // above draws only the few regions that are a useful size,
+                // rather than every folder at once.
+                ctx.globalAlpha = globalScale >= settings.display.textFadeThreshold ? 0.42 : 0.78;
                 // Biggest region first, and a name is dropped when its box
                 // would land on one already written. Without this every folder
                 // writes at its own centroid and a dense project stacks a dozen
                 // of them into a smear — which is worse than no name at all.
                 const takenLabelBoxes: Array<[number, number, number, number]> = [];
-                const viewportPx = ctx.canvas.width / pxRatio;
                 const baseAlpha = ctx.globalAlpha;
                 // Largest on screen first, not shallowest: with the size-driven
                 // level of detail above, "which region is the landmark right
@@ -1705,7 +1749,7 @@ export function GraphView({
                       area,
                       screen,
                       widthPx,
-                      lod: getGraphAreaLodAlpha(widthPx, viewportPx),
+                      lod: areaAlphaRef.current.get(area.id) ?? 0,
                       wasShown: shownLastFrame.has(area.id),
                     };
                   })
@@ -1811,9 +1855,9 @@ export function GraphView({
                 isRegionEnteredForNode: (nodeId) => {
                   const area = innermostAreaByNodeId.get(nodeId);
                   if (!area) return null;
-                  const box = areaBoundsRef.current.get(area.id);
-                  if (!box) return null;
-                  return isGraphAreaEntered(box.rx * globalScale * 2, dimensions.width);
+                  const focusDepth = focusDepthRef.current;
+                  if (focusDepth === null) return null;
+                  return focusDepth >= area.depth;
                 },
               });
 

@@ -213,55 +213,100 @@ export const GRAPH_AREA_BLUR_PX = 30;
 export const GRAPH_AREA_LAYER_SCALE = 0.22;
 
 /**
- * How present a region is at the current zoom, from its own on-screen size.
+ * Whether a region is big enough on screen to be worth drawing at all.
  *
- * An atlas does not draw every boundary it knows at every scale — the world map
- * shows continents, and the districts only appear once you are close enough for
- * them to mean something. Drawing every folder at every zoom is what turned a
- * deep vault into a wash of overlapping tints: at the zoom that fits the map,
- * two hundred nested folders are all painting, and none of them is legible.
+ * Only the fade IN. A region below a tenth of the viewport is a handful of
+ * dots and its parent already says where you are; past that it ramps up and
+ * stays up.
  *
- * The original solved this with two zoom phases and a `depth >= 2` split, on
- * absolute zoom thresholds (0.35 / 0.60) tuned to its own coordinate scale. The
- * thresholds would not survive the port — ours is a different world size — and
- * depth is the wrong axis anyway: a shallow folder holding three pages is small
- * on screen and a deep one holding four hundred is not. Region SIZE is the
- * scale-free statement of the same idea, and it needs no tier at all: as you
- * zoom, a parent grows past the viewport and fades while its children grow into
- * the band and take over the naming.
- *
- * @param regionWidthPx the territory's on-screen width.
- * @param viewportPx    the canvas's on-screen width.
- * @returns 0 when the region should not be drawn, up to 1 when it is the thing
- *          you are looking at.
+ * There used to be a fade OUT here as well, for a region grown larger than the
+ * screen. That was the right idea at the wrong level: "you have zoomed past
+ * this" is a fact about the LEVEL you are on, not about one region, and
+ * `getGraphAreaFocusDepth` now owns it. Keeping both meant a region was fading
+ * for two reasons at once during a handover, and the product of the two left a
+ * trough in the middle of every transition where the map went blank.
  */
 export function getGraphAreaLodAlpha(regionWidthPx: number, viewportPx: number): number {
   if (viewportPx <= 0) return 0;
   const share = regionWidthPx / viewportPx;
-  // Too small to be a place — it is a handful of dots, and its parent already
-  // says where you are.
   if (share < 0.1) return 0;
   if (share < 0.18) return (share - 0.1) / 0.08;
-  if (share <= 0.85) return 1;
-  // Past the edges of the screen it stops being a landmark and becomes the
-  // ground you are standing on, which does not need colouring in.
-  if (share < 1.5) return 1 - (share - 0.85) / 0.65;
-  return 0;
+  return 1;
 }
 
 /**
- * Whether the viewer is INSIDE a region rather than looking at it.
- *
- * This is the same number the level of detail above starts fading a region out
- * at, and deliberately so: past it the territory has stopped being a landmark
- * you navigate by and become the ground you are standing on. That is exactly
- * the moment its contents should start naming themselves — so a region's name
- * fading out and its pages' names fading in are one event, and zooming in
- * walks down the folder tree a level at a time.
+ * The on-screen share a region wants to occupy to be the level you are reading.
+ * Sits in the middle of the band `getGraphAreaLodAlpha` calls fully present.
  */
-export function isGraphAreaEntered(regionWidthPx: number, viewportPx: number): boolean {
-  if (viewportPx <= 0) return false;
-  return regionWidthPx / viewportPx >= 0.85;
+export const GRAPH_AREA_FOCUS_SHARE = 0.5;
+
+/**
+ * Which storey of the folder tree the map is showing, as a continuous number.
+ *
+ * Regions shrink as you go deeper and grow as you zoom in, so "how big is a
+ * typical depth-2 region right now" is a monotone read-out of where you are in
+ * the tree. This finds the depth whose regions are currently closest to the
+ * size a region wants to be to be read, interpolating between the two it falls
+ * between — so the answer slides continuously from 0 toward 1 toward 2 as you
+ * descend, rather than jumping.
+ *
+ * Interpolated in log space because share scales multiplicatively with zoom:
+ * a constant zoom gesture should move this by a constant amount.
+ */
+export function getGraphAreaFocusDepth(
+  entries: ReadonlyArray<{ depth: number; share: number }>,
+): number | null {
+  const totals = new Map<number, { sum: number; count: number }>();
+  for (const entry of entries) {
+    if (!(entry.share > 0)) continue;
+    const bucket = totals.get(entry.depth) ?? { sum: 0, count: 0 };
+    bucket.sum += entry.share;
+    bucket.count += 1;
+    totals.set(entry.depth, bucket);
+  }
+  if (totals.size === 0) return null;
+
+  const levels = [...totals]
+    .map(([depth, bucket]) => ({ depth, share: bucket.sum / bucket.count }))
+    .sort((a, b) => a.depth - b.depth);
+  if (levels.length === 1) return levels[0].depth;
+
+  const target = Math.log(GRAPH_AREA_FOCUS_SHARE);
+  // Shallow regions are the big ones, so share falls as depth rises; walk out
+  // until the target is bracketed.
+  for (let index = 0; index < levels.length - 1; index += 1) {
+    const near = levels[index];
+    const far = levels[index + 1];
+    const nearLog = Math.log(near.share);
+    const farLog = Math.log(far.share);
+    const between = (target - nearLog) / (farLog - nearLog);
+    if (between >= 0 && between <= 1) {
+      return near.depth + between * (far.depth - near.depth);
+    }
+  }
+  // Outside the range entirely: either everything is still too small (stay at
+  // the shallowest level) or you are inside the deepest one.
+  return levels[0].share < GRAPH_AREA_FOCUS_SHARE
+    ? levels[0].depth
+    : levels[levels.length - 1].depth;
+}
+
+/**
+ * How much of the map each depth gets, given where between the storeys you are.
+ *
+ * A triangular kernel one level wide: at exactly depth 2 that level has the map
+ * to itself, and halfway between 1 and 2 they hold half each. Never more than
+ * two levels at once, and every weight moves continuously with the zoom, so
+ * descending is a crossfade rather than a cut.
+ *
+ * The alternative — pick the best-fitting depth and give the runner-up a share
+ * proportional to how close it is — reads the same while nothing changes but
+ * jumps the moment the runner-up's IDENTITY changes, which is exactly at the
+ * handover.
+ */
+export function getGraphAreaDepthWeight(depth: number, focusDepth: number | null): number {
+  if (focusDepth === null) return 0;
+  return Math.max(0, 1 - Math.abs(depth - focusDepth));
 }
 
 /** Below this on-screen width a region has no room for a name at all. */
