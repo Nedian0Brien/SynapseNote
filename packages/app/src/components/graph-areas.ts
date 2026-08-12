@@ -457,47 +457,13 @@ export function getGraphAreaTintWeight(depth: number, focusDepth: number | null)
 }
 
 /**
- * The territory is painted by stamping a soft disc at every member, not by
- * drawing one ellipse over the lot.
- *
- * An ellipse is a claim about a shape the members do not necessarily have. A
- * folder whose pages have been pulled into a crescent by their links gets a
- * fat oval covering a lot of ground that belongs to its neighbours, and the
- * neighbours get one back — which is most of why the tints read as a wash
- * rather than as a map.
- *
- * Stamping each member and blurring the result gives the same answer a Voronoi
- * partition would, without any of its costs: the boundary lands where the
- * density changes, which is roughly the equidistant line between two clusters.
- * Unlike a Voronoi it follows the members' ACTUAL positions (a crescent folder
- * gets a crescent), it does not tile empty canvas out to infinity, it keeps
- * nesting intact, and it cannot jump discontinuously when a region appears —
- * all three of which would have to be engineered around otherwise.
- *
- * @param regionHalfWidthPx the region's on-screen half-width, which stands in
- *        for how far apart its members are at this zoom.
- */
-export function getGraphAreaSplatRadiusPx(regionHalfWidthPx: number): number {
-  return Math.max(26, Math.min(regionHalfWidthPx * 0.42, 150));
-}
-
-/**
- * Cap on discs stamped per region. Past this the members are resampled evenly
- * across the set — with a blur this wide the field is indistinguishable, and
- * the largest region here holds 681 members, which is a lot to stamp every
- * frame for a result you cannot see.
- */
-export const GRAPH_AREA_MAX_SPLATS = 180;
-
-/**
  * How far past the deepest level you get before its name stops being written.
  *
  * The original dropped every region name once you were close enough to read
  * pages (its `phase2UpperFade`, zoom 0.52 → 0.68) and kept only the tints. It
  * is right: at that distance the place names are competing with the page names
  * for the same pixels, and you already know where you are — you just came from
- * there. Ours kept writing them, which is most of why a zoomed-in frame reads
- * as two layers of type fighting each other.
+ * there.
  */
 const GRAPH_AREA_NAME_RETIRE_LEVELS = 0.9;
 

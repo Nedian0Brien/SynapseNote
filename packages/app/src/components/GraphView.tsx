@@ -19,7 +19,6 @@ import {
   GRAPH_AREA_BLUR_PX,
   GRAPH_AREA_LABEL_MIN_REGION_PX,
   GRAPH_AREA_LAYER_SCALE,
-  GRAPH_AREA_MAX_SPLATS,
   GRAPH_AREA_TINT_ALPHA,
   type GraphArea,
   type GraphAreaBounds,
@@ -30,7 +29,6 @@ import {
   getGraphAreaLabelSizePx,
   getGraphAreaLodAlpha,
   getGraphAreaNameFade,
-  getGraphAreaSplatRadiusPx,
   getGraphAreaTintWeight,
 } from './graph-areas';
 import { GRAPH_COLOR_PAIRS, shiftGraphColorShade } from './graph-colors';
@@ -267,7 +265,6 @@ function paintGraphAreaPartition({
   areas,
   boundsById,
   alphaById,
-  positionById,
   colorOf,
   toScreen,
   globalScale,
@@ -279,7 +276,6 @@ function paintGraphAreaPartition({
   areas: readonly GraphArea[];
   boundsById: ReadonlyMap<string, GraphAreaBounds>;
   alphaById: ReadonlyMap<string, number>;
-  positionById: ReadonlyMap<string, { x?: number; y?: number }>;
   colorOf: (area: GraphArea) => string;
   toScreen: (x: number, y: number) => { x: number; y: number };
   globalScale: number;
@@ -318,37 +314,17 @@ function paintGraphAreaPartition({
     // remainder — which is how the original made a child sit inside its parent.
     layerCtx.globalAlpha = Math.min(1, lod * getGraphAreaDepthDensity(area.depth));
     layerCtx.fillStyle = colorOf(area);
-
-    // One soft disc per member rather than one ellipse over the lot, so the
-    // territory takes the shape the members actually have. Resampled evenly
-    // once a region is larger than the splat budget.
-    const memberIds = [...area.memberIds];
-    const stride = Math.max(1, Math.ceil(memberIds.length / GRAPH_AREA_MAX_SPLATS));
-    const splatPx = getGraphAreaSplatRadiusPx(box.rx * globalScale);
+    const center = toScreen(box.cx, box.cy);
     layerCtx.beginPath();
-    let stamped = 0;
-    for (let index = 0; index < memberIds.length; index += stride) {
-      const point = positionById.get(memberIds[index]);
-      if (typeof point?.x !== 'number' || typeof point?.y !== 'number') continue;
-      const at = toScreen(point.x, point.y);
-      layerCtx.moveTo(at.x + splatPx, at.y);
-      layerCtx.arc(at.x, at.y, splatPx, 0, 2 * Math.PI);
-      stamped += 1;
-    }
-    // A region whose members the simulation has not placed yet still gets its
-    // bounds, so it does not blink out on the first frames.
-    if (stamped === 0) {
-      const center = toScreen(box.cx, box.cy);
-      layerCtx.ellipse(
-        center.x,
-        center.y,
-        Math.max(1, box.rx * globalScale),
-        Math.max(1, box.ry * globalScale),
-        0,
-        0,
-        2 * Math.PI,
-      );
-    }
+    layerCtx.ellipse(
+      center.x,
+      center.y,
+      Math.max(1, box.rx * globalScale),
+      Math.max(1, box.ry * globalScale),
+      0,
+      0,
+      2 * Math.PI,
+    );
     layerCtx.fill();
   }
   layerCtx.globalAlpha = 1;
@@ -1743,7 +1719,6 @@ export function GraphView({
                 areas,
                 boundsById: bounds,
                 alphaById: alphas,
-                positionById,
                 colorOf: areaColor,
                 toScreen: (x, y) => fg.graph2ScreenCoords(x, y),
                 globalScale,
