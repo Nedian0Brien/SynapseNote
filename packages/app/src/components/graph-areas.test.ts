@@ -70,6 +70,33 @@ describe('buildGraphAreas', () => {
   });
 });
 
+describe('buildGraphAreas — colour', () => {
+  // Two top-level folders, so the project root exists and `docs` is itself a
+  // region rather than the outermost thing; `api` then nests inside it.
+  const nested = ['docs/api/A', 'docs/api/B', 'docs/Intro', 'notes/N', 'notes/M'];
+
+  test('a nested region takes its colour from the region it sits inside', () => {
+    // Only one storey is drawn at a time, so an index per folder repainted the
+    // whole map every time you descended a level. A province is a shade of its
+    // country.
+    const byName = new Map(areasFor(nested).map((area) => [area.name, area]));
+    expect(byName.get('api')?.depth).toBe(2);
+    expect(byName.get('api')?.colorIndex).toBe(byName.get('docs')?.colorIndex);
+  });
+
+  test('unrelated top-level regions still get different colours', () => {
+    const byName = new Map(areasFor(nested).map((area) => [area.name, area]));
+    expect(byName.get('docs')?.colorIndex).not.toBe(byName.get('notes')?.colorIndex);
+  });
+
+  test('the whole of a deep chain shares one colour', () => {
+    const indices = new Set(
+      areasFor(['a/b/c/One', 'a/b/c/Two', 'a/b/Other', 'a/Top']).map((area) => area.colorIndex),
+    );
+    expect(indices.size).toBe(1);
+  });
+});
+
 describe('getGraphAreaBounds', () => {
   const [area] = areasFor(['docs/A', 'docs/B', 'notes/N']).filter((a) => a.name === 'docs');
 
