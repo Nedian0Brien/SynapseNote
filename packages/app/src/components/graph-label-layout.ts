@@ -337,15 +337,20 @@ function placeCandidate(
   // need them. Stepping further down keeps the one relationship that matters
   // (the name hangs beneath its node, never beside it) while letting the label
   // clear what is in the way.
-  // The step it already had comes first, so a name that is still fine where it
-  // is does not hop to a different row because something else moved.
-  const order = [
-    candidate.previousOffsetStep,
-    ...Array.from({ length: BOTTOM_OFFSET_STEPS }, (_, step) => step),
-  ];
+  // Searched outward from the row it already had, so a name that is still fine
+  // where it is never moves, and one that is forced to move goes to the
+  // adjacent row rather than snapping back to the top of the list. Falling
+  // straight back to row 0 was a jump of the node's whole diameter, and at a
+  // zoom where several labels are jostling it happened often enough to look
+  // like the labels were swimming.
+  const previous = candidate.previousOffsetStep;
+  const order: number[] = [previous];
+  for (let distance = 1; distance < BOTTOM_OFFSET_STEPS; distance += 1) {
+    order.push(previous + distance, previous - distance);
+  }
 
   for (const step of order) {
-    if (step >= BOTTOM_OFFSET_STEPS) continue;
+    if (step < 0 || step >= BOTTOM_OFFSET_STEPS) continue;
     const placement = buildPlacement(candidate, 'bottom', priority, step);
     if (!isRectWithinViewport(placement.rect, viewport)) continue;
     if (acceptedRects.some((acceptedRect) => rectsIntersect(acceptedRect, placement.rect))) {

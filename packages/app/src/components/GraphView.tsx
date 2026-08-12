@@ -62,6 +62,7 @@ import {
   buildGraphDegreeMap,
   buildGraphLinkSignature,
   buildGraphNodeSignature,
+  capGraphNodeRadius,
   type GraphData,
   type GraphDocClickBehavior,
   type GraphDocDisplayState,
@@ -1510,8 +1511,10 @@ export function GraphView({
               });
               const degree = degreeByNodeId.get(node.id) ?? 0;
               const style = getGraphNodeStyle({ node, degree, displayState, visualState: state });
-              const radius =
-                getGraphNodeCanvasRadius(state) * settings.display.nodeSize * style.scale;
+              const radius = capGraphNodeRadius(
+                getGraphNodeCanvasRadius(state) * settings.display.nodeSize * style.scale,
+                globalScale,
+              );
 
               // A user-defined group is an explicit instruction and outranks the
               // weight scale; the auto-assigned cluster hue does NOT, because a
@@ -1839,14 +1842,16 @@ export function GraphView({
                     node,
                     navigationIntentByNodeId,
                   });
+                  // Same cap as the drawn circle, so the name sits just under
+                  // the disc it belongs to and stops sliding once the disc
+                  // stops growing.
                   return (
-                    getGraphNodeInteractiveRadius({
-                      state,
-                      displayState,
+                    capGraphNodeRadius(
+                      getGraphNodeInteractiveRadius({ state, displayState, globalScale }) *
+                        settings.display.nodeSize *
+                        drawnNodeScale(node),
                       globalScale,
-                    }) *
-                      settings.display.nodeSize *
-                      drawnNodeScale(node) *
+                    ) *
                       globalScale +
                     4
                   );

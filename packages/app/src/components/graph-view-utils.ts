@@ -382,6 +382,27 @@ export function screenOffsetInGraphUnits(
   return Math.min(pixels / Math.max(globalScale, 0.01), baseRadius * 0.6);
 }
 
+/**
+ * The largest a node is allowed to draw on screen, whatever the zoom.
+ *
+ * Node radii live in graph coordinates, so without a cap they scale with the
+ * view: a page that is a 4px dot at the zoom that fits the map becomes a 50px
+ * disc when you are reading it. That is odd on its own, and it drags the node's
+ * name with it — the label is anchored to the node's edge, so as the disc
+ * inflates the name slides away from it, continuously, for the whole length of
+ * a zoom gesture. Capping the drawn size holds both still.
+ *
+ * Only bites when you are zoomed in past the point where a node would exceed
+ * it; zoomed out, everything is well under and nothing changes.
+ */
+export const MAX_GRAPH_NODE_SCREEN_RADIUS_PX = 11;
+
+/** Clamp a graph-unit radius so it draws no larger than the screen cap. */
+export function capGraphNodeRadius(radius: number, globalScale: number): number {
+  if (globalScale <= 0) return radius;
+  return Math.min(radius, MAX_GRAPH_NODE_SCREEN_RADIUS_PX / globalScale);
+}
+
 export function getGraphNodePointerRadius(
   state: GraphNodeVisualState,
   globalScale: number,

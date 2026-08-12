@@ -2,12 +2,14 @@ import { describe, expect, test } from 'bun:test';
 
 import {
   buildGraphLinkSignature,
+  capGraphNodeRadius,
   type GraphDocDisplayState,
   getGraphNodeCanvasRadius,
   getGraphNodePointerRadius,
   getGraphNodeTooltipLabel,
   getGraphNodeVisualState,
   getHashForGraphDocSelection,
+  MAX_GRAPH_NODE_SCREEN_RADIUS_PX,
   reconcileGraphData,
   resolveGraphNodeClickAction,
 } from './graph-view-utils';
@@ -601,5 +603,28 @@ describe('buildGraphLinkSignature', () => {
         },
       ] as unknown as Parameters<typeof buildGraphLinkSignature>[0]),
     ).toBe('notes/alpha>notes/beta,notes/beta>notes/gamma');
+  });
+});
+
+describe('capGraphNodeRadius', () => {
+  test('leaves a node alone while it is comfortably under the cap', () => {
+    // Zoomed out, every node is a few pixels across and nothing is clamped.
+    expect(capGraphNodeRadius(5, 0.8)).toBe(5);
+  });
+
+  test('stops a node growing without bound as you zoom in', () => {
+    // 5 graph units at 10x would draw a 50px disc. It also drags the node's
+    // name with it, since the label is anchored to the node's edge.
+    expect(capGraphNodeRadius(5, 10) * 10).toBeLessThanOrEqual(
+      MAX_GRAPH_NODE_SCREEN_RADIUS_PX + 0.001,
+    );
+  });
+
+  test('holds the drawn size steady once capped, so the label stops sliding', () => {
+    expect(capGraphNodeRadius(5, 10) * 10).toBeCloseTo(capGraphNodeRadius(5, 20) * 20, 5);
+  });
+
+  test('survives a zero scale rather than dividing by it', () => {
+    expect(capGraphNodeRadius(5, 0)).toBe(5);
   });
 });

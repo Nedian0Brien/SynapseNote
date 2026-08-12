@@ -312,11 +312,13 @@ describe('planGraphLabels', () => {
     const placements = plan({
       nodes,
       viewport: { width: 500, height: 400 },
-      // Step 3 would run off the bottom edge; it should fall back to one that fits.
+      // Step 3 would run off the bottom edge.
       previousOffsetStepByNodeId: new Map([['solo', 3]]),
     });
     expect(placements).toHaveLength(1);
-    expect(placements[0]?.offsetStep).toBe(0);
+    // The NEAREST row that fits, not the top of the list — a forced move is
+    // one row, so it reads as a nudge rather than a jump.
+    expect(placements[0]?.offsetStep).toBe(1);
   });
 
   test('lets a name pass over an ordinary dot, and only goes around a big one', () => {
