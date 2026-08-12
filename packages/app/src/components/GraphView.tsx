@@ -321,7 +321,7 @@ function paintGraphAreaPartition({
       center.y,
       Math.max(1, box.rx * globalScale),
       Math.max(1, box.ry * globalScale),
-      0,
+      box.rotation,
       0,
       2 * Math.PI,
     );

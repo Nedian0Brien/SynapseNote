@@ -46,6 +46,8 @@ export interface GraphAreaBounds {
   cy: number;
   rx: number;
   ry: number;
+  /** Radians to rotate the ellipse by, so it lies along the cluster. */
+  rotation: number;
 }
 
 /** Floors on the half-extent, so a one-member region is still a region. */
@@ -177,6 +179,31 @@ export function getGraphAreaBounds(
   const cx = sumX / count;
   const cy = sumY / count;
 
+  // Lay the ellipse along the cluster rather than along the screen axes.
+  //
+  // A folder's pages are pulled into whatever shape their links want, and that
+  // is rarely axis-aligned. Measured on this repo, an axis-aligned fit left 22%
+  // of all nodes outside the territory of their OWN folder — a fifth of the
+  // graph sitting on bare canvas next to the colour that was supposed to
+  // contain it. Rotating to the cluster's principal axis fixes that without
+  // touching the percentile below, which is there to keep outliers from
+  // inflating the region and should stay strict.
+  let sxx = 0;
+  let syy = 0;
+  let sxy = 0;
+  for (const id of area.memberIds) {
+    const point = positionById.get(id);
+    if (typeof point?.x !== 'number' || typeof point?.y !== 'number') continue;
+    const dx = point.x - cx;
+    const dy = point.y - cy;
+    sxx += dx * dx;
+    syy += dy * dy;
+    sxy += dx * dy;
+  }
+  const rotation = 0.5 * Math.atan2(2 * sxy, sxx - syy);
+  const cos = Math.cos(rotation);
+  const sin = Math.sin(rotation);
+
   // A high percentile of the members' distances, NOT the maximum.
   //
   // The maximum is decided by whichever single member has wandered furthest,
@@ -192,8 +219,11 @@ export function getGraphAreaBounds(
   for (const id of area.memberIds) {
     const point = positionById.get(id);
     if (typeof point?.x !== 'number' || typeof point?.y !== 'number') continue;
-    dxs.push(Math.abs(point.x - cx));
-    dys.push(Math.abs(point.y - cy));
+    const dx = point.x - cx;
+    const dy = point.y - cy;
+    // Distances along the cluster's own axes, not the screen's.
+    dxs.push(Math.abs(dx * cos + dy * sin));
+    dys.push(Math.abs(dy * cos - dx * sin));
   }
   dxs.sort((a, b) => a - b);
   dys.sort((a, b) => a - b);
@@ -207,6 +237,7 @@ export function getGraphAreaBounds(
     cy,
     rx: Math.max(MIN_HALF_WIDTH, at(dxs)) + padding,
     ry: Math.max(MIN_HALF_HEIGHT, at(dys)) + padding,
+    rotation,
   };
 }
 

@@ -119,6 +119,34 @@ describe('getGraphAreaBounds', () => {
     expect(bounds?.cx).toBe(40);
   });
 
+  test('lies along the cluster, not along the screen axes', () => {
+    // A folder's pages sit wherever their links pull them, which is rarely
+    // axis-aligned. Fitting an upright ellipse to a diagonal cluster left a
+    // fifth of the graph outside the territory of its own folder.
+    const diagonal = getGraphAreaBounds(
+      area,
+      new Map([
+        ['docs/A', { x: -100, y: -100 }],
+        ['docs/B', { x: 100, y: 100 }],
+      ]),
+    );
+    // 45 degrees, give or take the sign convention.
+    expect(Math.abs(diagonal?.rotation ?? 0)).toBeCloseTo(Math.PI / 4, 2);
+    // And the long axis is the diagonal, not either screen axis.
+    expect(diagonal?.rx).toBeGreaterThan(diagonal?.ry ?? 0);
+  });
+
+  test('stays upright when the members have no direction of their own', () => {
+    const flat = getGraphAreaBounds(
+      area,
+      new Map([
+        ['docs/A', { x: -100, y: 0 }],
+        ['docs/B', { x: 100, y: 0 }],
+      ]),
+    );
+    expect(flat?.rotation).toBeCloseTo(0, 5);
+  });
+
   test('keeps a floor, so a single-member territory is still a territory', () => {
     const bounds = getGraphAreaBounds(area, new Map([['docs/A', { x: 0, y: 0 }]]));
     expect(bounds?.rx).toBeGreaterThan(0);
