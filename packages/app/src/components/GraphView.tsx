@@ -23,6 +23,7 @@ import {
   type GraphArea,
   type GraphAreaBounds,
   getGraphAreaBounds,
+  getGraphAreaDepthDensity,
   getGraphAreaDepthWeight,
   getGraphAreaFocusDepth,
   getGraphAreaLabelSizePx,
@@ -307,7 +308,11 @@ function paintGraphAreaPartition({
     const lod = alphaById.get(area.id) ?? 0;
     if (lod <= 0) continue;
     const center = toScreen(box.cx, box.cy);
-    layerCtx.globalAlpha = lod;
+    // Deeper regions carry more ink, so nesting reads as density and not only
+    // as position. `destination-over` gives the pixel to the deepest region
+    // first, and the denser it is the less of its parent shows through the
+    // remainder — which is how the original made a child sit inside its parent.
+    layerCtx.globalAlpha = Math.min(1, lod * getGraphAreaDepthDensity(area.depth));
     layerCtx.beginPath();
     layerCtx.ellipse(
       center.x,

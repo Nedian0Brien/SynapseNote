@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import {
   buildGraphAreas,
   getGraphAreaBounds,
+  getGraphAreaDepthDensity,
   getGraphAreaDepthWeight,
   getGraphAreaFocusDepth,
   getGraphAreaLabelSizePx,
@@ -225,6 +226,26 @@ describe('getGraphAreaDepthWeight', () => {
 
   test('draws nothing when there is no focus', () => {
     expect(getGraphAreaDepthWeight(0, null)).toBe(0);
+  });
+});
+
+describe('getGraphAreaDepthDensity', () => {
+  test('a top-level region is the reference', () => {
+    expect(getGraphAreaDepthDensity(1)).toBe(1);
+  });
+
+  test("reproduces the original's ratios for the first three depths", () => {
+    // It filled at 0.10 + depth * 0.02, so 0.12 / 0.14 / 0.16 — 1 : 1.17 : 1.33.
+    expect(getGraphAreaDepthDensity(2)).toBeCloseTo(0.14 / 0.12, 2);
+    expect(getGraphAreaDepthDensity(3)).toBeCloseTo(0.16 / 0.12, 2);
+  });
+
+  test('nesting reads as ink, so a child is denser than its parent', () => {
+    expect(getGraphAreaDepthDensity(4)).toBeGreaterThan(getGraphAreaDepthDensity(3));
+  });
+
+  test('caps, so a pathologically deep tree cannot reach full opacity', () => {
+    expect(getGraphAreaDepthDensity(40)).toBeLessThanOrEqual(1.67);
   });
 });
 

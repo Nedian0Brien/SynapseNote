@@ -345,6 +345,36 @@ export function getGraphAreaDepthWeight(depth: number, focusDepth: number | null
 }
 
 /**
+ * How much denser a region draws for each level of nesting.
+ *
+ * The original filled each territory at `0.10 + depth * 0.02` — depth was
+ * legible as ink, not just as position, so a nested region read as sitting
+ * INSIDE its parent rather than merely next to it. Our regions all drew at one
+ * alpha, which threw that cue away.
+ *
+ * Expressed as a multiplier rather than an absolute alpha because our layer
+ * carries its opacity once at composite time (see `GRAPH_AREA_TINT_ALPHA`)
+ * instead of per shape. 0.167 per level reproduces the original's ratios:
+ * its 0.12 / 0.14 / 0.16 for the first three depths are 1 : 1.17 : 1.33.
+ */
+const GRAPH_AREA_DEPTH_DENSITY_STEP = 0.167;
+
+/**
+ * Capped so a pathologically deep tree cannot drive one region to full
+ * opacity. The original was uncapped but never met a vault deep enough to
+ * matter; this bottoms out around the density it reached at depth 5.
+ */
+const GRAPH_AREA_MAX_DEPTH_DENSITY = 1.67;
+
+/** Ink for a region at this nesting depth, relative to a top-level one. */
+export function getGraphAreaDepthDensity(depth: number): number {
+  return Math.min(
+    GRAPH_AREA_MAX_DEPTH_DENSITY,
+    1 + Math.max(0, depth - 1) * GRAPH_AREA_DEPTH_DENSITY_STEP,
+  );
+}
+
+/**
  * What a level you have already descended past keeps, rather than going dark.
  *
  * Ported from the original, whose shallow tint bottomed out at 0.4 and never
