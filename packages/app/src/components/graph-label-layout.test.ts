@@ -20,6 +20,7 @@ function plan({
   leafLabelThreshold = 1.8,
   previousOffsetStepByNodeId,
   isRegionEnteredForNode,
+  getNodeRadiusPx = () => 6,
 }: {
   nodes: GraphLabelLayoutNode[];
   links?: GraphLabelLayoutLink[];
@@ -31,6 +32,7 @@ function plan({
   leafLabelThreshold?: number;
   previousOffsetStepByNodeId?: ReadonlyMap<string, number>;
   isRegionEnteredForNode?: (nodeId: string) => boolean | null;
+  getNodeRadiusPx?: (node: GraphLabelLayoutNode) => number;
 }) {
   return planGraphLabels({
     nodes,
@@ -46,7 +48,7 @@ function plan({
     labelDescriptors: buildGraphLabelDescriptors(nodes),
     measureTextWidthPx: (text) => text.length * 6,
     projectToScreen: (x, y) => ({ x, y }),
-    getNodeRadiusPx: () => 6,
+    getNodeRadiusPx,
   });
 }
 
@@ -317,6 +319,30 @@ describe('planGraphLabels', () => {
     expect(placements[0]?.offsetStep).toBe(0);
   });
 
+  test('lets a name pass over an ordinary dot, and only goes around a big one', () => {
+    // Clearing EVERY node circle threw away ~40% of the names that were
+    // otherwise ready, in the dense places where they are worth most. An
+    // ordinary page is a small hollow dot and a name near one still reads;
+    // a hub or a folder is a large filled disc and would swallow it.
+    const nodes: GraphLabelLayoutNode[] = [
+      { id: 'subject', label: 'Subject', x: 200, y: 100 },
+      { id: 'neighbour', label: 'Neighbour', x: 200, y: 118 },
+    ];
+    const viewport = { width: 500, height: 400 };
+
+    const overDot = plan({ nodes, activeDocName: 'subject', viewport, maxLabels: 1 });
+    expect(overDot[0]?.offsetStep).toBe(0);
+
+    const aroundDisc = plan({
+      nodes,
+      activeDocName: 'subject',
+      viewport,
+      maxLabels: 1,
+      getNodeRadiusPx: (node) => (node.id === 'neighbour' ? 20 : 6),
+    });
+    expect(aroundDisc[0]?.offsetStep).toBeGreaterThan(0);
+  });
+
   test('drops a blocked name further down rather than putting it beside the node', () => {
     // Two nodes stacked close together: the lower one sits exactly where the
     // upper one's name wants to go.
@@ -330,6 +356,9 @@ describe('planGraphLabels', () => {
       activeDocName: 'upper',
       viewport: { width: 500, height: 400 },
       maxLabels: 1,
+      // Only a node that draws much larger than a plain page pushes a name
+      // around; a dot of the same size as everything else does not.
+      getNodeRadiusPx: (node) => (node.id === 'blocker' ? 20 : 6),
     });
 
     expect(placements).toHaveLength(1);
@@ -396,6 +425,7 @@ describe('planGraphLabels', () => {
       activeDocName: 'active',
       viewport: { width: 200, height: 200 },
       maxLabels: 1,
+      getNodeRadiusPx: (node) => (node.id === 'active' ? 6 : 20),
     });
 
     expect(placements.some((placement) => placement.nodeId === 'active')).toBeFalse();

@@ -130,6 +130,24 @@ const LABEL_PADDING_X_PX = 6;
 const LABEL_PADDING_Y_PX = 4;
 const LABEL_HEIGHT_PX = LABEL_FONT_SIZE_PX + LABEL_PADDING_Y_PX * 2;
 const NODE_COLLISION_PADDING_PX = 2;
+/**
+ * How much bigger than a plain page a node must draw before a name will go
+ * around it rather than across it.
+ *
+ * The rule used to be "clear EVERY node circle", which at a normal working
+ * zoom threw away about 40% of the names that were otherwise ready — and threw
+ * them away in the dense places where you most want them. It is also the wrong
+ * instinct: an ordinary page is a small hollow dot, and a name passing near one
+ * stays perfectly readable. What actually swallows text is a hub or a folder,
+ * which draw as large filled discs.
+ *
+ * Measured against the smallest node on screen rather than in absolute pixels,
+ * because every radius here scales with the zoom — an absolute threshold is
+ * either every node or none of them depending on how far in you are. Plain
+ * pages all share the base radius, so they never qualify; the sizes that come
+ * from `getGraphNodeStyle`'s degree scaling do.
+ */
+const BULKY_NODE_RADIUS_FACTOR = 1.35;
 const DISTANCE_EPSILON_PX = 0.001;
 /** How far below the node a blocked name may drop, and in what increments.
  * Four steps of a label-height reach ~3 rows down, which clears a typical
@@ -229,6 +247,14 @@ export function planGraphLabels(input: PlanGraphLabelsInput): GraphLabelPlacemen
 
   const placements: GraphLabelPlacement[] = [];
   const acceptedRects: LabelRect[] = [];
+  // Calibrated per frame off the smallest node actually on screen.
+  const smallestRadiusPx = positionedNodes.reduce(
+    (smallest, positionedNode) => Math.min(smallest, positionedNode.radiusPx),
+    Number.POSITIVE_INFINITY,
+  );
+  const bulkyRadiusPx = Number.isFinite(smallestRadiusPx)
+    ? smallestRadiusPx * BULKY_NODE_RADIUS_FACTOR
+    : Number.POSITIVE_INFINITY;
 
   for (let index = 0; index < candidates.length; index += 1) {
     if (placements.length >= maxLabels) {
@@ -241,6 +267,7 @@ export function planGraphLabels(input: PlanGraphLabelsInput): GraphLabelPlacemen
       viewport,
       acceptedRects,
       positionedNodes,
+      bulkyRadiusPx,
     });
 
     if (!placement) continue;
@@ -295,11 +322,13 @@ function placeCandidate(
     viewport,
     acceptedRects,
     positionedNodes,
+    bulkyRadiusPx,
   }: {
     priority: number;
     viewport: GraphViewport;
     acceptedRects: LabelRect[];
     positionedNodes: PositionedNode[];
+    bulkyRadiusPx: number;
   },
 ): GraphLabelPlacement | null {
   // Always below — but not always at the same distance. In a dense patch the
@@ -326,6 +355,7 @@ function placeCandidate(
       positionedNodes.some(
         (positionedNode) =>
           positionedNode.node.id !== candidate.node.id &&
+          positionedNode.radiusPx >= bulkyRadiusPx &&
           rectIntersectsCircle(placement.rect, {
             x: positionedNode.screenX,
             y: positionedNode.screenY,
