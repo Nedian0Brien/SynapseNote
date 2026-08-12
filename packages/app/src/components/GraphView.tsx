@@ -36,6 +36,7 @@ import { applyGraphFilters } from './graph-filter';
 import {
   buildGraphFolderNodes,
   GRAPH_FOLDER_LINK_STRENGTH,
+  graphFolderDepthOf,
   isGraphFolderLink,
   isGraphRootFolderNode,
 } from './graph-folders';
@@ -933,6 +934,19 @@ export function GraphView({
   // A folder node's id IS its region's id, so this is how the dot that anchors
   // a territory finds the territory's colour.
   const areaById = new Map(areas.map((area) => [area.id, area]));
+  // Each node's own place in the folder tree, which is what paces the label
+  // reveal. Folder nodes carry their path directly; a page's is the folder it
+  // sits in.
+  const nodeDepthById = new Map(
+    displayData.nodes.map((node) => {
+      // A folder's own depth is the length of its path; a page's is the depth
+      // of the folder it sits in. Tags and external URLs belong to no folder,
+      // so they sit at the top and reveal first.
+      if (node.kind === 'folder') return [node.id, graphFolderDepthOf(`${node.path}/leaf`)];
+      if (node.kind === 'doc') return [node.id, graphFolderDepthOf(node.docName)];
+      return [node.id, 0];
+    }),
+  );
   const innermostAreaByNodeId = new Map<string, GraphArea>();
   for (const area of areas) {
     for (const memberId of area.memberIds) {
@@ -1910,12 +1924,17 @@ export function GraphView({
                   );
                 },
                 previousOffsetStepByNodeId: labelOffsetStepsRef.current,
-                isRegionEnteredForNode: (nodeId) => {
-                  const area = innermostAreaByNodeId.get(nodeId);
-                  if (!area) return null;
+                // Keyed on the page's OWN depth in the folder tree, not on the
+                // depth of the territory holding it. Territories stop at depth
+                // 2, so everything below that shares one region and used to
+                // reveal in a single step — a wall of names arriving at once.
+                // The focus depth keeps counting past the deepest territory
+                // (one level per 2x zoom), so this gives the descent as many
+                // steps as the tree actually has.
+                isDepthRevealedForNode: (nodeId) => {
                   const focusDepth = focusDepthRef.current;
                   if (focusDepth === null) return null;
-                  return focusDepth >= area.depth;
+                  return focusDepth >= (nodeDepthById.get(nodeId) ?? 0);
                 },
               });
 

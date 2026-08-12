@@ -83,19 +83,18 @@ interface PlanGraphLabelsInput {
    */
   previousOffsetStepByNodeId?: ReadonlyMap<string, number>;
   /**
-   * Whether the viewer has zoomed INTO the folder this node lives in, or `null`
-   * if the node is not inside one (a top-level page, or territories switched
-   * off — in which case the degree tiers below decide alone, as they always
-   * did).
+   * Whether the map has descended far enough to name this node, or `null` if
+   * there is nothing to say (territories switched off — in which case the
+   * degree tiers below decide alone, as they always did).
    *
    * This is what makes the reveal follow the folder tree rather than the link
-   * count. Zoomed out you get region names and nothing else; zoom into a
-   * region and its pages name themselves as it stops being a landmark; zoom
-   * into one of ITS folders and the same thing happens a level down. Link
-   * count still decides the order WITHIN a revealed folder — it is a good
-   * answer to "which of these matters most", and a poor one to "where am I".
+   * count. Zoomed out you get region names and nothing else; descend a level
+   * and the pages at that level name themselves; descend again and the ones
+   * nested a level deeper follow. Link count still decides the order WITHIN a
+   * revealed level — it is a good answer to "which of these matters most", and
+   * a poor one to "where am I".
    */
-  isRegionEnteredForNode?: (nodeId: string) => boolean | null;
+  isDepthRevealedForNode?: (nodeId: string) => boolean | null;
 }
 
 interface LabelRect {
@@ -176,7 +175,7 @@ export function planGraphLabels(input: PlanGraphLabelsInput): GraphLabelPlacemen
     projectToScreen,
     getNodeRadiusPx,
     previousOffsetStepByNodeId,
-    isRegionEnteredForNode,
+    isDepthRevealedForNode,
   } = input;
 
   if (maxLabels <= 0 || viewport.width <= 0 || viewport.height <= 0 || nodes.length === 0) {
@@ -227,14 +226,13 @@ export function planGraphLabels(input: PlanGraphLabelsInput): GraphLabelPlacemen
       };
     })
     .filter((candidate): candidate is LabelCandidate => candidate !== null)
-    // Hierarchy gate: a page inside a folder waits until you have zoomed into
-    // that folder. Zoomed out you see region names and nothing else; each level
-    // you descend hands the naming to its contents. The active document is
+    // Hierarchy gate: a page waits until the map has descended to its level.
+    // Zoomed out you see region names and nothing else; each level you descend
+    // hands the naming to the pages that live there. The active document is
     // exempt — it is the one label that orients everything else.
     .filter((candidate) => {
       if (candidate.isActive) return true;
-      const entered = isRegionEnteredForNode?.(candidate.node.id);
-      return entered ?? true;
+      return isDepthRevealedForNode?.(candidate.node.id) ?? true;
     })
     // Tier gate: a hub earns its label further out than a leaf does, so zooming
     // out thins the labels down to the landmarks instead of clearing them all.

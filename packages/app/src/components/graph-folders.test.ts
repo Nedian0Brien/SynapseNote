@@ -3,6 +3,7 @@ import {
   buildGraphFolderNodes,
   GRAPH_FOLDER_NODE_PREFIX,
   GRAPH_ROOT_NODE_ID,
+  graphFolderDepthOf,
   graphFolderNodeId,
   graphFolderPathOf,
   isGraphFolderLink,
@@ -245,5 +246,25 @@ describe('isGraphFolderLink', () => {
 describe('graphFolderNodeId', () => {
   test('namespaces folder ids the way the server namespaces external ones', () => {
     expect(graphFolderNodeId('notes')).toBe(`${GRAPH_FOLDER_NODE_PREFIX}notes`);
+  });
+});
+
+describe('graphFolderDepthOf', () => {
+  test('counts the folders a page sits under', () => {
+    expect(graphFolderDepthOf('README')).toBe(0);
+    expect(graphFolderDepthOf('docs/Intro')).toBe(1);
+    expect(graphFolderDepthOf('packages/app/src/Foo')).toBe(3);
+  });
+
+  test('paces the label reveal past where territories stop', () => {
+    // Territories cap at depth 2, so keying the reveal on the region holding a
+    // page made everything below that arrive in one step — a wall of names.
+    // The page's own depth keeps giving the descent steps to take.
+    expect(graphFolderDepthOf('packages/app/src/components/Foo')).toBeGreaterThan(2);
+  });
+
+  test('is not confused by a leading slash or a doubled separator', () => {
+    expect(graphFolderDepthOf('/docs/Intro')).toBe(1);
+    expect(graphFolderDepthOf('docs//api/Intro')).toBe(2);
   });
 });

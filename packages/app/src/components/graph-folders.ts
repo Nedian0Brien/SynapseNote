@@ -46,6 +46,22 @@ export function graphFolderPathOf(docName: string): string | null {
   return index > 0 ? docName.slice(0, index) : null;
 }
 
+/**
+ * How many folders a page sits under: `README` is 0, `docs/Intro` is 1,
+ * `packages/app/src/Foo` is 3.
+ *
+ * This is the page's OWN place in the tree, which is not the same as the depth
+ * of the territory it belongs to — territories stop at depth 2, so everything
+ * below that shares one region and would otherwise reveal all at once. Keying
+ * the label reveal on this instead lets the descent keep going: shallow pages
+ * name themselves first and each level of nesting waits its turn.
+ */
+export function graphFolderDepthOf(docName: string): number {
+  const path = graphFolderPathOf(docName);
+  if (path === null) return 0;
+  return path.split('/').filter((segment) => segment !== '').length;
+}
+
 /** `'a/b/c'` → `['a', 'a/b', 'a/b/c']`. */
 function ancestorPaths(path: string): string[] {
   const paths: string[] = [];

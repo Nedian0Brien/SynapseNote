@@ -19,7 +19,7 @@ function plan({
   zoomScale = 10,
   leafLabelThreshold = 1.8,
   previousOffsetStepByNodeId,
-  isRegionEnteredForNode,
+  isDepthRevealedForNode,
   getNodeRadiusPx = () => 6,
 }: {
   nodes: GraphLabelLayoutNode[];
@@ -31,7 +31,7 @@ function plan({
   zoomScale?: number;
   leafLabelThreshold?: number;
   previousOffsetStepByNodeId?: ReadonlyMap<string, number>;
-  isRegionEnteredForNode?: (nodeId: string) => boolean | null;
+  isDepthRevealedForNode?: (nodeId: string) => boolean | null;
   getNodeRadiusPx?: (node: GraphLabelLayoutNode) => number;
 }) {
   return planGraphLabels({
@@ -44,7 +44,7 @@ function plan({
     zoomScale,
     leafLabelThreshold,
     previousOffsetStepByNodeId,
-    isRegionEnteredForNode,
+    isDepthRevealedForNode,
     labelDescriptors: buildGraphLabelDescriptors(nodes),
     measureTextWidthPx: (text) => text.length * 6,
     projectToScreen: (x, y) => ({ x, y }),
@@ -193,9 +193,9 @@ describe('planGraphLabels', () => {
     expect(placements[0]?.nodeId).toBe('hub');
   });
 
-  test('holds a page’s name back until you have zoomed into its folder', () => {
-    // Zoomed out you should get region names and nothing else; the pages name
-    // themselves only once the folder they live in is the place you are in.
+  test('holds a page’s name back until the map has descended to its level', () => {
+    // Zoomed out you should get region names and nothing else; a page names
+    // itself only once the descent has reached the level it lives at.
     const nodes: GraphLabelLayoutNode[] = [
       { id: 'docs/Intro', label: 'Intro', x: 200, y: 100 },
       { id: 'docs/Api', label: 'Api', x: 200, y: 200 },
@@ -203,27 +203,27 @@ describe('planGraphLabels', () => {
     const viewport = { width: 500, height: 400 };
 
     expect(
-      plan({ nodes, viewport, isRegionEnteredForNode: () => false }).map((p) => p.nodeId),
+      plan({ nodes, viewport, isDepthRevealedForNode: () => false }).map((p) => p.nodeId),
     ).toEqual([]);
     expect(
-      plan({ nodes, viewport, isRegionEnteredForNode: () => true })
+      plan({ nodes, viewport, isDepthRevealedForNode: () => true })
         .map((p) => p.nodeId)
         .sort(),
     ).toEqual(['docs/Api', 'docs/Intro']);
   });
 
-  test('a page in no folder is left to the degree tiers, as before', () => {
+  test('says nothing when territories are off, leaving the degree tiers to decide', () => {
     const nodes: GraphLabelLayoutNode[] = [{ id: 'README', label: 'Readme', x: 200, y: 100 }];
     const placements = plan({
       nodes,
       viewport: { width: 500, height: 400 },
-      // null means "not inside a region" — the hierarchy gate must not swallow it.
-      isRegionEnteredForNode: () => null,
+      // null means "no opinion" — the hierarchy gate must not swallow the node.
+      isDepthRevealedForNode: () => null,
     });
     expect(placements.map((placement) => placement.nodeId)).toEqual(['README']);
   });
 
-  test('the active document is named even from outside its folder', () => {
+  test('the active document is named even before the descent reaches it', () => {
     // It is the one label that says where you came from; hiding it because you
     // have not zoomed into its folder yet defeats the point.
     const nodes: GraphLabelLayoutNode[] = [{ id: 'docs/Intro', label: 'Intro', x: 200, y: 100 }];
@@ -231,7 +231,7 @@ describe('planGraphLabels', () => {
       nodes,
       activeDocName: 'docs/Intro',
       viewport: { width: 500, height: 400 },
-      isRegionEnteredForNode: () => false,
+      isDepthRevealedForNode: () => false,
     });
     expect(placements.map((placement) => placement.nodeId)).toEqual(['docs/Intro']);
   });
