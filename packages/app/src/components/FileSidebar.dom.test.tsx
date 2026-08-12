@@ -503,6 +503,20 @@ describe('FileSidebar runtime behavior', () => {
     expect(onOpenSearch).toHaveBeenCalledTimes(1);
   });
 
+  test('the toolbar offers a way into the graph, and it teaches the shortcut', async () => {
+    // The sidebar was the one surface with no route to the graph at all: the
+    // rail's tab needs a document open, and the chord is undiscoverable.
+    await renderSidebar();
+
+    const button = screen.getByTestId('sidebar-open-graph');
+    expect(button.getAttribute('aria-label')).toContain('Graph view');
+    // Spelled out, the way SidebarTrigger spells the sidebar chord.
+    expect(button.getAttribute('aria-label')).toMatch(/\(.+\)/);
+
+    fireEvent.click(button);
+    expect(window.location.hash).toBe('#/__graph__');
+  });
+
   test('Electron mode moves identity to the footer and applies drag/no-drag chrome treatment', async () => {
     installBridge();
     await renderSidebar();

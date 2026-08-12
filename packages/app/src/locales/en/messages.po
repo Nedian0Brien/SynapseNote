@@ -4984,6 +4984,10 @@ msgstr "Graph mode"
 msgid "Graph settings"
 msgstr "Graph settings"
 
+#: src/components/FileSidebar.tsx
+msgid "Graph view ({graphShortcutLabel})"
+msgstr "Graph view ({graphShortcutLabel})"
+
 #: src/components/GraphView.tsx
 msgid "Graph visualization of document links"
 msgstr "Graph visualization of document links"
