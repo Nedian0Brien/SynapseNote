@@ -18,11 +18,47 @@ interface ExternalGraphNode {
   url: string;
 }
 
-export type GraphNode = DocGraphNode | ExternalGraphNode;
+/**
+ * Synthesized client-side from frontmatter tags — the server's link graph has
+ * no notion of one. It carries no navigation target: a tag is a facet of pages,
+ * not a page, so clicking one selects it but never routes anywhere.
+ */
+interface TagGraphNode {
+  kind: 'tag';
+  id: string;
+  label: string;
+  tag: string;
+}
+
+/**
+ * A directory in the note tree, synthesized client-side from doc names — like
+ * tag nodes, the server's link graph has no notion of one. See `graph-folders.ts`
+ * for why it is a node rather than a region drawn behind one.
+ */
+interface FolderGraphNode {
+  kind: 'folder';
+  id: string;
+  label: string;
+  path: string;
+  /** Direct members: pages plus child folders. Drives both size and repulsion. */
+  memberCount: number;
+}
+
+export type GraphNode = DocGraphNode | ExternalGraphNode | TagGraphNode | FolderGraphNode;
 
 export interface GraphLink {
   source: string;
   target: string;
+  /**
+   * Set only on synthesized folder-containment edges. Authored links leave it
+   * absent, which is what `isGraphFolderLink` reads.
+   */
+  kind?: 'containment';
+  /**
+   * Containment edges only: how many members the parent folder has. The layout
+   * sizes the folder's disc from it — see `getGraphFolderLinkDistance`.
+   */
+  memberCount?: number;
 }
 
 export interface GraphData {
@@ -62,16 +98,33 @@ export type GraphNodeSelection =
     } & Pick<DocGraphNode, 'id' | 'docName' | 'label' | 'anchor'>)
   | ({
       kind: 'external';
-    } & Pick<ExternalGraphNode, 'id' | 'label' | 'url'>);
+    } & Pick<ExternalGraphNode, 'id' | 'label' | 'url'>)
+  | ({
+      kind: 'tag';
+    } & Pick<TagGraphNode, 'id' | 'label' | 'tag'>)
+  | ({
+      kind: 'folder';
+    } & Pick<FolderGraphNode, 'id' | 'label' | 'path' | 'memberCount'>);
 
 export type GraphDocClickBehavior = 'navigate' | 'select';
+/**
+ * Which graph a view is showing. `local` is the 2-hop neighborhood around the
+ * active document (the right rail); `global` is the whole project (the content
+ * surface). The two differ in what they fetch and how far out they read, not
+ * just in size, so callers name the intent rather than a pixel state.
+ */
+export type GraphScope = 'local' | 'global';
 export type GraphNodeVisualState =
   | 'default'
   | 'active'
   | 'selected'
   | 'active-selected'
   | 'external-selected'
-  | 'external';
+  | 'external'
+  | 'tag'
+  | 'tag-selected'
+  | 'folder'
+  | 'folder-selected';
 
 const DEFAULT_GRAPH_NODE_RADIUS = 5;
 const SELECTED_GRAPH_NODE_RADIUS = 7;
@@ -93,7 +146,9 @@ const GRAPH_NODE_PHYSICS_KEYS = [
 type GraphNodeClickAction =
   | { kind: 'external'; url: string }
   | { kind: 'navigate'; hash: string }
-  | { kind: 'select'; selection: GraphNodeSelection };
+  | { kind: 'select'; selection: GraphNodeSelection }
+  // A tag node clicked in `navigate` mode: there is nothing to navigate to.
+  | { kind: 'none' };
 
 function copyGraphNodePhysics(nextNode: MutableGraphNode, prevNode: MutableGraphNode): void {
   for (const key of GRAPH_NODE_PHYSICS_KEYS) {
@@ -110,6 +165,39 @@ export function getGraphLinkEndpointId(endpoint: unknown): string {
     return String((endpoint as { id: unknown }).id);
   }
   return '';
+}
+
+/**
+ * Endpoint id as `string | null`, for callers that must distinguish "no id" from
+ * an id that happens to stringify. `getGraphLinkEndpointId` collapses both to
+ * `''` because its callers build signature keys, where the distinction is moot.
+ */
+export function resolveGraphLinkEndpointId(endpoint: unknown): string | null {
+  if (typeof endpoint === 'string') return endpoint;
+  if (endpoint === null || typeof endpoint !== 'object' || !('id' in endpoint)) return null;
+  const { id } = endpoint as { id: unknown };
+  if (typeof id === 'string') return id;
+  if (typeof id === 'number') return String(id);
+  return null;
+}
+
+/**
+ * Undirected degree per node id. Both endpoints of every link count, so a
+ * node's degree is its total edge count regardless of direction — which is
+ * what both the label-placement ranking and the orphan filter want.
+ */
+export function buildGraphDegreeMap(
+  links: ReadonlyArray<{ source: unknown; target: unknown }>,
+): Map<string, number> {
+  const degrees = new Map<string, number>();
+  for (const link of links) {
+    for (const endpoint of [link.source, link.target]) {
+      const id = resolveGraphLinkEndpointId(endpoint);
+      if (id === null) continue;
+      degrees.set(id, (degrees.get(id) ?? 0) + 1);
+    }
+  }
+  return degrees;
 }
 
 export function buildGraphNodeSignature(nodes: GraphNode[]): string {
@@ -168,6 +256,8 @@ export function getGraphNodeTooltipLabel(
   } = {},
 ): string {
   if (node.kind === 'external') return node.url;
+  if (node.kind === 'tag') return `#${node.tag}`;
+  if (node.kind === 'folder') return node.path;
 
   const title = node.label ?? node.id;
   const displayState = options.displayState ?? 'doc';
@@ -238,6 +328,14 @@ export function getGraphNodeVisualState(
     return isSelected ? 'external-selected' : 'external';
   }
 
+  if (node.kind === 'tag') {
+    return isSelected ? 'tag-selected' : 'tag';
+  }
+
+  if (node.kind === 'folder') {
+    return isSelected ? 'folder-selected' : 'folder';
+  }
+
   const isActive = node.docName === activeDocName;
 
   if (isActive && isSelected) {
@@ -256,10 +354,63 @@ export function getGraphNodeCanvasRadius(state: GraphNodeVisualState): number {
   if (state === 'active' || state === 'active-selected') {
     return ACTIVE_GRAPH_NODE_RADIUS;
   }
-  if (state === 'selected' || state === 'external-selected') {
+  if (
+    state === 'selected' ||
+    state === 'external-selected' ||
+    state === 'tag-selected' ||
+    state === 'folder-selected'
+  ) {
     return SELECTED_GRAPH_NODE_RADIUS;
   }
   return DEFAULT_GRAPH_NODE_RADIUS;
+}
+
+/**
+ * A screen-space offset converted to graph units, capped.
+ *
+ * `px / globalScale` is the right conversion, but it is unbounded: zoomed out
+ * to 0.05 a 2px ring becomes 40 graph units, and a radius-5 node paints as a
+ * radius-45 blob. The cap keeps the ring hugging the node at every zoom, at the
+ * cost of it thinning below a couple of pixels when very far out — which is
+ * where it should be invisible anyway.
+ */
+export function screenOffsetInGraphUnits(
+  pixels: number,
+  globalScale: number,
+  baseRadius: number,
+): number {
+  return Math.min(pixels / Math.max(globalScale, 0.01), baseRadius * 0.6);
+}
+
+/**
+ * The largest a node is allowed to draw on screen, whatever the zoom.
+ *
+ * Node radii live in graph coordinates, so without a cap they scale with the
+ * view: a page that is a 4px dot at the zoom that fits the map becomes a 50px
+ * disc when you are reading it. That is odd on its own, and it drags the node's
+ * name with it — the label is anchored to the node's edge, so as the disc
+ * inflates the name slides away from it, continuously, for the whole length of
+ * a zoom gesture. Capping the drawn size holds both still.
+ *
+ * Only bites when you are zoomed in past the point where a node would exceed
+ * it; zoomed out, everything is well under and nothing changes.
+ */
+export const MAX_GRAPH_NODE_SCREEN_RADIUS_PX = 11;
+
+/**
+ * Clamp the BASE radius — the one a plain page draws at — so it grows no larger
+ * than the screen cap. The caller then applies its own multipliers on top.
+ *
+ * Applying the cap after those multipliers, as this did at first, silently
+ * deleted the whole size encoding: at any zoom past the cap a page, an
+ * eight-link hub and a two-hundred-page folder all clamped to exactly the same
+ * 11px, so the one cue saying which dot anchors a territory disappeared
+ * precisely when you had zoomed in to look at it. Capping the base keeps every
+ * ratio intact and only stops the absolute size running away.
+ */
+export function capGraphNodeRadius(baseRadius: number, globalScale: number): number {
+  if (globalScale <= 0) return baseRadius;
+  return Math.min(baseRadius, MAX_GRAPH_NODE_SCREEN_RADIUS_PX / globalScale);
 }
 
 export function getGraphNodePointerRadius(
@@ -271,9 +422,11 @@ export function getGraphNodePointerRadius(
     state === 'active' ||
     state === 'selected' ||
     state === 'active-selected' ||
-    state === 'external-selected'
+    state === 'external-selected' ||
+    state === 'tag-selected' ||
+    state === 'folder-selected'
   ) {
-    return baseRadius + 2 / Math.max(globalScale, 0.01);
+    return baseRadius + screenOffsetInGraphUnits(2, globalScale, baseRadius);
   }
   return baseRadius;
 }
@@ -299,6 +452,40 @@ export function resolveGraphNodeClickAction(
       };
     }
     return { kind: 'external', url: node.url };
+  }
+
+  if (node.kind === 'tag') {
+    if (docClickBehavior === 'select') {
+      return {
+        kind: 'select',
+        selection: { kind: 'tag', id: node.id, label: node.label, tag: node.tag },
+      };
+    }
+    return { kind: 'none' };
+  }
+
+  if (node.kind === 'folder') {
+    // The project root (empty path, see `GRAPH_ROOT_FOLDER_PATH`) is there to
+    // hold the tree together, not to be opened — there is no folder view above
+    // the project. Compared literally rather than imported, so this module
+    // stays free of a dependency on the folder synthesizer that depends on it.
+    if (node.path === '') return { kind: 'none' };
+
+    if (docClickBehavior === 'select') {
+      return {
+        kind: 'select',
+        selection: {
+          kind: 'folder',
+          id: node.id,
+          label: node.label,
+          path: node.path,
+          memberCount: node.memberCount,
+        },
+      };
+    }
+    // A folder path resolves to the folder overview through the ordinary hash
+    // route — the navigation layer already recognizes it as a folder.
+    return { kind: 'navigate', hash: hashFromDocName(node.path, null) };
   }
 
   if (docClickBehavior === 'select') {

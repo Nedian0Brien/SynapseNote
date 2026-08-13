@@ -2,12 +2,14 @@ import { describe, expect, test } from 'bun:test';
 
 import {
   buildGraphLinkSignature,
+  capGraphNodeRadius,
   type GraphDocDisplayState,
   getGraphNodeCanvasRadius,
   getGraphNodePointerRadius,
   getGraphNodeTooltipLabel,
   getGraphNodeVisualState,
   getHashForGraphDocSelection,
+  MAX_GRAPH_NODE_SCREEN_RADIUS_PX,
   reconcileGraphData,
   resolveGraphNodeClickAction,
 } from './graph-view-utils';
@@ -195,6 +197,40 @@ describe('getGraphNodeTooltipLabel', () => {
   });
 });
 
+describe('resolveGraphNodeClickAction — folder nodes', () => {
+  const folder = {
+    kind: 'folder',
+    id: 'folder:notes/projects',
+    label: 'projects',
+    path: 'notes/projects',
+    memberCount: 4,
+  } as const;
+
+  test('navigates to the folder overview, which is a plain hash route', () => {
+    expect(resolveGraphNodeClickAction(folder, 'navigate')).toEqual({
+      kind: 'navigate',
+      hash: getHashForGraphDocSelection({
+        docName: 'notes/projects',
+        label: 'projects',
+        anchor: null,
+      }),
+    });
+  });
+
+  test('selects with the path, which is what the card needs to open it', () => {
+    expect(resolveGraphNodeClickAction(folder, 'select')).toEqual({
+      kind: 'select',
+      selection: {
+        kind: 'folder',
+        id: 'folder:notes/projects',
+        label: 'projects',
+        path: 'notes/projects',
+        memberCount: 4,
+      },
+    });
+  });
+});
+
 describe('resolveGraphNodeClickAction', () => {
   test('selects fullscreen document nodes without losing anchor metadata', () => {
     expect(
@@ -287,6 +323,23 @@ describe('resolveGraphNodeClickAction', () => {
 });
 
 describe('getGraphNodeVisualState', () => {
+  test('gives a folder its own state, so it never reads as the active document', () => {
+    const folder = {
+      kind: 'folder' as const,
+      id: 'folder:notes',
+      label: 'notes',
+      path: 'notes',
+      memberCount: 3,
+    };
+
+    expect(getGraphNodeVisualState(folder, { activeDocName: 'notes', selectedNodeId: null })).toBe(
+      'folder',
+    );
+    expect(
+      getGraphNodeVisualState(folder, { activeDocName: 'notes', selectedNodeId: 'folder:notes' }),
+    ).toBe('folder-selected');
+  });
+
   test('distinguishes active, selected, and active-and-selected document states', () => {
     const node = {
       kind: 'doc' as const,
@@ -550,5 +603,42 @@ describe('buildGraphLinkSignature', () => {
         },
       ] as unknown as Parameters<typeof buildGraphLinkSignature>[0]),
     ).toBe('notes/alpha>notes/beta,notes/beta>notes/gamma');
+  });
+});
+
+describe('capGraphNodeRadius', () => {
+  test('leaves a node alone while it is comfortably under the cap', () => {
+    // Zoomed out, every node is a few pixels across and nothing is clamped.
+    expect(capGraphNodeRadius(5, 0.8)).toBe(5);
+  });
+
+  test('stops a node growing without bound as you zoom in', () => {
+    // 5 graph units at 10x would draw a 50px disc. It also drags the node's
+    // name with it, since the label is anchored to the node's edge.
+    expect(capGraphNodeRadius(5, 10) * 10).toBeLessThanOrEqual(
+      MAX_GRAPH_NODE_SCREEN_RADIUS_PX + 0.001,
+    );
+  });
+
+  test('holds the drawn size steady once capped, so the label stops sliding', () => {
+    expect(capGraphNodeRadius(5, 10) * 10).toBeCloseTo(capGraphNodeRadius(5, 20) * 20, 5);
+  });
+
+  test('caps the BASE, so the size encoding survives the cap', () => {
+    // Capping after the style multiplier collapsed a page, a hub and a
+    // two-hundred-page folder to the same 11px at any zoom past the cap —
+    // deleting the one cue that says which dot anchors a territory, exactly
+    // when you had zoomed in to look at it.
+    const base = capGraphNodeRadius(5, 10);
+    const page = base * 1;
+    const hub = base * 1.6;
+    const folder = base * 2.2;
+    expect(hub).toBeGreaterThan(page);
+    expect(folder).toBeGreaterThan(hub);
+    expect(folder / page).toBeCloseTo(2.2, 5);
+  });
+
+  test('survives a zero scale rather than dividing by it', () => {
+    expect(capGraphNodeRadius(5, 0)).toBe(5);
   });
 });

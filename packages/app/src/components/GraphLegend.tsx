@@ -1,7 +1,8 @@
 import { Trans } from '@lingui/react/macro';
 import { useTheme } from 'next-themes';
+import type { GraphGroup } from '@/lib/graph-settings-store';
 import { cn } from '@/lib/utils';
-import { clusterColor } from './graph-colors';
+import { resolveGraphGroupColor } from './graph-groups';
 
 type GraphLegendVariant = 'fullscreen' | 'docked';
 
@@ -40,21 +41,38 @@ function getGraphLegendLayout(variant: GraphLegendVariant): GraphLegendLayout {
   return GRAPH_LEGEND_LAYOUTS[variant];
 }
 
+/**
+ * The colors currently on the canvas, and nothing else.
+ *
+ * It used to list frontmatter clusters, from back when every node was tinted by
+ * its cluster. Node color now carries only state (see `graph-node-style.ts`),
+ * so groups — which the user defines and which really do tint nodes — are the
+ * only thing left to explain.
+ */
 export function GraphLegend({
-  clusters,
+  groups = [],
   variant = 'fullscreen',
 }: {
-  clusters: string[];
+  groups?: readonly GraphGroup[];
   variant?: GraphLegendVariant;
 }) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
   const layout = getGraphLegendLayout(variant);
 
-  if (clusters.length === 0) return null;
+  // A group with no query is inert and colors nothing, so it is left out.
+  const entries = groups
+    .filter((group) => group.query.trim() !== '')
+    .map((group) => ({
+      key: group.id,
+      label: group.query,
+      color: resolveGraphGroupColor(group.color, isDark),
+    }));
 
-  const visible = clusters.slice(0, layout.maxEntries);
-  const overflow = clusters.length - visible.length;
+  if (entries.length === 0) return null;
+
+  const visible = entries.slice(0, layout.maxEntries);
+  const overflow = entries.length - visible.length;
 
   return (
     <div
@@ -71,15 +89,15 @@ export function GraphLegend({
           isDark ? 'text-slate-300' : 'text-slate-700',
         )}
       >
-        <Trans>Clusters</Trans>
+        <Trans>Groups</Trans>
       </div>
-      {visible.map((cluster) => (
-        <div key={cluster} className={cn('flex items-center', layout.rowClassName)}>
+      {visible.map((entry) => (
+        <div key={entry.key} className={cn('flex items-center', layout.rowClassName)}>
           <span
             className={cn('inline-block shrink-0 rounded-full', layout.swatchClassName)}
-            style={{ backgroundColor: clusterColor(cluster, isDark) }}
+            style={{ backgroundColor: entry.color }}
           />
-          <span className={cn('truncate', layout.labelClassName)}>{cluster}</span>
+          <span className={cn('truncate', layout.labelClassName)}>{entry.label}</span>
         </div>
       ))}
       {overflow > 0 && (

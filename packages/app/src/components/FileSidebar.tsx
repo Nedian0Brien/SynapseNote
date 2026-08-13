@@ -9,6 +9,7 @@ import {
   FolderPlus,
   FoldVertical,
   ListCollapse,
+  Network,
   Share2,
   SquarePen,
   UnfoldVertical,
@@ -93,9 +94,11 @@ import {
   emitFileTreeMenuActionRename,
 } from '@/lib/file-tree-menu-action-events';
 import { VISIBLE_TARGETS } from '@/lib/handoff/targets';
+import { formatShortcutLabel } from '@/lib/keyboard-shortcuts';
 import { ProfilerBoundary } from '@/lib/perf';
 import { scheduleClipboardWrite } from '@/lib/share/clipboard-adapter';
 import { buildFolderShareInput, runShareAction } from '@/lib/share/run-share-action';
+import { openGraphSurface } from '@/lib/use-graph-route';
 import { useWorkspace } from '@/lib/use-workspace';
 import { cn } from '@/lib/utils';
 
@@ -182,6 +185,10 @@ const ToolbarDropdownTrigger: FC<ToolbarButtonProps> = ({ icon: Icon, label, ...
 
 function FileSidebarInner({ onOpenSearch, onNewDatabase }: FileSidebarProps) {
   const { t } = useLingui();
+  // Spelled into the toolbar button's label the way SidebarTrigger spells the
+  // sidebar chord, so the button teaches the shortcut instead of competing
+  // with it.
+  const graphShortcutLabel = formatShortcutLabel('graph-open');
   const handleNewDatabase = onNewDatabase ?? (() => dispatchDatabaseSlashCommand('new'));
   // Imperative handle to the FileTree — header buttons (Expand-All / Collapse-
   // All in the dropdown menu) call methods directly. Stored as React state
@@ -946,6 +953,19 @@ function FileSidebarInner({ onOpenSearch, onNewDatabase }: FileSidebarProps) {
                     </DropdownMenuGroup>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                {/*
+                 * Sits with Tree view options rather than among the three
+                 * create actions below: both are ways of looking at the
+                 * project, and neither writes anything. Same `Network` icon as
+                 * the right rail's graph tab, so the two entry points read as
+                 * the same destination.
+                 */}
+                <ToolbarButton
+                  icon={Network}
+                  label={t`Graph view (${graphShortcutLabel})`}
+                  onClick={openGraphSurface}
+                  data-testid="sidebar-open-graph"
+                />
                 <ToolbarButton
                   icon={SquarePen}
                   label={t`New file`}

@@ -467,6 +467,7 @@ msgid "{label} on page {0}"
 msgstr "{label} on page {0}"
 
 #: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "{linkCount, plural, one {# link} other {# links}}"
 msgstr "{linkCount, plural, one {# link} other {# links}}"
 
@@ -493,6 +494,7 @@ msgid "{name} CLI"
 msgstr "{name} CLI"
 
 #: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "{nodeCount, plural, one {# node} other {# nodes}}"
 msgstr "{nodeCount, plural, one {# node} other {# nodes}}"
 
@@ -885,6 +887,7 @@ msgstr "Add cursors or select matching occurrences through CodeMirror."
 
 #: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 #: src/components/DatabasePageLayoutDialog.tsx
+#: src/components/GraphSettingsPopover.tsx
 msgid "Add group"
 msgstr "Add group"
 
@@ -1128,13 +1131,17 @@ msgstr "Already at {assetContentPath} — reusing."
 msgid "Already have a git repository? Add it with <0>git remote add origin <url></0> in this project's folder. This page updates automatically once a remote is detected."
 msgstr "Already have a git repository? Add it with <0>git remote add origin <url></0> in this project's folder. This page updates automatically once a remote is detected."
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Already open"
 msgstr "Already open"
 
 #: src/components/McpConsentDialogBody.tsx
 msgid "Already set up — ok is available in your terminal"
 msgstr "Already set up — ok is available in your terminal"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Always"
+msgstr "Always"
 
 #: src/components/AppErrorBoundary.tsx
 #: src/components/DocumentErrorBoundary.tsx
@@ -1260,6 +1267,10 @@ msgstr "Are you sure you want to delete {itemName}? This action cannot be undone
 #: src/components/FileTree.tsx
 msgid "Are you sure you want to delete {targetCount} selected items? Folders and all files inside them will be deleted. This action cannot be undone."
 msgstr "Are you sure you want to delete {targetCount} selected items? Folders and all files inside them will be deleted. This action cannot be undone."
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Arrows"
+msgstr "Arrows"
 
 #: src/components/BottomComposer.tsx
 msgid "Ask"
@@ -1556,7 +1567,7 @@ msgstr "Board cards and limits"
 msgid "Bold"
 msgstr "Bold"
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Both"
 msgstr "Both"
 
@@ -1605,7 +1616,7 @@ msgstr "breadcrumb"
 msgid "Bring a remote repository onto this machine."
 msgstr "Bring a remote repository onto this machine."
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Broken link"
 msgstr "Broken link"
 
@@ -1796,6 +1807,10 @@ msgstr "Caption"
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "Captured Context Pack"
 msgstr "Captured Context Pack"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Center force"
+msgstr "Center force"
 
 #: src/components/DatabasePropertyMenu.tsx
 msgid "Change property type"
@@ -2110,6 +2125,10 @@ msgstr "Close all unpinned"
 msgid "Close find"
 msgstr "Close find"
 
+#: src/components/GraphCardDeck.tsx
+msgid "Close neighbor cards"
+msgstr "Close neighbor cards"
+
 #: src/components/EditorTabs.tsx
 msgid "Close new tab"
 msgstr "Close new tab"
@@ -2126,10 +2145,6 @@ msgstr "Close search"
 #: src/components/TerminalRefusalNotice.tsx
 msgid "Close terminal"
 msgstr "Close terminal"
-
-#: src/components/GraphLegend.tsx
-msgid "Clusters"
-msgstr "Clusters"
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Code block"
@@ -2168,7 +2183,6 @@ msgstr "Codex will still ask until you run \"ok init\" in a terminal for this pr
 msgid "Collaborators see your in-progress edits as soon as they sync."
 msgstr "Collaborators see your in-progress edits as soon as they sync."
 
-#: src/components/GraphPanel.tsx
 #: src/components/MemoPanel.tsx
 msgid "Collapse"
 msgstr "Collapse"
@@ -2199,10 +2213,6 @@ msgstr "Collapse attached context"
 msgid "Collapse burst {burstNumber} diff"
 msgstr "Collapse burst {burstNumber} diff"
 
-#: src/components/GraphPanel.tsx
-msgid "Collapse graph"
-msgstr "Collapse graph"
-
 #: src/components/MemoPanel.tsx
 msgid "Collapse original text"
 msgstr "Collapse original text"
@@ -2227,6 +2237,10 @@ msgstr "Color"
 #: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Color columns"
 msgstr "Color columns"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Color pages that match a search. The first matching group in the list wins."
+msgstr "Color pages that match a search. The first matching group in the list wins."
 
 #: src/components/CommandPalette.tsx
 msgid "Command failed."
@@ -3092,7 +3106,7 @@ msgstr "Create new project"
 msgid "Create new tag #{tagValue}"
 msgstr "Create new tag #{tagValue}"
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 #: src/editor/extensions/InternalLinkPropPanel.tsx
 #: src/editor/extensions/WikiLinkPropPanel.tsx
 msgid "Create page"
@@ -3678,6 +3692,10 @@ msgstr "Dismiss"
 msgid "Dismiss notice"
 msgstr "Dismiss notice"
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Display"
+msgstr "Display"
+
 #: src/components/DatabaseFilesCellEditor.tsx
 msgid "Display name"
 msgstr "Display name"
@@ -4200,17 +4218,9 @@ msgstr "Expand attached context"
 msgid "Expand burst {burstNumber} diff"
 msgstr "Expand burst {burstNumber} diff"
 
-#: src/components/GraphPanel.tsx
-msgid "Expand graph"
-msgstr "Expand graph"
-
 #: src/components/MemoPanel.tsx
 msgid "Expand original text"
 msgstr "Expand original text"
-
-#: src/components/GraphPanel.tsx
-msgid "Expanded graph mode"
-msgstr "Expanded graph mode"
 
 #: src/components/AuthModal.tsx
 msgid "Expires in {timeLabel}"
@@ -4220,7 +4230,7 @@ msgstr "Expires in {timeLabel}"
 msgid "Explain how your codebase works so teammates and AI agents can find their way around. Good for documenting the architecture, the main parts, and the questions new contributors always ask."
 msgstr "Explain how your codebase works so teammates and AI agents can find their way around. Good for documenting the architecture, the main parts, and the questions new contributors always ask."
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Explore"
 msgstr "Explore"
 
@@ -4252,6 +4262,7 @@ msgstr "External actions run after the verified database commit and use durable 
 msgid "External link"
 msgstr "External link"
 
+#: src/components/GraphSettingsPopover.tsx
 #: src/editor/components/PdfEmbed.tsx
 msgid "External links"
 msgstr "External links"
@@ -4358,11 +4369,11 @@ msgstr "Failed to load graph"
 msgid "Failed to load headings"
 msgstr "Failed to load headings"
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Failed to load hub pages"
 msgstr "Failed to load hub pages"
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Failed to load orphan pages"
 msgstr "Failed to load orphan pages"
 
@@ -4618,9 +4629,22 @@ msgstr "Files"
 msgid "Files sidebar"
 msgstr "Files sidebar"
 
+#. placeholder {0}: node.label
+#: src/components/GraphCardDeck.tsx
+msgid "Filter by {0}"
+msgstr "Filter by {0}"
+
 #: src/components/DatabasePropertyMenu.tsx
 msgid "Filter by property"
 msgstr "Filter by property"
+
+#: src/components/GraphSurface.tsx
+msgid "Filter by tag"
+msgstr "Filter by tag"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Filter graph"
+msgstr "Filter graph"
 
 #: src/editor/extensions/CodeBlockView.tsx
 msgid "Filter languages"
@@ -4629,6 +4653,7 @@ msgstr "Filter languages"
 #: src/components/DatabaseContextInspectorDialog.tsx
 #: src/components/DatabaseViewTabMenu.tsx
 #: src/components/DatabaseWorkspaceToolbar.tsx
+#: src/components/GraphSettingsPopover.tsx
 #: src/editor/components/InlineDatabaseToolbar.tsx
 msgid "Filters"
 msgstr "Filters"
@@ -4674,6 +4699,11 @@ msgstr "First page preview"
 msgid "Fit cover"
 msgstr "Fit cover"
 
+#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
+msgid "Fit graph to view"
+msgstr "Fit graph to view"
+
 #: src/editor/components/PdfEmbed.tsx
 msgid "Fit height"
 msgstr "Fit height"
@@ -4681,6 +4711,11 @@ msgstr "Fit height"
 #: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Fit image"
 msgstr "Fit image"
+
+#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
+msgid "Fit to view"
+msgstr "Fit to view"
 
 #: src/editor/components/PdfEmbed.tsx
 msgid "Fit width"
@@ -4746,6 +4781,7 @@ msgstr "Folder target: {linkTitle}. Click to open the overview."
 msgid "Folder view"
 msgstr "Folder view"
 
+#: src/components/GraphSettingsPopover.tsx
 #: src/components/settings/AiToolsSection.tsx
 #: src/components/settings/ProjectAiToolsSection.tsx
 msgid "Folders"
@@ -4766,6 +4802,10 @@ msgstr "Follow us on X"
 #: src/editor/slash-command/items.tsx
 msgid "Footnote"
 msgstr "Footnote"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Forces"
+msgstr "Forces"
 
 #: src/components/DatabaseForm.tsx
 msgid "Form closed"
@@ -4897,6 +4937,10 @@ msgstr "Global outside text fields"
 msgid "Global Skill"
 msgstr "Global Skill"
 
+#: src/lib/keyboard-shortcuts.ts
+msgid "Global, unless the find bar is open"
+msgstr "Global, unless the find bar is open"
+
 #: src/components/DocumentErrorBoundary.tsx
 #: src/components/LargeFileEditorState.tsx
 msgid "Go back"
@@ -4926,9 +4970,23 @@ msgid "Grant exact actions for {databaseName}. The project owner always retains 
 msgstr "Grant exact actions for {databaseName}. The project owner always retains access."
 
 #: src/components/DocPanel.tsx
+#: src/components/EditorTabs.tsx
 #: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Graph"
 msgstr "Graph"
+
+#: src/components/GraphSurface.tsx
+msgid "Graph mode"
+msgstr "Graph mode"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Graph settings"
+msgstr "Graph settings"
+
+#: src/components/FileSidebar.tsx
+msgid "Graph view ({graphShortcutLabel})"
+msgstr "Graph view ({graphShortcutLabel})"
 
 #: src/components/GraphView.tsx
 msgid "Graph visualization of document links"
@@ -4954,9 +5012,22 @@ msgstr "Group"
 msgid "Group and subgroup"
 msgstr "Group and subgroup"
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Group color"
+msgstr "Group color"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Group query"
+msgstr "Group query"
+
 #: src/components/DatabaseRecordLayoutOverrideDialog.tsx
 msgid "Group state overrides"
 msgstr "Group state overrides"
+
+#: src/components/GraphLegend.tsx
+#: src/components/GraphSettingsPopover.tsx
+msgid "Groups"
+msgstr "Groups"
 
 #: src/components/CreatedItemsList.tsx
 msgid "Guides your AI agents on how to work here."
@@ -5056,6 +5127,7 @@ msgid "Hide empty"
 msgstr "Hide empty"
 
 #: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Hide external URL nodes"
 msgstr "Hide external URL nodes"
 
@@ -5196,7 +5268,7 @@ msgstr "https://example.com/cover.png or assets/cover.png"
 msgid "https://github.com/owner/repo or owner/repo"
 msgstr "https://github.com/owner/repo or owner/repo"
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Hubs"
 msgstr "Hubs"
 
@@ -5688,6 +5760,10 @@ msgstr "Label <0>(optional display text)</0>"
 msgid "Label <0>(visible link text)</0>"
 msgstr "Label <0>(visible link text)</0>"
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Label count"
+msgstr "Label count"
+
 #: src/components/DatabaseDiagnosticsDialog.tsx
 msgid "Last rebuilt"
 msgstr "Last rebuilt"
@@ -5740,6 +5816,14 @@ msgstr "Link"
 msgid "Link copied."
 msgstr "Link copied."
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Link distance"
+msgstr "Link distance"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Link force"
+msgstr "Link force"
+
 #: src/editor/slash-command/component-items.tsx
 msgid "Link shared records into this page and choose a saved view."
 msgstr "Link shared records into this page and choose a saved view."
@@ -5751,6 +5835,10 @@ msgstr "Link target"
 #: src/lib/keyboard-shortcuts.ts
 msgid "Link the selected text, or edit the link under the caret."
 msgstr "Link the selected text, or edit the link under the caret."
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Link thickness"
+msgstr "Link thickness"
 
 #: src/editor/slash-command/component-items.tsx
 msgid "Link to a page or external URL."
@@ -5876,6 +5964,7 @@ msgid "Loading files"
 msgstr "Loading files"
 
 #: src/components/DocPanel.tsx
+#: src/components/EditorArea.tsx
 msgid "Loading graph"
 msgstr "Loading graph"
 
@@ -6368,6 +6457,10 @@ msgstr "Name is required"
 msgid "Name Z–A"
 msgstr "Name Z–A"
 
+#: src/components/GraphSurface.tsx
+msgid "Narrow the graph to the pages carrying this tag."
+msgstr "Narrow the graph to the pages carrying this tag."
+
 #: src/lib/keyboard-shortcuts.ts
 msgid "Navigate CodeMirror source search results or dismiss the search panel."
 msgstr "Navigate CodeMirror source search results or dismiss the search panel."
@@ -6383,6 +6476,15 @@ msgstr "Navigation and suggestions"
 #: src/components/EditorNavigationButtons.tsx
 msgid "Navigation history"
 msgstr "Navigation history"
+
+#: src/components/GraphCardDeck.tsx
+msgid "Neighbors"
+msgstr "Neighbors"
+
+#. placeholder {0}: centerNode.label
+#: src/components/GraphCardDeck.tsx
+msgid "Neighbors of {0}"
+msgstr "Neighbors of {0}"
 
 #: src/components/settings/OkignoreSection.tsx
 msgid "Nested .okignore error in {path}"
@@ -6661,7 +6763,7 @@ msgstr "No description yet — add one so agents know when to use this skill."
 msgid "No diff."
 msgstr "No diff."
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "No disconnected pages. Pages appear here only when they have no incoming and no outgoing graph edges."
 msgstr "No disconnected pages. Pages appear here only when they have no incoming and no outgoing graph edges."
 
@@ -6737,11 +6839,11 @@ msgstr "No headings yet."
 msgid "No history yet"
 msgstr "No history yet"
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "No hub pages yet. Hubs appear once pages accumulate inbound graph links."
 msgstr "No hub pages yet. Hubs appear once pages accumulate inbound graph links."
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "No Incoming"
 msgstr "No Incoming"
 
@@ -6820,15 +6922,15 @@ msgstr "No memo text"
 msgid "No memos have been created from this PDF yet."
 msgstr "No memos have been created from this PDF yet."
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "No Outgoing"
 msgstr "No Outgoing"
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "No pages are missing incoming graph links."
 msgstr "No pages are missing incoming graph links."
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "No pages are missing outgoing graph links."
 msgstr "No pages are missing outgoing graph links."
 
@@ -7015,6 +7117,10 @@ msgstr "No visible related records."
 msgid "No workspace"
 msgstr "No workspace"
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Node size"
+msgstr "Node size"
+
 #: src/components/DatabaseContextInspectorDialog.tsx
 #: src/components/settings/SettingsDialogBody.tsx
 msgid "None"
@@ -7184,14 +7290,16 @@ msgstr "Only the current document uses <0>#{tag}</0>."
 #: src/components/DatabaseGallery.tsx
 #: src/components/DatabaseTableRowActions.tsx
 #: src/components/DatabaseTableRowMenu.tsx
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Open"
 msgstr "Open"
 
 #. placeholder {0}: entry.title
 #. placeholder {0}: link.title
+#. placeholder {0}: node.label
 #: src/components/chat/WebPreviewCards.tsx
 #: src/components/FolderDocumentCard.tsx
+#: src/components/GraphCardDeck.tsx
 msgid "Open {0}"
 msgstr "Open {0}"
 
@@ -7338,6 +7446,7 @@ msgstr "Open emoji picker for {keyName}"
 msgid "Open file"
 msgstr "Open file"
 
+#: src/components/GraphSurface.tsx
 #: src/components/NavigatorApp.tsx
 #: src/components/ProjectSwitcher.tsx
 #: src/lib/keyboard-shortcuts.ts
@@ -7382,7 +7491,7 @@ msgstr "Open in worktree"
 msgid "Open it there"
 msgstr "Open it there"
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Open link"
 msgstr "Open link"
 
@@ -7460,21 +7569,34 @@ msgstr "Open that worktree instead"
 msgid "Open the agent handoff from the workspace to continue."
 msgstr "Open the agent handoff from the workspace to continue."
 
+#: src/components/GraphSurface.tsx
+msgid "Open the folder overview."
+msgstr "Open the folder overview."
+
 #: src/lib/keyboard-shortcuts.ts
 msgid "Open the insert menu in an empty or active text position."
 msgstr "Open the insert menu in an empty or active text position."
+
+#: src/components/GraphPanel.tsx
+#: src/lib/keyboard-shortcuts.ts
+msgid "Open the project graph"
+msgstr "Open the project graph"
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Open the Project Navigator."
 msgstr "Open the Project Navigator."
 
-#: src/components/GraphPanel.tsx
-msgid "Open this document in the editor and collapse the graph."
-msgstr "Open this document in the editor and collapse the graph."
+#: src/lib/keyboard-shortcuts.ts
+msgid "Open the whole-project link graph as a tab."
+msgstr "Open the whole-project link graph as a tab."
 
-#: src/components/GraphPanel.tsx
-msgid "Open this link in a new tab and collapse the graph."
-msgstr "Open this link in a new tab and collapse the graph."
+#: src/components/GraphSurface.tsx
+msgid "Open this document in the editor."
+msgstr "Open this document in the editor."
+
+#: src/components/GraphSurface.tsx
+msgid "Open this link in a new tab."
+msgstr "Open this link in a new tab."
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Open this settings dialog."
@@ -7586,7 +7708,7 @@ msgstr "Organize specs"
 msgid "Original text"
 msgstr "Original text"
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Orphan mode"
 msgstr "Orphan mode"
 
@@ -7594,7 +7716,8 @@ msgstr "Orphan mode"
 msgid "Orphaned entries"
 msgstr "Orphaned entries"
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSettingsPopover.tsx
+#: src/components/GraphSurface.tsx
 msgid "Orphans"
 msgstr "Orphans"
 
@@ -8111,23 +8234,23 @@ msgstr "Project Skill"
 msgid "Project templates"
 msgstr "Project templates"
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Project-level disconnected pages"
 msgstr "Project-level disconnected pages"
 
-#: src/components/GraphPanel.tsx
-msgid "Project-level pages ordered by inbound link count, up to {FULLSCREEN_HUB_LIMIT} results."
-msgstr "Project-level pages ordered by inbound link count, up to {FULLSCREEN_HUB_LIMIT} results."
+#: src/components/GraphSurface.tsx
+msgid "Project-level pages ordered by inbound link count, up to {HUB_LIMIT} results."
+msgstr "Project-level pages ordered by inbound link count, up to {HUB_LIMIT} results."
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Project-level pages with neither incoming nor outgoing graph edges."
 msgstr "Project-level pages with neither incoming nor outgoing graph edges."
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Project-level pages with no incoming graph edges."
 msgstr "Project-level pages with no incoming graph edges."
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Project-level pages with no outgoing graph edges."
 msgstr "Project-level pages with no outgoing graph edges."
 
@@ -8583,6 +8706,10 @@ msgstr "Remove from favorites"
 msgid "Remove from recent projects"
 msgstr "Remove from recent projects"
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Remove group"
+msgstr "Remove group"
+
 #. placeholder {0}: index + 1
 #: src/components/ArrayOfObjectsWidget.tsx
 msgid "Remove item {0}"
@@ -8722,6 +8849,10 @@ msgstr "Repeat this template"
 #: src/components/DatabaseTemplatesDialog.tsx
 msgid "Repeating template history"
 msgstr "Repeating template history"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Repel force"
+msgstr "Repel force"
 
 #: src/editor/find-replace/FindReplaceBar.tsx
 #: src/lib/keyboard-shortcuts.ts
@@ -8894,6 +9025,10 @@ msgstr "Restarting the server…"
 #: src/components/TimelinePanel.tsx
 msgid "Restore"
 msgstr "Restore"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Restore defaults"
+msgstr "Restore defaults"
 
 #: src/components/TimelinePanel.tsx
 msgid "Restore failed"
@@ -9378,6 +9513,14 @@ msgstr "Search settings not yet loaded — try again in a moment"
 msgid "Search templates"
 msgstr "Search templates"
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Search terms"
+msgstr "Search terms"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Search terms, -exclude, tag:name"
+msgstr "Search terms, -exclude, tag:name"
+
 #: src/components/FolderOverview.tsx
 msgid "Search this folder"
 msgstr "Search this folder"
@@ -9508,11 +9651,15 @@ msgstr "Selected"
 msgid "Selected field preview"
 msgstr "Selected field preview"
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
+msgid "Selected folder"
+msgstr "Selected folder"
+
+#: src/components/GraphSurface.tsx
 msgid "Selected graph item"
 msgstr "Selected graph item"
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Selected in graph"
 msgstr "Selected in graph"
 
@@ -9528,6 +9675,10 @@ msgstr "Selected property"
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "Selected record"
 msgstr "Selected record"
+
+#: src/components/GraphSurface.tsx
+msgid "Selected tag"
+msgstr "Selected tag"
 
 #: src/components/chat/ChatMessageList.tsx
 #: src/components/chat/CliChatPanel.tsx
@@ -9603,7 +9754,7 @@ msgstr "Server error (HTTP {status})"
 msgid "Server error: {status}"
 msgstr "Server error: {status}"
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 #: src/editor/components/TagDialog.tsx
 msgid "Server error: {status} {statusText}"
 msgstr "Server error: {status} {statusText}"
@@ -9778,6 +9929,7 @@ msgid "Show exact scope"
 msgstr "Show exact scope"
 
 #: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Show external URL nodes"
 msgstr "Show external URL nodes"
 
@@ -10413,6 +10565,7 @@ msgstr "Table"
 msgid "Table layout and calculations"
 msgstr "Table layout and calculations"
 
+#: src/components/GraphCardDeck.tsx
 #: src/editor/slash-command/component-items.tsx
 msgid "Tag"
 msgstr "Tag"
@@ -10432,6 +10585,10 @@ msgstr "Tag value"
 #: src/editor/components/TagView.tsx
 msgid "tag-name"
 msgstr "tag-name"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Tags"
+msgstr "Tags"
 
 #: src/components/CommandPalette.tsx
 msgid "Tags matching \"{tagListQuery}\""
@@ -10565,6 +10722,10 @@ msgstr "Terminal settings not yet loaded — try again in a moment"
 #: src/components/PropertyWidgets.tsx
 msgid "Text"
 msgstr "Text"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Text fade threshold"
+msgstr "Text fade threshold"
 
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "Text search"
@@ -10814,9 +10975,9 @@ msgstr "This doc hasn't synced to GitHub yet. The link will work after the next 
 msgid "This doc isn't on GitHub yet. The link won't work until it's pushed."
 msgstr "This doc isn't on GitHub yet. The link won't work until it's pushed."
 
-#: src/components/GraphPanel.tsx
-msgid "This document is already active in the editor. Use Open to collapse the graph."
-msgstr "This document is already active in the editor. Use Open to collapse the graph."
+#: src/components/GraphSurface.tsx
+msgid "This document is open in another tab. Use Open to switch to it."
+msgstr "This document is open in another tab. Use Open to switch to it."
 
 #: src/components/DatabaseFeed.tsx
 msgid "This Feed view has an invalid Title or chronology property."
@@ -10890,13 +11051,17 @@ msgstr "This pack did not include property metadata."
 msgid "This pack is already set up here."
 msgstr "This pack is already set up here."
 
-#: src/components/GraphPanel.tsx
-msgid "This page doesn't exist yet. Open it to create the page in the editor and collapse the graph."
-msgstr "This page doesn't exist yet. Open it to create the page in the editor and collapse the graph."
+#: src/components/GraphSurface.tsx
+msgid "This page doesn't exist yet. Open it to create the page in the editor."
+msgstr "This page doesn't exist yet. Open it to create the page in the editor."
 
 #: src/components/LinksPanel.tsx
 msgid "This page doesn't link to anything yet."
 msgstr "This page doesn't link to anything yet."
+
+#: src/components/GraphCardDeck.tsx
+msgid "This page has no links yet."
+msgstr "This page has no links yet."
 
 #: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 msgid "This page is archived. Restore it from More page actions."
@@ -11146,7 +11311,7 @@ msgstr "Toggle underline formatting."
 msgid "Token budget"
 msgstr "Token budget"
 
-#: src/components/GraphPanel.tsx
+#: src/components/GraphSurface.tsx
 msgid "Top linked pages"
 msgstr "Top linked pages"
 
@@ -11244,6 +11409,10 @@ msgstr "unavailable on this platform"
 #: src/components/AutoSyncEnableWarning.tsx
 msgid "Uncommitted changes"
 msgstr "Uncommitted changes"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Uncreated pages"
+msgstr "Uncreated pages"
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Underline"

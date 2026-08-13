@@ -1,10 +1,10 @@
 /**
- * Wiring test: selecting an external URL node in the fullscreen graph and
- * clicking "Open link" routes through the desktop bridge
- * (`okDesktop.shell.openExternal`) on Electron, and through `window.open`
- * on web — never opening a new in-app window on desktop.
+ * Wiring test: selecting an external URL node in the project graph and clicking
+ * "Open link" routes through the desktop bridge (`okDesktop.shell.openExternal`)
+ * on Electron, and through `window.open` on web — never opening a new in-app
+ * window on desktop.
  *
- * This exercises the real `GraphPanel` "Open link" call site, complementing
+ * This exercises the real `GraphSurface` "Open link" call site, complementing
  * the isolated `openExternalUrl` unit test in `lib/external-link.test.ts`.
  * The force-graph canvas can't be clicked in jsdom, so the graph selection
  * is driven through the captured `onSelectNode` handler instead.
@@ -25,6 +25,12 @@ mock.module('@lingui/react/macro', () => ({
   Plural: ({ one }: { one: string }) => <>{one}</>,
   Trans: ({ children }: { children: ReactNode }) => <>{children}</>,
   useLingui: () => ({ t: renderLinguiTemplate }),
+}));
+
+// The graph surface fetches orphan/hub lists through react-query, but only in
+// its non-explore modes. Explore (the default) needs no provider.
+mock.module('next-themes', () => ({
+  useTheme: () => ({ resolvedTheme: 'light' }),
 }));
 
 mock.module('next-themes', () => ({
@@ -68,14 +74,14 @@ const graphHarness: { select?: (sel: ExternalSelection) => void } = {};
 
 mock.module('@/components/GraphView', () => ({
   GraphView: ({
-    isExpanded,
+    scope,
     onSelectNode,
   }: {
-    isExpanded: boolean;
+    scope: string;
     onSelectNode?: (sel: ExternalSelection) => void;
   }) => {
     graphHarness.select = onSelectNode;
-    return <div data-testid="graph-view" data-expanded={String(isExpanded)} />;
+    return <div data-testid="graph-view" data-scope={scope} />;
   },
 }));
 
@@ -85,7 +91,7 @@ function setDesktopBridge(openExternal: (url: string) => Promise<void>) {
   (window as unknown as { okDesktop?: unknown }).okDesktop = { shell: { openExternal } };
 }
 
-describe('GraphPanel — external "Open link" routes to the OS browser', () => {
+describe('GraphSurface — external "Open link" routes to the OS browser', () => {
   let originalOpen: typeof window.open;
 
   beforeEach(() => {
@@ -99,15 +105,13 @@ describe('GraphPanel — external "Open link" routes to the OS browser', () => {
     graphHarness.select = undefined;
   });
 
-  async function expandAndSelectExternal() {
-    const { GraphPanel } = await import('./GraphPanel');
+  async function selectExternal() {
+    const { GraphSurface } = await import('./GraphSurface');
     render(
       <TooltipProvider>
-        <GraphPanel activeDocName="docs/Active" />
+        <GraphSurface activeDocName="docs/Active" />
       </TooltipProvider>,
     );
-    // Selection is only wired in the expanded (fullscreen) graph.
-    await userEvent.click(screen.getByRole('button', { name: 'Expand graph' }));
     // Drive an external-node selection through the captured handler; the
     // selected-node card with the "Open link" button then renders.
     act(() => {
@@ -126,7 +130,7 @@ describe('GraphPanel — external "Open link" routes to the OS browser', () => {
     const openSpy = mock(() => null);
     window.open = openSpy as unknown as typeof window.open;
 
-    await expandAndSelectExternal();
+    await selectExternal();
     await userEvent.click(screen.getByRole('button', { name: 'Open link' }));
 
     expect(openExternal).toHaveBeenCalledTimes(1);
@@ -138,7 +142,7 @@ describe('GraphPanel — external "Open link" routes to the OS browser', () => {
     const openSpy = mock(() => null);
     window.open = openSpy as unknown as typeof window.open;
 
-    await expandAndSelectExternal();
+    await selectExternal();
     await userEvent.click(screen.getByRole('button', { name: 'Open link' }));
 
     expect(openSpy).toHaveBeenCalledTimes(1);
