@@ -17,26 +17,24 @@ import { getGraphCardNeighbors } from './GraphCardDeck';
 import {
   buildGraphAreas,
   GRAPH_AREA_BLUR_PX,
-  GRAPH_AREA_LABEL_MIN_REGION_PX,
   GRAPH_AREA_LAYER_SCALE,
-  GRAPH_AREA_TINT_ALPHA,
+  GRAPH_AREA_MIN_MEMBERS,
   type GraphArea,
   type GraphAreaBounds,
+  type GraphAreaPhases,
   getGraphAreaBounds,
-  getGraphAreaDepthDensity,
-  getGraphAreaDepthWeight,
-  getGraphAreaFocusDepth,
-  getGraphAreaLabelSizePx,
-  getGraphAreaLodAlpha,
-  getGraphAreaNameFade,
-  getGraphAreaTintWeight,
+  getGraphAreaNameAlpha,
+  getGraphAreaNameSizePx,
+  getGraphAreaPhases,
+  getGraphAreaTintAlpha,
+  getGraphAreaWorldScale,
+  getGraphAreaZoom,
 } from './graph-areas';
-import { GRAPH_COLOR_PAIRS } from './graph-colors';
+import { blendGraphColor, GRAPH_COLOR_PAIRS } from './graph-colors';
 import { applyGraphFilters } from './graph-filter';
 import {
   buildGraphFolderNodes,
   GRAPH_FOLDER_LINK_STRENGTH,
-  graphFolderDepthOf,
   isGraphFolderLink,
   isGraphRootFolderNode,
 } from './graph-folders';
@@ -260,13 +258,12 @@ function maybeFocusActiveGraphNode({
  * has already taken and a nested folder reads as its own place inside its
  * parent. The finished layer is blurred and composited once, at one opacity.
  */
-function paintGraphAreaPartition({
+function paintGraphAreas({
   ctx,
   layer,
   areas,
   boundsById,
-  alphaById,
-  colorOf,
+  fillById,
   toScreen,
   globalScale,
   width,
@@ -276,8 +273,8 @@ function paintGraphAreaPartition({
   layer: HTMLCanvasElement;
   areas: readonly GraphArea[];
   boundsById: ReadonlyMap<string, GraphAreaBounds>;
-  alphaById: ReadonlyMap<string, number>;
-  colorOf: (area: GraphArea) => string;
+  /** Opaque colour per region, its tint already blended into the backdrop. */
+  fillById: ReadonlyMap<string, string>;
   toScreen: (x: number, y: number) => { x: number; y: number };
   globalScale: number;
   width: number;
@@ -297,24 +294,33 @@ function paintGraphAreaPartition({
   // Ellipses are still placed in CSS pixels; the transform does the shrinking.
   layerCtx.setTransform(GRAPH_AREA_LAYER_SCALE, 0, 0, GRAPH_AREA_LAYER_SCALE, 0, 0);
   layerCtx.clearRect(0, 0, width, height);
+  // The densest region covering a pixel owns it, rather than the regions over
+  // it stacking.
+  //
+  // This is the original's `areaCloudContainer.blendMode = 'max'` — Pixi's MAX
+  // blend equation against a transparent layer, which resolves overlap by
+  // taking the larger alpha rather than compositing one over the other. Its
+  // whole job is to stop a patch covered by four folders coming out four times
+  // as dark.
+  //
+  // `destination-over`, painted deepest-first, is that same rule: the first
+  // region to claim a pixel keeps it, and because ink rises with depth
+  // (`getGraphAreaFillAlpha`) the deepest region is also the densest one.
+  //
+  // It only holds because the fills are OPAQUE. Every canvas composite unions
+  // alpha, `destination-over` included — it reverses the order but still
+  // stacks — so drawing them at their true tenth-of-an-alpha drove this layer
+  // to 98% opaque across 57 regions and the map came out a saturated wash.
+  // The tint is baked into the colour instead (`blendGraphColor`), which is
+  // identical over the same backdrop and leaves nothing to accumulate.
   layerCtx.globalCompositeOperation = 'destination-over';
 
   for (const area of [...areas].sort((a, b) => b.depth - a.depth)) {
     const box = boundsById.get(area.id);
     if (!box) continue;
-    // Only the regions that are a useful size right now. Varying alpha per
-    // region does not bring back the accumulation problem: `destination-over`
-    // still gives each pixel to the deepest region covering it, so a region
-    // half faded in just lets its parent read through the gap — which is the
-    // crossfade you want as one hands naming over to the other.
-    const lod = alphaById.get(area.id) ?? 0;
-    if (lod <= 0) continue;
-    // Deeper regions carry more ink, so nesting reads as density and not only
-    // as position. `destination-over` gives the pixel to the deepest region
-    // first, and the denser it is the less of its parent shows through the
-    // remainder — which is how the original made a child sit inside its parent.
-    layerCtx.globalAlpha = Math.min(1, lod * getGraphAreaDepthDensity(area.depth));
-    layerCtx.fillStyle = colorOf(area);
+    const fill = fillById.get(area.id);
+    if (!fill) continue;
+    layerCtx.fillStyle = fill;
     const center = toScreen(box.cx, box.cy);
     layerCtx.beginPath();
     layerCtx.ellipse(
@@ -322,13 +328,12 @@ function paintGraphAreaPartition({
       center.y,
       Math.max(1, box.rx * globalScale),
       Math.max(1, box.ry * globalScale),
-      box.rotation,
+      0,
       0,
       2 * Math.PI,
     );
     layerCtx.fill();
   }
-  layerCtx.globalAlpha = 1;
 
   const pxRatio = window.devicePixelRatio || 1;
   ctx.save();
@@ -337,7 +342,10 @@ function paintGraphAreaPartition({
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
   ctx.filter = `blur(${GRAPH_AREA_BLUR_PX}px)`;
-  ctx.globalAlpha = GRAPH_AREA_TINT_ALPHA;
+  // No composite alpha. Each region carries its own — the original's
+  // `0.10 + depth * 0.02` times how present its phase is — already blended
+  // into its colour. A second global multiplier on top is what forced those
+  // per-region values to be restated as ratios instead of used as written.
   ctx.drawImage(layer, 0, 0, width, height);
   ctx.restore();
 }
@@ -815,6 +823,9 @@ export function GraphView({
         edgeContainment: 'rgba(23,23,23,0.085)',
       };
   const bgColor = palette.background;
+  // The same background as a hex, because the territory layer has to resolve
+  // its tint against it numerically — see `blendGraphColor`.
+  const bgHex = isDark ? '#0e0e0e' : '#ffffff';
   const labelColor = palette.label;
   const emphasisColor = (emphasis: GraphNodeEmphasis): string =>
     emphasis === 'accent'
@@ -934,19 +945,6 @@ export function GraphView({
   // A folder node's id IS its region's id, so this is how the dot that anchors
   // a territory finds the territory's colour.
   const areaById = new Map(areas.map((area) => [area.id, area]));
-  // Each node's own place in the folder tree, which is what paces the label
-  // reveal. Folder nodes carry their path directly; a page's is the folder it
-  // sits in.
-  const nodeDepthById = new Map(
-    displayData.nodes.map((node) => {
-      // A folder's own depth is the length of its path; a page's is the depth
-      // of the folder it sits in. Tags and external URLs belong to no folder,
-      // so they sit at the top and reveal first.
-      if (node.kind === 'folder') return [node.id, graphFolderDepthOf(`${node.path}/leaf`)];
-      if (node.kind === 'doc') return [node.id, graphFolderDepthOf(node.docName)];
-      return [node.id, 0];
-    }),
-  );
   const innermostAreaByNodeId = new Map<string, GraphArea>();
   for (const area of areas) {
     for (const memberId of area.memberIds) {
@@ -960,24 +958,16 @@ export function GraphView({
   // `previousOffsetStepByNodeId`. Held in a ref rather than state because it is
   // written from the canvas render hook and must never trigger a re-render.
   const labelOffsetStepsRef = useRef<Map<string, number>>(new Map());
-  // Which region names were written last frame, for the same reason.
-  const areaLabelShownRef = useRef<Set<string>>(new Set());
-  // Each region's final opacity this frame: its own size-driven fade, times its
-  // depth's share of the map. Computed once in the pre-render hook and read by
-  // both the tint and the names, so the two can never disagree about which
-  // storey of the folder tree is currently on show.
-  const areaAlphaRef = useRef<Map<string, number>>(new Map());
-  // Names are stricter than the tint: exactly one level names itself, while a
-  // level you have already passed keeps its colour as ground. That split is
-  // what the original did, and it is why the map never went blank mid-handover.
-  const areaNameAlphaRef = useRef<Map<string, number>>(new Map());
-  // Which storey the map has descended to, from the same computation. A page's
-  // name is revealed when the map reaches the folder it lives in, so the
-  // territories and the node labels are driven by one number rather than two
-  // definitions of "we are inside this now" that could drift apart.
-  const focusDepthRef = useRef<number | null>(null);
-  // Offscreen layer the territories are partitioned onto before being
-  // composited in one pass — see `paintGraphAreaPartition`. Created in an
+  // How present each phase is, computed once in the pre-render hook from the
+  // zoom and read again by the post-render hook that writes the region names,
+  // so tint and names can never disagree about where in the descent we are.
+  const areaPhasesRef = useRef<GraphAreaPhases | null>(null);
+  // How this graph's world size compares to the one the original's constants
+  // were written for. Measured in the pre-render hook and reused by the
+  // post-render hook that sizes the region names, so both read one number.
+  const areaWorldScaleRef = useRef(1);
+  // Offscreen layer the territories are drawn onto before being composited in
+  // one blurred pass — see `paintGraphAreas`. Created in an
   // effect rather than lazily on first render: the React Compiler rejects
   // reading a ref during render, and the render hooks that use it only run
   // after mount anyway.
@@ -1689,6 +1679,7 @@ export function GraphView({
               // ellipses that were tried and reverted earlier.
               const bounds = areaBoundsRef.current;
               bounds.clear();
+              areaPhasesRef.current = null;
               if (areas.length === 0) return;
 
               const positionById = new Map(
@@ -1698,71 +1689,63 @@ export function GraphView({
                 ]),
               );
 
+              // How much world the graph currently spans, which is what the
+              // original's numbers get converted through — see
+              // `getGraphAreaWorldScale`. Measured off the same node bounding
+              // box a zoom-to-fit uses.
+              let minX = Number.POSITIVE_INFINITY;
+              let maxX = Number.NEGATIVE_INFINITY;
+              let minY = Number.POSITIVE_INFINITY;
+              let maxY = Number.NEGATIVE_INFINITY;
+              for (const node of positionById.values()) {
+                if (typeof node.x !== 'number' || typeof node.y !== 'number') continue;
+                if (node.x < minX) minX = node.x;
+                if (node.x > maxX) maxX = node.x;
+                if (node.y < minY) minY = node.y;
+                if (node.y > maxY) maxY = node.y;
+              }
+              const worldScale = getGraphAreaWorldScale({
+                spanX: maxX - minX,
+                spanY: maxY - minY,
+                width: dimensions.width,
+                height: dimensions.height,
+              });
+              areaWorldScaleRef.current = worldScale;
               for (const area of areas) {
-                const box = getGraphAreaBounds(area, positionById);
+                // A region is a place only once it holds something besides
+                // itself — the original's `members.length >= 2`.
+                let members = 0;
+                for (const id of area.memberIds) {
+                  const point = positionById.get(id);
+                  if (typeof point?.x === 'number' && typeof point?.y === 'number') members += 1;
+                }
+                if (members < GRAPH_AREA_MIN_MEMBERS) continue;
+                const box = getGraphAreaBounds(area, positionById, worldScale);
                 if (box) bounds.set(area.id, box);
               }
 
-              // One storey of the tree at a time: size says how present each
-              // region is, and the depth weighting then keeps whichever level
-              // best fits the screen, crossfading into the next as you descend.
-              const sized = areas.flatMap((area) => {
-                const box = bounds.get(area.id);
-                if (!box) return [];
-                const share = (box.rx * globalScale * 2) / Math.max(1, dimensions.width);
-                return [
-                  {
-                    area,
-                    share,
-                    lod: getGraphAreaLodAlpha(box.rx * globalScale * 2, dimensions.width),
-                  },
-                ];
-              });
-              const focusDepth = getGraphAreaFocusDepth(
-                sized.map(({ area, share }) => ({ depth: area.depth, share })),
-              );
-              focusDepthRef.current = focusDepth;
-              // The TINT never descends past the deepest level there is.
-              //
-              // The crossfade assumes a level below to hand over to; at the
-              // bottom of the tree there is none, so handing over just fades
-              // the last regions to ground and leaves the map blank exactly
-              // where you have arrived. Names still use the true focus depth —
-              // those SHOULD retire once you are reading pages — but the
-              // colour holds.
-              const deepestDepth = sized.reduce(
-                (deepest, { area }) => Math.max(deepest, area.depth),
-                0,
-              );
-              const tintFocus = focusDepth === null ? null : Math.min(focusDepth, deepestDepth);
-
-              const alphas = areaAlphaRef.current;
-              const nameAlphas = areaNameAlphaRef.current;
-              alphas.clear();
-              nameAlphas.clear();
-              for (const { area, lod } of sized) {
-                const tint = lod * getGraphAreaTintWeight(area.depth, tintFocus);
-                if (tint > 0) alphas.set(area.id, tint);
-                // Names also retire as the map goes inside them — past that
-                // point they are competing with the page names for the same
-                // pixels, and you already know where you are.
-                const name =
-                  lod *
-                  getGraphAreaDepthWeight(area.depth, tintFocus) *
-                  getGraphAreaNameFade(area.depth, focusDepth);
-                if (name > 0) nameAlphas.set(area.id, name);
-              }
+              // Two phases, not one per depth: the top-level folders, and
+              // everything inside them. How present each is depends only on the
+              // zoom, so this is one computation for the whole map rather than
+              // a size measurement per region.
+              const phases = getGraphAreaPhases(getGraphAreaZoom(globalScale, worldScale));
+              areaPhasesRef.current = phases;
 
               const fg = fgRef.current;
               const layer = areaLayerRef.current;
               if (!fg || !layer || bounds.size === 0) return;
-              paintGraphAreaPartition({
+              const fills = new Map<string, string>();
+              for (const area of areas) {
+                if (!bounds.has(area.id)) continue;
+                const alpha = getGraphAreaTintAlpha(area, phases);
+                if (alpha > 0) fills.set(area.id, blendGraphColor(areaColor(area), bgHex, alpha));
+              }
+              paintGraphAreas({
                 ctx,
                 layer,
                 areas,
                 boundsById: bounds,
-                alphaById: alphas,
-                colorOf: areaColor,
+                fillById: fills,
                 toScreen: (x, y) => fg.graph2ScreenCoords(x, y),
                 globalScale,
                 width: dimensions.width,
@@ -1771,103 +1754,41 @@ export function GraphView({
             }}
             onRenderFramePost={(ctx: CanvasRenderingContext2D, globalScale: number) => {
               const areaFg = areas.length > 0 ? fgRef.current : null;
-              if (areaFg) {
-                // Region names, in screen space so they stay readable at any
-                // zoom. They are the legend you navigate by, so they are drawn
-                // before the node labels and yield to them: strong when you are
-                // far enough out that node labels are gone, receding once you
-                // are close enough to read individual pages.
+              const phases = areaPhasesRef.current;
+              if (areaFg && phases) {
+                // Region names, at the centre of their own territory.
+                //
+                // Sized by DEPTH and scaled by the zoom, which is what the
+                // original did by keeping them inside the zoomed container: a
+                // top-level folder is lettered at 56 world units and one nested
+                // inside it at 40, so the size tells you which storey you are
+                // reading before you have read the word. Sizing them instead to
+                // the measured on-screen width of their own region — which is
+                // what stood here — made two folders on the same storey come
+                // out at different sizes, and made every size churn as the
+                // simulation moved their members around.
                 ctx.save();
                 const pxRatio = window.devicePixelRatio || 1;
                 ctx.setTransform(pxRatio, 0, 0, pxRatio, 0, 0);
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
+                // The original wrote these in a fixed near-black ink. This one
+                // has a dark theme, so the theme's label colour stands in —
+                // the only deviation, and unavoidable.
                 ctx.fillStyle = palette.label;
-                // 0.45/0.22 was too faint to read — these names are the map's
-                // legend, not a watermark, and the original carried them at
-                // 0.82. They can afford the ink now that the level of detail
-                // above draws only the few regions that are a useful size,
-                // rather than every folder at once.
-                ctx.globalAlpha = globalScale >= settings.display.textFadeThreshold ? 0.42 : 0.78;
-                // Biggest region first, and a name is dropped when its box
-                // would land on one already written. Without this every folder
-                // writes at its own centroid and a dense project stacks a dozen
-                // of them into a smear — which is worse than no name at all.
-                const takenLabelBoxes: Array<[number, number, number, number]> = [];
-                const baseAlpha = ctx.globalAlpha;
-                // Largest on screen first, not shallowest: with the size-driven
-                // level of detail above, "which region is the landmark right
-                // now" is a question about pixels, and the one that owns the
-                // most of them should get to keep its name.
-                //
-                // Everything below is decided against numbers that move while
-                // you zoom, so — exactly as with the node labels — it is done
-                // with a memory of what was written last frame. Two sibling
-                // folders of near-equal size (`views-25` and `views-200`) kept
-                // swapping rank frame to frame, and the swap handed the
-                // contested spot back and forth: both names strobed the whole
-                // way through a zoom.
-                const shownLastFrame = areaLabelShownRef.current;
-                const named = areas
-                  .map((area) => {
-                    const box = areaBoundsRef.current.get(area.id);
-                    if (!box) return null;
-                    const screen = areaFg.graph2ScreenCoords(box.cx, box.cy);
-                    const edge = areaFg.graph2ScreenCoords(box.cx + box.rx, box.cy);
-                    const widthPx = Math.abs(edge.x - screen.x) * 2;
-                    return {
-                      area,
-                      screen,
-                      widthPx,
-                      lod: areaNameAlphaRef.current.get(area.id) ?? 0,
-                      wasShown: shownLastFrame.has(area.id),
-                    };
-                  })
-                  .filter((entry) => entry !== null)
-                  .filter(
-                    (entry) =>
-                      entry.lod > 0 &&
-                      // A name already up survives a little below the entry
-                      // size, so a region hovering on the threshold does not
-                      // chatter across it.
-                      entry.widthPx >= GRAPH_AREA_LABEL_MIN_REGION_PX * (entry.wasShown ? 0.85 : 1),
-                  )
-                  .sort((a, b) => {
-                    if (a.wasShown !== b.wasShown) return a.wasShown ? -1 : 1;
-                    return b.widthPx - a.widthPx;
-                  });
-                const shownThisFrame = new Set<string>();
+                const zoom = getGraphAreaZoom(globalScale, areaWorldScaleRef.current);
 
-                for (const { area, screen, widthPx, lod, wasShown } of named) {
-                  // Size the name to its own territory. Measured on screen
-                  // rather than in graph units so it survives zoom.
-                  const sizePx = getGraphAreaLabelSizePx(widthPx);
+                for (const area of areas) {
+                  const box = areaBoundsRef.current.get(area.id);
+                  if (!box) continue;
+                  const alpha = getGraphAreaNameAlpha(area, phases);
+                  if (alpha <= 0.01) continue;
+                  const screen = areaFg.graph2ScreenCoords(box.cx, box.cy);
+                  const sizePx = getGraphAreaNameSizePx(area.depth, zoom);
                   ctx.font = `italic ${sizePx}px Georgia, "Times New Roman", serif`;
-                  // A name wider than the thing it names is a label for the
-                  // whole canvas, not for that region — drop it rather than
-                  // write across its neighbours. Same hysteresis as the size
-                  // gate above: a name already up is given slack before it is
-                  // taken away again.
-                  const textWidth = ctx.measureText(area.name).width;
-                  if (textWidth > widthPx * (wasShown ? 1.15 : 1)) continue;
-                  const halfWidth = textWidth / 2;
-                  const halfHeight = sizePx * 0.55;
-                  const left = screen.x - halfWidth;
-                  const right = screen.x + halfWidth;
-                  const top = screen.y - halfHeight;
-                  const bottom = screen.y + halfHeight;
-                  const collides = takenLabelBoxes.some(
-                    ([l, t, r, b]) => left < r && right > l && top < b && bottom > t,
-                  );
-                  if (collides) continue;
-                  takenLabelBoxes.push([left, top, right, bottom]);
-                  // A region fading in or out takes its name with it, so the
-                  // handover from parent to child reads as one movement.
-                  ctx.globalAlpha = baseAlpha * lod;
+                  ctx.globalAlpha = alpha;
                   ctx.fillText(area.name, screen.x, screen.y);
-                  shownThisFrame.add(area.id);
                 }
-                areaLabelShownRef.current = shownThisFrame;
                 ctx.restore();
               }
 
@@ -1924,18 +1845,6 @@ export function GraphView({
                   );
                 },
                 previousOffsetStepByNodeId: labelOffsetStepsRef.current,
-                // Keyed on the page's OWN depth in the folder tree, not on the
-                // depth of the territory holding it. Territories stop at depth
-                // 2, so everything below that shares one region and used to
-                // reveal in a single step — a wall of names arriving at once.
-                // The focus depth keeps counting past the deepest territory
-                // (one level per 2x zoom), so this gives the descent as many
-                // steps as the tree actually has.
-                isDepthRevealedForNode: (nodeId) => {
-                  const focusDepth = focusDepthRef.current;
-                  if (focusDepth === null) return null;
-                  return focusDepth >= (nodeDepthById.get(nodeId) ?? 0);
-                },
               });
 
               // Hand this frame's decisions to the next one. Without it the

@@ -66,11 +66,12 @@ genuinely well-connected before it draws as a numbered hub, and arrowheads are
 off by default — the graph should tell you what things ARE before it tells you
 how many links they have.
 
-Territories behave like an atlas rather than an overlay. Only the ones that are
-a useful size at your current zoom are drawn, and each is named in type sized to
-fit it, so zooming out shows you the few large places your vault is made of and
-zooming in hands the naming over to their contents — one region fading as its
-children arrive. A territory is also drawn around where a folder's pages
-actually sit rather than stretched to reach its one far-flung outlier, so the
-colour marks a place instead of washing the canvas.
+Territories behave like an atlas rather than an overlay. Framed in view you get
+the top-level places your vault is made of, each named across it; zoom in and
+they divide into their own parts, the smaller names arriving as the larger ones
+step back; keep going and the names hand over to the pages entirely while the
+colour stays as ground under them. A name is sized by how deep its folder sits
+rather than by how wide it happens to have spread, so two places on the same
+level are lettered alike, and nesting reads as ink — a folder inside another is
+drawn a shade denser than the one holding it.
 

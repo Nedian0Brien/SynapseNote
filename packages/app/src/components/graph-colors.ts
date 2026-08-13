@@ -94,3 +94,48 @@ export function clusterColor(cluster: string, isDark: boolean): string {
   const palette = isDark ? DARK_PALETTE : LIGHT_PALETTE;
   return palette[stableHash(cluster) % palette.length];
 }
+
+/**
+ * A colour laid over a backdrop at `amount` opacity, resolved to an opaque
+ * colour rather than left as a translucent one.
+ *
+ * The territory layer needs this because canvas has no per-channel MAX blend.
+ * Pixi had one, and the original leaned on it entirely: it drew every region
+ * translucent onto a transparent layer and let MAX resolve the overlaps, so a
+ * patch covered by four folders came out as dark as the deepest one and no
+ * darker. Every canvas composite operation unions alpha instead — including
+ * `destination-over`, which reverses the draw order but still stacks — so 57
+ * regions at a tenth opacity each drove the layer to 98% opaque and the map
+ * came out as one saturated wash.
+ *
+ * Baking the opacity into the colour moves the problem somewhere canvas can
+ * solve it: the regions become OPAQUE, so `destination-over` gives each pixel
+ * to exactly one of them and there is nothing left to accumulate, and the
+ * result over the same backdrop is identical to having drawn it translucent.
+ */
+export function blendGraphColor(color: string, backdrop: string, amount: number): string {
+  const source = parseHexColor(color);
+  const target = parseHexColor(backdrop);
+  if (!source || !target) return color;
+  const ratio = Math.max(0, Math.min(1, amount));
+  const channel = (from: number, to: number) => Math.round(to + (from - to) * ratio);
+  return `rgb(${channel(source.r, target.r)}, ${channel(source.g, target.g)}, ${channel(source.b, target.b)})`;
+}
+
+function parseHexColor(value: string): { r: number; g: number; b: number } | null {
+  const match = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(value.trim());
+  if (!match) return null;
+  const hex = match[1];
+  const full =
+    hex.length === 3
+      ? hex
+          .split('')
+          .map((part) => part + part)
+          .join('')
+      : hex;
+  return {
+    r: Number.parseInt(full.slice(0, 2), 16),
+    g: Number.parseInt(full.slice(2, 4), 16),
+    b: Number.parseInt(full.slice(4, 6), 16),
+  };
+}

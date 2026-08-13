@@ -6,38 +6,27 @@ import { resolveGraphLinkEndpointId } from './graph-view-utils';
  * Folder territories: a soft tinted region behind everything a directory holds,
  * with the directory's name written across it.
  *
- * This is the thing the original SynapseNote graph was recognizable BY — you
- * read the map by its regions, not by squinting at node labels. It draws as a
- * blurred, low-alpha ellipse over the members' bounding box, plus a large
- * italic name at the centroid.
+ * This is a faithful port of the original SynapseNote graph — the Flask +
+ * PixiJS one on `archive/synapsenote-before-appflowy`, whose area system lived
+ * in `services/web/frontend/src/features/workspace/GraphView.jsx`. Everything
+ * here (the bounds, the two phases, the fade ranges, the ink, the name sizes)
+ * reproduces that file's numbers rather than reinventing them.
  *
- * An earlier attempt at this on this branch failed and was reverted, for a
- * reason worth recording: a region is only meaningful if its members are
- * already sitting together, and back then folders were not nodes, so nothing in
- * the layout put them there. The ellipses covered the whole canvas and meant
- * nothing. Directories are real nodes now (see `graph-folders.ts`), which is
- * what makes this honest.
+ * An earlier pass on this branch tried to improve on it — percentile bounds, a
+ * rotated ellipse, a continuous per-depth crossfade — and the result read as
+ * awkward next to the thing it was replacing. The original's choices are
+ * cruder and they work, so they are restored verbatim and the reasoning is
+ * recorded next to each one.
  */
 
 export interface GraphArea {
   id: string;
   /** The folder's own label — the region name. */
   name: string;
-  /** Distance from the project root. Drives size, padding and tint depth. */
+  /** Distance from the project root. Drives padding, ink, phase and name size. */
   depth: number;
   memberIds: Set<string>;
-  /**
-   * Index into the caller's palette; areas cycle through it.
-   *
-   * One slot per region, NOT inherited from an ancestor. Inheriting it was an
-   * answer to the map repainting itself when one level handed over to the
-   * next, back when levels were mutually exclusive — but the ground weight
-   * (see `GRAPH_AREA_GROUND_WEIGHT`) answers that better, by keeping the
-   * parent's colour underneath instead of restating it on top. With both in
-   * place the inheritance only cost legibility: at this layer's alpha the
-   * shade variation that kept siblings apart was far too fine to survive, and
-   * a screenful of regions came out as one wash of the same pink.
-   */
+  /** Index into the caller's palette; areas cycle through it. */
   colorIndex: number;
 }
 
@@ -46,34 +35,7 @@ export interface GraphAreaBounds {
   cy: number;
   rx: number;
   ry: number;
-  /** Radians to rotate the ellipse by, so it lies along the cluster. */
-  rotation: number;
 }
-
-/** Floors on the half-extent, so a one-member region is still a region. */
-const MIN_HALF_WIDTH = 30;
-const MIN_HALF_HEIGHT = 25;
-
-/**
- * How deep in the folder tree a directory can be and still be a place.
- *
- * The original was written for note vaults, which are two or three levels
- * deep, and drew a territory for every directory it found. Run the same rule
- * over a codebase and you get storeys nobody thinks in: this repo yields 57
- * regions, 40 of them at depth 3 or below, and every one of the ten at depth 5
- * holds exactly two files. A folder with two files in it is not somewhere you
- * navigate to, and having to descend past four levels of them to reach the
- * pages is what made the map confusing rather than legible.
- *
- * Deeper folders do not lose their pages — a region's members already include
- * all its descendants, so those pages simply belong to the deepest ANCESTOR
- * that is still a place.
- *
- * Two levels, not three: three still left this repo with fourteen depth-3
- * regions to descend through, and the storeys a reader actually holds in their
- * head are "which top-level area" and "which part of it".
- */
-export const GRAPH_AREA_MAX_DEPTH = 2;
 
 /**
  * Regions for every directory that holds something, EXCEPT the ones with no
@@ -81,7 +43,16 @@ export const GRAPH_AREA_MAX_DEPTH = 2;
  *
  * The exclusion matters: the project root's region would be the whole graph, so
  * it would tint everything uniformly and name the map after itself. The
- * original made the same exclusion.
+ * original made exactly this exclusion (`!rootIds.has(dir.id)`), and it is why
+ * the shallowest region is a top-level folder at depth 1 rather than the root
+ * at depth 0.
+ *
+ * There is deliberately no maximum depth. One was added on this branch, on the
+ * theory that a codebase is deeper than a note vault and the deep regions were
+ * storeys nobody thinks in. But the original handles depth by PHASE, not by
+ * exclusion — everything at depth 2 and below shares one phase and appears
+ * together — so capping it removed regions the phase system was already
+ * accounting for.
  */
 export function buildGraphAreas(
   nodes: readonly GraphNode[],
@@ -136,12 +107,9 @@ export function buildGraphAreas(
   return (
     folders
       .filter(
-        (node) =>
-          (childrenByParent.get(node.id) ?? []).length > 0 &&
-          parentByChild.has(node.id) &&
-          (depthById.get(node.id) ?? 0) <= GRAPH_AREA_MAX_DEPTH,
+        (node) => (childrenByParent.get(node.id) ?? []).length > 0 && parentByChild.has(node.id),
       )
-      // Shallow regions first, so a nested one paints on top of its parent.
+      // Shallow regions first, exactly as the original sorted them.
       .sort((a, b) => (depthById.get(a.id) ?? 0) - (depthById.get(b.id) ?? 0))
       .map((node, index) => ({
         id: node.id,
@@ -154,15 +122,114 @@ export function buildGraphAreas(
 }
 
 /**
+ * How the original's numbers are carried over to a graph of a different size.
+ *
+ * Every world-space constant below — the extent floors, the padding, the name
+ * sizes — was written against a layout running `forceLink().distance(95)` over
+ * a note vault, and every zoom threshold was written against the scale factor
+ * THAT graph produced. Neither survives being pasted into a 1,248-node
+ * codebase: this layout runs a shorter spring and holds six times the nodes,
+ * so at zoom-to-fit it sits three times further out on the original's scale
+ * than the original ever did, and the whole phase system would be off the end
+ * of its own range before the user touched anything.
+ *
+ * So the constants are kept verbatim and converted through one measured
+ * factor. The measurement is the original's own `fitAll`:
+ *
+ *     scale = min(width * 0.62 / spanX, height * 0.72 / spanY)
+ *
+ * — it framed the graph into 62% of the viewport, and the phase thresholds
+ * were chosen against whatever zoom that produced for a vault. Anchoring OUR
+ * fit to the same point on its scale reproduces the relationship it actually
+ * had (fit shows you the top-level regions; the first zoom-in subdivides them)
+ * on a graph of any size, which pasting its raw numbers would not.
+ */
+const GRAPH_AREA_FIT_WIDTH_SHARE = 0.62;
+const GRAPH_AREA_FIT_HEIGHT_SHARE = 0.72;
+
+/**
+ * Where zoom-to-fit lands on the original's zoom scale.
+ *
+ * `GRAPH_AREA_PHASE1_START - GRAPH_AREA_FADE_RANGE` — the exact point its own
+ * `bgVisible` gate let the phase-2 regions in. So the framed graph is the
+ * top-level regions and their names, and the very first zoom-in starts
+ * dividing them into their parts. Not a number picked to look right: it is the
+ * boundary the original already had, put where the original already framed to.
+ */
+const GRAPH_AREA_FIT_ZOOM = 0.27;
+
+export interface GraphAreaExtent {
+  spanX: number;
+  spanY: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * World units here per world unit in the original, measured from how much of
+ * the viewport this graph currently spans. Returns 1 — the identity, i.e.
+ * "assume the original's own scale" — for a degenerate extent.
+ */
+export function getGraphAreaWorldScale(extent: GraphAreaExtent): number {
+  const { spanX, spanY, width, height } = extent;
+  if (!(spanX > 0) || !(spanY > 0) || !(width > 0) || !(height > 0)) return 1;
+  const fitScale = Math.min(
+    (width * GRAPH_AREA_FIT_WIDTH_SHARE) / spanX,
+    (height * GRAPH_AREA_FIT_HEIGHT_SHARE) / spanY,
+  );
+  if (!(fitScale > 0)) return 1;
+  return GRAPH_AREA_FIT_ZOOM / fitScale;
+}
+
+/**
+ * The original's zoom scale, recovered from ours: screen pixels per ORIGINAL
+ * world unit. Every threshold in this file reads against this, never against
+ * `globalScale` directly.
+ */
+export function getGraphAreaZoom(globalScale: number, worldScale: number): number {
+  return globalScale * worldScale;
+}
+
+/** Floors on the half-extent, so a one-member region is still a region. */
+const MIN_HALF_WIDTH = 30;
+const MIN_HALF_HEIGHT = 25;
+
+/**
+ * How far a region's ellipse reaches past its outermost member.
+ *
+ * The original: `depth >= 2 ? 35 + (2 - depth) * 10 : 55 + (2 - depth) * 15`.
+ * Padding shrinks with depth so a nested region sits visibly inside its parent
+ * instead of tracing the same outline, and it shrinks in two different steps
+ * because the two phases are read at different zooms — a phase-1 region is
+ * looked at from far enough out that it needs the generous 70 to register as a
+ * shape at all, while a phase-2 region is read up close where 35 already
+ * separates it from its neighbours.
+ */
+export function getGraphAreaPadding(depth: number): number {
+  return depth >= GRAPH_AREA_PHASE2_DEPTH ? 35 + (2 - depth) * 10 : 55 + (2 - depth) * 15;
+}
+
+/**
  * The ellipse to paint for an area, from wherever the simulation has currently
  * put its members. Returns `null` while none of them have coordinates yet.
  *
- * Padding shrinks with depth so a nested region sits visibly inside its parent
- * rather than tracing the same outline.
+ * Centroid, then the MAXIMUM absolute offset on each axis, then padding —
+ * axis-aligned, exactly as the original's `updateAreaBounds`.
+ *
+ * This branch previously replaced the maximum with an 82nd percentile and
+ * rotated the ellipse onto the cluster's principal axis. Both were answers to
+ * real measurements (one distant member inflating a region; 22% of nodes
+ * landing outside their own folder's ellipse) and both made the map worse to
+ * look at: the percentile leaves members visibly stranded outside the colour
+ * that is supposed to contain them, and the rotation makes every region tilt
+ * at its own angle and wobble as the simulation settles. A territory that
+ * always contains its members and never tilts reads as ground; a tighter one
+ * that does neither reads as a mistake.
  */
 export function getGraphAreaBounds(
   area: GraphArea,
   positionById: ReadonlyMap<string, { x?: number; y?: number }>,
+  worldScale = 1,
 ): GraphAreaBounds | null {
   let sumX = 0;
   let sumY = 0;
@@ -179,320 +246,176 @@ export function getGraphAreaBounds(
   const cx = sumX / count;
   const cy = sumY / count;
 
-  // Lay the ellipse along the cluster rather than along the screen axes.
-  //
-  // A folder's pages are pulled into whatever shape their links want, and that
-  // is rarely axis-aligned. Measured on this repo, an axis-aligned fit left 22%
-  // of all nodes outside the territory of their OWN folder — a fifth of the
-  // graph sitting on bare canvas next to the colour that was supposed to
-  // contain it. Rotating to the cluster's principal axis fixes that without
-  // touching the percentile below, which is there to keep outliers from
-  // inflating the region and should stay strict.
-  let sxx = 0;
-  let syy = 0;
-  let sxy = 0;
+  let maxDx = MIN_HALF_WIDTH * worldScale;
+  let maxDy = MIN_HALF_HEIGHT * worldScale;
   for (const id of area.memberIds) {
     const point = positionById.get(id);
     if (typeof point?.x !== 'number' || typeof point?.y !== 'number') continue;
-    const dx = point.x - cx;
-    const dy = point.y - cy;
-    sxx += dx * dx;
-    syy += dy * dy;
-    sxy += dx * dy;
+    const dx = Math.abs(point.x - cx);
+    const dy = Math.abs(point.y - cy);
+    if (dx > maxDx) maxDx = dx;
+    if (dy > maxDy) maxDy = dy;
   }
-  const rotation = 0.5 * Math.atan2(2 * sxy, sxx - syy);
-  const cos = Math.cos(rotation);
-  const sin = Math.sin(rotation);
 
-  // A high percentile of the members' distances, NOT the maximum.
-  //
-  // The maximum is decided by whichever single member has wandered furthest,
-  // and in a link graph something always has: one page in `packages` that is
-  // cited from the other end of the vault dragged that region's territory to
-  // one and a half times the width of the whole canvas, while the graph it was
-  // supposed to be a part of fitted inside it. The tint then covered empty
-  // space, and every large region overlapped every other one. A percentile
-  // asks where the members actually ARE and lets the strays fall outside,
-  // which is what a region on a map means anyway.
-  const dxs: number[] = [];
-  const dys: number[] = [];
-  for (const id of area.memberIds) {
-    const point = positionById.get(id);
-    if (typeof point?.x !== 'number' || typeof point?.y !== 'number') continue;
-    const dx = point.x - cx;
-    const dy = point.y - cy;
-    // Distances along the cluster's own axes, not the screen's.
-    dxs.push(Math.abs(dx * cos + dy * sin));
-    dys.push(Math.abs(dy * cos - dx * sin));
-  }
-  dxs.sort((a, b) => a - b);
-  dys.sort((a, b) => a - b);
-  const at = (sorted: number[]) =>
-    sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * GRAPH_AREA_EXTENT_PERCENTILE))] ??
-    0;
+  const padding = getGraphAreaPadding(area.depth) * worldScale;
+  return { cx, cy, rx: maxDx + padding, ry: maxDy + padding };
+}
 
-  const padding = Math.max(20, 55 - area.depth * 12);
+/**
+ * The depth at which a region stops belonging to the first phase.
+ *
+ * The whole level-of-detail system is two phases, not one per depth. Depth 1 —
+ * the top-level folders — is phase 1, the map you read when zoomed out.
+ * Everything at depth 2 and below is phase 2, the map you read once you are
+ * inside one. There is no third phase; a depth-5 folder is simply a small
+ * phase-2 region.
+ */
+export const GRAPH_AREA_PHASE2_DEPTH = 2;
+
+/** Where phase 2 starts arriving and phase 1 starts leaving. */
+export const GRAPH_AREA_PHASE1_START = 0.35;
+
+/** Where phase 2 has finished leaving, having handed the map to the pages. */
+export const GRAPH_AREA_PHASE2_FADE_END = 0.6;
+
+/** Half-width of every crossfade, in zoom scale. */
+export const GRAPH_AREA_FADE_RANGE = 0.08;
+
+/** The ink a region name is written with at full presence. */
+export const GRAPH_AREA_NAME_ALPHA = 0.82;
+
+/** A region is a place only once it holds something besides itself. */
+export const GRAPH_AREA_MIN_MEMBERS = 2;
+
+export function isGraphAreaPhase2(depth: number): boolean {
+  return depth >= GRAPH_AREA_PHASE2_DEPTH;
+}
+
+export interface GraphAreaPhases {
+  /** Multiplier on a phase-1 region's own fill alpha. */
+  phase1Tint: number;
+  /** Multiplier on a phase-2 region's own fill alpha. */
+  phase2Tint: number;
+  /** Absolute alpha for a phase-1 region's name. */
+  phase1Name: number;
+  /** Absolute alpha for a phase-2 region's name. */
+  phase2Name: number;
+  /** Whether phase-2 regions are drawn at all yet. */
+  phase2Visible: boolean;
+}
+
+function clamp01(value: number): number {
+  return Math.max(0, Math.min(1, value));
+}
+
+/**
+ * How present each phase is at this zoom — the original's frame-loop block,
+ * unchanged.
+ *
+ * Three things are worth naming, because they are what the rebuilt version got
+ * wrong:
+ *
+ * 1. `phase1Tint` bottoms out at 0.4, never 0. A top-level region you have
+ *    zoomed inside of stays as ground under the smaller regions rather than
+ *    going dark, so descending never empties the map.
+ * 2. Phase 2's tint arrives over the FIRST 60% of the handover
+ *    (`fadeT / 0.6`), so the child regions are fully inked well before the
+ *    parent has finished receding. The overlap is the point.
+ * 3. Names and tint are on different clocks. Both phases' names are gone by
+ *    `phase2FadeEnd`, while phase 1's tint stays forever — because a name
+ *    competes with the page labels for the same pixels and a tint does not.
+ */
+export function getGraphAreaPhases(zoom: number): GraphAreaPhases {
+  const fadeT = clamp01(
+    (zoom - (GRAPH_AREA_PHASE1_START - GRAPH_AREA_FADE_RANGE)) / (2 * GRAPH_AREA_FADE_RANGE),
+  );
+  const phase2UpperFade = clamp01(
+    1 - (zoom - (GRAPH_AREA_PHASE2_FADE_END - GRAPH_AREA_FADE_RANGE)) / (2 * GRAPH_AREA_FADE_RANGE),
+  );
+
   return {
-    cx,
-    cy,
-    rx: Math.max(MIN_HALF_WIDTH, at(dxs)) + padding,
-    ry: Math.max(MIN_HALF_HEIGHT, at(dys)) + padding,
-    rotation,
+    phase1Tint: 1 - fadeT * 0.6,
+    phase2Tint: clamp01(fadeT / 0.6),
+    phase1Name: GRAPH_AREA_NAME_ALPHA * (1 - fadeT),
+    phase2Name: GRAPH_AREA_NAME_ALPHA * fadeT * phase2UpperFade,
+    phase2Visible: zoom > GRAPH_AREA_PHASE1_START - GRAPH_AREA_FADE_RANGE,
   };
 }
 
 /**
- * Share of a region's members the territory is drawn to cover. The rest are
- * outliers whose job is to be linked from elsewhere, not to define a place.
- */
-export const GRAPH_AREA_EXTENT_PERCENTILE = 0.82;
-
-/**
- * Opacity of the FINISHED territory layer, applied once at composite time.
+ * Ink for one region at this nesting depth: the original's
+ * `0.10 + depth * 0.02`.
  *
- * There is deliberately no per-region alpha any more. Painting the ellipses
- * straight onto the canvas made alpha accumulate, so a patch covered by four
- * folders came out four times as dark — depth information that is not there,
- * and the muddy wash that made the whole thing unreadable. The regions are
- * partitioned first (see `paintGraphAreaPartition`) so every pixel carries
- * exactly one region's colour, and then the whole layer gets this one value.
+ * Depth is legible as density, not only as position, so a nested region reads
+ * as sitting INSIDE its parent rather than merely next to it. This is an
+ * ABSOLUTE alpha for the shape, not a multiplier on a layer opacity — the
+ * layer is composited at 1 and these values are the whole of the tint.
  */
-export const GRAPH_AREA_TINT_ALPHA = 0.16;
+export function getGraphAreaFillAlpha(depth: number): number {
+  return 0.1 + depth * 0.02;
+}
+
+/** The fill alpha a region should actually be painted at right now. */
+export function getGraphAreaTintAlpha(area: GraphArea, phases: GraphAreaPhases): number {
+  if (isGraphAreaPhase2(area.depth)) {
+    if (!phases.phase2Visible) return 0;
+    return getGraphAreaFillAlpha(area.depth) * phases.phase2Tint;
+  }
+  return getGraphAreaFillAlpha(area.depth) * phases.phase1Tint;
+}
+
+/** The alpha a region's NAME should be written at right now. */
+export function getGraphAreaNameAlpha(area: GraphArea, phases: GraphAreaPhases): number {
+  if (isGraphAreaPhase2(area.depth)) {
+    if (!phases.phase2Visible) return 0;
+    return phases.phase2Name;
+  }
+  return phases.phase1Name;
+}
 
 /**
- * Softness of the territory edges, applied to the assembled layer rather than
- * to each region. Blurring them individually would feather the boundaries back
- * into one another and undo the partition.
+ * How big a region's name is drawn, in the original's world units.
+ *
+ * Phase 1 starts at 72 and loses 16 a level; phase 2 starts at 40 and loses 12
+ * a level, with floors at 30 and 24. Size is a function of DEPTH, not of how
+ * many pixels the region currently occupies — which is what makes the name a
+ * statement about where you are in the tree rather than about the shape it
+ * happens to be sitting on.
+ *
+ * (This branch had sized names to the measured on-screen width of their own
+ * region. That is why they came out ragged: two folders on the same storey
+ * would be lettered at different sizes because the simulation had spread one
+ * of them wider that second, and the size churned as the layout settled.)
  */
-export const GRAPH_AREA_BLUR_PX = 30;
+export function getGraphAreaNameWorldSize(depth: number): number {
+  return isGraphAreaPhase2(depth)
+    ? Math.max(24, 40 - (depth - GRAPH_AREA_PHASE2_DEPTH) * 12)
+    : Math.max(30, 72 - depth * 16);
+}
+
+/**
+ * That size on screen. The original's labels lived inside the zoomed container,
+ * so they grew and shrank with the map; ours are drawn in screen space, so the
+ * zoom has to be applied by hand to get the same behaviour.
+ */
+export function getGraphAreaNameSizePx(depth: number, zoom: number): number {
+  return getGraphAreaNameWorldSize(depth) * zoom;
+}
+
+/**
+ * Softness of the territory edges — the original's `BlurFilter({ strength: 16 })`,
+ * which Pixi applies in screen space after the zoom transform, so it is 16
+ * screen pixels at any zoom just as this is.
+ */
+export const GRAPH_AREA_BLUR_PX = 16;
 
 /**
  * Resolution the territory layer is rasterized at, as a fraction of the canvas.
  *
- * The layer exists only to be soft, so there is no reason to draw it sharp and
- * then spend a full-resolution blur destroying that sharpness. Rasterizing it
- * small and scaling back up IS a smoothing pass — bilinear interpolation across
- * a 4-5x upscale rounds every boundary on its own — and it costs a fraction of
- * what blurring the full canvas each frame does. The blur on top finishes the
- * job.
+ * Not from the original — Pixi did this on the GPU and could afford full
+ * resolution. The layer exists only to be soft, so there is no reason to draw
+ * it sharp and then spend a full-resolution blur destroying that sharpness.
+ * Rasterizing small and scaling back up IS a smoothing pass, and it costs a
+ * fraction of blurring the full canvas every frame.
  */
 export const GRAPH_AREA_LAYER_SCALE = 0.22;
-
-/**
- * Whether a region is big enough on screen to be worth drawing at all.
- *
- * Only the fade IN. A region below a tenth of the viewport is a handful of
- * dots and its parent already says where you are; past that it ramps up and
- * stays up.
- *
- * There used to be a fade OUT here as well, for a region grown larger than the
- * screen. That was the right idea at the wrong level: "you have zoomed past
- * this" is a fact about the LEVEL you are on, not about one region, and
- * `getGraphAreaFocusDepth` now owns it. Keeping both meant a region was fading
- * for two reasons at once during a handover, and the product of the two left a
- * trough in the middle of every transition where the map went blank.
- */
-export function getGraphAreaLodAlpha(regionWidthPx: number, viewportPx: number): number {
-  if (viewportPx <= 0) return 0;
-  const share = regionWidthPx / viewportPx;
-  if (share < 0.1) return 0;
-  if (share < 0.18) return (share - 0.1) / 0.08;
-  return 1;
-}
-
-/**
- * The on-screen share a region wants to occupy to be the level you are reading.
- * Sits in the middle of the band `getGraphAreaLodAlpha` calls fully present.
- */
-export const GRAPH_AREA_FOCUS_SHARE = 0.5;
-
-/**
- * Which storey of the folder tree the map is showing, as a continuous number.
- *
- * Regions shrink as you go deeper and grow as you zoom in, so "how big is a
- * typical depth-2 region right now" is a monotone read-out of where you are in
- * the tree. This finds the depth whose regions are currently closest to the
- * size a region wants to be to be read, interpolating between the two it falls
- * between — so the answer slides continuously from 0 toward 1 toward 2 as you
- * descend, rather than jumping.
- *
- * Interpolated in log space because share scales multiplicatively with zoom:
- * a constant zoom gesture should move this by a constant amount.
- */
-export function getGraphAreaFocusDepth(
-  entries: ReadonlyArray<{ depth: number; share: number }>,
-): number | null {
-  const totals = new Map<number, { sum: number; count: number }>();
-  for (const entry of entries) {
-    if (!(entry.share > 0)) continue;
-    const bucket = totals.get(entry.depth) ?? { sum: 0, count: 0 };
-    bucket.sum += entry.share;
-    bucket.count += 1;
-    totals.set(entry.depth, bucket);
-  }
-  if (totals.size === 0) return null;
-
-  const levels = [...totals]
-    .map(([depth, bucket]) => ({ depth, share: bucket.sum / bucket.count }))
-    .sort((a, b) => a.depth - b.depth);
-  if (levels.length === 1) return levels[0].depth;
-
-  const target = Math.log(GRAPH_AREA_FOCUS_SHARE);
-  // Shallow regions are the big ones, so share falls as depth rises; walk out
-  // until the target is bracketed.
-  for (let index = 0; index < levels.length - 1; index += 1) {
-    const near = levels[index];
-    const far = levels[index + 1];
-    const nearLog = Math.log(near.share);
-    const farLog = Math.log(far.share);
-    const between = (target - nearLog) / (farLog - nearLog);
-    if (between >= 0 && between <= 1) {
-      return near.depth + between * (far.depth - near.depth);
-    }
-  }
-  // Everything still too small: stay at the shallowest level.
-  if (levels[0].share < GRAPH_AREA_FOCUS_SHARE) return levels[0].depth;
-
-  // Past the deepest level, keep counting rather than saturating. There is no
-  // storey below this one, but "how far INSIDE the last one am I" is still a
-  // real question and the region names need it: once you are reading pages,
-  // the names of the places holding them are noise, and the original dropped
-  // them entirely at that point. Extrapolated at the spacing of the last two
-  // levels so a zoom keeps moving this at the same rate it did on the way down.
-  // Counted in doublings of the deepest region's on-screen size, NOT in
-  // multiples of the gap between the last two levels.
-  //
-  // The gap version divided by a number that is routinely near zero: two
-  // adjacent levels are often almost the same size on screen — here `packages`
-  // covers 0.59 of the viewport and `app/tests` inside it covers 0.58 — so the
-  // divisor was 0.017 and the first pixel of zoom past the deepest level sent
-  // this from 2 to about 10. Everything keyed off it vanished at once.
-  //
-  // A doubling is a fixed, honest unit: one more level of "inside" per 2x zoom,
-  // whatever the tree happens to look like.
-  const deepest = levels[levels.length - 1];
-  return deepest.depth + Math.max(0, Math.log2(deepest.share / GRAPH_AREA_FOCUS_SHARE));
-}
-
-/**
- * How much of the map each depth gets, given where between the storeys you are.
- *
- * A triangular kernel one level wide: at exactly depth 2 that level has the map
- * to itself, and halfway between 1 and 2 they hold half each. Never more than
- * two levels at once, and every weight moves continuously with the zoom, so
- * descending is a crossfade rather than a cut.
- *
- * The alternative — pick the best-fitting depth and give the runner-up a share
- * proportional to how close it is — reads the same while nothing changes but
- * jumps the moment the runner-up's IDENTITY changes, which is exactly at the
- * handover.
- */
-export function getGraphAreaDepthWeight(depth: number, focusDepth: number | null): number {
-  if (focusDepth === null) return 0;
-  return Math.max(0, 1 - Math.abs(depth - focusDepth));
-}
-
-/**
- * How much denser a region draws for each level of nesting.
- *
- * The original filled each territory at `0.10 + depth * 0.02` — depth was
- * legible as ink, not just as position, so a nested region read as sitting
- * INSIDE its parent rather than merely next to it. Our regions all drew at one
- * alpha, which threw that cue away.
- *
- * Expressed as a multiplier rather than an absolute alpha because our layer
- * carries its opacity once at composite time (see `GRAPH_AREA_TINT_ALPHA`)
- * instead of per shape. 0.167 per level reproduces the original's ratios:
- * its 0.12 / 0.14 / 0.16 for the first three depths are 1 : 1.17 : 1.33.
- */
-const GRAPH_AREA_DEPTH_DENSITY_STEP = 0.167;
-
-/**
- * Capped so a pathologically deep tree cannot drive one region to full
- * opacity. The original was uncapped but never met a vault deep enough to
- * matter; this bottoms out around the density it reached at depth 5.
- */
-const GRAPH_AREA_MAX_DEPTH_DENSITY = 1.67;
-
-/** Ink for a region at this nesting depth, relative to a top-level one. */
-export function getGraphAreaDepthDensity(depth: number): number {
-  return Math.min(
-    GRAPH_AREA_MAX_DEPTH_DENSITY,
-    1 + Math.max(0, depth - 1) * GRAPH_AREA_DEPTH_DENSITY_STEP,
-  );
-}
-
-/**
- * What a level you have already descended past keeps, rather than going dark.
- *
- * Ported from the original, whose shallow tint bottomed out at 0.4 and never
- * left (`p1BgFade = 1 - fadeT * 0.6`). Its "one level at a time" only ever
- * applied to the NAMES — the tints stacked, with the shallow one staying as
- * ground under the deep one. Making the tint exclusive too, as this did at
- * first, is stricter than the original and costs two things: the map dims to
- * nothing halfway through every handover, and you lose the coarse colour
- * blocking that tells you which part of the vault you are in while the level
- * you are reading is still arriving.
- */
-export const GRAPH_AREA_GROUND_WEIGHT = 0.35;
-
-/**
- * How much of the tint a level gets — the same crossfade as the names, but a
- * level ABOVE the one you are on stays on as ground instead of leaving.
- *
- * Levels below the current one are still dark: they have not arrived yet, and
- * showing them early is the clutter the depth stepping exists to remove.
- */
-export function getGraphAreaTintWeight(depth: number, focusDepth: number | null): number {
-  const weight = getGraphAreaDepthWeight(depth, focusDepth);
-  if (focusDepth === null || depth > focusDepth) return weight;
-  return Math.max(weight, GRAPH_AREA_GROUND_WEIGHT);
-}
-
-/**
- * How far past the deepest level you get before its name stops being written.
- *
- * The original dropped every region name once you were close enough to read
- * pages (its `phase2UpperFade`, zoom 0.52 → 0.68) and kept only the tints. It
- * is right: at that distance the place names are competing with the page names
- * for the same pixels, and you already know where you are — you just came from
- * there.
- *
- * Two levels — with the overshoot counted in doublings, that is a 4x zoom from
- * the point where a region is half the screen to the point where its name is
- * gone. A gentle fade: the last level is the one you spend the most time in,
- * and having its name evaporate the moment you arrive is worse than carrying
- * it a little too long.
- */
-const GRAPH_AREA_NAME_RETIRE_LEVELS = 2;
-
-/**
- * How much of its name a region still writes, given how deep the map has gone.
- * Full while you are navigating between places, gone by the time you are
- * reading what is in them.
- */
-export function getGraphAreaNameFade(depth: number, focusDepth: number | null): number {
-  if (focusDepth === null) return 0;
-  const past = focusDepth - depth;
-  if (past <= 0) return 1;
-  return Math.max(0, 1 - past / GRAPH_AREA_NAME_RETIRE_LEVELS);
-}
-
-/** Below this on-screen width a region has no room for a name at all. */
-export const GRAPH_AREA_LABEL_MIN_REGION_PX = 56;
-
-/**
- * A region's name is sized to the region, the way an atlas writes a continent
- * across the continent and a town in small type beside the town.
- *
- * This used to be a function of folder DEPTH alone (28–64px flat), which meant
- * a territory 40px wide on screen still got a 64px name: it sprawled over
- * everything around it, several collided into a smear, and a nested folder's
- * compressed path (`desktop/tests/smoke`) ran the full width of the canvas.
- * Depth was never the question — how much room the thing has is.
- *
- * @param regionWidthPx the territory's on-screen width, not its graph width.
- */
-export function getGraphAreaLabelSizePx(regionWidthPx: number): number {
-  return Math.max(11, Math.min(regionWidthPx * 0.2, 40));
-}

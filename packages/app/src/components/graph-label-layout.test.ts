@@ -19,7 +19,6 @@ function plan({
   zoomScale = 10,
   leafLabelThreshold = 1.8,
   previousOffsetStepByNodeId,
-  isDepthRevealedForNode,
   getNodeRadiusPx = () => 6,
 }: {
   nodes: GraphLabelLayoutNode[];
@@ -31,7 +30,6 @@ function plan({
   zoomScale?: number;
   leafLabelThreshold?: number;
   previousOffsetStepByNodeId?: ReadonlyMap<string, number>;
-  isDepthRevealedForNode?: (nodeId: string) => boolean | null;
   getNodeRadiusPx?: (node: GraphLabelLayoutNode) => number;
 }) {
   return planGraphLabels({
@@ -44,7 +42,6 @@ function plan({
     zoomScale,
     leafLabelThreshold,
     previousOffsetStepByNodeId,
-    isDepthRevealedForNode,
     labelDescriptors: buildGraphLabelDescriptors(nodes),
     measureTextWidthPx: (text) => text.length * 6,
     projectToScreen: (x, y) => ({ x, y }),
@@ -60,16 +57,24 @@ describe('planGraphLabels — label tiers', () => {
     { kind: 'doc', id: 'hub', docName: 'hub', anchor: null, label: 'hub', x: 40, y: 20 },
     { kind: 'doc', id: 'leaf', docName: 'leaf', anchor: null, label: 'leaf', x: 150, y: 60 },
   ];
-  // `hub` gets 8 edges (the hub cutoff); `leaf` gets one of them.
+  // `hub` clears the four-edge hub cutoff; `leaf` gets one of them.
   const links: GraphLabelLayoutLink[] = [
     { source: 'hub', target: 'leaf' },
     ...Array.from({ length: 7 }, (_, index) => ({ source: 'hub', target: `other-${index}` })),
   ];
+  // Between the hub tier (0.55/0.78 of the setting) and the leaf tier (all of
+  // it): 1.8 * 0.705 = 1.27, so 1.4 names the hub and not the leaf.
+  const BETWEEN_TIERS_ZOOM = 1.4;
 
   test('drops the leaf but keeps the hub at an intermediate zoom', () => {
     // This is the whole point: zooming out thins labels down to the landmarks
     // instead of clearing the canvas of names entirely.
-    const placements = plan({ nodes, links, zoomScale: 1.0, leafLabelThreshold: 1.8 });
+    const placements = plan({
+      nodes,
+      links,
+      zoomScale: BETWEEN_TIERS_ZOOM,
+      leafLabelThreshold: 1.8,
+    });
     expect(placements.map((placement) => placement.nodeId)).toEqual(['hub']);
   });
 
@@ -100,7 +105,7 @@ describe('planGraphLabels — label tiers', () => {
       nodes,
       links,
       maxLabels: 1,
-      zoomScale: 1.0,
+      zoomScale: BETWEEN_TIERS_ZOOM,
       leafLabelThreshold: 1.8,
     });
     expect(placements.map((placement) => placement.nodeId)).toEqual(['hub']);
@@ -193,34 +198,32 @@ describe('planGraphLabels', () => {
     expect(placements[0]?.nodeId).toBe('hub');
   });
 
-  test('holds a page’s name back until the map has descended to its level', () => {
-    // Zoomed out you should get region names and nothing else; a page names
-    // itself only once the descent has reached the level it lives at.
+  test('names the folder before the pages inside it', () => {
+    // The original's reveal order: places first, then hubs, then pages. A
+    // folder-tree gate used to sit on top of this, holding a page back until
+    // the map had descended to its own nesting level; the original paces the
+    // reveal by kind alone.
     const nodes: GraphLabelLayoutNode[] = [
-      { id: 'docs/Intro', label: 'Intro', x: 200, y: 100 },
-      { id: 'docs/Api', label: 'Api', x: 200, y: 200 },
+      {
+        kind: 'folder',
+        id: 'folder:docs',
+        path: 'docs',
+        label: 'docs',
+        x: 200,
+        y: 100,
+      } as GraphLabelLayoutNode,
+      { id: 'docs/Intro', label: 'Intro', x: 200, y: 200 },
     ];
     const viewport = { width: 500, height: 400 };
 
     expect(
-      plan({ nodes, viewport, isDepthRevealedForNode: () => false }).map((p) => p.nodeId),
-    ).toEqual([]);
+      plan({ nodes, viewport, zoomScale: 1.0, leafLabelThreshold: 1.8 }).map((p) => p.nodeId),
+    ).toEqual(['folder:docs']);
     expect(
-      plan({ nodes, viewport, isDepthRevealedForNode: () => true })
+      plan({ nodes, viewport, zoomScale: 1.8, leafLabelThreshold: 1.8 })
         .map((p) => p.nodeId)
         .sort(),
-    ).toEqual(['docs/Api', 'docs/Intro']);
-  });
-
-  test('says nothing when territories are off, leaving the degree tiers to decide', () => {
-    const nodes: GraphLabelLayoutNode[] = [{ id: 'README', label: 'Readme', x: 200, y: 100 }];
-    const placements = plan({
-      nodes,
-      viewport: { width: 500, height: 400 },
-      // null means "no opinion" — the hierarchy gate must not swallow the node.
-      isDepthRevealedForNode: () => null,
-    });
-    expect(placements.map((placement) => placement.nodeId)).toEqual(['README']);
+    ).toEqual(['docs/Intro', 'folder:docs']);
   });
 
   test('the active document is named even before the descent reaches it', () => {
@@ -231,7 +234,6 @@ describe('planGraphLabels', () => {
       nodes,
       activeDocName: 'docs/Intro',
       viewport: { width: 500, height: 400 },
-      isDepthRevealedForNode: () => false,
     });
     expect(placements.map((placement) => placement.nodeId)).toEqual(['docs/Intro']);
   });
