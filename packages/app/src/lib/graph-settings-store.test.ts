@@ -11,8 +11,9 @@ import {
   writeGraphSettings,
 } from './graph-settings-store';
 
-const DOCKED_KEY = 'ok-graph-settings-docked-v1';
-const FULLSCREEN_KEY = 'ok-graph-settings-fullscreen-v1';
+const DOCKED_KEY = 'ok-graph-settings-docked-v2';
+const FULLSCREEN_KEY = 'ok-graph-settings-fullscreen-v2';
+const DOCKED_V1_KEY = 'ok-graph-settings-docked-v1';
 
 function memoryStorage(seed: Record<string, string> = {}): GraphSettingsStorage & {
   values: Record<string, string>;
@@ -28,21 +29,20 @@ function memoryStorage(seed: Record<string, string> = {}): GraphSettingsStorage 
 }
 
 describe('getDefaultGraphSettings', () => {
-  test('reproduces the hardcoded values the pre-settings build shipped', () => {
-    // These are not arbitrary: changing any of them relayouts or re-densifies
-    // every existing user's graph on upgrade.
+  test("reproduces the original SynapseNote graph's own values", () => {
+    // These are not arbitrary: changing any of them relayouts every existing
+    // user's graph on upgrade, which is exactly why the storage key is
+    // versioned alongside them.
     const docked = getDefaultGraphSettings('docked');
-    expect(docked.display.textFadeThreshold).toBe(1.8);
+    expect(docked.display.textFadeThreshold).toBe(0.78);
     expect(docked.filters.showExternalNodes).toBe(false);
     expect(docked.forces).toEqual(GRAPH_FORCE_DEFAULTS);
-  });
-
-  test('budgets labels generously, leaving overlap to the collision planner', () => {
-    // A budget of 10 on a canvas showing sixty nodes left it unreadable: the
-    // planner already refuses to place a label that would collide, so this is
-    // only a ceiling on the work, not the thing preventing a mess.
-    expect(getDefaultGraphSettings('fullscreen').display.maxLabels).toBe(60);
-    expect(getDefaultGraphSettings('docked').display.maxLabels).toBe(30);
+    expect(GRAPH_FORCE_DEFAULTS).toEqual({
+      centerStrength: 0.04,
+      repelStrength: 200,
+      linkStrength: 0.7,
+      linkDistance: 95,
+    });
   });
 
   test('leaves arrowheads off, as Obsidian does', () => {
@@ -99,22 +99,15 @@ describe('clampGraphSettings', () => {
   test('falls back per field on NaN, Infinity, and wrong types', () => {
     const result = clampGraphSettings(
       {
-        display: { nodeSize: Number.NaN, linkThickness: Number.POSITIVE_INFINITY, maxLabels: '20' },
+        display: { nodeSize: Number.NaN, linkThickness: Number.POSITIVE_INFINITY },
         filters: { showOrphans: 'yes', query: 7 },
       },
       'docked',
     );
     expect(result.display.nodeSize).toBe(1);
     expect(result.display.linkThickness).toBe(1);
-    expect(result.display.maxLabels).toBe(30);
     expect(result.filters.showOrphans).toBe(true);
     expect(result.filters.query).toBe('');
-  });
-
-  test('rounds the label budget to a whole number', () => {
-    expect(clampGraphSettings({ display: { maxLabels: 12.7 } }, 'docked').display.maxLabels).toBe(
-      13,
-    );
   });
 
   test('keeps well-formed groups and drops malformed ones', () => {
@@ -215,6 +208,47 @@ describe('migration from the standalone external-URL toggle', () => {
     const storage = memoryStorage({ 'ok-graph-fullscreen-url-nodes-v1': 'true' });
     expect(readGraphSettings('fullscreen', storage).filters.showExternalNodes).toBe(true);
     expect(readGraphSettings('docked', storage).filters.showExternalNodes).toBe(false);
+  });
+
+  // v1 held a layout this release replaces. Carrying its display and force
+  // values forward would pin an upgrading user to the old graph forever, so
+  // only what they actually chose comes across.
+  test('carries a v1 user’s filters and groups across, and nothing else', () => {
+    const v1 = getDefaultGraphSettings('docked');
+    v1.filters.showExternalNodes = true;
+    v1.filters.showOrphans = false;
+    v1.groups = [{ id: 'g1', query: 'rfc', color: '#ff0000' }];
+    v1.forces.linkDistance = 30;
+    v1.display.nodeSize = 2.5;
+
+    const settings = readGraphSettings(
+      'docked',
+      memoryStorage({ [DOCKED_V1_KEY]: JSON.stringify(v1) }),
+    );
+
+    expect(settings.filters.showExternalNodes).toBe(true);
+    expect(settings.filters.showOrphans).toBe(false);
+    expect(settings.groups).toEqual(v1.groups);
+    expect(settings.forces).toEqual(getDefaultGraphSettings('docked').forces);
+    expect(settings.display).toEqual(getDefaultGraphSettings('docked').display);
+  });
+
+  test('a v2 preset wins over the v1 one it was migrated from', () => {
+    const v1 = getDefaultGraphSettings('docked');
+    v1.filters.showExternalNodes = true;
+    const v2 = getDefaultGraphSettings('docked');
+    v2.filters.showExternalNodes = false;
+
+    const settings = readGraphSettings(
+      'docked',
+      memoryStorage({ [DOCKED_KEY]: JSON.stringify(v2), [DOCKED_V1_KEY]: JSON.stringify(v1) }),
+    );
+    expect(settings.filters.showExternalNodes).toBe(false);
+  });
+
+  test('an unparseable v1 blob falls back to defaults rather than throwing', () => {
+    const settings = readGraphSettings('docked', memoryStorage({ [DOCKED_V1_KEY]: '{oops' }));
+    expect(settings).toEqual(getDefaultGraphSettings('docked'));
   });
 
   test('stops consulting the legacy key once a preset exists', () => {

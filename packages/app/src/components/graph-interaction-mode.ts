@@ -104,10 +104,23 @@ export function getGraphPhysicsProfile(
 }
 
 /**
- * d3's `alphaDecay`. Focus mode cools more slowly so the pinned neighborhood
- * has time to settle into place after the reheat; browse mode uses d3's own
- * default and stops sooner.
+ * d3's `alphaDecay`. The original SynapseNote's two values: 0.018 while
+ * browsing, and 0.01 in focus so the pinned neighborhood has time to settle
+ * into place after the reheat. Browsing used to run d3's bare default of
+ * 0.0228, which stops the simulation a little before the folders have finished
+ * separating.
  */
 export function getGraphAlphaDecay(mode: GraphInteractionMode): number {
-  return isGraphFocusMode(mode) ? 0.01 : 0.0228;
+  return isGraphFocusMode(mode) ? 0.01 : 0.018;
+}
+
+/**
+ * d3's `velocityDecay` — friction. Also the original's pair: focus is stickier
+ * so a neighborhood being read does not coast, and browsing is looser so the
+ * layout can travel while it is still finding its shape. d3's own default is
+ * 0.4, which is close enough to the browse value that only focus really
+ * changes here.
+ */
+export function getGraphVelocityDecay(mode: GraphInteractionMode): number {
+  return isGraphFocusMode(mode) ? 0.5 : 0.42;
 }

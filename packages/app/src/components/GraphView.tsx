@@ -1,5 +1,6 @@
 import { Trans, useLingui } from '@lingui/react/macro';
 import { LinkGraphSuccessSchema, ProblemDetailsSchema } from '@nedian0brien/synapsenote-core';
+import { forceCollide } from 'd3-force-3d';
 import { useTheme } from 'next-themes';
 import { useEffect, useImperativeHandle, useRef, useState } from 'react';
 import ForceGraph2D, {
@@ -11,7 +12,7 @@ import { usePageList } from '@/components/PageListContext';
 import { hashFromDocName } from '@/lib/doc-hash';
 import { subscribeToDocumentsChanged } from '@/lib/documents-events';
 import { openExternalUrl } from '@/lib/external-link';
-import { GRAPH_REPEL_RANGE_FACTOR, type GraphSettings } from '@/lib/graph-settings-store';
+import type { GraphSettings } from '@/lib/graph-settings-store';
 import { cn } from '@/lib/utils';
 import { getGraphCardNeighbors } from './GraphCardDeck';
 import {
@@ -32,12 +33,7 @@ import {
 } from './graph-areas';
 import { blendGraphColor, GRAPH_COLOR_PAIRS } from './graph-colors';
 import { applyGraphFilters } from './graph-filter';
-import {
-  buildGraphFolderNodes,
-  GRAPH_FOLDER_LINK_STRENGTH,
-  isGraphFolderLink,
-  isGraphRootFolderNode,
-} from './graph-folders';
+import { buildGraphFolderNodes, isGraphFolderLink, isGraphRootFolderNode } from './graph-folders';
 import { matchGraphGroup, resolveGraphGroupColor } from './graph-groups';
 import {
   buildGraphAdjacency,
@@ -49,22 +45,18 @@ import {
   getGraphAlphaDecay,
   getGraphInteractionMode,
   getGraphPhysicsProfile,
+  getGraphVelocityDecay,
   isGraphFocusMode,
 } from './graph-interaction-mode';
-import {
-  type GraphLabelLayoutLink,
-  type GraphLabelLayoutNode,
-  type GraphLabelPlacement,
-  planGraphLabels,
-} from './graph-label-layout';
 import { MIN_GRAPH_LABEL_ZOOM_FACTOR } from './graph-label-tiers';
 import { buildGraphLabelDescriptors } from './graph-label-utils';
+import { drawGraphArticleGlyph, drawGraphFolderGlyph } from './graph-node-glyphs';
+import { planGraphNodeLabels } from './graph-node-labels';
 import { type GraphNodeEmphasis, getGraphNodeStyle } from './graph-node-style';
 import {
   buildGraphDegreeMap,
   buildGraphLinkSignature,
   buildGraphNodeSignature,
-  capGraphNodeRadius,
   type GraphData,
   type GraphDocClickBehavior,
   type GraphDocDisplayState,
@@ -73,14 +65,10 @@ import {
   type GraphNodeSelection,
   type GraphNodeVisualState,
   type GraphScope,
-  getGraphNodeCanvasRadius,
-  getGraphNodePointerRadius,
   getGraphNodeTooltipLabel,
   getGraphNodeVisualState,
   reconcileGraphData,
-  resolveGraphLinkEndpointId,
   resolveGraphNodeClickAction,
-  screenOffsetInGraphUnits,
 } from './graph-view-utils';
 import { resolveTargetNavigationIntent } from './target-navigation-intent';
 
@@ -130,19 +118,19 @@ function getGraphNodeDisplayState({
   return navigationIntentByNodeId.get(node.id)?.displayState ?? 'doc';
 }
 
-function getGraphNodeInteractiveRadius({
-  state,
-  displayState,
-  globalScale,
-}: {
-  state: GraphNodeVisualState;
-  displayState: GraphDocDisplayState;
-  globalScale: number;
-}): number {
-  const pointerRadius = getGraphNodePointerRadius(state, globalScale);
-  if (displayState !== 'missing') return pointerRadius;
-  const baseRadius = getGraphNodeCanvasRadius(state);
-  return Math.max(pointerRadius, baseRadius + screenOffsetInGraphUnits(2, globalScale, baseRadius));
+/**
+ * How far from a node's centre a click still counts, in world units.
+ *
+ * The original's `pickNode` used `getNodeRadius(node) + 8` and nothing else —
+ * one margin for every node, in the same units the node is drawn in. The
+ * screen-space variant that stood here had to be re-derived from the visual
+ * state because the drawn radius was not available to it; now that the radius
+ * IS the style, the margin is all that is left.
+ */
+const GRAPH_NODE_PICK_MARGIN = 8;
+
+function getGraphNodeInteractiveRadius(worldRadius: number): number {
+  return worldRadius + GRAPH_NODE_PICK_MARGIN;
 }
 
 function getActiveGraphNodeCoords({
@@ -350,26 +338,25 @@ function paintGraphAreas({
   ctx.restore();
 }
 
-function drawGraphLabelPlacements({
-  ctx,
-  placements,
-  labelColor,
-}: {
-  ctx: CanvasRenderingContext2D;
-  placements: GraphLabelPlacement[];
-  labelColor: string;
-}): void {
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
+/** The original's `edge.edge_type === 'directory' ? 1.6 : 1.1`, in world units. */
+function getGraphLinkWidth(link: { kind?: unknown }): number {
+  return isGraphFolderLink(link) ? 1.6 : 1.1;
+}
 
-  // Plain text, no chip, and every name at full weight. They used to be faint
-  // for everything except the active document, which left a canvas of
-  // anonymous circles with a scattering of digits — the names are the one
-  // thing on screen that says what you are looking at.
-  ctx.fillStyle = labelColor;
-  for (const placement of placements) {
-    ctx.fillText(placement.text, placement.textX, placement.textY);
-  }
+/**
+ * Whether a link points at something that is not a page — the original's
+ * `ref` edge type, recovered from the target rather than from the edge.
+ */
+function isGraphReferenceLink(
+  link: { target: unknown; kind?: unknown },
+  navigationIntentByNodeId: Map<string, { displayState: GraphDocDisplayState }>,
+): boolean {
+  if (isGraphFolderLink(link)) return false;
+  const target = link.target;
+  if (typeof target !== 'object' || target === null) return false;
+  const node = target as GraphNode;
+  if (node.kind === 'external' || node.kind === 'tag') return true;
+  return node.kind === 'doc' && navigationIntentByNodeId.get(node.id)?.displayState === 'missing';
 }
 
 function getGraphNodeHitbox({
@@ -378,14 +365,14 @@ function getGraphNodeHitbox({
   activeDocName,
   selectedNodeId,
   globalScale,
-  displayState,
+  worldRadius,
 }: {
   node: NodeObject<GraphNode>;
   fg: ForceGraphMethods<NodeObject<GraphNode>>;
   activeDocName: string;
   selectedNodeId: string | null;
   globalScale: number;
-  displayState: GraphDocDisplayState;
+  worldRadius: number;
 }): GraphNodeHitbox | null {
   if (typeof node.x !== 'number' || typeof node.y !== 'number') return null;
 
@@ -398,7 +385,7 @@ function getGraphNodeHitbox({
   return {
     x: screen.x,
     y: screen.y,
-    radiusPx: getGraphNodeInteractiveRadius({ state, displayState, globalScale }) * globalScale,
+    radiusPx: getGraphNodeInteractiveRadius(worldRadius) * globalScale,
     state,
   };
 }
@@ -425,30 +412,26 @@ function getGraphNodeAtPoint({
   nodes,
   activeDocName,
   selectedNodeId,
-  navigationIntentByNodeId,
+  nodeWorldRadius,
 }: {
   point: { x: number; y: number };
   fg: ForceGraphMethods<NodeObject<GraphNode>>;
   nodes: GraphNode[];
   activeDocName: string;
   selectedNodeId: string | null;
-  navigationIntentByNodeId: Map<string, { displayState: GraphDocDisplayState }>;
+  nodeWorldRadius: (node: GraphNode) => number;
 }): GraphNode | null {
   const globalScale = fg.zoom();
   let closestNode: { node: GraphNode; distance: number } | null = null;
 
   for (const node of nodes as NodeObject<GraphNode>[]) {
-    const displayState = getGraphNodeDisplayState({
-      node,
-      navigationIntentByNodeId,
-    });
     const hitbox = getGraphNodeHitbox({
       node,
       fg,
       activeDocName,
       selectedNodeId,
       globalScale,
-      displayState,
+      worldRadius: nodeWorldRadius(node),
     });
     if (!hitbox) continue;
 
@@ -836,7 +819,6 @@ export function GraphView({
           ? palette.faint
           : palette.normal;
   const focusZoom = scope === 'global' ? 1.6 : 2.35;
-  const maxLabelWidthPx = scope === 'global' ? 220 : 150;
 
   // Built from the UNFILTERED node set: the missing-node filter reads display
   // state to decide what to drop, so resolving it after filtering would be
@@ -899,14 +881,14 @@ export function GraphView({
   }, [filteredSignature]);
   const displayData = renderData;
 
-  const layoutNodes = displayData.nodes as GraphLabelLayoutNode[];
-  const layoutLinks = displayData.links as GraphLabelLayoutLink[];
+  const layoutNodes = displayData.nodes as Array<GraphNode & { x?: number; y?: number }>;
   const labelDescriptors = buildGraphLabelDescriptors(displayData.nodes);
-  const focusKey = `${activeDocName}|${focusZoom}`;
   const displayLinks = displayData.links;
+  const focusKey = `${activeDocName}|${focusZoom}`;
   const physics = getGraphPhysicsProfile(interactionMode, settings.forces);
   const { centerStrength, repelStrength, linkStrength, linkDistance } = physics;
   const alphaDecay = getGraphAlphaDecay(interactionMode);
+  const velocityDecay = getGraphVelocityDecay(interactionMode);
   const pinSelectedNode = physics.pinSelectedNode;
 
   const adjacency = buildGraphAdjacency(displayData.links);
@@ -918,18 +900,29 @@ export function GraphView({
   const degreeByNodeId = buildGraphDegreeMap(
     displayData.links.filter((link) => !isGraphFolderLink(link)),
   );
-  // The size multiplier `nodeCanvasObject` actually paints with. The label
-  // planner and the pointer hit area have to agree with it: a folder or a big
-  // hub is drawn at twice its base radius, so measuring them at the base puts
-  // their label underneath their own fill and stops their clickable circle
-  // short of the edge you can see.
-  const drawnNodeScale = (node: GraphNode): number =>
+  // The radius `nodeCanvasObject` actually paints, in world units. The label
+  // placement, the pointer hit area and the collision force all have to agree
+  // with it: a folder is drawn at nearly four times a page's radius, so
+  // measuring them all at one base puts a folder's label underneath its own
+  // fill and stops its clickable circle well short of the edge you can see.
+  // Held in a ref for the collision force below: the force is installed in an
+  // effect, and a closure over the render-scoped function would either go
+  // stale or force a reinstall (and a reheat) on every render.
+  const nodeWorldRadiusRef = useRef<(node: GraphNode) => number>(() => 7);
+  const nodeWorldRadius = (node: GraphNode): number =>
     getGraphNodeStyle({
       node,
       degree: degreeByNodeId.get(node.id) ?? 0,
       displayState: getGraphNodeDisplayState({ node, navigationIntentByNodeId }),
       visualState: getGraphNodeVisualState(node, { activeDocName, selectedNodeId }),
-    }).scale;
+      isFocused: isGraphFocusMode(interactionMode),
+    }).radius;
+  // Written in an effect, not during render: the React Compiler rejects a ref
+  // write from the render body, and the two consumers (the collision force and
+  // the DEV harness) both run after commit anyway.
+  useEffect(() => {
+    nodeWorldRadiusRef.current = nodeWorldRadius;
+  });
   // Folder territories, and where each one currently sits. The bounds follow
   // the simulation, so they are recomputed once per frame in the pre-render
   // hook and reused by the post-render hook that writes the region names —
@@ -954,10 +947,6 @@ export function GraphView({
       }
     }
   }
-  // Last frame's label decisions, so this frame can keep them — see
-  // `previousOffsetStepByNodeId`. Held in a ref rather than state because it is
-  // written from the canvas render hook and must never trigger a re-render.
-  const labelOffsetStepsRef = useRef<Map<string, number>>(new Map());
   // How present each phase is, computed once in the pre-render hook from the
   // zoom and read again by the post-render hook that writes the region names,
   // so tint and names can never disagree about where in the descent we are.
@@ -1003,15 +992,17 @@ export function GraphView({
 
   // Push the Forces sliders into the live d3 simulation. force-graph builds the
   // three standard forces once and keeps them across data updates, so this
-  // re-applies on every settings change and on every topology change — the link
-  // strength below is degree-derived, and degrees move when the data does.
+  // re-applies on every settings change and on every topology change.
   //
   // Depending on the four scalars rather than on `settings.forces` keeps a
-  // filter-box keystroke (which rebuilds the settings object) from reheating
+  // filter-box keystroke, which rebuilds the settings object, from reheating
   // the simulation; `displayLinks` is memoized above for the same reason.
   useEffect(() => {
     const fg = fgRef.current;
-    if (!fg) return;
+    // Nothing to configure before the data lands, and force-graph builds its
+    // three standard forces lazily — reading them on an empty graph gets
+    // `undefined` and the settings are silently dropped.
+    if (!fg || displayLinks.length === 0) return;
 
     const charge = fg.d3Force('charge');
     // Stored as a magnitude; d3 wants a negative strength to push apart. Flat:
@@ -1020,40 +1011,38 @@ export function GraphView({
     // by membership below — and doing it with repulsion instead shoved the
     // neighboring clusters to the far side of the canvas.
     charge?.strength?.(-repelStrength);
-    // Bound the range, or the pressure of every distant node crushes each
-    // cluster to a few pixels across at the zoom that fits the map. Scaled off
-    // the spring length so dragging the Link distance slider keeps the two in
-    // proportion — see GRAPH_REPEL_RANGE_FACTOR for the measurements.
-    charge?.distanceMax?.(linkDistance * GRAPH_REPEL_RANGE_FACTOR);
+    // Unbounded, as the original had it — see GRAPH_UNBOUNDED_REPULSION. The
+    // range cap that used to sit here was answering a weak-spring layout, and
+    // against these springs it lets the folders drift back into contact.
+    charge?.distanceMax?.(Number.POSITIVE_INFINITY);
 
     const center = fg.d3Force('center');
     center?.strength?.(centerStrength);
 
     const link = fg.d3Force('link');
     if (link) {
-      // One length for every edge, containment included, as the original
-      // SynapseNote layout had it.
+      // One length and one strength for every edge, containment included, as
+      // the original SynapseNote layout had it: `distance(95).strength(0.7)`.
+      //
+      // A degree-derived strength stood here — d3's own `1 / min(degree)`,
+      // reproduced by hand so that a multiplier of 1 stayed a no-op, with
+      // containment carved out because under that rule a leaf page gets the
+      // stiffest spring in the graph. The original ran flat and needed neither
+      // half.
       link.distance?.(linkDistance);
-      // d3's own default is `1 / min(degree(source), degree(target))`, computed
-      // once at initialize. Reproducing it here rather than passing a flat
-      // number keeps a multiplier of 1 a true no-op: a flat strength would
-      // stiffen hub edges that d3 deliberately slackens.
-      const degrees = buildGraphDegreeMap(displayLinks);
-      link.strength?.((candidate: { source: unknown; target: unknown; kind?: unknown }) => {
-        // Containment opts out of the degree rule entirely — see
-        // GRAPH_FOLDER_LINK_STRENGTH. Under `1 / min(degree)` a leaf page gets
-        // the stiffest spring in the graph, which is what welds a big folder
-        // into a shell instead of letting it breathe out to the radius its
-        // members' own repulsion asks for.
-        if (isGraphFolderLink(candidate)) return GRAPH_FOLDER_LINK_STRENGTH * linkStrength;
-
-        const source = resolveGraphLinkEndpointId(candidate.source);
-        const target = resolveGraphLinkEndpointId(candidate.target);
-        const sourceDegree = source === null ? 1 : (degrees.get(source) ?? 1);
-        const targetDegree = target === null ? 1 : (degrees.get(target) ?? 1);
-        return (1 / Math.max(1, Math.min(sourceDegree, targetDegree))) * linkStrength;
-      });
+      link.strength?.(linkStrength);
     }
+
+    // Nodes take up room. The original's fourth force, and the reason its
+    // graph reads as objects laid out rather than as a point cloud: without it
+    // a dense folder piles its pages on top of one another at any zoom where
+    // the discs are big enough to see.
+    fg.d3Force(
+      'collide',
+      forceCollide<GraphNode>()
+        .radius((node) => nodeWorldRadiusRef.current(node) + 12)
+        .strength(0.58),
+    );
 
     fg.d3ReheatSimulation();
   }, [centerStrength, repelStrength, linkStrength, linkDistance, displayLinks]);
@@ -1226,10 +1215,7 @@ export function GraphView({
           activeDocName,
           selectedNodeId,
           globalScale: fg.zoom(),
-          displayState: getGraphNodeDisplayState({
-            node,
-            navigationIntentByNodeId,
-          }),
+          worldRadius: nodeWorldRadiusRef.current(node),
         });
         if (!hitbox) return null;
 
@@ -1282,10 +1268,7 @@ export function GraphView({
           activeDocName,
           selectedNodeId,
           globalScale: fg.zoom(),
-          displayState: getGraphNodeDisplayState({
-            node: sourceNode,
-            navigationIntentByNodeId,
-          }),
+          worldRadius: nodeWorldRadiusRef.current(sourceNode),
         });
         const targetHitbox = getGraphNodeHitbox({
           node: targetNode,
@@ -1293,10 +1276,7 @@ export function GraphView({
           activeDocName,
           selectedNodeId,
           globalScale: fg.zoom(),
-          displayState: getGraphNodeDisplayState({
-            node: targetNode,
-            navigationIntentByNodeId,
-          }),
+          worldRadius: nodeWorldRadiusRef.current(targetNode),
         });
         if (!sourceHitbox || !targetHitbox) return null;
 
@@ -1330,7 +1310,6 @@ export function GraphView({
     docClickBehavior,
     displayData.links,
     displayData.nodes,
-    navigationIntentByNodeId,
     onBackgroundClick,
     onSelectNode,
     selectedNodeId,
@@ -1365,12 +1344,12 @@ export function GraphView({
               container,
             });
             const node = getGraphNodeAtPoint({
+              nodeWorldRadius,
               point,
               fg,
               nodes: displayData.nodes,
               activeDocName,
               selectedNodeId,
-              navigationIntentByNodeId,
             });
             if (node) {
               return { kind: 'node', node } satisfies GraphPointerTarget;
@@ -1491,31 +1470,15 @@ export function GraphView({
             }}
             nodeRelSize={4}
             nodeVal={(node: NodeObject<GraphNode>) => {
-              const state = getGraphNodeVisualState(node, {
-                activeDocName,
-                selectedNodeId,
-              });
-
-              const base =
-                state === 'active-selected'
-                  ? 20
-                  : state === 'active'
-                    ? 18
-                    : state === 'selected' ||
-                        state === 'external-selected' ||
-                        state === 'tag-selected'
-                      ? 12
-                      : 6;
-              // nodeVal drives force-graph's own area math (and the drag hit
-              // area), so it scales with the same multiplier as the drawn
-              // radius — squared, since val is an area and nodeSize a length.
-              return base * settings.display.nodeSize ** 2;
+              // force-graph's own area math and its drag hit area. Squared,
+              // since val is an area and the radius a length.
+              return (nodeWorldRadius(node) * settings.display.nodeSize) ** 2;
             }}
             nodeCanvasObjectMode={() => 'replace'}
             nodeCanvasObject={(
               node: NodeObject<GraphNode>,
               ctx: CanvasRenderingContext2D,
-              globalScale: number,
+              _globalScale: number,
             ) => {
               if (typeof node.x !== 'number' || typeof node.y !== 'number') return;
 
@@ -1528,14 +1491,20 @@ export function GraphView({
                 navigationIntentByNodeId,
               });
               const degree = degreeByNodeId.get(node.id) ?? 0;
-              const style = getGraphNodeStyle({ node, degree, displayState, visualState: state });
-              // Cap the base, then scale — so a folder stays proportionally
-              // bigger than a page however far in you are.
-              const radius =
-                capGraphNodeRadius(
-                  getGraphNodeCanvasRadius(state) * settings.display.nodeSize,
-                  globalScale,
-                ) * style.scale;
+              const style = getGraphNodeStyle({
+                node,
+                degree,
+                displayState,
+                visualState: state,
+                isFocused: isGraphFocusMode(interactionMode),
+              });
+              // World units throughout, as the original had it: a node grows
+              // when you zoom into it, and the screen cap that used to hold
+              // every radius to 11px — flattening folder, hub and page into
+              // identical dots exactly when you were close enough to tell them
+              // apart — is gone with it.
+              const radius = style.radius * settings.display.nodeSize;
+              const strokeWidth = style.strokeWidth * settings.display.nodeSize;
 
               // A user-defined group is an explicit instruction and outranks the
               // weight scale; the auto-assigned cluster hue does NOT, because a
@@ -1543,14 +1512,12 @@ export function GraphView({
               // encoding exists to replace. Clusters still drive the legend.
               const group = matchGraphGroup(node, settings.groups);
               // The dot that anchors a territory is drawn in that territory's
-              // colour, at full strength against the 16%-alpha wash of the same
-              // hue behind it — so it reads as the thing that OWNS the field
-              // rather than as a grey dot that happens to sit on it. Nothing
-              // else on the canvas ties a region to its folder.
-              //
-              // Below an explicit group, which is a user instruction, and below
-              // the selected/active states, whose whole job is to override the
-              // resting colour.
+              // colour, at full strength against the wash of the same hue
+              // behind it — so it reads as the thing that OWNS the field rather
+              // than as a grey dot that happens to sit on it. Nothing else on
+              // the canvas ties a region to its folder. (Not the original's:
+              // its directories were all one tone. Kept because it answers a
+              // question the original never posed.)
               const anchoredArea = state === 'folder' ? areaById.get(node.id) : undefined;
               const color = group
                 ? resolveGraphGroupColor(group.color, isDark)
@@ -1561,78 +1528,95 @@ export function GraphView({
               ctx.save();
               ctx.globalAlpha = nodeAlpha(node.id);
 
-              const strokeWidth = screenOffsetInGraphUnits(1.5, globalScale, radius);
-              if (style.shape === 'filled') {
-                ctx.beginPath();
-                ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);
+              ctx.beginPath();
+              ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);
+              if (style.kind === 'dir') {
+                // Solid. A directory is the one thing on the canvas that is a
+                // place rather than a page.
                 ctx.fillStyle = color;
                 ctx.fill();
-              } else if (style.shape === 'ring') {
+              } else {
                 // Hollow, so the fill has to be the background rather than
                 // nothing — links are drawn first and would otherwise show
                 // straight through the node.
-                ctx.beginPath();
-                ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);
                 ctx.fillStyle = bgColor;
                 ctx.fill();
                 ctx.lineWidth = strokeWidth;
                 ctx.strokeStyle = color;
-                ctx.stroke();
-              } else if (style.shape === 'ghost') {
-                ctx.beginPath();
-                ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);
-                ctx.fillStyle = bgColor;
-                ctx.fill();
-                ctx.lineWidth = strokeWidth;
-                ctx.strokeStyle = color;
-                ctx.setLineDash([
-                  screenOffsetInGraphUnits(2.5, globalScale, radius),
-                  screenOffsetInGraphUnits(2, globalScale, radius),
-                ]);
+                if (style.kind === 'ghost') {
+                  ctx.setLineDash([radius * 0.45, radius * 0.35]);
+                }
                 ctx.stroke();
                 ctx.setLineDash([]);
-              } else {
-                ctx.beginPath();
-                ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);
-                ctx.fillStyle = color;
-                ctx.fill();
               }
 
-              // Selection is a halo OUTSIDE the node rather than a fill change,
-              // so a selected node keeps whatever weight its role gave it.
-              if (state !== 'default' && state !== 'external' && state !== 'tag') {
+              // Selection is a dashed ring OUTSIDE the node — the original's
+              // `drawDashedCircle(x, y, radius + 7)` — so a selected node keeps
+              // whatever weight its role gave it.
+              //
+              // Only for a node that IS selected or active. The test used to be
+              // "not one of the resting states", which quietly included
+              // `folder`: that is a resting state too — it says a link points
+              // at a directory — so every folder on the canvas wore a halo that
+              // means "you picked this".
+              if (state === 'active' || state.endsWith('selected')) {
                 ctx.beginPath();
+                ctx.setLineDash([radius * 0.4, radius * 0.4]);
                 ctx.arc(
                   node.x,
                   node.y,
-                  radius + screenOffsetInGraphUnits(3, globalScale, radius),
+                  radius + 7 * settings.display.nodeSize,
                   0,
                   2 * Math.PI,
                   false,
                 );
-                ctx.lineWidth = screenOffsetInGraphUnits(1.5, globalScale, radius);
+                ctx.lineWidth = 1.5 * settings.display.nodeSize;
                 ctx.strokeStyle =
                   state === 'active' || state === 'active-selected'
                     ? palette.accent
                     : palette.strong;
                 ctx.globalAlpha = nodeAlpha(node.id) * 0.45;
                 ctx.stroke();
+                ctx.setLineDash([]);
                 ctx.globalAlpha = nodeAlpha(node.id);
               }
 
-              // The edge count, inside the ring. Only drawn once the ring is
-              // physically big enough on screen to hold a digit.
-              // Quiet: the count is metadata about a node, not its identity.
-              // Drawn bold and dark it was the loudest thing on the canvas while
-              // the names were the faintest — exactly backwards.
-              if (style.showDegree && radius * globalScale >= 11) {
-                const fontPx = Math.min(radius * 0.85, 8 / globalScale);
-                ctx.font = `400 ${fontPx}px system-ui, sans-serif`;
-                ctx.fillStyle = color;
-                ctx.globalAlpha = nodeAlpha(node.id) * 0.5;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(String(degree), node.x, node.y);
+              // The glyph inside. Sized in world units like everything else, so
+              // it is a smudge when you are far out and a readable mark when
+              // you are close — and skipped entirely below the size where it
+              // would only muddy the disc.
+              const glyphSize = style.glyphSize * settings.display.nodeSize;
+              if (glyphSize >= 4) {
+                if (style.glyph === 'folder') {
+                  ctx.fillStyle = bgColor;
+                  drawGraphFolderGlyph(ctx, node.x, node.y, Math.min(glyphSize, radius * 1.1));
+                } else if (style.glyph === 'article') {
+                  ctx.strokeStyle = color;
+                  ctx.globalAlpha = nodeAlpha(node.id) * 0.55;
+                  // Fitted inside the disc rather than drawn at its nominal
+                  // size: the original's mark was a glyph in an 8pt em box,
+                  // most of which is bearing, while this one is a path that
+                  // fills the box it is given — at 8 against a radius of 7 it
+                  // spilled straight over the outline.
+                  drawGraphArticleGlyph(
+                    ctx,
+                    node.x,
+                    node.y,
+                    Math.min(glyphSize, radius * 1.1),
+                    strokeWidth * 0.6,
+                  );
+                  ctx.globalAlpha = nodeAlpha(node.id);
+                } else if (style.glyph === 'degree') {
+                  // The edge count, inside the ring. Quiet: it is metadata
+                  // about a node, not its identity.
+                  ctx.font = `600 ${glyphSize}px system-ui, sans-serif`;
+                  ctx.fillStyle = color;
+                  ctx.globalAlpha = nodeAlpha(node.id) * 0.6;
+                  ctx.textAlign = 'center';
+                  ctx.textBaseline = 'middle';
+                  ctx.fillText(String(degree), node.x, node.y);
+                  ctx.globalAlpha = nodeAlpha(node.id);
+                }
               }
 
               ctx.restore();
@@ -1641,30 +1625,15 @@ export function GraphView({
               node: NodeObject<GraphNode>,
               color: string,
               ctx: CanvasRenderingContext2D,
-              globalScale: number,
             ) => {
               if (typeof node.x !== 'number' || typeof node.y !== 'number') return;
-              const state = getGraphNodeVisualState(node, {
-                activeDocName,
-                selectedNodeId,
-              });
-              const displayState = getGraphNodeDisplayState({
-                node,
-                navigationIntentByNodeId,
-              });
               ctx.beginPath();
               ctx.arc(
                 node.x,
                 node.y,
-                // Scaled by the same multiplier as the drawn radius, or the
-                // clickable area would drift away from the visible circle.
-                getGraphNodeInteractiveRadius({
-                  state,
-                  displayState,
-                  globalScale,
-                }) *
-                  settings.display.nodeSize *
-                  drawnNodeScale(node),
+                // The same radius the node is drawn at, or the clickable area
+                // drifts away from the circle you can see.
+                getGraphNodeInteractiveRadius(nodeWorldRadius(node)) * settings.display.nodeSize,
                 0,
                 2 * Math.PI,
                 false,
@@ -1680,7 +1649,6 @@ export function GraphView({
               const bounds = areaBoundsRef.current;
               bounds.clear();
               areaPhasesRef.current = null;
-              if (areas.length === 0) return;
 
               const positionById = new Map(
                 (displayData.nodes as Array<GraphNode & { x?: number; y?: number }>).map((node) => [
@@ -1689,10 +1657,17 @@ export function GraphView({
                 ]),
               );
 
-              // How much world the graph currently spans, which is what the
-              // original's numbers get converted through — see
+              // How much world the graph currently spans, which is what every
+              // one of the original's numbers gets converted through — see
               // `getGraphAreaWorldScale`. Measured off the same node bounding
               // box a zoom-to-fit uses.
+              //
+              // Computed BEFORE the territory work and regardless of whether
+              // there is any: the node labels read the same converted zoom, and
+              // the rail's local graph has folder nodes switched off. Leaving
+              // it inside the territory branch left that graph measuring its
+              // label thresholds against a scale of 1, which is the original's
+              // world, not this one's.
               let minX = Number.POSITIVE_INFINITY;
               let maxX = Number.NEGATIVE_INFINITY;
               let minY = Number.POSITIVE_INFINITY;
@@ -1711,6 +1686,7 @@ export function GraphView({
                 height: dimensions.height,
               });
               areaWorldScaleRef.current = worldScale;
+              if (areas.length === 0) return;
               for (const area of areas) {
                 // A region is a place only once it holds something besides
                 // itself — the original's `members.length >= 2`.
@@ -1792,71 +1768,49 @@ export function GraphView({
                 ctx.restore();
               }
 
-              // No single cutoff any more: hubs earn a label further out than
-              // leaves do, so the planner decides per node and this only skips
-              // the work when not even the most permissive tier qualifies.
-              if (globalScale < settings.display.textFadeThreshold * MIN_GRAPH_LABEL_ZOOM_FACTOR) {
+              // No single cutoff: a folder earns a label further out than a
+              // hub, which earns one further out than a page, so the rule is
+              // per node and this only skips the work when not even the most
+              // permissive tier qualifies.
+              if (
+                getGraphAreaZoom(globalScale, areaWorldScaleRef.current) <
+                settings.display.textFadeThreshold * MIN_GRAPH_LABEL_ZOOM_FACTOR
+              ) {
                 return;
               }
 
               const fg = fgRef.current;
               if (!fg) return;
 
+              // Drawn in GRAPH space, not screen space — the original kept its
+              // labels inside the zoomed container, so a name grows with its
+              // node and holds a constant gap beneath it. force-graph leaves
+              // the graph transform active during this hook, so there is
+              // nothing to set up.
               ctx.save();
-              // force-graph keeps the graph transform active during frame hooks; reset to
-              // CSS-pixel space so placement math and text rendering share one coordinate system.
-              const pxRatio = window.devicePixelRatio || 1;
-              ctx.setTransform(pxRatio, 0, 0, pxRatio, 0, 0);
-              ctx.font = '10px system-ui, sans-serif';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'top';
+              ctx.fillStyle = labelColor;
 
-              const placements = planGraphLabels({
-                nodes: layoutNodes,
-                links: layoutLinks,
-                activeDocName,
-                viewport: dimensions,
-                maxLabels: settings.display.maxLabels,
-                zoomScale: globalScale,
+              const placements = planGraphNodeLabels({
+                nodes: layoutNodes.map((node) => ({
+                  node,
+                  text: labelDescriptors.get(node.id)?.primaryLabel ?? '',
+                  degree: degreeByNodeId.get(node.id) ?? 0,
+                  radius: nodeWorldRadius(node) * settings.display.nodeSize,
+                  isActive: node.id === activeDocName,
+                  isForced: node.id === selectedNodeId,
+                })),
+                zoomScale: getGraphAreaZoom(globalScale, areaWorldScaleRef.current),
                 leafLabelThreshold: settings.display.textFadeThreshold,
-                maxLabelWidthPx,
-                labelDescriptors,
-                measureTextWidthPx: (text) => ctx.measureText(text).width,
-                projectToScreen: (x, y) => fg.graph2ScreenCoords(x, y),
-                getNodeRadiusPx: (node) => {
-                  const state = getGraphNodeVisualState(node, {
-                    activeDocName,
-                    selectedNodeId,
-                  });
-                  const displayState = getGraphNodeDisplayState({
-                    node,
-                    navigationIntentByNodeId,
-                  });
-                  // Same cap as the drawn circle, so the name sits just under
-                  // the disc it belongs to and stops sliding once the disc
-                  // stops growing.
-                  return (
-                    capGraphNodeRadius(
-                      getGraphNodeInteractiveRadius({ state, displayState, globalScale }) *
-                        settings.display.nodeSize,
-                      globalScale,
-                    ) *
-                      drawnNodeScale(node) *
-                      globalScale +
-                    4
-                  );
-                },
-                previousOffsetStepByNodeId: labelOffsetStepsRef.current,
               });
 
-              // Hand this frame's decisions to the next one. Without it the
-              // plan is recomputed from scratch against inputs that move with
-              // the view, and the labels shake themselves apart while you zoom.
-              const nextOffsetSteps = new Map<string, number>();
               for (const placement of placements) {
-                nextOffsetSteps.set(placement.nodeId, placement.offsetStep);
+                ctx.font = `${placement.fontWeight} ${placement.sizePx}px system-ui, sans-serif`;
+                ctx.fillStyle = placement.isActive ? palette.accent : labelColor;
+                ctx.globalAlpha = nodeAlpha(placement.nodeId);
+                ctx.fillText(placement.text, placement.x, placement.y);
               }
-              labelOffsetStepsRef.current = nextOffsetSteps;
-
-              drawGraphLabelPlacements({ ctx, placements, labelColor });
               ctx.restore();
             }}
             linkColor={(link: LinkObject<GraphNode, GraphLink>) => {
@@ -1882,12 +1836,23 @@ export function GraphView({
             }
             linkDirectionalArrowRelPos={1}
             linkWidth={(link: LinkObject<GraphNode, GraphLink>) =>
-              // A hovered node's own edges thicken, so the highlighted subgraph
-              // reads as a shape rather than just a brightness difference.
+              // The original's two weights: containment at 1.6, an authored
+              // link at 1.1. A hovered node's own edges then thicken, so the
+              // highlighted subgraph reads as a shape rather than just a
+              // brightness difference.
+              getGraphLinkWidth(link) *
               settings.display.linkThickness *
               (isGraphLinkHighlighted(link, hoveredNodeIdRef.current) ? 2 : 1)
             }
+            linkLineDash={(link: LinkObject<GraphNode, GraphLink>) =>
+              // The original drew its `ref` edges dashed — the links that point
+              // at something which is not a page. This graph has no such edge
+              // KIND, but it has such targets: an unresolved wiki link, a tag,
+              // an external URL. Reading the target is the same statement.
+              isGraphReferenceLink(link, navigationIntentByNodeId) ? [3, 3] : null
+            }
             d3AlphaDecay={alphaDecay}
+            d3VelocityDecay={velocityDecay}
             onZoom={({ k }: { k: number }) => {
               zoomScaleRef.current = k;
               syncInteractionMode();

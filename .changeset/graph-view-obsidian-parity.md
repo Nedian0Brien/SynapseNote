@@ -29,15 +29,17 @@ centering force released, so the neighborhood stays where you can read and click
 it. Keep zooming and the neighbors become **cards** with their titles, paths, and
 tags at full size; zoom back out and you return to exactly the view you left.
 
-The graph is also redrawn to read calmly at scale. Meaning is carried by weight
-rather than by color: well-linked pages are open rings with their link count
-inside, ordinary pages are soft dots, and things that are referenced but are not
-pages — unresolved links, tags, external URLs — recede into faint outlines
-instead of being painted in alarm red. Page-to-page links are drawn more firmly
-than links to tags and URLs, and color is spent on one thing only: the document
-you came from. Labels sit as plain text under their node and appear at a zoom
-that matches how connected the page is, so zooming out thins the graph down to
-its landmarks instead of clearing every name at once.
+The graph is also redrawn to read calmly at scale. There are three kinds of
+node and you can tell them apart at a glance: a **folder** is a solid disc with
+a folder mark in it, a **well-linked page** is an open ring with its link count
+inside, and an **ordinary page** is a small outlined dot with a document mark.
+Things that are referenced but are not pages — unresolved links, tags, external
+URLs — keep a dashed outline instead of being painted in alarm red. Everything
+is drawn in the graph's own units, so a node grows as you zoom into it rather
+than staying a dot. Colour is spent on one thing only: the document you came
+from. Names hang beneath their node and appear at a zoom that matches what the
+node IS — folders first, then hubs, then pages — so zooming out thins the graph
+down to its landmarks instead of clearing every name at once.
 
 Folders are now part of the graph. Each directory that holds pages becomes a
 node of its own, and every page it holds is tied to it — so the layout gathers
@@ -51,12 +53,17 @@ is a node too, pinned at the centre, so the whole tree holds together instead of
 drifting into separate islands. Turn it off under **Filters → Folders** — on by
 default for the project graph, off for the rail's local one.
 
-The layout itself is readable at the zoom that fits the whole map. Repulsion
-between nodes now has a range instead of reaching across the entire graph, which
-was quietly crushing every folder into a solid dot while pushing the folders far
-apart — so the map came out many times wider than the gap between neighbouring
-pages, and no zoom level could show you both. Clusters now sit at a size you can
-actually see into, and stay just as well grouped.
+The layout itself is readable at the zoom that fits the whole map. Springs are
+three times longer and repulsion nearly seven times stronger than d3's bare
+defaults, centering is almost released, and nodes now take up room instead of
+piling on top of one another — the balance the original SynapseNote graph ran,
+which is what lets a folder hold together while sitting clear of its
+neighbours. Clusters sit at a size you can see into, and stay just as well
+grouped.
+
+If you had already tuned the graph, your filters and your groups carry over;
+the display and force sliders reset once, because their old values were tuned
+against the layout this replaces.
 
 Each folder now also paints a soft tinted territory behind everything it holds,
 with its name written across it, so you can tell which part of the vault you are

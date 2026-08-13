@@ -121,8 +121,8 @@ describe('GraphSettingsPopover — display and forces', () => {
     slider.focus();
     await userEvent.keyboard('{ArrowRight}');
 
-    // Default 30 with a step of 5.
-    expect(lastCall(onSettingsChange).forces.repelStrength).toBe(35);
+    // The original's 200, with a step of 5.
+    expect(lastCall(onSettingsChange).forces.repelStrength).toBe(205);
   });
 
   test('sliders clamp at the bound instead of running past it', async () => {
@@ -232,9 +232,8 @@ describe('GraphSettingsPopover — restore defaults', () => {
         linkThickness: 3,
         showArrows: false,
         textFadeThreshold: 0,
-        maxLabels: 50,
       },
-      forces: { centerStrength: 0, repelStrength: 200, linkStrength: 2, linkDistance: 90 },
+      forces: { centerStrength: 0, repelStrength: 120, linkStrength: 2, linkDistance: 40 },
       groups: [{ id: 'a', query: 'first', color: '#60a5fa' }],
     };
     const { onSettingsChange } = await openPopover(settings);
@@ -243,10 +242,14 @@ describe('GraphSettingsPopover — restore defaults', () => {
     expect(lastCall(onSettingsChange)).toEqual(getDefaultGraphSettings('docked'));
   });
 
-  test('restores the docked label budget, not the fullscreen one', async () => {
+  test('restores the scope’s own defaults, not the other scope’s', async () => {
     const { onSettingsChange } = await openPopover();
     await userEvent.click(screen.getByRole('button', { name: 'Restore defaults' }));
-    expect(lastCall(onSettingsChange).display.maxLabels).toBe(30);
+    // Folder territories are on for the project graph and off for the rail's
+    // local one — the one default that still differs between the two.
+    expect(lastCall(onSettingsChange).filters.showFolderNodes).toBe(
+      getDefaultGraphSettings('docked').filters.showFolderNodes,
+    );
   });
 });
 
