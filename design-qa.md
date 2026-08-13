@@ -69,6 +69,88 @@ final result: passed
 
 ---
 
+# Craft folder preview, grid, and list design QA — 2026-08-10
+
+## Visual truth and compared implementation
+
+- Preview source: `01-craft-reference.png`; installed result: `20-synapsenote-preview-two-notes-final.png`; combined comparison: `21-preview-reference-final.png`.
+- Grid source: `07-craft-grid-reference.png`; installed result: `14-synapsenote-grid-final.png`; combined comparison: `16-grid-reference-final.png`.
+- List source: `06-craft-list-reference.png`; installed result: `15-synapsenote-list-final.png`; combined comparison: `17-list-reference-final.png`.
+- Viewport: all final implementation captures are 1294 × 768 at device scale 1. The original 2654 × 1596 preview source was normalized to 1294 × 768 with a top-aligned cover crop; grid and list sources were native 1294 × 768.
+- State: Craft `Idea` light-theme reference compared with the installed SynapseNote Electron app in light theme. Preview used `brain/wiki/` with four folders and two direct notes; grid and list used `brain/wiki/concepts/` with five documents sorted by modified date descending.
+
+## Findings and iteration history
+
+| Iteration | Severity | Finding | Resolution and post-fix evidence |
+| --- | --- | --- | --- |
+| 1 | P2 | Folder cards flattened Markdown into text and used a small title with an edge-to-edge divider. | Rendered GitHub-flavored Markdown in the compact page preview, raised the title to 13 px, and inset the divider within the card padding. |
+| 2 | P1 | Masonry placement could fill the shortest column first, so two notes appeared vertically instead of occupying the first row. | Assigned cards to columns cyclically from left to right and stacked only within each column. The final `brain/wiki/` capture shows two direct notes adjacent in the first row. |
+| 3 | P2 | The first grid implementation was materially smaller and denser than the Craft reference. | Increased fixed card width to 15 rem and height to 192 px while preserving rendered Markdown content and date sections. |
+| 4 | P2 | The first list implementation compressed rows, thumbnails, text, and date columns. | Increased row height, thumbnail size, title and summary type, and date-column width to match the reference hierarchy. |
+| 5 | P2 | Grid and list lacked the reference's temporal structure. | Added modified-date groups for the past 7 days, past 30 days, calendar months, and undated items while preserving the active sort order. |
+
+## Required fidelity surfaces
+
+- Typography and hierarchy: preview and grid cards use a 13 px semibold title above a compact rendered Markdown page. List rows use a 13 px title, 10 px one-line summary, and subdued metadata headers.
+- Spacing and layout: preview cards use content-derived heights within bounded minimum and maximum sizes, a 240 px track, 12 px gaps, and left-to-right row filling. Grid cards use fixed 15 rem tracks. List rows align their thumbnail, name block, last-viewed, modified, and created columns.
+- Colors and chrome: all surfaces reuse existing background, foreground, muted, border, shadow, and focus tokens; no reference-only raster chrome was embedded.
+- Assets: list thumbnails and cards are real Markdown renderings from each document, not static screenshots, skeletons, or placeholder drawings.
+- Copy and metadata: date-section labels and column names are localized. Existing files have no reliable created-at metadata, so Created displays `—`; Last viewed records subsequent local document opens and otherwise displays `—`.
+
+## Interaction and final assessment
+
+- Verified preview, grid, and list controls switch between their distinct layouts.
+- Verified search and sort continue to feed the grouped views and document links remain navigable.
+- Verified opening a document records a local last-viewed timestamp used by the list view.
+- Focused layout, Markdown normalization, date grouping, card DOM, and folder-overview DOM tests passed; the app TypeScript check passed.
+- P0 findings: none.
+- Unresolved P1 findings: none.
+- Unresolved P2 findings: none.
+- Expected P3 differences: SynapseNote retains its own application shell, repository content, and folder description behavior rather than copying Craft-specific product chrome or data.
+
+final result: passed
+
+---
+
+# Folder gallery row-first layout design QA — 2026-08-10
+
+## Visual truth and compared implementation
+
+- Source visual truth: `01-current.png`, the installed `Research/brain` folder before this correction at 1288 × 768 pixels.
+- Installed implementation: `02-row-first.png`, the same folder, viewport, light theme, preview mode, five child folders, and two direct documents after this correction.
+- Full-view comparison: `04-before-after.png` places both 1288 × 768 captures side by side at native scale without density resampling.
+- A focused crop was unnecessary because the complete affected gallery and both document cards are legible in the full-view comparison; no typography, icon, or asset detail changed.
+
+## Findings and comparison history
+
+| Iteration | Severity | Finding | Resolution and post-fix evidence |
+| --- | --- | --- | --- |
+| 1 | P1 | CSS multi-column flow placed the second direct document below the first despite enough horizontal space for both cards. | Replaced column-major flow with explicit responsive grid placement. `02-row-first.png` and `04-before-after.png` show the first two documents occupying adjacent horizontal tracks. Later cards retain masonry packing by choosing the shortest column, while source and keyboard order remain left-to-right. |
+
+## Required fidelity surfaces
+
+- Fonts and typography: unchanged; titles, document preview text, wrapping, weights, line heights, and truncation retain the existing SynapseNote treatment.
+- Spacing and layout rhythm: the two 176 px paper cards now fill the first row with the existing 12 px gap. Folder tiles, page padding, radii, shadows, and vertical rhythm remain unchanged.
+- Colors and visual tokens: unchanged; cards continue to use the existing card, border, foreground, muted, focus, and shadow tokens.
+- Image and asset fidelity: this change introduces no raster, decorative, or custom-drawn assets. Existing icons and live document previews are unchanged.
+- Copy and content: unchanged. `Work Log` and `간단한 메모` preserve their canonical titles and preview text.
+- Responsiveness: the layout contract resolves 364 px to two 176 px cards plus a 12 px gap, and 176 px to one column. The installed wide-screen capture verifies the two-column state.
+
+## Interaction and final assessment
+
+- Verified two direct documents render left-to-right in the installed app.
+- Verified all documents retain source DOM order and later documents choose the shortest available column.
+- Verified Preview, Grid, and List switching remains covered by the focused folder-overview DOM test.
+- Automated evidence: two layout tests and four folder-overview DOM tests passed.
+- Installed bundle revision `35be5e9d` passed revision, code-signature, and ASAR integrity verification.
+- P0 findings: none.
+- Unresolved P1 findings: none.
+- Unresolved P2 findings: none.
+
+final result: passed
+
+---
+
 # Craft-style folder gallery design QA — 2026-08-09/10
 
 ## Visual truth and compared implementation

@@ -69,6 +69,8 @@ mock.module('@/components/FolderDocumentCard', () => ({
       {entry.title}
     </a>
   ),
+  FolderMarkdownPreview: ({ markdown }: { markdown: string }) => <span>{markdown}</span>,
+  useFolderDocumentPreview: () => ({ status: 'ready', markdown: 'A concise document summary' }),
 }));
 
 mock.module('@/components/FolderPropertiesCard', () => ({
@@ -94,6 +96,7 @@ describe('FolderOverview Craft gallery behavior', () => {
   beforeEach(() => {
     cleanup();
     window.location.hash = '';
+    window.localStorage.clear();
   });
 
   afterEach(cleanup);
@@ -117,6 +120,8 @@ describe('FolderOverview Craft gallery behavior', () => {
     await renderOverview();
 
     await user.click(screen.getByRole('radio', { name: 'Grid view' }));
+    expect(document.querySelector('[data-folder-document-grid]')).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'past-7-days' })).toBeTruthy();
     expect(
       document
         .querySelector('[data-folder-document-card="notes/alpha"]')
@@ -125,6 +130,9 @@ describe('FolderOverview Craft gallery behavior', () => {
 
     await user.click(screen.getByRole('radio', { name: 'List view' }));
     expect(document.querySelectorAll('[data-folder-document-card]')).toHaveLength(0);
+    expect(document.querySelector('[data-folder-document-list]')).toBeTruthy();
+    expect(screen.getByText('Last viewed')).toBeTruthy();
+    expect(screen.getByText('Created')).toBeTruthy();
     expect(screen.getByRole('region', { name: 'Documents' })).toBeTruthy();
     expect(screen.getByRole('link', { name: /Alpha Plan/ })).toBeTruthy();
     expect(screen.getByRole('link', { name: /Beta Research/ })).toBeTruthy();
@@ -146,6 +154,19 @@ describe('FolderOverview Craft gallery behavior', () => {
     await user.type(input, 'archive');
     expect(screen.getByRole('link', { name: 'archive' })).toBeTruthy();
     expect(document.querySelectorAll('[data-folder-document-card]')).toHaveLength(0);
+  });
+
+  test('records a document as last viewed when it is opened from the list', async () => {
+    const user = userEvent.setup();
+    await renderOverview();
+
+    await user.click(screen.getByRole('radio', { name: 'List view' }));
+    await user.click(screen.getByRole('link', { name: /Alpha Plan/ }));
+
+    const stored = JSON.parse(
+      window.localStorage.getItem('synapsenote.folder-document-last-viewed.v1') ?? '{}',
+    ) as Record<string, string>;
+    expect(stored['notes/alpha']).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
   test('opens the new-document dialog and preserves folder management in the details sheet', async () => {

@@ -2,7 +2,6 @@ import { Trans, useLingui } from '@lingui/react/macro';
 import {
   ArrowDownUp,
   Columns3,
-  FileText,
   Folder,
   FolderOpen,
   Grid2X2,
@@ -14,12 +13,15 @@ import {
 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { FolderDocumentCard } from '@/components/FolderDocumentCard';
+import { FolderDocumentGallery } from '@/components/FolderDocumentGallery';
+import { FolderDateGroupLabel, FolderDocumentList } from '@/components/FolderDocumentList';
 import { FolderPropertiesCard } from '@/components/FolderPropertiesCard';
 import { FolderTimelineCard } from '@/components/FolderTimelineCard';
 import {
   buildFolderOverviewData,
   type FolderOverviewEntry,
 } from '@/components/folder-overview-data';
+import { groupFolderDocumentsByModified } from '@/components/folder-overview-date-groups';
 import { NewItemDialog } from '@/components/NewItemDialog';
 import { usePageList } from '@/components/PageListContext';
 import { TemplatesCard } from '@/components/TemplatesCard';
@@ -44,7 +46,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useFolderConfig } from '@/hooks/use-folder-config';
 import { hashFromDocName } from '@/lib/doc-hash';
-import { cn } from '@/lib/utils';
 
 type SortKey = 'name' | 'modified';
 type SortDir = 'asc' | 'desc';
@@ -67,19 +68,6 @@ function sortEntries(
     }
     return dir === 'asc' ? comparison : -comparison;
   });
-}
-
-function formatRelativeDate(iso: string): string {
-  if (!iso) return '—';
-  const date = new Date(iso);
-  const diffMinutes = Math.floor((Date.now() - date.getTime()) / 60_000);
-  if (diffMinutes < 1) return 'now';
-  if (diffMinutes < 60) return `${diffMinutes}m`;
-  const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) return `${diffHours}h`;
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 30) return `${diffDays}d`;
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 function FolderOverviewSkeleton() {
@@ -131,38 +119,6 @@ function FolderTiles({ entries }: { entries: Extract<FolderOverviewEntry, { kind
   );
 }
 
-function DocumentList({
-  entries,
-  ariaLabel,
-}: {
-  entries: Extract<FolderOverviewEntry, { kind: 'file' }>[];
-  ariaLabel: string;
-}) {
-  return (
-    <section
-      aria-label={ariaLabel}
-      className="overflow-hidden rounded-[13px] border border-black/7 bg-card/94 shadow-sm dark:border-white/9"
-    >
-      <ul className="divide-y divide-border/65">
-        {entries.map((entry) => (
-          <li key={entry.path}>
-            <a
-              href={hashFromDocName(entry.path)}
-              className="group flex items-center gap-3 px-3.5 py-3 text-sm transition-colors hover:bg-muted/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40"
-            >
-              <FileText className="size-4 shrink-0 text-muted-foreground/65 group-hover:text-foreground" />
-              <span className="min-w-0 flex-1 truncate font-medium">{entry.title}</span>
-              <span className="shrink-0 text-xs text-muted-foreground">
-                {formatRelativeDate(entry.modified)}
-              </span>
-            </a>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
 export function FolderOverview({ folderPath }: { folderPath: string }) {
   const { t } = useLingui();
   const { folderPaths, loading, pages, pageTitles, pageMeta } = usePageList();
@@ -173,8 +129,8 @@ export function FolderOverview({ folderPath }: { folderPath: string }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('preview');
-  const [sortKey, setSortKey] = useState<SortKey>('name');
-  const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [sortKey, setSortKey] = useState<SortKey>('modified');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const data = buildFolderOverviewData(folderPath, { pages, pageTitles, pageMeta, folderPaths });
@@ -190,6 +146,7 @@ export function FolderOverview({ folderPath }: { folderPath: string }) {
   const documents = visibleEntries.filter(
     (entry): entry is Extract<FolderOverviewEntry, { kind: 'file' }> => entry.kind === 'file',
   );
+  const documentDateGroups = groupFolderDocumentsByModified(documents);
   const description =
     folderConfig.status === 'ready' && typeof folderConfig.data.folder.description === 'string'
       ? folderConfig.data.folder.description.trim()
@@ -360,18 +317,22 @@ export function FolderOverview({ folderPath }: { folderPath: string }) {
 
           {documents.length > 0 ? (
             viewMode === 'list' ? (
-              <DocumentList entries={documents} ariaLabel={t`Documents`} />
+              <FolderDocumentList groups={documentDateGroups} ariaLabel={t`Documents`} />
+            ) : viewMode === 'preview' ? (
+              <FolderDocumentGallery entries={documents} ariaLabel={t`Documents`} />
             ) : (
-              <section
-                aria-label={t`Documents`}
-                className={cn(
-                  viewMode === 'preview' && 'columns-[11rem] gap-3',
-                  viewMode === 'grid' &&
-                    'grid grid-cols-[repeat(auto-fill,minmax(min(100%,11rem),1fr))] gap-3',
-                )}
-              >
-                {documents.map((entry) => (
-                  <FolderDocumentCard key={entry.path} entry={entry} mode={viewMode} />
+              <section aria-label={t`Documents`} className="space-y-5" data-folder-document-grid>
+                {documentDateGroups.map((group) => (
+                  <section key={group.key} aria-label={group.key}>
+                    <h2 className="mb-3 px-1 text-[11px] font-medium text-muted-foreground/70">
+                      <FolderDateGroupLabel group={group} />
+                    </h2>
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,15rem),15rem))] gap-3">
+                      {group.entries.map((entry) => (
+                        <FolderDocumentCard key={entry.path} entry={entry} mode={viewMode} />
+                      ))}
+                    </div>
+                  </section>
                 ))}
               </section>
             )
