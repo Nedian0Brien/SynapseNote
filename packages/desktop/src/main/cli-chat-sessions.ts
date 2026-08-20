@@ -6,6 +6,7 @@ const MAX_TITLE_LENGTH = 36;
 const MAX_TRANSCRIPT_MESSAGES = 400;
 const MAX_TRANSCRIPT_CHARACTERS = 1_000_000;
 const SESSION_LIST_SAMPLE_BYTES = 64 * 1024;
+const SESSION_LIST_PROMPT_BYTES = 2 * 1024 * 1024;
 const SESSION_LIST_READ_CONCURRENCY = 12;
 const sessionFileCache = new Map<string, string>();
 const sessionListInFlight = new Map<string, Promise<NativeCliChatSession[]>>();
@@ -126,6 +127,25 @@ async function sampleJsonLines(path: string, mode: 'head' | 'head-tail'): Promis
   }
 }
 
+async function readJsonLinesPrefix(path: string, maxBytes: number): Promise<unknown[]> {
+  try {
+    const info = await stat(path);
+    const length = Math.min(info.size, maxBytes);
+    const handle = await open(path, 'r');
+    try {
+      const buffer = Buffer.alloc(length);
+      if (length > 0) await handle.read(buffer, 0, length, 0);
+      return parseCompleteJsonLines(buffer.toString('utf8'), {
+        dropLastPartial: length < info.size,
+      });
+    } finally {
+      await handle.close();
+    }
+  } catch {
+    return [];
+  }
+}
+
 async function mapWithConcurrency<T, R>(
   values: readonly T[],
   concurrency: number,
@@ -185,6 +205,16 @@ function visibleUserPrompt(value: unknown): string | null {
   return hasSynapseNoteContext && markerIndex >= 0
     ? messageText(text.slice(markerIndex + marker.length))
     : text;
+}
+
+function firstCodexPrompt(rows: readonly Record<string, unknown>[]): string | null {
+  for (const row of rows) {
+    const event = record(row.payload);
+    if (row.type !== 'event_msg' || event?.type !== 'user_message') continue;
+    const title = shortTitle(visibleUserPrompt(event.message));
+    if (title !== null) return title;
+  }
+  return null;
 }
 
 function boundedMessages(messages: readonly NativeCliChatMessage[]): NativeCliChatMessage[] {
@@ -281,14 +311,24 @@ async function codexSessions(
       if (sessionId === null) return null;
 
       const indexed = index.get(sessionId);
-      let firstPrompt: string | null = null;
+      let firstPrompt = firstCodexPrompt(rows);
       let latest = Math.max(sample.modifiedAt, indexed?.updatedAt ?? 0);
       for (const row of rows) {
         latest = Math.max(latest, timestamp(row.timestamp));
-        const event = record(row.payload);
-        if (firstPrompt === null && row.type === 'event_msg' && event?.type === 'user_message') {
-          firstPrompt = shortTitle(visibleUserPrompt(event.message));
-        }
+      }
+      if (
+        indexed === undefined &&
+        firstPrompt === null &&
+        sample.size > SESSION_LIST_SAMPLE_BYTES
+      ) {
+        // SynapseNote context can make the first user-message JSONL record
+        // larger than the 64KB ownership sample. Only the already-matched,
+        // unindexed sessions pay this bounded fallback read; unrelated
+        // transcripts are never expanded.
+        const promptRows = (await readJsonLinesPrefix(path, SESSION_LIST_PROMPT_BYTES))
+          .map(record)
+          .filter((row) => row !== null);
+        firstPrompt = firstCodexPrompt(promptRows);
       }
       cacheSessionFile({ homeDir, projectRoot, cli: 'codex', sessionId }, path);
       return {

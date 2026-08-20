@@ -171,6 +171,26 @@ describe('listNativeCliChatSessions', () => {
       'Updated title',
     );
   });
+
+  test('recovers a visible fallback title from a user-message record larger than the ownership sample', async () => {
+    const homeDir = temporaryHome();
+    const projectRoot = '/workspace/current';
+    const injectedContext = 'x'.repeat(80 * 1024);
+    writeJsonLines(join(homeDir, '.codex', 'sessions', 'current.jsonl'), [
+      { type: 'session_meta', payload: { id: 'codex-current', cwd: projectRoot } },
+      {
+        type: 'event_msg',
+        payload: {
+          type: 'user_message',
+          message: `The following metadata identifies the document currently open.\n\n<current_document>\n${injectedContext}\n</current_document>\n\nUser request:\nKeep the useful title`,
+        },
+      },
+    ]);
+
+    expect((await listNativeCliChatSessions({ homeDir, projectRoot }))[0]?.title).toBe(
+      'Keep the useful title',
+    );
+  });
 });
 
 describe('readNativeCliChatSession', () => {
