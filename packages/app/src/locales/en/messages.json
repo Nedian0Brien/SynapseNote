@@ -434,6 +434,7 @@
       " results."
     ],
     "6HCOwA": ["Failed to open."],
+    "6I7cJR": ["Open chat"],
     "6KCH4m": ["Hidden files"],
     "6Ki4Pv": ["Favorite"],
     "6LbUG7": ["The repository is private and your GitHub account doesn't have access to it."],
@@ -600,6 +601,7 @@
     "9clcD5": ["Open documents tagged #", ["chip"]],
     "9cyMNe": ["Try a different name or path."],
     "9dHQ7r": ["No visible related records."],
+    "9dc-OP": ["Copy session ID"],
     "9dw5bW": ["Create with ", ["0"]],
     "9euN0m": [
       [
@@ -1426,6 +1428,7 @@
     "NvOvTi": ["Create in <0>", ["dirDisplay"], "</0>"],
     "Nx7BWE": ["Git auto-sync"],
     "NxW-md": ["Resize ", ["handleKey"]],
+    "NyvidK": ["Refresh chats"],
     "NzFvyK": ["Session ended — undo unavailable"],
     "NzluOx": ["(optional)"],
     "O-SQUD": ["Failed to load PDF: Missing PDF source"],

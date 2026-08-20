@@ -2640,6 +2640,10 @@ msgstr "Copy selected cells"
 msgid "Copy selected file or folder"
 msgstr "Copy selected file or folder"
 
+#: src/components/ChatSidebarSection.tsx
+msgid "Copy session ID"
+msgstr "Copy session ID"
+
 #: src/components/PublishToGitHubDialog.tsx
 msgid "Copy share link"
 msgstr "Copy share link"
@@ -7400,6 +7404,10 @@ msgstr "Open and focus the Ask AI composer for the current editor selection."
 msgid "Open and focus the bottom Ask AI prompt composer."
 msgstr "Open and focus the bottom Ask AI prompt composer."
 
+#: src/components/ChatSidebarSection.tsx
+msgid "Open chat"
+msgstr "Open chat"
+
 #. placeholder {0}: session.title
 #: src/components/ChatSidebarSection.tsx
 msgid "Open chat {0}"
@@ -8582,6 +8590,10 @@ msgstr "References and functions"
 #: src/editor/components/InlineDatabaseToolbar.tsx
 msgid "Refresh"
 msgstr "Refresh"
+
+#: src/components/ChatSidebarSection.tsx
+msgid "Refresh chats"
+msgstr "Refresh chats"
 
 #: src/components/DatabaseWorkspaceReadState.tsx
 msgid "Refresh paused. The current database view remains available."

@@ -2635,6 +2635,10 @@ msgstr ""
 msgid "Copy selected file or folder"
 msgstr ""
 
+#: src/components/ChatSidebarSection.tsx
+msgid "Copy session ID"
+msgstr ""
+
 #: src/components/PublishToGitHubDialog.tsx
 msgid "Copy share link"
 msgstr ""
@@ -7395,6 +7399,10 @@ msgstr ""
 msgid "Open and focus the bottom Ask AI prompt composer."
 msgstr ""
 
+#: src/components/ChatSidebarSection.tsx
+msgid "Open chat"
+msgstr ""
+
 #. placeholder {0}: session.title
 #: src/components/ChatSidebarSection.tsx
 msgid "Open chat {0}"
@@ -8576,6 +8584,10 @@ msgstr ""
 #: src/components/DatabaseWorkspaceToolbar.tsx
 #: src/editor/components/InlineDatabaseToolbar.tsx
 msgid "Refresh"
+msgstr ""
+
+#: src/components/ChatSidebarSection.tsx
+msgid "Refresh chats"
 msgstr ""
 
 #: src/components/DatabaseWorkspaceReadState.tsx

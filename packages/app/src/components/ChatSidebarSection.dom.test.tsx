@@ -7,6 +7,8 @@ import { renderLinguiTemplate } from '@/test-utils/lingui-mock';
 import { TerminalLaunchProvider } from './handoff/TerminalLaunchContext';
 import { subscribeToTerminalLaunchRequests } from './handoff/terminal-launch-events';
 
+const clipboardWrite = mock(async (_text: string) => {});
+
 function PassThrough({
   children,
   asChild: _asChild,
@@ -62,6 +64,11 @@ describe('ChatSidebarSection', () => {
   beforeEach(() => {
     cleanup();
     window.localStorage.clear();
+    clipboardWrite.mockClear();
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: clipboardWrite },
+    });
   });
 
   afterEach(cleanup);
@@ -137,6 +144,52 @@ describe('ChatSidebarSection', () => {
     expect(newChat.getAttribute('disabled')).toBeNull();
     fireEvent.click(newChat);
     expect(launches).toEqual([{ prompt: null, cli: 'claude', options: { surface: 'main' } }]);
+    unsubscribe();
+  });
+
+  test('opens a row context menu with safe chat actions', async () => {
+    const listChatSessions = mock(() =>
+      Promise.resolve([
+        {
+          cli: 'codex' as const,
+          sessionId: 'codex-session',
+          title: 'Fix graph labels',
+          updatedAt: 2,
+        },
+      ]),
+    );
+    const bridge = { terminal: { listChatSessions } } as unknown as OkDesktopBridge;
+    const launches: unknown[] = [];
+    const unsubscribe = subscribeToTerminalLaunchRequests((prompt, cli, options) => {
+      launches.push({ prompt, cli, options });
+    });
+    const { ChatSidebarSection } = await import('./ChatSidebarSection');
+    render(
+      <TerminalLaunchProvider
+        value={{ launchInTerminal: () => {}, installedClis: { codex: true } }}
+      >
+        <ChatSidebarSection bridge={bridge} />
+      </TerminalLaunchProvider>,
+    );
+
+    const row = await screen.findByRole('button', { name: 'Open chat Fix graph labels' });
+    fireEvent.contextMenu(row);
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Open chat' }));
+    expect(launches).toEqual([
+      {
+        prompt: null,
+        cli: 'codex',
+        options: { resumeSessionId: 'codex-session', surface: 'main' },
+      },
+    ]);
+
+    fireEvent.contextMenu(row);
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Copy session ID' }));
+    await waitFor(() => expect(clipboardWrite).toHaveBeenCalledWith('codex-session'));
+
+    fireEvent.contextMenu(row);
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Refresh chats' }));
+    await waitFor(() => expect(listChatSessions).toHaveBeenCalledTimes(2));
     unsubscribe();
   });
 });

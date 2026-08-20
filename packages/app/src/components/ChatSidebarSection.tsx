@@ -1,8 +1,15 @@
 import { Trans, useLingui } from '@lingui/react/macro';
-import { Bot, ChevronRight, MessageSquareText, Plus, RefreshCw } from 'lucide-react';
+import { Bot, ChevronRight, Copy, MessageSquareText, Plus, RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
 import {
   SidebarGroup,
   SidebarGroupAction,
@@ -77,6 +84,17 @@ export function ChatSidebarSection({ bridge }: ChatSidebarSectionProps) {
     });
   }
 
+  function reloadChats() {
+    setLoadAttempt((attempt) => attempt + 1);
+  }
+
+  function copySessionId(session: OkCliChatSession) {
+    if (!navigator.clipboard?.writeText) return;
+    void navigator.clipboard.writeText(session.sessionId).catch((error: unknown) => {
+      console.warn('[sidebar] could not copy native chat session ID:', error);
+    });
+  }
+
   return (
     <Collapsible
       open={open}
@@ -120,7 +138,7 @@ export function ChatSidebarSection({ bridge }: ChatSidebarSectionProps) {
                   variant="ghost"
                   size="icon-xs"
                   aria-label={t`Retry loading chats`}
-                  onClick={() => setLoadAttempt((attempt) => attempt + 1)}
+                  onClick={reloadChats}
                 >
                   <RefreshCw className="size-3.5" aria-hidden="true" />
                 </Button>
@@ -135,19 +153,39 @@ export function ChatSidebarSection({ bridge }: ChatSidebarSectionProps) {
               <SidebarMenu data-testid="chat-sidebar-list">
                 {sessions.map((session) => (
                   <SidebarMenuItem key={`${session.cli}:${session.sessionId}`}>
-                    <SidebarMenuButton
-                      type="button"
-                      className="h-7"
-                      tooltip={session.title}
-                      aria-label={t`Open chat ${session.title}`}
-                      onClick={() => resumeChat(session)}
-                    >
-                      <Bot className="size-3.5 shrink-0" aria-hidden="true" />
-                      <span className="min-w-0 flex-1 truncate">{session.title}</span>
-                      <span className="shrink-0 text-[9px] uppercase text-muted-foreground/70">
-                        {session.cli}
-                      </span>
-                    </SidebarMenuButton>
+                    <ContextMenu>
+                      <ContextMenuTrigger asChild>
+                        <SidebarMenuButton
+                          type="button"
+                          className="h-7"
+                          tooltip={session.title}
+                          aria-label={t`Open chat ${session.title}`}
+                          onClick={() => resumeChat(session)}
+                        >
+                          <Bot className="size-3.5 shrink-0" aria-hidden="true" />
+                          <span className="min-w-0 flex-1 truncate">{session.title}</span>
+                          <span className="shrink-0 text-[9px] uppercase text-muted-foreground/70">
+                            {session.cli}
+                          </span>
+                        </SidebarMenuButton>
+                      </ContextMenuTrigger>
+                      <ContextMenuContent className="w-44">
+                        <ContextMenuItem onSelect={() => resumeChat(session)}>
+                          <MessageSquareText aria-hidden="true" />
+                          <Trans>Open chat</Trans>
+                        </ContextMenuItem>
+                        <ContextMenuSeparator />
+                        <ContextMenuItem onSelect={() => copySessionId(session)}>
+                          <Copy aria-hidden="true" />
+                          <Trans>Copy session ID</Trans>
+                        </ContextMenuItem>
+                        <ContextMenuSeparator />
+                        <ContextMenuItem onSelect={reloadChats}>
+                          <RefreshCw aria-hidden="true" />
+                          <Trans>Refresh chats</Trans>
+                        </ContextMenuItem>
+                      </ContextMenuContent>
+                    </ContextMenu>
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>
