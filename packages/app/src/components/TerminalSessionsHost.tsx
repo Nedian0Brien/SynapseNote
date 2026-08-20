@@ -102,7 +102,7 @@ interface TerminalSessionsHostProps {
    * window: always visible, seeds its first tab on mount, the tab row doubles as
    * the macOS title bar, no dock/collapse controls (window management is the
    * OS's), and ⌘1–9 is scope-free (the whole window is the terminal). Everything
-   * else — the new-chat split button, OSC tab titles, menu actions, liveness,
+   * else — the new-chat menu, OSC tab titles, menu actions, liveness,
    * reload rehydration — is identical by construction: one session model, two
    * placements.
    */
@@ -330,8 +330,7 @@ export function TerminalSessionsHost({
   }
 
   // Sticky CLI mirror, mount-read from the shared Ask-AI store, so the New-chat
-  // split button's default reflects the user's last pick and updates its primary
-  // icon reactively when they switch CLI from the dropdown. `resolveDefaultCli`
+  // menu reflects the user's last pick. `resolveDefaultCli`
   // also honors the live `installedClis` when there is no sticky pick.
   const [stickyCliId, setStickyCliId] = useState<string | null>(() => loadStickyAgent());
   // Terminal-only "last New-tab pick was a bare shell" flag. The shared store has
@@ -343,7 +342,7 @@ export function TerminalSessionsHost({
   const newChatDefaultCli = resolveDefaultCli(stickyCliId, installedClis ?? {});
   const newChatSelected: TerminalNewTabChoice = preferBareTerminal ? 'terminal' : newChatDefaultCli;
   // Gate the New-chat dropdown rows to Claude + CLIs the probe hasn't ruled out,
-  // keeping the resolved default (`newChatDefaultCli`) so the split button's
+  // keeping the resolved default (`newChatDefaultCli`) so the menu's
   // current pick is always present in its own dropdown (with its checkmark).
   const newChatVisibleClis = visibleTerminalClis(installedClis ?? {}, newChatDefaultCli);
 
@@ -367,13 +366,6 @@ export function TerminalSessionsHost({
     );
   }
 
-  // Primary click: launch the current pick — a bare shell when Terminal is the
-  // default, else a promptless session in the default CLI.
-  function launchSelectedNewTab() {
-    if (preferBareTerminal) openSession(null);
-    else openNewChatSession(newChatDefaultCli);
-  }
-
   // Dropdown CLI pick: clear the bare-terminal preference, persist `cli` to the
   // shared Ask-AI store (so every entry point agrees), and open a session in it.
   function pickNewChatCli(cli: TerminalCli) {
@@ -386,7 +378,7 @@ export function TerminalSessionsHost({
   }
 
   // Dropdown "Terminal" pick: persist the bare-shell preference (terminal-only)
-  // and open a bare shell. A subsequent primary click then opens a terminal too.
+  // and open a bare shell.
   function pickNewChatTerminal() {
     setPreferBareTerminal(true);
     writePreferBareTerminal(true);
@@ -860,7 +852,6 @@ export function TerminalSessionsHost({
         // container is focusable) when a tab is selected by pointer or Enter.
         onTabActivate={(id) => queueMicrotask(() => focusTerminalSession(id))}
         newChatSelected={newChatSelected}
-        onNewChatLaunch={launchSelectedNewTab}
         onNewChatPickCli={pickNewChatCli}
         onNewChatPickTerminal={pickNewChatTerminal}
         newChatVisibleClis={newChatVisibleClis}

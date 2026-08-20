@@ -9,44 +9,35 @@ function renderButton(
   selected: TerminalNewTabChoice = 'claude',
   visibleClis?: readonly TerminalCli[],
 ) {
-  const onLaunchSelected = mock(() => {});
   const onPickCli = mock((_cli: TerminalCli) => {});
   const onPickTerminal = mock(() => {});
   render(
     <TooltipProvider>
       <TerminalNewChatButton
         selected={selected}
-        onLaunchSelected={onLaunchSelected}
         onPickCli={onPickCli}
         onPickTerminal={onPickTerminal}
         visibleClis={visibleClis}
       />
     </TooltipProvider>,
   );
-  return { onLaunchSelected, onPickCli, onPickTerminal };
+  return { onPickCli, onPickTerminal };
 }
 
 describe('TerminalNewChatButton', () => {
   afterEach(() => cleanup());
 
-  test('the primary launches the current selection (a CLI) without changing it', async () => {
+  test('renders one plus button that opens the new-session menu', async () => {
     const user = userEvent.setup();
-    const { onLaunchSelected, onPickCli } = renderButton('codex');
+    const { onPickCli, onPickTerminal } = renderButton('codex');
 
-    await user.click(screen.getByRole('button', { name: 'New Codex chat' }));
+    const buttons = screen.getAllByRole('button');
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0]?.getAttribute('aria-label')).toBe('New chat');
+    await user.click(screen.getByRole('button', { name: 'New chat' }));
 
-    expect(onLaunchSelected).toHaveBeenCalledTimes(1);
-    // Primary is a plain launch — it never re-picks.
+    expect(await screen.findByRole('menuitem', { name: 'Codex CLI' })).toBeDefined();
     expect(onPickCli).not.toHaveBeenCalled();
-  });
-
-  test('when Terminal is the selection the primary opens a bare terminal', async () => {
-    const user = userEvent.setup();
-    const { onLaunchSelected, onPickTerminal } = renderButton('terminal');
-
-    await user.click(screen.getByRole('button', { name: 'New terminal' }));
-
-    expect(onLaunchSelected).toHaveBeenCalledTimes(1);
     expect(onPickTerminal).not.toHaveBeenCalled();
   });
 
@@ -54,7 +45,7 @@ describe('TerminalNewChatButton', () => {
     const user = userEvent.setup();
     renderButton('claude');
 
-    await user.click(screen.getByRole('button', { name: 'Choose CLI for new chat' }));
+    await user.click(screen.getByRole('button', { name: 'New chat' }));
 
     for (const name of ['Claude CLI', 'Codex CLI', 'OpenCode CLI', 'Cursor CLI']) {
       expect(await screen.findByRole('menuitem', { name })).toBeDefined();
@@ -69,7 +60,7 @@ describe('TerminalNewChatButton', () => {
     // detected on PATH, so their rows are absent.
     renderButton('claude', ['claude', 'codex']);
 
-    await user.click(screen.getByRole('button', { name: 'Choose CLI for new chat' }));
+    await user.click(screen.getByRole('button', { name: 'New chat' }));
 
     expect(await screen.findByRole('menuitem', { name: 'Claude CLI' })).toBeDefined();
     expect(screen.getByRole('menuitem', { name: 'Codex CLI' })).toBeDefined();
@@ -81,14 +72,13 @@ describe('TerminalNewChatButton', () => {
 
   test('picking a CLI from the dropdown switches the default (persist + launch)', async () => {
     const user = userEvent.setup();
-    const { onPickCli, onLaunchSelected, onPickTerminal } = renderButton('claude');
+    const { onPickCli, onPickTerminal } = renderButton('claude');
 
-    await user.click(screen.getByRole('button', { name: 'Choose CLI for new chat' }));
+    await user.click(screen.getByRole('button', { name: 'New chat' }));
     await user.click(await screen.findByRole('menuitem', { name: 'OpenCode CLI' }));
 
     expect(onPickCli).toHaveBeenCalledTimes(1);
     expect(onPickCli).toHaveBeenCalledWith('opencode');
-    expect(onLaunchSelected).not.toHaveBeenCalled();
     expect(onPickTerminal).not.toHaveBeenCalled();
   });
 
@@ -96,7 +86,7 @@ describe('TerminalNewChatButton', () => {
     const user = userEvent.setup();
     renderButton('codex');
 
-    await user.click(screen.getByRole('button', { name: 'Choose CLI for new chat' }));
+    await user.click(screen.getByRole('button', { name: 'New chat' }));
 
     // The active CLI row is programmatically current; siblings + Terminal are not.
     expect(
@@ -114,7 +104,7 @@ describe('TerminalNewChatButton', () => {
     const user = userEvent.setup();
     renderButton('terminal');
 
-    await user.click(screen.getByRole('button', { name: 'Choose CLI for new chat' }));
+    await user.click(screen.getByRole('button', { name: 'New chat' }));
 
     expect(
       (await screen.findByRole('menuitem', { name: 'Terminal' })).getAttribute('aria-current'),
@@ -126,13 +116,12 @@ describe('TerminalNewChatButton', () => {
 
   test('picking Terminal from the dropdown switches the default to a bare shell', async () => {
     const user = userEvent.setup();
-    const { onPickTerminal, onPickCli, onLaunchSelected } = renderButton('claude');
+    const { onPickTerminal, onPickCli } = renderButton('claude');
 
-    await user.click(screen.getByRole('button', { name: 'Choose CLI for new chat' }));
+    await user.click(screen.getByRole('button', { name: 'New chat' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Terminal' }));
 
     expect(onPickTerminal).toHaveBeenCalledTimes(1);
     expect(onPickCli).not.toHaveBeenCalled();
-    expect(onLaunchSelected).not.toHaveBeenCalled();
   });
 });

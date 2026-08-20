@@ -77,7 +77,7 @@ function seed(prefix: string): Seed {
 
 async function launchApp(s: Seed): Promise<ElectronApplication> {
   const deepLink = `synapsenote://open?project=${encodeURIComponent(s.projectDir)}&doc=start`;
-  // Restricted, system-only PATH: the New-chat carat opens a BARE shell (the
+  // Restricted, system-only PATH: the New-chat plus menu opens a BARE shell (the
   // "Terminal" pick) so no `claude` install is needed to spawn a live PTY.
   const PATH = '/usr/bin:/bin:/usr/sbin:/sbin';
   return electron.launch({
@@ -159,10 +159,10 @@ async function waitActiveRunning(page: Page, timeoutMs = 25_000): Promise<void> 
   );
 }
 
-/** Open a second (or further) tab running a BARE shell via the New-chat carat →
+/** Open a second (or further) tab running a BARE shell via the New-chat plus →
  *  "Terminal" pick. The new tab activates; wait for its shell to be running. */
 async function openBareTab(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Choose CLI for new chat' }).click();
+  await page.getByRole('button', { name: 'New chat' }).click();
   await page.getByRole('menuitem', { name: 'Terminal' }).click();
   await waitActiveRunning(page);
 }

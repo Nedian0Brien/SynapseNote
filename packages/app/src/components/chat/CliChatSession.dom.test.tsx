@@ -50,6 +50,6 @@ describe('CliChatSession', () => {
     // the tab verbatim and stacked a third band on the rail.
     expect(screen.queryByRole('heading')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Load previous chat' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'New Codex chat' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'New chat' })).toBeNull();
   });
 });

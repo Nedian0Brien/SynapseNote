@@ -1928,10 +1928,6 @@ msgstr ""
 msgid "Choose another view"
 msgstr ""
 
-#: src/components/TerminalNewChatButton.tsx
-msgid "Choose CLI for new chat"
-msgstr ""
-
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "Choose only the properties needed for a compact local preview. The captured pack is unchanged."
 msgstr ""
@@ -6537,11 +6533,6 @@ msgstr ""
 msgid "New"
 msgstr ""
 
-#. placeholder {0}: TERMINAL_CLIS[selected].displayName
-#: src/components/TerminalNewChatButton.tsx
-msgid "New {0} chat"
-msgstr ""
-
 #: src/components/MemoPanel.tsx
 msgid "New annotation"
 msgstr ""
@@ -6658,10 +6649,6 @@ msgstr ""
 #: src/components/settings/TemplatesManagerSection.tsx
 #: src/components/TemplatesCard.tsx
 msgid "New template"
-msgstr ""
-
-#: src/components/TerminalNewChatButton.tsx
-msgid "New terminal"
 msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts

@@ -1,7 +1,7 @@
-// Persisted "the New-chat split button's last pick was a bare Terminal" flag,
+// Persisted "the New-chat menu's last pick was a bare Terminal" flag,
 // per machine. Terminal-only: the shared Ask-AI sticky store (unified-agent-store)
 // only understands CLI / app-target picks, so a "Terminal" (bare shell) choice
-// can't live there. When set, the split button defaults to opening a bare shell;
+// can't live there. When set, the menu marks Terminal as the current choice;
 // when absent, it falls back to the shared CLI default (so a CLI pick — here or in
 // any Ask-AI surface — still drives the default, unchanged). Picking a CLI clears
 // this flag. Mirrors terminal-dock-store's storage-restricted-host contract; a UI

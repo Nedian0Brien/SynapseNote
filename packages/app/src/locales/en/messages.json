@@ -644,7 +644,6 @@
       "No collab server for this worktree — run <0>ok start</0> here, or reopen the project."
     ],
     "AAyUBg": ["Show proposed diff"],
-    "AB4qw9": ["New terminal"],
     "ACCCV-": ["Nothing was uploaded — the report stays on this Mac until you email it to us."],
     "AE7BY3": ["The terminal session ended."],
     "AHZflp": ["Chat"],
@@ -1565,7 +1564,6 @@
     "QI01g8": ["Invalid values"],
     "QId_xk": ["Inspect context"],
     "QJ8HBJ": ["Schema"],
-    "QJaG-9": ["Choose CLI for new chat"],
     "QNxpRm": ["Dock terminal to the right"],
     "QOINDn": ["empty"],
     "QQghPu": ["Install in Claude Desktop"],
@@ -2879,7 +2877,6 @@
     "nJq7et": ["Couldn't uninstall skill: ", ["0"]],
     "nLe-JZ": ["Include end"],
     "nNYV3Y": ["and ", ["remaining"], " more"],
-    "nP-KFo": ["New ", ["0"], " chat"],
     "nSS8yS": ["New memo"],
     "nTwL53": ["Open a doc to share its URL."],
     "nUNFDn": ["Repeating template history"],

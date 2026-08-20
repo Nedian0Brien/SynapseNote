@@ -122,12 +122,10 @@ interface TerminalTabStripProps {
    * caret stays in the tablist while arrowing.
    */
   readonly onTabActivate?: (id: string) => void;
-  /** The New-chat split button's current pick — a CLI (resolved by the host from
-   *  the sticky pick + installed set) or `'terminal'` (a bare shell). Drives the
-   *  primary icon/label + the dropdown checkmark. */
+  /** The New-chat menu's current pick — a CLI (resolved by the host from the
+   *  sticky pick + installed set) or `'terminal'` (a bare shell). Drives the
+   *  dropdown checkmark. */
   readonly newChatSelected: TerminalNewTabChoice;
-  /** Primary New-chat click — open a new tab in the current pick, no persist. */
-  readonly onNewChatLaunch: () => void;
   /** Dropdown CLI pick — persist it as the new default AND open a tab in it. */
   readonly onNewChatPickCli: (cli: TerminalCli) => void;
   /** Dropdown "Terminal" — persist a bare shell as the default AND open one. */
@@ -207,12 +205,12 @@ interface TerminalTabStripProps {
  * Each tab pairs a Radix tab trigger (the roving-focus, arrow-navigable target)
  * with a sibling close button rather than nesting the close inside the trigger —
  * a button nested in a `role="tab"` button is invalid and unreachable. The
- * New-chat split button sits outside the tablist so the list contains only tabs.
+ * New-chat menu button sits outside the tablist so the list contains only tabs.
  *
- * The New-chat split button ({@link TerminalNewChatButton}) hugs the last tab
+ * The New-chat menu button ({@link TerminalNewChatButton}) hugs the last tab
  * (immediately right of the scrollable tablist, outside the scroll container so
- * the fade mask never clips it): its primary opens a new tab in the default CLI,
- * its carat switches CLI or opens a bare terminal. A flex-1 spacer then pushes the
+ * the fade mask never clips it): its plus opens the CLI or bare-terminal picker.
+ * A flex-1 spacer then pushes the
  * trailing controls to the far right: a dock-toggle that flips the terminal
  * between the bottom dock and the right column, and a collapse button that hides
  * the terminal (sessions stay alive). The consumer owns dock position +
@@ -231,7 +229,6 @@ export function TerminalTabStrip({
   onSelect,
   onTabActivate,
   newChatSelected,
-  onNewChatLaunch,
   onNewChatPickCli,
   onNewChatPickTerminal,
   newChatVisibleClis,
@@ -535,12 +532,10 @@ export function TerminalTabStrip({
             </SortableContext>
           </DndContext>
         </TabsList>
-        {/* New-chat split button hugs the last tab (outside the tablist's
-            scroll+fade so it is never clipped): the primary launches the default
-            CLI, the carat switches CLI or opens a bare terminal. */}
+        {/* The single New-chat menu hugs the last tab, outside the tablist's
+            scroll+fade so it is never clipped. */}
         <TerminalNewChatButton
           selected={newChatSelected}
-          onLaunchSelected={onNewChatLaunch}
           onPickCli={onNewChatPickCli}
           onPickTerminal={onNewChatPickTerminal}
           visibleClis={newChatVisibleClis}

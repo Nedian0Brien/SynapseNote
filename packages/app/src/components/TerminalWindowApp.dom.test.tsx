@@ -8,7 +8,7 @@
  * owns: one shell on mount, the new-tab affordance, ⌘1–9 switching with no
  * scope gate, and close-last → window.close(). The window mounts the shared
  * TerminalSessionsHost (window variant), so the session model — including the
- * New-chat split button — is the dock's. The sibling root surfaces are
+ * New-chat menu — is the dock's. The sibling root surfaces are
  * stubbed so the routing helper resolves without pulling the editor / navigator
  * trees.
  */
@@ -91,11 +91,11 @@ function bridgeWithMode(mode: string): OkDesktopBridge {
   return { config: { mode } } as unknown as OkDesktopBridge;
 }
 
-// Adds a plain-shell tab via the New-chat split button's "Terminal" option —
+// Adds a plain-shell tab via the single New-chat menu's "Terminal" option —
 // the same affordance the dock has (the window holds feature parity; only the
 // placement differs).
 async function addTerminalTab(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole('button', { name: 'Choose CLI for new chat' }));
+  await user.click(screen.getByRole('button', { name: 'New chat' }));
   await user.click(await screen.findByRole('menuitem', { name: 'Terminal' }));
 }
 

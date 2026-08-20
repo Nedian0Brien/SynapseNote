@@ -316,11 +316,11 @@ function editorRegion(): HTMLElement {
   return region;
 }
 
-// Adds a plain-shell tab via the New-chat split button's "Terminal" option — the
+// Adds a plain-shell tab via the single New-chat menu's "Terminal" option — the
 // path that replaced the standalone "New terminal tab" button. Opens a bare shell
 // (no CLI launch), the same session the old button created.
 async function addTerminalTab(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole('button', { name: 'Choose CLI for new chat' }));
+  await user.click(screen.getByRole('button', { name: 'New chat' }));
   await user.click(await screen.findByRole('menuitem', { name: 'Terminal' }));
 }
 

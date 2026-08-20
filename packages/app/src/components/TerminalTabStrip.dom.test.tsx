@@ -23,7 +23,6 @@ function renderStrip(props?: {
 }) {
   const onSelect = mock((_id: string) => {});
   const onTabActivate = mock((_id: string) => {});
-  const onNewChatLaunch = mock(() => {});
   const onNewChatPickCli = mock((_cli: string) => {});
   const onNewChatPickTerminal = mock(() => {});
   const onClose = mock((_id: string) => {});
@@ -44,7 +43,6 @@ function renderStrip(props?: {
         onSelect={onSelect}
         onTabActivate={onTabActivate}
         newChatSelected={props?.newChatSelected ?? 'claude'}
-        onNewChatLaunch={onNewChatLaunch}
         onNewChatPickCli={onNewChatPickCli}
         onNewChatPickTerminal={onNewChatPickTerminal}
         onClose={onClose}
@@ -62,7 +60,6 @@ function renderStrip(props?: {
   return {
     onSelect,
     onTabActivate,
-    onNewChatLaunch,
     onNewChatPickCli,
     onNewChatPickTerminal,
     onClose,
@@ -191,40 +188,31 @@ describe('TerminalTabStrip', () => {
     expect(onSelect).toHaveBeenCalledWith('s2');
   });
 
-  test('the New-chat primary launches the current selection and never onSelect', async () => {
+  test('the single New-chat plus opens the picker and never selects a tab', async () => {
     const user = userEvent.setup();
-    const { onNewChatLaunch, onNewChatPickTerminal, onSelect } = renderStrip();
+    const { onNewChatPickCli, onNewChatPickTerminal, onSelect } = renderStrip();
 
-    await user.click(screen.getByRole('button', { name: 'New Claude chat' }));
+    await user.click(screen.getByRole('button', { name: 'New chat' }));
 
-    expect(onNewChatLaunch).toHaveBeenCalledTimes(1);
+    expect(await screen.findByRole('menuitem', { name: 'Claude CLI' })).toBeDefined();
+    expect(onNewChatPickCli).not.toHaveBeenCalled();
     expect(onNewChatPickTerminal).not.toHaveBeenCalled();
     expect(onSelect).not.toHaveBeenCalled();
   });
 
-  test('the primary reflects a Terminal selection (opens a bare terminal)', async () => {
-    const user = userEvent.setup();
-    const { onNewChatLaunch } = renderStrip({ newChatSelected: 'terminal' });
-
-    await user.click(screen.getByRole('button', { name: 'New terminal' }));
-
-    expect(onNewChatLaunch).toHaveBeenCalledTimes(1);
-  });
-
   test('the New-chat dropdown picks a bare terminal via its "Terminal" option', async () => {
     const user = userEvent.setup();
-    const { onNewChatPickTerminal, onNewChatLaunch } = renderStrip();
+    const { onNewChatPickTerminal } = renderStrip();
 
-    await user.click(screen.getByRole('button', { name: 'Choose CLI for new chat' }));
+    await user.click(screen.getByRole('button', { name: 'New chat' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Terminal' }));
 
     expect(onNewChatPickTerminal).toHaveBeenCalledTimes(1);
-    expect(onNewChatLaunch).not.toHaveBeenCalled();
   });
 
   test('New chat hugs the last tab, preceding the trailing dock-toggle / collapse controls', () => {
     renderStrip();
-    const newChat = screen.getByRole('button', { name: 'New Claude chat' });
+    const newChat = screen.getByRole('button', { name: 'New chat' });
     const dockToggle = screen.getByRole('button', { name: 'Dock terminal to the right' });
     const collapse = screen.getByRole('button', { name: 'Collapse terminal' });
     // New chat sits immediately right of the tablist; the spacer pushes the
@@ -239,14 +227,13 @@ describe('TerminalTabStrip', () => {
 
   test('a tab close control reports onClose with that session id only', async () => {
     const user = userEvent.setup();
-    const { onClose, onSelect, onNewChatLaunch } = renderStrip({ activeSessionId: 's1' });
+    const { onClose, onSelect } = renderStrip({ activeSessionId: 's1' });
 
     await user.click(screen.getByRole('button', { name: 'Close Terminal 2' }));
 
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(onClose).toHaveBeenCalledWith('s2');
     expect(onSelect).not.toHaveBeenCalled();
-    expect(onNewChatLaunch).not.toHaveBeenCalled();
   });
 
   test('the dock-toggle reports onToggleDock and labels the resulting position', async () => {
@@ -269,13 +256,12 @@ describe('TerminalTabStrip', () => {
 
   test('the collapse control reports onCollapse and never onClose / new-chat', async () => {
     const user = userEvent.setup();
-    const { onCollapse, onClose, onNewChatLaunch, onNewChatPickTerminal } = renderStrip();
+    const { onCollapse, onClose, onNewChatPickTerminal } = renderStrip();
 
     await user.click(screen.getByRole('button', { name: 'Collapse terminal' }));
 
     expect(onCollapse).toHaveBeenCalledTimes(1);
     expect(onClose).not.toHaveBeenCalled();
-    expect(onNewChatLaunch).not.toHaveBeenCalled();
     expect(onNewChatPickTerminal).not.toHaveBeenCalled();
   });
 
@@ -286,8 +272,7 @@ describe('TerminalTabStrip', () => {
 
   test('every icon-only control exposes an accessible name', () => {
     renderStrip();
-    expect(screen.getByRole('button', { name: 'New Claude chat' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Choose CLI for new chat' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'New chat' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Dock terminal to the right' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Collapse terminal' })).toBeDefined();
     for (const label of ['Terminal 1', 'Terminal 2', 'Terminal 3']) {
@@ -305,7 +290,7 @@ describe('TerminalTabStrip', () => {
     // title bar's job — but keeps the full new-chat affordance (feature parity).
     expect(screen.queryByRole('button', { name: /Dock terminal/ })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Collapse terminal' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'New Claude chat' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'New chat' })).toBeDefined();
     cleanup();
     renderStrip();
     expect(document.querySelector('[data-electron-drag]')).toBeNull();
@@ -313,12 +298,13 @@ describe('TerminalTabStrip', () => {
 
   test('window mode keeps the tab controls interactive (no-drag opt-out works)', async () => {
     const user = userEvent.setup();
-    const { onNewChatLaunch, onClose } = renderStrip({ activeSessionId: 's1', draggable: true });
+    const { onNewChatPickCli, onClose } = renderStrip({ activeSessionId: 's1', draggable: true });
 
-    await user.click(screen.getByRole('button', { name: 'New Claude chat' }));
+    await user.click(screen.getByRole('button', { name: 'New chat' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Claude CLI' }));
     await user.click(screen.getByRole('button', { name: 'Close Terminal 1' }));
 
-    expect(onNewChatLaunch).toHaveBeenCalledTimes(1);
+    expect(onNewChatPickCli).toHaveBeenCalledWith('claude');
     expect(onClose).toHaveBeenCalledWith('s1');
   });
 
@@ -467,7 +453,6 @@ describe('TerminalTabStrip', () => {
           activeSessionId="s1"
           onSelect={() => {}}
           newChatSelected="claude"
-          onNewChatLaunch={() => {}}
           onNewChatPickCli={() => {}}
           onNewChatPickTerminal={() => {}}
           onClose={() => {}}

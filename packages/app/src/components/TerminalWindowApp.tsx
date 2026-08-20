@@ -14,7 +14,7 @@ interface TerminalWindowAppProps {
 /**
  * Full-window multi-session terminal — the renderer for a `--ok-mode=terminal`
  * window. Mounts the SAME {@link TerminalSessionsHost} the docked terminal uses
- * (window variant), so the window is purely a placement: new-chat split button,
+ * (window variant), so the window is purely a placement: new-chat menu,
  * OSC tab titles, menu actions, ⌘1–9, liveness reporting, and reload
  * rehydration are the dock's, by construction. The window-shaped differences
  * live in the host's `variant: 'window'`: closing the last tab closes the
