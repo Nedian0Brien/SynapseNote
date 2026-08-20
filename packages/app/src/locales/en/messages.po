@@ -1912,6 +1912,10 @@ msgstr "Choose a compatible data source. The move will use the same reviewed pla
 msgid "Choose a compatible relation, target property, and aggregation."
 msgstr "Choose a compatible relation, target property, and aggregation."
 
+#: src/components/chat/ChatMessageList.tsx
+msgid "Choose a model provider"
+msgstr "Choose a model provider"
+
 #: src/components/DatabasePropertyInsertPopover.tsx
 msgid "Choose a name and type for the new column."
 msgstr "Choose a name and type for the new column."
@@ -6300,6 +6304,10 @@ msgid "Model settings"
 msgstr "Model settings"
 
 #: src/components/chat/CliChatModelMenu.tsx
+msgid "Model settings: {modelLabel}, effort {effortLabel}"
+msgstr "Model settings: {modelLabel}, effort {effortLabel}"
+
+#: src/components/chat/CliChatModelMenu.tsx
 msgid "Model settings: {modelLabel}, effort {effortLabel}, speed {speedLabel}"
 msgstr "Model settings: {modelLabel}, effort {effortLabel}, speed {speedLabel}"
 
@@ -7144,10 +7152,6 @@ msgstr "None"
 #: src/components/DatabaseAgentRunsDialog.tsx
 msgid "Not available"
 msgstr "Not available"
-
-#: src/components/chat/CliChatModelMenu.tsx
-msgid "Not available for this model"
-msgstr "Not available for this model"
 
 #: src/components/settings/AccountSection.tsx
 msgid "Not connected"

@@ -846,6 +846,21 @@ describe('TerminalDock multi-session', () => {
     expect(view.input).not.toHaveBeenCalled();
   });
 
+  test('switches the provider of a fresh empty chat without leaving a duplicate tab', async () => {
+    const user = userEvent.setup();
+    const view = renderDock(true, { prompt: null, cli: 'codex', nonce: 1 });
+    await waitFor(() => expect(view.create).toHaveBeenCalledTimes(1));
+    const sessionId = activePanelId();
+
+    await user.click(screen.getByRole('button', { name: 'Claude' }));
+
+    expect(sessionPanels()).toHaveLength(1);
+    expect(activePanelId()).toBe(sessionId);
+    expect(screen.getByRole('tab', { name: /Claude chat/ })).toBeTruthy();
+    await waitFor(() => expect(view.create).toHaveBeenCalledTimes(2));
+    expect(view.kill).toHaveBeenCalledWith('pty-1');
+  });
+
   test('the selection input reuses the live terminal — raw PTY write, no new tab', async () => {
     const view = renderDock(true);
     // Wait until the seed session's PTY is live and reported up into the reuse map.

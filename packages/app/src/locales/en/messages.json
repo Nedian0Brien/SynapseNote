@@ -778,6 +778,7 @@
     "CLHGgq": [
       "Index state, invalid records, schema revisions, recent tasks, and repair actions — content-free."
     ],
+    "CM1uHB": ["Choose a model provider"],
     "CMtN5P": ["Collapse attached context"],
     "CQUSki": ["Database changed elsewhere"],
     "CRsuq4": ["Every"],
@@ -929,7 +930,6 @@
     "EeRZnZ": ["Expand burst ", ["burstNumber"], " diff"],
     "EessVn": ["Table layout and calculations"],
     "Ef7StM": ["Unknown"],
-    "EgzM6F": ["Not available for this model"],
     "EhDLBx": ["You modified <0>", ["filePath"], "</0> locally, but it was deleted upstream."],
     "Ehkru0": ["Open, navigate, accept, or dismiss CodeMirror completion suggestions."],
     "EiVgl5": ["You don't have permission to push to this repo."],
@@ -1762,6 +1762,7 @@
     ],
     "UMrOy2": ["Skill \"", ["trimmedName"], "\" created"],
     "UPjaXD": ["Couldn't duplicate \"", ["0"], "\": ", ["1"]],
+    "UQ4ELN": ["Model settings: ", ["modelLabel"], ", effort ", ["effortLabel"]],
     "UQAp48": ["Search templates"],
     "UQMMvx": ["Moved \"", ["name"], "\" to ", ["0"]],
     "URAE3q": ["Paused"],

@@ -48,6 +48,8 @@ interface CliChatPanelProps {
   readonly initialSessionId?: string | null;
   readonly onSessionId?: (sessionId: string) => void;
   readonly onTitleChange?: (title: string) => void;
+  readonly providerOptions?: readonly CliChatId[];
+  readonly onProviderChange?: (provider: CliChatId) => void;
 }
 
 export function CliChatPanel({
@@ -62,6 +64,8 @@ export function CliChatPanel({
   initialSessionId = null,
   onSessionId,
   onTitleChange,
+  providerOptions = [],
+  onProviderChange,
 }: CliChatPanelProps) {
   const { t } = useLingui();
   const configContext = use(ConfigContext);
@@ -252,8 +256,14 @@ export function CliChatPanel({
         bridge={bridge}
         emptyLabel={historyLoading ? t`Loading chat history` : undefined}
         emptyLoading={historyLoading}
+        providerOptions={initialSessionId === null ? providerOptions : []}
+        selectedProvider={cli}
+        onProviderSelect={(provider) => {
+          if (provider === cli) textareaRef.current?.focus();
+          else onProviderChange?.(provider);
+        }}
       />
-      <form onSubmit={submit} className="border-t border-border p-3">
+      <form onSubmit={submit} className="p-3">
         <div
           data-chat-composer="true"
           className="mx-auto max-w-3xl overflow-hidden rounded-2xl border border-input bg-background shadow-xs transition-shadow focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50"

@@ -1,6 +1,8 @@
 import { useLingui } from '@lingui/react/macro';
-import { ChevronDownIcon, GaugeIcon, ZapIcon } from 'lucide-react';
+import { ChevronDownIcon, ZapIcon } from 'lucide-react';
 import { type PointerEvent, useRef } from 'react';
+import { TargetIcon } from '@/components/handoff/OpenInAgentMenuItem';
+import { cliIconTargetId } from '@/components/handoff/terminal-cli-display';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -100,6 +102,9 @@ export function CliChatModelMenu({
   const modelLabel = displayValue(value.model);
   const effortLabel = displayValue(value.effort);
   const speedLabel = displayValue(value.speed);
+  const settingsLabel = fastAvailable
+    ? t`Model settings: ${modelLabel}, effort ${effortLabel}, speed ${speedLabel}`
+    : t`Model settings: ${modelLabel}, effort ${effortLabel}`;
   const effortInteractionRef = useRef<HTMLDivElement>(null);
 
   function selectEffortAtPointer(event: PointerEvent<HTMLElement>, fallback: CliChatEffort) {
@@ -133,21 +138,25 @@ export function CliChatModelMenu({
           size="sm"
           className="h-8 min-w-0 max-w-60 gap-1 px-2 text-muted-foreground"
           disabled={disabled}
-          aria-label={t`Model settings: ${modelLabel}, effort ${effortLabel}, speed ${speedLabel}`}
+          aria-label={settingsLabel}
         >
-          <GaugeIcon aria-hidden="true" />
+          <TargetIcon id={cliIconTargetId(cli)} aria-hidden="true" data-chat-provider-icon={cli} />
           <span className="truncate">{modelLabel}</span>
           <span aria-hidden="true" className="shrink-0 text-border">
             ·
           </span>
           <span className="shrink-0 text-xs">{effortLabel}</span>
-          <ZapIcon
-            aria-hidden="true"
-            className={cn(
-              'ml-0.5 size-3.5 shrink-0 transition-colors',
-              value.speed === 'fast' ? 'fill-primary/25 text-primary' : 'text-muted-foreground/35',
-            )}
-          />
+          {fastAvailable ? (
+            <ZapIcon
+              aria-hidden="true"
+              className={cn(
+                'ml-0.5 size-3.5 shrink-0 transition-colors',
+                value.speed === 'fast'
+                  ? 'fill-primary/25 text-primary'
+                  : 'text-muted-foreground/35',
+              )}
+            />
+          ) : null}
           <ChevronDownIcon aria-hidden="true" className="size-3" />
         </Button>
       </DropdownMenuTrigger>
@@ -259,32 +268,33 @@ export function CliChatModelMenu({
             </div>
           </TooltipProvider>
         </fieldset>
-        <div className="my-1 h-px bg-border" />
-        <div className="flex items-center justify-between gap-3 px-2 py-1.5">
-          <span className="flex min-w-0 flex-col">
-            <span className="text-sm font-medium">{t`Speed`}</span>
-            <span className="text-xs text-muted-foreground">
-              {fastAvailable ? t`1.5× faster` : t`Not available for this model`}
-            </span>
-          </span>
-          <Toggle
-            variant="outline"
-            size="sm"
-            className="min-w-20 data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary/90"
-            pressed={value.speed === 'fast'}
-            disabled={!fastAvailable}
-            onPressedChange={(pressed) =>
-              onValueChange({ ...value, speed: pressed ? 'fast' : 'default' })
-            }
-            aria-label={value.speed === 'fast' ? t`Fast speed: On` : t`Fast speed: Off`}
-          >
-            <ZapIcon
-              aria-hidden="true"
-              className={value.speed === 'fast' ? 'fill-current' : undefined}
-            />
-            {value.speed === 'fast' ? t`Fast on` : t`Fast`}
-          </Toggle>
-        </div>
+        {fastAvailable ? (
+          <>
+            <div className="my-1 h-px bg-border" />
+            <div className="flex items-center justify-between gap-3 px-2 py-1.5">
+              <span className="flex min-w-0 flex-col">
+                <span className="text-sm font-medium">{t`Speed`}</span>
+                <span className="text-xs text-muted-foreground">{t`1.5× faster`}</span>
+              </span>
+              <Toggle
+                variant="outline"
+                size="sm"
+                className="min-w-20 data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary/90"
+                pressed={value.speed === 'fast'}
+                onPressedChange={(pressed) =>
+                  onValueChange({ ...value, speed: pressed ? 'fast' : 'default' })
+                }
+                aria-label={value.speed === 'fast' ? t`Fast speed: On` : t`Fast speed: Off`}
+              >
+                <ZapIcon
+                  aria-hidden="true"
+                  className={value.speed === 'fast' ? 'fill-current' : undefined}
+                />
+                {value.speed === 'fast' ? t`Fast on` : t`Fast`}
+              </Toggle>
+            </div>
+          </>
+        ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
   );

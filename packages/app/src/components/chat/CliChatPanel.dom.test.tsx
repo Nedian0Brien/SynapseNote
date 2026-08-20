@@ -511,6 +511,31 @@ describe('CliChatPanel', () => {
     expect(actions).not.toBeNull();
     expect(composer?.contains(actions)).toBe(true);
     expect(message.getAttribute('rows')).toBe('2');
+    expect(message.closest('form')?.className).not.toContain('border-t');
+  });
+
+  test('offers branded provider choices in a fresh empty chat', () => {
+    const { bridge } = makeBridge();
+    const onProviderChange = mock((_provider: 'claude' | 'codex') => {});
+    render(
+      <CliChatPanel
+        bridge={bridge}
+        cli="codex"
+        ptyId="pty-1"
+        initialPrompt={null}
+        providerOptions={['claude', 'codex']}
+        onProviderChange={onProviderChange}
+      />,
+    );
+
+    expect(screen.getByRole('group', { name: 'Choose a model provider' })).toBeTruthy();
+    const claude = screen.getByRole('button', { name: 'Claude' });
+    const codex = screen.getByRole('button', { name: 'Codex' });
+    expect(codex.getAttribute('aria-pressed')).toBe('true');
+    expect(codex.querySelector('[data-chat-provider-icon="codex"]')).not.toBeNull();
+    expect(claude.querySelector('[data-chat-provider-icon="claude"]')).not.toBeNull();
+    fireEvent.click(claude);
+    expect(onProviderChange).toHaveBeenCalledWith('claude');
   });
 
   test('sends the selected permission mode through the structured bridge', async () => {
@@ -579,6 +604,22 @@ describe('CliChatPanel', () => {
       effort: 'max',
       speed: 'fast',
     });
+  });
+
+  test('uses the provider logo and hides speed controls when the model does not support them', async () => {
+    const { bridge } = makeBridge();
+    render(<CliChatPanel bridge={bridge} cli="claude" ptyId="pty-1" initialPrompt={null} />);
+
+    const modelTrigger = screen.getByRole('button', {
+      name: 'Model settings: Sonnet, effort Medium',
+    });
+    expect(modelTrigger.querySelector('[data-chat-provider-icon="claude"]')).not.toBeNull();
+    fireEvent.pointerDown(modelTrigger, { button: 0, ctrlKey: false });
+    await screen.findByRole('menuitemradio', { name: 'Sonnet' });
+
+    expect(screen.queryByText('Speed')).toBeNull();
+    expect(screen.queryByText('Not available for this model')).toBeNull();
+    expect(screen.queryByRole('button', { name: /Fast speed/ })).toBeNull();
   });
 
   test('remembers model, effort, speed, and permission choices for the provider', async () => {

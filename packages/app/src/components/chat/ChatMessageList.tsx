@@ -1,4 +1,5 @@
 import { useLingui } from '@lingui/react/macro';
+import { TERMINAL_CLIS } from '@nedian0brien/synapsenote-core';
 import {
   CheckIcon,
   ChevronDownIcon,
@@ -12,11 +13,18 @@ import {
   WrenchIcon,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { TargetIcon } from '@/components/handoff/OpenInAgentMenuItem';
+import { cliIconTargetId } from '@/components/handoff/terminal-cli-display';
 import { Button } from '@/components/ui/button';
 import type { OkDesktopBridge } from '@/lib/desktop-bridge-types';
 import { cn } from '@/lib/utils';
 import { ChatMarkdown } from './ChatMarkdown';
-import type { ChatActivity, ChatTimelineEntry, CliChatSelectionContext } from './cli-chat-types';
+import type {
+  ChatActivity,
+  ChatTimelineEntry,
+  CliChatId,
+  CliChatSelectionContext,
+} from './cli-chat-types';
 import { WebPreviewCards } from './WebPreviewCards';
 import { extractWebPreviewLinks } from './web-preview-links';
 
@@ -26,6 +34,9 @@ interface ChatMessageListProps {
   readonly bridge: OkDesktopBridge;
   readonly emptyLabel?: string;
   readonly emptyLoading?: boolean;
+  readonly providerOptions?: readonly CliChatId[];
+  readonly selectedProvider?: CliChatId;
+  readonly onProviderSelect?: (provider: CliChatId) => void;
 }
 
 type ActivityVisualState = 'working' | 'completed' | 'failed' | 'idle';
@@ -335,6 +346,9 @@ export function ChatMessageList({
   bridge,
   emptyLabel,
   emptyLoading = false,
+  providerOptions = [],
+  selectedProvider,
+  onProviderSelect,
 }: ChatMessageListProps) {
   const { t } = useLingui();
   const endRef = useRef<HTMLDivElement | null>(null);
@@ -358,15 +372,48 @@ export function ChatMessageList({
         data-chat-history-loading={emptyLoading ? 'true' : undefined}
         className="flex min-h-0 flex-1 items-center justify-center p-8 text-center text-sm text-muted-foreground"
       >
-        <span className="inline-flex items-center gap-2">
-          {emptyLoading ? (
-            <LoaderCircleIcon
-              aria-hidden="true"
-              className="size-4 animate-spin motion-reduce:animate-none"
-            />
+        <div className="flex flex-col items-center gap-4">
+          <span className="inline-flex items-center gap-2">
+            {emptyLoading ? (
+              <LoaderCircleIcon
+                aria-hidden="true"
+                className="size-4 animate-spin motion-reduce:animate-none"
+              />
+            ) : null}
+            <span>{emptyLabel ?? t`Ask about your current document or project.`}</span>
+          </span>
+          {!emptyLoading && onProviderSelect !== undefined && providerOptions.length > 0 ? (
+            <fieldset
+              className="flex flex-wrap items-center justify-center gap-2"
+              data-chat-provider-chooser="true"
+            >
+              <legend className="sr-only">{t`Choose a model provider`}</legend>
+              {providerOptions.map((provider) => {
+                const selected = provider === selectedProvider;
+                const label = TERMINAL_CLIS[provider].displayName;
+                return (
+                  <Button
+                    key={provider}
+                    type="button"
+                    variant={selected ? 'secondary' : 'outline'}
+                    size="sm"
+                    className="min-w-28 gap-2"
+                    aria-pressed={selected}
+                    onClick={() => onProviderSelect(provider)}
+                  >
+                    <TargetIcon
+                      id={cliIconTargetId(provider)}
+                      className="size-4"
+                      aria-hidden="true"
+                      data-chat-provider-icon={provider}
+                    />
+                    {label}
+                  </Button>
+                );
+              })}
+            </fieldset>
           ) : null}
-          <span>{emptyLabel ?? t`Ask about your current document or project.`}</span>
-        </span>
+        </div>
       </div>
     );
   }

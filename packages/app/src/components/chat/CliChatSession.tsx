@@ -24,6 +24,8 @@ interface CliChatSessionProps {
   readonly documentContext?: CliChatDocumentContext | null;
   readonly selectionContext?: CliChatSelectionContext | null;
   readonly onNativeSessionId?: (sessionId: string) => void;
+  readonly providerOptions?: readonly CliChatId[];
+  readonly onProviderChange?: (provider: CliChatId) => void;
 }
 
 export function CliChatSession({
@@ -37,6 +39,8 @@ export function CliChatSession({
   documentContext = null,
   selectionContext = null,
   onNativeSessionId,
+  providerOptions = [],
+  onProviderChange,
 }: CliChatSessionProps) {
   const [ptyId, setPtyId] = useState<string | null>(null);
 
@@ -64,6 +68,8 @@ export function CliChatSession({
             documentContext={documentContext}
             selectionContext={selectionContext}
             initialSessionId={launch.resumeSessionId}
+            providerOptions={providerOptions}
+            onProviderChange={onProviderChange}
             onSessionId={(sessionId) => {
               if (ptyId !== null) bridge.terminal.setMeta(ptyId, { chatSessionId: sessionId });
               onNativeSessionId?.(sessionId);

@@ -1907,6 +1907,10 @@ msgstr ""
 msgid "Choose a compatible relation, target property, and aggregation."
 msgstr ""
 
+#: src/components/chat/ChatMessageList.tsx
+msgid "Choose a model provider"
+msgstr ""
+
 #: src/components/DatabasePropertyInsertPopover.tsx
 msgid "Choose a name and type for the new column."
 msgstr ""
@@ -6295,6 +6299,10 @@ msgid "Model settings"
 msgstr ""
 
 #: src/components/chat/CliChatModelMenu.tsx
+msgid "Model settings: {modelLabel}, effort {effortLabel}"
+msgstr ""
+
+#: src/components/chat/CliChatModelMenu.tsx
 msgid "Model settings: {modelLabel}, effort {effortLabel}, speed {speedLabel}"
 msgstr ""
 
@@ -7138,10 +7146,6 @@ msgstr ""
 
 #: src/components/DatabaseAgentRunsDialog.tsx
 msgid "Not available"
-msgstr ""
-
-#: src/components/chat/CliChatModelMenu.tsx
-msgid "Not available for this model"
 msgstr ""
 
 #: src/components/settings/AccountSection.tsx

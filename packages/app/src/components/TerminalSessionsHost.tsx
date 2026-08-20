@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { type CliChatHeaderSession, CliChatSession } from './chat/CliChatSession';
 import {
   type CliChatDocumentContext,
+  type CliChatId,
   type CliChatSelectionContext,
   isCliChatId,
 } from './chat/cli-chat-types';
@@ -48,6 +49,19 @@ interface TerminalSessionDescriptor {
   readonly ordinal: number;
   readonly adoptPtyId: string | null;
   readonly chatSessionId: string | null;
+}
+
+const CHAT_PROVIDER_CLIS = ['claude', 'codex'] as const;
+
+function isFreshPromptlessChat(session: TerminalSessionDescriptor): boolean {
+  return (
+    session.launch !== null &&
+    session.launch.prompt === null &&
+    session.launch.stagePaste === undefined &&
+    session.launch.resumeSessionId === undefined &&
+    session.chatSessionId === null &&
+    isCliChatId(session.launch.cli)
+  );
 }
 
 function loadNativeChatSessions(
@@ -364,6 +378,36 @@ export function TerminalSessionsHost({
       },
       previousTitle,
     );
+  }
+
+  function changeEmptyChatProvider(sessionId: string, provider: CliChatId) {
+    const current = sessionsRef.current.find((session) => session.id === sessionId);
+    if (current === undefined || !isFreshPromptlessChat(current) || current.launch === null) return;
+    if (current.launch.cli === provider) {
+      focusTerminalSession(sessionId);
+      return;
+    }
+
+    setPreferBareTerminal(false);
+    writePreferBareTerminal(false);
+    const stickyId = terminalCliId(provider);
+    setStickyCliId(stickyId);
+    saveStickyAgent(stickyId);
+    stripLaunchNonceRef.current += 1;
+    const nonce = stripLaunchNonceRef.current;
+    setSessions((previous) =>
+      previous.map((session) =>
+        session.id === sessionId && isFreshPromptlessChat(session) && session.launch !== null
+          ? {
+              ...session,
+              launch: { ...session.launch, cli: provider, nonce },
+              title: null,
+              adoptPtyId: null,
+            }
+          : session,
+      ),
+    );
+    requestAnimationFrame(() => focusTerminalSession(sessionId));
   }
 
   // Dropdown CLI pick: clear the bare-terminal preference, persist `cli` to the
@@ -911,6 +955,7 @@ export function TerminalSessionsHost({
             session.launch.stagePaste === undefined &&
             isCliChatId(session.launch.cli) ? (
               <CliChatSession
+                key={`${session.id}:${session.launch.cli}`}
                 bridge={bridge}
                 cli={session.launch.cli}
                 launch={session.launch}
@@ -922,6 +967,15 @@ export function TerminalSessionsHost({
                 onTitleChange={(title) => setSessionTitle(session.id, title)}
                 onNativeSessionId={(chatSessionId) =>
                   setSessionChatSessionId(session.id, chatSessionId)
+                }
+                providerOptions={CHAT_PROVIDER_CLIS.filter(
+                  (provider) =>
+                    installedClis?.[provider] !== false || provider === session.launch?.cli,
+                )}
+                onProviderChange={
+                  isFreshPromptlessChat(session)
+                    ? (provider) => changeEmptyChatProvider(session.id, provider)
+                    : undefined
                 }
               />
             ) : (
