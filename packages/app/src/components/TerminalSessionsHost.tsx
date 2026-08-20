@@ -138,6 +138,9 @@ interface TerminalSessionsHostProps {
   /** Flip the dock between bottom and right (the tab strip's dock-toggle button).
    *  Dock variant only — the strip renders no toggle without it. */
   readonly onToggleDock?: () => void;
+  /** Whether the dock collapse affordance is shown. Main-pane chat uses the
+   *  editor tab's close button instead, while dock placement keeps collapse. */
+  readonly collapsible?: boolean;
   /** Reports whether any PTY session is currently open. The header's New chat
    *  button reads this to decide between spawning a first chat and merely
    *  revealing the existing dock. */
@@ -176,6 +179,7 @@ export function TerminalSessionsHost({
   onRequestEditorFocus,
   dockPosition,
   onToggleDock,
+  collapsible = true,
   onHasSessionsChange,
   onActiveSessionCliChange,
   documentContext = null,
@@ -887,7 +891,7 @@ export function TerminalSessionsHost({
         // Collapse hides the terminal but keeps every session alive (hide is not
         // kill), exactly like the ⌘J toggle — the next reveal restores the tabs.
         // The window has no collapse (closing the window is the OS affordance).
-        onCollapse={variant === 'window' ? undefined : () => onVisibleChange(false)}
+        onCollapse={variant === 'window' || !collapsible ? undefined : () => onVisibleChange(false)}
         // Window mode: the tab row doubles as the frameless window's title bar.
         draggable={variant === 'window'}
         className="h-full"

@@ -56,8 +56,10 @@ import {
 import { DatabaseOverlayProvider } from '@/lib/database-overlay-store';
 import {
   assetPathFromHash,
+  CHAT_HASH,
   docNameFromHash,
   GRAPH_HASH,
+  isChatHash,
   isContentRootHash,
   isGraphHash,
   ROUTE_NAVIGATION_CHANGE_EVENT,
@@ -278,6 +280,11 @@ function NavigationHandler() {
       if (isGraphHash(window.location.hash)) {
         mark('ok/nav/hash-change', { docName: null, kind: 'graph' });
         openTargetTransition({ kind: 'graph', target: GRAPH_HASH });
+        return;
+      }
+      if (isChatHash(window.location.hash)) {
+        mark('ok/nav/hash-change', { docName: null, kind: 'chat' });
+        openTargetTransition({ kind: 'chat', target: CHAT_HASH });
         return;
       }
       const assetPath = assetPathFromHash(window.location.hash);

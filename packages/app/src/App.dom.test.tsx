@@ -8,6 +8,7 @@ type NavigationTarget =
   | { kind: 'folder-index'; target: string; docName: string; folderPath: string }
   | { kind: 'folder'; target: string; folderPath: string }
   | { kind: 'asset'; target: string; assetPath: string; mediaKind: string }
+  | { kind: 'chat'; target: string }
   | { kind: 'missing'; target: string };
 
 let activeTarget: NavigationTarget | null = null;
@@ -433,6 +434,20 @@ describe('App runtime wiring', () => {
         kind: 'doc',
         target: 'docs/guide.mdx',
         docName: 'docs/guide.mdx',
+      });
+    });
+    expect(resolveNavigationTargetMock).not.toHaveBeenCalled();
+  });
+
+  test('chat hash opens the singleton main-pane chat target', async () => {
+    setHash('#/__chat__');
+
+    renderApp();
+
+    await waitFor(() => {
+      expect(openTargetTransitionMock).toHaveBeenCalledWith({
+        kind: 'chat',
+        target: '#/__chat__',
       });
     });
     expect(resolveNavigationTargetMock).not.toHaveBeenCalled();

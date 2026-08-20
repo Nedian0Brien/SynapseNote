@@ -74,6 +74,7 @@ export function resolveFileTreeSelection(
     case 'skill-file':
     // The graph has no file-tree row to highlight — it is not in the tree.
     case 'graph':
+    case 'chat':
       return {
         selectedFilePath: null,
         selectedFolderPath: null,

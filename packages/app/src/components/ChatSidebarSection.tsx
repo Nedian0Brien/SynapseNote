@@ -66,14 +66,15 @@ export function ChatSidebarSection({ bridge }: ChatSidebarSectionProps) {
   }, [bridge, canLoadChats, loadAttempt, open]);
 
   function startNewChat() {
-    if (terminalLaunch === null) return;
-    const cli = resolveDefaultCli(loadStickyAgent(), terminalLaunch.installedClis);
-    requestTerminalLaunch(null, cli);
+    const cli = resolveDefaultCli(loadStickyAgent(), terminalLaunch?.installedClis ?? {});
+    requestTerminalLaunch(null, cli, { surface: 'main' });
   }
 
   function resumeChat(session: OkCliChatSession) {
-    if (terminalLaunch === null) return;
-    requestTerminalLaunch(null, session.cli, { resumeSessionId: session.sessionId });
+    requestTerminalLaunch(null, session.cli, {
+      resumeSessionId: session.sessionId,
+      surface: 'main',
+    });
   }
 
   return (
@@ -95,9 +96,8 @@ export function ChatSidebarSection({ bridge }: ChatSidebarSectionProps) {
           </CollapsibleTrigger>
         </SidebarGroupLabel>
         <SidebarGroupAction
-          title={terminalLaunch === null ? t`Chat is available in the desktop app` : t`New chat`}
+          title={t`New chat`}
           aria-label={t`New chat`}
-          disabled={terminalLaunch === null}
           onClick={startNewChat}
           data-testid="chat-sidebar-new"
         >

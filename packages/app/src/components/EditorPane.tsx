@@ -13,6 +13,7 @@ import { useSelectionContext } from '@/hooks/use-selection-context';
 import { useWorktreeAutoSyncNotice } from '@/hooks/use-worktree-autosync-notice';
 import { useConfigContext } from '@/lib/config-provider';
 import { resolveDefaultCli } from '@/lib/default-cli-resolver';
+import { CHAT_HASH } from '@/lib/doc-hash';
 import { matchesKeyboardShortcut } from '@/lib/keyboard-shortcuts';
 import { RIGHT_COLLAPSE_THRESHOLD } from '@/lib/sidebar-partition';
 import {
@@ -133,6 +134,7 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
   // dock — re-docking a hidden terminal that stays hidden would feel inert.
   const [terminalDock, setTerminalDockState] =
     useState<TerminalDockPosition>(getInitialTerminalDock);
+  const [terminalSurface, setTerminalSurface] = useState<'dock' | 'main'>('dock');
   const terminalDockRef = useRef(terminalDock);
   function activePanelFallback(): DocumentPanelTab | PdfPanelTab {
     return activeTarget?.kind === 'asset' && activeTarget.mediaKind === 'pdf'
@@ -140,6 +142,7 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
       : lastDocumentTabRef.current;
   }
   function setTerminalDock(next: TerminalDockPosition) {
+    setTerminalSurface('dock');
     terminalDockRef.current = next;
     setTerminalDockState(next);
     writeTerminalDock(next);
@@ -172,6 +175,14 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
 
   function handleTerminalVisibleChange(visible: boolean) {
     setTerminalVisible(visible);
+    if (resolvedTerminalSurface !== 'dock') return;
+    if (terminalDockRef.current !== 'right') return;
+    setActiveTab(visible ? 'chat' : activePanelFallback());
+  }
+
+  function setDockTerminalVisible(visible: boolean) {
+    setTerminalSurface('dock');
+    setTerminalVisible(visible);
     if (terminalDockRef.current !== 'right') return;
     setActiveTab(visible ? 'chat' : activePanelFallback());
   }
@@ -187,7 +198,7 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
   // auto-runs (see the TerminalLaunchIntent JSDoc for the bake gate).
   function launchNewChat(cli?: TerminalCli, stagePaste?: string) {
     const resolvedCli = cli ?? resolveDefaultCli(loadStickyAgent(), installedClis);
-    handleTerminalVisibleChange(true);
+    setDockTerminalVisible(true);
     launchNonceRef.current += 1;
     setTerminalLaunch({
       prompt: null,
@@ -204,7 +215,7 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
   // "Terminal" (persisted terminal-only), skip the CLI launch and let the host's
   // reveal-from-empty fallback seed a bare shell instead.
   function revealTerminal() {
-    handleTerminalVisibleChange(true);
+    setDockTerminalVisible(true);
     if (!hasSessions && !readPreferBareTerminal()) launchNewChat();
   }
 
@@ -235,7 +246,7 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
       lastDocumentTabRef.current = tab;
     }
     setActiveTab(tab);
-    if (terminalDockRef.current === 'right' && terminalVisible) {
+    if (terminalSurface === 'dock' && terminalDockRef.current === 'right' && terminalVisible) {
       setTerminalVisible(false);
     }
   }
@@ -245,6 +256,11 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
     useConfigContext();
 
   const { activeDocName, activeTarget } = useDocumentContext();
+  const resolvedTerminalSurface = activeTarget?.kind === 'chat' ? 'main' : terminalSurface;
+  const effectiveTerminalVisible =
+    resolvedTerminalSurface === 'main'
+      ? terminalVisible && activeTarget?.kind === 'chat'
+      : terminalVisible;
   const activePdfAssetPath =
     activeTarget?.kind === 'asset' && activeTarget.mediaKind === 'pdf'
       ? activeTarget.assetPath
@@ -381,7 +397,7 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
     // onto a blank line below the staged passage.
     const staged = `${composeTerminalSelectionPaste(selection.docName, selectionMarkdown)}\n\n`;
     if (!newTab && activeSessionIsCliRef.current) {
-      handleTerminalVisibleChange(true);
+      setDockTerminalVisible(true);
       requestActiveTerminalInput(staged);
     } else {
       launchNewChat(undefined, staged);
@@ -394,9 +410,9 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
   const sendSelectionToTerminalEvent = useEffectEvent(sendSelectionToTerminal);
   const launchNewChatEvent = useEffectEvent(() => launchNewChat());
   const toggleTerminalVisibilityEvent = useEffectEvent(() => {
-    handleTerminalVisibleChange(!terminalVisible);
+    setDockTerminalVisible(!terminalVisible);
   });
-  const showTerminalEvent = useEffectEvent(() => handleTerminalVisibleChange(true));
+  const showTerminalEvent = useEffectEvent(() => setDockTerminalVisible(true));
 
   // Bottom-terminal toggle, dual-wired like the DocPanel: on desktop the
   // View → Terminal item's ⌘J/Ctrl+J accelerator is OS-captured and dispatches
@@ -449,16 +465,20 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
     return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
   }, [terminalAvailable]);
 
-  // "Open in terminal" launch — a handoff-menu click fires a window event with
-  // the composed prompt. Open the dock (the terminal is allowed by default; the
-  // gate only blocks a project explicitly opted out) AND carry the prompt to the
-  // session as a fresh one-shot intent. The nonce comes from the monotonic ref,
-  // so every click is a strictly increasing, never-reused intent: each one opens
-  // its own tab and the dock can dedup re-renders by nonce without dropping a
-  // genuinely new launch. Desktop-only; the web host never renders the entry point.
+  // Terminal and sidebar-chat launchers share one window event. The chosen
+  // surface decides whether the stable session host appears in the dock or in a
+  // main Chat tab. Every dispatch gets a monotonic nonce, so repeated clicks
+  // remain distinct launch intents. Web follows the route but renders the desktop
+  // availability state because it has no terminal bridge.
   useEffect(() => {
     return subscribeToTerminalLaunchRequests((prompt, cli, options) => {
-      if (terminalDockRef.current === 'right') setActiveTab('chat');
+      const surface = options.surface ?? 'dock';
+      setTerminalSurface(surface);
+      if (surface === 'main') {
+        if (window.location.hash !== CHAT_HASH) window.location.hash = CHAT_HASH;
+      } else if (terminalDockRef.current === 'right') {
+        setActiveTab('chat');
+      }
       setTerminalVisible(true);
       launchNonceRef.current += 1;
       setTerminalLaunch({ prompt, cli, nonce: launchNonceRef.current, ...options });
@@ -470,6 +490,7 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
   // right rail opens on Chat even when a live session was previously hidden.
   useEffect(() => {
     return subscribeToActiveTerminalInput(() => {
+      setTerminalSurface('dock');
       if (terminalDockRef.current !== 'right') {
         terminalDockRef.current = 'right';
         setTerminalDockState('right');
@@ -539,6 +560,7 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
         // adoption telemetry below skips it.
         restoreRevealRef.current = true;
         if (terminalDockRef.current === 'right') setActiveTab('chat');
+        setTerminalSurface('dock');
         setTerminalVisible(true);
       })
       .catch((err) => {
@@ -605,7 +627,7 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
         onActiveTabChange={handleActiveTabChange}
         isSourceMode={editorMode === 'source'}
         terminalBridge={desktopBridge}
-        terminalVisible={terminalVisible}
+        terminalVisible={resolvedTerminalSurface === 'dock' ? terminalVisible : false}
         onTerminalVisibleChange={handleTerminalVisibleChange}
         terminalDock={terminalDock}
       >
@@ -625,7 +647,7 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
           onModeChange={handleModeChange}
           activeTab={activeTab}
           terminalBridge={desktopBridge}
-          terminalVisible={terminalVisible}
+          terminalVisible={effectiveTerminalVisible}
           onTerminalVisibleChange={handleTerminalVisibleChange}
           terminalDock={terminalDock}
           onTerminalPlacement={setTerminalPlacement}
@@ -636,15 +658,16 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
       {terminalAvailable && desktopBridge != null ? (
         <TerminalSessionsHost
           bridge={desktopBridge}
-          visible={terminalVisible}
+          visible={effectiveTerminalVisible}
           onVisibleChange={handleTerminalVisibleChange}
           launch={terminalLaunch}
           installedClis={installedClis}
           container={terminalPlacement.container}
           isShowing={terminalPlacement.isShowing}
           onRequestEditorFocus={() => terminalPlacement.editorRegion?.focus()}
-          dockPosition={terminalDock}
-          onToggleDock={toggleTerminalDock}
+          dockPosition={resolvedTerminalSurface === 'dock' ? terminalDock : undefined}
+          onToggleDock={resolvedTerminalSurface === 'dock' ? toggleTerminalDock : undefined}
+          collapsible={resolvedTerminalSurface === 'dock'}
           onHasSessionsChange={setHasSessions}
           onActiveSessionCliChange={(isCli) => {
             activeSessionIsCliRef.current = isCli;

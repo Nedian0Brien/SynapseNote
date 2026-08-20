@@ -34,8 +34,9 @@ function getTargetDisplayState(resolvedTarget: ResolvedNavigationTarget): Target
     case 'asset':
       return 'missing';
     // Unreachable in practice: this resolves a LINK target, and no link can
-    // point at the graph. Listed so the switch stays exhaustive.
+    // point at graph or chat. Listed so the switch stays exhaustive.
     case 'graph':
+    case 'chat':
       return 'missing';
   }
 }

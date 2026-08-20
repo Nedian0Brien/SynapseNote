@@ -29,13 +29,18 @@ describe('terminal-launch-events', () => {
       target,
     );
 
-    requestTerminalLaunch(null, 'claude', { resumeSessionId: 'session-42' }, target);
+    requestTerminalLaunch(
+      null,
+      'claude',
+      { resumeSessionId: 'session-42', surface: 'main' },
+      target,
+    );
 
     expect(received).toEqual([
       {
         prompt: null,
         cli: 'claude',
-        options: { resumeSessionId: 'session-42' },
+        options: { resumeSessionId: 'session-42', surface: 'main' },
       },
     ]);
     unsub();

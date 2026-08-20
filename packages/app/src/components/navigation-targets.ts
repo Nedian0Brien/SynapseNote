@@ -66,16 +66,21 @@ export type ResolvedNavigationTarget =
       target: string;
     }
   | {
+      // Project AI chat, opened as a singleton content surface in the main pane.
+      kind: 'chat';
+      target: string;
+    }
+  | {
       kind: 'missing';
       target: string;
     };
 
 /**
- * Everything a *link target string* can resolve to. The graph is reachable only
- * by route (⌘G, `#/__graph__`), never by resolving a path — so it is excluded
- * here, which keeps link callers from having to carry a dead `graph` branch.
+ * Everything a *link target string* can resolve to. Graph and chat are reached
+ * directly by route, never by resolving a path — so they are excluded here,
+ * which keeps link callers from carrying dead surface branches.
  */
-export type ResolvedLinkTarget = Exclude<ResolvedNavigationTarget, { kind: 'graph' }>;
+export type ResolvedLinkTarget = Exclude<ResolvedNavigationTarget, { kind: 'graph' | 'chat' }>;
 
 interface DocumentSizeMeta {
   size?: number;
@@ -421,6 +426,7 @@ export function docNameForNavigationTarget(target: ResolvedNavigationTarget): st
     case 'folder':
     // The graph is a surface, not a place in the file tree.
     case 'graph':
+    case 'chat':
       return null;
   }
 }

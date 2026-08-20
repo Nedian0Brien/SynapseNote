@@ -1831,10 +1831,12 @@ msgstr "Chart drill-through"
 #: src/components/chat/CliChatPanel.tsx
 #: src/components/ChatSidebarSection.tsx
 #: src/components/DocPanel.tsx
+#: src/components/EditorArea.tsx
+#: src/components/EditorTabs.tsx
 msgid "Chat"
 msgstr "Chat"
 
-#: src/components/ChatSidebarSection.tsx
+#: src/components/EditorArea.tsx
 msgid "Chat is available in the desktop app"
 msgstr "Chat is available in the desktop app"
 

@@ -726,7 +726,7 @@ export function EditorTabs() {
           if (tab.kind === 'skill-file') return [tabId, tab.path] as const;
           // The graph tab is a fixed label with no path, so it has no prefix to
           // disambiguate against its siblings.
-          if (tab.kind === 'graph') return [tabId, ''] as const;
+          if (tab.kind === 'graph' || tab.kind === 'chat') return [tabId, ''] as const;
           return [tabId, tab.docName] as const;
         }),
     ),
@@ -1091,7 +1091,12 @@ export function EditorTabs() {
                 );
               }
 
-              if (tab.kind === 'asset' || tab.kind === 'skill-file' || tab.kind === 'graph') {
+              if (
+                tab.kind === 'asset' ||
+                tab.kind === 'skill-file' ||
+                tab.kind === 'graph' ||
+                tab.kind === 'chat'
+              ) {
                 // Skill bundle files share the asset tab's read-only chrome, and
                 // so does the graph — none of the three is an editable document.
                 // Label off the skill-relative path (`references/x.md`) for the
@@ -1102,7 +1107,9 @@ export function EditorTabs() {
                 const { baseName, label, prefix } =
                   tab.kind === 'graph'
                     ? { baseName: t`Graph`, label: t`Graph`, prefix: '' }
-                    : tabParts(labelPath, '');
+                    : tab.kind === 'chat'
+                      ? { baseName: t`Chat`, label: t`Chat`, prefix: '' }
+                      : tabParts(labelPath, '');
                 const accessibleLabel = `${prefix}${label}`;
                 const displayPrefix =
                   prefix === '' ? '' : (tabDisplayPrefixes.get(tabId) ?? prefix);

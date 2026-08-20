@@ -25,6 +25,7 @@ interface TerminalLaunchDetail {
   readonly displayPrompt?: string;
   readonly context?: readonly ChatContextChip[];
   readonly resumeSessionId?: string;
+  readonly surface?: 'dock' | 'main';
 }
 
 export function requestTerminalLaunch(
@@ -35,6 +36,7 @@ export function requestTerminalLaunch(
         readonly displayPrompt?: string;
         readonly context?: readonly ChatContextChip[];
         readonly resumeSessionId?: string;
+        readonly surface?: 'dock' | 'main';
       }
     | Pick<Window, 'dispatchEvent'>
     | EventTarget = {},
@@ -60,6 +62,7 @@ export function subscribeToTerminalLaunchRequests(
       readonly displayPrompt?: string;
       readonly context?: readonly ChatContextChip[];
       readonly resumeSessionId?: string;
+      readonly surface?: 'dock' | 'main';
     },
   ) => void,
   target: Pick<Window, 'addEventListener' | 'removeEventListener'> | EventTarget = typeof window ===
@@ -79,6 +82,7 @@ export function subscribeToTerminalLaunchRequests(
         ...(detail.resumeSessionId === undefined
           ? {}
           : { resumeSessionId: detail.resumeSessionId }),
+        ...(detail.surface === undefined ? {} : { surface: detail.surface }),
       });
     }
   };

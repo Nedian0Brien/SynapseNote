@@ -112,14 +112,18 @@ describe('ChatSidebarSection', () => {
       {
         prompt: null,
         cli: 'codex',
-        options: { resumeSessionId: 'codex-session' },
+        options: { resumeSessionId: 'codex-session', surface: 'main' },
       },
-      { prompt: null, cli: 'codex', options: {} },
+      { prompt: null, cli: 'codex', options: { surface: 'main' } },
     ]);
     unsubscribe();
   });
 
-  test('keeps the Chat section visible with an empty web fallback', async () => {
+  test('opens a main-pane chat from the empty web fallback', async () => {
+    const launches: unknown[] = [];
+    const unsubscribe = subscribeToTerminalLaunchRequests((prompt, cli, options) => {
+      launches.push({ prompt, cli, options });
+    });
     const { ChatSidebarSection } = await import('./ChatSidebarSection');
     render(
       <TerminalLaunchProvider value={null}>
@@ -129,8 +133,10 @@ describe('ChatSidebarSection', () => {
 
     expect(screen.getByTestId('chat-sidebar-section')).toBeTruthy();
     expect(screen.getByText('No chats yet.')).toBeTruthy();
-    expect(
-      screen.getByRole('button', { name: 'New chat' }).getAttribute('disabled'),
-    ).not.toBeNull();
+    const newChat = screen.getByRole('button', { name: 'New chat' });
+    expect(newChat.getAttribute('disabled')).toBeNull();
+    fireEvent.click(newChat);
+    expect(launches).toEqual([{ prompt: null, cli: 'claude', options: { surface: 'main' } }]);
+    unsubscribe();
   });
 });

@@ -22,6 +22,8 @@ export function docNameFromHash(hash: string): string | null {
   if (hash.startsWith(SKILL_FILE_HASH_PREFIX)) return null;
   // The graph (`#/__graph__`) is a content surface with no document behind it.
   if (isGraphHash(hash)) return null;
+  // Chat (`#/__chat__`) is likewise a singleton content surface, not a doc.
+  if (isChatHash(hash)) return null;
   // Skill (`#/__skill__/…`) and template (`#/__template__/…`) hashes ARE
   // documents — they open as ordinary editor tabs, so they resolve to their
   // synthetic doc name here like any other `#/<docName>` hash (per-segment
@@ -176,6 +178,13 @@ export function isGraphHash(hash: string): boolean {
   // Tolerate a trailing `/` so a hand-typed or history-normalized variant of
   // the route still lands on the graph instead of opening a phantom document.
   return hash === GRAPH_HASH || hash === `${GRAPH_HASH}/`;
+}
+
+/** The project AI chat as a singleton editor-tab surface. */
+export const CHAT_HASH = '#/__chat__';
+
+export function isChatHash(hash: string): boolean {
+  return hash === CHAT_HASH || hash === `${CHAT_HASH}/`;
 }
 
 const SKILL_FILE_HASH_PREFIX = '#/__skill-file__/';

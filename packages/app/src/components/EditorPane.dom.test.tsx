@@ -592,18 +592,25 @@ describe('EditorPane terminal dock wiring', () => {
     expect(dock().getAttribute('data-launch-nonce')).toBe('2');
   });
 
-  test('desktop: a sidebar history request reveals Chat and carries its native session id', async () => {
+  test('desktop: a sidebar history request opens main Chat and carries its native session id', async () => {
     const desk = makeOkDesktopStub();
     (window as { okDesktop?: unknown }).okDesktop = desk.stub;
     const { requestTerminalLaunch } = await import('./handoff/terminal-launch-events');
     await renderEditorPane();
 
-    act(() => requestTerminalLaunch(null, 'codex', { resumeSessionId: 'native-session-42' }));
+    mockActiveTarget = { kind: 'chat', target: '#/__chat__' };
+    act(() =>
+      requestTerminalLaunch(null, 'codex', {
+        resumeSessionId: 'native-session-42',
+        surface: 'main',
+      }),
+    );
 
     const dock = screen.getByTestId('terminal-dock');
     expect(dock.getAttribute('data-visible')).toBe('true');
     expect(dock.getAttribute('data-launch-resume-session')).toBe('native-session-42');
-    expect(screen.getByTestId('editor-area').getAttribute('data-active-tab')).toBe('chat');
+    expect(window.location.hash).toBe('#/__chat__');
+    expect(screen.getByTestId('editor-area').getAttribute('data-active-tab')).toBe('outline');
   });
 
   test('desktop: new-terminal menu action opens the dock and stays open on repeat (not a toggle)', async () => {

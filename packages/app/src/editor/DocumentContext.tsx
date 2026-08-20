@@ -10,12 +10,14 @@ import { docNameForNavigationTarget } from '@/components/navigation-targets';
 import { consumePrewarmClick } from '@/components/prewarm-correlation';
 import {
   assetPathFromHash,
+  CHAT_HASH,
   docNameFromHash,
   GRAPH_HASH,
   hashFromAssetPath,
   hashFromDocName,
   hashFromFolderPath,
   hashFromSkillFile,
+  isChatHash,
   isGraphHash,
   skillFileFromHash,
 } from '@/lib/doc-hash';
@@ -31,6 +33,7 @@ import {
   addPinnedTab,
   applyDragPinMutation,
   assetTabId,
+  CHAT_TAB_ID,
   createEditorTabSessionState,
   docNameForTabId,
   docTabId,
@@ -503,11 +506,14 @@ function hashFromTabId(tabId: string): string {
       return hashFromSkillFile({ scope: tab.scope, name: tab.name, path: tab.path });
     case 'graph':
       return GRAPH_HASH;
+    case 'chat':
+      return CHAT_HASH;
   }
 }
 
 function tabIdFromHash(hash: string): string | null {
   if (isGraphHash(hash)) return GRAPH_TAB_ID;
+  if (isChatHash(hash)) return CHAT_TAB_ID;
   const assetPath = assetPathFromHash(hash);
   if (assetPath) return assetTabId(assetPath);
   const skillFile = skillFileFromHash(hash);
@@ -585,6 +591,8 @@ function navigationTargetKey(target: ResolvedNavigationTarget): string {
     case 'graph':
       // A singleton surface: one key, always the same one.
       return 'graph';
+    case 'chat':
+      return 'chat';
   }
 }
 
@@ -1314,6 +1322,11 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
     if (tab.kind === 'graph') {
       setActiveTarget({ kind: 'graph', target: GRAPH_HASH });
       if (window.location.hash !== GRAPH_HASH) window.location.hash = GRAPH_HASH;
+      return;
+    }
+    if (tab.kind === 'chat') {
+      setActiveTarget({ kind: 'chat', target: CHAT_HASH });
+      if (window.location.hash !== CHAT_HASH) window.location.hash = CHAT_HASH;
       return;
     }
     setActiveTarget({ kind: 'folder', target: tab.folderPath, folderPath: tab.folderPath });

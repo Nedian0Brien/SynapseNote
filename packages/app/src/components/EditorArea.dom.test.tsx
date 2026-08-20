@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { type ReactNode, useEffect } from 'react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
@@ -39,6 +39,10 @@ const EMPTY_DOC_CTX = {
   docPanelMode: 'timeline',
   docPanelAgentId: null,
   docPanelExpandSignal: 0,
+};
+const CHAT_DOC_CTX = {
+  ...EMPTY_DOC_CTX,
+  activeTarget: { kind: 'chat', target: '#/__chat__' },
 };
 const LARGE_FILE_DOC_CTX = {
   activeDocName: 'big',
@@ -84,6 +88,7 @@ let docCtx:
   | typeof FOLDER_DOC_CTX
   | typeof FOLDER_LIVE_CTX
   | typeof EMPTY_DOC_CTX
+  | typeof CHAT_DOC_CTX
   | typeof LARGE_FILE_DOC_CTX
   | typeof ASSET_DOC_CTX
   | typeof PDF_ASSET_DOC_CTX
@@ -97,6 +102,42 @@ mock.module('@/editor/DocumentContext', () => ({
   // here is a passthrough, so the context reads as present.
   useOptionalDocumentContext: () => docCtx,
 }));
+
+describe('EditorArea main chat surface', () => {
+  beforeEach(() => {
+    cleanup();
+    docCtx = CHAT_DOC_CTX;
+  });
+
+  test('reports the main pane as the live desktop chat host', async () => {
+    let placement: { container: HTMLElement | null; isShowing: boolean } | null = null;
+    render(
+      <EditorArea
+        editorMode="wysiwyg"
+        onModeChange={() => {}}
+        activeTab="outline"
+        terminalBridge={{} as never}
+        terminalVisible
+        onTerminalVisibleChange={() => {}}
+        onTerminalPlacement={(next) => {
+          placement = next;
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId('main-chat-surface')).toBeTruthy();
+    expect(screen.queryByTestId('terminal-dock')).toBeNull();
+    await waitFor(() => expect(placement?.isShowing).toBe(true));
+    expect(placement?.container).toBeInstanceOf(HTMLElement);
+  });
+
+  test('opens the main chat route in web preview with a desktop availability message', () => {
+    renderEditorArea();
+
+    expect(screen.getByTestId('main-chat-surface')).toBeTruthy();
+    expect(screen.getByText('Chat is available in the desktop app')).toBeTruthy();
+  });
+});
 
 mock.module('@/components/EmptyEditorState', () => ({
   // Forward terminalDock so the EditorArea -> EmptyEditorState prop wiring is

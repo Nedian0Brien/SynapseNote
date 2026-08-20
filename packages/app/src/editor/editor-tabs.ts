@@ -60,6 +60,7 @@ const TAB_INSTANCE_SEPARATOR = '\u0000doc-tab:';
 // prefix — there is no body naming *which* graph. Opening it twice therefore
 // resolves to the one tab instead of stacking duplicates.
 export const GRAPH_TAB_ID = `${TAB_NAMESPACE_SENTINEL}graph`;
+export const CHAT_TAB_ID = `${TAB_NAMESPACE_SENTINEL}chat`;
 const MARKDOWN_TAB_EXTENSION_PATTERN = /\.(md|mdx)$/i;
 
 interface OpenTabOptions {
@@ -91,7 +92,7 @@ function stripMarkdownTabExtension(path: string): string | null {
 function isValidTabId(value: unknown): value is string {
   if (typeof value !== 'string' || value.length === 0) return false;
   const base = baseTabId(value);
-  if (base === GRAPH_TAB_ID) return true;
+  if (base === GRAPH_TAB_ID || base === CHAT_TAB_ID) return true;
   if (base.startsWith(FOLDER_TAB_PREFIX)) return base.length > FOLDER_TAB_PREFIX.length;
   if (base.startsWith(ASSET_TAB_PREFIX)) return base.length > ASSET_TAB_PREFIX.length;
   if (base.startsWith(SKILL_FILE_TAB_PREFIX)) return parseSkillFileTabBody(base) !== null;
@@ -240,11 +241,14 @@ export function tabIdForNavigationTarget(
     | { kind: 'skill-file'; scope: SkillScope; name: string; path: string }
     | { kind: 'large-file'; docName: string }
     | { kind: 'graph' }
+    | { kind: 'chat' }
     | { kind: 'missing'; target: string },
 ): string | null {
   switch (target.kind) {
     case 'graph':
       return GRAPH_TAB_ID;
+    case 'chat':
+      return CHAT_TAB_ID;
     case 'doc':
     case 'folder-index':
     case 'large-file':
@@ -267,9 +271,11 @@ export function parseEditorTabId(
   | { kind: 'folder'; folderPath: string }
   | { kind: 'asset'; assetPath: string }
   | { kind: 'skill-file'; scope: SkillScope; name: string; path: string }
-  | { kind: 'graph' } {
+  | { kind: 'graph' }
+  | { kind: 'chat' } {
   const base = baseTabId(tabId);
   if (base === GRAPH_TAB_ID) return { kind: 'graph' };
+  if (base === CHAT_TAB_ID) return { kind: 'chat' };
   if (base.startsWith(FOLDER_TAB_PREFIX)) {
     return { kind: 'folder', folderPath: base.slice(FOLDER_TAB_PREFIX.length) };
   }
@@ -530,7 +536,7 @@ export function filterOpenTabsForKnownTargets(
     if (tab.kind === 'skill-file') return true;
     // The graph is a surface, not a file: it has no entry to look up and it
     // cannot stop existing, so a page-list sync must never prune its tab.
-    if (tab.kind === 'graph') return true;
+    if (tab.kind === 'graph' || tab.kind === 'chat') return true;
     const markdownStem = stripMarkdownTabExtension(tab.docName);
     return (
       pages.has(tab.docName) ||

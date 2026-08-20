@@ -257,6 +257,7 @@ function EditorAreaInner({
   const [bottomTerminalContainer, setBottomTerminalContainer] = useState<HTMLDivElement | null>(
     null,
   );
+  const [mainChatContainer, setMainChatContainer] = useState<HTMLDivElement | null>(null);
   const [terminalEditorRegion, setTerminalEditorRegion] = useState<HTMLDivElement | null>(null);
 
   // Terminal placement, computed early (before the view branches) so it can be
@@ -264,14 +265,19 @@ function EditorAreaInner({
   // docked the terminal is the rail's Chat tool, available across EVERY view
   // kind. This is why the dock stays on the right even when there's nothing
   // else to put there.
-  const rightDocked = terminalDock === 'right';
+  const mainChatActive = activeTarget?.kind === 'chat';
+  const rightDocked = terminalDock === 'right' && !mainChatActive;
   const terminalDockPosition: TerminalDockPosition = rightDocked ? 'right' : 'bottom';
   const rightTerminalShowing = rightDocked && terminalVisible && rightTerminalContainer != null;
-  const activeTerminalContainer = rightTerminalShowing
-    ? rightTerminalContainer
-    : bottomTerminalContainer;
-  const terminalShowing =
-    (rightDocked ? rightTerminalShowing : terminalVisible) && activeTerminalContainer != null;
+  const mainChatShowing = mainChatActive && terminalVisible && mainChatContainer != null;
+  const activeTerminalContainer = mainChatActive
+    ? mainChatContainer
+    : rightTerminalShowing
+      ? rightTerminalContainer
+      : bottomTerminalContainer;
+  const terminalShowing = mainChatActive
+    ? mainChatShowing
+    : (rightDocked ? rightTerminalShowing : terminalVisible) && activeTerminalContainer != null;
   // Report the attach point up to EditorPane (which owns the long-lived session
   // host). EditorArea only says where to attach — the VS Code / Zed pattern of
   // owning the terminal above the layout that moves.
@@ -333,7 +339,24 @@ function EditorAreaInner({
   // so the PTY survives tab switches and view-kind changes.
   let viewContent: ReactNode;
 
-  if (activeTarget?.kind === 'large-file') {
+  if (activeTarget?.kind === 'chat') {
+    viewContent = (
+      <div className="flex h-full min-h-0 flex-col bg-background" data-testid="main-chat-surface">
+        <div ref={setMainChatContainer} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          {terminalBridge == null ? (
+            <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
+              <h2 className="text-lg font-medium">
+                <Trans>Chat</Trans>
+              </h2>
+              <p className="max-w-sm text-sm text-muted-foreground">
+                <Trans>Chat is available in the desktop app</Trans>
+              </p>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    );
+  } else if (activeTarget?.kind === 'large-file') {
     viewContent = (
       <LargeFileEditorState
         docName={activeTarget.docName}
@@ -605,7 +628,7 @@ function EditorAreaInner({
   // render only the bottom layout shell, which reports its mount + editor region up
   // (the placement is reported to EditorPane via onTerminalPlacement above).
   const leftColumn =
-    terminalBridge != null ? (
+    terminalBridge != null && !mainChatActive ? (
       <TerminalDock
         visible={terminalVisible}
         onVisibleChange={onTerminalVisibleChange ?? (() => {})}
