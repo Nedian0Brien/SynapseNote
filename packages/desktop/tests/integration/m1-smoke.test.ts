@@ -601,8 +601,9 @@ describe('M1 smoke', () => {
     // 26 + 2 worktree actions (`new-worktree`, `switch-worktree`) for the
     // worktree selector (worktree = window) + `report-bug` (Help menu) + 3
     // sidebar visibility toggles (`toggle-show-ok-folders`,
-    // `toggle-show-only-markdown-files`, `toggle-show-skills-section`).
-    expect(desktopMembers.size).toBe(32);
+    // `toggle-show-only-markdown-files`, `toggle-show-skills-section`) + 2
+    // renderer-owned content-history actions for mouse Back/Forward commands.
+    expect(desktopMembers.size).toBe(34);
     expect(desktopMembers).toEqual(coreMembers);
     expect(desktopMembers).toEqual(appMembers);
     // Pin the visibility toggles explicitly: a bare count check wouldn't
@@ -614,6 +615,8 @@ describe('M1 smoke', () => {
     expect(desktopMembers.has('new-worktree')).toBe(true);
     expect(desktopMembers.has('switch-worktree')).toBe(true);
     expect(desktopMembers.has('report-bug')).toBe(true);
+    expect(desktopMembers.has('navigate-back')).toBe(true);
+    expect(desktopMembers.has('navigate-forward')).toBe(true);
   });
 
   test('M1 invariant: EntryPoint / OkProjectEntryPoint literal-union drift catcher', async () => {

@@ -179,6 +179,11 @@ export interface OkDesktopConfig {
 export type OkMenuAction =
   | 'new-doc'
   | 'new-folder'
+  // Browser Back/Forward app commands emitted by auxiliary mouse buttons.
+  // The renderer owns content history, so main forwards intent rather than
+  // asking Chromium to traverse its page-level navigation stack.
+  | 'navigate-back'
+  | 'navigate-forward'
   // Opens the create-new-project dialog in the focused window (a whole new
   // project, distinct from new-doc/new-folder which create inside the current
   // project). Sibling of Switch Project, which dispatches via `openNavigator`.

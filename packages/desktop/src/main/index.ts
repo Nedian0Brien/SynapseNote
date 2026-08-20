@@ -256,6 +256,7 @@ import {
   runMcpWiringOnFirstLaunch,
 } from './mcp-wiring.ts';
 import { installApplicationMenu } from './menu.ts';
+import { attachDesktopNavigationCommands } from './navigation-commands.ts';
 import { createNavigatorWindow, tryCloseNavigator } from './navigator-window.ts';
 import { runOkInit } from './ok-init.ts';
 import {
@@ -1109,6 +1110,7 @@ function ensureWindowManager() {
         trackProjectWindowFocus(win, opts.projectPath);
       }
       attachSpellcheckMenuToWindow(win);
+      attachDesktopNavigationCommands(win);
       // Per-window PTY reap: closing the window kills its shell (no orphan).
       // Idempotent — the manager no-ops for a window that never opened one. The
       // onReap clears the window's retained dock-visibility so it can't restore

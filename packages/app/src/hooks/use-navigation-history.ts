@@ -20,7 +20,11 @@ let entries: string[] = [];
 let currentIndex = -1;
 let snapshot = EMPTY_SNAPSHOT;
 let listening = false;
+let unsubscribeDesktopNavigation: (() => void) | null = null;
 const listeners = new Set<() => void>();
+
+const MOUSE_NAVIGATION_BACK_BUTTON = 3;
+const MOUSE_NAVIGATION_FORWARD_BUTTON = 4;
 
 /**
  * Keep only app content routes. A second `#` is a document/folder anchor, so
@@ -67,12 +71,49 @@ function handleNavigationReplaced(event: Event): void {
   recordNavigation(detail.hash);
 }
 
+function navigationOffsetForMouseButton(button: number): -1 | 1 | null {
+  if (button === MOUSE_NAVIGATION_BACK_BUTTON) return -1;
+  if (button === MOUSE_NAVIGATION_FORWARD_BUTTON) return 1;
+  return null;
+}
+
+function handleNavigationMouseDown(event: MouseEvent): void {
+  if (navigationOffsetForMouseButton(event.button) === null) return;
+  // Chromium otherwise traverses its page-level history, which intentionally
+  // differs from the editor's content-history stack (file-tree navigation can
+  // use replaceState). Consume the gesture at the window boundary.
+  event.preventDefault();
+}
+
+function handleNavigationMouseUp(event: MouseEvent): void {
+  const offset = navigationOffsetForMouseButton(event.button);
+  if (offset === null) return;
+  event.preventDefault();
+  moveTo(currentIndex + offset);
+}
+
+function handleNavigationAuxClick(event: MouseEvent): void {
+  if (navigationOffsetForMouseButton(event.button) === null) return;
+  // `auxclick` follows mouseup in Chromium. Navigation already happened in
+  // handleNavigationMouseUp; this only cancels the remaining native default.
+  event.preventDefault();
+}
+
+function handleDesktopNavigation(action: string): void {
+  if (action === 'navigate-back') moveTo(currentIndex - 1);
+  if (action === 'navigate-forward') moveTo(currentIndex + 1);
+}
+
 function startListening(): void {
   if (listening || typeof window === 'undefined') return;
   listening = true;
   recordNavigation(window.location.hash);
   window.addEventListener('hashchange', handleHashChange);
   window.addEventListener(APP_NAVIGATION_REPLACED_EVENT, handleNavigationReplaced);
+  window.addEventListener('mousedown', handleNavigationMouseDown, true);
+  window.addEventListener('mouseup', handleNavigationMouseUp, true);
+  window.addEventListener('auxclick', handleNavigationAuxClick, true);
+  unsubscribeDesktopNavigation = window.okDesktop?.onMenuAction(handleDesktopNavigation) ?? null;
 }
 
 function stopListening(): void {
@@ -80,6 +121,11 @@ function stopListening(): void {
   listening = false;
   window.removeEventListener('hashchange', handleHashChange);
   window.removeEventListener(APP_NAVIGATION_REPLACED_EVENT, handleNavigationReplaced);
+  window.removeEventListener('mousedown', handleNavigationMouseDown, true);
+  window.removeEventListener('mouseup', handleNavigationMouseUp, true);
+  window.removeEventListener('auxclick', handleNavigationAuxClick, true);
+  unsubscribeDesktopNavigation?.();
+  unsubscribeDesktopNavigation = null;
 }
 
 function subscribe(listener: () => void): () => void {

@@ -3,6 +3,8 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { replaceHashWithoutNavigation } from '@/lib/doc-hash';
 import { resetNavigationHistoryForTesting, useNavigationHistory } from './use-navigation-history';
 
+const originalDesktopBridge = window.okDesktop;
+
 function HistoryHarness() {
   const { canGoBack, canGoForward, goBack, goForward } = useNavigationHistory();
   return (
@@ -28,6 +30,7 @@ describe('useNavigationHistory', () => {
     cleanup();
     resetNavigationHistoryForTesting();
     window.history.replaceState(null, '', window.location.pathname);
+    window.okDesktop = originalDesktopBridge;
   });
 
   test('moves backward and forward through app content routes', () => {
@@ -74,5 +77,58 @@ describe('useNavigationHistory', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(window.location.hash).toBe('#/alpha');
+  });
+
+  test('routes mouse back and forward buttons through app navigation history', () => {
+    replaceAndDispatchHash('#/alpha');
+    render(<HistoryHarness />);
+
+    act(() => replaceAndDispatchHash('#/beta'));
+    act(() => replaceAndDispatchHash('#/gamma'));
+
+    const backDown = new MouseEvent('mousedown', { button: 3, cancelable: true });
+    const backUp = new MouseEvent('mouseup', { button: 3, cancelable: true });
+    act(() => {
+      window.dispatchEvent(backDown);
+      window.dispatchEvent(backUp);
+    });
+
+    expect(backDown.defaultPrevented).toBe(true);
+    expect(backUp.defaultPrevented).toBe(true);
+    expect(window.location.hash).toBe('#/beta');
+
+    const forwardDown = new MouseEvent('mousedown', { button: 4, cancelable: true });
+    const forwardUp = new MouseEvent('mouseup', { button: 4, cancelable: true });
+    act(() => {
+      window.dispatchEvent(forwardDown);
+      window.dispatchEvent(forwardUp);
+    });
+
+    expect(forwardDown.defaultPrevented).toBe(true);
+    expect(forwardUp.defaultPrevented).toBe(true);
+    expect(window.location.hash).toBe('#/gamma');
+  });
+
+  test('routes Electron browser commands through app navigation history', () => {
+    let onMenuAction: ((action: string) => void) | null = null;
+    window.okDesktop = {
+      onMenuAction(cb: (action: string) => void) {
+        onMenuAction = cb;
+        return () => {
+          onMenuAction = null;
+        };
+      },
+    } as unknown as NonNullable<typeof window.okDesktop>;
+
+    replaceAndDispatchHash('#/alpha');
+    render(<HistoryHarness />);
+    act(() => replaceAndDispatchHash('#/beta'));
+    act(() => replaceAndDispatchHash('#/gamma'));
+
+    act(() => onMenuAction?.('navigate-back'));
+    expect(window.location.hash).toBe('#/beta');
+
+    act(() => onMenuAction?.('navigate-forward'));
+    expect(window.location.hash).toBe('#/gamma');
   });
 });
