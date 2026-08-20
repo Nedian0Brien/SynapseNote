@@ -1,10 +1,11 @@
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { readdir, readFile, stat } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 
 const MAX_SESSIONS = 40;
 const MAX_TITLE_LENGTH = 36;
 const MAX_TRANSCRIPT_MESSAGES = 400;
 const MAX_TRANSCRIPT_CHARACTERS = 1_000_000;
+const sessionFileCache = new Map<string, string>();
 
 export interface NativeCliChatSession {
   readonly cli: 'codex' | 'claude';
@@ -23,9 +24,9 @@ interface SessionTitle {
   readonly updatedAt: number;
 }
 
-function parseJsonLines(path: string): unknown[] {
+async function parseJsonLines(path: string): Promise<unknown[]> {
   try {
-    return readFileSync(path, 'utf8')
+    return (await readFile(path, 'utf8'))
       .split('\n')
       .filter(Boolean)
       .flatMap((line) => {
@@ -99,30 +100,56 @@ function sameProject(candidate: unknown, projectRoot: string): boolean {
   );
 }
 
-function jsonlFiles(root: string, depth = 0): string[] {
-  if (!existsSync(root) || depth > 4) return [];
+async function jsonlFiles(root: string, depth = 0): Promise<string[]> {
+  if (depth > 4) return [];
   try {
-    return readdirSync(root, { withFileTypes: true }).flatMap((entry) => {
+    const files: string[] = [];
+    for (const entry of await readdir(root, { withFileTypes: true })) {
       const path = join(root, entry.name);
-      if (entry.isDirectory()) return jsonlFiles(path, depth + 1);
-      return entry.isFile() && entry.name.endsWith('.jsonl') ? [path] : [];
-    });
+      if (entry.isDirectory()) files.push(...(await jsonlFiles(path, depth + 1)));
+      else if (entry.isFile() && entry.name.endsWith('.jsonl')) files.push(path);
+    }
+    return files;
   } catch {
     return [];
   }
 }
 
-function fileModifiedAt(path: string): number {
+async function fileModifiedAt(path: string): Promise<number> {
   try {
-    return statSync(path).mtimeMs;
+    return (await stat(path)).mtimeMs;
   } catch {
     return 0;
   }
 }
 
-function codexSessions(homeDir: string, projectRoot: string): NativeCliChatSession[] {
+function sessionCacheKey(options: {
+  readonly homeDir: string;
+  readonly projectRoot: string;
+  readonly cli: 'codex' | 'claude';
+  readonly sessionId: string;
+}): string {
+  return `${resolve(options.homeDir)}\u0000${resolve(options.projectRoot)}\u0000${options.cli}\u0000${options.sessionId}`;
+}
+
+function cacheSessionFile(
+  options: {
+    readonly homeDir: string;
+    readonly projectRoot: string;
+    readonly cli: 'codex' | 'claude';
+    readonly sessionId: string;
+  },
+  path: string,
+): void {
+  sessionFileCache.set(sessionCacheKey(options), path);
+}
+
+async function codexSessions(
+  homeDir: string,
+  projectRoot: string,
+): Promise<NativeCliChatSession[]> {
   const index = new Map<string, SessionTitle>();
-  for (const raw of parseJsonLines(join(homeDir, '.codex', 'session_index.jsonl'))) {
+  for (const raw of await parseJsonLines(join(homeDir, '.codex', 'session_index.jsonl'))) {
     const row = record(raw);
     const sessionId = row?.id;
     const title = shortTitle(row?.thread_name);
@@ -131,10 +158,8 @@ function codexSessions(homeDir: string, projectRoot: string): NativeCliChatSessi
   }
 
   const sessions = new Map<string, NativeCliChatSession>();
-  for (const path of jsonlFiles(join(homeDir, '.codex', 'sessions'))) {
-    const rows = parseJsonLines(path)
-      .map(record)
-      .filter((row) => row !== null);
+  for (const path of await jsonlFiles(join(homeDir, '.codex', 'sessions'))) {
+    const rows = (await parseJsonLines(path)).map(record).filter((row) => row !== null);
     const meta = rows.find((row) => row.type === 'session_meta');
     const payload = record(meta?.payload);
     if (!sameProject(payload?.cwd, projectRoot)) continue;
@@ -148,7 +173,7 @@ function codexSessions(homeDir: string, projectRoot: string): NativeCliChatSessi
 
     const indexed = index.get(sessionId);
     let firstPrompt: string | null = null;
-    let latest = Math.max(fileModifiedAt(path), indexed?.updatedAt ?? 0);
+    let latest = Math.max(await fileModifiedAt(path), indexed?.updatedAt ?? 0);
     for (const row of rows) {
       latest = Math.max(latest, timestamp(row.timestamp));
       const event = record(row.payload);
@@ -162,6 +187,7 @@ function codexSessions(homeDir: string, projectRoot: string): NativeCliChatSessi
       title: indexed?.title ?? firstPrompt ?? 'Codex chat',
       updatedAt: latest,
     });
+    cacheSessionFile({ homeDir, projectRoot, cli: 'codex', sessionId }, path);
   }
   return [...sessions.values()];
 }
@@ -189,7 +215,10 @@ interface ClaudeCandidate {
   matchesProject: boolean;
 }
 
-function claudeSessions(homeDir: string, projectRoot: string): NativeCliChatSession[] {
+async function claudeSessions(
+  homeDir: string,
+  projectRoot: string,
+): Promise<NativeCliChatSession[]> {
   const candidates = new Map<string, ClaudeCandidate>();
   const ensure = (sessionId: string): ClaudeCandidate => {
     const current = candidates.get(sessionId);
@@ -206,7 +235,7 @@ function claudeSessions(homeDir: string, projectRoot: string): NativeCliChatSess
     return created;
   };
 
-  for (const raw of parseJsonLines(join(homeDir, '.claude', 'history.jsonl'))) {
+  for (const raw of await parseJsonLines(join(homeDir, '.claude', 'history.jsonl'))) {
     const row = record(raw);
     if (!sameProject(row?.project, projectRoot) || typeof row?.sessionId !== 'string') continue;
     const candidate = ensure(row.sessionId);
@@ -216,13 +245,16 @@ function claudeSessions(homeDir: string, projectRoot: string): NativeCliChatSess
   }
 
   const projectDirectory = projectRoot.replace(/[\\/]/g, '-');
-  for (const path of jsonlFiles(join(homeDir, '.claude', 'projects', projectDirectory))) {
-    const fallbackTime = fileModifiedAt(path);
-    for (const raw of parseJsonLines(path)) {
+  for (const path of await jsonlFiles(join(homeDir, '.claude', 'projects', projectDirectory))) {
+    const fallbackTime = await fileModifiedAt(path);
+    for (const raw of await parseJsonLines(path)) {
       const row = record(raw);
       if (typeof row?.sessionId !== 'string') continue;
       const candidate = ensure(row.sessionId);
       candidate.matchesProject ||= sameProject(row.cwd, projectRoot);
+      if (candidate.matchesProject) {
+        cacheSessionFile({ homeDir, projectRoot, cli: 'claude', sessionId: row.sessionId }, path);
+      }
       candidate.updatedAt = Math.max(candidate.updatedAt, timestamp(row.timestamp, fallbackTime));
       if (row.type === 'ai-title') candidate.aiTitle = shortTitle(row.aiTitle) ?? candidate.aiTitle;
       if (row.type === 'last-prompt') {
@@ -254,27 +286,31 @@ function claudeSessions(homeDir: string, projectRoot: string): NativeCliChatSess
 }
 
 /** Discover resumable Codex and Claude sessions owned by the active project. */
-export function listNativeCliChatSessions(options: {
+export async function listNativeCliChatSessions(options: {
   readonly homeDir: string;
   readonly projectRoot: string;
-}): NativeCliChatSession[] {
+}): Promise<NativeCliChatSession[]> {
   return [
-    ...codexSessions(options.homeDir, options.projectRoot),
-    ...claudeSessions(options.homeDir, options.projectRoot),
+    ...(await codexSessions(options.homeDir, options.projectRoot)),
+    ...(await claudeSessions(options.homeDir, options.projectRoot)),
   ]
     .sort((left, right) => right.updatedAt - left.updatedAt)
     .slice(0, MAX_SESSIONS);
 }
 
-function readCodexTranscript(options: {
+async function readCodexTranscript(options: {
   readonly homeDir: string;
   readonly projectRoot: string;
   readonly sessionId: string;
-}): NativeCliChatMessage[] {
-  for (const path of jsonlFiles(join(options.homeDir, '.codex', 'sessions'))) {
-    const rows = parseJsonLines(path)
-      .map(record)
-      .filter((row) => row !== null);
+}): Promise<NativeCliChatMessage[]> {
+  const cacheOptions = { ...options, cli: 'codex' as const };
+  const cachedPath = sessionFileCache.get(sessionCacheKey(cacheOptions));
+  const paths =
+    cachedPath === undefined
+      ? await jsonlFiles(join(options.homeDir, '.codex', 'sessions'))
+      : [cachedPath];
+  for (const path of paths) {
+    const rows = (await parseJsonLines(path)).map(record).filter((row) => row !== null);
     const meta = rows.find((row) => row.type === 'session_meta');
     const payload = record(meta?.payload);
     const id =
@@ -284,6 +320,7 @@ function readCodexTranscript(options: {
           ? payload.session_id
           : null;
     if (id !== options.sessionId || !sameProject(payload?.cwd, options.projectRoot)) continue;
+    cacheSessionFile(cacheOptions, path);
 
     const messages = rows.flatMap((row): NativeCliChatMessage[] => {
       if (row.type !== 'event_msg') return [];
@@ -303,20 +340,25 @@ function readCodexTranscript(options: {
   return [];
 }
 
-function readClaudeTranscript(options: {
+async function readClaudeTranscript(options: {
   readonly homeDir: string;
   readonly projectRoot: string;
   readonly sessionId: string;
-}): NativeCliChatMessage[] {
+}): Promise<NativeCliChatMessage[]> {
+  const cacheOptions = { ...options, cli: 'claude' as const };
+  const cachedPath = sessionFileCache.get(sessionCacheKey(cacheOptions));
   const projectDirectory = options.projectRoot.replace(/[\\/]/g, '-');
-  for (const path of jsonlFiles(join(options.homeDir, '.claude', 'projects', projectDirectory))) {
-    const rows = parseJsonLines(path)
-      .map(record)
-      .filter((row) => row !== null);
+  const paths =
+    cachedPath === undefined
+      ? await jsonlFiles(join(options.homeDir, '.claude', 'projects', projectDirectory))
+      : [cachedPath];
+  for (const path of paths) {
+    const rows = (await parseJsonLines(path)).map(record).filter((row) => row !== null);
     const belongsToSession = rows.some(
       (row) => row.sessionId === options.sessionId && sameProject(row.cwd, options.projectRoot),
     );
     if (!belongsToSession) continue;
+    cacheSessionFile(cacheOptions, path);
 
     const messages = rows.flatMap((row): NativeCliChatMessage[] => {
       if (row.sessionId !== options.sessionId || row.isMeta === true || row.isSidechain === true) {
@@ -338,11 +380,11 @@ function readClaudeTranscript(options: {
 }
 
 /** Read the human-visible message history for one project-owned native chat. */
-export function readNativeCliChatSession(options: {
+export async function readNativeCliChatSession(options: {
   readonly homeDir: string;
   readonly projectRoot: string;
   readonly cli: 'codex' | 'claude';
   readonly sessionId: string;
-}): NativeCliChatMessage[] {
+}): Promise<NativeCliChatMessage[]> {
   return options.cli === 'codex' ? readCodexTranscript(options) : readClaudeTranscript(options);
 }

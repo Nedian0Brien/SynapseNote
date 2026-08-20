@@ -11,7 +11,11 @@ afterEach(() => {
   localStorage.clear();
 });
 
-function makeBridge(history: readonly { role: 'user' | 'assistant'; text: string }[] = []) {
+function makeBridge(
+  history: readonly { role: 'user' | 'assistant'; text: string }[] = [],
+  readHistory: () => Promise<readonly { role: 'user' | 'assistant'; text: string }[]> = async () =>
+    history,
+) {
   const dataSubscribers: Array<(message: OkPtyData) => void> = [];
   const exitSubscribers: Array<(message: OkPtyExit) => void> = [];
   const input = mock((_ptyId: string, _data: string) => {});
@@ -40,7 +44,7 @@ function makeBridge(history: readonly { role: 'user' | 'assistant'; text: string
     imageDataUrl: 'data:image/png;base64,AQI=',
     faviconDataUrl: 'data:image/png;base64,AwQ=',
   }));
-  const readChatSession = mock(async (_cli: 'codex' | 'claude', _sessionId: string) => history);
+  const readChatSession = mock((_cli: 'codex' | 'claude', _sessionId: string) => readHistory());
   const bridge = {
     shell: { fetchWebPreview },
     terminal: {
@@ -76,6 +80,40 @@ function makeBridge(history: readonly { role: 'user' | 'assistant'; text: string
 }
 
 describe('CliChatPanel', () => {
+  test('shows an animated loading status while native history is read asynchronously', async () => {
+    let resolveHistory:
+      | ((messages: readonly { role: 'user' | 'assistant'; text: string }[]) => void)
+      | undefined;
+    const pendingHistory = new Promise<readonly { role: 'user' | 'assistant'; text: string }[]>(
+      (resolve) => {
+        resolveHistory = resolve;
+      },
+    );
+    const { bridge } = makeBridge([], () => pendingHistory);
+    render(
+      <CliChatPanel
+        bridge={bridge}
+        cli="codex"
+        ptyId="pty-1"
+        initialPrompt={null}
+        initialSessionId="slow-session"
+      />,
+    );
+
+    const status = screen.getByRole('status');
+    expect(status.textContent).toContain('Loading chat history');
+    expect(status.getAttribute('data-chat-history-loading')).toBe('true');
+    expect(status.querySelector('svg')?.classList.contains('animate-spin')).toBe(true);
+    expect(screen.getByLabelText('Message').getAttribute('disabled')).not.toBeNull();
+
+    await act(async () => {
+      resolveHistory?.([{ role: 'assistant', text: 'Restored after the async read.' }]);
+      await pendingHistory;
+    });
+    expect(await screen.findByText('Restored after the async read.')).toBeTruthy();
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
   test('restores native history before continuing the same session', async () => {
     const { bridge, chatSend, readChatSession } = makeBridge([
       { role: 'user', text: 'Why are graph labels hidden?' },

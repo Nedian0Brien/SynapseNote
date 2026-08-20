@@ -3298,7 +3298,7 @@ function registerIpcHandlers() {
         messages:
           projectPath === null || !validSessionId || !validCli
             ? []
-            : readNativeCliChatSession({
+            : await readNativeCliChatSession({
                 homeDir: osHomedir(),
                 projectRoot: projectPath,
                 cli: request.cli,
@@ -3311,7 +3311,7 @@ function registerIpcHandlers() {
       sessions:
         projectPath === null
           ? []
-          : listNativeCliChatSessions({ homeDir: osHomedir(), projectRoot: projectPath }),
+          : await listNativeCliChatSessions({ homeDir: osHomedir(), projectRoot: projectPath }),
     };
   });
   handle('ok:pty:adopt', async (event, req) => {

@@ -25,6 +25,7 @@ interface ChatMessageListProps {
   readonly running: boolean;
   readonly bridge: OkDesktopBridge;
   readonly emptyLabel?: string;
+  readonly emptyLoading?: boolean;
 }
 
 type ActivityVisualState = 'working' | 'completed' | 'failed' | 'idle';
@@ -328,7 +329,13 @@ function SentSelectionContext({ selection }: { selection: CliChatSelectionContex
   );
 }
 
-export function ChatMessageList({ timeline, running, bridge, emptyLabel }: ChatMessageListProps) {
+export function ChatMessageList({
+  timeline,
+  running,
+  bridge,
+  emptyLabel,
+  emptyLoading = false,
+}: ChatMessageListProps) {
   const { t } = useLingui();
   const endRef = useRef<HTMLDivElement | null>(null);
   const lastEntry = timeline.at(-1);
@@ -346,8 +353,20 @@ export function ChatMessageList({ timeline, running, bridge, emptyLabel }: ChatM
 
   if (!timeline.some((entry) => entry.type === 'message')) {
     return (
-      <div className="flex min-h-0 flex-1 items-center justify-center p-8 text-center text-sm text-muted-foreground">
-        {emptyLabel ?? t`Ask about your current document or project.`}
+      <div
+        role={emptyLoading ? 'status' : undefined}
+        data-chat-history-loading={emptyLoading ? 'true' : undefined}
+        className="flex min-h-0 flex-1 items-center justify-center p-8 text-center text-sm text-muted-foreground"
+      >
+        <span className="inline-flex items-center gap-2">
+          {emptyLoading ? (
+            <LoaderCircleIcon
+              aria-hidden="true"
+              className="size-4 animate-spin motion-reduce:animate-none"
+            />
+          ) : null}
+          <span>{emptyLabel ?? t`Ask about your current document or project.`}</span>
+        </span>
       </div>
     );
   }

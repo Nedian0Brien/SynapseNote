@@ -22,7 +22,7 @@ afterEach(() => {
 });
 
 describe('listNativeCliChatSessions', () => {
-  test('finds current-project Codex rollouts and uses the native index title', () => {
+  test('finds current-project Codex rollouts and uses the native index title', async () => {
     const homeDir = temporaryHome();
     const projectRoot = '/workspace/current';
     writeJsonLines(join(homeDir, '.codex', 'session_index.jsonl'), [
@@ -59,11 +59,13 @@ describe('listNativeCliChatSessions', () => {
     ]);
 
     expect(
-      listNativeCliChatSessions({ homeDir, projectRoot }).map(({ cli, sessionId, title }) => ({
-        cli,
-        sessionId,
-        title,
-      })),
+      (await listNativeCliChatSessions({ homeDir, projectRoot })).map(
+        ({ cli, sessionId, title }) => ({
+          cli,
+          sessionId,
+          title,
+        }),
+      ),
     ).toEqual(
       expect.arrayContaining([
         { cli: 'codex', sessionId: 'codex-current', title: 'Indexed Codex title' },
@@ -72,7 +74,7 @@ describe('listNativeCliChatSessions', () => {
     );
   });
 
-  test('merges Claude history and project logs into resumable sessions', () => {
+  test('merges Claude history and project logs into resumable sessions', async () => {
     const homeDir = temporaryHome();
     const projectRoot = '/workspace/current';
     writeJsonLines(join(homeDir, '.claude', 'history.jsonl'), [
@@ -100,14 +102,14 @@ describe('listNativeCliChatSessions', () => {
       { type: 'ai-title', sessionId: 'claude-log', aiTitle: 'Claude generated title' },
     ]);
 
-    const sessions = listNativeCliChatSessions({ homeDir, projectRoot });
+    const sessions = await listNativeCliChatSessions({ homeDir, projectRoot });
     expect(sessions.map(({ cli, sessionId, title }) => ({ cli, sessionId, title }))).toEqual([
       { cli: 'claude', sessionId: 'claude-log', title: 'Claude generated title' },
       { cli: 'claude', sessionId: 'claude-history', title: 'History title' },
     ]);
   });
 
-  test('ignores malformed native records and shortens long fallback titles', () => {
+  test('ignores malformed native records and shortens long fallback titles', async () => {
     const homeDir = temporaryHome();
     const projectRoot = '/workspace/current';
     const path = join(homeDir, '.codex', 'sessions', '2026', '07', '18', 'current.jsonl');
@@ -130,14 +132,14 @@ describe('listNativeCliChatSessions', () => {
       ].join('\n'),
     );
 
-    expect(listNativeCliChatSessions({ homeDir, projectRoot })[0]?.title).toBe(
+    expect((await listNativeCliChatSessions({ homeDir, projectRoot }))[0]?.title).toBe(
       'A title that is deliberately much l…',
     );
   });
 });
 
 describe('readNativeCliChatSession', () => {
-  test('restores visible Codex turns without response-item duplicates or injected context', () => {
+  test('restores visible Codex turns without response-item duplicates or injected context', async () => {
     const homeDir = temporaryHome();
     const projectRoot = '/workspace/current';
     writeJsonLines(join(homeDir, '.codex', 'sessions', '2026', '07', '18', 'current.jsonl'), [
@@ -172,7 +174,7 @@ describe('readNativeCliChatSession', () => {
     ]);
 
     expect(
-      readNativeCliChatSession({
+      await readNativeCliChatSession({
         homeDir,
         projectRoot,
         cli: 'codex',
@@ -184,7 +186,7 @@ describe('readNativeCliChatSession', () => {
     ]);
   });
 
-  test('restores Claude text turns and ignores tool-only and sidechain records', () => {
+  test('restores Claude text turns and ignores tool-only and sidechain records', async () => {
     const homeDir = temporaryHome();
     const projectRoot = '/workspace/current';
     writeJsonLines(join(homeDir, '.claude', 'projects', '-workspace-current', 'session.jsonl'), [
@@ -219,7 +221,7 @@ describe('readNativeCliChatSession', () => {
     ]);
 
     expect(
-      readNativeCliChatSession({
+      await readNativeCliChatSession({
         homeDir,
         projectRoot,
         cli: 'claude',
@@ -231,7 +233,7 @@ describe('readNativeCliChatSession', () => {
     ]);
   });
 
-  test('refuses a same-id transcript outside the active project', () => {
+  test('refuses a same-id transcript outside the active project', async () => {
     const homeDir = temporaryHome();
     writeJsonLines(join(homeDir, '.codex', 'sessions', 'outside.jsonl'), [
       { type: 'session_meta', payload: { id: 'shared-id', cwd: '/workspace/other' } },
@@ -239,7 +241,7 @@ describe('readNativeCliChatSession', () => {
     ]);
 
     expect(
-      readNativeCliChatSession({
+      await readNativeCliChatSession({
         homeDir,
         projectRoot: '/workspace/current',
         cli: 'codex',

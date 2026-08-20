@@ -251,6 +251,7 @@ export function CliChatPanel({
         running={state.running}
         bridge={bridge}
         emptyLabel={historyLoading ? t`Loading chat history` : undefined}
+        emptyLoading={historyLoading}
       />
       <form onSubmit={submit} className="border-t border-border p-3">
         <div
