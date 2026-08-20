@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { listNativeCliChatSessions } from './cli-chat-sessions';
+import { listNativeCliChatSessions, readNativeCliChatSession } from './cli-chat-sessions';
 
 const temporaryDirectories: string[] = [];
 
@@ -133,5 +133,118 @@ describe('listNativeCliChatSessions', () => {
     expect(listNativeCliChatSessions({ homeDir, projectRoot })[0]?.title).toBe(
       'A title that is deliberately much l…',
     );
+  });
+});
+
+describe('readNativeCliChatSession', () => {
+  test('restores visible Codex turns without response-item duplicates or injected context', () => {
+    const homeDir = temporaryHome();
+    const projectRoot = '/workspace/current';
+    writeJsonLines(join(homeDir, '.codex', 'sessions', '2026', '07', '18', 'current.jsonl'), [
+      {
+        type: 'session_meta',
+        payload: { id: 'codex-current', cwd: projectRoot },
+      },
+      {
+        type: 'event_msg',
+        payload: {
+          type: 'user_message',
+          message:
+            'The following metadata identifies the document currently open.\n\n<current_document>\n{}\n</current_document>\n\nUser request:\nExplain the graph',
+        },
+      },
+      {
+        type: 'response_item',
+        payload: { type: 'message', role: 'user', content: [{ type: 'input_text', text: 'dupe' }] },
+      },
+      {
+        type: 'event_msg',
+        payload: { type: 'agent_message', message: 'The graph connects related notes.' },
+      },
+      {
+        type: 'response_item',
+        payload: {
+          type: 'message',
+          role: 'assistant',
+          content: [{ type: 'output_text', text: 'duplicate assistant response' }],
+        },
+      },
+    ]);
+
+    expect(
+      readNativeCliChatSession({
+        homeDir,
+        projectRoot,
+        cli: 'codex',
+        sessionId: 'codex-current',
+      }),
+    ).toEqual([
+      { role: 'user', text: 'Explain the graph' },
+      { role: 'assistant', text: 'The graph connects related notes.' },
+    ]);
+  });
+
+  test('restores Claude text turns and ignores tool-only and sidechain records', () => {
+    const homeDir = temporaryHome();
+    const projectRoot = '/workspace/current';
+    writeJsonLines(join(homeDir, '.claude', 'projects', '-workspace-current', 'session.jsonl'), [
+      {
+        type: 'user',
+        sessionId: 'claude-current',
+        cwd: projectRoot,
+        message: { role: 'user', content: 'Review this plan' },
+      },
+      {
+        type: 'assistant',
+        sessionId: 'claude-current',
+        message: {
+          role: 'assistant',
+          content: [
+            { type: 'text', text: 'The plan is sound.' },
+            { type: 'tool_use', id: 'tool-1', name: 'read' },
+          ],
+        },
+      },
+      {
+        type: 'user',
+        sessionId: 'claude-current',
+        message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'tool-1' }] },
+      },
+      {
+        type: 'assistant',
+        sessionId: 'claude-current',
+        isSidechain: true,
+        message: { role: 'assistant', content: [{ type: 'text', text: 'Hidden sidechain' }] },
+      },
+    ]);
+
+    expect(
+      readNativeCliChatSession({
+        homeDir,
+        projectRoot,
+        cli: 'claude',
+        sessionId: 'claude-current',
+      }),
+    ).toEqual([
+      { role: 'user', text: 'Review this plan' },
+      { role: 'assistant', text: 'The plan is sound.' },
+    ]);
+  });
+
+  test('refuses a same-id transcript outside the active project', () => {
+    const homeDir = temporaryHome();
+    writeJsonLines(join(homeDir, '.codex', 'sessions', 'outside.jsonl'), [
+      { type: 'session_meta', payload: { id: 'shared-id', cwd: '/workspace/other' } },
+      { type: 'event_msg', payload: { type: 'user_message', message: 'Private prompt' } },
+    ]);
+
+    expect(
+      readNativeCliChatSession({
+        homeDir,
+        projectRoot: '/workspace/current',
+        cli: 'codex',
+        sessionId: 'shared-id',
+      }),
+    ).toEqual([]);
   });
 });

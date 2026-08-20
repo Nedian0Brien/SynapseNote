@@ -922,6 +922,12 @@ export interface OkCliChatSession {
   readonly updatedAt: number;
 }
 
+/** Human-visible turn restored from a project-owned native CLI conversation. */
+export interface OkCliChatMessage {
+  readonly role: 'user' | 'assistant';
+  readonly text: string;
+}
+
 /**
  * Result of `terminal.adopt` — re-binding a surviving session to a reloaded
  * renderer. On success, `replay` is the retained screen + scrollback the renderer
@@ -2012,6 +2018,8 @@ export interface OkDesktopBridge {
     ): void;
     /** List native Codex/Claude sessions whose working directory is this project. */
     listChatSessions(): Promise<OkCliChatSession[]>;
+    /** Read the visible user/assistant turns for one project-owned native session. */
+    readChatSession(cli: 'codex' | 'claude', sessionId: string): Promise<OkCliChatMessage[]>;
     resize(ptyId: string, cols: number, rows: number): void;
     kill(ptyId: string): Promise<void>;
     drain(ptyId: string, bytes: number): void;

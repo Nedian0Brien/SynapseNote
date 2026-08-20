@@ -72,6 +72,7 @@ export function CliChatPanel({
   const defaultModelReady = configContext === null || configContext.userSynced;
   const [rememberedPreferences] = useState(() => readCliChatPreferences(cli));
   const [state, dispatch] = useReducer(cliChatReducer, initialSessionId, createInitialCliChatState);
+  const [historyLoading, setHistoryLoading] = useState(initialSessionId !== null);
   const [draft, setDraft] = useState('');
   const [permissionMode, setPermissionMode] = useState<CliChatPermissionMode>(
     rememberedPreferences?.permissionMode ?? DEFAULT_CLI_CHAT_PERMISSION_MODE,
@@ -92,6 +93,30 @@ export function CliChatPanel({
   const titleReportedRef = useRef(initialSessionId !== null);
   const modelWasChangedRef = useRef(rememberedPreferences?.modelSettings !== undefined);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (initialSessionId === null) {
+      setHistoryLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setHistoryLoading(true);
+    void bridge.terminal
+      .readChatSession(cli, initialSessionId)
+      .then((messages) => {
+        if (cancelled) return;
+        dispatch({ type: 'hydrate', messages });
+        setHistoryLoading(false);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        console.error('[chat] failed to restore native chat history:', error);
+        setHistoryLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [bridge, cli, initialSessionId]);
 
   useEffect(() => {
     if (configContext === null || !defaultModelReady || modelWasChangedRef.current) return;
@@ -221,7 +246,12 @@ export function CliChatPanel({
 
   return (
     <section aria-label={t`Chat`} className="flex h-full min-h-0 flex-col bg-background">
-      <ChatMessageList timeline={state.timeline} running={state.running} bridge={bridge} />
+      <ChatMessageList
+        timeline={state.timeline}
+        running={state.running}
+        bridge={bridge}
+        emptyLabel={historyLoading ? t`Loading chat history` : undefined}
+      />
       <form onSubmit={submit} className="border-t border-border p-3">
         <div
           data-chat-composer="true"
@@ -279,7 +309,7 @@ export function CliChatPanel({
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={t`Message ${cli === 'codex' ? 'Codex' : 'Claude'}`}
-            disabled={ptyId === null}
+            disabled={ptyId === null || historyLoading}
             rows={2}
             className="max-h-40 min-h-12 resize-none border-0 bg-transparent px-3 pt-3 pb-1 shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent"
           />
@@ -323,7 +353,7 @@ export function CliChatPanel({
               <Button
                 type="submit"
                 size="icon"
-                disabled={ptyId === null || draft.trim() === ''}
+                disabled={ptyId === null || historyLoading || draft.trim() === ''}
                 aria-label={t`Send`}
               >
                 <SendIcon />

@@ -592,6 +592,7 @@ export async function installHandoffMocks(page: Page, cfg: HandoffMockConfig): P
           input: () => {},
           chatSend: () => {},
           listChatSessions: async () => [],
+          readChatSession: async () => [],
           resize: () => {},
           kill: async () => {},
           drain: () => {},

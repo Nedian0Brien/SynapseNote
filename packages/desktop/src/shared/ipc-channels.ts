@@ -87,6 +87,7 @@ import type {
   ClaudeReadiness,
   CliReadiness,
   HeadBranchInfo,
+  OkCliChatMessage,
   OkCliChatSession,
   OkDesktopConfig,
   OkLocalOpAuthReposResponse,
@@ -1519,10 +1520,20 @@ export interface RequestChannels {
     args: [];
     result: OkPtyListEntry[];
   };
-  /** Native Codex/Claude conversations scoped to the sender window's project. */
+  /** List or read native Codex/Claude conversations scoped to the sender project. */
   'ok:terminal:cli-chat-sessions': {
-    args: [];
-    result: OkCliChatSession[];
+    args: [
+      request:
+        | { readonly action: 'list' }
+        | {
+            readonly action: 'read';
+            readonly cli: 'codex' | 'claude';
+            readonly sessionId: string;
+          },
+    ];
+    result:
+      | { readonly action: 'list'; readonly sessions: OkCliChatSession[] }
+      | { readonly action: 'read'; readonly messages: OkCliChatMessage[] };
   };
   /**
    * Reload-rehydration adopt: re-bind a surviving session to the reloaded

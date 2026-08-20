@@ -5932,6 +5932,10 @@ msgstr "Loading Agent Runs"
 msgid "Loading branch state"
 msgstr "Loading branch state"
 
+#: src/components/chat/CliChatPanel.tsx
+msgid "Loading chat history"
+msgstr "Loading chat history"
+
 #: src/components/ChatSidebarSection.tsx
 msgid "Loading chats"
 msgstr "Loading chats"

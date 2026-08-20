@@ -743,7 +743,14 @@ const bridge: OkDesktopBridge = {
     chatSend: (ptyId, input) => {
       invoke('ok:pty:input', { ptyId, chat: input }).catch(() => {});
     },
-    listChatSessions: () => invoke('ok:terminal:cli-chat-sessions'),
+    listChatSessions: () =>
+      invoke('ok:terminal:cli-chat-sessions', { action: 'list' }).then((result) =>
+        result.action === 'list' ? result.sessions : [],
+      ),
+    readChatSession: (cli, sessionId) =>
+      invoke('ok:terminal:cli-chat-sessions', { action: 'read', cli, sessionId }).then((result) =>
+        result.action === 'read' ? result.messages : [],
+      ),
     resize: (ptyId, cols, rows) => {
       invoke('ok:pty:resize', { ptyId, cols, rows }).catch(() => {});
     },

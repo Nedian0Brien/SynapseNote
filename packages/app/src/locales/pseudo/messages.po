@@ -5927,6 +5927,10 @@ msgstr ""
 msgid "Loading branch state"
 msgstr ""
 
+#: src/components/chat/CliChatPanel.tsx
+msgid "Loading chat history"
+msgstr ""
+
 #: src/components/ChatSidebarSection.tsx
 msgid "Loading chats"
 msgstr ""

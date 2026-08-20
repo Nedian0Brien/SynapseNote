@@ -1,3 +1,4 @@
+import type { OkCliChatMessage } from '@/lib/desktop-bridge-types';
 import type {
   ChatActivity,
   ChatEvent,
@@ -13,6 +14,7 @@ export interface CliChatState {
 }
 
 export type CliChatAction =
+  | { readonly type: 'hydrate'; readonly messages: readonly OkCliChatMessage[] }
   | {
       readonly type: 'send';
       readonly text: string;
@@ -50,6 +52,19 @@ function findToolActivity(timeline: readonly ChatTimelineEntry[], sourceId: stri
 }
 
 export function cliChatReducer(state: CliChatState, action: CliChatAction): CliChatState {
+  if (action.type === 'hydrate') {
+    return {
+      ...state,
+      timeline: action.messages.map((message, index) => ({
+        id: `message-${index + 1}`,
+        type: 'message' as const,
+        role: message.role,
+        text: message.text,
+      })),
+      running: false,
+      nextId: action.messages.length + 1,
+    };
+  }
   if (action.type === 'send') {
     return {
       ...state,

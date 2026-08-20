@@ -3,12 +3,19 @@ import { isAbsolute, join, relative, resolve } from 'node:path';
 
 const MAX_SESSIONS = 40;
 const MAX_TITLE_LENGTH = 36;
+const MAX_TRANSCRIPT_MESSAGES = 400;
+const MAX_TRANSCRIPT_CHARACTERS = 1_000_000;
 
 export interface NativeCliChatSession {
   readonly cli: 'codex' | 'claude';
   readonly sessionId: string;
   readonly title: string;
   readonly updatedAt: number;
+}
+
+export interface NativeCliChatMessage {
+  readonly role: 'user' | 'assistant';
+  readonly text: string;
 }
 
 interface SessionTitle {
@@ -52,6 +59,35 @@ function shortTitle(value: unknown): string | null {
   return characters.length <= MAX_TITLE_LENGTH
     ? normalized
     : `${characters.slice(0, MAX_TITLE_LENGTH - 1).join('')}…`;
+}
+
+function messageText(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed === '' ? null : trimmed;
+}
+
+function visibleUserPrompt(value: unknown): string | null {
+  const text = messageText(value);
+  if (text === null) return null;
+  const marker = '\n\nUser request:\n';
+  const markerIndex = text.lastIndexOf(marker);
+  const hasSynapseNoteContext =
+    text.includes('<current_document>') || text.includes('<selected_document>');
+  return hasSynapseNoteContext && markerIndex >= 0
+    ? messageText(text.slice(markerIndex + marker.length))
+    : text;
+}
+
+function boundedMessages(messages: readonly NativeCliChatMessage[]): NativeCliChatMessage[] {
+  const bounded: NativeCliChatMessage[] = [];
+  let characters = 0;
+  for (const message of messages.slice(-MAX_TRANSCRIPT_MESSAGES).reverse()) {
+    if (characters + message.text.length > MAX_TRANSCRIPT_CHARACTERS) continue;
+    bounded.unshift(message);
+    characters += message.text.length;
+  }
+  return bounded;
 }
 
 function sameProject(candidate: unknown, projectRoot: string): boolean {
@@ -117,7 +153,7 @@ function codexSessions(homeDir: string, projectRoot: string): NativeCliChatSessi
       latest = Math.max(latest, timestamp(row.timestamp));
       const event = record(row.payload);
       if (firstPrompt === null && row.type === 'event_msg' && event?.type === 'user_message') {
-        firstPrompt = shortTitle(event.message);
+        firstPrompt = shortTitle(visibleUserPrompt(event.message));
       }
     }
     sessions.set(sessionId, {
@@ -130,19 +166,18 @@ function codexSessions(homeDir: string, projectRoot: string): NativeCliChatSessi
   return [...sessions.values()];
 }
 
-function claudeMessageText(message: unknown): string | null {
+function claudeTranscriptText(message: unknown): string | null {
   const value = record(message);
   const content = value?.content;
-  if (typeof content === 'string') return shortTitle(content);
+  if (typeof content === 'string') return messageText(content);
   if (!Array.isArray(content)) return null;
-  for (const part of content) {
-    const item = record(part);
-    if (item?.type === 'text') {
-      const text = shortTitle(item.text);
-      if (text !== null) return text;
-    }
-  }
-  return null;
+  const text = content
+    .flatMap((part) => {
+      const item = record(part);
+      return item?.type === 'text' && typeof item.text === 'string' ? [item.text] : [];
+    })
+    .join('\n\n');
+  return messageText(text);
 }
 
 interface ClaudeCandidate {
@@ -194,7 +229,7 @@ function claudeSessions(homeDir: string, projectRoot: string): NativeCliChatSess
         candidate.lastPrompt = shortTitle(row.lastPrompt) ?? candidate.lastPrompt;
       }
       if (row.type === 'user' && candidate.firstPrompt === null) {
-        candidate.firstPrompt = claudeMessageText(row.message);
+        candidate.firstPrompt = shortTitle(visibleUserPrompt(claudeTranscriptText(row.message)));
       }
     }
   }
@@ -229,4 +264,85 @@ export function listNativeCliChatSessions(options: {
   ]
     .sort((left, right) => right.updatedAt - left.updatedAt)
     .slice(0, MAX_SESSIONS);
+}
+
+function readCodexTranscript(options: {
+  readonly homeDir: string;
+  readonly projectRoot: string;
+  readonly sessionId: string;
+}): NativeCliChatMessage[] {
+  for (const path of jsonlFiles(join(options.homeDir, '.codex', 'sessions'))) {
+    const rows = parseJsonLines(path)
+      .map(record)
+      .filter((row) => row !== null);
+    const meta = rows.find((row) => row.type === 'session_meta');
+    const payload = record(meta?.payload);
+    const id =
+      typeof payload?.id === 'string'
+        ? payload.id
+        : typeof payload?.session_id === 'string'
+          ? payload.session_id
+          : null;
+    if (id !== options.sessionId || !sameProject(payload?.cwd, options.projectRoot)) continue;
+
+    const messages = rows.flatMap((row): NativeCliChatMessage[] => {
+      if (row.type !== 'event_msg') return [];
+      const event = record(row.payload);
+      if (event?.type === 'user_message') {
+        const text = visibleUserPrompt(event.message);
+        return text === null ? [] : [{ role: 'user', text }];
+      }
+      if (event?.type === 'agent_message') {
+        const text = messageText(event.message);
+        return text === null ? [] : [{ role: 'assistant', text }];
+      }
+      return [];
+    });
+    return boundedMessages(messages);
+  }
+  return [];
+}
+
+function readClaudeTranscript(options: {
+  readonly homeDir: string;
+  readonly projectRoot: string;
+  readonly sessionId: string;
+}): NativeCliChatMessage[] {
+  const projectDirectory = options.projectRoot.replace(/[\\/]/g, '-');
+  for (const path of jsonlFiles(join(options.homeDir, '.claude', 'projects', projectDirectory))) {
+    const rows = parseJsonLines(path)
+      .map(record)
+      .filter((row) => row !== null);
+    const belongsToSession = rows.some(
+      (row) => row.sessionId === options.sessionId && sameProject(row.cwd, options.projectRoot),
+    );
+    if (!belongsToSession) continue;
+
+    const messages = rows.flatMap((row): NativeCliChatMessage[] => {
+      if (row.sessionId !== options.sessionId || row.isMeta === true || row.isSidechain === true) {
+        return [];
+      }
+      if (row.type !== 'user' && row.type !== 'assistant') return [];
+      const message = record(row.message);
+      const role = message?.role;
+      if (role !== 'user' && role !== 'assistant') return [];
+      const text =
+        role === 'user'
+          ? visibleUserPrompt(claudeTranscriptText(message))
+          : claudeTranscriptText(message);
+      return text === null ? [] : [{ role, text }];
+    });
+    return boundedMessages(messages);
+  }
+  return [];
+}
+
+/** Read the human-visible message history for one project-owned native chat. */
+export function readNativeCliChatSession(options: {
+  readonly homeDir: string;
+  readonly projectRoot: string;
+  readonly cli: 'codex' | 'claude';
+  readonly sessionId: string;
+}): NativeCliChatMessage[] {
+  return options.cli === 'codex' ? readCodexTranscript(options) : readClaudeTranscript(options);
 }

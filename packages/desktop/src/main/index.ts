@@ -172,7 +172,7 @@ import {
   buildCliChatShellCommand,
   isCliChatLaunchInput,
 } from './cli-chat-command.ts';
-import { listNativeCliChatSessions } from './cli-chat-sessions.ts';
+import { listNativeCliChatSessions, readNativeCliChatSession } from './cli-chat-sessions.ts';
 import { requestUserConsent, walkExceedsCap } from './consent-dialog.ts';
 import {
   type CrashDetection,
@@ -3280,7 +3280,7 @@ function registerIpcHandlers() {
     const win = BrowserWindow.fromWebContents(event.sender);
     return win ? terminalManager.listSessions(win.id) : [];
   });
-  handle('ok:terminal:cli-chat-sessions', async (event) => {
+  handle('ok:terminal:cli-chat-sessions', async (event, request) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     const editorCtx =
       win && wm ? wm.getContextForBrowserWindow(win as unknown as BrowserWindowLike) : null;
@@ -3289,9 +3289,30 @@ function registerIpcHandlers() {
       terminalWindow: win ? getTerminalWindowContext(win.id) : undefined,
       homedir: osHomedir(),
     });
-    return projectPath === null
-      ? []
-      : listNativeCliChatSessions({ homeDir: osHomedir(), projectRoot: projectPath });
+    if (request.action === 'read') {
+      const validSessionId =
+        typeof request.sessionId === 'string' && request.sessionId.trim() !== '';
+      const validCli = request.cli === 'codex' || request.cli === 'claude';
+      return {
+        action: 'read' as const,
+        messages:
+          projectPath === null || !validSessionId || !validCli
+            ? []
+            : readNativeCliChatSession({
+                homeDir: osHomedir(),
+                projectRoot: projectPath,
+                cli: request.cli,
+                sessionId: request.sessionId,
+              }),
+      };
+    }
+    return {
+      action: 'list' as const,
+      sessions:
+        projectPath === null
+          ? []
+          : listNativeCliChatSessions({ homeDir: osHomedir(), projectRoot: projectPath }),
+    };
   });
   handle('ok:pty:adopt', async (event, req) => {
     const win = BrowserWindow.fromWebContents(event.sender);

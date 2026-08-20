@@ -11,7 +11,7 @@ afterEach(() => {
   localStorage.clear();
 });
 
-function makeBridge() {
+function makeBridge(history: readonly { role: 'user' | 'assistant'; text: string }[] = []) {
   const dataSubscribers: Array<(message: OkPtyData) => void> = [];
   const exitSubscribers: Array<(message: OkPtyExit) => void> = [];
   const input = mock((_ptyId: string, _data: string) => {});
@@ -40,11 +40,13 @@ function makeBridge() {
     imageDataUrl: 'data:image/png;base64,AQI=',
     faviconDataUrl: 'data:image/png;base64,AwQ=',
   }));
+  const readChatSession = mock(async (_cli: 'codex' | 'claude', _sessionId: string) => history);
   const bridge = {
     shell: { fetchWebPreview },
     terminal: {
       input,
       chatSend,
+      readChatSession,
       onData: (callback: (message: OkPtyData) => void) => {
         dataSubscribers.push(callback);
         return () => {};
@@ -65,6 +67,7 @@ function makeBridge() {
     bridge,
     input,
     chatSend,
+    readChatSession,
     fetchWebPreview,
     pushData(data: string) {
       for (const callback of dataSubscribers) callback({ ptyId: 'pty-1', data });
@@ -73,6 +76,32 @@ function makeBridge() {
 }
 
 describe('CliChatPanel', () => {
+  test('restores native history before continuing the same session', async () => {
+    const { bridge, chatSend, readChatSession } = makeBridge([
+      { role: 'user', text: 'Why are graph labels hidden?' },
+      { role: 'assistant', text: 'They are gated by the zoom threshold.' },
+    ]);
+    render(
+      <CliChatPanel
+        bridge={bridge}
+        cli="codex"
+        ptyId="pty-1"
+        initialPrompt={null}
+        initialSessionId="codex-session"
+      />,
+    );
+
+    expect(screen.getByLabelText('Message').getAttribute('disabled')).not.toBeNull();
+    expect(await screen.findByText('Why are graph labels hidden?')).toBeTruthy();
+    expect(screen.getByText('They are gated by the zoom threshold.')).toBeTruthy();
+    expect(readChatSession).toHaveBeenCalledWith('codex', 'codex-session');
+
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Show them sooner' } });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(chatSend).toHaveBeenCalledTimes(1));
+    expect(chatSend.mock.calls[0]?.[1].sessionId).toBe('codex-session');
+  });
+
   test('shows context, sends immediately, and accumulates a structured response', async () => {
     const { bridge, chatSend, pushData } = makeBridge();
     render(

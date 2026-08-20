@@ -24,6 +24,7 @@ interface ChatMessageListProps {
   readonly timeline: readonly ChatTimelineEntry[];
   readonly running: boolean;
   readonly bridge: OkDesktopBridge;
+  readonly emptyLabel?: string;
 }
 
 type ActivityVisualState = 'working' | 'completed' | 'failed' | 'idle';
@@ -327,7 +328,7 @@ function SentSelectionContext({ selection }: { selection: CliChatSelectionContex
   );
 }
 
-export function ChatMessageList({ timeline, running, bridge }: ChatMessageListProps) {
+export function ChatMessageList({ timeline, running, bridge, emptyLabel }: ChatMessageListProps) {
   const { t } = useLingui();
   const endRef = useRef<HTMLDivElement | null>(null);
   const lastEntry = timeline.at(-1);
@@ -346,7 +347,7 @@ export function ChatMessageList({ timeline, running, bridge }: ChatMessageListPr
   if (!timeline.some((entry) => entry.type === 'message')) {
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center p-8 text-center text-sm text-muted-foreground">
-        {t`Ask about your current document or project.`}
+        {emptyLabel ?? t`Ask about your current document or project.`}
       </div>
     );
   }
