@@ -869,100 +869,8 @@ function FileSidebarInner({ onOpenSearch, onNewDatabase }: FileSidebarProps) {
                 )}
               >
                 {/*
-                 * Tree view options uses DropdownMenu (click-to-open). The
-                 * earlier hover-to-open HoverCard shape was unreachable from
-                 * keyboard and touch: Radix HoverCard's content root forcibly
-                 * sets `tabindex="-1"` on every tabbable descendant
-                 * (@radix-ui/react-hover-card@dist/index.mjs:172-177), and
-                 * hover cannot be triggered from keyboard/AT/touch at all. A
-                 * DropdownMenu opens on click/Enter/Space, routes arrow-key
-                 * focus between items, and is the shadcn-standard pattern
-                 * for toolbar menus.
-                 *
-                 * The trigger is always visible: the Show group is state-
-                 * independent, so the menu always has content. The Expand/
-                 * Collapse-all commands smart-hide individually when their
-                 * action would no-op (no folders; every folder already
-                 * expanded / collapsed), taking their separator with them.
-                 */}
-                <DropdownMenu>
-                  <ToolbarDropdownTrigger icon={ListCollapse} label={t`Tree view options`} />
-                  <DropdownMenuContent
-                    align="end"
-                    className="min-w-52"
-                    data-testid="tree-options-menu"
-                  >
-                    {showExpandAll ? (
-                      <DropdownMenuItem onSelect={() => tree?.expandAll()}>
-                        <UnfoldVertical aria-hidden="true" />
-                        <Trans>Expand all</Trans>
-                      </DropdownMenuItem>
-                    ) : null}
-                    {showCollapseAll ? (
-                      <DropdownMenuItem onSelect={() => tree?.collapseAll()}>
-                        <FoldVertical aria-hidden="true" />
-                        <Trans>Collapse all</Trans>
-                      </DropdownMenuItem>
-                    ) : null}
-                    {showTreeStateSection ? <DropdownMenuSeparator /> : null}
-                    {/* Labeled `role="group"` so assistive tech announces the
-                          section; the visual DropdownMenuLabel alone is skipped
-                          by arrow-key menu navigation. Items read group-relative
-                          ("Hidden files") because the label carries the "Show";
-                          the unsectioned menu surfaces use the full-form labels. */}
-                    <DropdownMenuGroup aria-label={t`Show`}>
-                      <DropdownMenuLabel>
-                        <Trans>Show</Trans>
-                      </DropdownMenuLabel>
-                      <DropdownMenuCheckboxItem
-                        checked={showHiddenFiles}
-                        onCheckedChange={(checked) =>
-                          patchSidebarVisibility({ showHiddenFiles: checked })
-                        }
-                        disabled={projectLocalBinding === null}
-                        data-testid="tree-options-show-hidden-files"
-                      >
-                        <Trans>Hidden files</Trans>
-                      </DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem
-                        checked={showOkFolders}
-                        onCheckedChange={(checked) =>
-                          patchSidebarVisibility({ showOkFolders: checked })
-                        }
-                        disabled={projectLocalBinding === null}
-                        data-testid="tree-options-show-ok-folders"
-                      >
-                        <Trans>.ok folders</Trans>
-                      </DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem
-                        checked={showOnlyMarkdownFiles}
-                        onCheckedChange={(checked) =>
-                          patchSidebarVisibility({ showOnlyMarkdownFiles: checked })
-                        }
-                        disabled={projectLocalBinding === null}
-                        data-testid="tree-options-show-only-markdown-files"
-                      >
-                        <Trans>Only markdown files</Trans>
-                      </DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem
-                        checked={showSkillsSection}
-                        onCheckedChange={(checked) =>
-                          patchSidebarVisibility({ showSkillsSection: checked })
-                        }
-                        disabled={projectLocalBinding === null}
-                        data-testid="tree-options-show-skills"
-                      >
-                        <Trans>Skills</Trans>
-                      </DropdownMenuCheckboxItem>
-                    </DropdownMenuGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                {/*
-                 * Sits with Tree view options rather than among the three
-                 * create actions below: both are ways of looking at the
-                 * project, and neither writes anything. Same `Network` icon as
-                 * the right rail's graph tab, so the two entry points read as
-                 * the same destination.
+                 * Graph remains a direct navigation action. Creation actions
+                 * live together under the adjacent Add menu.
                  */}
                 <ToolbarButton
                   icon={Network}
@@ -1131,15 +1039,100 @@ function FileSidebarInner({ onOpenSearch, onNewDatabase }: FileSidebarProps) {
                     on top would double it to 16px. */}
                 <SidebarGroup className="min-h-0 px-0">
                   <SidebarGroupLabel asChild className="shrink-0">
-                    <CollapsibleTrigger
-                      // Marks the project-root header so right-click opens the project-scoped menu.
-                      data-sidebar-root-context
+                    <div
+                      data-testid="sidebar-project-header"
                       className="flex w-full items-center gap-1.5"
                     >
-                      <FolderOpen className="size-3.5 shrink-0" />
-                      <span className="truncate">{projectName}</span>
-                      <ChevronRight className="size-3.5 shrink-0 text-muted-foreground transition-transform group-data-[state=open]/files:rotate-90" />
-                    </CollapsibleTrigger>
+                      <CollapsibleTrigger
+                        // Marks the project-root header so right-click opens the project-scoped menu.
+                        data-sidebar-root-context
+                        className="flex min-w-0 flex-1 items-center gap-1.5"
+                      >
+                        <FolderOpen className="size-3.5 shrink-0" />
+                        <span className="truncate">{projectName}</span>
+                        <ChevronRight className="size-3.5 shrink-0 text-muted-foreground transition-transform group-data-[state=open]/files:rotate-90" />
+                      </CollapsibleTrigger>
+                      {/* Keep the tree controls with the project they configure,
+                          leaving the top chrome row for navigation and creation. */}
+                      <div data-testid="sidebar-tree-options-action" className="shrink-0">
+                        <DropdownMenu>
+                          <ToolbarDropdownTrigger
+                            icon={ListCollapse}
+                            label={t`Tree view options`}
+                            className={cn(isElectronHost && '[-webkit-app-region:no-drag]')}
+                          />
+                          <DropdownMenuContent
+                            align="end"
+                            className="min-w-52"
+                            data-testid="tree-options-menu"
+                          >
+                            {showExpandAll ? (
+                              <DropdownMenuItem onSelect={() => tree?.expandAll()}>
+                                <UnfoldVertical aria-hidden="true" />
+                                <Trans>Expand all</Trans>
+                              </DropdownMenuItem>
+                            ) : null}
+                            {showCollapseAll ? (
+                              <DropdownMenuItem onSelect={() => tree?.collapseAll()}>
+                                <FoldVertical aria-hidden="true" />
+                                <Trans>Collapse all</Trans>
+                              </DropdownMenuItem>
+                            ) : null}
+                            {showTreeStateSection ? <DropdownMenuSeparator /> : null}
+                            {/* Labeled `role="group"` so assistive tech announces the
+                                  section; the visual DropdownMenuLabel alone is skipped
+                                  by arrow-key menu navigation. Items read group-relative
+                                  ("Hidden files") because the label carries the "Show";
+                                  the unsectioned menu surfaces use the full-form labels. */}
+                            <DropdownMenuGroup aria-label={t`Show`}>
+                              <DropdownMenuLabel>
+                                <Trans>Show</Trans>
+                              </DropdownMenuLabel>
+                              <DropdownMenuCheckboxItem
+                                checked={showHiddenFiles}
+                                onCheckedChange={(checked) =>
+                                  patchSidebarVisibility({ showHiddenFiles: checked })
+                                }
+                                disabled={projectLocalBinding === null}
+                                data-testid="tree-options-show-hidden-files"
+                              >
+                                <Trans>Hidden files</Trans>
+                              </DropdownMenuCheckboxItem>
+                              <DropdownMenuCheckboxItem
+                                checked={showOkFolders}
+                                onCheckedChange={(checked) =>
+                                  patchSidebarVisibility({ showOkFolders: checked })
+                                }
+                                disabled={projectLocalBinding === null}
+                                data-testid="tree-options-show-ok-folders"
+                              >
+                                <Trans>.ok folders</Trans>
+                              </DropdownMenuCheckboxItem>
+                              <DropdownMenuCheckboxItem
+                                checked={showOnlyMarkdownFiles}
+                                onCheckedChange={(checked) =>
+                                  patchSidebarVisibility({ showOnlyMarkdownFiles: checked })
+                                }
+                                disabled={projectLocalBinding === null}
+                                data-testid="tree-options-show-only-markdown-files"
+                              >
+                                <Trans>Only markdown files</Trans>
+                              </DropdownMenuCheckboxItem>
+                              <DropdownMenuCheckboxItem
+                                checked={showSkillsSection}
+                                onCheckedChange={(checked) =>
+                                  patchSidebarVisibility({ showSkillsSection: checked })
+                                }
+                                disabled={projectLocalBinding === null}
+                                data-testid="tree-options-show-skills"
+                              >
+                                <Trans>Skills</Trans>
+                              </DropdownMenuCheckboxItem>
+                            </DropdownMenuGroup>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
                   </SidebarGroupLabel>
                   <CollapsibleContent
                     className="flex max-h-[70vh] flex-col overflow-hidden"

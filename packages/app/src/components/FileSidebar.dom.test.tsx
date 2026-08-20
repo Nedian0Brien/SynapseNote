@@ -525,7 +525,13 @@ describe('FileSidebar runtime behavior', () => {
     await waitFor(() => expect(treeListeners.size).toBe(1));
 
     expect(screen.getByTestId('sidebar-open-graph')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Tree view options' })).toBeTruthy();
+    const projectHeader = screen.getByTestId('sidebar-project-header');
+    expect(within(projectHeader).getByRole('button', { name: 'Tree view options' })).toBeTruthy();
+    expect(
+      within(screen.getByTestId('sidebar-toolbar')).queryByRole('button', {
+        name: 'Tree view options',
+      }),
+    ).toBeNull();
     expect(screen.getByTestId('sidebar-add-menu-trigger')).toBeTruthy();
     expect(screen.getByTestId('sidebar-add-menu')).toBeTruthy();
     expect(screen.getByTestId('sidebar-add-new-file')).toBeTruthy();
