@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, test } from 'bun:test';
-import { seedInitialDocHash, seedInitialDocHashFromWindow } from './single-file-initial-doc';
+import {
+  seedDesktopStartupHashFromWindow,
+  seedInitialDocHash,
+  seedInitialDocHashFromWindow,
+} from './single-file-initial-doc';
 
 /**
  * Unit coverage for the ephemeral single-file hash seed — the deterministic
@@ -90,6 +94,38 @@ describe('seedInitialDocHashFromWindow', () => {
   });
 
   test('no-op when there is no desktop bridge (web/CLI)', () => {
+    expect(seedWith(undefined)).toBe('');
+  });
+});
+
+describe('seedDesktopStartupHashFromWindow', () => {
+  const original = (globalThis as { window?: unknown }).window;
+  afterEach(() => {
+    (globalThis as { window?: unknown }).window = original;
+  });
+
+  function seedWith(okDesktop: unknown, startHash = ''): string {
+    const location = { hash: startHash };
+    (globalThis as { window?: unknown }).window = { okDesktop, location };
+    seedDesktopStartupHashFromWindow();
+    return location.hash;
+  }
+
+  test('starts an ordinary desktop editor window at the content-root home', () => {
+    expect(seedWith({ config: { mode: 'editor', initialDoc: null } })).toBe('#/');
+  });
+
+  test('keeps an explicit single-file target ahead of the global home', () => {
+    expect(seedWith({ config: { mode: 'editor', initialDoc: 'todo' } })).toBe('#/todo');
+  });
+
+  test('preserves an existing deep link or renderer-reload route', () => {
+    expect(seedWith({ config: { mode: 'editor', initialDoc: null } }, '#/brain/')).toBe('#/brain/');
+  });
+
+  test('does not seed navigator, terminal, or web surfaces', () => {
+    expect(seedWith({ config: { mode: 'navigator', initialDoc: null } })).toBe('');
+    expect(seedWith({ config: { mode: 'terminal', initialDoc: null } })).toBe('');
     expect(seedWith(undefined)).toBe('');
   });
 });

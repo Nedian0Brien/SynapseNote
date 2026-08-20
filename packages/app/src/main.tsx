@@ -51,7 +51,7 @@ import {
 } from '@/lib/perf/cold-mount-instrumentation';
 import { installRelaunchStateBridge } from '@/lib/relaunch-store';
 import { installShareReceivedListener } from '@/lib/share/receive-store';
-import { seedInitialDocHashFromWindow } from '@/lib/single-file-initial-doc';
+import { seedDesktopStartupHashFromWindow } from '@/lib/single-file-initial-doc';
 import { installSubscribeCardStore } from '@/lib/subscribe-card-store';
 import { installUpdateNoticesBridge } from '@/lib/update-notices-store';
 import '@fontsource-variable/inter';
@@ -187,12 +187,11 @@ if (typeof window !== 'undefined') {
   installCrashInviteListener({ bridge: window.okDesktop });
 }
 
-// Desktop-only: ephemeral single-file window (`ok <file>`). Seed the doc into
-// the hash BEFORE `createRoot().render()` so `NavigationHandler`'s first-mount
-// read lands on the file — deterministic, no post-load `ok:deep-link` IPC to
-// race. No-op on every other window (`initialDoc` is null) and in web/CLI
-// (window.okDesktop undefined).
-seedInitialDocHashFromWindow();
+// Desktop editor startup route, seeded BEFORE `createRoot().render()`:
+// ephemeral single-file windows land on their explicit doc; ordinary project
+// windows land on the content-root overview (`#/`) instead of restoring the
+// last active tab. Existing hashes (deep links / renderer reloads) win.
+seedDesktopStartupHashFromWindow();
 
 const queryClient = new QueryClient({
   defaultOptions: {

@@ -17,7 +17,7 @@
  * is set synchronously before any React effect can read it.
  */
 
-import { hashFromDocName } from '@/lib/doc-hash';
+import { hashFromDocName, hashFromFolderPath } from '@/lib/doc-hash';
 
 interface SeedInitialDocHashOptions {
   /** `window.okDesktop?.config.initialDoc` — the doc to open, or null/absent. */
@@ -60,4 +60,30 @@ export function seedInitialDocHashFromWindow(): void {
       window.location.hash = hash;
     },
   });
+}
+
+/**
+ * Seed the first editor route before React mounts. An explicit single-file
+ * target remains authoritative; an ordinary project window starts at the
+ * content-root folder overview instead of restoring the last active tab.
+ * Existing hashes are preserved for deep links and renderer reloads.
+ */
+export function seedDesktopStartupHashFromWindow(): void {
+  if (
+    typeof window === 'undefined' ||
+    !window.okDesktop ||
+    window.okDesktop.config.mode !== 'editor'
+  ) {
+    return;
+  }
+
+  const initialDoc = window.okDesktop.config.initialDoc;
+  if (initialDoc) {
+    seedInitialDocHashFromWindow();
+    return;
+  }
+
+  if (window.location.hash === '' || window.location.hash === '#') {
+    window.location.hash = hashFromFolderPath('');
+  }
 }
