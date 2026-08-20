@@ -317,6 +317,9 @@ mock.module('@/components/ui/dropdown-menu', () => ({
   DropdownMenuItem: Button,
   DropdownMenuLabel: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
   DropdownMenuSeparator: () => <hr data-testid="dropdown-menu-separator" />,
+  DropdownMenuSub: PassThrough,
+  DropdownMenuSubContent: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+  DropdownMenuSubTrigger: Button,
   DropdownMenuTrigger: PassThrough,
 }));
 
@@ -515,6 +518,29 @@ describe('FileSidebar runtime behavior', () => {
 
     fireEvent.click(button);
     expect(window.location.hash).toBe('#/__graph__');
+  });
+
+  test('merges creation actions into one Add menu while keeping tree and graph controls direct', async () => {
+    await renderSidebar();
+    await waitFor(() => expect(treeListeners.size).toBe(1));
+
+    expect(screen.getByTestId('sidebar-open-graph')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Tree view options' })).toBeTruthy();
+    expect(screen.getByTestId('sidebar-add-menu-trigger')).toBeTruthy();
+    expect(screen.getByTestId('sidebar-add-menu')).toBeTruthy();
+    expect(screen.getByTestId('sidebar-add-new-file')).toBeTruthy();
+    expect(screen.getByTestId('sidebar-add-new-database')).toBeTruthy();
+    expect(screen.getByTestId('sidebar-add-new-folder')).toBeTruthy();
+    expect(screen.getByTestId('sidebar-add-new-from-template')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'New file' })).toBeTruthy();
+
+    fireEvent.click(screen.getByTestId('sidebar-add-new-file'));
+    fireEvent.click(screen.getByTestId('sidebar-add-new-database'));
+    fireEvent.click(screen.getByTestId('sidebar-add-new-folder'));
+
+    expect(treeCalls.startCreating).toHaveBeenCalledWith('file', 'docs');
+    expect(treeCalls.startCreating).toHaveBeenCalledWith('folder', 'docs');
+    expect(treeCalls.startCreating).toHaveBeenCalledTimes(2);
   });
 
   test('Electron mode moves identity to the footer and applies drag/no-drag chrome treatment', async () => {
@@ -882,7 +908,7 @@ describe('FileSidebar runtime behavior', () => {
     await renderSidebar();
     await waitFor(() => expect(treeListeners.size).toBe(1));
 
-    expect(screen.queryByRole('button', { name: 'New from template' })).toBeNull();
+    expect(screen.queryByTestId('sidebar-add-new-from-template')).toBeNull();
     expect(screen.queryByTestId('empty-space-menu-new-from-template')).toBeNull();
     // Sibling create actions still render.
     expect(screen.getByTestId('empty-space-menu-new-file')).toBeTruthy();

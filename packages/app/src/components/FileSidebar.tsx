@@ -10,6 +10,7 @@ import {
   FoldVertical,
   ListCollapse,
   Network,
+  Plus,
   Share2,
   SquarePen,
   UnfoldVertical,
@@ -61,6 +62,9 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -966,44 +970,68 @@ function FileSidebarInner({ onOpenSearch, onNewDatabase }: FileSidebarProps) {
                   onClick={openGraphSurface}
                   data-testid="sidebar-open-graph"
                 />
-                <ToolbarButton
-                  icon={SquarePen}
-                  label={t`New file`}
-                  onClick={() => tree?.startCreating('file', initialCreateDir)}
-                />
-                <ToolbarButton
-                  icon={Database}
-                  label={t`New database`}
-                  onClick={handleNewDatabase}
-                />
-                {activeFolderHasTemplates ? (
-                  // Toolbar opens templates on click (not hover): a hover-only
-                  // flyout off an icon button isn't keyboard/touch reachable.
-                  // Mirrors the Tree view options dropdown above. Picking a
-                  // template runs the same inline-rename create flow as New file.
-                  <DropdownMenu>
-                    <ToolbarDropdownTrigger icon={FilePlus} label={t`New from template`} />
-                    <DropdownMenuContent
-                      align="end"
-                      className="min-w-52"
-                      onCloseAutoFocus={handleCreateMenuCloseAutoFocus}
+                <DropdownMenu>
+                  <ToolbarDropdownTrigger
+                    icon={Plus}
+                    label={t`Add`}
+                    data-testid="sidebar-add-menu-trigger"
+                  />
+                  <DropdownMenuContent
+                    align="end"
+                    className="min-w-52"
+                    data-testid="sidebar-add-menu"
+                    onCloseAutoFocus={handleCreateMenuCloseAutoFocus}
+                  >
+                    <DropdownMenuItem
+                      onSelect={() => {
+                        suppressCreateMenuFocusRestoreRef.current = true;
+                        tree?.startCreating('file', initialCreateDir);
+                      }}
+                      data-testid="sidebar-add-new-file"
                     >
-                      <TemplateMenuRows
-                        parentDir={initialCreateDir}
-                        onSelectTemplate={(templateName) => {
-                          suppressCreateMenuFocusRestoreRef.current = true;
-                          tree?.createFromTemplate(initialCreateDir, templateName);
-                        }}
-                        ItemComponent={DropdownMenuItem}
-                      />
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : null}
-                <ToolbarButton
-                  icon={FolderPlus}
-                  label={t`New folder`}
-                  onClick={() => tree?.startCreating('folder', initialCreateDir)}
-                />
+                      <SquarePen aria-hidden="true" />
+                      <Trans>New file</Trans>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={handleNewDatabase}
+                      data-testid="sidebar-add-new-database"
+                    >
+                      <Database aria-hidden="true" />
+                      <Trans>New database</Trans>
+                    </DropdownMenuItem>
+                    {activeFolderHasTemplates ? (
+                      // Keep templates in the add menu without adding another
+                      // toolbar button. The nested menu preserves the existing
+                      // template picker and keeps the primary menu compact.
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger data-testid="sidebar-add-new-from-template">
+                          <FilePlus aria-hidden="true" />
+                          <Trans>New from template</Trans>
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent>
+                          <TemplateMenuRows
+                            parentDir={initialCreateDir}
+                            onSelectTemplate={(templateName) => {
+                              suppressCreateMenuFocusRestoreRef.current = true;
+                              tree?.createFromTemplate(initialCreateDir, templateName);
+                            }}
+                            ItemComponent={DropdownMenuItem}
+                          />
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
+                    ) : null}
+                    <DropdownMenuItem
+                      onSelect={() => {
+                        suppressCreateMenuFocusRestoreRef.current = true;
+                        tree?.startCreating('folder', initialCreateDir);
+                      }}
+                      data-testid="sidebar-add-new-folder"
+                    >
+                      <FolderPlus aria-hidden="true" />
+                      <Trans>New folder</Trans>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </SidebarHeader>
             {/*
