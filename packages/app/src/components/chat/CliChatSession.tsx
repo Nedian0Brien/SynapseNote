@@ -79,6 +79,7 @@ export function CliChatSession({
         </div>
         <div className="invisible pointer-events-none absolute inset-0" inert>
           <TerminalGate
+            key={cli}
             bridge={bridge}
             launch={null}
             privateHistory

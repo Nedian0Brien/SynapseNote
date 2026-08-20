@@ -851,11 +851,17 @@ describe('TerminalDock multi-session', () => {
     const view = renderDock(true, { prompt: null, cli: 'codex', nonce: 1 });
     await waitFor(() => expect(view.create).toHaveBeenCalledTimes(1));
     const sessionId = activePanelId();
+    const composerBefore = document.querySelector('[data-chat-composer="true"]');
+    const messageBefore = screen.getByLabelText('Message');
+    await user.type(messageBefore, 'Keep this draft');
 
     await user.click(screen.getByRole('button', { name: 'Claude' }));
 
     expect(sessionPanels()).toHaveLength(1);
     expect(activePanelId()).toBe(sessionId);
+    expect(document.querySelector('[data-chat-composer="true"]')).toBe(composerBefore);
+    expect(screen.getByLabelText('Message')).toBe(messageBefore);
+    expect((messageBefore as HTMLTextAreaElement).value).toBe('Keep this draft');
     expect(screen.getByRole('tab', { name: /Claude chat/ })).toBeTruthy();
     await waitFor(() => expect(view.create).toHaveBeenCalledTimes(2));
     expect(view.kill).toHaveBeenCalledWith('pty-1');

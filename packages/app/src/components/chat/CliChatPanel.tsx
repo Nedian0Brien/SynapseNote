@@ -6,6 +6,7 @@ import {
   use,
   useEffect,
   useEffectEvent,
+  useLayoutEffect,
   useReducer,
   useRef,
   useState,
@@ -96,7 +97,22 @@ export function CliChatPanel({
   // derives one from the first user instruction.
   const titleReportedRef = useRef(initialSessionId !== null);
   const modelWasChangedRef = useRef(rememberedPreferences?.modelSettings !== undefined);
+  const previousCliRef = useRef(cli);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useLayoutEffect(() => {
+    if (previousCliRef.current === cli) return;
+    previousCliRef.current = cli;
+    const preferences = readCliChatPreferences(cli);
+    setPermissionMode(preferences?.permissionMode ?? DEFAULT_CLI_CHAT_PERMISSION_MODE);
+    setModelSettings(
+      preferences?.modelSettings ?? defaultCliChatModelSettings(cli, preferredModel),
+    );
+    modelWasChangedRef.current = preferences?.modelSettings !== undefined;
+    parserRef.current = createParserState();
+    initialSentRef.current = false;
+    titleReportedRef.current = initialSessionId !== null;
+  }, [cli, initialSessionId, preferredModel]);
 
   useEffect(() => {
     if (initialSessionId === null) {

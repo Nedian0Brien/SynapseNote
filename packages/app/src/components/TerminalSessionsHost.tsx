@@ -955,7 +955,6 @@ export function TerminalSessionsHost({
             session.launch.stagePaste === undefined &&
             isCliChatId(session.launch.cli) ? (
               <CliChatSession
-                key={`${session.id}:${session.launch.cli}`}
                 bridge={bridge}
                 cli={session.launch.cli}
                 launch={session.launch}
