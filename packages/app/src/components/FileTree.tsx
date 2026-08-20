@@ -43,7 +43,6 @@ import {
   UnfoldVertical,
 } from 'lucide-react';
 import { __iconNode as botIcon } from 'lucide-react/dist/esm/icons/bot';
-import { __iconNode as folderInputIcon } from 'lucide-react/dist/esm/icons/folder-input';
 import { __iconNode as link2Icon } from 'lucide-react/dist/esm/icons/link-2';
 import { useTheme } from 'next-themes';
 import {
@@ -100,7 +99,6 @@ import {
   applyExtensionBadges,
   FILE_TREE_EXT_BADGE_CSS,
 } from '@/components/file-tree-extension-badge';
-import { attachFolderOverviewButton } from '@/components/file-tree-folder-overview-button';
 import { buildOkignorePatternFromTarget } from '@/components/file-tree-okignore';
 import {
   applyDeleteToDocuments,
@@ -322,7 +320,6 @@ const AGENT_FILE_NAMES = new Set(['agents', 'agent', 'claude', 'skill']);
 const LINK_DECORATION_ICON_ID = 'ok-file-tree-link-decoration';
 const AGENT_DECORATION_ICON_ID = 'ok-file-tree-agent-decoration';
 const MARKDOWN_FILE_ICON_ID = 'ok-file-tree-markdown';
-const FOLDER_OVERVIEW_ICON_ID = 'ok-file-tree-folder-overview';
 // Custom Markdown file glyph (document with an "MD" label) overriding Pierre's
 // built-in `complete`-set markdown glyph. `fill="currentColor"` lets
 // `--trees-file-icon-color-markdown` (set in createFileTreeStyle, see
@@ -353,7 +350,6 @@ function createLucideSpriteSymbol(id: string, iconNode: IconNode): string {
 const FILE_TREE_DECORATION_SPRITE_SHEET = `<svg data-icon-sprite aria-hidden="true" width="0" height="0">
   ${createLucideSpriteSymbol(LINK_DECORATION_ICON_ID, link2Icon)}
   ${createLucideSpriteSymbol(AGENT_DECORATION_ICON_ID, botIcon)}
-  ${createLucideSpriteSymbol(FOLDER_OVERVIEW_ICON_ID, folderInputIcon)}
   ${MARKDOWN_FILE_ICON_SYMBOL}
 </svg>`;
 
@@ -445,36 +441,7 @@ const FILE_TREE_CREATION_CLEARED_CSS = `
   }
 `;
 
-const FILE_TREE_FOLDER_OVERVIEW_CSS = `
-  [data-item-type="folder"] > [data-item-section="action"] {
-    width: calc(var(--trees-action-lane-width) * 2 + 4px);
-  }
-  [data-type="folder-overview-trigger"] {
-    all: unset;
-    align-items: center;
-    justify-content: center;
-    width: var(--trees-action-lane-width);
-    height: calc(var(--trees-row-height) - var(--trees-focus-ring-width) * 2);
-    margin: var(--trees-focus-ring-width) 4px var(--trees-focus-ring-width)
-      var(--trees-focus-ring-width);
-    border-radius: var(--trees-border-radius);
-    color: var(--trees-fg-muted);
-    fill: currentColor;
-    cursor: pointer;
-    display: flex;
-    transition: color 120ms ease;
-  }
-  [data-type="folder-overview-trigger"]:hover,
-  [data-type="folder-overview-trigger"]:focus-visible {
-    color: var(--trees-fg);
-  }
-  [data-type="folder-overview-trigger"]:focus-visible {
-    outline: var(--trees-focus-ring-width) solid var(--trees-focus-ring-color);
-    outline-offset: calc(var(--trees-focus-ring-width) * -1);
-  }
-  [data-type="folder-overview-trigger"][hidden] {
-    display: none;
-  }
+const FILE_TREE_CONTEXT_MENU_CSS = `
   [data-type="context-menu-trigger"] {
     border-radius: var(--trees-border-radius);
   }
@@ -485,7 +452,7 @@ const FILE_TREE_FOLDER_OVERVIEW_CSS = `
 // markdown icon stays gray when its row is selected. The full styling block lives
 // alongside the badge-injection processor in file-tree-extension-badge.ts so the
 // CSS + DOM-mutation contract stays in one place.
-const FILE_TREE_UNSAFE_CSS = `${FILE_TREE_EXT_BADGE_CSS}\n${FILE_TREE_RENAME_INPUT_CSS}\n${FILE_TREE_ROOT_DROP_CSS}\n${FILE_TREE_EXTERNAL_FILE_DROP_CSS}\n${FILE_TREE_CREATION_CLEARED_CSS}\n${FILE_TREE_FOLDER_OVERVIEW_CSS}\n${FILE_TREE_INDENT_GUIDE_CSS}\n${FILE_TREE_STICKY_HEADER_CSS}`;
+const FILE_TREE_UNSAFE_CSS = `${FILE_TREE_EXT_BADGE_CSS}\n${FILE_TREE_RENAME_INPUT_CSS}\n${FILE_TREE_ROOT_DROP_CSS}\n${FILE_TREE_EXTERNAL_FILE_DROP_CSS}\n${FILE_TREE_CREATION_CLEARED_CSS}\n${FILE_TREE_CONTEXT_MENU_CSS}\n${FILE_TREE_INDENT_GUIDE_CSS}\n${FILE_TREE_STICKY_HEADER_CSS}`;
 
 function isAgentTreePath(treePath: string): boolean {
   const name = treePath.split('/').pop()?.replace(/\.md$/i, '').toLowerCase();
@@ -3365,23 +3332,6 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     return () => observer.disconnect();
   }, [loading, documents.length]);
 
-  // Pierre owns the row action lane inside an open shadow root and renders a
-  // single floating Options trigger. Add the folder-overview action to that
-  // same anchor so ordinary folder-row clicks can be dedicated to disclosure.
-  useEffect(() => {
-    if (loading || documents.length === 0) return;
-    const shadow = fileTreeHostRef.current?.querySelector(FILE_TREE_TAG_NAME)?.shadowRoot;
-    if (!shadow) return;
-    const controller = attachFolderOverviewButton(shadow, {
-      iconId: FOLDER_OVERVIEW_ICON_ID,
-      label: t`Open folder overview`,
-      onOpen: (treeDirectoryPath) => {
-        folderOverviewNavigationRef.current(treeDirectoryPathToFolderPath(treeDirectoryPath));
-      },
-    });
-    return () => controller.dispose();
-  }, [loading, documents.length, t]);
-
   // Replace Pierre's trailing-dot artifact with an always-visible uppercase
   // extension badge. Same shadow-root + MutationObserver pattern as
   // stampTitles above — kept as a separate observer so the watch scope
@@ -4164,15 +4114,19 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     if (item.dataset.itemType === 'folder') {
       const folderItem = asDirectoryHandle(model.getItem(path));
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      // Folder rows are disclosure controls. The separate overview action in
-      // the floating action lane is now the only pointer path that navigates
-      // to the folder overview, so clicking the label or chevron consistently
-      // expands/collapses without disturbing document navigation or selection.
       event.preventDefault();
       event.stopPropagation();
-      if (!folderItem) return;
-      if (folderItem.isExpanded()) folderItem.collapse();
-      else folderItem.expand();
+      // Keep disclosure and navigation as separate pointer targets: only the
+      // leading chevron expands/collapses. Clicking the folder row itself opens
+      // its overview, matching file-row navigation and avoiding accidental
+      // tree mutations when the user is trying to enter a folder.
+      if (eventTargetsTreeItemSection(event.nativeEvent, 'icon')) {
+        if (!folderItem) return;
+        if (folderItem.isExpanded()) folderItem.collapse();
+        else folderItem.expand();
+        return;
+      }
+      folderOverviewNavigationRef.current(treeDirectoryPathToFolderPath(path));
       return;
     }
 
@@ -4469,6 +4423,15 @@ function findTreeItemElement(event: MouseEvent): HTMLElement | null {
     }
   }
   return null;
+}
+
+function eventTargetsTreeItemSection(event: MouseEvent, section: string): boolean {
+  for (const entry of event.composedPath()) {
+    if (!(entry instanceof HTMLElement)) continue;
+    if (entry.dataset.itemPath) return false;
+    if (entry.dataset.itemSection === section) return true;
+  }
+  return false;
 }
 
 function findTreeVirtualizedRootElement(event: MouseEvent): HTMLElement | null {

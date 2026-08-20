@@ -555,7 +555,7 @@ describe('FileTree showAll lazy root seed', () => {
     );
   });
 
-  test('clicking a folder label toggles expansion without opening the overview', async () => {
+  test('clicking a folder row opens its overview without toggling expansion', async () => {
     showAllResponseFactory = () =>
       jsonResponse({
         documents: [docEntry('foo'), folderEntry('docs', false)],
@@ -570,14 +570,14 @@ describe('FileTree showAll lazy root seed', () => {
     const row = screen.getByRole('treeitem', { name: 'docs/' });
     fireEvent.click(row);
 
-    expect(model.getItem('docs/')?.isExpanded()).toBe(true);
-    expect(model.selectedPaths).toEqual(['foo.md']);
-    expect(window.location.hash).toBe('');
-    expect(openTargetMock).not.toHaveBeenCalled();
-
-    fireEvent.click(row);
     expect(model.getItem('docs/')?.isExpanded()).toBe(false);
-    expect(openTargetMock).not.toHaveBeenCalled();
+    expect(model.selectedPaths).toEqual(['foo.md']);
+    expect(window.location.hash).toBe('#/docs/');
+    expect(openTargetMock).toHaveBeenCalledTimes(1);
+    expect(openTargetMock).toHaveBeenCalledWith(
+      { kind: 'folder', target: 'docs', folderPath: 'docs' },
+      { tabBehavior: 'replace-active' },
+    );
   });
 
   test('clicking a folder disclosure toggles expansion without navigating', async () => {
