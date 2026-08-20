@@ -531,7 +531,14 @@ describe('CliChatPanel', () => {
     expect(screen.getByRole('heading', { name: 'Start a new chat' })).toBeTruthy();
     const providerGroup = screen.getByRole('group', { name: 'Choose a model provider' });
     expect(providerGroup.className).toContain('sm:grid-cols-2');
-    expect(document.querySelector('[data-chat-provider-panel="true"]')).not.toBeNull();
+    const providerSurface = document.querySelector<HTMLElement>(
+      '[data-chat-provider-surface="true"]',
+    );
+    expect(providerSurface).not.toBeNull();
+    expect(providerSurface?.className).not.toContain('border');
+    expect(providerSurface?.className).not.toContain('rounded');
+    expect(providerSurface?.className).not.toContain('shadow');
+    expect(providerSurface?.className).not.toContain('bg-card');
     const claude = screen.getByRole('button', { name: 'Claude' });
     const codex = screen.getByRole('button', { name: 'Codex' });
     expect(claude.className).toContain('min-h-24');

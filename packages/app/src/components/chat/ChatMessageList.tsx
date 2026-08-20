@@ -385,8 +385,8 @@ export function ChatMessageList({
         ) : showProviderChooser ? (
           <section
             aria-labelledby="new-chat-provider-heading"
-            className="w-full max-w-xl rounded-3xl border border-border/70 bg-card/60 p-6 shadow-sm sm:p-8"
-            data-chat-provider-panel="true"
+            className="w-full max-w-xl px-2 sm:px-4"
+            data-chat-provider-surface="true"
           >
             <h2
               id="new-chat-provider-heading"
@@ -419,14 +419,12 @@ export function ChatMessageList({
                     aria-pressed={selected}
                     onClick={() => onProviderSelect(provider)}
                   >
-                    <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-background ring-1 ring-border/80">
-                      <TargetIcon
-                        id={cliIconTargetId(provider)}
-                        className="size-6"
-                        aria-hidden="true"
-                        data-chat-provider-icon={provider}
-                      />
-                    </span>
+                    <TargetIcon
+                      id={cliIconTargetId(provider)}
+                      className="size-8"
+                      aria-hidden="true"
+                      data-chat-provider-icon={provider}
+                    />
                     <span className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
                       <span className="text-base font-semibold text-foreground">{label}</span>
                       <span className="text-xs font-normal text-muted-foreground">{vendor}</span>
