@@ -226,12 +226,15 @@ export function planGraphLabels(input: PlanGraphLabelsInput): GraphLabelPlacemen
       };
     })
     .filter((candidate): candidate is LabelCandidate => candidate !== null)
-    // Hierarchy gate: a page waits until the map has descended to its level.
-    // Zoomed out you see region names and nothing else; each level you descend
-    // hands the naming to the pages that live there. The active document is
-    // exempt — it is the one label that orients everything else.
+    // Hierarchy gate: while zoomed out, a page waits until the map has descended
+    // to its level. The configured leaf threshold is authoritative, though:
+    // once the camera reaches it, every otherwise-eligible page must be allowed
+    // through. Previously the folder-depth gate could keep rejecting every
+    // page after that point, leaving a close-up graph with no labels at all.
+    // The active document is always exempt because it orients everything else.
     .filter((candidate) => {
       if (candidate.isActive) return true;
+      if (zoomScale >= leafLabelThreshold) return true;
       return isDepthRevealedForNode?.(candidate.node.id) ?? true;
     })
     // Tier gate: a hub earns its label further out than a leaf does, so zooming

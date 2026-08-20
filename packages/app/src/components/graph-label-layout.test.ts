@@ -193,23 +193,59 @@ describe('planGraphLabels', () => {
     expect(placements[0]?.nodeId).toBe('hub');
   });
 
-  test('holds a page’s name back until the map has descended to its level', () => {
+  test('holds an early hub label back until the map has descended to its level', () => {
     // Zoomed out you should get region names and nothing else; a page names
-    // itself only once the descent has reached the level it lives at.
+    // itself only once the descent has reached the level it lives at. Use a
+    // hub here so the degree tier has already admitted it before leaf labels
+    // reach their global threshold.
     const nodes: GraphLabelLayoutNode[] = [
       { id: 'docs/Intro', label: 'Intro', x: 200, y: 100 },
       { id: 'docs/Api', label: 'Api', x: 200, y: 200 },
     ];
+    const links: GraphLabelLayoutLink[] = Array.from({ length: 8 }, (_, index) => ({
+      source: 'docs/Intro',
+      target: index === 0 ? 'docs/Api' : `other-${index}`,
+    }));
     const viewport = { width: 500, height: 400 };
 
     expect(
-      plan({ nodes, viewport, isDepthRevealedForNode: () => false }).map((p) => p.nodeId),
+      plan({
+        nodes,
+        links,
+        viewport,
+        zoomScale: 1,
+        isDepthRevealedForNode: () => false,
+      }).map((p) => p.nodeId),
     ).toEqual([]);
     expect(
-      plan({ nodes, viewport, isDepthRevealedForNode: () => true })
-        .map((p) => p.nodeId)
-        .sort(),
-    ).toEqual(['docs/Api', 'docs/Intro']);
+      plan({
+        nodes,
+        links,
+        viewport,
+        zoomScale: 1,
+        isDepthRevealedForNode: () => true,
+      }).map((p) => p.nodeId),
+    ).toEqual(['docs/Intro']);
+  });
+
+  test('shows leaf labels at the configured zoom even when folder depth lags behind', () => {
+    const nodes: GraphLabelLayoutNode[] = [
+      { id: 'deep/Intro', label: 'Intro', x: 150, y: 100 },
+      { id: 'deep/Api', label: 'Api', x: 350, y: 200 },
+    ];
+
+    const placements = plan({
+      nodes,
+      viewport: { width: 500, height: 400 },
+      zoomScale: 1.8,
+      leafLabelThreshold: 1.8,
+      isDepthRevealedForNode: () => false,
+    });
+
+    expect(placements.map((placement) => placement.nodeId).sort()).toEqual([
+      'deep/Api',
+      'deep/Intro',
+    ]);
   });
 
   test('says nothing when territories are off, leaving the degree tiers to decide', () => {
