@@ -1095,7 +1095,7 @@ msgid "All changes in this exact plan are one review group and commit together. 
 msgstr ""
 
 #: src/components/FolderOverview.tsx
-msgid "All files"
+msgid "All Documents"
 msgstr ""
 
 #: src/components/FileTreeFilteredToZeroNotice.tsx

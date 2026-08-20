@@ -1100,8 +1100,8 @@ msgid "All changes in this exact plan are one review group and commit together. 
 msgstr "All changes in this exact plan are one review group and commit together. Review the group before approving any write."
 
 #: src/components/FolderOverview.tsx
-msgid "All files"
-msgstr "All files"
+msgid "All Documents"
+msgstr "All Documents"
 
 #: src/components/FileTreeFilteredToZeroNotice.tsx
 msgid "All files are hidden by view filters."

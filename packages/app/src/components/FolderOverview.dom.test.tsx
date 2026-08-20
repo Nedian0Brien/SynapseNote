@@ -11,8 +11,8 @@ const pageTitles = new Map([
   ['notes/beta', 'Beta Research'],
 ]);
 const pageMeta = new Map([
-  ['notes/alpha', { size: 900, modified: '2026-08-07T00:00:00.000Z' }],
-  ['notes/beta', { size: 2_000, modified: '2026-08-08T00:00:00.000Z' }],
+  ['notes/alpha', { size: 900, modified: new Date(Date.now() - 86_400_000).toISOString() }],
+  ['notes/beta', { size: 2_000, modified: new Date(Date.now() - 172_800_000).toISOString() }],
 ]);
 
 mock.module('@lingui/react/macro', () => ({
@@ -87,9 +87,9 @@ mock.module('@/components/NewItemDialog', () => ({
     open ? <div role="dialog">New document dialog</div> : null,
 }));
 
-async function renderOverview() {
+async function renderOverview(folderPath = 'notes') {
   const { FolderOverview } = await import('./FolderOverview');
-  return render(<FolderOverview folderPath="notes" />);
+  return render(<FolderOverview folderPath={folderPath} />);
 }
 
 describe('FolderOverview Craft gallery behavior', () => {
@@ -100,6 +100,12 @@ describe('FolderOverview Craft gallery behavior', () => {
   });
 
   afterEach(cleanup);
+
+  test('labels the content-root overview as All Documents', async () => {
+    await renderOverview('');
+
+    expect(screen.getByRole('heading', { name: 'All Documents' })).toBeTruthy();
+  });
 
   test('renders the folder description, child folder, and preview cards by default', async () => {
     await renderOverview();

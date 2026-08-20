@@ -134,7 +134,7 @@ export function FolderOverview({ folderPath }: { folderPath: string }) {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const data = buildFolderOverviewData(folderPath, { pages, pageTitles, pageMeta, folderPaths });
-  const heading = data.title || (folderPath === '' ? t`All files` : data.title);
+  const heading = data.title || (folderPath === '' ? t`All Documents` : data.title);
   const normalizedQuery = query.trim().toLocaleLowerCase();
   const visibleEntries = sortEntries(data.children, sortKey, sortDir).filter((entry) => {
     if (!normalizedQuery) return true;
