@@ -200,8 +200,8 @@ function FileSidebarInner({ onOpenSearch, onNewDatabase }: FileSidebarProps) {
   // is what re-runs the subscription effect with a non-null handle.
   const [tree, setTree] = useState<FileTreeHandle | null>(null);
   // Measured file-tree content height (px) — the pane is sized flush to this
-  // (capped) so the virtualized tree is exactly as tall as its files and the
-  // Chat section sits directly beneath them with no gap. The tree still
+  // (capped) so the virtualized tree is exactly as tall as its files beneath
+  // the Chat section. The tree still
   // virtualizes + scrolls internally once content exceeds the cap.
   const [treeContentHeight, setTreeContentHeight] = useState<number | null>(null);
 
@@ -1021,15 +1021,16 @@ function FileSidebarInner({ onOpenSearch, onNewDatabase }: FileSidebarProps) {
             </div>
             <SidebarContent>
               <ConflictsSection />
+              <ChatSidebarSection bridge={bridge} />
               {/* Project files, under a collapsible header named for the project
-                  — a true peer to the Chat section below it. The content pane
+                  — a true peer to the Chat section above it. The content pane
                   is sized to the tree's measured content height (capped at 70vh),
-                  so a short tree sits flush above Chat (no bottom-dock) and a
+                  so a short tree stays compact below Chat and a
                   long tree virtualizes + scrolls internally; SidebarContent
                   scrolls both sections together. `50vh` is the bootstrap height
                   before the first measurement lands. */}
               <Collapsible defaultOpen className="group/files flex shrink-0 flex-col">
-                {/* SidebarGroup wrapper matches the Chat section so the two
+                {/* SidebarGroup wrapper matches the Chat section above so the two
                     headers + their content share the same gutter alignment.
                     `px-0` overrides the base `p-2`'s horizontal inset — the
                     header's own `px-2` (below) and Pierre's
@@ -1127,8 +1128,8 @@ function FileSidebarInner({ onOpenSearch, onNewDatabase }: FileSidebarProps) {
                     className="flex max-h-[70vh] flex-col overflow-hidden"
                     style={{
                       // Sized flush to the tree's measured content height so the
-                      // Chat section sits directly beneath the files with no
-                      // gap; `max-h-[70vh]` caps it so a long tree virtualizes +
+                      // file list stays compact below Chat; `max-h-[70vh]`
+                      // caps it so a long tree virtualizes +
                       // scrolls instead. The deselect-to-root hit target moved to
                       // the empty filler below (a flush tree leaves no empty space
                       // of its own to click).
@@ -1139,14 +1140,13 @@ function FileSidebarInner({ onOpenSearch, onNewDatabase }: FileSidebarProps) {
                   </CollapsibleContent>
                 </SidebarGroup>
               </Collapsible>
-              <ChatSidebarSection bridge={bridge} />
               {/* Deselect-to-root hit target. With the tree sized flush to its
                   rows there's no empty space inside it to click, so the leftover
                   sidebar space below the sections takes over: clicking it clears
                   the creation target (New file / New folder then land at the
                   project root) and neutralizes the focused row's ring, exactly
                   like the old empty-tree-area click. Flex-grows to fill whatever
-                  space the Files and Chat sections leave; collapses to nothing (and the
+                  space the Chat and Files sections leave; collapses to nothing (and the
                   sidebar scrolls) once they exceed the viewport. */}
               <div
                 aria-hidden

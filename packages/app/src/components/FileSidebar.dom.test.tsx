@@ -928,13 +928,18 @@ describe('FileSidebar runtime behavior', () => {
     );
   });
 
-  test('replaces the Databases and Skills lists with Chat', async () => {
+  test('replaces the Databases and Skills lists with Chat above Files', async () => {
     await renderSidebar();
 
-    expect(screen.getByTestId('chat-sidebar-section')).toBeTruthy();
+    const chatSection = screen.getByTestId('chat-sidebar-section');
+    const fileTree = screen.getByTestId('file-tree-stub');
+    expect(chatSection).toBeTruthy();
+    expect(
+      chatSection.compareDocumentPosition(fileTree) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).not.toBe(0);
     expect(screen.queryByTestId('database-sidebar-section')).toBeNull();
     expect(screen.queryByTestId('skills-sidebar-section')).toBeNull();
-    expect(screen.getByTestId('file-tree-stub')).toBeTruthy();
+    expect(fileTree).toBeTruthy();
   });
 
   test('search pill render failures are contained to the pill row and reset when sidebar state changes', async () => {
