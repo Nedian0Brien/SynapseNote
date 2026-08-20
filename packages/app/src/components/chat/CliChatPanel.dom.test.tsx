@@ -528,9 +528,15 @@ describe('CliChatPanel', () => {
       />,
     );
 
-    expect(screen.getByRole('group', { name: 'Choose a model provider' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Start a new chat' })).toBeTruthy();
+    const providerGroup = screen.getByRole('group', { name: 'Choose a model provider' });
+    expect(providerGroup.className).toContain('sm:grid-cols-2');
+    expect(document.querySelector('[data-chat-provider-panel="true"]')).not.toBeNull();
     const claude = screen.getByRole('button', { name: 'Claude' });
     const codex = screen.getByRole('button', { name: 'Codex' });
+    expect(claude.className).toContain('min-h-24');
+    expect(screen.getByText('Anthropic')).toBeTruthy();
+    expect(screen.getByText('OpenAI')).toBeTruthy();
     expect(codex.getAttribute('aria-pressed')).toBe('true');
     expect(codex.querySelector('[data-chat-provider-icon="codex"]')).not.toBeNull();
     expect(claude.querySelector('[data-chat-provider-icon="claude"]')).not.toBeNull();

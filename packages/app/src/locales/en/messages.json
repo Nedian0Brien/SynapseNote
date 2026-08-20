@@ -2595,6 +2595,7 @@
     "iNFKkm": ["No diff."],
     "iO8V-7": ["Create worktree"],
     "iOHg1t": ["Open embedded URL in new tab"],
+    "iQGjpq": ["OpenAI"],
     "iSLA_r": ["Move left"],
     "iSLIjg": ["Connect"],
     "iSQTsg": ["Ordered list"],
@@ -3270,6 +3271,7 @@
     "tsH-oX": [
       "Use a stable user principal ID. Agent access remains limited by its own capability and session."
     ],
+    "tsWBN9": ["Anthropic"],
     "tsiTqO": ["Paste your API key"],
     "tsj0c6": ["CSV or TSV file"],
     "tstmZe": ["Manage views without leaving the document."],
@@ -3372,6 +3374,7 @@
     "vLyv1R": ["Hide"],
     "vNWIMB": ["Forces"],
     "vNhgNE": ["Insert property to the left"],
+    "vPF04k": ["Start a new chat"],
     "vQIVHc": ["Folder properties"],
     "vVJWTJ": ["Submit response"],
     "vVkJqG": ["Refresh preview"],

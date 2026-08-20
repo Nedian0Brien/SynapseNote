@@ -366,54 +366,85 @@ export function ChatMessageList({
   }, [lastEntryContent]);
 
   if (!timeline.some((entry) => entry.type === 'message')) {
+    const showProviderChooser =
+      !emptyLoading && onProviderSelect !== undefined && providerOptions.length > 0;
     return (
       <div
         role={emptyLoading ? 'status' : undefined}
         data-chat-history-loading={emptyLoading ? 'true' : undefined}
         className="flex min-h-0 flex-1 items-center justify-center p-8 text-center text-sm text-muted-foreground"
       >
-        <div className="flex flex-col items-center gap-4">
+        {emptyLoading ? (
           <span className="inline-flex items-center gap-2">
-            {emptyLoading ? (
-              <LoaderCircleIcon
-                aria-hidden="true"
-                className="size-4 animate-spin motion-reduce:animate-none"
-              />
-            ) : null}
+            <LoaderCircleIcon
+              aria-hidden="true"
+              className="size-4 animate-spin motion-reduce:animate-none"
+            />
             <span>{emptyLabel ?? t`Ask about your current document or project.`}</span>
           </span>
-          {!emptyLoading && onProviderSelect !== undefined && providerOptions.length > 0 ? (
+        ) : showProviderChooser ? (
+          <section
+            aria-labelledby="new-chat-provider-heading"
+            className="w-full max-w-xl rounded-3xl border border-border/70 bg-card/60 p-6 shadow-sm sm:p-8"
+            data-chat-provider-panel="true"
+          >
+            <h2
+              id="new-chat-provider-heading"
+              className="text-xl font-semibold tracking-tight text-foreground"
+            >
+              {t`Start a new chat`}
+            </h2>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
+              {emptyLabel ?? t`Ask about your current document or project.`}
+            </p>
             <fieldset
-              className="flex flex-wrap items-center justify-center gap-2"
+              className="mt-6 grid w-full gap-3 sm:grid-cols-2"
               data-chat-provider-chooser="true"
             >
               <legend className="sr-only">{t`Choose a model provider`}</legend>
               {providerOptions.map((provider) => {
                 const selected = provider === selectedProvider;
                 const label = TERMINAL_CLIS[provider].displayName;
+                const vendor = provider === 'claude' ? t`Anthropic` : t`OpenAI`;
                 return (
                   <Button
                     key={provider}
                     type="button"
-                    variant={selected ? 'secondary' : 'outline'}
-                    size="sm"
-                    className="min-w-28 gap-2"
+                    variant="outline"
+                    className={cn(
+                      'relative h-auto min-h-24 justify-start gap-3 rounded-2xl p-4 text-left shadow-none transition-[border-color,background-color,box-shadow,transform] hover:-translate-y-0.5 hover:bg-accent/50 hover:shadow-sm motion-reduce:transform-none motion-reduce:transition-none',
+                      selected && 'border-primary/50 bg-primary/5 ring-1 ring-primary/20',
+                    )}
+                    aria-label={label}
                     aria-pressed={selected}
                     onClick={() => onProviderSelect(provider)}
                   >
-                    <TargetIcon
-                      id={cliIconTargetId(provider)}
-                      className="size-4"
-                      aria-hidden="true"
-                      data-chat-provider-icon={provider}
-                    />
-                    {label}
+                    <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-background ring-1 ring-border/80">
+                      <TargetIcon
+                        id={cliIconTargetId(provider)}
+                        className="size-6"
+                        aria-hidden="true"
+                        data-chat-provider-icon={provider}
+                      />
+                    </span>
+                    <span className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
+                      <span className="text-base font-semibold text-foreground">{label}</span>
+                      <span className="text-xs font-normal text-muted-foreground">{vendor}</span>
+                    </span>
+                    {selected ? (
+                      <CheckIcon
+                        aria-hidden="true"
+                        className="absolute right-3 top-3 size-4 text-primary"
+                      />
+                    ) : null}
                   </Button>
                 );
               })}
             </fieldset>
-          ) : null}
-        </div>
+          </section>
+        ) : (
+          <span>{emptyLabel ?? t`Ask about your current document or project.`}</span>
+        )}
       </div>
     );
   }

@@ -1169,6 +1169,10 @@ msgstr ""
 msgid "Annotations"
 msgstr ""
 
+#: src/components/chat/ChatMessageList.tsx
+msgid "Anthropic"
+msgstr ""
+
 #: src/components/PublishToGitHubDialog.tsx
 msgid "Anyone can see"
 msgstr ""
@@ -7665,6 +7669,10 @@ msgstr ""
 msgid "Open, navigate, accept, or dismiss CodeMirror completion suggestions."
 msgstr ""
 
+#: src/components/chat/ChatMessageList.tsx
+msgid "OpenAI"
+msgstr ""
+
 #: src/components/NavigatorApp.tsx
 msgid "Opening {openingLabel}…"
 msgstr ""
@@ -10273,6 +10281,10 @@ msgstr ""
 
 #: src/components/DatabaseDateCellEditor.tsx
 msgid "Start"
+msgstr ""
+
+#: src/components/chat/ChatMessageList.tsx
+msgid "Start a new chat"
 msgstr ""
 
 #: src/components/NavigatorApp.tsx
