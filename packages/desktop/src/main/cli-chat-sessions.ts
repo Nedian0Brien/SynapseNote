@@ -1,11 +1,26 @@
-import { readdir, readFile, stat } from 'node:fs/promises';
+import { open, readdir, readFile, stat } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 
 const MAX_SESSIONS = 40;
 const MAX_TITLE_LENGTH = 36;
 const MAX_TRANSCRIPT_MESSAGES = 400;
 const MAX_TRANSCRIPT_CHARACTERS = 1_000_000;
+const SESSION_LIST_SAMPLE_BYTES = 64 * 1024;
+const SESSION_LIST_READ_CONCURRENCY = 12;
 const sessionFileCache = new Map<string, string>();
+const sessionListInFlight = new Map<string, Promise<NativeCliChatSession[]>>();
+
+interface JsonLineSample {
+  readonly modifiedAt: number;
+  readonly rows: unknown[];
+  readonly size: number;
+}
+
+interface JsonLineSampleCacheEntry extends JsonLineSample {
+  readonly mode: 'head' | 'head-tail';
+}
+
+const jsonLineSampleCache = new Map<string, JsonLineSampleCacheEntry>();
 
 export interface NativeCliChatSession {
   readonly cli: 'codex' | 'claude';
@@ -24,21 +39,113 @@ interface SessionTitle {
   readonly updatedAt: number;
 }
 
+function parseJsonLineText(text: string): unknown[] {
+  return text
+    .split('\n')
+    .filter(Boolean)
+    .flatMap((line) => {
+      try {
+        return [JSON.parse(line) as unknown];
+      } catch {
+        return [];
+      }
+    });
+}
+
 async function parseJsonLines(path: string): Promise<unknown[]> {
   try {
-    return (await readFile(path, 'utf8'))
-      .split('\n')
-      .filter(Boolean)
-      .flatMap((line) => {
-        try {
-          return [JSON.parse(line) as unknown];
-        } catch {
-          return [];
-        }
-      });
+    return parseJsonLineText(await readFile(path, 'utf8'));
   } catch {
     return [];
   }
+}
+
+function parseCompleteJsonLines(
+  text: string,
+  options: { dropFirstPartial?: boolean; dropLastPartial?: boolean },
+): unknown[] {
+  const lines = text.split('\n');
+  if (options.dropFirstPartial) lines.shift();
+  if (options.dropLastPartial && !text.endsWith('\n')) lines.pop();
+  return lines.flatMap((line) => {
+    if (line === '') return [];
+    try {
+      return [JSON.parse(line) as unknown];
+    } catch {
+      return [];
+    }
+  });
+}
+
+async function sampleJsonLines(path: string, mode: 'head' | 'head-tail'): Promise<JsonLineSample> {
+  try {
+    const info = await stat(path);
+    const cached = jsonLineSampleCache.get(path);
+    if (cached?.mode === mode && cached.size === info.size && cached.modifiedAt === info.mtimeMs) {
+      return cached;
+    }
+
+    const handle = await open(path, 'r');
+    try {
+      const headLength = Math.min(info.size, SESSION_LIST_SAMPLE_BYTES);
+      const head = Buffer.alloc(headLength);
+      if (headLength > 0) await handle.read(head, 0, headLength, 0);
+      const rows = parseCompleteJsonLines(head.toString('utf8'), {
+        dropLastPartial: headLength < info.size,
+      });
+
+      if (mode === 'head-tail' && info.size > headLength) {
+        // Listing needs identity/title metadata, not transcript bodies. Claude
+        // writes project/session identity near the front and generated-title /
+        // last-prompt records near the end, so bounded windows preserve useful
+        // labels without reading multi-megabyte tool and assistant payloads.
+        const tailStart = Math.max(headLength, info.size - SESSION_LIST_SAMPLE_BYTES);
+        const tailLength = info.size - tailStart;
+        const tail = Buffer.alloc(tailLength);
+        if (tailLength > 0) await handle.read(tail, 0, tailLength, tailStart);
+        rows.push(
+          ...parseCompleteJsonLines(tail.toString('utf8'), {
+            dropFirstPartial: tailStart > 0,
+          }),
+        );
+      }
+
+      const sample: JsonLineSampleCacheEntry = {
+        mode,
+        modifiedAt: info.mtimeMs,
+        rows,
+        size: info.size,
+      };
+      jsonLineSampleCache.set(path, sample);
+      return sample;
+    } finally {
+      await handle.close();
+    }
+  } catch {
+    return { modifiedAt: 0, rows: [], size: 0 };
+  }
+}
+
+async function mapWithConcurrency<T, R>(
+  values: readonly T[],
+  concurrency: number,
+  mapValue: (value: T) => Promise<R>,
+): Promise<R[]> {
+  if (values.length === 0) return [];
+  const results = new Array<R>(values.length);
+  let nextIndex = 0;
+  const workers = Array.from(
+    { length: Math.min(Math.max(1, concurrency), values.length) },
+    async () => {
+      while (nextIndex < values.length) {
+        const index = nextIndex;
+        nextIndex += 1;
+        results[index] = await mapValue(values[index] as T);
+      }
+    },
+  );
+  await Promise.all(workers);
+  return results;
 }
 
 function record(value: unknown): Record<string, unknown> | null {
@@ -103,23 +210,17 @@ function sameProject(candidate: unknown, projectRoot: string): boolean {
 async function jsonlFiles(root: string, depth = 0): Promise<string[]> {
   if (depth > 4) return [];
   try {
-    const files: string[] = [];
-    for (const entry of await readdir(root, { withFileTypes: true })) {
-      const path = join(root, entry.name);
-      if (entry.isDirectory()) files.push(...(await jsonlFiles(path, depth + 1)));
-      else if (entry.isFile() && entry.name.endsWith('.jsonl')) files.push(path);
-    }
-    return files;
+    const entries = await readdir(root, { withFileTypes: true });
+    const files = await Promise.all(
+      entries.map(async (entry): Promise<string[]> => {
+        const path = join(root, entry.name);
+        if (entry.isDirectory()) return jsonlFiles(path, depth + 1);
+        return entry.isFile() && entry.name.endsWith('.jsonl') ? [path] : [];
+      }),
+    );
+    return files.flat();
   } catch {
     return [];
-  }
-}
-
-async function fileModifiedAt(path: string): Promise<number> {
-  try {
-    return (await stat(path)).mtimeMs;
-  } catch {
-    return 0;
   }
 }
 
@@ -157,37 +258,50 @@ async function codexSessions(
     index.set(sessionId, { title, updatedAt: timestamp(row?.updated_at) });
   }
 
-  const sessions = new Map<string, NativeCliChatSession>();
-  for (const path of await jsonlFiles(join(homeDir, '.codex', 'sessions'))) {
-    const rows = (await parseJsonLines(path)).map(record).filter((row) => row !== null);
-    const meta = rows.find((row) => row.type === 'session_meta');
-    const payload = record(meta?.payload);
-    if (!sameProject(payload?.cwd, projectRoot)) continue;
-    const sessionId =
-      typeof payload?.id === 'string'
-        ? payload.id
-        : typeof payload?.session_id === 'string'
-          ? payload.session_id
-          : null;
-    if (sessionId === null) continue;
+  const paths = await jsonlFiles(join(homeDir, '.codex', 'sessions'));
+  // session_meta is the first rollout record and the native session index owns
+  // the preferred title. A small prefix is therefore enough to prove project
+  // ownership and derive the rare unindexed fallback title; full parsing is
+  // reserved for readCodexTranscript after the user opens one chat.
+  const discovered = await mapWithConcurrency(
+    paths,
+    SESSION_LIST_READ_CONCURRENCY,
+    async (path): Promise<NativeCliChatSession | null> => {
+      const sample = await sampleJsonLines(path, 'head');
+      const rows = sample.rows.map(record).filter((row) => row !== null);
+      const meta = rows.find((row) => row.type === 'session_meta');
+      const payload = record(meta?.payload);
+      if (!sameProject(payload?.cwd, projectRoot)) return null;
+      const sessionId =
+        typeof payload?.id === 'string'
+          ? payload.id
+          : typeof payload?.session_id === 'string'
+            ? payload.session_id
+            : null;
+      if (sessionId === null) return null;
 
-    const indexed = index.get(sessionId);
-    let firstPrompt: string | null = null;
-    let latest = Math.max(await fileModifiedAt(path), indexed?.updatedAt ?? 0);
-    for (const row of rows) {
-      latest = Math.max(latest, timestamp(row.timestamp));
-      const event = record(row.payload);
-      if (firstPrompt === null && row.type === 'event_msg' && event?.type === 'user_message') {
-        firstPrompt = shortTitle(visibleUserPrompt(event.message));
+      const indexed = index.get(sessionId);
+      let firstPrompt: string | null = null;
+      let latest = Math.max(sample.modifiedAt, indexed?.updatedAt ?? 0);
+      for (const row of rows) {
+        latest = Math.max(latest, timestamp(row.timestamp));
+        const event = record(row.payload);
+        if (firstPrompt === null && row.type === 'event_msg' && event?.type === 'user_message') {
+          firstPrompt = shortTitle(visibleUserPrompt(event.message));
+        }
       }
-    }
-    sessions.set(sessionId, {
-      cli: 'codex',
-      sessionId,
-      title: indexed?.title ?? firstPrompt ?? 'Codex chat',
-      updatedAt: latest,
-    });
-    cacheSessionFile({ homeDir, projectRoot, cli: 'codex', sessionId }, path);
+      cacheSessionFile({ homeDir, projectRoot, cli: 'codex', sessionId }, path);
+      return {
+        cli: 'codex',
+        sessionId,
+        title: indexed?.title ?? firstPrompt ?? 'Codex chat',
+        updatedAt: latest,
+      };
+    },
+  );
+  const sessions = new Map<string, NativeCliChatSession>();
+  for (const session of discovered) {
+    if (session !== null) sessions.set(session.sessionId, session);
   }
   return [...sessions.values()];
 }
@@ -245,9 +359,13 @@ async function claudeSessions(
   }
 
   const projectDirectory = projectRoot.replace(/[\\/]/g, '-');
-  for (const path of await jsonlFiles(join(homeDir, '.claude', 'projects', projectDirectory))) {
-    const fallbackTime = await fileModifiedAt(path);
-    for (const raw of await parseJsonLines(path)) {
+  const paths = await jsonlFiles(join(homeDir, '.claude', 'projects', projectDirectory));
+  const samples = await mapWithConcurrency(paths, SESSION_LIST_READ_CONCURRENCY, async (path) => ({
+    path,
+    sample: await sampleJsonLines(path, 'head-tail'),
+  }));
+  for (const { path, sample } of samples) {
+    for (const raw of sample.rows) {
       const row = record(raw);
       if (typeof row?.sessionId !== 'string') continue;
       const candidate = ensure(row.sessionId);
@@ -255,7 +373,10 @@ async function claudeSessions(
       if (candidate.matchesProject) {
         cacheSessionFile({ homeDir, projectRoot, cli: 'claude', sessionId: row.sessionId }, path);
       }
-      candidate.updatedAt = Math.max(candidate.updatedAt, timestamp(row.timestamp, fallbackTime));
+      candidate.updatedAt = Math.max(
+        candidate.updatedAt,
+        timestamp(row.timestamp, sample.modifiedAt),
+      );
       if (row.type === 'ai-title') candidate.aiTitle = shortTitle(row.aiTitle) ?? candidate.aiTitle;
       if (row.type === 'last-prompt') {
         candidate.lastPrompt = shortTitle(row.lastPrompt) ?? candidate.lastPrompt;
@@ -290,12 +411,30 @@ export async function listNativeCliChatSessions(options: {
   readonly homeDir: string;
   readonly projectRoot: string;
 }): Promise<NativeCliChatSession[]> {
-  return [
-    ...(await codexSessions(options.homeDir, options.projectRoot)),
-    ...(await claudeSessions(options.homeDir, options.projectRoot)),
-  ]
-    .sort((left, right) => right.updatedAt - left.updatedAt)
-    .slice(0, MAX_SESSIONS);
+  const cacheKey = `${resolve(options.homeDir)}\u0000${resolve(options.projectRoot)}`;
+  const pending = sessionListInFlight.get(cacheKey);
+  // The sidebar and chat tab strip mount together and request the same list.
+  // Share that discovery pass instead of scanning the native stores twice.
+  if (pending !== undefined) return pending;
+
+  const task = Promise.all([
+    codexSessions(options.homeDir, options.projectRoot),
+    claudeSessions(options.homeDir, options.projectRoot),
+  ]).then(([codex, claude]) =>
+    [...codex, ...claude]
+      .sort((left, right) => right.updatedAt - left.updatedAt)
+      .slice(0, MAX_SESSIONS),
+  );
+  sessionListInFlight.set(cacheKey, task);
+  void task.then(
+    () => {
+      if (sessionListInFlight.get(cacheKey) === task) sessionListInFlight.delete(cacheKey);
+    },
+    () => {
+      if (sessionListInFlight.get(cacheKey) === task) sessionListInFlight.delete(cacheKey);
+    },
+  );
+  return task;
 }
 
 async function readCodexTranscript(options: {

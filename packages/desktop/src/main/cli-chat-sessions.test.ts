@@ -136,6 +136,41 @@ describe('listNativeCliChatSessions', () => {
       'A title that is deliberately much l…',
     );
   });
+
+  test('shares one in-flight discovery result across simultaneous list consumers', async () => {
+    const homeDir = temporaryHome();
+    const projectRoot = '/workspace/current';
+    writeJsonLines(join(homeDir, '.codex', 'sessions', 'current.jsonl'), [
+      { type: 'session_meta', payload: { id: 'codex-current', cwd: projectRoot } },
+    ]);
+
+    const first = listNativeCliChatSessions({ homeDir, projectRoot });
+    const second = listNativeCliChatSessions({ homeDir, projectRoot });
+    const [firstResult, secondResult] = await Promise.all([first, second]);
+
+    expect(firstResult).toBe(secondResult);
+  });
+
+  test('invalidates sampled metadata when a session file changes', async () => {
+    const homeDir = temporaryHome();
+    const projectRoot = '/workspace/current';
+    const path = join(homeDir, '.codex', 'sessions', 'current.jsonl');
+    writeJsonLines(path, [
+      { type: 'session_meta', payload: { id: 'codex-current', cwd: projectRoot } },
+      { type: 'event_msg', payload: { type: 'user_message', message: 'First title' } },
+    ]);
+    expect((await listNativeCliChatSessions({ homeDir, projectRoot }))[0]?.title).toBe(
+      'First title',
+    );
+
+    writeJsonLines(path, [
+      { type: 'session_meta', payload: { id: 'codex-current', cwd: projectRoot } },
+      { type: 'event_msg', payload: { type: 'user_message', message: 'Updated title' } },
+    ]);
+    expect((await listNativeCliChatSessions({ homeDir, projectRoot }))[0]?.title).toBe(
+      'Updated title',
+    );
+  });
 });
 
 describe('readNativeCliChatSession', () => {
