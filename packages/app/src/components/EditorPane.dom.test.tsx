@@ -160,7 +160,7 @@ mock.module('./TerminalSessionsHost', () => ({
     selectionContext,
   }: {
     visible?: boolean;
-    launch?: { nonce: number; stagePaste?: string } | null;
+    launch?: { nonce: number; resumeSessionId?: string; stagePaste?: string } | null;
     onActiveSessionCliChange?: (isCli: boolean) => void;
     documentContext?: { documentTitle: string; documentPath: string } | null;
     selectionContext?: { documentPath: string; markdown: string } | null;
@@ -175,6 +175,7 @@ mock.module('./TerminalSessionsHost', () => ({
         data-testid="terminal-dock"
         data-visible={String(visible)}
         data-launch-nonce={launch ? String(launch.nonce) : 'none'}
+        data-launch-resume-session={launch?.resumeSessionId ?? 'none'}
         data-launch-stage={launch?.stagePaste ?? 'none'}
         data-document-title={documentContext?.documentTitle ?? 'none'}
         data-document-path={documentContext?.documentPath ?? 'none'}
@@ -589,6 +590,20 @@ describe('EditorPane terminal dock wiring', () => {
     // a repeat of the already-opened tab and drop it, opening no new tab.
     act(() => requestTerminalLaunch('second', 'codex'));
     expect(dock().getAttribute('data-launch-nonce')).toBe('2');
+  });
+
+  test('desktop: a sidebar history request reveals Chat and carries its native session id', async () => {
+    const desk = makeOkDesktopStub();
+    (window as { okDesktop?: unknown }).okDesktop = desk.stub;
+    const { requestTerminalLaunch } = await import('./handoff/terminal-launch-events');
+    await renderEditorPane();
+
+    act(() => requestTerminalLaunch(null, 'codex', { resumeSessionId: 'native-session-42' }));
+
+    const dock = screen.getByTestId('terminal-dock');
+    expect(dock.getAttribute('data-visible')).toBe('true');
+    expect(dock.getAttribute('data-launch-resume-session')).toBe('native-session-42');
+    expect(screen.getByTestId('editor-area').getAttribute('data-active-tab')).toBe('chat');
   });
 
   test('desktop: new-terminal menu action opens the dock and stays open on repeat (not a toggle)', async () => {

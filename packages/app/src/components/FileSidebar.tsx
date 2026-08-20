@@ -25,8 +25,8 @@ import {
 } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { toast } from 'sonner';
+import { ChatSidebarSection } from '@/components/ChatSidebarSection';
 import { ConflictsSection } from '@/components/ConflictsSection';
-import { DatabaseSidebarSection } from '@/components/DatabaseSidebarSection';
 import { FileTree, type FileTreeHandle } from '@/components/FileTree';
 import { defaultInitialDir, hasOkPathSegment } from '@/components/file-tree-utils';
 import { OpenInAgentEmptySpaceSubmenu } from '@/components/handoff/OpenInAgentEmptySpaceSubmenu';
@@ -38,7 +38,6 @@ import { useInstalledAgents } from '@/components/handoff/useInstalledAgents';
 import { OnboardingCardMount } from '@/components/OnboardingCard';
 import { ProjectSwitcher } from '@/components/ProjectSwitcher';
 import { onPillRenderError, SidebarSearchBar } from '@/components/SidebarSearchBar';
-import { SkillsSidebarSection } from '@/components/SkillsSidebarSection';
 import { TemplateMenuRows } from '@/components/template-menu-rows';
 import { UpdateNotices } from '@/components/UpdateNotices';
 import { Button } from '@/components/ui/button';
@@ -202,7 +201,7 @@ function FileSidebarInner({ onOpenSearch, onNewDatabase }: FileSidebarProps) {
   const [tree, setTree] = useState<FileTreeHandle | null>(null);
   // Measured file-tree content height (px) — the pane is sized flush to this
   // (capped) so the virtualized tree is exactly as tall as its files and the
-  // Skills section sits directly beneath them with no gap. The tree still
+  // Chat section sits directly beneath them with no gap. The tree still
   // virtualizes + scrolls internally once content exceeds the cap.
   const [treeContentHeight, setTreeContentHeight] = useState<number | null>(null);
 
@@ -1023,14 +1022,14 @@ function FileSidebarInner({ onOpenSearch, onNewDatabase }: FileSidebarProps) {
             <SidebarContent>
               <ConflictsSection />
               {/* Project files, under a collapsible header named for the project
-                  — a true peer to the Skills section below it. The content pane
+                  — a true peer to the Chat section below it. The content pane
                   is sized to the tree's measured content height (capped at 70vh),
-                  so a short tree sits flush above Skills (no bottom-dock) and a
+                  so a short tree sits flush above Chat (no bottom-dock) and a
                   long tree virtualizes + scrolls internally; SidebarContent
                   scrolls both sections together. `50vh` is the bootstrap height
                   before the first measurement lands. */}
               <Collapsible defaultOpen className="group/files flex shrink-0 flex-col">
-                {/* SidebarGroup wrapper matches the Skills section so the two
+                {/* SidebarGroup wrapper matches the Chat section so the two
                     headers + their content share the same gutter alignment.
                     `px-0` overrides the base `p-2`'s horizontal inset — the
                     header's own `px-2` (below) and Pierre's
@@ -1118,16 +1117,6 @@ function FileSidebarInner({ onOpenSearch, onNewDatabase }: FileSidebarProps) {
                               >
                                 <Trans>Only markdown files</Trans>
                               </DropdownMenuCheckboxItem>
-                              <DropdownMenuCheckboxItem
-                                checked={showSkillsSection}
-                                onCheckedChange={(checked) =>
-                                  patchSidebarVisibility({ showSkillsSection: checked })
-                                }
-                                disabled={projectLocalBinding === null}
-                                data-testid="tree-options-show-skills"
-                              >
-                                <Trans>Skills</Trans>
-                              </DropdownMenuCheckboxItem>
                             </DropdownMenuGroup>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -1138,7 +1127,7 @@ function FileSidebarInner({ onOpenSearch, onNewDatabase }: FileSidebarProps) {
                     className="flex max-h-[70vh] flex-col overflow-hidden"
                     style={{
                       // Sized flush to the tree's measured content height so the
-                      // Skills section sits directly beneath the files with no
+                      // Chat section sits directly beneath the files with no
                       // gap; `max-h-[70vh]` caps it so a long tree virtualizes +
                       // scrolls instead. The deselect-to-root hit target moved to
                       // the empty filler below (a flush tree leaves no empty space
@@ -1150,18 +1139,14 @@ function FileSidebarInner({ onOpenSearch, onNewDatabase }: FileSidebarProps) {
                   </CollapsibleContent>
                 </SidebarGroup>
               </Collapsible>
-              <DatabaseSidebarSection />
-              {/* View-preference gate on the section render only: with the
-                  section hidden, skill docs stay reachable (links, search,
-                  direct routes) and open with full editor chrome. */}
-              {showSkillsSection ? <SkillsSidebarSection /> : null}
+              <ChatSidebarSection bridge={bridge} />
               {/* Deselect-to-root hit target. With the tree sized flush to its
                   rows there's no empty space inside it to click, so the leftover
                   sidebar space below the sections takes over: clicking it clears
                   the creation target (New file / New folder then land at the
                   project root) and neutralizes the focused row's ring, exactly
                   like the old empty-tree-area click. Flex-grows to fill whatever
-                  space the two sections leave; collapses to nothing (and the
+                  space the Files and Chat sections leave; collapses to nothing (and the
                   sidebar scrolls) once they exceed the viewport. */}
               <div
                 aria-hidden
@@ -1350,14 +1335,6 @@ function FileSidebarInner({ onOpenSearch, onNewDatabase }: FileSidebarProps) {
             data-testid="empty-space-menu-show-only-markdown-files"
           >
             <Trans>Show only markdown files</Trans>
-          </ContextMenuCheckboxItem>
-          <ContextMenuCheckboxItem
-            checked={showSkillsSection}
-            onCheckedChange={(checked) => patchSidebarVisibility({ showSkillsSection: checked })}
-            disabled={projectLocalBinding === null}
-            data-testid="empty-space-menu-show-skills-section"
-          >
-            <Trans>Show skills section</Trans>
           </ContextMenuCheckboxItem>
           {showTreeStateSection ? <ContextMenuSeparator /> : null}
           {showExpandAll ? (

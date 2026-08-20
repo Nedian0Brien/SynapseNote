@@ -5,7 +5,7 @@ import { requestTerminalLaunch, subscribeToTerminalLaunchRequests } from './term
 describe('terminal-launch-events', () => {
   test('delivers the composed prompt + chosen CLI from request to subscriber', () => {
     const target = new EventTarget();
-    const received: Array<{ prompt: string; cli: TerminalCli }> = [];
+    const received: Array<{ prompt: string | null; cli: TerminalCli }> = [];
     const unsub = subscribeToTerminalLaunchRequests(
       (prompt, cli) => received.push({ prompt, cli }),
       target,
@@ -19,5 +19,25 @@ describe('terminal-launch-events', () => {
     unsub();
     requestTerminalLaunch('after unsubscribe', 'cursor', target);
     expect(received).toHaveLength(1);
+  });
+
+  test('delivers a promptless resumable chat request', () => {
+    const target = new EventTarget();
+    const received: unknown[] = [];
+    const unsub = subscribeToTerminalLaunchRequests(
+      (prompt, cli, options) => received.push({ prompt, cli, options }),
+      target,
+    );
+
+    requestTerminalLaunch(null, 'claude', { resumeSessionId: 'session-42' }, target);
+
+    expect(received).toEqual([
+      {
+        prompt: null,
+        cli: 'claude',
+        options: { resumeSessionId: 'session-42' },
+      },
+    ]);
+    unsub();
   });
 });

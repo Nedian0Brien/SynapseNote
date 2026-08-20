@@ -1829,9 +1829,14 @@ msgid "Chart drill-through"
 msgstr "Chart drill-through"
 
 #: src/components/chat/CliChatPanel.tsx
+#: src/components/ChatSidebarSection.tsx
 #: src/components/DocPanel.tsx
 msgid "Chat"
 msgstr "Chat"
+
+#: src/components/ChatSidebarSection.tsx
+msgid "Chat is available in the desktop app"
+msgstr "Chat is available in the desktop app"
 
 #: src/components/DatabaseTablePrimitives.tsx
 msgid "Check again"
@@ -2717,6 +2722,10 @@ msgstr "Could not initialize {0}."
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "Could not load agent context"
 msgstr "Could not load agent context"
+
+#: src/components/ChatSidebarSection.tsx
+msgid "Could not load chats"
+msgstr "Could not load chats"
 
 #: src/components/DatabaseDiagnosticsDialog.tsx
 msgid "Could not load database diagnostics"
@@ -5925,6 +5934,10 @@ msgstr "Loading Agent Runs"
 msgid "Loading branch state"
 msgstr "Loading branch state"
 
+#: src/components/ChatSidebarSection.tsx
+msgid "Loading chats"
+msgstr "Loading chats"
+
 #: src/components/DiffViewBoundary.tsx
 msgid "Loading conflict for {filePath}"
 msgstr "Loading conflict for {filePath}"
@@ -6544,6 +6557,7 @@ msgstr "New branch <0>{trimmed}</0> will be created from <1>{currentBaseLabel}</
 msgid "New branch <0>{trimmed}</0> will be created from the current commit, in its own worktree under <1>.ok/worktrees/</1>."
 msgstr "New branch <0>{trimmed}</0> will be created from the current commit, in its own worktree under <1>.ok/worktrees/</1>."
 
+#: src/components/ChatSidebarSection.tsx
 #: src/components/TerminalNewChatButton.tsx
 msgid "New chat"
 msgstr "New chat"
@@ -6717,6 +6731,10 @@ msgstr "No cards"
 #: src/components/ActivityPanelDiffView.tsx
 msgid "No changes"
 msgstr "No changes"
+
+#: src/components/ChatSidebarSection.tsx
+msgid "No chats yet."
+msgstr "No chats yet."
 
 #: src/components/ConnectingBanner.tsx
 msgid "No collab server for this worktree — run <0>ok start</0> here, or reopen the project."
@@ -7388,6 +7406,11 @@ msgstr "Open and focus the Ask AI composer for the current editor selection."
 #: src/lib/keyboard-shortcuts.ts
 msgid "Open and focus the bottom Ask AI prompt composer."
 msgstr "Open and focus the bottom Ask AI prompt composer."
+
+#. placeholder {0}: session.title
+#: src/components/ChatSidebarSection.tsx
+msgid "Open chat {0}"
+msgstr "Open chat {0}"
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Open CodeMirror search in source editor mode."
@@ -9098,6 +9121,10 @@ msgstr "Retry"
 msgid "Retry attempts"
 msgstr "Retry attempts"
 
+#: src/components/ChatSidebarSection.tsx
+msgid "Retry loading chats"
+msgstr "Retry loading chats"
+
 #: src/components/DatabaseSidebarSection.tsx
 msgid "Retry loading databases"
 msgstr "Retry loading databases"
@@ -10010,10 +10037,6 @@ msgstr "Show retrieval details"
 msgid "Show selection preview"
 msgstr "Show selection preview"
 
-#: src/components/FileSidebar.tsx
-msgid "Show skills section"
-msgstr "Show skills section"
-
 #: src/components/MermaidFileViewer.tsx
 msgid "Show source"
 msgstr "Show source"
@@ -10099,7 +10122,6 @@ msgstr "Skill level"
 msgid "Skill renamed"
 msgstr "Skill renamed"
 
-#: src/components/FileSidebar.tsx
 #: src/components/settings/SettingsDialogShell.tsx
 #: src/components/settings/SkillsManagerSection.tsx
 #: src/components/SkillsSidebarSection.tsx

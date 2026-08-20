@@ -161,11 +161,8 @@ mock.module('@/components/ConflictsSection', () => ({
   ConflictsSection: () => <div data-testid="conflicts-section" />,
 }));
 
-// Heavy sidebar child (pulls in skill-actions → dropdown submenu + handoff
-// builders). Not under test here; stubbed like FileTree/ConflictsSection so the
-// sidebar's own behavior tests don't depend on the skills subtree's deep graph.
-mock.module('@/components/SkillsSidebarSection', () => ({
-  SkillsSidebarSection: () => <div data-testid="skills-sidebar-section" />,
+mock.module('@/components/ChatSidebarSection', () => ({
+  ChatSidebarSection: () => <div data-testid="chat-sidebar-section" />,
 }));
 
 mock.module('@/components/ProjectSwitcher', () => ({
@@ -702,7 +699,6 @@ describe('FileSidebar runtime behavior', () => {
       'Hidden files',
       '.ok folders',
       'Only markdown files',
-      'Skills',
     ]);
     // Commands lead; the Show group follows.
     expect(
@@ -722,7 +718,7 @@ describe('FileSidebar runtime behavior', () => {
     expect(within(menu).queryByRole('button', { name: 'Expand all' })).toBeNull();
     expect(within(menu).queryByRole('button', { name: 'Collapse all' })).toBeNull();
     expect(within(menu).queryByTestId('dropdown-menu-separator')).toBeNull();
-    expect(within(menu).getAllByRole('menuitemcheckbox')).toHaveLength(4);
+    expect(within(menu).getAllByRole('menuitemcheckbox')).toHaveLength(3);
   });
 
   test('each Show checkbox reflects its config leaf and writes it through the project-local binding', async () => {
@@ -733,8 +729,7 @@ describe('FileSidebar runtime behavior', () => {
     const menu = screen.getByTestId('tree-options-menu');
 
     // Checked state mirrors merged config — hidden files on, .ok folders +
-    // only-markdown off (keys absent / false), skills defaulting on while its
-    // key is absent.
+    // only-markdown off (keys absent / false).
     expect(
       within(menu).getByTestId('tree-options-show-hidden-files').getAttribute('aria-checked'),
     ).toBe('true');
@@ -746,9 +741,6 @@ describe('FileSidebar runtime behavior', () => {
         .getByTestId('tree-options-show-only-markdown-files')
         .getAttribute('aria-checked'),
     ).toBe('false');
-    expect(within(menu).getByTestId('tree-options-show-skills').getAttribute('aria-checked')).toBe(
-      'true',
-    );
 
     fireEvent.click(within(menu).getByTestId('tree-options-show-hidden-files'));
     expect(projectLocalPatch).toHaveBeenCalledWith({
@@ -762,10 +754,6 @@ describe('FileSidebar runtime behavior', () => {
     expect(projectLocalPatch).toHaveBeenCalledWith({
       appearance: { sidebar: { showOnlyMarkdownFiles: true } },
     });
-    fireEvent.click(within(menu).getByTestId('tree-options-show-skills'));
-    expect(projectLocalPatch).toHaveBeenCalledWith({
-      appearance: { sidebar: { showSkillsSection: false } },
-    });
   });
 
   test('Show checkboxes disable while the project-local binding is unavailable', async () => {
@@ -777,7 +765,6 @@ describe('FileSidebar runtime behavior', () => {
       'tree-options-show-hidden-files',
       'tree-options-show-ok-folders',
       'tree-options-show-only-markdown-files',
-      'tree-options-show-skills',
     ]) {
       const checkbox = within(menu).getByTestId(id) as HTMLButtonElement;
       expect(checkbox.disabled).toBe(true);
@@ -787,7 +774,6 @@ describe('FileSidebar runtime behavior', () => {
       'empty-space-menu-show-hidden-files',
       'empty-space-menu-show-ok-folders',
       'empty-space-menu-show-only-markdown-files',
-      'empty-space-menu-show-skills-section',
     ]) {
       const checkbox = screen.getByTestId(id) as HTMLButtonElement;
       expect(checkbox.disabled).toBe(true);
@@ -828,7 +814,6 @@ describe('FileSidebar runtime behavior', () => {
       'empty-space-menu-show-hidden-files',
       'empty-space-menu-show-ok-folders',
       'empty-space-menu-show-only-markdown-files',
-      'empty-space-menu-show-skills-section',
       'empty-space-menu-expand-all',
       'empty-space-menu-collapse-all',
     ];
@@ -874,18 +859,13 @@ describe('FileSidebar runtime behavior', () => {
     const hidden = screen.getByTestId('empty-space-menu-show-hidden-files');
     const okFolders = screen.getByTestId('empty-space-menu-show-ok-folders');
     const onlyMarkdown = screen.getByTestId('empty-space-menu-show-only-markdown-files');
-    const skills = screen.getByTestId('empty-space-menu-show-skills-section');
     expect(hidden.textContent).toBe('Show hidden files');
     expect(okFolders.textContent).toBe('Show .ok folders');
     expect(onlyMarkdown.textContent).toBe('Show only markdown files');
-    expect(skills.textContent).toBe('Show skills section');
 
-    // Skills expects checked with its key absent from the fixture: the
-    // section toggle is the one default-on leaf.
     expect(hidden.getAttribute('aria-checked')).toBe('false');
     expect(okFolders.getAttribute('aria-checked')).toBe('false');
     expect(onlyMarkdown.getAttribute('aria-checked')).toBe('true');
-    expect(skills.getAttribute('aria-checked')).toBe('true');
 
     fireEvent.click(hidden);
     expect(projectLocalPatch).toHaveBeenCalledWith({
@@ -898,10 +878,6 @@ describe('FileSidebar runtime behavior', () => {
     fireEvent.click(onlyMarkdown);
     expect(projectLocalPatch).toHaveBeenCalledWith({
       appearance: { sidebar: { showOnlyMarkdownFiles: false } },
-    });
-    fireEvent.click(skills);
-    expect(projectLocalPatch).toHaveBeenCalledWith({
-      appearance: { sidebar: { showSkillsSection: false } },
     });
   });
 
@@ -952,38 +928,13 @@ describe('FileSidebar runtime behavior', () => {
     );
   });
 
-  test('showSkillsSection false removes the Skills section from the sidebar', async () => {
-    mergedConfig = { appearance: { sidebar: { showSkillsSection: false } } };
+  test('replaces the Databases and Skills lists with Chat', async () => {
     await renderSidebar();
 
-    expect(screen.queryByTestId('skills-sidebar-section')).toBeNull();
-    // The rest of the sidebar is unaffected by the section gate.
-    expect(screen.getByTestId('file-tree-stub')).toBeTruthy();
-  });
-
-  test('Skills section renders when showSkillsSection is unset and when config is absent', async () => {
-    // beforeEach config carries no showSkillsSection key — the default is ON.
-    const rendered = await renderSidebar();
-    expect(screen.getByTestId('skills-sidebar-section')).toBeTruthy();
-
-    // No merged config at all (early load) must also leave the section on.
-    mergedConfig = null;
-    const { FileSidebar } = await import('./FileSidebar');
-    rendered.rerender(<FileSidebar onOpenSearch={onOpenSearch} />);
-    expect(screen.getByTestId('skills-sidebar-section')).toBeTruthy();
-  });
-
-  test('hidden Skills section stays hidden while a skill doc is the active doc', async () => {
-    // The gate reads only the config axis: an open skill doc must not pull the
-    // section back (no auto-reveal), and the sidebar stays fully functional.
-    mergedConfig = { appearance: { sidebar: { showSkillsSection: false } } };
-    activeDocName = '.ok/skills/test-skill/SKILL';
-    activeTarget = null;
-    await renderSidebar();
-
+    expect(screen.getByTestId('chat-sidebar-section')).toBeTruthy();
+    expect(screen.queryByTestId('database-sidebar-section')).toBeNull();
     expect(screen.queryByTestId('skills-sidebar-section')).toBeNull();
     expect(screen.getByTestId('file-tree-stub')).toBeTruthy();
-    expect(screen.getAllByRole('button', { name: 'New file' }).length).toBeGreaterThan(0);
   });
 
   test('search pill render failures are contained to the pill row and reset when sidebar state changes', async () => {

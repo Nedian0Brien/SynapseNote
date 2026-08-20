@@ -1824,8 +1824,13 @@ msgid "Chart drill-through"
 msgstr ""
 
 #: src/components/chat/CliChatPanel.tsx
+#: src/components/ChatSidebarSection.tsx
 #: src/components/DocPanel.tsx
 msgid "Chat"
+msgstr ""
+
+#: src/components/ChatSidebarSection.tsx
+msgid "Chat is available in the desktop app"
 msgstr ""
 
 #: src/components/DatabaseTablePrimitives.tsx
@@ -2711,6 +2716,10 @@ msgstr ""
 
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "Could not load agent context"
+msgstr ""
+
+#: src/components/ChatSidebarSection.tsx
+msgid "Could not load chats"
 msgstr ""
 
 #: src/components/DatabaseDiagnosticsDialog.tsx
@@ -5920,6 +5929,10 @@ msgstr ""
 msgid "Loading branch state"
 msgstr ""
 
+#: src/components/ChatSidebarSection.tsx
+msgid "Loading chats"
+msgstr ""
+
 #: src/components/DiffViewBoundary.tsx
 msgid "Loading conflict for {filePath}"
 msgstr ""
@@ -6539,6 +6552,7 @@ msgstr ""
 msgid "New branch <0>{trimmed}</0> will be created from the current commit, in its own worktree under <1>.ok/worktrees/</1>."
 msgstr ""
 
+#: src/components/ChatSidebarSection.tsx
 #: src/components/TerminalNewChatButton.tsx
 msgid "New chat"
 msgstr ""
@@ -6711,6 +6725,10 @@ msgstr ""
 
 #: src/components/ActivityPanelDiffView.tsx
 msgid "No changes"
+msgstr ""
+
+#: src/components/ChatSidebarSection.tsx
+msgid "No chats yet."
 msgstr ""
 
 #: src/components/ConnectingBanner.tsx
@@ -7382,6 +7400,11 @@ msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Open and focus the bottom Ask AI prompt composer."
+msgstr ""
+
+#. placeholder {0}: session.title
+#: src/components/ChatSidebarSection.tsx
+msgid "Open chat {0}"
 msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts
@@ -9093,6 +9116,10 @@ msgstr ""
 msgid "Retry attempts"
 msgstr ""
 
+#: src/components/ChatSidebarSection.tsx
+msgid "Retry loading chats"
+msgstr ""
+
 #: src/components/DatabaseSidebarSection.tsx
 msgid "Retry loading databases"
 msgstr ""
@@ -10005,10 +10032,6 @@ msgstr ""
 msgid "Show selection preview"
 msgstr ""
 
-#: src/components/FileSidebar.tsx
-msgid "Show skills section"
-msgstr ""
-
 #: src/components/MermaidFileViewer.tsx
 msgid "Show source"
 msgstr ""
@@ -10094,7 +10117,6 @@ msgstr ""
 msgid "Skill renamed"
 msgstr ""
 
-#: src/components/FileSidebar.tsx
 #: src/components/settings/SettingsDialogShell.tsx
 #: src/components/settings/SkillsManagerSection.tsx
 #: src/components/SkillsSidebarSection.tsx

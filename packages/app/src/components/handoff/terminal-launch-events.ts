@@ -8,10 +8,10 @@
  * them without lifting ownership. The provider composes the prompt and fires
  * `requestTerminalLaunch`; EditorPane subscribes and sets visibility + intent.
  *
- * The payload is a fully-composed prompt string (the same one the deep-link
- * puts in `q=`) — never a command — plus the chosen `cli` discriminant. The
- * session does the fixed `<bin> '<prompt>'` wrapping per `cli`; this channel
- * never carries an executable command.
+ * The payload is either a fully-composed prompt string (the same one the
+ * deep-link puts in `q=`), or `null` for a fresh/resumed promptless chat. It is
+ * never a command. The session does the fixed `<bin> '<prompt>'` wrapping per
+ * `cli`; this channel never carries an executable command.
  */
 
 import type { TerminalCli } from '@nedian0brien/synapsenote-core';
@@ -20,17 +20,22 @@ import type { ChatContextChip } from '../chat/cli-chat-types';
 const TERMINAL_LAUNCH_EVENT = 'synapsenote:terminal-launch';
 
 interface TerminalLaunchDetail {
-  readonly prompt: string;
+  readonly prompt: string | null;
   readonly cli: TerminalCli;
   readonly displayPrompt?: string;
   readonly context?: readonly ChatContextChip[];
+  readonly resumeSessionId?: string;
 }
 
 export function requestTerminalLaunch(
-  prompt: string,
+  prompt: string | null,
   cli: TerminalCli,
   optionsOrTarget:
-    | { readonly displayPrompt?: string; readonly context?: readonly ChatContextChip[] }
+    | {
+        readonly displayPrompt?: string;
+        readonly context?: readonly ChatContextChip[];
+        readonly resumeSessionId?: string;
+      }
     | Pick<Window, 'dispatchEvent'>
     | EventTarget = {},
   explicitTarget?: Pick<Window, 'dispatchEvent'> | EventTarget,
@@ -49,9 +54,13 @@ export function requestTerminalLaunch(
 
 export function subscribeToTerminalLaunchRequests(
   onRequest: (
-    prompt: string,
+    prompt: string | null,
     cli: TerminalCli,
-    options: { readonly displayPrompt?: string; readonly context?: readonly ChatContextChip[] },
+    options: {
+      readonly displayPrompt?: string;
+      readonly context?: readonly ChatContextChip[];
+      readonly resumeSessionId?: string;
+    },
   ) => void,
   target: Pick<Window, 'addEventListener' | 'removeEventListener'> | EventTarget = typeof window ===
   'undefined'
@@ -63,10 +72,13 @@ export function subscribeToTerminalLaunchRequests(
       event instanceof CustomEvent
         ? (event as CustomEvent<TerminalLaunchDetail>).detail
         : undefined;
-    if (detail && typeof detail.prompt === 'string') {
+    if (detail && (typeof detail.prompt === 'string' || detail.prompt === null)) {
       onRequest(detail.prompt, detail.cli, {
         ...(detail.displayPrompt === undefined ? {} : { displayPrompt: detail.displayPrompt }),
         ...(detail.context === undefined ? {} : { context: detail.context }),
+        ...(detail.resumeSessionId === undefined
+          ? {}
+          : { resumeSessionId: detail.resumeSessionId }),
       });
     }
   };
