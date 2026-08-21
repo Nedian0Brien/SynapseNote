@@ -1135,10 +1135,6 @@ msgstr ""
 msgid "Already set up — ok is available in your terminal"
 msgstr ""
 
-#: src/components/GraphSettingsPopover.tsx
-msgid "Always"
-msgstr ""
-
 #: src/components/AppErrorBoundary.tsx
 #: src/components/DocumentErrorBoundary.tsx
 msgid "An unexpected error occurred."
@@ -5798,10 +5794,6 @@ msgstr ""
 
 #: src/editor/extensions/InternalLinkPropPanel.tsx
 msgid "Label <0>(visible link text)</0>"
-msgstr ""
-
-#: src/components/GraphSettingsPopover.tsx
-msgid "Label count"
 msgstr ""
 
 #: src/components/DatabaseDiagnosticsDialog.tsx
@@ -10808,10 +10800,6 @@ msgstr ""
 
 #: src/components/PropertyWidgets.tsx
 msgid "Text"
-msgstr ""
-
-#: src/components/GraphSettingsPopover.tsx
-msgid "Text fade threshold"
 msgstr ""
 
 #: src/components/DatabaseContextInspectorDialog.tsx

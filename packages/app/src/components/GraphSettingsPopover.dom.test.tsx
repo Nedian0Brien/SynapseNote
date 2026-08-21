@@ -250,14 +250,14 @@ describe('GraphSettingsPopover — restore defaults', () => {
         showMissingNodes: false,
         showOrphans: false,
         showTagNodes: true,
+        showFolderNodes: false,
+        folderNodeExclusions: [],
       },
       display: {
         nodeSize: 2,
         linkThickness: 3,
         showArrows: false,
         showFolderAreas: false,
-        textFadeThreshold: 0,
-        maxLabels: 50,
       },
       forces: { centerStrength: 0, repelStrength: 200, linkStrength: 2, linkDistance: 90 },
       groups: [{ id: 'a', query: 'first', color: '#60a5fa' }],
@@ -268,11 +268,6 @@ describe('GraphSettingsPopover — restore defaults', () => {
     expect(lastCall(onSettingsChange)).toEqual(getDefaultGraphSettings('docked'));
   });
 
-  test('restores the docked label budget, not the fullscreen one', async () => {
-    const { onSettingsChange } = await openPopover();
-    await userEvent.click(screen.getByRole('button', { name: 'Restore defaults' }));
-    expect(lastCall(onSettingsChange).display.maxLabels).toBe(30);
-  });
 });
 
 describe('GraphSettingsPopover — section structure', () => {

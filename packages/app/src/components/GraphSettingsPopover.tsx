@@ -353,22 +353,6 @@ export function GraphSettingsPopover({
             format={multiplier}
             onValueChange={(linkThickness) => patchDisplay({ linkThickness })}
           />
-          <SettingSlider
-            label={t`Text fade threshold`}
-            value={settings.display.textFadeThreshold}
-            bounds={GRAPH_SETTINGS_BOUNDS.textFadeThreshold}
-            step={0.1}
-            format={(value) => (value === 0 ? t`Always` : value.toFixed(1))}
-            onValueChange={(textFadeThreshold) => patchDisplay({ textFadeThreshold })}
-          />
-          <SettingSlider
-            label={t`Label count`}
-            value={settings.display.maxLabels}
-            bounds={GRAPH_SETTINGS_BOUNDS.maxLabels}
-            step={1}
-            format={plain}
-            onValueChange={(maxLabels) => patchDisplay({ maxLabels })}
-          />
           <SettingSwitch
             label={t`Arrows`}
             checked={settings.display.showArrows}

@@ -93,7 +93,6 @@
     "0caMy7": ["History"],
     "0eHrMb": ["Could not complete delete"],
     "0g7rCZ": ["Duplicated to \"", ["0"], "\""],
-    "0gPQCa": ["Always"],
     "0jD-Gn": ["A team knowledge base, a personal wiki, project docs..."],
     "0kTAXe": ["Open source: ", ["mirrorSrc"]],
     "0mx5ow": ["Query"],
@@ -1872,7 +1871,6 @@
     "W-ntoW": ["heading-slug"],
     "W0i24j": ["Object"],
     "W1DTHC": ["Token budget"],
-    "W2kNGA": ["Label count"],
     "W3Xlpc": [
       "Set the auto-sync default for users opening this project for the first time. This setting is committed to your repository."
     ],
@@ -3103,7 +3101,6 @@
     "qpQwGC": ["Describe what you're working on and the agent sets it up for you."],
     "qqeAJM": ["Never"],
     "qrXszS": ["Remove group"],
-    "qtM5cy": ["Text fade threshold"],
     "qurSX8": ["Model settings"],
     "qvWGzP": ["Collapse all"],
     "qy-JHB": ["List hierarchy and display"],

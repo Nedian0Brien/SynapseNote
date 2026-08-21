@@ -1140,10 +1140,6 @@ msgstr "Already open"
 msgid "Already set up — ok is available in your terminal"
 msgstr "Already set up — ok is available in your terminal"
 
-#: src/components/GraphSettingsPopover.tsx
-msgid "Always"
-msgstr "Always"
-
 #: src/components/AppErrorBoundary.tsx
 #: src/components/DocumentErrorBoundary.tsx
 msgid "An unexpected error occurred."
@@ -5804,10 +5800,6 @@ msgstr "Label <0>(optional display text)</0>"
 #: src/editor/extensions/InternalLinkPropPanel.tsx
 msgid "Label <0>(visible link text)</0>"
 msgstr "Label <0>(visible link text)</0>"
-
-#: src/components/GraphSettingsPopover.tsx
-msgid "Label count"
-msgstr "Label count"
 
 #: src/components/DatabaseDiagnosticsDialog.tsx
 msgid "Last rebuilt"
@@ -10814,10 +10806,6 @@ msgstr "Terminal settings not yet loaded — try again in a moment"
 #: src/components/PropertyWidgets.tsx
 msgid "Text"
 msgstr "Text"
-
-#: src/components/GraphSettingsPopover.tsx
-msgid "Text fade threshold"
-msgstr "Text fade threshold"
 
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "Text search"
