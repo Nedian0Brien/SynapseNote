@@ -302,22 +302,29 @@ function FileSidebarInner({ onOpenSearch, onNewDatabase }: FileSidebarProps) {
     return tree.subscribe(sync);
   }, [tree]);
 
-  // Cross-component "create a file" handler. EmptyEditorState fires this
-  // event from its primary "New file" CTA, the "or start from scratch" link,
-  // and the template-picker rows. We route to the same FileTree primitives
-  // the sidebar toolbar uses (`startCreating` / `createFromTemplate`) so the
-  // inline-rename / busy-path / navigation flow stays consistent.
+  // Cross-component "create" handler — the single landing point for every
+  // create request raised outside this sidebar: the ⌘N shortcut, the command
+  // palette's New file / New folder, EmptyEditorState's CTAs and template
+  // rows, the folder overview, and the folder Templates card. All of them
+  // route to the same FileTree primitives the sidebar toolbar uses
+  // (`startCreating` / `createFromTemplate`), so every surface gets the same
+  // inline-rename / busy-path / navigation flow and none of them needs to
+  // know how a file is created.
+  //
+  // A request with no `initialDir` inherits `initialCreateDir` — the same
+  // target the toolbar buttons use, including the empty-space "deselect"
+  // override — so a caller only names a folder when it owns one.
   useEffect(() => {
     if (tree === null) return;
     return subscribeToCreateTopLevelFile((request) => {
-      const dir = request.initialDir ?? '';
+      const dir = request.initialDir ?? initialCreateDir;
       if (request.template) {
         tree.createFromTemplate(request.template.folder, request.template.name);
         return;
       }
-      tree.startCreating('file', dir);
+      tree.startCreating(request.kind ?? 'file', dir);
     });
-  }, [tree]);
+  }, [tree, initialCreateDir]);
   const hasFolders = folderState.folderCount > 0;
   const allExpanded = hasFolders && folderState.expandedCount === folderState.folderCount;
   const noneExpanded = folderState.expandedCount === 0;
@@ -528,10 +535,9 @@ function FileSidebarInner({ onOpenSearch, onNewDatabase }: FileSidebarProps) {
   // truth. Web-host short-circuits when the bridge is absent.
   //
   // Routes:
-  //   - new-doc / new-folder / new-from-template — tree?.startCreating(...) /
-  //     startCreatingFromTemplate(...), parentDir = active folder (when
-  //     folder scope) else workspace root, matching the toolbar's
-  //     `initialCreateDir` derivation.
+  //   - new-doc / new-folder — tree?.startCreating(...), parentDir = active
+  //     folder (when folder scope) else workspace root, matching the
+  //     toolbar's `initialCreateDir` derivation.
   //   - duplicate / rename — same path as the FileTree row actions via the
   //     event bus; FileTree owns the per-kind target resolution.
   //   - move-to-trash — same path as the FileTree row's Delete via the
@@ -569,11 +575,6 @@ function FileSidebarInner({ onOpenSearch, onNewDatabase }: FileSidebarProps) {
         case 'new-folder': {
           if (!workspace || !tree) return;
           tree.startCreating('folder', initialCreateDir);
-          return;
-        }
-        case 'new-from-template': {
-          if (!workspace || !tree) return;
-          tree.startCreatingFromTemplate(initialCreateDir);
           return;
         }
         case 'rename': {
@@ -1026,10 +1027,14 @@ function FileSidebarInner({ onOpenSearch, onNewDatabase }: FileSidebarProps) {
                   — a true peer to the Chat section above it. The content pane
                   is sized to the tree's measured content height (capped at 70vh),
                   so a short tree stays compact below Chat and a
-                  long tree virtualizes + scrolls internally; SidebarContent
-                  scrolls both sections together. `50vh` is the bootstrap height
-                  before the first measurement lands. */}
-              <Collapsible defaultOpen className="group/files flex shrink-0 flex-col">
+                  long tree virtualizes + scrolls internally. The section also
+                  shrinks: when the Chat pane above is dragged taller than the
+                  space left over, the tree gives up height (and scrolls inside)
+                  instead of pushing the whole sidebar into an outer scroll —
+                  that give is what makes the seam handle feel like a split.
+                  `50vh` is the bootstrap height before the first measurement
+                  lands. */}
+              <Collapsible defaultOpen className="group/files flex min-h-0 flex-col">
                 {/* SidebarGroup wrapper matches the Chat section above so the two
                     headers + their content share the same gutter alignment.
                     `px-0` overrides the base `p-2`'s horizontal inset — the
@@ -1125,7 +1130,7 @@ function FileSidebarInner({ onOpenSearch, onNewDatabase }: FileSidebarProps) {
                     </div>
                   </SidebarGroupLabel>
                   <CollapsibleContent
-                    className="flex max-h-[70vh] flex-col overflow-hidden"
+                    className="flex max-h-[70vh] min-h-0 flex-col overflow-hidden"
                     style={{
                       // Sized flush to the tree's measured content height so the
                       // file list stays compact below Chat; `max-h-[70vh]`
