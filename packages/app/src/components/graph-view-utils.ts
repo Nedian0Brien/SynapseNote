@@ -40,7 +40,7 @@ interface FolderGraphNode {
   id: string;
   label: string;
   path: string;
-  /** Direct members: pages plus child folders. Drives both size and repulsion. */
+  /** Visible subtree size, matching Folders to Graph's descendant weighting. */
   memberCount: number;
 }
 
@@ -49,6 +49,10 @@ export type GraphNode = DocGraphNode | ExternalGraphNode | TagGraphNode | Folder
 export interface GraphLink {
   source: string;
   target: string;
+  /** Raw-link resolution mode emitted by the server for Obsidian graph parity. */
+  authoredSyntax?: 'wiki' | 'markdown';
+  /** True for `![[embed]]`; Obsidian queues unresolved embeds after ordinary links. */
+  authoredEmbed?: true;
   /**
    * Set only on synthesized folder-containment edges. Authored links leave it
    * absent, which is what `isGraphFolderLink` reads.
@@ -206,7 +210,11 @@ export function buildGraphNodeSignature(nodes: GraphNode[]): string {
 
 export function buildGraphLinkSignature(links: GraphLink[]): string {
   return links
-    .map((link) => `${getGraphLinkEndpointId(link.source)}>${getGraphLinkEndpointId(link.target)}`)
+    .map((link) => {
+      const base = `${getGraphLinkEndpointId(link.source)}>${getGraphLinkEndpointId(link.target)}`;
+      if (!link.authoredSyntax && !link.authoredEmbed) return base;
+      return `${base}:${link.authoredSyntax ?? ''}:${link.authoredEmbed ? 'embed' : ''}`;
+    })
     .join(',');
 }
 
@@ -219,6 +227,14 @@ export function reconcileGraphData(previous: GraphData, next: GraphData): GraphD
     const previousNode = previousNodesById.get(node.id);
     if (previousNode) {
       copyGraphNodePhysics(mergedNode, previousNode);
+    } else {
+      // Obsidian's graph worker creates every unseen node at the origin with no
+      // velocity. d3's usual undefined-coordinate fallback is a phyllotaxis
+      // spiral, which sends the same topology into a different local minimum.
+      mergedNode.x = 0;
+      mergedNode.y = 0;
+      mergedNode.vx = 0;
+      mergedNode.vy = 0;
     }
     return mergedNode as GraphNode;
   });

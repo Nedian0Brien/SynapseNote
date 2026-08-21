@@ -81,6 +81,14 @@ interface ExternalForwardLinkEntry {
 
 type ForwardLinkEntry = DocumentForwardLinkEntry | ExternalForwardLinkEntry;
 
+export type GraphAuthoredLinkSyntax = 'wiki' | 'markdown';
+
+export interface GraphAuthoredTarget {
+  target: string;
+  syntax: GraphAuthoredLinkSyntax;
+  embed?: true;
+}
+
 export interface HubEntry {
   docName: string;
   count: number;
@@ -112,6 +120,8 @@ export { isOrphanMode, ORPHAN_MODES, type OrphanMode };
 interface BranchGraphState {
   backward: Map<string, Map<string, { anchor: string | null; snippet: string | null }>>;
   forward: Map<string, Set<string>>;
+  /** Raw local targets retained with their authored syntax for Obsidian-parity graph resolution. */
+  graphAuthoredForward: Map<string, GraphAuthoredTarget[]>;
   externalForward: Map<string, Map<string, { label: string | null; snippet: string | null }>>;
   externalBackward: Map<string, Map<string, { label: string | null; snippet: string | null }>>;
 }
@@ -119,6 +129,9 @@ interface BranchGraphState {
 interface SerializedBranchGraphState {
   backward: Record<string, Array<BacklinkEntry>>;
   forward: Record<string, string[]>;
+  graphAuthoredForward?: Record<string, GraphAuthoredTarget[]>;
+  /** Backward-compatible cache field written by the first parity iteration. */
+  graphUnresolvedForward?: Record<string, string[]>;
   externalForward: Record<
     string,
     Array<{ url: string; label: string | null; snippet: string | null }>
@@ -141,6 +154,7 @@ function createEmptyState(): BranchGraphState {
   return {
     backward: new Map(),
     forward: new Map(),
+    graphAuthoredForward: new Map(),
     externalForward: new Map(),
     externalBackward: new Map(),
   };
@@ -302,7 +316,11 @@ function readWikiLink(
   const match = WIKI_LINK_RE.exec(line);
   if (!match) return null;
 
-  const target = match[1]?.trim();
+  // Obsidian commonly writes `\|` inside Markdown tables so the alias
+  // separator does not terminate the table cell. The graph parser still treats
+  // it as the wiki-link separator; the capture above stops at `|`, leaving the
+  // escape slash attached to the target unless we remove it here.
+  const target = match[1]?.trim().replace(/\\$/, '');
   const anchor = match[2]?.trim() || null;
   const alias = match[3]?.trim() || null;
   if (!target) return null;
@@ -645,6 +663,105 @@ export function extractWikiLinksFromMarkdown(
   return links;
 }
 
+/**
+ * Extract the raw local target exactly as Obsidian's graph receives it. The
+ * backlink index resolves Markdown hrefs for navigation, but the graph needs
+ * the authored syntax too: an unresolved `../script/` remains that literal
+ * ring node in Obsidian instead of becoming a source-relative path.
+ */
+export function extractGraphAuthoredTargetsFromMarkdown(
+  markdown: string,
+  sourceDocName: string,
+): GraphAuthoredTarget[] {
+  const source = markdown.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+  const targets = new Map<string, GraphAuthoredTarget>();
+  let fence: FenceState | null = null;
+
+  const record = (target: string, syntax: GraphAuthoredLinkSyntax, embed = false): void => {
+    const withoutAnchor = target.split('#', 1)[0]?.trim() ?? '';
+    const normalizedTarget =
+      syntax === 'markdown' ? withoutAnchor.replace(/\.(?:md|mdx)$/i, '') : withoutAnchor;
+    if (!normalizedTarget) return;
+    targets.set(`${syntax}\u0000${embed ? 'embed' : 'link'}\u0000${normalizedTarget}`, {
+      target: normalizedTarget,
+      syntax,
+      ...(embed ? { embed: true as const } : {}),
+    });
+  };
+
+  for (const line of source.split('\n')) {
+    if (fence) {
+      if (isFenceClose(line, fence)) fence = null;
+      continue;
+    }
+    const nextFence = matchFence(line);
+    if (nextFence) {
+      fence = nextFence;
+      continue;
+    }
+
+    let index = leadingMarkdownPrefixLength(line);
+    while (index < line.length) {
+      if (line[index] === '\\' && index + 1 < line.length) {
+        index += 2;
+        continue;
+      }
+      if (line[index] === '`') {
+        const inlineCode = readInlineCode(line, index);
+        if (inlineCode) {
+          index = inlineCode.nextIndex;
+          continue;
+        }
+      }
+      if (line[index] === '[' && line[index + 1] === '[') {
+        const wikiLink = readWikiLink(line, index);
+        if (wikiLink) {
+          const classified = classifyWikiLinkTarget(wikiLink.target, wikiLink.anchor);
+          if (classified?.kind === 'doc' || classified?.kind === 'asset') {
+            record(wikiLink.target, 'wiki', line[index - 1] === '!');
+          }
+          index = wikiLink.nextIndex;
+          continue;
+        }
+      }
+      if (line[index] === '[' && line[index - 1] !== '!') {
+        const markdownLink = readMarkdownLink(line, index);
+        if (markdownLink) {
+          if (markdownLink.href.trim().startsWith('#')) {
+            record(sourceDocName, 'wiki');
+            index = markdownLink.nextIndex;
+            continue;
+          }
+          const graphTarget = markdownLink.href.split('#', 1)[0] ?? '';
+          const classified = classifyMarkdownHref(graphTarget, sourceDocName);
+          if (classified?.kind === 'doc' || classified?.kind === 'asset') {
+            record(graphTarget, 'markdown');
+          }
+          index = markdownLink.nextIndex;
+          continue;
+        }
+      }
+      index += 1;
+    }
+  }
+
+  return [...targets.values()];
+}
+
+/** Compatibility helper retained for callers that only need non-Markdown files. */
+export function extractGraphUnresolvedTargetsFromMarkdown(
+  markdown: string,
+  sourceDocName: string,
+): string[] {
+  return extractGraphAuthoredTargetsFromMarkdown(markdown, sourceDocName)
+    .filter(({ target, syntax }) => {
+      return syntax === 'wiki'
+        ? classifyWikiLinkTarget(target, null)?.kind === 'asset'
+        : classifyMarkdownHref(target, sourceDocName)?.kind === 'asset';
+    })
+    .map(({ target }) => target);
+}
+
 function extractExternalWikiLinksFromMarkdown(markdown: string): ExtractedExternalLink[] {
   const source = markdown.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
   const lines = source.split('\n');
@@ -900,6 +1017,16 @@ function serializeState(state: BranchGraphState): SerializedBranchGraphState {
     forward: Object.fromEntries(
       [...state.forward.entries()].map(([source, targets]) => [source, [...targets].sort()]),
     ),
+    graphAuthoredForward: Object.fromEntries(
+      [...state.graphAuthoredForward.entries()].map(([source, targets]) => [
+        source,
+        [...targets].sort((a, b) =>
+          a.target === b.target
+            ? a.syntax.localeCompare(b.syntax)
+            : a.target.localeCompare(b.target),
+        ),
+      ]),
+    ),
     externalForward: Object.fromEntries(
       [...state.externalForward.entries()].map(([source, targets]) => [
         source,
@@ -970,6 +1097,14 @@ function deserializeState(data: SerializedBranchGraphState): BranchGraphState {
     ),
     forward: new Map(
       Object.entries(data.forward ?? {}).map(([source, targets]) => [source, new Set(targets)]),
+    ),
+    graphAuthoredForward: new Map(
+      Object.entries(data.graphAuthoredForward ?? {}).length > 0
+        ? Object.entries(data.graphAuthoredForward ?? {})
+        : Object.entries(data.graphUnresolvedForward ?? {}).map(([source, targets]) => [
+            source,
+            targets.map((target) => ({ target, syntax: 'wiki' as const })),
+          ]),
     ),
     externalForward,
     externalBackward: buildExternalBackward(externalForward),
@@ -1090,6 +1225,7 @@ export class BacklinkIndex {
       if (sources.size === 0) state.externalBackward.delete(url);
     }
     state.forward.set(docName, new Set());
+    state.graphAuthoredForward.set(docName, []);
     state.externalForward.set(docName, new Map());
   }
 
@@ -1141,6 +1277,7 @@ export class BacklinkIndex {
     const nextTargets = new Set<string>();
     const nextExternalTargets = new Map<string, { label: string | null; snippet: string | null }>();
     state.forward.set(docName, nextTargets);
+    state.graphAuthoredForward.set(docName, []);
     state.externalForward.set(docName, nextExternalTargets);
 
     for (const link of links) {
@@ -1197,6 +1334,13 @@ export class BacklinkIndex {
         ...mdExternalLinks.filter((link) => !externalSeen.has(link.url)),
       ];
       this.updateDocument(docName, merged, mergedExternal, branch);
+      this.getState(branch).graphAuthoredForward.set(
+        docName,
+        // Obsidian's graph indexes internal links in YAML properties too. The
+        // backlink index intentionally scans only the body, but graph-only
+        // unresolved targets must retain the full document here.
+        extractGraphAuthoredTargetsFromMarkdown(markdown, docName),
+      );
     } catch (err) {
       console.warn(`[backlinks] Failed to scan ${docName} for link extraction:`, err);
       this.deleteDocument(docName, branch);
@@ -1221,6 +1365,7 @@ export class BacklinkIndex {
       if (sources.size === 0) state.externalBackward.delete(url);
     }
     state.forward.delete(docName);
+    state.graphAuthoredForward.delete(docName);
     state.externalForward.delete(docName);
   }
 
@@ -1416,11 +1561,21 @@ export class BacklinkIndex {
 
   getLinkGraph(branch = this.activeBranch): {
     nodes: GraphNode[];
-    links: Array<{ source: string; target: string }>;
+    links: Array<{
+      source: string;
+      target: string;
+      authoredSyntax?: GraphAuthoredLinkSyntax;
+      authoredEmbed?: true;
+    }>;
   } {
     const state = this.getState(branch);
     const nodes = new Map<string, GraphNode>();
-    const links: Array<{ source: string; target: string }> = [];
+    const links: Array<{
+      source: string;
+      target: string;
+      authoredSyntax?: GraphAuthoredLinkSyntax;
+      authoredEmbed?: true;
+    }> = [];
 
     for (const [source, targets] of state.forward) {
       nodes.set(source, {
@@ -1429,7 +1584,9 @@ export class BacklinkIndex {
         docName: source,
         anchor: getRepresentativeAnchor(state.backward.get(source)),
       });
-      for (const target of targets) {
+      const authoredTargets = state.graphAuthoredForward.get(source) ?? [];
+      const useRawGraphTargets = authoredTargets.length > 0 && !parseSkillBundleDocAnyScope(source);
+      for (const target of useRawGraphTargets ? [] : targets) {
         nodes.set(target, {
           kind: 'doc',
           id: target,
@@ -1437,6 +1594,30 @@ export class BacklinkIndex {
           anchor: getRepresentativeAnchor(state.backward.get(target)),
         });
         links.push({ source, target });
+      }
+    }
+
+    for (const [source, targets] of state.graphAuthoredForward) {
+      if (targets.length === 0 || parseSkillBundleDocAnyScope(source)) continue;
+      nodes.set(source, {
+        kind: 'doc',
+        id: source,
+        docName: source,
+        anchor: getRepresentativeAnchor(state.backward.get(source)),
+      });
+      for (const { target, syntax, embed } of targets) {
+        nodes.set(target, {
+          kind: 'doc',
+          id: target,
+          docName: target,
+          anchor: null,
+        });
+        links.push({
+          source,
+          target,
+          authoredSyntax: syntax,
+          ...(embed ? { authoredEmbed: true as const } : {}),
+        });
       }
     }
 
@@ -1492,7 +1673,12 @@ export class BacklinkIndex {
     branch = this.activeBranch,
   ): {
     nodes: GraphNode[];
-    links: Array<{ source: string; target: string }>;
+    links: Array<{
+      source: string;
+      target: string;
+      authoredSyntax?: GraphAuthoredLinkSyntax;
+      authoredEmbed?: true;
+    }>;
   } {
     const state = this.getState(branch);
     const externalLabelsByUrl = new Map<string, string | null>();
@@ -1522,6 +1708,19 @@ export class BacklinkIndex {
         for (const target of state.forward.get(current.nodeId) ?? new Set<string>()) {
           neighbors.add(target);
         }
+        if (!parseSkillBundleDocAnyScope(current.nodeId)) {
+          for (const { target } of state.graphAuthoredForward.get(current.nodeId) ?? []) {
+            neighbors.add(target);
+          }
+        }
+        for (const [source, targets] of state.graphAuthoredForward) {
+          if (
+            !parseSkillBundleDocAnyScope(source) &&
+            targets.some(({ target }) => target === current.nodeId)
+          ) {
+            neighbors.add(source);
+          }
+        }
         for (const url of state.externalForward.get(current.nodeId)?.keys() ?? []) {
           neighbors.add(externalNodeId(url));
         }
@@ -1541,12 +1740,36 @@ export class BacklinkIndex {
       }
     }
 
-    const links: Array<{ source: string; target: string }> = [];
+    const links: Array<{
+      source: string;
+      target: string;
+      authoredSyntax?: GraphAuthoredLinkSyntax;
+      authoredEmbed?: true;
+    }> = [];
     for (const [source, targets] of state.forward) {
       if (!visited.has(source)) continue;
+      if (
+        (state.graphAuthoredForward.get(source)?.length ?? 0) > 0 &&
+        !parseSkillBundleDocAnyScope(source)
+      ) {
+        continue;
+      }
       for (const target of targets) {
         if (!visited.has(target)) continue;
         links.push({ source, target });
+      }
+    }
+
+    for (const [source, targets] of state.graphAuthoredForward) {
+      if (!visited.has(source) || parseSkillBundleDocAnyScope(source)) continue;
+      for (const { target, syntax, embed } of targets) {
+        if (!visited.has(target)) continue;
+        links.push({
+          source,
+          target,
+          authoredSyntax: syntax,
+          ...(embed ? { authoredEmbed: true as const } : {}),
+        });
       }
     }
 
@@ -1692,6 +1915,10 @@ export class BacklinkIndex {
         const targets = new Set<string>();
         const externalTargets = new Map<string, { label: string | null; snippet: string | null }>();
         state.forward.set(docName, targets);
+        state.graphAuthoredForward.set(
+          docName,
+          extractGraphAuthoredTargetsFromMarkdown(markdown, docName),
+        );
         state.externalForward.set(docName, externalTargets);
         for (const link of links) {
           if (!link.target) continue;

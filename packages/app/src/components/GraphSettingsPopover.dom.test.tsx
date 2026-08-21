@@ -9,7 +9,7 @@
  */
 
 import { afterEach, describe, expect, mock, test } from 'bun:test';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -85,6 +85,17 @@ describe('GraphSettingsPopover — filters', () => {
     await openPopover(settings);
     expect(screen.getByRole('switch', { name: 'Tags' }).getAttribute('aria-checked')).toBe('true');
   });
+
+  test('edits folder-node exclusions without hiding files below them', async () => {
+    const settings = getDefaultGraphSettings('fullscreen');
+    const { onSettingsChange } = await openPopover(settings);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Excluded folder nodes' }), {
+      target: { value: 'Archive' },
+    });
+
+    expect(lastCall(onSettingsChange).filters.folderNodeExclusions).toEqual(['Archive']);
+    expect(lastCall(onSettingsChange).filters.showFolderNodes).toBe(true);
+  });
 });
 
 describe('GraphSettingsPopover — display and forces', () => {
@@ -113,6 +124,19 @@ describe('GraphSettingsPopover — display and forces', () => {
     expect(next.display.nodeSize).toBe(1);
   });
 
+  test('the folder areas switch hides only the territory layer setting', async () => {
+    const settings = getDefaultGraphSettings('docked');
+    settings.filters.showFolderNodes = true;
+    settings.display.showFolderAreas = true;
+    const { onSettingsChange } = await openPopover(settings);
+    await openSection('Display');
+    await userEvent.click(screen.getByRole('switch', { name: 'Folder areas' }));
+
+    const next = lastCall(onSettingsChange);
+    expect(next.display.showFolderAreas).toBe(false);
+    expect(next.filters.showFolderNodes).toBe(true);
+  });
+
   test('a force slider emits a stepped value', async () => {
     const { onSettingsChange } = await openPopover();
     await openSection('Forces');
@@ -121,8 +145,8 @@ describe('GraphSettingsPopover — display and forces', () => {
     slider.focus();
     await userEvent.keyboard('{ArrowRight}');
 
-    // Default 30 with a step of 5.
-    expect(lastCall(onSettingsChange).forces.repelStrength).toBe(35);
+    // Physical default 1000 with a step of 50.
+    expect(lastCall(onSettingsChange).forces.repelStrength).toBe(1050);
   });
 
   test('sliders clamp at the bound instead of running past it', async () => {
@@ -231,6 +255,7 @@ describe('GraphSettingsPopover — restore defaults', () => {
         nodeSize: 2,
         linkThickness: 3,
         showArrows: false,
+        showFolderAreas: false,
         textFadeThreshold: 0,
         maxLabels: 50,
       },

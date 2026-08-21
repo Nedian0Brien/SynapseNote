@@ -109,5 +109,5 @@ export function getGraphPhysicsProfile(
  * default and stops sooner.
  */
 export function getGraphAlphaDecay(mode: GraphInteractionMode): number {
-  return isGraphFocusMode(mode) ? 0.01 : 0.0228;
+  return isGraphFocusMode(mode) ? 0.01 : 1 - 0.001 ** (1 / 300);
 }

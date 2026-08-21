@@ -1,3 +1,36 @@
+# Obsidian graph pixel-parity QA — 2026-08-21
+
+## Visual truth and compared implementation
+
+- Source visual truth: `obsidian-graph-pixel-reference-restored.png`, captured from Obsidian 1.13.4 with the user's Research vault and Folders to Graph configuration.
+- Live implementation: `synapsenote-graph-final-runtime.jpg`, rendered from the same 821 Markdown files plus the vault's real attachments in SynapseNote light mode.
+- Combined comparison input: `graph-parity-final-morphology.png`; focused graph bounds from both live surfaces are scaled uniformly into equal 650 × 650 slots without aspect-ratio distortion.
+- Matching state: folder nodes on, project root hidden, `Archive` folder nodes excluded while Archive files remain visible, missing pages and orphans shown, external URLs and tags hidden, link thickness 1.00×, arrows off, and folder areas off.
+- Exact ordered topology: 1,284 nodes and 2,421 links in both renderers. The node-id sequence and source-target link sequence compare with zero missing, extra, or reordered entries.
+
+## Findings and resolutions
+
+| Severity | Finding | Resolution and evidence |
+| --- | --- | --- |
+| P1 | The earlier comparison used SynapseNote's resolved backlink paths, omitted YAML property links, and treated attachment and unresolved targets differently from Obsidian. | The graph now retains raw wiki/Markdown syntax, embed status, anchors, YAML-property links, and unresolved paths while leaving the ordinary backlink index unchanged. Existing attachments hide and missing targets remain ring nodes. Authored topology now matches exactly at 958 nodes / 1,356 links. |
+| P1 | Folder synthesis previously produced the right ideas but the wrong hierarchy and edge order for absolute, `./`, and `../` unresolved paths. | Folder ids, absolute-path normalization, child-before-file ordering, root hiding, Archive exclusion, and subtree weighting now reproduce all 326 folder nodes and 1,065 containment links in the same order as Folders to Graph. |
+| P1 | Equivalent node/link sets still settled into a rotated local minimum because worker insertion order and force registration order differed. | Files now enter in vault file order, unresolved targets enter immediately after their first source, embeds follow ordinary links, every new node starts at `(0, 0)`, and forces run X → Y → link → charge → collision with Obsidian's exact constants and 300-tick decay. The resulting dominant radial component, dense secondary component, and surrounding islands align with the source. |
+| P2 | Node fills, unresolved rings, focused blue, edge gray, dimming, and size scaling used SynapseNote-specific styling. | Light-mode colors and alpha values are sampled from the live Obsidian renderer: node `#737373`, folder/focus `#5c8af5`, unresolved `#bfbfbf` at 0.5 alpha, edges `#dadada`, highlight `#7396f7`, and hover dimming at 0.2. Node diameter follows Obsidian's weight formula. |
+| P2 | Region tints could obscure the reference even though folder nodes were required. | `Display → Folder areas` remains independent of folder nodes and now defaults off. The live switch was verified both directions; disabling it preserves all 1,284 nodes, 2,421 links, and forces. |
+
+## Final assessment
+
+- P0 findings: none.
+- Unresolved P1 findings: none.
+- Unresolved P2 findings: none.
+- P3 note: Obsidian executes its force loop in a private Float32 WebAssembly worker while SynapseNote uses the open d3 implementation. Ordered topology, constants, axis alignment, styling, and camera framing match; subpixel coordinates can still drift slightly from floating-point accumulation.
+- Functional checks: folder-area toggle, folder-node exclusion, missing-node rings, external-node toggle, hover dimming, fit-to-view, and graph navigation remain interactive.
+- Automated evidence: 96 focused server tests, 118 focused app tests, 19 settings-popover DOM tests, and both app/server TypeScript checks passed.
+
+final result: passed
+
+---
+
 # Document viewer design QA
 
 ## Visual truth
