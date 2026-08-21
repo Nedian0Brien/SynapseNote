@@ -1154,6 +1154,7 @@
       "SynapseNote stores its configuration and internal files inside a newly created <0>.ok</0> directory in your project root folder."
     ],
     "IyLOqi": ["No memos have been created from this PDF yet."],
+    "Iys_O-": ["One folder path per line"],
     "J2MgzQ": ["Undo all edits on ", ["docName"]],
     "J2Mv98": ["Name (e.g. ", ["login"], ")"],
     "J2eKUI": ["File"],
@@ -1449,6 +1450,7 @@
     "OFBmkg": [
       "Search files, commands, projects, and AI handoff actions. With text selected in the visual editor, this chord adds a link instead."
     ],
+    "OFeOfY": ["Files stay visible; only matching folder nodes and containment links hide."],
     "OFxXeB": ["Include page body"],
     "OJTOUj": ["Requires ", ["brand"], "."],
     "OJeiSH": ["Failed to add property"],
@@ -2163,6 +2165,7 @@
     "aalx4E": ["Editing broken MDX source: ", ["reason"]],
     "abiHje": ["Delete selected items"],
     "adsMWO": ["Resolving deltas"],
+    "ai9jdp": ["Folder areas"],
     "aiArms": ["We couldn't clone this repository."],
     "aihaPC": ["Link distance"],
     "ajCbk5": ["Move selected record to"],
@@ -2238,6 +2241,7 @@
     "c-sLRX": ["Global, unless the find bar is open"],
     "c0acMS": ["Advanced filters"],
     "c1LZZH": ["Link copied."],
+    "c5Reoj": ["Excluded folder nodes"],
     "c5f7sm": ["Code block language: ", ["currentLabel"], ". Click to change."],
     "c5rF4v": ["What is this knowledge base for?"],
     "c81uTY": ["No Context Packs yet"],

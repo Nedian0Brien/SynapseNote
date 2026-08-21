@@ -4213,6 +4213,10 @@ msgstr "Exact Context Pack"
 msgid "Exact plan details"
 msgstr "Exact plan details"
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Excluded folder nodes"
+msgstr "Excluded folder nodes"
+
 #: src/components/DatabaseAgentRunsDialog.tsx
 msgid "Execution"
 msgstr "Execution"
@@ -4662,6 +4666,10 @@ msgstr "Files"
 msgid "Files sidebar"
 msgstr "Files sidebar"
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Files stay visible; only matching folder nodes and containment links hide."
+msgstr "Files stay visible; only matching folder nodes and containment links hide."
+
 #. placeholder {0}: node.label
 #: src/components/GraphCardDeck.tsx
 msgid "Filter by {0}"
@@ -4785,6 +4793,10 @@ msgstr "folder"
 #: src/editor/link-path-suggestions.tsx
 msgid "Folder"
 msgstr "Folder"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Folder areas"
+msgstr "Folder areas"
 
 #: src/components/FolderOverview.tsx
 msgid "Folder details"
@@ -7297,6 +7309,10 @@ msgstr "On — your search queries and the text of matching pages are sent to yo
 #: src/components/DatabaseOnboardingDialog.tsx
 msgid "Onboarding task queued"
 msgstr "Onboarding task queued"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "One folder path per line"
+msgstr "One folder path per line"
 
 #. Next step for a Cursor project MCP row — Cursor leaves project servers disabled
 #: src/components/settings/ProjectAiToolsSection.tsx
