@@ -58,6 +58,8 @@ export type EmptyRequest = z.infer<typeof EmptyRequestSchema>;
 export const CreatePageRequestSchema = z
   .object({
     path: z.string().min(1),
+    /** Override {{date}} when a browser-local workflow differs from server UTC. */
+    templateDate: z.iso.date().optional(),
     ...agentIdentityFields,
     summary: summaryField,
   })

@@ -8,6 +8,7 @@ import { CommandPalette } from '@/components/CommandPalette';
 import { ConnectingBanner } from '@/components/ConnectingBanner';
 import { CreateProjectMenuTrigger } from '@/components/CreateProjectMenuTrigger';
 import type { ChatContextChip } from '@/components/chat/cli-chat-types';
+import { DailyNoteHandler } from '@/components/DailyNoteHandler';
 import { DatabaseOverlayHost } from '@/components/DatabaseOverlayHost';
 import { EditorPane } from '@/components/EditorPane';
 import { FileSidebar } from '@/components/FileSidebar';
@@ -787,6 +788,7 @@ function AppBody() {
       <DatabaseOverlayHost />
       <PageListProvider>
         <SystemDocSubscriber />
+        <DailyNoteHandler />
         <NavigationHandler />
         <ActiveTargetBridgePush />
         <NewItemShortcutHandler />

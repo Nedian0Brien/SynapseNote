@@ -9631,7 +9631,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           const userDisplayName =
             actor.kind === 'agent' || actor.kind === 'principal' ? (actor.displayName ?? '') : '';
           initialContent = applySubstitution(templateStarter, {
-            date: todayIsoUtc(),
+            // Browser-local workflows (daily notes in particular) can provide
+            // their already-resolved calendar date. Existing callers retain
+            // the server UTC default when no override is supplied.
+            date: body.templateDate ?? todayIsoUtc(),
             user: userDisplayName,
           });
           templateScopeForLog = matched.scope;

@@ -541,6 +541,22 @@ describe('CommandPalette DOM behavior', () => {
     );
   });
 
+  test('opens today daily note through the shared app action and its journal search token', async () => {
+    const { subscribeToOpenTodayDailyNote } = await import('@/lib/daily-note-events');
+    const onOpenDailyNote = mock(() => {});
+    const unsubscribe = subscribeToOpenTodayDailyNote(onOpenDailyNote);
+    const { onOpenChange } = await renderPalette({ bridge: null });
+
+    await setQuery('journal');
+    const item = screen.getByTestId('command-palette-open-daily-note');
+    expect(item.textContent).toContain("Open today's daily note");
+    fireEvent.click(item);
+
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onOpenDailyNote).toHaveBeenCalledTimes(1);
+    unsubscribe();
+  });
+
   test('settings command is searchable by preferences/config, closes the palette, and routes through the canonical hash', async () => {
     const { onOpenChange } = await renderPalette({ bridge: null });
 

@@ -1,6 +1,7 @@
 import { Trans, useLingui } from '@lingui/react/macro';
 import { humanFormat } from '@nedian0brien/synapsenote-core';
 import {
+  CalendarDays,
   ChevronRight,
   Copy,
   Database,
@@ -85,6 +86,7 @@ import { useGitSyncStatusDetailed } from '@/hooks/use-git-sync-status';
 import { useIsEmbedded } from '@/hooks/use-is-embedded';
 import { useConfigContext } from '@/lib/config-provider';
 import { subscribeToCreateTopLevelFile } from '@/lib/create-file-events';
+import { emitOpenTodayDailyNote } from '@/lib/daily-note-events';
 import { dispatchDatabaseSlashCommand } from '@/lib/database-events';
 import {
   buildSendToAiInputForActiveTarget,
@@ -876,6 +878,12 @@ function FileSidebarInner({ onOpenSearch, onNewDatabase }: FileSidebarProps) {
                   label={t`Graph view (${graphShortcutLabel})`}
                   onClick={openGraphSurface}
                   data-testid="sidebar-open-graph"
+                />
+                <ToolbarButton
+                  icon={CalendarDays}
+                  label={t`Open today's daily note`}
+                  onClick={emitOpenTodayDailyNote}
+                  data-testid="sidebar-open-daily-note"
                 />
                 <DropdownMenu>
                   <ToolbarDropdownTrigger
