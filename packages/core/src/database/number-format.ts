@@ -1,4 +1,22 @@
-import type { DatabaseProperty } from './schema.ts';
+import type { DatabaseNumberVisualization, DatabaseProperty } from './schema.ts';
+
+export const DEFAULT_DATABASE_NUMBER_VISUALIZATION = {
+  style: 'number',
+  color: 'green',
+  denominator: 100,
+  showValue: true,
+} as const satisfies DatabaseNumberVisualization;
+
+export function databaseNumberVisualization(
+  property: Extract<DatabaseProperty, { type: 'number' }>,
+): DatabaseNumberVisualization {
+  return property.visualization ?? DEFAULT_DATABASE_NUMBER_VISUALIZATION;
+}
+
+export function databaseNumberVisualizationProgress(value: number, denominator: number): number {
+  if (!Number.isFinite(value) || !Number.isFinite(denominator) || denominator <= 0) return 0;
+  return Math.min(1, Math.max(0, value / denominator));
+}
 
 function option<T>(options: Record<string, unknown>, key: string): T | undefined {
   return options[key] as T | undefined;

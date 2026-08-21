@@ -167,6 +167,7 @@ export function InlineDatabaseSurface({
     reorderInlineSelectOptions,
     createInlineRecord,
     addInlineProperty,
+    configureInlineNumberVisualization,
     applyInlineViewChanges,
     pasteInlineCells,
     openInlineDatabaseSurface,
@@ -520,6 +521,7 @@ export function InlineDatabaseSurface({
           onPasteInlineCells={pasteInlineCells}
           onOpenInlineAgentScope={openInlineAgentScope}
           onAddInlineProperty={addInlineProperty}
+          onConfigureInlineNumberProperty={configureInlineNumberVisualization}
           onOpenInlineDatabaseSurface={(surface, propertyId, options) =>
             openInlineDatabaseSurface(surface, propertyId, undefined, options)
           }

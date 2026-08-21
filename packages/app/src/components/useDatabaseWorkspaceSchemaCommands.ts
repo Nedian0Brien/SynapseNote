@@ -1,4 +1,5 @@
 import type {
+  DatabaseNumberVisualization,
   DatabaseProperty,
   DatabasePropertyType,
   DatabaseQueryResult,
@@ -9,6 +10,7 @@ import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-s
 import {
   createDatabaseAddPropertyDesiredState,
   createDatabaseDuplicatePropertyDesiredState,
+  createDatabaseNumberVisualizationDesiredState,
   createDatabasePropertyDefinitionForAdd,
   createDatabaseRemovePropertyDesiredState,
   createDatabaseRenamePropertyDesiredState,
@@ -216,6 +218,30 @@ export function useDatabaseWorkspaceSchemaCommands(context: DatabaseWorkspaceCon
       setPropertiesDialogRenameId(null);
     } catch (cause) {
       setPropertiesError(classifyDatabaseUiProblem(cause, 'Unable to rename the property').message);
+    }
+  };
+
+  const configureNumberVisualization = (
+    property: Extract<DatabaseProperty, { type: 'number' }>,
+    visualization: DatabaseNumberVisualization,
+  ) => {
+    if (!description?.source || mutationStatus !== 'idle') return;
+    try {
+      runMutation(
+        createDatabaseNumberVisualizationDesiredState({
+          database: description.database,
+          source: description.source,
+          property,
+          visualization,
+        }),
+        'ui-number-visualization',
+        'Update Number visualization failed',
+        { policy: databaseSchemaMutationPolicy },
+      );
+    } catch (cause) {
+      setMutationError(
+        classifyDatabaseUiProblem(cause, 'Unable to update the Number visualization'),
+      );
     }
   };
 
@@ -466,6 +492,7 @@ export function useDatabaseWorkspaceSchemaCommands(context: DatabaseWorkspaceCon
     addSchemaProperty,
     duplicateSchemaProperty,
     renameSchemaProperty,
+    configureNumberVisualization,
     removeSchemaProperty,
     commitPropertyDeletionPreview,
     reorderSchemaProperties,

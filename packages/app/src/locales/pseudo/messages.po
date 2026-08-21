@@ -1201,6 +1201,10 @@ msgstr ""
 msgid "Apply link"
 msgstr ""
 
+#: src/components/DatabaseNumberPropertyMenu.tsx
+msgid "Apply number display"
+msgstr ""
+
 #: src/components/DatabaseDiagnosticsDialog.tsx
 msgid "Apply repair"
 msgstr ""
@@ -2239,6 +2243,7 @@ msgstr ""
 msgid "Collapsible section with a clickable summary."
 msgstr ""
 
+#: src/components/DatabaseNumberPropertyMenu.tsx
 #: src/components/DatabaseWorkspaceRecordActions.tsx
 #: src/editor/components/PdfSelectionMenu.tsx
 msgid "Color"
@@ -3712,6 +3717,10 @@ msgstr ""
 
 #: src/editor/extensions/InternalLinkPropPanel.tsx
 msgid "Display text"
+msgstr ""
+
+#: src/components/DatabaseNumberPropertyMenu.tsx
+msgid "Divide by"
 msgstr ""
 
 #: src/components/TrashFailureModal.tsx
@@ -7193,6 +7202,11 @@ msgstr ""
 msgid "Number"
 msgstr ""
 
+#: src/components/DatabaseNumberPropertyMenu.tsx
+#: src/components/DatabasePropertyMenu.tsx
+msgid "Number display"
+msgstr ""
+
 #: src/editor/slash-command/items.tsx
 msgid "Numbered list of items."
 msgstr ""
@@ -9987,6 +10001,10 @@ msgstr ""
 msgid "Show less"
 msgstr ""
 
+#: src/components/DatabaseNumberPropertyMenu.tsx
+msgid "Show number"
+msgstr ""
+
 #: src/components/FileSidebar.tsx
 msgid "Show only markdown files"
 msgstr ""
@@ -10049,6 +10067,10 @@ msgstr ""
 
 #: src/components/DatabaseAgentRunsDialog.tsx
 msgid "Show undo token"
+msgstr ""
+
+#: src/components/DatabaseNumberPropertyMenu.tsx
+msgid "Show values as numbers, bars, or rings in every table view."
 msgstr ""
 
 #: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx

@@ -283,7 +283,12 @@ export {
   type DatabaseManifestMigrationPlan,
   planDatabaseManifestMigration,
 } from './database/migration.ts';
-export { formatDatabaseNumber } from './database/number-format.ts';
+export {
+  DEFAULT_DATABASE_NUMBER_VISUALIZATION,
+  databaseNumberVisualization,
+  databaseNumberVisualizationProgress,
+  formatDatabaseNumber,
+} from './database/number-format.ts';
 export {
   DATABASE_ACCESS_LAYER_KINDS,
   DATABASE_PERMISSION_ACTIONS,
@@ -461,6 +466,7 @@ export {
   DATABASE_CONDITIONAL_COLOR_NAMES,
   DATABASE_MANIFEST_CURRENT_VERSION,
   DATABASE_MANIFEST_SUPPORTED_VERSIONS,
+  DATABASE_NUMBER_VISUALIZATION_STYLES,
   DATABASE_PROPERTY_TYPES,
   DATABASE_STATUS_CATEGORIES,
   type DatabaseActionButton,
@@ -518,6 +524,9 @@ export {
   type DatabaseManifestVersion,
   type DatabaseMapViewConfiguration,
   DatabaseMapViewConfigurationSchema,
+  type DatabaseNumberVisualization,
+  DatabaseNumberVisualizationSchema,
+  type DatabaseNumberVisualizationStyle,
   type DatabaseOption,
   DatabaseOptionIdSchema,
   DatabaseOptionSchema,

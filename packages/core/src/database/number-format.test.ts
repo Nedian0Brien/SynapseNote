@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'bun:test';
-import { formatDatabaseNumber } from './number-format.ts';
+import {
+  databaseNumberVisualization,
+  databaseNumberVisualizationProgress,
+  formatDatabaseNumber,
+} from './number-format.ts';
 import { DatabasePropertySchema } from './schema.ts';
 
 function property(style: string, options: Record<string, unknown>) {
@@ -18,6 +22,24 @@ function property(style: string, options: Record<string, unknown>) {
 }
 
 describe('formatDatabaseNumber', () => {
+  test('provides stable visualization defaults and clamps progress to the configured scale', () => {
+    const number = DatabasePropertySchema.parse({
+      id: 'prop_score',
+      key: 'score',
+      name: 'Score',
+      type: 'number',
+    });
+    expect(databaseNumberVisualization(number)).toEqual({
+      style: 'number',
+      color: 'green',
+      denominator: 100,
+      showValue: true,
+    });
+    expect(databaseNumberVisualizationProgress(24, 100)).toBe(0.24);
+    expect(databaseNumberVisualizationProgress(-1, 100)).toBe(0);
+    expect(databaseNumberVisualizationProgress(120, 100)).toBe(1);
+  });
+
   test('formats precision, grouping, and signed values without changing storage', () => {
     const number = property('decimal', {
       minimumFractionDigits: 2,

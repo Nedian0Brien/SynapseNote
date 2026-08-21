@@ -17,7 +17,7 @@ import {
   Sparkles,
   Trash2,
 } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -34,6 +34,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { moveDatabaseTableProperty } from '@/lib/database-table-layout';
+import { DatabaseNumberPropertyMenu } from './DatabaseNumberPropertyMenu';
 import { type DatabaseTableProps, isDatabaseSelectProperty } from './database-table-types';
 
 export interface DatabasePropertyMenuProps
@@ -44,6 +45,7 @@ export interface DatabasePropertyMenuProps
     | 'onOpenPropertyContextInspector'
     | 'onOpenAgentScope'
     | 'onConfigureSelectProperty'
+    | 'onConfigureNumberProperty'
     | 'onConvertProperty'
     | 'onManageProperties'
     | 'onRenameProperty'
@@ -93,6 +95,7 @@ export function DatabasePropertyMenu({
   onOpenPropertyContextInspector,
   onOpenAgentScope,
   onConfigureSelectProperty,
+  onConfigureNumberProperty,
   onConvertProperty,
   onManageProperties,
   onRenameProperty,
@@ -101,9 +104,10 @@ export function DatabasePropertyMenu({
   onCalculationChange,
   trigger,
 }: DatabasePropertyMenuProps) {
+  const [open, setOpen] = useState(false);
   const calculationOptions = databaseCalculationFunctionsForProperty(property);
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         {trigger ?? (
           <Button
@@ -244,6 +248,24 @@ export function DatabasePropertyMenu({
             <Settings2 aria-hidden="true" />
             <Trans>Configure options</Trans>
           </DropdownMenuItem>
+        ) : null}
+        {property.type === 'number' && onConfigureNumberProperty ? (
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <Settings2 aria-hidden="true" />
+              <Trans>Number display</Trans>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent className="w-auto p-0">
+              <DatabaseNumberPropertyMenu
+                property={property}
+                disabled={mutationLocked}
+                onApply={(numberProperty, visualization) => {
+                  onConfigureNumberProperty(numberProperty, visualization);
+                  setOpen(false);
+                }}
+              />
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
         ) : null}
         <DropdownMenuItem
           disabled={

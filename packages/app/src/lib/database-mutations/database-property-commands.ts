@@ -1,5 +1,6 @@
 import type {
   DatabaseDefinition,
+  DatabaseNumberVisualization,
   DatabaseProperty,
   DatabasePropertyType,
   DatabaseSource,
@@ -223,6 +224,43 @@ export function createDatabaseRenamePropertyDesiredState(input: {
             ...source,
             properties: source.properties.map((property) =>
               property.id === currentProperty.id ? { ...property, name } : property,
+            ),
+          }
+        : source,
+    ),
+  });
+  return {
+    ...databaseDraftBase(definition),
+    sampleRecords: [],
+    recordMutations: [],
+  };
+}
+
+/** Updates presentation-only settings for one Number property. */
+export function createDatabaseNumberVisualizationDesiredState(input: {
+  database: DatabaseDefinition;
+  source: DatabaseSource;
+  property: Extract<DatabaseProperty, { type: 'number' }>;
+  visualization: DatabaseNumberVisualization;
+}): DatabaseDesiredStateDraftInput {
+  const currentSource = input.database.sources.find((source) => source.id === input.source.id);
+  const currentProperty = currentSource?.properties.find(
+    (property): property is Extract<DatabaseProperty, { type: 'number' }> =>
+      property.id === input.property.id && property.type === 'number',
+  );
+  if (!currentSource || !currentProperty) {
+    throw new Error('The Number property is outside the selected source');
+  }
+  const definition = DatabaseDefinitionSchema.parse({
+    ...input.database,
+    sources: input.database.sources.map((source) =>
+      source.id === currentSource.id
+        ? {
+            ...source,
+            properties: source.properties.map((property) =>
+              property.id === currentProperty.id
+                ? { ...property, visualization: input.visualization }
+                : property,
             ),
           }
         : source,

@@ -77,6 +77,7 @@ export function DatabaseWorkspaceViewRenderer({
     setPropertiesDialogRenameId,
     setPropertiesDialogOpen,
     renameSchemaProperty,
+    configureNumberVisualization,
     removeSchemaProperty,
     loadMore,
   } = context;
@@ -393,6 +394,7 @@ export function DatabaseWorkspaceViewRenderer({
           onConfigureUniqueIdProperty={(property) => setUniqueIdPropertyId(property.id)}
           onConfigurePlaceProperty={(property) => setPlacePropertyId(property.id)}
           onConfigureSelectProperty={openSelectOptions}
+          onConfigureNumberProperty={configureNumberVisualization}
           onConvertProperty={(property) => setConversionPropertyId(property.id)}
           onOpenPropertySort={(property) => {
             setPropertySortTargetId(property.id);

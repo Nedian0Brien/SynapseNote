@@ -3692,6 +3692,11 @@ export class DatabasePlanEngine {
           ...(property.semantics && typeof property.semantics === 'object'
             ? { semantics: property.semantics }
             : {}),
+          ...(property.type === 'number' &&
+          property.visualization &&
+          typeof property.visualization === 'object'
+            ? { visualization: property.visualization }
+            : {}),
           type: property.type,
         };
         if (property.type === 'status') {

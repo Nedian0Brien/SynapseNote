@@ -302,6 +302,29 @@ const scalarProperty = <
     })
     .strict();
 
+export const DATABASE_NUMBER_VISUALIZATION_STYLES = ['number', 'bar', 'ring'] as const;
+export type DatabaseNumberVisualizationStyle =
+  (typeof DATABASE_NUMBER_VISUALIZATION_STYLES)[number];
+
+export const DatabaseNumberVisualizationSchema = z
+  .object({
+    style: z.enum(DATABASE_NUMBER_VISUALIZATION_STYLES),
+    color: z.enum(DATABASE_CONDITIONAL_COLOR_NAMES),
+    denominator: z.number().finite().positive().max(1_000_000_000_000_000),
+    showValue: z.boolean(),
+  })
+  .strict();
+
+export type DatabaseNumberVisualization = z.infer<typeof DatabaseNumberVisualizationSchema>;
+
+const numberProperty = z
+  .object({
+    ...propertyBaseShape,
+    type: z.literal('number'),
+    visualization: DatabaseNumberVisualizationSchema.optional(),
+  })
+  .strict();
+
 export const DatabaseOptionSchema = z
   .object({
     id: DatabaseOptionIdSchema,
@@ -776,7 +799,7 @@ export const DatabasePropertySchema = z.discriminatedUnion('type', [
     })
     .strict(),
   scalarProperty('text'),
-  scalarProperty('number'),
+  numberProperty,
   scalarProperty('checkbox'),
   scalarProperty('date'),
   selectProperty('select'),

@@ -1,5 +1,6 @@
 import {
   createDatabaseRecordId,
+  type DatabaseNumberVisualization,
   type DatabaseProperty,
   type DatabaseValue,
   type ProjectedDatabaseRecord,
@@ -20,6 +21,7 @@ import {
 } from '@/lib/database-mutations/database-mutation-gateway';
 import {
   createDatabaseAddPropertyDesiredState,
+  createDatabaseNumberVisualizationDesiredState,
   createDatabasePropertyDefinitionForAdd,
 } from '@/lib/database-mutations/database-property-commands';
 import { createDatabaseRecordDesiredState } from '@/lib/database-mutations/database-record-commands';
@@ -312,6 +314,26 @@ export function useInlineDatabaseCommands({
     }
   };
 
+  const configureInlineNumberVisualization = (
+    property: Extract<DatabaseProperty, { type: 'number' }>,
+    visualization: DatabaseNumberVisualization,
+  ) => {
+    if (state.status !== 'ready' || !linkedSource || !linkedDatabase) return;
+    try {
+      runInlineMutation(
+        createDatabaseNumberVisualizationDesiredState({
+          database: linkedDatabase,
+          source: linkedSource,
+          property,
+          visualization,
+        }),
+        { operation: 'property-create' },
+      );
+    } catch (cause) {
+      setInlineMutationErrorFromCause(cause, 'Unable to update the Number visualization');
+    }
+  };
+
   const applyInlineViewChanges = (
     record: ProjectedDatabaseRecord,
     changes: readonly { property: DatabaseProperty; value: DatabaseValue | undefined }[],
@@ -414,6 +436,7 @@ export function useInlineDatabaseCommands({
     reorderInlineSelectOptions,
     createInlineRecord,
     addInlineProperty,
+    configureInlineNumberVisualization,
     applyInlineViewChanges,
     pasteInlineCells,
     openInlineDatabaseSurface,

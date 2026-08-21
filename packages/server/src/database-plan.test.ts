@@ -745,6 +745,37 @@ describe('DatabasePlanEngine ephemeral desired state', () => {
     );
   });
 
+  test('preserves Number visualization settings during desired-state normalization', () => {
+    const { engine } = fixture();
+    const state = desiredState();
+    state.sources[0]?.properties.push({
+      key: 'progress',
+      name: 'Progress',
+      type: 'number',
+      visualization: {
+        style: 'bar',
+        color: 'green',
+        denominator: 100,
+        showValue: true,
+      },
+    } as never);
+
+    const draft = engine.createDraft(state);
+    expect(
+      draft.normalized.definition.sources[0]?.properties.find(
+        (property) => property.key === 'progress',
+      ),
+    ).toMatchObject({
+      type: 'number',
+      visualization: {
+        style: 'bar',
+        color: 'green',
+        denominator: 100,
+        showValue: true,
+      },
+    });
+  });
+
   test('creates stable default Status groups and options for an agent-authored property', () => {
     const { engine } = fixture();
     const state = desiredState() as unknown as Record<string, unknown> & {

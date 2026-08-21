@@ -14,6 +14,7 @@ import {
   createDatabaseComputedPropertyChangeDesiredState,
   createDatabaseDefaultViewChangeDesiredState,
   createDatabaseDuplicatePropertyDesiredState,
+  createDatabaseNumberVisualizationDesiredState,
   createDatabasePageAppearanceDesiredState,
   createDatabasePageTitleDesiredState,
   createDatabasePlacePrivacyChangeDesiredState,
@@ -338,6 +339,39 @@ describe('database cell mutation compiler', () => {
     expect(() =>
       createDatabaseRenamePropertyDesiredState({ database, source, property, name: '   ' }),
     ).toThrow('name is required');
+  });
+
+  test('updates one Number visualization without changing records or schema identity', () => {
+    const source = database.sources[0] as DatabaseSource;
+    const property = source.properties.find((candidate) => candidate.id === 'prop_score');
+    if (!property || property.type !== 'number') throw new Error('expected Score property');
+    const desired = createDatabaseNumberVisualizationDesiredState({
+      database,
+      source,
+      property,
+      visualization: {
+        style: 'bar',
+        color: 'green',
+        denominator: 100,
+        showValue: false,
+      },
+    });
+    const updated = desired.sources
+      .find((candidate) => candidate.id === source.id)
+      ?.properties.find((candidate) => candidate.id === property.id);
+    expect(updated).toMatchObject({
+      id: property.id,
+      key: property.key,
+      type: 'number',
+      visualization: {
+        style: 'bar',
+        color: 'green',
+        denominator: 100,
+        showValue: false,
+      },
+    });
+    expect(desired.sampleRecords).toEqual([]);
+    expect(desired.recordMutations).toEqual([]);
   });
 
   test('keeps created and last edited time immutable in every cell write path', () => {

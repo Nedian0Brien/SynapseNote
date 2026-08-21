@@ -1232,6 +1232,33 @@ describe('database manifest schema', () => {
     expect(DatabaseDefinitionSchema.safeParse(invalidPrecision).success).toBe(false);
   });
 
+  test('validates optional Number visualization settings', () => {
+    const visualized = validDefinition();
+    visualized.sources[0]?.properties.push({
+      id: 'prop_progress',
+      key: 'progress',
+      name: 'Progress',
+      type: 'number',
+      visualization: {
+        style: 'bar',
+        color: 'green',
+        denominator: 100,
+        showValue: true,
+      },
+    });
+    expect(DatabaseDefinitionSchema.safeParse(visualized).success).toBe(true);
+
+    const zeroScale = structuredClone(visualized);
+    const progress = zeroScale.sources[0]?.properties.find(
+      (property) => property.key === 'progress',
+    );
+    if (!progress || progress.type !== 'number' || !progress.visualization) {
+      throw new Error('progress visualization missing');
+    }
+    progress.visualization.denominator = 0;
+    expect(DatabaseDefinitionSchema.safeParse(zeroScale).success).toBe(false);
+  });
+
   test('applies explicit v1 defaults and round-trips as YAML', () => {
     const parsed = DatabaseDefinitionSchema.parse(validDefinition());
     expect(parsed.aliases).toEqual([]);

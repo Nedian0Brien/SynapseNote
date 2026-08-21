@@ -1,5 +1,6 @@
 import type {
   DatabaseCalculationFunction,
+  DatabaseNumberVisualization,
   DatabaseProperty,
   DatabasePropertyType,
   DatabaseQueryResult,
@@ -145,6 +146,10 @@ export interface DatabaseTableProps {
   ) => void;
   onConfigurePlaceProperty?: (property: Extract<DatabaseProperty, { type: 'place' }>) => void;
   onConfigureSelectProperty?: (property: DatabaseSelectProperty) => void;
+  onConfigureNumberProperty?: (
+    property: Extract<DatabaseProperty, { type: 'number' }>,
+    visualization: DatabaseNumberVisualization,
+  ) => void;
   onConvertProperty?: (property: DatabaseProperty) => void;
   onOpenPropertySort?: (property: DatabaseProperty) => void;
   onOpenPropertyFilter?: (property: DatabaseProperty) => void;

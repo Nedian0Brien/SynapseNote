@@ -1,5 +1,6 @@
 import type {
   DatabaseLinkedViewSettings,
+  DatabaseNumberVisualization,
   DatabaseProperty,
   DatabaseQueryResult,
   DatabaseSource,
@@ -85,6 +86,10 @@ export interface InlineDatabaseBlockProps {
   onPasteInlineCells: (changes: readonly DatabasePasteChange[]) => void;
   onOpenInlineAgentScope: (scope: DatabaseAgentScope) => void;
   onAddInlineProperty: (input: { name: string; type: DatabaseProperty['type'] }) => void;
+  onConfigureInlineNumberProperty: (
+    property: Extract<DatabaseProperty, { type: 'number' }>,
+    visualization: DatabaseNumberVisualization,
+  ) => void;
   onOpenInlineDatabaseSurface: (
     surface: 'properties' | 'options',
     propertyId?: string,
@@ -125,6 +130,7 @@ export function InlineDatabaseBlock(props: InlineDatabaseBlockProps) {
     onPasteInlineCells,
     onOpenInlineAgentScope,
     onAddInlineProperty,
+    onConfigureInlineNumberProperty,
     onOpenInlineDatabaseSurface,
     onSetReplacementPickerOpen,
     onRefresh,
@@ -426,6 +432,7 @@ export function InlineDatabaseBlock(props: InlineDatabaseBlockProps) {
               onConfigureSelectProperty={(property) =>
                 onOpenInlineDatabaseSurface('options', property.id)
               }
+              onConfigureNumberProperty={onConfigureInlineNumberProperty}
               onManageProperties={(propertyId) =>
                 onOpenInlineDatabaseSurface('properties', propertyId)
               }

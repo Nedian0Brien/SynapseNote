@@ -1,3 +1,46 @@
+# Number property visualization QA — 2026-08-22
+
+## Visual truth and implementation evidence
+
+- Source settings reference: `/Users/minjaepark/.codex/visualizations/2026/08/21/01a024c0-8d10-7e21-8860-ca2ac5f386e1/number-reference-settings.png` (573 × 414 px).
+- Source bar reference: `/Users/minjaepark/.codex/visualizations/2026/08/21/01a024c0-8d10-7e21-8860-ca2ac5f386e1/number-reference-bar.png` (243 × 118 px).
+- Browser-rendered settings implementation: `/Users/minjaepark/.codex/visualizations/2026/08/21/01a024c0-8d10-7e21-8860-ca2ac5f386e1/number-visualization-settings.png` (1280 × 720 px).
+- Browser-rendered bar implementation: `/Users/minjaepark/.codex/visualizations/2026/08/21/01a024c0-8d10-7e21-8860-ca2ac5f386e1/number-visualization-bar.png` (1280 × 720 px).
+- Full settings comparison input: `/Users/minjaepark/.codex/visualizations/2026/08/21/01a024c0-8d10-7e21-8860-ca2ac5f386e1/number-visualization-settings-comparison.png`.
+- Focused table-cell comparison input: `/Users/minjaepark/.codex/visualizations/2026/08/21/01a024c0-8d10-7e21-8860-ca2ac5f386e1/number-visualization-bar-comparison.png`.
+- Viewport: 1280 × 720 CSS px, device scale factor 1. The source crops and implementation crops were placed side by side at native density without aspect-ratio distortion.
+- State: one Number property named `Progress`, value 24, green Bar display, Divide by 100, Show number enabled. The Ring display, blue color, and hidden-number state were also exercised before restoring the Bar state.
+
+## Findings and comparison history
+
+- P0: none.
+- P1: none.
+- P2: none.
+- P3: the supplied Notion reference is dark and Korean while the current SynapseNote browser session is light and English. The implementation intentionally uses the active SynapseNote theme, typography, localization, Lucide icons, and existing menu density rather than forcing reference-specific colors or language.
+- P3: SynapseNote requires an explicit schema review and commit after applying presentation metadata. The settings panel therefore stages the complete Number display configuration with one Apply action instead of silently bypassing the product's canonical database review policy.
+
+No P0/P1/P2 iteration was required after the final server-normalization fix. The focused comparison confirms that the visible value, proportional green fill, neutral track, header hierarchy, and compact row density match the reference behavior. The settings comparison confirms the same three display modes, selected state, color choices, denominator input, and value-visibility toggle.
+
+## Required fidelity surfaces
+
+- Fonts and typography: existing SynapseNote sans-serif weights and tabular numeric alignment are preserved; labels, values, and compact helper copy remain readable without clipping.
+- Spacing and layout rhythm: the nested panel follows the existing dropdown radius, shadow, row density, 3-column display selector, and compact settings group. The cell keeps the number aligned with the progress track inside the existing table height.
+- Colors and visual tokens: the chosen green uses the product's Tailwind token family, while the track uses a muted foreground opacity with sufficient light/dark contrast.
+- Image and asset fidelity: the feature contains no raster product assets. Standard interface symbols use the existing Lucide icon library; the dynamic ring is rendered as a resolution-independent canvas visualization.
+- Copy and content: Number, Bar, Ring, Color, Divide by, and Show number preserve the reference concepts. Lingui-wrapped copy follows the app's current locale.
+
+## Functional and browser checks
+
+- Created a real database, Number property, row, and value through the running web editor.
+- Applied Bar settings, completed the required schema review, confirmed the canonical YAML contains the visualization block, reloaded, and observed progress `0.24` with the accessible `Progress: 24` progressbar.
+- Applied Ring, blue color, and hidden-number state; confirmed the ring canvas rendered and visible `24` text was absent; then restored the final green Bar state.
+- Primary interactions tested: property menu, nested display panel, style selection, color selection, denominator input, value switch, Apply, schema review commit, cell edit, and reload persistence.
+- Browser console: no feature-specific errors. Connection-close warnings were emitted only when the local development server was deliberately restarted or an idle local WebSocket timed out.
+
+final result: passed
+
+---
+
 # Obsidian graph pixel-parity QA — 2026-08-21
 
 ## Visual truth and compared implementation

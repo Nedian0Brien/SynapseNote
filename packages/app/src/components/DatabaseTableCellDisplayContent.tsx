@@ -3,6 +3,7 @@ import { AlertCircle, FileText, Link2, MapPin, Paperclip, Pencil, UserRound } fr
 import { isDatabaseCellEditable } from '@/lib/database-cell-mutation';
 import { dispatchExternalLinkClick, openExternalUrl } from '@/lib/external-link';
 import { cn } from '@/lib/utils';
+import { DatabaseNumberVisualization } from './DatabaseNumberVisualization';
 import type { DatabaseTableCellContentProps } from './DatabaseTableCellContent';
 import { DatabaseValueCopyButton } from './DatabaseValueCopyButton';
 import {
@@ -435,6 +436,30 @@ export function DatabaseTableCellDisplayContent({
             </span>
           )}
         </div>
+      ) : property.type === 'number' &&
+        typeof shownValue === 'number' &&
+        invalidValue === undefined ? (
+        isDatabaseCellEditable(property) && onEdit && !ghostCreated ? (
+          <Button
+            variant="ghost"
+            disabled={mutationLocked || proposed}
+            className="h-auto w-full min-w-0 justify-start px-1 py-0.5 font-inherit"
+            aria-label={`Edit ${property.name} for ${notionSurface ? 'page' : 'record'} ${recordLabel}: ${shownText}`}
+            onClick={() => onBeginEdit(record, property)}
+          >
+            <DatabaseNumberVisualization
+              property={property}
+              value={shownValue}
+              formattedValue={shownText}
+            />
+          </Button>
+        ) : (
+          <DatabaseNumberVisualization
+            property={property}
+            value={shownValue}
+            formattedValue={shownText}
+          />
+        )
       ) : isDatabaseCellEditable(property) && onEdit && !ghostCreated ? (
         <Button
           variant="ghost"

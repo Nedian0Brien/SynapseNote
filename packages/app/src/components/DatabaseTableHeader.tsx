@@ -29,6 +29,7 @@ export interface DatabaseTableHeaderProps
     | 'onConfigureUniqueIdProperty'
     | 'onConfigurePlaceProperty'
     | 'onConfigureSelectProperty'
+    | 'onConfigureNumberProperty'
     | 'onConvertProperty'
     | 'onManageProperties'
     | 'onRenameProperty'
@@ -105,6 +106,7 @@ export function DatabaseTableHeader({
   onConfigureUniqueIdProperty,
   onConfigurePlaceProperty,
   onConfigureSelectProperty,
+  onConfigureNumberProperty,
   onConvertProperty,
   onManageProperties,
   onRenameProperty,
@@ -222,6 +224,7 @@ export function DatabaseTableHeader({
             onConfigureUniqueIdProperty={onConfigureUniqueIdProperty}
             onConfigurePlaceProperty={onConfigurePlaceProperty}
             onConfigureSelectProperty={onConfigureSelectProperty}
+            onConfigureNumberProperty={onConfigureNumberProperty}
             onConvertProperty={onConvertProperty}
             onManageProperties={onManageProperties}
             onRenameProperty={onRenameProperty}

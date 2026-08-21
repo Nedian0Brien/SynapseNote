@@ -102,6 +102,7 @@ type PropertyHeaderCellCallbacks = Pick<
   | 'onConfigureUniqueIdProperty'
   | 'onConfigurePlaceProperty'
   | 'onConfigureSelectProperty'
+  | 'onConfigureNumberProperty'
   | 'onConvertProperty'
   | 'onManageProperties'
   | 'onRenameProperty'
