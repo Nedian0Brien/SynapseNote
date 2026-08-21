@@ -121,6 +121,9 @@ describe('ChatSidebarSection', () => {
     // hover/active `color` cascade cannot repaint the mark.
     expect(claudeRow.querySelector('svg')?.getAttribute('style')).toContain('#D97757');
     expect(codexRow.querySelector('svg')?.getAttribute('style')).toContain('--ok-brand-color');
+    // The provider stays spelled out beside the mark.
+    expect(codexRow.textContent).toContain('codex');
+    expect(claudeRow.textContent).toContain('claude');
 
     fireEvent.click(screen.getByRole('button', { name: 'Open Codex chat Fix graph labels' }));
     fireEvent.click(screen.getByRole('button', { name: 'New chat' }));

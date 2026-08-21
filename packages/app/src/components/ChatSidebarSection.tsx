@@ -241,19 +241,16 @@ export function ChatSidebarSection({ bridge }: ChatSidebarSectionProps) {
                             type="button"
                             className="h-7"
                             tooltip={session.title}
-                            // The provider is no longer written out on the row,
-                            // so the name carries it — a brand mark alone says
-                            // nothing to a screen reader.
+                            // `aria-label` overrides the row's children, so the
+                            // visible CLI text never reaches the accessible name:
+                            // it has to name the provider itself.
                             aria-label={t`Open ${cliLabel(session.cli)} chat ${session.title}`}
                             onClick={() => resumeChat(session)}
                           >
                             {/* The provider's own mark, brand-colored: which agent
                               owns a chat is the first thing the eye needs here,
                               and one generic robot for both made every row read
-                              the same. The mark replaces the uppercase CLI text
-                              that used to sit at the row's end, giving the title
-                              the width it was losing to a label the logo
-                              already carries. */}
+                              the same. */}
                             <AgentIcon
                               icon={agentIconForCli(session.cli)}
                               className="size-3.5 shrink-0"
@@ -261,6 +258,12 @@ export function ChatSidebarSection({ bridge }: ChatSidebarSectionProps) {
                               aria-hidden="true"
                             />
                             <span className="min-w-0 flex-1 truncate">{session.title}</span>
+                            {/* The mark names the provider at a glance; this
+                              keeps it spelled out for anyone scanning the column
+                              rather than the icons. */}
+                            <span className="shrink-0 text-[9px] uppercase text-muted-foreground/70">
+                              {session.cli}
+                            </span>
                           </SidebarMenuButton>
                         </ContextMenuTrigger>
                         <ContextMenuContent className="w-44">
