@@ -143,11 +143,13 @@ test.describe('packaged database open-page smoke', () => {
       'Edit Priority for page Mobile navigation feedback',
     );
     await priorityCell.click();
-    await page.getByRole('textbox', { name: 'Edit Priority' }).fill('High');
-    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    const priorityEditor = page.getByRole('textbox', { name: 'Edit Priority' });
+    await priorityEditor.fill('High');
+    await priorityEditor.press('Enter');
     await expect(reloadedInline.getByText('High', { exact: true })).toBeVisible({
       timeout: 30_000,
     });
+    await expect(page.getByTestId('inline-save-feedback')).toBeVisible({ timeout: 30_000 });
 
     await page.reload();
     const persistedInline = page.getByRole('region', { name: /Linked database view:/ });
