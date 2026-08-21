@@ -8,9 +8,13 @@ import {
 import { Trans, useLingui } from '@lingui/react/macro';
 import type { TerminalCli } from '@nedian0brien/synapsenote-core';
 import {
+  Archive,
+  ArrowLeftToLine,
+  ArrowRightToLine,
   ChevronDownIcon,
   ChevronRightIcon,
   HistoryIcon,
+  ListX,
   PanelBottomIcon,
   PanelRightIcon,
   XIcon,
@@ -147,6 +151,7 @@ function TerminalTabContextMenu({
           data-testid="terminal-tab-context-close"
           onSelect={() => onClose(session.id)}
         >
+          <XIcon aria-hidden="true" />
           <Trans>Close tab</Trans>
         </ContextMenuItem>
         <ContextMenuItem
@@ -154,6 +159,7 @@ function TerminalTabContextMenu({
           disabled={onCloseMany == null || others.length === 0}
           onSelect={() => onCloseMany?.(others)}
         >
+          <ListX aria-hidden="true" />
           <Trans>Close other tabs</Trans>
         </ContextMenuItem>
         <ContextMenuItem
@@ -161,6 +167,7 @@ function TerminalTabContextMenu({
           disabled={onCloseMany == null || toTheLeft.length === 0}
           onSelect={() => onCloseMany?.(toTheLeft)}
         >
+          <ArrowLeftToLine aria-hidden="true" />
           <Trans>Close tabs to the left</Trans>
         </ContextMenuItem>
         <ContextMenuItem
@@ -168,6 +175,7 @@ function TerminalTabContextMenu({
           disabled={onCloseMany == null || toTheRight.length === 0}
           onSelect={() => onCloseMany?.(toTheRight)}
         >
+          <ArrowRightToLine aria-hidden="true" />
           <Trans>Close tabs to the right</Trans>
         </ContextMenuItem>
         {canArchive ? (
@@ -177,6 +185,7 @@ function TerminalTabContextMenu({
               data-testid="terminal-tab-context-archive"
               onSelect={() => onArchive?.(session.id)}
             >
+              <Archive aria-hidden="true" />
               <Trans>Archive chat</Trans>
             </ContextMenuItem>
           </>
