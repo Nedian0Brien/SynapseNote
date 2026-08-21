@@ -1,7 +1,7 @@
 /**
  * Maps component name → React component for the descriptor registry.
  *
- * Canonical pack: Callout + Image + Video + Audio + Accordion + Math + MermaidFence + Pdf + File + Tabs + Tab.
+ * Canonical pack: Callout + Image + Video + Audio + Accordion + Math + MermaidFence + Pdf + File + Embed + Bookmark + Tabs + Tab.
  * Each canonical entry is a DIY renderer — Callout is a 7-prop GFM shape
  * at `./Callout`, Image wraps `react-medium-image-zoom` (8-prop at
  * `./Image`), Video is a pure HTML5 `<video>` wrapper (9-prop at `./Video`
@@ -44,6 +44,7 @@
 import { useDocumentContext } from '@/editor/DocumentContext';
 import { Accordion } from './Accordion.tsx';
 import { Audio } from './Audio.tsx';
+import { Bookmark } from './Bookmark.tsx';
 import { Callout } from './Callout.tsx';
 import { DatabaseView } from './DatabaseView.tsx';
 import { Embed } from './Embed.tsx';
@@ -94,6 +95,11 @@ export const componentMap: Record<string, React.ComponentType<any>> = {
   // `<embed>` is for legacy plugin objects, not the iframe pattern).
   // Renders via a cross-origin iframe with `referrerPolicy="no-referrer"`.
   Embed,
+  // `Bookmark` is capitalized for the same no-HTML-element reason.
+  // Sibling to `Embed` for the same input (a URL): a static preview card
+  // built from metadata captured at creation time, where `Embed` renders
+  // the live page in an iframe.
+  Bookmark,
   DatabaseView,
   Accordion,
   Tabs,

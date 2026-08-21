@@ -288,6 +288,77 @@ describe('readNativeCliChatSession', () => {
     ]);
   });
 
+  test('hides the context envelope a CLI stored with transport line separators', async () => {
+    const homeDir = temporaryHome();
+    const projectRoot = '/workspace/current';
+    // The PTY transport rewrites newlines as U+2028, so this is the exact shape
+    // both CLIs persist for a SynapseNote turn — not the \n form.
+    const separator = '\u2028';
+    const stored = [
+      'The following metadata identifies the document currently open in the SynapseNote editor.',
+      '',
+      '<current_document>',
+      '{ "documentTitle": "Field notes", "documentPath": "note/field-notes.md" }',
+      '</current_document>',
+      '',
+      'The user attached the following image files from the SynapseNote editor.',
+      '',
+      '<attached_images>',
+      '[{ "path": "note/pasted.png" }]',
+      '</attached_images>',
+      '',
+      'User request:',
+      'Read this image and analyse it',
+    ].join(separator);
+    writeJsonLines(join(homeDir, '.claude', 'projects', '-workspace-current', 'session.jsonl'), [
+      {
+        type: 'user',
+        sessionId: 'claude-current',
+        cwd: projectRoot,
+        message: { role: 'user', content: stored },
+      },
+    ]);
+
+    expect(
+      await readNativeCliChatSession({
+        homeDir,
+        projectRoot,
+        cli: 'claude',
+        sessionId: 'claude-current',
+      }),
+    ).toEqual([{ role: 'user', text: 'Read this image and analyse it' }]);
+  });
+
+  test('hides an image-only context envelope and restores the prompt line breaks', async () => {
+    const homeDir = temporaryHome();
+    const projectRoot = '/workspace/current';
+    const separator = '\u2028';
+    const stored = [
+      'The user attached the following image files from the SynapseNote editor.',
+      '',
+      '<attached_images>',
+      '[{ "path": "note/pasted.png" }]',
+      '</attached_images>',
+      '',
+      'User request:',
+      'First line',
+      'Second line',
+    ].join(separator);
+    writeJsonLines(join(homeDir, '.codex', 'sessions', 'current.jsonl'), [
+      { type: 'session_meta', payload: { id: 'codex-current', cwd: projectRoot } },
+      { type: 'event_msg', payload: { type: 'user_message', message: stored } },
+    ]);
+
+    expect(
+      await readNativeCliChatSession({
+        homeDir,
+        projectRoot,
+        cli: 'codex',
+        sessionId: 'codex-current',
+      }),
+    ).toEqual([{ role: 'user', text: 'First line\nSecond line' }]);
+  });
+
   test('refuses a same-id transcript outside the active project', async () => {
     const homeDir = temporaryHome();
     writeJsonLines(join(homeDir, '.codex', 'sessions', 'outside.jsonl'), [

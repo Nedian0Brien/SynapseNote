@@ -195,16 +195,27 @@ function messageText(value: unknown): string | null {
   return trimmed === '' ? null : trimmed;
 }
 
+/** The chat transport rewrites every newline as U+2028 so a multi-line prompt
+ * survives the PTY's readline, and that separator is what both CLIs persist in
+ * their transcripts. Restore real line breaks before the stored prompt is
+ * matched against the context envelope or shown to the user. */
+function restoreTransportLineBreaks(text: string): string {
+  return text.replaceAll('\u2028', '\n');
+}
+
 function visibleUserPrompt(value: unknown): string | null {
   const text = messageText(value);
   if (text === null) return null;
+  const restored = restoreTransportLineBreaks(text);
   const marker = '\n\nUser request:\n';
-  const markerIndex = text.lastIndexOf(marker);
+  const markerIndex = restored.lastIndexOf(marker);
   const hasSynapseNoteContext =
-    text.includes('<current_document>') || text.includes('<selected_document>');
+    restored.includes('<current_document>') ||
+    restored.includes('<selected_document>') ||
+    restored.includes('<attached_images>');
   return hasSynapseNoteContext && markerIndex >= 0
-    ? messageText(text.slice(markerIndex + marker.length))
-    : text;
+    ? messageText(restored.slice(markerIndex + marker.length))
+    : restored;
 }
 
 function firstCodexPrompt(rows: readonly Record<string, unknown>[]): string | null {

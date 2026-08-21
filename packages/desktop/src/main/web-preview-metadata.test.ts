@@ -57,7 +57,13 @@ describe('web preview metadata', () => {
         url: 'https://preview.example/article',
         title: 'Preview title',
         imageDataUrl: 'data:image/png;base64,AQI=',
+        // Reported alongside the inlined bytes for consumers that persist a
+        // preview into a document (`<Bookmark>`), where base64 payloads
+        // would bloat the file. Emitted only because the inline fetch above
+        // succeeded — that fetch is the validation pass.
+        imageUrl: 'https://cdn.example/preview.png',
         faviconDataUrl: 'data:image/png;base64,AwQ=',
+        faviconUrl: 'https://preview.example/icon.png',
       },
     );
   });

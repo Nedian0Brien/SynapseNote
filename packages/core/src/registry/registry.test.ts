@@ -4,9 +4,10 @@ import { builtInComponents, createRegistry, wildcardMeta } from './index.ts';
 import type { JsxComponentMeta } from './types.ts';
 
 describe('createRegistry', () => {
-  test('returns the 15 canonical + 9 compat descriptors + wildcard', () => {
-    // 15 canonicals (Callout, Image, Video, Audio, Accordion, Math,
-    // MermaidFence, Pdf, File, Tabs, Tab, Embed, DatabaseView, Mirror, MirrorSource)
+  test('returns the 16 canonical + 9 compat descriptors + wildcard', () => {
+    // 16 canonicals (Callout, Image, Video, Audio, Accordion, Math,
+    // MermaidFence, Pdf, File, Tabs, Tab, Embed, Bookmark, DatabaseView, Mirror,
+    // MirrorSource)
     // + 9 compats (GFMCallout, CommonMarkImage, HtmlDetailsAccordion,
     // WikiEmbedImage, WikiEmbedVideo, WikiEmbedAudio, WikiEmbedFile,
     // DollarMath, MathFence) + '*' wildcard.
@@ -22,7 +23,7 @@ describe('createRegistry', () => {
     // through to the wildcard.
     const registry = createRegistry();
     const entries = [...registry.entries()];
-    expect(entries.length).toBe(25);
+    expect(entries.length).toBe(26);
   });
 
   test('get returns registered component by name', () => {
@@ -116,11 +117,11 @@ describe('createRegistry', () => {
 });
 
 describe('builtInComponents manifest', () => {
-  test('contains 15 canonical + 9 compat entries including linked DatabaseView', () => {
-    expect(builtInComponents.length).toBe(24);
+  test('contains 16 canonical + 9 compat entries including linked DatabaseView', () => {
+    expect(builtInComponents.length).toBe(25);
     const canonical = builtInComponents.filter((m) => m.surface === 'canonical');
     const compat = builtInComponents.filter((m) => m.surface === 'compat');
-    expect(canonical.length).toBe(15);
+    expect(canonical.length).toBe(16);
     expect(compat.length).toBe(9);
   });
 

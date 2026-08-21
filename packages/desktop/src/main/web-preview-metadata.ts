@@ -332,21 +332,29 @@ async function loadWebPreview(
   );
   if (!page || !/^(?:text\/html|application\/xhtml\+xml)$/.test(page.contentType)) return null;
   const parsed = parseOpenGraphHtml(page.bytes.toString('utf8'), page.finalUrl);
+  // The declared `<link rel=icon>` when the page has one, else the
+  // conventional well-known path. Held in a variable because the remote
+  // URL is reported back alongside the inlined bytes (see below), so the
+  // two must name the same resource.
+  const faviconCandidate = parsed.faviconUrl ?? new URL('/favicon.ico', page.finalUrl).toString();
   const [image, favicon] = await Promise.all([
     imageDataUrl(parsed.imageUrl, IMAGE_LIMIT, deps),
-    imageDataUrl(
-      parsed.faviconUrl ?? new URL('/favicon.ico', page.finalUrl).toString(),
-      ICON_LIMIT,
-      deps,
-    ),
+    imageDataUrl(faviconCandidate, ICON_LIMIT, deps),
   ]);
+  // `imageUrl` / `faviconUrl` are emitted only when the corresponding
+  // inline fetch succeeded. That fetch is the validation pass — public
+  // host, allowed content type, under the size cap — so a consumer that
+  // persists the remote URL (the `Bookmark` descriptor) is never handed a
+  // URL that failed those checks.
   return {
     url: page.finalUrl.toString(),
     ...(parsed.title ? { title: parsed.title } : {}),
     ...(parsed.description ? { description: parsed.description } : {}),
     ...(parsed.siteName ? { siteName: parsed.siteName } : {}),
     ...(image ? { imageDataUrl: image } : {}),
+    ...(image && parsed.imageUrl ? { imageUrl: parsed.imageUrl } : {}),
     ...(favicon ? { faviconDataUrl: favicon } : {}),
+    ...(favicon ? { faviconUrl: faviconCandidate } : {}),
   };
 }
 

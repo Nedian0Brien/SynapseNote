@@ -39,6 +39,7 @@ const EXPECTED_LOCAL_IMPORTS = [
   './styles/components/video.css',
   './styles/components/pdf.css',
   './styles/components/file.css',
+  './styles/components/bookmark.css',
   './styles/components/code-editors.css',
   './styles/components/tabs-accordion.css',
   './styles/components/database.css',

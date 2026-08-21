@@ -147,6 +147,53 @@ describe('ChatSidebarSection', () => {
     unsubscribe();
   });
 
+  test('resizes the chat pane from the seam handle and remembers the height', async () => {
+    const bridge = {
+      terminal: {
+        listChatSessions: mock(() =>
+          Promise.resolve([
+            {
+              cli: 'codex' as const,
+              sessionId: 'codex-session',
+              title: 'Fix graph labels',
+              updatedAt: 2,
+            },
+          ]),
+        ),
+      },
+    } as unknown as OkDesktopBridge;
+    const { ChatSidebarSection } = await import('./ChatSidebarSection');
+    const { CHAT_PANE_HEIGHT_STORAGE_KEY } = await import('@/lib/sidebar-pane-height');
+    render(
+      <TerminalLaunchProvider
+        value={{ launchInTerminal: () => {}, installedClis: { codex: true } }}
+      >
+        <ChatSidebarSection bridge={bridge} />
+      </TerminalLaunchProvider>,
+    );
+
+    await screen.findByRole('button', { name: 'Open chat Fix graph labels' });
+    const pane = screen.getByTestId('chat-sidebar-pane');
+    expect(pane.style.height).toBe('208px');
+
+    const handle = screen.getByTestId('chat-sidebar-resize');
+    fireEvent.keyDown(handle, { key: 'ArrowUp' });
+    await waitFor(() => expect(pane.style.height).toBe('192px'));
+    expect(handle.getAttribute('aria-valuenow')).toBe('192');
+
+    fireEvent.keyDown(handle, { key: 'PageDown' });
+    await waitFor(() => expect(pane.style.height).toBe('256px'));
+
+    // Double-click restores the default split.
+    fireEvent.doubleClick(handle);
+    await waitFor(() => expect(pane.style.height).toBe('208px'));
+
+    fireEvent.keyDown(handle, { key: 'ArrowDown' });
+    await waitFor(() =>
+      expect(window.localStorage.getItem(CHAT_PANE_HEIGHT_STORAGE_KEY)).toBe('224'),
+    );
+  });
+
   test('opens a row context menu with safe chat actions', async () => {
     const listChatSessions = mock(() =>
       Promise.resolve([

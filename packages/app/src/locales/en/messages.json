@@ -155,6 +155,7 @@
     "1vaMx1": ["Default Codex chat model"],
     "2-Dvfi": ["Database diagnostics"],
     "20fqc-": ["Page options"],
+    "222xGE": ["Paste as"],
     "22KnfO": ["Related properties"],
     "237hSL": ["Ended"],
     "25Pw6a": ["Cloning"],
@@ -199,6 +200,7 @@
     "322lyb": ["Highlight tips, warnings, and notes."],
     "327pND": ["Custom synapsenote entry — not managed by SynapseNote"],
     "32TndD": ["Blocked"],
+    "32XjZE": ["Resize chat list"],
     "32kvvr": ["Convert to inline view"],
     "33vs1O": ["Fast speed: Off"],
     "34qyH5": ["Could not reach server"],
@@ -1132,6 +1134,7 @@
     "IWGfGF": ["Checking your GitHub connection"],
     "IX7-sq": ["Something went wrong opening \"", ["docName"], "\"."],
     "IX_uXB": ["my-feature"],
+    "IagCbF": ["URL"],
     "IajAbS": ["Add a starter pack"],
     "Iejpeb": [
       "All changes in this exact plan are one review group and commit together. Review the group before approving any write."
@@ -1207,6 +1210,7 @@
     "KDw4GX": ["Try again"],
     "KGJb9_": ["Conflicts"],
     "KH4k7k": ["Create a document to start filling this space."],
+    "KKBlUU": ["Embed"],
     "KOZud0": [
       "Build a competitor research knowledge base. Start with an overview page, then add cross-linked pages for each competitor, their products and pricing, and the sources behind every claim."
     ],
@@ -1534,6 +1538,7 @@
     "PXPD03": ["Loading chat history"],
     "PX_22W": ["The plan stays bounded to the reviewed scope and is checked before commit."],
     "PZ9NrH": ["The document is still loading. Try exporting again in a moment."],
+    "PZlHt8": ["Bookmark"],
     "PZtgO0": ["Opening worktree"],
     "P_bX4O": ["How to set up"],
     "PdA9NZ": [["ahead"], " ahead"],
@@ -2614,6 +2619,7 @@
     ],
     "iTylMl": ["Templates"],
     "iXTp5j": ["Scope: "],
+    "iaM74K": ["Mention"],
     "idD8Ev": ["Saved"],
     "idvCDL": ["continuation available"],
     "ig5vUe": ["Failed to load file"],
@@ -2914,6 +2920,7 @@
     "njBeMm": ["Both"],
     "njU86j": ["Property \"", ["trimmed"], "\" already exists"],
     "nm_e2c": ["PDF saved"],
+    "nnBnVO": ["Save a link as a preview card — title, summary, site icon, and thumbnail."],
     "no9f6N": ["Optional — you can rename it from the table header."],
     "noH1JX": [
       "Couldn't reach collab server — ",

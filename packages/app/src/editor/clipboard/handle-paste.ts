@@ -29,6 +29,12 @@
  * codeBlock short-circuit: cursor inside a codeBlock → skip all branches,
  * insert text/plain verbatim.
  *
+ * Paste-format menu: a cursor-position lone-URL paste additionally opens
+ * the "Paste as" menu over the link it just minted (mention / URL /
+ * bookmark / embed — see `../paste-format/`). Advisory only: the document
+ * already holds the link, and dismissing the menu leaves the paste exactly
+ * as it was before the menu existed.
+ *
  * Lone-URL step: after those two gates and before the MIME branches, a
  * payload whose text/plain is a single URL token linkifies instead of
  * falling into the branch tree. Over a one-block text selection the
@@ -70,6 +76,7 @@ import { Fragment, type Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { type EditorState, TextSelection, type Transaction } from '@tiptap/pm/state';
 import type { EditorView } from '@tiptap/pm/view';
 import { PREVENT_AUTOLINK_META } from '../gfm-autolink-plugin.ts';
+import { requestPasteFormatMenu } from '../paste-format/paste-format-plugin.ts';
 import { type ClipboardSource, detectSource } from './detect-source.ts';
 import {
   type ClipboardBranch,
@@ -170,7 +177,13 @@ function handleDropOrPaste(
       }
     } else {
       const gfmToken = detectLoneGfmUrl(plain);
+      // Caret position BEFORE the insert. `applyJsonSlice` uses
+      // `replaceSelection`, which leaves the caret immediately after the
+      // inserted content — so the pair brackets exactly what was pasted,
+      // and that is the range the paste-format menu offers to reshape.
+      const beforePos = view.state.selection.from;
       if (gfmToken && tryBranchMarkdown(view, gfmToken, deps, 'url', source)) {
+        offerPasteFormats(view, beforePos, view.state.selection.from);
         logSourceDetected({ view: 'wysiwyg', branch: 'url', source });
         logIfSlow(start, { op: surface, view: 'wysiwyg', branch: 'url', source });
         return true;
@@ -310,6 +323,28 @@ function linkifySelection(view: EditorView, href: string, source: ClipboardSourc
     // entirely — the one outcome the file header forbids.
     notifyPasteDegraded('wysiwyg', 'Pasted without linking — the link could not be applied.');
     return false;
+  }
+}
+
+/**
+ * Open the paste-format menu over a just-linkified range.
+ *
+ * A pasted URL is committed as a link because that is the reading that is
+ * never wrong; the menu is how the author says they meant a mention, a
+ * bookmark card, or an inline embed instead. It is offered only at a
+ * cursor: pasting over a selection is the "link this text" idiom, where
+ * the other three formats would discard the text the gesture was about.
+ *
+ * Fully advisory — the menu declines to open for URLs with only one
+ * sensible form, and a throw here must never turn a successful paste into
+ * a failed one, so the call is swallowed on error.
+ */
+function offerPasteFormats(view: EditorView, from: number, to: number): void {
+  try {
+    const appOrigin = typeof window === 'undefined' ? null : window.location.origin;
+    requestPasteFormatMenu(view, from, to, appOrigin);
+  } catch (err) {
+    console.warn('[clipboard] paste-format menu could not open', err);
   }
 }
 

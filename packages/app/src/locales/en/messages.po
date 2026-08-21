@@ -1572,6 +1572,10 @@ msgstr "Board cards and limits"
 msgid "Bold"
 msgstr "Bold"
 
+#: src/editor/paste-format/PasteFormatMenu.tsx
+msgid "Bookmark"
+msgstr "Bookmark"
+
 #: src/components/GraphSurface.tsx
 msgid "Both"
 msgstr "Both"
@@ -4069,6 +4073,10 @@ msgstr "Email"
 msgid "Email address"
 msgstr "Email address"
 
+#: src/editor/paste-format/PasteFormatMenu.tsx
+msgid "Embed"
+msgstr "Embed"
+
 #: src/editor/slash-command/component-items.tsx
 msgid "Embed a video with native player controls."
 msgstr "Embed a video with native player controls."
@@ -6268,6 +6276,10 @@ msgstr "Memo"
 msgid "Memos"
 msgstr "Memos"
 
+#: src/editor/paste-format/PasteFormatMenu.tsx
+msgid "Mention"
+msgstr "Mention"
+
 #: src/components/MermaidDocEditor.tsx
 msgid "Mermaid diagram"
 msgstr "Mermaid diagram"
@@ -7936,6 +7948,10 @@ msgstr "Past 30 days"
 msgid "Past 7 days"
 msgstr "Past 7 days"
 
+#: src/editor/paste-format/PasteFormatMenu.tsx
+msgid "Paste as"
+msgstr "Paste as"
+
 #: src/lib/keyboard-shortcuts.ts
 msgid "Paste duplicate"
 msgstr "Paste duplicate"
@@ -9056,6 +9072,10 @@ msgstr "Reset view filters"
 msgid "Resize {handleKey}"
 msgstr "Resize {handleKey}"
 
+#: src/components/ChatSidebarSection.tsx
+msgid "Resize chat list"
+msgstr "Resize chat list"
+
 #: src/components/DatabaseConflictResolutionNotice.tsx
 msgid "Resolve concurrent database changes"
 msgstr "Resolve concurrent database changes"
@@ -9403,6 +9423,10 @@ msgstr "Sandboxed HTML embed — write HTML, see the rendered preview live."
 #: src/editor/extensions/WikiLinkPropPanel.tsx
 msgid "Save"
 msgstr "Save"
+
+#: src/editor/slash-command/component-items.tsx
+msgid "Save a link as a preview card — title, summary, site icon, and thumbnail."
+msgstr "Save a link as a preview card — title, summary, site icon, and thumbnail."
 
 #: src/components/DatabasePageAppearanceDialog.tsx
 msgid "Save appearance"
@@ -11769,6 +11793,10 @@ msgstr "Uploading securely"
 #: src/components/TimelinePanel.tsx
 msgid "Upstream sync"
 msgstr "Upstream sync"
+
+#: src/editor/paste-format/PasteFormatMenu.tsx
+msgid "URL"
+msgstr "URL"
 
 #: src/components/NavigatorApp.tsx
 msgid "Use a folder you already have."

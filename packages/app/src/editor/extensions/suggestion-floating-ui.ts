@@ -1,9 +1,24 @@
 import { autoUpdate, computePosition, flip, offset, shift, size } from '@floating-ui/dom';
-import type { SuggestionProps } from '@tiptap/suggestion';
 
 export interface SuggestionPositionState {
   popup: HTMLDivElement | null;
   stopAutoUpdate: (() => void) | null;
+}
+
+/**
+ * What the popup needs from whatever is driving it: where to point, and
+ * which element to treat as the positioning context.
+ *
+ * Structurally satisfied by `@tiptap/suggestion`'s `SuggestionProps` (the
+ * original and still the majority caller) without those call sites
+ * changing. Stated as its own minimal shape so surfaces with no suggestion
+ * plugin behind them — the paste-format menu anchors to a document range,
+ * not to a typed trigger — can reuse the same positioning behavior instead
+ * of forging a fake `SuggestionProps`.
+ */
+export interface SuggestionPopupAnchor {
+  clientRect?: (() => DOMRect | null) | null;
+  editor: { view: { dom: Element } };
 }
 
 /**
@@ -33,7 +48,7 @@ export interface SuggestionPositionState {
  * disconnected. A null-check alone would miss this race.
  */
 export function createSuggestionPopup(
-  getCurrentProps: () => SuggestionProps<unknown> | null,
+  getCurrentProps: () => SuggestionPopupAnchor | null,
   label: string,
 ): {
   popup: HTMLDivElement;

@@ -975,6 +975,16 @@ export interface OkWebPreviewMetadata {
   readonly siteName?: string;
   readonly imageDataUrl?: string;
   readonly faviconDataUrl?: string;
+  /**
+   * Remote (non-inlined) URL of the preview image, emitted only when the
+   * `imageDataUrl` fetch above succeeded — i.e. it resolved to a public
+   * host and returned a real, size-capped image. Consumers that persist a
+   * preview into a document (the `Bookmark` descriptor) store this instead
+   * of the base64 payload, which would bloat the file.
+   */
+  readonly imageUrl?: string;
+  /** Remote URL counterpart of `faviconDataUrl`. Same contract as `imageUrl`. */
+  readonly faviconUrl?: string;
 }
 
 export interface OkDesktopBridge {

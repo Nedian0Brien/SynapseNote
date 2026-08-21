@@ -1567,6 +1567,10 @@ msgstr ""
 msgid "Bold"
 msgstr ""
 
+#: src/editor/paste-format/PasteFormatMenu.tsx
+msgid "Bookmark"
+msgstr ""
+
 #: src/components/GraphSurface.tsx
 msgid "Both"
 msgstr ""
@@ -4064,6 +4068,10 @@ msgstr ""
 msgid "Email address"
 msgstr ""
 
+#: src/editor/paste-format/PasteFormatMenu.tsx
+msgid "Embed"
+msgstr ""
+
 #: src/editor/slash-command/component-items.tsx
 msgid "Embed a video with native player controls."
 msgstr ""
@@ -6263,6 +6271,10 @@ msgstr ""
 msgid "Memos"
 msgstr ""
 
+#: src/editor/paste-format/PasteFormatMenu.tsx
+msgid "Mention"
+msgstr ""
+
 #: src/components/MermaidDocEditor.tsx
 msgid "Mermaid diagram"
 msgstr ""
@@ -7931,6 +7943,10 @@ msgstr ""
 msgid "Past 7 days"
 msgstr ""
 
+#: src/editor/paste-format/PasteFormatMenu.tsx
+msgid "Paste as"
+msgstr ""
+
 #: src/lib/keyboard-shortcuts.ts
 msgid "Paste duplicate"
 msgstr ""
@@ -9051,6 +9067,10 @@ msgstr ""
 msgid "Resize {handleKey}"
 msgstr ""
 
+#: src/components/ChatSidebarSection.tsx
+msgid "Resize chat list"
+msgstr ""
+
 #: src/components/DatabaseConflictResolutionNotice.tsx
 msgid "Resolve concurrent database changes"
 msgstr ""
@@ -9397,6 +9417,10 @@ msgstr ""
 #: src/editor/extensions/InternalLinkPropPanel.tsx
 #: src/editor/extensions/WikiLinkPropPanel.tsx
 msgid "Save"
+msgstr ""
+
+#: src/editor/slash-command/component-items.tsx
+msgid "Save a link as a preview card — title, summary, site icon, and thumbnail."
 msgstr ""
 
 #: src/components/DatabasePageAppearanceDialog.tsx
@@ -11763,6 +11787,10 @@ msgstr ""
 
 #: src/components/TimelinePanel.tsx
 msgid "Upstream sync"
+msgstr ""
+
+#: src/editor/paste-format/PasteFormatMenu.tsx
+msgid "URL"
 msgstr ""
 
 #: src/components/NavigatorApp.tsx

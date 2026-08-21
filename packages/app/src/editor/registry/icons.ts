@@ -13,6 +13,7 @@
  */
 import {
   AppWindow,
+  Bookmark,
   Box,
   ChevronRight,
   CopyPlus,
@@ -34,6 +35,7 @@ import {
 
 const ICON_COMPONENTS: Record<string, LucideIcon> = {
   AppWindow,
+  Bookmark,
   ChevronRight,
   CopyPlus,
   FileText,

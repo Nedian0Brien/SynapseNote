@@ -37,6 +37,7 @@ import { JsxComponent } from './jsx-component';
 import { ListEditingShortcuts } from './list-editing-shortcuts';
 import { MathInline } from './math-inline';
 import { ParagraphIndentShortcuts } from './paragraph-indent-shortcuts';
+import { PasteFormatMenu } from './paste-format-menu.ts';
 import { RawMdxFallback } from './raw-mdx-fallback';
 import { SelectionStatePlugin } from './selection-state-plugin';
 import { SlashCommand } from './slash-command';
@@ -107,6 +108,11 @@ export const sharedExtensions = [
       embed: 'Embeds',
     },
   }),
+  // "Paste as" menu — offers mention / bookmark / embed over the link a
+  // lone-URL paste just minted. Registered as an extension because the
+  // clipboard dispatcher (an `editorProps` handler) has no `Editor` to
+  // drive commands or mount React with; it only requests the menu.
+  PasteFormatMenu,
   FormattingShortcuts,
   // App authoring policy for list-shaped markdown: Tab changes nesting and
   // Backspace at the marker boundary converts the item to a plain paragraph.
