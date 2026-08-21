@@ -44,7 +44,6 @@ import {
   ProblemDetailsSchema,
   type TimelineEntry,
 } from '@nedian0brien/synapsenote-core';
-import type { LucideProps } from 'lucide-react';
 import {
   ArrowDownToLine,
   ChevronDown,
@@ -59,15 +58,10 @@ import {
   User,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { lazy, Suspense, type SVGProps, useEffect, useId, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useId, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import type { DiffLayout } from '@/components/DiffView';
-import { ClaudeIcon } from '@/components/icons/claude';
-import { ClineIcon } from '@/components/icons/cline';
-import { CodexIcon } from '@/components/icons/codex';
-import { CopilotIcon } from '@/components/icons/copilot';
-import { CursorIcon } from '@/components/icons/cursor';
-import { WindsurfIcon } from '@/components/icons/windsurf';
+import { AgentIcon } from '@/components/icons/AgentIcon';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -203,16 +197,6 @@ function displayAuthor(entry: TimelineEntry): string {
   return entry.author;
 }
 
-function AgentBrandIcon({ icon, ...props }: { icon?: string } & SVGProps<SVGSVGElement>) {
-  if (icon === 'claude') return <ClaudeIcon {...props} />;
-  if (icon === 'cursor') return <CursorIcon {...props} />;
-  if (icon === 'windsurf') return <WindsurfIcon {...props} />;
-  if (icon === 'openai') return <CodexIcon {...props} />;
-  if (icon === 'cline') return <ClineIcon {...props} />;
-  if (icon === 'github') return <CopilotIcon {...props} />;
-  return <Sparkles strokeWidth={1.5} {...(props as LucideProps)} />;
-}
-
 /** Icon for a timeline entry contributor. Brand icons for agents, lucide icons for system writers. */
 function ContributorIcon({ entry, isDark }: { entry: TimelineEntry; isDark: boolean }) {
   const iconClass = 'size-3.5 shrink-0 text-muted-foreground';
@@ -231,7 +215,7 @@ function ContributorIcon({ entry, isDark }: { entry: TimelineEntry; isDark: bool
     // Known agent brand → brand icon with brand color (dark override when available)
     if (icon !== 'bot') {
       return (
-        <AgentBrandIcon icon={icon} width={14} height={14} className="shrink-0" style={{ color }} />
+        <AgentIcon icon={icon} width={14} height={14} className="shrink-0" style={{ color }} />
       );
     }
 

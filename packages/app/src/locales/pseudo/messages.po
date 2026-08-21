@@ -7282,6 +7282,12 @@ msgstr ""
 msgid "Open {0}"
 msgstr ""
 
+#. placeholder {0}: cliLabel(session.cli)
+#. placeholder {1}: session.title
+#: src/components/ChatSidebarSection.tsx
+msgid "Open {0} chat {1}"
+msgstr ""
+
 #. placeholder {0}: status.remote.label
 #: src/components/settings/SettingsDialogBody.tsx
 #: src/components/SyncStatusBadge.tsx
@@ -7366,11 +7372,6 @@ msgstr ""
 
 #: src/components/ChatSidebarSection.tsx
 msgid "Open chat"
-msgstr ""
-
-#. placeholder {0}: session.title
-#: src/components/ChatSidebarSection.tsx
-msgid "Open chat {0}"
 msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts

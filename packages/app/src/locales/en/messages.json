@@ -1700,6 +1700,7 @@
       "The <0>type</0> every document created from this template gets (e.g. <1>research-note</1>). Keeps new docs SynapseNote Format–conformant."
     ],
     "ScwcF2": ["A project already exists at this location. Pick a different parent folder."],
+    "Se6cV_": ["Open ", ["0"], " chat ", ["1"]],
     "Sesbzr": ["No invalid records detected."],
     "SfY-hq": ["Select one or more options"],
     "SfxQX8": ["Writes a project-MCP config for each selected tool."],
@@ -2161,7 +2162,6 @@
     "aihaPC": ["Link distance"],
     "ajCbk5": ["Move selected record to"],
     "ajz9F8": ["Couldn't load conflict content for ", ["filePath"], ". Try reloading the page."],
-    "alVVBr": ["Open chat ", ["0"]],
     "alxK13": ["Loading exact Context Pack"],
     "amGOpn": ["Active query"],
     "aoa6xA": ["network error (is `ok ui` running?)"],

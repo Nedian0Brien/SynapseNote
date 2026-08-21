@@ -7287,6 +7287,12 @@ msgstr "Open"
 msgid "Open {0}"
 msgstr "Open {0}"
 
+#. placeholder {0}: cliLabel(session.cli)
+#. placeholder {1}: session.title
+#: src/components/ChatSidebarSection.tsx
+msgid "Open {0} chat {1}"
+msgstr "Open {0} chat {1}"
+
 #. placeholder {0}: status.remote.label
 #: src/components/settings/SettingsDialogBody.tsx
 #: src/components/SyncStatusBadge.tsx
@@ -7372,11 +7378,6 @@ msgstr "Open and focus the Ask AI composer for the current editor selection."
 #: src/components/ChatSidebarSection.tsx
 msgid "Open chat"
 msgstr "Open chat"
-
-#. placeholder {0}: session.title
-#: src/components/ChatSidebarSection.tsx
-msgid "Open chat {0}"
-msgstr "Open chat {0}"
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Open CodeMirror search in source editor mode."

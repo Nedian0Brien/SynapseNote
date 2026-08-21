@@ -112,7 +112,17 @@ describe('ChatSidebarSection', () => {
     await waitFor(() => expect(screen.getByText('Fix graph labels')).toBeTruthy());
     expect(screen.getByText('Review database flow')).toBeTruthy();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open chat Fix graph labels' }));
+    // Each row wears its provider's mark, not one shared robot.
+    const codexRow = screen.getByRole('button', { name: 'Open Codex chat Fix graph labels' });
+    const claudeRow = screen.getByRole('button', { name: 'Open Claude chat Review database flow' });
+    expect(codexRow.querySelector('svg')?.getAttribute('aria-label')).toBe('Codex icon');
+    expect(claudeRow.querySelector('svg')?.getAttribute('aria-label')).toBe('Claude icon');
+    // Brand-colored, and the color rides on the custom property so the row's
+    // hover/active `color` cascade cannot repaint the mark.
+    expect(claudeRow.querySelector('svg')?.getAttribute('style')).toContain('#D97757');
+    expect(codexRow.querySelector('svg')?.getAttribute('style')).toContain('--ok-brand-color');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open Codex chat Fix graph labels' }));
     fireEvent.click(screen.getByRole('button', { name: 'New chat' }));
 
     expect(launches).toEqual([
@@ -172,7 +182,7 @@ describe('ChatSidebarSection', () => {
       </TerminalLaunchProvider>,
     );
 
-    await screen.findByRole('button', { name: 'Open chat Fix graph labels' });
+    await screen.findByRole('button', { name: 'Open Codex chat Fix graph labels' });
     const pane = screen.getByTestId('chat-sidebar-pane');
     expect(pane.style.height).toBe('208px');
 
@@ -219,7 +229,7 @@ describe('ChatSidebarSection', () => {
       </TerminalLaunchProvider>,
     );
 
-    const row = await screen.findByRole('button', { name: 'Open chat Fix graph labels' });
+    const row = await screen.findByRole('button', { name: 'Open Codex chat Fix graph labels' });
     fireEvent.contextMenu(row);
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Open chat' }));
     expect(launches).toEqual([
