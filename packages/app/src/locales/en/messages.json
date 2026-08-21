@@ -1205,6 +1205,7 @@
     "KGJb9_": ["Conflicts"],
     "KH4k7k": ["Create a document to start filling this space."],
     "KKBlUU": ["Embed"],
+    "KNSn-e": ["Unarchive chat"],
     "KOZud0": [
       "Build a competitor research knowledge base. Start with an overview page, then add cross-linked pages for each competitor, their products and pricing, and the sources behind every claim."
     ],
@@ -1795,6 +1796,7 @@
     "UhpfxY": ["Pan left"],
     "UkQGhd": ["Hide replace"],
     "UlAF05": ["Copy selected cells"],
+    "UlxRA8": ["Archived (", ["0"], ")"],
     "Unique ID preview": ["Preview: ", ["value"]],
     "Up2_7p": ["Copy full path"],
     "Use only letters, numbers, underscores, or hyphens.": [
@@ -2386,12 +2388,14 @@
     "epuNYK": [
       "Mark a block as the source of truth. Mirrors elsewhere update live as you edit it."
     ],
+    "epugm_": ["Close tabs to the right"],
     "eqNJng": ["Previous result"],
     "euc6Ns": ["Duplicate"],
     "evs0iw": ["Tags matching \"", ["tagListQuery"], "\""],
     "ew58FM": ["Loading run detail"],
     "f1XQyZ": ["Move block"],
     "f5lQ5x": [["keyName"], " type: ", ["type"]],
+    "f5tkuJ": ["Close tabs to the left"],
     "f6Hub0": ["Sort"],
     "f7qewI": ["Move selected page to"],
     "f8jU-L": [["0"], "/", ["1"], " — ", ["2"]],
@@ -2493,6 +2497,7 @@
     "gwykHF": ["This doc hasn't synced to GitHub yet. The link will work after the next sync."],
     "gympwh": ["Edit condition"],
     "h-AdvS": ["The folders and templates are already here, so there's nothing to add."],
+    "h-vkgp": ["Archive chat"],
     "h06R3C": ["No pages are missing outgoing graph links."],
     "h3QZcB": [
       "A branch named ",
@@ -2562,6 +2567,7 @@
     "i-ShMB": ["Diagram"],
     "i1flq_": ["Wiki link suggestions"],
     "i3f2kh": ["No matching commands."],
+    "i74lmA": ["Every chat is archived."],
     "i92eAT": ["We'll create a repository and start syncing — no terminal needed."],
     "i9OyGp": ["Undo or redo"],
     "i9TPUi": [
@@ -2646,6 +2652,7 @@
     "jaCmC9": ["Send image to AI"],
     "jbSG8V": ["Show Files (", ["sidebarShortcutLabel"], ")"],
     "jdGUeI": ["Couldn't create template: ", ["error"]],
+    "jdLk0E": ["Close other tabs"],
     "jerqF0": ["Loading branch state"],
     "jhtG3I": [" Your selection has been restored."],
     "jkZFIw": ["No memo text"],
@@ -3096,6 +3103,7 @@
     "r3iaI0": ["No chats yet."],
     "r4R7AZ": ["Network error during cleanup"],
     "r51jLC": ["File saved & Claude Desktop App opened"],
+    "r6ncaO": ["Close tab"],
     "r7F43e": ["Retry reconciliation"],
     "r871ed": [
       "Your knowledge base is now on GitHub at <0>",

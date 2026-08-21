@@ -1229,6 +1229,11 @@ msgstr ""
 msgid "Archive"
 msgstr ""
 
+#: src/components/ChatSidebarSection.tsx
+#: src/components/TerminalTabStrip.tsx
+msgid "Archive chat"
+msgstr ""
+
 #: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 #: src/components/DatabaseTableCellMenu.tsx
 msgid "Archive page"
@@ -1245,6 +1250,11 @@ msgstr ""
 
 #: src/components/DatabaseTableRowActions.tsx
 msgid "Archived"
+msgstr ""
+
+#. placeholder {0}: archivedSessions.length
+#: src/components/ChatSidebarSection.tsx
+msgid "Archived ({0})"
 msgstr ""
 
 #: src/components/DatabaseContextInspectorDialog.tsx
@@ -2121,6 +2131,10 @@ msgstr ""
 msgid "Close new tab"
 msgstr ""
 
+#: src/components/TerminalTabStrip.tsx
+msgid "Close other tabs"
+msgstr ""
+
 #: src/components/EditorTabs.tsx
 msgid "Close others"
 msgstr ""
@@ -2128,6 +2142,18 @@ msgstr ""
 #: src/components/FolderOverview.tsx
 #: src/editor/components/PdfEmbed.tsx
 msgid "Close search"
+msgstr ""
+
+#: src/components/TerminalTabStrip.tsx
+msgid "Close tab"
+msgstr ""
+
+#: src/components/TerminalTabStrip.tsx
+msgid "Close tabs to the left"
+msgstr ""
+
+#: src/components/TerminalTabStrip.tsx
+msgid "Close tabs to the right"
 msgstr ""
 
 #: src/components/TerminalRefusalNotice.tsx
@@ -4155,6 +4181,10 @@ msgstr ""
 
 #: src/components/DatabaseTemplatesDialog.tsx
 msgid "Every"
+msgstr ""
+
+#: src/components/ChatSidebarSection.tsx
+msgid "Every chat is archived."
 msgstr ""
 
 #: src/components/DatabaseContextInspectorDialog.tsx
@@ -11377,6 +11407,10 @@ msgstr ""
 
 #: src/components/DatabaseRelationCellEditor.tsx
 msgid "Unable to search related records."
+msgstr ""
+
+#: src/components/ChatSidebarSection.tsx
+msgid "Unarchive chat"
 msgstr ""
 
 #: src/components/DatabaseRelationCellEditor.tsx

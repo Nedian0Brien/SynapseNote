@@ -1234,6 +1234,11 @@ msgstr "Approve revocation"
 msgid "Archive"
 msgstr "Archive"
 
+#: src/components/ChatSidebarSection.tsx
+#: src/components/TerminalTabStrip.tsx
+msgid "Archive chat"
+msgstr "Archive chat"
+
 #: src/components/database-record-page/DatabaseRecordPageChromeRuntime.tsx
 #: src/components/DatabaseTableCellMenu.tsx
 msgid "Archive page"
@@ -1251,6 +1256,11 @@ msgstr "archived"
 #: src/components/DatabaseTableRowActions.tsx
 msgid "Archived"
 msgstr "Archived"
+
+#. placeholder {0}: archivedSessions.length
+#: src/components/ChatSidebarSection.tsx
+msgid "Archived ({0})"
+msgstr "Archived ({0})"
 
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "archived records included"
@@ -2126,6 +2136,10 @@ msgstr "Close neighbor cards"
 msgid "Close new tab"
 msgstr "Close new tab"
 
+#: src/components/TerminalTabStrip.tsx
+msgid "Close other tabs"
+msgstr "Close other tabs"
+
 #: src/components/EditorTabs.tsx
 msgid "Close others"
 msgstr "Close others"
@@ -2134,6 +2148,18 @@ msgstr "Close others"
 #: src/editor/components/PdfEmbed.tsx
 msgid "Close search"
 msgstr "Close search"
+
+#: src/components/TerminalTabStrip.tsx
+msgid "Close tab"
+msgstr "Close tab"
+
+#: src/components/TerminalTabStrip.tsx
+msgid "Close tabs to the left"
+msgstr "Close tabs to the left"
+
+#: src/components/TerminalTabStrip.tsx
+msgid "Close tabs to the right"
+msgstr "Close tabs to the right"
 
 #: src/components/TerminalRefusalNotice.tsx
 msgid "Close terminal"
@@ -4161,6 +4187,10 @@ msgstr "Estimated tokens"
 #: src/components/DatabaseTemplatesDialog.tsx
 msgid "Every"
 msgstr "Every"
+
+#: src/components/ChatSidebarSection.tsx
+msgid "Every chat is archived."
+msgstr "Every chat is archived."
 
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "Exact Context Pack"
@@ -11383,6 +11413,10 @@ msgstr "Typed sort · {0} sort keys · record ID tie-breaker"
 #: src/components/DatabaseRelationCellEditor.tsx
 msgid "Unable to search related records."
 msgstr "Unable to search related records."
+
+#: src/components/ChatSidebarSection.tsx
+msgid "Unarchive chat"
+msgstr "Unarchive chat"
 
 #: src/components/DatabaseRelationCellEditor.tsx
 #: src/components/DatabaseRelationPropertyWidget.tsx

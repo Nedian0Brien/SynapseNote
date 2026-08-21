@@ -207,6 +207,59 @@ describe('ChatSidebarSection', () => {
     );
   });
 
+  test('archives a chat out of the list and brings it back', async () => {
+    const bridge = {
+      terminal: {
+        listChatSessions: mock(() =>
+          Promise.resolve([
+            {
+              cli: 'codex' as const,
+              sessionId: 'codex-session',
+              title: 'Fix graph labels',
+              updatedAt: 2,
+            },
+            {
+              cli: 'claude' as const,
+              sessionId: 'claude-session',
+              title: 'Review database flow',
+              updatedAt: 1,
+            },
+          ]),
+        ),
+      },
+    } as unknown as OkDesktopBridge;
+    const { ChatSidebarSection } = await import('./ChatSidebarSection');
+    render(
+      <TerminalLaunchProvider
+        value={{ launchInTerminal: () => {}, installedClis: { codex: true } }}
+      >
+        <ChatSidebarSection bridge={bridge} />
+      </TerminalLaunchProvider>,
+    );
+
+    const row = await screen.findByRole('button', { name: 'Open Codex chat Fix graph labels' });
+    fireEvent.contextMenu(row);
+    fireEvent.click(await screen.findByTestId('chat-sidebar-archive'));
+
+    // Out of the list, but one disclosure away — never gone.
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Open Codex chat Fix graph labels' })).toBeNull(),
+    );
+    expect(screen.getByRole('button', { name: 'Open Claude chat Review database flow' })).toBeTruthy();
+    const toggle = screen.getByTestId('chat-sidebar-archived-toggle');
+    expect(toggle.textContent).toContain('1');
+
+    fireEvent.click(toggle);
+    const archivedRow = await screen.findByRole('button', {
+      name: 'Open Codex chat Fix graph labels',
+    });
+    fireEvent.contextMenu(archivedRow);
+    fireEvent.click(await screen.findByTestId('chat-sidebar-unarchive'));
+
+    await waitFor(() => expect(screen.queryByTestId('chat-sidebar-archived-toggle')).toBeNull());
+    expect(screen.getByRole('button', { name: 'Open Codex chat Fix graph labels' })).toBeTruthy();
+  });
+
   test('opens a row context menu with safe chat actions', async () => {
     const listChatSessions = mock(() =>
       Promise.resolve([

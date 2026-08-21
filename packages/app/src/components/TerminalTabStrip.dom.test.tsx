@@ -26,6 +26,8 @@ function renderStrip(props?: {
   const onNewChatPickCli = mock((_cli: string) => {});
   const onNewChatPickTerminal = mock(() => {});
   const onClose = mock((_id: string) => {});
+  const onCloseMany = mock((_ids: readonly string[]) => {});
+  const onArchive = mock((_id: string) => {});
   const onRename = mock((_id: string, _label: string) => {});
   const onToggleDock = mock(() => {});
   const onCollapse = mock(() => {});
@@ -46,6 +48,8 @@ function renderStrip(props?: {
         onNewChatPickCli={onNewChatPickCli}
         onNewChatPickTerminal={onNewChatPickTerminal}
         onClose={onClose}
+        onCloseMany={onCloseMany}
+        onArchive={onArchive}
         onRename={props?.renameDisabled ? undefined : onRename}
         dockPosition={props?.draggable ? undefined : (props?.dockPosition ?? 'bottom')}
         onToggleDock={props?.draggable ? undefined : onToggleDock}
@@ -63,6 +67,8 @@ function renderStrip(props?: {
     onNewChatPickCli,
     onNewChatPickTerminal,
     onClose,
+    onCloseMany,
+    onArchive,
     onRename,
     onToggleDock,
     onCollapse,
@@ -90,6 +96,51 @@ describe('TerminalTabStrip', () => {
     expect(onReloadPreviousChats).toHaveBeenCalledTimes(1);
     await user.click(await screen.findByRole('menuitem', { name: 'Compare source arguments' }));
     expect(onSelectPreviousChat).toHaveBeenCalledWith('older');
+  });
+
+  test('closes a run of tabs from one tab\'s context menu', async () => {
+    const user = userEvent.setup();
+    const { onCloseMany, onClose } = renderStrip({ activeSessionId: 's2' });
+
+    await user.pointer({ keys: '[MouseRight]', target: screen.getByRole('tab', { name: /Terminal 2/ }) });
+
+    // Every close item acts on the run as the user currently sees it.
+    await user.click(await screen.findByTestId('terminal-tab-context-close-others'));
+    expect(onCloseMany).toHaveBeenCalledWith(['s1', 's3']);
+
+    await user.pointer({ keys: '[MouseRight]', target: screen.getByRole('tab', { name: /Terminal 2/ }) });
+    await user.click(await screen.findByTestId('terminal-tab-context-close-left'));
+    expect(onCloseMany).toHaveBeenLastCalledWith(['s1']);
+
+    await user.pointer({ keys: '[MouseRight]', target: screen.getByRole('tab', { name: /Terminal 2/ }) });
+    await user.click(await screen.findByTestId('terminal-tab-context-close-right'));
+    expect(onCloseMany).toHaveBeenLastCalledWith(['s3']);
+
+    await user.pointer({ keys: '[MouseRight]', target: screen.getByRole('tab', { name: /Terminal 2/ }) });
+    await user.click(await screen.findByTestId('terminal-tab-context-close'));
+    expect(onClose).toHaveBeenCalledWith('s2');
+  });
+
+  test('disables the edge close items for the first tab and offers archive only for chats', async () => {
+    const user = userEvent.setup();
+    const { onArchive } = renderStrip({
+      sessions: [
+        { id: 's1', label: 'Terminal 1' },
+        { id: 's2', label: 'Review the plan', cli: 'claude', canArchive: true },
+      ],
+    });
+
+    await user.pointer({ keys: '[MouseRight]', target: screen.getByRole('tab', { name: /Terminal 1/ }) });
+    // Nothing sits left of the first tab, and a bare shell has nothing to file.
+    expect(
+      (await screen.findByTestId('terminal-tab-context-close-left')).getAttribute('aria-disabled'),
+    ).toBe('true');
+    expect(screen.queryByTestId('terminal-tab-context-archive')).toBeNull();
+    await user.keyboard('{Escape}');
+
+    await user.pointer({ keys: '[MouseRight]', target: screen.getByRole('tab', { name: /Review the plan/ }) });
+    await user.click(await screen.findByTestId('terminal-tab-context-archive'));
+    expect(onArchive).toHaveBeenCalledWith('s2');
   });
 
   test('hides the previous-chats control when the host supplies no handler', () => {

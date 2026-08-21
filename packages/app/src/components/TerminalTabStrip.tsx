@@ -19,6 +19,13 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { TargetIcon } from '@/components/handoff/OpenInAgentMenuItem';
 import { Button } from '@/components/ui/button';
 import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -99,6 +106,84 @@ export interface TerminalTabDescriptor {
   readonly id: string;
   readonly label: string;
   readonly cli?: TerminalCli | null;
+  /** True when this tab is a native chat the host can put away — the context
+   *  menu's Archive item appears only then (a bare shell has nothing to file). */
+  readonly canArchive?: boolean;
+}
+
+/**
+ * Right-click menu for one tab: the close family plus, for a native chat, the
+ * archive action. The close items work on ids computed from the tab's position
+ * in the current run, so "to the left" / "to the right" mean what the user sees
+ * after a reorder, not the order the sessions were opened in.
+ */
+function TerminalTabContextMenu({
+  children,
+  session,
+  sessions,
+  onClose,
+  onCloseMany,
+  onArchive,
+}: {
+  children: ReactNode;
+  session: TerminalTabDescriptor;
+  sessions: readonly TerminalTabDescriptor[];
+  onClose: (id: string) => void;
+  onCloseMany?: (ids: readonly string[]) => void;
+  onArchive?: (id: string) => void;
+}) {
+  const index = sessions.findIndex((candidate) => candidate.id === session.id);
+  const ids = (subset: readonly TerminalTabDescriptor[]) => subset.map((entry) => entry.id);
+  const others = ids(sessions.filter((candidate) => candidate.id !== session.id));
+  const toTheLeft = index <= 0 ? [] : ids(sessions.slice(0, index));
+  const toTheRight = index < 0 ? [] : ids(sessions.slice(index + 1));
+  const canArchive = session.canArchive === true && onArchive != null;
+
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+      <ContextMenuContent className="min-w-48">
+        <ContextMenuItem
+          data-testid="terminal-tab-context-close"
+          onSelect={() => onClose(session.id)}
+        >
+          <Trans>Close tab</Trans>
+        </ContextMenuItem>
+        <ContextMenuItem
+          data-testid="terminal-tab-context-close-others"
+          disabled={onCloseMany == null || others.length === 0}
+          onSelect={() => onCloseMany?.(others)}
+        >
+          <Trans>Close other tabs</Trans>
+        </ContextMenuItem>
+        <ContextMenuItem
+          data-testid="terminal-tab-context-close-left"
+          disabled={onCloseMany == null || toTheLeft.length === 0}
+          onSelect={() => onCloseMany?.(toTheLeft)}
+        >
+          <Trans>Close tabs to the left</Trans>
+        </ContextMenuItem>
+        <ContextMenuItem
+          data-testid="terminal-tab-context-close-right"
+          disabled={onCloseMany == null || toTheRight.length === 0}
+          onSelect={() => onCloseMany?.(toTheRight)}
+        >
+          <Trans>Close tabs to the right</Trans>
+        </ContextMenuItem>
+        {canArchive ? (
+          <>
+            <ContextMenuSeparator />
+            <ContextMenuItem
+              data-testid="terminal-tab-context-archive"
+              onSelect={() => onArchive?.(session.id)}
+            >
+              <Trans>Archive chat</Trans>
+            </ContextMenuItem>
+          </>
+        ) : null}
+      </ContextMenuContent>
+    </ContextMenu>
+  );
 }
 
 /** One entry in the strip's "previous chats" menu. */
@@ -136,6 +221,18 @@ interface TerminalTabStripProps {
   readonly newChatVisibleClis?: readonly TerminalCli[];
   /** Fires with the session id when the user closes a tab. */
   readonly onClose: (id: string) => void;
+  /**
+   * Close several tabs at once (the context menu's close-others / close-left /
+   * close-right). Separate from {@link onClose} because the host has to drop
+   * them in ONE state update: closing ids in a loop makes every call after the
+   * first read a pre-close snapshot. Without it those items stay hidden.
+   */
+  readonly onCloseMany?: (ids: readonly string[]) => void;
+  /**
+   * Put a chat away: it leaves the chat lists and its tab closes. Rendered only
+   * for tabs that report {@link TerminalTabDescriptor.canArchive}.
+   */
+  readonly onArchive?: (id: string) => void;
   /**
    * Commit a manual tab rename: the trimmed label the user typed, or the empty
    * string to clear a previously-set custom name (revert to the program's OSC
@@ -233,6 +330,8 @@ export function TerminalTabStrip({
   onNewChatPickTerminal,
   newChatVisibleClis,
   onClose,
+  onCloseMany,
+  onArchive,
   onRename,
   onReorder,
   onDragActiveChange,
@@ -453,47 +552,61 @@ export function TerminalTabStrip({
                         (OSC 0/2) that overflows is hard-clipped in the tab — the
                         tooltip surfaces the full title on hover. */}
                         <Tooltip>
-                          <TooltipTrigger asChild>
-                            <TabsTrigger
-                              value={session.id}
-                              // Anchor for focus-return after a rename ends.
-                              data-tab-id={session.id}
-                              // Pointer/Enter activation routes through onClick (arrow-key
-                              // navigation does not fire it), so the consumer can focus the
-                              // terminal on a deliberate select without stealing focus while
-                              // the user arrows across tabs. The second click of a
-                              // double-click is skipped (detail >= 2): otherwise its
-                              // activation would focus the terminal and blur-commit the
-                              // rename that same double-click is opening.
-                              onClick={(event) => {
-                                if (event.detail >= 2) return;
-                                onTabActivate?.(session.id);
-                              }}
-                              // Double-click (pointer) and F2 (keyboard) enter rename —
-                              // the same two idioms the editor file tabs use. Inert
-                              // when the host supplies no onRename.
-                              onDoubleClick={() => enterRename(session)}
-                              onKeyDown={(event) => {
-                                if (event.key === 'F2') {
-                                  event.preventDefault();
-                                  enterRename(session);
-                                }
-                              }}
-                              className={cn(
-                                'h-7 flex-none rounded-md px-2 text-xs',
-                                draggable && '[-webkit-app-region:no-drag]',
-                              )}
-                            >
-                              {session.cli != null ? (
-                                <TargetIcon
-                                  id={cliIconTargetId(session.cli)}
-                                  className="size-3.5 shrink-0"
-                                  aria-hidden="true"
-                                />
-                              ) : null}
-                              <span className="max-w-40 truncate">{session.label}</span>
-                            </TabsTrigger>
-                          </TooltipTrigger>
+                          {/* Two `asChild` triggers over one element: the tab is
+                            both the tooltip's anchor and the context menu's.
+                            The context trigger has to sit OUTSIDE the tooltip
+                            trigger — each `asChild` merges its props into the
+                            next DOM-forwarding element, and only Radix's own
+                            triggers forward. */}
+                          <TerminalTabContextMenu
+                            session={session}
+                            sessions={sessions}
+                            onClose={onClose}
+                            onCloseMany={onCloseMany}
+                            onArchive={onArchive}
+                          >
+                            <TooltipTrigger asChild>
+                              <TabsTrigger
+                                value={session.id}
+                                // Anchor for focus-return after a rename ends.
+                                data-tab-id={session.id}
+                                // Pointer/Enter activation routes through onClick (arrow-key
+                                // navigation does not fire it), so the consumer can focus the
+                                // terminal on a deliberate select without stealing focus while
+                                // the user arrows across tabs. The second click of a
+                                // double-click is skipped (detail >= 2): otherwise its
+                                // activation would focus the terminal and blur-commit the
+                                // rename that same double-click is opening.
+                                onClick={(event) => {
+                                  if (event.detail >= 2) return;
+                                  onTabActivate?.(session.id);
+                                }}
+                                // Double-click (pointer) and F2 (keyboard) enter rename —
+                                // the same two idioms the editor file tabs use. Inert
+                                // when the host supplies no onRename.
+                                onDoubleClick={() => enterRename(session)}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'F2') {
+                                    event.preventDefault();
+                                    enterRename(session);
+                                  }
+                                }}
+                                className={cn(
+                                  'h-7 flex-none rounded-md px-2 text-xs',
+                                  draggable && '[-webkit-app-region:no-drag]',
+                                )}
+                              >
+                                {session.cli != null ? (
+                                  <TargetIcon
+                                    id={cliIconTargetId(session.cli)}
+                                    className="size-3.5 shrink-0"
+                                    aria-hidden="true"
+                                  />
+                                ) : null}
+                                <span className="max-w-40 truncate">{session.label}</span>
+                              </TabsTrigger>
+                            </TooltipTrigger>
+                          </TerminalTabContextMenu>
                           <TooltipContent side="bottom" sideOffset={8}>
                             {session.label}
                           </TooltipContent>

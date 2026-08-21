@@ -3,6 +3,13 @@ import type { TerminalCli } from '@nedian0brien/synapsenote-core';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { TabsContent } from '@/components/ui/tabs';
+import {
+  type ArchivedChatCli,
+  archiveChat,
+  archivedChatKey,
+  loadArchivedChats,
+  subscribeToArchivedChats,
+} from '@/lib/archived-chats';
 import { resolveDefaultCli } from '@/lib/default-cli-resolver';
 import type { OkCliChatSession, OkDesktopBridge } from '@/lib/desktop-bridge-types';
 import type { TerminalDockPosition } from '@/lib/terminal-dock-store';
@@ -269,6 +276,17 @@ export function TerminalSessionsHost({
   // inventory query can't spawn a shell the adopted set would then replace.
   const [rehydrationSettled, setRehydrationSettled] = useState(!canRehydrate);
   const [nativeChatSessions, setNativeChatSessions] = useState<readonly OkCliChatSession[]>([]);
+  const [archivedChats, setArchivedChats] = useState<ReadonlySet<string>>(loadArchivedChats);
+
+  // The set is written from this window's tab menu and from the sidebar, and a
+  // second window (the standalone terminal) writes to the same store.
+  useEffect(() => subscribeToArchivedChats(setArchivedChats), []);
+
+  // Chats the user put away stay on disk but leave every list that offers them
+  // back, here and in the sidebar.
+  const visibleNativeChatSessions = nativeChatSessions.filter(
+    (entry) => !archivedChats.has(archivedChatKey(entry.cli, entry.sessionId)),
+  );
 
   function reloadNativeChatSessions() {
     loadNativeChatSessions(bridge, setNativeChatSessions);
@@ -336,6 +354,19 @@ export function TerminalSessionsHost({
     launchForSession: TerminalLaunchIntent | null,
     initialTitle: string | null = null,
   ) {
+    // A resumed chat already owns a name — the CLI's own title, the same one the
+    // sidebar row and the previous-chats menu show. Reading it here (rather than
+    // at each call site) is what keeps a chat opened from the sidebar from
+    // landing on the generic "Claude chat" label. When the native list has not
+    // loaded yet the lookup misses and the backfill effect below fills it in.
+    const resumeTitle =
+      launchForSession?.resumeSessionId === undefined
+        ? null
+        : (nativeChatSessions.find(
+            (entry) =>
+              entry.cli === launchForSession.cli &&
+              entry.sessionId === launchForSession.resumeSessionId,
+          )?.title ?? null);
     sessionCounterRef.current += 1;
     const id = makeSessionId(sessionCounterRef.current);
     setSessions((prev) => [
@@ -343,7 +374,7 @@ export function TerminalSessionsHost({
       {
         id,
         launch: launchForSession,
-        title: initialTitle,
+        title: initialTitle ?? resumeTitle,
         customLabel: null,
         ordinal: sessionCounterRef.current,
         adoptPtyId: null,
@@ -373,21 +404,14 @@ export function TerminalSessionsHost({
   // Tab-strip New-chat primary: open a promptless session running `cli`.
   function openNewChatSession(cli: TerminalCli, resumeSessionId?: string) {
     stripLaunchNonceRef.current += 1;
-    const previousTitle =
-      resumeSessionId === undefined
-        ? null
-        : (nativeChatSessions.find(
-            (entry) => entry.cli === cli && entry.sessionId === resumeSessionId,
-          )?.title ?? null);
-    openSession(
-      {
-        prompt: null,
-        cli,
-        nonce: stripLaunchNonceRef.current,
-        ...(resumeSessionId === undefined ? {} : { resumeSessionId }),
-      },
-      previousTitle,
-    );
+    // The resumed chat's title comes from openSession, which reads it for every
+    // resume path rather than only this one.
+    openSession({
+      prompt: null,
+      cli,
+      nonce: stripLaunchNonceRef.current,
+      ...(resumeSessionId === undefined ? {} : { resumeSessionId }),
+    });
   }
 
   function changeEmptyChatProvider(sessionId: string, provider: CliChatId) {
@@ -478,6 +502,28 @@ export function TerminalSessionsHost({
     if (ptyId != null) bridge.terminal?.setMeta?.(ptyId, { customLabel: next });
   }
 
+  // A chat resumed before the native list loaded has no title yet; fill it in
+  // when the list arrives so the tab stops reading "Claude chat". A tab the user
+  // renamed, or one that already has a title, is left alone.
+  useEffect(() => {
+    if (nativeChatSessions.length === 0) return;
+    setSessions((prev) => {
+      let changed = false;
+      const next = prev.map((session) => {
+        if (session.title != null || session.customLabel != null) return session;
+        const resumeId = session.chatSessionId ?? session.launch?.resumeSessionId ?? null;
+        if (resumeId === null) return session;
+        const match = nativeChatSessions.find(
+          (entry) => entry.sessionId === resumeId && entry.cli === session.launch?.cli,
+        );
+        if (match === undefined) return session;
+        changed = true;
+        return { ...session, title: match.title };
+      });
+      return changed ? next : prev;
+    });
+  }, [nativeChatSessions]);
+
   // Display label precedence, shared by the tab list and the reorder announcer:
   // a manual name pins over the OSC title, which pins over the sticky ordinal.
   function sessionLabel(session: TerminalSessionDescriptor): string {
@@ -554,17 +600,33 @@ export function TerminalSessionsHost({
   // re-subscribing (React Compiler forbids writing the ref during render).
   const openSessionRef = useRef(openSession);
 
-  function closeSession(id: string) {
+  /**
+   * Close one or many tabs in a single commit.
+   *
+   * The whole set has to leave at once: `sessionsRef` catches up after the
+   * commit, so closing ids one at a time would have every call but the first
+   * read a pre-close snapshot and put the already-closed tabs back. The tab
+   * menu's close-others / close-left / close-right all land here.
+   */
+  function closeSessions(ids: readonly string[]) {
+    const closing = new Set(ids);
+    if (closing.size === 0) return;
     // Read the live list from the ref (kept in sync post-commit), not the render
     // closure, so two close actions that coalesce into one batch can't act on a
     // stale snapshot — the same source the ⌘-number handler reads.
     const current = sessionsRef.current;
-    const index = current.findIndex((session) => session.id === id);
-    if (index === -1) return;
-    const next = current.filter((session) => session.id !== id);
-    // Closing the active tab activates its left neighbor, else the right one.
-    if (id === activeSessionId) {
-      const neighbor = current[index - 1] ?? current[index + 1];
+    const next = current.filter((session) => !closing.has(session.id));
+    if (next.length === current.length) return;
+    // Closing the active tab activates its nearest surviving left neighbor, else
+    // the nearest on the right.
+    if (closing.has(activeSessionId)) {
+      const index = current.findIndex((session) => session.id === activeSessionId);
+      const neighbor =
+        current
+          .slice(0, index)
+          .reverse()
+          .find((session) => !closing.has(session.id)) ??
+        current.slice(index + 1).find((session) => !closing.has(session.id));
       const neighborId = neighbor?.id ?? '';
       setActiveSessionId(neighborId);
       // Move focus into the surviving neighbor's terminal so a keyboard user who
@@ -579,6 +641,24 @@ export function TerminalSessionsHost({
       onVisibleChange(false);
       onRequestEditorFocus();
     }
+  }
+
+  function closeSession(id: string) {
+    closeSessions([id]);
+  }
+
+  /**
+   * Put a chat away and close its tab. The transcript stays where the CLI wrote
+   * it; only the lists that offer the chat back drop it, so unarchiving from the
+   * sidebar brings it straight back.
+   */
+  function archiveSession(id: string) {
+    const session = sessionsRef.current.find((candidate) => candidate.id === id);
+    const cli = session?.launch?.cli;
+    if (session?.chatSessionId != null && cli != null && isCliChatId(cli)) {
+      setArchivedChats(archiveChat(cli as ArchivedChatCli, session.chatSessionId));
+    }
+    closeSessions([id]);
   }
   const closeActiveRef = useRef(() => {});
 
@@ -855,6 +935,13 @@ export function TerminalSessionsHost({
     // ordinal (not its render index) so a reorder never renumbers untitled tabs.
     label: sessionLabel(session),
     cli: session.launch?.cli ?? null,
+    // Archivable once the chat has a native session id to file it under — a bare
+    // shell never gets one, and a brand-new chat gets one as the CLI reports it.
+    canArchive:
+      session.chatSessionId != null &&
+      session.launch != null &&
+      session.launch.stagePaste === undefined &&
+      isCliChatId(session.launch.cli),
   }));
 
   const openChatHeaderSessions: readonly CliChatHeaderSession[] = sessions.flatMap((session) => {
@@ -883,7 +970,7 @@ export function TerminalSessionsHost({
   );
   const chatHeaderSessions: readonly CliChatHeaderSession[] = [
     ...openChatHeaderSessions,
-    ...nativeChatSessions.flatMap((entry) =>
+    ...visibleNativeChatSessions.flatMap((entry) =>
       openNativeSessionIds.has(entry.sessionId)
         ? []
         : [
@@ -920,6 +1007,8 @@ export function TerminalSessionsHost({
         onNewChatPickTerminal={pickNewChatTerminal}
         newChatVisibleClis={newChatVisibleClis}
         onClose={closeSession}
+        onCloseMany={closeSessions}
+        onArchive={archiveSession}
         onRename={setSessionCustomLabel}
         // Pointer-drag reorder: the strip computes the new visual order and the
         // host applies it (keyboard reorder shares reorderSessions). onDragActive
