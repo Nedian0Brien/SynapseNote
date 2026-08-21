@@ -1,5 +1,6 @@
 import { Trans, useLingui } from '@lingui/react/macro';
 import { LinkGraphSuccessSchema, ProblemDetailsSchema } from '@nedian0brien/synapsenote-core';
+import { forceCollide } from 'd3-force-3d';
 import { useTheme } from 'next-themes';
 import { useEffect, useImperativeHandle, useRef, useState } from 'react';
 import ForceGraph2D, {
@@ -31,6 +32,7 @@ import {
   getGraphAreaNameFade,
   getGraphAreaTintWeight,
 } from './graph-areas';
+import { GRAPH_COLLISION_STRENGTH, getGraphCollisionRadius } from './graph-collision';
 import { GRAPH_COLOR_PAIRS } from './graph-colors';
 import { applyGraphFilters } from './graph-filter';
 import {
@@ -919,6 +921,20 @@ export function GraphView({
       displayState: getGraphNodeDisplayState({ node, navigationIntentByNodeId }),
       visualState: getGraphNodeVisualState(node, { activeDocName, selectedNodeId }),
     }).scale;
+  // Collision uses the resting structural size, not selection or hover state.
+  // Otherwise clicking a node would change its physical radius and reflow the
+  // graph the user is trying to inspect. The accessor lives in a ref so the d3
+  // force can stay installed while navigation metadata and degrees update.
+  const collisionRadiusRef = useRef<(node: GraphNode) => number>(() => 8);
+  const collisionRadius = (node: GraphNode): number =>
+    getGraphCollisionRadius({
+      baseNodeRadius: getGraphNodeCanvasRadius('default'),
+      nodeScale: drawnNodeScale(node),
+      linkDistance,
+    });
+  useEffect(() => {
+    collisionRadiusRef.current = collisionRadius;
+  });
   // Folder territories, and where each one currently sits. The bounds follow
   // the simulation, so they are recomputed once per frame in the pre-render
   // hook and reused by the post-render hook that writes the region names —
@@ -1064,6 +1080,18 @@ export function GraphView({
         return (1 / Math.max(1, Math.min(sourceDegree, targetDegree))) * linkStrength;
       });
     }
+
+    // manyBody repulsion changes the scale of the whole layout, but it does
+    // not guarantee a minimum local gap. Collision does: dense folders settle
+    // as readable groups instead of allowing several nodes to occupy nearly
+    // the same point. Its radius follows link distance and structural node size
+    // so both the default preset and wide user presets remain compatible.
+    fg.d3Force(
+      'collide',
+      forceCollide<NodeObject<GraphNode>>()
+        .radius((node) => collisionRadiusRef.current(node))
+        .strength(GRAPH_COLLISION_STRENGTH),
+    );
 
     fg.d3ReheatSimulation();
   }, [centerStrength, repelStrength, linkStrength, linkDistance, displayLinks]);
