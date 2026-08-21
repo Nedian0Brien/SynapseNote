@@ -70,6 +70,11 @@ export interface GraphSettingsStorage {
 }
 
 const STORAGE_KEYS: Record<GraphSettingsScope, string> = {
+  docked: 'ok-graph-settings-docked-v2',
+  fullscreen: 'ok-graph-settings-fullscreen-v2',
+};
+
+const PREVIOUS_STORAGE_KEYS: Record<GraphSettingsScope, string> = {
   docked: 'ok-graph-settings-docked-v1',
   fullscreen: 'ok-graph-settings-fullscreen-v1',
 };
@@ -82,53 +87,13 @@ const LEGACY_URL_NODES_KEYS: Record<GraphSettingsScope, string> = {
   fullscreen: 'ok-graph-fullscreen-url-nodes-v1',
 };
 
-/**
- * d3-force's own defaults, so a multiplier of 1 is a true no-op:
- * `forceManyBody().strength(-30)`, `forceLink().distance(30)`,
- * `forceCenter().strength(1)`.
- *
- * These four are deliberately left at d3's values, because measurement says
- * they are not the knobs that matter — see GRAPH_REPEL_RANGE_FACTOR. Sweeping
- * repulsion 30 → 100 → 300 over the whole project moved the ratio of map size
- * to node spacing by 138:1 → 140:1 → 143:1, i.e. not at all: a global force
- * scales the entire layout, and zoom-to-fit divides that right back out. Same
- * for spring length (30 → 90 gave 131:1). They change the number the physics
- * runs on and nothing a reader can see.
- */
+/** Physical defaults from Obsidian's graph worker, after its UI transforms. */
 export const GRAPH_FORCE_DEFAULTS: GraphForceSettings = {
-  centerStrength: 1,
-  repelStrength: 30,
+  centerStrength: 0.1,
+  repelStrength: 1000,
   linkStrength: 1,
-  linkDistance: 30,
+  linkDistance: 250,
 };
-
-/**
- * How far a node's repulsion reaches, as a multiple of the spring length.
- *
- * d3 leaves `forceManyBody().distanceMax()` at Infinity, so every node pushes
- * every other node at any range. That is the one setting that decided whether
- * this graph was readable, and not for the reason it looks like: the layout
- * clusters correctly either way (~71% of a node's six nearest neighbours are
- * from its own folder, at convergence, with or without the cap). What unbounded
- * repulsion wrecks is the SCALE RANGE. Pressure from 1,200 distant nodes packs
- * each cluster tighter than its own springs want while shoving the clusters
- * apart, so the map ends up 138× wider than the gap between adjacent nodes.
- * Zoom out far enough to see the map and neighbours sit ~3px apart — a solid
- * mass. Zoom in far enough to read a cluster and the map is gone. No zoom level
- * shows both, which is what "dense with its children, far from its neighbours"
- * actually was.
- *
- * Capping the range fixes the ratio rather than the size: 138:1 → 64:1 here,
- * 56:1 → 35:1 once the perf fixtures (66% of this repo's graph) are filtered
- * out. Clustering survives it — on a fixture-free vault it gets BETTER (median
- * folder purity 47% → 56%), because a small folder's own springs finally beat
- * the ambient pressure from the rest of the graph.
- *
- * 10× is the balance point of that sweep. Tighter (3×) keeps compressing the
- * range but starts dissolving folders (median purity 58% → 33% fixture-free);
- * looser (20×) is free but only gets halfway.
- */
-export const GRAPH_REPEL_RANGE_FACTOR = 10;
 
 // The planner already refuses to place a label that would collide with one it
 // has placed, so overlap is handled and this is only a ceiling on the work.
@@ -154,10 +119,10 @@ export const GRAPH_SETTINGS_BOUNDS = {
   linkThickness: { min: 0.25, max: 5 },
   textFadeThreshold: { min: 0, max: 4 },
   maxLabels: { min: 0, max: 200 },
-  centerStrength: { min: 0, max: 2 },
-  repelStrength: { min: 0, max: 300 },
-  linkStrength: { min: 0, max: 3 },
-  linkDistance: { min: 5, max: 300 },
+  centerStrength: { min: 0, max: 1 },
+  repelStrength: { min: 0, max: 8000 },
+  linkStrength: { min: 0, max: 1 },
+  linkDistance: { min: 30, max: 500 },
 } as const;
 
 /** Guards against a corrupt blob inflating the popover into an unusable list. */
@@ -323,6 +288,15 @@ export function readGraphSettings(
     const raw = s.getItem(STORAGE_KEYS[scope]);
     if (raw === null) {
       const defaults = getDefaultGraphSettings(scope);
+      const previousRaw = s.getItem(PREVIOUS_STORAGE_KEYS[scope]);
+      if (previousRaw !== null) {
+        try {
+          const previous = clampGraphSettings(JSON.parse(previousRaw), scope);
+          return { ...previous, forces: { ...defaults.forces } };
+        } catch {
+          // Fall through to the older one-field migration/defaults below.
+        }
+      }
       const legacy = readLegacyExternalNodes(s, scope);
       if (legacy === null) return defaults;
       return {

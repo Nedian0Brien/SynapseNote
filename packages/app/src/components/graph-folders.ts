@@ -21,25 +21,6 @@ export function graphFolderNodeId(path: string): string {
   return `${GRAPH_FOLDER_NODE_PREFIX}${path}`;
 }
 
-/**
- * The project itself, as a node, with every top-level folder and page hanging
- * off it. Pinned at the origin by the view.
- *
- * Left out at first, on the theory that one root hub would just re-merge the
- * graph into the blob folders exist to break up. It does the opposite: without
- * it the folder tree is not a tree at all but a scatter of unconnected
- * components, and a force layout has nothing holding them together, so they
- * drift apart until the graph reads as debris. The original SynapseNote pinned
- * a vault-root node at the origin for exactly this reason.
- */
-export const GRAPH_ROOT_FOLDER_PATH = '';
-export const GRAPH_ROOT_NODE_ID = graphFolderNodeId(GRAPH_ROOT_FOLDER_PATH);
-export const GRAPH_ROOT_NODE_LABEL = '/';
-
-export function isGraphRootFolderNode(node: { kind?: unknown; id?: unknown }): boolean {
-  return node.kind === 'folder' && node.id === GRAPH_ROOT_NODE_ID;
-}
-
 /** The directory a doc sits in, or `null` when it sits at the project root. */
 export function graphFolderPathOf(docName: string): string | null {
   const index = docName.lastIndexOf('/');
@@ -79,18 +60,6 @@ interface FolderTreeEntry {
   directDocIds: string[];
   childPaths: Set<string>;
 }
-
-/**
- * How hard a containment spring pulls. FLAT — not derived from either end's
- * degree. Low, so the folder tethers its pages rather than clamping them: their own
- * mutual repulsion is what decides how much room the cluster takes.
- *
- * d3's per-link default would be `1 / min(degree(source), degree(target))`,
- * which hands a leaf page hanging off a four-hundred-page folder `1/1` — the
- * stiffest spring in the graph — and clamps all four hundred to one identical
- * radius.
- */
-export const GRAPH_FOLDER_LINK_STRENGTH = 0.25;
 
 /**
  * Containment is marked on the link rather than inferred from its endpoints: a
@@ -135,14 +104,11 @@ export function buildGraphFolderNodes(
     ensure(folderPath).directDocIds.push(node.id);
   }
 
-  // A folder holding nothing but a single subfolder separates nothing — it just
-  // adds a node and a hop. Drop it and let the subfolder carry the joined path,
-  // the way a file tree collapses `a/ → b/ → c/` into one `a/b/c/` row.
-  const keptPaths = new Set(
-    [...folders.values()]
-      .filter((folder) => folder.directDocIds.length > 0 || folder.childPaths.size > 1)
-      .map((folder) => folder.path),
-  );
+  // Keep the complete folder hierarchy. Folders to Graph injects every
+  // directory into Obsidian's ordinary graph simulation; compressing
+  // single-child chains changes both the topology and the forces acting on
+  // their descendants.
+  const keptPaths = new Set(folders.keys());
 
   const nearestKeptAncestor = (path: string): string | null => {
     const chain = ancestorPaths(path);
@@ -201,22 +167,10 @@ export function buildGraphFolderNodes(
     if (parent !== null) connect(parent, nodeIdForPath(path));
   }
 
-  // Everything with no folder above it hangs off the project root — the
-  // top-level folders and the pages that sit beside them.
-  // De-duplicated: a folder note is both a top-level folder and a root-level
-  // page, and counting it twice would conjure a root for a one-item project.
-  const topLevel = new Set([
-    ...[...keptPaths].filter((path) => nearestKeptAncestor(path) === null).map(nodeIdForPath),
-    ...nodes.flatMap((node) =>
-      node.kind === 'doc' && graphFolderPathOf(node.docName) === null ? [node.id] : [],
-    ),
-  ]);
-  // One top-level item means the root would explain nothing — the same rule
-  // that collapses a single-child folder into its child.
-  const hasRoot = topLevel.size > 1 && !existingIds.has(GRAPH_ROOT_NODE_ID);
-  if (hasRoot) {
-    for (const childId of topLevel) connect(GRAPH_ROOT_FOLDER_PATH, childId);
-  }
+  // Deliberately no synthetic project-root node. The reference Folders to
+  // Graph setup hides `/`, leaving top-level folders and root-level pages free
+  // to form islands through authored links instead of forcing the entire vault
+  // into one radial tree.
 
   // Emitted last, once every membership is counted: the layout reads the count
   // off the link, for anything that wants to know how big a folder is.
@@ -228,15 +182,6 @@ export function buildGraphFolderNodes(
   }));
 
   const folderNodes: GraphNode[] = [];
-  if (hasRoot) {
-    folderNodes.push({
-      kind: 'folder',
-      id: GRAPH_ROOT_NODE_ID,
-      label: GRAPH_ROOT_NODE_LABEL,
-      path: GRAPH_ROOT_FOLDER_PATH,
-      memberCount: memberCounts.get(GRAPH_ROOT_FOLDER_PATH) ?? 0,
-    });
-  }
   for (const path of [...keptPaths].sort()) {
     if (existingIds.has(path)) continue;
     const parent = nearestKeptAncestor(path);

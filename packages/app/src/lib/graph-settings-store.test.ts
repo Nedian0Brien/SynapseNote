@@ -11,8 +11,9 @@ import {
   writeGraphSettings,
 } from './graph-settings-store';
 
-const DOCKED_KEY = 'ok-graph-settings-docked-v1';
-const FULLSCREEN_KEY = 'ok-graph-settings-fullscreen-v1';
+const DOCKED_KEY = 'ok-graph-settings-docked-v2';
+const FULLSCREEN_KEY = 'ok-graph-settings-fullscreen-v2';
+const PREVIOUS_DOCKED_KEY = 'ok-graph-settings-docked-v1';
 
 function memoryStorage(seed: Record<string, string> = {}): GraphSettingsStorage & {
   values: Record<string, string>;
@@ -28,13 +29,17 @@ function memoryStorage(seed: Record<string, string> = {}): GraphSettingsStorage 
 }
 
 describe('getDefaultGraphSettings', () => {
-  test('reproduces the hardcoded values the pre-settings build shipped', () => {
-    // These are not arbitrary: changing any of them relayouts or re-densifies
-    // every existing user's graph on upgrade.
+  test('uses the physical defaults from Obsidian’s graph worker', () => {
     const docked = getDefaultGraphSettings('docked');
     expect(docked.display.textFadeThreshold).toBe(1.8);
     expect(docked.filters.showExternalNodes).toBe(false);
     expect(docked.forces).toEqual(GRAPH_FORCE_DEFAULTS);
+    expect(docked.forces).toEqual({
+      centerStrength: 0.1,
+      repelStrength: 1000,
+      linkStrength: 1,
+      linkDistance: 250,
+    });
   });
 
   test('budgets labels generously, leaving overlap to the collision planner', () => {
@@ -85,7 +90,7 @@ describe('clampGraphSettings', () => {
     const result = clampGraphSettings(
       {
         display: { nodeSize: 99, linkThickness: -5, textFadeThreshold: 100 },
-        forces: { repelStrength: 5000, linkDistance: 0 },
+        forces: { repelStrength: 50_000, linkDistance: 0 },
       },
       'docked',
     );
@@ -228,6 +233,49 @@ describe('migration from the standalone external-URL toggle', () => {
       }),
     );
     expect(settings.filters.showExternalNodes).toBe(false);
+  });
+});
+
+describe('migration from graph settings v1', () => {
+  test('keeps filters, display and groups but resets incompatible force values', () => {
+    const previous = getDefaultGraphSettings('docked');
+    previous.filters.query = 'tag:research';
+    previous.display.nodeSize = 2;
+    previous.groups = [{ id: 'research', query: 'tag:research', color: '#60a5fa' }];
+    previous.forces = {
+      centerStrength: 1.8,
+      repelStrength: 160,
+      linkStrength: 0.7,
+      linkDistance: 145,
+    };
+
+    const migrated = readGraphSettings(
+      'docked',
+      memoryStorage({ [PREVIOUS_DOCKED_KEY]: JSON.stringify(previous) }),
+    );
+
+    expect(migrated.filters.query).toBe('tag:research');
+    expect(migrated.display.nodeSize).toBe(2);
+    expect(migrated.groups).toEqual(previous.groups);
+    expect(migrated.forces).toEqual(GRAPH_FORCE_DEFAULTS);
+  });
+
+  test('prefers a v2 preset once one exists', () => {
+    const current = getDefaultGraphSettings('docked');
+    current.forces.linkDistance = 300;
+    const previous = getDefaultGraphSettings('docked');
+    previous.filters.query = 'old';
+
+    const settings = readGraphSettings(
+      'docked',
+      memoryStorage({
+        [DOCKED_KEY]: JSON.stringify(current),
+        [PREVIOUS_DOCKED_KEY]: JSON.stringify(previous),
+      }),
+    );
+
+    expect(settings.forces.linkDistance).toBe(300);
+    expect(settings.filters.query).toBe('');
   });
 });
 

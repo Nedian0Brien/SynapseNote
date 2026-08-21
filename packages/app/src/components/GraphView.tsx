@@ -1,6 +1,6 @@
 import { Trans, useLingui } from '@lingui/react/macro';
 import { LinkGraphSuccessSchema, ProblemDetailsSchema } from '@nedian0brien/synapsenote-core';
-import { forceCollide } from 'd3-force-3d';
+import { forceCollide, forceX, forceY } from 'd3-force-3d';
 import { useTheme } from 'next-themes';
 import { useEffect, useImperativeHandle, useRef, useState } from 'react';
 import ForceGraph2D, {
@@ -12,7 +12,7 @@ import { usePageList } from '@/components/PageListContext';
 import { hashFromDocName } from '@/lib/doc-hash';
 import { subscribeToDocumentsChanged } from '@/lib/documents-events';
 import { openExternalUrl } from '@/lib/external-link';
-import { GRAPH_REPEL_RANGE_FACTOR, type GraphSettings } from '@/lib/graph-settings-store';
+import type { GraphSettings } from '@/lib/graph-settings-store';
 import { cn } from '@/lib/utils';
 import { getGraphCardNeighbors } from './GraphCardDeck';
 import {
@@ -32,16 +32,14 @@ import {
   getGraphAreaNameFade,
   getGraphAreaTintWeight,
 } from './graph-areas';
-import { GRAPH_COLLISION_STRENGTH, getGraphCollisionRadius } from './graph-collision';
+import {
+  GRAPH_CHARGE_DISTANCE_MIN,
+  GRAPH_COLLISION_RADIUS,
+  GRAPH_COLLISION_STRENGTH,
+} from './graph-collision';
 import { GRAPH_COLOR_PAIRS } from './graph-colors';
 import { applyGraphFilters } from './graph-filter';
-import {
-  buildGraphFolderNodes,
-  GRAPH_FOLDER_LINK_STRENGTH,
-  graphFolderDepthOf,
-  isGraphFolderLink,
-  isGraphRootFolderNode,
-} from './graph-folders';
+import { buildGraphFolderNodes, graphFolderDepthOf, isGraphFolderLink } from './graph-folders';
 import { matchGraphGroup, resolveGraphGroupColor } from './graph-groups';
 import {
   buildGraphAdjacency,
@@ -921,20 +919,6 @@ export function GraphView({
       displayState: getGraphNodeDisplayState({ node, navigationIntentByNodeId }),
       visualState: getGraphNodeVisualState(node, { activeDocName, selectedNodeId }),
     }).scale;
-  // Collision uses the resting structural size, not selection or hover state.
-  // Otherwise clicking a node would change its physical radius and reflow the
-  // graph the user is trying to inspect. The accessor lives in a ref so the d3
-  // force can stay installed while navigation metadata and degrees update.
-  const collisionRadiusRef = useRef<(node: GraphNode) => number>(() => 8);
-  const collisionRadius = (node: GraphNode): number =>
-    getGraphCollisionRadius({
-      baseNodeRadius: getGraphNodeCanvasRadius('default'),
-      nodeScale: drawnNodeScale(node),
-      linkDistance,
-    });
-  useEffect(() => {
-    collisionRadiusRef.current = collisionRadius;
-  });
   // Folder territories, and where each one currently sits. The bounds follow
   // the simulation, so they are recomputed once per frame in the pre-render
   // hook and reused by the post-render hook that writes the region names —
@@ -1040,20 +1024,18 @@ export function GraphView({
     if (!fg) return;
 
     const charge = fg.d3Force('charge');
-    // Stored as a magnitude; d3 wants a negative strength to push apart. Flat:
-    // folder nodes used to push several times harder here, to clear room for
-    // what they hold. That room is the containment spring's job — it is sized
-    // by membership below — and doing it with repulsion instead shoved the
-    // neighboring clusters to the far side of the canvas.
+    // Stored as a magnitude; d3 wants a negative strength to push apart.
     charge?.strength?.(-repelStrength);
-    // Bound the range, or the pressure of every distant node crushes each
-    // cluster to a few pixels across at the zoom that fits the map. Scaled off
-    // the spring length so dragging the Link distance slider keeps the two in
-    // proportion — see GRAPH_REPEL_RANGE_FACTOR for the measurements.
-    charge?.distanceMax?.(linkDistance * GRAPH_REPEL_RANGE_FACTOR);
+    charge?.distanceMin?.(GRAPH_CHARGE_DISTANCE_MIN);
+    charge?.distanceMax?.(Number.POSITIVE_INFINITY);
 
-    const center = fg.d3Force('center');
-    center?.strength?.(centerStrength);
+    // Obsidian's "Center force" is a pair of position forces, not d3's
+    // forceCenter. Position forces pull each disconnected component toward the
+    // origin while preserving its internal layout; forceCenter only translates
+    // the centroid and cannot organize islands.
+    fg.d3Force('center', null);
+    fg.d3Force('x', forceX<GraphNode>(0).strength(centerStrength));
+    fg.d3Force('y', forceY<GraphNode>(0).strength(centerStrength));
 
     const link = fg.d3Force('link');
     if (link) {
@@ -1065,14 +1047,7 @@ export function GraphView({
       // number keeps a multiplier of 1 a true no-op: a flat strength would
       // stiffen hub edges that d3 deliberately slackens.
       const degrees = buildGraphDegreeMap(displayLinks);
-      link.strength?.((candidate: { source: unknown; target: unknown; kind?: unknown }) => {
-        // Containment opts out of the degree rule entirely — see
-        // GRAPH_FOLDER_LINK_STRENGTH. Under `1 / min(degree)` a leaf page gets
-        // the stiffest spring in the graph, which is what welds a big folder
-        // into a shell instead of letting it breathe out to the radius its
-        // members' own repulsion asks for.
-        if (isGraphFolderLink(candidate)) return GRAPH_FOLDER_LINK_STRENGTH * linkStrength;
-
+      link.strength?.((candidate: { source: unknown; target: unknown }) => {
         const source = resolveGraphLinkEndpointId(candidate.source);
         const target = resolveGraphLinkEndpointId(candidate.target);
         const sourceDegree = source === null ? 1 : (degrees.get(source) ?? 1);
@@ -1081,16 +1056,15 @@ export function GraphView({
       });
     }
 
-    // manyBody repulsion changes the scale of the whole layout, but it does
-    // not guarantee a minimum local gap. Collision does: dense folders settle
-    // as readable groups instead of allowing several nodes to occupy nearly
-    // the same point. Its radius follows link distance and structural node size
-    // so both the default preset and wide user presets remain compatible.
+    // Folders to Graph adds nodes and links but leaves Obsidian's stock
+    // constant collision radius untouched. Matching it matters: a radius tied
+    // to each drawn folder size turns rendering weight into a second layout
+    // hierarchy that the reference graph does not have.
     fg.d3Force(
       'collide',
-      forceCollide<NodeObject<GraphNode>>()
-        .radius((node) => collisionRadiusRef.current(node))
-        .strength(GRAPH_COLLISION_STRENGTH),
+      forceCollide<NodeObject<GraphNode>>(GRAPH_COLLISION_RADIUS).strength(
+        GRAPH_COLLISION_STRENGTH,
+      ),
     );
 
     fg.d3ReheatSimulation();
@@ -1138,24 +1112,6 @@ export function GraphView({
       neighbors: getGraphCardNeighbors(selectedNodeId, displayData.nodes, adjacency),
     });
   }, [interactionMode, selectedNodeId, displayData.nodes, adjacency, onCardModeChange]);
-
-  // Nail the project root to the origin. The original SynapseNote ran its
-  // layout with the vault root fixed for the same reason: with the whole folder
-  // tree hanging off one immovable point, the layout has a centre to organize
-  // around and the branches settle around it instead of wandering off as
-  // separate drifting components.
-  useEffect(() => {
-    const root = displayData.nodes.find(isGraphRootFolderNode) as
-      | (GraphNode & { fx?: number | null; fy?: number | null })
-      | undefined;
-    if (!root) return;
-    root.fx = 0;
-    root.fy = 0;
-    return () => {
-      root.fx = null;
-      root.fy = null;
-    };
-  }, [displayData.nodes]);
 
   // Pin the selected node while it is being read up close, and release it the
   // moment focus ends. Without this the simulation keeps nudging the very node

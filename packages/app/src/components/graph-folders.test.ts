@@ -2,12 +2,10 @@ import { describe, expect, test } from 'bun:test';
 import {
   buildGraphFolderNodes,
   GRAPH_FOLDER_NODE_PREFIX,
-  GRAPH_ROOT_NODE_ID,
   graphFolderDepthOf,
   graphFolderNodeId,
   graphFolderPathOf,
   isGraphFolderLink,
-  isGraphRootFolderNode,
 } from './graph-folders';
 import type { GraphLink, GraphNode } from './graph-view-utils';
 
@@ -75,13 +73,10 @@ describe('buildGraphFolderNodes', () => {
     expect(folder.kind === 'folder' && folder.memberCount).toBe(3);
   });
 
-  test('hangs root-level pages off the project root', () => {
+  test('leaves root-level pages outside the folder hierarchy', () => {
     const result = build(['README', 'CHANGELOG']);
-    expect(paths(result)).toEqual(['']);
-    expect(edges(result)).toEqual([
-      `${GRAPH_ROOT_NODE_ID}>CHANGELOG`,
-      `${GRAPH_ROOT_NODE_ID}>README`,
-    ]);
+    expect(paths(result)).toEqual([]);
+    expect(edges(result)).toEqual([]);
   });
 
   test('nests folders, so the tree shows as a tree', () => {
@@ -111,62 +106,50 @@ describe('buildGraphFolderNodes', () => {
   });
 });
 
-describe('buildGraphFolderNodes — the project root', () => {
-  test('ties otherwise unrelated top-level folders into one tree', () => {
-    // This is what stops the graph reading as debris: without the root the
-    // folder tree is a scatter of separate components with nothing holding
-    // them together, and the layout lets them drift apart.
+describe('buildGraphFolderNodes — hidden project root', () => {
+  test('leaves unrelated top-level folders as separate components', () => {
     const result = build(['docs/A', 'notes/B', 'src/C']);
-    expect(edges(result)).toContain(`${GRAPH_ROOT_NODE_ID}>folder:docs`);
-    expect(edges(result)).toContain(`${GRAPH_ROOT_NODE_ID}>folder:notes`);
-    expect(edges(result)).toContain(`${GRAPH_ROOT_NODE_ID}>folder:src`);
-  });
-
-  test('is skipped when there is only one top-level item, which it would not explain', () => {
-    // Same rule that collapses a single-child folder into its child.
-    expect(paths(build(['notes/A', 'notes/B']))).toEqual(['notes']);
-  });
-
-  test('counts a folder note once, rather than as both a folder and a root page', () => {
-    // `notes.md` beside `notes/` is one top-level item, so no root appears.
-    const result = buildGraphFolderNodes([doc('notes'), doc('notes/A')], []);
-    expect(result.nodes).toEqual([]);
-  });
-
-  test('is recognizable to the view, which pins it at the origin', () => {
-    const [root] = build(['docs/A', 'notes/B']).nodes;
-    expect(isGraphRootFolderNode(root)).toBe(true);
-    expect(isGraphRootFolderNode({ kind: 'folder', id: 'folder:docs' })).toBe(false);
-    expect(isGraphRootFolderNode(doc('notes/A'))).toBe(false);
-  });
-
-  test('carries no path, so clicking it cannot try to open a folder above the project', () => {
-    const [root] = build(['docs/A', 'notes/B']).nodes;
-    expect(root.kind === 'folder' && root.path).toBe('');
-  });
-});
-
-describe('buildGraphFolderNodes — path compression', () => {
-  test('collapses a chain of single-child folders into one node', () => {
-    // `docs/ → archive/ → cleanup/` with pages only at the bottom: the two
-    // upper rings hold nothing and separate nothing.
-    const result = build(['docs/archive/cleanup/A', 'docs/archive/cleanup/B']);
-    expect(paths(result)).toEqual(['docs/archive/cleanup']);
+    expect(paths(result)).toEqual(['docs', 'notes', 'src']);
     expect(edges(result)).toEqual([
-      'folder:docs/archive/cleanup>docs/archive/cleanup/A',
-      'folder:docs/archive/cleanup>docs/archive/cleanup/B',
+      'folder:docs>docs/A',
+      'folder:notes>notes/B',
+      'folder:src>src/C',
     ]);
   });
 
-  test('labels a compressed folder with the whole joined path, like a file tree row', () => {
-    const [folder] = build(['docs/archive/cleanup/A']).nodes;
-    expect(folder.label).toBe('docs/archive/cleanup');
+  test('never synthesizes a root for a single top-level item', () => {
+    expect(paths(build(['notes/A', 'notes/B']))).toEqual(['notes']);
+  });
+
+  test('keeps a folder note distinct from any missing project root', () => {
+    const result = buildGraphFolderNodes([doc('notes'), doc('notes/A')], []);
+    expect(result.nodes).toEqual([]);
+    expect(edges(result)).toEqual(['notes>notes/A']);
+  });
+});
+
+describe('buildGraphFolderNodes — complete folder paths', () => {
+  test('keeps every folder in a single-child chain', () => {
+    const result = build(['docs/archive/cleanup/A', 'docs/archive/cleanup/B']);
+    expect(paths(result)).toEqual(['docs', 'docs/archive', 'docs/archive/cleanup']);
+    expect(edges(result)).toEqual([
+      'folder:docs/archive/cleanup>docs/archive/cleanup/A',
+      'folder:docs/archive/cleanup>docs/archive/cleanup/B',
+      'folder:docs/archive>folder:docs/archive/cleanup',
+      'folder:docs>folder:docs/archive',
+    ]);
+  });
+
+  test('labels every nested folder by its own segment', () => {
+    const result = build(['docs/archive/cleanup/A']);
+    expect(result.nodes.map((node) => node.label)).toEqual(['docs', 'archive', 'cleanup']);
   });
 
   test('keeps a folder that holds pages of its own, however few', () => {
     const result = build(['docs/Intro', 'docs/archive/cleanup/A']);
-    expect(paths(result)).toEqual(['docs', 'docs/archive/cleanup']);
-    expect(edges(result)).toContain('folder:docs>folder:docs/archive/cleanup');
+    expect(paths(result)).toEqual(['docs', 'docs/archive', 'docs/archive/cleanup']);
+    expect(edges(result)).toContain('folder:docs>folder:docs/archive');
+    expect(edges(result)).toContain('folder:docs/archive>folder:docs/archive/cleanup');
   });
 
   test('keeps a folder that forks, because a fork is what it separates', () => {
@@ -174,12 +157,12 @@ describe('buildGraphFolderNodes — path compression', () => {
     expect(paths(result)).toEqual(['docs', 'docs/a', 'docs/b']);
   });
 
-  test('re-parents a compressed folder onto its nearest surviving ancestor', () => {
-    // `top` forks, so it survives; `top/x` holds only `top/x/y`, so it does not.
+  test('keeps the direct parent of a deeply nested folder', () => {
     const result = build(['top/a/A', 'top/x/y/B']);
-    expect(paths(result)).toEqual(['top', 'top/a', 'top/x/y']);
-    expect(edges(result)).toContain('folder:top>folder:top/x/y');
-    expect(result.nodes.find((node) => node.id === 'folder:top/x/y')?.label).toBe('x/y');
+    expect(paths(result)).toEqual(['top', 'top/a', 'top/x', 'top/x/y']);
+    expect(edges(result)).toContain('folder:top>folder:top/x');
+    expect(edges(result)).toContain('folder:top/x>folder:top/x/y');
+    expect(result.nodes.find((node) => node.id === 'folder:top/x/y')?.label).toBe('y');
   });
 });
 

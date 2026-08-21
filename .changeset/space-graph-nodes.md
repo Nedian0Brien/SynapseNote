@@ -2,4 +2,4 @@
 '@nedian0brien/synapsenote': patch
 ---
 
-Keep dense graph regions readable by giving every page and folder a collision radius that scales with its structural size and the selected link distance.
+Lay out folder-enhanced graphs with the same physical model as Obsidian’s Folders to Graph setup: keep the project root hidden, retain the complete folder hierarchy, and use stock position, repulsion, link, and collision forces.

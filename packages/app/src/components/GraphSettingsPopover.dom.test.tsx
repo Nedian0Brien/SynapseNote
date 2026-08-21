@@ -121,8 +121,8 @@ describe('GraphSettingsPopover — display and forces', () => {
     slider.focus();
     await userEvent.keyboard('{ArrowRight}');
 
-    // Default 30 with a step of 5.
-    expect(lastCall(onSettingsChange).forces.repelStrength).toBe(35);
+    // Physical default 1000 with a step of 50.
+    expect(lastCall(onSettingsChange).forces.repelStrength).toBe(1050);
   });
 
   test('sliders clamp at the bound instead of running past it', async () => {

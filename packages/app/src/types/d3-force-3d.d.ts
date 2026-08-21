@@ -16,4 +16,13 @@ declare module 'd3-force-3d' {
   export function forceCollide<Node>(
     radius?: number | ((node: Node, index: number, nodes: Node[]) => number),
   ): ForceCollide<Node>;
+
+  interface ForcePosition<Node> {
+    (alpha: number): void;
+    initialize(nodes: Node[], random: () => number, numDimensions?: number): void;
+    strength(strength: number | ((node: Node, index: number, nodes: Node[]) => number)): this;
+  }
+
+  export function forceX<Node>(x?: number | ((node: Node) => number)): ForcePosition<Node>;
+  export function forceY<Node>(y?: number | ((node: Node) => number)): ForcePosition<Node>;
 }

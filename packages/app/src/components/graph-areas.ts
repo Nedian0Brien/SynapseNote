@@ -76,12 +76,9 @@ const MIN_HALF_HEIGHT = 25;
 export const GRAPH_AREA_MAX_DEPTH = 2;
 
 /**
- * Regions for every directory that holds something, EXCEPT the ones with no
- * directory above them.
- *
- * The exclusion matters: the project root's region would be the whole graph, so
- * it would tint everything uniformly and name the map after itself. The
- * original made the same exclusion.
+ * Regions for every directory that holds something. Top-level folders remain
+ * regions even though the synthetic project-root node is hidden; otherwise
+ * removing that physics-only root would also erase the map's largest places.
  */
 export function buildGraphAreas(
   nodes: readonly GraphNode[],
@@ -138,7 +135,6 @@ export function buildGraphAreas(
       .filter(
         (node) =>
           (childrenByParent.get(node.id) ?? []).length > 0 &&
-          parentByChild.has(node.id) &&
           (depthById.get(node.id) ?? 0) <= GRAPH_AREA_MAX_DEPTH,
       )
       // Shallow regions first, so a nested one paints on top of its parent.

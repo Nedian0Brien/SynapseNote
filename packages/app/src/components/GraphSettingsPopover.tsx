@@ -365,7 +365,7 @@ export function GraphSettingsPopover({
             label={t`Repel force`}
             value={settings.forces.repelStrength}
             bounds={GRAPH_SETTINGS_BOUNDS.repelStrength}
-            step={5}
+            step={50}
             format={plain}
             onValueChange={(repelStrength) => patchForces({ repelStrength })}
           />
