@@ -2708,7 +2708,7 @@ describe('DatabaseTableDialog', () => {
     expect(edits).toEqual([['person_codex', 'person_owner']]);
   });
 
-  test('projects Text as plain multiline content and edits canonical stable references', () => {
+  test('edits Text in one compact cell input without rich-text chrome', () => {
     const textSource = {
       ...source,
       properties: [
@@ -2726,16 +2726,6 @@ describe('DatabaseTableDialog', () => {
     render(
       <DatabaseTable
         source={textSource as never}
-        people={[
-          {
-            id: 'person_owner',
-            key: 'owner',
-            name: 'Owner',
-            kind: 'collaborator',
-            active: true,
-          },
-        ]}
-        relationRecords={[{ id: 'rec_alpha', sourceId: source.id, title: 'Alpha task' }]}
         result={
           {
             ...queryResult(),
@@ -2781,15 +2771,22 @@ describe('DatabaseTableDialog', () => {
     fireEvent.click(screen.getByLabelText('Edit Notes for record rec_first'));
     const textarea = screen.getByLabelText('Edit Notes') as HTMLTextAreaElement;
     expect(textarea.value).toBe(raw);
-    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-    fireEvent.change(screen.getByLabelText('Insert record reference in Notes'), {
-      target: { value: 'rec_alpha' },
-    });
-    expect(textarea.value).toEndWith('[Alpha task](synapsenote://record/rec_alpha)');
-    fireEvent.keyDown(textarea, { key: 'Enter' });
+    expect(textarea.rows).toBe(1);
+    expect(screen.queryByText('Plain-text preview')).toBeNull();
+    expect(screen.queryByText(/Markdown ·/)).toBeNull();
+    expect(screen.queryByLabelText('Insert person mention in Notes')).toBeNull();
+    expect(screen.queryByLabelText('Insert record reference in Notes')).toBeNull();
+    fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: true });
     expect(edits).toEqual([]);
-    fireEvent.keyDown(textarea, { key: 'Enter', ctrlKey: true });
-    expect(edits).toEqual([`${raw}[Alpha task](synapsenote://record/rec_alpha)`]);
+    fireEvent.change(textarea, { target: { value: 'Discard this draft' } });
+    fireEvent.keyDown(textarea, { key: 'Escape' });
+    expect(edits).toEqual([]);
+
+    fireEvent.click(screen.getByLabelText('Edit Notes for record rec_first'));
+    const reopened = screen.getByLabelText('Edit Notes') as HTMLTextAreaElement;
+    expect(reopened.value).toBe(raw);
+    fireEvent.keyDown(reopened, { key: 'Enter' });
+    expect(edits).toEqual([raw]);
   });
 
   test('edits ordered Files captions and URLs while surfacing missing local assets', async () => {
