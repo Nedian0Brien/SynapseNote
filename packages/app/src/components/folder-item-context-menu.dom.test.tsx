@@ -139,6 +139,21 @@ describe('folder overview item context menu', () => {
     expect(screen.getByRole('menuitem', { name: 'Rename' })).toBeTruthy();
   });
 
+  test('anchors under the body so a hover-lifted card cannot displace the menu', () => {
+    render(<Host target={{ kind: 'file', docName: 'notes/alpha' }} title="Alpha" />);
+    openMenu();
+
+    // The anchor positions itself in viewport coordinates, and `position: fixed`
+    // resolves against the nearest transformed ancestor when one exists. The
+    // overview's cards lift on hover — the state the pointer is in at
+    // right-click — so an anchor left inside the card opened the menu offset by
+    // the card's own position. Living under the body is what keeps it honest.
+    const menuAnchor = document.querySelector('[data-folder-item-menu-anchor]');
+    expect(menuAnchor).toBeTruthy();
+    expect(menuAnchor?.parentElement).toBe(document.body);
+    expect(screen.getByTestId('item').contains(menuAnchor)).toBe(false);
+  });
+
   test('a file offers duplicate / rename / delete and no folder-only verbs', () => {
     render(<Host target={{ kind: 'file', docName: 'notes/alpha' }} title="Alpha" />);
     openMenu();

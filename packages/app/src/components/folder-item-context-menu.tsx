@@ -18,7 +18,8 @@
  * mirroring `FileTreeMenu`. `OpenInAgentContextSubmenu` renders DropdownMenu
  * submenu primitives, and mixing the two Radix stacks detaches keyboard nav.
  * A one-pixel fixed-position trigger placed at the click point gives the
- * dropdown its anchor.
+ * dropdown its anchor, portaled to the body so a hover-lifted card (a
+ * transformed ancestor) cannot capture its fixed positioning.
  *
  * Cost: the hook itself holds one piece of state per item, and the menu's own
  * hooks (workspace probe, install-state probe, git-remote status) live inside
@@ -29,6 +30,7 @@
 import { Trans, useLingui } from '@lingui/react/macro';
 import { Copy, CopyPlus, FolderOpen, Pencil, Share2, SquarePen, Trash2 } from 'lucide-react';
 import { type MouseEvent, type ReactNode, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import {
   DropdownMenu,
@@ -285,27 +287,44 @@ export function useFolderItemContextMenu(
   };
 
   const menu =
-    anchor === null ? null : (
-      <DropdownMenu
-        open
-        modal={false}
-        onOpenChange={(open) => {
-          if (!open) setAnchor(null);
-        }}
-      >
-        <DropdownMenuTrigger asChild>
-          {/* Pointer anchor: a zero-size fixed element at the click point, so
-              the menu opens where the user clicked rather than at the item's
-              corner. Same shape as the sidebar tree's row menu. */}
-          <span
-            aria-hidden="true"
-            className="fixed block size-px"
-            style={{ left: anchor.x, top: anchor.y }}
-          />
-        </DropdownMenuTrigger>
-        <FolderItemMenu target={target} title={title} onClose={() => setAnchor(null)} />
-      </DropdownMenu>
-    );
+    anchor === null
+      ? null
+      : // Portaled to the body, not left inside the item.
+        //
+        // The anchor positions itself with viewport coordinates, and `fixed`
+        // only means "the viewport" while no ancestor has a transform. The
+        // overview's cards and folder tiles lift on hover
+        // (`hover:-translate-y-0.5`) — which is exactly the state the pointer is
+        // in when the right-click lands — so an anchor rendered inside the card
+        // resolved against the CARD instead, and the menu opened offset by the
+        // card's own position on screen. Rendering the whole menu under `body`
+        // puts the anchor out of reach of any such ancestor. Radix already
+        // portals the content; this moves the anchor with it. The menu stays in
+        // the React tree of the item, so its context and event handlers are
+        // unchanged.
+        createPortal(
+          <DropdownMenu
+            open
+            modal={false}
+            onOpenChange={(open) => {
+              if (!open) setAnchor(null);
+            }}
+          >
+            <DropdownMenuTrigger asChild>
+              {/* Pointer anchor: a zero-size fixed element at the click point, so
+                  the menu opens where the user clicked rather than at the item's
+                  corner. */}
+              <span
+                aria-hidden="true"
+                data-folder-item-menu-anchor="true"
+                className="fixed block size-px"
+                style={{ left: anchor.x, top: anchor.y }}
+              />
+            </DropdownMenuTrigger>
+            <FolderItemMenu target={target} title={title} onClose={() => setAnchor(null)} />
+          </DropdownMenu>,
+          document.body,
+        );
 
   return { onContextMenu, menu };
 }
