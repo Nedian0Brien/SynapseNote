@@ -4310,6 +4310,39 @@ export class DatabaseDataPlane {
     return result;
   }
 
+  /**
+   * Recover a durable commit receipt after the caller lost the original HTTP
+   * response. The idempotency journal is the source of truth; access is still
+   * checked against every database named by the receipt before it leaves the
+   * server.
+   */
+  async getIdempotentCommitResult(idempotencyKey: string): Promise<DatabaseCommitResult | null> {
+    if (!this.#databaseCommitEngine) {
+      throw new DatabaseCommitError(
+        'commit_unavailable',
+        'Database commit engine is not configured',
+      );
+    }
+    const result = await this.#databaseCommitEngine.getIdempotentResult(idempotencyKey);
+    if (!result) return null;
+    const databaseIds = [...new Set(result.auditReceipt.dataSources.databaseIds)];
+    const existingDatabaseIds = new Set(
+      this.#databaseStore.snapshot().databases.map((database) => database.id),
+    );
+    if (databaseIds.length === 0) {
+      this.authorizeOperation({ action: 'read_audit' });
+    } else {
+      for (const databaseId of databaseIds) {
+        this.authorizeOperation(
+          existingDatabaseIds.has(databaseId)
+            ? { action: 'read_audit', databaseId }
+            : { action: 'read_audit' },
+        );
+      }
+    }
+    return result;
+  }
+
   async #publishPlanAutomationEvents(
     plan: DatabasePlanArtifact,
     result: DatabaseCommitResult,

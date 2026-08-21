@@ -102,6 +102,35 @@ import { getMeter, setActiveSpanAttributes, withSpan } from './telemetry.ts';
 
 const log = getLogger('persistence');
 
+function contributorDocKeyToRelativePath(docName: string): string {
+  if (docName.startsWith('.ok/skills/') && docName.split('/').length === 3) {
+    return `${docName}/SKILL.md`;
+  }
+  if (docName.includes('/.ok/templates/') || docName.startsWith('.ok/templates/')) {
+    return `${docName}.md`;
+  }
+  return docNameToRelativePath(docName);
+}
+
+export function contributorSnapshotProjectPaths(
+  snapshot: ReadonlyMap<string, Pick<ContributorEntry, 'docs' | 'previousPaths'>>,
+  contentRoot: string,
+): string[] {
+  const changedProjectPaths = new Set<string>();
+  const addDocumentPath = (docName: string) => {
+    const relativePath = contributorDocKeyToRelativePath(docName);
+    changedProjectPaths.add(contentRoot === '.' ? relativePath : `${contentRoot}/${relativePath}`);
+  };
+  for (const entry of snapshot.values()) {
+    for (const docName of entry.docs) addDocumentPath(docName);
+    for (const previousPath of entry.previousPaths) {
+      addDocumentPath(previousPath.from);
+      addDocumentPath(previousPath.to);
+    }
+  }
+  return [...changedProjectPaths].sort();
+}
+
 export class DocumentOpenSizeLimitError extends Error {
   readonly docName: string;
   readonly size: number;
@@ -860,7 +889,10 @@ export function createPersistenceExtension(options?: PersistenceOptions): Persis
       // principal-<UUID>, file-system, git-upstream, synapsenote-service.
       let treeSha: string;
       try {
-        treeSha = await buildWipTree(shadow, contentRoot);
+        treeSha = await buildWipTree(shadow, contentRoot, {
+          branch,
+          paths: contributorSnapshotProjectPaths(snapshot, contentRoot),
+        });
       } catch (e) {
         // Tree build failed — restore all contributors and abort this cycle
         restoreContributors(snapshot);

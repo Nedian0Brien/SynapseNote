@@ -4,9 +4,10 @@ import {
   type DatabaseLinkedViewSettings,
 } from '@nedian0brien/synapsenote-core';
 import { Braces, ListChecks, X } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { createDatabaseCreationId } from '@/lib/database-creation';
 import { databaseUiProblemMessage } from '@/lib/database-ui-problem';
 import { cn } from '@/lib/utils';
 import { InlineDatabaseBlock } from './InlineDatabaseBlock';
@@ -29,6 +30,10 @@ export interface DatabaseViewProps {
   mode?: 'inline' | 'full-page';
   /** Fresh slash insertion can request an immediate blank inline table. */
   create?: 'blank';
+  /** Stable recovery identity retained until the canonical references land. */
+  creationId?: string;
+  /** Pending title retained with the creation identity across remounts. */
+  creationName?: string;
 }
 
 export { databaseViewTabActionToInitialAction };
@@ -40,8 +45,11 @@ export function InlineDatabaseSurface({
   viewOverrides,
   mode,
   create,
+  creationId,
+  creationName,
 }: DatabaseViewProps) {
   'use no memo';
+  const [fallbackCreationId] = useState(() => createDatabaseCreationId());
   const reference = DatabaseLinkedViewReferenceSchema.safeParse({
     databaseId,
     sourceId,
@@ -147,6 +155,7 @@ export function InlineDatabaseSurface({
     searchNeedle,
     loadMoreInlineSearch,
     applyReference,
+    persistCreationIntent,
     persistLinkedViewOverrides,
     setInlineMode,
     removeLinkedView,
@@ -176,7 +185,7 @@ export function InlineDatabaseSurface({
     if (!inlineMutationError) return;
     toast.error(inlineMutationError, { id: 'inline-database-mutation-error' });
   }, [inlineMutationError]);
-  if (!reference.success) {
+  if (!reference.success || create === 'blank') {
     const autoCreateBlank = create === 'blank';
     return (
       <>
@@ -187,9 +196,12 @@ export function InlineDatabaseSurface({
           />
         ) : null}
         <InlineDatabaseCreationDialog
-          open={inlineCreationOpen || autoCreateBlank}
+          open={inlineCreationOpen || create === 'blank'}
           autoStart={autoCreateBlank}
+          creationId={creationId ?? fallbackCreationId}
+          creationName={creationName}
           onOpenChange={setInlineCreationOpen}
+          onCreationIntent={persistCreationIntent}
           onCreated={(next) => applyReference(next, { focusNewRecord: true })}
         />
       </>
@@ -528,6 +540,7 @@ export function InlineDatabaseSurface({
         inlineCreationOpen={inlineCreationOpen}
         setInlineCreationOpen={setInlineCreationOpen}
         applyReference={applyReference}
+        persistCreationIntent={persistCreationIntent}
         linkedFilterOpen={linkedFilterOpen}
         setLinkedFilterOpen={setLinkedFilterOpen}
         linkedFilterTargetId={linkedFilterTargetId}

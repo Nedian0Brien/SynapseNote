@@ -67,6 +67,7 @@ describe('versioned database API schemas', () => {
       'button',
       'placeSearch',
       'commit',
+      'commitResult',
       'agentRuns',
       'templateRuns',
       'automations',
@@ -136,6 +137,21 @@ describe('versioned database API schemas', () => {
         databaseId: 'db_tasks',
         expectedSnapshotRevision: `sha256:${'a'.repeat(64)}`,
       }).success,
+    ).toBe(true);
+    expect(
+      DATABASE_API_SCHEMAS.operations.commitResult.request.safeParse({
+        idempotencyKey: 'ui-database-commit-0001',
+      }).success,
+    ).toBe(true);
+    expect(
+      DATABASE_API_SCHEMAS.operations.commitResult.request.safeParse({
+        idempotencyKey: 'ui-database-commit-0001',
+        unknown: true,
+      }).success,
+    ).toBe(false);
+    expect(
+      DATABASE_API_SCHEMAS.operations.commitResult.response.safeParse({ status: 'not_found' })
+        .success,
     ).toBe(true);
     expect(
       DATABASE_API_SCHEMAS.operations.button.request.safeParse({

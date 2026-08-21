@@ -22,6 +22,7 @@ import { Trans } from '@lingui/react/macro';
 import type { Editor } from '@tiptap/react';
 import { CopyPlus, Database, ExternalLink, FileUp, Hash, Link2 } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { createDatabaseCreationId } from '@/lib/database-creation';
 import { dispatchDatabaseSlashCommand } from '@/lib/database-events';
 import { setPendingLinkEdit } from '../extensions/link-edit-autoopen';
 import { findMarkIdAt } from '../extensions/mark-identity';
@@ -643,7 +644,13 @@ function getCustomBlockComponentItems(): SlashCommandItem[] {
       insertsBlockComponent: true,
       command: (editor) => {
         const descriptor = getDescriptor('DatabaseView');
-        if (descriptor) createInsertCommand(descriptor, { create: 'blank' })(editor);
+        if (descriptor) {
+          createInsertCommand(descriptor, {
+            create: 'blank',
+            creationId: createDatabaseCreationId(),
+            creationName: 'Untitled database',
+          })(editor);
+        }
       },
       preview: {
         description: t`Create a database in this page and edit its rows without leaving the document.`,

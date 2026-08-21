@@ -128,6 +128,8 @@ describe('getComponentItems (slash menu)', () => {
     expect((inserted?.attrs as { componentName?: string }).componentName).toBe('DatabaseView');
     expect((inserted?.attrs as { props?: Record<string, unknown> }).props).toMatchObject({
       create: 'blank',
+      creationId: expect.stringMatching(/^creation_[a-z0-9]+$/),
+      creationName: 'Untitled database',
       mode: 'inline',
     });
   });

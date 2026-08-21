@@ -172,6 +172,26 @@ describe('builtInComponents manifest', () => {
       name: 'mode',
       value: 'full-page',
     });
+
+    const pending = databaseView.serialize(
+      {
+        attrs: {
+          componentName: 'DatabaseView',
+          props: {
+            mode: 'inline',
+            create: 'blank',
+            creationId: 'creation_fixture',
+            creationName: 'Recovery table',
+          },
+        },
+      } as never,
+      { all: () => [] } as never,
+    ) as { attributes: Array<{ name: string; value: unknown }> };
+    expect(pending.attributes).toEqual([
+      { type: 'mdxJsxAttribute', name: 'create', value: 'blank' },
+      { type: 'mdxJsxAttribute', name: 'creationId', value: 'creation_fixture' },
+      { type: 'mdxJsxAttribute', name: 'creationName', value: 'Recovery table' },
+    ]);
   });
 
   test('all canonical entries have description and searchTerms (slash-menu surface)', () => {
@@ -816,6 +836,9 @@ describe('builtInComponents manifest', () => {
       'sourceId',
       'viewId',
       'mode',
+      'create',
+      'creationId',
+      'creationName',
     ]);
     expect(databaseView.props.some((prop) => prop.name === 'records')).toBe(false);
   });
@@ -1015,7 +1038,7 @@ describe('common/advanced split per descriptor', () => {
     },
     DatabaseView: {
       common: ['mode'],
-      advanced: ['databaseId', 'sourceId', 'viewId'],
+      advanced: ['databaseId', 'sourceId', 'viewId', 'create', 'creationId', 'creationName'],
     },
   };
   for (const [name, split] of Object.entries(expected)) {

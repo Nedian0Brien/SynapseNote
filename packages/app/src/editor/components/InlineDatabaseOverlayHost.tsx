@@ -54,6 +54,7 @@ export interface InlineDatabaseOverlayHostProps {
     next: { databaseId: string; sourceId: string; viewId: string },
     options?: { focusNewRecord?: boolean },
   ) => void;
+  persistCreationIntent: (intent: { id: string; name: string }) => void;
   linkedFilterOpen: boolean;
   setLinkedFilterOpen: (open: boolean) => void;
   linkedFilterTargetId?: string;
@@ -100,6 +101,7 @@ export function InlineDatabaseOverlayHost({
   inlineCreationOpen,
   setInlineCreationOpen,
   applyReference,
+  persistCreationIntent,
   linkedFilterOpen,
   setLinkedFilterOpen,
   linkedFilterTargetId,
@@ -139,6 +141,7 @@ export function InlineDatabaseOverlayHost({
       <InlineDatabaseCreationDialog
         open={inlineCreationOpen}
         onOpenChange={setInlineCreationOpen}
+        onCreationIntent={persistCreationIntent}
         onCreated={(next) => applyReference(next, { focusNewRecord: true })}
       />
 

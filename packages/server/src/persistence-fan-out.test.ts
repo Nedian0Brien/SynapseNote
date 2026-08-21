@@ -14,6 +14,7 @@ import { join } from 'node:path';
 import * as Y from 'yjs';
 import { recordContributor, swapContributors } from './contributor-tracker.ts';
 import { applyExternalChange } from './external-change.ts';
+import { contributorSnapshotProjectPaths } from './persistence.ts';
 import { createServer } from './server-factory.ts';
 import { FILE_SYSTEM_WRITER, initShadowRepo, shadowGit } from './shadow-repo.ts';
 
@@ -29,6 +30,28 @@ describe('persistence L2 fan-out (US-014)', () => {
   afterEach(() => {
     swapContributors(); // drain to prevent leaking into next test
     rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  test('scopes a drain to changed docs, managed artifacts, and both sides of renames', () => {
+    recordContributor(
+      'note/current',
+      'agent-s1',
+      'Session 1',
+      'agent-s1',
+      undefined,
+      undefined,
+      undefined,
+      [{ from: 'note/old', to: 'note/current' }],
+    );
+    recordContributor('.ok/skills/research-helper', 'agent-s1', 'Session 1');
+    recordContributor('team/.ok/templates/brief', 'agent-s2', 'Session 2');
+
+    expect(contributorSnapshotProjectPaths(swapContributors(), 'content')).toEqual([
+      'content/.ok/skills/research-helper/SKILL.md',
+      'content/note/current.md',
+      'content/note/old.md',
+      'content/team/.ok/templates/brief.md',
+    ]);
   });
 
   test('two contributors → two WIP refs sharing the same tree SHA', async () => {

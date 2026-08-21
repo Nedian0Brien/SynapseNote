@@ -46,6 +46,7 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
   'use no memo';
   const activeMutationRef = useRef(false);
   const optimisticMutationIdsRef = useRef(new Map<string, string>());
+  const buttonExecutionRef = useRef<{ planId: string; idempotencyKey: string } | null>(null);
   const {
     open,
     reviewResolver: reviewResolverRef,
@@ -501,6 +502,7 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
     }
     setMutationError(null);
     setButtonPlan(null);
+    buttonExecutionRef.current = null;
     setButtonStatus('planning');
     void createDatabaseButtonPlan({
       databaseId: selection.databaseId,
@@ -520,6 +522,7 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
     if (!selection || buttonStatus !== 'idle' || mutationStatus !== 'idle') return;
     setMutationError(null);
     setButtonPlan(null);
+    buttonExecutionRef.current = null;
     setButtonStatus('planning');
     void createDatabaseButtonPlan({
       databaseId: selection.databaseId,
@@ -540,19 +543,26 @@ export function useDatabaseWorkspaceMutationCommands(context: DatabaseWorkspaceC
     }
     setButtonStatus('committing');
     setMutationError(null);
+    const existingExecution = buttonExecutionRef.current;
+    const execution =
+      existingExecution && existingExecution.planId === buttonPlan.id
+        ? existingExecution
+        : { planId: buttonPlan.id, idempotencyKey: `ui-button-${crypto.randomUUID()}` };
+    buttonExecutionRef.current = execution;
     void executeDatabaseButtonPlan({
       plan: buttonPlan,
       actor: { principalId: 'user:local' },
-      idempotencyKey: `ui-button-${crypto.randomUUID()}`,
+      idempotencyKey: execution.idempotencyKey,
     })
       .then((result) => {
+        buttonExecutionRef.current = null;
+        setButtonPlan(null);
+        setRefresh((current: number) => current + 1);
         if (result.undoToken) {
           setLastUndoToken(result.undoToken);
           setLastRedoToken(null);
         }
         if (result.run.state === 'succeeded') {
-          setButtonPlan(null);
-          setRefresh((current: number) => current + 1);
           return;
         }
         throw new Error(
