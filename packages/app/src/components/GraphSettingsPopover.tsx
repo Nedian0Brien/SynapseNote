@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   GRAPH_SETTINGS_BOUNDS,
@@ -184,6 +185,7 @@ export function GraphSettingsPopover({
   onSettingsChange: (settings: GraphSettings) => void;
 }) {
   const { t } = useLingui();
+  const folderExclusionsId = useId();
 
   const patch = (next: Partial<GraphSettings>) => onSettingsChange({ ...settings, ...next });
   const patchFilters = (next: Partial<GraphSettings['filters']>) =>
@@ -259,6 +261,28 @@ export function GraphSettingsPopover({
             checked={settings.filters.showFolderNodes}
             onCheckedChange={(checked) => patchFilters({ showFolderNodes: checked })}
           />
+          {settings.filters.showFolderNodes ? (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={folderExclusionsId} className="text-sm font-normal">
+                <Trans>Excluded folder nodes</Trans>
+              </Label>
+              <Textarea
+                id={folderExclusionsId}
+                value={settings.filters.folderNodeExclusions.join('\n')}
+                aria-label={t`Excluded folder nodes`}
+                placeholder={t`One folder path per line`}
+                className="min-h-14 resize-y text-sm"
+                onChange={(event) =>
+                  patchFilters({ folderNodeExclusions: event.target.value.split('\n') })
+                }
+              />
+              <p className="text-xs text-muted-foreground">
+                <Trans>
+                  Files stay visible; only matching folder nodes and containment links hide.
+                </Trans>
+              </p>
+            </div>
+          ) : null}
         </SettingsSection>
 
         <SettingsSection title={t`Groups`}>
@@ -350,6 +374,11 @@ export function GraphSettingsPopover({
             checked={settings.display.showArrows}
             onCheckedChange={(showArrows) => patchDisplay({ showArrows })}
           />
+          <SettingSwitch
+            label={t`Folder areas`}
+            checked={settings.display.showFolderAreas}
+            onCheckedChange={(showFolderAreas) => patchDisplay({ showFolderAreas })}
+          />
         </SettingsSection>
 
         <SettingsSection title={t`Forces`}>
@@ -365,7 +394,7 @@ export function GraphSettingsPopover({
             label={t`Repel force`}
             value={settings.forces.repelStrength}
             bounds={GRAPH_SETTINGS_BOUNDS.repelStrength}
-            step={5}
+            step={50}
             format={plain}
             onValueChange={(repelStrength) => patchForces({ repelStrength })}
           />

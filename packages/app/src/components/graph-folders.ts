@@ -7,43 +7,31 @@ import { resolveGraphLinkEndpointId } from './graph-view-utils';
  * The graph used to draw folders as translucent regions behind the nodes, which
  * was backwards: a region only means something if its members are already
  * sitting together, and nothing in a force layout puts them there. A directory
- * node fixes the cause instead — every page it holds is tied to it by a short,
- * stiff spring, so the layout gathers the folder for us and the separation you
- * see is the one the simulation actually found.
+ * node fixes the cause instead — every page it holds is tied to it by a graph
+ * spring, so the layout gathers the folder for us and the separation you see
+ * is the one the simulation actually found.
  *
  * Nothing here needs the server. A doc name IS its path, so membership is a
  * string operation on data the client already has.
  */
 
-export const GRAPH_FOLDER_NODE_PREFIX = 'folder:';
+// Folders to Graph uses the vault-relative folder path with a leading slash.
+// Keeping the same id scheme also keeps deterministic force initialization in
+// the same node order as the reference graph.
+export const GRAPH_FOLDER_NODE_PREFIX = '/';
 
 export function graphFolderNodeId(path: string): string {
   return `${GRAPH_FOLDER_NODE_PREFIX}${path}`;
 }
 
-/**
- * The project itself, as a node, with every top-level folder and page hanging
- * off it. Pinned at the origin by the view.
- *
- * Left out at first, on the theory that one root hub would just re-merge the
- * graph into the blob folders exist to break up. It does the opposite: without
- * it the folder tree is not a tree at all but a scatter of unconnected
- * components, and a force layout has nothing holding them together, so they
- * drift apart until the graph reads as debris. The original SynapseNote pinned
- * a vault-root node at the origin for exactly this reason.
- */
-export const GRAPH_ROOT_FOLDER_PATH = '';
-export const GRAPH_ROOT_NODE_ID = graphFolderNodeId(GRAPH_ROOT_FOLDER_PATH);
-export const GRAPH_ROOT_NODE_LABEL = '/';
-
-export function isGraphRootFolderNode(node: { kind?: unknown; id?: unknown }): boolean {
-  return node.kind === 'folder' && node.id === GRAPH_ROOT_NODE_ID;
-}
-
 /** The directory a doc sits in, or `null` when it sits at the project root. */
 export function graphFolderPathOf(docName: string): string | null {
-  const index = docName.lastIndexOf('/');
-  return index > 0 ? docName.slice(0, index) : null;
+  // Folders to Graph drops the absolute-path marker before deriving its folder
+  // hierarchy. Without this normalization the ancestor chain is `/home/...`
+  // but the leaf is inserted again as a distinct `//home/...` node.
+  const comparable = docName.startsWith('/') ? docName.slice(1) : docName;
+  const index = comparable.lastIndexOf('/');
+  return index > 0 ? comparable.slice(0, index) : null;
 }
 
 /**
@@ -80,22 +68,30 @@ interface FolderTreeEntry {
   childPaths: Set<string>;
 }
 
-/**
- * How hard a containment spring pulls. FLAT — not derived from either end's
- * degree. Low, so the folder tethers its pages rather than clamping them: their own
- * mutual repulsion is what decides how much room the cluster takes.
- *
- * d3's per-link default would be `1 / min(degree(source), degree(target))`,
- * which hands a leaf page hanging off a four-hundred-page folder `1/1` — the
- * stiffest spring in the graph — and clamps all four hundred to one identical
- * radius.
- */
-export const GRAPH_FOLDER_LINK_STRENGTH = 0.25;
+export interface GraphFolderOptions {
+  /**
+   * Vault-relative folder paths whose folder nodes and containment edges are
+   * omitted. Files below them remain in the graph, matching Folders to Graph's
+   * exclude mode with “hide files” disabled.
+   */
+  excludedPaths?: readonly string[];
+}
+
+function normalizeFolderPath(path: string): string {
+  return path
+    .trim()
+    .replace(/\\/g, '/')
+    .replace(/^\/+|\/+$/g, '');
+}
+
+function isPathCovered(path: string, exclusions: readonly string[]): boolean {
+  return exclusions.some((excluded) => path === excluded || path.startsWith(`${excluded}/`));
+}
 
 /**
- * Containment is marked on the link rather than inferred from its endpoints: a
- * folder that has a page of the same name hangs its members off THAT page (see
- * below), so neither end carries the `folder:` prefix.
+ * Containment is marked on the link rather than inferred from its endpoints.
+ * The leading slash identifies folder nodes today, but the semantic mark keeps
+ * rendering and degree logic independent from an id convention.
  */
 export function isGraphFolderLink(link: { kind?: unknown }): boolean {
   return link.kind === 'containment';
@@ -111,8 +107,11 @@ export function isGraphFolderLink(link: { kind?: unknown }): boolean {
 export function buildGraphFolderNodes(
   nodes: readonly GraphNode[],
   links: readonly GraphLink[],
+  options: GraphFolderOptions = {},
 ): { nodes: GraphNode[]; links: GraphLink[] } {
-  const existingIds = new Set(nodes.map((node) => node.id));
+  const excludedPaths = [...new Set((options.excludedPaths ?? []).map(normalizeFolderPath))].filter(
+    Boolean,
+  );
   const folders = new Map<string, FolderTreeEntry>();
 
   const ensure = (path: string): FolderTreeEntry => {
@@ -127,6 +126,7 @@ export function buildGraphFolderNodes(
     if (node.kind !== 'doc') continue;
     const folderPath = graphFolderPathOf(node.docName);
     if (folderPath === null) continue;
+    if (isPathCovered(folderPath, excludedPaths)) continue;
     const chain = ancestorPaths(folderPath);
     for (const [index, path] of chain.entries()) {
       ensure(path);
@@ -135,14 +135,11 @@ export function buildGraphFolderNodes(
     ensure(folderPath).directDocIds.push(node.id);
   }
 
-  // A folder holding nothing but a single subfolder separates nothing — it just
-  // adds a node and a hop. Drop it and let the subfolder carry the joined path,
-  // the way a file tree collapses `a/ → b/ → c/` into one `a/b/c/` row.
-  const keptPaths = new Set(
-    [...folders.values()]
-      .filter((folder) => folder.directDocIds.length > 0 || folder.childPaths.size > 1)
-      .map((folder) => folder.path),
-  );
+  // Keep the complete folder hierarchy. Folders to Graph injects every
+  // directory into Obsidian's ordinary graph simulation; compressing
+  // single-child chains changes both the topology and the forces acting on
+  // their descendants.
+  const keptPaths = new Set(folders.keys());
 
   const nearestKeptAncestor = (path: string): string | null => {
     const chain = ancestorPaths(path);
@@ -153,70 +150,75 @@ export function buildGraphFolderNodes(
     return null;
   };
 
-  // A page whose name IS the folder path (`notes.md` beside `notes/`) already
-  // holds that id. Hang the members off that page instead of drawing a second
-  // node for the same place — which is exactly what a folder note is.
-  const nodeIdForPath = (path: string): string =>
-    existingIds.has(path) ? path : graphFolderNodeId(path);
+  // Folder nodes always remain distinct from notes. Obsidian identifies a
+  // folder as `/notes` and a note as `notes`, even when `notes.md` sits beside
+  // `notes/`; merging them changes both the topology and the force order.
+  const nodeIdForPath = graphFolderNodeId;
 
-  // Keys are newline-separated because a doc name may contain spaces, and
-  // `a b` + `c` must not collide with `a` + `b c`.
+  // Folders to Graph stores links as keys on the source node. An exact
+  // source→target match is overwritten by containment, while the reverse edge
+  // remains a separate authored link.
   const authoredPairs = new Set<string>();
   for (const link of links) {
     const source = resolveGraphLinkEndpointId(link.source);
     const target = resolveGraphLinkEndpointId(link.target);
     if (source === null || target === null) continue;
     authoredPairs.add(`${source}\n${target}`);
-    authoredPairs.add(`${target}\n${source}`);
   }
 
   const pending: Array<{ parentPath: string; parentId: string; childId: string }> = [];
-  const memberCounts = new Map<string, number>();
   const connected = new Set<string>();
 
   const connect = (parentPath: string, childId: string): void => {
     const parentId = nodeIdForPath(parentPath);
     if (parentId === childId) return;
     const key = `${parentId}\n${childId}`;
-    // A folder note reaches its parent by both routes at once — as a page of
-    // that folder and as the folder below it. It is one membership either way.
+    // Multiple synthesis routes must still emit one membership edge.
     if (connected.has(key)) return;
     connected.add(key);
-    // Counted whether or not the edge is drawn: it is still a member, and the
-    // count is what sizes the folder.
-    memberCounts.set(parentPath, (memberCounts.get(parentPath) ?? 0) + 1);
-    // An authored link already joins these two. Drawing containment on top of it
-    // would double the edge and double the spring.
+    // An authored link with the exact same direction already occupies this key
+    // in Obsidian's node-link object, so containment overwrites rather than
+    // doubles it.
     if (authoredPairs.has(key)) return;
     pending.push({ parentPath, parentId, childId });
   };
 
+  // With subtree weighting enabled, Folders to Graph adds every indirect
+  // visible descendant to the folder's ordinary direct-link weight. The result
+  // is the full visible subtree size, not merely the number of direct members.
+  const subtreeCounts = new Map<string, number>();
+  const countSubtree = (path: string): number => {
+    const cached = subtreeCounts.get(path);
+    if (cached !== undefined) return cached;
+    const entry = folders.get(path);
+    if (!entry) return 0;
+    let count = entry.directDocIds.length;
+    for (const childPath of entry.childPaths) {
+      if (!keptPaths.has(childPath)) continue;
+      count += 1 + countSubtree(childPath);
+    }
+    subtreeCounts.set(path, count);
+    return count;
+  };
+  for (const path of keptPaths) countSubtree(path);
+
+  // The plugin walks folder nodes in insertion order and writes child-folder
+  // edges before direct file memberships. The edge sequence feeds the link
+  // force, so preserving it is part of deterministic layout parity.
   for (const path of keptPaths) {
-    for (const docId of folders.get(path)?.directDocIds ?? []) {
+    const entry = folders.get(path);
+    for (const childPath of entry?.childPaths ?? []) {
+      if (keptPaths.has(childPath)) connect(path, nodeIdForPath(childPath));
+    }
+    for (const docId of entry?.directDocIds ?? []) {
       connect(path, docId);
     }
   }
-  for (const path of keptPaths) {
-    const parent = nearestKeptAncestor(path);
-    if (parent !== null) connect(parent, nodeIdForPath(path));
-  }
 
-  // Everything with no folder above it hangs off the project root — the
-  // top-level folders and the pages that sit beside them.
-  // De-duplicated: a folder note is both a top-level folder and a root-level
-  // page, and counting it twice would conjure a root for a one-item project.
-  const topLevel = new Set([
-    ...[...keptPaths].filter((path) => nearestKeptAncestor(path) === null).map(nodeIdForPath),
-    ...nodes.flatMap((node) =>
-      node.kind === 'doc' && graphFolderPathOf(node.docName) === null ? [node.id] : [],
-    ),
-  ]);
-  // One top-level item means the root would explain nothing — the same rule
-  // that collapses a single-child folder into its child.
-  const hasRoot = topLevel.size > 1 && !existingIds.has(GRAPH_ROOT_NODE_ID);
-  if (hasRoot) {
-    for (const childId of topLevel) connect(GRAPH_ROOT_FOLDER_PATH, childId);
-  }
+  // Deliberately no synthetic project-root node. The reference Folders to
+  // Graph setup hides `/`, leaving top-level folders and root-level pages free
+  // to form islands through authored links instead of forcing the entire vault
+  // into one radial tree.
 
   // Emitted last, once every membership is counted: the layout reads the count
   // off the link, for anything that wants to know how big a folder is.
@@ -224,21 +226,11 @@ export function buildGraphFolderNodes(
     source: parentId,
     target: childId,
     kind: 'containment',
-    memberCount: memberCounts.get(parentPath) ?? 1,
+    memberCount: subtreeCounts.get(parentPath) ?? 1,
   }));
 
   const folderNodes: GraphNode[] = [];
-  if (hasRoot) {
-    folderNodes.push({
-      kind: 'folder',
-      id: GRAPH_ROOT_NODE_ID,
-      label: GRAPH_ROOT_NODE_LABEL,
-      path: GRAPH_ROOT_FOLDER_PATH,
-      memberCount: memberCounts.get(GRAPH_ROOT_FOLDER_PATH) ?? 0,
-    });
-  }
-  for (const path of [...keptPaths].sort()) {
-    if (existingIds.has(path)) continue;
+  for (const path of keptPaths) {
     const parent = nearestKeptAncestor(path);
     folderNodes.push({
       kind: 'folder',
@@ -247,8 +239,14 @@ export function buildGraphFolderNodes(
       // `docs/archive` while a plain child reads as just `archive`.
       label: parent === null ? path : path.slice(parent.length + 1),
       path,
-      memberCount: memberCounts.get(path) ?? 0,
-    });
+      memberCount: subtreeCounts.get(path) ?? 0,
+      // Obsidian initializes injected folder nodes at the origin too. Leaving
+      // these undefined makes d3 place only folders on its fallback spiral.
+      x: 0,
+      y: 0,
+      vx: 0,
+      vy: 0,
+    } as GraphNode);
   }
 
   return { nodes: folderNodes, links: folderLinks };

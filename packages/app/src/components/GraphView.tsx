@@ -1,7 +1,8 @@
 import { Trans, useLingui } from '@lingui/react/macro';
 import { LinkGraphSuccessSchema, ProblemDetailsSchema } from '@nedian0brien/synapsenote-core';
+import { forceCollide, forceX, forceY } from 'd3-force-3d';
 import { useTheme } from 'next-themes';
-import { useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import ForceGraph2D, {
   type ForceGraphMethods,
   type LinkObject,
@@ -11,7 +12,7 @@ import { usePageList } from '@/components/PageListContext';
 import { hashFromDocName } from '@/lib/doc-hash';
 import { subscribeToDocumentsChanged } from '@/lib/documents-events';
 import { openExternalUrl } from '@/lib/external-link';
-import { GRAPH_REPEL_RANGE_FACTOR, type GraphSettings } from '@/lib/graph-settings-store';
+import type { GraphSettings } from '@/lib/graph-settings-store';
 import { cn } from '@/lib/utils';
 import { getGraphCardNeighbors } from './GraphCardDeck';
 import {
@@ -31,21 +32,16 @@ import {
   getGraphAreaNameFade,
   getGraphAreaTintWeight,
 } from './graph-areas';
+import {
+  GRAPH_CHARGE_DISTANCE_MIN,
+  GRAPH_COLLISION_RADIUS,
+  GRAPH_COLLISION_STRENGTH,
+} from './graph-collision';
 import { GRAPH_COLOR_PAIRS } from './graph-colors';
 import { applyGraphFilters } from './graph-filter';
-import {
-  buildGraphFolderNodes,
-  GRAPH_FOLDER_LINK_STRENGTH,
-  graphFolderDepthOf,
-  isGraphFolderLink,
-  isGraphRootFolderNode,
-} from './graph-folders';
+import { buildGraphFolderNodes, graphFolderDepthOf, isGraphFolderLink } from './graph-folders';
 import { matchGraphGroup, resolveGraphGroupColor } from './graph-groups';
-import {
-  buildGraphAdjacency,
-  isGraphLinkHighlighted,
-  isStructuralGraphLink,
-} from './graph-highlight';
+import { buildGraphAdjacency, isGraphLinkHighlighted } from './graph-highlight';
 import {
   type GraphInteractionMode,
   getGraphAlphaDecay,
@@ -61,12 +57,16 @@ import {
 } from './graph-label-layout';
 import { MIN_GRAPH_LABEL_ZOOM_FACTOR } from './graph-label-tiers';
 import { buildGraphLabelDescriptors } from './graph-label-utils';
-import { type GraphNodeEmphasis, getGraphNodeStyle } from './graph-node-style';
+import {
+  getGraphNodeStyle,
+  OBSIDIAN_GRAPH_DIM_ALPHA,
+  OBSIDIAN_GRAPH_LIGHT_COLORS,
+} from './graph-node-style';
+import { canonicalizeObsidianGraphData } from './graph-obsidian-data';
 import {
   buildGraphDegreeMap,
   buildGraphLinkSignature,
   buildGraphNodeSignature,
-  capGraphNodeRadius,
   type GraphData,
   type GraphDocClickBehavior,
   type GraphDocDisplayState,
@@ -75,14 +75,12 @@ import {
   type GraphNodeSelection,
   type GraphNodeVisualState,
   type GraphScope,
-  getGraphNodeCanvasRadius,
   getGraphNodePointerRadius,
   getGraphNodeTooltipLabel,
   getGraphNodeVisualState,
   reconcileGraphData,
   resolveGraphLinkEndpointId,
   resolveGraphNodeClickAction,
-  screenOffsetInGraphUnits,
 } from './graph-view-utils';
 import { resolveTargetNavigationIntent } from './target-navigation-intent';
 
@@ -91,7 +89,15 @@ const FOCUS_RETRY_INTERVAL_MS = 120;
 const FOCUS_RETRY_DISTANCE_PX = 18;
 const FINAL_SETTLE_DRIFT_PX = 28;
 const BACKGROUND_CLICK_TOLERANCE_PX = 5;
-const ZOOM_TO_FIT_PADDING_PX = 40;
+const ZOOM_TO_FIT_PADDING_PX = 60;
+const GLOBAL_GRAPH_HORIZONTAL_PADDING_PX = 55;
+const GLOBAL_GRAPH_VERTICAL_PADDING_PX = 55;
+// Both simulators are isotropic, but Obsidian's Float32 worker and d3 choose
+// different absolute axes from the same zero-origin seed. Align that stable
+// basis once after settlement; topology changes then preserve the orientation.
+const OBSIDIAN_LAYOUT_ROTATION_RADIANS = (-3 * Math.PI) / 4;
+const OBSIDIAN_LAYOUT_X_SCALE = 1;
+const OBSIDIAN_LAYOUT_HORIZONTAL_BIAS_PX = 0;
 const EMPTY_GRAPH_DATA: GraphData = { nodes: [], links: [] };
 const EMPTY_GRAPH_AREAS: GraphArea[] = [];
 
@@ -134,17 +140,12 @@ function getGraphNodeDisplayState({
 
 function getGraphNodeInteractiveRadius({
   state,
-  displayState,
   globalScale,
 }: {
   state: GraphNodeVisualState;
-  displayState: GraphDocDisplayState;
   globalScale: number;
 }): number {
-  const pointerRadius = getGraphNodePointerRadius(state, globalScale);
-  if (displayState !== 'missing') return pointerRadius;
-  const baseRadius = getGraphNodeCanvasRadius(state);
-  return Math.max(pointerRadius, baseRadius + screenOffsetInGraphUnits(2, globalScale, baseRadius));
+  return getGraphNodePointerRadius(state, globalScale);
 }
 
 function getActiveGraphNodeCoords({
@@ -370,14 +371,12 @@ function getGraphNodeHitbox({
   activeDocName,
   selectedNodeId,
   globalScale,
-  displayState,
 }: {
   node: NodeObject<GraphNode>;
   fg: ForceGraphMethods<NodeObject<GraphNode>>;
   activeDocName: string;
   selectedNodeId: string | null;
   globalScale: number;
-  displayState: GraphDocDisplayState;
 }): GraphNodeHitbox | null {
   if (typeof node.x !== 'number' || typeof node.y !== 'number') return null;
 
@@ -390,7 +389,7 @@ function getGraphNodeHitbox({
   return {
     x: screen.x,
     y: screen.y,
-    radiusPx: getGraphNodeInteractiveRadius({ state, displayState, globalScale }) * globalScale,
+    radiusPx: getGraphNodeInteractiveRadius({ state, globalScale }) * globalScale,
     state,
   };
 }
@@ -417,30 +416,23 @@ function getGraphNodeAtPoint({
   nodes,
   activeDocName,
   selectedNodeId,
-  navigationIntentByNodeId,
 }: {
   point: { x: number; y: number };
   fg: ForceGraphMethods<NodeObject<GraphNode>>;
   nodes: GraphNode[];
   activeDocName: string;
   selectedNodeId: string | null;
-  navigationIntentByNodeId: Map<string, { displayState: GraphDocDisplayState }>;
 }): GraphNode | null {
   const globalScale = fg.zoom();
   let closestNode: { node: GraphNode; distance: number } | null = null;
 
   for (const node of nodes as NodeObject<GraphNode>[]) {
-    const displayState = getGraphNodeDisplayState({
-      node,
-      navigationIntentByNodeId,
-    });
     const hitbox = getGraphNodeHitbox({
       node,
       fg,
       activeDocName,
       selectedNodeId,
       globalScale,
-      displayState,
     });
     if (!hitbox) continue;
 
@@ -663,6 +655,16 @@ export function GraphView({
   // canvas-click-at-coord tests can gate on a real settlement signal instead
   // of racing the physics.
   const simulationSettledRef = useRef(false);
+  const globalAutoFitRef = useRef(false);
+  const globalLayoutAlignedRef = useRef(false);
+  const globalFitTimerRef = useRef<number | null>(null);
+  useEffect(() => {
+    return () => {
+      if (globalFitTimerRef.current !== null) {
+        window.clearTimeout(globalFitTimerRef.current);
+      }
+    };
+  }, []);
   // Hover NEVER goes through React state. Any re-render hands ForceGraph2D a new
   // `graphData` object, and force-graph's setter for that prop reinitializes the
   // layout and calls `resetCountdown()` — restarting the simulation. Driving
@@ -680,8 +682,11 @@ export function GraphView({
   const { t } = useLingui();
   const { resolvedTheme } = useTheme();
   const {
+    assetPaths,
+    filePaths,
     folderPaths,
     loading: pageListLoading,
+    pageMeta,
     pages,
     pagesBySlug,
     pagesByBasename,
@@ -783,55 +788,50 @@ export function GraphView({
   );
 
   const isDark = resolvedTheme === 'dark';
-  // The graph reads in the app's own chord: the neutral greyscale ramp from
-  // `tokens.css` plus the one sky-blue `--primary`. Weight carries the
-  // hierarchy (see `graph-node-style.ts`); hue is spent only on the active
-  // document, so it is the single thing on screen that can claim the eye.
+  // Light mode is sampled directly from Obsidian 1.13.4's live renderer. Dark
+  // mode keeps the same semantic roles with the stock Obsidian dark values.
   const palette = isDark
     ? {
-        background: 'oklch(0.145 0 0)',
-        accent: '#69a3ff',
-        strong: 'oklch(0.90 0 0)',
-        normal: 'oklch(0.62 0 0)',
-        faint: 'oklch(0.42 0 0)',
-        label: 'oklch(0.78 0 0)',
-        labelFaint: 'oklch(0.55 0 0)',
-        edgeStrong: 'rgba(255,255,255,0.20)',
-        edgeSoft: 'rgba(255,255,255,0.10)',
-        edgeDim: 'rgba(255,255,255,0.045)',
-        edgeContainment: 'rgba(255,255,255,0.075)',
+        background: '#1e1e1e',
+        node: '#b3b3b3',
+        focused: '#7f9cf5',
+        folder: '#5c8af5',
+        unresolved: '#666666',
+        line: '#3d3d3d',
+        text: '#dcddde',
+        highlight: '#7396f7',
+        lineDim: 'rgba(61,61,61,0.2)',
       }
     : {
-        background: 'oklch(1 0 0)',
-        accent: '#3784ff',
-        strong: 'oklch(0.32 0 0)',
-        normal: 'oklch(0.68 0 0)',
-        faint: 'oklch(0.86 0 0)',
-        label: 'oklch(0.38 0 0)',
-        labelFaint: 'oklch(0.62 0 0)',
-        edgeStrong: 'rgba(23,23,23,0.20)',
-        edgeSoft: 'rgba(23,23,23,0.10)',
-        edgeDim: 'rgba(23,23,23,0.045)',
-        edgeContainment: 'rgba(23,23,23,0.085)',
+        ...OBSIDIAN_GRAPH_LIGHT_COLORS,
+        lineDim: 'rgba(218,218,218,0.2)',
       };
   const bgColor = palette.background;
-  const labelColor = palette.label;
-  const emphasisColor = (emphasis: GraphNodeEmphasis): string =>
-    emphasis === 'accent'
-      ? palette.accent
-      : emphasis === 'selected' || emphasis === 'strong'
-        ? palette.strong
-        : emphasis === 'faint'
-          ? palette.faint
-          : palette.normal;
+  const labelColor = palette.text;
   const focusZoom = scope === 'global' ? 1.6 : 2.35;
   const maxLabelWidthPx = scope === 'global' ? 220 : 150;
+  const existingAssetPaths = useMemo(
+    () => new Set([...assetPaths, ...filePaths]),
+    [assetPaths, filePaths],
+  );
+  const canonicalGraphData = useMemo(
+    () =>
+      pageListLoading
+        ? graphData
+        : canonicalizeObsidianGraphData(graphData, pages, {
+            existingAssetPaths,
+            documentExtensionByPage: new Map(
+              [...pageMeta].map(([page, meta]) => [page, meta.docExt] as const),
+            ),
+          }),
+    [existingAssetPaths, graphData, pageListLoading, pageMeta, pages],
+  );
 
   // Built from the UNFILTERED node set: the missing-node filter reads display
   // state to decide what to drop, so resolving it after filtering would be
   // circular.
   const navigationIntentByNodeId = new Map(
-    graphData.nodes.flatMap((node) => {
+    canonicalGraphData.nodes.flatMap((node) => {
       if (node.kind !== 'doc') return [];
       const navigationIntent = pageListLoading
         ? {
@@ -850,7 +850,7 @@ export function GraphView({
   );
 
   const filteredData = applyGraphFilters({
-    data: graphData,
+    data: canonicalGraphData,
     filters: settings.filters,
     activeDocName,
     getDisplayState: (node) =>
@@ -864,7 +864,9 @@ export function GraphView({
   // is an orphan once it has a parent), and the folders drawn would be those of
   // pages the user just hid.
   const folderAdditions = settings.filters.showFolderNodes
-    ? buildGraphFolderNodes(filteredData.nodes, filteredData.links)
+    ? buildGraphFolderNodes(filteredData.nodes, filteredData.links, {
+        excludedPaths: settings.filters.folderNodeExclusions,
+      })
     : EMPTY_GRAPH_DATA;
   const composedData: GraphData =
     folderAdditions.nodes.length === 0 && folderAdditions.links.length === 0
@@ -884,8 +886,9 @@ export function GraphView({
   const [renderData, setRenderData] = useState<GraphData>(EMPTY_GRAPH_DATA);
   // biome-ignore lint/correctness/useExhaustiveDependencies: the signature stands in for `composedData`, whose identity churns every render — depending on it directly is the bug this exists to prevent
   useEffect(() => {
+    if (scope === 'global') globalAutoFitRef.current = false;
     setRenderData(composedData);
-  }, [filteredSignature]);
+  }, [filteredSignature, scope]);
   const displayData = renderData;
 
   const layoutNodes = displayData.nodes as GraphLabelLayoutNode[];
@@ -898,42 +901,87 @@ export function GraphView({
   const alphaDecay = getGraphAlphaDecay(interactionMode);
   const pinSelectedNode = physics.pinSelectedNode;
 
+  const fitGlobalGraphToView = () => {
+    const positioned = (displayData.nodes as NodeObject<GraphNode>[]).filter(
+      (node) => typeof node.x === 'number' && typeof node.y === 'number',
+    );
+    if (positioned.length === 0 || dimensions.width <= 0 || dimensions.height <= 0) return;
+
+    if (!globalLayoutAlignedRef.current) {
+      const cosine = Math.cos(OBSIDIAN_LAYOUT_ROTATION_RADIANS);
+      const sine = Math.sin(OBSIDIAN_LAYOUT_ROTATION_RADIANS);
+      for (const node of positioned) {
+        const x = node.x as number;
+        const y = node.y as number;
+        node.x = (x * cosine - y * sine) * OBSIDIAN_LAYOUT_X_SCALE;
+        node.y = x * sine + y * cosine;
+      }
+      globalLayoutAlignedRef.current = true;
+    }
+
+    const xs = positioned.map((node) => node.x as number);
+    const ys = positioned.map((node) => node.y as number);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    const rangeX = Math.max(maxX - minX, 1);
+    const rangeY = Math.max(maxY - minY, 1);
+    const zoom = Math.max(
+      1e-4,
+      Math.min(
+        (dimensions.width - GLOBAL_GRAPH_HORIZONTAL_PADDING_PX * 2) / rangeX,
+        (dimensions.height - GLOBAL_GRAPH_VERTICAL_PADDING_PX * 2) / rangeY,
+      ),
+    );
+    const fg = fgRef.current;
+    fg?.centerAt(
+      (minX + maxX) / 2 - OBSIDIAN_LAYOUT_HORIZONTAL_BIAS_PX / zoom,
+      (minY + maxY) / 2,
+      0,
+    );
+    fg?.zoom(zoom, 0);
+    globalAutoFitRef.current = true;
+  };
+
   const adjacency = buildGraphAdjacency(displayData.links);
-  // Degree means "how many links does this page have", which is what the hub
-  // ring and its printed number claim. Containment is not a link anyone wrote,
-  // so counting it would add one to every page and turn every folder into the
-  // biggest hub on the canvas. Hover highlighting, above, DOES count it — there
-  // the question is "what is this connected to", and a folder's members are.
-  const degreeByNodeId = buildGraphDegreeMap(
-    displayData.links.filter((link) => !isGraphFolderLink(link)),
-  );
-  // The size multiplier `nodeCanvasObject` actually paints with. The label
-  // planner and the pointer hit area have to agree with it: a folder or a big
-  // hub is drawn at twice its base radius, so measuring them at the base puts
-  // their label underneath their own fill and stops their clickable circle
-  // short of the edge you can see.
-  const drawnNodeScale = (node: GraphNode): number =>
+  // Obsidian's node `weight` is total rendered degree, including injected
+  // folder containment. Folders replace this with visible subtree weight in
+  // `graph-folders.ts`, but files use the ordinary degree directly.
+  const degreeByNodeId = buildGraphDegreeMap(displayData.links);
+  const normalizedFolderPaths = new Set([...folderPaths].map((path) => path.normalize('NFC')));
+  const graphNodeStyle = (node: GraphNode) =>
     getGraphNodeStyle({
       node,
       degree: degreeByNodeId.get(node.id) ?? 0,
       displayState: getGraphNodeDisplayState({ node, navigationIntentByNodeId }),
       visualState: getGraphNodeVisualState(node, { activeDocName, selectedNodeId }),
-    }).scale;
+      isGhostFolder:
+        node.kind === 'folder' && !normalizedFolderPaths.has(node.path.normalize('NFC')),
+      nodeSizeMultiplier: settings.display.nodeSize,
+    });
+  const graphNodeRadius = (node: GraphNode, globalScale: number): number => {
+    const safeScale = Number.isFinite(globalScale) && globalScale > 0 ? globalScale : 1;
+    return graphNodeStyle(node).diameter / (2 * Math.sqrt(safeScale));
+  };
+  const graphNodeColor = (node: GraphNode): string => {
+    const group = matchGraphGroup(node, settings.groups);
+    if (group) return resolveGraphGroupColor(group.color, isDark);
+    return palette[graphNodeStyle(node).colorRole];
+  };
   // Folder territories, and where each one currently sits. The bounds follow
   // the simulation, so they are recomputed once per frame in the pre-render
   // hook and reused by the post-render hook that writes the region names —
   // walking every member twice a frame is the one thing here that would cost.
-  const areas = settings.filters.showFolderNodes
-    ? buildGraphAreas(displayData.nodes, displayData.links)
-    : EMPTY_GRAPH_AREAS;
+  const areas =
+    settings.filters.showFolderNodes && settings.display.showFolderAreas
+      ? buildGraphAreas(displayData.nodes, displayData.links)
+      : EMPTY_GRAPH_AREAS;
   const areaBoundsRef = useRef<Map<string, GraphAreaBounds>>(new Map());
   // The deepest region each node sits in, which is the one whose on-screen size
   // decides when that node's name is revealed. An area's `memberIds` already
   // includes its descendants, so the deepest match is the innermost folder.
   // Built here rather than per frame — it only changes when the areas do.
-  // A folder node's id IS its region's id, so this is how the dot that anchors
-  // a territory finds the territory's colour.
-  const areaById = new Map(areas.map((area) => [area.id, area]));
   // Each node's own place in the folder tree, which is what paces the label
   // reveal. Folder nodes carry their path directly; a page's is the folder it
   // sits in.
@@ -995,12 +1043,11 @@ export function GraphView({
 
   // Alpha applied to everything outside the hover highlight. Dimmed rather than
   // hidden: the surrounding shape is what makes the highlighted subgraph legible.
-  const dimAlpha = isDark ? 0.16 : 0.12;
   // Resolved at PAINT time from the ref, not precomputed at render time.
   const nodeAlpha = (nodeId: string) => {
     const hovered = hoveredNodeIdRef.current;
     if (hovered === null) return 1;
-    return hovered === nodeId || adjacency.get(hovered)?.has(nodeId) ? 1 : dimAlpha;
+    return hovered === nodeId || adjacency.get(hovered)?.has(nodeId) ? 1 : OBSIDIAN_GRAPH_DIM_ALPHA;
   };
 
   useEffect(() => {
@@ -1008,8 +1055,8 @@ export function GraphView({
   }, [displayData, loading, onStatsChange]);
 
   useEffect(() => {
-    graphNodesRef.current = graphData.nodes;
-  }, [graphData.nodes]);
+    graphNodesRef.current = canonicalGraphData.nodes;
+  }, [canonicalGraphData.nodes]);
 
   // Push the Forces sliders into the live d3 simulation. force-graph builds the
   // three standard forces once and keeps them across data updates, so this
@@ -1024,22 +1071,29 @@ export function GraphView({
     if (!fg) return;
 
     const charge = fg.d3Force('charge');
-    // Stored as a magnitude; d3 wants a negative strength to push apart. Flat:
-    // folder nodes used to push several times harder here, to clear room for
-    // what they hold. That room is the containment spring's job — it is sized
-    // by membership below — and doing it with repulsion instead shoved the
-    // neighboring clusters to the far side of the canvas.
-    charge?.strength?.(-repelStrength);
-    // Bound the range, or the pressure of every distant node crushes each
-    // cluster to a few pixels across at the zoom that fits the map. Scaled off
-    // the spring length so dragging the Link distance slider keeps the two in
-    // proportion — see GRAPH_REPEL_RANGE_FACTOR for the measurements.
-    charge?.distanceMax?.(linkDistance * GRAPH_REPEL_RANGE_FACTOR);
-
-    const center = fg.d3Force('center');
-    center?.strength?.(centerStrength);
-
     const link = fg.d3Force('link');
+    // Force application order is observable because each force reads velocity
+    // written by the previous one. Obsidian's worker runs X, Y, link, charge,
+    // then collision; rebuild the d3 registry in that exact order.
+    fg.d3Force('center', null);
+    fg.d3Force('x', null);
+    fg.d3Force('y', null);
+    fg.d3Force('link', null);
+    fg.d3Force('charge', null);
+    fg.d3Force('collide', null);
+
+    // Stored as a magnitude; d3 wants a negative strength to push apart.
+    charge?.strength?.(-repelStrength);
+    charge?.distanceMin?.(GRAPH_CHARGE_DISTANCE_MIN);
+    charge?.distanceMax?.(Number.POSITIVE_INFINITY);
+
+    // Obsidian's "Center force" is a pair of position forces, not d3's
+    // forceCenter. Position forces pull each disconnected component toward the
+    // origin while preserving its internal layout; forceCenter only translates
+    // the centroid and cannot organize islands.
+    fg.d3Force('x', forceX<GraphNode>(0).strength(centerStrength));
+    fg.d3Force('y', forceY<GraphNode>(0).strength(centerStrength));
+
     if (link) {
       // One length for every edge, containment included, as the original
       // SynapseNote layout had it.
@@ -1049,35 +1103,46 @@ export function GraphView({
       // number keeps a multiplier of 1 a true no-op: a flat strength would
       // stiffen hub edges that d3 deliberately slackens.
       const degrees = buildGraphDegreeMap(displayLinks);
-      link.strength?.((candidate: { source: unknown; target: unknown; kind?: unknown }) => {
-        // Containment opts out of the degree rule entirely — see
-        // GRAPH_FOLDER_LINK_STRENGTH. Under `1 / min(degree)` a leaf page gets
-        // the stiffest spring in the graph, which is what welds a big folder
-        // into a shell instead of letting it breathe out to the radius its
-        // members' own repulsion asks for.
-        if (isGraphFolderLink(candidate)) return GRAPH_FOLDER_LINK_STRENGTH * linkStrength;
-
+      link.strength?.((candidate: { source: unknown; target: unknown }) => {
         const source = resolveGraphLinkEndpointId(candidate.source);
         const target = resolveGraphLinkEndpointId(candidate.target);
         const sourceDegree = source === null ? 1 : (degrees.get(source) ?? 1);
         const targetDegree = target === null ? 1 : (degrees.get(target) ?? 1);
         return (1 / Math.max(1, Math.min(sourceDegree, targetDegree))) * linkStrength;
       });
+      fg.d3Force('link', link);
     }
+    if (charge) fg.d3Force('charge', charge);
+
+    // Folders to Graph adds nodes and links but leaves Obsidian's stock
+    // constant collision radius untouched. Matching it matters: a radius tied
+    // to each drawn folder size turns rendering weight into a second layout
+    // hierarchy that the reference graph does not have.
+    fg.d3Force(
+      'collide',
+      forceCollide<NodeObject<GraphNode>>(GRAPH_COLLISION_RADIUS).strength(
+        GRAPH_COLLISION_STRENGTH,
+      ),
+    );
 
     fg.d3ReheatSimulation();
   }, [centerStrength, repelStrength, linkStrength, linkDistance, displayLinks]);
 
   const canSelect = docClickBehavior === 'select';
   const syncInteractionMode = () => {
-    setInteractionMode((previousMode) => {
-      const next = getGraphInteractionMode({
-        selectedNodeId,
-        zoomScale: zoomScaleRef.current,
-        canSelect,
-        previousMode,
+    // force-graph reports its initial zoom synchronously while its own React
+    // component is rendering. Defer the parent state reconciliation one
+    // microtask so React never sees a cross-component render-phase update.
+    queueMicrotask(() => {
+      setInteractionMode((previousMode) => {
+        const next = getGraphInteractionMode({
+          selectedNodeId,
+          zoomScale: zoomScaleRef.current,
+          canSelect,
+          previousMode,
+        });
+        return next === previousMode ? previousMode : next;
       });
-      return next === previousMode ? previousMode : next;
     });
   };
 
@@ -1111,24 +1176,6 @@ export function GraphView({
     });
   }, [interactionMode, selectedNodeId, displayData.nodes, adjacency, onCardModeChange]);
 
-  // Nail the project root to the origin. The original SynapseNote ran its
-  // layout with the vault root fixed for the same reason: with the whole folder
-  // tree hanging off one immovable point, the layout has a centre to organize
-  // around and the branches settle around it instead of wandering off as
-  // separate drifting components.
-  useEffect(() => {
-    const root = displayData.nodes.find(isGraphRootFolderNode) as
-      | (GraphNode & { fx?: number | null; fy?: number | null })
-      | undefined;
-    if (!root) return;
-    root.fx = 0;
-    root.fy = 0;
-    return () => {
-      root.fx = null;
-      root.fy = null;
-    };
-  }, [displayData.nodes]);
-
   // Pin the selected node while it is being read up close, and release it the
   // moment focus ends. Without this the simulation keeps nudging the very node
   // the user zoomed in on, and the camera chases it across the canvas.
@@ -1148,6 +1195,7 @@ export function GraphView({
   }, [pinSelectedNode, selectedNodeId, displayData.nodes]);
 
   useEffect(() => {
+    if (scope === 'global') return;
     focusStateRef.current = {
       key: focusKey,
       lastX: null,
@@ -1166,7 +1214,7 @@ export function GraphView({
       });
     });
     return () => window.cancelAnimationFrame(animationFrame);
-  }, [focusKey, activeDocName, focusZoom]);
+  }, [focusKey, activeDocName, focusZoom, scope]);
 
   useEffect(() => {
     // DEV-gate guards all `window.__graphHarness` writes below; see
@@ -1236,10 +1284,6 @@ export function GraphView({
           activeDocName,
           selectedNodeId,
           globalScale: fg.zoom(),
-          displayState: getGraphNodeDisplayState({
-            node,
-            navigationIntentByNodeId,
-          }),
         });
         if (!hitbox) return null;
 
@@ -1292,10 +1336,6 @@ export function GraphView({
           activeDocName,
           selectedNodeId,
           globalScale: fg.zoom(),
-          displayState: getGraphNodeDisplayState({
-            node: sourceNode,
-            navigationIntentByNodeId,
-          }),
         });
         const targetHitbox = getGraphNodeHitbox({
           node: targetNode,
@@ -1303,10 +1343,6 @@ export function GraphView({
           activeDocName,
           selectedNodeId,
           globalScale: fg.zoom(),
-          displayState: getGraphNodeDisplayState({
-            node: targetNode,
-            navigationIntentByNodeId,
-          }),
         });
         if (!sourceHitbox || !targetHitbox) return null;
 
@@ -1380,7 +1416,6 @@ export function GraphView({
               nodes: displayData.nodes,
               activeDocName,
               selectedNodeId,
-              navigationIntentByNodeId,
             });
             if (node) {
               return { kind: 'node', node } satisfies GraphPointerTarget;
@@ -1438,16 +1473,18 @@ export function GraphView({
           <ForceGraph2D
             ref={fgRef}
             graphData={displayData}
-            // Enough to converge. This used to be 150 on the belief that the
-            // converged layout was a featureless disc and the structure at 150
-            // was a lucky intermediate. Measuring it says the opposite: at 400
-            // ticks ~71% of a node's six nearest neighbours are from its own
-            // folder, and the radial density is lumpy, not uniform. The disc was
-            // never the layout — it was every cluster crushed into a few pixels
-            // by unbounded repulsion, which distanceMax now bounds.
-            cooldownTicks={400}
+            // Obsidian's default alpha decay reaches its 0.001 stop threshold
+            // after roughly 300 ticks. Stopping at the same point avoids either
+            // freezing an intermediate or adding low-alpha drift after the
+            // reference worker has declared the graph settled.
+            cooldownTicks={300}
             onEngineTick={() => {
               simulationSettledRef.current = false;
+              if (globalFitTimerRef.current !== null) {
+                window.clearTimeout(globalFitTimerRef.current);
+                globalFitTimerRef.current = null;
+              }
+              if (scope === 'global') return;
               // The camera stops chasing the ACTIVE document once the user has
               // zoomed in on a SELECTION: they are driving now, and re-centering
               // on a different node every tick would pull the ground out from
@@ -1455,7 +1492,7 @@ export function GraphView({
               if (isGraphFocusMode(interactionMode)) return;
               focusStateRef.current = maybeFocusActiveGraphNode({
                 fg: fgRef.current,
-                nodes: graphData.nodes,
+                nodes: canonicalGraphData.nodes,
                 activeDocName,
                 zoom: focusZoom,
                 focusKey,
@@ -1464,9 +1501,23 @@ export function GraphView({
             }}
             onEngineStop={() => {
               simulationSettledRef.current = true;
+              if (scope === 'global') {
+                if (!globalAutoFitRef.current) {
+                  if (globalFitTimerRef.current !== null) {
+                    window.clearTimeout(globalFitTimerRef.current);
+                  }
+                  globalFitTimerRef.current = window.setTimeout(() => {
+                    globalFitTimerRef.current = null;
+                    if (simulationSettledRef.current && !globalAutoFitRef.current) {
+                      fitGlobalGraphToView();
+                    }
+                  }, 60);
+                }
+                return;
+              }
               if (isGraphFocusMode(interactionMode)) return;
               const coords = getActiveGraphNodeCoords({
-                nodes: graphData.nodes,
+                nodes: canonicalGraphData.nodes,
                 activeDocName,
               });
               if (
@@ -1478,7 +1529,7 @@ export function GraphView({
               ) {
                 focusStateRef.current = maybeFocusActiveGraphNode({
                   fg: fgRef.current,
-                  nodes: graphData.nodes,
+                  nodes: canonicalGraphData.nodes,
                   activeDocName,
                   zoom: focusZoom,
                   focusKey,
@@ -1501,25 +1552,8 @@ export function GraphView({
             }}
             nodeRelSize={4}
             nodeVal={(node: NodeObject<GraphNode>) => {
-              const state = getGraphNodeVisualState(node, {
-                activeDocName,
-                selectedNodeId,
-              });
-
-              const base =
-                state === 'active-selected'
-                  ? 20
-                  : state === 'active'
-                    ? 18
-                    : state === 'selected' ||
-                        state === 'external-selected' ||
-                        state === 'tag-selected'
-                      ? 12
-                      : 6;
-              // nodeVal drives force-graph's own area math (and the drag hit
-              // area), so it scales with the same multiplier as the drawn
-              // radius — squared, since val is an area and nodeSize a length.
-              return base * settings.display.nodeSize ** 2;
+              const radius = graphNodeStyle(node).diameter / 2;
+              return Math.PI * radius * radius;
             }}
             nodeCanvasObjectMode={() => 'replace'}
             nodeCanvasObject={(
@@ -1528,121 +1562,25 @@ export function GraphView({
               globalScale: number,
             ) => {
               if (typeof node.x !== 'number' || typeof node.y !== 'number') return;
-
-              const state = getGraphNodeVisualState(node, {
-                activeDocName,
-                selectedNodeId,
-              });
-              const displayState = getGraphNodeDisplayState({
-                node,
-                navigationIntentByNodeId,
-              });
-              const degree = degreeByNodeId.get(node.id) ?? 0;
-              const style = getGraphNodeStyle({ node, degree, displayState, visualState: state });
-              // Cap the base, then scale — so a folder stays proportionally
-              // bigger than a page however far in you are.
-              const radius =
-                capGraphNodeRadius(
-                  getGraphNodeCanvasRadius(state) * settings.display.nodeSize,
-                  globalScale,
-                ) * style.scale;
-
-              // A user-defined group is an explicit instruction and outranks the
-              // weight scale; the auto-assigned cluster hue does NOT, because a
-              // graph that colors every node by cluster is the confetti this
-              // encoding exists to replace. Clusters still drive the legend.
-              const group = matchGraphGroup(node, settings.groups);
-              // The dot that anchors a territory is drawn in that territory's
-              // colour, at full strength against the 16%-alpha wash of the same
-              // hue behind it — so it reads as the thing that OWNS the field
-              // rather than as a grey dot that happens to sit on it. Nothing
-              // else on the canvas ties a region to its folder.
-              //
-              // Below an explicit group, which is a user instruction, and below
-              // the selected/active states, whose whole job is to override the
-              // resting colour.
-              const anchoredArea = state === 'folder' ? areaById.get(node.id) : undefined;
-              const color = group
-                ? resolveGraphGroupColor(group.color, isDark)
-                : anchoredArea
-                  ? areaColor(anchoredArea)
-                  : emphasisColor(style.emphasis);
+              const style = graphNodeStyle(node);
+              const radius = graphNodeRadius(node, globalScale);
+              const hovered = hoveredNodeIdRef.current === node.id;
+              const color = hovered ? palette.highlight : graphNodeColor(node);
 
               ctx.save();
-              ctx.globalAlpha = nodeAlpha(node.id);
-
-              const strokeWidth = screenOffsetInGraphUnits(1.5, globalScale, radius);
+              ctx.globalAlpha = nodeAlpha(node.id) * style.alpha;
+              ctx.beginPath();
+              ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);
               if (style.shape === 'filled') {
-                ctx.beginPath();
-                ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);
                 ctx.fillStyle = color;
                 ctx.fill();
-              } else if (style.shape === 'ring') {
-                // Hollow, so the fill has to be the background rather than
-                // nothing — links are drawn first and would otherwise show
-                // straight through the node.
-                ctx.beginPath();
-                ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);
-                ctx.fillStyle = bgColor;
-                ctx.fill();
-                ctx.lineWidth = strokeWidth;
-                ctx.strokeStyle = color;
-                ctx.stroke();
-              } else if (style.shape === 'ghost') {
-                ctx.beginPath();
-                ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);
-                ctx.fillStyle = bgColor;
-                ctx.fill();
-                ctx.lineWidth = strokeWidth;
-                ctx.strokeStyle = color;
-                ctx.setLineDash([
-                  screenOffsetInGraphUnits(2.5, globalScale, radius),
-                  screenOffsetInGraphUnits(2, globalScale, radius),
-                ]);
-                ctx.stroke();
-                ctx.setLineDash([]);
               } else {
-                ctx.beginPath();
-                ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);
-                ctx.fillStyle = color;
-                ctx.fill();
-              }
-
-              // Selection is a halo OUTSIDE the node rather than a fill change,
-              // so a selected node keeps whatever weight its role gave it.
-              if (state !== 'default' && state !== 'external' && state !== 'tag') {
-                ctx.beginPath();
-                ctx.arc(
-                  node.x,
-                  node.y,
-                  radius + screenOffsetInGraphUnits(3, globalScale, radius),
-                  0,
-                  2 * Math.PI,
-                  false,
-                );
-                ctx.lineWidth = screenOffsetInGraphUnits(1.5, globalScale, radius);
-                ctx.strokeStyle =
-                  state === 'active' || state === 'active-selected'
-                    ? palette.accent
-                    : palette.strong;
-                ctx.globalAlpha = nodeAlpha(node.id) * 0.45;
+                // Folders to Graph redraws unresolved and ghost nodes with a
+                // stroke equal to 18% of the circle radius, leaving the center
+                // transparent so the edge layer remains visible underneath.
+                ctx.lineWidth = radius * 0.18;
+                ctx.strokeStyle = color;
                 ctx.stroke();
-                ctx.globalAlpha = nodeAlpha(node.id);
-              }
-
-              // The edge count, inside the ring. Only drawn once the ring is
-              // physically big enough on screen to hold a digit.
-              // Quiet: the count is metadata about a node, not its identity.
-              // Drawn bold and dark it was the loudest thing on the canvas while
-              // the names were the faintest — exactly backwards.
-              if (style.showDegree && radius * globalScale >= 11) {
-                const fontPx = Math.min(radius * 0.85, 8 / globalScale);
-                ctx.font = `400 ${fontPx}px system-ui, sans-serif`;
-                ctx.fillStyle = color;
-                ctx.globalAlpha = nodeAlpha(node.id) * 0.5;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(String(degree), node.x, node.y);
               }
 
               ctx.restore();
@@ -1654,27 +1592,11 @@ export function GraphView({
               globalScale: number,
             ) => {
               if (typeof node.x !== 'number' || typeof node.y !== 'number') return;
-              const state = getGraphNodeVisualState(node, {
-                activeDocName,
-                selectedNodeId,
-              });
-              const displayState = getGraphNodeDisplayState({
-                node,
-                navigationIntentByNodeId,
-              });
               ctx.beginPath();
               ctx.arc(
                 node.x,
                 node.y,
-                // Scaled by the same multiplier as the drawn radius, or the
-                // clickable area would drift away from the visible circle.
-                getGraphNodeInteractiveRadius({
-                  state,
-                  displayState,
-                  globalScale,
-                }) *
-                  settings.display.nodeSize *
-                  drawnNodeScale(node),
+                Math.max(graphNodeRadius(node, globalScale), 6 / Math.max(globalScale, 1e-6)),
                 0,
                 2 * Math.PI,
                 false,
@@ -1782,7 +1704,7 @@ export function GraphView({
                 ctx.setTransform(pxRatio, 0, 0, pxRatio, 0, 0);
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillStyle = palette.label;
+                ctx.fillStyle = palette.text;
                 // 0.45/0.22 was too faint to read — these names are the map's
                 // legend, not a watermark, and the original carried them at
                 // 0.82. They can afford the ink now that the level of detail
@@ -1900,29 +1822,7 @@ export function GraphView({
                 labelDescriptors,
                 measureTextWidthPx: (text) => ctx.measureText(text).width,
                 projectToScreen: (x, y) => fg.graph2ScreenCoords(x, y),
-                getNodeRadiusPx: (node) => {
-                  const state = getGraphNodeVisualState(node, {
-                    activeDocName,
-                    selectedNodeId,
-                  });
-                  const displayState = getGraphNodeDisplayState({
-                    node,
-                    navigationIntentByNodeId,
-                  });
-                  // Same cap as the drawn circle, so the name sits just under
-                  // the disc it belongs to and stops sliding once the disc
-                  // stops growing.
-                  return (
-                    capGraphNodeRadius(
-                      getGraphNodeInteractiveRadius({ state, displayState, globalScale }) *
-                        settings.display.nodeSize,
-                      globalScale,
-                    ) *
-                      drawnNodeScale(node) *
-                      globalScale +
-                    4
-                  );
-                },
+                getNodeRadiusPx: (node) => graphNodeRadius(node, globalScale) * globalScale + 4,
                 previousOffsetStepByNodeId: labelOffsetStepsRef.current,
                 // Keyed on the page's OWN depth in the folder tree, not on the
                 // depth of the territory holding it. Territories stop at depth
@@ -1951,20 +1851,9 @@ export function GraphView({
               ctx.restore();
             }}
             linkColor={(link: LinkObject<GraphNode, GraphLink>) => {
-              if (
-                hoveredNodeIdRef.current !== null &&
-                !isGraphLinkHighlighted(link, hoveredNodeIdRef.current)
-              ) {
-                return palette.edgeDim;
-              }
-              // Containment is drawn faintest of all. It is scaffolding: it
-              // earns its keep in the LAYOUT, by gathering a folder's pages, and
-              // the ink only has to be enough to show which folder they belong
-              // to — any heavier and it reads as though every page links home.
-              if (isGraphFolderLink(link)) return palette.edgeContainment;
-              // A page-to-page link is the graph's real structure; a link to a
-              // tag or an external URL is annotation, and recedes behind it.
-              return isStructuralGraphLink(link) ? palette.edgeStrong : palette.edgeSoft;
+              const hovered = hoveredNodeIdRef.current;
+              if (hovered === null) return palette.line;
+              return isGraphLinkHighlighted(link, hovered) ? palette.highlight : palette.lineDim;
             }}
             linkDirectionalArrowLength={(link: LinkObject<GraphNode, GraphLink>) =>
               // Containment has no direction to point at — a folder does not
@@ -1972,13 +1861,9 @@ export function GraphView({
               settings.display.showArrows && !isGraphFolderLink(link) ? 3 : 0
             }
             linkDirectionalArrowRelPos={1}
-            linkWidth={(link: LinkObject<GraphNode, GraphLink>) =>
-              // A hovered node's own edges thicken, so the highlighted subgraph
-              // reads as a shape rather than just a brightness difference.
-              settings.display.linkThickness *
-              (isGraphLinkHighlighted(link, hoveredNodeIdRef.current) ? 2 : 1)
-            }
+            linkWidth={settings.display.linkThickness}
             d3AlphaDecay={alphaDecay}
+            d3VelocityDecay={0.4}
             onZoom={({ k }: { k: number }) => {
               zoomScaleRef.current = k;
               syncInteractionMode();

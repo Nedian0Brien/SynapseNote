@@ -525,8 +525,10 @@ describe('reconcileGraphData', () => {
     expect(alpha.vx).toBe(0.25);
     expect(alpha.vy).toBe(-0.5);
     expect(alpha.__indexColor).toBe('#123456');
-    expect(beta.x).toBeUndefined();
-    expect(beta.y).toBeUndefined();
+    expect(beta.x).toBe(0);
+    expect(beta.y).toBe(0);
+    expect(beta.vx).toBe(0);
+    expect(beta.vy).toBe(0);
     expect(link.__indexColor).toBe('#abcdef');
   });
 
@@ -587,8 +589,8 @@ describe('reconcileGraphData', () => {
     expect(alpha.x).toBe(10);
     expect(alpha.y).toBe(20);
     const newNode = reconciled.nodes.find((n) => n.id === 'notes/new') as GraphNodeFixture;
-    expect(newNode.x).toBeUndefined();
-    expect(newNode.y).toBeUndefined();
+    expect(newNode.x).toBe(0);
+    expect(newNode.y).toBe(0);
   });
 });
 
