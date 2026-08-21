@@ -46,6 +46,7 @@ describe('graphFolderPathOf', () => {
 
   test('is null for a degenerate leading slash rather than an empty-path folder', () => {
     expect(graphFolderPathOf('/A')).toBeNull();
+    expect(graphFolderPathOf('/home/user/scripts/train.sh')).toBe('home/user/scripts');
   });
 });
 

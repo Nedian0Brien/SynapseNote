@@ -156,7 +156,7 @@ export function getDefaultGraphSettings(scope: GraphSettingsScope): GraphSetting
       // you rarely need, and at any density it is the difference between a
       // graph and a thicket.
       showArrows: false,
-      showFolderAreas: true,
+      showFolderAreas: false,
       // 1.8 is the zoom scale the pre-settings build hardcoded.
       textFadeThreshold: 1.8,
       maxLabels: DEFAULT_MAX_LABELS[scope],

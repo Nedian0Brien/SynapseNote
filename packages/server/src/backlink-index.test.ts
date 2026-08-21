@@ -16,6 +16,7 @@ import {
   type BrokenOutboundLink,
   computeBrokenOutboundLinks,
   type ExtractedWikiLink,
+  extractGraphUnresolvedTargetsFromMarkdown,
   extractMarkdownLinksFromMarkdown,
   extractWikiLinksFromMarkdown,
   resolveMarkdownHref,
@@ -44,6 +45,20 @@ describe('extractWikiLinksFromMarkdown', () => {
         target: 'beta',
         anchor: null,
         snippet: 'Alpha links to beta for deployment notes.',
+      },
+    ]);
+  });
+
+  test('treats a table-escaped alias separator as the wiki-link separator', () => {
+    expect(
+      extractWikiLinksFromMarkdown(
+        '| Summary |\n| --- |\n| [[summary/Page Title\\|Readable title]] |\n',
+      ),
+    ).toEqual([
+      {
+        target: 'summary/Page Title',
+        anchor: null,
+        snippet: '| Readable title |',
       },
     ]);
   });
@@ -645,9 +660,9 @@ describe('BacklinkIndex', () => {
         { kind: 'doc', id: 'beta', docName: 'beta', anchor: null },
         { kind: 'doc', id: 'gamma', docName: 'gamma', anchor: null },
       ]);
-      expect(links).toContainEqual({ source: 'alpha', target: 'beta' });
-      expect(links).toContainEqual({ source: 'alpha', target: 'gamma' });
-      expect(links).toContainEqual({ source: 'beta', target: 'gamma' });
+      expect(links).toContainEqual({ source: 'alpha', target: 'beta', authoredSyntax: 'wiki' });
+      expect(links).toContainEqual({ source: 'alpha', target: 'gamma', authoredSyntax: 'wiki' });
+      expect(links).toContainEqual({ source: 'beta', target: 'gamma', authoredSyntax: 'wiki' });
       expect(links).toHaveLength(3);
     } finally {
       rmSync(projectDir, { recursive: true, force: true });
@@ -673,9 +688,21 @@ describe('BacklinkIndex', () => {
         { kind: 'doc', id: 'delta', docName: 'delta', anchor: null },
         { kind: 'doc', id: 'gamma', docName: 'gamma', anchor: null },
       ]);
-      expect(oneHop.links).toContainEqual({ source: 'alpha', target: 'beta' });
-      expect(oneHop.links).toContainEqual({ source: 'beta', target: 'gamma' });
-      expect(oneHop.links).toContainEqual({ source: 'beta', target: 'delta' });
+      expect(oneHop.links).toContainEqual({
+        source: 'alpha',
+        target: 'beta',
+        authoredSyntax: 'wiki',
+      });
+      expect(oneHop.links).toContainEqual({
+        source: 'beta',
+        target: 'gamma',
+        authoredSyntax: 'wiki',
+      });
+      expect(oneHop.links).toContainEqual({
+        source: 'beta',
+        target: 'delta',
+        authoredSyntax: 'wiki',
+      });
       expect(oneHop.links).toHaveLength(3);
 
       const twoHop = index.getLinkGraphNeighborhood('beta', 2);
@@ -686,7 +713,11 @@ describe('BacklinkIndex', () => {
         { kind: 'doc', id: 'epsilon', docName: 'epsilon', anchor: null },
         { kind: 'doc', id: 'gamma', docName: 'gamma', anchor: null },
       ]);
-      expect(twoHop.links).toContainEqual({ source: 'gamma', target: 'epsilon' });
+      expect(twoHop.links).toContainEqual({
+        source: 'gamma',
+        target: 'epsilon',
+        authoredSyntax: 'wiki',
+      });
       expect(twoHop.links).toHaveLength(4);
     } finally {
       rmSync(projectDir, { recursive: true, force: true });
@@ -717,7 +748,11 @@ describe('BacklinkIndex', () => {
         source: 'alpha',
         target: 'external:https://example.com/docs',
       });
-      expect(neighborhood.links).toContainEqual({ source: 'beta', target: 'alpha' });
+      expect(neighborhood.links).toContainEqual({
+        source: 'beta',
+        target: 'alpha',
+        authoredSyntax: 'wiki',
+      });
     } finally {
       rmSync(projectDir, { recursive: true, force: true });
     }
@@ -1043,6 +1078,67 @@ describe('BacklinkIndex GLOBAL structural skill-bundle edges', () => {
       expect(index.getForwardLinks(G_SKILL)).toEqual([G_REF]);
     } finally {
       rmSync(projectDir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('extractGraphUnresolvedTargetsFromMarkdown', () => {
+  test('collects non-Markdown link targets without treating them as document backlinks', () => {
+    const markdown = [
+      'See [[scripts/train.sh]] and [helper](../tools/helper.py).',
+      '`[[ignored.pdf]]`',
+      '```',
+      '[[also-ignored.zip]]',
+      '```',
+    ].join('\n');
+    expect(extractGraphUnresolvedTargetsFromMarkdown(markdown, 'docs/page')).toEqual([
+      'scripts/train.sh',
+      '../tools/helper.py',
+    ]);
+  });
+
+  test('adds graph-only unresolved edges while keeping forward doc links clean', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'backlinks-graph-unresolved-'));
+    try {
+      const index = new BacklinkIndex({ projectDir: tmpDir, contentDir: tmpDir });
+      index.updateDocumentFromMarkdown('source', '[[Page]] [[scripts/train.sh]]');
+      expect(index.getForwardLinks('source')).toEqual(['Page']);
+      expect(index.getLinkGraph().links).toContainEqual({
+        source: 'source',
+        target: 'scripts/train.sh',
+        authoredSyntax: 'wiki',
+      });
+    } finally {
+      rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  test('keeps graph-only targets from YAML properties and strips markdown anchors', () => {
+    const markdown = [
+      '---',
+      'sources:',
+      '  - "![[raw/paper.txt|paper.txt]]"',
+      '---',
+      '[script](/workspace/train.sh#L13)',
+    ].join('\n');
+
+    const tmpDir = mkdtempSync(join(tmpdir(), 'backlinks-graph-properties-'));
+    try {
+      const index = new BacklinkIndex({ projectDir: tmpDir, contentDir: tmpDir });
+      index.updateDocumentFromMarkdown('source', markdown);
+      expect(index.getLinkGraph().links).toEqual(
+        expect.arrayContaining([
+          {
+            source: 'source',
+            target: 'raw/paper.txt',
+            authoredSyntax: 'wiki',
+            authoredEmbed: true,
+          },
+          { source: 'source', target: '/workspace/train.sh', authoredSyntax: 'markdown' },
+        ]),
+      );
+    } finally {
+      rmSync(tmpDir, { recursive: true, force: true });
     }
   });
 });

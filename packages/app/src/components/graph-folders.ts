@@ -26,8 +26,12 @@ export function graphFolderNodeId(path: string): string {
 
 /** The directory a doc sits in, or `null` when it sits at the project root. */
 export function graphFolderPathOf(docName: string): string | null {
-  const index = docName.lastIndexOf('/');
-  return index > 0 ? docName.slice(0, index) : null;
+  // Folders to Graph drops the absolute-path marker before deriving its folder
+  // hierarchy. Without this normalization the ancestor chain is `/home/...`
+  // but the leaf is inserted again as a distinct `//home/...` node.
+  const comparable = docName.startsWith('/') ? docName.slice(1) : docName;
+  const index = comparable.lastIndexOf('/');
+  return index > 0 ? comparable.slice(0, index) : null;
 }
 
 /**
@@ -179,12 +183,6 @@ export function buildGraphFolderNodes(
     pending.push({ parentPath, parentId, childId });
   };
 
-  for (const path of keptPaths) {
-    for (const docId of folders.get(path)?.directDocIds ?? []) {
-      connect(path, docId);
-    }
-  }
-
   // With subtree weighting enabled, Folders to Graph adds every indirect
   // visible descendant to the folder's ordinary direct-link weight. The result
   // is the full visible subtree size, not merely the number of direct members.
@@ -203,9 +201,18 @@ export function buildGraphFolderNodes(
     return count;
   };
   for (const path of keptPaths) countSubtree(path);
+
+  // The plugin walks folder nodes in insertion order and writes child-folder
+  // edges before direct file memberships. The edge sequence feeds the link
+  // force, so preserving it is part of deterministic layout parity.
   for (const path of keptPaths) {
-    const parent = nearestKeptAncestor(path);
-    if (parent !== null) connect(parent, nodeIdForPath(path));
+    const entry = folders.get(path);
+    for (const childPath of entry?.childPaths ?? []) {
+      if (keptPaths.has(childPath)) connect(path, nodeIdForPath(childPath));
+    }
+    for (const docId of entry?.directDocIds ?? []) {
+      connect(path, docId);
+    }
   }
 
   // Deliberately no synthetic project-root node. The reference Folders to

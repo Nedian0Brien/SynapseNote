@@ -49,6 +49,10 @@ export type GraphNode = DocGraphNode | ExternalGraphNode | TagGraphNode | Folder
 export interface GraphLink {
   source: string;
   target: string;
+  /** Raw-link resolution mode emitted by the server for Obsidian graph parity. */
+  authoredSyntax?: 'wiki' | 'markdown';
+  /** True for `![[embed]]`; Obsidian queues unresolved embeds after ordinary links. */
+  authoredEmbed?: true;
   /**
    * Set only on synthesized folder-containment edges. Authored links leave it
    * absent, which is what `isGraphFolderLink` reads.
@@ -206,7 +210,11 @@ export function buildGraphNodeSignature(nodes: GraphNode[]): string {
 
 export function buildGraphLinkSignature(links: GraphLink[]): string {
   return links
-    .map((link) => `${getGraphLinkEndpointId(link.source)}>${getGraphLinkEndpointId(link.target)}`)
+    .map((link) => {
+      const base = `${getGraphLinkEndpointId(link.source)}>${getGraphLinkEndpointId(link.target)}`;
+      if (!link.authoredSyntax && !link.authoredEmbed) return base;
+      return `${base}:${link.authoredSyntax ?? ''}:${link.authoredEmbed ? 'embed' : ''}`;
+    })
     .join(',');
 }
 

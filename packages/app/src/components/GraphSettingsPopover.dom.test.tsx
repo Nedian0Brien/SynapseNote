@@ -127,6 +127,7 @@ describe('GraphSettingsPopover — display and forces', () => {
   test('the folder areas switch hides only the territory layer setting', async () => {
     const settings = getDefaultGraphSettings('docked');
     settings.filters.showFolderNodes = true;
+    settings.display.showFolderAreas = true;
     const { onSettingsChange } = await openPopover(settings);
     await openSection('Display');
     await userEvent.click(screen.getByRole('switch', { name: 'Folder areas' }));
