@@ -66,6 +66,20 @@ describe('CreatePageRequestSchema', () => {
     expect(result.success).toBe(true);
     if (result.success) expect(result.data.path).toBe('foo/bar.md');
   });
+  test('accepts an ISO template date and rejects malformed overrides', () => {
+    expect(
+      CreatePageRequestSchema.safeParse({
+        path: 'daily/2026-08-21.md',
+        templateDate: '2026-08-21',
+      }).success,
+    ).toBe(true);
+    expect(
+      CreatePageRequestSchema.safeParse({
+        path: 'daily/2026-08-21.md',
+        templateDate: '08/21/2026',
+      }).success,
+    ).toBe(false);
+  });
   test('rejects empty path', () => {
     expect(CreatePageRequestSchema.safeParse({ path: '' }).success).toBe(false);
   });

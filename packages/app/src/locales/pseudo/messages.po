@@ -841,6 +841,7 @@ msgid "Activity"
 msgstr ""
 
 #: src/components/DatabasePropertiesDialog.tsx
+#: src/components/FileSidebar.tsx
 #: src/components/FrontmatterRow.tsx
 #: src/components/ObjectWidget.tsx
 #: src/components/PropertyPanel.tsx
@@ -2764,6 +2765,10 @@ msgstr ""
 msgid "Could not open GitHub sign-in. Please try again."
 msgstr ""
 
+#: src/components/DailyNoteHandler.tsx
+msgid "Could not open today's daily note"
+msgstr ""
+
 #: src/components/FileTree.tsx
 msgid "Could not reach server"
 msgstr ""
@@ -3178,6 +3183,10 @@ msgstr ""
 msgid "Create your first project"
 msgstr ""
 
+#: src/components/FolderDocumentList.tsx
+msgid "Created"
+msgstr ""
+
 #: src/components/FolderTimelineCard.tsx
 msgid "created folder"
 msgstr ""
@@ -3298,6 +3307,10 @@ msgstr ""
 
 #: src/components/DatabaseRecordLayoutOverrideDialog.tsx
 msgid "Customize this record"
+msgstr ""
+
+#: src/components/DailyNoteHandler.tsx
+msgid "Daily note created"
 msgstr ""
 
 #: src/components/DatabaseDashboardSettings.tsx
@@ -4090,6 +4103,7 @@ msgid "Empty"
 msgstr ""
 
 #: src/components/FolderDocumentCard.tsx
+#: src/components/FolderDocumentList.tsx
 msgid "Empty note"
 msgstr ""
 
@@ -5786,6 +5800,10 @@ msgstr ""
 msgid "Last sync"
 msgstr ""
 
+#: src/components/FolderDocumentList.tsx
+msgid "Last viewed"
+msgstr ""
+
 #: src/editor/components/PdfEmbed.tsx
 msgid "Layout"
 msgstr ""
@@ -6310,6 +6328,10 @@ msgstr ""
 msgid "Model settings: {modelLabel}, effort {effortLabel}, speed {speedLabel}"
 msgstr ""
 
+#: src/components/FolderDocumentList.tsx
+msgid "Modified"
+msgstr ""
+
 #: src/editor/extensions/WikiLinkPropPanel.tsx
 msgid "Modify the link target, anchor, and display label."
 msgstr ""
@@ -6451,6 +6473,7 @@ msgstr ""
 #: src/components/AuthModal.tsx
 #: src/components/DatabaseTemplatesDialog.tsx
 #: src/components/DatabaseWorkspaceRecordActions.tsx
+#: src/components/FolderDocumentList.tsx
 #: src/components/NewSkillDialog.tsx
 #: src/components/SkillRenameDialog.tsx
 #: src/editor/slash-command/items.tsx
@@ -7317,6 +7340,7 @@ msgstr ""
 #. placeholder {0}: node.label
 #: src/components/chat/WebPreviewCards.tsx
 #: src/components/FolderDocumentCard.tsx
+#: src/components/FolderDocumentList.tsx
 #: src/components/GraphCardDeck.tsx
 msgid "Open {0}"
 msgstr ""
@@ -7625,6 +7649,11 @@ msgstr ""
 msgid "Open this settings dialog."
 msgstr ""
 
+#: src/components/CommandPalette.tsx
+#: src/components/FileSidebar.tsx
+msgid "Open today's daily note"
+msgstr ""
+
 #: src/lib/keyboard-shortcuts.ts
 msgid "Open visual-editor find with replace controls expanded."
 msgstr ""
@@ -7876,6 +7905,14 @@ msgstr ""
 
 #: src/editor/extensions/RawMdxFallbackCMView.tsx
 msgid "Parse failed"
+msgstr ""
+
+#: src/components/FolderDocumentList.tsx
+msgid "Past 30 days"
+msgstr ""
+
+#: src/components/FolderDocumentList.tsx
+msgid "Past 7 days"
 msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts
@@ -11446,6 +11483,10 @@ msgstr ""
 
 #: src/components/GraphSettingsPopover.tsx
 msgid "Uncreated pages"
+msgstr ""
+
+#: src/components/FolderDocumentList.tsx
+msgid "Undated"
 msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts
