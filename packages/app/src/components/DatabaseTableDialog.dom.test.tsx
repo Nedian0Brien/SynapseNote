@@ -185,7 +185,7 @@ function queryResult() {
 }
 
 describe('DatabaseTableDialog', () => {
-  test('plans a source-level multi-step Button from the database header', async () => {
+  test('reuses one execution identity when a source-level Button response is lost', async () => {
     const actionDatabase = {
       ...database,
       buttons: [
@@ -215,6 +215,7 @@ describe('DatabaseTableDialog', () => {
       ],
     };
     const requests: unknown[] = [];
+    let executeAttempts = 0;
     globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = String(input);
       if (path.startsWith('/api/databases/catalog')) return Response.json(catalog());
@@ -226,6 +227,8 @@ describe('DatabaseTableDialog', () => {
         const request = JSON.parse(String(init?.body));
         requests.push(request);
         if (request.action === 'execute') {
+          executeAttempts += 1;
+          if (executeAttempts <= 2) throw new TypeError('response connection lost');
           return Response.json({
             action: 'execute',
             run: {
@@ -307,9 +310,13 @@ describe('DatabaseTableDialog', () => {
     expect((await screen.findByTestId('database-button-review')).textContent).toContain(
       '2 database record changes',
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Run Button' }));
+    const runButton = screen.getByRole('button', { name: 'Run Button' });
+    fireEvent.click(runButton);
+    await waitFor(() => expect(executeAttempts).toBe(2));
+    await waitFor(() => expect(runButton.hasAttribute('disabled')).toBe(false));
+    fireEvent.click(runButton);
     await waitFor(() => expect(screen.queryByTestId('database-button-review')).toBeNull());
-    expect(requests).toHaveLength(2);
+    expect(requests).toHaveLength(4);
     expect(requests[0]).toEqual({
       databaseId: database.id,
       buttonId: 'dbbtn_pair',
@@ -321,6 +328,10 @@ describe('DatabaseTableDialog', () => {
       approvalToken: `approve:${hash}`,
       actor: { principalId: 'user:local', kind: 'human' },
     });
+    const executionKeys = requests
+      .slice(1)
+      .map((request) => String((request as { idempotencyKey: unknown }).idempotencyKey));
+    expect(new Set(executionKeys).size).toBe(1);
   });
 
   test('renders a full Gallery from its saved Files preview', async () => {

@@ -3,7 +3,11 @@ import { Loader2, Plus } from 'lucide-react';
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { createBlankDatabaseDesiredState, createNotionDatabaseKey } from '@/lib/database-creation';
+import {
+  createBlankDatabaseDesiredState,
+  createDatabaseCreationId,
+  createNotionDatabaseKey,
+} from '@/lib/database-creation';
 import { executeDatabaseUiMutation } from '@/lib/database-mutation-client';
 import { databaseUiMutationReviewMode } from '@/lib/database-mutation-policy';
 
@@ -12,6 +16,9 @@ export interface InlineDatabaseCreationDialogProps {
   onOpenChange: (open: boolean) => void;
   onCreated: (reference: { databaseId: string; sourceId: string; viewId: string }) => void;
   autoStart?: boolean;
+  creationId?: string;
+  creationName?: string;
+  onCreationIntent?: (intent: { id: string; name: string }) => void;
 }
 
 /**
@@ -24,11 +31,15 @@ export function InlineDatabaseCreationDialog({
   onOpenChange,
   onCreated,
   autoStart = false,
+  creationId,
+  creationName,
+  onCreationIntent,
 }: InlineDatabaseCreationDialogProps) {
   const [name, setName] = useState('');
   const [status, setStatus] = useState<'idle' | 'creating'>('idle');
   const [error, setError] = useState<string | null>(null);
-  const [inlineDatabaseKey] = useState(() => createNotionDatabaseKey());
+  const [localCreationId] = useState(() => creationId ?? createDatabaseCreationId());
+  const [inlineDatabaseKey] = useState(() => createNotionDatabaseKey(localCreationId));
   const autoStartRef = useRef(false);
   const mutationRequestRef = useRef<{
     controller: AbortController;
@@ -37,9 +48,11 @@ export function InlineDatabaseCreationDialog({
 
   const submit = () => {
     if (status !== 'idle') return;
+    const desiredName = creationName?.trim() || name.trim() || 'Untitled database';
+    onCreationIntent?.({ id: localCreationId, name: desiredName });
     const desiredState: DatabaseDesiredStateDraftInput = createBlankDatabaseDesiredState({
-      name: name.trim() || 'Untitled database',
-      ...(autoStart ? { key: inlineDatabaseKey } : {}),
+      name: desiredName,
+      key: inlineDatabaseKey,
     });
     const policy = {
       operation: 'blank-database-create' as const,
@@ -55,7 +68,7 @@ export function InlineDatabaseCreationDialog({
       {
         desiredState,
         actor: { principalId: policy.principalId },
-        idempotencyKey: `ui-inline-database-${crypto.randomUUID()}`,
+        idempotencyKey: `ui-inline-database-${localCreationId}`,
         assertions: {
           databaseAbsent: true,
           createdRecords: desiredState.sampleRecords?.length ?? 0,

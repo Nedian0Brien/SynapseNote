@@ -3,6 +3,7 @@ import { Trans } from '@lingui/react/macro';
 import type { DatabasePageLayout } from '@nedian0brien/synapsenote-core';
 import {
   bindFrontmatterDoc,
+  createDatabaseRecordId,
   type DatabaseProperty,
   type FrontmatterSnapshot,
   type FrontmatterValue,
@@ -543,6 +544,7 @@ export function DatabaseRecordPageChrome({
         database: currentBinding.database,
         source,
         record,
+        newRecordId: createDatabaseRecordId(),
       });
     });
   }

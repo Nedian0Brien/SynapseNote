@@ -356,6 +356,62 @@ describe('database UI mutation client', () => {
     });
   });
 
+  test('recovers a durable commit receipt when the original response is lost', async () => {
+    const paths: string[] = [];
+    const fetchImplementation = mock(async (input: string | URL | Request, init?: RequestInit) => {
+      const path = String(input);
+      const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      paths.push(path);
+      if (path === '/api/databases/plan' && body.action === 'create_draft') {
+        return response({
+          action: 'create_draft',
+          draft: { id: 'draft_1', revision: hash, desiredState },
+        });
+      }
+      if (path === '/api/databases/plan' && body.action === 'create_plan') {
+        return response({ action: 'create_plan', plan: artifact() });
+      }
+      if (path === '/api/databases/commit') {
+        throw new TypeError('connection closed after commit');
+      }
+      return response({
+        status: 'committed',
+        result: {
+          mutationId: 'mut_recovered',
+          planId: 'plan_1',
+          planHash: hash,
+          idempotentReplay: true,
+          actualDiff: [],
+          verification: { status: 'passed', checks: [] },
+          revisions: { gitHead: `sha1:${'c'.repeat(40)}`, snapshotRevision },
+          auditReceipt: {},
+          undoToken: 'undo_recovered',
+        },
+      });
+    });
+
+    const outcome = await executeDatabaseUiMutation(
+      {
+        desiredState,
+        actor: { principalId: 'user:local' },
+        idempotencyKey: 'ui-recover-response-0001',
+        review: () => true,
+      },
+      { fetch: fetchImplementation as unknown as typeof fetch },
+    );
+
+    expect(outcome).toMatchObject({
+      status: 'committed',
+      result: { mutationId: 'mut_recovered', idempotentReplay: true },
+    });
+    expect(paths).toEqual([
+      '/api/databases/plan',
+      '/api/databases/plan',
+      '/api/databases/commit',
+      '/api/databases/commit-result',
+    ]);
+  });
+
   test('never commits blocked, converged, or declined plans', async () => {
     for (const [plan, expectedStatus, review] of [
       [artifact({ committable: false, conflicts: [{ code: 'blocked' }] }), 'blocked', true],
@@ -533,6 +589,35 @@ describe('database UI mutation client', () => {
       ),
     ).toMatchObject({ action: 'redo_apply' });
     expect(actions).toEqual(['preview', 'apply', 'redo_preview', 'redo_apply']);
+  });
+
+  test('replays the exact idempotent undo request after a transport failure', async () => {
+    let attempts = 0;
+    const fetchImplementation = mock(async (_input: unknown, init?: RequestInit) => {
+      attempts += 1;
+      if (attempts === 1) throw new TypeError('response lost');
+      const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      return response({
+        action: body.action,
+        undoId: 'undo_retry',
+        mutationId: 'mut_retry',
+        canApply: true,
+        conflicts: [],
+        receipt: {},
+      });
+    });
+
+    await expect(
+      applyDatabaseUiUndo(
+        {
+          undoToken: 'undo_retry.token',
+          actor: { principalId: 'user:local' },
+          idempotencyKey: 'ui-undo-retry-0001',
+        },
+        { fetch: fetchImplementation as unknown as typeof fetch },
+      ),
+    ).resolves.toMatchObject({ action: 'apply', mutationId: 'mut_retry' });
+    expect(attempts).toBe(2);
   });
 
   test('preserves machine-readable server problems and refuses mismatched receipts', async () => {

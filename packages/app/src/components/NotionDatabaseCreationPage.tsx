@@ -2,6 +2,10 @@ import { Database, Loader2, Plus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  completeDatabaseCreationIntent,
+  getOrCreateDatabaseCreationIntent,
+} from '@/lib/database-creation-intent';
 import { createBlankDatabaseDesiredState, createNotionDatabaseKey } from '@/lib/database-creation';
 import { executeDatabaseUiMutation } from '@/lib/database-mutation-client';
 import { databaseUiMutationReviewMode } from '@/lib/database-mutation-policy';
@@ -35,6 +39,7 @@ export function NotionDatabaseCreationPage({
   const [status, setStatus] = useState<'creating' | 'error'>('creating');
   const [error, setError] = useState<string | null>(null);
   const [retryNonce, setRetryNonce] = useState(0);
+  const [creationIntent] = useState(() => getOrCreateDatabaseCreationIntent('notion-page'));
 
   // The parent workspace owns the navigation callback and may recreate it
   // while its surrounding shell re-renders. Keep the in-flight creation
@@ -67,7 +72,7 @@ export function NotionDatabaseCreationPage({
 
     const desiredState = createBlankDatabaseDesiredState({
       name: 'Untitled database',
-      key: createNotionDatabaseKey(),
+      key: createNotionDatabaseKey(creationIntent.id),
     });
     const policy = {
       operation: 'blank-database-create' as const,
@@ -79,7 +84,7 @@ export function NotionDatabaseCreationPage({
       {
         desiredState,
         actor: { principalId: policy.principalId },
-        idempotencyKey: `ui-notion-database-${retryNonce}-${crypto.randomUUID()}`,
+        idempotencyKey: `ui-notion-database-${creationIntent.id}`,
         assertions: {
           databaseAbsent: true,
           createdRecords: desiredState.sampleRecords?.length ?? 0,
@@ -107,6 +112,7 @@ export function NotionDatabaseCreationPage({
           setError('The created database has no editable table view.');
           return;
         }
+        completeDatabaseCreationIntent('notion-page', creationIntent.id);
         onCreatedRef.current({ databaseId: definition.id, sourceId: source.id, viewId: view.id });
       })
       .catch((cause: unknown) => {
@@ -131,7 +137,7 @@ export function NotionDatabaseCreationPage({
         creationRequestRef.current = null;
       });
     };
-  }, [open, retryNonce]);
+  }, [creationIntent.id, open, retryNonce]);
 
   if (!open) return null;
 

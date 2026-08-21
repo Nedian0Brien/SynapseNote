@@ -196,6 +196,14 @@ function stableKey(value: string, fallback: string): string {
 
 let notionDatabaseKeySequence = 0;
 
+export function createDatabaseCreationId(): string {
+  const suffix =
+    typeof globalThis.crypto?.randomUUID === 'function'
+      ? globalThis.crypto.randomUUID().replaceAll('-', '')
+      : `${Date.now().toString(36)}${(++notionDatabaseKeySequence).toString(36)}`;
+  return `creation_${suffix}`;
+}
+
 /**
  * Return a readable-but-unique stable key for a Notion-style blank database.
  *

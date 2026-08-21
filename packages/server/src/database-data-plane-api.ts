@@ -510,6 +510,11 @@ export const DatabasePlanRequestSchema = z.discriminatedUnion('action', [
     .strict(),
 ]);
 export const DatabaseCommitRequestSchema = DatabaseCommitInputSchema;
+export const DatabaseCommitResultRequestSchema = z
+  .object({
+    idempotencyKey: z.string().min(8).max(256),
+  })
+  .strict();
 export const DatabaseButtonRequestSchema = z.union([
   DatabaseButtonPlanInputSchema,
   DatabaseButtonExecutionInputSchema.extend({ action: z.literal('execute') }),
@@ -1981,6 +1986,15 @@ export const DatabaseCommitResponseSchema = z
     undoToken: z.string().startsWith('undo_'),
   })
   .strict();
+export const DatabaseCommitResultResponseSchema = z.discriminatedUnion('status', [
+  z.object({ status: z.literal('not_found') }).strict(),
+  z
+    .object({
+      status: z.literal('committed'),
+      result: DatabaseCommitResponseSchema,
+    })
+    .strict(),
+]);
 export const DatabaseButtonResponseSchema = z.union([
   z.object({ plan: z.record(z.string(), z.unknown()) }).strict(),
   z
@@ -2695,6 +2709,10 @@ export const DATABASE_API_SCHEMAS: Readonly<{
       request: DatabaseCommitRequestSchema,
       response: DatabaseCommitResponseSchema,
     }),
+    commitResult: Object.freeze({
+      request: DatabaseCommitResultRequestSchema,
+      response: DatabaseCommitResultResponseSchema,
+    }),
     agentRuns: Object.freeze({
       request: DatabaseAgentRunsRequestSchema,
       response: DatabaseAgentRunsResponseSchema,
@@ -2755,6 +2773,7 @@ export interface DatabaseDataPlaneApiHandlers {
   button: (request: IncomingMessage, response: ServerResponse) => Promise<void>;
   placeSearch: (request: IncomingMessage, response: ServerResponse) => Promise<void>;
   commit: (request: IncomingMessage, response: ServerResponse) => Promise<void>;
+  commitResult: (request: IncomingMessage, response: ServerResponse) => Promise<void>;
   runs: (request: IncomingMessage, response: ServerResponse) => Promise<void>;
   templateRuns: (request: IncomingMessage, response: ServerResponse) => Promise<void>;
   automations: (request: IncomingMessage, response: ServerResponse) => Promise<void>;
@@ -3814,6 +3833,37 @@ export function createDatabaseDataPlaneApiHandlers(
     },
   );
 
+  const commitResult = withValidation(
+    DatabaseCommitResultRequestSchema,
+    async (_request, response, body) => {
+      if (!dataPlane) {
+        respondUnavailable(response, 'database-commit-result');
+        return;
+      }
+      try {
+        const result = await dataPlane.getIdempotentCommitResult(body.idempotencyKey);
+        successResponse(
+          response,
+          200,
+          DatabaseCommitResultResponseSchema,
+          result ? { status: 'committed', result } : { status: 'not_found' },
+          {
+            handler: 'database-commit-result',
+            extraHeaders: noStoreHeaders(),
+            errorExtensions: DATABASE_INTERNAL_ERROR_EXTENSIONS,
+          },
+        );
+      } catch (error) {
+        respondDataPlaneError(response, 'database-commit-result', error);
+      }
+    },
+    {
+      handler: 'database-commit-result',
+      method: 'POST',
+      errorExtensions: DATABASE_REQUEST_ERROR_EXTENSIONS,
+    },
+  );
+
   const autonomy = withValidation(
     DatabaseAutonomyRequestSchema,
     async (_request, response, body) => {
@@ -4854,6 +4904,7 @@ export function createDatabaseDataPlaneApiHandlers(
     button,
     placeSearch,
     commit,
+    commitResult,
     runs,
     templateRuns,
     automations,
