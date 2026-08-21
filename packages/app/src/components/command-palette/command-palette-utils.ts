@@ -1,8 +1,6 @@
-import type { DocumentNavigation } from '@/editor/document-context/useDocumentNavigation';
 import { hashFromDocName } from '@/lib/doc-hash';
 import { runWithToast as runWithToastBase } from '@/lib/error-state';
 import type { WorkspaceEntry, WorkspaceSearchEntry } from '../command-palette-search';
-import { defaultInitialDir } from '../file-tree-utils';
 
 /** Command-palette scoped error boundary. */
 export const runWithToast = (
@@ -13,16 +11,6 @@ export const runWithToast = (
 
 export function navigateToDocHash(docName: string): void {
   window.location.assign(hashFromDocName(docName));
-}
-
-export function resolveCreateInitialDir(
-  activeTarget: DocumentNavigation['activeTarget'],
-  activeDocName: string | null,
-): string {
-  if (activeTarget?.kind === 'folder' || activeTarget?.kind === 'folder-index') {
-    return activeTarget.folderPath;
-  }
-  return defaultInitialDir(activeDocName);
 }
 
 /**

@@ -238,17 +238,6 @@ mock.module('@/components/FolderOverview', () => ({
   ),
 }));
 
-// The "Ask AI" composer now renders in both doc and folder views (it is no
-// longer desktop-gated). Stub it here so these layout/skeleton tests don't drag
-// in its config / workspace / TipTap dependency tree — the gate is unit-tested
-// in bottom-composer-gate.test.ts and the composer itself in
-// BottomComposer.dom.test.tsx.
-mock.module('./BottomComposer', () => ({
-  BottomComposer: ({ docName, folderPath }: { docName?: string | null; folderPath?: string }) => (
-    <div data-testid="bottom-composer" data-doc={docName ?? ''} data-folder={folderPath ?? ''} />
-  ),
-}));
-
 mock.module('@/components/AssetPreview', () => ({
   AssetPreview: ({
     assetPath,

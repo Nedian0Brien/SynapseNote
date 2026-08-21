@@ -106,13 +106,6 @@ mock.module('./EditorToolbar', () => ({
   EditorToolbar: () => <div data-testid="editor-toolbar" />,
 }));
 mock.module('./EditorFooter', () => ({ EditorFooter: () => <div data-testid="editor-footer" /> }));
-// The create-mode branch mounts BottomComposer, which reaches useConfigContext
-// via useHandoffDispatch — stub it out (this test only asserts which primary
-// view renders, not the ask-composer, and pulling in the real config context
-// is out of scope).
-mock.module('./BottomComposer', () => ({
-  BottomComposer: () => <div data-testid="bottom-composer" />,
-}));
 mock.module('./editor-area-overlay', () => ({ shouldPaintOverlay: () => false }));
 // The editor `else` branch mounts DocPanel as its right panel; it reads
 // usePageList, so stub it out — this test only cares which primary view renders.

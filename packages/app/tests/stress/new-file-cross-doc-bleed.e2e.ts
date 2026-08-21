@@ -92,8 +92,9 @@ const CM6_BODY = [
 const CANARY = 'CANARY_CROSS_DOC_BLEED_TOKEN_XYZ_123456789ABCDEF';
 
 /**
- * Trigger NewItemDialog via the browser-safe Cmd+Alt+N (or Ctrl+Alt+N) shortcut,
- * submit a brand-new docName, and wait for the new file's editor to mount.
+ * Create a file via the browser-safe Cmd+Alt+N (or Ctrl+Alt+N) shortcut, name
+ * it in the tree's inline rename input, and wait for the new file's editor to
+ * mount.
  *
  * Settlement: wait for the new doc's HocuspocusProvider to finish initial
  * sync (`window.__activeProvider?.isSynced`), then yield two paint frames so
@@ -107,7 +108,7 @@ const CANARY = 'CANARY_CROSS_DOC_BLEED_TOKEN_XYZ_123456789ABCDEF';
 async function newFileViaShortcut(page: Page, newDocName: string): Promise<void> {
   // Defocus the editor so the global shortcut isn't suppressed by an INPUT /
   // TEXTAREA / contenteditable target (per isNewItemShortcut's guard in
-  // components/NewItemDialog.tsx). Wait for focus to actually land on body —
+  // lib/keyboard-shortcuts.ts). Wait for focus to actually land on body —
   // browser focus dispatch is async on some platforms.
   await page.locator('body').click({ position: { x: 5, y: 5 } });
   await page.waitForFunction(
@@ -119,16 +120,12 @@ async function newFileViaShortcut(page: Page, newDocName: string): Promise<void>
   const modKey = process.platform === 'darwin' ? 'Meta' : 'Control';
   await page.keyboard.press(`${modKey}+Alt+KeyN`);
 
-  await expect(page.getByRole('dialog', { name: /New file/i })).toBeVisible({
-    timeout: 5_000,
-  });
-
-  await page.getByLabel(/^File name$/i).fill(newDocName);
-  await page.getByRole('button', { name: /^Create$/ }).click();
-
-  await expect(page.getByRole('dialog', { name: /New file/i })).toBeHidden({
-    timeout: 5_000,
-  });
+  // The file lands in the tree immediately and opens its inline rename input —
+  // there is no dialog to fill in. Naming happens on the row.
+  const renameInput = page.getByRole('textbox', { name: /rename Untitled/i });
+  await expect(renameInput).toBeVisible({ timeout: 10_000 });
+  await renameInput.fill(newDocName);
+  await renameInput.press('Enter');
 
   await page.waitForFunction((expected) => window.location.hash.includes(expected), newDocName, {
     timeout: 10_000,

@@ -420,10 +420,6 @@ mock.module('@/components/DeleteConfirmationDialog', () => ({
   },
 }));
 
-mock.module('@/components/NewItemDialog', () => ({
-  NewItemDialog: () => null,
-}));
-
 mock.module('@/components/TrashFailureModal', () => ({
   TrashFailureModal: () => null,
   coerceTrashFailureReason: (reason: string) => reason,

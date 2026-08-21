@@ -14,18 +14,6 @@
   padding: 0;
 }
 
-/* Restore the floating Ask AI composer's bottom inset for full-page source mode
-   and the conflict-mode diff view. The `padding: 0` reset above ties on
-   specificity with the shared `.editor-doc-scroll :is(.ProseMirror, .cm-content)`
-   inset rule and, being later, zeroes it — so those surfaces' last lines would
-   sit under the composer while WYSIWYG clears. Scoped to `.source-editor` /
-   `.diff-view` (not `.cm-editor`) so nested code-block CM inside the WYSIWYG
-   body is never padded; declared after the reset so it wins the tie. */
-.source-editor .cm-content,
-.diff-view .cm-content {
-  padding-bottom: var(--ask-composer-height, 0px);
-}
-
 .cm-editor.cm-focused {
   outline: none;
 }

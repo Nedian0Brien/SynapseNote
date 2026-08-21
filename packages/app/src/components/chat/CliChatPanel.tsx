@@ -16,6 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { lightRenderMarkdownPreview } from '@/editor/selection-context';
 import { ConfigContext } from '@/lib/config-context';
 import type { OkDesktopBridge } from '@/lib/desktop-bridge-types';
+import { recordOnboardingAskedAi } from '@/lib/onboarding-signals';
 import { ChatMessageList } from './ChatMessageList';
 import { CliChatModelMenu } from './CliChatModelMenu';
 import { CliChatPermissionMenu } from './CliChatPermissionMenu';
@@ -27,6 +28,7 @@ import {
   type ChatEvent,
   type CliChatDocumentContext,
   type CliChatId,
+  type CliChatImageAttachment,
   type CliChatModel,
   type CliChatModelSettings,
   type CliChatPermissionMode,
@@ -37,6 +39,11 @@ import {
 } from './cli-chat-types';
 import { createParserState, parseStructuredChatChunk } from './parsing/stream-parser';
 
+/** Last path segment — the label a reader recognizes for an attached image. */
+function attachmentBasename(path: string): string {
+  return path.split('/').at(-1) ?? path;
+}
+
 interface CliChatPanelProps {
   readonly bridge: OkDesktopBridge;
   readonly cli: CliChatId;
@@ -46,6 +53,11 @@ interface CliChatPanelProps {
   readonly context?: readonly ChatContextChip[];
   readonly documentContext?: CliChatDocumentContext | null;
   readonly selectionContext?: CliChatSelectionContext | null;
+  /** Images staged from a note's image block, shown as removable thumbnails in
+   *  the composer. Owned by the pane so the attachment survives this panel
+   *  remounting and so sending from one session clears it everywhere. */
+  readonly imageAttachments?: readonly CliChatImageAttachment[];
+  readonly onImageAttachmentsChange?: (next: readonly CliChatImageAttachment[]) => void;
   readonly initialSessionId?: string | null;
   readonly onSessionId?: (sessionId: string) => void;
   readonly onTitleChange?: (title: string) => void;
@@ -62,6 +74,8 @@ export function CliChatPanel({
   context = [],
   documentContext = null,
   selectionContext = null,
+  imageAttachments = [],
+  onImageAttachmentsChange,
   initialSessionId = null,
   onSessionId,
   onTitleChange,
@@ -152,6 +166,7 @@ export function CliChatPanel({
     prompt: string,
     displayPrompt = prompt,
     displaySelection: CliChatSelectionContext | null = null,
+    displayImages: readonly CliChatImageAttachment[] = [],
   ): Promise<boolean> {
     const trimmed = prompt.trim();
     if (trimmed === '' || ptyId === null || state.running) return false;
@@ -165,6 +180,7 @@ export function CliChatPanel({
       type: 'send',
       text: displayPrompt.trim() || trimmed,
       ...(displaySelection === null ? {} : { selectionContext: displaySelection }),
+      ...(displayImages.length === 0 ? {} : { imageAttachments: displayImages }),
     });
     let installed = false;
     try {
@@ -188,6 +204,9 @@ export function CliChatPanel({
       return false;
     }
     parserRef.current = createParserState();
+    // The onboarding card's "Ask AI" step completes on a question that actually
+    // reached an agent — this is the surface that dispatches one.
+    recordOnboardingAskedAi();
     bridge.terminal.chatSend(ptyId, {
       cli,
       prompt: trimmed,
@@ -244,11 +263,16 @@ export function CliChatPanel({
     if (draft.trim() === '') return;
     const instruction = draft;
     const selection = attachedSelection;
-    const prompt = composeCliChatPrompt(instruction, documentContext, selection);
-    void sendPrompt(prompt, instruction, selection).then((sent) => {
+    const images = imageAttachments;
+    const prompt = composeCliChatPrompt(instruction, documentContext, selection, images);
+    void sendPrompt(prompt, instruction, selection, images).then((sent) => {
       if (!sent) return;
       setDraft('');
       setDismissedSelection(selection);
+      // The staged images belong to this turn now — clearing them leaves the
+      // composer empty for the next question instead of silently re-sending
+      // the same picture with every follow-up.
+      if (images.length > 0) onImageAttachmentsChange?.([]);
     });
   }
 
@@ -328,6 +352,48 @@ export function CliChatPanel({
                 <XIcon aria-hidden="true" />
               </Button>
             </div>
+          ) : null}
+          {imageAttachments.length > 0 ? (
+            <ul
+              data-chat-image-attachments="true"
+              className="mx-2 mt-2 flex min-w-0 flex-wrap gap-2"
+            >
+              {imageAttachments.map((image) => {
+                const label = attachmentBasename(image.path);
+                return (
+                  <li
+                    key={image.path}
+                    data-chat-image-attachment={image.path}
+                    className="relative shrink-0"
+                  >
+                    {/* The thumbnail is the whole affordance: the reader
+                        recognizes the picture they picked far faster than a
+                        filename, and the path stays available on hover for the
+                        rare same-looking pair. */}
+                    <img
+                      src={image.previewSrc}
+                      alt={image.alt === undefined || image.alt === '' ? label : image.alt}
+                      title={image.path}
+                      className="size-14 rounded-lg border border-border bg-muted object-cover"
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="icon-xs"
+                      className="-top-1.5 -right-1.5 absolute size-5 rounded-full border border-border shadow-sm"
+                      onClick={() =>
+                        onImageAttachmentsChange?.(
+                          imageAttachments.filter((other) => other.path !== image.path),
+                        )
+                      }
+                      aria-label={t`Remove attached image ${label}`}
+                    >
+                      <XIcon aria-hidden="true" className="size-3" />
+                    </Button>
+                  </li>
+                );
+              })}
+            </ul>
           ) : null}
           <Textarea
             ref={textareaRef}

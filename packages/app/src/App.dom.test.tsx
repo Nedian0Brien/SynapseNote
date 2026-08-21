@@ -198,13 +198,6 @@ mock.module('@/components/ShareReceiveMissDialog', () => ({
   ShareReceiveMissDialog: () => <div data-testid="share-receive-miss-dialog" />,
 }));
 
-mock.module('@/components/NewItemDialog', () => ({
-  isNewItemShortcut: () => false,
-  NewItemDialog: ({ open, initialDir }: { open: boolean; initialDir: string }) => (
-    <div data-testid="new-item-dialog" data-open={String(open)} data-initial-dir={initialDir} />
-  ),
-}));
-
 mock.module('@/components/FileSidebar', () => ({
   FileSidebar: ({
     onOpenSearch,

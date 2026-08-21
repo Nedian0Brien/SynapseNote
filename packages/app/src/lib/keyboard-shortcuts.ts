@@ -191,7 +191,7 @@ const KEYBOARD_SHORTCUT_DEFINITIONS = [
     id: 'open-ask-ai',
     category: 'general',
     title: msg`Ask AI`,
-    description: msg`Open and focus the bottom Ask AI prompt composer.`,
+    description: msg`Open the Chat panel and focus its message box.`,
     scope: msg`OK Desktop`,
     bindings: [
       {
@@ -918,6 +918,16 @@ export function formatShortcutLabel(
   platform: ShortcutPlatform = currentShortcutPlatform(),
 ): string {
   return formatShortcutBindingLabel(getShortcut(id).bindings[0], platform);
+}
+
+/**
+ * ⌘N / Ctrl+N — "new file". Suppressed while the user is typing in an input,
+ * textarea, or contentEditable so the chord never steals a keystroke from a
+ * rename field or the editor body.
+ */
+export function isNewItemShortcut(e: ShortcutEventLike, platform?: ShortcutPlatform): boolean {
+  if (isEditableShortcutTarget(e.target)) return false;
+  return matchesKeyboardShortcut(e, 'new-item', platform);
 }
 
 export function isEditableShortcutTarget(target: ShortcutTargetLike): boolean {

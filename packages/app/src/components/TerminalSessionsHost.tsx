@@ -16,9 +16,11 @@ import { type CliChatHeaderSession, CliChatSession } from './chat/CliChatSession
 import {
   type CliChatDocumentContext,
   type CliChatId,
+  type CliChatImageAttachment,
   type CliChatSelectionContext,
   isCliChatId,
 } from './chat/cli-chat-types';
+import { subscribeToOpenChatPanel } from './chat-panel-events';
 import type { TerminalLaunchIntent } from './EditorPane';
 import { visibleTerminalClis } from './handoff/terminal-cli-display';
 import { subscribeToActiveTerminalInput } from './handoff/terminal-input-events';
@@ -171,6 +173,12 @@ interface TerminalSessionsHostProps {
   readonly documentContext?: CliChatDocumentContext | null;
   /** Live editor passage offered to chat composers as a removable attachment. */
   readonly selectionContext?: CliChatSelectionContext | null;
+  /** Images staged for chat from a note's image block ("Send to AI"), shown in
+   *  every chat composer as removable thumbnails until sent or removed. */
+  readonly imageAttachments?: readonly CliChatImageAttachment[];
+  /** Owner-side setter for {@link imageAttachments} — a composer calls it to
+   *  drop one thumbnail, and to clear the set once a turn carries them. */
+  readonly onImageAttachmentsChange?: (next: readonly CliChatImageAttachment[]) => void;
 }
 
 /**
@@ -198,6 +206,8 @@ export function TerminalSessionsHost({
   onActiveSessionCliChange,
   documentContext = null,
   selectionContext = null,
+  imageAttachments = [],
+  onImageAttachmentsChange,
 }: TerminalSessionsHostProps) {
   const { t } = useLingui();
 
@@ -720,6 +730,16 @@ export function TerminalSessionsHost({
     });
   }, [bridge, variant]);
 
+  // Focus half of the "open Chat" intent (`EditorPane` reveals it). Deferred a
+  // frame so a session revealed by the same event has committed to shown before
+  // we reach for its message box; `focusTerminalSession` prefers the chat
+  // composer's textarea and no-ops while nothing is mounted yet.
+  useEffect(() => {
+    return subscribeToOpenChatPanel(() => {
+      requestAnimationFrame(() => focusTerminalSession(activeSessionIdRef.current));
+    });
+  }, []);
+
   // ⌘1–⌘9 jump straight to the Nth tab. Capture phase so a focused xterm can't
   // swallow the chord; scoped to focus inside the stable host div (which follows
   // the terminal to whichever dock) so the digit chord stays free everywhere else.
@@ -963,6 +983,8 @@ export function TerminalSessionsHost({
                 onClose={() => closeSession(session.id)}
                 documentContext={documentContext}
                 selectionContext={selectionContext}
+                imageAttachments={imageAttachments}
+                onImageAttachmentsChange={onImageAttachmentsChange}
                 onTitleChange={(title) => setSessionTitle(session.id, title)}
                 onNativeSessionId={(chatSessionId) =>
                   setSessionChatSessionId(session.id, chatSessionId)

@@ -69,7 +69,7 @@ export function TemplateMenuRows({
   return (
     <>
       {templates.map((tpl) => (
-        // value-unique key mirrors NewItemDialog's picker: a folder can resolve
+        // value-unique key: a folder can resolve
         // two templates with the same display title from different scopes.
         <ItemComponent
           key={`${tpl.scope}:${tpl.source_folder}:${tpl.name}`}

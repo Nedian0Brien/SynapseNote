@@ -93,11 +93,9 @@
   margin-bottom: 0;
 }
 
-/* Inline `@`-mention chip in the composer — VISUALLY INDISTINGUISHABLE from the
-   host-level ComposerContextChips top-row chip (`FileChip`): a user can't tell an
-   inline chip from a top-row chip by looking, only by where it sits. Each rule
-   below maps token-for-token to a Tailwind class on the top-row chip so the two
-   stay in lockstep. The top-row container is:
+/* Inline `@`-mention chip in the composer. The rules below are the CSS
+   equivalent of the app's chip Tailwind stack, kept here because the chip is
+   built imperatively by a ProseMirror node view (no className to apply):
      inline-flex max-w-[14rem] items-center gap-1 rounded-md border bg-muted/40
      py-0.5 pr-1.5 pl-1 text-muted-foreground text-xs
    and its leading icon-button is `size-3.5 rounded-sm` holding a `size-3` glyph

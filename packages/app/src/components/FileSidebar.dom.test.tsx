@@ -97,7 +97,6 @@ const treeCalls = {
   createFromTemplate: mock((_parentDir: string, _templateName: string) => {}),
   expandAll: mock(() => {}),
   startCreating: mock((_kind: 'file' | 'folder', _parentDir: string) => {}),
-  startCreatingFromTemplate: mock((_parentDir: string) => {}),
 };
 const projectLocalPatch = mock((_patch: unknown) => projectPatchResult);
 const showItemInFolderMock = mock((_path: string) => Promise.resolve());
@@ -144,7 +143,6 @@ mock.module('@/components/FileTree', () => ({
         getFolderState: () => folderState,
         isCreationTargetCleared: () => false,
         startCreating: treeCalls.startCreating,
-        startCreatingFromTemplate: treeCalls.startCreatingFromTemplate,
         subscribe: (listener: () => void) => {
           treeListeners.add(listener);
           return () => treeListeners.delete(listener);
@@ -456,7 +454,6 @@ describe('FileSidebar runtime behavior', () => {
       treeCalls.createFromTemplate,
       treeCalls.expandAll,
       treeCalls.startCreating,
-      treeCalls.startCreatingFromTemplate,
       projectLocalPatch,
       showItemInFolderMock,
       notifyViewMenuStateChangedMock,

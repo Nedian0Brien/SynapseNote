@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
+import { subscribeToCreateTopLevelFile } from '@/lib/create-file-events';
 import { renderLinguiTemplate } from '@/test-utils/lingui-mock';
 
 type CommandDialogProps = {
@@ -26,7 +27,6 @@ let activeDocName: string | null = 'docs/active';
 let activeTarget: { kind: 'doc'; docName: string } | null = { kind: 'doc', docName: 'docs/active' };
 let requestDocPanelTabCalls: string[] = [];
 let seedDialogProps: Array<{ open: boolean }> = [];
-let newItemDialogProps: Array<{ open: boolean; kind: string; initialDir: string }> = [];
 let createProjectDialogProps: Array<{ open: boolean; bridge: unknown }> = [];
 let reportBugDialogProps: Array<{ open: boolean }> = [];
 let commandDialogProps: CommandDialogProps[] = [];
@@ -122,15 +122,6 @@ mock.module('@/components/ui/command', () => ({
 mock.module('@/components/doc-panel-events', () => ({
   requestDocPanelTab: (tab: string) => {
     requestDocPanelTabCalls.push(tab);
-  },
-}));
-
-mock.module('@/components/NewItemDialog', () => ({
-  NewItemDialog: (props: { open: boolean; kind: string; initialDir: string }) => {
-    newItemDialogProps.push(props);
-    return (
-      <div data-kind={props.kind} data-open={String(props.open)} data-testid="new-item-dialog" />
-    );
   },
 }));
 
@@ -322,7 +313,6 @@ describe('CommandPalette DOM behavior', () => {
     pageListLoading = false;
     requestDocPanelTabCalls = [];
     seedDialogProps = [];
-    newItemDialogProps = [];
     createProjectDialogProps = [];
     reportBugDialogProps = [];
     commandDialogProps = [];
@@ -555,6 +545,23 @@ describe('CommandPalette DOM behavior', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(onOpenDailyNote).toHaveBeenCalledTimes(1);
     unsubscribe();
+  });
+
+  test('new file / new folder close the palette and hand the create to the tree', async () => {
+    // No dialog: both rows raise the shared create request, and the sidebar
+    // decides where it lands — the same target its own toolbar uses.
+    const { onOpenChange } = await renderPalette({ bridge: null });
+    const requests: unknown[] = [];
+    const unsubscribe = subscribeToCreateTopLevelFile((request) => requests.push(request));
+    try {
+      fireEvent.click(screen.getByTestId('command-palette-new-file'));
+      fireEvent.click(screen.getByTestId('command-palette-new-folder'));
+    } finally {
+      unsubscribe();
+    }
+    expect(requests).toEqual([{}, { kind: 'folder' }]);
+    expect(screen.queryByTestId('new-item-dialog')).toBeNull();
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
   test('settings command is searchable by preferences/config, closes the palette, and routes through the canonical hash', async () => {

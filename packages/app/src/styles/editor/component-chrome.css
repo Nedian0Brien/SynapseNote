@@ -6,12 +6,12 @@
   position: relative;
   border-radius: 0.375rem;
   /* Reserve vertical space above each component wrapper for the chrome
-   * bar (`.jsx-component-chrome` floats at `top: -11px`, ~28px tall, so
-   * it extends ~11-39px above the wrapper). Without this gap, the bar
+   * bar (`.jsx-component-chrome` floats at `top: -16px`, ~32px tall, so
+   * it extends 16px above the wrapper). Without this gap, the bar
    * visually overlaps the previous block's bottom AND gets clipped at
    * the editor's scroll-top edge when the wrapper is the first block.
    * The Tailwind class on the element (`my-2` = 0.5rem each side) is
-   * insufficient for the bar's 11px above-wrapper extension; this rule
+   * insufficient for the bar's 16px above-wrapper extension; this rule
    * overrides via descendant-selector specificity (0,2,0 vs 0,1,0).
    * Symmetric block spacing — both top and bottom — keeps the visual
    * weight consistent block-to-block. */
@@ -37,10 +37,13 @@
 .ProseMirror .jsx-component-wrapper::before {
   content: "";
   position: absolute;
-  top: -12px;
+  /* Covers the bar's full 16px above-wrapper extension — a shorter zone
+     leaves a dead band the pointer crosses on its way up, dismissing the
+     bar just as the user reaches for it. */
+  top: -16px;
   left: 0;
   right: 0;
-  height: 12px;
+  height: 16px;
   z-index: 9;
 }
 
@@ -227,8 +230,8 @@
  * is centered/left/right via inline-content alignment). This is
  * deliberately DIFFERENT from the `width: fit-content + margin: auto`
  * approach — that would shrink the wrapper to the image's natural
- * dimensions, causing the right-anchored chrome bar (~120px wide,
- * `top: -11px`) to overlap the image's click region for small images.
+ * dimensions, causing the right-anchored chrome bar (`top: -16px`) to
+ * overlap the image's click region for small images.
  * The decorative-PNG comment on the `data-component-type="video|audio"`
  * fit-content rule above was written to protect against exactly this
  * overlap; `text-align` keeps the wrapper at its natural column width

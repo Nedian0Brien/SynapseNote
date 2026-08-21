@@ -1,5 +1,4 @@
 import { Trans, useLingui } from '@lingui/react/macro';
-import { detectEmbeddedHostFromBrowser } from '@nedian0brien/synapsenote-core';
 import {
   lazy,
   type ReactNode,
@@ -41,8 +40,6 @@ import {
 import type { TerminalDockPosition } from '@/lib/terminal-dock-store';
 import { useSettingsRoute } from '@/lib/use-settings-route';
 import { useSyncStatus } from '@/presence/use-sync-status';
-import { BottomComposer } from './BottomComposer';
-import { shouldShowBottomComposer, shouldShowFolderComposer } from './bottom-composer-gate';
 import { EditorActivityPool } from './EditorActivityPool';
 import { EditorFooter } from './EditorFooter';
 import type { EditorMode } from './EditorPane';
@@ -238,13 +235,6 @@ function EditorAreaInner({
   );
   const shareReceiveMiss = matchesShareReceiveMiss(activeTarget, pendingReceiveNav);
 
-  const [embeddedHost] = useState(() => detectEmbeddedHostFromBrowser());
-  // Derive from the cached `embeddedHost` instead of calling
-  // `useIsEmbedded()` (which would re-run `detectEmbeddedHostFromBrowser()`
-  // a second time on mount — both are lazy-initializer stable, but the
-  // double-detect was pure waste).
-  const isEmbedded = embeddedHost !== null;
-
   // The toolbox lives OUTSIDE this component — it is a sibling of the whole
   // content column (header included), owned by `RightRailLayout`, and its
   // collapse control lives in `EditorHeader` beside the file-sidebar trigger.
@@ -303,10 +293,6 @@ function EditorAreaInner({
   // navigated-to doc, not the doc that just errored.
   const previousDocNameRef = useRef<string | null>(null);
   const [previousDocName, setPreviousDocName] = useState<string | null>(null);
-  // Session-sticky dismissal of the bottom "Ask AI" composer. When dismissed the
-  // field collapses and the footer shows a reopen badge; persists across doc
-  // switches within this editor shell's lifetime.
-  const [composerDismissed, setComposerDismissed] = useState(false);
   const activeDocumentHistoryName =
     activeTarget?.kind === 'large-file' ? activeTarget.docName : activeDocName;
   useEffect(() => {
@@ -368,33 +354,9 @@ function EditorAreaInner({
       />
     );
   } else if (activeTarget?.kind === 'folder') {
-    // The folder view gets the same "Ask AI" composer as the editor, scoped to
-    // this folder (the folder is its top-row context chip + dispatch lead). It
-    // docks in-flow below the folder list rather than as a scroll overlay — the
-    // list is a discrete table, not a continuous document.
-    const showFolderComposer = shouldShowFolderComposer({
-      terminalVisible,
-      isEmbedded,
-    });
     viewContent = (
       <div className="relative flex h-full min-h-0 flex-col">
-        {/* Wrap the folder list so the fade band can anchor to the bottom of the
-            list region (the top of the in-flow composer) rather than the bottom
-            of the whole column. */}
-        <div className="relative flex min-h-0 flex-1 flex-col">
-          <FolderOverview folderPath={activeTarget.folderPath} />
-          {/* Same footer fade as EditorFooter's sliver (identical gradient
-              band): the list dissolves into the background above the composer
-              instead of meeting a hard edge. Only while the Ask AI composer is
-              shown. */}
-          {showFolderComposer ? (
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-2 bg-linear-to-t from-background to-transparent"
-            />
-          ) : null}
-        </div>
-        {showFolderComposer ? <BottomComposer folderPath={activeTarget.folderPath} /> : null}
+        <FolderOverview folderPath={activeTarget.folderPath} />
       </div>
     );
     // Agent activity is a tool in the rail (DocPanel's `'agent'` mode), not a
@@ -487,22 +449,6 @@ function EditorAreaInner({
       requestAddProperty(activeDocName);
     }
 
-    // Visibility for the open doc's "Ask AI" composer — the pure gate in
-    // bottom-composer-gate.ts (hidden while the docked terminal is open, in
-    // embedded webviews, and with no doc open). The folder overview mounts its
-    // own instance under shouldShowFolderComposer. Positioning and the
-    // --ask-composer-height scroll inset are documented at the render site
-    // below.
-    // Desktop chat now has one canonical entry point in the shared right rail.
-    // Keep the compact bottom composer only for the web host, where no desktop
-    // session rail exists.
-    const showBottomComposer =
-      terminalBridge == null &&
-      shouldShowBottomComposer({
-        terminalVisible,
-        isEmbedded,
-        activeDocName,
-      });
     const editorContent = (
       <div className="relative flex h-full flex-col">
         <div className="relative min-h-0 flex-1">
@@ -588,31 +534,8 @@ function EditorAreaInner({
               onAddProperty={openAddPropertyForm}
             />
           )}
-          {/* Floats over the bottom of the scroll area (an absolute overlay, like
-              the toolbar at the top) so content scrolls under its faded top edge.
-              BottomComposer publishes its measured height as `--ask-composer-height`
-              and `styles/shell/editor-layout.css` pads the editor content by it so the last lines clear
-              the card; the var clears on collapse, reclaiming the space. */}
-          {showBottomComposer ? (
-            <BottomComposer
-              docName={activeDocName}
-              surface={isSourceMode ? 'source' : 'wysiwyg'}
-              dismissed={composerDismissed}
-              onDismiss={() => setComposerDismissed(true)}
-              onReopen={() => setComposerDismissed(false)}
-            />
-          ) : null}
         </div>
-        <EditorFooter
-          stats={stats}
-          selectionStats={selectionStats}
-          showStats={showStats}
-          composerBadge={
-            showBottomComposer && composerDismissed
-              ? { onReopen: () => setComposerDismissed(false) }
-              : null
-          }
-        />
+        <EditorFooter stats={stats} selectionStats={selectionStats} showStats={showStats} />
       </div>
     );
 

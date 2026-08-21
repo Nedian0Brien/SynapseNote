@@ -4,6 +4,7 @@ import {
   formatShortcutBindingLabel,
   formatShortcutLabel,
   isEditableShortcutTarget,
+  isNewItemShortcut,
   KEYBOARD_SHORTCUTS,
   matchesKeyboardShortcut,
 } from './keyboard-shortcuts';
@@ -562,5 +563,150 @@ describe('keyboard shortcut registry', () => {
     expect(isEditableShortcutTarget({ tagName: 'TEXTAREA' })).toBe(true);
     expect(isEditableShortcutTarget({ isContentEditable: true })).toBe(true);
     expect(isEditableShortcutTarget({ tagName: 'BUTTON' })).toBe(false);
+  });
+});
+
+describe('isNewItemShortcut', () => {
+  const base = { metaKey: false, ctrlKey: false, altKey: false, key: 'n' };
+
+  test('Cmd+N on BODY matches', () => {
+    expect(
+      isNewItemShortcut(
+        {
+          ...base,
+          metaKey: true,
+          target: { tagName: 'BODY' },
+        },
+        'mac',
+      ),
+    ).toBe(true);
+  });
+
+  test('Ctrl+N on BODY matches on Windows/Linux', () => {
+    expect(
+      isNewItemShortcut(
+        {
+          ...base,
+          ctrlKey: true,
+          target: { tagName: 'BODY' },
+        },
+        'windowsLinux',
+      ),
+    ).toBe(true);
+  });
+
+  test('Ctrl+Alt+N browser fallback still matches', () => {
+    expect(
+      isNewItemShortcut({
+        ...base,
+        ctrlKey: true,
+        altKey: true,
+        target: { tagName: 'DIV' },
+      }),
+    ).toBe(true);
+  });
+
+  test('Cmd+Alt+N browser fallback still matches', () => {
+    expect(
+      isNewItemShortcut({
+        ...base,
+        metaKey: true,
+        altKey: true,
+        target: { tagName: 'BODY' },
+      }),
+    ).toBe(true);
+  });
+
+  test('uppercase key value still matches when Shift is not held', () => {
+    expect(
+      isNewItemShortcut(
+        {
+          ...base,
+          metaKey: true,
+          key: 'N',
+          target: { tagName: 'BODY' },
+        },
+        'mac',
+      ),
+    ).toBe(true);
+  });
+
+  test('does not match Cmd+Shift+N because New Folder owns that shortcut', () => {
+    expect(
+      isNewItemShortcut(
+        {
+          ...base,
+          metaKey: true,
+          shiftKey: true,
+          key: 'N',
+          target: { tagName: 'BODY' },
+        },
+        'mac',
+      ),
+    ).toBe(false);
+  });
+
+  test('blocked when target is INPUT', () => {
+    expect(
+      isNewItemShortcut({
+        ...base,
+        metaKey: true,
+        target: { tagName: 'INPUT' },
+      }),
+    ).toBe(false);
+  });
+
+  test('blocked when target is TEXTAREA', () => {
+    expect(
+      isNewItemShortcut({
+        ...base,
+        ctrlKey: true,
+        target: { tagName: 'TEXTAREA' },
+      }),
+    ).toBe(false);
+  });
+
+  test('blocked when target is contenteditable', () => {
+    expect(
+      isNewItemShortcut({
+        ...base,
+        metaKey: true,
+        target: { tagName: 'DIV', isContentEditable: true },
+      }),
+    ).toBe(false);
+  });
+
+  test('does not match without Cmd/Ctrl', () => {
+    expect(
+      isNewItemShortcut({
+        ...base,
+        altKey: true,
+        key: 'n',
+        target: { tagName: 'BODY' },
+      }),
+    ).toBe(false);
+  });
+
+  test('does not match other keys', () => {
+    expect(
+      isNewItemShortcut({
+        ...base,
+        metaKey: true,
+        altKey: true,
+        key: 'm',
+        target: { tagName: 'BODY' },
+      }),
+    ).toBe(false);
+  });
+
+  test('tolerates null target', () => {
+    expect(
+      isNewItemShortcut({
+        ...base,
+        metaKey: true,
+        altKey: true,
+        target: null,
+      }),
+    ).toBe(true);
   });
 });

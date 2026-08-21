@@ -17,12 +17,12 @@ import { FolderDocumentGallery } from '@/components/FolderDocumentGallery';
 import { FolderDateGroupLabel, FolderDocumentList } from '@/components/FolderDocumentList';
 import { FolderPropertiesCard } from '@/components/FolderPropertiesCard';
 import { FolderTimelineCard } from '@/components/FolderTimelineCard';
+import { useFolderItemContextMenu } from '@/components/folder-item-context-menu';
 import {
   buildFolderOverviewData,
   type FolderOverviewEntry,
 } from '@/components/folder-overview-data';
 import { groupFolderDocumentsByModified } from '@/components/folder-overview-date-groups';
-import { NewItemDialog } from '@/components/NewItemDialog';
 import { usePageList } from '@/components/PageListContext';
 import { TemplatesCard } from '@/components/TemplatesCard';
 import { Button } from '@/components/ui/button';
@@ -45,6 +45,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useFolderConfig } from '@/hooks/use-folder-config';
+import { emitCreateTopLevelFile } from '@/lib/create-file-events';
 import { hashFromDocName } from '@/lib/doc-hash';
 
 type SortKey = 'name' | 'modified';
@@ -99,20 +100,31 @@ function FolderOverviewSkeleton() {
   );
 }
 
+function FolderTile({ entry }: { entry: Extract<FolderOverviewEntry, { kind: 'folder' }> }) {
+  const { onContextMenu, menu } = useFolderItemContextMenu(
+    { kind: 'folder', folderPath: entry.path },
+    entry.title,
+  );
+  return (
+    <a
+      href={hashFromDocName(entry.path)}
+      onContextMenu={onContextMenu}
+      className="group flex min-w-0 items-center gap-2 rounded-[11px] border border-black/7 bg-card/92 px-3 py-2.5 text-sm shadow-xs transition-[border-color,box-shadow,transform] hover:-translate-y-px hover:border-black/12 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 dark:border-white/9 dark:hover:border-white/16"
+    >
+      <Folder className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+      <span className="truncate font-medium">{entry.title}</span>
+      {menu}
+    </a>
+  );
+}
+
 function FolderTiles({ entries }: { entries: Extract<FolderOverviewEntry, { kind: 'folder' }>[] }) {
   if (entries.length === 0) return null;
   return (
     <section aria-label="Folders" className="mb-4">
       <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,11rem),1fr))] gap-2">
         {entries.map((entry) => (
-          <a
-            key={entry.path}
-            href={hashFromDocName(entry.path)}
-            className="group flex min-w-0 items-center gap-2 rounded-[11px] border border-black/7 bg-card/92 px-3 py-2.5 text-sm shadow-xs transition-[border-color,box-shadow,transform] hover:-translate-y-px hover:border-black/12 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 dark:border-white/9 dark:hover:border-white/16"
-          >
-            <Folder className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
-            <span className="truncate font-medium">{entry.title}</span>
-          </a>
+          <FolderTile key={entry.path} entry={entry} />
         ))}
       </div>
     </section>
@@ -124,7 +136,6 @@ export function FolderOverview({ folderPath }: { folderPath: string }) {
   const { folderPaths, loading, pages, pageTitles, pageMeta } = usePageList();
   const folderConfigHandle = useFolderConfig(folderPath);
   const { state: folderConfig, refresh: refreshFolderConfig } = folderConfigHandle;
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -176,7 +187,9 @@ export function FolderOverview({ folderPath }: { folderPath: string }) {
               variant="outline"
               size="icon"
               className="size-8 rounded-xl border-black/8 bg-card shadow-sm dark:border-white/10"
-              onClick={() => setCreateDialogOpen(true)}
+              // This surface owns a folder, so it names one — every other
+              // caller lets the sidebar pick its own create target.
+              onClick={() => emitCreateTopLevelFile({ initialDir: folderPath })}
               aria-label={t`New document`}
               title={t`New document`}
             >
@@ -379,21 +392,11 @@ export function FolderOverview({ folderPath }: { folderPath: string }) {
               folderPath={folderPath}
               state={folderConfig}
               onChange={refreshFolderConfig}
-              folderConfigHandle={folderConfigHandle}
             />
             <FolderTimelineCard folderPath={folderPath} />
           </div>
         </SheetContent>
       </Sheet>
-
-      <NewItemDialog
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
-        kind="file"
-        initialDir={folderPath}
-        folderConfig={folderConfigHandle}
-        suggestedName="index"
-      />
     </>
   );
 }

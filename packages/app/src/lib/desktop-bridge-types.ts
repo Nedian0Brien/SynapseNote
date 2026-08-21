@@ -210,7 +210,6 @@ type OkMenuAction =
   | 'focus-command-palette'
   // File menu state-aware items. See bridge-contract.ts for
   // rationale; mirrored here per the OkDesktopBridge 3-way-mirror invariant.
-  | 'new-from-template'
   | 'duplicate'
   | 'move-to-trash'
   | 'reveal-in-finder'

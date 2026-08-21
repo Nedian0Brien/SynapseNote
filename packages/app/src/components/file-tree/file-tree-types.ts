@@ -3,7 +3,6 @@ import type { Ref } from 'react';
 /** Public imperative contract owned by the sidebar controller. */
 export interface FileTreeHandle {
   startCreating(kind: 'file' | 'folder', parentDir: string): void;
-  startCreatingFromTemplate(parentDir: string): void;
   createFromTemplate(parentDir: string, templateName: string): void;
   expandAll(): void;
   collapseAll(): void;

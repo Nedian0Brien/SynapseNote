@@ -2,7 +2,6 @@ import { Trans } from '@lingui/react/macro';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { InheritedBadge } from '@/components/FrontmatterRow';
-import { NewItemDialog } from '@/components/NewItemDialog';
 import { NewTemplateDialog } from '@/components/NewTemplateDialog';
 import { TemplateDeleteDialog } from '@/components/TemplateDeleteDialog';
 import { TemplateRow } from '@/components/TemplateRow';
@@ -11,10 +10,10 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import type {
   AsyncState,
-  FolderConfigHandle,
   FolderConfigSnapshot,
   TemplateMenuEntry,
 } from '@/hooks/use-folder-config';
+import { emitCreateTopLevelFile } from '@/lib/create-file-events';
 import { templateDocName } from '@/lib/managed-artifact-doc-name';
 import { openManagedArtifactTab } from '@/lib/open-managed-artifact-tab';
 
@@ -23,24 +22,16 @@ interface Props {
   state: AsyncState<FolderConfigSnapshot>;
   /** Called after a successful create/update/delete so the parent re-fetches. */
   onChange: () => void;
-  /**
-   * Optional pre-fetched folder-config handle forwarded to this card's
-   * `NewItemDialog`, so the dialog can dedup its own `useFolderConfig` fetch
-   * when the parent is already fetching the same path. Omit to let the dialog
-   * self-fetch.
-   */
-  folderConfigHandle?: FolderConfigHandle;
 }
 
 /**
- * Templates menu for a folder — what an agent or the New File dialog can pick
- * from when creating a doc here. Resolves leaf -> root (`local` when owned by
+ * Templates menu for a folder — what an agent or a "New from template" menu
+ * can pick from when creating a doc here. Resolves leaf -> root (`local` when owned by
  * this folder, `inherited` from an ancestor; closest wins on filename
  * collision). Rows, edit, and delete are the shared template-list components.
  */
-export function TemplatesCard({ folderPath, state, onChange, folderConfigHandle }: Props) {
+export function TemplatesCard({ folderPath, state, onChange }: Props) {
   const [deleteTarget, setDeleteTarget] = useState<TemplateMenuEntry | null>(null);
-  const [createFromTemplate, setCreateFromTemplate] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
 
   if (state.status === 'idle' || state.status === 'loading') {
@@ -107,7 +98,12 @@ export function TemplatesCard({ folderPath, state, onChange, folderConfigHandle 
                 <TemplateRow
                   key={tpl.path}
                   template={tpl}
-                  onCreate={() => setCreateFromTemplate(tpl.name)}
+                  // Creates straight away in the tree — same inline-rename
+                  // flow as every other create surface; the name is typed on
+                  // the new row instead of in a dialog first.
+                  onCreate={() =>
+                    emitCreateTopLevelFile({ template: { folder: folderPath, name: tpl.name } })
+                  }
                   onEdit={() =>
                     openManagedArtifactTab(templateDocName(tpl.source_folder, tpl.name))
                   }
@@ -142,16 +138,6 @@ export function TemplatesCard({ folderPath, state, onChange, folderConfigHandle 
           onChange();
           openManagedArtifactTab(templateDocName(folderPath, createdName));
         }}
-      />
-      <NewItemDialog
-        open={createFromTemplate !== null}
-        onOpenChange={(open) => {
-          if (!open) setCreateFromTemplate(null);
-        }}
-        kind="file"
-        initialDir={folderPath}
-        initialTemplate={createFromTemplate ?? undefined}
-        folderConfig={folderConfigHandle}
       />
     </>
   );

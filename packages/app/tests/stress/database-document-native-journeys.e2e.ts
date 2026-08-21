@@ -88,29 +88,6 @@ test.describe('document-native database browser journeys', () => {
     );
   });
 
-  test('New file → Database keeps the page-first table experience', async ({ page }) => {
-    await page.goto('/');
-    await page.locator('body').click({ position: { x: 5, y: 5 } });
-    await page.waitForFunction(
-      () => document.activeElement === null || document.activeElement === document.body,
-      null,
-      { timeout: 1_000 },
-    );
-    const modKey = process.platform === 'darwin' ? 'Meta' : 'Control';
-    await page.keyboard.press(`${modKey}+Alt+KeyN`);
-
-    const newFile = page.getByRole('dialog', { name: 'New file' });
-    await expect(newFile).toBeVisible({ timeout: 5_000 });
-    await newFile.getByTestId('new-item-dialog-new-database').click();
-
-    await expect(newFile).toBeHidden({ timeout: 5_000 });
-    await expect(page).toHaveURL(/#database\//, { timeout: 20_000 });
-    await expect(page.getByRole('grid')).toBeVisible({ timeout: 20_000 });
-    await expect(page.getByRole('columnheader', { name: 'Title' })).toBeVisible();
-    await expect(page.getByRole('textbox', { name: 'New page title' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'New database view' })).toBeVisible();
-  });
-
   test('slash Inline database stays in the document and hands off to the canonical page', async ({
     page,
     api,

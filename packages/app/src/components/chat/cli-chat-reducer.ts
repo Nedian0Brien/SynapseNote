@@ -3,6 +3,7 @@ import type {
   ChatActivity,
   ChatEvent,
   ChatTimelineEntry,
+  CliChatImageAttachment,
   CliChatSelectionContext,
 } from './cli-chat-types';
 
@@ -19,6 +20,7 @@ export type CliChatAction =
       readonly type: 'send';
       readonly text: string;
       readonly selectionContext?: CliChatSelectionContext;
+      readonly imageAttachments?: readonly CliChatImageAttachment[];
     }
   | { readonly type: 'events'; readonly events: readonly ChatEvent[] }
   | { readonly type: 'interrupt' };
@@ -78,6 +80,9 @@ export function cliChatReducer(state: CliChatState, action: CliChatAction): CliC
           ...(action.selectionContext === undefined
             ? {}
             : { selectionContext: action.selectionContext }),
+          ...(action.imageAttachments === undefined || action.imageAttachments.length === 0
+            ? {}
+            : { imageAttachments: action.imageAttachments }),
         },
       ],
       running: true,

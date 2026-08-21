@@ -147,8 +147,6 @@ export interface MenuDeps {
   onNewFile?(): void;
   /** File → New folder click handler. Sibling of `onNewFile`. */
   onNewFolder?(): void;
-  /** File → New from Template… click handler — opens NewItemDialog. */
-  onNewFromTemplate?(): void;
   /**
    * File → New project… click handler — opens the create-new-project
    * dialog in the focused window. Distinct from `openNavigator` (Switch
@@ -423,11 +421,6 @@ export function buildMenuTemplate(deps: MenuDeps): MenuItemConstructorOptions[] 
           accelerator: 'CmdOrCtrl+Shift+N',
           enabled: deps.onNewFolder !== undefined,
           click: () => deps.onNewFolder?.(),
-        },
-        {
-          label: `${MENU_LABELS.newFromTemplate}\u2026`,
-          enabled: deps.onNewFromTemplate !== undefined,
-          click: () => deps.onNewFromTemplate?.(),
         },
         { type: 'separator' },
         // Project section — order mirrors the in-app ProjectSwitcher

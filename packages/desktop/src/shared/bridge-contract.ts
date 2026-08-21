@@ -198,7 +198,6 @@ export type OkMenuAction =
   // item." Each action maps to a renderer-side handler that knows the current
   // `activeTarget` (file / folder / asset / project scope) and dispatches the
   // appropriate primitive.
-  | 'new-from-template'
   | 'duplicate'
   | 'move-to-trash'
   | 'reveal-in-finder'

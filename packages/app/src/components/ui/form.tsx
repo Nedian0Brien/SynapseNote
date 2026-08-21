@@ -132,7 +132,7 @@ function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
       data-slot="form-message"
       id={formMessageId}
       // role="alert" so AT announces immediately when an error appears,
-      // matching the broader codebase pattern (FieldError, NewItemDialog,
+      // matching the broader codebase pattern (FieldError,
       // FileTree, etc.). aria-describedby alone only fires on focus —
       // commit-on-blur errors would otherwise be silent.
       role={error ? 'alert' : undefined}

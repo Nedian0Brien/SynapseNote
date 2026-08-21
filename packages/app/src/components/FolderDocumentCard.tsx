@@ -11,6 +11,7 @@ import {
   folderDocumentMeasuredCardHeight,
   folderDocumentPreviewMarkdown,
 } from '@/components/folder-document-preview';
+import { useFolderItemContextMenu } from '@/components/folder-item-context-menu';
 import type { FolderOverviewEntry } from '@/components/folder-overview-data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { hashFromDocName } from '@/lib/doc-hash';
@@ -151,6 +152,10 @@ export function FolderDocumentCard({
   const contentRef = useRef<HTMLDivElement>(null);
   const [isClipped, setIsClipped] = useState(false);
   const preview = useFolderDocumentPreview(entry, cardRef);
+  const { onContextMenu, menu } = useFolderItemContextMenu(
+    { kind: 'file', docName: entry.path },
+    entry.title,
+  );
 
   useLayoutEffect(() => {
     if (mode !== 'preview' || preview.status !== 'ready') return;
@@ -177,6 +182,7 @@ export function FolderDocumentCard({
   return (
     <article
       ref={cardRef}
+      onContextMenu={onContextMenu}
       className={cn(
         'group relative mb-3 inline-block w-full break-inside-avoid overflow-hidden rounded-[13px] border border-black/7 bg-card text-card-foreground shadow-[0_1px_2px_rgba(15,23,42,0.06),0_8px_24px_rgba(15,23,42,0.045)] transition-[border-color,box-shadow,transform] duration-150 hover:-translate-y-0.5 hover:border-black/12 hover:shadow-[0_3px_10px_rgba(15,23,42,0.09),0_16px_30px_rgba(15,23,42,0.07)] focus-within:border-ring/60 focus-within:ring-2 focus-within:ring-ring/30 dark:border-white/9 dark:hover:border-white/16',
         mode === 'grid' && 'mb-0',
@@ -226,6 +232,7 @@ export function FolderDocumentCard({
           />
         ) : null}
       </a>
+      {menu}
     </article>
   );
 }

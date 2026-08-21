@@ -2258,7 +2258,6 @@ async function runApplicationMenuRefresh(): Promise<void> {
     activeTarget: editorActiveTarget,
     onNewFile: () => sendMenuActionToFocused('new-doc'),
     onNewFolder: () => sendMenuActionToFocused('new-folder'),
-    onNewFromTemplate: () => sendMenuActionToFocused('new-from-template'),
     // New project… — opens the create-new-project dialog in the
     // focused window. Both window kinds (editor App, NavigatorApp) subscribe
     // to this action and mount CreateProjectDialog.

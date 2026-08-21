@@ -167,10 +167,6 @@ msgstr "(project-level only)"
 msgid "(read-only — edit in source mode for now)"
 msgstr "(read-only — edit in source mode for now)"
 
-#: src/components/NewItemDialog.tsx
-msgid "(root)"
-msgstr "(root)"
-
 #: src/components/settings/OkignoreSection.tsx
 msgid "(some may already be hidden by other rules)"
 msgstr "(some may already be hidden by other rules)"
@@ -391,7 +387,6 @@ msgstr "{detail} - {kind} \"{createdPath}\" still exists on disk"
 msgid "{displayName} ({bin}) isn't installed or on your PATH."
 msgstr "{displayName} ({bin}) isn't installed or on your PATH."
 
-#: src/components/BottomComposer.tsx
 #: src/components/empty-state/CreatePromptComposer.tsx
 #: src/components/handoff/OpenInAgentContextSubmenu.tsx
 #: src/components/handoff/OpenInAgentEmptySpaceSubmenu.tsx
@@ -1277,20 +1272,6 @@ msgstr "Are you sure you want to delete {targetCount} selected items? Folders an
 msgid "Arrows"
 msgstr "Arrows"
 
-#: src/components/BottomComposer.tsx
-msgid "Ask"
-msgstr "Ask"
-
-#. placeholder {0}: resolvedTarget.displayName
-#: src/components/BottomComposer.tsx
-msgid "Ask {0}"
-msgstr "Ask {0}"
-
-#. placeholder {0}: TERMINAL_CLIS[selectedCli].displayName
-#: src/components/BottomComposer.tsx
-msgid "Ask {0} CLI"
-msgstr "Ask {0} CLI"
-
 #: src/components/chat/ChatMessageList.tsx
 msgid "Ask about your current document or project."
 msgstr "Ask about your current document or project."
@@ -1317,7 +1298,6 @@ msgstr "Ask agent about property"
 msgid "Ask agent about record"
 msgstr "Ask agent about record"
 
-#: src/components/BottomComposer.tsx
 #: src/components/EditorFooter.tsx
 #: src/components/OnboardingCard.tsx
 #: src/editor/bubble-menu/EditWithAiBubbleButton.tsx
@@ -1367,6 +1347,10 @@ msgstr "Attach the file in an email to <0>support@lawdigest.kr</0>"
 #: src/components/chat/ChatMessageList.tsx
 msgid "Attached context: {0}"
 msgstr "Attached context: {0}"
+
+#: src/components/chat/ChatMessageList.tsx
+msgid "Attached image: {label}"
+msgstr "Attached image: {label}"
 
 #: src/components/settings/SettingsDialogBody.tsx
 msgid "Attachments"
@@ -1526,10 +1510,6 @@ msgstr "Big section heading."
 #: src/components/empty-state/use-create-suggestions.ts
 msgid "Bird wiki"
 msgstr "Bird wiki"
-
-#: src/components/NewItemDialog.tsx
-msgid "Blank note"
-msgstr "Blank note"
 
 #: src/components/DatabaseWorkspaceRecordActions.tsx
 msgid "Blank page"
@@ -1757,7 +1737,6 @@ msgstr "Can't safely edit this tool's config"
 #: src/components/InstallInClaudeDesktopDialog.tsx
 #: src/components/MemoPanel.tsx
 #: src/components/MountStalledAffordance.tsx
-#: src/components/NewItemDialog.tsx
 #: src/components/NewSkillDialog.tsx
 #: src/components/NewTemplateDialog.tsx
 #: src/components/NewWorktreeDialog.tsx
@@ -1869,7 +1848,6 @@ msgstr "Check out worktree"
 msgid "Checkbox"
 msgstr "Checkbox"
 
-#: src/components/BottomComposer.tsx
 #: src/components/handoff/EditWithAiPopover.tsx
 #: src/components/handoff/OpenInAgentContextSubmenu.tsx
 #: src/components/handoff/OpenInAgentMenu.tsx
@@ -1933,7 +1911,6 @@ msgstr "Choose a name and type for the new column."
 msgid "Choose a name and type for the new property."
 msgstr "Choose a name and type for the new property."
 
-#: src/components/BottomComposer.tsx
 #: src/components/empty-state/CreatePromptComposer.tsx
 msgid "Choose agent"
 msgstr "Choose agent"
@@ -2217,10 +2194,6 @@ msgstr "Collapse {keyName}"
 msgid "Collapse all"
 msgstr "Collapse all"
 
-#: src/components/BottomComposer.tsx
-msgid "Collapse Ask AI"
-msgstr "Collapse Ask AI"
-
 #: src/components/chat/ChatMessageList.tsx
 msgid "Collapse attached context"
 msgstr "Collapse attached context"
@@ -2331,10 +2304,6 @@ msgstr "Completed:"
 msgid "Component boundary navigation"
 msgstr "Component boundary navigation"
 
-#: src/components/BottomComposer.tsx
-msgid "Condense my AGENTS.md file to less than 40k characters"
-msgstr "Condense my AGENTS.md file to less than 40k characters"
-
 #: src/components/DatabaseAdvancedFilterDialog.tsx
 msgid "Condition"
 msgstr "Condition"
@@ -2428,6 +2397,7 @@ msgstr "Connect the AI tools you use to this specific project. These files live 
 
 #: src/components/FileSidebar.tsx
 #: src/components/FileTree.tsx
+#: src/components/folder-item-context-menu.tsx
 msgid "Connect this project to GitHub to share."
 msgstr "Connect this project to GitHub to share."
 
@@ -2571,7 +2541,7 @@ msgid "Copied"
 msgstr "Copied"
 
 #: src/components/FileSidebar.tsx
-#: src/components/FileTree.tsx
+#: src/components/path-menu-actions.ts
 msgid "Copied full path"
 msgstr "Copied full path"
 
@@ -2580,7 +2550,7 @@ msgid "Copied path"
 msgstr "Copied path"
 
 #: src/components/FileSidebar.tsx
-#: src/components/FileTree.tsx
+#: src/components/path-menu-actions.ts
 msgid "Copied relative path"
 msgstr "Copied relative path"
 
@@ -2634,6 +2604,7 @@ msgid "Copy full path, No workspace"
 msgstr "Copy full path, No workspace"
 
 #: src/components/FileTree.tsx
+#: src/components/folder-item-context-menu.tsx
 msgid "Copy path"
 msgstr "Copy path"
 
@@ -2690,12 +2661,12 @@ msgid "Could not construct share URL."
 msgstr "Could not construct share URL."
 
 #: src/components/FileSidebar.tsx
-#: src/components/FileTree.tsx
+#: src/components/path-menu-actions.ts
 msgid "Could not copy full path"
 msgstr "Could not copy full path"
 
 #: src/components/FileSidebar.tsx
-#: src/components/FileTree.tsx
+#: src/components/path-menu-actions.ts
 msgid "Could not copy relative path"
 msgstr "Could not copy relative path"
 
@@ -2745,10 +2716,6 @@ msgstr "Could not load chats"
 #: src/components/DatabaseDiagnosticsDialog.tsx
 msgid "Could not load database diagnostics"
 msgstr "Could not load database diagnostics"
-
-#: src/components/NewItemDialog.tsx
-msgid "Could not load templates: {templatesError}. You can still create a blank note."
-msgstr "Could not load templates: {templatesError}. You can still create a blank note."
 
 #: src/components/empty-state/CreateView.tsx
 msgid "Could not load templates. Try again later."
@@ -2940,10 +2907,6 @@ msgstr "Couldn't open a worktree for that branch."
 msgid "Couldn't open document"
 msgstr "Couldn't open document"
 
-#: src/components/BottomComposer.tsx
-msgid "Couldn't open the terminal — please try again."
-msgstr "Couldn't open the terminal — please try again."
-
 #: src/components/NewWorktreeDialog.tsx
 msgid "Couldn't open the worktree. Try again."
 msgstr "Couldn't open the worktree. Try again."
@@ -3024,10 +2987,6 @@ msgstr "Couldn't send the report"
 msgid "Couldn't send the selection — please try again."
 msgstr "Couldn't send the selection — please try again."
 
-#: src/components/BottomComposer.tsx
-msgid "Couldn't send your prompt — please try again."
-msgstr "Couldn't send your prompt — please try again."
-
 #. placeholder {0}: result.error
 #: src/components/skill-actions.tsx
 msgid "Couldn't uninstall skill: {0}"
@@ -3053,7 +3012,6 @@ msgstr "Cover image"
 
 #: src/components/CreateProjectDialog.tsx
 #: src/components/empty-state/CreatePromptComposer.tsx
-#: src/components/NewItemDialog.tsx
 #: src/components/TemplateRow.tsx
 msgid "Create"
 msgstr "Create"
@@ -3094,10 +3052,6 @@ msgstr "Create a new database page with a Name column and a first-row affordance
 msgid "Create a new list item from the current list item."
 msgstr "Create a new list item from the current list item."
 
-#: src/components/BottomComposer.tsx
-msgid "Create a new spec file for my user story"
-msgstr "Create a new spec file for my user story"
-
 #. placeholder {0}: selectedPack.name
 #. placeholder {1}: selectedPack.entryCounts.folders
 #: src/components/CreateProjectDialog.tsx
@@ -3120,10 +3074,6 @@ msgstr "Create and organize stable saved views. Each change follows the database
 #: src/components/DatabaseWorkspaceHeader.tsx
 msgid "Create database"
 msgstr "Create database"
-
-#: src/components/NewItemDialog.tsx
-msgid "Create in <0>{dirDisplay}</0>"
-msgstr "Create in <0>{dirDisplay}</0>"
 
 #: src/components/CreateProjectDialog.tsx
 #: src/components/NavigatorApp.tsx
@@ -3205,7 +3155,6 @@ msgid "created template"
 msgstr "created template"
 
 #: src/components/CreateProjectDialog.tsx
-#: src/components/NewItemDialog.tsx
 #: src/components/NewSkillDialog.tsx
 #: src/components/NewTemplateDialog.tsx
 msgid "Creating"
@@ -3328,7 +3277,6 @@ msgstr "Dashboard layout"
 
 #: src/components/DatabaseContextInspectorDialog.tsx
 #: src/components/DatabaseWorkspaceHeader.tsx
-#: src/components/NewItemDialog.tsx
 #: src/components/use-database-workspace-controller-runtime.ts
 msgid "Database"
 msgstr "Database"
@@ -3482,6 +3430,7 @@ msgstr "Definitions"
 #: src/components/DatabaseTableRowMenu.tsx
 #: src/components/DatabaseViewTabMenu.tsx
 #: src/components/DeleteConfirmationDialog.tsx
+#: src/components/folder-item-context-menu.tsx
 #: src/components/skill-actions.tsx
 #: src/components/TemplateRow.tsx
 #: src/editor/components/InlineDatabaseViewManagerPopover.tsx
@@ -3500,6 +3449,10 @@ msgstr "Delete {itemName}"
 #: src/components/CreateProjectDialog.tsx
 msgid "Delete {targetGitPath}"
 msgstr "Delete {targetGitPath}"
+
+#: src/components/folder-item-context-menu.tsx
+msgid "Delete {title}"
+msgstr "Delete {title}"
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Delete a table when the active table cell selection covers the full table."
@@ -3864,6 +3817,7 @@ msgstr "Drag item {0} to reorder"
 #: src/components/DatabaseTableRowMenu.tsx
 #: src/components/DatabaseViewTabMenu.tsx
 #: src/components/FileTree.tsx
+#: src/components/folder-item-context-menu.tsx
 #: src/components/skill-actions.tsx
 #: src/editor/components/InlineDatabaseViewManagerPopover.tsx
 msgid "Duplicate"
@@ -4120,10 +4074,6 @@ msgstr "Empty"
 msgid "Empty note"
 msgstr "Empty note"
 
-#: src/components/NewItemDialog.tsx
-msgid "Empty starting content"
-msgstr "Empty starting content"
-
 #: src/components/AutoSyncOnboardingDialog.tsx
 #: src/components/EnableSyncConfirmDialog.tsx
 #: src/components/share-receive-miss-content.tsx
@@ -4334,12 +4284,10 @@ msgid "Failed to clean up pending {kind}"
 msgstr "Failed to clean up pending {kind}"
 
 #: src/components/FileTree.tsx
-#: src/components/NewItemDialog.tsx
 msgid "Failed to create file"
 msgstr "Failed to create file"
 
 #: src/components/FileTree.tsx
-#: src/components/NewItemDialog.tsx
 msgid "Failed to create folder"
 msgstr "Failed to create folder"
 
@@ -4634,10 +4582,6 @@ msgstr "File drop zone"
 msgid "File duplicated"
 msgstr "File duplicated"
 
-#: src/components/NewItemDialog.tsx
-msgid "File name"
-msgstr "File name"
-
 #: src/components/TrashFailureModal.tsx
 msgid "File not found"
 msgstr "File not found"
@@ -4732,10 +4676,6 @@ msgstr "Find next match"
 msgid "Find previous match"
 msgstr "Find previous match"
 
-#: src/components/NewItemDialog.tsx
-msgid "First file name"
-msgstr "First file name"
-
 #: src/editor/slash-command/items.tsx
 msgid "First item"
 msgstr "First item"
@@ -4813,14 +4753,6 @@ msgstr "Folder details"
 #: src/components/FileTree.tsx
 msgid "Folder duplicated"
 msgstr "Folder duplicated"
-
-#: src/components/NewItemDialog.tsx
-msgid "Folder name"
-msgstr "Folder name"
-
-#: src/components/NewItemDialog.tsx
-msgid "Folder name: {detail}"
-msgstr "Folder name: {detail}"
 
 #: src/components/FolderPropertiesCard.tsx
 msgid "Folder properties"
@@ -4917,6 +4849,7 @@ msgid "Full guide"
 msgstr "Full guide"
 
 #: src/components/FileTree.tsx
+#: src/components/folder-item-context-menu.tsx
 msgid "Full path"
 msgstr "Full path"
 
@@ -5219,10 +5152,6 @@ msgstr "Hide panel ({shortcut})"
 #: src/editor/find-replace/FindReplaceBar.tsx
 msgid "Hide replace"
 msgstr "Hide replace"
-
-#: src/components/BottomComposer.tsx
-msgid "Hide selection preview"
-msgstr "Hide selection preview"
 
 #: src/components/FileTree.tsx
 msgid "Hide this file"
@@ -6103,7 +6032,6 @@ msgid "Loading tags"
 msgstr "Loading tags"
 
 #: src/components/empty-state/CreateView.tsx
-#: src/components/NewItemDialog.tsx
 #: src/components/template-menu-rows.tsx
 msgid "Loading templates"
 msgstr "Loading templates"
@@ -6521,10 +6449,6 @@ msgstr "Name A–Z"
 msgid "Name can’t be empty, \".\", \"..\", or contain / or \\"
 msgstr "Name can’t be empty, \".\", \"..\", or contain / or \\"
 
-#: src/components/NewItemDialog.tsx
-msgid "Name cannot be empty"
-msgstr "Name cannot be empty"
-
 #: src/components/FolderPropertiesCard.tsx
 #: src/components/ObjectWidget.tsx
 #: src/components/PropertyPanel.tsx
@@ -6578,7 +6502,6 @@ msgstr "Network error — check your connection and try again"
 
 #: src/components/EditorTabs.tsx
 #: src/components/FileTree.tsx
-#: src/components/NewItemDialog.tsx
 msgid "Network error — please try again"
 msgstr "Network error — please try again"
 
@@ -6647,7 +6570,7 @@ msgstr "New document"
 #: src/components/CommandPalette.tsx
 #: src/components/FileSidebar.tsx
 #: src/components/FileTree.tsx
-#: src/components/NewItemDialog.tsx
+#: src/components/folder-item-context-menu.tsx
 #: src/lib/keyboard-shortcuts.ts
 msgid "New file"
 msgstr "New file"
@@ -6663,7 +6586,6 @@ msgstr "New file from template \"{displayTitle}\" ({fileName}) in the project ro
 #: src/components/CommandPalette.tsx
 #: src/components/FileSidebar.tsx
 #: src/components/FileTree.tsx
-#: src/components/NewItemDialog.tsx
 #: src/lib/keyboard-shortcuts.ts
 msgid "New folder"
 msgstr "New folder"
@@ -6685,10 +6607,6 @@ msgstr "New memo"
 #: src/components/DatabaseWorkspaceToolbar.tsx
 msgid "New page"
 msgstr "New page"
-
-#: src/components/NewItemDialog.tsx
-msgid "New page type"
-msgstr "New page type"
 
 #: src/components/CommandPalette.tsx
 #: src/components/ProjectSwitcher.tsx
@@ -6921,7 +6839,6 @@ msgstr "No hub pages yet. Hubs appear once pages accumulate inbound graph links.
 msgid "No Incoming"
 msgstr "No Incoming"
 
-#: src/components/BottomComposer.tsx
 #: src/components/handoff/EditWithAiPopover.tsx
 #: src/components/handoff/OpenInAgentContextSubmenu.tsx
 #: src/components/handoff/OpenInAgentMenu.tsx
@@ -7163,14 +7080,6 @@ msgstr "No tasks yet."
 #: src/components/template-menu-rows.tsx
 msgid "No templates available"
 msgstr "No templates available"
-
-#: src/components/NewItemDialog.tsx
-msgid "No templates found."
-msgstr "No templates found."
-
-#: src/components/NewItemDialog.tsx
-msgid "No templates yet. Add one in this folder's Templates section, or in Settings → Templates."
-msgstr "No templates yet. Add one in this folder's Templates section, or in Settings → Templates."
 
 #: src/components/TemplatesCard.tsx
 msgid "No templates yet. Add one to give new docs in this folder a ready-made starting point."
@@ -7460,10 +7369,6 @@ msgstr "Open an existing project folder from disk."
 msgid "Open and focus the Ask AI composer for the current editor selection."
 msgstr "Open and focus the Ask AI composer for the current editor selection."
 
-#: src/lib/keyboard-shortcuts.ts
-msgid "Open and focus the bottom Ask AI prompt composer."
-msgstr "Open and focus the bottom Ask AI prompt composer."
-
 #: src/components/ChatSidebarSection.tsx
 msgid "Open chat"
 msgstr "Open chat"
@@ -7486,6 +7391,7 @@ msgid "Open CodeMirror's lint diagnostics panel."
 msgstr "Open CodeMirror's lint diagnostics panel."
 
 #: src/components/FileTree.tsx
+#: src/components/path-menu-actions.ts
 msgid "Open containing folder"
 msgstr "Open containing folder"
 
@@ -7648,6 +7554,10 @@ msgstr "Open that worktree instead"
 #: src/components/DatabaseCreationDialog.tsx
 msgid "Open the agent handoff from the workspace to continue."
 msgstr "Open the agent handoff from the workspace to continue."
+
+#: src/lib/keyboard-shortcuts.ts
+msgid "Open the Chat panel and focus its message box."
+msgstr "Open the Chat panel and focus its message box."
 
 #: src/components/GraphSurface.tsx
 msgid "Open the folder overview."
@@ -7841,7 +7751,6 @@ msgstr "Owner"
 msgid "Package logs and system info into a report you can review, then send it privately to the SynapseNote team."
 msgstr "Package logs and system info into a report you can review, then send it privately to the SynapseNote team."
 
-#: src/components/NewItemDialog.tsx
 #: src/editor/extensions/InternalLinkPropPanel.tsx
 #: src/editor/link-path-suggestions.tsx
 msgid "Page"
@@ -7979,22 +7888,6 @@ msgstr "Paste was incomplete — {chunksCompleted} of {totalChunks} chunks lande
 #: src/components/settings/EmbeddingsKeySection.tsx
 msgid "Paste your API key"
 msgstr "Paste your API key"
-
-#: src/components/NewItemDialog.tsx
-msgid "Path cannot contain \"..\""
-msgstr "Path cannot contain \"..\""
-
-#: src/components/NewItemDialog.tsx
-msgid "Path cannot contain backslashes"
-msgstr "Path cannot contain backslashes"
-
-#: src/components/NewItemDialog.tsx
-msgid "Path cannot contain null bytes"
-msgstr "Path cannot contain null bytes"
-
-#: src/components/NewItemDialog.tsx
-msgid "Path cannot start with \"/\""
-msgstr "Path cannot start with \"/\""
 
 #: src/components/TrashFailureModal.tsx
 msgid "Path resolves outside project"
@@ -8716,6 +8609,7 @@ msgid "Relations"
 msgstr "Relations"
 
 #: src/components/FileTree.tsx
+#: src/components/folder-item-context-menu.tsx
 msgid "Relative path"
 msgstr "Relative path"
 
@@ -8775,10 +8669,6 @@ msgstr "Remove {fullLabel} from context"
 msgid "Remove {keyName}"
 msgstr "Remove {keyName}"
 
-#: src/components/ComposerContextChips.tsx
-msgid "Remove {label} from context"
-msgstr "Remove {label} from context"
-
 #: src/components/settings/OkignoreSection.tsx
 msgid "Remove {patternText}"
 msgstr "Remove {patternText}"
@@ -8790,6 +8680,10 @@ msgstr "Remove {projectName} from recent projects"
 #: src/components/ui/tag-pill-input.tsx
 msgid "Remove {tag}"
 msgstr "Remove {tag}"
+
+#: src/components/chat/CliChatPanel.tsx
+msgid "Remove attached image {label}"
+msgstr "Remove attached image {label}"
 
 #: src/components/MemoPanel.tsx
 msgid "Remove attached selection"
@@ -8836,10 +8730,6 @@ msgstr "Remove property"
 msgid "Remove selected lines"
 msgstr "Remove selected lines"
 
-#: src/components/BottomComposer.tsx
-msgid "Remove selection"
-msgstr "Remove selection"
-
 #: src/components/CreateProjectDialog.tsx
 msgid "Remove the parent <0>.git</0> folder"
 msgstr "Remove the parent <0>.git</0> folder"
@@ -8856,6 +8746,7 @@ msgstr "Removing"
 #: src/components/DatabaseViewManagerDialog.tsx
 #: src/components/DatabaseViewTabMenu.tsx
 #: src/components/FileTree.tsx
+#: src/components/folder-item-context-menu.tsx
 #: src/components/skill-actions.tsx
 #: src/components/SkillRenameDialog.tsx
 #: src/editor/components/InlineDatabaseViewManagerPopover.tsx
@@ -9039,10 +8930,6 @@ msgstr "Required for creating databases and grants the selected actions on every
 #: src/components/handoff/OpenInAgentMenuItem.tsx
 msgid "Requires {brand}."
 msgstr "Requires {brand}."
-
-#: src/components/BottomComposer.tsx
-msgid "Research the extinction of flightless birds"
-msgstr "Research the extinction of flightless birds"
 
 #: src/components/TemplateForm.tsx
 msgid "research-note"
@@ -9256,6 +9143,7 @@ msgid "Reused if it already exists, created if not."
 msgstr "Reused if it already exists, created if not."
 
 #: src/components/FileTree.tsx
+#: src/components/path-menu-actions.ts
 msgid "Reveal in File Explorer"
 msgstr "Reveal in File Explorer"
 
@@ -9265,6 +9153,7 @@ msgstr "Reveal in File Explorer, {hint}"
 
 #: src/components/FileSidebar.tsx
 #: src/components/FileTree.tsx
+#: src/components/path-menu-actions.ts
 #: src/components/ReportBugDialogBody.tsx
 #: src/components/skill-actions.tsx
 msgid "Reveal in Finder"
@@ -9372,10 +9261,6 @@ msgstr "Role"
 #: src/components/DatabaseDiagnosticsDialog.tsx
 msgid "Rollbacks"
 msgstr "Rollbacks"
-
-#: src/components/NewItemDialog.tsx
-msgid "root"
-msgstr "root"
 
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "Root properties"
@@ -9626,10 +9511,6 @@ msgstr "Search related records"
 msgid "Search settings not yet loaded — try again in a moment"
 msgstr "Search settings not yet loaded — try again in a moment"
 
-#: src/components/NewItemDialog.tsx
-msgid "Search templates"
-msgstr "Search templates"
-
 #: src/components/GraphSettingsPopover.tsx
 msgid "Search terms"
 msgstr "Search terms"
@@ -9831,6 +9712,10 @@ msgstr "Semantic search is on, but no API key is set — search falls back to ke
 msgid "Send"
 msgstr "Send"
 
+#: src/editor/extensions/JsxComponentView.tsx
+msgid "Send image to AI"
+msgstr "Send image to AI"
+
 #: src/components/ReportBugDialogBody.tsx
 msgid "Send report"
 msgstr "Send report"
@@ -9862,10 +9747,6 @@ msgstr "Separator"
 #: src/components/DocumentErrorBoundary.tsx
 msgid "Server can't open documents"
 msgstr "Server can't open documents"
-
-#: src/components/NewItemDialog.tsx
-msgid "Server error (HTTP {status})"
-msgstr "Server error (HTTP {status})"
 
 #: src/components/GraphView.tsx
 msgid "Server error: {status}"
@@ -9948,6 +9829,7 @@ msgstr "Setup SynapseNote in this folder?"
 #: src/components/DatabaseWorkspaceToolbar.tsx
 #: src/components/FileSidebar.tsx
 #: src/components/FileTree.tsx
+#: src/components/folder-item-context-menu.tsx
 #: src/components/ShareButton.tsx
 msgid "Share"
 msgstr "Share"
@@ -10122,10 +10004,6 @@ msgstr "Show replace"
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "Show retrieval details"
 msgstr "Show retrieval details"
-
-#: src/components/BottomComposer.tsx
-msgid "Show selection preview"
-msgstr "Show selection preview"
 
 #: src/components/MermaidFileViewer.tsx
 msgid "Show source"
@@ -10369,10 +10247,6 @@ msgstr "Start a new chat"
 msgid "Start a new SynapseNote project."
 msgstr "Start a new SynapseNote project."
 
-#: src/components/NewItemDialog.tsx
-msgid "Start from"
-msgstr "Start from"
-
 #: src/components/CreatedItemsList.tsx
 msgid "Start here: what this is and how it's organized."
 msgstr "Start here: what this is and how it's organized."
@@ -10513,10 +10387,6 @@ msgstr "Suggestion menu navigation"
 #: src/lib/keyboard-shortcuts.ts
 msgid "Suggestion menu open"
 msgstr "Suggestion menu open"
-
-#: src/components/BottomComposer.tsx
-msgid "Summarize everything I changed this week"
-msgstr "Summarize everything I changed this week"
 
 #: src/components/ShareBranchSwitchDialog.tsx
 msgid "Switch and update branch"

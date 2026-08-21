@@ -1,20 +1,18 @@
 /**
- * Cross-placement integration for the unified "Ask AI" composer's SHARED draft.
+ * Draft persistence for the create-screen hero composer.
  *
- * The user symptom this guards: a brief typed in the bottom docked composer must
- * carry into the create-screen hero composer (and back), surviving the composer
- * unmounting as the user navigates doc → empty → doc. Both placements read/write
- * the same `composer-draft-store`, so the draft lives in the store, not in either
- * component's local state.
+ * The user symptom this guards: a brief typed on the empty/create screen must
+ * still be there after navigating away and back, and after a reload — the draft
+ * lives in `composer-draft-store`, not in the component's local state.
  *
- * The shared unit is the editor's ProseMirror document JSON, NOT a flattened
- * string — so an atomic `@`-mention chip survives across placements as a real
- * `composerMention` node, instead of round-tripping through lossy literal `@path`
- * text. The rich `@`-mention input is replaced with a doc-faithful double that
- * honors the real contract additions (`initialDoc` seed + `onContentChange`
- * mirror, both doc JSON) and renders `composerMention` nodes as `.composer-mention`
- * chip spans, so these tests exercise the store wiring + chip survival through the
- * real components rather than the editor internals (covered in
+ * The persisted unit is the editor's ProseMirror document JSON, NOT a flattened
+ * string — so an atomic `@`-mention chip comes back as a real `composerMention`
+ * node instead of round-tripping through lossy literal `@path` text. The rich
+ * `@`-mention input is replaced with a doc-faithful double that honors the real
+ * contract additions (`initialDoc` seed + `onContentChange` mirror, both doc
+ * JSON) and renders `composerMention` nodes as `.composer-mention` chip spans, so
+ * these tests exercise the store wiring + chip survival through the real
+ * component rather than the editor internals (covered in
  * `ComposerMentionInput.dom.test.tsx`).
  */
 
@@ -249,7 +247,6 @@ mock.module('@/editor/ComposerMentionInput', () => ({
   },
 }));
 
-const { BottomComposer } = await import('./BottomComposer');
 const { CreatePromptComposer } = await import('./empty-state/CreatePromptComposer');
 
 beforeEach(() => {
@@ -266,99 +263,52 @@ afterEach(() => {
   __resetComposerDraftForTests();
 });
 
-function bottomInput() {
-  return screen.getByRole('textbox', { name: 'Ask AI' }) as HTMLTextAreaElement;
-}
-
 function heroInput() {
   return screen.getByRole('textbox', {
     name: 'Describe the project you want to create',
   }) as HTMLTextAreaElement;
 }
 
-describe('shared draft across composer placements', () => {
-  test('a draft typed in the bottom (docked) composer appears in the create (hero) composer', async () => {
-    const docked = render(<BottomComposer docName="notes" surface="wysiwyg" />);
-    fireEvent.change(bottomInput(), { target: { value: 'condense my AGENTS.md' } });
+function renderHero() {
+  return render(<CreatePromptComposer scenario={'new-project' as CreateScenario} />);
+}
 
-    // Navigate away from the doc → the bottom composer unmounts.
-    docked.unmount();
-
-    // The create/empty hero mounts (a new tab landed on the empty state).
-    render(<CreatePromptComposer scenario={'new-project' as CreateScenario} />);
-    await waitFor(() => expect(heroInput().value).toBe('condense my AGENTS.md'));
-  });
-
-  test('a draft typed in the create (hero) composer appears in the bottom (docked) composer', async () => {
-    const hero = render(<CreatePromptComposer scenario={'new-project' as CreateScenario} />);
+describe('create composer draft persistence', () => {
+  test('a draft survives the composer unmounting and remounting', async () => {
+    const first = renderHero();
     fireEvent.change(heroInput(), { target: { value: 'research flightless birds' } });
+    first.unmount();
 
-    hero.unmount();
-
-    render(<BottomComposer docName="notes" surface="wysiwyg" />);
-    await waitFor(() => expect(bottomInput().value).toBe('research flightless birds'));
+    renderHero();
+    await waitFor(() => expect(heroInput().value).toBe('research flightless birds'));
   });
 
-  test('an @-mention chip inserted in the bottom composer survives as a chip node in the create composer', async () => {
-    const docked = render(<BottomComposer docName="notes" surface="wysiwyg" />);
-    fireEvent.change(bottomInput(), { target: { value: 'see ' } });
-    // Insert a mention the way the typeahead would — it becomes an atomic node.
-    fireEvent.click(screen.getByTestId('insert-mention-Ask AI'));
-
-    docked.unmount();
-
-    render(<CreatePromptComposer scenario={'new-project' as CreateScenario} />);
-
-    // The seeded hero field restores a real `.composer-mention` chip element —
-    // NOT a literal `@ideas/foo.md` text run — proving the doc (not a flattened
-    // string) crossed the placement boundary.
-    await waitFor(() => {
-      const chip = document.querySelector(
-        '.composer-mention[data-composer-mention="ideas/foo.md"]',
-      );
-      expect(chip).not.toBeNull();
-    });
-  });
-
-  test('the chip also survives the reverse direction (hero → bottom)', async () => {
-    const hero = render(<CreatePromptComposer scenario={'new-project' as CreateScenario} />);
+  test('an @-mention chip comes back as a chip node, not literal @path text', async () => {
+    const first = renderHero();
     fireEvent.change(heroInput(), { target: { value: 'reference ' } });
+    // Insert a mention the way the typeahead would — it becomes an atomic node.
     fireEvent.click(screen.getByTestId('insert-mention-Describe the project you want to create'));
+    first.unmount();
 
-    hero.unmount();
-
-    render(<BottomComposer docName="notes" surface="wysiwyg" />);
+    renderHero();
     await waitFor(() => {
       const chip = document.querySelector(
         '.composer-mention[data-composer-mention="ideas/foo.md"]',
       );
       expect(chip).not.toBeNull();
     });
-  });
-
-  test('the draft survives a doc → empty → doc round trip (remount restores it)', async () => {
-    const first = render(<BottomComposer docName="notes" surface="wysiwyg" />);
-    fireEvent.change(bottomInput(), { target: { value: 'summarize my week' } });
-    first.unmount(); // → folder/empty
-
-    const empty = render(<CreatePromptComposer scenario={'new-project' as CreateScenario} />);
-    await waitFor(() => expect(heroInput().value).toBe('summarize my week'));
-    empty.unmount(); // → back to a doc
-
-    render(<BottomComposer docName="other" surface="wysiwyg" />);
-    await waitFor(() => expect(bottomInput().value).toBe('summarize my week'));
   });
 
   test('the draft persists across a reload (store re-hydrates the doc from storage)', async () => {
-    const docked = render(<BottomComposer docName="notes" surface="wysiwyg" />);
-    fireEvent.change(bottomInput(), { target: { value: 'draft a spec' } });
-    docked.unmount();
+    const first = renderHero();
+    fireEvent.change(heroInput(), { target: { value: 'draft a spec' } });
+    first.unmount();
 
     // Simulate reload: drop the in-memory store snapshot. The next mount reads
     // the persisted draft doc back from localStorage.
     __resetComposerDraftForTests();
 
-    render(<BottomComposer docName="notes" surface="wysiwyg" />);
-    await waitFor(() => expect(bottomInput().value).toBe('draft a spec'));
+    renderHero();
+    await waitFor(() => expect(heroInput().value).toBe('draft a spec'));
   });
 });

@@ -851,4 +851,78 @@ describe('CliChatPanel', () => {
       completePassage,
     );
   });
+
+  test('sends attached note images with the typed message and clears them', async () => {
+    const { bridge, chatSend } = makeBridge();
+    const onImageAttachmentsChange = mock((_next: readonly unknown[]) => {});
+    render(
+      <CliChatPanel
+        bridge={bridge}
+        cli="claude"
+        ptyId="pty-1"
+        initialPrompt={null}
+        documentContext={{ documentTitle: 'Trip', documentPath: 'trip/day-1.md' }}
+        imageAttachments={[
+          {
+            path: 'trip/assets/sunset.png',
+            absolutePath: '/Users/me/vault/trip/assets/sunset.png',
+            previewSrc: '/trip/assets/sunset.png',
+            alt: 'Sunset over the bay',
+          },
+        ]}
+        onImageAttachmentsChange={onImageAttachmentsChange}
+      />,
+    );
+
+    const thumbnail = await screen.findByAltText('Sunset over the bay');
+    expect(thumbnail.getAttribute('src')).toBe('/trip/assets/sunset.png');
+    expect(thumbnail.getAttribute('title')).toBe('trip/assets/sunset.png');
+
+    fireEvent.change(screen.getByLabelText('Message'), {
+      target: { value: 'What time of day is this?' },
+    });
+    fireEvent.click(screen.getByLabelText('Send'));
+
+    await waitFor(() => expect(chatSend).toHaveBeenCalledTimes(1));
+    const sent = chatSend.mock.calls[0]?.[1];
+    expect(sent?.prompt).toContain('<attached_images>');
+    expect(sent?.prompt).toContain('"path": "trip/assets/sunset.png"');
+    expect(sent?.prompt).toContain('"absolutePath": "/Users/me/vault/trip/assets/sunset.png"');
+    expect(sent?.prompt).toContain('User request:\nWhat time of day is this?');
+
+    const userMessage = screen.getByLabelText('You');
+    expect(userMessage.textContent).toContain('What time of day is this?');
+    expect(userMessage.textContent).not.toContain('<attached_images>');
+    const sentImage = document.querySelector('[data-chat-sent-image="trip/assets/sunset.png"]');
+    expect(sentImage).not.toBeNull();
+    expect(userMessage.contains(sentImage)).toBe(false);
+
+    // The staged set belongs to the sent turn now — the composer empties so a
+    // follow-up question does not silently re-send the same picture.
+    await waitFor(() => expect(onImageAttachmentsChange).toHaveBeenCalledTimes(1));
+    expect(onImageAttachmentsChange.mock.calls[0]?.[0]).toEqual([]);
+  });
+
+  test('removes one attached image without touching the others', async () => {
+    const { bridge } = makeBridge();
+    const onImageAttachmentsChange = mock((_next: readonly unknown[]) => {});
+    const attachments = [
+      { path: 'a/one.png', previewSrc: '/a/one.png' },
+      { path: 'a/two.png', previewSrc: '/a/two.png' },
+    ];
+    render(
+      <CliChatPanel
+        bridge={bridge}
+        cli="claude"
+        ptyId="pty-1"
+        initialPrompt={null}
+        imageAttachments={attachments}
+        onImageAttachmentsChange={onImageAttachmentsChange}
+      />,
+    );
+
+    fireEvent.click(await screen.findByLabelText('Remove attached image one.png'));
+    expect(onImageAttachmentsChange).toHaveBeenCalledTimes(1);
+    expect(onImageAttachmentsChange.mock.calls[0]?.[0]).toEqual([attachments[1]]);
+  });
 });

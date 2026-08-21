@@ -7,23 +7,21 @@
  * `@`-mention plus the passage inline, or a locus "read via OK MCP" pointer
  * when it is large) — so the running agent can place the passage in its doc
  * instead of receiving an unattributed blob. With no selection to send
- * (caret-only or no active doc) it opens the docked "Ask AI" composer, the
- * same path the ⌘L shortcut runs; the composer pins the live selection as a
- * removable context pill.
+ * (caret-only or no active doc) it opens the Chat panel and focuses its
+ * message box — the same path the ⌘L shortcut runs.
  *
  * Mounted only in the bubble menu's text branch: image / file node selections
  * swap the whole bar to a separate control tree, and selection handoff does
  * not apply to leaf media nodes.
  *
- * Available on every platform — the button just opens the (now cross-platform)
- * composer. Hidden only when OK is embedded inside an agent host, where the
- * composer is not shown. The ⌘/Ctrl+Shift+I keyboard shortcut, however, stays
- * macOS-only: on Windows/Linux that chord is the browser DevTools shortcut, and
- * hijacking it for end users is worse than the missing shortcut.
+ * Hidden only when OK is embedded inside an agent host, which is the AI surface
+ * itself. The ⌘/Ctrl+Shift+I keyboard shortcut stays macOS-only: on
+ * Windows/Linux that chord is the browser DevTools shortcut, and hijacking it
+ * for end users is worse than the missing shortcut.
  *
- * The open+focus intent is dispatched through `emitOpenAskAiComposer`, a
- * window CustomEvent that `BottomComposer` subscribes to — so the button and ⌘L
- * share exactly one open+focus implementation rather than duplicating it.
+ * The open+focus intent is dispatched through `emitOpenChatPanel`, a window
+ * CustomEvent the chat hosts subscribe to — so the button and ⌘L share exactly
+ * one open+focus implementation rather than duplicating it.
  */
 
 import { Trans } from '@lingui/react/macro';
@@ -31,7 +29,7 @@ import { isMacOS } from '@tiptap/core';
 import type { Editor } from '@tiptap/react';
 import { Sparkles } from 'lucide-react';
 import { type ReactNode, useEffect } from 'react';
-import { emitOpenAskAiComposer } from '@/components/ask-ai-composer-events';
+import { emitOpenChatPanel } from '@/components/chat-panel-events';
 import { composeTerminalSelectionPaste } from '@/components/handoff/compose-terminal-selection';
 import { requestActiveTerminalInput } from '@/components/handoff/terminal-input-events';
 import { Button } from '@/components/ui/button';
@@ -57,9 +55,8 @@ export function EditWithAiBubbleButton({
   shortcutEnabled?: boolean;
 }): ReactNode {
   const isEmbedded = useIsEmbedded();
-  // The button is available on every platform (it opens the cross-platform
-  // composer); it's hidden only inside an embedded agent host, where the
-  // composer is not shown.
+  // Hidden only inside an embedded agent host — that host IS the AI surface, so
+  // a second hand-off affordance would be a duplicate.
   if (isEmbedded) return null;
 
   return <EditWithAiBubbleMenu editor={editor} shortcutEnabled={shortcutEnabled} />;
@@ -86,7 +83,7 @@ function EditWithAiBubbleMenu({
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();
-      emitOpenAskAiComposer();
+      emitOpenChatPanel();
     };
 
     // Capture phase overrides Chrome DevTools' Cmd+Shift+I before it fires (macOS
@@ -107,13 +104,12 @@ function EditWithAiBubbleMenu({
         // Send the selected passage into the active shell (host reuses a live
         // PTY or launches a fresh Claude tab) as a GROUNDED prompt (see
         // `composeTerminalSelectionPaste`). Caret-only / empty selection (or
-        // no active doc to ground against) has nothing to send, so open the
-        // composer.
+        // no active doc to ground against) has nothing to send, so open Chat.
         //
-        // Deferred a frame: the composer focus (empty-selection branch) and
-        // the terminal focus fire synchronously inside this click, before
+        // Deferred a frame: the chat focus (empty-selection branch) and the
+        // terminal focus fire synchronously inside this click, before
         // ProseMirror's own focus handling on the trailing mouseup, which
-        // would steal the caret back to the doc and leave the composer
+        // would steal the caret back to the doc and leave the message box
         // unfocused. Reading the selection first keeps the passage from the
         // click moment even though the write runs later. Mirrors
         // LinkEditPopover's rAF focus.
@@ -122,7 +118,7 @@ function EditWithAiBubbleMenu({
           const selectionMarkdown = serializeWysiwygSelection(editor);
           requestAnimationFrame(() => {
             if (docName === null || selectionMarkdown.trim() === '') {
-              emitOpenAskAiComposer();
+              emitOpenChatPanel();
               return;
             }
             requestActiveTerminalInput(composeTerminalSelectionPaste(docName, selectionMarkdown));

@@ -1,10 +1,10 @@
 import type { TemplateMenuEntry } from '@/hooks/use-folder-config';
 
 /**
- * Pure ordering helper for the "Start from" / "New from template" pickers.
- * Lives in a leaf module (no component imports) so both `NewItemDialog` and
- * `TemplateMenuRows` can share it without forming an import cycle through the
- * dialog's component file.
+ * Pure ordering helper for the "New from template" menus.
+ * Lives in a leaf module (no component imports) so every menu surface and
+ * `TemplateMenuRows` can share it without forming an import cycle through a
+ * component file.
  */
 
 const SCOPE_ORDER: Record<TemplateMenuEntry['scope'], number> = {

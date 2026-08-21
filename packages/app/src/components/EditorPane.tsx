@@ -24,14 +24,22 @@ import {
 import { readPreferBareTerminal } from '@/lib/terminal-new-tab-store';
 import { recordTerminalOpened } from '@/lib/terminal-telemetry';
 import { loadStickyAgent } from '@/lib/unified-agent-store';
+import { useWorkspace } from '@/lib/use-workspace';
+import { joinWorkspacePath } from '@/lib/workspace-paths';
 import { AuthModal } from './AuthModal';
 import { AutoSyncOnboardingDialog } from './AutoSyncOnboardingDialog';
 import { shouldShowAutoSyncOnboarding } from './auto-sync-onboarding-gate';
+import {
+  type ChatImageAttachmentRequest,
+  subscribeToChatImageAttachment,
+} from './chat/chat-image-attachment';
 import type {
   ChatContextChip,
   CliChatDocumentContext,
+  CliChatImageAttachment,
   CliChatSelectionContext,
 } from './chat/cli-chat-types';
+import { subscribeToOpenChatPanel } from './chat-panel-events';
 import type { DocumentPanelTab, PanelTab, PdfPanelTab } from './DocPanel';
 import { EditorArea, type TerminalPlacement } from './EditorArea';
 import { EditorHeader } from './EditorHeader';
@@ -335,6 +343,42 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
     };
   })();
 
+  // Images handed to chat from a note's image block ("Send to AI"). Unlike the
+  // live selection above, this is an explicit, pinned act — the attachment
+  // stays in the composer until the user sends or removes it — so it is state
+  // here rather than a derivation of whatever the editor currently highlights.
+  // The workspace resolves once for the whole pane (synchronously on desktop)
+  // and turns the content-root-relative path into the absolute one an agent's
+  // file reader needs; it is only fetched where chat can exist at all.
+  const workspace = useWorkspace({ enabled: terminalAvailable });
+  const [chatImageAttachments, setChatImageAttachments] = useState<
+    readonly CliChatImageAttachment[]
+  >([]);
+  const attachChatImage = useEffectEvent((request: ChatImageAttachmentRequest) => {
+    const absolutePath =
+      workspace === null
+        ? undefined
+        : joinWorkspacePath(workspace.contentDir, request.path, workspace.pathSeparator);
+    setChatImageAttachments((previous) =>
+      // Same image twice is a no-op rather than a duplicate thumbnail: the
+      // button is easy to hit again while the composer already holds it.
+      previous.some((image) => image.path === request.path)
+        ? previous
+        : [...previous, { ...request, ...(absolutePath === undefined ? {} : { absolutePath }) }],
+    );
+    // The attachment is useless in a panel the user cannot see, so the same
+    // click that stages it brings Chat forward (seeding a first session when
+    // none exists) — the one place that decision belongs.
+    revealRightChat();
+  });
+  useEffect(() => subscribeToChatImageAttachment((request) => attachChatImage(request)), []);
+
+  // ⌘L and the editor's "Ask AI" affordances (bubble button with no passage to
+  // send, source mode's ⌘⇧I) all land here: bring Chat forward, seeding a first
+  // session when none exists. `TerminalSessionsHost` owns the other half of the
+  // intent — moving focus into the active session's message box.
+  useEffect(() => subscribeToOpenChatPanel(() => revealRightChatEvent()), []);
+
   // Onboarding modal: open once per machine per project when every gate
   // input aligns. Decision logic lives in `shouldShowAutoSyncOnboarding`
   // so each input has its own row in the helper's truth table.
@@ -370,8 +414,8 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
   // ⌘J / ⇧⌘J with an editor selection STAGE that selection into an AI CLI's input
   // in the terminal instead of toggling — never submitted, so the user can add
   // context and send it themselves. Reads the debounced selection snapshot for the
-  // active doc + current mode (the same registry BottomComposer reads — no editor
-  // instance needed, so it works even from the OS-captured ⌘J menu accelerator)
+  // active doc + current mode (a registry read — no editor instance needed, so it
+  // works even from the OS-captured ⌘J menu accelerator)
   // and composes the same grounded prompt the Ask-AI selection button sends.
   //   - ⌘J into a tab that is ALREADY running a CLI → write the passage straight
   //     into its input (no screen wipe) via the reuse channel, and focus it.
@@ -674,6 +718,8 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
           }}
           documentContext={chatDocumentContext}
           selectionContext={chatSelectionContext}
+          imageAttachments={chatImageAttachments}
+          onImageAttachmentsChange={setChatImageAttachments}
         />
       ) : null}
       <AuthModal

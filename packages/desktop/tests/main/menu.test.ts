@@ -588,7 +588,6 @@ describe('buildMenuTemplate — File menu state-aware items (US-020 / FR16 + FR1
         activeTarget: { kind: null },
         onNewFile: mock(() => {}),
         onNewFolder: mock(() => {}),
-        onNewFromTemplate: mock(() => {}),
         onRevealInFinder: mock(() => {}),
         onSendToAi: mock(() => {}),
         onCopyFullPath: mock(() => {}),
@@ -597,7 +596,6 @@ describe('buildMenuTemplate — File menu state-aware items (US-020 / FR16 + FR1
     );
     expect(findByLabel(template, 'New file')?.enabled).toBe(true);
     expect(findByLabel(template, 'New folder')?.enabled).toBe(true);
-    expect(findByLabel(template, 'New from template…')?.enabled).toBe(true);
     expect(findByLabel(template, 'Reveal in Finder')?.enabled).toBe(true);
     expect(findByLabel(template, 'Open with AI')?.enabled).toBe(true);
     expect(findByLabel(template, 'Copy path')?.enabled).toBe(true);
@@ -607,7 +605,6 @@ describe('buildMenuTemplate — File menu state-aware items (US-020 / FR16 + FR1
     const template = buildMenuTemplate(makeDeps());
     expect(findByLabel(template, 'New file')?.enabled).toBe(false);
     expect(findByLabel(template, 'New folder')?.enabled).toBe(false);
-    expect(findByLabel(template, 'New from template…')?.enabled).toBe(false);
     expect(findByLabel(template, 'Duplicate')?.enabled).toBe(false);
     expect(findByLabel(template, 'Reveal in Finder')?.enabled).toBe(false);
     expect(findByLabel(template, 'Open with AI')?.enabled).toBe(false);
@@ -702,7 +699,7 @@ describe('buildMenuTemplate — New project… menu item', () => {
     expect(() => (item?.click as (() => void) | undefined)?.()).not.toThrow();
   });
 
-  test('project section mirrors the ProjectSwitcher order and sits right after New from template…', () => {
+  test('project section mirrors the ProjectSwitcher order and sits right after the New… items', () => {
     // Native File menu and the in-app ProjectSwitcher present the same project
     // actions in the same order: Recent project, New project, Switch project,
     // Open folder — placed directly under the New… items, above the
@@ -712,15 +709,15 @@ describe('buildMenuTemplate — New project… menu item', () => {
     const sub = fileMenu?.submenu as MenuItemConstructorOptions[] | undefined;
     if (!sub) throw new Error('File submenu missing');
     const idx = (label: string) => sub.findIndex((i) => i.label === label);
-    const newFromTemplateIdx = idx('New from template…');
+    const newFolderIdx = idx('New folder');
     const recentIdx = idx('Recent project');
     const newProjectIdx = idx('New project…');
     const switchIdx = idx('Switch project…');
     const openFolderIdx = idx('Open folder…');
     const duplicateIdx = idx('Duplicate');
-    expect(newFromTemplateIdx).toBeGreaterThanOrEqual(0);
+    expect(newFolderIdx).toBeGreaterThanOrEqual(0);
     // Switcher-parity order: Recent → New project → Switch project → Open folder.
-    expect(recentIdx).toBeGreaterThan(newFromTemplateIdx);
+    expect(recentIdx).toBeGreaterThan(newFolderIdx);
     expect(newProjectIdx).toBeGreaterThan(recentIdx);
     expect(switchIdx).toBeGreaterThan(newProjectIdx);
     expect(openFolderIdx).toBeGreaterThan(switchIdx);

@@ -4,7 +4,7 @@
  *
  * Spins up a real Hocuspocus server via createTestServer (random port,
  * tmp contentDir, debounce=200ms). Every case below uses raw `fetch` against
- * the server exactly as NewItemDialog does in the browser.
+ * the server exactly as the app's create flow does in the browser.
  *
  * Scenarios covered:
  *   - simple file creation
@@ -144,7 +144,7 @@ describe('/api/create-page — reserved name (QA-010)', () => {
 describe('/api/create-page — template seeding', () => {
   // Seeds a root-level template on disk; the resolver reads `.ok/templates/`
   // live per request, so writing the file before the call is enough. Both the
-  // inline-rename flow (FileTree) and the dialog (NewItemDialog) post the same
+  // inline-rename flow (FileTree) and the template create path post the same
   // `{ path, template }` contract this exercises.
   async function createPageWithTemplate(path: string, template: string) {
     const res = await fetch(`http://127.0.0.1:${server.port}/api/create-page`, {

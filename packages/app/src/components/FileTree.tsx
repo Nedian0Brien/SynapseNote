@@ -1,4 +1,4 @@
-import { plural, t } from '@lingui/core/macro';
+import { plural } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react/macro';
 import {
   CreateFolderSuccessSchema,
@@ -141,7 +141,6 @@ import {
   isFolderEntry,
   toFileEntries,
 } from '@/components/file-tree-utils';
-import { NewItemDialog } from '@/components/NewItemDialog';
 import {
   largeFileNavigationTarget,
   okContentNavigationTarget,
@@ -239,6 +238,7 @@ import {
   useHandoffDispatch,
 } from './handoff/useHandoffDispatch';
 import { useInstalledAgents } from './handoff/useInstalledAgents';
+import { copyPathToClipboard, revealInFileManagerLabel } from './path-menu-actions';
 import { cancelHoverPrewarm, scheduleHoverPrewarm } from './sidebar-hover-prewarm';
 import { useSidebar } from './ui/sidebar';
 
@@ -301,20 +301,9 @@ function setExternalFileDropAffordance(
   ref.current = { row: target.row, root: target.root };
 }
 
-// Module-level functions can't call `useLingui()`, so this file uses the
-// `@lingui/core/macro` `t` (and `plural`) for any localizable string outside a
-// React component; the `t` from `useLingui()` is used inside components.
-async function copyToClipboard(text: string, kind: 'full' | 'relative'): Promise<void> {
-  try {
-    await navigator.clipboard.writeText(text);
-    toast.success(kind === 'full' ? t`Copied full path` : t`Copied relative path`, {
-      description: text,
-    });
-  } catch (err) {
-    console.warn('[FileTree] clipboard write failed:', err);
-    toast.error(kind === 'full' ? t`Could not copy full path` : t`Could not copy relative path`);
-  }
-}
+// Module-level code can't call `useLingui()`, so it uses the
+// `@lingui/core/macro` `plural`; the `t` from `useLingui()` is used inside
+// components.
 
 const AGENT_FILE_NAMES = new Set(['agents', 'agent', 'claude', 'skill']);
 const LINK_DECORATION_ICON_ID = 'ok-file-tree-link-decoration';
@@ -497,18 +486,6 @@ interface TrashFailureRequest {
 interface WorkspaceInfo {
   contentDir: string;
   pathSeparator: '/' | '\\';
-}
-
-/**
- * Platform-specific label for the file-manager reveal action. Mirrors VS Code's copy.
- * Linux verb asymmetry (Open vs Reveal) is intentional — no stable Linux file-manager
- * brand to "Reveal in"; a normalizing fix to "Reveal in Files" would be incorrect on
- * most distros.
- */
-function revealInFileManagerLabel(platform: 'darwin' | 'win32' | 'linux'): string {
-  if (platform === 'darwin') return t`Reveal in Finder`;
-  if (platform === 'win32') return t`Reveal in File Explorer`;
-  return t`Open containing folder`;
 }
 
 /**
@@ -846,7 +823,7 @@ function FileTreeMenu({
                       relativePathForTreeItem(item),
                       workspace.pathSeparator,
                     );
-                    void copyToClipboard(full, 'full');
+                    void copyPathToClipboard(full, 'full');
                   }}
                 >
                   <Trans>Full path</Trans>
@@ -854,7 +831,7 @@ function FileTreeMenu({
                 <DropdownMenuItem
                   onSelect={() => {
                     close();
-                    void copyToClipboard(relativePathForTreeItem(item), 'relative');
+                    void copyPathToClipboard(relativePathForTreeItem(item), 'relative');
                   }}
                 >
                   <Trans>Relative path</Trans>
@@ -983,7 +960,7 @@ function FileTreeMenu({
                       relativePathForTreeItem(item),
                       workspace.pathSeparator,
                     );
-                    void copyToClipboard(full, 'full');
+                    void copyPathToClipboard(full, 'full');
                   }}
                 >
                   <Trans>Full path</Trans>
@@ -991,7 +968,7 @@ function FileTreeMenu({
                 <DropdownMenuItem
                   onSelect={() => {
                     close();
-                    void copyToClipboard(relativePathForTreeItem(item), 'relative');
+                    void copyPathToClipboard(relativePathForTreeItem(item), 'relative');
                   }}
                 >
                   <Trans>Relative path</Trans>
@@ -1142,7 +1119,7 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
   const { closeTabs, closeDocument, remapTabsForRename } = useDocumentTabs();
   const { closeAndClearForRename, getPoolActiveDocName, poolHas, prewarm } =
     useDocumentCollaboration();
-  const { notifySidebarFileSelected } = useSidebar();
+  const { notifySidebarFileSelected, open: sidebarOpen, setOpen: setSidebarOpen } = useSidebar();
   const { resolvedTheme } = useTheme();
   const { addPage, pageMeta, pages } = usePageList();
   const { okignoreBinding, merged } = useConfigContext();
@@ -1222,11 +1199,6 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
   // to-Trash flow does NOT (Step 1 is `shell.trashItem`, an OS call), so we
   // refuse here before the file leaves disk.
   const { conflicts: activeConflicts } = useConflicts();
-  // Sibling to startCreating's inline-rename UX: opens NewItemDialog when
-  // the user picks "New from template…" from a folder context menu, so the
-  // template picker is reachable without giving up the fast typed-name
-  // path that the toolbar / first-row create still uses.
-  const [newItemRequest, setNewItemRequest] = useState<{ parentDir: string } | null>(null);
   const [workspace, setWorkspace] = useState<WorkspaceInfo | null>(null);
   // Clicking the tree's empty content area "deselects" the active row *for
   // creation purposes only*: New file / New folder land at the project root
@@ -1254,6 +1226,10 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
 
   const documentsRef = useRef(documents);
   const pageMetaRef = useRef(pageMeta);
+  // Mirrored so the once-bound rename subscription can reveal a collapsed
+  // sidebar without re-subscribing on every open/close flip.
+  const sidebarOpenRef = useRef(sidebarOpen);
+  const setSidebarOpenRef = useRef(setSidebarOpen);
   const pendingExactFileSelectionRef = useRef<string | null>(null);
   function activateTreePath(treePath: string, entries: readonly FileEntry[] = documents) {
     const action = resolveFileTreeSelectionAction(treePath, entries);
@@ -2949,10 +2925,6 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     }
   }
 
-  function startCreatingFromTemplate(parentDir: string) {
-    setNewItemRequest({ parentDir });
-  }
-
   async function startCreating(
     kind: 'file' | 'folder',
     parentDir: string,
@@ -2979,7 +2951,7 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
       let createdPath: string;
       if (kind === 'file') {
         const createPath = createPagePathFromTreeDestination('file', placeholder.addPath);
-        // Template param mirrors NewItemDialog's create call: the server seeds
+        // Template param: the server seeds
         // the new doc from the named template's body + frontmatter. Omitted for
         // the blank "New file" path so behavior there is unchanged.
         const createBody: { path: string; template?: string } = { path: createPath };
@@ -3153,6 +3125,8 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
   useLayoutEffect(() => {
     documentsRef.current = documents;
     pageMetaRef.current = pageMeta;
+    sidebarOpenRef.current = sidebarOpen;
+    setSidebarOpenRef.current = setSidebarOpen;
     activeDocNameRef.current = activeDocName;
     activeTargetRef.current = activeTarget;
     assetTreePathsRef.current = assetTreePaths;
@@ -3401,10 +3375,8 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
   // and before paint; by the time the handle methods fire on user
   // interaction (click), the ref is current.
   const startCreatingRef = useRef(startCreating);
-  const startCreatingFromTemplateRef = useRef(startCreatingFromTemplate);
   useEffect(() => {
     startCreatingRef.current = startCreating;
-    startCreatingFromTemplateRef.current = startCreatingFromTemplate;
   });
 
   useImperativeHandle(
@@ -3412,9 +3384,6 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
     () => ({
       startCreating(kind, parentDir) {
         void startCreatingRef.current(kind, parentDir);
-      },
-      startCreatingFromTemplate(parentDir) {
-        startCreatingFromTemplateRef.current(parentDir);
       },
       createFromTemplate(parentDir, templateName) {
         void startCreatingRef.current('file', parentDir, { template: templateName });
@@ -3996,6 +3965,26 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
   // asset uses the raw asset path; missing falls through to a structured
   // warn because the menu enable gate disables rename for that scope.
   useEffect(() => {
+    // The rename surface is the tree row's inline input, but the request can
+    // come from anywhere — the native File menu, or the folder overview's card
+    // menu out in the main pane. Reveal the row first: a collapsed sidebar
+    // (offcanvas keeps the tree mounted but off-screen) would otherwise put the
+    // focused input where the user cannot see it, and a row scrolled out of the
+    // tree's viewport reads as "nothing happened".
+    const revealRow = (treePath: string) => {
+      if (!sidebarOpenRef.current) setSidebarOpenRef.current(true);
+      // After the sidebar's open transition so the scroll lands on the row's
+      // final position rather than its mid-animation one.
+      requestAnimationFrame(() => {
+        try {
+          model.scrollToPath(treePath);
+        } catch {
+          // Row not in the model (lazy-loaded folder not expanded yet) — the
+          // rename below is the no-op that matters; scrolling is a courtesy.
+        }
+      });
+      model.startRenaming(treePath);
+    };
     return subscribeToFileTreeMenuActionRename((target) => {
       if (target.kind === 'doc' || target.kind === 'folder-index') {
         const docName = target.docName;
@@ -4003,15 +3992,15 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
           (entry): entry is DocumentEntry => isDocumentEntry(entry) && entry.docName === docName,
         );
         const treePath = docNameToTreePath(docName, docEntry?.docExt);
-        model.startRenaming(treePath);
+        revealRow(treePath);
         return;
       }
       if (target.kind === 'folder') {
-        model.startRenaming(target.folderPath);
+        revealRow(target.folderPath);
         return;
       }
       if (target.kind === 'asset') {
-        model.startRenaming(target.assetPath);
+        revealRow(target.assetPath);
         return;
       }
       console.warn(
@@ -4396,18 +4385,6 @@ export function FileTree({ ref, onContentHeightChange }: FileTreeProps) {
           />
         )}
       </Dialog>
-      <NewItemDialog
-        open={newItemRequest !== null}
-        onOpenChange={(open) => {
-          if (!open) setNewItemRequest(null);
-        }}
-        kind="file"
-        initialDir={newItemRequest?.parentDir ?? ''}
-        // This dialog is only opened via `startCreatingFromTemplate` (the
-        // native macOS File → "New from Template…" item), so default the
-        // picker to the first resolved template rather than Blank note.
-        defaultToTemplate
-      />
     </>
   );
 }

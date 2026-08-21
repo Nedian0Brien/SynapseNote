@@ -87,7 +87,7 @@ export function useFolderConfig(folderPath: string | null): FolderConfigHandle {
   // Cross-instance reactivity: any successful template create/delete
   // (via folder-config-api) emits `templates-changed`; every mounted
   // useFolderConfig refreshes so consumers like the sidebar's smart-hide
-  // and an open NewItemDialog reflect the new state without a reload.
+  // and an open templates panel reflect the new state without a reload.
   //
   // Skip when `folderPath === null` (NewItemDialog's dedup branch when a
   // parent supplies `folderConfigOverride`): the fetch effect below

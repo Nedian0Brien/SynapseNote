@@ -136,7 +136,7 @@ export function CreatePromptComposer({
 
   // The input-required message is opt-in, not a permanent label: it stays hidden
   // until the user *attempts* to create with an empty brief, then surfaces in the
-  // app's standard inline-validation style (matches NewItemDialog — a
+  // app's standard inline-validation style (a
   // `role="alert"` `text-destructive` line). Cleared the moment valid input
   // arrives. A natively-disabled button can't fire click, so the Create primary
   // stays clickable on empty input and routes the attempt here instead.
@@ -365,8 +365,8 @@ export function CreatePromptComposer({
         {/* Footer row: the input-required validation error (left) + the Create
             split button (right). The error is hidden by default and only appears
             once the user attempts to create with an empty brief — rendered in the
-            app's standard inline-validation style (role="alert" text-destructive,
-            matching NewItemDialog). It clears as soon as a valid brief is typed. */}
+            app's standard inline-validation style (role="alert"
+            text-destructive). It clears as soon as a valid brief is typed. */}
         <div className="flex flex-wrap items-center justify-between gap-2 px-3 pb-3">
           {showRequiredError && isEmpty ? (
             <p

@@ -12,7 +12,6 @@ import { DailyNoteHandler } from '@/components/DailyNoteHandler';
 import { DatabaseOverlayHost } from '@/components/DatabaseOverlayHost';
 import { EditorPane } from '@/components/EditorPane';
 import { FileSidebar } from '@/components/FileSidebar';
-import { defaultInitialDir } from '@/components/file-tree-utils';
 import {
   type TerminalLaunchContextValue,
   TerminalLaunchProvider,
@@ -24,7 +23,6 @@ import {
 } from '@/components/handoff/useHandoffDispatch';
 import { InstallInClaudeDesktopDialog } from '@/components/InstallInClaudeDesktopDialog';
 import { McpConsentDialog } from '@/components/McpConsentDialog';
-import { isNewItemShortcut, NewItemDialog } from '@/components/NewItemDialog';
 import {
   downgradeFolderIndexForHashNav,
   type ResolvedNavigationTarget,
@@ -44,6 +42,7 @@ import { parseEditorTabId } from '@/editor/editor-tabs';
 import { useInstalledClis } from '@/hooks/use-installed-clis';
 import { useReconcileSkillTabs } from '@/hooks/use-reconcile-skill-tabs';
 import { ConfigProvider } from '@/lib/config-provider';
+import { emitCreateTopLevelFile } from '@/lib/create-file-events';
 import { DATABASE_SLASH_COMMAND_EVENT, type DatabaseSlashCommand } from '@/lib/database-events';
 import {
   DATABASE_CREATION_HASH,
@@ -66,6 +65,7 @@ import {
   ROUTE_NAVIGATION_CHANGE_EVENT,
   skillFileFromHash,
 } from '@/lib/doc-hash';
+import { isNewItemShortcut } from '@/lib/keyboard-shortcuts';
 import { mark, ProfilerBoundary } from '@/lib/perf';
 import { SingleFileModeProvider, useSingleFileMode } from '@/lib/single-file-mode';
 import { useGraphShortcut } from '@/lib/use-graph-route';
@@ -499,11 +499,6 @@ function ActiveTargetBridgePush() {
 }
 
 function NewItemShortcutHandler() {
-  const { activeDocName, activeTarget } = useDocumentContext();
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const initialDir =
-    activeTarget?.kind === 'folder' ? activeTarget.folderPath : defaultInitialDir(activeDocName);
-
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       // KeyboardEvent.target is EventTarget|null — widen to the duck-typed
@@ -519,7 +514,10 @@ function NewItemShortcutHandler() {
         })
       ) {
         e.preventDefault();
-        setDialogOpen(true);
+        // No folder argument: the sidebar creates where its own toolbar would
+        // (active folder / active doc's folder, root after an empty-space
+        // deselect), so ⌘N and the toolbar button can never disagree.
+        emitCreateTopLevelFile();
       }
     }
 
@@ -527,14 +525,7 @@ function NewItemShortcutHandler() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
-  return (
-    <NewItemDialog
-      open={dialogOpen}
-      onOpenChange={setDialogOpen}
-      kind="file"
-      initialDir={initialDir}
-    />
-  );
+  return null;
 }
 
 /**

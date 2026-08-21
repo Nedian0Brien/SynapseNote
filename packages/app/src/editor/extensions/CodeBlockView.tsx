@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useEffect, useId, useRef, useState } from 'react';
-import { emitOpenAskAiComposer } from '@/components/ask-ai-composer-events';
+import { emitOpenChatPanel } from '@/components/chat-panel-events';
 import { requestActiveTerminalInput } from '@/components/handoff/terminal-input-events';
 import {
   Command,
@@ -657,7 +657,7 @@ export function CodeBlockView({ node, updateAttributes, editor, getPos, selected
               const selectionMarkdown = serializeWysiwygSelection(editor);
               requestAnimationFrame(() => {
                 if (docName === null || !selectionMarkdown.trim()) {
-                  emitOpenAskAiComposer();
+                  emitOpenChatPanel();
                   return;
                 }
                 requestActiveTerminalInput(

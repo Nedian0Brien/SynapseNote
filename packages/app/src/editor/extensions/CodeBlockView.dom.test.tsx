@@ -13,7 +13,7 @@ import { afterEach, describe, expect, mock, test } from 'bun:test';
 import type { Config } from '@nedian0brien/synapsenote-core';
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import type { NodeViewProps } from '@tiptap/core';
-import { subscribeToOpenAskAiComposer } from '@/components/ask-ai-composer-events';
+import { subscribeToOpenChatPanel } from '@/components/chat-panel-events';
 import { subscribeToActiveTerminalInput } from '@/components/handoff/terminal-input-events';
 import { ConfigContext, type ConfigContextValue } from '@/lib/config-context';
 import { CodeBlockView } from './CodeBlockView';
@@ -262,7 +262,7 @@ describe('CodeBlockView Ask AI dispatch', () => {
     unsubscribeTerminal = subscribeToActiveTerminalInput((text) => {
       terminalInputs.push(text);
     });
-    unsubscribeComposer = subscribeToOpenAskAiComposer(() => {
+    unsubscribeComposer = subscribeToOpenChatPanel(() => {
       composerOpens += 1;
     });
   }

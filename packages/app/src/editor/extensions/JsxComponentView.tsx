@@ -48,10 +48,23 @@ import {
 import type { NodeViewProps } from '@tiptap/core';
 import { TextSelection } from '@tiptap/pm/state';
 import { NodeViewContent, NodeViewWrapper } from '@tiptap/react';
-import { ArrowDown, ArrowUp, ExternalLink, Pencil, Settings2, Trash2 } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowUp,
+  ExternalLink,
+  Pencil,
+  Settings2,
+  Sparkles,
+  Trash2,
+} from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
+import {
+  buildChatImageAttachment,
+  requestChatImageAttachment,
+} from '@/components/chat/chat-image-attachment';
+import { useTerminalLaunch } from '@/components/handoff/TerminalLaunchContext';
 import { Button } from '@/components/ui/button';
 import {
   createDatabaseInteractionId,
@@ -198,8 +211,19 @@ function ComponentErrorBoundary(props: ComponentErrorBoundaryProps) {
  */
 const MAX_AUTO_CONVERT_RETRIES = 3;
 
+/**
+ * Descriptors whose block chrome offers "Send to AI": the `img` canonical and
+ * the `CommonMarkImage` compat that a markdown `![](…)` parses into. Both
+ * render a single local asset, which is what the chat attachment can carry.
+ */
+const CHAT_IMAGE_DESCRIPTOR_NAMES = new Set(['img', 'CommonMarkImage']);
+
 export function JsxComponentView({ node, editor, extension, getPos, selected }: NodeViewProps) {
   const { t } = useLingui();
+  // Chat is a desktop surface (it drives a real CLI in a PTY). On the web host
+  // the launcher context is null, and the image chrome's "Send to AI" button
+  // stays unrendered rather than pointing at a panel that cannot exist.
+  const chatAvailable = useTerminalLaunch() !== null;
   const descriptor = getDescriptor(node.attrs.componentName as string);
   const [renderError, setRenderError] = useState<Error | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -419,6 +443,21 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
     translatedProps,
     sourceDocName,
   );
+  // "Send to AI" attachment for image blocks. Derived from the authored `src`
+  // + the doc it lives in, so it resolves the same file the block renders;
+  // `null` for an external / data URL (no local file for an agent to open) and
+  // for every non-image descriptor, which is exactly when the button is absent.
+  const chatImageAttachment =
+    chatAvailable &&
+    CHAT_IMAGE_DESCRIPTOR_NAMES.has(descriptor.name) &&
+    typeof primitiveProps.src === 'string'
+      ? buildChatImageAttachment(
+          primitiveProps.src,
+          sourceDocName,
+          typeof primitiveProps.alt === 'string' ? primitiveProps.alt : undefined,
+        )
+      : null;
+
   // Stable reset key for the ErrorBoundary. `JSON.stringify` on an arbitrary
   // props object produced a string whose content was key-order-sensitive
   // across engines — combined with the post-edit re-serialization that
@@ -1032,7 +1071,7 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
                 // but the anchor needs its native click-to-navigate path).
                 onMouseDown={(e) => e.stopPropagation()}
               >
-                <ExternalLink size={12} aria-hidden="true" />
+                <ExternalLink size={16} aria-hidden="true" />
               </a>
             )}
 
@@ -1058,7 +1097,7 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
                   title={t`Open source: ${mirrorSrc}`}
                   onMouseDown={(e) => e.stopPropagation()}
                 >
-                  <ExternalLink size={12} aria-hidden="true" />
+                  <ExternalLink size={16} aria-hidden="true" />
                 </a>
               );
             })()}
@@ -1107,7 +1146,7 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
                 }
               }}
             >
-              <ArrowUp size={12} aria-hidden="true" />
+              <ArrowUp size={16} aria-hidden="true" />
             </button>
           )}
 
@@ -1146,7 +1185,7 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
                 }
               }}
             >
-              <ArrowDown size={12} aria-hidden="true" />
+              <ArrowDown size={16} aria-hidden="true" />
             </button>
           )}
 
@@ -1163,7 +1202,25 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
               data-testid="jsx-component-edit-btn"
               onClick={() => setEditModalOpen(true)}
             >
-              <Pencil size={12} aria-hidden="true" />
+              <Pencil size={16} aria-hidden="true" />
+            </button>
+          ) : null}
+
+          {/* Send to AI — image blocks only. Hands the image to the Chat
+            panel's composer as a removable attachment (the panel opens if it
+            is not already showing), so the reader can type a question about
+            the picture and send both together. Sits before Delete, keeping
+            the bar's "actions left, destructive mid, config far-right" order. */}
+          {chatImageAttachment !== null ? (
+            <button
+              type="button"
+              className="jsx-chrome-btn"
+              aria-label={t`Send image to AI`}
+              title={t`Send image to AI`}
+              data-testid="jsx-component-send-image-to-ai"
+              onClick={() => requestChatImageAttachment(chatImageAttachment)}
+            >
+              <Sparkles size={16} aria-hidden="true" />
             </button>
           ) : null}
 
@@ -1218,7 +1275,7 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
               }
             }}
           >
-            <Trash2 size={12} aria-hidden="true" />
+            <Trash2 size={16} aria-hidden="true" />
           </button>
 
           {/* Settings — opens the controlled PropPanel popover hoisted above
@@ -1234,7 +1291,7 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
                 data-jsx-gear=""
                 aria-label={t`${settingsDescriptorLabel} properties`}
               >
-                <Settings2 size={12} aria-hidden="true" />
+                <Settings2 size={16} aria-hidden="true" />
               </button>
             </PopoverTrigger>
           )}

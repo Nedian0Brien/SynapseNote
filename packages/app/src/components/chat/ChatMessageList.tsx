@@ -23,6 +23,7 @@ import type {
   ChatActivity,
   ChatTimelineEntry,
   CliChatId,
+  CliChatImageAttachment,
   CliChatSelectionContext,
 } from './cli-chat-types';
 import { WebPreviewCards } from './WebPreviewCards';
@@ -239,6 +240,37 @@ function ChatActivityEntry({
       <ActivityLeadingIcon entry={entry} visualState={visualState} />
       <ActivityLabel entry={entry} visualState={visualState} />
     </div>
+  );
+}
+
+/**
+ * Images the user attached to a turn, shown above their bubble. The agent got
+ * the file path, but the reader needs to see WHICH picture they sent — a
+ * filename row would make a scrolled-back conversation unreadable.
+ */
+function SentImageAttachments({ images }: { images: readonly CliChatImageAttachment[] }) {
+  const { t } = useLingui();
+  return (
+    <ul data-chat-sent-images="true" className="flex flex-wrap justify-end gap-1.5">
+      {images.map((image) => {
+        const label = image.path.split('/').at(-1) ?? image.path;
+        return (
+          <li key={image.path}>
+            <img
+              data-chat-sent-image={image.path}
+              src={image.previewSrc}
+              alt={
+                image.alt === undefined || image.alt === ''
+                  ? t`Attached image: ${label}`
+                  : image.alt
+              }
+              title={image.path}
+              className="size-16 rounded-lg border border-border bg-muted object-cover"
+            />
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -494,16 +526,25 @@ export function ChatMessageList({
                 ) : null}
               </article>
             );
-            if (entry.role === 'user' && entry.selectionContext !== undefined) {
+            const sentImages = entry.role === 'user' ? (entry.imageAttachments ?? []) : [];
+            if (
+              entry.role === 'user' &&
+              (entry.selectionContext !== undefined || sentImages.length > 0)
+            ) {
               return (
                 <div
                   key={entry.id}
-                  data-chat-message-group="selection"
+                  data-chat-message-group={
+                    entry.selectionContext !== undefined ? 'selection' : 'images'
+                  }
                   className="flex w-full min-w-0 flex-col items-end gap-1.5"
                 >
-                  <div className="w-full min-w-0">
-                    <SentSelectionContext selection={entry.selectionContext} />
-                  </div>
+                  {entry.selectionContext !== undefined ? (
+                    <div className="w-full min-w-0">
+                      <SentSelectionContext selection={entry.selectionContext} />
+                    </div>
+                  ) : null}
+                  {sentImages.length > 0 ? <SentImageAttachments images={sentImages} /> : null}
                   {messageBubble}
                 </div>
               );

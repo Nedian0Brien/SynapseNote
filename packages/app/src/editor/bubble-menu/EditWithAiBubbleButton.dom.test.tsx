@@ -4,10 +4,10 @@
  *
  * Covers the embedded render gate, the cross-platform button, the macOS-only
  * keyboard shortcut, and the open+focus wiring: clicking the trigger (or, on
- * macOS, pressing Cmd+Shift+I) dispatches the shared `open-ask-ai-composer`
- * window event that `BottomComposer` subscribes to — the same path the ⌘L
- * shortcut runs — rather than opening any popover. The test observes dispatches
- * through the real `subscribeToOpenAskAiComposer` subscriber, so it asserts the
+ * macOS, pressing Cmd+Shift+I) dispatches the shared `open-chat-panel` window
+ * event the chat hosts subscribe to — the same path the ⌘L shortcut runs —
+ * rather than opening any popover. The test observes dispatches
+ * through the real `subscribeToOpenChatPanel` subscriber, so it asserts the
  * actual cross-component contract.
  *
  * The editor is a minimal `doc > paragraph > text` fake.
@@ -21,7 +21,7 @@ import userEvent from '@testing-library/user-event';
 import { Schema } from '@tiptap/pm/model';
 import type { Editor } from '@tiptap/react';
 import type { ReactNode } from 'react';
-import { subscribeToOpenAskAiComposer } from '@/components/ask-ai-composer-events';
+import { subscribeToOpenChatPanel } from '@/components/chat-panel-events';
 import { subscribeToActiveTerminalInput } from '@/components/handoff/terminal-input-events';
 import { setEditorDocName } from '../extensions/doc-context.ts';
 
@@ -87,7 +87,7 @@ function setUserAgent(userAgent: string): void {
 const PLAIN_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/120 Safari/537.36';
 const EMBEDDED_UA = `${PLAIN_UA} Cursor/1.2.3`;
 
-// Count open+focus requests reaching BottomComposer's subscriber path.
+// Count open+focus requests reaching the chat-panel subscriber path.
 let openRequests = 0;
 let unsubscribe: (() => void) | null = null;
 // Capture text routed to the active-terminal input channel (TerminalSessionsHost's
@@ -128,7 +128,7 @@ function dispatchEditWithAiShortcut(target: EventTarget): void {
 beforeEach(() => {
   openRequests = 0;
   terminalInputs = [];
-  unsubscribe = subscribeToOpenAskAiComposer(() => {
+  unsubscribe = subscribeToOpenChatPanel(() => {
     openRequests += 1;
   });
   unsubscribeTerminal = subscribeToActiveTerminalInput((text) => {

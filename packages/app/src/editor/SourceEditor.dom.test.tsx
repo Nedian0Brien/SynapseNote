@@ -6,7 +6,7 @@ import type { Config } from '@nedian0brien/synapsenote-core';
 import { act, cleanup, render, waitFor } from '@testing-library/react';
 import { Awareness } from 'y-protocols/awareness';
 import * as Y from 'yjs';
-import { subscribeToOpenAskAiComposer } from '@/components/ask-ai-composer-events';
+import { subscribeToOpenChatPanel } from '@/components/chat-panel-events';
 import { OUTLINE_NAV_EVENT, type OutlineNavDetail } from '@/components/OutlinePanel';
 import { ConfigContext, type ConfigContextValue } from '@/lib/config-context';
 import { evictCmEditor } from './editor-cache';
@@ -25,7 +25,7 @@ Object.defineProperty(window.Range.prototype, 'getBoundingClientRect', {
 
 const mountedDocNames = new Set<string>();
 
-// Count open+focus requests reaching the BottomComposer subscriber path.
+// Count open+focus requests reaching the chat-panel subscriber path.
 let composerOpenRequests = 0;
 let unsubscribeComposer: (() => void) | null = null;
 
@@ -108,7 +108,7 @@ function setPlatform(platform: string): void {
 describe('SourceEditor word-wrap preference wiring', () => {
   beforeEach(() => {
     composerOpenRequests = 0;
-    unsubscribeComposer = subscribeToOpenAskAiComposer(() => {
+    unsubscribeComposer = subscribeToOpenChatPanel(() => {
       composerOpenRequests += 1;
     });
     globalThis.fetch = mock(async (input: RequestInfo | URL) => {

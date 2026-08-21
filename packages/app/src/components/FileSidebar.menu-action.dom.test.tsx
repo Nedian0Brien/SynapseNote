@@ -65,7 +65,6 @@ const treeCalls = {
   collapseAll: mock(() => {}),
   expandAll: mock(() => {}),
   startCreating: mock((_kind: 'file' | 'folder', _parentDir: string) => {}),
-  startCreatingFromTemplate: mock((_parentDir: string) => {}),
 };
 const projectLocalPatch = mock((_patch: unknown) => ({ ok: true as const }));
 // Production `projectLocalBinding` keeps its identity across config-value
@@ -93,7 +92,6 @@ mock.module('@/components/FileTree', () => ({
         getFolderState: () => ({ folderCount: 2, expandedCount: 1 }),
         isCreationTargetCleared: () => false,
         startCreating: treeCalls.startCreating,
-        startCreatingFromTemplate: treeCalls.startCreatingFromTemplate,
         subscribe: () => () => {},
       };
       ref?.(handle);
@@ -290,7 +288,6 @@ describe('FileSidebar menu-action runtime routing', () => {
       treeCalls.collapseAll,
       treeCalls.expandAll,
       treeCalls.startCreating,
-      treeCalls.startCreatingFromTemplate,
     ]) {
       fn.mockClear();
     }
@@ -361,13 +358,11 @@ describe('FileSidebar menu-action runtime routing', () => {
 
     menuActionCallback?.('new-doc' as MenuAction);
     menuActionCallback?.('new-folder' as MenuAction);
-    menuActionCallback?.('new-from-template' as MenuAction);
     menuActionCallback?.('expand-all-tree' as MenuAction);
     menuActionCallback?.('collapse-all-tree' as MenuAction);
 
     expect(treeCalls.startCreating).toHaveBeenCalledWith('file', 'notes');
     expect(treeCalls.startCreating).toHaveBeenCalledWith('folder', 'notes');
-    expect(treeCalls.startCreatingFromTemplate).toHaveBeenCalledWith('notes');
     expect(treeCalls.expandAll).toHaveBeenCalledTimes(1);
     expect(treeCalls.collapseAll).toHaveBeenCalledTimes(1);
   });

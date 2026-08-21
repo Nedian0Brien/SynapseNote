@@ -111,12 +111,9 @@ const ComposerHistory = Extension.create({
  * the user deletes whole.
  *
  * The chip is its own context affordance: its LEADING `@`-icon doubles as the
- * remove control (Cursor pattern), so an inline `@`-mention reads as a removable
- * chip exactly like the host-level context chips (the top row is reserved for
- * NON-inline context — the auto-included current file — so an inline mention is
- * never duplicated up there). Styling mirrors `ComposerContextChips`'s chip:
- * leading icon-that-swaps-to-× + label, rounded muted pill, with NO trailing ×
- * and no reserved trailing slot, so the two read as one system.
+ * remove control (Cursor pattern), so an inline `@`-mention reads as a
+ * removable chip — leading icon-that-swaps-to-× + label, rounded muted pill,
+ * with NO trailing × and no reserved trailing slot.
  */
 const ComposerMention = Node.create({
   name: 'composerMention',
@@ -182,8 +179,7 @@ const ComposerMention = Node.create({
       remove.type = 'button';
       remove.className = 'composer-mention-icon';
       // Imperative Lingui (the node view runs outside React, so `useLingui` is
-      // unavailable). Reuse the host context-chip key so the two chip systems
-      // share one translation (see ComposerContextChips).
+      // unavailable).
       remove.setAttribute('aria-label', t`Remove ${fullLabel} from context`);
 
       const fileIcon = document.createElement('span');

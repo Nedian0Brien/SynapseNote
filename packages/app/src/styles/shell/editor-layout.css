@@ -30,32 +30,6 @@
   grid-column: content;
 }
 
-/* The floating Ask AI composer reserves scroll room at the bottom of the doc by
-   padding the editor CONTENT (.ProseMirror / .cm-content) — padding the scroll
-   container alone creates no overflow because the content's own min-height fills
-   it. The inset tracks the live composer via `--ask-composer-height` (card height
-   + gap, published by BottomComposer); the var is the single source of truth and
-   is absent when the composer is collapsed or hidden, so the padding collapses to
-   0 and the space is reclaimed — no class to fall out of sync. Scoped inside
-   `.editor-doc-scroll` so the floating composer's own ProseMirror (a sibling of
-   the scroll container) is never padded. */
-.editor-doc-scroll {
-  scroll-padding-bottom: var(--ask-composer-height, 0px);
-}
-.editor-doc-scroll :is(.ProseMirror, .cm-content) {
-  padding-bottom: var(--ask-composer-height, 0px);
-}
-
-/* Standalone Mermaid docs render OUTSIDE `.editor-doc-scroll` — a diagram +
-   source pane, not a ProseMirror/CM scroll surface — so the inset above never
-   reaches them. Reserve the composer height on the whole editor so a full-page
-   panzoom diagram (which does not scroll) and the source pane's last lines clear
-   the floating card. The var is 0 when the composer is collapsed/hidden, so the
-   space is reclaimed with no class to fall out of sync. */
-[data-mermaid-doc-editor] {
-  padding-bottom: var(--ask-composer-height, 0px);
-}
-
 /* Mermaid label flash — the "this text just changed too" cue when a WYSIWYG
    label edit propagates to linked occurrences (e.g. a renamed sequence
    participant appears in its top AND bottom actor boxes). Same accent family
@@ -93,42 +67,6 @@
        reduce-motion users still get the "this changed too" signal (a color
        fade, not vestibular motion). */
     animation: mermaid-label-flash 0.9s var(--ease-out-strong) 1;
-  }
-}
-
-/* Conflict-mode DiffView scroller: same composer inset so the last hunks (and
-   their inline Accept/Reject controls) can scroll clear of the floating
-   composer. The content-side padding rule lives next to the
-   `.source-editor .cm-content` restore rule AFTER the `.cm-editor .cm-content`
-   padding reset (equal specificity — source order decides; see the comment
-   there). The conflict footer itself needs no inset — the composer anchors
-   above it via `--conflict-footer-height` (see use-conflict-footer-height.ts). */
-.diff-view {
-  scroll-padding-bottom: var(--ask-composer-height, 0px);
-}
-
-/* Ease the inset + composer entrance so collapsing/expanding glides instead of a
-   hard jump cut. The per-frame scroll re-clamp in BottomComposer keeps the bottom
-   pinned while the padding transition plays. `bottom` is included because the
-   composer's anchor tracks `--conflict-footer-height`, which flips between 0 and
-   the conflict footer's height when conflict mode mounts/unmounts. Reduced-motion
-   users get the instant change. */
-@media (prefers-reduced-motion: no-preference) {
-  .editor-doc-scroll :is(.ProseMirror, .cm-content),
-  .diff-view .cm-content {
-    transition: padding-bottom 240ms cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  [data-testid="bottom-composer"] {
-    transition:
-      opacity 200ms ease,
-      transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
-      bottom 240ms cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  @starting-style {
-    [data-testid="bottom-composer"] {
-      opacity: 0;
-      transform: translateY(8px);
-    }
   }
 }
 

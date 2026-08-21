@@ -10,6 +10,7 @@ import {
   readFolderDocumentLastViewed,
 } from '@/components/folder-document-last-viewed';
 import { folderDocumentPreviewText } from '@/components/folder-document-preview';
+import { useFolderItemContextMenu } from '@/components/folder-item-context-menu';
 import type { FolderOverviewEntry } from '@/components/folder-overview-data';
 import type { FolderDateGroup } from '@/components/folder-overview-date-groups';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -75,6 +76,10 @@ function DocumentRow({ entry }: { entry: FileEntry }) {
   const { t } = useLingui();
   const rowRef = useRef<HTMLAnchorElement>(null);
   const preview = useFolderDocumentPreview(entry, rowRef);
+  const { onContextMenu, menu } = useFolderItemContextMenu(
+    { kind: 'file', docName: entry.path },
+    entry.title,
+  );
   const summary =
     preview.status === 'ready' ? folderDocumentPreviewText(preview.markdown, entry.title) : '';
 
@@ -83,6 +88,7 @@ function DocumentRow({ entry }: { entry: FileEntry }) {
       ref={rowRef}
       href={hashFromDocName(entry.path)}
       onClick={() => markFolderDocumentViewed(entry.path)}
+      onContextMenu={onContextMenu}
       className="group grid min-h-16 grid-cols-[minmax(0,1fr)_6.75rem_6.75rem] items-center border-border/55 border-b px-1.5 text-[11px] transition-colors hover:bg-background/42 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/35 lg:grid-cols-[minmax(0,1fr)_9rem_9rem_9rem]"
       aria-label={t`Open ${entry.title}`}
       data-folder-document-list-row={entry.path}
@@ -109,6 +115,7 @@ function DocumentRow({ entry }: { entry: FileEntry }) {
         {formatRelativeDate(entry.modified)}
       </span>
       <span className="truncate text-muted-foreground/68">—</span>
+      {menu}
     </a>
   );
 }

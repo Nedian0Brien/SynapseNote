@@ -2,16 +2,16 @@
  * DOM-tier tests for `deriveEditorClipOptions` — the floating-ui clipping
  * config that keeps the selection bubble menu inside the editor's visible
  * content region (scroll container minus the toolbar band and the live
- * bottom-composer / conflict-footer overlays).
+ * conflict-footer overlay).
  *
  * DOM tier because the derivable resolves the `.editor-doc-scroll` ancestor
  * via `closest()` on a rendered tree and reads the overlay-height CSS vars
  * off the document root's inline style — both real-DOM behaviors.
  *
  * The load-bearing property is liveness: the options function is re-invoked
- * per `computePosition` pass and must reflect the overlay vars *at that
- * moment* (the composer card grows with its draft and collapses to nothing),
- * not a snapshot from when the menu mounted.
+ * per `computePosition` pass and must reflect the overlay var *at that
+ * moment* (the conflict footer mounts and unmounts with conflict mode), not a
+ * snapshot from when the menu mounted.
  *
  * Invocation: `bun run test:dom` from `packages/app/`.
  */
@@ -37,7 +37,6 @@ function renderEditorInScroller(): { editor: Editor; scroller: HTMLElement } {
 
 afterEach(() => {
   cleanup();
-  document.documentElement.style.removeProperty('--ask-composer-height');
   document.documentElement.style.removeProperty('--conflict-footer-height');
 });
 
@@ -49,38 +48,25 @@ describe('deriveEditorClipOptions', () => {
     expect(options.padding).toEqual({ top: TOOLBAR_HEIGHT, bottom: 0 });
   });
 
-  test('bottom inset tracks the published composer height', () => {
-    const { editor } = renderEditorInScroller();
-    document.documentElement.style.setProperty('--ask-composer-height', '236px');
-    expect(deriveEditorClipOptions(editor)().padding.bottom).toBe(236);
-  });
-
-  test('conflict-footer overlay alone sets the bottom inset', () => {
+  test('bottom inset tracks the published conflict-footer height', () => {
     const { editor } = renderEditorInScroller();
     document.documentElement.style.setProperty('--conflict-footer-height', '48px');
     expect(deriveEditorClipOptions(editor)().padding.bottom).toBe(48);
   });
 
-  test('composer and conflict-footer overlays stack into one bottom inset', () => {
-    const { editor } = renderEditorInScroller();
-    document.documentElement.style.setProperty('--ask-composer-height', '236px');
-    document.documentElement.style.setProperty('--conflict-footer-height', '48px');
-    expect(deriveEditorClipOptions(editor)().padding.bottom).toBe(284);
-  });
-
-  test('re-reads overlay heights on every invocation', () => {
+  test('re-reads the overlay height on every invocation', () => {
     const { editor } = renderEditorInScroller();
     const derive = deriveEditorClipOptions(editor);
     expect(derive().padding.bottom).toBe(0);
-    document.documentElement.style.setProperty('--ask-composer-height', '180px');
+    document.documentElement.style.setProperty('--conflict-footer-height', '180px');
     expect(derive().padding.bottom).toBe(180);
-    document.documentElement.style.removeProperty('--ask-composer-height');
+    document.documentElement.style.removeProperty('--conflict-footer-height');
     expect(derive().padding.bottom).toBe(0);
   });
 
   test('malformed overlay value reads as no inset', () => {
     const { editor } = renderEditorInScroller();
-    document.documentElement.style.setProperty('--ask-composer-height', 'auto');
+    document.documentElement.style.setProperty('--conflict-footer-height', 'auto');
     expect(deriveEditorClipOptions(editor)().padding.bottom).toBe(0);
   });
 

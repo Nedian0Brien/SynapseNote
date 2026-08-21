@@ -3,7 +3,12 @@ import type { OkDesktopBridge } from '@/lib/desktop-bridge-types';
 import type { TerminalLaunchIntent } from '../EditorPane';
 import { TerminalGate } from '../TerminalGate';
 import { CliChatPanel } from './CliChatPanel';
-import type { CliChatDocumentContext, CliChatId, CliChatSelectionContext } from './cli-chat-types';
+import type {
+  CliChatDocumentContext,
+  CliChatId,
+  CliChatImageAttachment,
+  CliChatSelectionContext,
+} from './cli-chat-types';
 
 export interface CliChatHeaderSession {
   readonly id: string;
@@ -23,6 +28,8 @@ interface CliChatSessionProps {
   readonly onClose?: () => void;
   readonly documentContext?: CliChatDocumentContext | null;
   readonly selectionContext?: CliChatSelectionContext | null;
+  readonly imageAttachments?: readonly CliChatImageAttachment[];
+  readonly onImageAttachmentsChange?: (next: readonly CliChatImageAttachment[]) => void;
   readonly onNativeSessionId?: (sessionId: string) => void;
   readonly providerOptions?: readonly CliChatId[];
   readonly onProviderChange?: (provider: CliChatId) => void;
@@ -38,6 +45,8 @@ export function CliChatSession({
   onClose,
   documentContext = null,
   selectionContext = null,
+  imageAttachments = [],
+  onImageAttachmentsChange,
   onNativeSessionId,
   providerOptions = [],
   onProviderChange,
@@ -67,6 +76,8 @@ export function CliChatSession({
             context={launch.context}
             documentContext={documentContext}
             selectionContext={selectionContext}
+            imageAttachments={imageAttachments}
+            onImageAttachmentsChange={onImageAttachmentsChange}
             initialSessionId={launch.resumeSessionId}
             providerOptions={providerOptions}
             onProviderChange={onProviderChange}

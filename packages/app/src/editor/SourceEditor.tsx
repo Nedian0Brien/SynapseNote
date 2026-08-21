@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { yCollab } from 'y-codemirror.next';
 import type * as Y from 'yjs';
-import { emitOpenAskAiComposer } from '@/components/ask-ai-composer-events';
+import { emitOpenChatPanel } from '@/components/chat-panel-events';
 import { OUTLINE_NAV_EVENT, type OutlineNavDetail } from '@/components/OutlinePanel';
 import {
   createNestedCMExtensions,
@@ -295,7 +295,7 @@ export function SourceEditor({
                   event.preventDefault();
                   event.stopPropagation();
                   event.stopImmediatePropagation();
-                  emitOpenAskAiComposer();
+                  emitOpenChatPanel();
                   return true;
                 },
               }),

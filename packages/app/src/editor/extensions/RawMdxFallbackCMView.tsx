@@ -664,7 +664,7 @@ export function RawMdxFallbackView({ node, editor, getPos }: NodeViewProps) {
           aria-label={t`Delete block`}
           onClick={handleDelete}
         >
-          <Trash2 size={12} />
+          <Trash2 size={16} />
         </button>
       </div>
 

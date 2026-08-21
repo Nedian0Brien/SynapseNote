@@ -77,7 +77,6 @@ import {
 } from '@/components/database-navigation-entries';
 import { requestDocPanelTab } from '@/components/doc-panel-events';
 import { FileEntryIcon } from '@/components/file-entry-icon';
-import { NewItemDialog } from '@/components/NewItemDialog';
 import { usePageList } from '@/components/PageListContext';
 import { ReportBugDialog } from '@/components/ReportBugDialog';
 import { SeedDialog } from '@/components/SeedDialog';
@@ -95,6 +94,7 @@ import type { TagSummaryEntry } from '@/editor/extensions/tag-suggestion';
 import { useIsEmbedded } from '@/hooks/use-is-embedded';
 import { useSemanticSearchStatus } from '@/hooks/use-semantic-search-status';
 import { useWorktrees } from '@/hooks/use-worktrees';
+import { emitCreateTopLevelFile } from '@/lib/create-file-events';
 import { emitOpenTodayDailyNote } from '@/lib/daily-note-events';
 import { fetchDatabaseCatalog } from '@/lib/database-catalog-client';
 import { dispatchDatabaseSlashCommand } from '@/lib/database-events';
@@ -110,7 +110,6 @@ import type { CommandPaletteProps } from './command-palette/command-palette-type
 import {
   computeVisibleSearchResults,
   navigateToDocHash,
-  resolveCreateInitialDir,
   runWithToast,
 } from './command-palette/command-palette-utils';
 import { buildHandoffInput, useHandoffDispatch } from './handoff/useHandoffDispatch';
@@ -355,7 +354,6 @@ export function CommandPalette({
   const [databaseNavigationStatus, setDatabaseNavigationStatus] = useState<
     'idle' | 'loading' | 'success' | 'error'
   >('idle');
-  const [createDialogKind, setCreateDialogKind] = useState<'file' | 'folder' | null>(null);
   const [seedDialogOpen, setSeedDialogOpen] = useState(false);
   const [createProjectOpen, setCreateProjectOpen] = useState(false);
   const [reportBugOpen, setReportBugOpen] = useState(false);
@@ -388,7 +386,7 @@ export function CommandPalette({
   // cancels the prior request cleanly without clobbering newer state.
   const semanticAbortRef = useRef<AbortController | null>(null);
   const semanticTimerRef = useRef<number | null>(null);
-  const { activeDocName, activeTarget } = useDocumentNavigation();
+  const { activeDocName } = useDocumentNavigation();
   const {
     pages,
     pageTitles,
@@ -463,7 +461,6 @@ export function CommandPalette({
     bridge && worktreeModel
       ? worktreeModel.entries.filter((entry) => entry.branch !== null && !entry.isCurrent)
       : [];
-  const initialCreateDir = resolveCreateInitialDir(activeTarget, activeDocName);
   const fallbackSearchResults =
     trimmedDeferredQuery === ''
       ? []
@@ -1488,7 +1485,7 @@ export function CommandPalette({
                   value="new file create file"
                   onSelect={() => {
                     onOpenChange(false);
-                    setCreateDialogKind('file');
+                    emitCreateTopLevelFile();
                   }}
                   data-testid="command-palette-new-file"
                 >
@@ -1504,7 +1501,7 @@ export function CommandPalette({
                   value="new folder create folder"
                   onSelect={() => {
                     onOpenChange(false);
-                    setCreateDialogKind('folder');
+                    emitCreateTopLevelFile({ kind: 'folder' });
                   }}
                   data-testid="command-palette-new-folder"
                 >
@@ -1926,22 +1923,6 @@ export function CommandPalette({
         />
       </CommandDialog>
 
-      <NewItemDialog
-        open={createDialogKind === 'file'}
-        onOpenChange={(next) => {
-          if (!next) setCreateDialogKind(null);
-        }}
-        kind="file"
-        initialDir={initialCreateDir}
-      />
-      <NewItemDialog
-        open={createDialogKind === 'folder'}
-        onOpenChange={(next) => {
-          if (!next) setCreateDialogKind(null);
-        }}
-        kind="folder"
-        initialDir={initialCreateDir}
-      />
       <SeedDialog open={seedDialogOpen} onOpenChange={setSeedDialogOpen} />
       {/* Desktop-only — `showCreateProject` gates the launching command on
           `bridge !== null`, so the dialog only mounts when the bridge exists. */}

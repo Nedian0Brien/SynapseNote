@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
+import { subscribeToCreateTopLevelFile } from '@/lib/create-file-events';
 import { renderLinguiTemplate } from '@/test-utils/lingui-mock';
 
 const pages = new Set(['notes/alpha', 'notes/beta', 'notes/archive/old']);
@@ -82,11 +83,6 @@ mock.module('@/components/TemplatesCard', () => ({
 mock.module('@/components/FolderTimelineCard', () => ({
   FolderTimelineCard: () => <section>Activity panel</section>,
 }));
-mock.module('@/components/NewItemDialog', () => ({
-  NewItemDialog: ({ open }: { open: boolean }) =>
-    open ? <div role="dialog">New document dialog</div> : null,
-}));
-
 async function renderOverview(folderPath = 'notes') {
   const { FolderOverview } = await import('./FolderOverview');
   return render(<FolderOverview folderPath={folderPath} />);
@@ -175,11 +171,19 @@ describe('FolderOverview Craft gallery behavior', () => {
     expect(stored['notes/alpha']).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
-  test('opens the new-document dialog and preserves folder management in the details sheet', async () => {
+  test('requests a new document in this folder and preserves folder management in the details sheet', async () => {
     await renderOverview();
 
-    fireEvent.click(screen.getByRole('button', { name: 'New document' }));
-    expect(screen.getByRole('dialog', { name: '' }).textContent).toContain('New document dialog');
+    const requests: unknown[] = [];
+    const unsubscribe = subscribeToCreateTopLevelFile((request) => requests.push(request));
+    try {
+      fireEvent.click(screen.getByRole('button', { name: 'New document' }));
+    } finally {
+      unsubscribe();
+    }
+    // No dialog — the create lands in the tree, scoped to the folder on screen.
+    expect(requests).toEqual([{ initialDir: 'notes' }]);
+    expect(screen.queryByRole('dialog')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Folder details' }));
     await waitFor(() => expect(screen.getByText('Folder properties panel')).toBeTruthy());
