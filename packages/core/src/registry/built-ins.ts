@@ -417,6 +417,60 @@ const embedProps: PropDef[] = [
   },
 ];
 
+// bookmarkProps — link-preview card for an external URL. Five props: `src`
+// (required page URL) + the four metadata fields captured at paste time
+// (`title` / `description` / `image` / `favicon`).
+//
+// Why the metadata lives in props instead of being fetched at render:
+// a bookmark is a *snapshot* of what the page said when the author
+// filed it. Persisting the text keeps the card readable offline, in a
+// shared export, and on any surface with no metadata fetcher (web /
+// CLI builds) — and keeps document open cost at zero network requests
+// for the text. Only the two image props point at the remote host.
+//
+// None of the four optional props declare a `defaultValue`, so the
+// empty-string strip rule in `serialize-helpers.ts`
+// (`stringPropsOmittingEmpty`) keeps a metadata-less
+// `<Bookmark src="…" />` byte-stable across a round-trip.
+const bookmarkProps: PropDef[] = [
+  {
+    // No `defaultValue` — a slash-inserted `<Bookmark />` has no upload
+    // dialog to fill `src` for it, so the key-absence predicate must fire
+    // and surface the placeholder + chrome-bar gear nudge (precedent #46).
+    name: 'src',
+    type: 'string',
+    required: true,
+    description: 'Bookmarked page URL (must start with http:// or https://)',
+    autoFocus: true,
+  },
+  {
+    name: 'title',
+    type: 'string',
+    required: false,
+    description: 'Page title captured when the bookmark was created',
+  },
+  {
+    name: 'description',
+    type: 'string',
+    required: false,
+    description: 'Page summary captured when the bookmark was created',
+  },
+  {
+    name: 'image',
+    type: 'string',
+    required: false,
+    advanced: true,
+    description: 'Preview thumbnail URL (og:image) shown on the right of the card',
+  },
+  {
+    name: 'favicon',
+    type: 'string',
+    required: false,
+    advanced: true,
+    description: 'Site icon URL shown next to the hostname',
+  },
+];
+
 const databaseViewProps: PropDef[] = [
   {
     name: 'databaseId',
@@ -1291,6 +1345,31 @@ export const builtInComponents: JsxComponentMeta[] = [
     searchTerms: ['embed', 'iframe', 'website', 'page', 'inline', 'frame', 'preview'],
     placeholder: { label: 'Embed a URL' },
     serialize: (node, ctx) => emitMdxJsx('Embed', node, ctx, embedProps),
+  },
+  {
+    // Bookmark canonical — link-preview card for an external URL.
+    // Sibling to `Embed`: same input (a URL) but the opposite tradeoff —
+    // `Embed` renders the live page in an iframe (heavy, blockable by the
+    // remote site's frame-ancestors policy), `Bookmark` renders a static
+    // card built from the page's own Open Graph metadata (cheap, works
+    // for every site, readable offline). The paste-format menu offers
+    // both for the same pasted URL.
+    //
+    // Capitalized for the same reason as `Pdf` / `File` / `Embed` — no
+    // `<bookmark>` HTML element exists to match.
+    name: 'Bookmark',
+    surface: 'canonical',
+    hasChildren: false,
+    isSelfClosing: true,
+    props: bookmarkProps,
+    icon: 'Bookmark',
+    category: 'media',
+    displayName: 'Bookmark',
+    description:
+      'Link-preview card — title, summary, site icon, and thumbnail captured from the page. Lighter alternative to `<Embed>` for links that only need to be *referenced*, not rendered.',
+    searchTerms: ['bookmark', 'link', 'preview', 'card', 'url', 'website', 'unfurl'],
+    placeholder: { label: 'Add a bookmark URL' },
+    serialize: (node, ctx) => emitMdxJsx('Bookmark', node, ctx, bookmarkProps),
   },
   {
     name: 'DatabaseView',

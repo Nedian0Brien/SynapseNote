@@ -115,6 +115,26 @@ const PREVIEW_CONFIG: Record<string, PreviewConfig> = {
       </div>
     ),
   },
+  Bookmark: {
+    description: msg`Save a link as a preview card — title, summary, site icon, and thumbnail.`,
+    // Hand-built card mockup rather than a live `<Bookmark>`: a real one
+    // renders whatever metadata its props carry, and a preview with empty
+    // props would show the hostname fallback — which teaches the wrong
+    // thing about what the block is for.
+    render: () => (
+      <div className="flex h-full w-full overflow-hidden rounded-md border border-border bg-background">
+        <div className="flex flex-1 flex-col justify-center gap-1.5 px-2.5 py-2">
+          <span className="h-1.5 w-4/5 rounded-sm bg-muted-foreground/40" />
+          <span className="h-1.5 w-full rounded-sm bg-muted-foreground/20" />
+          <span className="mt-0.5 flex items-center gap-1">
+            <span className="size-2 rounded-full bg-muted-foreground/30" />
+            <span className="h-1.5 w-1/2 rounded-sm bg-muted-foreground/20" />
+          </span>
+        </div>
+        <div className="w-12 shrink-0 bg-muted-foreground/15" />
+      </div>
+    ),
+  },
   Pdf: {
     description: msg`Multi-page PDF viewer with toolbar controls (thumbnails, page nav, zoom).`,
     // Hand-built viewer mockup: toolbar (thumbnail toggle / page nav /

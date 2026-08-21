@@ -1,0 +1,152 @@
+/*
+ * Bookmark card — link-preview surface for the `Bookmark` canonical
+ * (`src/editor/components/Bookmark.tsx`).
+ *
+ * Layout: a two-column flex row inside a bordered card. The text column
+ * flexes; the thumbnail is a fixed-width block pinned right. When no
+ * thumbnail is present the text simply spans the full card — no
+ * placeholder box, no reserved gap.
+ *
+ * Height: a card WITH a thumbnail commits to `--ok-bookmark-height`,
+ * because the image loads asynchronously from a remote host and an
+ * uncommitted box would reflow mid-read (and, in a collaborative doc,
+ * shift every connected cursor below it). A text-only card has nothing
+ * pending, so it takes its natural height instead of padding itself out
+ * to an image-shaped rectangle that never arrives.
+ *
+ * Selection: like the File row, the wrapper-level halo is suppressed and
+ * the card paints its own selected state — a bordered card inside a
+ * second selection rectangle reads as a double border.
+ */
+
+.ProseMirror a.ok-bookmark {
+  --ok-bookmark-height: 7rem;
+
+  /* Container for the narrow-column rule at the bottom of this file: the
+   * card's own width decides whether the thumbnail fits, not the
+   * viewport's (split view / narrow panes have a full-width viewport). */
+  container-type: inline-size;
+  display: flex;
+  width: 100%;
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background-color: var(--card, var(--background));
+  color: var(--foreground);
+  text-decoration: none;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.ProseMirror a.ok-bookmark:hover {
+  border-color: var(--ring, var(--border));
+  background-color: var(--muted);
+}
+
+.ProseMirror a.ok-bookmark:focus-visible {
+  outline: 2px solid var(--ring, currentColor);
+  outline-offset: 2px;
+}
+
+/* Committed height only where an async image is coming — see the header. */
+.ProseMirror a.ok-bookmark[data-bookmark-has-thumb="true"] {
+  min-height: var(--ok-bookmark-height);
+}
+
+/* Non-http(s) `src` (an author typed something the card can't open) —
+ * the card still renders so the prop panel has a target, but the
+ * affordance drops to "not clickable". */
+.ProseMirror a.ok-bookmark[data-bookmark-openable="false"] {
+  cursor: default;
+}
+
+.ProseMirror .ok-bookmark-text {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.75rem 0.875rem;
+}
+
+.ProseMirror .ok-bookmark-title {
+  overflow: hidden;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ProseMirror .ok-bookmark-description {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.ProseMirror .ok-bookmark-footer {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.125rem;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+}
+
+.ProseMirror .ok-bookmark-favicon,
+.ProseMirror .ok-bookmark-favicon-fallback {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex: none;
+  object-fit: contain;
+}
+
+.ProseMirror .ok-bookmark-location {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ProseMirror .ok-bookmark-thumb {
+  display: block;
+  width: 10rem;
+  flex: none;
+  background-color: var(--muted);
+}
+
+.ProseMirror .ok-bookmark-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Narrow prose columns (split view, small windows): the thumbnail eats
+ * the text column before the title has room to breathe, so drop it. */
+@container (max-width: 24rem) {
+  .ProseMirror .ok-bookmark-thumb {
+    display: none;
+  }
+}
+
+/* Suppress the wrapper-level selection halo — the card paints its own
+ * selected state below (same rationale as the File row). */
+.ProseMirror .jsx-component-wrapper[data-component-type="bookmark"][data-selected="true"]::after {
+  --selection-halo-opacity: 0;
+}
+
+.ProseMirror
+  .jsx-component-wrapper[data-component-type="bookmark"][data-selected="true"]
+  a.ok-bookmark {
+  border-color: var(--ring, var(--border));
+  background-color: var(--muted);
+}

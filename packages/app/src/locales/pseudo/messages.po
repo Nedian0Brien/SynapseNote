@@ -391,7 +391,6 @@ msgstr ""
 msgid "{displayName} ({bin}) isn't installed or on your PATH."
 msgstr ""
 
-#: src/components/BottomComposer.tsx
 #: src/components/empty-state/CreatePromptComposer.tsx
 #: src/components/handoff/OpenInAgentContextSubmenu.tsx
 #: src/components/handoff/OpenInAgentEmptySpaceSubmenu.tsx
@@ -841,6 +840,7 @@ msgid "Activity"
 msgstr ""
 
 #: src/components/DatabasePropertiesDialog.tsx
+#: src/components/FileSidebar.tsx
 #: src/components/FrontmatterRow.tsx
 #: src/components/ObjectWidget.tsx
 #: src/components/PropertyPanel.tsx
@@ -1271,20 +1271,6 @@ msgstr ""
 msgid "Arrows"
 msgstr ""
 
-#: src/components/BottomComposer.tsx
-msgid "Ask"
-msgstr ""
-
-#. placeholder {0}: resolvedTarget.displayName
-#: src/components/BottomComposer.tsx
-msgid "Ask {0}"
-msgstr ""
-
-#. placeholder {0}: TERMINAL_CLIS[selectedCli].displayName
-#: src/components/BottomComposer.tsx
-msgid "Ask {0} CLI"
-msgstr ""
-
 #: src/components/chat/ChatMessageList.tsx
 msgid "Ask about your current document or project."
 msgstr ""
@@ -1311,7 +1297,6 @@ msgstr ""
 msgid "Ask agent about record"
 msgstr ""
 
-#: src/components/BottomComposer.tsx
 #: src/components/EditorFooter.tsx
 #: src/components/OnboardingCard.tsx
 #: src/editor/bubble-menu/EditWithAiBubbleButton.tsx
@@ -1360,6 +1345,10 @@ msgstr ""
 #. placeholder {0}: selection.documentTitle
 #: src/components/chat/ChatMessageList.tsx
 msgid "Attached context: {0}"
+msgstr ""
+
+#: src/components/chat/ChatMessageList.tsx
+msgid "Attached image: {label}"
 msgstr ""
 
 #: src/components/settings/SettingsDialogBody.tsx
@@ -1564,6 +1553,10 @@ msgstr ""
 #: src/components/MarkdownFormatToolbar.tsx
 #: src/lib/keyboard-shortcuts.ts
 msgid "Bold"
+msgstr ""
+
+#: src/editor/paste-format/PasteFormatMenu.tsx
+msgid "Bookmark"
 msgstr ""
 
 #: src/components/GraphSurface.tsx
@@ -1859,7 +1852,6 @@ msgstr ""
 msgid "Checkbox"
 msgstr ""
 
-#: src/components/BottomComposer.tsx
 #: src/components/handoff/EditWithAiPopover.tsx
 #: src/components/handoff/OpenInAgentContextSubmenu.tsx
 #: src/components/handoff/OpenInAgentMenu.tsx
@@ -1923,7 +1915,6 @@ msgstr ""
 msgid "Choose a name and type for the new property."
 msgstr ""
 
-#: src/components/BottomComposer.tsx
 #: src/components/empty-state/CreatePromptComposer.tsx
 msgid "Choose agent"
 msgstr ""
@@ -2207,10 +2198,6 @@ msgstr ""
 msgid "Collapse all"
 msgstr ""
 
-#: src/components/BottomComposer.tsx
-msgid "Collapse Ask AI"
-msgstr ""
-
 #: src/components/chat/ChatMessageList.tsx
 msgid "Collapse attached context"
 msgstr ""
@@ -2319,10 +2306,6 @@ msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Component boundary navigation"
-msgstr ""
-
-#: src/components/BottomComposer.tsx
-msgid "Condense my AGENTS.md file to less than 40k characters"
 msgstr ""
 
 #: src/components/DatabaseAdvancedFilterDialog.tsx
@@ -2926,10 +2909,6 @@ msgstr ""
 msgid "Couldn't open document"
 msgstr ""
 
-#: src/components/BottomComposer.tsx
-msgid "Couldn't open the terminal — please try again."
-msgstr ""
-
 #: src/components/NewWorktreeDialog.tsx
 msgid "Couldn't open the worktree. Try again."
 msgstr ""
@@ -3010,10 +2989,6 @@ msgstr ""
 msgid "Couldn't send the selection — please try again."
 msgstr ""
 
-#: src/components/BottomComposer.tsx
-msgid "Couldn't send your prompt — please try again."
-msgstr ""
-
 #. placeholder {0}: result.error
 #: src/components/skill-actions.tsx
 msgid "Couldn't uninstall skill: {0}"
@@ -3078,10 +3053,6 @@ msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Create a new list item from the current list item."
-msgstr ""
-
-#: src/components/BottomComposer.tsx
-msgid "Create a new spec file for my user story"
 msgstr ""
 
 #. placeholder {0}: selectedPack.name
@@ -3176,6 +3147,10 @@ msgstr ""
 
 #: src/components/OnboardingCard.tsx
 msgid "Create your first project"
+msgstr ""
+
+#: src/components/FolderDocumentList.tsx
+msgid "Created"
 msgstr ""
 
 #: src/components/FolderTimelineCard.tsx
@@ -4051,6 +4026,10 @@ msgstr ""
 msgid "Email address"
 msgstr ""
 
+#: src/editor/paste-format/PasteFormatMenu.tsx
+msgid "Embed"
+msgstr ""
+
 #: src/editor/slash-command/component-items.tsx
 msgid "Embed a video with native player controls."
 msgstr ""
@@ -4090,6 +4069,7 @@ msgid "Empty"
 msgstr ""
 
 #: src/components/FolderDocumentCard.tsx
+#: src/components/FolderDocumentList.tsx
 msgid "Empty note"
 msgstr ""
 
@@ -4192,6 +4172,10 @@ msgstr ""
 #: src/components/DatabaseWorkspaceReadState.tsx
 #: src/components/DatabaseWorkspaceStatusPanel.tsx
 msgid "Exact plan details"
+msgstr ""
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Excluded folder nodes"
 msgstr ""
 
 #: src/components/DatabaseAgentRunsDialog.tsx
@@ -4643,6 +4627,10 @@ msgstr ""
 msgid "Files sidebar"
 msgstr ""
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Files stay visible; only matching folder nodes and containment links hide."
+msgstr ""
+
 #. placeholder {0}: node.label
 #: src/components/GraphCardDeck.tsx
 msgid "Filter by {0}"
@@ -4765,6 +4753,10 @@ msgstr ""
 #: src/editor/extensions/WikiLinkPropPanel.tsx
 #: src/editor/link-path-suggestions.tsx
 msgid "Folder"
+msgstr ""
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Folder areas"
 msgstr ""
 
 #: src/components/FolderOverview.tsx
@@ -5179,10 +5171,6 @@ msgstr ""
 
 #: src/editor/find-replace/FindReplaceBar.tsx
 msgid "Hide replace"
-msgstr ""
-
-#: src/components/BottomComposer.tsx
-msgid "Hide selection preview"
 msgstr ""
 
 #: src/components/FileTree.tsx
@@ -5786,6 +5774,10 @@ msgstr ""
 msgid "Last sync"
 msgstr ""
 
+#: src/components/FolderDocumentList.tsx
+msgid "Last viewed"
+msgstr ""
+
 #: src/editor/components/PdfEmbed.tsx
 msgid "Layout"
 msgstr ""
@@ -6233,6 +6225,10 @@ msgstr ""
 msgid "Memos"
 msgstr ""
 
+#: src/editor/paste-format/PasteFormatMenu.tsx
+msgid "Mention"
+msgstr ""
+
 #: src/components/MermaidDocEditor.tsx
 msgid "Mermaid diagram"
 msgstr ""
@@ -6308,6 +6304,10 @@ msgstr ""
 
 #: src/components/chat/CliChatModelMenu.tsx
 msgid "Model settings: {modelLabel}, effort {effortLabel}, speed {speedLabel}"
+msgstr ""
+
+#: src/components/FolderDocumentList.tsx
+msgid "Modified"
 msgstr ""
 
 #: src/editor/extensions/WikiLinkPropPanel.tsx
@@ -6451,6 +6451,7 @@ msgstr ""
 #: src/components/AuthModal.tsx
 #: src/components/DatabaseTemplatesDialog.tsx
 #: src/components/DatabaseWorkspaceRecordActions.tsx
+#: src/components/FolderDocumentList.tsx
 #: src/components/NewSkillDialog.tsx
 #: src/components/SkillRenameDialog.tsx
 #: src/editor/slash-command/items.tsx
@@ -6869,7 +6870,6 @@ msgstr ""
 msgid "No Incoming"
 msgstr ""
 
-#: src/components/BottomComposer.tsx
 #: src/components/handoff/EditWithAiPopover.tsx
 #: src/components/handoff/OpenInAgentContextSubmenu.tsx
 #: src/components/handoff/OpenInAgentMenu.tsx
@@ -7270,6 +7270,10 @@ msgstr ""
 msgid "Onboarding task queued"
 msgstr ""
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "One folder path per line"
+msgstr ""
+
 #. Next step for a Cursor project MCP row — Cursor leaves project servers disabled
 #: src/components/settings/ProjectAiToolsSection.tsx
 msgid "One more step: enable it in Cursor → Settings → Tools & MCP (Cursor leaves project servers off until you turn them on)."
@@ -7317,6 +7321,7 @@ msgstr ""
 #. placeholder {0}: node.label
 #: src/components/chat/WebPreviewCards.tsx
 #: src/components/FolderDocumentCard.tsx
+#: src/components/FolderDocumentList.tsx
 #: src/components/GraphCardDeck.tsx
 msgid "Open {0}"
 msgstr ""
@@ -7401,10 +7406,6 @@ msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Open and focus the Ask AI composer for the current editor selection."
-msgstr ""
-
-#: src/lib/keyboard-shortcuts.ts
-msgid "Open and focus the bottom Ask AI prompt composer."
 msgstr ""
 
 #: src/components/ChatSidebarSection.tsx
@@ -7590,6 +7591,10 @@ msgstr ""
 
 #: src/components/DatabaseCreationDialog.tsx
 msgid "Open the agent handoff from the workspace to continue."
+msgstr ""
+
+#: src/lib/keyboard-shortcuts.ts
+msgid "Open the Chat panel and focus its message box."
 msgstr ""
 
 #: src/components/GraphSurface.tsx
@@ -7876,6 +7881,18 @@ msgstr ""
 
 #: src/editor/extensions/RawMdxFallbackCMView.tsx
 msgid "Parse failed"
+msgstr ""
+
+#: src/components/FolderDocumentList.tsx
+msgid "Past 30 days"
+msgstr ""
+
+#: src/components/FolderDocumentList.tsx
+msgid "Past 7 days"
+msgstr ""
+
+#: src/editor/paste-format/PasteFormatMenu.tsx
+msgid "Paste as"
 msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts
@@ -8701,10 +8718,6 @@ msgstr ""
 msgid "Remove {keyName}"
 msgstr ""
 
-#: src/components/ComposerContextChips.tsx
-msgid "Remove {label} from context"
-msgstr ""
-
 #: src/components/settings/OkignoreSection.tsx
 msgid "Remove {patternText}"
 msgstr ""
@@ -8715,6 +8728,10 @@ msgstr ""
 
 #: src/components/ui/tag-pill-input.tsx
 msgid "Remove {tag}"
+msgstr ""
+
+#: src/components/chat/CliChatPanel.tsx
+msgid "Remove attached image {label}"
 msgstr ""
 
 #: src/components/MemoPanel.tsx
@@ -8760,10 +8777,6 @@ msgstr ""
 
 #: src/components/chat/CliChatPanel.tsx
 msgid "Remove selected lines"
-msgstr ""
-
-#: src/components/BottomComposer.tsx
-msgid "Remove selection"
 msgstr ""
 
 #: src/components/CreateProjectDialog.tsx
@@ -8964,10 +8977,6 @@ msgstr ""
 
 #: src/components/handoff/OpenInAgentMenuItem.tsx
 msgid "Requires {brand}."
-msgstr ""
-
-#: src/components/BottomComposer.tsx
-msgid "Research the extinction of flightless birds"
 msgstr ""
 
 #: src/components/TemplateForm.tsx
@@ -9344,6 +9353,10 @@ msgstr ""
 #: src/editor/extensions/InternalLinkPropPanel.tsx
 #: src/editor/extensions/WikiLinkPropPanel.tsx
 msgid "Save"
+msgstr ""
+
+#: src/editor/slash-command/component-items.tsx
+msgid "Save a link as a preview card — title, summary, site icon, and thumbnail."
 msgstr ""
 
 #: src/components/DatabasePageAppearanceDialog.tsx
@@ -9749,6 +9762,10 @@ msgstr ""
 msgid "Send"
 msgstr ""
 
+#: src/editor/extensions/JsxComponentView.tsx
+msgid "Send image to AI"
+msgstr ""
+
 #: src/components/ReportBugDialogBody.tsx
 msgid "Send report"
 msgstr ""
@@ -10039,10 +10056,6 @@ msgstr ""
 
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "Show retrieval details"
-msgstr ""
-
-#: src/components/BottomComposer.tsx
-msgid "Show selection preview"
 msgstr ""
 
 #: src/components/MermaidFileViewer.tsx
@@ -10430,10 +10443,6 @@ msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Suggestion menu open"
-msgstr ""
-
-#: src/components/BottomComposer.tsx
-msgid "Summarize everything I changed this week"
 msgstr ""
 
 #: src/components/ShareBranchSwitchDialog.tsx
@@ -11448,6 +11457,10 @@ msgstr ""
 msgid "Uncreated pages"
 msgstr ""
 
+#: src/components/FolderDocumentList.tsx
+msgid "Undated"
+msgstr ""
+
 #: src/lib/keyboard-shortcuts.ts
 msgid "Underline"
 msgstr ""
@@ -11706,6 +11719,10 @@ msgstr ""
 
 #: src/components/TimelinePanel.tsx
 msgid "Upstream sync"
+msgstr ""
+
+#: src/editor/paste-format/PasteFormatMenu.tsx
+msgid "URL"
 msgstr ""
 
 #: src/components/NavigatorApp.tsx

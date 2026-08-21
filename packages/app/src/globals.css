@@ -30,6 +30,7 @@
 @import "./styles/components/video.css";
 @import "./styles/components/pdf.css";
 @import "./styles/components/file.css";
+@import "./styles/components/bookmark.css";
 @import "./styles/components/code-editors.css";
 @import "./styles/components/tabs-accordion.css";
 @import "./styles/components/database.css";

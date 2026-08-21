@@ -50,6 +50,7 @@ describe('getComponentItems (slash menu)', () => {
       [
         'Accordion',
         'Audio',
+        'Bookmark',
         'Callout',
         'New database',
         'Embed',
@@ -336,11 +337,11 @@ describe('agent-surface ↔ slash-menu filter parity', () => {
     expect(divergence).toEqual(new Set(SLASH_HIDDEN_CANONICALS));
   });
 
-  test('intersection covers every canonical NOT in either curation set (11 names today)', () => {
+  test('intersection covers every canonical NOT in either curation set (12 names today)', () => {
     const agent = agentCanonicalSet();
     const slash = slashMenuCanonicalSet();
     const intersection = new Set([...agent].filter((name) => slash.has(name)));
-    expect(intersection.size).toBe(11);
+    expect(intersection.size).toBe(12);
   });
 
   test('agent surface excludes wildcard descriptor', () => {

@@ -134,6 +134,10 @@ export const URL_PROP_NAMES = new Set([
   // future descriptor inherits the filter.
   'url',
   'link',
+  // `Bookmark`'s two remote-image props. The card renders both through
+  // `<img src>`, so they need the same scheme filter as `src` / `poster`.
+  'image',
+  'favicon',
 ]);
 
 /**
