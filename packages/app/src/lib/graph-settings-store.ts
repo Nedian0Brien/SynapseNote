@@ -35,6 +35,8 @@ export interface GraphDisplaySettings {
   nodeSize: number;
   linkThickness: number;
   showArrows: boolean;
+  /** Draw tinted folder territories and their large map labels. */
+  showFolderAreas: boolean;
   /** Zoom scale below which labels are not drawn at all. 0 draws them at every zoom. */
   textFadeThreshold: number;
   /** Upper bound on simultaneously placed labels — the collision planner's budget. */
@@ -149,6 +151,7 @@ export function getDefaultGraphSettings(scope: GraphSettingsScope): GraphSetting
       // you rarely need, and at any density it is the difference between a
       // graph and a thicket.
       showArrows: false,
+      showFolderAreas: true,
       // 1.8 is the zoom scale the pre-settings build hardcoded.
       textFadeThreshold: 1.8,
       maxLabels: DEFAULT_MAX_LABELS[scope],
@@ -235,6 +238,7 @@ export function clampGraphSettings(value: unknown, scope: GraphSettingsScope): G
         defaults.display.linkThickness,
       ),
       showArrows: readBoolean(display.showArrows, defaults.display.showArrows),
+      showFolderAreas: readBoolean(display.showFolderAreas, defaults.display.showFolderAreas),
       textFadeThreshold: clampNumber(
         display.textFadeThreshold,
         GRAPH_SETTINGS_BOUNDS.textFadeThreshold,

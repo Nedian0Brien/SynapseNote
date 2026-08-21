@@ -113,6 +113,18 @@ describe('GraphSettingsPopover — display and forces', () => {
     expect(next.display.nodeSize).toBe(1);
   });
 
+  test('the folder areas switch hides only the territory layer setting', async () => {
+    const settings = getDefaultGraphSettings('docked');
+    settings.filters.showFolderNodes = true;
+    const { onSettingsChange } = await openPopover(settings);
+    await openSection('Display');
+    await userEvent.click(screen.getByRole('switch', { name: 'Folder areas' }));
+
+    const next = lastCall(onSettingsChange);
+    expect(next.display.showFolderAreas).toBe(false);
+    expect(next.filters.showFolderNodes).toBe(true);
+  });
+
   test('a force slider emits a stepped value', async () => {
     const { onSettingsChange } = await openPopover();
     await openSection('Forces');
@@ -231,6 +243,7 @@ describe('GraphSettingsPopover — restore defaults', () => {
         nodeSize: 2,
         linkThickness: 3,
         showArrows: false,
+        showFolderAreas: false,
         textFadeThreshold: 0,
         maxLabels: 50,
       },

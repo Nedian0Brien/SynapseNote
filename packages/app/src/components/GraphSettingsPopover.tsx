@@ -350,6 +350,11 @@ export function GraphSettingsPopover({
             checked={settings.display.showArrows}
             onCheckedChange={(showArrows) => patchDisplay({ showArrows })}
           />
+          <SettingSwitch
+            label={t`Folder areas`}
+            checked={settings.display.showFolderAreas}
+            onCheckedChange={(showFolderAreas) => patchDisplay({ showFolderAreas })}
+          />
         </SettingsSection>
 
         <SettingsSection title={t`Forces`}>

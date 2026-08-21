@@ -33,6 +33,7 @@ describe('getDefaultGraphSettings', () => {
     const docked = getDefaultGraphSettings('docked');
     expect(docked.display.textFadeThreshold).toBe(1.8);
     expect(docked.filters.showExternalNodes).toBe(false);
+    expect(docked.display.showFolderAreas).toBe(true);
     expect(docked.forces).toEqual(GRAPH_FORCE_DEFAULTS);
     expect(docked.forces).toEqual({
       centerStrength: 0.1,
@@ -82,6 +83,7 @@ describe('clampGraphSettings', () => {
     expect(result.display.nodeSize).toBe(2);
     // Untouched siblings survive as defaults rather than becoming undefined.
     expect(result.display.linkThickness).toBe(1);
+    expect(result.display.showFolderAreas).toBe(true);
     expect(result.filters.showOrphans).toBe(true);
     expect(result.forces).toEqual(GRAPH_FORCE_DEFAULTS);
   });

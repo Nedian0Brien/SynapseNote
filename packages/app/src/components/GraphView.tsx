@@ -923,9 +923,10 @@ export function GraphView({
   // the simulation, so they are recomputed once per frame in the pre-render
   // hook and reused by the post-render hook that writes the region names —
   // walking every member twice a frame is the one thing here that would cost.
-  const areas = settings.filters.showFolderNodes
-    ? buildGraphAreas(displayData.nodes, displayData.links)
-    : EMPTY_GRAPH_AREAS;
+  const areas =
+    settings.filters.showFolderNodes && settings.display.showFolderAreas
+      ? buildGraphAreas(displayData.nodes, displayData.links)
+      : EMPTY_GRAPH_AREAS;
   const areaBoundsRef = useRef<Map<string, GraphAreaBounds>>(new Map());
   // The deepest region each node sits in, which is the one whose on-screen size
   // decides when that node's name is revealed. An area's `memberIds` already
