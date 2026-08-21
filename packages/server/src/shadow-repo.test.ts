@@ -14,6 +14,7 @@ import {
   buildWipTree,
   commitUpstreamImport,
   commitWip,
+  commitWipFromTree,
   commitWipTransaction,
   DEFAULT_CHECKPOINT_RETENTION,
   GIT_UPSTREAM_WRITER,
@@ -184,6 +185,35 @@ describe('buildWipTree contentRoot pathspec', () => {
     const shadow = await initShadowRepo(projectRoot);
 
     expect(buildWipTree(shadow, 'content')).rejects.toThrow(/pathspec 'content'/);
+  });
+
+  test('scoped fan-out refreshes changed paths without scanning unrelated working-tree changes', async () => {
+    const projectRoot = resolve(tmpDir, 'project');
+    mkdirSync(projectRoot, { recursive: true });
+    writeFileSync(resolve(projectRoot, 'changed.md'), '# Changed v1\n');
+    writeFileSync(resolve(projectRoot, 'untouched.md'), '# Untouched v1\n');
+    const shadow = await initShadowRepo(projectRoot);
+    const writer: WriterIdentity = {
+      id: 'principal-scope-test',
+      name: 'Scope Test',
+      email: 'scope@example.com',
+    };
+
+    const baselineTree = await buildWipTree(shadow, '.');
+    await commitWipFromTree(shadow, writer, baselineTree, 'wip: baseline');
+
+    writeFileSync(resolve(projectRoot, 'changed.md'), '# Changed v2\n');
+    writeFileSync(resolve(projectRoot, 'untouched.md'), '# Untouched working tree only\n');
+    writeFileSync(resolve(projectRoot, 'unrelated.bin'), 'not part of this drain');
+
+    const scopedTree = await buildWipTree(shadow, '.', {
+      branch: 'main',
+      paths: ['changed.md', 'already-removed.md'],
+    });
+    const sg = shadowGit(shadow);
+    expect(await sg.raw('show', `${scopedTree}:changed.md`)).toBe('# Changed v2\n');
+    expect(await sg.raw('show', `${scopedTree}:untouched.md`)).toBe('# Untouched v1\n');
+    expect(Promise.resolve(sg.raw('show', `${scopedTree}:unrelated.bin`))).rejects.toThrow();
   });
 });
 

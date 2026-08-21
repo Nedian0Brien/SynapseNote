@@ -517,11 +517,26 @@ describe('FileSidebar runtime behavior', () => {
     expect(window.location.hash).toBe('#/__graph__');
   });
 
+  test('the toolbar dispatches the shared today daily-note action', async () => {
+    const { subscribeToOpenTodayDailyNote } = await import('@/lib/daily-note-events');
+    const onOpen = mock(() => {});
+    const unsubscribe = subscribeToOpenTodayDailyNote(onOpen);
+    await renderSidebar();
+
+    const button = screen.getByTestId('sidebar-open-daily-note');
+    expect(button.getAttribute('aria-label')).toBe("Open today's daily note");
+    fireEvent.click(button);
+
+    expect(onOpen).toHaveBeenCalledTimes(1);
+    unsubscribe();
+  });
+
   test('merges creation actions into one Add menu while keeping tree and graph controls direct', async () => {
     await renderSidebar();
     await waitFor(() => expect(treeListeners.size).toBe(1));
 
     expect(screen.getByTestId('sidebar-open-graph')).toBeTruthy();
+    expect(screen.getByTestId('sidebar-open-daily-note')).toBeTruthy();
     const projectHeader = screen.getByTestId('sidebar-project-header');
     expect(within(projectHeader).getByRole('button', { name: 'Tree view options' })).toBeTruthy();
     expect(

@@ -45,6 +45,8 @@ export function useInlineDatabaseReference({
       mode: nextMode,
     } as Record<string, unknown>;
     delete nextProps.create;
+    delete nextProps.creationId;
+    delete nextProps.creationName;
     if (sameView && localViewOverrides) nextProps.viewOverrides = localViewOverrides;
     else delete nextProps.viewOverrides;
     editor.view.dispatch(
@@ -59,6 +61,35 @@ export function useInlineDatabaseReference({
     setInlineSearchOpen(false);
     setInlineSearchQuery('');
     setReplacementPickerOpen(false);
+  };
+
+  const persistCreationIntent = (intent: { id: string; name: string }) => {
+    const editor = host?.editor;
+    const pos = host?.getPos();
+    if (!editor || typeof pos !== 'number') return;
+    const node = editor.state.doc.nodeAt(pos);
+    if (!node || node.type.name !== 'jsxComponent') return;
+    const currentProps = (node.attrs.props as Record<string, unknown> | undefined) ?? {};
+    if (
+      currentProps.create === 'blank' &&
+      currentProps.creationId === intent.id &&
+      currentProps.creationName === intent.name &&
+      currentProps.mode === 'inline'
+    ) {
+      return;
+    }
+    editor.view.dispatch(
+      editor.state.tr.setNodeMarkup(pos, undefined, {
+        ...node.attrs,
+        props: {
+          ...currentProps,
+          create: 'blank',
+          creationId: intent.id,
+          creationName: intent.name,
+          mode: 'inline',
+        },
+      }),
+    );
   };
 
   const persistLinkedViewOverrides = (next: DatabaseLinkedViewSettings | undefined) => {
@@ -118,5 +149,11 @@ export function useInlineDatabaseReference({
     editor.view.focus();
   };
 
-  return { applyReference, persistLinkedViewOverrides, setInlineMode, removeLinkedView };
+  return {
+    applyReference,
+    persistCreationIntent,
+    persistLinkedViewOverrides,
+    setInlineMode,
+    removeLinkedView,
+  };
 }

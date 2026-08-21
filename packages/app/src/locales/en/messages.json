@@ -218,6 +218,7 @@
     "3FMvls": ["A short line shown under the title in the template list."],
     "3Fcb0I": ["Open graph"],
     "3HNlwb": ["Hello, world!"],
+    "3HiDGG": ["Past 30 days"],
     "3Ib6FN": ["Move down"],
     "3Ijjy1": ["Couldn't load this skill's files."],
     "3IseAk": ["Install an AI agent to create with AI"],
@@ -715,6 +716,7 @@
     "BAH4qX": ["Selected graph item"],
     "BBqGS9": ["Desktop"],
     "BD0XSC": ["Failed to load project templates"],
+    "BDewYo": ["Daily note created"],
     "BE6eVB": [["label"], " on page ", ["0"]],
     "BEBXTV": ["Open the folder overview."],
     "BEkF-P": [
@@ -946,6 +948,7 @@
     "EqzcIG": ["Building <0>synapsenote.skill</0> and opening the Claude Desktop App"],
     "ErRi6L": ["Template \"", ["label"], "\" deleted"],
     "Es-eZU": ["Remove from recent projects"],
+    "EtvzP2": ["Past 7 days"],
     "Ev2r9A": ["No results"],
     "EvPX7f": ["Opens a folder picker to choose where to clone the repository."],
     "Evq3lu": ["Orphan mode"],
@@ -1151,6 +1154,7 @@
       "SynapseNote stores its configuration and internal files inside a newly created <0>.ok</0> directory in your project root folder."
     ],
     "IyLOqi": ["No memos have been created from this PDF yet."],
+    "Iys_O-": ["One folder path per line"],
     "J2MgzQ": ["Undo all edits on ", ["docName"]],
     "J2Mv98": ["Name (e.g. ", ["login"], ")"],
     "J2eKUI": ["File"],
@@ -1446,6 +1450,7 @@
     "OFBmkg": [
       "Search files, commands, projects, and AI handoff actions. With text selected in the visual editor, this chord adds a link instead."
     ],
+    "OFeOfY": ["Files stay visible; only matching folder nodes and containment links hide."],
     "OFxXeB": ["Include page body"],
     "OJTOUj": ["Requires ", ["brand"], "."],
     "OJeiSH": ["Failed to add property"],
@@ -1553,6 +1558,7 @@
     "PzUvDM": ["Bug report ", ["reference"]],
     "Q2fWEn": ["Export JSON"],
     "Q3ziUd": ["Ask about your current document or project."],
+    "Q5U119": ["Undated"],
     "Q5fqMz": ["Connection error — try again"],
     "Q6hhn8": ["Preferences"],
     "Q7W-mC": ["Same folder as current file"],
@@ -1759,6 +1765,7 @@
       "Adds telemetry, server state, and runtime info when available. Document names are anonymized."
     ],
     "UMrOy2": ["Skill \"", ["trimmedName"], "\" created"],
+    "UOgIR2": ["Last viewed"],
     "UPjaXD": ["Couldn't duplicate \"", ["0"], "\": ", ["1"]],
     "UQ4ELN": ["Model settings: ", ["modelLabel"], ", effort ", ["effortLabel"]],
     "UQAp48": ["Search templates"],
@@ -2158,6 +2165,7 @@
     "aalx4E": ["Editing broken MDX source: ", ["reason"]],
     "abiHje": ["Delete selected items"],
     "adsMWO": ["Resolving deltas"],
+    "ai9jdp": ["Folder areas"],
     "aiArms": ["We couldn't clone this repository."],
     "aihaPC": ["Link distance"],
     "ajCbk5": ["Move selected record to"],
@@ -2233,6 +2241,7 @@
     "c-sLRX": ["Global, unless the find bar is open"],
     "c0acMS": ["Advanced filters"],
     "c1LZZH": ["Link copied."],
+    "c5Reoj": ["Excluded folder nodes"],
     "c5f7sm": ["Code block language: ", ["currentLabel"], ". Click to change."],
     "c5rF4v": ["What is this knowledge base for?"],
     "c81uTY": ["No Context Packs yet"],
@@ -2274,6 +2283,7 @@
     "ct2kv5": ["No headings in ", ["pageTarget"]],
     "cuA8QW": ["Organize specs"],
     "cvYqKz": ["Resume run"],
+    "d-F6q9": ["Created"],
     "d1JjXo": [
       "Your local copy of branch <0>",
       ["branch"],
@@ -2843,6 +2853,7 @@
     "mmpzAq": ["Wrap long lines in the markdown source editor."],
     "mo22UP": ["Toggle inline code formatting."],
     "moD9yl": ["Recover this run"],
+    "mpK4v1": ["Could not open today's daily note"],
     "mq5fZR": [["0"], " more risk rows are included in the exact plan."],
     "mqSwZH": [
       "<0>Mirror anchor not found.</0> No <1>",
@@ -2959,6 +2970,7 @@
     "oSOdyW": ["This snapshot is paginated; not all matching records are shown."],
     "oTN9q0": ["Open Agent Runs"],
     "oXKEsy": ["Delete an adjacent wiki-link or tag chip."],
+    "oXoFfZ": ["Open today's daily note"],
     "oYepHb": [
       "The terminal is turned off for this project. Turn it back on to run commands here."
     ],
@@ -3258,6 +3270,7 @@
     "tfi40B": ["Failed to create page"],
     "tgNl4E": ["Searching related records"],
     "tgWLFJ": ["Redo last change"],
+    "tgWuMB": ["Modified"],
     "thjuYY": ["Offline write queue"],
     "thnPBX": ["Activate the next editor tab."],
     "ti6aF_": ["Ask ", ["0"], " CLI"],

@@ -7,7 +7,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -155,6 +155,24 @@ describe('POST /api/create-page', () => {
     expect(body.docName).toBe('nested/folder/my-page');
     expect(body.ok).toBeUndefined();
     expect(existsSync(join(dir, 'nested/folder/my-page.md'))).toBe(true);
+  });
+
+  test('uses an explicit template date for browser-local calendar workflows', async () => {
+    const dir = setupTmpDir();
+    mkdirSync(join(dir, 'daily', '.ok', 'templates'), { recursive: true });
+    writeFileSync(
+      join(dir, 'daily', '.ok', 'templates', 'daily.md'),
+      '---\ntemplate:\n  title: Daily\n---\n# {{date}}\n',
+    );
+
+    const result = await callCreatePage(dir, 'POST', {
+      path: 'daily/2026-08-21.md',
+      template: 'daily',
+      templateDate: '2026-08-21',
+    });
+
+    expect(result.status).toBe(200);
+    expect(readFileSync(join(dir, 'daily', '2026-08-21.md'), 'utf8')).toContain('# 2026-08-21');
   });
 
   test('updates the in-memory file index immediately when available', async () => {

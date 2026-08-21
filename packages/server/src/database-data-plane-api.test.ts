@@ -2906,7 +2906,26 @@ describe('database data plane HTTP handlers', () => {
       }),
     );
     expect(committed.status, committed.body).toBe(200);
-    const undoToken = (JSON.parse(committed.body) as { undoToken: string }).undoToken;
+    const committedBody = JSON.parse(committed.body) as { mutationId: string; undoToken: string };
+    const recovered = await call(
+      handlers.commitResult,
+      'POST',
+      '/api/databases/commit-result',
+      JSON.stringify({ idempotencyKey: 'api-database-delete-0001' }),
+    );
+    expect(recovered.status, recovered.body).toBe(200);
+    expect(JSON.parse(recovered.body)).toMatchObject({
+      status: 'committed',
+      result: { mutationId: committedBody.mutationId, idempotentReplay: true },
+    });
+    const missingReceipt = await call(
+      handlers.commitResult,
+      'POST',
+      '/api/databases/commit-result',
+      JSON.stringify({ idempotencyKey: 'api-database-delete-missing' }),
+    );
+    expect(JSON.parse(missingReceipt.body)).toEqual({ status: 'not_found' });
+    const undoToken = committedBody.undoToken;
     expect(store.getById('db_tasks')).toBeNull();
     expect(index.list('db_tasks')).toEqual([]);
     expect(existsSync(manifestPath)).toBe(false);

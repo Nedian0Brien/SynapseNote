@@ -12,6 +12,7 @@ import { Plural, Trans, useLingui } from '@lingui/react/macro';
 import { SHOW_INSTALL_SKILL, type WorktreeSelectorEntry } from '@nedian0brien/synapsenote-core';
 import {
   Bug,
+  CalendarDays,
   Database,
   Download,
   FilePlus2,
@@ -94,6 +95,7 @@ import type { TagSummaryEntry } from '@/editor/extensions/tag-suggestion';
 import { useIsEmbedded } from '@/hooks/use-is-embedded';
 import { useSemanticSearchStatus } from '@/hooks/use-semantic-search-status';
 import { useWorktrees } from '@/hooks/use-worktrees';
+import { emitOpenTodayDailyNote } from '@/lib/daily-note-events';
 import { fetchDatabaseCatalog } from '@/lib/database-catalog-client';
 import { dispatchDatabaseSlashCommand } from '@/lib/database-events';
 import type { RecentProjectEntry } from '@/lib/desktop-bridge-types';
@@ -867,6 +869,14 @@ export function CommandPalette({
     !showSearchPreparing;
   const showCreateFile =
     !inExclusiveMode && matchesCommandQuery(t`New file`, deferredQuery, ['create file']);
+  const showDailyNote =
+    !inExclusiveMode &&
+    !singleFile &&
+    matchesCommandQuery(t`Open today's daily note`, deferredQuery, [
+      'daily note',
+      'today',
+      'journal',
+    ]);
   const showCreateFolder =
     !inExclusiveMode && matchesCommandQuery(t`New folder`, deferredQuery, ['create folder']);
   const showNewDatabase =
@@ -1447,7 +1457,8 @@ export function CommandPalette({
             </CommandGroup>
           ) : null}
 
-          {showCreateFile ||
+          {showDailyNote ||
+          showCreateFile ||
           showCreateFolder ||
           showNewDatabase ||
           showGraphCommand ||
@@ -1457,6 +1468,21 @@ export function CommandPalette({
           showDatabases ||
           showDatabaseDiagnostics ? (
             <CommandGroup heading={t`Commands`}>
+              {showDailyNote ? (
+                <CommandItem
+                  value="open today's daily note today journal"
+                  onSelect={() => {
+                    onOpenChange(false);
+                    emitOpenTodayDailyNote();
+                  }}
+                  data-testid="command-palette-open-daily-note"
+                >
+                  <CalendarDays />
+                  <span>
+                    <Trans>Open today's daily note</Trans>
+                  </span>
+                </CommandItem>
+              ) : null}
               {showCreateFile ? (
                 <CommandItem
                   value="new file create file"

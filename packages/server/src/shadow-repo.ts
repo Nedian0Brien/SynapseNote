@@ -418,6 +418,18 @@ export interface CommitWipOptions {
   paths?: readonly string[];
 }
 
+export interface BuildWipTreeOptions {
+  /**
+   * Exact project-relative paths changed during this persistence drain.
+   * When a branch baseline exists, the tree is seeded from that baseline and
+   * only these paths are refreshed from disk. A cold branch falls back to the
+   * full content-root scan required to establish its first complete tree.
+   */
+  paths?: readonly string[];
+  /** Branch whose latest WIP tree supplies the scoped snapshot baseline. */
+  branch?: string;
+}
+
 function normalizedSnapshotPaths(paths: readonly string[]): readonly string[] {
   const unique = new Set<string>();
   for (const path of paths) {
@@ -877,19 +889,72 @@ function sweepOrphanedTmpIndexFiles(shadow: ShadowHandle): number {
   return deleted;
 }
 
-export async function buildWipTree(shadow: ShadowHandle, contentRoot: string): Promise<string> {
+export async function buildWipTree(
+  shadow: ShadowHandle,
+  contentRoot: string,
+  options?: BuildWipTreeOptions,
+): Promise<string> {
   const tmpIndex = resolve(shadow.gitDir, `index-wip-fanout-${randomUUID()}`);
   const sg = shadowGit(shadow);
   const gitPathspecs = shadowAddPathspecs(contentRoot);
+  const scopedPaths = options?.paths ? normalizedSnapshotPaths(options.paths) : null;
+  let baselineTreeSha: string | null = null;
 
   try {
-    await sg
-      .env({
-        GIT_DIR: shadow.gitDir,
-        GIT_WORK_TREE: shadow.workTree,
-        GIT_INDEX_FILE: tmpIndex,
-      })
-      .raw('add', '--all', '--', ...gitPathspecs);
+    if (scopedPaths !== null) {
+      const baselineHead = (
+        await sg.raw(
+          'for-each-ref',
+          '--sort=-committerdate',
+          '--format=%(objectname)',
+          `refs/wip/${options?.branch ?? 'main'}/`,
+        )
+      )
+        .split('\n')
+        .map((line) => line.trim())
+        .find(Boolean);
+      if (baselineHead) {
+        baselineTreeSha = (await sg.raw('rev-parse', `${baselineHead}^{tree}`)).trim();
+        await sg
+          .env({ GIT_DIR: shadow.gitDir, GIT_INDEX_FILE: tmpIndex })
+          .raw('read-tree', baselineTreeSha);
+      }
+    }
+
+    const git = sg.env({
+      GIT_DIR: shadow.gitDir,
+      GIT_WORK_TREE: shadow.workTree,
+      GIT_INDEX_FILE: tmpIndex,
+    });
+    if (scopedPaths !== null && baselineTreeSha !== null) {
+      if (scopedPaths.length > 0) {
+        const missingPaths = scopedPaths.filter(
+          (path) => !existsSync(resolve(shadow.workTree, path)),
+        );
+        const trackedMissingPaths = new Set(
+          missingPaths.length === 0
+            ? []
+            : (await git.raw('ls-files', '-z', '--', ...literalSnapshotPathspecs(missingPaths)))
+                .split('\0')
+                .filter(Boolean),
+        );
+        const stagedPathspecs = scopedPaths
+          .filter((path) => {
+            if (existsSync(resolve(shadow.workTree, path))) return true;
+            if (trackedMissingPaths.has(path)) return true;
+            const directoryPrefix = `${path.replace(/[\\/]+$/g, '')}/`;
+            return [...trackedMissingPaths].some((tracked) => tracked.startsWith(directoryPrefix));
+          })
+          .map((path) => `:(literal)${path}`);
+        if (stagedPathspecs.length > 0) {
+          await git.raw('add', '--all', '--', ...stagedPathspecs);
+        }
+      }
+    } else {
+      // A branch with no WIP baseline still needs one complete tree. This is
+      // the only persistence fan-out path that scans the full content root.
+      await git.raw('add', '--all', '--', ...gitPathspecs);
+    }
     return (
       await sg.env({ GIT_DIR: shadow.gitDir, GIT_INDEX_FILE: tmpIndex }).raw('write-tree')
     ).trim();

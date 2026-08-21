@@ -3019,12 +3019,23 @@ describe('DatabaseView', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create database' }));
     await waitFor(() =>
       expect(dispatched[0]?.props).toMatchObject({
+        create: 'blank',
+        creationName: 'Inline tasks',
+        mode: 'inline',
+      }),
+    );
+    expect(String(dispatched[0]?.props.creationId)).toMatch(/^creation_[a-f0-9]+$/);
+    await waitFor(() =>
+      expect(dispatched.at(-1)?.props).toMatchObject({
         databaseId: 'db_inline',
         sourceId: 'ds_inline',
         viewId: 'view_inline',
         mode: 'inline',
       }),
     );
+    expect(dispatched.at(-1)?.props.create).toBeUndefined();
+    expect(dispatched.at(-1)?.props.creationId).toBeUndefined();
+    expect(dispatched.at(-1)?.props.creationName).toBeUndefined();
     expect(screen.queryByTestId('inline-database-create-dialog')).toBeNull();
   });
 
@@ -3032,7 +3043,15 @@ describe('DatabaseView', () => {
     const dispatched: Array<Record<string, unknown>> = [];
     const node = {
       type: { name: 'jsxComponent' },
-      attrs: { componentName: 'DatabaseView', props: { create: 'blank', mode: 'inline' } },
+      attrs: {
+        componentName: 'DatabaseView',
+        props: {
+          create: 'blank',
+          creationId: 'creation_notion_inline',
+          creationName: 'Untitled database',
+          mode: 'inline',
+        },
+      },
     };
     const editor = {
       state: {
@@ -3141,7 +3160,12 @@ describe('DatabaseView', () => {
     render(
       <StrictMode>
         <JsxComponentHostProvider value={{ editor, getPos: () => 0, addChild: null }}>
-          <DatabaseView create="blank" mode="inline" />
+          <DatabaseView
+            create="blank"
+            creationId="creation_notion_inline"
+            creationName="Untitled database"
+            mode="inline"
+          />
         </JsxComponentHostProvider>
       </StrictMode>,
     );
@@ -3170,13 +3194,23 @@ describe('DatabaseView', () => {
         ?.key,
     ).toMatch(/^untitled_database_[a-z0-9_]+$/);
     expect(dispatched[0]?.props.create).toBeUndefined();
+    expect(dispatched[0]?.props.creationId).toBeUndefined();
+    expect(dispatched[0]?.props.creationName).toBeUndefined();
   });
 
   test('offers an in-place retry when Notion-style inline creation fails', async () => {
     const dispatched: Array<Record<string, unknown>> = [];
     const node = {
       type: { name: 'jsxComponent' },
-      attrs: { componentName: 'DatabaseView', props: { create: 'blank', mode: 'inline' } },
+      attrs: {
+        componentName: 'DatabaseView',
+        props: {
+          create: 'blank',
+          creationId: 'creation_notion_retry',
+          creationName: 'Untitled database',
+          mode: 'inline',
+        },
+      },
     };
     const editor = {
       state: {
@@ -3277,7 +3311,12 @@ describe('DatabaseView', () => {
     render(
       <StrictMode>
         <JsxComponentHostProvider value={{ editor, getPos: () => 0, addChild: null }}>
-          <DatabaseView create="blank" mode="inline" />
+          <DatabaseView
+            create="blank"
+            creationId="creation_notion_retry"
+            creationName="Untitled database"
+            mode="inline"
+          />
         </JsxComponentHostProvider>
       </StrictMode>,
     );

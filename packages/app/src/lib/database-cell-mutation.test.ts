@@ -1184,6 +1184,7 @@ describe('database cell mutation compiler', () => {
     const desired = createDatabaseRecordCopyDesiredState({
       database,
       source,
+      newRecordId: 'rec_first_copy',
       record: {
         id: 'rec_first',
         path: 'tasks/first.md',
@@ -1196,6 +1197,7 @@ describe('database cell mutation compiler', () => {
         id: 'rec_first',
         expectedRevision: `sha256:${'a'.repeat(64)}`,
         sourceKey: 'tasks',
+        newId: 'rec_first_copy',
         title: 'First copy',
       },
     ]);
@@ -1204,6 +1206,7 @@ describe('database cell mutation compiler', () => {
     const blankDesired = createDatabaseRecordCopyDesiredState({
       database,
       source,
+      newRecordId: 'rec_blank_copy',
       record: {
         id: 'rec_blank',
         path: 'tasks/blank.md',
@@ -1216,6 +1219,7 @@ describe('database cell mutation compiler', () => {
         id: 'rec_blank',
         expectedRevision: `sha256:${'b'.repeat(64)}`,
         sourceKey: 'tasks',
+        newId: 'rec_blank_copy',
         title: '',
       },
     ]);

@@ -448,6 +448,31 @@ const databaseViewProps: PropDef[] = [
     required: false,
     description: 'Inline document block or full-page-width database surface',
   },
+  {
+    name: 'create',
+    type: 'enum',
+    enumValues: ['blank'],
+    required: false,
+    advanced: true,
+    hidden: true,
+    description: 'Internal pending blank-database creation intent',
+  },
+  {
+    name: 'creationId',
+    type: 'string',
+    required: false,
+    advanced: true,
+    hidden: true,
+    description: 'Stable recovery ID for a pending database creation',
+  },
+  {
+    name: 'creationName',
+    type: 'string',
+    required: false,
+    advanced: true,
+    hidden: true,
+    description: 'Pending database title retained across interrupted creation',
+  },
 ];
 
 // htmlVideoProps — 12 props (2 common + 10 advanced).

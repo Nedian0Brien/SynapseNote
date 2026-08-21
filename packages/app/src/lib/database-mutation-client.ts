@@ -80,6 +80,7 @@ async function post(
     | '/api/databases/plan'
     | '/api/databases/button'
     | '/api/databases/commit'
+    | '/api/databases/commit-result'
     | '/api/databases/undo',
   body: Record<string, unknown>,
   operation: string,
@@ -99,6 +100,26 @@ async function post(
     });
   }
   return result;
+}
+
+async function postWithTransportRetry(
+  path: '/api/databases/button' | '/api/databases/undo',
+  body: Record<string, unknown>,
+  operation: string,
+  options: DatabaseMutationClientOptions,
+): Promise<unknown> {
+  try {
+    return await post(path, body, operation, options);
+  } catch (cause) {
+    if (cause instanceof DatabaseMutationClientError || options.signal?.aborted) throw cause;
+    try {
+      // These endpoints persist idempotency before returning. Replaying the
+      // exact request resolves a lost response without executing it twice.
+      return await post(path, body, operation, { fetch: options.fetch });
+    } catch {
+      throw cause;
+    }
+  }
 }
 
 function draftFromResponse(value: unknown, expectedAction: string): DatabaseDraftArtifact {
@@ -333,20 +354,16 @@ export async function executeDatabaseButtonPlan(
   },
   options: DatabaseMutationClientOptions = {},
 ): Promise<{ run: DatabaseButtonRun; undoToken: string | null }> {
+  const request = {
+    action: 'execute',
+    buttonPlanId: input.plan.id,
+    buttonPlanHash: input.plan.hash,
+    idempotencyKey: input.idempotencyKey,
+    approvalToken: `approve:${input.plan.hash}`,
+    actor: { ...input.actor, kind: 'human' as const },
+  };
   const response = object(
-    await post(
-      '/api/databases/button',
-      {
-        action: 'execute',
-        buttonPlanId: input.plan.id,
-        buttonPlanHash: input.plan.hash,
-        idempotencyKey: input.idempotencyKey,
-        approvalToken: `approve:${input.plan.hash}`,
-        actor: { ...input.actor, kind: 'human' },
-      },
-      'Button execution',
-      options,
-    ),
+    await postWithTransportRetry('/api/databases/button', request, 'Button execution', options),
     'Database Button execution returned an invalid response',
   );
   if (response.action !== 'execute') {
@@ -414,6 +431,29 @@ async function commitReviewedDatabasePlan(
     );
   }
   return result;
+}
+
+export async function getDatabaseCommitResult(
+  idempotencyKey: string,
+  options: DatabaseMutationClientOptions = {},
+): Promise<DatabaseCommitResult | null> {
+  const response = object(
+    await post(
+      '/api/databases/commit-result',
+      { idempotencyKey },
+      'commit receipt lookup',
+      options,
+    ),
+    'Database commit receipt lookup returned an invalid response',
+  );
+  if (response.status === 'not_found') return null;
+  if (response.status !== 'committed') {
+    throw new DatabaseMutationClientError(
+      'Database commit receipt lookup returned an invalid status',
+      { status: 502, problem: response },
+    );
+  }
+  return commitFromResponse(response.result);
 }
 
 export interface ExecuteDatabaseUiMutationInput {
@@ -506,7 +546,13 @@ export async function executeReviewedDatabasePlan(
       if (cause instanceof DatabaseMutationClientError && cause.status === 409) {
         throw new DatabasePlanExecutionError(cause, input.plan);
       }
-      throw cause;
+      const ambiguous = !(cause instanceof DatabaseMutationClientError) || cause.status >= 500;
+      if (!ambiguous) throw cause;
+      const recovered = await getDatabaseCommitResult(input.idempotencyKey, {
+        fetch: options.fetch,
+      }).catch(() => null);
+      if (!recovered) throw cause;
+      result = recovered;
     }
     return { status: 'committed', plan: input.plan, result };
   } finally {
@@ -554,18 +600,14 @@ export async function applyDatabaseUiUndo(
   input: { undoToken: string; actor: DatabaseUiActor; idempotencyKey: string },
   options: DatabaseMutationClientOptions = {},
 ): Promise<DatabaseUndoResult> {
+  const request = {
+    action: 'apply',
+    undoToken: input.undoToken,
+    idempotencyKey: input.idempotencyKey,
+    actor: { ...input.actor, kind: 'human' as const },
+  };
   return undoFromResponse(
-    await post(
-      '/api/databases/undo',
-      {
-        action: 'apply',
-        undoToken: input.undoToken,
-        idempotencyKey: input.idempotencyKey,
-        actor: { ...input.actor, kind: 'human' },
-      },
-      'undo apply',
-      options,
-    ),
+    await postWithTransportRetry('/api/databases/undo', request, 'undo apply', options),
     'apply',
   );
 }
@@ -589,18 +631,14 @@ export async function applyDatabaseUiRedo(
   input: { undoToken: string; actor: DatabaseUiActor; idempotencyKey: string },
   options: DatabaseMutationClientOptions = {},
 ): Promise<DatabaseUndoResult> {
+  const request = {
+    action: 'redo_apply',
+    undoToken: input.undoToken,
+    idempotencyKey: input.idempotencyKey,
+    actor: { ...input.actor, kind: 'human' as const },
+  };
   return undoFromResponse(
-    await post(
-      '/api/databases/undo',
-      {
-        action: 'redo_apply',
-        undoToken: input.undoToken,
-        idempotencyKey: input.idempotencyKey,
-        actor: { ...input.actor, kind: 'human' },
-      },
-      'redo apply',
-      options,
-    ),
+    await postWithTransportRetry('/api/databases/undo', request, 'redo apply', options),
     'redo_apply',
   );
 }

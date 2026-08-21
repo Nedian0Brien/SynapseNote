@@ -213,6 +213,7 @@ export function createDatabaseRecordCopyDesiredState(input: {
   database: DatabaseDefinition;
   source: DatabaseSource;
   record: ProjectedDatabaseRecord;
+  newRecordId: string;
 }): DatabaseDesiredStateDraftInput {
   if (input.record.revision === null) {
     throw new Error('A database record cannot be duplicated without an exact record revision');
@@ -231,6 +232,7 @@ export function createDatabaseRecordCopyDesiredState(input: {
         id: input.record.id,
         expectedRevision: input.record.revision,
         sourceKey: input.source.key,
+        newId: input.newRecordId,
         title: title.trim() === '' ? '' : `${title} copy`,
       },
     ],

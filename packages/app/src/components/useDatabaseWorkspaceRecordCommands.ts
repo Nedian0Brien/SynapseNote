@@ -330,6 +330,7 @@ export function useDatabaseWorkspaceRecordCommands(context: DatabaseWorkspaceCon
           database: description.database,
           source: description.source,
           record,
+          newRecordId: createDatabaseRecordId(),
         }),
         'ui-record-copy',
         `Database ${itemNoun} duplication failed`,

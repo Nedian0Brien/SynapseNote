@@ -846,6 +846,7 @@ msgid "Activity"
 msgstr "Activity"
 
 #: src/components/DatabasePropertiesDialog.tsx
+#: src/components/FileSidebar.tsx
 #: src/components/FrontmatterRow.tsx
 #: src/components/ObjectWidget.tsx
 #: src/components/PropertyPanel.tsx
@@ -2769,6 +2770,10 @@ msgstr "Could not open folder picker"
 msgid "Could not open GitHub sign-in. Please try again."
 msgstr "Could not open GitHub sign-in. Please try again."
 
+#: src/components/DailyNoteHandler.tsx
+msgid "Could not open today's daily note"
+msgstr "Could not open today's daily note"
+
 #: src/components/FileTree.tsx
 msgid "Could not reach server"
 msgstr "Could not reach server"
@@ -3183,6 +3188,10 @@ msgstr "Create your first file"
 msgid "Create your first project"
 msgstr "Create your first project"
 
+#: src/components/FolderDocumentList.tsx
+msgid "Created"
+msgstr "Created"
+
 #: src/components/FolderTimelineCard.tsx
 msgid "created folder"
 msgstr "created folder"
@@ -3304,6 +3313,10 @@ msgstr "Customize this page"
 #: src/components/DatabaseRecordLayoutOverrideDialog.tsx
 msgid "Customize this record"
 msgstr "Customize this record"
+
+#: src/components/DailyNoteHandler.tsx
+msgid "Daily note created"
+msgstr "Daily note created"
 
 #: src/components/DatabaseDashboardSettings.tsx
 msgid "Dashboard layout"
@@ -4095,6 +4108,7 @@ msgid "Empty"
 msgstr "Empty"
 
 #: src/components/FolderDocumentCard.tsx
+#: src/components/FolderDocumentList.tsx
 msgid "Empty note"
 msgstr "Empty note"
 
@@ -4198,6 +4212,10 @@ msgstr "Exact Context Pack"
 #: src/components/DatabaseWorkspaceStatusPanel.tsx
 msgid "Exact plan details"
 msgstr "Exact plan details"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Excluded folder nodes"
+msgstr "Excluded folder nodes"
 
 #: src/components/DatabaseAgentRunsDialog.tsx
 msgid "Execution"
@@ -4648,6 +4666,10 @@ msgstr "Files"
 msgid "Files sidebar"
 msgstr "Files sidebar"
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "Files stay visible; only matching folder nodes and containment links hide."
+msgstr "Files stay visible; only matching folder nodes and containment links hide."
+
 #. placeholder {0}: node.label
 #: src/components/GraphCardDeck.tsx
 msgid "Filter by {0}"
@@ -4771,6 +4793,10 @@ msgstr "folder"
 #: src/editor/link-path-suggestions.tsx
 msgid "Folder"
 msgstr "Folder"
+
+#: src/components/GraphSettingsPopover.tsx
+msgid "Folder areas"
+msgstr "Folder areas"
 
 #: src/components/FolderOverview.tsx
 msgid "Folder details"
@@ -5791,6 +5817,10 @@ msgstr "Last rebuilt"
 msgid "Last sync"
 msgstr "Last sync"
 
+#: src/components/FolderDocumentList.tsx
+msgid "Last viewed"
+msgstr "Last viewed"
+
 #: src/editor/components/PdfEmbed.tsx
 msgid "Layout"
 msgstr "Layout"
@@ -6315,6 +6345,10 @@ msgstr "Model settings: {modelLabel}, effort {effortLabel}"
 msgid "Model settings: {modelLabel}, effort {effortLabel}, speed {speedLabel}"
 msgstr "Model settings: {modelLabel}, effort {effortLabel}, speed {speedLabel}"
 
+#: src/components/FolderDocumentList.tsx
+msgid "Modified"
+msgstr "Modified"
+
 #: src/editor/extensions/WikiLinkPropPanel.tsx
 msgid "Modify the link target, anchor, and display label."
 msgstr "Modify the link target, anchor, and display label."
@@ -6456,6 +6490,7 @@ msgstr "name"
 #: src/components/AuthModal.tsx
 #: src/components/DatabaseTemplatesDialog.tsx
 #: src/components/DatabaseWorkspaceRecordActions.tsx
+#: src/components/FolderDocumentList.tsx
 #: src/components/NewSkillDialog.tsx
 #: src/components/SkillRenameDialog.tsx
 #: src/editor/slash-command/items.tsx
@@ -7275,6 +7310,10 @@ msgstr "On — your search queries and the text of matching pages are sent to yo
 msgid "Onboarding task queued"
 msgstr "Onboarding task queued"
 
+#: src/components/GraphSettingsPopover.tsx
+msgid "One folder path per line"
+msgstr "One folder path per line"
+
 #. Next step for a Cursor project MCP row — Cursor leaves project servers disabled
 #: src/components/settings/ProjectAiToolsSection.tsx
 msgid "One more step: enable it in Cursor → Settings → Tools & MCP (Cursor leaves project servers off until you turn them on)."
@@ -7322,6 +7361,7 @@ msgstr "Open"
 #. placeholder {0}: node.label
 #: src/components/chat/WebPreviewCards.tsx
 #: src/components/FolderDocumentCard.tsx
+#: src/components/FolderDocumentList.tsx
 #: src/components/GraphCardDeck.tsx
 msgid "Open {0}"
 msgstr "Open {0}"
@@ -7630,6 +7670,11 @@ msgstr "Open this link in a new tab."
 msgid "Open this settings dialog."
 msgstr "Open this settings dialog."
 
+#: src/components/CommandPalette.tsx
+#: src/components/FileSidebar.tsx
+msgid "Open today's daily note"
+msgstr "Open today's daily note"
+
 #: src/lib/keyboard-shortcuts.ts
 msgid "Open visual-editor find with replace controls expanded."
 msgstr "Open visual-editor find with replace controls expanded."
@@ -7882,6 +7927,14 @@ msgstr "Paragraph"
 #: src/editor/extensions/RawMdxFallbackCMView.tsx
 msgid "Parse failed"
 msgstr "Parse failed"
+
+#: src/components/FolderDocumentList.tsx
+msgid "Past 30 days"
+msgstr "Past 30 days"
+
+#: src/components/FolderDocumentList.tsx
+msgid "Past 7 days"
+msgstr "Past 7 days"
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Paste duplicate"
@@ -11452,6 +11505,10 @@ msgstr "Uncommitted changes"
 #: src/components/GraphSettingsPopover.tsx
 msgid "Uncreated pages"
 msgstr "Uncreated pages"
+
+#: src/components/FolderDocumentList.tsx
+msgid "Undated"
+msgstr "Undated"
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Underline"

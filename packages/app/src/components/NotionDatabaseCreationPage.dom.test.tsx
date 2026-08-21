@@ -24,6 +24,7 @@ mock.module('@/lib/database-mutation-client', () => ({
 afterEach(() => {
   cleanup();
   createMutation.mockClear();
+  window.localStorage.clear();
 });
 
 describe('NotionDatabaseCreationPage', () => {
@@ -146,5 +147,27 @@ describe('NotionDatabaseCreationPage', () => {
       }),
     );
     expect(createMutation).toHaveBeenCalledTimes(1);
+  });
+
+  test('reuses the durable creation intent after an interrupted remount', async () => {
+    createMutation.mockImplementationOnce(() => new Promise(() => {}));
+    const first = render(
+      <NotionDatabaseCreationPage open onCreated={() => {}} onCancel={() => {}} />,
+    );
+    await waitFor(() => expect(createMutation).toHaveBeenCalledTimes(1));
+    const firstRequest = createMutation.mock.calls[0]?.[0] as {
+      desiredState: { database: { key: string } };
+      idempotencyKey: string;
+    };
+    first.unmount();
+
+    const onCreated = mock(() => {});
+    render(<NotionDatabaseCreationPage open onCreated={onCreated} onCancel={() => {}} />);
+    await waitFor(() => expect(createMutation).toHaveBeenCalledTimes(2));
+    const recoveredRequest = createMutation.mock.calls[1]?.[0] as typeof firstRequest;
+
+    expect(recoveredRequest.desiredState.database.key).toBe(firstRequest.desiredState.database.key);
+    expect(recoveredRequest.idempotencyKey).toBe(firstRequest.idempotencyKey);
+    await waitFor(() => expect(onCreated).toHaveBeenCalled());
   });
 });
