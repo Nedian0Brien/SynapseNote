@@ -28,6 +28,8 @@ export interface GraphFilterSettings {
    * This is what makes folders separate spatially — see `graph-folders.ts`.
    */
   showFolderNodes: boolean;
+  /** Folder nodes to omit while leaving the files below them visible. */
+  folderNodeExclusions: string[];
 }
 
 export interface GraphDisplaySettings {
@@ -129,8 +131,10 @@ export const GRAPH_SETTINGS_BOUNDS = {
 
 /** Guards against a corrupt blob inflating the popover into an unusable list. */
 export const MAX_GRAPH_GROUPS = 12;
+export const MAX_GRAPH_FOLDER_EXCLUSIONS = 32;
 
 const MAX_GRAPH_QUERY_LENGTH = 200;
+const MAX_GRAPH_FOLDER_PATH_LENGTH = 200;
 
 export function getDefaultGraphSettings(scope: GraphSettingsScope): GraphSettings {
   return {
@@ -143,6 +147,7 @@ export function getDefaultGraphSettings(scope: GraphSettingsScope): GraphSetting
       showOrphans: true,
       showTagNodes: false,
       showFolderNodes: DEFAULT_SHOW_FOLDER_NODES[scope],
+      folderNodeExclusions: [],
     },
     display: {
       nodeSize: 1,
@@ -175,6 +180,25 @@ function readBoolean(value: unknown, fallback: boolean): boolean {
 function readQuery(value: unknown, fallback: string): string {
   if (typeof value !== 'string') return fallback;
   return value.slice(0, MAX_GRAPH_QUERY_LENGTH);
+}
+
+function readFolderPaths(value: unknown, fallback: string[]): string[] {
+  if (!Array.isArray(value)) return fallback;
+  const paths: string[] = [];
+  const seen = new Set<string>();
+  for (const candidate of value) {
+    if (paths.length >= MAX_GRAPH_FOLDER_EXCLUSIONS) break;
+    if (typeof candidate !== 'string') continue;
+    const path = candidate
+      .trim()
+      .replace(/\\/g, '/')
+      .replace(/^\/+|\/+$/g, '')
+      .slice(0, MAX_GRAPH_FOLDER_PATH_LENGTH);
+    if (path === '' || seen.has(path)) continue;
+    seen.add(path);
+    paths.push(path);
+  }
+  return paths;
 }
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
@@ -225,6 +249,10 @@ export function clampGraphSettings(value: unknown, scope: GraphSettingsScope): G
       showOrphans: readBoolean(filters.showOrphans, defaults.filters.showOrphans),
       showTagNodes: readBoolean(filters.showTagNodes, defaults.filters.showTagNodes),
       showFolderNodes: readBoolean(filters.showFolderNodes, defaults.filters.showFolderNodes),
+      folderNodeExclusions: readFolderPaths(
+        filters.folderNodeExclusions,
+        defaults.filters.folderNodeExclusions,
+      ),
     },
     display: {
       nodeSize: clampNumber(

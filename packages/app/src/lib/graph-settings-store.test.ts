@@ -158,6 +158,14 @@ describe('clampGraphSettings', () => {
     const result = clampGraphSettings({ filters: { query: 'a'.repeat(500) } }, 'docked');
     expect(result.filters.query).toHaveLength(200);
   });
+
+  test('normalizes and deduplicates excluded folder-node paths', () => {
+    const result = clampGraphSettings(
+      { filters: { folderNodeExclusions: [' /Archive/ ', 'Archive', 'notes\\old', '', 7] } },
+      'fullscreen',
+    );
+    expect(result.filters.folderNodeExclusions).toEqual(['Archive', 'notes/old']);
+  });
 });
 
 describe('readGraphSettings', () => {
@@ -314,6 +322,7 @@ describe('writeGraphSettings', () => {
       showOrphans: false,
       showTagNodes: true,
       showFolderNodes: true,
+      folderNodeExclusions: ['Archive'],
     };
     settings.groups = [{ id: 'g1', query: 'project', color: '#60a5fa' }];
     writeGraphSettings('docked', settings, storage);

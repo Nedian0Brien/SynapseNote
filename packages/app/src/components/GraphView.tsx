@@ -864,7 +864,9 @@ export function GraphView({
   // is an orphan once it has a parent), and the folders drawn would be those of
   // pages the user just hid.
   const folderAdditions = settings.filters.showFolderNodes
-    ? buildGraphFolderNodes(filteredData.nodes, filteredData.links)
+    ? buildGraphFolderNodes(filteredData.nodes, filteredData.links, {
+        excludedPaths: settings.filters.folderNodeExclusions,
+      })
     : EMPTY_GRAPH_DATA;
   const composedData: GraphData =
     folderAdditions.nodes.length === 0 && folderAdditions.links.length === 0
@@ -1423,14 +1425,11 @@ export function GraphView({
           <ForceGraph2D
             ref={fgRef}
             graphData={displayData}
-            // Enough to converge. This used to be 150 on the belief that the
-            // converged layout was a featureless disc and the structure at 150
-            // was a lucky intermediate. Measuring it says the opposite: at 400
-            // ticks ~71% of a node's six nearest neighbours are from its own
-            // folder, and the radial density is lumpy, not uniform. The disc was
-            // never the layout — it was every cluster crushed into a few pixels
-            // by unbounded repulsion, which distanceMax now bounds.
-            cooldownTicks={400}
+            // Obsidian's default alpha decay reaches its 0.001 stop threshold
+            // after roughly 300 ticks. Stopping at the same point avoids either
+            // freezing an intermediate or adding low-alpha drift after the
+            // reference worker has declared the graph settled.
+            cooldownTicks={300}
             onEngineTick={() => {
               simulationSettledRef.current = false;
               // The camera stops chasing the ACTIVE document once the user has
@@ -1964,6 +1963,7 @@ export function GraphView({
               (isGraphLinkHighlighted(link, hoveredNodeIdRef.current) ? 2 : 1)
             }
             d3AlphaDecay={alphaDecay}
+            d3VelocityDecay={0.4}
             onZoom={({ k }: { k: number }) => {
               zoomScaleRef.current = k;
               syncInteractionMode();

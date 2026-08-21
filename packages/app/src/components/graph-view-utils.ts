@@ -40,7 +40,7 @@ interface FolderGraphNode {
   id: string;
   label: string;
   path: string;
-  /** Direct members: pages plus child folders. Drives both size and repulsion. */
+  /** Visible subtree size, matching Folders to Graph's descendant weighting. */
   memberCount: number;
 }
 
@@ -219,6 +219,14 @@ export function reconcileGraphData(previous: GraphData, next: GraphData): GraphD
     const previousNode = previousNodesById.get(node.id);
     if (previousNode) {
       copyGraphNodePhysics(mergedNode, previousNode);
+    } else {
+      // Obsidian's graph worker creates every unseen node at the origin with no
+      // velocity. d3's usual undefined-coordinate fallback is a phyllotaxis
+      // spiral, which sends the same topology into a different local minimum.
+      mergedNode.x = 0;
+      mergedNode.y = 0;
+      mergedNode.vx = 0;
+      mergedNode.vy = 0;
     }
     return mergedNode as GraphNode;
   });

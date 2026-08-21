@@ -9,7 +9,7 @@
  */
 
 import { afterEach, describe, expect, mock, test } from 'bun:test';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -84,6 +84,17 @@ describe('GraphSettingsPopover — filters', () => {
     settings.filters.showTagNodes = true;
     await openPopover(settings);
     expect(screen.getByRole('switch', { name: 'Tags' }).getAttribute('aria-checked')).toBe('true');
+  });
+
+  test('edits folder-node exclusions without hiding files below them', async () => {
+    const settings = getDefaultGraphSettings('fullscreen');
+    const { onSettingsChange } = await openPopover(settings);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Excluded folder nodes' }), {
+      target: { value: 'Archive' },
+    });
+
+    expect(lastCall(onSettingsChange).filters.folderNodeExclusions).toEqual(['Archive']);
+    expect(lastCall(onSettingsChange).filters.showFolderNodes).toBe(true);
   });
 });
 

@@ -53,7 +53,7 @@ describe('buildGraphFolderNodes', () => {
   test('gives each directory a node and ties its pages to it', () => {
     const result = build(['notes/A', 'notes/B']);
     expect(paths(result)).toEqual(['notes']);
-    expect(edges(result)).toEqual(['folder:notes>notes/A', 'folder:notes>notes/B']);
+    expect(edges(result)).toEqual(['/notes>notes/A', '/notes>notes/B']);
   });
 
   test('marks every synthesized edge as containment, never as an authored link', () => {
@@ -68,9 +68,16 @@ describe('buildGraphFolderNodes', () => {
     expect(result.links.map((link) => link.memberCount)).toEqual([3, 3, 3]);
   });
 
-  test('counts direct members, which is what sizes the node', () => {
+  test('counts visible descendants, which is what subtree weighting sizes by', () => {
     const [folder] = build(['notes/A', 'notes/B', 'notes/C']).nodes;
     expect(folder.kind === 'folder' && folder.memberCount).toBe(3);
+  });
+
+  test('includes nested folders and their pages in the parent subtree weight', () => {
+    const result = build(['notes/A', 'notes/deep/B', 'notes/deep/C']);
+    expect(
+      result.nodes.find((node) => node.kind === 'folder' && node.path === 'notes')?.memberCount,
+    ).toBe(4);
   });
 
   test('leaves root-level pages outside the folder hierarchy', () => {
@@ -83,9 +90,9 @@ describe('buildGraphFolderNodes', () => {
     const result = build(['notes/A', 'notes/deep/B']);
     expect(paths(result)).toEqual(['notes', 'notes/deep']);
     expect(edges(result)).toEqual([
-      'folder:notes/deep>notes/deep/B',
-      'folder:notes>folder:notes/deep',
-      'folder:notes>notes/A',
+      '/notes/deep>notes/deep/B',
+      '/notes>/notes/deep',
+      '/notes>notes/A',
     ]);
   });
 
@@ -102,7 +109,7 @@ describe('buildGraphFolderNodes', () => {
       { kind: 'tag', id: 'tag:idea', label: '#idea', tag: 'idea' },
       { kind: 'external', id: 'external:https://x.test', url: 'https://x.test', label: 'x' },
     ];
-    expect(edges(buildGraphFolderNodes(nodes, []))).toEqual(['folder:notes>notes/A']);
+    expect(edges(buildGraphFolderNodes(nodes, []))).toEqual(['/notes>notes/A']);
   });
 });
 
@@ -110,11 +117,7 @@ describe('buildGraphFolderNodes — hidden project root', () => {
   test('leaves unrelated top-level folders as separate components', () => {
     const result = build(['docs/A', 'notes/B', 'src/C']);
     expect(paths(result)).toEqual(['docs', 'notes', 'src']);
-    expect(edges(result)).toEqual([
-      'folder:docs>docs/A',
-      'folder:notes>notes/B',
-      'folder:src>src/C',
-    ]);
+    expect(edges(result)).toEqual(['/docs>docs/A', '/notes>notes/B', '/src>src/C']);
   });
 
   test('never synthesizes a root for a single top-level item', () => {
@@ -123,8 +126,8 @@ describe('buildGraphFolderNodes — hidden project root', () => {
 
   test('keeps a folder note distinct from any missing project root', () => {
     const result = buildGraphFolderNodes([doc('notes'), doc('notes/A')], []);
-    expect(result.nodes).toEqual([]);
-    expect(edges(result)).toEqual(['notes>notes/A']);
+    expect(paths(result)).toEqual(['notes']);
+    expect(edges(result)).toEqual(['/notes>notes/A']);
   });
 });
 
@@ -133,10 +136,10 @@ describe('buildGraphFolderNodes — complete folder paths', () => {
     const result = build(['docs/archive/cleanup/A', 'docs/archive/cleanup/B']);
     expect(paths(result)).toEqual(['docs', 'docs/archive', 'docs/archive/cleanup']);
     expect(edges(result)).toEqual([
-      'folder:docs/archive/cleanup>docs/archive/cleanup/A',
-      'folder:docs/archive/cleanup>docs/archive/cleanup/B',
-      'folder:docs/archive>folder:docs/archive/cleanup',
-      'folder:docs>folder:docs/archive',
+      '/docs/archive/cleanup>docs/archive/cleanup/A',
+      '/docs/archive/cleanup>docs/archive/cleanup/B',
+      '/docs/archive>/docs/archive/cleanup',
+      '/docs>/docs/archive',
     ]);
   });
 
@@ -148,8 +151,8 @@ describe('buildGraphFolderNodes — complete folder paths', () => {
   test('keeps a folder that holds pages of its own, however few', () => {
     const result = build(['docs/Intro', 'docs/archive/cleanup/A']);
     expect(paths(result)).toEqual(['docs', 'docs/archive', 'docs/archive/cleanup']);
-    expect(edges(result)).toContain('folder:docs>folder:docs/archive');
-    expect(edges(result)).toContain('folder:docs/archive>folder:docs/archive/cleanup');
+    expect(edges(result)).toContain('/docs>/docs/archive');
+    expect(edges(result)).toContain('/docs/archive>/docs/archive/cleanup');
   });
 
   test('keeps a folder that forks, because a fork is what it separates', () => {
@@ -160,23 +163,22 @@ describe('buildGraphFolderNodes — complete folder paths', () => {
   test('keeps the direct parent of a deeply nested folder', () => {
     const result = build(['top/a/A', 'top/x/y/B']);
     expect(paths(result)).toEqual(['top', 'top/a', 'top/x', 'top/x/y']);
-    expect(edges(result)).toContain('folder:top>folder:top/x');
-    expect(edges(result)).toContain('folder:top/x>folder:top/x/y');
-    expect(result.nodes.find((node) => node.id === 'folder:top/x/y')?.label).toBe('y');
+    expect(edges(result)).toContain('/top>/top/x');
+    expect(edges(result)).toContain('/top/x>/top/x/y');
+    expect(result.nodes.find((node) => node.id === '/top/x/y')?.label).toBe('y');
   });
 });
 
-describe('buildGraphFolderNodes — collisions with real pages', () => {
-  test('a page named after the folder becomes the folder node — that is a folder note', () => {
+describe('buildGraphFolderNodes — folders remain distinct from real pages', () => {
+  test('a page named after a folder does not replace that folder node', () => {
     const result = buildGraphFolderNodes([doc('notes'), doc('notes/A')], []);
-    // No second node for the same place.
-    expect(result.nodes).toEqual([]);
-    expect(edges(result)).toEqual(['notes>notes/A']);
+    expect(paths(result)).toEqual(['notes']);
+    expect(edges(result)).toEqual(['/notes>notes/A']);
   });
 
-  test('the folder-note page is still tied to ITS own parent folder', () => {
+  test('a same-named note and folder are both tied to their own parents', () => {
     const result = buildGraphFolderNodes([doc('a/b'), doc('a/b/C'), doc('a/D')], []);
-    expect(edges(result)).toEqual(['a/b>a/b/C', 'folder:a>a/D', 'folder:a>a/b']);
+    expect(edges(result)).toEqual(['/a/b>a/b/C', '/a>/a/b', '/a>a/D', '/a>a/b']);
   });
 
   test('never links a node to itself', () => {
@@ -185,49 +187,64 @@ describe('buildGraphFolderNodes — collisions with real pages', () => {
   });
 });
 
-describe('buildGraphFolderNodes — authored links win', () => {
-  test('skips containment where a real link already joins the pair', () => {
-    // Otherwise the pair gets two edges and two springs, and reads as twice as
-    // connected as it is.
+describe('buildGraphFolderNodes — authored links coexist with containment', () => {
+  test('skips only an exact authored source-target duplicate', () => {
     const result = buildGraphFolderNodes(
-      [doc('notes'), doc('notes/A')],
-      [{ source: 'notes', target: 'notes/A' }],
+      [doc('notes/A')],
+      [{ source: '/notes', target: 'notes/A' }],
     );
     expect(result.links).toEqual([]);
   });
 
-  test('skips it in either direction', () => {
+  test('keeps containment when an authored edge points in the reverse direction', () => {
     const result = buildGraphFolderNodes(
-      [doc('notes'), doc('notes/A')],
-      [{ source: 'notes/A', target: 'notes' }],
+      [doc('notes/A')],
+      [{ source: 'notes/A', target: '/notes' }],
     );
-    expect(result.links).toEqual([]);
+    expect(edges(result)).toEqual(['/notes>notes/A']);
   });
 
-  test('still counts the member, so the folder keeps its true size', () => {
-    const result = buildGraphFolderNodes(
-      [doc('a/b'), doc('a/b/C')],
-      [{ source: 'a/b', target: 'a/b/C' }],
-    );
-    // `a/b` is a page node, so no folder node is emitted for it; `a` is.
-    expect(result.nodes.find((node) => node.id === 'folder:a')?.kind).toBe('folder');
+  test('still counts an exact duplicate member, so the folder keeps its true size', () => {
+    const result = buildGraphFolderNodes([doc('a/b/C')], [{ source: '/a/b', target: 'a/b/C' }]);
+    expect(result.nodes.find((node) => node.id === '/a')?.kind).toBe('folder');
     expect(
       result.nodes.find((node) => node.kind === 'folder' && node.path === 'a')?.memberCount,
-    ).toBe(1);
+    ).toBe(2);
+  });
+});
+
+describe('buildGraphFolderNodes — folder exclusions', () => {
+  test('omits excluded folder nodes and containment while keeping their pages outside synthesis', () => {
+    const result = buildGraphFolderNodes(
+      [doc('Archive/A'), doc('Archive/deep/B'), doc('notes/C')],
+      [],
+      { excludedPaths: ['Archive'] },
+    );
+    expect(paths(result)).toEqual(['notes']);
+    expect(edges(result)).toEqual(['/notes>notes/C']);
+  });
+
+  test('normalizes slashes and excludes descendants only on a path boundary', () => {
+    const result = buildGraphFolderNodes(
+      [doc('Archive/A'), doc('Archive/deep/B'), doc('Archive-old/C')],
+      [],
+      { excludedPaths: [' /Archive/ '] },
+    );
+    expect(paths(result)).toEqual(['Archive-old']);
   });
 });
 
 describe('isGraphFolderLink', () => {
   test('reads the mark on the link, not the endpoint ids', () => {
-    // A folder note hangs its members off a PAGE node, so neither endpoint
-    // carries the `folder:` prefix — the mark is the only reliable signal.
+    // Semantic behavior should not depend on the current leading-slash id
+    // convention.
     expect(isGraphFolderLink({ kind: 'containment' })).toBe(true);
     expect(isGraphFolderLink({ source: 'notes', target: 'notes/A' })).toBe(false);
   });
 });
 
 describe('graphFolderNodeId', () => {
-  test('namespaces folder ids the way the server namespaces external ones', () => {
+  test('uses the leading-slash id scheme from Folders to Graph', () => {
     expect(graphFolderNodeId('notes')).toBe(`${GRAPH_FOLDER_NODE_PREFIX}notes`);
   });
 });

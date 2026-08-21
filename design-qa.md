@@ -1,3 +1,35 @@
+# Obsidian graph morphology and folder-area toggle QA — 2026-08-21
+
+## Visual truth and compared implementation
+
+- Source visual truth: `codex-clipboard-fcbed7fc-7012-4e98-a856-d391fd7bb224.png`, the user's Obsidian global graph for the iCloud `Research` vault with Folders to Graph 1.2.0 enabled.
+- Live implementation: `synapsenote-graph-parity.png`, the same Markdown vault opened by the SynapseNote web app in light theme.
+- Combined comparison input: `graph-obsidian-synapse-comparison.png`, with both graph surfaces normalized to the same 696 × 611 raster for morphology review.
+- Matching state: folder nodes on, project root hidden, `Archive` folder nodes excluded while Archive files remain visible, missing pages and orphans shown, external URLs and tags hidden, and folder areas off.
+- Matching topology in SynapseNote: 1,459 nodes and 2,411 links after applying the reference plugin's `Archive` exclusion.
+
+## Findings and resolutions
+
+| Severity | Finding | Resolution and evidence |
+| --- | --- | --- |
+| P1 | SynapseNote initially synthesized 71 additional folder nodes and 278 additional links because it could not reproduce the reference plugin's folder-only exclusion. | Added persisted folder-node exclusions that leave files visible. Entering `Archive` changes the live graph from 1,530 nodes / 2,689 links to the reference-equivalent 1,459 nodes / 2,411 links. |
+| P1 | Notes whose names matched folders replaced their folder nodes, while Folders to Graph keeps `/folder` and `folder` distinct. | Folder ids now use the plugin's leading-slash namespace and every folder remains a separate node. Exact-direction duplicate containment edges follow the plugin's object-link behavior. |
+| P1 | New SynapseNote nodes entered d3's phyllotaxis fallback, sending the same topology toward a different local minimum. | New document and folder nodes now begin at `(0, 0)` with zero velocity, matching Obsidian's graph-worker initialization. The 300-tick cooling point and 0.4 velocity decay are explicit. |
+| P2 | Folder node weight reflected only direct children, producing a different hub hierarchy from the reference's enabled subtree weighting. | Folder weight now uses the full visible descendant count while collision physics keeps the reference's constant radius. |
+| P2 | Folder territory colors and large area labels could not be hidden without also removing folder nodes and their layout effect. | Added `Display → Folder areas`. Turning it off removes only the tinted regions and map labels; folder nodes, containment links, and simulation forces remain active. |
+
+## Required fidelity surfaces and assessment
+
+- Topology, folder filtering, root handling, subtree weighting, force defaults, collision radius, initialization, cooling, and velocity retention now follow the inspected Obsidian plus Folders to Graph configuration.
+- The combined comparison preserves the same dominant morphology under the user's allowed global translation, rotation, and uniform scale: one large radial component, one dense secondary component, and the same surrounding islands.
+- Node color, label styling, and application chrome remain SynapseNote-specific and are outside the requested shape parity.
+- The private Obsidian renderer and SynapseNote's open d3 renderer do not guarantee bit-identical floating-point coordinates, so the acceptance claim is structural morphology parity rather than pixel identity.
+- Automated evidence: 136 focused non-DOM tests, 19 settings-popover DOM tests, and the app TypeScript check passed.
+
+final result: passed
+
+---
+
 # Document viewer design QA
 
 ## Visual truth
