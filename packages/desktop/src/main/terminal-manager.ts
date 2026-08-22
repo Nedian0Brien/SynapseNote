@@ -230,7 +230,7 @@ function containsCommandSubmit(data: string): boolean {
 
 export interface TerminalManager {
   create(req: TerminalCreateRequest): CreateResult;
-  input(req: TerminalAddressedRequest & { data: string }): void;
+  input(req: TerminalAddressedRequest & { data: string }): boolean;
   resize(req: TerminalAddressedRequest & { cols: number; rows: number }): void;
   kill(req: TerminalAddressedRequest): void;
   drain(req: TerminalAddressedRequest & { bytes: number }): void;
@@ -546,12 +546,17 @@ export function createTerminalManager(deps: TerminalManagerDeps): TerminalManage
       return { ok: true, ptyId };
     },
 
-    input(req): void {
+    input(req): boolean {
       const handle = handles.get(req.windowId);
       const session = handle?.sessions.get(req.ptyId);
-      if (!handle || !session) return;
+      if (!handle || !session) return false;
       if (!session.commandRan && containsCommandSubmit(req.data)) session.commandRan = true;
-      handle.utility.postMessage({ type: 'input', ptyId: req.ptyId, data: req.data });
+      try {
+        handle.utility.postMessage({ type: 'input', ptyId: req.ptyId, data: req.data });
+        return true;
+      } catch {
+        return false;
+      }
     },
 
     resize(req): void {

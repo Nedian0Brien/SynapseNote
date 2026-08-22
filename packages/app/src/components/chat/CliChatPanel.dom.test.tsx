@@ -34,7 +34,7 @@ function makeBridge(
           speed: string;
         };
       },
-    ) => {},
+    ) => ({ ok: true as const }),
   );
   const fetchWebPreview = mock(async (url: string) => ({
     url,
@@ -45,6 +45,7 @@ function makeBridge(
     faviconDataUrl: 'data:image/png;base64,AwQ=',
   }));
   const readChatSession = mock((_cli: 'codex' | 'claude', _sessionId: string) => readHistory());
+  const cliPreflight = mock(async () => ({ onPath: 'present' as const }));
   const bridge = {
     shell: { fetchWebPreview },
     terminal: {
@@ -59,7 +60,7 @@ function makeBridge(
         exitSubscribers.push(callback);
         return () => {};
       },
-      cliPreflight: async () => ({ onPath: 'present' as const }),
+      cliPreflight,
       claudePreflight: async () => ({
         claude: 'present' as const,
         mcp: 'wired' as const,
@@ -71,6 +72,7 @@ function makeBridge(
     bridge,
     input,
     chatSend,
+    cliPreflight,
     readChatSession,
     fetchWebPreview,
     pushData(data: string) {
@@ -80,6 +82,36 @@ function makeBridge(
 }
 
 describe('CliChatPanel', () => {
+  test('shows a rejected transport and keeps the composer retryable', async () => {
+    const { bridge, chatSend } = makeBridge();
+    chatSend.mockReturnValue({ ok: false, reason: 'unknown-session' });
+    render(<CliChatPanel bridge={bridge} cli="codex" ptyId="pty-1" initialPrompt={null} />);
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Retry me' } });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(chatSend).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(screen.getByLabelText('Message').getAttribute('disabled')).toBeNull(),
+    );
+    expect(screen.queryByLabelText('Stop')).toBeNull();
+    expect(screen.getByRole('alert').textContent).toContain('could not be sent');
+    expect(screen.getByLabelText('Message').getAttribute('disabled')).toBeNull();
+    expect(screen.queryByLabelText('You')).toBeNull();
+  });
+
+  test('rolls back the optimistic turn when the Codex preflight fails', async () => {
+    const { bridge, chatSend, cliPreflight } = makeBridge();
+    cliPreflight.mockResolvedValue({ onPath: 'missing' });
+    render(<CliChatPanel bridge={bridge} cli="codex" ptyId="pty-1" initialPrompt={null} />);
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Retry me' } });
+    fireEvent.click(screen.getByLabelText('Send'));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Codex CLI is not available on PATH.',
+    );
+    expect(chatSend).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText('You')).toBeNull();
+    expect(screen.getByLabelText('Send')).toBeTruthy();
+  });
+
   test('shows an animated loading status while native history is read asynchronously', async () => {
     let resolveHistory:
       | ((messages: readonly { role: 'user' | 'assistant'; text: string }[]) => void)
@@ -181,7 +213,11 @@ describe('CliChatPanel', () => {
       );
     });
     expect(await screen.findByText('Done')).toBeTruthy();
-    expect(screen.getByLabelText('Send')).toBeTruthy();
+    expect(screen.getByLabelText('Stop')).toBeTruthy();
+    act(() => pushData('{"type":"synapsenote.command_completed","exit_code":0}\r\n'));
+    await waitFor(() =>
+      expect(screen.getByLabelText('Message').getAttribute('disabled')).toBeNull(),
+    );
   });
 
   test('uses the configured default model for a new chat', async () => {
@@ -225,13 +261,17 @@ describe('CliChatPanel', () => {
   });
 
   test('interrupts the active CLI with Ctrl-C', async () => {
-    const { bridge, input } = makeBridge();
+    const { bridge, input, pushData } = makeBridge();
     render(<CliChatPanel bridge={bridge} cli="codex" ptyId="pty-1" initialPrompt={null} />);
     fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Keep working' } });
     fireEvent.click(screen.getByLabelText('Send'));
     const stop = await screen.findByLabelText('Stop');
     fireEvent.click(stop);
     expect(input.mock.calls.at(-1)?.[1]).toBe('\u0003');
+    expect(screen.queryByLabelText('Send')).toBeNull();
+    expect(screen.getByLabelText('Stop').getAttribute('disabled')).not.toBeNull();
+    act(() => pushData('{"type":"synapsenote.command_completed","exit_code":130}\r\n'));
+    expect(await screen.findByLabelText('Send')).toBeTruthy();
   });
 
   test('renders assistant and tool events in execution order', () => {
@@ -461,6 +501,8 @@ describe('CliChatPanel', () => {
 
     act(() => pushData('{"type":"turn.completed"}\r\n'));
     expect(assistant.getAttribute('data-chat-generating')).toBeNull();
+    act(() => pushData('{"type":"synapsenote.command_completed","exit_code":0}\r\n'));
+    await waitFor(() => expect(assistant.getAttribute('data-chat-generating')).toBeNull());
     expect(assistant.querySelector('[data-chat-generation-dots="true"]')).toBeNull();
   });
 

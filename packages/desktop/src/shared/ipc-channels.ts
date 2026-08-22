@@ -93,6 +93,7 @@ import type {
   OkLocalOpAuthReposResponse,
   OkLocalOpAuthStatusResponse,
   OkPtyAdoptResult,
+  OkPtyChatSendResult,
   OkPtyCreateResult,
   OkPtyListEntry,
   OkServerRestartOutcome,
@@ -1459,10 +1460,11 @@ export interface RequestChannels {
    * never add a generic exec channel outside `ok:pty:*`.
    *
    * `create` resolves with the new ptyId (or `no-project` when the window has
-   * no resolved project root). `input` / `resize` / `kill` / `drain` are
-   * fire-and-forget invokes keyed by ptyId; main drops a mismatched ptyId so
-   * a stale renderer can't drive a successor PTY. `drain` is the renderer's
-   * backpressure ack (consumed byte count) so main can resume a paused PTY.
+   * no resolved project root). Raw `input` / `resize` / `kill` / `drain` are
+   * fire-and-forget invokes keyed by ptyId; structured chat input returns an
+   * acknowledgement so the UI cannot claim a stale-session write succeeded.
+   * `drain` is the renderer's backpressure ack (consumed byte count) so main
+   * can resume a paused PTY.
    * Streaming output + exit are `EventChannels` pushes (`ok:pty:data` /
    * `ok:pty:exit`).
    */
@@ -1480,6 +1482,7 @@ export interface RequestChannels {
           prompt: string;
           sessionId: string | null;
           permissionMode: 'read-only' | 'workspace-write' | 'full-access';
+          autoApproveOkTools?: boolean;
           modelSettings: {
             model:
               | 'gpt-5.6-sol'
@@ -1495,7 +1498,7 @@ export interface RequestChannels {
         };
       },
     ];
-    result: undefined;
+    result: OkPtyChatSendResult | undefined;
   };
   'ok:pty:resize': {
     args: [req: { ptyId: string; cols: number; rows: number }];

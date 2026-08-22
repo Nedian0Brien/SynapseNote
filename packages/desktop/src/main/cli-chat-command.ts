@@ -113,10 +113,12 @@ function printablePtyArgument(value: string): string {
  */
 export function buildCliChatCommand(
   input: CliChatLaunchInput,
-  options: CliChatCommandOptions = {},
+  options: CliChatCommandOptions & { readonly promptFile?: string } = {},
 ): string {
   const permissionMode = options.dataPlaneOnlyWrites === true ? 'read-only' : input.permissionMode;
   const quotedPrompt = shellSingleQuote(printablePtyArgument(input.prompt));
+  const promptInput =
+    options.promptFile === undefined ? quotedPrompt : `- < ${shellSingleQuote(options.promptFile)}`;
   const quotedSessionId =
     input.sessionId === null ? null : shellSingleQuote(printablePtyArgument(input.sessionId));
   if (input.cli === 'codex') {
@@ -128,8 +130,8 @@ export function buildCliChatCommand(
     const model = codexModelArgs(input.modelSettings);
     const systemInstructions = systemInstructionArgs(input.cli);
     return input.sessionId === null
-      ? `codex exec --json --color never${permissions}${model}${systemInstructions} ${quotedPrompt}`
-      : `codex exec resume --json${permissions}${model}${systemInstructions} ${quotedSessionId} ${quotedPrompt}`;
+      ? `codex exec --json --color never${permissions}${model}${systemInstructions} ${promptInput}`
+      : `codex exec resume --json${permissions}${model}${systemInstructions} ${quotedSessionId} ${promptInput}`;
   }
   const permissions = claudePermissionArgs(permissionMode);
   const claudeSettings = buildClaudeSettingsArg({
@@ -151,8 +153,16 @@ export function buildCliChatCommand(
  * completion event; this sentinel is a fail-safe for startup/config failures
  * that only print plain stderr and would otherwise leave Chat spinning forever.
  */
-export function buildCliChatShellCommand(command: string): string {
-  return `${command}; printf '\\n{"type":"synapsenote.command_completed","exit_code":%d}\\n' "$?"`;
+export function buildCliChatShellCommand(command: string, cleanupFile?: string): string {
+  if (cleanupFile === undefined) {
+    return `${command}; printf '\\n{"type":"synapsenote.command_completed","exit_code":%d}\\n' "$?"`;
+  }
+  const cleanupDirectory = cleanupFile.slice(0, cleanupFile.lastIndexOf('/'));
+  const cleanup = `rm -f -- ${shellSingleQuote(cleanupFile)}; rmdir -- ${shellSingleQuote(cleanupDirectory)} 2>/dev/null || true`;
+  // Scope the EXIT trap to a disposable subshell so Ctrl-C and ordinary
+  // failures both remove the prompt payload. Emit readiness from the parent
+  // shell only after that subshell has exited and cleanup has completed.
+  return `(trap ${shellSingleQuote(cleanup)} EXIT; trap 'exit 130' INT; trap 'exit 143' TERM; ${command}); chat_exit_code=$?; printf '\\n{"type":"synapsenote.command_completed","exit_code":%d}\\n' "$chat_exit_code"`;
 }
 
 const CODEX_MODELS = new Set([

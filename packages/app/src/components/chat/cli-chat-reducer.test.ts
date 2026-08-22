@@ -21,6 +21,13 @@ describe('cliChatReducer', () => {
       ['assistant', 'Hi there'],
     ]);
     expect(streamed.running).toBe(false);
+    expect(streamed.transportReady).toBe(false);
+    const ready = cliChatReducer(streamed, {
+      type: 'events',
+      events: [{ type: 'command_exit', exitCode: 0 }],
+    });
+    expect(ready.running).toBe(false);
+    expect(ready.transportReady).toBe(true);
   });
 
   test('preserves assistant and tool events in execution order', () => {
@@ -128,14 +135,17 @@ describe('cliChatReducer', () => {
     });
   });
 
-  test('ignores the shell completion sentinel after a user interrupt', () => {
+  test('keeps transport blocked after interrupt until the shell completion sentinel', () => {
     const sent = cliChatReducer(initialCliChatState, { type: 'send', text: 'Hello' });
     const interrupted = cliChatReducer(sent, { type: 'interrupt' });
+    expect(interrupted.running).toBe(false);
+    expect(interrupted.transportReady).toBe(false);
     const exited = cliChatReducer(interrupted, {
       type: 'events',
       events: [{ type: 'command_exit', exitCode: 130 }],
     });
 
-    expect(exited).toEqual(interrupted);
+    expect(exited.transportReady).toBe(true);
+    expect(exited.timeline).toEqual(interrupted.timeline);
   });
 });

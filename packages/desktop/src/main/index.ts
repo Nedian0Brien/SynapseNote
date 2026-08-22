@@ -39,7 +39,12 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs';
-import { homedir as osHomedir, hostname as osHostname, release as osRelease } from 'node:os';
+import {
+  homedir as osHomedir,
+  hostname as osHostname,
+  release as osRelease,
+  tmpdir as osTmpdir,
+} from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import {
   ALL_EDITOR_IDS,
@@ -756,6 +761,38 @@ let wm: WindowManager;
  * quit — callers guard with `?.` / a truthiness check.
  */
 let terminalReaper: TerminalReaper | null = null;
+const activeChatPromptFiles = new Map<string, string>();
+
+function chatPromptKey(windowId: number, ptyId: string): string {
+  return `${windowId}:${ptyId}`;
+}
+
+async function createChatPromptFile(prompt: string): Promise<string> {
+  const directory = await fsPromises.mkdtemp(join(osTmpdir(), 'synapsenote-chat-'));
+  const path = join(directory, 'prompt.txt');
+  try {
+    await fsPromises.writeFile(path, prompt, 'utf8');
+    return path;
+  } catch (error) {
+    await fsPromises.rmdir(directory).catch(() => {});
+    throw error;
+  }
+}
+
+async function removeChatPromptFile(key: string): Promise<void> {
+  const path = activeChatPromptFiles.get(key);
+  if (path === undefined) return;
+  activeChatPromptFiles.delete(key);
+  await fsPromises.unlink(path).catch(() => {});
+  await fsPromises.rmdir(dirname(path)).catch(() => {});
+}
+
+function removeChatPromptFilesForWindow(windowId: number): void {
+  const prefix = `${windowId}:`;
+  for (const key of activeChatPromptFiles.keys()) {
+    if (key.startsWith(prefix)) void removeChatPromptFile(key);
+  }
+}
 /**
  * Per-window docked-terminal visibility, recorded from the renderer's view-menu
  * push so a reloaded renderer can restore an expanded dock. Keyed by windowId
@@ -1114,9 +1151,10 @@ function ensureWindowManager() {
       // onReap clears the window's retained dock-visibility so it can't restore
       // a stale "visible" for a future window that reuses the id.
       if (terminalReaper)
-        wireWindowTerminalReap(win, terminalReaper, (windowId) =>
-          dockVisibleForWindow.delete(windowId),
-        );
+        wireWindowTerminalReap(win, terminalReaper, (windowId) => {
+          dockVisibleForWindow.delete(windowId);
+          removeChatPromptFilesForWindow(windowId);
+        });
       return win as unknown as BrowserWindowLike;
     },
     // App-level foreground activation for the bring-to-front recipe. macOS
@@ -3220,36 +3258,56 @@ function registerIpcHandlers() {
   });
   handle('ok:pty:input', async (event, req) => {
     const win = BrowserWindow.fromWebContents(event.sender);
-    if (win) {
-      if (isCliChatLaunchInput(req.chat)) {
-        const editorCtx = wm
-          ? wm.getContextForBrowserWindow(win as unknown as BrowserWindowLike)
-          : null;
-        const projectRoot = resolvePtyProjectRoot({
-          editorProjectPath: editorCtx?.projectPath ?? null,
-          terminalWindow: getTerminalWindowContext(win.id),
-          homedir: osHomedir(),
-        });
-        const claudeMcpOwn =
-          req.chat.cli === 'claude' && isProjectClaudeMcpOwn(projectRoot ?? undefined);
-        const autoApproveOkTools =
-          req.chat.autoApproveOkTools !== false &&
-          (claudeMcpOwn ||
-            (req.chat.cli === 'codex' &&
-              classifyExistingMcpEntry(EDITOR_TARGETS.codex, '', osHomedir()).kind === 'present'));
+    if (req.chat !== undefined) {
+      if (!isCliChatLaunchInput(req.chat)) return { ok: false, reason: 'invalid-input' as const };
+      if (!win) return { ok: false, reason: 'no-window' as const };
+      const editorCtx = wm
+        ? wm.getContextForBrowserWindow(win as unknown as BrowserWindowLike)
+        : null;
+      const projectRoot = resolvePtyProjectRoot({
+        editorProjectPath: editorCtx?.projectPath ?? null,
+        terminalWindow: getTerminalWindowContext(win.id),
+        homedir: osHomedir(),
+      });
+      const claudeMcpOwn =
+        req.chat.cli === 'claude' && isProjectClaudeMcpOwn(projectRoot ?? undefined);
+      const autoApproveOkTools =
+        req.chat.autoApproveOkTools !== false &&
+        (claudeMcpOwn ||
+          (req.chat.cli === 'codex' &&
+            classifyExistingMcpEntry(EDITOR_TARGETS.codex, '', osHomedir()).kind === 'present'));
+      const promptKey = chatPromptKey(win.id, req.ptyId);
+      await removeChatPromptFile(promptKey);
+      try {
+        const promptFile =
+          req.chat.cli === 'codex' ? await createChatPromptFile(req.chat.prompt) : undefined;
+        if (promptFile !== undefined) activeChatPromptFiles.set(promptKey, promptFile);
         const command = buildCliChatCommand(req.chat, {
           autoApproveOkTools,
           mcpPreApprove: claudeMcpOwn,
           dataPlaneOnlyWrites: process.env.SYNAPSENOTE_DATABASE_SANDBOX_MODE === 'data-plane-only',
+          promptFile,
         });
-        terminalManager.input({
+        const accepted = terminalManager.input({
           windowId: win.id,
           ptyId: req.ptyId,
-          data: `${buildCliChatShellCommand(command)}\r`,
+          data: `${buildCliChatShellCommand(command, promptFile)}\r`,
         });
-      } else if (typeof req.data === 'string') {
-        terminalManager.input({ windowId: win.id, ptyId: req.ptyId, data: req.data });
+        if (!accepted) {
+          await removeChatPromptFile(promptKey);
+          return { ok: false, reason: 'unknown-session' as const };
+        }
+        return { ok: true as const };
+      } catch {
+        await removeChatPromptFile(promptKey);
+        return { ok: false, reason: 'dispatch-failed' as const };
       }
+    }
+    if (win && typeof req.data === 'string') {
+      if (req.data.includes('\u0003')) {
+        await removeChatPromptFile(chatPromptKey(win.id, req.ptyId));
+      }
+      terminalManager.input({ windowId: win.id, ptyId: req.ptyId, data: req.data });
     }
     return undefined;
   });
@@ -3267,7 +3325,10 @@ function registerIpcHandlers() {
   });
   handle('ok:pty:kill', async (event, req) => {
     const win = BrowserWindow.fromWebContents(event.sender);
-    if (win) terminalManager.kill({ windowId: win.id, ptyId: req.ptyId });
+    if (win) {
+      await removeChatPromptFile(chatPromptKey(win.id, req.ptyId));
+      terminalManager.kill({ windowId: win.id, ptyId: req.ptyId });
+    }
     return undefined;
   });
   handle('ok:pty:drain', async (event, req) => {
@@ -5816,6 +5877,7 @@ function bootPrimaryInstance(): void {
     // Reap every window's PTY host first so no user shell / spawn-helper
     // outlives the app. Idempotent (clears the map; a second pass no-ops).
     terminalReaper?.killAll();
+    for (const key of activeChatPromptFiles.keys()) void removeChatPromptFile(key);
     dockVisibleForWindow.clear();
     autoUpdaterHandle?.destroy();
     autoUpdaterHandle = null;

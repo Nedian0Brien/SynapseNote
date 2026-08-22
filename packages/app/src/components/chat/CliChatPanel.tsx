@@ -93,6 +93,7 @@ export function CliChatPanel({
   const [state, dispatch] = useReducer(cliChatReducer, initialSessionId, createInitialCliChatState);
   const [historyLoading, setHistoryLoading] = useState(initialSessionId !== null);
   const [draft, setDraft] = useState('');
+  const [sendError, setSendError] = useState<string | null>(null);
   const [permissionMode, setPermissionMode] = useState<CliChatPermissionMode>(
     rememberedPreferences?.permissionMode ?? DEFAULT_CLI_CHAT_PERMISSION_MODE,
   );
@@ -169,7 +170,8 @@ export function CliChatPanel({
     displayImages: readonly CliChatImageAttachment[] = [],
   ): Promise<boolean> {
     const trimmed = prompt.trim();
-    if (trimmed === '' || ptyId === null || state.running) return false;
+    if (trimmed === '' || ptyId === null || !state.transportReady) return false;
+    setSendError(null);
     if (!titleReportedRef.current) {
       titleReportedRef.current = true;
       onTitleChange?.(
@@ -194,12 +196,11 @@ export function CliChatPanel({
     }
     if (!installed) {
       const name = cli === 'codex' ? 'Codex' : 'Claude';
+      const message = `${name} CLI is not available on PATH.`;
+      setSendError(message);
       dispatch({
-        type: 'events',
-        events: [
-          { type: 'error', message: `${name} CLI is not available on PATH.` },
-          { type: 'done', exitCode: 127 },
-        ],
+        type: 'dispatch_rejected',
+        message,
       });
       return false;
     }
@@ -207,14 +208,24 @@ export function CliChatPanel({
     // The onboarding card's "Ask AI" step completes on a question that actually
     // reached an agent — this is the surface that dispatches one.
     recordOnboardingAskedAi();
-    bridge.terminal.chatSend(ptyId, {
-      cli,
-      prompt: trimmed,
-      sessionId: state.sessionId,
-      permissionMode,
-      autoApproveOkTools: configContext?.userConfig?.agents.autoApproveOkTools ?? true,
-      modelSettings,
-    });
+    let dispatchResult: Awaited<ReturnType<typeof bridge.terminal.chatSend>>;
+    try {
+      dispatchResult = await bridge.terminal.chatSend(ptyId, {
+        cli,
+        prompt: trimmed,
+        sessionId: state.sessionId,
+        permissionMode,
+        autoApproveOkTools: configContext?.userConfig?.agents.autoApproveOkTools ?? true,
+        modelSettings,
+      });
+    } catch {
+      dispatchResult = { ok: false, reason: 'dispatch-failed' };
+    }
+    if (!dispatchResult || !dispatchResult.ok) {
+      setSendError(t`The chat turn could not be sent. Try again.`);
+      dispatch({ type: 'dispatch_rejected' });
+      return false;
+    }
     return true;
   }
 
@@ -248,7 +259,7 @@ export function CliChatPanel({
       if (message.ptyId !== ptyId) return;
       const events: ChatEvent[] = [
         { type: 'error', message: t`The CLI process exited unexpectedly.` },
-        { type: 'done', exitCode: message.exitCode },
+        { type: 'command_exit', exitCode: message.exitCode },
       ];
       dispatch({ type: 'events', events });
     });
@@ -356,6 +367,11 @@ export function CliChatPanel({
               </Button>
             </div>
           ) : null}
+          {sendError === null ? null : (
+            <p role="alert" className="mx-3 mt-2 text-xs text-destructive">
+              {sendError}
+            </p>
+          )}
           {imageAttachments.length > 0 ? (
             <ul
               data-chat-image-attachments="true"
@@ -422,7 +438,7 @@ export function CliChatPanel({
                   setModelSettings(next);
                   writeCliChatPreferences(cli, { modelSettings: next, permissionMode });
                 }}
-                disabled={state.running}
+                disabled={!state.transportReady}
                 onClose={() => textareaRef.current?.focus()}
               />
               <CliChatPermissionMenu
@@ -431,16 +447,17 @@ export function CliChatPanel({
                   setPermissionMode(next);
                   writeCliChatPreferences(cli, { modelSettings, permissionMode: next });
                 }}
-                disabled={state.running}
+                disabled={!state.transportReady}
                 onClose={() => textareaRef.current?.focus()}
               />
             </div>
-            {state.running ? (
+            {!state.transportReady ? (
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
                 onClick={interrupt}
+                disabled={!state.running}
                 aria-label={t`Stop`}
               >
                 <SquareIcon />

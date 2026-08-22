@@ -115,4 +115,27 @@ describe('CLI chat command', () => {
     expect(command).toContain('synapsenote.command_completed');
     expect(command).toContain('"$?"');
   });
+
+  test('feeds the Codex prompt through stdin instead of the PTY shell command', () => {
+    const command = buildCliChatCommand(
+      { ...input, prompt: 'selected document text\nwith user instructions' },
+      { promptFile: '/tmp/synapsenote-chat/prompt.txt' },
+    );
+    expect(command).toContain('codex exec');
+    expect(command).toContain("- < '/tmp/synapsenote-chat/prompt.txt'");
+    expect(command).not.toContain('selected document text');
+    const shell = buildCliChatShellCommand(command, '/tmp/synapsenote-chat/prompt.txt');
+    expect(shell).toContain('chat_exit_code=$?');
+    expect(shell).toContain('trap');
+    expect(shell).toContain("trap 'exit 130' INT");
+    expect(shell).toContain("trap 'exit 143' TERM");
+    expect(shell).toContain('rm -f --');
+    expect(shell).toContain('/tmp/synapsenote-chat/prompt.txt');
+    expect(shell).toContain('rmdir --');
+    expect(shell).toContain('/tmp/synapsenote-chat');
+    expect(shell.indexOf('); chat_exit_code=$?')).toBeGreaterThan(shell.indexOf('trap'));
+    expect(shell.indexOf('synapsenote.command_completed')).toBeGreaterThan(
+      shell.indexOf('); chat_exit_code=$?'),
+    );
+  });
 });
