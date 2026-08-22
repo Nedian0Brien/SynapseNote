@@ -42,7 +42,7 @@ Classify the source before fetching. **\`.svg\` is intentionally absent from the
 - **URL with a binary file extension** (\`.pdf\`, \`.png\`, \`.jpg\`, \`.jpeg\`, \`.gif\`, \`.webp\`, \`.mp4\`, \`.webm\`, \`.mov\`, \`.m4v\`, \`.mp3\`, \`.wav\`, \`.ogg\`, \`.m4a\`, \`.flac\`, \`.docx\`, \`.xlsx\`, \`.pptx\`, \`.doc\`, \`.xls\`, \`.ppt\`, \`.zip\`, \`.7z\`, \`.tar\`, \`.gz\`, \`.rar\`, \`.csv\`, \`.tsv\`, \`.epub\`, etc.) → treat as **binary**. Skip to Step 1b.
 - **URL with a clear HTML/text extension** (\`.html\`, \`.htm\`, none, \`.txt\`, \`.md\`) → treat as **text**. Skip to Step 1c. The executable hard-block does NOT apply here because Step 1c never writes the source extension to disk — it writes a \`.md\` wrapper containing the extracted text.
 - **Local file path** → use your native file read tool. If the local file is text (HTML, plain, markdown), skip to **Step 2b** (text wrapper). If the local file is a binary you want preserved verbatim, you already have the bytes on disk — skip Step 1b's download and proceed directly to **Step 2a** (binary wrapper), pointing \`source_path:\` at the existing local path (relative to the wrapper).
-- **Ambiguous URL** (no extension, query-string download URL, redirect-y link) → run \`curl -IL --proto =http,=https --proto-redir =http,=https --max-redirs 5 -A 'Mozilla/5.0' <url>\` to read response headers, then classify by \`Content-Type\`:
+- **Ambiguous URL** (no extension, query-string download URL, redirect-y link) → run \`curl -IL --proto '=http,https' --proto-redir '=http,https' --max-redirs 5 -A 'Mozilla/5.0' <url>\` to read response headers, then classify by \`Content-Type\`:
   - \`application/pdf\`, \`image/*\` (except \`image/svg+xml\`), \`video/*\`, \`audio/*\`, \`application/zip\`, \`application/vnd.openxmlformats-*\`, \`application/epub+zip\` → **binary**
   - \`text/html\`, \`text/plain\`, \`application/json\` (when the source is a doc/article, not data) → **text**
   - \`application/octet-stream\` → ambiguous; treat as binary BUT note in chat that the server didn't declare a specific type, and the captured \`sha256\` + bytes record gives downstream tooling the signal if the bytes turn out to be HTML.
@@ -84,7 +84,7 @@ Use your shell tool. Use \`external-sources/\` as the destination folder under t
 \`\`\`bash
 mkdir -p "${contentDir}/external-sources"
 curl -L --fail \\
-  --proto =http,=https --proto-redir =http,=https \\
+  --proto '=http,https' --proto-redir '=http,https' \\
   --max-redirs 5 \\
   --max-time 60 \\
   --max-filesize 104857600 \\
@@ -97,7 +97,7 @@ curl -L --fail \\
 
 Flag rationale:
 - \`-L\` follows redirects (CDN-fronted sources need this).
-- \`--proto =http,=https --proto-redir =http,=https\` (M1 review fix) — refuses any scheme other than http(s), and refuses redirects that would downgrade to other schemes. Prevents redirect-chain SSRF into \`file://\`, \`gopher://\`, or cloud-metadata endpoints reached via \`--max-redirs\`.
+- \`--proto '=http,https' --proto-redir '=http,https'\` (M1 review fix) — refuses any scheme other than http(s), and refuses redirects that would downgrade to other schemes. Prevents redirect-chain SSRF into \`file://\`, \`gopher://\`, or cloud-metadata endpoints reached via \`--max-redirs\`.
 - \`--fail\` exits non-zero on HTTP 4xx/5xx instead of writing an error body to disk.
 - \`--max-redirs 5\` caps redirect chains (exit 47 on excess).
 - \`--max-time 60\` caps total request time (exit 28).
