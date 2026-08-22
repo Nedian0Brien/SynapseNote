@@ -1,8 +1,10 @@
 import { lookup as dnsLookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
+import { parseYouTubeUrl } from '@nedian0brien/synapsenote-core';
 import type { OkWebPreviewMetadata } from '../shared/bridge-contract.ts';
 
 const HTML_LIMIT = 512 * 1024;
+const OEMBED_LIMIT = 64 * 1024;
 const IMAGE_LIMIT = 2 * 1024 * 1024;
 const ICON_LIMIT = 256 * 1024;
 const REDIRECT_LIMIT = 3;
@@ -32,6 +34,12 @@ interface ParsedOpenGraph {
   readonly siteName?: string;
   readonly imageUrl?: string;
   readonly faviconUrl?: string;
+}
+
+interface YouTubeOEmbed {
+  readonly title?: unknown;
+  readonly provider_name?: unknown;
+  readonly thumbnail_url?: unknown;
 }
 
 const defaultDeps: WebPreviewDeps = {
@@ -320,10 +328,63 @@ async function imageDataUrl(
   return `data:${resource.contentType};base64,${resource.bytes.toString('base64')}`;
 }
 
+async function loadYouTubePreview(
+  rawUrl: string,
+  deps: WebPreviewDeps,
+): Promise<OkWebPreviewMetadata | null> {
+  const parsedUrl = parseYouTubeUrl(rawUrl);
+  if (!parsedUrl) return null;
+
+  const canonicalUrl = `https://www.youtube.com/watch?v=${parsedUrl.id}`;
+  // YouTube watch pages advertise this endpoint through their
+  // application/json+oembed discovery link. Using the bounded JSON response
+  // avoids downloading the multi-megabyte watch-page application shell.
+  const oEmbedUrl = new URL('https://www.youtube.com/oembed');
+  oEmbedUrl.searchParams.set('format', 'json');
+  oEmbedUrl.searchParams.set('url', canonicalUrl);
+  const resource = await fetchPublicResource(oEmbedUrl, 'application/json', OEMBED_LIMIT, deps);
+  if (!resource || resource.contentType !== 'application/json') return null;
+
+  let oEmbed: YouTubeOEmbed;
+  try {
+    oEmbed = JSON.parse(resource.bytes.toString('utf8')) as YouTubeOEmbed;
+  } catch {
+    return null;
+  }
+
+  const title = normalizedText(typeof oEmbed.title === 'string' ? oEmbed.title : undefined, 240);
+  const siteName = normalizedText(
+    typeof oEmbed.provider_name === 'string' ? oEmbed.provider_name : 'YouTube',
+    100,
+  );
+  const thumbnailUrl =
+    typeof oEmbed.thumbnail_url === 'string'
+      ? parsePublicUrl(oEmbed.thumbnail_url)?.toString()
+      : undefined;
+  const faviconUrl = 'https://www.youtube.com/favicon.ico';
+  const [image, favicon] = await Promise.all([
+    imageDataUrl(thumbnailUrl, IMAGE_LIMIT, deps),
+    imageDataUrl(faviconUrl, ICON_LIMIT, deps),
+  ]);
+
+  return {
+    url: canonicalUrl,
+    ...(title ? { title } : {}),
+    ...(siteName ? { siteName } : {}),
+    ...(image ? { imageDataUrl: image } : {}),
+    ...(image && thumbnailUrl ? { imageUrl: thumbnailUrl } : {}),
+    ...(favicon ? { faviconDataUrl: favicon, faviconUrl } : {}),
+  };
+}
+
 async function loadWebPreview(
   rawUrl: string,
   deps: WebPreviewDeps,
 ): Promise<OkWebPreviewMetadata | null> {
+  if (parseYouTubeUrl(rawUrl)) {
+    const youtube = await loadYouTubePreview(rawUrl, deps);
+    if (youtube) return youtube;
+  }
   const page = await fetchPublicResource(
     rawUrl,
     'text/html,application/xhtml+xml',

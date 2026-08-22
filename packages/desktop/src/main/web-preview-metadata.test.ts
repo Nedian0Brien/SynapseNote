@@ -68,6 +68,64 @@ describe('web preview metadata', () => {
     );
   });
 
+  test('uses YouTube oEmbed instead of downloading the watch page', async () => {
+    const oEmbedUrl =
+      'https://www.youtube.com/oembed?format=json&url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3Dk_gaZjXD5OY';
+    const fetchMock = mock(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === oEmbedUrl) {
+        return Response.json({
+          title: 'This Could End the RAM Crisis',
+          provider_name: 'YouTube',
+          thumbnail_url: 'https://i.ytimg.com/vi/k_gaZjXD5OY/hqdefault.jpg',
+        });
+      }
+      if (url === 'https://i.ytimg.com/vi/k_gaZjXD5OY/hqdefault.jpg') {
+        return new Response(new Uint8Array([1, 2]), {
+          headers: { 'content-type': 'image/jpeg' },
+        });
+      }
+      if (url === 'https://www.youtube.com/favicon.ico') {
+        return new Response(new Uint8Array([3, 4]), {
+          headers: { 'content-type': 'image/x-icon' },
+        });
+      }
+      throw new Error(`unexpected watch-page request: ${url}`);
+    });
+    const deps: WebPreviewDeps = {
+      fetch: fetchMock as unknown as typeof fetch,
+      lookup: async () => [{ address: '142.250.207.46' }],
+    };
+
+    await expect(fetchWebPreviewMetadata('https://youtu.be/k_gaZjXD5OY', deps)).resolves.toEqual({
+      url: 'https://www.youtube.com/watch?v=k_gaZjXD5OY',
+      title: 'This Could End the RAM Crisis',
+      siteName: 'YouTube',
+      imageDataUrl: 'data:image/jpeg;base64,AQI=',
+      imageUrl: 'https://i.ytimg.com/vi/k_gaZjXD5OY/hqdefault.jpg',
+      faviconDataUrl: 'data:image/x-icon;base64,AwQ=',
+      faviconUrl: 'https://www.youtube.com/favicon.ico',
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  test('keeps generic HTML responses bounded', async () => {
+    const fetchMock = mock(
+      async () =>
+        new Response(`<head><title>Too large</title></head>${'x'.repeat(512 * 1024)}`, {
+          headers: { 'content-type': 'text/html' },
+        }),
+    );
+    const deps: WebPreviewDeps = {
+      fetch: fetchMock as unknown as typeof fetch,
+      lookup: async () => [{ address: '93.184.216.34' }],
+    };
+
+    await expect(
+      fetchWebPreviewMetadata('https://oversized-preview.example/article', deps),
+    ).resolves.toBeNull();
+  });
+
   test('refuses destinations that resolve to private addresses', async () => {
     const fetchMock = mock(async () => new Response('<head></head>'));
     const deps: WebPreviewDeps = {
