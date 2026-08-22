@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import {
   buildCliChatCommand,
+  buildCliChatRunnerScript,
+  buildCliChatRunnerShellCommand,
   buildCliChatShellCommand,
   type CliChatLaunchInput,
 } from './cli-chat-command.ts';
@@ -124,18 +126,22 @@ describe('CLI chat command', () => {
     expect(command).toContain('codex exec');
     expect(command).toContain("- < '/tmp/synapsenote-chat/prompt.txt'");
     expect(command).not.toContain('selected document text');
-    const shell = buildCliChatShellCommand(command, '/tmp/synapsenote-chat/prompt.txt');
-    expect(shell).toContain('chat_exit_code=$?');
-    expect(shell).toContain('trap');
-    expect(shell).toContain("trap 'exit 130' INT");
-    expect(shell).toContain("trap 'exit 143' TERM");
-    expect(shell).toContain('rm -f --');
-    expect(shell).toContain('/tmp/synapsenote-chat/prompt.txt');
-    expect(shell).toContain('rmdir --');
-    expect(shell).toContain('/tmp/synapsenote-chat');
-    expect(shell.indexOf('); chat_exit_code=$?')).toBeGreaterThan(shell.indexOf('trap'));
-    expect(shell.indexOf('synapsenote.command_completed')).toBeGreaterThan(
-      shell.indexOf('); chat_exit_code=$?'),
+    const runner = buildCliChatRunnerScript(
+      command,
+      '/tmp/synapsenote-chat/prompt.txt',
+      '/tmp/synapsenote-chat/run.zsh',
     );
+    const shell = buildCliChatRunnerShellCommand('/tmp/synapsenote-chat/run.zsh');
+    expect(runner).toContain(command);
+    expect(runner).toContain('rm -f --');
+    expect(runner).toContain('/tmp/synapsenote-chat/prompt.txt');
+    expect(runner).toContain('/tmp/synapsenote-chat/run.zsh');
+    expect(runner).toContain('rmdir --');
+    expect(runner).toContain("trap 'exit 130' INT");
+    expect(runner).toContain("trap 'exit 143' TERM");
+    expect(shell).not.toContain(command);
+    expect(shell).toContain("/bin/zsh '/tmp/synapsenote-chat/run.zsh'");
+    expect(shell).toContain('chat_exit_code=$?');
+    expect(shell).toContain('synapsenote.command_completed');
   });
 });

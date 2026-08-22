@@ -153,16 +153,31 @@ export function buildCliChatCommand(
  * completion event; this sentinel is a fail-safe for startup/config failures
  * that only print plain stderr and would otherwise leave Chat spinning forever.
  */
-export function buildCliChatShellCommand(command: string, cleanupFile?: string): string {
-  if (cleanupFile === undefined) {
-    return `${command}; printf '\\n{"type":"synapsenote.command_completed","exit_code":%d}\\n' "$?"`;
-  }
-  const cleanupDirectory = cleanupFile.slice(0, cleanupFile.lastIndexOf('/'));
-  const cleanup = `rm -f -- ${shellSingleQuote(cleanupFile)}; rmdir -- ${shellSingleQuote(cleanupDirectory)} 2>/dev/null || true`;
-  // Scope the EXIT trap to a disposable subshell so Ctrl-C and ordinary
-  // failures both remove the prompt payload. Emit readiness from the parent
-  // shell only after that subshell has exited and cleanup has completed.
-  return `(trap ${shellSingleQuote(cleanup)} EXIT; trap 'exit 130' INT; trap 'exit 143' TERM; ${command}); chat_exit_code=$?; printf '\\n{"type":"synapsenote.command_completed","exit_code":%d}\\n' "$chat_exit_code"`;
+export function buildCliChatShellCommand(command: string): string {
+  return `${command}; printf '\\n{"type":"synapsenote.command_completed","exit_code":%d}\\n' "$?"`;
+}
+
+/**
+ * Put the complete Codex invocation in a temporary script so the interactive
+ * PTY receives only this short, fixed-shape command. Both the user context and
+ * the long developer instructions stay out of the terminal line discipline.
+ */
+export function buildCliChatRunnerScript(
+  command: string,
+  promptFile: string,
+  runnerFile: string,
+): string {
+  const directory = runnerFile.slice(0, runnerFile.lastIndexOf('/'));
+  const cleanup = `rm -f -- ${shellSingleQuote(promptFile)} ${shellSingleQuote(runnerFile)}; rmdir -- ${shellSingleQuote(directory)} 2>/dev/null || true`;
+  return `trap ${shellSingleQuote(cleanup)} EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+${command}
+`;
+}
+
+export function buildCliChatRunnerShellCommand(runnerFile: string): string {
+  return `/bin/zsh ${shellSingleQuote(runnerFile)}; chat_exit_code=$?; printf '\\n{"type":"synapsenote.command_completed","exit_code":%d}\\n' "$chat_exit_code"`;
 }
 
 const CODEX_MODELS = new Set([

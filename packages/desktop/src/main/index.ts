@@ -174,6 +174,8 @@ import {
 } from './claude-readiness.ts';
 import {
   buildCliChatCommand,
+  buildCliChatRunnerScript,
+  buildCliChatRunnerShellCommand,
   buildCliChatShellCommand,
   isCliChatLaunchInput,
 } from './cli-chat-command.ts';
@@ -761,36 +763,43 @@ let wm: WindowManager;
  * quit — callers guard with `?.` / a truthiness check.
  */
 let terminalReaper: TerminalReaper | null = null;
-const activeChatPromptFiles = new Map<string, string>();
+interface ChatTurnFiles {
+  readonly directory: string;
+  readonly promptFile: string;
+  readonly runnerFile: string;
+}
+const activeChatTurnFiles = new Map<string, ChatTurnFiles>();
 
 function chatPromptKey(windowId: number, ptyId: string): string {
   return `${windowId}:${ptyId}`;
 }
 
-async function createChatPromptFile(prompt: string): Promise<string> {
+async function createChatTurnFiles(prompt: string): Promise<ChatTurnFiles> {
   const directory = await fsPromises.mkdtemp(join(osTmpdir(), 'synapsenote-chat-'));
-  const path = join(directory, 'prompt.txt');
+  const promptFile = join(directory, 'prompt.txt');
+  const runnerFile = join(directory, 'run.zsh');
   try {
-    await fsPromises.writeFile(path, prompt, 'utf8');
-    return path;
+    await fsPromises.writeFile(promptFile, prompt, 'utf8');
+    return { directory, promptFile, runnerFile };
   } catch (error) {
     await fsPromises.rmdir(directory).catch(() => {});
     throw error;
   }
 }
 
-async function removeChatPromptFile(key: string): Promise<void> {
-  const path = activeChatPromptFiles.get(key);
-  if (path === undefined) return;
-  activeChatPromptFiles.delete(key);
-  await fsPromises.unlink(path).catch(() => {});
-  await fsPromises.rmdir(dirname(path)).catch(() => {});
+async function removeChatTurnFiles(key: string): Promise<void> {
+  const files = activeChatTurnFiles.get(key);
+  if (files === undefined) return;
+  activeChatTurnFiles.delete(key);
+  await fsPromises.unlink(files.promptFile).catch(() => {});
+  await fsPromises.unlink(files.runnerFile).catch(() => {});
+  await fsPromises.rmdir(files.directory).catch(() => {});
 }
 
-function removeChatPromptFilesForWindow(windowId: number): void {
+function removeChatTurnFilesForWindow(windowId: number): void {
   const prefix = `${windowId}:`;
-  for (const key of activeChatPromptFiles.keys()) {
-    if (key.startsWith(prefix)) void removeChatPromptFile(key);
+  for (const key of activeChatTurnFiles.keys()) {
+    if (key.startsWith(prefix)) void removeChatTurnFiles(key);
   }
 }
 /**
@@ -1153,7 +1162,7 @@ function ensureWindowManager() {
       if (terminalReaper)
         wireWindowTerminalReap(win, terminalReaper, (windowId) => {
           dockVisibleForWindow.delete(windowId);
-          removeChatPromptFilesForWindow(windowId);
+          removeChatTurnFilesForWindow(windowId);
         });
       return win as unknown as BrowserWindowLike;
     },
@@ -3277,35 +3286,46 @@ function registerIpcHandlers() {
           (req.chat.cli === 'codex' &&
             classifyExistingMcpEntry(EDITOR_TARGETS.codex, '', osHomedir()).kind === 'present'));
       const promptKey = chatPromptKey(win.id, req.ptyId);
-      await removeChatPromptFile(promptKey);
+      await removeChatTurnFiles(promptKey);
       try {
-        const promptFile =
-          req.chat.cli === 'codex' ? await createChatPromptFile(req.chat.prompt) : undefined;
-        if (promptFile !== undefined) activeChatPromptFiles.set(promptKey, promptFile);
+        const turnFiles =
+          req.chat.cli === 'codex' ? await createChatTurnFiles(req.chat.prompt) : undefined;
+        if (turnFiles !== undefined) activeChatTurnFiles.set(promptKey, turnFiles);
         const command = buildCliChatCommand(req.chat, {
           autoApproveOkTools,
           mcpPreApprove: claudeMcpOwn,
           dataPlaneOnlyWrites: process.env.SYNAPSENOTE_DATABASE_SANDBOX_MODE === 'data-plane-only',
-          promptFile,
+          promptFile: turnFiles?.promptFile,
         });
+        if (turnFiles !== undefined) {
+          await fsPromises.writeFile(
+            turnFiles.runnerFile,
+            buildCliChatRunnerScript(command, turnFiles.promptFile, turnFiles.runnerFile),
+            'utf8',
+          );
+        }
+        const shellCommand =
+          turnFiles === undefined
+            ? buildCliChatShellCommand(command)
+            : buildCliChatRunnerShellCommand(turnFiles.runnerFile);
         const accepted = terminalManager.input({
           windowId: win.id,
           ptyId: req.ptyId,
-          data: `${buildCliChatShellCommand(command, promptFile)}\r`,
+          data: `${shellCommand}\r`,
         });
         if (!accepted) {
-          await removeChatPromptFile(promptKey);
+          await removeChatTurnFiles(promptKey);
           return { ok: false, reason: 'unknown-session' as const };
         }
         return { ok: true as const };
       } catch {
-        await removeChatPromptFile(promptKey);
+        await removeChatTurnFiles(promptKey);
         return { ok: false, reason: 'dispatch-failed' as const };
       }
     }
     if (win && typeof req.data === 'string') {
       if (req.data.includes('\u0003')) {
-        await removeChatPromptFile(chatPromptKey(win.id, req.ptyId));
+        await removeChatTurnFiles(chatPromptKey(win.id, req.ptyId));
       }
       terminalManager.input({ windowId: win.id, ptyId: req.ptyId, data: req.data });
     }
@@ -3326,7 +3346,7 @@ function registerIpcHandlers() {
   handle('ok:pty:kill', async (event, req) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) {
-      await removeChatPromptFile(chatPromptKey(win.id, req.ptyId));
+      await removeChatTurnFiles(chatPromptKey(win.id, req.ptyId));
       terminalManager.kill({ windowId: win.id, ptyId: req.ptyId });
     }
     return undefined;
@@ -5877,7 +5897,7 @@ function bootPrimaryInstance(): void {
     // Reap every window's PTY host first so no user shell / spawn-helper
     // outlives the app. Idempotent (clears the map; a second pass no-ops).
     terminalReaper?.killAll();
-    for (const key of activeChatPromptFiles.keys()) void removeChatPromptFile(key);
+    for (const key of activeChatTurnFiles.keys()) void removeChatTurnFiles(key);
     dockVisibleForWindow.clear();
     autoUpdaterHandle?.destroy();
     autoUpdaterHandle = null;
