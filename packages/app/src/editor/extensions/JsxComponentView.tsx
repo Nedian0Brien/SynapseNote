@@ -731,7 +731,6 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
   // alongside `openPanel`'s own selection + popover-open.
   const handleBodyClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (showPlaceholder) return;
-    if (!isSelfClosingLeaf || !selectOnBodyClick) return;
     const target = e.target as HTMLElement;
     // React events bubble through the React tree including portals, so
     // clicks on inputs inside Radix Popover/Dialog content reach this
@@ -742,6 +741,25 @@ export function JsxComponentView({ node, editor, extension, getPos, selected }: 
     if (!e.currentTarget.contains(target)) return;
     if (target.closest('.jsx-component-chrome')) return;
     if (target.closest('.jsx-add-child-pill, .jsx-empty-child-placeholder')) return;
+    // An empty Accordion has a real PM content hole but no DOM text node for
+    // ProseMirror to place a caret in. Create the first paragraph only for a
+    // click in the rendered body (never the native summary), using the live
+    // NodeView position so concurrent edits cannot duplicate or misplace it.
+    if (descriptor.name === 'Accordion' && target.closest('.accordion-body')) {
+      const livePos = typeof getPos === 'function' ? getPos() : undefined;
+      if (typeof livePos !== 'number') return;
+      const curNode = editor.state.doc.nodeAt(livePos);
+      if (!curNode || curNode.type.name !== 'jsxComponent' || curNode.childCount > 0) return;
+      const insertPos = livePos + 1;
+      const paragraph = editor.state.schema.nodes.paragraph?.create();
+      if (!paragraph || insertPos > editor.state.doc.content.size) return;
+      const tr = editor.state.tr.insert(insertPos, paragraph);
+      tr.setSelection(TextSelection.near(tr.doc.resolve(insertPos + 1))).scrollIntoView();
+      editor.view.dispatch(tr);
+      editor.view.focus();
+      return;
+    }
+    if (!isSelfClosingLeaf || !selectOnBodyClick) return;
     // Rendered leaf components can contain native controls or composite
     // widgets. Let those controls own their click/focus behavior. This is a
     // defense-in-depth guard for descriptors that have not opted into the

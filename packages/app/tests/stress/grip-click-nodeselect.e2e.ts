@@ -296,6 +296,64 @@ test('AC23: grip drag still moves block (drag past dragstart threshold)', async 
     .toEqual(['second paragraph', 'third paragraph', 'first paragraph']);
 });
 
+test('AC23b: grip drag moves a top-level block into an Accordion body', async ({ page, api }) => {
+  await setupDoc(
+    page,
+    api,
+    'Drag this block\n\n<Accordion title="References" defaultOpen>\n\nExisting child\n\n</Accordion>\n',
+  );
+
+  const source = page.locator('.ProseMirror:not(.composer-prosemirror) > p').first();
+  const sourceBox = await source.boundingBox();
+  if (!sourceBox) throw new Error('source paragraph not measurable');
+  await page.mouse.move(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
+
+  const grip = page.locator('.ok-drag-grip');
+  await expect(grip).toBeVisible({ timeout: 5_000 });
+  const gripBox = await grip.boundingBox();
+  if (!gripBox) throw new Error('drag grip not measurable');
+
+  const existingChild = page.locator('.accordion-body p').first();
+  const childBox = await existingChild.boundingBox();
+  if (!childBox) throw new Error('Accordion child not measurable');
+
+  await page.mouse.move(gripBox.x + gripBox.width / 2, gripBox.y + gripBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(childBox.x + childBox.width / 2, childBox.y + childBox.height + 4, {
+    steps: 20,
+  });
+  await page.mouse.up();
+
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() => {
+          const editor = window.__activeEditor;
+          if (!editor) return null;
+          const accordion = editor.state.doc.firstChild;
+          return {
+            componentName: accordion?.attrs.componentName as string | undefined,
+            children: accordion
+              ? Array.from(
+                  { length: accordion.childCount },
+                  (_, index) => accordion.child(index).textContent,
+                )
+              : [],
+            topLevelText: Array.from(
+              { length: editor.state.doc.childCount },
+              (_, index) => editor.state.doc.child(index).textContent,
+            ).filter(Boolean),
+          };
+        }),
+      { timeout: 5_000 },
+    )
+    .toEqual({
+      componentName: 'Accordion',
+      children: ['Existing child', 'Drag this block'],
+      topLevelText: ['Existing childDrag this block'],
+    });
+});
+
 // ── micro-drag behavior (pins current implementation) ─────────────
 //
 // The design reads "micro-drag does NOT NodeSelect" but qualifies the

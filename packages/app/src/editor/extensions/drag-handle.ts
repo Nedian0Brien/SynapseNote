@@ -230,7 +230,12 @@ export const BlockDragHandle = Extension.create({
             }),
           ],
         },
-        nestedOptions: normalizeNestedOptions(false),
+        // The handle plugin otherwise treats a drag as a top-level range and
+        // cannot move a block into a container's content hole. Tiptap's
+        // default nested rules still reject table rows/cells and inline nodes;
+        // enabling the supported nested mode is therefore limited to the
+        // container-aware drag path rather than changing those guards.
+        nestedOptions: normalizeNestedOptions(true),
       }).plugin,
     ];
   },
