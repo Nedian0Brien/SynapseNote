@@ -221,40 +221,25 @@
   background: var(--background);
 }
 
-/* Native fullscreen keeps the sandboxed preview as the primary surface while
-   retaining the NodeView chrome as an explicit exit affordance. Targeting the
-   whole block (rather than the iframe alone) also keeps the preview's sandbox
-   boundary and source document unchanged during enter/exit. */
-.ProseMirror .ok-codeblock:fullscreen {
-  display: flex;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
+/* HTML preview expansion reuses react-medium-image-zoom's dialog + overlay +
+   minimize-button contract. The iframe occupies the same 20px viewport inset
+   as descriptor images configured with `zoomMargin={20}`. */
+.ok-html-preview-lightbox-frame {
+  position: absolute;
+  inset: 20px;
+  display: block;
+  width: calc(100% - 40px);
+  height: calc(100% - 40px);
+  border: 0;
+  border-radius: 0.5rem;
   background: var(--background);
+  box-shadow: 0 1px 8px rgb(0 0 0 / 12%);
+  opacity: 0;
+  transition: opacity 0.3s;
 }
 
-.ProseMirror .ok-codeblock:fullscreen > .ok-codeblock-preview {
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  max-height: none;
-  border-radius: 0;
-}
-
-.ProseMirror .ok-codeblock:fullscreen > .ok-codeblock-chrome {
-  top: 0.75rem;
-  right: 0.75rem;
-  bottom: auto;
-  padding-bottom: 0.1875rem;
+[data-ok-html-preview-lightbox="visible"] > .ok-html-preview-lightbox-frame {
   opacity: 1;
-  pointer-events: auto;
-}
-
-.ProseMirror .ok-codeblock:fullscreen > .ok-codeblock-title,
-.ProseMirror .ok-codeblock:fullscreen > .ok-codeblock-pre,
-.ProseMirror .ok-codeblock:fullscreen > .ok-codeblock-preview .ok-resize-overlay {
-  display: none;
 }
 
 /* Collapse the code body (PM contentDOM) when preview is active and the
