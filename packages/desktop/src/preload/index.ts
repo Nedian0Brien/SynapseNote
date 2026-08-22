@@ -42,6 +42,7 @@ import type {
   OkMcpWiringShowPayload,
   OkMenuAction,
   OkOnboardingShowPayload,
+  OkPtyChatSendResult,
   OkPtyData,
   OkPtyExit,
   OkServerReclaimedInfo,
@@ -741,7 +742,7 @@ const bridge: OkDesktopBridge = {
       invoke('ok:pty:input', { ptyId, data }).catch(() => {});
     },
     chatSend: (ptyId, input) => {
-      invoke('ok:pty:input', { ptyId, chat: input }).catch(() => {});
+      return invoke('ok:pty:input', { ptyId, chat: input }) as Promise<OkPtyChatSendResult>;
     },
     listChatSessions: () =>
       invoke('ok:terminal:cli-chat-sessions', { action: 'list' }).then((result) =>

@@ -590,7 +590,7 @@ export async function installHandoffMocks(page: Page, cfg: HandoffMockConfig): P
         terminal: {
           create: async () => ({ ok: true as const, ptyId: 'mock-pty' }),
           input: () => {},
-          chatSend: () => {},
+          chatSend: async () => ({ ok: true as const }),
           listChatSessions: async () => [],
           readChatSession: async () => [],
           resize: () => {},

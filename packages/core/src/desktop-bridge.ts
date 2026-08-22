@@ -908,6 +908,13 @@ export type OkPtyAdoptResult =
   | { readonly ok: true; readonly replay: string }
   | { readonly ok: false; readonly reason: 'unknown-session' };
 
+export type OkPtyChatSendResult =
+  | { readonly ok: true }
+  | {
+      readonly ok: false;
+      readonly reason: 'invalid-input' | 'no-window' | 'unknown-session' | 'dispatch-failed';
+    };
+
 /** Push payload for `ok:pty:data`. Canonical JSDoc in `bridge-contract.ts`. */
 export interface OkPtyData {
   readonly ptyId: string;
@@ -1718,7 +1725,7 @@ export interface OkDesktopBridge {
           speed: 'default' | 'fast';
         };
       },
-    ): void;
+    ): Promise<OkPtyChatSendResult>;
     /** List native Codex/Claude sessions whose working directory is this project. */
     listChatSessions(): Promise<OkCliChatSession[]>;
     /** Read the visible user/assistant turns for one project-owned native session. */

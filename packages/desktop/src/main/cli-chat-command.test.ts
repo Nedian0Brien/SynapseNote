@@ -115,4 +115,14 @@ describe('CLI chat command', () => {
     expect(command).toContain('synapsenote.command_completed');
     expect(command).toContain('"$?"');
   });
+
+  test('feeds the Codex prompt through stdin instead of the PTY shell command', () => {
+    const command = buildCliChatCommand(
+      { ...input, prompt: 'selected document text\nwith user instructions' },
+      { promptViaStdin: true },
+    );
+    expect(command).toContain('codex exec');
+    expect(command.endsWith(' -')).toBe(true);
+    expect(command).not.toContain('selected document text');
+  });
 });

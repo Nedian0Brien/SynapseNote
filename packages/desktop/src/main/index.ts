@@ -756,6 +756,31 @@ let wm: WindowManager;
  * quit — callers guard with `?.` / a truthiness check.
  */
 let terminalReaper: TerminalReaper | null = null;
+const activeCodexChatProcesses = new Map<string, ReturnType<typeof spawn>>();
+
+function chatProcessKey(windowId: number, ptyId: string): string {
+  return `${windowId}:${ptyId}`;
+}
+
+function signalCodexChatProcess(key: string, signal: NodeJS.Signals): void {
+  const child = activeCodexChatProcesses.get(key);
+  if (child === undefined) return;
+  try {
+    if (child.pid !== undefined) process.kill(-child.pid, signal);
+    else child.kill(signal);
+  } catch {
+    try {
+      child.kill(signal);
+    } catch {}
+  }
+}
+
+function stopCodexChatProcessesForWindow(windowId: number): void {
+  const prefix = `${windowId}:`;
+  for (const key of activeCodexChatProcesses.keys()) {
+    if (key.startsWith(prefix)) signalCodexChatProcess(key, 'SIGTERM');
+  }
+}
 /**
  * Per-window docked-terminal visibility, recorded from the renderer's view-menu
  * push so a reloaded renderer can restore an expanded dock. Keyed by windowId
@@ -1114,9 +1139,10 @@ function ensureWindowManager() {
       // onReap clears the window's retained dock-visibility so it can't restore
       // a stale "visible" for a future window that reuses the id.
       if (terminalReaper)
-        wireWindowTerminalReap(win, terminalReaper, (windowId) =>
-          dockVisibleForWindow.delete(windowId),
-        );
+        wireWindowTerminalReap(win, terminalReaper, (windowId) => {
+          dockVisibleForWindow.delete(windowId);
+          stopCodexChatProcessesForWindow(windowId);
+        });
       return win as unknown as BrowserWindowLike;
     },
     // App-level foreground activation for the bring-to-front recipe. macOS
@@ -3220,36 +3246,91 @@ function registerIpcHandlers() {
   });
   handle('ok:pty:input', async (event, req) => {
     const win = BrowserWindow.fromWebContents(event.sender);
-    if (win) {
-      if (isCliChatLaunchInput(req.chat)) {
-        const editorCtx = wm
-          ? wm.getContextForBrowserWindow(win as unknown as BrowserWindowLike)
-          : null;
-        const projectRoot = resolvePtyProjectRoot({
-          editorProjectPath: editorCtx?.projectPath ?? null,
-          terminalWindow: getTerminalWindowContext(win.id),
-          homedir: osHomedir(),
-        });
-        const claudeMcpOwn =
-          req.chat.cli === 'claude' && isProjectClaudeMcpOwn(projectRoot ?? undefined);
-        const autoApproveOkTools =
-          req.chat.autoApproveOkTools !== false &&
-          (claudeMcpOwn ||
-            (req.chat.cli === 'codex' &&
-              classifyExistingMcpEntry(EDITOR_TARGETS.codex, '', osHomedir()).kind === 'present'));
-        const command = buildCliChatCommand(req.chat, {
-          autoApproveOkTools,
-          mcpPreApprove: claudeMcpOwn,
-          dataPlaneOnlyWrites: process.env.SYNAPSENOTE_DATABASE_SANDBOX_MODE === 'data-plane-only',
-        });
-        terminalManager.input({
+    if (req.chat !== undefined) {
+      if (!isCliChatLaunchInput(req.chat)) return { ok: false, reason: 'invalid-input' as const };
+      if (!win) return { ok: false, reason: 'no-window' as const };
+      const editorCtx = wm
+        ? wm.getContextForBrowserWindow(win as unknown as BrowserWindowLike)
+        : null;
+      const projectRoot = resolvePtyProjectRoot({
+        editorProjectPath: editorCtx?.projectPath ?? null,
+        terminalWindow: getTerminalWindowContext(win.id),
+        homedir: osHomedir(),
+      });
+      const claudeMcpOwn =
+        req.chat.cli === 'claude' && isProjectClaudeMcpOwn(projectRoot ?? undefined);
+      const autoApproveOkTools =
+        req.chat.autoApproveOkTools !== false &&
+        (claudeMcpOwn ||
+          (req.chat.cli === 'codex' &&
+            classifyExistingMcpEntry(EDITOR_TARGETS.codex, '', osHomedir()).kind === 'present'));
+      if (!terminalManager.hasSession(win.id, req.ptyId)) {
+        return { ok: false, reason: 'unknown-session' as const };
+      }
+      const processKey = chatProcessKey(win.id, req.ptyId);
+      if (activeCodexChatProcesses.has(processKey)) {
+        return { ok: false, reason: 'dispatch-failed' as const };
+      }
+      const command = buildCliChatCommand(req.chat, {
+        autoApproveOkTools,
+        mcpPreApprove: claudeMcpOwn,
+        dataPlaneOnlyWrites: process.env.SYNAPSENOTE_DATABASE_SANDBOX_MODE === 'data-plane-only',
+        promptViaStdin: req.chat.cli === 'codex',
+      });
+      if (req.chat.cli !== 'codex') {
+        const accepted = terminalManager.input({
           windowId: win.id,
           ptyId: req.ptyId,
           data: `${buildCliChatShellCommand(command)}\r`,
         });
-      } else if (typeof req.data === 'string') {
-        terminalManager.input({ windowId: win.id, ptyId: req.ptyId, data: req.data });
+        return accepted ? { ok: true as const } : { ok: false, reason: 'unknown-session' as const };
       }
+      try {
+        const child = spawn('/bin/zsh', ['-l', '-c', command], {
+          cwd: projectRoot ?? osHomedir(),
+          detached: true,
+          env: process.env,
+          stdio: ['pipe', 'pipe', 'pipe'],
+        });
+        activeCodexChatProcesses.set(processKey, child);
+        let finalized = false;
+        let stderrTail = '';
+        const pushData = (data: string): void => {
+          sendToRenderer(win.webContents, 'ok:pty:data', { ptyId: req.ptyId, data });
+        };
+        const finalize = (exitCode: number, error?: string): void => {
+          if (finalized) return;
+          finalized = true;
+          activeCodexChatProcesses.delete(processKey);
+          if (exitCode !== 0 && error) {
+            pushData(`${JSON.stringify({ type: 'turn.failed', error: { message: error } })}\n`);
+          }
+          pushData(
+            `${JSON.stringify({ type: 'synapsenote.command_completed', exit_code: exitCode })}\n`,
+          );
+        };
+        child.stdout.on('data', (data: Buffer) => pushData(data.toString('utf8')));
+        child.stderr.on('data', (data: Buffer) => {
+          stderrTail = `${stderrTail}${data.toString('utf8')}`.slice(-4096);
+        });
+        child.once('error', (error) => finalize(1, error.message));
+        child.once('close', (code, signal) =>
+          finalize(code ?? (signal === 'SIGINT' ? 130 : 1), stderrTail.trim()),
+        );
+        child.stdin.end(req.chat.prompt, 'utf8');
+        return { ok: true as const };
+      } catch {
+        activeCodexChatProcesses.delete(processKey);
+        return { ok: false, reason: 'dispatch-failed' as const };
+      }
+    }
+    if (win && typeof req.data === 'string') {
+      const processKey = chatProcessKey(win.id, req.ptyId);
+      if (req.data.includes('\u0003') && activeCodexChatProcesses.has(processKey)) {
+        signalCodexChatProcess(processKey, 'SIGINT');
+        return undefined;
+      }
+      terminalManager.input({ windowId: win.id, ptyId: req.ptyId, data: req.data });
     }
     return undefined;
   });
@@ -3267,7 +3348,10 @@ function registerIpcHandlers() {
   });
   handle('ok:pty:kill', async (event, req) => {
     const win = BrowserWindow.fromWebContents(event.sender);
-    if (win) terminalManager.kill({ windowId: win.id, ptyId: req.ptyId });
+    if (win) {
+      signalCodexChatProcess(chatProcessKey(win.id, req.ptyId), 'SIGTERM');
+      terminalManager.kill({ windowId: win.id, ptyId: req.ptyId });
+    }
     return undefined;
   });
   handle('ok:pty:drain', async (event, req) => {
@@ -5816,6 +5900,7 @@ function bootPrimaryInstance(): void {
     // Reap every window's PTY host first so no user shell / spawn-helper
     // outlives the app. Idempotent (clears the map; a second pass no-ops).
     terminalReaper?.killAll();
+    for (const key of activeCodexChatProcesses.keys()) signalCodexChatProcess(key, 'SIGTERM');
     dockVisibleForWindow.clear();
     autoUpdaterHandle?.destroy();
     autoUpdaterHandle = null;

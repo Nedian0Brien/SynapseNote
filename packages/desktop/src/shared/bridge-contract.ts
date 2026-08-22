@@ -896,6 +896,14 @@ export type OkPtyCreateResult =
   | { readonly ok: true; readonly ptyId: string }
   | { readonly ok: false; readonly reason: 'no-project' | 'not-consented' };
 
+/** Acknowledgement for a structured CLI chat dispatch. */
+export type OkPtyChatSendResult =
+  | { readonly ok: true }
+  | {
+      readonly ok: false;
+      readonly reason: 'invalid-input' | 'no-window' | 'unknown-session' | 'dispatch-failed';
+    };
+
 /**
  * One entry of the reload-rehydration inventory (`terminal.list`) — a ptyId that
  * is still live in the main process for the window. Mirrored verbatim in the core
@@ -2024,7 +2032,7 @@ export interface OkDesktopBridge {
           speed: 'default' | 'fast';
         };
       },
-    ): void;
+    ): Promise<OkPtyChatSendResult>;
     /** List native Codex/Claude sessions whose working directory is this project. */
     listChatSessions(): Promise<OkCliChatSession[]>;
     /** Read the visible user/assistant turns for one project-owned native session. */

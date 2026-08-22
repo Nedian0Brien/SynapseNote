@@ -10798,6 +10798,10 @@ msgstr ""
 msgid "The app clears values first, then removes the schema in reviewed steps. After a successful commit, History exposes Undo for recovery."
 msgstr ""
 
+#: src/components/chat/CliChatPanel.tsx
+msgid "The chat turn could not be sent. Try again."
+msgstr ""
+
 #: src/components/InstallInClaudeDesktopDialog.tsx
 msgid "The Claude Desktop App didn't open the file. Is it installed? ({msg})"
 msgstr ""

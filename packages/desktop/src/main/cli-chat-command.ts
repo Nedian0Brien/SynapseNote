@@ -113,10 +113,11 @@ function printablePtyArgument(value: string): string {
  */
 export function buildCliChatCommand(
   input: CliChatLaunchInput,
-  options: CliChatCommandOptions = {},
+  options: CliChatCommandOptions & { readonly promptViaStdin?: boolean } = {},
 ): string {
   const permissionMode = options.dataPlaneOnlyWrites === true ? 'read-only' : input.permissionMode;
   const quotedPrompt = shellSingleQuote(printablePtyArgument(input.prompt));
+  const promptInput = options.promptViaStdin === true ? '-' : quotedPrompt;
   const quotedSessionId =
     input.sessionId === null ? null : shellSingleQuote(printablePtyArgument(input.sessionId));
   if (input.cli === 'codex') {
@@ -128,8 +129,8 @@ export function buildCliChatCommand(
     const model = codexModelArgs(input.modelSettings);
     const systemInstructions = systemInstructionArgs(input.cli);
     return input.sessionId === null
-      ? `codex exec --json --color never${permissions}${model}${systemInstructions} ${quotedPrompt}`
-      : `codex exec resume --json${permissions}${model}${systemInstructions} ${quotedSessionId} ${quotedPrompt}`;
+      ? `codex exec --json --color never${permissions}${model}${systemInstructions} ${promptInput}`
+      : `codex exec resume --json${permissions}${model}${systemInstructions} ${quotedSessionId} ${promptInput}`;
   }
   const permissions = claudePermissionArgs(permissionMode);
   const claudeSettings = buildClaudeSettingsArg({

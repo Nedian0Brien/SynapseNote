@@ -201,6 +201,7 @@ describe('createTerminalManager — addressing', () => {
 
   test('routes input/resize/kill to the host for the live ptyId', () => {
     const h = setup();
+    expect(h.mgr.hasSession(1, 'pty-1')).toBe(true);
     h.mgr.input({ windowId: 1, ptyId: 'pty-1', data: 'ls -la\r' });
     h.mgr.resize({ windowId: 1, ptyId: 'pty-1', cols: 120, rows: 40 });
     h.mgr.kill({ windowId: 1, ptyId: 'pty-1' });
@@ -212,6 +213,7 @@ describe('createTerminalManager — addressing', () => {
 
   test('drops input for a stale ptyId (a superseded renderer cannot drive the live shell)', () => {
     const h = setup();
+    expect(h.mgr.hasSession(1, 'stale')).toBe(false);
     const before = h.forked[0]?.posted.length ?? 0;
     h.mgr.input({ windowId: 1, ptyId: 'pty-OLD', data: 'rm -rf /\r' });
     expect(h.forked[0]?.posted.length).toBe(before);
