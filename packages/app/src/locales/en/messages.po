@@ -2177,6 +2177,13 @@ msgstr "Code block"
 msgid "Code Block"
 msgstr "Code Block"
 
+#. placeholder {0}: attachedBlockReference.index
+#. placeholder {0}: blockReference.index
+#: src/components/chat/ChatMessageList.tsx
+#: src/components/chat/CliChatPanel.tsx
+msgid "Code block {0}"
+msgstr "Code block {0}"
+
 #: src/editor/extensions/CodeBlockView.tsx
 msgid "Code block language: {currentLabel}. Click to change."
 msgstr "Code block language: {currentLabel}. Click to change."
