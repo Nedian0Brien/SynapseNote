@@ -48,6 +48,7 @@ interface CliChatPanelProps {
   readonly bridge: OkDesktopBridge;
   readonly cli: CliChatId;
   readonly ptyId: string | null;
+  readonly isActive?: boolean;
   readonly initialPrompt: string | null;
   readonly initialDisplayPrompt?: string;
   readonly context?: readonly ChatContextChip[];
@@ -69,6 +70,7 @@ export function CliChatPanel({
   bridge,
   cli,
   ptyId,
+  isActive = true,
   initialPrompt,
   initialDisplayPrompt,
   context = [],
@@ -307,6 +309,7 @@ export function CliChatPanel({
       <ChatMessageList
         timeline={state.timeline}
         running={state.running}
+        isActive={isActive}
         bridge={bridge}
         emptyLabel={historyLoading ? t`Loading chat history` : undefined}
         emptyLoading={historyLoading}

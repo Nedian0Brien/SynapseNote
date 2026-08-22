@@ -172,6 +172,50 @@ describe('CliChatPanel', () => {
     expect(chatSend.mock.calls[0]?.[1].sessionId).toBe('codex-session');
   });
 
+  test('scrolls restored history to the newest message when the chat becomes active', async () => {
+    const scrollIntoView = mock((_options?: ScrollIntoViewOptions) => {});
+    const scrollPrototype = HTMLElement.prototype as HTMLElement & {
+      scrollIntoView?: (options?: ScrollIntoViewOptions) => void;
+    };
+    const previousScrollIntoView = scrollPrototype.scrollIntoView;
+    scrollPrototype.scrollIntoView = scrollIntoView;
+
+    try {
+      const { bridge } = makeBridge([
+        { role: 'user', text: 'Earlier question' },
+        { role: 'assistant', text: 'Newest answer' },
+      ]);
+      const view = render(
+        <CliChatPanel
+          bridge={bridge}
+          cli="codex"
+          ptyId="pty-1"
+          initialPrompt={null}
+          initialSessionId="restored-session"
+          isActive={false}
+        />,
+      );
+
+      expect(await screen.findByText('Newest answer')).toBeTruthy();
+      expect(scrollIntoView).not.toHaveBeenCalled();
+
+      view.rerender(
+        <CliChatPanel
+          bridge={bridge}
+          cli="codex"
+          ptyId="pty-1"
+          initialPrompt={null}
+          initialSessionId="restored-session"
+          isActive
+        />,
+      );
+      await waitFor(() => expect(scrollIntoView).toHaveBeenCalledWith({ block: 'end' }));
+    } finally {
+      if (previousScrollIntoView === undefined) delete scrollPrototype.scrollIntoView;
+      else scrollPrototype.scrollIntoView = previousScrollIntoView;
+    }
+  });
+
   test('shows context, sends immediately, and accumulates a structured response', async () => {
     const { bridge, chatSend, pushData } = makeBridge();
     render(
