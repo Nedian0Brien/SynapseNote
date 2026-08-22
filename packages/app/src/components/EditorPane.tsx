@@ -95,9 +95,10 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
   const [editorMode, setEditorMode] = useState<EditorMode>(persistedMode);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authInitialStep, setAuthInitialStep] = useState<'auth' | 'identity'>('auth');
-  // Keep the established document-info default while ordering Chat first in the
-  // rail. Opening Chat explicitly swaps the right rail to the live session host;
-  // closing it restores the last document tab instead of leaving an empty panel.
+  // Start from the document-info fallback. The document-opening effect below
+  // promotes Chat through the real reveal path when a note becomes active;
+  // closing Chat still restores the last document tab instead of leaving an
+  // empty panel.
   const [activeTab, setActiveTab] = useState<PanelTab>('outline');
   const lastDocumentTabRef = useRef<DocumentPanelTab>('outline');
   const lastPdfTabRef = useRef<PdfPanelTab>('pages');
@@ -129,10 +130,10 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
   // settles to a `false` push and the dock stays hidden. Mirrors TerminalDock's
   // `rehydrationSettled` latch.
   const [dockRestoreSettled, setDockRestoreSettled] = useState(false);
-  // One-shot marker set when the restore itself drives the false→true reveal, so
-  // the adoption telemetry below doesn't count an automatic reload-restore as a
-  // user-initiated open.
-  const restoreRevealRef = useRef(false);
+  // One-shot marker set when note/PDF opening or state restoration drives a
+  // false→true reveal, so adoption telemetry doesn't count an automatic reveal
+  // as a user-initiated open.
+  const automaticRevealRef = useRef(false);
   // Launch intent threaded to the terminal session for the "Open in terminal"
   // entry point. Null until a UI click; bumping `nonce` makes each click a
   // distinct one-shot the session writes exactly once.
@@ -273,6 +274,8 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
     activeTarget?.kind === 'asset' && activeTarget.mediaKind === 'pdf'
       ? activeTarget.assetPath
       : null;
+  const activeDocumentPath =
+    activeTarget?.kind === 'doc' || activeTarget?.kind === 'missing' ? activeDocName : null;
   const panelSurface =
     activePdfAssetPath !== null
       ? 'pdf'
@@ -280,23 +283,36 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
         ? 'document'
         : null;
   const previousPanelSurfaceRef = useRef<'document' | 'pdf' | null>(null);
+  const previousDocumentPathRef = useRef<string | null>(null);
   const previousPdfAssetPathRef = useRef<string | null>(null);
   const revealRightChatEvent = useEffectEvent(revealRightChat);
+  const revealRightChatAutomaticallyEvent = useEffectEvent(() => {
+    if (!previousTerminalVisibleRef.current) automaticRevealRef.current = true;
+    revealRightChat();
+  });
   useEffect(() => {
+    const openedDocument =
+      activeDocumentPath !== null && previousDocumentPathRef.current !== activeDocumentPath;
+    previousDocumentPathRef.current = activeDocumentPath;
     const openedPdf =
       activePdfAssetPath !== null && previousPdfAssetPathRef.current !== activePdfAssetPath;
     previousPdfAssetPathRef.current = activePdfAssetPath;
 
+    if (openedDocument && terminalAvailable) {
+      previousPanelSurfaceRef.current = 'document';
+      revealRightChatAutomaticallyEvent();
+      return;
+    }
     if (openedPdf && terminalAvailable && window.innerWidth >= RIGHT_COLLAPSE_THRESHOLD) {
       previousPanelSurfaceRef.current = 'pdf';
-      revealRightChatEvent();
+      revealRightChatAutomaticallyEvent();
       return;
     }
     if (panelSurface === null || previousPanelSurfaceRef.current === panelSurface) return;
     previousPanelSurfaceRef.current = panelSurface;
     if (activeTab === 'chat') return;
     setActiveTab(panelSurface === 'pdf' ? lastPdfTabRef.current : lastDocumentTabRef.current);
-  }, [activePdfAssetPath, activeTab, panelSurface, terminalAvailable]);
+  }, [activeDocumentPath, activePdfAssetPath, activeTab, panelSurface, terminalAvailable]);
   const { pageMeta, pageTitles } = usePageList();
   const chatDocumentContext: CliChatDocumentContext | null = (() => {
     const activePath =
@@ -602,7 +618,7 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
         if (cancelled || !state.visible) return;
         // The restore — not the user — is driving this reveal; mark it so the
         // adoption telemetry below skips it.
-        restoreRevealRef.current = true;
+        if (!previousTerminalVisibleRef.current) automaticRevealRef.current = true;
         if (terminalDockRef.current === 'right') setActiveTab('chat');
         setTerminalSurface('dock');
         setTerminalVisible(true);
@@ -621,17 +637,17 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
     };
   }, []);
 
-  // Adoption telemetry: count each open (the false→true transition). Starts
-  // hidden, so the mount run is a no-op; desktop-only (the dock is too). The
-  // reload-restore reveal is not a user open — consume its one-shot marker so it
-  // isn't counted; a genuine ⌘J / menu open leaves the marker unset.
+  // Adoption telemetry: count each user open (the false→true transition).
+  // Automatic note/PDF/reload reveals consume their one-shot marker instead;
+  // a genuine ⌘J / menu open leaves the marker unset.
   useEffect(() => {
     if (window.okDesktop == null) return;
-    if (restoreRevealRef.current) {
-      restoreRevealRef.current = false;
+    if (!terminalVisible) return;
+    if (automaticRevealRef.current) {
+      automaticRevealRef.current = false;
       return;
     }
-    if (terminalVisible) recordTerminalOpened();
+    recordTerminalOpened();
   }, [terminalVisible]);
 
   // One-time toast when the engine pauses sync for missing push permission.

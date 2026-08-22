@@ -215,11 +215,21 @@ mock.module('./AutoSyncOnboardingDialog', () => ({
 
 async function renderEditorPane() {
   const { EditorPane } = await import('./EditorPane');
-  render(<EditorPane />);
+  const view = render(<EditorPane />);
   // Flush the mount-time async dock-state restore (getDockState) and the
   // re-render it triggers, so the now-gated View-menu push settles
   // deterministically before assertions read viewMenuPushes / data-visible.
   await act(async () => {});
+  return {
+    ...view,
+    rerenderEditorPane: () => view.rerender(<EditorPane />),
+  };
+}
+
+async function renderEditorPaneWithoutOpenDocument() {
+  mockActiveDocName = null;
+  mockActiveTarget = { kind: 'folder', folderPath: '' };
+  return renderEditorPane();
 }
 
 describe('EditorPane chat selection context', () => {
@@ -479,6 +489,25 @@ describe('EditorPane terminal dock wiring', () => {
     expect(screen.queryByTestId('terminal-dock')).not.toBeNull();
   });
 
+  test('desktop: opening a note defaults the right rail to a live chat', async () => {
+    (window as { okDesktop?: unknown }).okDesktop = makeOkDesktopStub().stub;
+    mockActiveDocName = null;
+    mockActiveTarget = { kind: 'folder', folderPath: '' };
+    const view = await renderEditorPane();
+
+    expect(screen.getByTestId('editor-area').getAttribute('data-active-tab')).toBe('outline');
+    expect(screen.getByTestId('terminal-dock').getAttribute('data-visible')).toBe('false');
+
+    mockActiveDocName = TEST_DOC;
+    mockActiveTarget = { kind: 'doc', docName: TEST_DOC };
+    await act(async () => view.rerenderEditorPane());
+
+    expect(screen.getByTestId('editor-area').getAttribute('data-active-tab')).toBe('chat');
+    expect(screen.getByTestId('terminal-dock').getAttribute('data-visible')).toBe('true');
+    expect(screen.getByTestId('terminal-dock').getAttribute('data-launch-nonce')).toBe('1');
+    expect(terminalOpenedCalls).toHaveLength(0);
+  });
+
   test('desktop: opening a PDF defaults the right rail to chat', async () => {
     Object.defineProperty(window, 'innerWidth', {
       value: 1280,
@@ -524,7 +553,7 @@ describe('EditorPane terminal dock wiring', () => {
   test('desktop: toggle-terminal menu action flips dock visibility and pushes the view-menu state', async () => {
     const desk = makeOkDesktopStub();
     (window as { okDesktop?: unknown }).okDesktop = desk.stub;
-    await renderEditorPane();
+    await renderEditorPaneWithoutOpenDocument();
 
     expect(screen.getByTestId('terminal-dock').getAttribute('data-visible')).toBe('false');
     // Mount pushes terminalVisible:false so the View menu reads "Show Terminal".
@@ -545,7 +574,7 @@ describe('EditorPane terminal dock wiring', () => {
     const desk = makeOkDesktopStub();
     (window as { okDesktop?: unknown }).okDesktop = desk.stub;
     const { requestTerminalLaunch } = await import('./handoff/terminal-launch-events');
-    await renderEditorPane();
+    await renderEditorPaneWithoutOpenDocument();
 
     const dock = () => screen.getByTestId('terminal-dock');
     expect(dock().getAttribute('data-launch-nonce')).toBe('none');
@@ -573,7 +602,7 @@ describe('EditorPane terminal dock wiring', () => {
     const desk = makeOkDesktopStub();
     (window as { okDesktop?: unknown }).okDesktop = desk.stub;
     const { requestTerminalLaunch } = await import('./handoff/terminal-launch-events');
-    await renderEditorPane();
+    await renderEditorPaneWithoutOpenDocument();
 
     const dock = () => screen.getByTestId('terminal-dock');
 
@@ -596,7 +625,7 @@ describe('EditorPane terminal dock wiring', () => {
     const desk = makeOkDesktopStub();
     (window as { okDesktop?: unknown }).okDesktop = desk.stub;
     const { requestTerminalLaunch } = await import('./handoff/terminal-launch-events');
-    await renderEditorPane();
+    await renderEditorPaneWithoutOpenDocument();
 
     mockActiveTarget = { kind: 'chat', target: '#/__chat__' };
     act(() =>
@@ -616,7 +645,7 @@ describe('EditorPane terminal dock wiring', () => {
   test('desktop: new-terminal menu action opens the dock and stays open on repeat (not a toggle)', async () => {
     const desk = makeOkDesktopStub();
     (window as { okDesktop?: unknown }).okDesktop = desk.stub;
-    await renderEditorPane();
+    await renderEditorPaneWithoutOpenDocument();
 
     expect(screen.getByTestId('terminal-dock').getAttribute('data-visible')).toBe('false');
 
@@ -632,7 +661,7 @@ describe('EditorPane terminal dock wiring', () => {
   test('desktop: an unrelated menu action does not toggle the terminal', async () => {
     const desk = makeOkDesktopStub();
     (window as { okDesktop?: unknown }).okDesktop = desk.stub;
-    await renderEditorPane();
+    await renderEditorPaneWithoutOpenDocument();
 
     act(() => desk.dispatchMenuAction('toggle-doc-panel'));
     expect(screen.getByTestId('terminal-dock').getAttribute('data-visible')).toBe('false');
@@ -641,7 +670,7 @@ describe('EditorPane terminal dock wiring', () => {
   test('desktop: each open records terminal-opened; mount (hidden) and close do not', async () => {
     const desk = makeOkDesktopStub();
     (window as { okDesktop?: unknown }).okDesktop = desk.stub;
-    await renderEditorPane();
+    await renderEditorPaneWithoutOpenDocument();
 
     // Starts hidden — the mount run of the effect must not record an open.
     expect(terminalOpenedCalls).toHaveLength(0);
@@ -677,7 +706,7 @@ describe('EditorPane terminal dock wiring', () => {
       },
     };
 
-    await renderEditorPane();
+    await renderEditorPaneWithoutOpenDocument();
 
     // Restored: the dock comes back expanded without a user re-open, and the
     // restore reveal is NOT counted as a user-initiated terminal open.
@@ -695,7 +724,7 @@ describe('EditorPane terminal dock wiring', () => {
       throw new Error('ipc boom');
     });
     (window as { okDesktop?: unknown }).okDesktop = desk.stub;
-    await renderEditorPane();
+    await renderEditorPaneWithoutOpenDocument();
 
     expect(desk.viewMenuPushes.at(-1)).toEqual({ terminalVisible: false });
     // With no restored state the dock stays hidden (the breadcrumb is logged).
@@ -731,7 +760,7 @@ describe('EditorPane terminal dock wiring', () => {
 
   test('desktop: ⇧⌘J with no selection opens a new chat (launch intent, no staged text)', async () => {
     (window as { okDesktop?: unknown }).okDesktop = makeOkDesktopStub().stub;
-    await renderEditorPane();
+    await renderEditorPaneWithoutOpenDocument();
     const input = captureActiveTerminalInput();
 
     act(() => {
@@ -758,10 +787,11 @@ describe('EditorPane terminal dock wiring', () => {
     });
     input.stop();
 
-    // A launch intent that STAGES the passage (no raw inject, nothing auto-run).
+    // The note-open default owns nonce 1; ⇧⌘J creates a distinct launch intent
+    // that stages the passage (no raw inject, nothing auto-run).
     const dock = screen.getByTestId('terminal-dock');
     expect(dock.getAttribute('data-visible')).toBe('true');
-    expect(dock.getAttribute('data-launch-nonce')).toBe('1');
+    expect(dock.getAttribute('data-launch-nonce')).toBe('2');
     expect(dock.getAttribute('data-launch-stage')).toContain('some highlighted text');
     // Trailing soft newlines land the CLI caret on a blank line below the passage.
     expect(dock.getAttribute('data-launch-stage')?.endsWith('\n\n')).toBe(true);
@@ -791,6 +821,7 @@ describe('EditorPane terminal dock wiring', () => {
     const desk = makeOkDesktopStub();
     (window as { okDesktop?: unknown }).okDesktop = desk.stub;
     await renderEditorPane();
+    expect(screen.getByTestId('terminal-dock').getAttribute('data-launch-nonce')).toBe('1');
     seedSelection('run the build');
     const input = captureActiveTerminalInput();
 
@@ -798,14 +829,14 @@ describe('EditorPane terminal dock wiring', () => {
     act(() => desk.dispatchMenuAction('toggle-terminal'));
     input.stop();
 
-    // Active tab is a running CLI → write the passage into it (reuse), reveal, no
-    // launch intent.
+    // Active tab is a running CLI → write the passage into it (reuse), reveal,
+    // and keep the note-open launch intent unchanged.
     const dock = screen.getByTestId('terminal-dock');
     expect(input.texts).toHaveLength(1);
     expect(input.texts[0]).toContain('run the build');
     // Trailing soft newlines land the CLI caret on a blank line below the passage.
     expect(input.texts[0]?.endsWith('\n\n')).toBe(true);
-    expect(dock.getAttribute('data-launch-nonce')).toBe('none');
+    expect(dock.getAttribute('data-launch-nonce')).toBe('1');
     expect(dock.getAttribute('data-visible')).toBe('true');
   });
 
@@ -820,11 +851,12 @@ describe('EditorPane terminal dock wiring', () => {
     act(() => desk.dispatchMenuAction('toggle-terminal'));
     input.stop();
 
-    // No running CLI in the active tab → launch a new CLI and STAGE the passage
-    // into it, rather than typing a multi-line prompt into a bare shell.
+    // No running CLI in the active tab → launch a new CLI after the note-open
+    // default and STAGE the passage into it, rather than typing a multi-line
+    // prompt into a bare shell.
     const dock = screen.getByTestId('terminal-dock');
     expect(input.texts).toEqual([]);
-    expect(dock.getAttribute('data-launch-nonce')).toBe('1');
+    expect(dock.getAttribute('data-launch-nonce')).toBe('2');
     expect(dock.getAttribute('data-launch-stage')).toContain('run the build');
     expect(dock.getAttribute('data-launch-stage')?.endsWith('\n\n')).toBe(true);
   });
@@ -832,7 +864,7 @@ describe('EditorPane terminal dock wiring', () => {
   test('desktop: ⌘J with no selection still toggles and stages nothing', async () => {
     const desk = makeOkDesktopStub();
     (window as { okDesktop?: unknown }).okDesktop = desk.stub;
-    await renderEditorPane();
+    await renderEditorPaneWithoutOpenDocument();
     const input = captureActiveTerminalInput();
 
     act(() => desk.dispatchMenuAction('toggle-terminal'));
