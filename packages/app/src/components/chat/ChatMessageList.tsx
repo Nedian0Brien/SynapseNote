@@ -484,7 +484,7 @@ export function ChatMessageList({
       role="log"
       aria-live="polite"
       aria-label={t`Conversation`}
-      className="min-h-0 flex-1 overflow-y-auto px-4 py-5"
+      className="min-h-0 min-w-0 max-w-full flex-1 overflow-x-hidden overflow-y-auto px-4 py-5"
     >
       <div className="mx-auto flex min-w-0 w-full max-w-3xl flex-col gap-3">
         {timeline.map((entry, index) => {
@@ -561,7 +561,11 @@ export function ChatMessageList({
                 </div>
               );
             }
-            return <div key={entry.id}>{messageBubble}</div>;
+            return (
+              <div key={entry.id} className="w-full min-w-0 max-w-full">
+                {messageBubble}
+              </div>
+            );
           }
 
           const visualState = activityVisualState(entry, index, timeline.length, running);

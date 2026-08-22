@@ -289,7 +289,10 @@ export function CliChatPanel({
   }
 
   return (
-    <section aria-label={t`Chat`} className="flex h-full min-h-0 flex-col bg-background">
+    <section
+      aria-label={t`Chat`}
+      className="flex h-full min-h-0 min-w-0 max-w-full flex-col overflow-hidden bg-background"
+    >
       <ChatMessageList
         timeline={state.timeline}
         running={state.running}
@@ -303,7 +306,7 @@ export function CliChatPanel({
           else onProviderChange?.(provider);
         }}
       />
-      <form onSubmit={submit} className="p-3">
+      <form onSubmit={submit} className="min-w-0 max-w-full p-3">
         <div
           data-chat-composer="true"
           className="mx-auto max-w-3xl overflow-hidden rounded-2xl border border-input bg-background shadow-xs transition-shadow focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50"

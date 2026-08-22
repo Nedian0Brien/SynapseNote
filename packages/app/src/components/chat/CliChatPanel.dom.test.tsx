@@ -498,6 +498,37 @@ describe('CliChatPanel', () => {
     expect(userBubble.className).toContain('ml-auto');
   });
 
+  test('contains wide message content without making the conversation scroll horizontally', () => {
+    const { bridge, pushData } = makeBridge();
+    render(<CliChatPanel bridge={bridge} cli="codex" ptyId="pty-1" initialPrompt={null} />);
+
+    act(() => {
+      pushData(
+        '{"type":"item.completed","item":{"id":"wide-message","type":"agent_message","text":"`' +
+          'a'.repeat(500) +
+          '`\\n\\n```text\\n' +
+          'b'.repeat(500) +
+          '\\n```"}}\r\n',
+      );
+    });
+
+    const chat = screen.getByRole('region', { name: 'Chat' });
+    expect(chat.className).toContain('min-w-0');
+    expect(chat.className).toContain('overflow-hidden');
+
+    const conversation = screen.getByRole('log', { name: 'Conversation' });
+    expect(conversation.className).toContain('min-w-0');
+    expect(conversation.className).toContain('max-w-full');
+    expect(conversation.className).toContain('overflow-x-hidden');
+
+    const assistant = screen.getByLabelText('Assistant');
+    expect(assistant.parentElement?.className).toContain('min-w-0');
+    expect(assistant.parentElement?.className).toContain('max-w-full');
+    expect(assistant.querySelector('[data-chat-markdown="true"]')?.className).toContain(
+      '[&_pre]:overflow-x-auto',
+    );
+  });
+
   test('places the composer actions below the message field', () => {
     const { bridge } = makeBridge();
     render(<CliChatPanel bridge={bridge} cli="codex" ptyId="pty-1" initialPrompt={null} />);
