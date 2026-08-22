@@ -277,6 +277,40 @@ function SentImageAttachments({ images }: { images: readonly CliChatImageAttachm
 function SentSelectionContext({ selection }: { selection: CliChatSelectionContext }) {
   const { t } = useLingui();
   const [expanded, setExpanded] = useState(false);
+  const blockReference = selection.blockReference;
+  if (blockReference !== undefined) {
+    const metadata = [blockReference.title, blockReference.language]
+      .filter((value): value is string => value !== undefined && value !== '')
+      .join(' · ');
+    return (
+      <section
+        data-chat-sent-selection="true"
+        data-chat-sent-block-reference="true"
+        aria-label={t`Attached context: ${selection.documentTitle}`}
+        className="min-w-0 overflow-hidden rounded-xl border border-border/80 bg-card px-3 py-2.5 text-card-foreground shadow-sm"
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/10">
+            <TextQuoteIcon aria-hidden="true" className="size-3.5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-xs font-semibold" title={selection.documentTitle}>
+              {selection.documentTitle}
+            </span>
+            <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">
+              {selection.documentPath}
+            </span>
+          </span>
+          <span className="shrink-0 text-[11px] text-muted-foreground">
+            {t`Code block ${blockReference.index}`}
+          </span>
+        </span>
+        {metadata === '' ? null : (
+          <span className="mt-2 block text-xs text-muted-foreground">{metadata}</span>
+        )}
+      </section>
+    );
+  }
   const lineLabel =
     selection.lineCount === 1 ? t`1 line selected` : t`${selection.lineCount} lines selected`;
   const location =

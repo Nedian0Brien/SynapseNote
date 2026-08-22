@@ -10,10 +10,11 @@
  */
 
 import type { EditorView } from '@codemirror/view';
-import type { ComposeSelection } from '@nedian0brien/synapsenote-core';
+import type { ComposeBlockReference, ComposeSelection } from '@nedian0brien/synapsenote-core';
 import type { Editor } from '@tiptap/core';
 import type { DocumentMemoAnchor } from '@/lib/document-memo-store';
 import { serializeWysiwygSelection } from './edit-with-ai-selection';
+import { getMetaTitle } from './extensions/code-block-meta';
 import type { EditorSurface } from './selection-stats';
 
 /**
@@ -29,6 +30,7 @@ export interface SelectionSnapshot {
   readonly lineCount: number;
   readonly sourceLineStart?: number;
   readonly sourceLineEnd?: number;
+  readonly blockReference?: ComposeBlockReference;
   readonly memoAnchor?: DocumentMemoAnchor;
 }
 
@@ -43,6 +45,9 @@ export const INLINE_SELECTION_MAX_CHARS = 100;
  * passage anchor (rich text, which has no line numbers).
  */
 export function selectionSnapshotToCompose(s: SelectionSnapshot): ComposeSelection {
+  if (s.blockReference !== undefined) {
+    return { kind: 'block', reference: s.blockReference };
+  }
   if (s.lineCount === 1 && s.charLen < INLINE_SELECTION_MAX_CHARS) {
     return { kind: 'inline', markdown: s.markdown };
   }
@@ -63,6 +68,9 @@ export function selectionSnapshotToCompose(s: SelectionSnapshot): ComposeSelecti
  * markdown here.
  */
 export function selectionChipLabel(s: SelectionSnapshot, name: string): string {
+  if (s.blockReference !== undefined) {
+    return `${name} (code block ${s.blockReference.index})`;
+  }
   if (s.sourceLineStart !== undefined && s.sourceLineEnd !== undefined) {
     const range =
       s.sourceLineStart === s.sourceLineEnd
@@ -154,6 +162,10 @@ function sameSnapshot(a: SelectionSnapshot, b: SelectionSnapshot): boolean {
     a.markdown === b.markdown &&
     a.sourceLineStart === b.sourceLineStart &&
     a.sourceLineEnd === b.sourceLineEnd &&
+    a.blockReference?.type === b.blockReference?.type &&
+    a.blockReference?.index === b.blockReference?.index &&
+    a.blockReference?.language === b.blockReference?.language &&
+    a.blockReference?.title === b.blockReference?.title &&
     a.memoAnchor?.from === b.memoAnchor?.from &&
     a.memoAnchor?.to === b.memoAnchor?.to
   );
@@ -204,6 +216,25 @@ export function selectionSnapshotFromWysiwyg(
   const markdown = serializeWysiwygSelection(editor);
   if (!markdown.trim()) return null;
   const { from, to } = editor.state.selection;
+  const selectedNode = (
+    editor.state.selection as { node?: { type: { name: string }; attrs: Record<string, unknown> } }
+  ).node;
+  let blockReference: ComposeBlockReference | undefined;
+  if (selectedNode?.type.name === 'codeBlock') {
+    let index = 0;
+    editor.state.doc.descendants((node, pos) => {
+      if (node.type.name === 'codeBlock' && pos <= from) index += 1;
+    });
+    const rawLanguage = selectedNode.attrs.language;
+    const rawMeta = selectedNode.attrs.meta;
+    const rawTitle = typeof rawMeta === 'string' ? getMetaTitle(rawMeta) : null;
+    blockReference = {
+      type: 'code',
+      index: Math.max(1, index),
+      ...(typeof rawLanguage === 'string' && rawLanguage !== '' ? { language: rawLanguage } : {}),
+      ...(rawTitle === null || rawTitle === '' ? {} : { title: rawTitle }),
+    };
+  }
   const exact = editor.state.doc.textBetween(from, to, '\n', '\uFFFC');
   return {
     surface: 'wysiwyg',
@@ -211,6 +242,7 @@ export function selectionSnapshotFromWysiwyg(
     markdown,
     charLen: markdown.trim().length,
     lineCount: (markdown.match(/\n/g)?.length ?? 0) + 1,
+    ...(blockReference === undefined ? {} : { blockReference }),
     memoAnchor: {
       surface: 'wysiwyg',
       exact,

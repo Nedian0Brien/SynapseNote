@@ -104,8 +104,15 @@ export function CliChatPanel({
     null,
   );
   const attachedSelection = selectionContext === dismissedSelection ? null : selectionContext;
+  const attachedBlockReference = attachedSelection?.blockReference;
   const attachedSelectionPreview =
-    attachedSelection === null ? '' : lightRenderMarkdownPreview(attachedSelection.markdown);
+    attachedSelection === null
+      ? ''
+      : attachedBlockReference === undefined
+        ? lightRenderMarkdownPreview(attachedSelection.markdown)
+        : [attachedBlockReference.title, attachedBlockReference.language]
+            .filter((value): value is string => value !== undefined && value !== '')
+            .join(' · ');
   const parserRef = useRef(createParserState());
   const initialSentRef = useRef(false);
   // A resumed native conversation already owns its title; only a fresh session
@@ -348,9 +355,11 @@ export function CliChatPanel({
             >
               <TextQuoteIcon aria-hidden="true" className="size-3.5 shrink-0" />
               <span className="shrink-0 font-medium text-foreground">
-                {attachedSelection.lineCount === 1
-                  ? t`1 line selected`
-                  : t`${attachedSelection.lineCount} lines selected`}
+                {attachedBlockReference === undefined
+                  ? attachedSelection.lineCount === 1
+                    ? t`1 line selected`
+                    : t`${attachedSelection.lineCount} lines selected`
+                  : t`Code block ${attachedBlockReference.index}`}
               </span>
               <span className="min-w-0 truncate" data-chat-selection-preview="true">
                 · {attachedSelectionPreview || attachedSelection.documentTitle}

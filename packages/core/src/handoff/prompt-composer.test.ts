@@ -1427,3 +1427,21 @@ test('assembleHandoffPrompt renders an anchor selection as the locus reference',
   // Only the opening line is embedded as the landmark, not the whole passage.
   expect(prompt).not.toContain('and more');
 });
+
+test('assembleHandoffPrompt renders a code block as metadata-only document reference', () => {
+  const prompt = assembleHandoffPrompt({
+    scope: 'doc',
+    docRelativePath: 'reports/dram.md',
+    selection: {
+      kind: 'block',
+      reference: { type: 'code', index: 2, language: 'html', title: 'DRAM price chart' },
+    },
+    instruction: '',
+    mentions: [],
+    autoOpen: false,
+    target: 'claude-code',
+  });
+  expect(prompt).toContain('code block 2 (language: "html", title: "DRAM price chart")');
+  expect(prompt).toContain('Read that block from @reports/dram.md');
+  expect(prompt).not.toContain('<div');
+});

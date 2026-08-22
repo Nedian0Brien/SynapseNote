@@ -171,6 +171,20 @@ describe('selectionSnapshotToCompose (inline vs reference rule)', () => {
     );
     expect(out).toEqual({ kind: 'anchor', markdown: 'a\nb\nc' });
   });
+
+  test('a selected code block → structural reference without passage content', () => {
+    const out = selectionSnapshotToCompose(
+      snap({
+        markdown: '```html\n<div>large preview</div>\n```',
+        lineCount: 3,
+        blockReference: { type: 'code', index: 4, language: 'html', title: 'Price chart' },
+      }),
+    );
+    expect(out).toEqual({
+      kind: 'block',
+      reference: { type: 'code', index: 4, language: 'html', title: 'Price chart' },
+    });
+  });
 });
 
 describe('selectionChipLabel (compact Cursor-style label)', () => {
@@ -201,6 +215,15 @@ describe('selectionChipLabel (compact Cursor-style label)', () => {
     expect(
       selectionChipLabel(snap({ markdown: '## Heading', lineCount: 1 }), 'notes.md'),
     ).not.toContain('##');
+  });
+
+  test('a code block shows its document ordinal', () => {
+    expect(
+      selectionChipLabel(
+        snap({ blockReference: { type: 'code', index: 3, language: 'html' } }),
+        'notes.md',
+      ),
+    ).toBe('notes.md (code block 3)');
   });
 });
 

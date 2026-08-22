@@ -350,6 +350,9 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
       documentPath,
       markdown: activeSelection.markdown,
       lineCount: activeSelection.lineCount,
+      ...(activeSelection.blockReference === undefined
+        ? {}
+        : { blockReference: activeSelection.blockReference }),
       ...(activeSelection.sourceLineStart === undefined
         ? {}
         : { startLine: activeSelection.sourceLineStart }),

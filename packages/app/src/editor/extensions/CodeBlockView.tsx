@@ -9,7 +9,7 @@
  */
 
 import { Trans, useLingui } from '@lingui/react/macro';
-import { composeSelectionPrompt } from '@nedian0brien/synapsenote-core';
+import { assembleHandoffPrompt } from '@nedian0brien/synapsenote-core';
 import type { NodeViewProps } from '@tiptap/core';
 import { NodeViewContent, NodeViewWrapper } from '@tiptap/react';
 import {
@@ -44,7 +44,7 @@ import { OPT_OUT_ATTR } from '../clipboard/index.ts';
 import { CodePreviewEditModal } from '../components/CodePreviewEditModal';
 import { PreviewBlockedNotice } from '../components/PreviewBlockedNotice';
 import { ResizeHandles } from '../components/ResizeHandles.tsx';
-import { serializeWysiwygSelection } from '../edit-with-ai-selection';
+import { selectionSnapshotFromWysiwyg, selectionSnapshotToCompose } from '../selection-context';
 import { CODE_BLOCK_LANGUAGES, normalizeCodeLanguage } from './code-block-languages';
 import {
   addMetaToken,
@@ -171,9 +171,10 @@ export function CodeBlockView({ node, updateAttributes, editor, getPos, selected
   // dominant on-screen surface (HTML preview hides the code by default).
   const [editOpen, setEditOpen] = useState(false);
   // Ask AI on this code block. Chrome-hosted (not the bubble menu),
-  // because the block isn't a text selection — the whole fence is the
-  // context we want to hand to the agent. Hidden inside an embedded agent
-  // host, same as the text bubble menu's Ask AI button.
+  // because the block isn't a text selection. The handoff carries its document
+  // path + code-block ordinal + language/title metadata, then asks the agent to
+  // read the source through MCP. Hidden inside an embedded agent host, same as
+  // the text bubble menu's Ask AI button.
   const isEmbedded = useIsEmbedded();
   // Hovered state — the html preview iframe consumes 100% of the block's
   // pointer events, so the CSS `:hover` selector never fires on the wrapper.
@@ -632,13 +633,11 @@ export function CodeBlockView({ node, updateAttributes, editor, getPos, selected
             aria-label={t`Ask AI about this code block`}
             data-testid="ok-codeblock-ask-ai-btn"
             onClick={() => {
-              // Make this code block the WYSIWYG selection so
-              // `serializeWysiwygSelection` emits the canonical fenced form
-              // (the code-block-fidelity extension's `fenceLength` outlasts
-              // any inner backtick run). `composeSelectionPrompt` then
-              // decides inline vs locus against the encoded-URL budget; the
-              // dispatch routes through `TerminalSessionsHost` which pastes
-              // to a live PTY or launches a fresh Claude tab.
+              // Make this code block the WYSIWYG selection so the selection
+              // snapshot can identify its one-based ordinal in the live doc.
+              // The dispatch includes only that locator and block metadata;
+              // `TerminalSessionsHost` pastes it into a live PTY or launches a
+              // fresh Claude tab.
               const docName = getEditorDocName(editor);
               const pos = typeof getPos === 'function' ? getPos() : undefined;
               if (typeof pos !== 'number') return;
@@ -654,17 +653,21 @@ export function CodeBlockView({ node, updateAttributes, editor, getPos, selected
                 console.warn('[CodeBlockView] Ask AI failed — position race', err);
                 return;
               }
-              const selectionMarkdown = serializeWysiwygSelection(editor);
+              const selection =
+                docName === null ? null : selectionSnapshotFromWysiwyg(editor, docName);
               requestAnimationFrame(() => {
-                if (docName === null || !selectionMarkdown.trim()) {
+                if (docName === null || selection === null) {
                   emitOpenChatPanel();
                   return;
                 }
                 requestActiveTerminalInput(
-                  composeSelectionPrompt({
-                    relativePath: docNameToRelativePath(docName),
+                  assembleHandoffPrompt({
+                    scope: 'doc',
+                    docRelativePath: docNameToRelativePath(docName),
                     instruction: '',
-                    selectionMarkdown,
+                    selection: selectionSnapshotToCompose(selection),
+                    mentions: [],
+                    autoOpen: false,
                     target: 'claude-code',
                   }),
                 );

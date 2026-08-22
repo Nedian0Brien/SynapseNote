@@ -12,6 +12,7 @@ export { buildCursorUrl } from './cursor-url.ts';
 export {
   type AssembleHandoffPromptInput,
   assembleHandoffPrompt,
+  type ComposeBlockReference,
   type ComposeSelection,
   type CreateScenario,
   composeAskProjectPrompt,

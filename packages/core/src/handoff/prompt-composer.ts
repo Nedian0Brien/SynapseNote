@@ -762,11 +762,22 @@ const OPEN_EDITOR_DIRECTIVE = 'Open the OK editor in web view.';
  *                mode, where real line numbers exist).
  *   - `anchor` — a bounded opening-line landmark + read-via-MCP directive (rich
  *                text mode, which has no line numbers, or an oversized inline).
+ *   - `block`  — structural metadata only; the agent reads the identified block
+ *                from the document instead of receiving its complete source.
  */
+export interface ComposeBlockReference {
+  readonly type: 'code';
+  /** One-based ordinal among code blocks in the document. */
+  readonly index: number;
+  readonly language?: string;
+  readonly title?: string;
+}
+
 export type ComposeSelection =
   | { readonly kind: 'inline'; readonly markdown: string }
   | { readonly kind: 'lines'; readonly startLine: number; readonly endLine: number }
-  | { readonly kind: 'anchor'; readonly markdown: string };
+  | { readonly kind: 'anchor'; readonly markdown: string }
+  | { readonly kind: 'block'; readonly reference: ComposeBlockReference };
 
 /**
  * Doc-scope inputs to `assembleHandoffPrompt` — the active doc is the scope lead
@@ -874,6 +885,16 @@ function linesSelectionSegment(startLine: number, endLine: number, safeDocPath: 
   return `The selected passage is ${range} of @${safeDocPath}. Read it from @${safeDocPath} via the SynapseNote MCP server before editing.`;
 }
 
+/** Exact structural reference for a block selected through editor chrome. */
+function blockSelectionSegment(reference: ComposeBlockReference, safeDocPath: string): string {
+  const metadata = [
+    reference.language === undefined ? null : `language: ${JSON.stringify(reference.language)}`,
+    reference.title === undefined ? null : `title: ${JSON.stringify(reference.title)}`,
+  ].filter((part): part is string => part !== null);
+  const suffix = metadata.length === 0 ? '' : ` (${metadata.join(', ')})`;
+  return `The target is code block ${reference.index}${suffix} in @${safeDocPath}. Read that block from @${safeDocPath} via the SynapseNote MCP server before editing.`;
+}
+
 /**
  * The explicit `@`-mention block — a short header plus one sanitized `@path`
  * per line (each on its own line so the agent CLIs read each as a single
@@ -942,6 +963,9 @@ function selectionSegmentFor(
 ): string {
   if (selection.kind === 'lines') {
     return linesSelectionSegment(selection.startLine, selection.endLine, safeDocPath);
+  }
+  if (selection.kind === 'block') {
+    return blockSelectionSegment(selection.reference, safeDocPath);
   }
   if (selection.kind === 'anchor') {
     return locusSelectionSegment(selection.markdown, safeDocPath);

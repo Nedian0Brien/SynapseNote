@@ -986,6 +986,7 @@ export {
   buildCliLaunchCommand,
   buildCodexUrl,
   buildCursorUrl,
+  type ComposeBlockReference,
   type ComposeSelection,
   type CreateScenario,
   composeAskProjectPrompt,

@@ -19,10 +19,9 @@ import { ConfigContext, type ConfigContextValue } from '@/lib/config-context';
 import { CodeBlockView } from './CodeBlockView';
 import { setEditorDocName } from './doc-context';
 
-// The Ask AI click handler routes through `serializeWysiwygSelection`, which
-// runs the full markdown pipeline against the selected slice. Testing that
-// pipeline end-to-end is the fidelity suite's job; this file tests the
-// click→dispatch contract, so stub the serializer to a fixed fenced body.
+// The selection snapshot still serializes the selected node for ordinary
+// selection features. The Ask AI path must discard this recognizable body in
+// favor of its structural block reference.
 mock.module('../edit-with-ai-selection', () => ({
   serializeWysiwygSelection: () => '```json\n{ "name": "sample" }\n```',
 }));
@@ -275,7 +274,7 @@ describe('CodeBlockView Ask AI dispatch', () => {
   // is a spy that either records the pos or throws, and `state.selection.empty`
   // reads false (my code doesn't check it, but leaving a NodeSelection-ish
   // shape here matches production). `serializeWysiwygSelection` is stubbed at
-  // module load so it never touches `state` directly.
+  // module load so only the block-reference decision is under test.
   function makeEditorWithCommands(overrides: EditorMockOverrides = {}) {
     const setNodeSelection = (_pos: number) => {
       if (overrides.setNodeSelectionThrows === 'range') {
@@ -290,8 +289,21 @@ describe('CodeBlockView Ask AI dispatch', () => {
       isDestroyed: false,
       commands: { setNodeSelection },
       state: {
-        doc: { nodeAt: () => ({ nodeSize: 10 }) },
-        selection: { from: 0, to: 0, empty: false },
+        doc: {
+          nodeAt: () => ({ nodeSize: 10 }),
+          descendants: (visit: (node: { type: { name: string } }, pos: number) => void) => {
+            visit({ type: { name: 'codeBlock' } }, 1);
+            visit({ type: { name: 'codeBlock' } }, 5);
+          },
+          textBetween: () => '{ "name": "sample" }',
+          content: { size: 32 },
+        },
+        selection: {
+          from: 5,
+          to: 15,
+          empty: false,
+          node: { type: { name: 'codeBlock' }, attrs: { language: 'json', meta: null } },
+        },
       },
       on: () => {},
       off: () => {},
@@ -333,11 +345,12 @@ describe('CodeBlockView Ask AI dispatch', () => {
 
     await waitFor(() => expect(terminalInputs).toHaveLength(1));
     const [prompt] = terminalInputs;
-    // Doc named as an @-mention (grounding contract from composeSelectionPrompt).
+    // Doc named as an @-mention and the body replaced by a structural locator.
     expect(prompt).toContain('@specs/foo/SPEC.md');
-    // Stubbed fenced body survives verbatim into the composed prompt.
-    expect(prompt).toContain('```json');
-    expect(prompt).toContain('{ "name": "sample" }');
+    expect(prompt).toContain('code block 2 (language: "json")');
+    expect(prompt).toContain('Read that block from @specs/foo/SPEC.md');
+    expect(prompt).not.toContain('```json');
+    expect(prompt).not.toContain('{ "name": "sample" }');
     // Terminal-input branch does NOT open the composer.
     expect(composerOpens).toBe(0);
   });

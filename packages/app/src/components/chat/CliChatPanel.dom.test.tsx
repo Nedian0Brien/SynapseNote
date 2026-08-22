@@ -896,6 +896,43 @@ describe('CliChatPanel', () => {
     });
   });
 
+  test('attaches a code-block locator without sending the block body', async () => {
+    const { bridge, chatSend } = makeBridge();
+    render(
+      <CliChatPanel
+        bridge={bridge}
+        cli="codex"
+        ptyId="pty-1"
+        initialPrompt={null}
+        documentContext={{ documentTitle: 'DRAM report', documentPath: 'reports/dram.md' }}
+        selectionContext={{
+          documentTitle: 'DRAM report',
+          documentPath: 'reports/dram.md',
+          markdown: '<html>very large chart source</html>',
+          lineCount: 82,
+          blockReference: { type: 'code', index: 2, language: 'html', title: 'DRAM chart' },
+        }}
+      />,
+    );
+
+    expect(await screen.findByText('Code block 2')).toBeTruthy();
+    expect(screen.getByText('· DRAM chart · html')).toBeTruthy();
+    expect(screen.queryByText('82 lines selected')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Explain this' } });
+    fireEvent.click(screen.getByLabelText('Send'));
+
+    await waitFor(() => expect(chatSend).toHaveBeenCalledTimes(1));
+    const prompt = chatSend.mock.calls[0]?.[1]?.prompt ?? '';
+    expect(prompt).toContain('<selected_document_block>');
+    expect(prompt).toContain('"index": 2');
+    expect(prompt).toContain('"language": "html"');
+    expect(prompt).not.toContain('very large chart source');
+    const sentContext = await screen.findByLabelText('Attached context: DRAM report');
+    expect(sentContext.getAttribute('data-chat-sent-block-reference')).toBe('true');
+    expect(sentContext.textContent).toContain('DRAM chart · html');
+    expect(sentContext.textContent).not.toContain('very large chart source');
+  });
+
   test('shows a short context snippet before revealing the complete passage', async () => {
     const { bridge } = makeBridge();
     const completePassage = `Opening sentence ${'supporting context '.repeat(16)}final detail.`;
