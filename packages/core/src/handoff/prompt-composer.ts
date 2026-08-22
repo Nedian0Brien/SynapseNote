@@ -771,6 +771,8 @@ export interface ComposeBlockReference {
   readonly index: number;
   readonly language?: string;
   readonly title?: string;
+  /** SHA-256 of the canonical fenced block, used to relocate safely. */
+  readonly blockSha256: string;
 }
 
 export type ComposeSelection =
@@ -892,7 +894,7 @@ function blockSelectionSegment(reference: ComposeBlockReference, safeDocPath: st
     reference.title === undefined ? null : `title: ${JSON.stringify(reference.title)}`,
   ].filter((part): part is string => part !== null);
   const suffix = metadata.length === 0 ? '' : ` (${metadata.join(', ')})`;
-  return `The target is code block ${reference.index}${suffix} in @${safeDocPath}. Read that block from @${safeDocPath} via the SynapseNote MCP server before editing.`;
+  return `The target is code block ${reference.index}${suffix} with SHA-256 fingerprint ${reference.blockSha256} in @${safeDocPath}. Read that block from @${safeDocPath} by calling SynapseNote MCP exec with documentBlock { path: ${JSON.stringify(safeDocPath)}, type: "code", index: ${reference.index}, blockSha256: ${JSON.stringify(reference.blockSha256)} } before editing.`;
 }
 
 /**

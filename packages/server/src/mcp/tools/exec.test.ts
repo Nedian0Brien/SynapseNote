@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -40,6 +41,7 @@ describe('exec DESCRIPTION — STOP-rule anchoring (SPEC 2026-04-22 FR4 / US-007
 });
 
 const DEFAULT_CONFIG: Config = ConfigSchema.parse({});
+const CONTENT_DIR_CONFIG: Config = ConfigSchema.parse({ content: { dir: 'content' } });
 
 function fileEntries(s: ExecStructuredResult): EnrichedMeta[] {
   return s.enrichedPaths.filter(
@@ -85,6 +87,77 @@ function structured(result: ExecResult): ExecStructuredResult & { text?: string 
 }
 
 describe('exec — happy path', () => {
+  test('documentBlock returns only the selected canonical fence and relocates by fingerprint', async () => {
+    const project = await bootstrap();
+    const path = 'note.md';
+    const source =
+      'before\n\n```js\nconst first = 1;\n```\n\n```ts\nconst target = 2;\n```\n\nafter\n';
+    mkdirSync(resolve(project, 'content'), { recursive: true });
+    writeFileSync(resolve(project, 'content', path), source);
+    const block = '```ts\nconst target = 2;\n```';
+    const result = (await buildExecResult(
+      {
+        documentBlock: {
+          path,
+          type: 'code',
+          index: 1,
+          blockSha256: createHash('sha256').update(block).digest('hex'),
+        },
+      },
+      { resolveCwd: async () => project, serverUrl: undefined, config: CONTENT_DIR_CONFIG },
+    )) as ExecResult;
+    expect(result.content[0].text).toBe(block);
+    expect(result.content[0].text).not.toContain('before');
+    expect(result.content[0].text).not.toContain('after');
+    expect(structured(result).documentBlock).toMatchObject({
+      path,
+      index: 2,
+      relocated: true,
+      lineStart: 7,
+      lineEnd: 9,
+    });
+  });
+
+  test('documentBlock returns a typed changed-or-missing error when fingerprint has no match', async () => {
+    const project = await bootstrap();
+    const path = 'note.md';
+    mkdirSync(resolve(project, 'content'), { recursive: true });
+    writeFileSync(resolve(project, 'content', path), '```js\nactual\n```\n');
+    const result = (await buildExecResult(
+      {
+        documentBlock: {
+          path,
+          type: 'code',
+          index: 1,
+          blockSha256: createHash('sha256').update('```js\nmissing\n```').digest('hex'),
+        },
+      },
+      { resolveCwd: async () => project, serverUrl: undefined, config: CONTENT_DIR_CONFIG },
+    )) as ExecResult;
+    expect(structured(result).error?.category).toBe('block_changed_or_missing');
+    expect(result.content[0].text).not.toContain('actual');
+  });
+
+  test('documentBlock rejects a changed or ambiguous fingerprint without returning a different block', async () => {
+    const project = await bootstrap();
+    const path = 'note.md';
+    mkdirSync(resolve(project, 'content'), { recursive: true });
+    writeFileSync(resolve(project, 'content', path), '```js\nsame\n```\n\n```js\nsame\n```\n');
+    const result = (await buildExecResult(
+      {
+        documentBlock: {
+          path,
+          type: 'code',
+          index: 3,
+          blockSha256: createHash('sha256').update('```js\nsame\n```').digest('hex'),
+        },
+      },
+      { resolveCwd: async () => project, serverUrl: undefined, config: CONTENT_DIR_CONFIG },
+    )) as ExecResult;
+    expect(structured(result).error?.category).toBe('block_reference_ambiguous');
+    expect(result.content[0].text).not.toContain('same');
+  });
+
   test('cat single file returns raw stdout + enrichment block + structuredContent', async () => {
     const project = await bootstrap();
     const contentDir = resolve(project, 'content');

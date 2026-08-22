@@ -33,7 +33,9 @@ export type ErrorCategory =
   | 'shell_construct_blocked'
   | 'path_traversal'
   | 'output_overflow'
-  | 'security_invariant_violation';
+  | 'security_invariant_violation'
+  | 'block_changed_or_missing'
+  | 'block_reference_ambiguous';
 
 interface ParseCommandError {
   category: ErrorCategory;

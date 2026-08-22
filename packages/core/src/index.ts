@@ -682,6 +682,12 @@ export {
   type RendererLogLevel,
   truncateLogMessage,
 } from './logging/renderer-log.ts';
+export {
+  type CanonicalCodeBlock,
+  enumerateCanonicalCodeBlocks,
+  hashCodeBlockMarkdown,
+  normalizeCodeBlockMarkdown,
+} from './markdown/code-block-reference.ts';
 // Cross-process contract version (pure integer; browser-safe).
 export { PROTOCOL_VERSION } from './protocol-version.ts';
 

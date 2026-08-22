@@ -910,7 +910,13 @@ describe('CliChatPanel', () => {
           documentPath: 'reports/dram.md',
           markdown: '<html>very large chart source</html>',
           lineCount: 82,
-          blockReference: { type: 'code', index: 2, language: 'html', title: 'DRAM chart' },
+          blockReference: {
+            type: 'code',
+            index: 2,
+            language: 'html',
+            title: 'DRAM chart',
+            blockSha256: 'a'.repeat(64),
+          },
         }}
       />,
     );
@@ -926,6 +932,8 @@ describe('CliChatPanel', () => {
     expect(prompt).toContain('<selected_document_block>');
     expect(prompt).toContain('"index": 2');
     expect(prompt).toContain('"language": "html"');
+    expect(prompt).toContain('Call SynapseNote MCP exec with documentBlock');
+    expect(prompt).toContain(`"blockSha256": "${'a'.repeat(64)}"`);
     expect(prompt).not.toContain('very large chart source');
     const sentContext = await screen.findByLabelText('Attached context: DRAM report');
     expect(sentContext.getAttribute('data-chat-sent-block-reference')).toBe('true');

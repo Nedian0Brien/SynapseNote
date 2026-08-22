@@ -17,8 +17,14 @@
  * Binary content (non-text/markdown files in `cat` argv) triggers a
  * warning banner.
  */
-import { stat } from 'node:fs/promises';
+
+import { createHash } from 'node:crypto';
+import { readFile, stat } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
+import {
+  enumerateCanonicalCodeBlocks,
+  hashCodeBlockMarkdown,
+} from '@nedian0brien/synapsenote-core';
 import { z } from 'zod';
 import { argsOf, extractReferencedPaths, nonFlagArgs } from '../../bash/extract-paths.ts';
 import { createBashInstance, execBash, StdoutOverflowError } from '../../bash/index.ts';
@@ -30,6 +36,7 @@ import {
   type Stage,
   serializeStages,
 } from '../../bash/parse-command.ts';
+import { resolveContentDir } from '../../config/paths.ts';
 import {
   type DirectoryMeta,
   type EnrichedEntry,
@@ -89,6 +96,8 @@ export const DESCRIPTION = [
   '',
   'Run a read-only bash-like command against the project content directory. Returns raw stdout plus enriched metadata for every wiki file referenced (frontmatter, backlink/forward-link counts, shadow-repo activity with agent/human attribution).',
   '',
+  '`documentBlock` mode reads one fingerprinted fenced code block without returning the rest of its Markdown/MDX document.',
+  '',
   'Allowlist: cat, ls, grep, find, head, tail, wc, sort, uniq, cut. One command or a pipe (|) per call — NOT a shell: `&&`, `;`, redirections, subshells, and writes are rejected. To do several things, make separate exec calls or pass multiple paths to one command (e.g. `ls -A a b c`, `cat a b c`).',
   '',
   "cwd: the command runs in the explicit absolute `cwd` you pass, or in the MCP client's only advertised root when there is exactly one. If the client has zero or multiple roots, pass `cwd` explicitly. Paths inside the command resolve relative to that cwd; traversal above it is rejected.",
@@ -147,6 +156,24 @@ export interface ExecStructuredResult {
   /** True when stdout was truncated by the soft cap (500 lines / ~24KB). */
   stdoutTruncated?: boolean;
   error?: { category: ErrorCategory; message: string };
+  documentBlock?: {
+    path: string;
+    index: number;
+    relocated: boolean;
+    lineStart?: number;
+    lineEnd?: number;
+    documentSha256: string;
+    blockSha256: string;
+  };
+}
+
+export interface DocumentBlockInput {
+  readonly path: string;
+  readonly type: 'code';
+  readonly index: number;
+  readonly blockSha256: string;
+  readonly language?: string;
+  readonly title?: string;
 }
 
 interface CapResult {
@@ -486,7 +513,7 @@ function withPreviewUrls(
 }
 
 export async function buildExecResult(
-  args: { command: string; cwd?: string },
+  args: { command?: string; cwd?: string; documentBlock?: DocumentBlockInput },
   deps: ExecDeps,
 ): Promise<ReturnType<typeof textPlusStructured>> {
   const context = await resolveProjectServerContext(
@@ -507,6 +534,69 @@ export async function buildExecResult(
   // differ only when the caller targets a subdirectory of the project.
   const { cwd, executionCwd, config, url: resolvedServerUrl } = context;
 
+  if (args.documentBlock !== undefined) {
+    const request = args.documentBlock;
+    const contentDir = resolveContentDir(config, cwd);
+    const contained = resolveWithinRoot(contentDir, request.path);
+    if (!contained.ok || !/\.(md|mdx)$/i.test(request.path)) {
+      return errorCategoryResult(
+        'block_changed_or_missing',
+        `documentBlock path is not a Markdown/MDX file under the content root: ${request.path}`,
+      );
+    }
+    try {
+      const source = await readFile(contained.abs, 'utf8');
+      const blocks = enumerateCanonicalCodeBlocks(source);
+      const requested = blocks.find((block) => block.index === request.index);
+      const requestedMatches = requested
+        ? hashCodeBlockMarkdown(requested.markdown) === request.blockSha256
+        : false;
+      const matches = requestedMatches
+        ? [requested]
+        : blocks.filter((block) => hashCodeBlockMarkdown(block.markdown) === request.blockSha256);
+      if (matches.length === 0) {
+        return errorCategoryResult(
+          'block_changed_or_missing',
+          `The referenced code block is missing or changed in ${request.path}; refresh the document and retry.`,
+        );
+      }
+      if (matches.length > 1) {
+        return errorCategoryResult(
+          'block_reference_ambiguous',
+          `The referenced code block fingerprint matches multiple blocks in ${request.path}; refresh the document and retry.`,
+        );
+      }
+      const [block] = matches;
+      if (block === undefined) {
+        return errorCategoryResult(
+          'block_changed_or_missing',
+          `The referenced code block is missing or changed in ${request.path}; refresh the document and retry.`,
+        );
+      }
+      const documentSha256 = createHash('sha256').update(source).digest('hex');
+      const blockSha256 = hashCodeBlockMarkdown(block.markdown);
+      const structured: ExecStructuredResult = {
+        enrichedPaths: [],
+        documentBlock: {
+          path: request.path,
+          index: block.index,
+          relocated: block.index !== request.index,
+          lineStart: block.lineStart,
+          lineEnd: block.lineEnd,
+          documentSha256,
+          blockSha256,
+        },
+        cwd: executionCwd,
+      };
+      return textPlusStructured(block.markdown, structured);
+    } catch {
+      return errorCategoryResult(
+        'block_changed_or_missing',
+        `The referenced document block could not be read: ${request.path}`,
+      );
+    }
+  }
+
   // Referenced paths emerge from stdout relative to where bash ran
   // (`executionCwd`); enrichment addresses them project-relative, so rebase each
   // onto the project root. Identity no-op when the two coincide (the common
@@ -518,6 +608,8 @@ export async function buildExecResult(
       : (p: string) => relative(cwd, resolve(executionCwd, p));
 
   // 1. Parse + validate
+  if (args.command === undefined)
+    return errorCategoryResult('shell_construct_blocked', 'exec requires command or documentBlock');
   const parsed = parseCommand(args.command);
   if ('error' in parsed) {
     return errorCategoryResult(parsed.error.category, parsed.error.message);
@@ -713,19 +805,32 @@ export function register(server: ServerInstance, deps: ExecDeps): void {
     'exec',
     {
       description: DESCRIPTION,
-      inputSchema: {
-        command: z
-          .string()
-          .describe(
-            'Read-only bash command (allowlist: cat, ls, grep, find, head, tail, wc, sort, uniq, cut; pipes OK)',
-          ),
-        cwd: z
-          .string()
-          .optional()
-          .describe(
-            'Absolute host path to run the command from. Defaults only when the MCP client advertises exactly one root; otherwise pass `cwd` explicitly.',
-          ),
-      },
+      inputSchema: z.union([
+        z.object({
+          command: z
+            .string()
+            .describe(
+              'Read-only bash command (allowlist: cat, ls, grep, find, head, tail, wc, sort, uniq, cut; pipes OK)',
+            ),
+          cwd: z
+            .string()
+            .optional()
+            .describe(
+              'Absolute host path to run the command from. Defaults only when the MCP client advertises exactly one root; otherwise pass `cwd` explicitly.',
+            ),
+        }),
+        z.object({
+          documentBlock: z.object({
+            path: z.string().min(1),
+            type: z.literal('code'),
+            index: z.number().int().positive(),
+            blockSha256: z.string().regex(/^[a-f0-9]{64}$/),
+            language: z.string().optional(),
+            title: z.string().optional(),
+          }),
+          cwd: z.string().optional(),
+        }),
+      ]),
       outputSchema: outputSchemaWithText({
         enrichedPaths: looseObjectArray.describe(
           'Per-referenced-file metadata: frontmatter, backlink/forward-link counts, recent shadow-repo activity, and a route-only previewUrl.',
@@ -743,9 +848,20 @@ export function register(server: ServerInstance, deps: ExecDeps): void {
           .object({ category: z.string(), message: z.string() })
           .optional()
           .describe('Present on failure — the error category + message.'),
+        documentBlock: z
+          .object({
+            path: z.string(),
+            index: z.number(),
+            relocated: z.boolean(),
+            documentSha256: z.string(),
+            blockSha256: z.string(),
+            lineStart: z.number().optional(),
+            lineEnd: z.number().optional(),
+          })
+          .optional(),
       }),
     },
-    async (args: { command: string; cwd?: string }) => {
+    async (args: { command?: string; cwd?: string; documentBlock?: DocumentBlockInput }) => {
       try {
         return await buildExecResult(args, deps);
       } catch (err) {

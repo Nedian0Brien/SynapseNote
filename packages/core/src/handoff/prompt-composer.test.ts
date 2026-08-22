@@ -1434,7 +1434,13 @@ test('assembleHandoffPrompt renders a code block as metadata-only document refer
     docRelativePath: 'reports/dram.md',
     selection: {
       kind: 'block',
-      reference: { type: 'code', index: 2, language: 'html', title: 'DRAM price chart' },
+      reference: {
+        type: 'code',
+        index: 2,
+        language: 'html',
+        title: 'DRAM price chart',
+        blockSha256: 'a'.repeat(64),
+      },
     },
     instruction: '',
     mentions: [],
@@ -1443,5 +1449,6 @@ test('assembleHandoffPrompt renders a code block as metadata-only document refer
   });
   expect(prompt).toContain('code block 2 (language: "html", title: "DRAM price chart")');
   expect(prompt).toContain('Read that block from @reports/dram.md');
+  expect(prompt).toContain(`blockSha256: "${'a'.repeat(64)}"`);
   expect(prompt).not.toContain('<div');
 });

@@ -177,12 +177,24 @@ describe('selectionSnapshotToCompose (inline vs reference rule)', () => {
       snap({
         markdown: '```html\n<div>large preview</div>\n```',
         lineCount: 3,
-        blockReference: { type: 'code', index: 4, language: 'html', title: 'Price chart' },
+        blockReference: {
+          type: 'code',
+          index: 4,
+          language: 'html',
+          title: 'Price chart',
+          blockSha256: 'a'.repeat(64),
+        },
       }),
     );
     expect(out).toEqual({
       kind: 'block',
-      reference: { type: 'code', index: 4, language: 'html', title: 'Price chart' },
+      reference: {
+        type: 'code',
+        index: 4,
+        language: 'html',
+        title: 'Price chart',
+        blockSha256: 'a'.repeat(64),
+      },
     });
   });
 });
@@ -220,7 +232,14 @@ describe('selectionChipLabel (compact Cursor-style label)', () => {
   test('a code block shows its document ordinal', () => {
     expect(
       selectionChipLabel(
-        snap({ blockReference: { type: 'code', index: 3, language: 'html' } }),
+        snap({
+          blockReference: {
+            type: 'code',
+            index: 3,
+            language: 'html',
+            blockSha256: 'b'.repeat(64),
+          },
+        }),
         'notes.md',
       ),
     ).toBe('notes.md (code block 3)');

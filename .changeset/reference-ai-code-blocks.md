@@ -2,4 +2,4 @@
 '@nedian0brien/synapsenote': patch
 ---
 
-Send code-block locations to AI chat instead of duplicating the complete block source.
+Send fingerprinted code-block locations to AI chat and let MCP read only the referenced block.

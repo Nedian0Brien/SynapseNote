@@ -10,7 +10,11 @@
  */
 
 import type { EditorView } from '@codemirror/view';
-import type { ComposeBlockReference, ComposeSelection } from '@nedian0brien/synapsenote-core';
+import {
+  type ComposeBlockReference,
+  type ComposeSelection,
+  hashCodeBlockMarkdown,
+} from '@nedian0brien/synapsenote-core';
 import type { Editor } from '@tiptap/core';
 import type { DocumentMemoAnchor } from '@/lib/document-memo-store';
 import { serializeWysiwygSelection } from './edit-with-ai-selection';
@@ -166,6 +170,7 @@ function sameSnapshot(a: SelectionSnapshot, b: SelectionSnapshot): boolean {
     a.blockReference?.index === b.blockReference?.index &&
     a.blockReference?.language === b.blockReference?.language &&
     a.blockReference?.title === b.blockReference?.title &&
+    a.blockReference?.blockSha256 === b.blockReference?.blockSha256 &&
     a.memoAnchor?.from === b.memoAnchor?.from &&
     a.memoAnchor?.to === b.memoAnchor?.to
   );
@@ -231,6 +236,7 @@ export function selectionSnapshotFromWysiwyg(
     blockReference = {
       type: 'code',
       index: Math.max(1, index),
+      blockSha256: hashCodeBlockMarkdown(markdown),
       ...(typeof rawLanguage === 'string' && rawLanguage !== '' ? { language: rawLanguage } : {}),
       ...(rawTitle === null || rawTitle === '' ? {} : { title: rawTitle }),
     };
