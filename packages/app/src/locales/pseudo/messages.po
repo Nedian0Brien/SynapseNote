@@ -4182,6 +4182,10 @@ msgstr ""
 msgid "Enter a valid URL (for example https://api.openai.com/v1)."
 msgstr ""
 
+#: src/editor/extensions/CodeBlockView.tsx
+msgid "Enter fullscreen"
+msgstr ""
+
 #: src/components/settings/AiToolsSection.tsx
 #: src/components/settings/ProjectAiToolsSection.tsx
 msgid "Entry"
@@ -4222,6 +4226,10 @@ msgstr ""
 
 #: src/components/NewWorktreeDialog.tsx
 msgid "Existing branch <0>{trimmed}</0> will be checked out into its own window, under <1>.ok/worktrees/</1>."
+msgstr ""
+
+#: src/editor/extensions/CodeBlockView.tsx
+msgid "Exit fullscreen"
 msgstr ""
 
 #: src/components/DiffView.tsx

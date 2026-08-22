@@ -1172,6 +1172,7 @@
     "JLzQi_": ["Close ", ["accessibleLabel"]],
     "JM_aq-": ["Use an https:// URL — http:// is only allowed for localhost."],
     "JOcPqH": ["Bring a remote repository onto this machine."],
+    "JWj1N3": ["Enter fullscreen"],
     "JWsZlx": ["Open a project to edit."],
     "JY5Oyv": ["Database"],
     "JZ4Z7I": ["Context Packs truncated"],
@@ -3177,6 +3178,7 @@
       "This ghost value is not canonical until the exact plan commits and the table refreshes."
     ],
     "sOxZaS": ["Failed to load graph"],
+    "sQpDn6": ["Exit fullscreen"],
     "sQqnYh": ["Review property deletion"],
     "sYhTPQ": ["Choose an option"],
     "sZ2IOu": [

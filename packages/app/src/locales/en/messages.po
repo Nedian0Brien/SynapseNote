@@ -4187,6 +4187,10 @@ msgstr "Enter a valid branch name (no spaces, no leading dot, no \"..\")."
 msgid "Enter a valid URL (for example https://api.openai.com/v1)."
 msgstr "Enter a valid URL (for example https://api.openai.com/v1)."
 
+#: src/editor/extensions/CodeBlockView.tsx
+msgid "Enter fullscreen"
+msgstr "Enter fullscreen"
+
 #: src/components/settings/AiToolsSection.tsx
 #: src/components/settings/ProjectAiToolsSection.tsx
 msgid "Entry"
@@ -4228,6 +4232,10 @@ msgstr "Execution"
 #: src/components/NewWorktreeDialog.tsx
 msgid "Existing branch <0>{trimmed}</0> will be checked out into its own window, under <1>.ok/worktrees/</1>."
 msgstr "Existing branch <0>{trimmed}</0> will be checked out into its own window, under <1>.ok/worktrees/</1>."
+
+#: src/editor/extensions/CodeBlockView.tsx
+msgid "Exit fullscreen"
+msgstr "Exit fullscreen"
 
 #: src/components/DiffView.tsx
 msgid "Exit merge"
