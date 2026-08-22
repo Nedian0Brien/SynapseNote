@@ -2726,6 +2726,7 @@ describe('DatabaseTableDialog', () => {
     render(
       <DatabaseTable
         source={textSource as never}
+        notionSurface
         result={
           {
             ...queryResult(),
@@ -2767,11 +2768,17 @@ describe('DatabaseTableDialog', () => {
     );
     expect(cell?.textContent).toContain('Owner: @Owner\nSecond line');
     expect(cell?.textContent).not.toContain('synapsenote://');
+    const row = document.querySelector<HTMLElement>('[data-record-id="rec_first"]');
+    const rowHeightBeforeEdit = row?.style.height;
 
-    fireEvent.click(screen.getByLabelText('Edit Notes for record rec_first'));
+    fireEvent.click(screen.getByLabelText('Edit Notes for page First task'));
     const textarea = screen.getByLabelText('Edit Notes') as HTMLTextAreaElement;
     expect(textarea.value).toBe(raw);
     expect(textarea.rows).toBe(1);
+    expect(textarea.className).toContain('h-5');
+    expect(textarea.className).not.toContain('h-8');
+    expect(textarea.className).toContain('leading-5');
+    expect(row?.style.height).toBe(rowHeightBeforeEdit);
     expect(screen.queryByText('Plain-text preview')).toBeNull();
     expect(screen.queryByText(/Markdown ·/)).toBeNull();
     expect(screen.queryByLabelText('Insert person mention in Notes')).toBeNull();
@@ -2782,7 +2789,7 @@ describe('DatabaseTableDialog', () => {
     fireEvent.keyDown(textarea, { key: 'Escape' });
     expect(edits).toEqual([]);
 
-    fireEvent.click(screen.getByLabelText('Edit Notes for record rec_first'));
+    fireEvent.click(screen.getByLabelText('Edit Notes for page First task'));
     const reopened = screen.getByLabelText('Edit Notes') as HTMLTextAreaElement;
     expect(reopened.value).toBe(raw);
     fireEvent.keyDown(reopened, { key: 'Enter' });

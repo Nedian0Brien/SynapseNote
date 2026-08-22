@@ -143,9 +143,7 @@ export function DatabaseTableCellEditingContent({
           value={editing.draft}
           aria-label={`Edit ${property.name}`}
           data-database-cell-editor-control="true"
-          onChange={(event) =>
-            setEditing({ ...editing, draft: event.currentTarget.value })
-          }
+          onChange={(event) => setEditing({ ...editing, draft: event.currentTarget.value })}
           onKeyDown={(event) => {
             if (event.nativeEvent.isComposing) return;
             if (event.key === 'Enter' && !event.shiftKey) {
@@ -158,9 +156,9 @@ export function DatabaseTableCellEditingContent({
             }
           }}
           className={cn(
-            'h-8 min-h-8 resize-none py-1.5',
-            notionSurface &&
-              'rounded-none border-0 bg-transparent px-0 shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent',
+            notionSurface
+              ? 'h-5 min-h-5 resize-none overflow-hidden rounded-none border-0 bg-transparent px-0 py-0 leading-5 shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent'
+              : 'h-8 min-h-8 resize-none py-1.5',
           )}
         />
       ) : property.type === 'date' ? (
