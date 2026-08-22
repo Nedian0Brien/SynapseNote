@@ -11,7 +11,6 @@ import { DatabaseDateCellEditor } from '@/components/DatabaseDateCellEditor';
 import { DatabaseFilesCellEditor } from '@/components/DatabaseFilesCellEditor';
 import { DatabasePlaceCellEditor } from '@/components/DatabasePlaceCellEditor';
 import { DatabaseRelationCellEditor } from '@/components/DatabaseRelationCellEditor';
-import { DatabaseRichTextCellEditor } from '@/components/DatabaseRichTextCellEditor';
 import { DatabaseSelectCellEditor } from '@/components/DatabaseSelectCellEditor';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -23,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import type { DatabaseTableCellEditing } from './database-table-cell-types';
 import type { DatabaseTableProps } from './database-table-types';
@@ -71,7 +71,7 @@ export function DatabaseTableCellEditingContent({
   setEditing,
 }: DatabaseTableCellEditingContentProps) {
   const inlineScalarEditor =
-    notionSurface && ['title', 'number', 'url', 'email', 'phone'].includes(property.type);
+    notionSurface && ['title', 'text', 'number', 'url', 'email', 'phone'].includes(property.type);
 
   if (property.type === 'select' || property.type === 'multi_select') {
     return (
@@ -136,14 +136,32 @@ export function DatabaseTableCellEditingContent({
           }
         />
       ) : property.type === 'text' ? (
-        <DatabaseRichTextCellEditor
-          draft={editing.draft}
-          propertyName={property.name}
-          people={people}
-          records={relationRecords}
-          onDraftChange={(draft) => setEditing({ ...editing, draft })}
-          onSave={() => onSaveEdit(record, property)}
-          onCancel={() => onCancelEdit(record, property)}
+        <Textarea
+          autoFocus
+          rows={1}
+          dir="auto"
+          value={editing.draft}
+          aria-label={`Edit ${property.name}`}
+          data-database-cell-editor-control="true"
+          onChange={(event) =>
+            setEditing({ ...editing, draft: event.currentTarget.value })
+          }
+          onKeyDown={(event) => {
+            if (event.nativeEvent.isComposing) return;
+            if (event.key === 'Enter' && !event.shiftKey) {
+              event.preventDefault();
+              onSaveEdit(record, property);
+            }
+            if (event.key === 'Escape') {
+              event.preventDefault();
+              onCancelEdit(record, property);
+            }
+          }}
+          className={cn(
+            'h-8 min-h-8 resize-none py-1.5',
+            notionSurface &&
+              'rounded-none border-0 bg-transparent px-0 shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent',
+          )}
         />
       ) : property.type === 'date' ? (
         <DatabaseDateCellEditor
@@ -292,28 +310,24 @@ export function DatabaseTableCellEditingContent({
           )}
         />
       )}
-      {property.type !== 'text' ? (
-        <>
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            className={inlineScalarEditor ? 'sr-only' : undefined}
-            aria-label="Save cell edit"
-            onClick={() => onSaveEdit(record, property)}
-          >
-            <Check />
-          </Button>
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            className={inlineScalarEditor ? 'sr-only' : undefined}
-            aria-label="Cancel cell edit"
-            onClick={() => onCancelEdit(record, property)}
-          >
-            <X />
-          </Button>
-        </>
-      ) : null}
+      <Button
+        size="icon-sm"
+        variant="ghost"
+        className={inlineScalarEditor ? 'sr-only' : undefined}
+        aria-label="Save cell edit"
+        onClick={() => onSaveEdit(record, property)}
+      >
+        <Check />
+      </Button>
+      <Button
+        size="icon-sm"
+        variant="ghost"
+        className={inlineScalarEditor ? 'sr-only' : undefined}
+        aria-label="Cancel cell edit"
+        onClick={() => onCancelEdit(record, property)}
+      >
+        <X />
+      </Button>
     </div>
   );
 }

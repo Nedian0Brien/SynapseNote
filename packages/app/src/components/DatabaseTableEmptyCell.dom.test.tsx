@@ -97,7 +97,7 @@ describe('database empty-cell editor matrix', () => {
 
     fireEvent.click(screen.getByLabelText('Edit Notes for page First task'));
     fireEvent.change(screen.getByLabelText('Edit Notes'), { target: { value: 'New note' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.keyDown(screen.getByLabelText('Edit Notes'), { key: 'Enter' });
 
     const savedCell = screen.getByLabelText('Edit Notes for page First task');
     expect(savedCell.textContent).toContain('New note');
@@ -166,7 +166,7 @@ describe('database empty-cell editor matrix', () => {
 
     fireEvent.click(screen.getByLabelText('Edit Notes for page First task'));
     fireEvent.change(screen.getByLabelText('Edit Notes'), { target: { value: 'Draft note' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.keyDown(screen.getByLabelText('Edit Notes'), { key: 'Enter' });
 
     fireEvent.click(screen.getByLabelText('Edit Score for page First task'));
     fireEvent.change(screen.getByLabelText('Edit Score'), { target: { value: '42' } });
