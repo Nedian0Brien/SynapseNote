@@ -19,9 +19,9 @@
  */
 
 import { findParentNode, InputRule, mergeAttributes, Node, wrappingInputRule } from '@tiptap/core';
-import type { NodeType, Node as PmNode } from '@tiptap/pm/model';
+import { Fragment, type NodeType, type Node as PmNode } from '@tiptap/pm/model';
 import { liftListItem as pmLiftListItem, wrapInList as pmWrapInList } from '@tiptap/pm/schema-list';
-import type { EditorState, Transaction } from '@tiptap/pm/state';
+import { type EditorState, Plugin, type Transaction } from '@tiptap/pm/state';
 import { findWrapping } from '@tiptap/pm/transform';
 
 declare module '@tiptap/core' {
@@ -135,6 +135,90 @@ function toggleListKind(
   return result;
 }
 
+/** Convert only the item whose first paragraph contains the typed marker. */
+function convertListItemInput(
+  state: EditorState,
+  start: number,
+  end: number,
+  listAttrs: Record<string, unknown>,
+  itemAttrs: Record<string, unknown>,
+): boolean {
+  const $start = state.doc.resolve(start);
+  let itemDepth = -1;
+  for (let depth = $start.depth; depth > 0; depth--) {
+    if ($start.node(depth).type.name === 'listItem') {
+      itemDepth = depth;
+      break;
+    }
+  }
+  if (itemDepth < 1 || $start.node(itemDepth - 1).type.name !== 'list') return false;
+  if ($start.parent.type.name !== 'paragraph' || $start.parentOffset !== 0) return false;
+
+  const listDepth = itemDepth - 1;
+  const listPos = $start.before(listDepth);
+  const itemIndex = $start.index(listDepth);
+  const tr = state.tr.delete(start, end);
+  const mappedListPos = tr.mapping.map(listPos);
+  const mappedList = tr.doc.nodeAt(mappedListPos);
+  if (!mappedList || mappedList.type.name !== 'list') return false;
+  const item = mappedList.child(itemIndex);
+
+  const converted = item.type.create(
+    { ...item.attrs, checked: null, ...itemAttrs },
+    item.content,
+    item.marks,
+  );
+  const items = Array.from({ length: mappedList.childCount }, (_, index) =>
+    mappedList.child(index),
+  );
+  const replacement: PmNode[] = [];
+  if (itemIndex > 0)
+    replacement.push(mappedList.copy(Fragment.fromArray(items.slice(0, itemIndex))));
+  replacement.push(
+    mappedList.type.create({ ...mappedList.attrs, ...listAttrs }, Fragment.from(converted)),
+  );
+  if (itemIndex + 1 < items.length) {
+    replacement.push(mappedList.copy(Fragment.fromArray(items.slice(itemIndex + 1))));
+  }
+  tr.replaceWith(mappedListPos, mappedListPos + mappedList.nodeSize, replacement);
+  return true;
+}
+
+function normalizeOrderedListStarts(state: EditorState): Transaction | null {
+  const tr = state.tr;
+  let changed = false;
+  const normalize = (parent: PmNode, pos: number) => {
+    let offset = 0;
+    let carry: number | null = null;
+    for (let index = 0; index < parent.childCount; index++) {
+      const child = parent.child(index);
+      const childPos = pos + 1 + offset;
+      if (child.type.name === 'list') {
+        if (child.attrs.ordered) {
+          const sourceOrdinal = child.firstChild?.attrs.sourceOrdinal;
+          const hasExplicitStart =
+            typeof sourceOrdinal === 'number' &&
+            Number.isFinite(sourceOrdinal) &&
+            sourceOrdinal !== 1;
+          const start: number =
+            carry !== null && !hasExplicitStart ? carry : Number(child.attrs.start ?? 1);
+          if (carry !== null && child.attrs.start !== start) {
+            tr.setNodeMarkup(childPos, undefined, { ...child.attrs, start });
+            changed = true;
+          }
+          carry = start + child.childCount;
+        }
+      } else {
+        carry = null;
+      }
+      normalize(child, childPos);
+      offset += child.nodeSize;
+    }
+  };
+  normalize(state.doc, -1);
+  return changed ? tr : null;
+}
+
 // ────────────────────────── List Node ──────────────────────────
 
 export const ListNode = Node.create({
@@ -178,6 +262,29 @@ export const ListNode = Node.create({
       extraAttrs.start = node.attrs.start;
     }
     return [tag, mergeAttributes(HTMLAttributes, extraAttrs), 0];
+  },
+
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        appendTransaction: (transactions, _oldState, newState) => {
+          if (!transactions.some((transaction) => transaction.docChanged)) return null;
+          return normalizeOrderedListStarts(newState);
+        },
+        view: (view) => {
+          const timeoutId = setTimeout(() => {
+            if (view.isDestroyed) return;
+            const tr = normalizeOrderedListStarts(view.state);
+            if (tr) view.dispatch(tr);
+          }, 0);
+          return {
+            destroy: () => {
+              clearTimeout(timeoutId);
+            },
+          };
+        },
+      }),
+    ];
   },
 
   addCommands() {
@@ -235,6 +342,46 @@ export const ListNode = Node.create({
 
   addInputRules() {
     return [
+      // At an existing item's paragraph start, split just that item out of
+      // its containing list before applying the newly typed list kind.
+      new InputRule({
+        find: /^\s*([-+*])(?!\s*\[[ xX]\])\s$/,
+        handler: ({ state, range, match }) => {
+          if (
+            !convertListItemInput(
+              state,
+              range.from,
+              range.to,
+              {
+                ordered: false,
+                bulletMarker: match[1],
+              },
+              { sourceOrdinal: null },
+            )
+          )
+            return null;
+        },
+      }),
+      new InputRule({
+        find: /^\s*(\d+)([.)])\s$/,
+        handler: ({ state, range, match }) => {
+          const start = Number(match[1]);
+          if (
+            !convertListItemInput(
+              state,
+              range.from,
+              range.to,
+              {
+                ordered: true,
+                start,
+                listMarkerDelimiter: match[2],
+              },
+              { sourceOrdinal: start },
+            )
+          )
+            return null;
+        },
+      }),
       // Bullet list: - , * , + (negative lookahead excludes task list pattern `- [ ] `)
       // joinPredicate: bullet and ordered lists share the single `list` node
       // type (distinguished by the `ordered` attr), so the default same-type
