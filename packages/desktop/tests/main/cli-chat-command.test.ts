@@ -49,6 +49,24 @@ describe('CLI chat command boundary', () => {
     expect(claude).toEndWith(" --resume 'session-id' 'next'");
   });
 
+  test('omits the Claude positional prompt when stdin transport is selected', () => {
+    const prompt = "document: don't run $(oops)";
+    const command = buildCliChatCommand(
+      {
+        cli: 'claude',
+        prompt,
+        sessionId: 'session-id',
+        permissionMode: 'read-only',
+        modelSettings: claudeModelSettings,
+      },
+      { promptViaStdin: true },
+    );
+    expect(command).toContain("--resume 'session-id'");
+    expect(command).not.toContain(prompt);
+    expect(command).not.toContain('$(oops)');
+    expect(command.endsWith("'session-id'")).toBe(true);
+  });
+
   test('keeps terminal control bytes out of the interactive command', () => {
     const command = buildCliChatCommand({
       cli: 'codex',

@@ -125,4 +125,21 @@ describe('CLI chat command', () => {
     expect(command.endsWith(' -')).toBe(true);
     expect(command).not.toContain('selected document text');
   });
+
+  test('feeds a contextual Claude prompt through stdin without putting it in the command', () => {
+    const prompt = `selection: $(do-not-run)\n${'x'.repeat(4096)}`;
+    const command = buildCliChatCommand(
+      {
+        ...input,
+        cli: 'claude',
+        prompt,
+        modelSettings: { model: 'sonnet', effort: 'medium', speed: 'default' },
+      },
+      { promptViaStdin: true },
+    );
+    expect(command).toContain('claude --print');
+    expect(command).not.toContain(prompt);
+    expect(command).not.toContain('$(do-not-run)');
+    expect(command.endsWith(' ')).toBe(false);
+  });
 });
