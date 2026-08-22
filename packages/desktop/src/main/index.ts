@@ -167,11 +167,7 @@ import {
   resolveCliOnPath,
   runLoginShellProbe,
 } from './claude-readiness.ts';
-import {
-  buildCliChatCommand,
-  buildCliChatShellCommand,
-  isCliChatLaunchInput,
-} from './cli-chat-command.ts';
+import { buildCliChatCommand, isCliChatLaunchInput } from './cli-chat-command.ts';
 import { listNativeCliChatSessions, readNativeCliChatSession } from './cli-chat-sessions.ts';
 import { requestUserConsent, walkExceedsCap } from './consent-dialog.ts';
 import {
@@ -756,14 +752,14 @@ let wm: WindowManager;
  * quit — callers guard with `?.` / a truthiness check.
  */
 let terminalReaper: TerminalReaper | null = null;
-const activeCodexChatProcesses = new Map<string, ReturnType<typeof spawn>>();
+const activeCliChatProcesses = new Map<string, ReturnType<typeof spawn>>();
 
 function chatProcessKey(windowId: number, ptyId: string): string {
   return `${windowId}:${ptyId}`;
 }
 
-function signalCodexChatProcess(key: string, signal: NodeJS.Signals): void {
-  const child = activeCodexChatProcesses.get(key);
+function signalCliChatProcess(key: string, signal: NodeJS.Signals): void {
+  const child = activeCliChatProcesses.get(key);
   if (child === undefined) return;
   try {
     if (child.pid !== undefined) process.kill(-child.pid, signal);
@@ -775,10 +771,10 @@ function signalCodexChatProcess(key: string, signal: NodeJS.Signals): void {
   }
 }
 
-function stopCodexChatProcessesForWindow(windowId: number): void {
+function stopCliChatProcessesForWindow(windowId: number): void {
   const prefix = `${windowId}:`;
-  for (const key of activeCodexChatProcesses.keys()) {
-    if (key.startsWith(prefix)) signalCodexChatProcess(key, 'SIGTERM');
+  for (const key of activeCliChatProcesses.keys()) {
+    if (key.startsWith(prefix)) signalCliChatProcess(key, 'SIGTERM');
   }
 }
 /**
@@ -1141,7 +1137,7 @@ function ensureWindowManager() {
       if (terminalReaper)
         wireWindowTerminalReap(win, terminalReaper, (windowId) => {
           dockVisibleForWindow.delete(windowId);
-          stopCodexChatProcessesForWindow(windowId);
+          stopCliChatProcessesForWindow(windowId);
         });
       return win as unknown as BrowserWindowLike;
     },
@@ -3268,23 +3264,15 @@ function registerIpcHandlers() {
         return { ok: false, reason: 'unknown-session' as const };
       }
       const processKey = chatProcessKey(win.id, req.ptyId);
-      if (activeCodexChatProcesses.has(processKey)) {
+      if (activeCliChatProcesses.has(processKey)) {
         return { ok: false, reason: 'dispatch-failed' as const };
       }
       const command = buildCliChatCommand(req.chat, {
         autoApproveOkTools,
         mcpPreApprove: claudeMcpOwn,
         dataPlaneOnlyWrites: process.env.SYNAPSENOTE_DATABASE_SANDBOX_MODE === 'data-plane-only',
-        promptViaStdin: req.chat.cli === 'codex',
+        promptViaStdin: true,
       });
-      if (req.chat.cli !== 'codex') {
-        const accepted = terminalManager.input({
-          windowId: win.id,
-          ptyId: req.ptyId,
-          data: `${buildCliChatShellCommand(command)}\r`,
-        });
-        return accepted ? { ok: true as const } : { ok: false, reason: 'unknown-session' as const };
-      }
       try {
         const child = spawn('/bin/zsh', ['-l', '-c', command], {
           cwd: projectRoot ?? osHomedir(),
@@ -3292,7 +3280,7 @@ function registerIpcHandlers() {
           env: process.env,
           stdio: ['pipe', 'pipe', 'pipe'],
         });
-        activeCodexChatProcesses.set(processKey, child);
+        activeCliChatProcesses.set(processKey, child);
         let finalized = false;
         let stderrTail = '';
         const pushData = (data: string): void => {
@@ -3301,7 +3289,7 @@ function registerIpcHandlers() {
         const finalize = (exitCode: number, error?: string): void => {
           if (finalized) return;
           finalized = true;
-          activeCodexChatProcesses.delete(processKey);
+          activeCliChatProcesses.delete(processKey);
           if (exitCode !== 0 && error) {
             pushData(`${JSON.stringify({ type: 'turn.failed', error: { message: error } })}\n`);
           }
@@ -3320,14 +3308,14 @@ function registerIpcHandlers() {
         child.stdin.end(req.chat.prompt, 'utf8');
         return { ok: true as const };
       } catch {
-        activeCodexChatProcesses.delete(processKey);
+        activeCliChatProcesses.delete(processKey);
         return { ok: false, reason: 'dispatch-failed' as const };
       }
     }
     if (win && typeof req.data === 'string') {
       const processKey = chatProcessKey(win.id, req.ptyId);
-      if (req.data.includes('\u0003') && activeCodexChatProcesses.has(processKey)) {
-        signalCodexChatProcess(processKey, 'SIGINT');
+      if (req.data.includes('\u0003') && activeCliChatProcesses.has(processKey)) {
+        signalCliChatProcess(processKey, 'SIGINT');
         return undefined;
       }
       terminalManager.input({ windowId: win.id, ptyId: req.ptyId, data: req.data });
@@ -3349,7 +3337,7 @@ function registerIpcHandlers() {
   handle('ok:pty:kill', async (event, req) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) {
-      signalCodexChatProcess(chatProcessKey(win.id, req.ptyId), 'SIGTERM');
+      signalCliChatProcess(chatProcessKey(win.id, req.ptyId), 'SIGTERM');
       terminalManager.kill({ windowId: win.id, ptyId: req.ptyId });
     }
     return undefined;
@@ -5900,7 +5888,7 @@ function bootPrimaryInstance(): void {
     // Reap every window's PTY host first so no user shell / spawn-helper
     // outlives the app. Idempotent (clears the map; a second pass no-ops).
     terminalReaper?.killAll();
-    for (const key of activeCodexChatProcesses.keys()) signalCodexChatProcess(key, 'SIGTERM');
+    for (const key of activeCliChatProcesses.keys()) signalCliChatProcess(key, 'SIGTERM');
     dockVisibleForWindow.clear();
     autoUpdaterHandle?.destroy();
     autoUpdaterHandle = null;

@@ -117,7 +117,8 @@ export function buildCliChatCommand(
 ): string {
   const permissionMode = options.dataPlaneOnlyWrites === true ? 'read-only' : input.permissionMode;
   const quotedPrompt = shellSingleQuote(printablePtyArgument(input.prompt));
-  const promptInput = options.promptViaStdin === true ? '-' : quotedPrompt;
+  const promptInput =
+    options.promptViaStdin === true ? (input.cli === 'codex' ? ' -' : '') : ` ${quotedPrompt}`;
   const quotedSessionId =
     input.sessionId === null ? null : shellSingleQuote(printablePtyArgument(input.sessionId));
   if (input.cli === 'codex') {
@@ -129,8 +130,8 @@ export function buildCliChatCommand(
     const model = codexModelArgs(input.modelSettings);
     const systemInstructions = systemInstructionArgs(input.cli);
     return input.sessionId === null
-      ? `codex exec --json --color never${permissions}${model}${systemInstructions} ${promptInput}`
-      : `codex exec resume --json${permissions}${model}${systemInstructions} ${quotedSessionId} ${promptInput}`;
+      ? `codex exec --json --color never${permissions}${model}${systemInstructions}${promptInput}`
+      : `codex exec resume --json${permissions}${model}${systemInstructions} ${quotedSessionId}${promptInput}`;
   }
   const permissions = claudePermissionArgs(permissionMode);
   const claudeSettings = buildClaudeSettingsArg({
@@ -143,7 +144,7 @@ export function buildCliChatCommand(
   const model = claudeModelArgs(input.modelSettings);
   const systemInstructions = systemInstructionArgs(input.cli);
   const resume = quotedSessionId === null ? '' : ` --resume ${quotedSessionId}`;
-  return `claude --print --verbose --output-format stream-json --include-partial-messages${permissions}${settings}${model}${systemInstructions}${resume} ${quotedPrompt}`;
+  return `claude --print --verbose --output-format stream-json --include-partial-messages${permissions}${settings}${model}${systemInstructions}${resume}${promptInput}`;
 }
 
 /**
