@@ -12,6 +12,7 @@ import { type Extension, StateEffect, StateField } from '@codemirror/state';
 import { Decoration, type DecorationSet, EditorView, ViewPlugin } from '@codemirror/view';
 import { FLASH_DURATION_MS } from '@nedian0brien/synapsenote-core';
 import type * as Y from 'yjs';
+import { AGENT_WRITING_TOOLS_LINE_STAGGER_MS } from './agent-writing-tools-preview';
 
 interface SourceAnimationRange {
   from: number;
@@ -84,16 +85,35 @@ const writingToolsField = StateField.define<{ decorations: DecorationSet; run: n
     for (const effect of transaction.effects) {
       if (effect.is(addWritingToolsEffect)) {
         run = effect.value.run;
-        const marks = effect.value.ranges.map((range, index) =>
+        const marks = effect.value.ranges.map((range) =>
           Decoration.mark({
-            class: 'agent-writing-tools-text',
+            class: 'agent-writing-tools-source-text',
             attributes: {
               'data-agent-writing-tools-run': String(run),
-              style: `--agent-writing-tools-delay: ${index * 70}ms`,
             },
           }).range(range.from, range.to),
         );
-        decorations = Decoration.set(marks, true);
+        const lineStarts = new Set<number>();
+        for (const range of effect.value.ranges) {
+          let line = transaction.state.doc.lineAt(range.from);
+          const finalLine = transaction.state.doc.lineAt(Math.max(range.from, range.to - 1));
+          while (line.number <= finalLine.number) {
+            lineStarts.add(line.from);
+            if (line.number === finalLine.number) break;
+            line = transaction.state.doc.line(line.number + 1);
+          }
+        }
+        const lines = [...lineStarts]
+          .sort((a, b) => a - b)
+          .map((from, index) =>
+            Decoration.line({
+              class: 'agent-writing-tools-source-line',
+              attributes: {
+                style: `--agent-writing-tools-line-index: ${index}`,
+              },
+            }).range(from),
+          );
+        decorations = Decoration.set([...marks, ...lines], true);
       }
 
       if (effect.is(removeWritingToolsEffect) && effect.value === run) {
@@ -134,11 +154,20 @@ export function createAgentFlashSourceExtension(doc: Y.Doc): Extension {
       view.dispatch({ effects: addWritingToolsEffect.of({ ranges, run }) });
       clearTimerIfNeeded();
       const scheduledRun = run;
-      clearTimer = setTimeout(() => {
-        clearTimer = null;
-        if (destroyed) return;
-        view.dispatch({ effects: removeWritingToolsEffect.of(scheduledRun) });
-      }, FLASH_DURATION_MS + 140);
+      const lineNumbers = new Set<number>();
+      for (const range of ranges) {
+        const first = view.state.doc.lineAt(range.from).number;
+        const last = view.state.doc.lineAt(Math.max(range.from, range.to - 1)).number;
+        for (let line = first; line <= last; line += 1) lineNumbers.add(line);
+      }
+      clearTimer = setTimeout(
+        () => {
+          clearTimer = null;
+          if (destroyed) return;
+          view.dispatch({ effects: removeWritingToolsEffect.of(scheduledRun) });
+        },
+        FLASH_DURATION_MS + Math.max(0, lineNumbers.size - 1) * AGENT_WRITING_TOOLS_LINE_STAGGER_MS,
+      );
     };
 
     const effectsObserver = (event: Y.YMapEvent<AgentEffectValue>) => {

@@ -10,8 +10,9 @@
  * Visual reference and timing: Apple WWDC25 “Dive deeper into Writing Tools,”
  * 11:17–11:19. Apple renders clear-background text previews, hides the live
  * range during the effect, and restores it after the animation. In the web
- * editor, ProseMirror inline decorations provide the equivalent no-reflow text
- * preview layer while preserving editor selection and document structure.
+ * editor, exact browser line boxes receive clipped clear-background DOM
+ * snapshots while ProseMirror decorations hide only the corresponding live
+ * glyphs. The preview-to-live handoff preserves selection, layout, and scroll.
  * https://developer.apple.com/videos/play/wwdc2025/265/?time=677
  */
 
@@ -21,10 +22,16 @@ import { Plugin, PluginKey, type Transaction } from '@tiptap/pm/state';
 import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view';
 import { ySyncPluginKey } from '@tiptap/y-tiptap';
 import type * as Y from 'yjs';
+import {
+  AGENT_WRITING_TOOLS_LINE_STAGGER_MS,
+  AGENT_WRITING_TOOLS_MAX_PREVIEW_LINES,
+  createAgentWritingToolsPreviewController,
+} from './agent-writing-tools-preview';
 
 const CORRELATION_WINDOW_MS = 180;
 const PENDING_SIGNAL_TTL_MS = 700;
-const RANGE_STAGGER_MS = 70;
+const MAX_PREVIEW_STAGGER_MS =
+  (AGENT_WRITING_TOOLS_MAX_PREVIEW_LINES - 1) * AGENT_WRITING_TOOLS_LINE_STAGGER_MS;
 
 interface AgentActivitySignal {
   agentId: string;
@@ -48,6 +55,7 @@ interface PendingActivity {
 
 interface AgentWritingToolsPluginState {
   decorations: DecorationSet;
+  ranges: AgentWritingToolsRange[];
   run: number;
 }
 
@@ -116,7 +124,7 @@ export function changedRangesFromRemoteTransaction(
   return [{ from, to }];
 }
 
-/** Build text-only decorations so nodes, layout, selection, and scroll never move. */
+/** Hide only changed live glyphs while their line previews animate above them. */
 export function createAgentWritingToolsDecorations(
   doc: ProseMirrorNode,
   ranges: AgentWritingToolsRange[],
@@ -124,7 +132,7 @@ export function createAgentWritingToolsDecorations(
 ): DecorationSet {
   const decorations: Decoration[] = [];
 
-  ranges.forEach((range, rangeIndex) => {
+  ranges.forEach((range) => {
     const from = clampPosition(range.from, doc);
     const to = clampPosition(range.to, doc);
     if (from >= to) return;
@@ -137,9 +145,8 @@ export function createAgentWritingToolsDecorations(
 
       decorations.push(
         Decoration.inline(textFrom, textTo, {
-          class: 'agent-writing-tools-text',
+          class: 'agent-writing-tools-live-text',
           'data-agent-writing-tools-run': String(run),
-          style: `--agent-writing-tools-delay: ${rangeIndex * RANGE_STAGGER_MS}ms`,
         }),
       );
       return false;
@@ -187,19 +194,16 @@ export function createAgentWritingToolsPlugin(
     }
   };
 
-  const scheduleClear = (run: number) => {
+  const scheduleClear = (run: number, staggerMs = MAX_PREVIEW_STAGGER_MS) => {
     clearTimerIfNeeded();
-    clearTimer = setTimeout(
-      () => {
-        clearTimer = null;
-        const view = editorView;
-        if (!view) return;
-        const state = agentWritingToolsPluginKey.getState(view.state);
-        if (!state || state.run !== run) return;
-        view.dispatch(view.state.tr.setMeta(agentWritingToolsPluginKey, { kind: 'clear', run }));
-      },
-      FLASH_DURATION_MS + RANGE_STAGGER_MS * 2,
-    );
+    clearTimer = setTimeout(() => {
+      clearTimer = null;
+      const view = editorView;
+      if (!view) return;
+      const state = agentWritingToolsPluginKey.getState(view.state);
+      if (!state || state.run !== run) return;
+      view.dispatch(view.state.tr.setMeta(agentWritingToolsPluginKey, { kind: 'clear', run }));
+    }, FLASH_DURATION_MS + staggerMs);
   };
 
   const dispatchStart = (ranges: AgentWritingToolsRange[]) => {
@@ -237,25 +241,31 @@ export function createAgentWritingToolsPlugin(
   return new Plugin<AgentWritingToolsPluginState>({
     key: agentWritingToolsPluginKey,
     state: {
-      init: () => ({ decorations: DecorationSet.empty, run: 0 }),
+      init: () => ({ decorations: DecorationSet.empty, ranges: [], run: 0 }),
       apply(transaction, previous) {
         const meta = transaction.getMeta(agentWritingToolsPluginKey) as
           | AgentWritingToolsMeta
           | undefined;
         if (meta?.kind === 'clear') {
           if (meta.run !== previous.run) return previous;
-          return { decorations: DecorationSet.empty, run: previous.run };
+          return { decorations: DecorationSet.empty, ranges: [], run: previous.run };
         }
         if (meta?.kind === 'start') {
           return {
             decorations: createAgentWritingToolsDecorations(transaction.doc, meta.ranges, meta.run),
+            ranges: meta.ranges,
             run: meta.run,
           };
         }
 
         const mapped = previous.decorations.map(transaction.mapping, transaction.doc);
         const ranges = changedRangesFromRemoteTransaction(transaction);
-        if (ranges.length === 0) return { ...previous, decorations: mapped };
+        if (ranges.length === 0) {
+          if (transaction.docChanged && previous.ranges.length > 0) {
+            return { decorations: DecorationSet.empty, ranges: [], run: previous.run };
+          }
+          return { ...previous, decorations: mapped };
+        }
 
         // Collaboration can dispatch its initial fragment catch-up before this
         // plugin's view hook mounts. It is editor hydration, not a live agent
@@ -276,6 +286,7 @@ export function createAgentWritingToolsPlugin(
         queueMicrotask(() => scheduleClear(run));
         return {
           decorations: createAgentWritingToolsDecorations(transaction.doc, ranges, run),
+          ranges,
           run,
         };
       },
@@ -288,10 +299,43 @@ export function createAgentWritingToolsPlugin(
     view(view) {
       editorView = view;
       activityMap.observe(activityObserver);
+      const preview = createAgentWritingToolsPreviewController();
+      let previewFrame: number | null = null;
+      let shownRun = 0;
       return {
+        update(updatedView) {
+          const state = agentWritingToolsPluginKey.getState(updatedView.state);
+          if (!state || state.ranges.length === 0) {
+            if (previewFrame !== null) cancelAnimationFrame(previewFrame);
+            previewFrame = null;
+            preview.clear();
+            return;
+          }
+          if (state.run === shownRun) return;
+          shownRun = state.run;
+          if (previewFrame !== null) cancelAnimationFrame(previewFrame);
+          previewFrame = requestAnimationFrame(() => {
+            previewFrame = null;
+            const current = agentWritingToolsPluginKey.getState(updatedView.state);
+            if (!current || current.run !== shownRun || current.ranges.length === 0) return;
+            const rendered = preview.show(updatedView, current.ranges, current.run);
+            if (rendered === null) {
+              updatedView.dispatch(
+                updatedView.state.tr.setMeta(agentWritingToolsPluginKey, {
+                  kind: 'clear',
+                  run: current.run,
+                } satisfies AgentWritingToolsMeta),
+              );
+              return;
+            }
+            scheduleClear(current.run, rendered);
+          });
+        },
         destroy() {
           activityMap.unobserve(activityObserver);
           clearTimerIfNeeded();
+          if (previewFrame !== null) cancelAnimationFrame(previewFrame);
+          preview.clear();
           if (editorView === view) editorView = null;
           pendingActivity = null;
           recentRemoteChange = null;

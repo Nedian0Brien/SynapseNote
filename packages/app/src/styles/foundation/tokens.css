@@ -77,10 +77,9 @@
   --color-azure-900: oklch(0.3773 0.1488 264.94);
   --color-azure-950: oklch(0.2785 0.0961 267.56);
 
-  /* Apple Writing Tools reference: the rewritten text stays in place while a
-     pastel spectral treatment resolves into the final glyphs. No block motion,
-     background wash, or accent rail. Timing is calibrated against the inline
-     rewrite at WWDC25 265, 11:17–11:19. */
+  /* Apple Writing Tools reference: exact visual lines descend in sequence,
+     pass their resting plane once, and settle with one small damped correction.
+     A spectral preview cross-fades into the final glyph snapshot underneath. */
   @keyframes agent-writing-tools-rewrite {
     0% {
       opacity: 0.14;
@@ -88,17 +87,8 @@
       color: transparent;
       -webkit-text-fill-color: transparent;
     }
-    16% {
-      opacity: 0.42;
-    }
-    78% {
-      opacity: 1;
-      background-position: 0% 50%;
-      color: transparent;
-      -webkit-text-fill-color: transparent;
-    }
-    96% {
-      opacity: 1;
+    62% {
+      opacity: 0.84;
       background-position: 0% 50%;
       color: transparent;
       -webkit-text-fill-color: transparent;
@@ -108,6 +98,61 @@
       background-position: 0% 50%;
       color: inherit;
       -webkit-text-fill-color: currentColor;
+    }
+  }
+
+  @keyframes agent-writing-tools-line-settle {
+    0% {
+      opacity: 0.08;
+      filter: blur(2px);
+      transform: translate3d(0, -11px, 16px) rotateX(-36deg);
+    }
+    68% {
+      opacity: 1;
+      filter: blur(0);
+      transform: translate3d(0, 0.9px, -0.8px) rotateX(2.2deg);
+    }
+    86% {
+      transform: translate3d(0, -0.2px, 0.2px) rotateX(-0.5deg);
+    }
+    100% {
+      opacity: 1;
+      filter: blur(0);
+      transform: translate3d(0, 0, 0) rotateX(0deg);
+    }
+  }
+
+  @keyframes agent-writing-tools-final-reveal {
+    0% {
+      opacity: 0.08;
+    }
+    46% {
+      opacity: 0.38;
+    }
+    78% {
+      opacity: 0.9;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes agent-writing-tools-spectrum {
+    0% {
+      opacity: 0.88;
+      background-position: 100% 50%;
+    }
+    62% {
+      opacity: 0.84;
+      background-position: 0% 50%;
+    }
+    82% {
+      opacity: 0.38;
+      background-position: 0% 50%;
+    }
+    100% {
+      opacity: 0;
+      background-position: 0% 50%;
     }
   }
 
@@ -151,7 +196,11 @@
     }
   }
 
-  --animate-agent-writing-tools: agent-writing-tools-rewrite 1.2s linear both;
+  --animate-agent-writing-tools: agent-writing-tools-rewrite 900ms linear both;
+  --animate-agent-writing-tools-line: agent-writing-tools-line-settle 900ms
+    cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-agent-writing-tools-final: agent-writing-tools-final-reveal 900ms ease-in-out both;
+  --animate-agent-writing-tools-spectrum: agent-writing-tools-spectrum 900ms linear both;
   --animate-agent-breathing: agent-breathing 2.4s ease-in-out infinite;
   --animate-undo-ready: undo-ready 600ms var(--ease-out-strong) forwards;
 

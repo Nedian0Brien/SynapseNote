@@ -1,40 +1,141 @@
-/* AI edits resolve in place like Apple Writing Tools. The PM/CM plugins wrap
-   only the exact changed characters; this treatment never moves blocks or
-   paints a paragraph background. `box-decoration-break: clone` gives every
-   wrapped visual line its own clear-background spectral preview. */
-.agent-writing-tools-text {
+/* Apple Writing Tools-style AI edit previews.
+
+   WYSIWYG: the live changed range is transparent while clear-background DOM
+   snapshots are clipped into exact browser line boxes. Each line descends in
+   sequence, crosses its resting plane once, and makes one small damped
+   correction. The normal-color snapshot sits underneath the spectral layer,
+   so removing the overlay never snaps to black.
+
+   Source: CodeMirror owns real line elements, so the same line motion can run
+   directly on those elements while the exact inserted characters receive the
+   spectral cross-fade. */
+.ProseMirror .agent-writing-tools-live-text {
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  caret-color: currentColor;
+}
+
+.agent-writing-tools-preview-root {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: visible;
+  perspective: 620px;
+  perspective-origin: 50% 0;
+  pointer-events: none;
+}
+
+.agent-writing-tools-preview-line {
+  position: absolute;
+  overflow: hidden;
+  transform-origin: 50% 100%;
+  animation: var(--animate-agent-writing-tools-line);
+  animation-delay: calc(var(--agent-writing-tools-line-index) * 105ms);
+  will-change: transform, opacity, filter;
+}
+
+.agent-writing-tools-preview-root .agent-writing-tools-preview-snapshot {
+  max-width: none;
+  pointer-events: none;
+  user-select: none;
+}
+
+.agent-writing-tools-preview-snapshot-final {
+  animation: var(--animate-agent-writing-tools-final);
+  animation-delay: calc(var(--agent-writing-tools-line-index) * 105ms);
+}
+
+.agent-writing-tools-preview-root .agent-writing-tools-preview-snapshot-spectrum {
   background-image: linear-gradient(
     96deg,
-    rgba(129, 134, 145, 0.2) 0%,
+    rgba(129, 134, 145, 0.18) 0%,
     #78a7ff 17%,
     #9b7cff 34%,
     #df78cf 50%,
     #f09792 65%,
     #efb968 79%,
     #79cde7 92%,
-    rgba(129, 134, 145, 0.2) 100%
+    rgba(129, 134, 145, 0.18) 100%
   );
   background-position: 100% 50%;
   background-size: 280% 100%;
   background-repeat: no-repeat;
   background-clip: text;
   -webkit-background-clip: text;
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
   color: transparent;
   -webkit-text-fill-color: transparent;
-  animation: var(--animate-agent-writing-tools);
-  animation-delay: var(--agent-writing-tools-delay, 0ms);
+  animation: var(--animate-agent-writing-tools-spectrum);
+  animation-delay: calc(var(--agent-writing-tools-line-index) * 105ms);
   will-change: opacity, background-position;
 }
 
-/* Reduced motion keeps authorship feedback but removes the traveling gradient. */
+.agent-writing-tools-preview-root .agent-writing-tools-preview-snapshot-spectrum * {
+  background-color: transparent;
+  background-image: inherit;
+  background-position: inherit;
+  background-size: inherit;
+  background-clip: text;
+  -webkit-background-clip: text;
+  border-color: transparent;
+  box-shadow: none;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.agent-writing-tools-preview-root
+  .agent-writing-tools-preview-snapshot-spectrum
+  :is(img, svg, canvas, video) {
+  visibility: hidden;
+}
+
+.agent-writing-tools-source-line {
+  transform-origin: 50% 100%;
+  animation: var(--animate-agent-writing-tools-line);
+  animation-delay: calc(var(--agent-writing-tools-line-index) * 105ms);
+  will-change: transform, opacity, filter;
+}
+
+.agent-writing-tools-source-text {
+  background-image: linear-gradient(
+    96deg,
+    rgba(129, 134, 145, 0.18) 0%,
+    #78a7ff 17%,
+    #9b7cff 34%,
+    #df78cf 50%,
+    #f09792 65%,
+    #efb968 79%,
+    #79cde7 92%,
+    rgba(129, 134, 145, 0.18) 100%
+  );
+  background-position: 100% 50%;
+  background-size: 280% 100%;
+  background-repeat: no-repeat;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: var(--animate-agent-writing-tools);
+  animation-delay: calc(var(--agent-writing-tools-line-index) * 105ms);
+}
+
+/* Reduced motion keeps authorship feedback but removes 3D travel and shimmer. */
 @media (prefers-reduced-motion: reduce) {
-  .agent-writing-tools-text {
+  .agent-writing-tools-preview-root {
+    display: none;
+  }
+
+  .ProseMirror .agent-writing-tools-live-text,
+  .agent-writing-tools-source-text {
     background-image: none;
+    color: inherit;
+    -webkit-text-fill-color: currentColor;
     animation: agent-writing-tools-reduced 600ms ease-out both;
     animation-delay: 0ms;
     will-change: opacity;
+  }
+
+  .agent-writing-tools-source-line {
+    animation: none;
   }
 }
 

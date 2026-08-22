@@ -9,6 +9,7 @@ import {
   changedRangesFromRemoteTransaction,
   createAgentWritingToolsPlugin,
 } from './agent-writing-tools';
+import { mergeAgentWritingToolsPreviewRects } from './agent-writing-tools-preview';
 
 const mountedEditors: Editor[] = [];
 
@@ -46,6 +47,56 @@ async function flushAnimationDispatch(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
+async function flushPreviewFrame(): Promise<void> {
+  await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+  await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+}
+
+function rect(left: number, top: number, width: number, height: number): DOMRect {
+  return {
+    x: left,
+    y: top,
+    left,
+    top,
+    right: left + width,
+    bottom: top + height,
+    width,
+    height,
+    toJSON: () => ({}),
+  } as DOMRect;
+}
+
+function installPreviewGeometry(editor: Editor): () => void {
+  const host = editor.view.dom.parentElement;
+  if (!host) throw new Error('expected editor host');
+  const originalRangeRects = window.Range.prototype.getClientRects;
+  const originalEditorRect = editor.view.dom.getBoundingClientRect;
+  const originalHostRect = host.getBoundingClientRect;
+  const originalBlockRects = [...editor.view.dom.children].map(
+    (child) => (child as HTMLElement).getBoundingClientRect,
+  );
+  Object.defineProperty(window.Range.prototype, 'getClientRects', {
+    configurable: true,
+    value: () => [rect(120, 140, 180, 22), rect(120, 162, 220, 22), rect(120, 184, 160, 22)],
+  });
+  editor.view.dom.getBoundingClientRect = () => rect(100, 100, 440, 260);
+  host.getBoundingClientRect = () => rect(90, 90, 460, 280);
+  for (const child of editor.view.dom.children) {
+    (child as HTMLElement).getBoundingClientRect = () => rect(110, 132, 410, 86);
+  }
+  return () => {
+    Object.defineProperty(window.Range.prototype, 'getClientRects', {
+      configurable: true,
+      value: originalRangeRects,
+    });
+    editor.view.dom.getBoundingClientRect = originalEditorRect;
+    host.getBoundingClientRect = originalHostRect;
+    [...editor.view.dom.children].forEach((child, index) => {
+      (child as HTMLElement).getBoundingClientRect = originalBlockRects[index];
+    });
+  };
+}
+
 function decorationRanges(editor: Editor): Array<{ from: number; to: number }> {
   return (
     agentWritingToolsPluginKey
@@ -68,6 +119,7 @@ describe('agent Writing Tools animation correlation', () => {
       }),
     ]);
     mountedEditors.push(editor);
+    const restoreGeometry = installPreviewGeometry(editor);
 
     const remoteDocument = new Y.Doc();
     Y.applyUpdate(remoteDocument, Y.encodeStateAsUpdate(localDocument));
@@ -85,10 +137,26 @@ describe('agent Writing Tools animation correlation', () => {
       remoteDocument,
     );
     await flushAnimationDispatch();
+    await flushPreviewFrame();
 
     expect(editor.state.doc.textContent).toBe('Hello AI');
     expect(decorationRanges(editor)).toEqual([{ from: 6, to: 9 }]);
-    expect(editor.view.dom.querySelector('.agent-writing-tools-text')?.textContent).toBe(' AI');
+    expect(editor.view.dom.querySelector('.agent-writing-tools-live-text')?.textContent).toBe(
+      ' AI',
+    );
+    const previewLines = editor.view.dom.parentElement?.querySelectorAll(
+      '.agent-writing-tools-preview-line',
+    );
+    expect(previewLines?.length).toBe(3);
+    expect(
+      (previewLines?.[2] as HTMLElement | undefined)?.style.getPropertyValue(
+        '--agent-writing-tools-line-index',
+      ),
+    ).toBe('2');
+    expect(
+      previewLines?.[0]?.querySelectorAll('.agent-writing-tools-preview-snapshot').length,
+    ).toBe(2);
+    restoreGeometry();
     remoteDocument.destroy();
   });
 
@@ -108,7 +176,9 @@ describe('agent Writing Tools animation correlation', () => {
 
     expect(editor.state.doc.textContent).toBe('Hello brave world');
     expect(decorationRanges(editor)).toEqual([{ from: 7, to: 13 }]);
-    expect(editor.view.dom.querySelector('.agent-writing-tools-text')?.textContent).toBe('brave ');
+    expect(editor.view.dom.querySelector('.agent-writing-tools-live-text')?.textContent).toBe(
+      'brave ',
+    );
   });
 
   test('activity arriving before the CRDT transaction arms the next remote change', () => {
@@ -152,5 +222,20 @@ describe('changed range extraction', () => {
       .setMeta(ySyncPluginKey, { isChangeOrigin: true });
 
     expect(changedRangesFromRemoteTransaction(transaction)).toEqual([{ from: 7, to: 16 }]);
+  });
+});
+
+describe('preview line geometry', () => {
+  test('merges adjacent fragments on one visual line without merging separate lines', () => {
+    expect(
+      mergeAgentWritingToolsPreviewRects([
+        rect(100, 20, 40, 18),
+        rect(140, 20.4, 35, 18),
+        rect(100, 42, 80, 18),
+      ]),
+    ).toEqual([
+      { left: 100, top: 20, right: 175, bottom: 38.4, width: 75, height: 18.4 },
+      { left: 100, top: 42, right: 180, bottom: 60, width: 80, height: 18 },
+    ]);
   });
 });
