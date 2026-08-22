@@ -221,6 +221,42 @@
   background: var(--background);
 }
 
+/* Native fullscreen keeps the sandboxed preview as the primary surface while
+   retaining the NodeView chrome as an explicit exit affordance. Targeting the
+   whole block (rather than the iframe alone) also keeps the preview's sandbox
+   boundary and source document unchanged during enter/exit. */
+.ProseMirror .ok-codeblock:fullscreen {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--background);
+}
+
+.ProseMirror .ok-codeblock:fullscreen > .ok-codeblock-preview {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  border-radius: 0;
+}
+
+.ProseMirror .ok-codeblock:fullscreen > .ok-codeblock-chrome {
+  top: 0.75rem;
+  right: 0.75rem;
+  bottom: auto;
+  padding-bottom: 0.1875rem;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ProseMirror .ok-codeblock:fullscreen > .ok-codeblock-title,
+.ProseMirror .ok-codeblock:fullscreen > .ok-codeblock-pre,
+.ProseMirror .ok-codeblock:fullscreen > .ok-codeblock-preview .ok-resize-overlay {
+  display: none;
+}
+
 /* Collapse the code body (PM contentDOM) when preview is active and the
    user hasn't opted to view source. We keep the <pre> mounted (precedent
    #30 — never literally `display:none` PM content) and instead clip it
