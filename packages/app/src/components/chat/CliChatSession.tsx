@@ -23,6 +23,7 @@ interface CliChatSessionProps {
   readonly cli: CliChatId;
   readonly launch: TerminalLaunchIntent;
   readonly adoptPtyId?: string | null;
+  readonly isActive?: boolean;
   readonly onPtyId?: (ptyId: string | null) => void;
   readonly onTitleChange?: (title: string) => void;
   readonly onClose?: () => void;
@@ -40,6 +41,7 @@ export function CliChatSession({
   cli,
   launch,
   adoptPtyId = null,
+  isActive = true,
   onPtyId,
   onTitleChange,
   onClose,
@@ -71,6 +73,7 @@ export function CliChatSession({
             bridge={bridge}
             cli={cli}
             ptyId={ptyId}
+            isActive={isActive}
             initialPrompt={launch.prompt}
             initialDisplayPrompt={launch.displayPrompt}
             context={launch.context}

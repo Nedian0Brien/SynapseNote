@@ -133,6 +133,91 @@ describe('CodeBlockView edit-source modal language wiring', () => {
   });
 });
 
+describe('CodeBlockView fullscreen preview', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  test('enters and exits native fullscreen while keeping the button state synchronized', async () => {
+    const { container } = render(
+      <ConfigContext value={makeConfigValue(null)}>
+        <CodeBlockView {...makeProps()} />
+      </ConfigContext>,
+    );
+    const block = container.querySelector('.ok-codeblock') as HTMLDivElement;
+    const originalFullscreenElement = Object.getOwnPropertyDescriptor(
+      document,
+      'fullscreenElement',
+    );
+    const originalExitFullscreen = Object.getOwnPropertyDescriptor(document, 'exitFullscreen');
+    const originalRequestFullscreen = Object.getOwnPropertyDescriptor(block, 'requestFullscreen');
+    let activeFullscreenElement: Element | null = null;
+    let requests = 0;
+    let exits = 0;
+
+    Object.defineProperty(document, 'fullscreenElement', {
+      configurable: true,
+      get: () => activeFullscreenElement,
+    });
+    Object.defineProperty(block, 'requestFullscreen', {
+      configurable: true,
+      value: async () => {
+        requests += 1;
+        activeFullscreenElement = block;
+        document.dispatchEvent(new Event('fullscreenchange'));
+      },
+    });
+    Object.defineProperty(document, 'exitFullscreen', {
+      configurable: true,
+      value: async () => {
+        exits += 1;
+        activeFullscreenElement = null;
+        document.dispatchEvent(new Event('fullscreenchange'));
+      },
+    });
+
+    try {
+      const enterButton = container.querySelector(
+        'button[aria-label="Enter fullscreen"]',
+      ) as HTMLButtonElement | null;
+      expect(enterButton).toBeTruthy();
+      fireEvent.click(enterButton as HTMLButtonElement);
+
+      await waitFor(() => {
+        expect(requests).toBe(1);
+        expect(block.getAttribute('data-fullscreen')).toBe('true');
+        expect(container.querySelector('button[aria-label="Exit fullscreen"]')).toBeTruthy();
+      });
+
+      fireEvent.click(
+        container.querySelector('button[aria-label="Exit fullscreen"]') as HTMLButtonElement,
+      );
+
+      await waitFor(() => {
+        expect(exits).toBe(1);
+        expect(block.hasAttribute('data-fullscreen')).toBe(false);
+        expect(container.querySelector('button[aria-label="Enter fullscreen"]')).toBeTruthy();
+      });
+    } finally {
+      if (originalFullscreenElement) {
+        Object.defineProperty(document, 'fullscreenElement', originalFullscreenElement);
+      } else {
+        Reflect.deleteProperty(document, 'fullscreenElement');
+      }
+      if (originalExitFullscreen) {
+        Object.defineProperty(document, 'exitFullscreen', originalExitFullscreen);
+      } else {
+        Reflect.deleteProperty(document, 'exitFullscreen');
+      }
+      if (originalRequestFullscreen) {
+        Object.defineProperty(block, 'requestFullscreen', originalRequestFullscreen);
+      } else {
+        Reflect.deleteProperty(block, 'requestFullscreen');
+      }
+    }
+  });
+});
+
 /**
  * Pins the parent-side CSP-violation seam that the unit tests cannot reach:
  * the bootstrap test stops at the iframe's `postMessage`, and

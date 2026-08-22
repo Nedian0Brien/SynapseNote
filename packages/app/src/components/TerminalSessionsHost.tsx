@@ -1068,6 +1068,7 @@ export function TerminalSessionsHost({
                 cli={session.launch.cli}
                 launch={session.launch}
                 adoptPtyId={session.adoptPtyId}
+                isActive={session.id === activeSessionId}
                 onPtyId={(ptyId) => setSessionPtyId(session.id, ptyId)}
                 onClose={() => closeSession(session.id)}
                 documentContext={documentContext}

@@ -18,6 +18,8 @@ import {
   Copy,
   Eye,
   EyeOff,
+  Maximize2,
+  Minimize2,
   Pencil,
   Settings2,
   Sparkles,
@@ -127,8 +129,10 @@ export function CodeBlockView({ node, updateAttributes, editor, getPos, selected
   // edit the source in a split view instead of expanding it inline
   // below. No state, no toggle button.
   const copyResetRef = useRef<number | null>(null);
+  const blockWrapperRef = useRef<HTMLDivElement | null>(null);
   const previewWrapperRef = useRef<HTMLDivElement | null>(null);
   const previewFrameRef = useRef<HTMLIFrameElement | null>(null);
+  const [fullscreen, setFullscreen] = useState(false);
   // Height the preview iframe last reported for its rendered content — drives
   // auto-height when the fence carries no explicit `h=`. `null` until the
   // first report; the wrapper shows the CSS default height until then.
@@ -228,6 +232,18 @@ export function CodeBlockView({ node, updateAttributes, editor, getPos, selected
     [],
   );
 
+  // Browser fullscreen is external state: Escape, browser chrome, or an OS
+  // gesture can end it without going through our button. Mirror the platform
+  // event so the button icon/label and the fullscreen-only layout never drift.
+  useEffect(() => {
+    const syncFullscreen = () => {
+      setFullscreen(document.fullscreenElement === blockWrapperRef.current);
+    };
+    document.addEventListener('fullscreenchange', syncFullscreen);
+    syncFullscreen();
+    return () => document.removeEventListener('fullscreenchange', syncFullscreen);
+  }, []);
+
   const editable = editor.isEditable;
   const cursorInside = useCursorInside(editor, getPos);
 
@@ -307,6 +323,25 @@ export function CodeBlockView({ node, updateAttributes, editor, getPos, selected
     updateAttributes({ meta: next });
   };
 
+  const handleToggleFullscreen = () => {
+    const block = blockWrapperRef.current;
+    if (!block) return;
+
+    if (document.fullscreenElement === block) {
+      if (typeof document.exitFullscreen !== 'function') return;
+      // A rejected promise (for example, the document becoming inactive
+      // between click and dispatch) should leave the current surface intact.
+      void document.exitFullscreen().catch(() => {});
+      return;
+    }
+
+    if (typeof block.requestFullscreen !== 'function') return;
+    // Fullscreen must be requested synchronously from the click activation.
+    // Target the whole NodeView, not only the iframe, so the chrome remains
+    // available as an explicit exit affordance alongside the native Esc path.
+    void block.requestFullscreen().catch(() => {});
+  };
+
   // Live-commit pattern matching `PropPanel`'s text inputs: every keystroke
   // writes through to `meta`, no local draft. An empty string removes the
   // `title=…` token entirely (returns the fence to the no-title state) so
@@ -356,6 +391,7 @@ export function CodeBlockView({ node, updateAttributes, editor, getPos, selected
 
   return (
     <NodeViewWrapper
+      ref={blockWrapperRef}
       className="ok-codeblock relative my-3"
       data-language={rawLanguage ?? undefined}
       data-cursor-inside={cursorInside ? 'true' : undefined}
@@ -363,6 +399,7 @@ export function CodeBlockView({ node, updateAttributes, editor, getPos, selected
       data-preview={previewActive ? 'true' : undefined}
       data-code-visible={codeVisible ? 'true' : 'false'}
       data-hovered={hovered ? 'true' : undefined}
+      data-fullscreen={fullscreen ? 'true' : undefined}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
@@ -376,8 +413,8 @@ export function CodeBlockView({ node, updateAttributes, editor, getPos, selected
           )}
           contentEditable={false}
           style={{
-            ...(effectivePreviewHeight ? { height: effectivePreviewHeight } : {}),
-            ...(previewWidth ? { width: previewWidth } : {}),
+            ...(!fullscreen && effectivePreviewHeight ? { height: effectivePreviewHeight } : {}),
+            ...(!fullscreen && previewWidth ? { width: previewWidth } : {}),
           }}
           // PM treats mousedown inside contentEditable as a selection drag.
           // The resize handles themselves stopPropagation in ResizeHandles,
@@ -559,6 +596,22 @@ export function CodeBlockView({ node, updateAttributes, editor, getPos, selected
             onClick={() => setEditOpen(true)}
           >
             <Pencil className="size-3.5" aria-hidden="true" />
+          </button>
+        ) : null}
+
+        {previewActive ? (
+          <button
+            type="button"
+            className="ok-codeblock-chrome-btn"
+            aria-label={fullscreen ? t`Exit fullscreen` : t`Enter fullscreen`}
+            data-testid="ok-codeblock-fullscreen-btn"
+            onClick={handleToggleFullscreen}
+          >
+            {fullscreen ? (
+              <Minimize2 className="size-3.5" aria-hidden="true" />
+            ) : (
+              <Maximize2 className="size-3.5" aria-hidden="true" />
+            )}
           </button>
         ) : null}
 

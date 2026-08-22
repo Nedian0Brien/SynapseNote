@@ -32,6 +32,7 @@ import { extractWebPreviewLinks } from './web-preview-links';
 interface ChatMessageListProps {
   readonly timeline: readonly ChatTimelineEntry[];
   readonly running: boolean;
+  readonly isActive?: boolean;
   readonly bridge: OkDesktopBridge;
   readonly emptyLabel?: string;
   readonly emptyLoading?: boolean;
@@ -409,6 +410,7 @@ function SentSelectionContext({ selection }: { selection: CliChatSelectionContex
 export function ChatMessageList({
   timeline,
   running,
+  isActive = true,
   bridge,
   emptyLabel,
   emptyLoading = false,
@@ -428,8 +430,9 @@ export function ChatMessageList({
   useEffect(() => {
     // Re-run as streamed text or the chronological feed grows.
     void lastEntryContent;
+    if (!isActive) return;
     endRef.current?.scrollIntoView({ block: 'end' });
-  }, [lastEntryContent]);
+  }, [isActive, lastEntryContent]);
 
   if (!timeline.some((entry) => entry.type === 'message')) {
     const showProviderChooser =
