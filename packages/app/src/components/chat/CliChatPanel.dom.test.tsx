@@ -514,7 +514,7 @@ describe('CliChatPanel', () => {
     expect(message.closest('form')?.className).not.toContain('border-t');
   });
 
-  test('offers branded provider choices in a fresh empty chat', () => {
+  test('offers branded provider choices that stack in a narrow chat panel', () => {
     const { bridge } = makeBridge();
     const onProviderChange = mock((_provider: 'claude' | 'codex') => {});
     render(
@@ -530,11 +530,13 @@ describe('CliChatPanel', () => {
 
     expect(screen.getByRole('heading', { name: 'Start a new chat' })).toBeTruthy();
     const providerGroup = screen.getByRole('group', { name: 'Choose a model provider' });
-    expect(providerGroup.className).toContain('sm:grid-cols-2');
+    expect(providerGroup.className).toContain('@min-[28rem]/provider:grid-cols-2');
+    expect(providerGroup.className).not.toContain('sm:grid-cols-2');
     const providerSurface = document.querySelector<HTMLElement>(
       '[data-chat-provider-surface="true"]',
     );
     expect(providerSurface).not.toBeNull();
+    expect(providerSurface?.className).toContain('@container/provider');
     expect(providerSurface?.className).not.toContain('border');
     expect(providerSurface?.className).not.toContain('rounded');
     expect(providerSurface?.className).not.toContain('shadow');

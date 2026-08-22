@@ -417,7 +417,7 @@ export function ChatMessageList({
         ) : showProviderChooser ? (
           <section
             aria-labelledby="new-chat-provider-heading"
-            className="w-full max-w-xl px-2 sm:px-4"
+            className="@container/provider w-full max-w-xl px-2 sm:px-4"
             data-chat-provider-surface="true"
           >
             <h2
@@ -430,7 +430,7 @@ export function ChatMessageList({
               {emptyLabel ?? t`Ask about your current document or project.`}
             </p>
             <fieldset
-              className="mt-6 grid w-full gap-3 sm:grid-cols-2"
+              className="mt-6 grid w-full gap-3 @min-[28rem]/provider:grid-cols-2"
               data-chat-provider-chooser="true"
             >
               <legend className="sr-only">{t`Choose a model provider`}</legend>
