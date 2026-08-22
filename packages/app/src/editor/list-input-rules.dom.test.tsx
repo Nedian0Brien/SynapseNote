@@ -98,8 +98,9 @@ describe('list input rules', () => {
     expect(editor.getJSON().content?.[1]?.content?.[0]?.attrs?.sourceOrdinal).toBe(3);
   });
 
-  test('normalizes same-level continuity, resets at paragraphs, and isolates nesting', () => {
+  test('normalizes same-level continuity, resets at paragraphs, and isolates nesting', async () => {
     const editor = mount('1. one\n   - nested\n\n- bullet\n1. two\n\nreset\n1. three');
+    await new Promise((resolve) => setTimeout(resolve, 0));
     const ordered = [...editor.view.dom.querySelectorAll('ol')];
     expect(ordered[1]?.getAttribute('start')).toBe('2');
     expect(ordered[2]?.getAttribute('start')).toBe('1');

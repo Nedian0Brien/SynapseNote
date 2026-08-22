@@ -272,9 +272,16 @@ export const ListNode = Node.create({
           return normalizeOrderedListStarts(newState);
         },
         view: (view) => {
-          const tr = normalizeOrderedListStarts(view.state);
-          if (tr) view.dispatch(tr);
-          return {};
+          const timeoutId = setTimeout(() => {
+            if (view.isDestroyed) return;
+            const tr = normalizeOrderedListStarts(view.state);
+            if (tr) view.dispatch(tr);
+          }, 0);
+          return {
+            destroy: () => {
+              clearTimeout(timeoutId);
+            },
+          };
         },
       }),
     ];
