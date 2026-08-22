@@ -39,12 +39,7 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs';
-import {
-  homedir as osHomedir,
-  hostname as osHostname,
-  release as osRelease,
-  tmpdir as osTmpdir,
-} from 'node:os';
+import { homedir as osHomedir, hostname as osHostname, release as osRelease } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import {
   ALL_EDITOR_IDS,
@@ -174,8 +169,6 @@ import {
 } from './claude-readiness.ts';
 import {
   buildCliChatCommand,
-  buildCliChatRunnerScript,
-  buildCliChatRunnerShellCommand,
   buildCliChatShellCommand,
   isCliChatLaunchInput,
 } from './cli-chat-command.ts';
@@ -763,43 +756,29 @@ let wm: WindowManager;
  * quit — callers guard with `?.` / a truthiness check.
  */
 let terminalReaper: TerminalReaper | null = null;
-interface ChatTurnFiles {
-  readonly directory: string;
-  readonly promptFile: string;
-  readonly runnerFile: string;
-}
-const activeChatTurnFiles = new Map<string, ChatTurnFiles>();
+const activeCodexChatProcesses = new Map<string, ReturnType<typeof spawn>>();
 
-function chatPromptKey(windowId: number, ptyId: string): string {
+function chatProcessKey(windowId: number, ptyId: string): string {
   return `${windowId}:${ptyId}`;
 }
 
-async function createChatTurnFiles(prompt: string): Promise<ChatTurnFiles> {
-  const directory = await fsPromises.mkdtemp(join(osTmpdir(), 'synapsenote-chat-'));
-  const promptFile = join(directory, 'prompt.txt');
-  const runnerFile = join(directory, 'run.zsh');
+function signalCodexChatProcess(key: string, signal: NodeJS.Signals): void {
+  const child = activeCodexChatProcesses.get(key);
+  if (child === undefined) return;
   try {
-    await fsPromises.writeFile(promptFile, prompt, 'utf8');
-    return { directory, promptFile, runnerFile };
-  } catch (error) {
-    await fsPromises.rmdir(directory).catch(() => {});
-    throw error;
+    if (child.pid !== undefined) process.kill(-child.pid, signal);
+    else child.kill(signal);
+  } catch {
+    try {
+      child.kill(signal);
+    } catch {}
   }
 }
 
-async function removeChatTurnFiles(key: string): Promise<void> {
-  const files = activeChatTurnFiles.get(key);
-  if (files === undefined) return;
-  activeChatTurnFiles.delete(key);
-  await fsPromises.unlink(files.promptFile).catch(() => {});
-  await fsPromises.unlink(files.runnerFile).catch(() => {});
-  await fsPromises.rmdir(files.directory).catch(() => {});
-}
-
-function removeChatTurnFilesForWindow(windowId: number): void {
+function stopCodexChatProcessesForWindow(windowId: number): void {
   const prefix = `${windowId}:`;
-  for (const key of activeChatTurnFiles.keys()) {
-    if (key.startsWith(prefix)) void removeChatTurnFiles(key);
+  for (const key of activeCodexChatProcesses.keys()) {
+    if (key.startsWith(prefix)) signalCodexChatProcess(key, 'SIGTERM');
   }
 }
 /**
@@ -1162,7 +1141,7 @@ function ensureWindowManager() {
       if (terminalReaper)
         wireWindowTerminalReap(win, terminalReaper, (windowId) => {
           dockVisibleForWindow.delete(windowId);
-          removeChatTurnFilesForWindow(windowId);
+          stopCodexChatProcessesForWindow(windowId);
         });
       return win as unknown as BrowserWindowLike;
     },
@@ -3285,47 +3264,71 @@ function registerIpcHandlers() {
         (claudeMcpOwn ||
           (req.chat.cli === 'codex' &&
             classifyExistingMcpEntry(EDITOR_TARGETS.codex, '', osHomedir()).kind === 'present'));
-      const promptKey = chatPromptKey(win.id, req.ptyId);
-      await removeChatTurnFiles(promptKey);
-      try {
-        const turnFiles =
-          req.chat.cli === 'codex' ? await createChatTurnFiles(req.chat.prompt) : undefined;
-        if (turnFiles !== undefined) activeChatTurnFiles.set(promptKey, turnFiles);
-        const command = buildCliChatCommand(req.chat, {
-          autoApproveOkTools,
-          mcpPreApprove: claudeMcpOwn,
-          dataPlaneOnlyWrites: process.env.SYNAPSENOTE_DATABASE_SANDBOX_MODE === 'data-plane-only',
-          promptFile: turnFiles?.promptFile,
-        });
-        if (turnFiles !== undefined) {
-          await fsPromises.writeFile(
-            turnFiles.runnerFile,
-            buildCliChatRunnerScript(command, turnFiles.promptFile, turnFiles.runnerFile),
-            'utf8',
-          );
-        }
-        const shellCommand =
-          turnFiles === undefined
-            ? buildCliChatShellCommand(command)
-            : buildCliChatRunnerShellCommand(turnFiles.runnerFile);
+      if (!terminalManager.hasSession(win.id, req.ptyId)) {
+        return { ok: false, reason: 'unknown-session' as const };
+      }
+      const processKey = chatProcessKey(win.id, req.ptyId);
+      if (activeCodexChatProcesses.has(processKey)) {
+        return { ok: false, reason: 'dispatch-failed' as const };
+      }
+      const command = buildCliChatCommand(req.chat, {
+        autoApproveOkTools,
+        mcpPreApprove: claudeMcpOwn,
+        dataPlaneOnlyWrites: process.env.SYNAPSENOTE_DATABASE_SANDBOX_MODE === 'data-plane-only',
+        promptViaStdin: req.chat.cli === 'codex',
+      });
+      if (req.chat.cli !== 'codex') {
         const accepted = terminalManager.input({
           windowId: win.id,
           ptyId: req.ptyId,
-          data: `${shellCommand}\r`,
+          data: `${buildCliChatShellCommand(command)}\r`,
         });
-        if (!accepted) {
-          await removeChatTurnFiles(promptKey);
-          return { ok: false, reason: 'unknown-session' as const };
-        }
+        return accepted ? { ok: true as const } : { ok: false, reason: 'unknown-session' as const };
+      }
+      try {
+        const child = spawn('/bin/zsh', ['-l', '-c', command], {
+          cwd: projectRoot ?? osHomedir(),
+          detached: true,
+          env: process.env,
+          stdio: ['pipe', 'pipe', 'pipe'],
+        });
+        activeCodexChatProcesses.set(processKey, child);
+        let finalized = false;
+        let stderrTail = '';
+        const pushData = (data: string): void => {
+          sendToRenderer(win.webContents, 'ok:pty:data', { ptyId: req.ptyId, data });
+        };
+        const finalize = (exitCode: number, error?: string): void => {
+          if (finalized) return;
+          finalized = true;
+          activeCodexChatProcesses.delete(processKey);
+          if (exitCode !== 0 && error) {
+            pushData(`${JSON.stringify({ type: 'turn.failed', error: { message: error } })}\n`);
+          }
+          pushData(
+            `${JSON.stringify({ type: 'synapsenote.command_completed', exit_code: exitCode })}\n`,
+          );
+        };
+        child.stdout.on('data', (data: Buffer) => pushData(data.toString('utf8')));
+        child.stderr.on('data', (data: Buffer) => {
+          stderrTail = `${stderrTail}${data.toString('utf8')}`.slice(-4096);
+        });
+        child.once('error', (error) => finalize(1, error.message));
+        child.once('close', (code, signal) =>
+          finalize(code ?? (signal === 'SIGINT' ? 130 : 1), stderrTail.trim()),
+        );
+        child.stdin.end(req.chat.prompt, 'utf8');
         return { ok: true as const };
       } catch {
-        await removeChatTurnFiles(promptKey);
+        activeCodexChatProcesses.delete(processKey);
         return { ok: false, reason: 'dispatch-failed' as const };
       }
     }
     if (win && typeof req.data === 'string') {
-      if (req.data.includes('\u0003')) {
-        await removeChatTurnFiles(chatPromptKey(win.id, req.ptyId));
+      const processKey = chatProcessKey(win.id, req.ptyId);
+      if (req.data.includes('\u0003') && activeCodexChatProcesses.has(processKey)) {
+        signalCodexChatProcess(processKey, 'SIGINT');
+        return undefined;
       }
       terminalManager.input({ windowId: win.id, ptyId: req.ptyId, data: req.data });
     }
@@ -3346,7 +3349,7 @@ function registerIpcHandlers() {
   handle('ok:pty:kill', async (event, req) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) {
-      await removeChatTurnFiles(chatPromptKey(win.id, req.ptyId));
+      signalCodexChatProcess(chatProcessKey(win.id, req.ptyId), 'SIGTERM');
       terminalManager.kill({ windowId: win.id, ptyId: req.ptyId });
     }
     return undefined;
@@ -5897,7 +5900,7 @@ function bootPrimaryInstance(): void {
     // Reap every window's PTY host first so no user shell / spawn-helper
     // outlives the app. Idempotent (clears the map; a second pass no-ops).
     terminalReaper?.killAll();
-    for (const key of activeChatTurnFiles.keys()) void removeChatTurnFiles(key);
+    for (const key of activeCodexChatProcesses.keys()) signalCodexChatProcess(key, 'SIGTERM');
     dockVisibleForWindow.clear();
     autoUpdaterHandle?.destroy();
     autoUpdaterHandle = null;

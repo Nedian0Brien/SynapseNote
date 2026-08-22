@@ -230,6 +230,7 @@ function containsCommandSubmit(data: string): boolean {
 
 export interface TerminalManager {
   create(req: TerminalCreateRequest): CreateResult;
+  hasSession(windowId: number, ptyId: string): boolean;
   input(req: TerminalAddressedRequest & { data: string }): boolean;
   resize(req: TerminalAddressedRequest & { cols: number; rows: number }): void;
   kill(req: TerminalAddressedRequest): void;
@@ -544,6 +545,10 @@ export function createTerminalManager(deps: TerminalManagerDeps): TerminalManage
         ...(req.privateHistory ? { privateHistory: true } : {}),
       });
       return { ok: true, ptyId };
+    },
+
+    hasSession(windowId, ptyId): boolean {
+      return handles.get(windowId)?.sessions.has(ptyId) === true;
     },
 
     input(req): boolean {

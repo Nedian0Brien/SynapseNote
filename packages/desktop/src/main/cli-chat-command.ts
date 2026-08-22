@@ -113,12 +113,11 @@ function printablePtyArgument(value: string): string {
  */
 export function buildCliChatCommand(
   input: CliChatLaunchInput,
-  options: CliChatCommandOptions & { readonly promptFile?: string } = {},
+  options: CliChatCommandOptions & { readonly promptViaStdin?: boolean } = {},
 ): string {
   const permissionMode = options.dataPlaneOnlyWrites === true ? 'read-only' : input.permissionMode;
   const quotedPrompt = shellSingleQuote(printablePtyArgument(input.prompt));
-  const promptInput =
-    options.promptFile === undefined ? quotedPrompt : `- < ${shellSingleQuote(options.promptFile)}`;
+  const promptInput = options.promptViaStdin === true ? '-' : quotedPrompt;
   const quotedSessionId =
     input.sessionId === null ? null : shellSingleQuote(printablePtyArgument(input.sessionId));
   if (input.cli === 'codex') {
@@ -155,29 +154,6 @@ export function buildCliChatCommand(
  */
 export function buildCliChatShellCommand(command: string): string {
   return `${command}; printf '\\n{"type":"synapsenote.command_completed","exit_code":%d}\\n' "$?"`;
-}
-
-/**
- * Put the complete Codex invocation in a temporary script so the interactive
- * PTY receives only this short, fixed-shape command. Both the user context and
- * the long developer instructions stay out of the terminal line discipline.
- */
-export function buildCliChatRunnerScript(
-  command: string,
-  promptFile: string,
-  runnerFile: string,
-): string {
-  const directory = runnerFile.slice(0, runnerFile.lastIndexOf('/'));
-  const cleanup = `rm -f -- ${shellSingleQuote(promptFile)} ${shellSingleQuote(runnerFile)}; rmdir -- ${shellSingleQuote(directory)} 2>/dev/null || true`;
-  return `trap ${shellSingleQuote(cleanup)} EXIT
-trap 'exit 130' INT
-trap 'exit 143' TERM
-${command}
-`;
-}
-
-export function buildCliChatRunnerShellCommand(runnerFile: string): string {
-  return `/bin/zsh ${shellSingleQuote(runnerFile)}; chat_exit_code=$?; printf '\\n{"type":"synapsenote.command_completed","exit_code":%d}\\n' "$chat_exit_code"`;
 }
 
 const CODEX_MODELS = new Set([
