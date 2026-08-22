@@ -1,159 +1,169 @@
 /**
- * Agent Flash Plugin — Source (CodeMirror)
+ * Apple Writing Tools-inspired inline rewrite animation for Source mode.
  *
- * Observes Y.Map('agent-flash') for new agent write entries and highlights
- * affected lines with a CSS animation (agent-flash class).
- *
- * Uses CodeMirror StateField + StateEffect pattern for flash decorations.
- * Activity entries older than 30s are auto-evicted on each observation.
+ * The server records the exact Y.Text delta for every agent write in
+ * Y.Map('agent-effects'). Source mode can map those offsets directly to
+ * CodeMirror ranges, so only inserted/replaced source characters receive the
+ * color sweep. Nested CodeMirror node views are intentionally ignored because
+ * their local document coordinates do not match the full source Y.Text.
  */
+
 import { type Extension, StateEffect, StateField } from '@codemirror/state';
-import {
-  Decoration,
-  type DecorationSet,
-  EditorView,
-  ViewPlugin,
-  type ViewUpdate,
-} from '@codemirror/view';
+import { Decoration, type DecorationSet, EditorView, ViewPlugin } from '@codemirror/view';
+import { FLASH_DURATION_MS } from '@nedian0brien/synapsenote-core';
 import type * as Y from 'yjs';
-import {
-  evictStaleEntries,
-  FLASH_DEBOUNCE_MS,
-  FLASH_DURATION_MS,
-  hasNewEntries,
-} from './flash-shared';
 
-/** Effect to add flash decorations for a line range */
-const addFlash = StateEffect.define<{ from: number; to: number }>();
+interface SourceAnimationRange {
+  from: number;
+  to: number;
+}
 
-/** Effect to remove all flash decorations */
-const removeFlash = StateEffect.define<null>();
+interface AgentEffectValue {
+  timestamp?: number;
+  delta?: Y.YTextEvent['delta'];
+}
 
-const flashDecoration = Decoration.line({ class: 'agent-flash' });
+const addWritingToolsEffect = StateEffect.define<{
+  ranges: SourceAnimationRange[];
+  run: number;
+}>();
+const removeWritingToolsEffect = StateEffect.define<number>();
 
-/** StateField that manages flash decorations */
-const flashField = StateField.define<DecorationSet>({
+function mergeRanges(ranges: SourceAnimationRange[]): SourceAnimationRange[] {
+  const sorted = ranges.sort((a, b) => a.from - b.from || a.to - b.to);
+  const merged: SourceAnimationRange[] = [];
+  for (const range of sorted) {
+    const previous = merged.at(-1);
+    if (previous && range.from <= previous.to) previous.to = Math.max(previous.to, range.to);
+    else merged.push({ ...range });
+  }
+  return merged;
+}
+
+/** Convert a post-change Y.Text delta into exact CodeMirror character ranges. */
+export function sourceAnimationRangesFromDelta(
+  delta: Y.YTextEvent['delta'],
+  docLength: number,
+): SourceAnimationRange[] {
+  const ranges: SourceAnimationRange[] = [];
+  let cursor = 0;
+  let deletionCursor: number | null = null;
+
+  for (const operation of delta) {
+    if (typeof operation.retain === 'number') cursor += operation.retain;
+
+    if (typeof operation.insert === 'string' && operation.insert.length > 0) {
+      const from = Math.max(0, Math.min(cursor, docLength));
+      const to = Math.max(from, Math.min(cursor + operation.insert.length, docLength));
+      if (from < to) ranges.push({ from, to });
+      cursor += operation.insert.length;
+    }
+
+    if (typeof operation.delete === 'number' && operation.delete > 0) {
+      deletionCursor ??= cursor;
+    }
+  }
+
+  if (ranges.length === 0 && deletionCursor !== null) {
+    const from = Math.max(0, Math.min(deletionCursor - 1, docLength));
+    const to = Math.min(docLength, Math.max(from + 1, deletionCursor + 1));
+    if (from < to) ranges.push({ from, to });
+  }
+
+  return mergeRanges(ranges);
+}
+
+const writingToolsField = StateField.define<{ decorations: DecorationSet; run: number }>({
   create() {
-    return Decoration.none;
+    return { decorations: Decoration.none, run: 0 };
   },
-  update(decorations, tr) {
-    // Map existing decorations through document changes
-    decorations = decorations.map(tr.changes);
+  update(value, transaction) {
+    let decorations = value.decorations.map(transaction.changes);
+    let run = value.run;
 
-    for (const effect of tr.effects) {
-      if (effect.is(addFlash)) {
-        const { from, to } = effect.value;
-        const builder: Array<ReturnType<typeof flashDecoration.range>> = [];
-        // Add decoration to each line in the range
-        for (let pos = from; pos <= to; ) {
-          const line = tr.state.doc.lineAt(pos);
-          builder.push(flashDecoration.range(line.from));
-          pos = line.to + 1;
-        }
-        decorations = decorations.update({ add: builder, sort: true });
-      } else if (effect.is(removeFlash)) {
+    for (const effect of transaction.effects) {
+      if (effect.is(addWritingToolsEffect)) {
+        run = effect.value.run;
+        const marks = effect.value.ranges.map((range, index) =>
+          Decoration.mark({
+            class: 'agent-writing-tools-text',
+            attributes: {
+              'data-agent-writing-tools-run': String(run),
+              style: `--agent-writing-tools-delay: ${index * 70}ms`,
+            },
+          }).range(range.from, range.to),
+        );
+        decorations = Decoration.set(marks, true);
+      }
+
+      if (effect.is(removeWritingToolsEffect) && effect.value === run) {
         decorations = Decoration.none;
       }
     }
-    return decorations;
+
+    return { decorations, run };
   },
-  provide: (f) => EditorView.decorations.from(f),
+  provide: (field) => EditorView.decorations.from(field, (value) => value.decorations),
 });
 
-/**
- * Creates a CodeMirror extension that flashes lines when agent activity is detected.
- */
+/** Creates the full-source CodeMirror animation extension. */
 export function createAgentFlashSourceExtension(doc: Y.Doc): Extension {
-  const activityMap = doc.getMap('agent-flash');
+  const effectsMap = doc.getMap<AgentEffectValue>('agent-effects');
 
-  const flashViewPlugin = ViewPlugin.define((view) => {
-    let lastFlashTime = 0;
-    let lastSeenTimestamp = Date.now();
-    let pendingTimeout: ReturnType<typeof setTimeout> | null = null;
-    // Track the removeFlash timeout so destroy() can cancel it before it dispatches
-    // on a torn-down view (which would throw).
-    let flashRemoveTimeout: ReturnType<typeof setTimeout> | null = null;
+  const writingToolsViewPlugin = ViewPlugin.define((view) => {
+    const mountedAt = Date.now();
+    let run = 0;
+    let clearTimer: ReturnType<typeof setTimeout> | null = null;
     let destroyed = false;
 
-    function flashAllLines() {
-      const docLength = view.state.doc.length;
-      if (docLength === 0) return;
-      if (destroyed) return;
-      view.dispatch({
-        effects: addFlash.of({ from: 0, to: docLength }),
-      });
-      // Clear any prior remove timer before scheduling a new one
-      if (flashRemoveTimeout) clearTimeout(flashRemoveTimeout);
-      flashRemoveTimeout = setTimeout(() => {
-        flashRemoveTimeout = null;
+    const clearTimerIfNeeded = () => {
+      if (!clearTimer) return;
+      clearTimeout(clearTimer);
+      clearTimer = null;
+    };
+
+    const animate = (delta: Y.YTextEvent['delta']) => {
+      if (destroyed || document.visibilityState !== 'visible') return;
+      // Only the full-page SourceEditor shares coordinates with Y.Text('source').
+      // Nested CM node views use this factory too but contain only one node.
+      if (view.state.doc.length !== doc.getText('source').length) return;
+
+      const ranges = sourceAnimationRangesFromDelta(delta, view.state.doc.length);
+      if (ranges.length === 0) return;
+      run += 1;
+      view.dispatch({ effects: addWritingToolsEffect.of({ ranges, run }) });
+      clearTimerIfNeeded();
+      const scheduledRun = run;
+      clearTimer = setTimeout(() => {
+        clearTimer = null;
         if (destroyed) return;
-        view.dispatch({
-          effects: removeFlash.of(null),
-        });
-      }, FLASH_DURATION_MS);
-    }
-
-    const activityObserver = (_event: Y.YMapEvent<unknown>) => {
-      evictStaleEntries(activityMap);
-
-      if (!hasNewEntries(activityMap, lastSeenTimestamp)) return;
-
-      lastSeenTimestamp = Date.now();
-
-      // Debounce: skip if last flash was too recent
-      const now = Date.now();
-      if (now - lastFlashTime < FLASH_DEBOUNCE_MS) {
-        if (!pendingTimeout) {
-          const delay = FLASH_DEBOUNCE_MS - (now - lastFlashTime);
-          pendingTimeout = setTimeout(() => {
-            pendingTimeout = null;
-            lastFlashTime = Date.now();
-            flashAllLines();
-          }, delay);
-        }
-        return;
-      }
-
-      lastFlashTime = now;
-      flashAllLines();
+        view.dispatch({ effects: removeWritingToolsEffect.of(scheduledRun) });
+      }, FLASH_DURATION_MS + 140);
     };
 
-    activityMap.observe(activityObserver);
-
-    // Visibility change handler — flash on tab refocus.
-    const visibilityHandler = () => {
-      if (document.visibilityState === 'visible') {
-        if (hasNewEntries(activityMap, lastSeenTimestamp)) {
-          lastSeenTimestamp = Date.now();
-          lastFlashTime = Date.now();
-          flashAllLines();
-        }
-      } else {
-        lastSeenTimestamp = Date.now();
+    const effectsObserver = (event: Y.YMapEvent<AgentEffectValue>) => {
+      let latest: AgentEffectValue | null = null;
+      for (const key of event.keysChanged) {
+        const change = event.changes.keys.get(key);
+        if (change?.action === 'delete') continue;
+        const value = effectsMap.get(key);
+        if (!value || typeof value.timestamp !== 'number' || value.timestamp < mountedAt) continue;
+        if (!latest || value.timestamp > (latest.timestamp ?? 0)) latest = value;
       }
+      if (!latest?.delta) return;
+      const delta = latest.delta;
+      queueMicrotask(() => animate(delta));
     };
 
-    document.addEventListener('visibilitychange', visibilityHandler);
-
+    effectsMap.observe(effectsObserver);
     return {
-      update(_update: ViewUpdate) {
-        // No-op — flash is driven by Y.Map observation, not editor updates
-      },
       destroy() {
         destroyed = true;
-        activityMap.unobserve(activityObserver);
-        document.removeEventListener('visibilitychange', visibilityHandler);
-        if (pendingTimeout) {
-          clearTimeout(pendingTimeout);
-          pendingTimeout = null;
-        }
-        if (flashRemoveTimeout) {
-          clearTimeout(flashRemoveTimeout);
-          flashRemoveTimeout = null;
-        }
+        effectsMap.unobserve(effectsObserver);
+        clearTimerIfNeeded();
       },
     };
   });
 
-  return [flashField, flashViewPlugin];
+  return [writingToolsField, writingToolsViewPlugin];
 }

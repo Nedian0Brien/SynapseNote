@@ -4,8 +4,12 @@
 import type * as Y from 'yjs';
 import type { AgentFlashEntry } from '../types/awareness';
 
-/** Duration of the flash CSS animation in milliseconds. */
-export const FLASH_DURATION_MS = 2000;
+/**
+ * Duration of the inline AI rewrite animation in milliseconds. Calibrated
+ * against Apple Writing Tools' rewrite transition (WWDC25 265, 11:17–11:19).
+ * https://developer.apple.com/videos/play/wwdc2025/265/?time=677
+ */
+export const FLASH_DURATION_MS = 1200;
 
 /** Minimum interval between consecutive flashes in milliseconds. */
 export const FLASH_DEBOUNCE_MS = 500;

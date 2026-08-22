@@ -77,37 +77,50 @@
   --color-azure-900: oklch(0.3773 0.1488 264.94);
   --color-azure-950: oklch(0.2785 0.0961 267.56);
 
-  /* Agent flash keyframes — refined version with accent slide + subtle background pulse.
-     Combines three effects in a single animation:
-     1. Inset box-shadow left accent bar slides in then out
-     2. Subtle background tint pulses once
-     3. Slight scale nudge (barely perceptible, adds "alive" quality)
-
-     Easing rationale: uses --ease-out-strong (cubic-bezier custom curve) —
-     strong custom curves outpunch built-in CSS easing keywords on UI work.
-     Duration 2s is deliberately above the typical UI ceiling (~300ms) because
-     this is a one-shot state-indication flash (rare event), not a frequently-
-     triggered interaction. */
-  @keyframes agent-flash {
+  /* Apple Writing Tools reference: the rewritten text stays in place while a
+     pastel spectral treatment resolves into the final glyphs. No block motion,
+     background wash, or accent rail. Timing is calibrated against the inline
+     rewrite at WWDC25 265, 11:17–11:19. */
+  @keyframes agent-writing-tools-rewrite {
     0% {
-      box-shadow: inset 3px 0 0 transparent;
-      background: transparent;
-      transform: translateX(0);
+      opacity: 0.14;
+      background-position: 100% 50%;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
     }
-    8% {
-      box-shadow: inset 3px 0 0 var(--color-agent);
-      background: rgba(217, 119, 87, 0.09);
-      transform: translateX(1px);
+    16% {
+      opacity: 0.42;
     }
-    35% {
-      box-shadow: inset 3px 0 0 var(--color-agent);
-      background: rgba(217, 119, 87, 0.06);
-      transform: translateX(0);
+    78% {
+      opacity: 1;
+      background-position: 0% 50%;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+    }
+    96% {
+      opacity: 1;
+      background-position: 0% 50%;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
     }
     100% {
-      box-shadow: inset 3px 0 0 transparent;
-      background: transparent;
-      transform: translateX(0);
+      opacity: 1;
+      background-position: 0% 50%;
+      color: inherit;
+      -webkit-text-fill-color: currentColor;
+    }
+  }
+
+  @keyframes agent-writing-tools-reduced {
+    0% {
+      opacity: 0.58;
+      color: var(--color-agent);
+      -webkit-text-fill-color: var(--color-agent);
+    }
+    100% {
+      opacity: 1;
+      color: inherit;
+      -webkit-text-fill-color: currentColor;
     }
   }
 
@@ -115,10 +128,10 @@
   @keyframes agent-breathing {
     0%,
     100% {
-      background: rgba(217, 119, 87, 0.04);
+      background-color: rgba(217, 119, 87, 0.04);
     }
     50% {
-      background: rgba(217, 119, 87, 0.14);
+      background-color: rgba(217, 119, 87, 0.14);
     }
   }
 
@@ -138,7 +151,7 @@
     }
   }
 
-  --animate-agent-flash: agent-flash 2s var(--ease-out-strong) forwards;
+  --animate-agent-writing-tools: agent-writing-tools-rewrite 1.2s linear both;
   --animate-agent-breathing: agent-breathing 2.4s ease-in-out infinite;
   --animate-undo-ready: undo-ready 600ms var(--ease-out-strong) forwards;
 

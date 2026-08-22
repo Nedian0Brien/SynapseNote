@@ -52,6 +52,7 @@ import { uploadDecorationPlugin } from './image-upload/index.ts';
 import { getMountId } from './mount-id-registry';
 import { mountTiptapEditorPromise } from './mount-promise';
 import { markUserTyping } from './observers';
+import { createAgentWritingToolsPlugin } from './plugins/agent-writing-tools';
 import { publishSelectionContext, selectionSnapshotFromWysiwyg } from './selection-context';
 import {
   publishSelectionStats,
@@ -349,6 +350,16 @@ export function buildExtensionList(args: BuildEditorOptionsArgs): AnyExtension[]
     // mapping is supplied) — paired with its currency guard below via
     // `buildPrewarmBoundCollaboration`.
     collaboration,
+    // Apple Writing Tools-inspired, range-accurate animation for agent CRDT
+    // writes. Registered beside Collaboration so it can correlate the
+    // Y.Map('agent-flash') signal with the exact ySyncPluginKey transaction
+    // without guessing first/last document blocks.
+    Extension.create({
+      name: 'agentWritingTools',
+      addProseMirrorPlugins() {
+        return [createAgentWritingToolsPlugin(provider.document)];
+      },
+    }),
     Extension.create({
       name: 'imageUploadDecoration',
       addProseMirrorPlugins() {

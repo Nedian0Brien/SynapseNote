@@ -375,7 +375,7 @@ if (usePatch) {
   console.log(`Mode: ${useMarkdown ? 'markdown' : 'raw'}`);
   console.log(`Writes: ${count}${count > 1 ? ' (rapid, 100ms apart)' : ''}`);
   console.log(`Presence: Agent connects with awareness (Claude, #D97757, type: agent)`);
-  console.log(`Activity: Y.Map('agent-flash') updated per write for flash plugins`);
+  console.log(`Activity: agent change signals updated for inline rewrite animations`);
   console.log(`Undo: writes tracked with 'agent-write' origin\n`);
 
   if (count > 1) {
@@ -391,6 +391,6 @@ if (usePatch) {
 
   console.log('\nDone. Check the browser for:');
   console.log('  - Agent in presence bar (Claude badge)');
-  console.log('  - Region flash on new content');
+  console.log('  - Writing Tools-style color sweep on changed content');
   console.log('  - "Undo Agent Edit" button enabled');
 }

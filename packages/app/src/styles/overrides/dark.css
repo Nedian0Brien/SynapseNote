@@ -33,30 +33,6 @@
   background: var(--color-gray-900);
 }
 
-/* Dark overrides — agent flash keyframes with boosted alpha for dark canvas */
-@keyframes agent-flash-dark {
-  0% {
-    box-shadow: inset 3px 0 0 transparent;
-    background: transparent;
-    transform: translateX(0);
-  }
-  8% {
-    box-shadow: inset 3px 0 0 var(--color-agent);
-    background: rgba(217, 119, 87, 0.22);
-    transform: translateX(1px);
-  }
-  35% {
-    box-shadow: inset 3px 0 0 var(--color-agent);
-    background: rgba(217, 119, 87, 0.14);
-    transform: translateX(0);
-  }
-  100% {
-    box-shadow: inset 3px 0 0 transparent;
-    background: transparent;
-    transform: translateX(0);
-  }
-}
-
 @keyframes agent-breathing-dark {
   0%,
   100% {
@@ -80,17 +56,6 @@
     transform: scale(1);
     box-shadow: 0 0 0 0 rgba(217, 119, 87, 0);
   }
-}
-
-.dark
-  [data-agent-flash-state="editing"][data-agent-flash-position="append"]
-  .ProseMirror
-  > *:nth-last-child(-n + 3),
-.dark
-  [data-agent-flash-state="editing"][data-agent-flash-position="prepend"]
-  .ProseMirror
-  > *:nth-child(-n + 3) {
-  animation-name: agent-flash-dark;
 }
 
 .dark [data-presence-badge="agent"][data-presence-mode="editing"] {
