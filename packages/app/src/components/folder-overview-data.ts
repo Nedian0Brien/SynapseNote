@@ -31,16 +31,6 @@ function getFolderTitle(folderPath: string, pageTitles: ReadonlyMap<string, stri
   return folderPath.split('/').pop() ?? folderPath;
 }
 
-function resolveTitle(
-  docNameOrPath: string,
-  leafName: string,
-  pageTitles: ReadonlyMap<string, string>,
-): string {
-  const raw = pageTitles.get(docNameOrPath);
-  if (raw && raw !== docNameOrPath) return raw;
-  return leafName;
-}
-
 export function buildFolderOverviewData(
   folderPath: string,
   options: {
@@ -79,7 +69,11 @@ export function buildFolderOverviewData(
         kind: 'file' as const,
         path: docName,
         name: rel,
-        title: resolveTitle(docName, rel, options.pageTitles),
+        // Document identity is filename-backed: PageHeader edits rename the
+        // file, while `pageTitles` may be inferred from the first body H1.
+        // Folder cards must therefore use the leaf filename so a section
+        // heading is never presented as the document title.
+        title: rel,
         size: meta?.size ?? 0,
         modified: meta?.modified ?? '',
       };

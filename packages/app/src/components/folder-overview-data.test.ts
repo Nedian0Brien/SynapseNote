@@ -28,46 +28,50 @@ describe('buildFolderOverviewData', () => {
 
     expect(data.title).toBe('Reports');
 
-    // Folders come first, then files — each group sorted by title (localeCompare)
+    // Folders keep their configured titles; documents use filename-backed
+    // identity and sort by that same visible title.
     expect(data.children).toEqual([
       { kind: 'folder', path: 'reports/q2', name: 'q2', title: 'q2' },
       { kind: 'folder', path: 'reports/q1', name: 'q1', title: 'Quarter One' },
       {
         kind: 'file',
-        path: 'reports/monthly',
-        name: 'monthly',
-        title: 'Monthly Review',
-        size: 150,
-        modified: '2026-04-11T00:00:00Z',
-      },
-      {
-        kind: 'file',
         path: 'reports/index',
         name: 'index',
-        title: 'Reports',
+        title: 'index',
         size: 100,
         modified: '2026-04-10T00:00:00Z',
       },
       {
         kind: 'file',
+        path: 'reports/monthly',
+        name: 'monthly',
+        title: 'monthly',
+        size: 150,
+        modified: '2026-04-11T00:00:00Z',
+      },
+      {
+        kind: 'file',
         path: 'reports/weekly',
         name: 'weekly',
-        title: 'Weekly Review',
+        title: 'weekly',
         size: 200,
         modified: '2026-04-12T00:00:00Z',
       },
     ]);
   });
 
-  test('title falls back to leaf name when pageTitles echoes full docName', () => {
+  test('uses the filename when a body heading is cached as the page title', () => {
     const data = buildFolderOverviewData('docs', {
-      pages: new Set(['docs/readme']),
-      pageTitles: new Map([['docs/readme', 'docs/readme']]),
+      pages: new Set(['docs/Memory investment paradox']),
+      pageTitles: new Map([['docs/Memory investment paradox', '1. Historical market cycle']]),
       pageMeta: new Map(),
       folderPaths: new Set(),
     });
 
-    expect(data.children[0]).toMatchObject({ kind: 'file', title: 'readme' });
+    expect(data.children[0]).toMatchObject({
+      kind: 'file',
+      title: 'Memory investment paradox',
+    });
   });
 
   test('content-root (empty folderPath) lists only top-level children', () => {
@@ -88,7 +92,7 @@ describe('buildFolderOverviewData', () => {
         kind: 'file',
         path: 'intro',
         name: 'intro',
-        title: 'Intro',
+        title: 'intro',
         size: 10,
         modified: '2026-05-01T00:00:00Z',
       },
