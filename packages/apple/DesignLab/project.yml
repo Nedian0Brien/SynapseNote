@@ -1,0 +1,38 @@
+name: SynapseDesignLab
+
+options:
+  createIntermediateGroups: true
+  deploymentTarget:
+    macOS: "26.0"
+
+packages:
+  SynapseApple:
+    path: ..
+
+targets:
+  SynapseDesignLab:
+    type: application
+    platform: macOS
+    sources:
+      - Sources
+    dependencies:
+      - package: SynapseApple
+        product: SynapseDesignSystem
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: kr.lawdigest.synapsenote.designlab
+        PRODUCT_NAME: SynapseDesignLab
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
+        ENABLE_PREVIEWS: YES
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+        ENABLE_HARDENED_RUNTIME: NO
+
+schemes:
+  SynapseDesignLab:
+    build:
+      targets:
+        SynapseDesignLab: all
+    run:
+      config: Debug

@@ -7,6 +7,8 @@ packages/desktop/dist-desktop-local/
 packages/desktop/dist-desktop-local-staging-*/
 packages/desktop/dist-desktop-local-previous-*/
 packages/desktop/dev-app-update.yml
+packages/apple/.build/
+packages/apple/DesignLab/.derived/
 .turbo/
 tmp/
 .DS_Store
