@@ -67,7 +67,7 @@ struct CatalogInspectorView: View {
     }
     .formStyle(.grouped)
     .scrollContentBackground(.hidden)
-    .background(.bar)
+    .navigationTitle("Inspector")
   }
 
   @ViewBuilder

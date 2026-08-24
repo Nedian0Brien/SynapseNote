@@ -3,27 +3,30 @@ import SwiftUI
 
 /// The restrained accent families available to SynapseNote surfaces.
 public enum SynapseAccent: String, CaseIterable, Identifiable, Sendable {
-  case iris
+  case system
   case teal
-  case copper
+  case indigo
+  case orange
 
   public var id: String { rawValue }
 
   /// A user-facing name for design-lab controls.
   public var title: String {
     switch self {
-    case .iris: "Iris"
+    case .system: "System"
     case .teal: "Teal"
-    case .copper: "Copper"
+    case .indigo: "Indigo"
+    case .orange: "Orange"
     }
   }
 
   /// The resolved accent color used by the current theme.
   public var color: Color {
     switch self {
-    case .iris: Color(red: 0.35, green: 0.31, blue: 0.82)
-    case .teal: Color(red: 0.10, green: 0.52, blue: 0.48)
-    case .copper: Color(red: 0.72, green: 0.34, blue: 0.18)
+    case .system: .accentColor
+    case .teal: .teal
+    case .indigo: .indigo
+    case .orange: .orange
     }
   }
 }
@@ -80,7 +83,7 @@ public final class SynapseTheme {
   public var increasedContrastOverride: Bool
 
   public init(
-    accent: SynapseAccent = .iris,
+    accent: SynapseAccent = .system,
     density: SynapseDensity = .comfortable,
     documentWidth: CGFloat = 680,
     spacingScale: CGFloat = 1,
@@ -103,32 +106,17 @@ public final class SynapseTheme {
     let highContrast = contrast == .increased || increasedContrastOverride
     let accentColor = accent.color
 
-    if colorScheme == .dark {
-      return SynapseColorRoles(
-        canvas: Color(red: 0.075, green: 0.075, blue: 0.07),
-        sidebar: Color(red: 0.105, green: 0.105, blue: 0.10),
-        elevatedSurface: Color(red: 0.145, green: 0.145, blue: 0.14),
-        contentPrimary: .white.opacity(highContrast ? 1 : 0.94),
-        contentSecondary: .white.opacity(highContrast ? 0.78 : 0.60),
-        separator: .white.opacity(highContrast ? 0.22 : 0.10),
-        accent: accentColor,
-        accentSurface: accentColor.opacity(highContrast ? 0.28 : 0.18),
-        warning: Color(red: 0.95, green: 0.65, blue: 0.22),
-        destructive: Color(red: 0.96, green: 0.37, blue: 0.34)
-      )
-    }
-
     return SynapseColorRoles(
-      canvas: Color(red: 0.985, green: 0.983, blue: 0.975),
-      sidebar: Color(red: 0.955, green: 0.952, blue: 0.94),
-      elevatedSurface: .white,
-      contentPrimary: .black.opacity(highContrast ? 1 : 0.88),
-      contentSecondary: .black.opacity(highContrast ? 0.72 : 0.52),
-      separator: .black.opacity(highContrast ? 0.20 : 0.08),
+      canvas: SynapsePlatformColor.canvas,
+      sidebar: SynapsePlatformColor.sidebar,
+      elevatedSurface: SynapsePlatformColor.elevatedSurface,
+      contentPrimary: .primary,
+      contentSecondary: .secondary,
+      separator: SynapsePlatformColor.separator.opacity(highContrast ? 1 : 0.72),
       accent: accentColor,
-      accentSurface: accentColor.opacity(highContrast ? 0.18 : 0.11),
-      warning: Color(red: 0.72, green: 0.42, blue: 0.05),
-      destructive: Color(red: 0.76, green: 0.16, blue: 0.14)
+      accentSurface: accentColor.opacity(highContrast ? 0.22 : 0.14),
+      warning: .orange,
+      destructive: .red
     )
   }
 

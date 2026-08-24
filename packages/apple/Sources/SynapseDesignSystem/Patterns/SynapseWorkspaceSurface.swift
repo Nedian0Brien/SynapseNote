@@ -256,19 +256,13 @@ public struct SynapseWorkspaceSurface: View {
   }
 
   private func inlineToolbar(colors: SynapseColorRoles) -> some View {
-    HStack(spacing: 2) {
-      ForEach(["textformat", "bold", "italic", "link", "list.bullet"], id: \.self) { symbol in
-        SynapseIconButton(symbol: symbol, accessibilityLabel: "서식") {}
+    GlassEffectContainer(spacing: 8) {
+      HStack(spacing: 8) {
+        ForEach(["textformat", "bold", "italic", "link", "list.bullet"], id: \.self) { symbol in
+          SynapseIconButton(symbol: symbol, accessibilityLabel: "서식") {}
+        }
+        SynapseIconButton(symbol: "ellipsis", accessibilityLabel: "추가 서식") {}
       }
-      Divider().frame(height: 20)
-      SynapseIconButton(symbol: "ellipsis", accessibilityLabel: "추가 서식") {}
-    }
-    .padding(4)
-    .background(colors.elevatedSurface)
-    .clipShape(RoundedRectangle(cornerRadius: theme.controlRadius, style: .continuous))
-    .overlay {
-      RoundedRectangle(cornerRadius: theme.controlRadius, style: .continuous)
-        .stroke(colors.separator, lineWidth: 1)
     }
     .fixedSize()
   }

@@ -48,6 +48,8 @@ private struct CatalogPreviewSurface: View {
       SpacingCatalogPage()
     case .shape:
       ShapeCatalogPage()
+    case .materials:
+      MaterialsCatalogPage()
     case .motion:
       MotionCatalogPage()
     case .buttons:
@@ -75,7 +77,7 @@ struct CatalogHeaderView: View {
         .foregroundStyle(.secondary)
 
       Text(item.title)
-        .font(.system(.largeTitle, design: .default, weight: .bold))
+        .font(.system(.title, design: .default, weight: .semibold))
 
       Text(item.summary)
         .font(.title3)
@@ -107,7 +109,7 @@ struct CatalogSectionView<Content: View>: View {
   var body: some View {
     let colors = theme.colors(for: colorScheme, contrast: contrast)
 
-    VStack(alignment: .leading, spacing: 16) {
+    VStack(alignment: .leading, spacing: 18) {
       VStack(alignment: .leading, spacing: 4) {
         Text(title)
           .font(.title2.weight(.semibold))
@@ -120,14 +122,10 @@ struct CatalogSectionView<Content: View>: View {
 
       content
         .frame(maxWidth: .infinity, alignment: .leading)
+
+      Divider()
     }
-    .padding(20)
-    .background(colors.elevatedSurface)
-    .clipShape(RoundedRectangle(cornerRadius: theme.panelRadius, style: .continuous))
-    .overlay {
-      RoundedRectangle(cornerRadius: theme.panelRadius, style: .continuous)
-        .stroke(colors.separator, lineWidth: 1)
-    }
+    .padding(.vertical, 4)
   }
 }
 

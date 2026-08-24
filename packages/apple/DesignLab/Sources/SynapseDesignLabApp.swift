@@ -14,5 +14,8 @@ struct SynapseDesignLabApp: App {
     }
     .defaultSize(width: 1520, height: 980)
     .windowResizability(.contentMinSize)
+    .commands {
+      InspectorCommands()
+    }
   }
 }

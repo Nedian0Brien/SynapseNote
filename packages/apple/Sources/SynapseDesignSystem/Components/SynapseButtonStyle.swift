@@ -12,63 +12,11 @@ public enum SynapseButtonRole: String, CaseIterable, Identifiable, Sendable {
   public var title: String { rawValue.capitalized }
 }
 
-/// A semantic button style that preserves native button behavior and accessibility.
-@MainActor
-public struct SynapseButtonStyle: ButtonStyle {
-  @Environment(SynapseTheme.self) private var theme
-  @Environment(\.colorScheme) private var colorScheme
-  @Environment(\.colorSchemeContrast) private var contrast
-  @Environment(\.isEnabled) private var isEnabled
-
-  private let role: SynapseButtonRole
-
-  public init(role: SynapseButtonRole) {
-    self.role = role
-  }
-
-  public func makeBody(configuration: Configuration) -> some View {
-    let colors = theme.colors(for: colorScheme, contrast: contrast)
-
-    configuration.label
-      .font(.system(.body, design: .default, weight: .semibold))
-      .foregroundStyle(foreground(colors: colors))
-      .padding(.horizontal, theme.spacing.medium)
-      .frame(minHeight: theme.spacing.rowHeight)
-      .background(background(colors: colors, isPressed: configuration.isPressed))
-      .clipShape(RoundedRectangle(cornerRadius: theme.controlRadius, style: .continuous))
-      .contentShape(Rectangle())
-      .scaleEffect(configuration.isPressed ? 0.985 : 1)
-      .opacity(isEnabled ? 1 : 0.44)
-      .animation(SynapseMotion.selection, value: configuration.isPressed)
-  }
-
-  private func foreground(colors: SynapseColorRoles) -> Color {
-    switch role {
-    case .primary: .white
-    case .secondary: colors.contentPrimary
-    case .quiet: colors.contentSecondary
-    }
-  }
-
-  private func background(colors: SynapseColorRoles, isPressed: Bool) -> Color {
-    switch role {
-    case .primary: colors.accent.opacity(isPressed ? 0.78 : 1)
-    case .secondary: colors.elevatedSurface.opacity(isPressed ? 0.66 : 1)
-    case .quiet: colors.accentSurface.opacity(isPressed ? 1 : 0)
-    }
-  }
-}
-
-extension ButtonStyle where Self == SynapseButtonStyle {
-  /// Creates a SynapseNote button style with a semantic emphasis role.
-  public static func synapse(_ role: SynapseButtonRole) -> SynapseButtonStyle {
-    SynapseButtonStyle(role: role)
-  }
-}
-
-/// A complete semantic button with built-in loading and disabled states.
+/// A semantic action that delegates rendering and interaction to native glass button styles.
 @MainActor
 public struct SynapseButton: View {
+  @Environment(SynapseTheme.self) private var theme
+
   private let title: LocalizedStringKey
   private let role: SynapseButtonRole
   private let isLoading: Bool
@@ -87,29 +35,40 @@ public struct SynapseButton: View {
   }
 
   public var body: some View {
+    switch role {
+    case .primary:
+      nativeButton
+        .buttonStyle(.glassProminent)
+    case .secondary:
+      nativeButton
+        .buttonStyle(.glass)
+    case .quiet:
+      nativeButton
+        .buttonStyle(.borderless)
+    }
+  }
+
+  private var nativeButton: some View {
     Button(action: action) {
-      ZStack {
-        Text(title)
-          .opacity(isLoading ? 0 : 1)
+      HStack(spacing: 7) {
         if isLoading {
           ProgressView()
             .controlSize(.small)
         }
+        Text(title)
       }
+      .frame(minWidth: 72)
     }
-    .buttonStyle(.synapse(role))
+    .controlSize(theme.density == .compact ? .small : .regular)
     .disabled(isLoading)
     .accessibilityValue(isLoading ? "로딩 중" : "")
   }
 }
 
-/// A compact native icon button for toolbars and contextual actions.
+/// A compact native glass button for toolbars and contextual actions.
 @MainActor
 public struct SynapseIconButton: View {
   @Environment(SynapseTheme.self) private var theme
-  @Environment(\.colorScheme) private var colorScheme
-  @Environment(\.colorSchemeContrast) private var contrast
-  @Environment(\.isEnabled) private var isEnabled
 
   private let symbol: String
   private let accessibilityLabel: LocalizedStringKey
@@ -126,19 +85,12 @@ public struct SynapseIconButton: View {
   }
 
   public var body: some View {
-    let colors = theme.colors(for: colorScheme, contrast: contrast)
-
     Button(action: action) {
       Image(systemName: symbol)
-        .font(.system(size: 14, weight: .semibold))
-        .frame(width: 32, height: 32)
-        .contentShape(Rectangle())
+        .frame(minWidth: 16, minHeight: 16)
     }
-    .buttonStyle(.plain)
-    .foregroundStyle(colors.contentSecondary)
-    .background(colors.elevatedSurface.opacity(0.001))
-    .clipShape(RoundedRectangle(cornerRadius: theme.controlRadius, style: .continuous))
-    .opacity(isEnabled ? 1 : 0.38)
+    .buttonStyle(.glass)
+    .controlSize(theme.density == .compact ? .small : .regular)
     .accessibilityLabel(accessibilityLabel)
   }
 }

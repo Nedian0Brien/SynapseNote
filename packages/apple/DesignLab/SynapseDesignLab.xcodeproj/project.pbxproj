@@ -11,6 +11,7 @@
 		1375810692ED64708535A323 /* SynapseDesignSystem in Frameworks */ = {isa = PBXBuildFile; productRef = 6BC3996D750A7425824996AF /* SynapseDesignSystem */; };
 		2CA618B7D7F49744E07D1A7D /* PatternCatalogPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 147116660274305595E82536 /* PatternCatalogPage.swift */; };
 		3C1F8B572E619EEEA3B13AD9 /* FoundationCatalogPages.swift in Sources */ = {isa = PBXBuildFile; fileRef = C882F65AC4A5D98285F9929E /* FoundationCatalogPages.swift */; };
+		435A3C6FD436DC8B01D182DD /* MaterialsCatalogPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A607A16FD276E232A0B21B33 /* MaterialsCatalogPage.swift */; };
 		773F2DF6F3619656CDA155CF /* CatalogModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 813517345556C2831648386B /* CatalogModel.swift */; };
 		BC4460EA4557323CB6F06B99 /* SynapseDesignLabApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 994FC4D59EB1B8D433C5118A /* SynapseDesignLabApp.swift */; };
 		CA220B101259B6CE73A90545 /* CatalogInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32840AA3CCE6FF01F2B096F7 /* CatalogInspectorView.swift */; };
@@ -28,6 +29,7 @@
 		48F09926B79990D46F711514 /* CatalogSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogSidebarView.swift; sourceTree = "<group>"; };
 		813517345556C2831648386B /* CatalogModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogModel.swift; sourceTree = "<group>"; };
 		994FC4D59EB1B8D433C5118A /* SynapseDesignLabApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SynapseDesignLabApp.swift; sourceTree = "<group>"; };
+		A607A16FD276E232A0B21B33 /* MaterialsCatalogPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaterialsCatalogPage.swift; sourceTree = "<group>"; };
 		C882F65AC4A5D98285F9929E /* FoundationCatalogPages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationCatalogPages.swift; sourceTree = "<group>"; };
 		D85188EA8E22F7987AE7822B /* SynapseDesignLab.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SynapseDesignLab.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EC271692E936B6F03028D7F4 /* apple */ = {isa = PBXFileReference; lastKnownFileType = folder; name = apple; path = ..; sourceTree = SOURCE_ROOT; };
@@ -72,6 +74,7 @@
 				36517FB826144E750D05C4E8 /* ComponentCatalogPages.swift */,
 				0D66B94EBA6E0D4C6CE34B3E /* DesignSystemCatalogView.swift */,
 				C882F65AC4A5D98285F9929E /* FoundationCatalogPages.swift */,
+				A607A16FD276E232A0B21B33 /* MaterialsCatalogPage.swift */,
 				147116660274305595E82536 /* PatternCatalogPage.swift */,
 			);
 			path = Catalog;
@@ -161,6 +164,7 @@
 				D55975CBE67A297C1BCBAF0C /* ComponentCatalogPages.swift in Sources */,
 				D9493A66610547E0528662F3 /* DesignSystemCatalogView.swift in Sources */,
 				3C1F8B572E619EEEA3B13AD9 /* FoundationCatalogPages.swift in Sources */,
+				435A3C6FD436DC8B01D182DD /* MaterialsCatalogPage.swift in Sources */,
 				2CA618B7D7F49744E07D1A7D /* PatternCatalogPage.swift in Sources */,
 				BC4460EA4557323CB6F06B99 /* SynapseDesignLabApp.swift in Sources */,
 			);

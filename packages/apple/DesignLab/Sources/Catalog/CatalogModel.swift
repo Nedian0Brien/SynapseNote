@@ -15,6 +15,7 @@ enum CatalogItem: String, CaseIterable, Identifiable {
   case typography
   case spacing
   case shape
+  case materials
   case motion
   case buttons
   case iconButtons
@@ -26,7 +27,7 @@ enum CatalogItem: String, CaseIterable, Identifiable {
 
   var group: CatalogGroup {
     switch self {
-    case .colors, .typography, .spacing, .shape, .motion: .foundations
+    case .colors, .typography, .spacing, .shape, .materials, .motion: .foundations
     case .buttons, .iconButtons, .documentRows, .statusBadges: .components
     case .workspace: .patterns
     }
@@ -38,6 +39,7 @@ enum CatalogItem: String, CaseIterable, Identifiable {
     case .typography: "Typography"
     case .spacing: "Spacing"
     case .shape: "Shape"
+    case .materials: "Materials"
     case .motion: "Motion"
     case .buttons: "Buttons"
     case .iconButtons: "Icon buttons"
@@ -53,6 +55,7 @@ enum CatalogItem: String, CaseIterable, Identifiable {
     case .typography: "textformat"
     case .spacing: "arrow.left.and.right"
     case .shape: "square.on.circle"
+    case .materials: "circle.hexagongrid"
     case .motion: "move.3d"
     case .buttons: "button.horizontal"
     case .iconButtons: "ellipsis.circle"
@@ -68,6 +71,7 @@ enum CatalogItem: String, CaseIterable, Identifiable {
     case .typography: "제품 크롬과 문서 편집기에 공통으로 적용하는 글자 역할"
     case .spacing: "밀도와 배율에 따라 함께 변하는 공간 단위"
     case .shape: "컨트롤, 패널, 선택 상태를 구분하는 모서리 계약"
+    case .materials: "조작 계층에 사용하는 Liquid Glass 변형과 적용 경계"
     case .motion: "상태 변화의 목적과 Reduce Motion 대응을 포함하는 전환 계약"
     case .buttons: "중요도와 진행 상태를 표현하는 의미형 버튼"
     case .iconButtons: "도구막대와 문맥 작업에 사용하는 압축 컨트롤"
@@ -156,6 +160,7 @@ enum ViewportPreset: String, CaseIterable, Identifiable {
 @Observable
 final class CatalogModel {
   var selection: CatalogItem = .colors
+  var searchText = ""
   var appearance: LabAppearance = .light
   var typeScale: CatalogTypeScale = .standard
   var viewport: ViewportPreset = .tablet
@@ -167,7 +172,7 @@ final class CatalogModel {
   var documentRowSelected = true
 
   func reset(theme: SynapseTheme) {
-    theme.accent = .iris
+    theme.accent = .system
     theme.density = .comfortable
     theme.documentWidth = 680
     theme.spacingScale = 1
