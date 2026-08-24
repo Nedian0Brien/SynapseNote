@@ -67,7 +67,7 @@ public struct SynapseDocumentRow: View {
     .padding(.horizontal, theme.spacing.small)
     .frame(minHeight: theme.spacing.rowHeight)
     .background(isSelected ? colors.accentSurface : .clear)
-    .clipShape(RoundedRectangle(cornerRadius: SynapseCorner.control, style: .continuous))
+    .clipShape(RoundedRectangle(cornerRadius: theme.controlRadius, style: .continuous))
     .contentShape(Rectangle())
     .accessibilityElement(children: .combine)
     .accessibilityAddTraits(isSelected ? .isSelected : [])

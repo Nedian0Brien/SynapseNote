@@ -87,7 +87,7 @@ public struct SynapseWorkspaceSurface: View {
       .padding(.horizontal, theme.spacing.small)
       .frame(height: 36)
       .background(colors.elevatedSurface.opacity(0.7))
-      .clipShape(RoundedRectangle(cornerRadius: SynapseCorner.control, style: .continuous))
+      .clipShape(RoundedRectangle(cornerRadius: theme.controlRadius, style: .continuous))
       .padding(.horizontal, theme.spacing.medium)
       .padding(.bottom, theme.spacing.medium)
 
@@ -200,7 +200,7 @@ public struct SynapseWorkspaceSurface: View {
           .padding(theme.spacing.medium)
           .background(selectedBlock ? colors.accentSurface : .clear)
           .overlay {
-            RoundedRectangle(cornerRadius: SynapseCorner.selection, style: .continuous)
+            RoundedRectangle(cornerRadius: theme.selectionRadius, style: .continuous)
               .stroke(selectedBlock ? colors.accent.opacity(0.55) : .clear, lineWidth: 1)
           }
           .contentShape(Rectangle())
@@ -265,9 +265,9 @@ public struct SynapseWorkspaceSurface: View {
     }
     .padding(4)
     .background(colors.elevatedSurface)
-    .clipShape(RoundedRectangle(cornerRadius: SynapseCorner.control, style: .continuous))
+    .clipShape(RoundedRectangle(cornerRadius: theme.controlRadius, style: .continuous))
     .overlay {
-      RoundedRectangle(cornerRadius: SynapseCorner.control, style: .continuous)
+      RoundedRectangle(cornerRadius: theme.controlRadius, style: .continuous)
         .stroke(colors.separator, lineWidth: 1)
     }
     .fixedSize()
@@ -290,9 +290,9 @@ public struct SynapseWorkspaceSurface: View {
     }
     .padding(theme.spacing.medium)
     .background(colors.elevatedSurface)
-    .clipShape(RoundedRectangle(cornerRadius: SynapseCorner.panel, style: .continuous))
+    .clipShape(RoundedRectangle(cornerRadius: theme.panelRadius, style: .continuous))
     .overlay {
-      RoundedRectangle(cornerRadius: SynapseCorner.panel, style: .continuous)
+      RoundedRectangle(cornerRadius: theme.panelRadius, style: .continuous)
         .stroke(colors.separator, lineWidth: 1)
     }
   }

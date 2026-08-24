@@ -1,10 +1,15 @@
 import SwiftUI
 
 /// Visual emphasis roles for SynapseNote buttons.
-public enum SynapseButtonRole: Sendable {
+public enum SynapseButtonRole: String, CaseIterable, Identifiable, Sendable {
   case primary
   case secondary
   case quiet
+
+  public var id: String { rawValue }
+
+  /// A user-facing role name for catalog controls.
+  public var title: String { rawValue.capitalized }
 }
 
 /// A semantic button style that preserves native button behavior and accessibility.
@@ -13,6 +18,7 @@ public struct SynapseButtonStyle: ButtonStyle {
   @Environment(SynapseTheme.self) private var theme
   @Environment(\.colorScheme) private var colorScheme
   @Environment(\.colorSchemeContrast) private var contrast
+  @Environment(\.isEnabled) private var isEnabled
 
   private let role: SynapseButtonRole
 
@@ -29,9 +35,10 @@ public struct SynapseButtonStyle: ButtonStyle {
       .padding(.horizontal, theme.spacing.medium)
       .frame(minHeight: theme.spacing.rowHeight)
       .background(background(colors: colors, isPressed: configuration.isPressed))
-      .clipShape(RoundedRectangle(cornerRadius: SynapseCorner.control, style: .continuous))
+      .clipShape(RoundedRectangle(cornerRadius: theme.controlRadius, style: .continuous))
       .contentShape(Rectangle())
       .scaleEffect(configuration.isPressed ? 0.985 : 1)
+      .opacity(isEnabled ? 1 : 0.44)
       .animation(SynapseMotion.selection, value: configuration.isPressed)
   }
 
@@ -59,12 +66,50 @@ extension ButtonStyle where Self == SynapseButtonStyle {
   }
 }
 
+/// A complete semantic button with built-in loading and disabled states.
+@MainActor
+public struct SynapseButton: View {
+  private let title: LocalizedStringKey
+  private let role: SynapseButtonRole
+  private let isLoading: Bool
+  private let action: () -> Void
+
+  public init(
+    _ title: LocalizedStringKey,
+    role: SynapseButtonRole,
+    isLoading: Bool = false,
+    action: @escaping () -> Void
+  ) {
+    self.title = title
+    self.role = role
+    self.isLoading = isLoading
+    self.action = action
+  }
+
+  public var body: some View {
+    Button(action: action) {
+      ZStack {
+        Text(title)
+          .opacity(isLoading ? 0 : 1)
+        if isLoading {
+          ProgressView()
+            .controlSize(.small)
+        }
+      }
+    }
+    .buttonStyle(.synapse(role))
+    .disabled(isLoading)
+    .accessibilityValue(isLoading ? "로딩 중" : "")
+  }
+}
+
 /// A compact native icon button for toolbars and contextual actions.
 @MainActor
 public struct SynapseIconButton: View {
   @Environment(SynapseTheme.self) private var theme
   @Environment(\.colorScheme) private var colorScheme
   @Environment(\.colorSchemeContrast) private var contrast
+  @Environment(\.isEnabled) private var isEnabled
 
   private let symbol: String
   private let accessibilityLabel: LocalizedStringKey
@@ -92,7 +137,8 @@ public struct SynapseIconButton: View {
     .buttonStyle(.plain)
     .foregroundStyle(colors.contentSecondary)
     .background(colors.elevatedSurface.opacity(0.001))
-    .clipShape(RoundedRectangle(cornerRadius: SynapseCorner.control, style: .continuous))
+    .clipShape(RoundedRectangle(cornerRadius: theme.controlRadius, style: .continuous))
+    .opacity(isEnabled ? 1 : 0.38)
     .accessibilityLabel(accessibilityLabel)
   }
 }

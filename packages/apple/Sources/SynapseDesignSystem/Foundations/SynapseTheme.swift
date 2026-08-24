@@ -18,7 +18,8 @@ public enum SynapseAccent: String, CaseIterable, Identifiable, Sendable {
     }
   }
 
-  var color: Color {
+  /// The resolved accent color used by the current theme.
+  public var color: Color {
     switch self {
     case .iris: Color(red: 0.35, green: 0.31, blue: 0.82)
     case .teal: Color(red: 0.10, green: 0.52, blue: 0.48)
@@ -74,15 +75,24 @@ public final class SynapseTheme {
   public var accent: SynapseAccent
   public var density: SynapseDensity
   public var documentWidth: CGFloat
+  public var spacingScale: CGFloat
+  public var cornerScale: CGFloat
+  public var increasedContrastOverride: Bool
 
   public init(
     accent: SynapseAccent = .iris,
     density: SynapseDensity = .comfortable,
-    documentWidth: CGFloat = 680
+    documentWidth: CGFloat = 680,
+    spacingScale: CGFloat = 1,
+    cornerScale: CGFloat = 1,
+    increasedContrastOverride: Bool = false
   ) {
     self.accent = accent
     self.density = density
     self.documentWidth = documentWidth
+    self.spacingScale = spacingScale
+    self.cornerScale = cornerScale
+    self.increasedContrastOverride = increasedContrastOverride
   }
 
   /// Resolves semantic colors for the current system appearance and contrast.
@@ -90,7 +100,7 @@ public final class SynapseTheme {
     for colorScheme: ColorScheme,
     contrast: ColorSchemeContrast
   ) -> SynapseColorRoles {
-    let highContrast = contrast == .increased
+    let highContrast = contrast == .increased || increasedContrastOverride
     let accentColor = accent.color
 
     if colorScheme == .dark {
@@ -124,27 +134,46 @@ public final class SynapseTheme {
 
   /// Resolves the spacing scale for the current density.
   public var spacing: SynapseSpacing {
-    switch density {
-    case .comfortable:
-      SynapseSpacing(
-        xSmall: 6,
-        small: 10,
-        medium: 16,
-        large: 24,
-        xLarge: 36,
-        rowHeight: 42
-      )
-    case .compact:
-      SynapseSpacing(
-        xSmall: 4,
-        small: 8,
-        medium: 12,
-        large: 18,
-        xLarge: 28,
-        rowHeight: 34
-      )
-    }
+    let base =
+      switch density {
+      case .comfortable:
+        SynapseSpacing(
+          xSmall: 6,
+          small: 10,
+          medium: 16,
+          large: 24,
+          xLarge: 36,
+          rowHeight: 42
+        )
+      case .compact:
+        SynapseSpacing(
+          xSmall: 4,
+          small: 8,
+          medium: 12,
+          large: 18,
+          xLarge: 28,
+          rowHeight: 34
+        )
+      }
+
+    return SynapseSpacing(
+      xSmall: base.xSmall * spacingScale,
+      small: base.small * spacingScale,
+      medium: base.medium * spacingScale,
+      large: base.large * spacingScale,
+      xLarge: base.xLarge * spacingScale,
+      rowHeight: base.rowHeight * spacingScale
+    )
   }
+
+  /// The resolved corner radius for compact controls.
+  public var controlRadius: CGFloat { SynapseCorner.control * cornerScale }
+
+  /// The resolved corner radius for contained panels.
+  public var panelRadius: CGFloat { SynapseCorner.panel * cornerScale }
+
+  /// The resolved corner radius for selection outlines.
+  public var selectionRadius: CGFloat { SynapseCorner.selection * cornerScale }
 }
 
 extension View {

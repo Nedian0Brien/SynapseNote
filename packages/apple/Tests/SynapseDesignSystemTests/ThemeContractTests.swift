@@ -21,4 +21,13 @@ struct ThemeContractTests {
     let theme = SynapseTheme()
     #expect((560...800).contains(theme.documentWidth))
   }
+
+  @Test
+  func tokenScalesResolveAcrossComponents() {
+    let theme = SynapseTheme(spacingScale: 1.25, cornerScale: 0.75)
+
+    #expect(theme.spacing.medium == 20)
+    #expect(abs(theme.controlRadius - SynapseCorner.control * 0.75) < 0.001)
+    #expect(abs(theme.panelRadius - SynapseCorner.panel * 0.75) < 0.001)
+  }
 }

@@ -19,6 +19,8 @@ public enum SynapseTypography {
 
 /// Shared motion contracts that remain meaningful when Reduce Motion is enabled.
 public enum SynapseMotion {
-  public static let reveal = Animation.spring(duration: 0.32, bounce: 0.06)
-  public static let selection = Animation.easeOut(duration: 0.16)
+  public static let revealDuration: TimeInterval = 0.32
+  public static let selectionDuration: TimeInterval = 0.16
+  public static let reveal = Animation.spring(duration: revealDuration, bounce: 0.06)
+  public static let selection = Animation.easeOut(duration: selectionDuration)
 }
