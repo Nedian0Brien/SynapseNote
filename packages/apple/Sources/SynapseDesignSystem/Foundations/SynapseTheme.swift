@@ -84,8 +84,8 @@ public final class SynapseTheme {
 
   public init(
     accent: SynapseAccent = .system,
-    density: SynapseDensity = .comfortable,
-    documentWidth: CGFloat = 680,
+    density: SynapseDensity = .compact,
+    documentWidth: CGFloat = 720,
     spacingScale: CGFloat = 1,
     cornerScale: CGFloat = 1,
     increasedContrastOverride: Bool = false
@@ -126,21 +126,21 @@ public final class SynapseTheme {
       switch density {
       case .comfortable:
         SynapseSpacing(
-          xSmall: 6,
-          small: 10,
-          medium: 16,
-          large: 24,
-          xLarge: 36,
-          rowHeight: 42
+          xSmall: 5,
+          small: 8,
+          medium: 14,
+          large: 20,
+          xLarge: 30,
+          rowHeight: 36
         )
       case .compact:
         SynapseSpacing(
-          xSmall: 4,
-          small: 8,
-          medium: 12,
-          large: 18,
-          xLarge: 28,
-          rowHeight: 34
+          xSmall: 3,
+          small: 6,
+          medium: 10,
+          large: 16,
+          xLarge: 24,
+          rowHeight: 28
         )
       }
 
@@ -165,9 +165,12 @@ public final class SynapseTheme {
 }
 
 extension View {
-  /// Installs a SynapseNote theme and its tint for a complete view subtree.
+  /// Installs a SynapseNote theme without tinting system materials globally.
+  ///
+  /// Accent is applied locally to selection, focus, links, and status. Keeping it
+  /// out of the root environment prevents neutral Liquid Glass controls from
+  /// becoming stained glass as an accidental side effect of theme selection.
   public func synapseTheme(_ theme: SynapseTheme) -> some View {
     environment(theme)
-      .tint(theme.accent.color)
   }
 }

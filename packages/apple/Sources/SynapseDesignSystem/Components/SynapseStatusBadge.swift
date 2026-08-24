@@ -47,20 +47,24 @@ public struct SynapseStatusBadge: View {
     let foreground = statusColor(colors: colors)
 
     Label(status.title, systemImage: status.symbol)
-      .font(SynapseTypography.metadata)
+      .font(.caption2)
       .foregroundStyle(foreground)
-      .padding(.horizontal, 9)
-      .frame(minHeight: 26)
-      .background(foreground.opacity(0.10))
+      .padding(.horizontal, statusNeedsSurface ? 6 : 0)
+      .frame(minHeight: 20)
+      .background(statusNeedsSurface ? foreground.opacity(0.10) : .clear)
       .clipShape(Capsule())
   }
 
   private func statusColor(colors: SynapseColorRoles) -> Color {
     switch status {
-    case .synced: colors.accent
+    case .synced: colors.contentSecondary
     case .syncing: colors.contentSecondary
     case .offline: colors.warning
     case .conflict: colors.destructive
     }
+  }
+
+  private var statusNeedsSurface: Bool {
+    status == .offline || status == .conflict
   }
 }

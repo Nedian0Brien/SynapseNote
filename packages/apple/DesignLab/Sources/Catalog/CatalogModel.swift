@@ -3,9 +3,9 @@ import SwiftUI
 import SynapseDesignSystem
 
 enum CatalogGroup: String, CaseIterable, Identifiable {
+  case patterns = "Product"
   case foundations = "Foundations"
   case components = "Components"
-  case patterns = "Patterns"
 
   var id: String { rawValue }
 }
@@ -139,14 +139,6 @@ enum ViewportPreset: String, CaseIterable, Identifiable {
     }
   }
 
-  var size: CGSize {
-    switch self {
-    case .phone: CGSize(width: 390, height: 844)
-    case .tablet: CGSize(width: 834, height: 1194)
-    case .desktop: CGSize(width: 1280, height: 820)
-    }
-  }
-
   var layout: SynapseWorkspaceLayout {
     switch self {
     case .phone: .compact
@@ -159,13 +151,15 @@ enum ViewportPreset: String, CaseIterable, Identifiable {
 @MainActor
 @Observable
 final class CatalogModel {
-  var selection: CatalogItem = .colors
+  var selection: CatalogItem = .workspace
   var searchText = ""
   var appearance: LabAppearance = .light
   var typeScale: CatalogTypeScale = .standard
-  var viewport: ViewportPreset = .tablet
-  var zoom: CGFloat = 0.75
+  var viewport: ViewportPreset = .desktop
   var syncStatus: SynapseSyncStatus = .synced
+  var workspaceShowsFiles = true
+  var workspaceShowsPanel = true
+  var workspacePanel: SynapseWorkspacePanel = .chat
   var buttonRole: SynapseButtonRole = .primary
   var componentEnabled = true
   var componentLoading = false
@@ -173,16 +167,18 @@ final class CatalogModel {
 
   func reset(theme: SynapseTheme) {
     theme.accent = .system
-    theme.density = .comfortable
-    theme.documentWidth = 680
+    theme.density = .compact
+    theme.documentWidth = 720
     theme.spacingScale = 1
     theme.cornerScale = 1
     theme.increasedContrastOverride = false
     appearance = .light
     typeScale = .standard
-    viewport = .tablet
-    zoom = 0.75
+    viewport = .desktop
     syncStatus = .synced
+    workspaceShowsFiles = true
+    workspaceShowsPanel = true
+    workspacePanel = .chat
     buttonRole = .primary
     componentEnabled = true
     componentLoading = false

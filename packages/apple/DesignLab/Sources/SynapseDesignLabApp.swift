@@ -10,9 +10,9 @@ struct SynapseDesignLabApp: App {
   var body: some Scene {
     WindowGroup("Synapse Design System") {
       DesignSystemCatalogView(theme: theme, catalog: catalog)
-        .frame(minWidth: 1180, minHeight: 760)
+        .frame(minWidth: 1320, minHeight: 820)
     }
-    .defaultSize(width: 1520, height: 980)
+    .defaultSize(width: 1760, height: 1020)
     .windowResizability(.contentMinSize)
     .commands {
       InspectorCommands()

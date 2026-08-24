@@ -12,7 +12,10 @@ public enum SynapseButtonRole: String, CaseIterable, Identifiable, Sendable {
   public var title: String { rawValue.capitalized }
 }
 
-/// A semantic action that delegates rendering and interaction to native glass button styles.
+/// A semantic action that delegates rendering and interaction to native button styles.
+///
+/// Liquid Glass remains neutral and belongs to window chrome. Product emphasis
+/// comes from native control hierarchy, not from repeatedly tinting glass.
 @MainActor
 public struct SynapseButton: View {
   @Environment(SynapseTheme.self) private var theme
@@ -38,10 +41,10 @@ public struct SynapseButton: View {
     switch role {
     case .primary:
       nativeButton
-        .buttonStyle(.glassProminent)
+        .buttonStyle(.borderedProminent)
     case .secondary:
       nativeButton
-        .buttonStyle(.glass)
+        .buttonStyle(.bordered)
     case .quiet:
       nativeButton
         .buttonStyle(.borderless)
@@ -65,7 +68,7 @@ public struct SynapseButton: View {
   }
 }
 
-/// A compact native glass button for toolbars and contextual actions.
+/// A compact native button for toolbars and contextual actions.
 @MainActor
 public struct SynapseIconButton: View {
   @Environment(SynapseTheme.self) private var theme
@@ -89,7 +92,7 @@ public struct SynapseIconButton: View {
       Image(systemName: symbol)
         .frame(minWidth: 16, minHeight: 16)
     }
-    .buttonStyle(.glass)
+    .buttonStyle(.borderless)
     .controlSize(theme.density == .compact ? .small : .regular)
     .accessibilityLabel(accessibilityLabel)
   }

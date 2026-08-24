@@ -9,7 +9,7 @@ struct CatalogSidebarView: View {
       VStack(alignment: .leading, spacing: 4) {
         Label("SynapseNote", systemImage: "point.3.connected.trianglepath.dotted")
           .font(.headline)
-        Text("Design System")
+        Text("Native Design System")
           .font(.caption)
           .foregroundStyle(.secondary)
       }
@@ -33,7 +33,7 @@ struct CatalogSidebarView: View {
 
       Divider()
 
-      Text("iOS · iPadOS · macOS 26")
+      Text("Product UI · Apple platforms 26")
         .font(.caption2)
         .foregroundStyle(.tertiary)
         .frame(maxWidth: .infinity, alignment: .leading)

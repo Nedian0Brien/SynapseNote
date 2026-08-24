@@ -30,7 +30,7 @@ struct CatalogInspectorView: View {
       }
 
       Section("Foundation tokens") {
-        Picker("Accent", selection: $theme.accent) {
+        Picker("Content accent", selection: $theme.accent) {
           ForEach(SynapseAccent.allCases) { accent in
             Text(accent.title).tag(accent)
           }
@@ -101,17 +101,24 @@ struct CatalogInspectorView: View {
       }
     case .workspace:
       Section("Workspace pattern") {
-        Picker("Viewport", selection: $catalog.viewport) {
+        Picker("Layout", selection: $catalog.viewport) {
           ForEach(ViewportPreset.allCases) { preset in
             Text(preset.title).tag(preset)
           }
         }
 
-        Picker("Zoom", selection: $catalog.zoom) {
-          Text("50%").tag(CGFloat(0.5))
-          Text("75%").tag(CGFloat(0.75))
-          Text("100%").tag(CGFloat(1))
+        Toggle("File sidebar", isOn: $catalog.workspaceShowsFiles)
+          .disabled(catalog.viewport == .phone)
+
+        Toggle("Document panel", isOn: $catalog.workspaceShowsPanel)
+          .disabled(catalog.viewport != .desktop)
+
+        Picker("Panel content", selection: $catalog.workspacePanel) {
+          ForEach(SynapseWorkspacePanel.allCases) { panel in
+            Text(panel.title).tag(panel)
+          }
         }
+        .disabled(catalog.viewport != .desktop || !catalog.workspaceShowsPanel)
 
         Picker("Sync state", selection: $catalog.syncStatus) {
           ForEach(SynapseSyncStatus.allCases) { status in
@@ -126,6 +133,13 @@ struct CatalogInspectorView: View {
           step: 20,
           format: { "\(Int($0)) pt" }
         )
+      }
+
+      Section("Material rule") {
+        LabeledContent("Liquid Glass", value: "Neutral")
+        Text("색유리는 기본 구성요소에서 사용하지 않습니다. 강조색은 콘텐츠 선택, 링크, 포커스, 상태에만 적용합니다.")
+          .font(.caption)
+          .foregroundStyle(.secondary)
       }
     default:
       EmptyView()

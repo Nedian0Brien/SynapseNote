@@ -23,15 +23,21 @@ private struct CatalogPreviewSurface: View {
   var body: some View {
     let colors = theme.colors(for: colorScheme, contrast: contrast)
 
-    ScrollView {
-      LazyVStack(alignment: .leading, spacing: 28) {
-        CatalogHeaderView(item: catalog.selection)
-        selectedPage
+    Group {
+      if catalog.selection == .workspace {
+        WorkspaceCatalogPage(catalog: catalog)
+      } else {
+        ScrollView {
+          LazyVStack(alignment: .leading, spacing: 28) {
+            CatalogHeaderView(item: catalog.selection)
+            selectedPage
+          }
+          .frame(maxWidth: 960, alignment: .leading)
+          .padding(.horizontal, 38)
+          .padding(.vertical, 32)
+          .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
       }
-      .frame(maxWidth: 960, alignment: .leading)
-      .padding(.horizontal, 38)
-      .padding(.vertical, 32)
-      .frame(maxWidth: .infinity, alignment: .topLeading)
     }
     .background(colors.canvas)
     .foregroundStyle(colors.contentPrimary)
@@ -61,7 +67,7 @@ private struct CatalogPreviewSurface: View {
     case .statusBadges:
       StatusBadgesCatalogPage(catalog: catalog)
     case .workspace:
-      WorkspaceCatalogPage(catalog: catalog)
+      EmptyView()
     }
   }
 }
