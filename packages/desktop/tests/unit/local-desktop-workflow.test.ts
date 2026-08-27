@@ -5,6 +5,8 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createPackage } from '@electron/asar';
 import { FuseV1Options, getCurrentFuseWire } from '@electron/fuses';
+import { getNodeModuleFileMatcher } from 'app-builder-lib/out/fileMatcher.js';
+import { parse } from 'yaml';
 import afterPack from '../../scripts/afterPack.mjs';
 import {
   localAppPath,
@@ -18,12 +20,33 @@ import {
 } from '../../scripts/packaging-freshness.mjs';
 import { expectedFuseState, targetFuses } from '../../scripts/target-fuses.mjs';
 import { verifyLocalAppRevision } from '../../scripts/verify-local-app-revision.mjs';
-import { assertWindowsInstallNotRunning } from '../../scripts/windows-local-app.mjs';
+import {
+  assertWindowsInstallNotRunning,
+  windowsBuilderConfig,
+} from '../../scripts/windows-local-app.mjs';
 
 const desktopRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const repoRoot = resolve(desktopRoot, '../..');
 
 describe('local desktop build and install workflow', () => {
+  test('excludes Rust build intermediates while keeping the native Windows runtime', () => {
+    const base = parse(readFileSync(resolve(desktopRoot, 'electron-builder.yml'), 'utf8'));
+    const config = windowsBuilderConfig(base);
+    const filter = getNodeModuleFileMatcher(desktopRoot, 'output', (value) => value, config.win, {
+      config,
+      debugLogger: { isEnabled: false },
+    } as never).createFilter();
+    const accepts = (relative: string, directory = false) =>
+      filter(resolve(desktopRoot, relative), {
+        isDirectory: () => directory,
+        moduleFullFilePath: relative,
+      } as never);
+    const native = 'node_modules/@nedian0brien/synapsenote-native-config';
+    expect(accepts(`${native}/target`, true)).toBe(false);
+    expect(accepts(`${native}/target/release/.fingerprint/crate/dep-lib`)).toBe(false);
+    expect(accepts(`${native}/index.js`)).toBe(true);
+    expect(accepts(`${native}/native-config.win32-x64-msvc.node`)).toBe(true);
+  });
   test('refuses to install over running Windows app and utility processes', () => {
     const target = 'C:\\Users\\Test\\Programs\\SynapseNote';
     expect(() => assertWindowsInstallNotRunning(target, [`${target}\\SynapseNote.exe`])).toThrow(

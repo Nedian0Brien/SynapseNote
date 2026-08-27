@@ -39,6 +39,10 @@ export async function validateWindowsExecutable(appPath, headerString) {
 export function windowsBuilderConfig(base) {
   return {
     ...base,
+    // Workspace dependencies bypass their npm "files" allowlist in the Bun
+    // collector. Cargo's target tree is not runtime data; its long paths can
+    // also be omitted by NSIS, breaking the installed ASAR integrity check.
+    files: [...base.files, '!**/@nedian0brien/synapsenote-native-config/target{,/**}'],
     extraResources: base.extraResources.map((entry) => {
       if (entry.from.endsWith('/keyring-darwin-arm64')) {
         return {
