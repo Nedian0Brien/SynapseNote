@@ -32,7 +32,7 @@
   },
   "scripts": {
     "build:cli": "tsdown",
-    "build:app": "rm -rf dist/public && cp -r ../app/dist dist/public",
+    "build:app": "rm -rf dist/public && cp -R ../app/dist dist/public",
     "build:skill-asset": "bun ../server/scripts/build-skill-bundles.ts && mkdir -p dist/assets/skills && cp -R ../server/dist/assets/skills/. dist/assets/skills/",
     "build:notices": "mkdir -p dist && cp ../../THIRD_PARTY_NOTICES.md dist/THIRD_PARTY_NOTICES.md",
     "build:license": "mkdir -p dist && cp ../../LICENSE dist/LICENSE",

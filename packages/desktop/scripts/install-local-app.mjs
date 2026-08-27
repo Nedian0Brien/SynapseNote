@@ -3,11 +3,11 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, renameSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, dirname, join, resolve } from 'node:path';
+import { basename, dirname, join, posix, resolve, win32 } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { localAppPath, PRODUCT_NAME, validateLocalAsarIntegrity } from './build-local-app.mjs';
 
-export const DEFAULT_INSTALL_PATH = `/Applications/${PRODUCT_NAME}.app`;
+export const DEFAULT_INSTALL_PATH = parseInstallPath([]);
 const BUNDLE_IDENTIFIER = 'kr.lawdigest.synapsenote';
 
 function run(command, args, options = {}) {
@@ -18,10 +18,21 @@ function run(command, args, options = {}) {
   });
 }
 
-export function parseInstallPath(argv) {
-  if (argv.length === 0) return DEFAULT_INSTALL_PATH;
+export function parseInstallPath(argv, platform = process.platform, env = process.env) {
+  if (argv.length === 0) {
+    if (platform !== 'win32') return `/Applications/${PRODUCT_NAME}.app`;
+    if (!env.LOCALAPPDATA) throw new Error('LOCALAPPDATA is required for a per-user install');
+    return win32.join(env.LOCALAPPDATA, 'Programs', PRODUCT_NAME);
+  }
   if (argv.length === 2 && argv[0] === '--target') {
-    const target = resolve(argv[1]);
+    if (platform === 'win32') {
+      const target = win32.resolve(argv[1]);
+      if (win32.basename(target).toLowerCase() !== PRODUCT_NAME.toLowerCase()) {
+        throw new Error('--target must be a SynapseNote directory, not a drive root or executable');
+      }
+      return target;
+    }
+    const target = posix.resolve(argv[1]);
     if (!target.endsWith('.app')) throw new Error('--target must point to a .app bundle');
     return target;
   }
@@ -106,6 +117,10 @@ function removeBackupDirectory(backupPath) {
 }
 
 export async function installLocalApp(targetPath = DEFAULT_INSTALL_PATH) {
+  if (process.platform === 'win32') {
+    const { installWindowsLocalApp } = await import('./windows-local-app.mjs');
+    return installWindowsLocalApp(targetPath, localAppPath(), validateLocalAsarIntegrity);
+  }
   if (process.platform !== 'darwin') throw new Error('install-local-app is macOS only');
 
   const sourcePath = localAppPath();

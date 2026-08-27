@@ -11,7 +11,8 @@
  * `bun test` (see `tests/utility/pty-host.real-io-harness.ts`).
  */
 
-import { delimiter, join } from 'node:path';
+import { posix, win32 } from 'node:path';
+import { resolveCommandShell } from '../shared/command-shell.ts';
 
 const DARWIN_FALLBACK_SHELL = '/bin/zsh';
 
@@ -120,6 +121,7 @@ interface PtyHostParentPort {
 }
 
 export interface SetupPtyHostDeps {
+  platform?: NodeJS.Platform;
   /** `process.parentPort` in the utility runtime; a fake in tests. */
   parentPort: PtyHostParentPort | null;
   /** node-pty's `spawn`, injected so message routing is testable without a real PTY. */
@@ -180,10 +182,18 @@ export interface PtyHostHandle {
 }
 
 /** Login interactive shell: sources profiles so `claude`/git/npm resolve on PATH. */
-export function resolveShell(env: Record<string, string | undefined>, override?: string): string {
+export function resolveShell(
+  env: Record<string, string | undefined>,
+  override?: string,
+  platform: NodeJS.Platform = process.platform,
+): string {
   if (override && override.length > 0) return override;
+  if (platform === 'win32') {
+    return resolveCommandShell(env, platform);
+  }
   const shell = env.SHELL;
-  return typeof shell === 'string' && shell.length > 0 ? shell : DARWIN_FALLBACK_SHELL;
+  if (typeof shell === 'string' && shell.length > 0) return shell;
+  return DARWIN_FALLBACK_SHELL;
 }
 
 /**
@@ -206,6 +216,9 @@ export function resolveShell(env: Record<string, string | undefined>, override?:
  * interactively regardless of the shell being driven by `-c`.
  */
 export function buildShellArgs(shell: string, launchCommand?: string): string[] {
+  if (/^(?:powershell|pwsh)(?:\.exe)?$/i.test(win32.basename(shell))) {
+    return launchCommand ? ['-NoLogo', '-NoExit', '-Command', launchCommand] : ['-NoLogo'];
+  }
   if (launchCommand === undefined || launchCommand.length === 0) return ['-l', '-i'];
   // Single-quote the shell path in the `exec` tail (POSIX close-escape-reopen),
   // so a shell path containing a space or quote can't break the launcher line.
@@ -221,13 +234,14 @@ export function buildShellArgs(shell: string, launchCommand?: string): string[] 
  */
 export function buildShellEnv(
   parentEnv: Record<string, string | undefined>,
+  platform: NodeJS.Platform = process.platform,
 ): Record<string, string> {
   const stripped = new Set<string>(STRIPPED_ENV_MARKERS);
   const out: Record<string, string> = {};
   for (const [key, value] of Object.entries(parentEnv)) {
     if (value === undefined) continue;
     if (stripped.has(key)) continue;
-    out[key] = value;
+    out[platform === 'win32' && key.toUpperCase() === 'PATH' ? 'PATH' : key] = value;
   }
   // `ok` must resolve in OK's own terminal regardless of the shell-PATH
   // rc-consent decision: OK spawns this process, so prepending `~/.ok/bin`
@@ -235,9 +249,11 @@ export function buildShellEnv(
   // dedups by substring match, so a consenting user's login shell won't
   // re-prepend it. A missing HOME (never the case on a macOS GUI launch)
   // just skips the injection.
-  const home = out.HOME;
+  const home = out.HOME ?? (platform === 'win32' ? out.USERPROFILE : undefined);
   if (home) {
-    const okBin = join(home, '.ok', 'bin');
+    const path = platform === 'win32' ? win32 : posix;
+    const { delimiter } = path;
+    const okBin = path.join(home, '.ok', 'bin');
     const entries = (out.PATH ?? '').split(delimiter).filter(Boolean);
     if (!entries.includes(okBin)) {
       out.PATH = [okBin, ...entries].join(delimiter);
@@ -289,13 +305,13 @@ export function setupPtyHost(deps: SetupPtyHostDeps): PtyHostHandle {
       safeKill(stale);
       sessions.delete(ptyId);
     }
-    const shell = resolveShell(env, message.shell);
     const shellEnv = {
-      ...buildShellEnv(env),
+      ...buildShellEnv(env, deps.platform),
       ...(message.privateHistory ? { HISTFILE: '/dev/null', SAVEHIST: '0' } : {}),
     };
     let pty: PtyProcessLike;
     try {
+      const shell = resolveShell(env, message.shell, deps.platform);
       pty = deps.spawn(shell, buildShellArgs(shell, message.launchCommand), {
         name: 'xterm-256color',
         cols: message.cols,

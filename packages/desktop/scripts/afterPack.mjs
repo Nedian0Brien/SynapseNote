@@ -32,10 +32,8 @@ import { targetFuses } from './target-fuses.mjs';
 export default async function afterPack(context) {
   const { appOutDir, packager, electronPlatformName } = context;
 
-  // electron-builder runs afterPack once per target platform. We only flip
-  // fuses on macOS for now. When Windows/Linux builds arrive in a later
-  // milestone, widen this guard.
-  if (electronPlatformName !== 'darwin') {
+  // Both supported desktop platforms use the same runtime hardening.
+  if (electronPlatformName !== 'darwin' && electronPlatformName !== 'win32') {
     console.log(`[afterPack] skipping fuses on platform "${electronPlatformName}"`);
     return;
   }
@@ -58,7 +56,10 @@ export default async function afterPack(context) {
   }
 
   const appName = packager.appInfo.productFilename;
-  const electronBinary = join(appOutDir, `${appName}.app`, 'Contents', 'MacOS', appName);
+  const electronBinary =
+    electronPlatformName === 'win32'
+      ? join(appOutDir, `${appName}.exe`)
+      : join(appOutDir, `${appName}.app`, 'Contents', 'MacOS', appName);
 
   if (!existsSync(electronBinary)) {
     throw new Error(
@@ -76,7 +77,7 @@ export default async function afterPack(context) {
   try {
     await flipFuses(electronBinary, {
       version: FuseVersion.V1,
-      resetAdHocDarwinSignature: true,
+      resetAdHocDarwinSignature: electronPlatformName === 'darwin',
       ...targetFuses,
     });
   } catch (err) {
@@ -92,6 +93,7 @@ export default async function afterPack(context) {
   }
 
   console.log('[afterPack] fuses flipped successfully; electron-builder will re-sign next');
+  if (electronPlatformName === 'win32') return;
 
   // Detached-server helper bundle: clone the Electron Helper stub binary
   // into our `SynapseNote Server.app/Contents/MacOS/` slot. electron-

@@ -4182,10 +4182,6 @@ msgstr ""
 msgid "Enter a valid URL (for example https://api.openai.com/v1)."
 msgstr ""
 
-#: src/editor/extensions/CodeBlockView.tsx
-msgid "Enter fullscreen"
-msgstr ""
-
 #: src/components/settings/AiToolsSection.tsx
 #: src/components/settings/ProjectAiToolsSection.tsx
 msgid "Entry"
@@ -4228,10 +4224,6 @@ msgstr ""
 msgid "Existing branch <0>{trimmed}</0> will be checked out into its own window, under <1>.ok/worktrees/</1>."
 msgstr ""
 
-#: src/editor/extensions/CodeBlockView.tsx
-msgid "Exit fullscreen"
-msgstr ""
-
 #: src/components/DiffView.tsx
 msgid "Exit merge"
 msgstr ""
@@ -4260,6 +4252,10 @@ msgstr ""
 
 #: src/components/ActivityPanelBurstRow.tsx
 msgid "Expand burst {burstNumber} diff"
+msgstr ""
+
+#: src/editor/extensions/CodeBlockView.tsx
+msgid "Expand HTML preview"
 msgstr ""
 
 #: src/components/MemoPanel.tsx
@@ -6276,6 +6272,10 @@ msgstr ""
 #. placeholder {0}: cli === 'codex' ? 'Codex' : 'Claude'
 #: src/components/chat/CliChatPanel.tsx
 msgid "Message {0}"
+msgstr ""
+
+#: src/editor/components/HtmlPreviewLightbox.tsx
+msgid "Minimize HTML preview"
 msgstr ""
 
 #: src/components/DatabaseDateCellEditor.tsx

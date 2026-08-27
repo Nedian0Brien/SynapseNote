@@ -9,7 +9,7 @@ import { localAppPath } from './build-local-app.mjs';
 import { currentPackagingState, currentSourceRevision } from './packaging-freshness.mjs';
 
 function readBundleRevision(appPath) {
-  const asarPath = resolve(appPath, 'Contents', 'Resources', 'app.asar');
+  const asarPath = bundleAsarPath(appPath);
   if (!existsSync(asarPath)) throw new Error(`app.asar is missing: ${asarPath}`);
   try {
     // electron-builder packages `packages/desktop/out` as the archive's
@@ -23,7 +23,17 @@ function readBundleRevision(appPath) {
   }
 }
 
+function bundleAsarPath(appPath) {
+  return existsSync(resolve(appPath, 'SynapseNote.exe'))
+    ? resolve(appPath, 'resources', 'app.asar')
+    : resolve(appPath, 'Contents', 'Resources', 'app.asar');
+}
+
 function readBundleVersion(appPath) {
+  if (existsSync(resolve(appPath, 'SynapseNote.exe'))) {
+    return JSON.parse(extractFile(bundleAsarPath(appPath), 'package.json').toString('utf8'))
+      .version;
+  }
   const infoPlist = resolve(appPath, 'Contents', 'Info.plist');
   if (!existsSync(infoPlist)) return null;
   return JSON.parse(

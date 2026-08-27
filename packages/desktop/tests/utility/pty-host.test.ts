@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+import { resolveCommandShell } from '../../src/shared/command-shell.ts';
 import {
   buildShellArgs,
   buildShellEnv,
@@ -99,6 +100,7 @@ function makeHarness(opts?: {
       return pty;
     });
   const handle = setupPtyHost({
+    platform: 'darwin',
     parentPort: {
       on(_event, h) {
         handler = h;
@@ -608,6 +610,17 @@ describe('setupPtyHost — incoming message validation (asIncomingMessage guard)
 });
 
 describe('buildShellArgs', () => {
+  test('uses PowerShell arguments rather than POSIX login flags on Windows', () => {
+    expect(
+      buildShellArgs('C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe'),
+    ).toEqual(['-NoLogo']);
+    expect(buildShellArgs('pwsh.exe', 'Write-Output hello')).toEqual([
+      '-NoLogo',
+      '-NoExit',
+      '-Command',
+      'Write-Output hello',
+    ]);
+  });
   test('a plain tab is the bare login interactive shell', () => {
     expect(buildShellArgs('/bin/zsh')).toEqual(['-l', '-i']);
     expect(buildShellArgs('/bin/zsh', '')).toEqual(['-l', '-i']);
@@ -633,14 +646,25 @@ describe('buildShellArgs', () => {
 });
 
 describe('buildShellEnv', () => {
+  test('uses USERPROFILE and a single case-insensitive Windows PATH', () => {
+    const env = buildShellEnv(
+      { USERPROFILE: 'C:\\Users\\Test User', Path: 'C:\\Windows' },
+      'win32',
+    );
+    expect(env.PATH).toBe('C:\\Users\\Test User\\.ok\\bin;C:\\Windows');
+    expect(env.Path).toBeUndefined();
+  });
   test('strips markers, drops undefined, preserves the rest, marks the desktop terminal', () => {
-    const env = buildShellEnv({
-      PATH: '/usr/bin',
-      HOME: '/Users/x',
-      OK_ELECTRON_PROTOCOL_HOST: '1',
-      OK_LOCK_KIND: 'interactive',
-      MAYBE: undefined,
-    });
+    const env = buildShellEnv(
+      {
+        PATH: '/usr/bin',
+        HOME: '/Users/x',
+        OK_ELECTRON_PROTOCOL_HOST: '1',
+        OK_LOCK_KIND: 'interactive',
+        MAYBE: undefined,
+      },
+      'darwin',
+    );
     // `~/.ok/bin` rides in front of the inherited PATH — OK's own spawned
     // shell resolves `ok` regardless of the rc-consent decision.
     expect(env).toEqual({
@@ -652,11 +676,37 @@ describe('buildShellEnv', () => {
 });
 
 describe('resolveShell', () => {
+  test('keeps structured macOS commands on zsh even when the interactive shell is fish', () => {
+    expect(resolveCommandShell({ SHELL: '/usr/local/bin/fish' }, 'darwin')).toBe('/bin/zsh');
+    expect(resolveShell({ SHELL: '/usr/local/bin/fish' }, undefined, 'darwin')).toBe(
+      '/usr/local/bin/fish',
+    );
+  });
+  test.skipIf(process.platform !== 'win32')(
+    'does not pass an inherited MSYS shell path to Windows CreateProcess',
+    () => {
+      expect(
+        resolveShell(
+          { ProgramFiles: 'C:\\Program Files', SHELL: '/usr/bin/bash' },
+          undefined,
+          'win32',
+        ),
+      ).toBe('C:/Program Files/Git/bin/bash.exe');
+    },
+  );
+  test.skipIf(process.platform !== 'win32')(
+    'uses Git Bash to preserve POSIX agent and dropped-path quoting on Windows',
+    () => {
+      expect(resolveShell({ ProgramFiles: 'C:\\Program Files' }, undefined, 'win32')).toBe(
+        'C:/Program Files/Git/bin/bash.exe',
+      );
+    },
+  );
   test('prefers an override, then $SHELL, then the darwin fallback', () => {
-    expect(resolveShell({ SHELL: '/bin/bash' }, '/usr/bin/fish')).toBe('/usr/bin/fish');
-    expect(resolveShell({ SHELL: '/bin/bash' })).toBe('/bin/bash');
-    expect(resolveShell({})).toBe('/bin/zsh');
-    expect(resolveShell({ SHELL: '' })).toBe('/bin/zsh');
+    expect(resolveShell({ SHELL: '/bin/bash' }, '/usr/bin/fish', 'darwin')).toBe('/usr/bin/fish');
+    expect(resolveShell({ SHELL: '/bin/bash' }, undefined, 'darwin')).toBe('/bin/bash');
+    expect(resolveShell({}, undefined, 'darwin')).toBe('/bin/zsh');
+    expect(resolveShell({ SHELL: '' }, undefined, 'darwin')).toBe('/bin/zsh');
   });
 });
 

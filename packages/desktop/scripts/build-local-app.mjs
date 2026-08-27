@@ -13,7 +13,10 @@ export const PRODUCT_NAME = 'SynapseNote';
 const desktopRoot = resolve(import.meta.dirname, '..');
 const repoRoot = resolve(desktopRoot, '..', '..');
 
-export function localAppPath(arch = process.arch) {
+export function localAppPath(arch = process.arch, platform = process.platform) {
+  if (platform === 'win32') {
+    return resolve(desktopRoot, LOCAL_OUTPUT_DIRECTORY_NAME, 'win-unpacked');
+  }
   return resolve(desktopRoot, LOCAL_OUTPUT_DIRECTORY_NAME, `mac-${arch}`, `${PRODUCT_NAME}.app`);
 }
 
@@ -62,18 +65,27 @@ function collectIntegrityEntries(node, parentPath = '', entries = []) {
 }
 
 export async function validateLocalAsarIntegrity(appPath) {
-  const asarPath = resolve(appPath, 'Contents', 'Resources', 'app.asar');
+  const windowsBundle = existsSync(resolve(appPath, `${PRODUCT_NAME}.exe`));
+  const asarPath = windowsBundle
+    ? resolve(appPath, 'resources', 'app.asar')
+    : resolve(appPath, 'Contents', 'Resources', 'app.asar');
   const infoPlistPath = resolve(appPath, 'Contents', 'Info.plist');
   const { header, headerString, headerSize } = getRawHeader(asarPath);
-  const infoPlist = JSON.parse(
-    run('/usr/bin/plutil', ['-convert', 'json', '-o', '-', infoPlistPath], { capture: true }),
-  );
-  const recordedHeaderHash = infoPlist.ElectronAsarIntegrity?.['Resources/app.asar']?.hash;
-  const actualHeaderHash = createHash('sha256').update(headerString).digest('hex');
-  if (recordedHeaderHash !== actualHeaderHash) {
-    throw new Error(
-      `ASAR header integrity mismatch (${actualHeaderHash} != ${recordedHeaderHash ?? 'missing'})`,
+  if (windowsBundle) {
+    const { validateWindowsExecutable } = await import('./windows-local-app.mjs');
+    await validateWindowsExecutable(appPath, headerString);
+  }
+  if (!windowsBundle) {
+    const infoPlist = JSON.parse(
+      run('/usr/bin/plutil', ['-convert', 'json', '-o', '-', infoPlistPath], { capture: true }),
     );
+    const recordedHeaderHash = infoPlist.ElectronAsarIntegrity?.['Resources/app.asar']?.hash;
+    const actualHeaderHash = createHash('sha256').update(headerString).digest('hex');
+    if (recordedHeaderHash !== actualHeaderHash) {
+      throw new Error(
+        `ASAR header integrity mismatch (${actualHeaderHash} != ${recordedHeaderHash ?? 'missing'})`,
+      );
+    }
   }
 
   const dataOffset = 8 + headerSize;
@@ -104,6 +116,10 @@ export async function validateLocalAsarIntegrity(appPath) {
 }
 
 export async function buildLocalApp() {
+  if (process.platform === 'win32') {
+    const { buildWindowsLocalApp } = await import('./windows-local-app.mjs');
+    return buildWindowsLocalApp(validateLocalAsarIntegrity);
+  }
   if (process.platform !== 'darwin') {
     throw new Error('build-local-app is macOS only');
   }

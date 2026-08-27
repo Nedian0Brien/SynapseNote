@@ -177,15 +177,17 @@ mock.module('./TerminalDock', () => ({
 let groupLayout: Record<string, number> = {};
 let groupSetLayoutCalls: Array<Record<string, number>> = [];
 let panelIsCollapsed = false;
+const expandPanel = mock(() => {});
+const panelRefMock = {
+  current: {
+    collapse: () => {},
+    expand: expandPanel,
+    getSize: () => ({ asPercentage: 25, inPixels: 340 }),
+    isCollapsed: () => panelIsCollapsed,
+  },
+};
 mock.module('react-resizable-panels', () => ({
-  usePanelRef: () => ({
-    current: {
-      collapse: () => {},
-      expand: () => {},
-      getSize: () => ({ asPercentage: 25, inPixels: 340 }),
-      isCollapsed: () => panelIsCollapsed,
-    },
-  }),
+  usePanelRef: () => panelRefMock,
   useGroupRef: () => ({
     current: {
       getLayout: () => groupLayout,
@@ -463,6 +465,25 @@ describe('EditorArea right rail is one stable panel across tool changes', () => 
     Array.from(document.querySelectorAll('[data-panel-id]')).map((el) =>
       el.getAttribute('data-panel-id'),
     );
+
+  test('revealing right-docked chat expands a collapsed rail only on reveal', () => {
+    setViewportWidth(1200);
+    panelIsCollapsed = true;
+    expandPanel.mockClear();
+    const view = render(<EditorArea {...baseProps} terminalVisible={false} />);
+    expect(expandPanel).not.toHaveBeenCalled();
+
+    view.rerender(<EditorArea {...baseProps} terminalVisible />);
+    expect(expandPanel).toHaveBeenCalledTimes(1);
+    view.rerender(<EditorArea {...baseProps} terminalVisible />);
+    expect(expandPanel).toHaveBeenCalledTimes(1);
+
+    view.rerender(<EditorArea {...baseProps} terminalVisible={false} />);
+    view.rerender(<EditorArea {...baseProps} terminalDock="bottom" terminalVisible />);
+    expect(expandPanel).toHaveBeenCalledTimes(1);
+    view.rerender(<EditorArea {...baseProps} terminalVisible />);
+    expect(expandPanel).toHaveBeenCalledTimes(2);
+  });
 
   test('showing and hiding chat leaves the panel-ID set untouched', async () => {
     setViewportWidth(1400);

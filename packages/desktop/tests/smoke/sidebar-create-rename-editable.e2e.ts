@@ -12,20 +12,25 @@ import { _electron as electron } from '@playwright/test';
 import { expect, test } from './_helpers/smoke-test';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const PACKAGED_EXECUTABLE = resolve(
-  __dirname,
-  '..',
-  '..',
-  'dist-desktop',
-  'mac-arm64',
-  'SynapseNote.app',
-  'Contents',
-  'MacOS',
-  'SynapseNote',
-);
+const PACKAGED_EXECUTABLE =
+  process.env.OK_DESKTOP_TEST_EXECUTABLE ??
+  (process.platform === 'win32'
+    ? resolve(__dirname, '..', '..', 'dist-desktop-local', 'win-unpacked', 'SynapseNote.exe')
+    : resolve(
+        __dirname,
+        '..',
+        '..',
+        'dist-desktop',
+        'mac-arm64',
+        'SynapseNote.app',
+        'Contents',
+        'MacOS',
+        'SynapseNote',
+      ));
 
 const SMOKE_ENABLED = process.env.OK_DESKTOP_E2E_SMOKE === '1';
 const DARWIN = process.platform === 'darwin';
+const WINDOWS = process.platform === 'win32';
 const PACKAGED_BUILD_EXISTS = existsSync(PACKAGED_EXECUTABLE);
 
 interface SeededProject {
@@ -57,7 +62,7 @@ function seedProject(prefix: string): SeededProject {
           lastOpenedAt: new Date().toISOString(),
         },
       ],
-      lastOpenedProject: projectDir,
+      lastOpenedProject: WINDOWS ? null : projectDir,
       versionPendingInstall: null,
       lastSeenVersion: null,
       lastSuccessfulCheckAt: null,
@@ -68,9 +73,16 @@ function seedProject(prefix: string): SeededProject {
   return { tmpHome, userDataDir, projectDir };
 }
 
-async function launchApp(seed: SeededProject): Promise<ElectronApplication> {
-  const deepLink = `synapsenote://open?project=${encodeURIComponent(seed.projectDir)}&doc=start`;
-  const args = [`--user-data-dir=${seed.userDataDir}`, deepLink];
+async function launchApp(
+  seed: SeededProject,
+  docName: string | null = 'start',
+): Promise<ElectronApplication> {
+  const args = [`--user-data-dir=${seed.userDataDir}`];
+  if (docName !== null) {
+    args.push(
+      `synapsenote://open?project=${encodeURIComponent(seed.projectDir)}&doc=${encodeURIComponent(docName)}`,
+    );
+  }
   return electron.launch({
     executablePath: PACKAGED_EXECUTABLE,
     args,
@@ -78,6 +90,7 @@ async function launchApp(seed: SeededProject): Promise<ElectronApplication> {
     env: {
       ...process.env,
       HOME: seed.tmpHome,
+      ...(WINDOWS ? { USERPROFILE: seed.tmpHome } : {}),
       OK_DESKTOP_E2E_SMOKE: '1',
       OK_RECLAIM_DISABLE: '1',
       NODE_ENV: 'production',
@@ -107,8 +120,10 @@ async function createSidebarFileAndType(
   seed: SeededProject,
   docName: string,
   bodyText: string,
+  clickToFocus = false,
 ): Promise<void> {
-  await page.getByRole('button', { name: 'New file' }).click();
+  await page.getByTestId('sidebar-add-menu-trigger').click();
+  await page.getByTestId('sidebar-add-new-file').click();
   const renameInput = page.getByRole('textbox', { name: /rename Untitled\.md/i });
   await renameInput.fill(docName);
   await renameInput.press('Enter');
@@ -123,8 +138,9 @@ async function createSidebarFileAndType(
     })
     .toBe(`#/${docName}`);
 
-  const editor = page.locator('.ProseMirror[contenteditable="true"]').first();
+  const editor = page.locator('.ProseMirror[contenteditable="true"]:not(.composer-prosemirror)');
   await expect(editor).toBeVisible({ timeout: 30_000 });
+  if (clickToFocus) await editor.click();
   await expect
     .poll(
       () =>
@@ -151,7 +167,7 @@ async function createSidebarFileAndType(
 
 test.describe('Sidebar create and rename editability smoke', () => {
   test.skip(!SMOKE_ENABLED, 'Set OK_DESKTOP_E2E_SMOKE=1 to run Electron smoke tests.');
-  test.skip(!DARWIN, 'Smoke harness is darwin-only in v0.');
+  test.skip(!DARWIN && !WINDOWS, 'Packaged smoke requires macOS or Windows.');
   test.skip(
     !PACKAGED_BUILD_EXISTS,
     `Packaged desktop build missing at ${PACKAGED_EXECUTABLE} — run an unpacked packaged build first.`,
@@ -160,9 +176,13 @@ test.describe('Sidebar create and rename editability smoke', () => {
   test('successive sidebar-created files remain editable after inline rename commit', async ({
     captureStderrFor,
   }) => {
+    test.skip(!DARWIN, 'macOS automatic-focus regression; Windows save/reopen is covered below.');
     const seed = seedProject('editable');
     const app = await launchApp(seed);
-    captureStderrFor(app, { cleanupDirs: [seed.tmpHome, seed.projectDir] });
+    captureStderrFor(app, {
+      cleanupDirs: [seed.tmpHome, seed.projectDir],
+      cleanupServerRoots: [seed.projectDir],
+    });
 
     const page = await findEditorWindow(app, 'start');
     await expect(page.locator('.ProseMirror[contenteditable="true"]').first()).toBeVisible({
@@ -171,5 +191,69 @@ test.describe('Sidebar create and rename editability smoke', () => {
 
     await createSidebarFileAndType(page, seed, 'dd', 'first sidebar-created file is editable');
     await createSidebarFileAndType(page, seed, 'ddd', 'second sidebar-created file is editable');
+  });
+
+  test('Windows preserves Korean note content across restart in a path with spaces', async ({
+    captureStderrFor,
+  }) => {
+    test.skip(!WINDOWS, 'Windows installation regression.');
+    test.setTimeout(120_000);
+    const seed = seedProject('한글 저장');
+    const app = await launchApp(seed);
+    captureStderrFor(app, {
+      cleanupDirs: [seed.tmpHome, seed.projectDir],
+      cleanupServerRoots: [seed.projectDir],
+    });
+    const page = await findEditorWindow(app, 'start');
+    const body = '윈도우 시냅스노트 저장 확인: 다시 열어도 한글이 유지됩니다.';
+    await createSidebarFileAndType(page, seed, 'windows-korean-note', body, true);
+    const firstProcess = app.process();
+    await app.evaluate(({ app: mainApp }) => {
+      setTimeout(() => mainApp.quit(), 0);
+    });
+    await expect.poll(() => firstProcess.exitCode, { timeout: 10_000 }).toBe(0);
+
+    // Restart normally, restore the project, and reopen the saved note.
+    const restarted = await launchApp(seed, null);
+    captureStderrFor(restarted);
+    const restored = await restarted.firstWindow();
+    await restored.getByRole('treeitem', { name: /windows-korean-note\.md/ }).click({
+      timeout: 30_000,
+    });
+    await expect(
+      restored.locator('.ProseMirror[contenteditable="true"]:not(.composer-prosemirror)'),
+    ).toContainText(body, { timeout: 30_000 });
+
+    await restored.bringToFront();
+    const nativeWindow = await restarted.browserWindow(restored);
+    await nativeWindow.evaluate((window) => {
+      window.show();
+      window.focus();
+    });
+    await expect.poll(() => nativeWindow.evaluate((window) => window.isFocused())).toBe(true);
+    await restarted.evaluate(({ Menu }) => {
+      const menu = Menu.getApplicationMenu();
+      const terminal = menu?.items.find((item) => item.label === 'Terminal');
+      const item = terminal?.submenu?.items.find((item) => item.label === 'New Terminal');
+      if (!item?.enabled) throw new Error('New Terminal menu is missing or disabled');
+      item.click();
+    });
+    await expect(restored.locator('[data-terminal-status]:visible')).toHaveAttribute(
+      'data-terminal-status',
+      'running',
+      { timeout: 20_000 },
+    );
+    await restored.locator('section[aria-label="Terminal"] .xterm:visible').click();
+    await restored.keyboard.type("printf 'WINDOWS_PTY_READY' > terminal-proof.txt");
+    await restored.keyboard.press('Enter');
+    await expect
+      .poll(
+        () => {
+          const proof = join(seed.projectDir, 'terminal-proof.txt');
+          return existsSync(proof) ? readFileSync(proof, 'utf8') : '';
+        },
+        { timeout: 10_000 },
+      )
+      .toBe('WINDOWS_PTY_READY');
   });
 });

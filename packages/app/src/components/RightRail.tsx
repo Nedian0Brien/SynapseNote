@@ -269,6 +269,14 @@ export function RightRailLayout({
     panelRef.current?.expand();
   }
 
+  // A terminal reveal (including moving it from the bottom dock) must take the
+  // toolbox out as well as selecting Chat. Otherwise narrow windows can keep
+  // a running PTY inside the collapsed, inert rail. Do not depend on collapse
+  // state: ordinary re-renders must not undo the user's close gesture.
+  useEffect(() => {
+    if (chatToolLive) panelRef.current?.expand();
+  }, [chatToolLive, panelRef]);
+
   // Closing the toolbox also stands the live chat session down. The PTY itself
   // survives in EditorPane's session host, but the portal target must not
   // linger inside a collapsed `inert` panel — xterm's fit addon misreads a

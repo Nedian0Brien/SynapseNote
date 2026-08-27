@@ -55,7 +55,8 @@ afterEach(() => {
       proc.signalCode === null
     ) {
       try {
-        process.kill(-proc.pid, 'SIGKILL');
+        if (process.platform === 'win32') proc.kill();
+        else process.kill(-proc.pid, 'SIGKILL');
       } catch {
         // Best-effort — the proc may have exited between the check and the
         // kill (ESRCH); either way the test teardown goal is achieved.
@@ -94,6 +95,21 @@ async function awaitSpawn(proc: ChildProcess): Promise<void> {
 }
 
 describe('closeAppBounded — real subprocess contract', () => {
+  test.skipIf(process.platform !== 'win32')(
+    'terminates a Windows process after the grace period',
+    async () => {
+      const proc = spawnNode('setInterval(() => {}, 1000)');
+      await awaitSpawn(proc);
+      try {
+        await closeAppBounded(proc, { gracefulMs: 20 });
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        expect(proc.exitCode !== null || proc.signalCode !== null).toBe(true);
+      } finally {
+        if (proc.exitCode === null && proc.signalCode === null) proc.kill();
+      }
+    },
+  );
+
   test('(a) graceful exit during gracefulMs wait → returns shortly after exit, no SIGKILL fired', async () => {
     // Subprocess exits naturally after ~100 ms — well within the 5_000 ms
     // graceful budget. closeAppBounded should observe the 'exit' event and

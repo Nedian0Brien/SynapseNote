@@ -121,6 +121,7 @@ import {
   utilityProcess,
 } from 'electron';
 import type { ClaudeReadiness, CliReadiness, OkMenuAction } from '../shared/bridge-contract.ts';
+import { resolveCommandShell } from '../shared/command-shell.ts';
 import { type EntryPoint, isEntryPoint } from '../shared/entry-point.ts';
 import type {
   EditorActiveTargetSnapshot,
@@ -150,7 +151,7 @@ import {
   proxyRunCheckout,
   proxyShareTargetStatus,
 } from './branch-info-proxy.ts';
-import { wrapperPathInBundle } from './bundle-paths.ts';
+import { localOpCliArgsInBundle, wrapperPathInBundle } from './bundle-paths.ts';
 import {
   type BundleReplaceWatcherHandle,
   startBundleReplaceWatcher,
@@ -270,6 +271,7 @@ import {
 import { savePdfAssetSafely } from './pdf-asset-save.ts';
 import { exportWebContentsToPdf } from './pdf-export.ts';
 import { installStdioBrokenPipeGuard } from './process-safety-net.ts';
+import { signalProcessTree } from './process-tree.ts';
 import {
   type ProjectIntegrationsCliSurface,
   registerProjectIntegrationsSettings,
@@ -761,14 +763,7 @@ function chatProcessKey(windowId: number, ptyId: string): string {
 function signalCliChatProcess(key: string, signal: NodeJS.Signals): void {
   const child = activeCliChatProcesses.get(key);
   if (child === undefined) return;
-  try {
-    if (child.pid !== undefined) process.kill(-child.pid, signal);
-    else child.kill(signal);
-  } catch {
-    try {
-      child.kill(signal);
-    } catch {}
-  }
+  signalProcessTree(child, signal);
 }
 
 function stopCliChatProcessesForWindow(windowId: number): void {
@@ -1002,7 +997,7 @@ function isDebugKeyringSmokeAllowed(): boolean {
  */
 function resolveLocalOpCliArgs(): string[] {
   if (app.isPackaged) {
-    return [wrapperPathInBundle(app.getPath('exe'))];
+    return localOpCliArgsInBundle(app.getPath('exe'));
   }
   return ['synapsenote'];
 }
@@ -3274,9 +3269,10 @@ function registerIpcHandlers() {
         promptViaStdin: true,
       });
       try {
-        const child = spawn('/bin/zsh', ['-l', '-c', command], {
+        const child = spawn(resolveCommandShell(), ['-l', '-c', command], {
           cwd: projectRoot ?? osHomedir(),
           detached: true,
+          windowsHide: true,
           env: process.env,
           stdio: ['pipe', 'pipe', 'pipe'],
         });

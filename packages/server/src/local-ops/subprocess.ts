@@ -94,7 +94,10 @@ export function runSubprocess(opts: SubprocessRunOptions): SubprocessController 
   let stdoutBuffer = '';
   const stderrChunks: Buffer[] = [];
 
-  const childEnv: NodeJS.ProcessEnv = { ...process.env };
+  // A packaged desktop may use its Electron executable as the CLI's Node host.
+  // Set this only on the child so it never opens another GUI window. Ordinary
+  // Node/Bun CLI hosts ignore it; no shell is involved in argument forwarding.
+  const childEnv: NodeJS.ProcessEnv = { ...process.env, ELECTRON_RUN_AS_NODE: '1' };
   if (opts.extraPathDirs && opts.extraPathDirs.length > 0) {
     childEnv.PATH = [...opts.extraPathDirs, process.env.PATH ?? '']
       .filter(Boolean)

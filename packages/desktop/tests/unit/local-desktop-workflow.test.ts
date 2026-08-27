@@ -1,14 +1,119 @@
 import { describe, expect, test } from 'bun:test';
-import { readFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseAppleDevelopmentIdentity } from '../../scripts/build-local-app.mjs';
+import { createPackage } from '@electron/asar';
+import { FuseV1Options, getCurrentFuseWire } from '@electron/fuses';
+import afterPack from '../../scripts/afterPack.mjs';
+import {
+  localAppPath,
+  parseAppleDevelopmentIdentity,
+  validateLocalAsarIntegrity,
+} from '../../scripts/build-local-app.mjs';
 import { parseInstallPath } from '../../scripts/install-local-app.mjs';
+import {
+  currentPackagingState,
+  currentSourceRevision,
+} from '../../scripts/packaging-freshness.mjs';
+import { expectedFuseState, targetFuses } from '../../scripts/target-fuses.mjs';
+import { verifyLocalAppRevision } from '../../scripts/verify-local-app-revision.mjs';
+import { assertWindowsInstallNotRunning } from '../../scripts/windows-local-app.mjs';
 
 const desktopRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const repoRoot = resolve(desktopRoot, '../..');
 
 describe('local desktop build and install workflow', () => {
+  test('refuses to install over running Windows app and utility processes', () => {
+    const target = 'C:\\Users\\Test\\Programs\\SynapseNote';
+    expect(() => assertWindowsInstallNotRunning(target, [`${target}\\SynapseNote.exe`])).toThrow(
+      'Close SynapseNote',
+    );
+    expect(() =>
+      assertWindowsInstallNotRunning(target, [`${target}\\resources\\helper.exe`]),
+    ).toThrow('Close SynapseNote');
+    expect(() =>
+      assertWindowsInstallNotRunning(target, [`${target}-other\\SynapseNote.exe`]),
+    ).not.toThrow();
+  });
+  test('verifies revision and version from a Windows bundle', async () => {
+    const output = mkdtempSync(resolve(tmpdir(), 'synapsenote-win-revision-'));
+    try {
+      const source = resolve(output, 'source');
+      mkdirSync(resolve(source, 'out'), { recursive: true });
+      mkdirSync(resolve(output, 'resources'));
+      writeFileSync(resolve(output, 'SynapseNote.exe'), 'fixture');
+      const version = JSON.parse(
+        readFileSync(resolve(desktopRoot, 'package.json'), 'utf8'),
+      ).version;
+      const revision = {
+        version: 1,
+        bundleVersion: version,
+        source: currentSourceRevision(),
+        packaging: currentPackagingState(),
+      };
+      writeFileSync(resolve(source, 'package.json'), JSON.stringify({ version }));
+      writeFileSync(resolve(source, 'out/app-revision.json'), JSON.stringify(revision));
+      await createPackage(source, resolve(output, 'resources/app.asar'));
+      expect(verifyLocalAppRevision(output).embedded.bundleVersion).toBe(version);
+    } finally {
+      rmSync(output, { recursive: true, force: true });
+    }
+  });
+  test.skipIf(process.platform !== 'win32')(
+    'rejects a Windows archive with no executable-bound integrity hash',
+    async () => {
+      const output = mkdtempSync(resolve(tmpdir(), 'synapsenote-win-integrity-'));
+      try {
+        const source = resolve(output, 'source');
+        const resources = resolve(output, 'resources');
+        mkdirSync(source);
+        mkdirSync(resources);
+        writeFileSync(resolve(source, 'index.js'), 'console.log("fixture")');
+        copyFileSync(
+          resolve(repoRoot, 'node_modules/electron/dist/electron.exe'),
+          resolve(output, 'SynapseNote.exe'),
+        );
+        await createPackage(source, resolve(resources, 'app.asar'));
+        await expect(validateLocalAsarIntegrity(output)).rejects.toThrow('ASAR header integrity');
+      } finally {
+        rmSync(output, { recursive: true, force: true });
+      }
+    },
+  );
+  test.skipIf(process.platform !== 'win32')(
+    'hardens the Windows executable before installation',
+    async () => {
+      const output = mkdtempSync(resolve(tmpdir(), 'synapsenote-win-fuses-'));
+      try {
+        const executable = resolve(output, 'SynapseNote.exe');
+        copyFileSync(resolve(repoRoot, 'node_modules/electron/dist/electron.exe'), executable);
+        await afterPack({
+          appOutDir: output,
+          electronPlatformName: 'win32',
+          packager: { appInfo: { productFilename: 'SynapseNote' } },
+        });
+        const wire = await getCurrentFuseWire(executable);
+        expect(wire[FuseV1Options.EnableNodeOptionsEnvironmentVariable]).toBe(
+          expectedFuseState(false),
+        );
+        for (const [key, enabled] of Object.entries(targetFuses)) {
+          expect(wire[Number(key) as FuseV1Options]).toBe(expectedFuseState(enabled));
+        }
+      } finally {
+        rmSync(output, { recursive: true, force: true });
+      }
+    },
+  );
+  test('locates the Windows x64 unpacked app independently of macOS bundles', () => {
+    expect(localAppPath('x64', 'win32')).toBe(
+      resolve(desktopRoot, 'dist-desktop-local', 'win-unpacked'),
+    );
+    expect(localAppPath('arm64', 'darwin')).toBe(
+      resolve(desktopRoot, 'dist-desktop-local', 'mac-arm64', 'SynapseNote.app'),
+    );
+  });
+
   test('keeps local packaging separate from release output and certificate signing', () => {
     const desktopPackage = JSON.parse(
       readFileSync(resolve(desktopRoot, 'package.json'), 'utf8'),
@@ -63,14 +168,25 @@ describe('local desktop build and install workflow', () => {
   });
 
   test('defaults to Applications and validates explicit targets', () => {
-    expect(parseInstallPath([])).toBe('/Applications/SynapseNote.app');
-    expect(parseInstallPath(['--target', '/tmp/Local SynapseNote.app'])).toBe(
+    expect(parseInstallPath([], 'darwin')).toBe('/Applications/SynapseNote.app');
+    expect(parseInstallPath(['--target', '/tmp/Local SynapseNote.app'], 'darwin')).toBe(
       '/tmp/Local SynapseNote.app',
     );
-    expect(() => parseInstallPath(['--target', '/tmp/not-an-app'])).toThrow(
+    expect(() => parseInstallPath(['--target', '/tmp/not-an-app'], 'darwin')).toThrow(
       '--target must point to a .app bundle',
     );
     expect(() => parseInstallPath(['--unknown'])).toThrow('Usage:');
+  });
+
+  test('installs Windows per user and rejects drive roots and executable targets', () => {
+    expect(
+      parseInstallPath([], 'win32', { LOCALAPPDATA: 'C:\\Users\\Test User\\AppData\\Local' }),
+    ).toBe('C:\\Users\\Test User\\AppData\\Local\\Programs\\SynapseNote');
+    expect(parseInstallPath(['--target', 'D:\\Apps\\SynapseNote'], 'win32')).toBe(
+      'D:\\Apps\\SynapseNote',
+    );
+    expect(() => parseInstallPath(['--target', 'D:\\'], 'win32')).toThrow();
+    expect(() => parseInstallPath(['--target', 'D:\\Apps\\SynapseNote.exe'], 'win32')).toThrow();
   });
 
   test('backs up and verifies the installed app before relaunching it', () => {

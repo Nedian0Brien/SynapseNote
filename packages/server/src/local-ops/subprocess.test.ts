@@ -12,6 +12,17 @@ import { runSubprocess } from './subprocess.ts';
 const fixtureCli = (script: string): readonly string[] => [process.execPath, '-e', script];
 
 describe('runSubprocess', () => {
+  test('runs bundled Electron CLI hosts in Node mode without a command shell', async () => {
+    const lines: { parsed: Record<string, unknown> | null }[] = [];
+    const proc = runSubprocess({
+      cliArgs: fixtureCli('console.log(JSON.stringify({mode:process.env.ELECTRON_RUN_AS_NODE}))'),
+      trailingArgs: [],
+      timeoutMs: 5000,
+      onLine: (line) => lines.push(line),
+    });
+    expect((await proc.done).code).toBe(0);
+    expect(lines[0]?.parsed).toEqual({ mode: '1' });
+  });
   test('emits one parsed line per NDJSON event from stdout', async () => {
     const lines: { raw: string; parsed: Record<string, unknown> | null }[] = [];
     const proc = runSubprocess({

@@ -33,6 +33,39 @@ The local bundle is written to
 verified, and installed at `/Applications/SynapseNote.app`. Release builds keep
 using the existing signed `build:dir` or `build:mac` paths.
 
+### Local Windows desktop (x64)
+
+Install Node.js 24+, Bun 1.3.13+, Git for Windows, Rust (MSVC toolchain),
+Python 3, CMake, and Visual Studio 2022 Build Tools with the C++ desktop workload
+and Windows SDK, plus the MSVC x64/x86 Spectre-mitigated libraries component
+required by node-pty. The workload's bundled CMake can be used by adding its `bin`
+directory to PATH.
+The first extraction of electron-builder's `winCodeSign` tools may require an
+elevated terminal for the archive's symbolic links; later builds reuse the cache.
+Git Bash is used by the integrated terminal and agent commands so their POSIX
+argument quoting and private-history behavior stay consistent with macOS.
+
+From PowerShell, put Git Bash and Cargo on the build process's PATH (otherwise
+Windows may select a WSL `bash` launcher). Use LF checkouts for the formatter:
+
+```powershell
+git config core.autocrlf false
+$env:Path = "${env:ProgramFiles}\Git\bin;$env:USERPROFILE\.cargo\bin;$env:Path"
+$env:npm_config_python = (Get-Command python.exe).Source
+bun install --frozen-lockfile
+bun run build:desktop:local
+bun run install:desktop:local
+```
+
+The local Windows build creates an unsigned NSIS installer and `win-unpacked`
+in `packages/desktop/dist-desktop-local`. Installation uses
+`%LOCALAPPDATA%\Programs\SynapseNote`, adds a Start menu shortcut, and leaves
+notes and application data intact on uninstall. Remove the app through Windows
+Settings → Apps. These are local development builds, not signed public releases;
+do not disable Windows security protections to run a downloaded build.
+Close SynapseNote and its running terminals before reinstalling; the local
+installer refuses to replace a running installation.
+
 Use the narrowest verification tier that covers the change:
 
 ```bash

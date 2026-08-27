@@ -65,16 +65,12 @@
  * the global `process.kill`. Production callers (the smoke fixture) omit
  * it; the helper defaults to `process.kill`.
  *
- * Process-group kill is POSIX-specific. The smoke harness is darwin-only
- * (per `.e2e.ts` skip gates referencing `process.platform === 'darwin'`),
- * so this is a sound assumption. If the harness is ever extended to
- * Windows, the kill code path here would need a parallel branch using
- * `taskkill`.
+ * Windows uses bounded `taskkill /T /F` instead of POSIX process groups.
  *
  * No production code dependency. Test infrastructure only.
  */
 
-import type { ChildProcess } from 'node:child_process';
+import { type ChildProcess, execFileSync } from 'node:child_process';
 import type { ElectronApplication } from '@playwright/test';
 
 export interface CloseAppBoundedOpts {
@@ -162,7 +158,16 @@ export async function closeAppBounded(
   const killFn = opts.kill ?? process.kill.bind(process);
   if (typeof proc.pid === 'number' && Number.isInteger(proc.pid) && proc.pid > 0) {
     try {
-      killFn(-proc.pid, 'SIGKILL');
+      if (process.platform === 'win32' && !opts.kill) {
+        execFileSync('taskkill.exe', ['/PID', String(proc.pid), '/T', '/F'], {
+          windowsHide: true,
+          stdio: 'ignore',
+          timeout: 5000,
+        });
+        await waitForExit(proc, 1000);
+      } else {
+        killFn(-proc.pid, 'SIGKILL');
+      }
     } catch {
       // Race: process exited between the check and the kill. Or ESRCH
       // because the pid is no longer in any process table. Either way,
@@ -208,8 +213,8 @@ function waitForExit(proc: ChildProcess, timeoutMs: number): Promise<void> {
       resolve();
     };
     const timer = setTimeout(settle, timeoutMs);
-    // Don't keep the worker process alive past the timer's natural fire.
-    (timer as unknown as { unref?: () => void }).unref?.();
+    // Keep the deadline referenced: Bun on Windows can stall an awaited
+    // unreferenced timer when a mocked child has no live OS handle.
     proc.once('exit', settle);
   });
 }
