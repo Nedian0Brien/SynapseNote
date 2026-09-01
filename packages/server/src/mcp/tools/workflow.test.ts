@@ -74,6 +74,9 @@ describe('workflow — kind discriminator + per-kind teaching errors', () => {
     expect(textOf(r)).toContain('# Codebase Wiki');
     // The guide is interpolated with the resolved content.dir (mirrors discover).
     expect(textOf(r)).toContain('wiki/OVERVIEW.md');
+    // Crash-safe persistence for host rate limits (Factory, Cursor, etc.).
+    expect(textOf(r)).toContain('PERSIST AS YOU GO');
+    expect(textOf(r)).toContain('Host rate limits + session interrupts');
     expect(r.structuredContent?.previewUrl).toBeNull();
   });
 
