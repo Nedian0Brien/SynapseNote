@@ -7,9 +7,9 @@
  * the same durability rules without host-specific code paths.
  */
 
-/** How to refer to the host's durable task/todo system without naming one product. */
+/** How to refer to the host's durable task/todo system without requiring a single host product. */
 export function hostTaskSystemPhrase(): string {
-  return "your host's task system (`TaskCreate` in Claude; equivalent task/todo APIs elsewhere — Cursor, Factory, etc.)";
+  return 'your host\'s task system (`TaskCreate` in Claude; equivalent task/todo APIs elsewhere — Cursor, Factory, etc.)';
 }
 
 /**
@@ -45,7 +45,7 @@ export function buildWikiPersistAsYouGoSection(contentDir: string): string {
 - **After each page lands, update OVERVIEW nav links if needed** — don't defer all hub updates to Phase 7.
 - **Structured notes that live only in your context are not persisted work** — if a section is worth keeping, it belongs in a wiki page via \`write\`/\`edit\`, not in chat or memory.
 
-On resume after any interrupt: re-invoke \`workflow({ kind: "wiki" })\`, inventory partial progress with \`exec("find ${contentDir}/wiki -name '*.md'")\` (or \`exec("ls -R ${contentDir}/wiki")\`), read each partial page via \`exec("cat …")\`, skip completed pages, continue from the first gap in phase order.`;
+On resume after any interrupt: re-invoke \`workflow({ kind: "wiki" })\`, inventory partial progress with \`exec("find ${contentDir}/wiki -name '*.md'")\` (or \`exec("ls -R ${contentDir}/wiki")\`), read each partial page via \`exec("cat ${contentDir}/wiki/modules/<module>.md")\` (substitute the actual path), skip completed pages, continue from the first gap in phase order.`;
 }
 
 /** Step 0 task list for wiki GENERATE mode — persists across context compaction on hosts that support tasks. */

@@ -17,7 +17,7 @@ describe('workflow-persistence — tool-agnostic durability fragments', () => {
   test('buildWikiPersistAsYouGoSection stresses one-page-at-a-time writes', () => {
     const section = buildWikiPersistAsYouGoSection('content');
     expect(section).toContain('PERSIST AS YOU GO');
-    expect(section).toContain('write` each page immediately');
+    expect(section).toContain('`write` each page immediately after reading its source');
     expect(section).toContain('content/wiki');
   });
 
