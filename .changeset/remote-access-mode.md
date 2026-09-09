@@ -8,4 +8,6 @@ Set `OK_ACCESS_MODE=remote` with a public origin and a trusted-proxy hop count, 
 
 Local use is unchanged. Without `OK_ACCESS_MODE`, the desktop app, `bun run dev`, and `synapsenote start` behave exactly as before.
 
+Remote mode also runs an OAuth 2.1 authorization server, which is what lets ChatGPT and other MCP clients connect. It publishes the discovery documents the MCP specification requires, resolves clients through Client ID Metadata Documents (with dynamic registration kept for clients that predate them), and asks you to approve each connection on a consent page. Access tokens are audience-bound to this server's `/mcp` endpoint and refresh tokens rotate.
+
 `deploy/` carries a Dockerfile, a compose file, an nginx server block, and a deployment runbook.

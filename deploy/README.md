@@ -17,6 +17,7 @@ deployment removes that reasoning, so every surface asks for one instead:
 | Content assets (images, attachments) | 404 |
 | `POST /api/auth/session` | reachable — this is how you sign in |
 | The React app itself | served — it is where the sign-in form lives |
+| `/.well-known/oauth-*`, `/oauth/token`, `/oauth/register` | reachable — a client cannot discover or complete OAuth otherwise |
 
 Two credentials do the work. An **access token** is long-lived, minted from the
 CLI, and pasted into an MCP client or the web sign-in form. A **session** is
@@ -155,8 +156,43 @@ container. Check the `Upgrade` and `Connection` headers and the `map` block.
 **The server refuses to start.** It printed the reason and every missing piece
 with it. Read the list rather than changing one variable at a time.
 
+## Connecting an MCP client
+
+Remote mode also runs an OAuth 2.1 authorization server, which is how MCP
+clients that cannot be handed a token — ChatGPT among them — connect.
+
+Point the client at `https://synapse.lawdigest.kr/mcp` and choose OAuth. It
+discovers everything else on its own:
+
+| Document | Path |
+| --- | --- |
+| Protected resource metadata (RFC 9728) | `/.well-known/oauth-protected-resource` |
+| Authorization server metadata (RFC 8414) | `/.well-known/oauth-authorization-server` |
+
+The browser then lands on a consent page. Sign in with an access token if you
+have not already, review which client is asking, and approve. The client
+receives a token scoped to `synapsenote:workspace` and bound to this server's
+`/mcp` endpoint as its audience.
+
+Clients register through Client ID Metadata Documents — the client's identity
+is an HTTPS URL this server fetches — which is the mechanism the MCP
+specification prefers and the one ChatGPT uses. `POST /oauth/register`
+(RFC 7591) is kept for clients that predate it.
+
+Access tokens last an hour and refresh tokens rotate: spending one retires the
+whole grant it belonged to, so a stolen pair cannot outlive the real client.
+
+To see or cut off what is connected, read `.ok/local/oauth.json` in the
+workspace volume. Deleting a client's entry and its tokens there ends its
+access at the next request.
+
 ## Not covered here
 
 The agent surface (Claude / Codex chat) does not run in this container: the
 image ships neither CLI binary nor any credential for one. Running agents
 server-side is a separate milestone.
+
+Scopes are not split by operation. `synapsenote:workspace` grants read and
+write together, because every MCP tool worth connecting for does both.
+Advertising a `read`/`write` split without enforcing it per tool would promise
+a guarantee the server does not keep.
