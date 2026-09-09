@@ -36,7 +36,12 @@ import { type AccessPolicy, authorizeRequest, LOCAL_ACCESS_POLICY } from './acce
 import { AgentFocusBroadcaster } from './agent-focus.ts';
 import { AgentPresenceBroadcaster } from './agent-presence.ts';
 import { AgentSessionManager } from './agent-sessions.ts';
-import { type AccessSessionIssuer, createApiExtension, isSafeDocName } from './api-extension.ts';
+import {
+  type AccessSessionIssuer,
+  type AccountAuthDeps,
+  createApiExtension,
+  isSafeDocName,
+} from './api-extension.ts';
 import { assetReferencesChanged } from './asset-references.ts';
 import { seedBasenameIndex, seedSingleDirBasenameIndex } from './asset-walk.ts';
 import { HocuspocusAuthRejection, parseHocuspocusAuthToken } from './auth-token-schema.ts';
@@ -388,6 +393,12 @@ export interface ServerOptions {
    * policy.
    */
   accessSessions?: AccessSessionIssuer;
+  /**
+   * Account store, WebAuthn ceremonies and login throttle behind the browser
+   * login routes. Forwarded to `createApiExtension`; `bootServer` supplies it
+   * only alongside a `remote` policy, and its absence makes those routes 404.
+   */
+  accountAuth?: AccountAuthDeps;
 }
 
 export interface ServerInstance {
@@ -635,6 +646,7 @@ export function createServer(options: ServerOptions): ServerInstance {
     ephemeral = false,
     accessPolicy = LOCAL_ACCESS_POLICY,
     accessSessions,
+    accountAuth,
   } = options;
 
   const log = getLogger('server');
@@ -1963,6 +1975,7 @@ export function createServer(options: ServerOptions): ServerInstance {
       sessionManager,
       accessPolicy,
       accessSessions,
+      accountAuth,
       contentDir,
       databaseDataPlane,
       databaseCommentStore,

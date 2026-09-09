@@ -40,6 +40,8 @@ import sirv from 'sirv';
 import { createAssetServeMiddleware } from './asset-serve-middleware.ts';
 import { formatAccessPolicyProblems, resolveAccessPolicy } from './auth/access-config.ts';
 import { accessStorePath, openAccessStore } from './auth/access-store.ts';
+import { accountStorePath, openAccountStore } from './auth/account-store.ts';
+import { createLoginThrottle } from './auth/login-throttle.ts';
 import { bootElapsedMs, recordBootPhase, startBootTimings } from './boot-timings.ts';
 import { getLocalDir } from './config/paths.ts';
 import type { Config } from './config/schema.ts';
@@ -93,6 +95,7 @@ import {
   UiLockCollisionError,
   updateUiLockPort,
 } from './ui-lock.ts';
+import { createChallengeStore, relyingPartyFromOrigin } from './webauthn/ceremony.ts';
 
 /**
  * Names of per-machine runtime files that pre-date the `.ok/local/` move.
@@ -697,6 +700,36 @@ async function bootServerInner(opts: BootServerOptions): Promise<BootedServer> {
         }
       : undefined;
 
+  // The public origin doubles as the WebAuthn relying party and as the OAuth
+  // issuer, so it is resolved once here rather than at each use.
+  const publicOrigin = accessPolicy.mode === 'remote' ? accessPolicy.allowedOrigins[0] : undefined;
+  if (accessPolicy.mode === 'remote' && publicOrigin === undefined) {
+    throw new Error('remote access policy has no public origin');
+  }
+
+  // Browser login. Only under a remote policy, for the same reason as the
+  // session endpoint: a local server admits by reachability, so a route that
+  // mints a credential would only widen the local foothold.
+  //
+  // Note that this does not require an account to exist. A deployment that
+  // has been running on personal tokens keeps booting and serving; the login
+  // routes simply refuse until the operator runs `ok access account create`.
+  const accountAuth =
+    accessPolicy.mode === 'remote' && publicOrigin !== undefined
+      ? {
+          store: openAccountStore(
+            accountStorePath(getLocalDir(opts.projectDir ?? opts.contentDir)),
+          ),
+          challenges: createChallengeStore(),
+          throttle: createLoginThrottle(),
+          relyingParty: relyingPartyFromOrigin(publicOrigin),
+          createSession: (accountId: string, label: string) => {
+            const minted = accessStore.createAccountSession(accountId, label);
+            return { secret: minted.secret, expiresAt: minted.record.expiresAt };
+          },
+        }
+      : undefined;
+
   // OAuth authorization server. Only meaningful under a remote policy: a
   // local server has nothing to authorize, because reachability is already
   // the proof.
@@ -709,11 +742,7 @@ async function bootServerInner(opts: BootServerOptions): Promise<BootedServer> {
     accessPolicy.mode === 'remote'
       ? openOAuthStore(oauthStorePath(getLocalDir(opts.projectDir ?? opts.contentDir)))
       : undefined;
-  if (accessPolicy.mode === 'remote' && oauthStore !== undefined) {
-    const publicOrigin = accessPolicy.allowedOrigins[0];
-    if (publicOrigin === undefined) {
-      throw new Error('remote access policy has no public origin');
-    }
+  if (accessPolicy.mode === 'remote' && oauthStore !== undefined && publicOrigin !== undefined) {
     const personalVerify = accessPolicy.verify;
     // Captured before the policy is rebuilt below: the closures that follow
     // must not depend on narrowing a variable that is about to be reassigned.
@@ -762,6 +791,7 @@ async function bootServerInner(opts: BootServerOptions): Promise<BootedServer> {
   const serverInstance = createServer({
     accessPolicy,
     accessSessions,
+    accountAuth,
     contentDir: opts.contentDir,
     projectDir: opts.projectDir,
     contentRoot: opts.contentRoot,

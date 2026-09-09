@@ -80,6 +80,31 @@ export {
   TOKEN_PREFIX,
 } from './auth/access-store.ts';
 export {
+  ACCOUNT_STORE_FILENAME,
+  type AccountRecord,
+  type AccountStore,
+  accountStorePath,
+  normalizeUsername,
+  openAccountStore,
+  type PasskeyRecord,
+} from './auth/account-store.ts';
+export {
+  createLoginThrottle,
+  FAILURE_WINDOW_MS,
+  LOCK_DURATION_MS,
+  type LoginThrottle,
+  MAX_FAILURES,
+} from './auth/login-throttle.ts';
+export {
+  DEFAULT_SCRYPT_PARAMS,
+  hashPassword,
+  MIN_PASSWORD_LENGTH,
+  type PasswordHashRecord,
+  type PasswordRejection,
+  validatePassword,
+  verifyPassword,
+} from './auth/password-hash.ts';
+export {
   formatAuthRejectionWire,
   HOCUSPOCUS_AUTH_REJECTION_REASONS,
   HocuspocusAuthRejection,
