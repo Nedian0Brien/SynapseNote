@@ -45,11 +45,22 @@ import type { OAuthStore } from './store.ts';
 /** Bodies here are tiny; anything larger is not a real OAuth request. */
 const MAX_BODY_BYTES = 16 * 1024;
 
-/** The slice of the access store the consent page's sign-in leg needs. */
-export interface OAuthSessionIssuer {
-  exchangeToken(
-    tokenSecret: string,
-  ): { readonly secret: string; readonly expiresAt: string; readonly label: string } | null;
+/**
+ * Signing in on the consent page.
+ *
+ * Passwords only. This page carries no JavaScript — a strict CSP with no
+ * `script-src`, so that anything reflected into it cannot execute — and
+ * WebAuthn cannot run without JavaScript. A passkey user signs in to the app
+ * first and arrives here already carrying a session cookie.
+ */
+export interface OAuthAccountLogin {
+  signIn(
+    username: string,
+    password: string,
+  ): Promise<
+    | { readonly ok: true; readonly secret: string; readonly expiresAt: string }
+    | { readonly ok: false; readonly retryAfterSeconds?: number }
+  >;
 }
 
 export interface OAuthHttpOptions {
@@ -59,8 +70,11 @@ export interface OAuthHttpOptions {
   readonly publicOrigin: string;
   /** Used to recognize the operator at `/oauth/authorize`. */
   readonly accessPolicy: AccessPolicy;
-  /** Lets the consent page sign an operator in without leaving the flow. */
-  readonly accessSessions?: OAuthSessionIssuer;
+  /**
+   * Lets the consent page sign an operator in without leaving the flow.
+   * Absent means this server issues no sessions, and the page says so.
+   */
+  readonly accountLogin?: OAuthAccountLogin;
   /**
    * Whether the client's own leg of this request was encrypted, which decides
    * the `Secure` cookie attribute. Supplied by the caller because only it
@@ -179,22 +193,26 @@ function refusalPage(error: string, description: string): string {
   );
 }
 
-function signInPage(returnTo: string, error?: string): string {
+function signInPage(returnTo: string, options: { error?: string; username?: string } = {}): string {
+  const { error, username = '' } = options;
   return page(
     'Sign in to approve',
     `<h1>Sign in to approve</h1>
-     <p>An application is asking for access to this workspace. Sign in with an access token to
-     review the request.</p>
+     <p>An application is asking for access to this workspace. Sign in to review the request.</p>
      ${error === undefined ? '' : `<p class="error">${escapeHtml(error)}</p>`}
      <form method="POST" action="${escapeHtml(AUTHORIZE_PATH)}">
        <input type="hidden" name="action" value="signin">
        <input type="hidden" name="return_to" value="${escapeHtml(returnTo)}">
-       <input type="password" name="token" placeholder="snote_" autocomplete="current-password"
-              spellcheck="false" autofocus required>
+       <input type="text" name="username" placeholder="Username" autocomplete="username"
+              spellcheck="false" autocapitalize="none" value="${escapeHtml(username)}"
+              ${username === '' ? 'autofocus ' : ''}required>
+       <input type="password" name="password" placeholder="Password"
+              autocomplete="current-password" ${username === '' ? '' : 'autofocus '}required>
        <button class="primary" type="submit"><span>Sign in</span></button>
      </form>
-     <p class="muted">Create a token on the server with
-     <code>synapsenote access token create &lt;name&gt;</code>.</p>`,
+     <p class="muted">This is the account created with
+     <code>synapsenote access account create &lt;username&gt;</code>. Passkeys are not offered
+     here: this page runs no JavaScript.</p>`,
   );
 }
 
@@ -250,7 +268,7 @@ function consentPage(
 }
 
 export function createOAuthHttpHandler(options: OAuthHttpOptions): OAuthHttpHandler {
-  const { store, cimd, publicOrigin, accessPolicy, accessSessions, isSecureRequest } = options;
+  const { store, cimd, publicOrigin, accessPolicy, accountLogin, isSecureRequest } = options;
   const resourceIdentifier = mcpResourceIdentifier(publicOrigin);
   const deps = { store, cimd, resourceIdentifier };
 
@@ -310,11 +328,11 @@ export function createOAuthHttpHandler(options: OAuthHttpOptions): OAuthHttpHand
     const form = new URLSearchParams(raw);
 
     if (form.get('action') === 'signin') {
-      // Exchange the pasted token for a session cookie and come back to the
-      // authorization request. Done here rather than by pointing the form at
-      // `/api/auth/session` so the flow needs no JavaScript: that endpoint
-      // answers JSON, which a plain form post would render as a blank page.
-      if (accessSessions === undefined) {
+      // Sign in and come back to the authorization request. Done here rather
+      // than by pointing the form at `/api/auth/password` so the flow needs no
+      // JavaScript: that endpoint answers JSON, which a plain form post would
+      // render as a blank page.
+      if (accountLogin === undefined) {
         html(
           res,
           404,
@@ -323,17 +341,32 @@ export function createOAuthHttpHandler(options: OAuthHttpOptions): OAuthHttpHand
         return;
       }
       const returnTo = safeReturnTo(form.get('return_to'));
-      const token = form.get('token') ?? '';
-      const minted = token === '' ? null : accessSessions.exchangeToken(token);
-      if (minted === null) {
-        // Same page, same wording as a first visit plus the refusal: a wrong
-        // token is the common case and should not look like a broken flow.
-        html(res, 401, signInPage(returnTo, 'That token was not accepted.'));
+      const username = form.get('username') ?? '';
+      const password = form.get('password') ?? '';
+      const outcome =
+        username === '' || password === ''
+          ? { ok: false as const }
+          : await accountLogin.signIn(username, password);
+      if (!outcome.ok) {
+        // The same page a first visit renders, plus the refusal: a mistyped
+        // password is the common case and should not look like a broken flow.
+        // The username is echoed back so only the password has to be retyped.
+        html(
+          res,
+          outcome.retryAfterSeconds === undefined ? 401 : 429,
+          signInPage(returnTo, {
+            username,
+            error:
+              outcome.retryAfterSeconds === undefined
+                ? 'That username and password were not accepted.'
+                : `Too many failed attempts. Try again in ${outcome.retryAfterSeconds} seconds.`,
+          }),
+        );
         return;
       }
       res.writeHead(302, {
         Location: returnTo,
-        'Set-Cookie': buildSessionCookie(minted.secret, minted.expiresAt, isSecureRequest(req)),
+        'Set-Cookie': buildSessionCookie(outcome.secret, outcome.expiresAt, isSecureRequest(req)),
         'Cache-Control': 'no-store',
       });
       res.end();

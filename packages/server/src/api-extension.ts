@@ -277,9 +277,8 @@ import { type NormalizedSummary, normalizeSummary } from './agent-write-summary.
 import { collectReferencedAssets, toContentRelativePath } from './asset-references.ts';
 import { assetContentTypeForPath } from './asset-serve-middleware.ts';
 import type { AccountStore, PasskeyRecord } from './auth/account-store.ts';
-import { normalizeUsername } from './auth/account-store.ts';
 import type { LoginThrottle } from './auth/login-throttle.ts';
-import { consumeTimingBudget, verifyPassword } from './auth/password-hash.ts';
+import { attemptPasswordLogin } from './auth/password-login.ts';
 import { buildClearedSessionCookie, buildSessionCookie } from './auth/session-cookie.ts';
 import { getLocalDir } from './config/paths.ts';
 import { CONFIG_VALIDATION_REVERT_ORIGIN } from './config-edit-origin.ts';
@@ -18532,40 +18531,28 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     AuthPasswordLoginRequestSchema,
     async (req, res, body) => {
       if (accounts === undefined) return;
-      const refuse = () => {
+      const outcome = await attemptPasswordLogin(accounts, body.username, body.password);
+      if (!outcome.ok) {
+        if (outcome.reason === 'locked') {
+          errorResponse(
+            res,
+            429,
+            'urn:ok:error:login-locked',
+            'Too many failed sign-in attempts.',
+            {
+              handler: 'auth-password',
+              detail: `Try again in ${outcome.retryAfterSeconds} seconds.`,
+              extraHeaders: { 'Retry-After': String(outcome.retryAfterSeconds) },
+            },
+          );
+          return;
+        }
         errorResponse(res, 401, 'urn:ok:error:unauthorized', 'Authentication required.', {
           handler: 'auth-password',
         });
-      };
-
-      const account = accounts.store.findByUsername(body.username);
-      // Throttle by the account when there is one, and by the submitted name
-      // when there is not. Skipping the throttle for unknown names would make
-      // the endpoint enumerable through its own rate limit.
-      const throttleKey = account?.id ?? `unknown:${normalizeUsername(body.username)}`;
-      const gate = accounts.throttle.check(throttleKey);
-      if (!gate.allowed) {
-        errorResponse(res, 429, 'urn:ok:error:login-locked', 'Too many failed sign-in attempts.', {
-          handler: 'auth-password',
-          detail: `Try again in ${gate.retryAfterSeconds} seconds.`,
-          extraHeaders: { 'Retry-After': String(gate.retryAfterSeconds) },
-        });
         return;
       }
-
-      if (account === undefined) {
-        await consumeTimingBudget();
-        accounts.throttle.recordFailure(throttleKey);
-        refuse();
-        return;
-      }
-      if (!(await verifyPassword(body.password, account.password))) {
-        accounts.throttle.recordFailure(throttleKey);
-        refuse();
-        return;
-      }
-      accounts.throttle.recordSuccess(throttleKey);
-      completeLogin(req, res, account, 'auth-password');
+      completeLogin(req, res, outcome.account, 'auth-password');
     },
     { handler: 'auth-password', method: 'POST' },
   );

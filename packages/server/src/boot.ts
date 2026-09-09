@@ -42,6 +42,7 @@ import { formatAccessPolicyProblems, resolveAccessPolicy } from './auth/access-c
 import { accessStorePath, openAccessStore } from './auth/access-store.ts';
 import { accountStorePath, openAccountStore } from './auth/account-store.ts';
 import { createLoginThrottle } from './auth/login-throttle.ts';
+import { attemptPasswordLogin } from './auth/password-login.ts';
 import { bootElapsedMs, recordBootPhase, startBootTimings } from './boot-timings.ts';
 import { getLocalDir } from './config/paths.ts';
 import type { Config } from './config/schema.ts';
@@ -778,7 +779,27 @@ async function bootServerInner(opts: BootServerOptions): Promise<BootedServer> {
       cimd,
       publicOrigin,
       accessPolicy: operatorPolicy,
-      accessSessions,
+      // Same rule as `/api/auth/password`, through the same throttle: a
+      // second implementation here is how the two surfaces would drift into
+      // one leaking whether an account exists while the other does not.
+      accountLogin:
+        accountAuth === undefined
+          ? undefined
+          : {
+              signIn: async (username, password) => {
+                const outcome = await attemptPasswordLogin(accountAuth, username, password);
+                if (!outcome.ok) {
+                  return outcome.reason === 'locked'
+                    ? { ok: false, retryAfterSeconds: outcome.retryAfterSeconds }
+                    : { ok: false };
+                }
+                const minted = accountAuth.createSession(
+                  outcome.account.id,
+                  outcome.account.username,
+                );
+                return { ok: true, secret: minted.secret, expiresAt: minted.expiresAt };
+              },
+            },
       isSecureRequest: (req) =>
         resolveClientProtocolIsSecure(trustedProxy, {
           socketEncrypted: (req.socket as { encrypted?: boolean } | undefined)?.encrypted === true,

@@ -26,6 +26,10 @@ const REDIRECT = 'https://app.example.com/cb';
 const VERIFIER = 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk';
 const CHALLENGE = deriveCodeChallenge(VERIFIER);
 const OPERATOR_TOKEN = 'snote_operator';
+const USERNAME = 'libera3920';
+const PASSWORD = 'correct horse battery staple';
+/** A username the stub reports as locked out, standing in for the throttle. */
+const LOCKED_USERNAME = 'locked-out';
 
 const dirs: string[] = [];
 afterEach(() => {
@@ -64,18 +68,20 @@ function makeHandler(opts: { withSessions?: boolean; secure?: boolean } = {}) {
     publicOrigin: ORIGIN,
     accessPolicy: policy,
     isSecureRequest: () => opts.secure ?? true,
-    accessSessions:
+    accountLogin:
       opts.withSessions === false
         ? undefined
         : {
-            exchangeToken: (secret) =>
-              secret === OPERATOR_TOKEN
+            signIn: async (username, password) => {
+              if (username === LOCKED_USERNAME) return { ok: false, retryAfterSeconds: 120 };
+              return username === USERNAME && password === PASSWORD
                 ? {
+                    ok: true,
                     secret: 'snote_session_value',
                     expiresAt: new Date(Date.now() + 60_000).toISOString(),
-                    label: 'owner',
                   }
-                : null,
+                : { ok: false };
+            },
           },
   });
   return { handler, store };
@@ -178,7 +184,7 @@ describe('GET /oauth/authorize', () => {
     const res = await call(handler, 'GET', authorizeQuery());
     expect(res.status).toBe(200);
     expect(res.body).toContain('Sign in to approve');
-    expect(res.body).toContain('synapsenote access token create');
+    expect(res.body).toContain('synapsenote access account create');
   });
 
   test('shows the consent page to a signed-in operator', async () => {
@@ -255,15 +261,15 @@ describe('GET /oauth/authorize', () => {
 });
 
 describe('the consent sign-in leg', () => {
-  test('a good token sets a session cookie and returns to the request', async () => {
+  function signin(fields: Record<string, string>): string {
+    return new URLSearchParams({ action: 'signin', ...fields }).toString();
+  }
+
+  test('the right password sets a session cookie and returns to the request', async () => {
     const { handler } = makeHandler();
     const returnTo = authorizeQuery();
     const res = await call(handler, 'POST', '/oauth/authorize', {
-      body: new URLSearchParams({
-        action: 'signin',
-        token: OPERATOR_TOKEN,
-        return_to: returnTo,
-      }).toString(),
+      body: signin({ username: USERNAME, password: PASSWORD, return_to: returnTo }),
     });
     expect(res.status).toBe(302);
     expect(res.headers.location).toBe(returnTo);
@@ -272,20 +278,66 @@ describe('the consent sign-in leg', () => {
     expect(res.headers['set-cookie']).toContain('Secure');
   });
 
-  test('a bad token re-renders the form with a refusal', async () => {
+  test('a wrong password re-renders the form with a refusal', async () => {
     const { handler } = makeHandler();
     const res = await call(handler, 'POST', '/oauth/authorize', {
-      body: new URLSearchParams({ action: 'signin', token: 'snote_wrong' }).toString(),
+      body: signin({ username: USERNAME, password: 'wrong' }),
     });
     expect(res.status).toBe(401);
-    expect(res.body).toContain('That token was not accepted');
+    expect(res.body).toContain('username and password were not accepted');
     expect(res.headers['set-cookie']).toBeUndefined();
+  });
+
+  test('the refusal keeps the username so only the password is retyped', async () => {
+    const { handler } = makeHandler();
+    const res = await call(handler, 'POST', '/oauth/authorize', {
+      body: signin({ username: USERNAME, password: 'wrong' }),
+    });
+    expect(res.body).toContain(`value="${USERNAME}"`);
+  });
+
+  test('the echoed username cannot inject markup', async () => {
+    const { handler } = makeHandler();
+    const res = await call(handler, 'POST', '/oauth/authorize', {
+      body: signin({ username: '"><script>alert(1)</script>', password: 'wrong' }),
+    });
+    expect(res.body).not.toContain('<script>alert(1)</script>');
+    expect(res.body).toContain('&lt;script&gt;');
+  });
+
+  test('a locked account is told how long to wait', async () => {
+    const { handler } = makeHandler();
+    const res = await call(handler, 'POST', '/oauth/authorize', {
+      body: signin({ username: LOCKED_USERNAME, password: PASSWORD }),
+    });
+    expect(res.status).toBe(429);
+    expect(res.body).toContain('120 seconds');
+    expect(res.headers['set-cookie']).toBeUndefined();
+  });
+
+  test('an empty field is refused without reaching the account', async () => {
+    const { handler } = makeHandler();
+    const res = await call(handler, 'POST', '/oauth/authorize', {
+      body: signin({ username: USERNAME, password: '' }),
+    });
+    expect(res.status).toBe(401);
+    expect(res.headers['set-cookie']).toBeUndefined();
+  });
+
+  test('the form carries no token field', async () => {
+    // Pasting a token into a browser is the thing this replaced. Tokens still
+    // work as `Authorization: Bearer` for MCP and the CLI.
+    const { handler } = makeHandler();
+    const res = await call(handler, 'GET', authorizeQuery());
+    expect(res.body).toContain('name="password"');
+    expect(res.body).not.toContain('name="token"');
+    expect(res.body).not.toContain('snote_');
   });
 
   test('omits Secure over a plaintext client leg', async () => {
     const { handler } = makeHandler({ secure: false });
     const res = await call(handler, 'POST', '/oauth/authorize', {
-      body: new URLSearchParams({ action: 'signin', token: OPERATOR_TOKEN }).toString(),
+      body: signin({ username: USERNAME, password: PASSWORD }),
     });
     expect(res.headers['set-cookie']).not.toContain('Secure');
   });
