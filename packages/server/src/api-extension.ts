@@ -12847,7 +12847,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         handler: 'sync-status',
         policy: accessPolicy,
         principal: principalOf(req),
-        remote: 'never',
+        remote: 'account-session',
       })
     )
       return;
@@ -12929,7 +12929,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
             handler: 'sync-trigger',
             policy: accessPolicy,
             principal: principalOf(req),
-            remote: 'never',
+            remote: 'account-session',
           })
         )
           return false;
@@ -12951,7 +12951,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         handler: 'sync-conflicts',
         policy: accessPolicy,
         principal: principalOf(req),
-        remote: 'never',
+        remote: 'account-session',
       })
     )
       return;
@@ -13034,7 +13034,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
             handler: 'sync-resolve-conflict',
             policy: accessPolicy,
             principal: principalOf(req),
-            remote: 'never',
+            remote: 'account-session',
           })
         )
           return false;
@@ -13059,7 +13059,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         handler: 'sync-conflict-content',
         policy: accessPolicy,
         principal: principalOf(req),
-        remote: 'never',
+        remote: 'account-session',
       })
     )
       return;
