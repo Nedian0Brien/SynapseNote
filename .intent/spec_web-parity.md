@@ -43,8 +43,10 @@ date: 2026-09-09
 
 - [ ] R12. `GET /api/seed/packs`, `GET /api/seed/plan`, `POST /api/seed/apply`가
       원격 계정 세션으로 동작한다.
-- [ ] R13. `GET /api/skill/install-state`가 원격 계정 세션으로 동작한다.
+- [ ] R13. `skill/install-state`, `skill/install`, `installed-agents`가 원격
+      계정 세션으로 동작한다.
 - [ ] R14. 스타터 팩 적용과 스킬 설치가 웹에서 끝까지 된다.
+- [ ] R14b. 공유·게시 5개(`share/*`)가 원격 계정 세션으로 동작한다.
 
 ### P4 — GitHub 읽기
 
@@ -59,7 +61,7 @@ date: 2026-09-09
 - [ ] R18. 원격에서 403이 나는 버튼이 화면에 없다. 해당 컨트롤은 감추거나
       비활성화하고, 왜 없는지 한 줄로 적는다.
 - [ ] R19. 대상: 에디터로 열기(`handoff`, `spawn-cursor`), 프로젝트 복제·초기화
-      (`clone`, `ok-init`), GitHub 연결·해제, 에이전트 채팅.
+      (`clone`, `ok-init`), GitHub 연결·해제, 임베딩 제공자 키, 에이전트 채팅.
 - [ ] R20. 에이전트 채팅은 "이 서버에서는 아직 안 된다"고 말한다. 컨테이너에 CLI
       바이너리도 자격증명도 없다는 사실을 감추지 않는다.
 
@@ -114,15 +116,33 @@ date: 2026-09-09
 
 ### 열 엔드포인트와 두는 엔드포인트
 
-게이트 자체는 한 곳에서 바뀌고, 각 핸들러는 어느 게이트를 부를지만 정한다.
+호출 지점은 **28곳**이다(핸들러 태그 기준 전수). 게이트 자체는 한 곳에서 바뀌고,
+각 호출 지점은 어느 규칙을 요구할지만 정한다.
 
-| 남기는 것 (원격에서도 거절) | 이유 |
+**계정 세션으로 여는 것 (20곳)**
+
+| 계열 | 핸들러 | 단계 |
+|---|---|---|
+| 동기화 | `sync-status`, `sync-conflicts`, `sync-trigger`, `sync-resolve-conflict`, `sync-conflict-content` | P2 |
+| 스타터 팩 | `seed-plan`, `seed-packs`, `seed-apply` | P3 |
+| 스킬 | `install-skill`, `skill-install-state`, `installed-agents` | P3 |
+| 공유·게시 | `share-construct-url`, `share-target-status`, `share-publish-owners`, `share-publish-name-check`, `share-publish` | P3 |
+| GitHub 읽기 | `local-op-auth-status`, `local-op-auth-repos` | P4 |
+| 진단 | `client-logs` | P3 |
+
+**원격에서 계속 거절하는 것 (8곳)**
+
+| 핸들러 | 이유 |
 |---|---|
 | `handoff`, `spawn-cursor` | 서버 머신에서 프로세스를 띄운다. 원격에서 의미가 없다 |
-| `local-op/clone`, `local-op/ok-init` | 원격은 워크스페이스 하나를 보는 창이다 |
-| `local-op/auth/{login,signout,set-identity}` | 서버의 GitHub 자격증명을 바꾼다 |
+| `local-op-clone`, `local-op-ok-init` | 원격은 워크스페이스 하나를 보는 창이다 |
+| `local-op-auth-login`, `local-op-auth-signout`, `local-op-auth-set-identity` | 서버의 GitHub 자격증명을 바꾼다 |
+| `local-op-embeddings-set-key`, `local-op-embeddings-clear-key` | 머신 전역 임베딩 제공자 키를 쓴다. 이 서버 하나가 아니라 그 머신의 모든 프로젝트에 걸린다 |
 
-나머지는 계정 세션으로 연다.
+이 표가 P1의 산출물이다. 호출 지점마다 둘 중 하나를 명시적으로 고르게 하고,
+**기본값을 두지 않는다** — 새 `local-op` 핸들러가 생겼을 때 아무 것도 안 적으면
+컴파일이 실패하도록 한다. 28곳 중 하나를 조용히 빠뜨리는 것이 이 작업의 가장
+큰 위험이다.
 
 ### UI (R18~R20)
 
@@ -150,8 +170,10 @@ date: 2026-09-09
 
 ## 함정
 
-- **`checkLocalOpSecurity`는 14개 핸들러가 부른다.** 시그니처를 넓히면 전부
-  고쳐야 하고, 하나를 빠뜨리면 그 경로만 조용히 옛 규칙으로 남는다.
+- **`checkLocalOpSecurity` 호출 지점은 28곳이다.** 처음 세었을 때 14개로 봤는데
+  그건 UI 기능 단위였다. 공유 5개와 임베딩 키 2개가 빠져 있었다. 시그니처를
+  넓히면 28곳을 전부 고쳐야 하고, 하나를 빠뜨리면 그 경로만 조용히 옛 규칙으로
+  남는다. 그래서 새 인자에 기본값을 두지 않는다.
 - **`AccessPrincipal.kind`는 닫힌 유니온이고 로그·테스트가 참조한다.** 값을
   더하면 그 값을 다루지 않는 `switch`가 컴파일 에러 없이 통과할 수 있다.
 - **데스크톱 앱은 이 서버를 그대로 쓴다.** Electron 유틸리티 프로세스는 로컬
