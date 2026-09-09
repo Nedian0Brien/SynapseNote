@@ -25,6 +25,9 @@ date: 2026-09-09
 | `packages/server/src/webauthn/ceremony.ts` | @simplewebauthn 래핑 + 챌린지 저장소 |
 | `packages/server/src/webauthn/ceremony.test.ts` | 챌린지 1회성·만료, 카운터 역행 거절 |
 | `packages/server/src/api-auth-login.test.ts` | 로그인 라우트의 HTTP 동작 |
+| `packages/server/src/auth/password-login.ts` | 비밀번호 검증 규칙 한 벌 (구현 중 추가) |
+| `packages/cli/src/ui/read-password.ts` | 무에코 터미널 입력 (구현 중 추가) |
+| `packages/cli/src/ui/read-password.test.ts` | 백스페이스·Ctrl-C·화살표·비TTY |
 | `packages/cli/src/commands/access/account.ts` | `create` / `passwd` / `show` |
 | `packages/cli/src/commands/access/account.test.ts` | 대화형 입력 주입, 중복 계정 거부 |
 | `packages/app/src/lib/auth-login.ts` | 브라우저측 로그인·패스키 호출 |
@@ -97,6 +100,25 @@ date: 2026-09-09
 **두 번째 위험: 게이트 면제 경로 확대(6단계).** 면제를 넓히다 실수하면 인증 없이 닿는
 경로가 늘어난다. 면제 목록을 상수 집합으로 두고, "면제 목록에 없는 `/api/auth/*` 경로는
 401"을 확인하는 테스트를 같이 넣는다.
+
+## 구현 중 계획과 달라진 것
+
+**`auth/password-login.ts`를 새로 뺐다.** `/api/auth/password`와 OAuth 동의
+화면이 같은 비밀번호 규칙을 써야 하는데, 계획은 각자 구현하는 모양이었다. 두 벌이
+되면 한쪽만 계정 존재를 흘리는 식으로 갈라지기 쉬운 부분이라 — 균일한 거절, 없는
+사용자명에도 소비하는 해시 한 번, 비교보다 먼저 도는 스로틀 — 규칙을 한 곳에 두고
+둘 다 부른다. 실서버에서 API로 10번 실패시킨 뒤 동의 화면이 429를 주는 것으로
+확인했다.
+
+**`ui/read-password.ts`를 CLI 쪽에 새로 만들었다.** 계획은 "대화형으로 두 번
+받는다"까지만 적었고, readline에 마스킹 모드가 없다는 점은 구현에서 드러났다.
+raw 모드로 키를 직접 모으고, 화살표가 보내는 이스케이프 시퀀스를 상태 기계로
+걸러낸다.
+
+**R29의 "계정이 없으면 로그인 화면이 그렇게 말한다"는 항상 보이는 안내문으로
+했다.** 계정 유무를 알려주는 미인증 엔드포인트를 새로 두면 "이 서버는 아직
+설정 전"이라는 사실이 인터넷에 노출된다. 대신 로그인 화면과 동의 화면 모두
+`synapsenote access account create <username>` 를 상시 표시한다.
 
 ## 검증
 
