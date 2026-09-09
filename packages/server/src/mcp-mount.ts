@@ -37,14 +37,20 @@ import {
   iconFromClientName,
 } from '@nedian0brien/synapsenote-core';
 import { WebSocketServer } from 'ws';
+import {
+  type AccessDenial,
+  type AccessPolicy,
+  accessRequestFromNode,
+  authorizeOrigin,
+  authorizeRequest,
+  LOCAL_ACCESS_POLICY,
+} from './access-control.ts';
 import type { AgentFocusBroadcaster } from './agent-focus.ts';
 import { toBroadcasterKey, validateAgentId } from './agent-id.ts';
 import type { AgentPresenceBroadcaster } from './agent-presence.ts';
 import type { AgentSessionManager } from './agent-sessions.ts';
-import { isAllowedApiOrigin } from './api-origin.ts';
 import { errorResponse } from './http/error-response.ts';
 import type { PinoLogger } from './logger.ts';
-import { isAllowedWorkspaceHostHeader, isLoopbackAddress } from './loopback.ts';
 import type { MaintenanceCoordinator } from './maintenance-coordinator.ts';
 import type { McpHttpHandler } from './mcp-http.ts';
 import { handleCollabSocketError, incrementCollabMessageTooLarge } from './metrics.ts';
@@ -132,6 +138,13 @@ export interface MountMcpAndApiOptions {
    * serving is unchanged.
    */
   ephemeral?: boolean;
+  /**
+   * How this mount decides whether a request may reach `/mcp` and the
+   * ephemeral content-asset surface. Defaults to `LOCAL_ACCESS_POLICY` — the
+   * loopback + Host gate these legs have always applied. `bootServer` passes a
+   * `remote` policy when the operator configured one.
+   */
+  accessPolicy?: AccessPolicy;
 }
 
 export interface MountMcpAndApiHandle {
@@ -164,6 +177,14 @@ export interface MountMcpAndApiHandle {
  * Wire `/mcp` + `/api/*` + the `/collab` + `/collab/keepalive` WS upgrade onto
  * the supplied `httpServer`. See module doc-block for the full contract.
  */
+/**
+ * Emit an admission refusal in the same RFC 9457 problem+json shape the gate
+ * produced inline before it was routed through `access-control.ts`.
+ */
+function denyAccess(res: ServerResponse, denial: AccessDenial, handler: string): void {
+  errorResponse(res, denial.status, denial.type, denial.title, { handler });
+}
+
 export function mountMcpAndApi(opts: MountMcpAndApiOptions): MountMcpAndApiHandle {
   const {
     httpServer,
@@ -177,6 +198,7 @@ export function mountMcpAndApi(opts: MountMcpAndApiOptions): MountMcpAndApiHandl
     contentAssetMiddleware,
     reactShellMiddleware,
     ephemeral,
+    accessPolicy = LOCAL_ACCESS_POLICY,
   } = opts;
   const keepaliveGraceMs = opts.keepaliveGraceMs ?? DEFAULT_KEEPALIVE_GRACE_MS;
 
@@ -209,19 +231,12 @@ export function mountMcpAndApi(opts: MountMcpAndApiOptions): MountMcpAndApiHandl
       const sessionId = Array.isArray(req.headers['mcp-session-id'])
         ? req.headers['mcp-session-id'][0]
         : req.headers['mcp-session-id'];
-      if (!isLoopbackAddress(req.socket.remoteAddress)) {
-        errorResponse(res, 403, 'urn:ok:error:loopback-required', 'Loopback access required.', {
-          handler: 'mcp',
-        });
+      const admission = authorizeRequest(accessPolicy, accessRequestFromNode(req));
+      if (!admission.ok) {
+        denyAccess(res, admission, 'mcp');
         return;
       }
-      if (!isAllowedWorkspaceHostHeader(req.headers.host)) {
-        errorResponse(res, 403, 'urn:ok:error:host-not-allowed', 'Host header not allowed.', {
-          handler: 'mcp',
-        });
-        return;
-      }
-      if (origin !== undefined && !isAllowedApiOrigin(origin)) {
+      if (!authorizeOrigin(accessPolicy, origin)) {
         errorResponse(res, 403, 'urn:ok:error:invalid-origin', 'Origin not allowed.', {
           handler: 'mcp',
         });
@@ -331,16 +346,12 @@ export function mountMcpAndApi(opts: MountMcpAndApiOptions): MountMcpAndApiHandl
       // omit it, and the Host-header check already rejects the rebinding
       // content-exfil vector without that dependency. Project / desktop modes
       // (`ephemeral` falsy) are unchanged — the user chose the served root.
-      if (
-        ephemeral === true &&
-        contentAssetMiddleware !== undefined &&
-        (!isLoopbackAddress(req.socket.remoteAddress) ||
-          !isAllowedWorkspaceHostHeader(req.headers.host))
-      ) {
-        errorResponse(res, 403, 'urn:ok:error:loopback-required', 'Loopback access required.', {
-          handler: 'content-asset',
-        });
-        return;
+      if (ephemeral === true && contentAssetMiddleware !== undefined) {
+        const assetAdmission = authorizeRequest(accessPolicy, accessRequestFromNode(req));
+        if (!assetAdmission.ok) {
+          denyAccess(res, assetAdmission, 'content-asset');
+          return;
+        }
       }
       runMiddleware(contentAssetMiddleware, 'content-asset', onMiss);
     };
@@ -396,10 +407,12 @@ export function mountMcpAndApi(opts: MountMcpAndApiOptions): MountMcpAndApiHandl
 
   const onUpgrade = (req: IncomingMessage, socket: Duplex, head: Buffer): void => {
     if (req.url?.startsWith('/collab/keepalive')) {
-      if (
-        !isLoopbackAddress(req.socket.remoteAddress) ||
-        !isAllowedWorkspaceHostHeader(req.headers.host)
-      ) {
+      // No HTTP response on this leg — an upgrade that fails admission gets
+      // the socket torn down, exactly as before. Browsers cannot set an
+      // `Authorization` header on a WebSocket handshake, so under a `remote`
+      // policy this leg authenticates by the session cookie the handshake
+      // carries; non-browser keepalive clients may still send a bearer token.
+      if (!authorizeRequest(accessPolicy, accessRequestFromNode(req)).ok) {
         socket.destroy();
         return;
       }

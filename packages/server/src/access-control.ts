@@ -103,6 +103,17 @@ export interface RemoteAccessPolicy {
 
 export type AccessPolicy = LocalAccessPolicy | RemoteAccessPolicy;
 
+/**
+ * The policy every call site defaults to.
+ *
+ * Wiring sites take `accessPolicy?: AccessPolicy` and fall back to this, so a
+ * caller that knows nothing about remote access — the test harness, the Vite
+ * dev-server plugin, the Electron utility process — keeps today's behavior
+ * without opting in. Only `bootServer` resolves a different value, and only
+ * when the operator asked for one.
+ */
+export const LOCAL_ACCESS_POLICY: LocalAccessPolicy = { mode: 'local' };
+
 /** The request facts this module reads. Structural, so tests need no sockets. */
 export interface AccessRequest {
   readonly socketAddress: string | undefined;

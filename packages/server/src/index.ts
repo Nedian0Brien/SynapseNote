@@ -3,6 +3,25 @@ export {
   GitDirAccessError,
   MalformedGitPointerError,
 } from '@nedian0brien/synapsenote-core/shadow-repo-layout';
+export {
+  type AccessDecision,
+  type AccessDenial,
+  type AccessDenialReason,
+  type AccessPolicy,
+  type AccessPrincipal,
+  type AccessRequest,
+  accessRequestFromNode,
+  authorizeOrigin,
+  authorizeRequest,
+  type CredentialVerifier,
+  extractCredential,
+  LOCAL_ACCESS_POLICY,
+  type LocalAccessPolicy,
+  type PresentedCredential,
+  type RemoteAccessPolicy,
+  readCookie,
+  SESSION_COOKIE_NAME,
+} from './access-control.ts';
 export { AgentFocusBroadcaster } from './agent-focus.ts';
 export {
   AGENT_ID_MAX_LEN,
@@ -994,6 +1013,14 @@ export {
   type ToleranceFireLine,
   teardownToleranceTelemetryWriter,
 } from './tolerance-telemetry-writer.ts';
+export {
+  type ClientAddressFailure,
+  type ClientAddressResolution,
+  NO_TRUSTED_PROXY,
+  resolveClientAddress,
+  resolveClientProtocolIsSecure,
+  type TrustedProxyPolicy,
+} from './trusted-proxy.ts';
 export {
   acquireUiLock,
   readUiLock,

@@ -243,6 +243,14 @@ import busboy from 'busboy';
 import { fileTypeFromBuffer } from 'file-type';
 import { parse as parseYaml } from 'yaml';
 import { z } from 'zod';
+import {
+  type AccessDenial,
+  type AccessPolicy,
+  accessRequestFromNode,
+  authorizeOrigin,
+  authorizeRequest,
+  LOCAL_ACCESS_POLICY,
+} from './access-control.ts';
 import { captureEffect } from './activity-log.ts';
 import { listAgentActivity, synthesizeStackItemDiffText } from './agent-activity.ts';
 import type { AgentFocusBroadcaster } from './agent-focus.ts';
@@ -256,7 +264,6 @@ import {
   iconFromClientName,
 } from './agent-sessions.ts';
 import { type NormalizedSummary, normalizeSummary } from './agent-write-summary.ts';
-import { isAllowedApiOrigin } from './api-origin.ts';
 import { collectReferencedAssets, toContentRelativePath } from './asset-references.ts';
 import { assetContentTypeForPath } from './asset-serve-middleware.ts';
 import { getLocalDir } from './config/paths.ts';
@@ -516,7 +523,6 @@ import {
   runDeviceFlowSubprocess,
 } from './local-ops/index.ts';
 import { getLogger } from './logger.ts';
-import { isAllowedWorkspaceHostHeader, isLoopbackAddress } from './loopback.ts';
 import {
   managedArtifactAbsPath,
   managedArtifactTimelinePaths,
@@ -2548,6 +2554,15 @@ export interface ApiExtensionOptions {
    */
   ephemeral?: boolean;
   /**
+   * How this server decides whether a request may touch the workspace.
+   *
+   * Defaults to `LOCAL_ACCESS_POLICY`, which reproduces the loopback + Host
+   * gate this file has always applied. `bootServer` passes a `remote` policy
+   * when the operator configured one; every other caller (test harness, Vite
+   * dev plugin, Electron utility process) leaves it unset.
+   */
+  accessPolicy?: AccessPolicy;
+  /**
    * Per-process UUID advertised via `GET /api/server-info` and the
    * `__system__` CC1 `server-info` broadcast. Clients cache this value
    * and claim it in the `expectedServerInstanceId` field of their auth
@@ -2927,6 +2942,16 @@ export function getCurrentDocumentSnapshot(
   return { current: viewers[0] ?? null, viewers };
 }
 
+/**
+ * Emit an admission refusal as the RFC 9457 problem+json the gate already
+ * produced inline. The decision carries its own status, URN, and title so the
+ * wire shape stays identical to what each of these gates emitted before they
+ * were routed through `access-control.ts`.
+ */
+function denyAccess(res: ServerResponse, denial: AccessDenial, handler: string): void {
+  errorResponse(res, denial.status, denial.type, denial.title, { handler });
+}
+
 export function createApiExtension(options: ApiExtensionOptions): Extension {
   const {
     hocuspocus,
@@ -2986,6 +3011,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     getSemanticSimilarityFloor,
     embeddingsSecretsFile,
     ephemeral = false,
+    accessPolicy = LOCAL_ACCESS_POLICY,
   } = options;
 
   // Concurrency guard: at most 1 in-flight request per local-op endpoint
@@ -8822,16 +8848,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     // `handleMetricsAgentPresence` and `handleWorkspace` apply.
     // Authorization runs BEFORE method dispatch so a bad Host never leaks
     // "verb the endpoint expects" via the 405 response (OWASP ASVS V4.1.1).
-    if (!isLoopbackAddress(req.socket.remoteAddress)) {
-      errorResponse(res, 403, 'urn:ok:error:loopback-required', 'Loopback required.', {
-        handler: 'principal',
-      });
-      return;
-    }
-    if (!isAllowedWorkspaceHostHeader(req.headers.host)) {
-      errorResponse(res, 403, 'urn:ok:error:host-not-allowed', 'Host header not allowed.', {
-        handler: 'principal',
-      });
+    const admission = authorizeRequest(accessPolicy, accessRequestFromNode(req));
+    if (!admission.ok) {
+      denyAccess(res, admission, 'principal');
       return;
     }
     if (req.method !== 'GET') {
@@ -8866,16 +8885,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     // method dispatch so a bad Host never leaks "verb the endpoint expects"
     // via 405 (same pattern + rationale as handleWorkspace — see its
     // comment block for the ASVS / DNS-rebinding background).
-    if (!isLoopbackAddress(req.socket.remoteAddress)) {
-      errorResponse(res, 403, 'urn:ok:error:loopback-required', 'Loopback required.', {
-        handler: 'metrics-agent-presence',
-      });
-      return;
-    }
-    if (!isAllowedWorkspaceHostHeader(req.headers.host)) {
-      errorResponse(res, 403, 'urn:ok:error:host-not-allowed', 'Host header not allowed.', {
-        handler: 'metrics-agent-presence',
-      });
+    const admission = authorizeRequest(accessPolicy, accessRequestFromNode(req));
+    if (!admission.ok) {
+      denyAccess(res, admission, 'metrics-agent-presence');
       return;
     }
     if (req.method !== 'GET') {
@@ -8923,16 +8935,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     // The active document is local workspace state. Keep the endpoint behind
     // the same loopback + Host-header gate as workspace/principal/presence so
     // a DNS-rebound page or LAN peer cannot observe what the user is reading.
-    if (!isLoopbackAddress(req.socket.remoteAddress)) {
-      errorResponse(res, 403, 'urn:ok:error:loopback-required', 'Loopback required.', {
-        handler: 'current-document',
-      });
-      return;
-    }
-    if (!isAllowedWorkspaceHostHeader(req.headers.host)) {
-      errorResponse(res, 403, 'urn:ok:error:host-not-allowed', 'Host header not allowed.', {
-        handler: 'current-document',
-      });
+    const admission = authorizeRequest(accessPolicy, accessRequestFromNode(req));
+    if (!admission.ok) {
+      denyAccess(res, admission, 'current-document');
       return;
     }
     if (req.method !== 'GET') {
@@ -8969,16 +8974,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     // entry's UA. Loopback + Host-header gated — same pattern as
     // `handlePrincipal` / `handleMetricsAgentPresence`. Disclosed fields
     // (full request headers, remote address) are local-editing-only signals.
-    if (!isLoopbackAddress(req.socket.remoteAddress)) {
-      errorResponse(res, 403, 'urn:ok:error:loopback-required', 'Loopback required.', {
-        handler: 'embed-detect',
-      });
-      return;
-    }
-    if (!isAllowedWorkspaceHostHeader(req.headers.host)) {
-      errorResponse(res, 403, 'urn:ok:error:host-not-allowed', 'Host header not allowed.', {
-        handler: 'embed-detect',
-      });
+    const admission = authorizeRequest(accessPolicy, accessRequestFromNode(req));
+    if (!admission.ok) {
+      denyAccess(res, admission, 'embed-detect');
       return;
     }
     if (req.method !== 'GET') {
@@ -9023,16 +9021,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     // to us via `localhost` / `127.0.0.1` / `[::1]`, matching the mitigation
     // in the Ethereum/geth JSON-RPC lineage. Same-origin fetches from the
     // editor app pass; cross-origin rebinding attempts are refused.
-    if (!isLoopbackAddress(req.socket.remoteAddress)) {
-      errorResponse(res, 403, 'urn:ok:error:loopback-required', 'Loopback required.', {
-        handler: 'workspace',
-      });
-      return;
-    }
-    if (!isAllowedWorkspaceHostHeader(req.headers.host)) {
-      errorResponse(res, 403, 'urn:ok:error:host-not-allowed', 'Host header not allowed.', {
-        handler: 'workspace',
-      });
+    const admission = authorizeRequest(accessPolicy, accessRequestFromNode(req));
+    if (!admission.ok) {
+      denyAccess(res, admission, 'workspace');
       return;
     }
     if (req.method !== 'GET') {
@@ -18574,7 +18565,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       // unit tests that stub only `writeHead` + `end`.
       if (url.startsWith('/api/')) {
         const origin = request.headers.origin;
-        if (origin !== undefined && !isAllowedApiOrigin(origin)) {
+        if (!authorizeOrigin(accessPolicy, origin)) {
           // RFC 9457 problem+json. Tag the handler as `api-origin-gate` so
           // the `ok.api.error.count` counter distinguishes onRequest-level
           // CSRF rejections from per-handler emits. The cross-origin browser
@@ -18610,39 +18601,31 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         }
       }
 
-      // DNS-rebinding defense for state-mutating endpoints. The
-      // `isLoopbackAddress` TCP-peer check and `isAllowedWorkspaceHostHeader`
+      // Admission gate for state-mutating endpoints, delegated to
+      // `access-control.ts`. Under the default `local` policy this is the same
+      // DNS-rebinding defense as before: the TCP-peer check plus the
       // Host-header check together block the standard rebinding pattern
       // (attacker-owned hostname whose DNS resolves to 127.0.0.1 after an
-      // initial attacker-serves-JS response — the TCP peer is loopback,
-      // but the Host header names the attacker domain). The same mitigation
-      // already gates `/api/workspace`; without it, a rebinding page could
-      // POST /api/upload + /api/agent-write, mutating the local vault.
+      // initial attacker-serves-JS response — the TCP peer is loopback, but
+      // the Host header names the attacker domain). Without it, a rebinding
+      // page could POST /api/upload + /api/agent-write and mutate the local
+      // vault. Under a `remote` policy the same call demands a verified
+      // credential instead.
       //
       // Test-harness note: Node's production socket always has
       // `remoteAddress` set by the kernel; the only path that reaches
       // this check without a socket is a mocked `IncomingMessage` built
       // from `Readable.from(...)`. Those mocks bypass the HTTP listener
-      // entirely and can't be reached by a real remote attacker, so a
-      // missing socket is treated as test-context and skips the check.
-      // The Host-header gate still fires (tests set `host: 'localhost'`),
-      // so the protection remains meaningful for any production path.
+      // entirely and can't be reached by a real remote attacker, hence
+      // `allowMissingPeer` — the Host-header gate still fires (tests set
+      // `host: 'localhost'`), so the protection remains meaningful for any
+      // production path.
       if (MUTATING_ROUTES.has(url) || STATE_MUTATING_PREFIXES.some((p) => url.startsWith(p))) {
-        const peerAddress = request.socket?.remoteAddress;
-        if (peerAddress !== undefined && !isLoopbackAddress(peerAddress)) {
-          errorResponse(response, 403, 'urn:ok:error:loopback-required', 'Loopback required.', {
-            handler: 'api-mutating-gate',
-          });
-          return;
-        }
-        if (!isAllowedWorkspaceHostHeader(request.headers.host)) {
-          errorResponse(
-            response,
-            403,
-            'urn:ok:error:host-not-allowed',
-            'Host header not allowed.',
-            { handler: 'api-mutating-gate' },
-          );
+        const admission = authorizeRequest(accessPolicy, accessRequestFromNode(request), {
+          allowMissingPeer: true,
+        });
+        if (!admission.ok) {
+          denyAccess(response, admission, 'api-mutating-gate');
           return;
         }
       }
@@ -18662,23 +18645,11 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       // ephemeral-scoped content-asset gate in `mcp-mount.ts`, which covers the
       // non-`/api/` static-serve path.
       if (ephemeral && url.startsWith('/api/')) {
-        const peerAddress = request.socket?.remoteAddress;
-        if (peerAddress !== undefined && !isLoopbackAddress(peerAddress)) {
-          errorResponse(response, 403, 'urn:ok:error:loopback-required', 'Loopback required.', {
-            handler: 'api-ephemeral-gate',
-          });
-          return;
-        }
-        if (!isAllowedWorkspaceHostHeader(request.headers.host)) {
-          errorResponse(
-            response,
-            403,
-            'urn:ok:error:host-not-allowed',
-            'Host header not allowed.',
-            {
-              handler: 'api-ephemeral-gate',
-            },
-          );
+        const admission = authorizeRequest(accessPolicy, accessRequestFromNode(request), {
+          allowMissingPeer: true,
+        });
+        if (!admission.ok) {
+          denyAccess(response, admission, 'api-ephemeral-gate');
           return;
         }
       }

@@ -467,13 +467,18 @@ describe('mountMcpAndApi ephemeral content-asset gate', () => {
     expect(res.status).toBe(200);
   });
 
-  test('ephemeral: a rebound Host header is rejected with 403 loopback-required', async () => {
+  test('ephemeral: a rebound Host header is rejected with 403 host-not-allowed', async () => {
     const { port } = await startAssets(true);
     // Loopback TCP peer (127.0.0.1) but an attacker-controlled Host — the
     // DNS-rebinding shape. The Host gate rejects it before sirv reads the file.
+    //
+    // The URN names the check that actually failed. This gate previously
+    // collapsed both of its conditions into `loopback-required`, which
+    // misreported a Host failure as a peer failure; routing it through
+    // `access-control.ts` gives each condition its own token.
     const res = await getWithHost(port, '/secret.png', 'evil.example.com');
     expect(res.status).toBe(403);
-    expect((JSON.parse(res.body) as { type?: string }).type).toBe('urn:ok:error:loopback-required');
+    expect((JSON.parse(res.body) as { type?: string }).type).toBe('urn:ok:error:host-not-allowed');
   });
 
   test('non-ephemeral (project mode): the same rebound Host header still serves', async () => {
@@ -677,5 +682,162 @@ describe('mountMcpAndApi react-shell middleware', () => {
     for (const dir of tmpDirs.splice(0)) {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+// Remote access policy. These cases exist because the module-level tests in
+// `access-control.test.ts` prove the DECISION and say nothing about whether
+// each gate is wired to it. Here a real HTTP server answers real requests, so
+// a gate that forgot to consult the policy fails loudly.
+describe('mountMcpAndApi remote access policy', () => {
+  const REMOTE_HOST = 'notes.example.com';
+  const REMOTE_ORIGIN = 'https://notes.example.com';
+  const GOOD_TOKEN = 'tok-good';
+
+  const remotePolicy: MountMcpAndApiOptions['accessPolicy'] = {
+    mode: 'remote',
+    allowedOrigins: [REMOTE_ORIGIN],
+    allowedHosts: [REMOTE_HOST],
+    trustedProxy: { hops: 1 },
+    verify: (credential) =>
+      credential.value === GOOD_TOKEN
+        ? { kind: credential.scheme === 'bearer' ? 'bearer' : 'session', id: 'u1', label: 'owner' }
+        : null,
+  };
+
+  async function startRemote(): Promise<{ port: number; calls: () => number }> {
+    let calls = 0;
+    const httpServer = createServer();
+    const mount = mountMcpAndApi({
+      httpServer,
+      hocuspocus,
+      log,
+      accessPolicy: remotePolicy,
+      mcpHttpHandler: {
+        handle: async (_req, res) => {
+          calls += 1;
+          res.writeHead(200);
+          res.end('ok');
+        },
+        close: async () => {},
+      },
+    });
+    const port = await getFreeLoopbackPort();
+    await new Promise<void>((resolve) => httpServer.listen(port, '127.0.0.1', () => resolve()));
+    servers.push({ httpServer, mount });
+    return { port, calls: () => calls };
+  }
+
+  async function postMcp(
+    port: number,
+    headers: Record<string, string>,
+  ): Promise<{ status: number; body: string }> {
+    return new Promise((resolve, reject) => {
+      const req = httpRequest(
+        {
+          hostname: '127.0.0.1',
+          port,
+          path: '/mcp',
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...headers },
+        },
+        (res) => {
+          const chunks: Buffer[] = [];
+          res.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+          res.on('end', () =>
+            resolve({ status: res.statusCode ?? 0, body: Buffer.concat(chunks).toString('utf-8') }),
+          );
+        },
+      );
+      req.on('error', reject);
+      req.end('{}');
+    });
+  }
+
+  test('a bearer token on the configured host reaches the MCP handler', async () => {
+    const { port, calls } = await startRemote();
+    const res = await postMcp(port, {
+      Host: REMOTE_HOST,
+      Authorization: `Bearer ${GOOD_TOKEN}`,
+      'X-Forwarded-For': '203.0.113.9',
+    });
+    expect(res.status).toBe(200);
+    expect(calls()).toBe(1);
+  });
+
+  test('a session cookie also reaches the handler', async () => {
+    const { port, calls } = await startRemote();
+    const res = await postMcp(port, {
+      Host: REMOTE_HOST,
+      Cookie: `synapsenote_session=${GOOD_TOKEN}`,
+    });
+    expect(res.status).toBe(200);
+    expect(calls()).toBe(1);
+  });
+
+  test('no credential is 401 and the handler never runs', async () => {
+    const { port, calls } = await startRemote();
+    const res = await postMcp(port, { Host: REMOTE_HOST });
+    expect(res.status).toBe(401);
+    const body = JSON.parse(res.body) as { type?: string };
+    expect(body.type).toBe('urn:ok:error:unauthorized');
+    expect(calls()).toBe(0);
+  });
+
+  test('an unknown token is 401 with the same body as no token', async () => {
+    // Absent and rejected must be indistinguishable on the wire, or the
+    // endpoint becomes a token oracle.
+    const { port, calls } = await startRemote();
+    const res = await postMcp(port, { Host: REMOTE_HOST, Authorization: 'Bearer tok-wrong' });
+    expect(res.status).toBe(401);
+    expect((JSON.parse(res.body) as { type?: string }).type).toBe('urn:ok:error:unauthorized');
+    expect(calls()).toBe(0);
+  });
+
+  test('a loopback request with a localhost Host no longer gets in', async () => {
+    // This is the whole point of the mode. Under the local policy this exact
+    // request is admitted; under a remote policy reachability earns nothing.
+    const { port, calls } = await startRemote();
+    const res = await postMcp(port, {
+      Host: `localhost:${port}`,
+      Authorization: `Bearer ${GOOD_TOKEN}`,
+    });
+    expect(res.status).toBe(403);
+    expect((JSON.parse(res.body) as { type?: string }).type).toBe('urn:ok:error:host-not-allowed');
+    expect(calls()).toBe(0);
+  });
+
+  test('a valid token on an unlisted host is refused', async () => {
+    const { port, calls } = await startRemote();
+    const res = await postMcp(port, {
+      Host: 'evil.example.com',
+      Authorization: `Bearer ${GOOD_TOKEN}`,
+    });
+    expect(res.status).toBe(403);
+    expect((JSON.parse(res.body) as { type?: string }).type).toBe('urn:ok:error:host-not-allowed');
+    expect(calls()).toBe(0);
+  });
+
+  test('the configured origin is accepted and reflected', async () => {
+    const { port, calls } = await startRemote();
+    const res = await postMcp(port, {
+      Host: REMOTE_HOST,
+      Origin: REMOTE_ORIGIN,
+      Authorization: `Bearer ${GOOD_TOKEN}`,
+    });
+    expect(res.status).toBe(200);
+    expect(calls()).toBe(1);
+  });
+
+  test('a loopback origin that local mode allows is refused here', async () => {
+    const { port, calls } = await startRemote();
+    const res = await postMcp(port, {
+      Host: REMOTE_HOST,
+      Origin: 'http://localhost:5173',
+      Authorization: `Bearer ${GOOD_TOKEN}`,
+    });
+    expect(res.status).toBe(403);
+    expect((JSON.parse(res.body) as { type?: string }).type).toBe('urn:ok:error:invalid-origin');
+    expect(calls()).toBe(0);
   });
 });

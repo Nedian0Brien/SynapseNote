@@ -32,6 +32,7 @@ import {
   resolveShadowDir,
 } from '@nedian0brien/synapsenote-core/shadow-repo-layout';
 import simpleGit from 'simple-git';
+import { type AccessPolicy, authorizeRequest, LOCAL_ACCESS_POLICY } from './access-control.ts';
 import { AgentFocusBroadcaster } from './agent-focus.ts';
 import { AgentPresenceBroadcaster } from './agent-presence.ts';
 import { AgentSessionManager } from './agent-sessions.ts';
@@ -162,7 +163,6 @@ import type {
 import { type HeadWatcherHandle, readBranchFromHead, startHeadWatcher } from './head-watcher.ts';
 import { createLiveDerivedIndexExtension } from './live-derived-index.ts';
 import { getLogger } from './logger.ts';
-import { isAllowedWorkspaceHostHeader, isLoopbackAddress } from './loopback.ts';
 import {
   createMaintenanceCoordinator,
   type MaintenanceCoordinator,
@@ -375,6 +375,13 @@ export interface ServerOptions {
    * unmounted by the boot layer (`bootServer`), not here. Default `false`.
    */
   ephemeral?: boolean;
+  /**
+   * How this server decides whether a request may touch the workspace.
+   * Threaded into `createApiExtension`, `mountMcpAndApi` (via the boot path),
+   * and the config-doc admission guard so all of them answer from one value.
+   * Defaults to `LOCAL_ACCESS_POLICY` — today's loopback + Host gate.
+   */
+  accessPolicy?: AccessPolicy;
 }
 
 export interface ServerInstance {
@@ -620,6 +627,7 @@ export function createServer(options: ServerOptions): ServerInstance {
     skipStateManifestCheck = false,
     singleDocRelPath,
     ephemeral = false,
+    accessPolicy = LOCAL_ACCESS_POLICY,
   } = options;
 
   const log = getLogger('server');
@@ -1799,30 +1807,40 @@ export function createServer(options: ServerOptions): ServerInstance {
         // host-header check, which still enforces the rebinding defense.
         const req = payload.request as unknown as {
           socket?: { remoteAddress?: string };
-          headers?: { host?: string };
+          headers?: {
+            host?: string;
+            authorization?: string;
+            cookie?: string;
+            'x-forwarded-for'?: string | string[];
+          };
         };
-        const peer = req.socket?.remoteAddress;
-        if (peer !== undefined && !isLoopbackAddress(peer)) {
-          throw new Error(
-            `config-doc admission requires loopback peer (peer=${peer}, doc=${payload.documentName})`,
-          );
-        }
         // Headers can arrive either as the Node IncomingMessage `headers`
         // bag or, when Hocuspocus surfaces a real Web `Request`, as a
         // `Headers` instance via `payload.requestHeaders`. Prefer the
-        // structured `requestHeaders.get('host')` because it is consistent
-        // across both code paths; fall back to `req.headers.host` when the
-        // Headers object is absent (synthetic test payloads).
+        // structured `requestHeaders.get(...)` because it is consistent
+        // across both code paths; fall back to the bag when the Headers
+        // object is absent (synthetic test payloads).
         const headersBag = (payload as { requestHeaders?: Headers }).requestHeaders;
-        const host =
-          (headersBag && typeof headersBag.get === 'function' ? headersBag.get('host') : null) ??
-          req.headers?.host ??
-          undefined;
-        if (!isAllowedWorkspaceHostHeader(host)) {
+        const readHeader = (name: string): string | undefined =>
+          (headersBag && typeof headersBag.get === 'function' ? headersBag.get(name) : null) ??
+          ((req.headers as Record<string, string | string[] | undefined> | undefined)?.[name] as
+            | string
+            | undefined);
+        const admission = authorizeRequest(
+          accessPolicy,
+          {
+            socketAddress: req.socket?.remoteAddress,
+            host: readHeader('host'),
+            origin: undefined,
+            authorization: readHeader('authorization'),
+            cookie: readHeader('cookie'),
+            forwardedFor: req.headers?.['x-forwarded-for'],
+          },
+          { allowMissingPeer: true },
+        );
+        if (!admission.ok) {
           throw new Error(
-            `config-doc admission requires loopback Host header (host=${
-              host ?? '<absent>'
-            }, doc=${payload.documentName})`,
+            `config-doc admission refused (reason=${admission.reason}, doc=${payload.documentName})`,
           );
         }
       },
@@ -1936,6 +1954,7 @@ export function createServer(options: ServerOptions): ServerInstance {
     const apiExtension = createApiExtension({
       hocuspocus,
       sessionManager,
+      accessPolicy,
       contentDir,
       databaseDataPlane,
       databaseCommentStore,

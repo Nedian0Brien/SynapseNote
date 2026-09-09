@@ -208,6 +208,7 @@ export interface BootServerOptions
     | 'embeddingsKeyStore'
     | 'singleDocRelPath'
     | 'ephemeral'
+    | 'accessPolicy'
   > {
   /**
    * The project's loaded `Config` (parsed from `.ok/config.yml`,
@@ -649,6 +650,7 @@ async function bootServerInner(opts: BootServerOptions): Promise<BootedServer> {
 
   // Compose createServer options from the subset we accept.
   const serverInstance = createServer({
+    accessPolicy: opts.accessPolicy,
     contentDir: opts.contentDir,
     projectDir: opts.projectDir,
     contentRoot: opts.contentRoot,
@@ -821,6 +823,7 @@ async function bootServerInner(opts: BootServerOptions): Promise<BootedServer> {
     : undefined;
 
   const mount = mountMcpAndApi({
+    accessPolicy: opts.accessPolicy,
     httpServer,
     hocuspocus,
     mcpHttpHandler,

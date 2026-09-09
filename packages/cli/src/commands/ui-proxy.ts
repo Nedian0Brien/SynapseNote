@@ -16,6 +16,16 @@
  *
  * Uses only `node:http` — no new 3P dependency.
  */
+
+/*
+ * Access-control note: this proxy stays on the raw loopback predicates
+ * rather than routing through `access-control.ts`. `ok ui` is a local
+ * developer surface by construction — it binds loopback and forwards to a
+ * loopback API on the same machine. A remote deployment does not run it:
+ * the server serves the React shell itself through `reactShellMiddleware`,
+ * so there is no remote request path that reaches this file. Give it a
+ * policy only if `ok ui` ever needs to face a network.
+ */
 import type {
   Server as HttpServer,
   IncomingHttpHeaders,
