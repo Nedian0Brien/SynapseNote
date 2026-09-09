@@ -142,7 +142,7 @@ function cleanup() {
   for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 }
 
-/** Every route P2 opens, with the method the app actually uses. */
+/** Sync — opened by P2, with the method the app actually uses. */
 const OPENED: ReadonlyArray<readonly [string, string]> = [
   ['GET', '/api/sync/status'],
   ['GET', '/api/sync/conflicts'],
@@ -151,14 +151,38 @@ const OPENED: ReadonlyArray<readonly [string, string]> = [
   ['POST', '/api/sync/conflict-content'],
 ];
 
-/** A sample of what P2 deliberately left closed. */
+/** Project setup — opened by P3. Everything here stays inside the workspace. */
+const OPENED_P3: ReadonlyArray<readonly [string, string]> = [
+  ['GET', '/api/seed/packs'],
+  ['GET', '/api/seed/plan'],
+  ['POST', '/api/seed/apply'],
+  // `/api/install-skill`, not `/api/skill/install` — the latter is a different
+  // handler that was never behind this gate.
+  ['POST', '/api/install-skill'],
+  ['GET', '/api/skill/install-state'],
+  ['GET', '/api/installed-agents'],
+  ['POST', '/api/client-logs'],
+];
+
+/**
+ * What is still closed, and why each one is here rather than opened.
+ *
+ * The `share/*` entries are the ones worth watching: they were slated for P3
+ * and taken back out. The deployed container's `$HOME` is tmpfs, so the CLI's
+ * GitHub credential never survives a restart, and the only route that writes
+ * it is desktop-only. Publishing would fail at the push.
+ */
 const STILL_CLOSED: ReadonlyArray<readonly [string, string]> = [
   ['POST', '/api/handoff'],
   ['POST', '/api/spawn-cursor'],
   ['POST', '/api/local-op/auth/status'],
   ['POST', '/api/local-op/clone'],
+  ['POST', '/api/local-op/ok-init'],
   ['POST', '/api/local-op/embeddings/set-key'],
-  ['POST', '/api/seed/apply'],
+  ['POST', '/api/local-op/embeddings/clear-key'],
+  ['POST', '/api/share/publish'],
+  ['POST', '/api/share/construct-url'],
+  ['POST', '/api/share/target-status'],
 ];
 
 describe('what an account session may do', () => {
@@ -221,11 +245,41 @@ describe('what a token may not do', () => {
   });
 });
 
-describe('what P2 left closed', () => {
+describe('what an account session may do — project setup', () => {
+  test('reaches every route P3 opens', async () => {
+    // Same reading as the sync case: anything but the gate's own 403 means the
+    // request got past it. These run inside the workspace and need no GitHub
+    // credential, which is why they could be opened when `share/*` could not.
+    const call = build();
+    for (const [method, url] of OPENED_P3) {
+      const result = await call(method, url, 'account');
+      expect({ url, refused: result.type === 'urn:ok:error:desktop-only' }).toEqual({
+        url,
+        refused: false,
+      });
+    }
+    cleanup();
+  });
+
+  test('a bearer token reaches none of them', async () => {
+    const call = build();
+    for (const [method, url] of OPENED_P3) {
+      const result = await call(method, url, 'bearer');
+      expect({ url, status: result.status, type: result.type }).toEqual({
+        url,
+        status: 403,
+        type: 'urn:ok:error:desktop-only',
+      });
+    }
+    cleanup();
+  });
+});
+
+describe('what is still closed', () => {
   test('an account session still cannot reach them', async () => {
-    // P2 opens sync and nothing else. These routes act on the machine the
-    // server runs on, and they stay shut until their own phase decides
-    // otherwise.
+    // These act on the machine the server runs on, or need a GitHub credential
+    // the deployed container does not have. Signing in does not change either
+    // fact.
     const call = build();
     for (const [method, url] of STILL_CLOSED) {
       const result = await call(method, url, 'account');

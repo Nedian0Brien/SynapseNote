@@ -13334,7 +13334,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         handler: 'seed-plan',
         policy: accessPolicy,
         principal: principalOf(req),
-        remote: 'never',
+        remote: 'account-session',
       })
     )
       return;
@@ -13456,7 +13456,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           handler: 'seed-apply',
           policy: accessPolicy,
           principal: principalOf(req),
-          remote: 'never',
+          remote: 'account-session',
         }),
     },
   );
@@ -13473,7 +13473,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         handler: 'seed-packs',
         policy: accessPolicy,
         principal: principalOf(req),
-        remote: 'never',
+        remote: 'account-session',
       })
     )
       return;
@@ -13553,7 +13553,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           handler: 'install-skill',
           policy: accessPolicy,
           principal: principalOf(req),
-          remote: 'never',
+          remote: 'account-session',
         }),
     },
   );
@@ -13576,7 +13576,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         handler: 'installed-agents',
         policy: accessPolicy,
         principal: principalOf(req),
-        remote: 'never',
+        remote: 'account-session',
       })
     )
       return;
@@ -17434,7 +17434,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           handler: 'skill-install-state',
           policy: accessPolicy,
           principal: principalOf(req),
-          remote: 'never',
+          remote: 'account-session',
         }),
     },
   );
@@ -18301,7 +18301,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           handler: 'client-logs',
           policy: accessPolicy,
           principal: principalOf(req),
-          remote: 'never',
+          remote: 'account-session',
         }),
     },
   );
