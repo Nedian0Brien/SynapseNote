@@ -17,20 +17,12 @@
  * project's own sync. Written `0600`, through a temp file and a rename, so a
  * crash mid-write leaves the previous file rather than a truncated one.
  *
- * ## Why a plain SHA-256 and not a password KDF
- *
- * Secrets here are 32 bytes of CSPRNG output that this process generated —
- * never a human-chosen string. A password KDF exists to make guessing a
- * low-entropy secret expensive, and there is nothing to guess: brute-forcing
- * 256 bits is infeasible regardless of how the digest is computed. Paying
- * scrypt's cost per request would add latency to every API call and buy
- * nothing. This is the same reasoning behind how API keys are stored across
- * the industry, and it is a deliberate choice rather than an omission — if
- * this store ever accepts a user-chosen passphrase, that path needs a real
- * KDF.
+ * Secret minting and comparison live in `secret-hash.ts`, shared with the
+ * OAuth store; that module documents why a plain SHA-256 is the right digest
+ * for secrets this process generated itself.
  */
 
-import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type {
@@ -38,19 +30,19 @@ import type {
   CredentialVerifier,
   PresentedCredential,
 } from '../access-control.ts';
+import {
+  hashesEqual,
+  looksLikeOurSecret,
+  mintSecret,
+  SECRET_PREFIX,
+  sha256Hex,
+} from './secret-hash.ts';
 
 /** File name under `.ok/local/`. */
 export const ACCESS_STORE_FILENAME = 'access.json';
 
-/**
- * Prefix on every minted secret. Makes a leaked credential recognizable in a
- * log, a paste, or a secret scanner, and lets an obviously-foreign string be
- * rejected before it is hashed.
- */
-export const TOKEN_PREFIX = 'snote_';
-
-/** Bytes of entropy per secret. 32 bytes = 256 bits. */
-const SECRET_BYTES = 32;
+/** Re-exported so existing importers keep one name for the prefix. */
+export const TOKEN_PREFIX = SECRET_PREFIX;
 
 /** Default session lifetime: 30 days. */
 export const DEFAULT_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -122,25 +114,6 @@ export interface AccessStore {
   pruneSessions(): number;
   /** The verifier handed to `access-control.ts`. */
   readonly verify: CredentialVerifier;
-}
-
-function sha256Hex(value: string): string {
-  return createHash('sha256').update(value, 'utf-8').digest('hex');
-}
-
-/**
- * Compare two hex digests without leaking their difference through timing.
- *
- * Both sides are fixed-length SHA-256 hex, so a length mismatch means a
- * corrupted record rather than an attacker probe; it short-circuits false.
- */
-function hashesEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(Buffer.from(a, 'utf-8'), Buffer.from(b, 'utf-8'));
-}
-
-function mintSecret(): string {
-  return `${TOKEN_PREFIX}${randomBytes(SECRET_BYTES).toString('base64url')}`;
 }
 
 const EMPTY_FILE: AccessStoreFile = { version: 1, tokens: [], sessions: [] };
@@ -275,7 +248,7 @@ export function openAccessStore(path: string): AccessStore {
     const presented = credential.value;
     // Reject a foreign-shaped string before hashing. Cheap, and it keeps the
     // log free of digests for values that were never ours.
-    if (!presented.startsWith(TOKEN_PREFIX)) return null;
+    if (!looksLikeOurSecret(presented)) return null;
     const hash = sha256Hex(presented);
 
     if (credential.scheme === 'bearer') {
@@ -378,7 +351,7 @@ export function openAccessStore(path: string): AccessStore {
     },
 
     revokeSessionBySecret(secret: string): boolean {
-      if (!secret.startsWith(TOKEN_PREFIX)) return false;
+      if (!looksLikeOurSecret(secret)) return false;
       const hash = sha256Hex(secret);
       const match = sessions.find((s) => hashesEqual(s.hash, hash));
       if (match === undefined) return false;
