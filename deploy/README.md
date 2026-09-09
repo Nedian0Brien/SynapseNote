@@ -15,14 +15,19 @@ deployment removes that reasoning, so every surface asks for one instead:
 | `/mcp` | 401 |
 | `/collab` WebSocket | connection closed |
 | Content assets (images, attachments) | 404 |
-| `POST /api/auth/session` | reachable — this is how you sign in |
+| `POST /api/auth/password`, `/api/auth/passkey/authenticate/*` | reachable — this is how you sign in |
 | The React app itself | served — it is where the sign-in form lives |
 | `/.well-known/oauth-*`, `/oauth/token`, `/oauth/register` | reachable — a client cannot discover or complete OAuth otherwise |
 
-Two credentials do the work. An **access token** is long-lived, minted from the
-CLI, and pasted into an MCP client or the web sign-in form. A **session** is
-what the browser gets in exchange: an `HttpOnly` cookie, so page scripts never
-hold the durable secret.
+Three credentials do the work, for three different callers.
+
+An **access token** is long-lived, minted from the CLI, and handed to an MCP
+client or a script as `Authorization: Bearer`. The browser never sees one: a
+pasted token is a long-lived secret in the place least able to keep it.
+
+An **account** — one username and password, plus any passkeys registered
+against it — is how a person signs in. A successful sign-in yields a
+**session**: an `HttpOnly` cookie, so page scripts hold nothing durable.
 
 ## Before the first deploy
 
@@ -37,6 +42,10 @@ every missing piece at once. Four things must hold:
    request arrives from loopback, so a server that ignored the header would see
    the whole internet as a local client.
 4. At least one access token exists.
+
+An account is *not* required to boot. A server that has tokens but no account
+starts and serves; only the sign-in screen refuses, and it names the command
+that fixes that.
 
 ## Deploy
 
@@ -108,7 +117,35 @@ curl -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOKEN" \
      https://synapse.lawdigest.kr/api/config                                      # 200
 ```
 
-Then open `https://synapse.lawdigest.kr` and paste the token into the form.
+**6. Create the account you will sign in with.** Note the missing `-T`: the
+command reads the password from the terminal, and refuses to run without one.
+There is no `--password` flag — an argument would land in the process list, the
+shell history, and the daemon log.
+
+```bash
+docker compose -f deploy/compose.yml exec synapsenote \
+  node /app/dist/cli.mjs access account create <username>
+```
+
+Then open `https://synapse.lawdigest.kr`, sign in, and register a passkey from
+Settings → Account so the password is not needed again on that device.
+
+## Managing the account
+
+```bash
+# Change the password. Signs out every open browser session; passkeys keep
+# working, so remove those from Settings too if that is the point.
+docker compose -f deploy/compose.yml exec synapsenote \
+  node /app/dist/cli.mjs access account passwd
+
+# Username, creation date, registered passkeys.
+docker compose -f deploy/compose.yml exec synapsenote \
+  node /app/dist/cli.mjs access account show
+```
+
+One server holds one account. Ten failed password attempts inside fifteen
+minutes lock sign-in for fifteen more; a registered passkey is unaffected,
+which is the other reason to register one.
 
 ## Managing tokens
 
@@ -129,7 +166,7 @@ kills every browser session minted from it.
 ## Backups
 
 Back up the workspace volume. It holds the documents, the shadow git repository
-behind version history, and the access tokens.
+behind version history, the access tokens, and the account with its passkeys.
 
 Compose prefixes volume names with the project name, so the volume is
 `synapsenote-remote_synapsenote-workspace`. Confirm with `docker volume ls`
@@ -169,8 +206,9 @@ discovers everything else on its own:
 | Protected resource metadata (RFC 9728) | `/.well-known/oauth-protected-resource` |
 | Authorization server metadata (RFC 8414) | `/.well-known/oauth-authorization-server` |
 
-The browser then lands on a consent page. Sign in with an access token if you
-have not already, review which client is asking, and approve. The client
+The browser then lands on a consent page. Sign in with your username and
+password if you have not already — the page runs no JavaScript, so passkeys are
+not offered there — review which client is asking, and approve. The client
 receives a token scoped to `synapsenote:workspace` and bound to this server's
 `/mcp` endpoint as its audience.
 

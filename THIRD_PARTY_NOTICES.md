@@ -1567,6 +1567,11 @@ Homepage: https://github.com/dcodeIO/long.js
 
 _(LICENSE template present but no copyright line filled in; refer to the package source for canonical attribution.)_
 
+### `reflect-metadata@0.2.2`
+Homepage: http://rbuckton.github.io/reflect-metadata
+
+_(LICENSE template present but no copyright line filled in; refer to the package source for canonical attribution.)_
+
 ### `scheduler-polyfill@1.3.0`
 Homepage: https://github.com/GoogleChromeLabs/scheduler-polyfill
 
@@ -2044,6 +2049,11 @@ Homepage: https://github.com/handlewithcarecollective/remark-prosemirror
 
 Copyright (c) 2024 Handle with Care Collective
 
+### `@hexagon/base64@1.1.28`
+Homepage: https://base64.56k.guru
+
+Copyright (c) 2021-2022 Hexagon <github.com/Hexagon>
+
 ### `@hocuspocus/common@4.0.0-rc.2`
 Homepage: https://hocuspocus.dev
 
@@ -2208,6 +2218,11 @@ Copyright (c) 2015 Steve King
 Homepage: https://github.com/kwsites/promise-deferred
 
 Copyright (c) 2018 kwsites
+
+### `@levischuck/tiny-cbor@0.2.11`
+Homepage: https://github.com/levischuck/tiny-cbor
+
+Copyright (c) 2025 Levi
 
 ### `@lezer/common@1.5.2`
 Homepage: https://github.com/lezer-parser/common
@@ -2463,6 +2478,81 @@ _(No LICENSE file in package; SPDX identifier in `package.json` is the sole decl
 Homepage: https://github.com/parcel-bundler/watcher
 
 Copyright (c) 2017-present Devon Govett
+
+### `@peculiar/asn1-android@2.9.4`
+Homepage: https://github.com/PeculiarVentures/asn1-schema/tree/master/packages/android#readme
+
+Copyright (c) 2020
+
+### `@peculiar/asn1-asym-key@2.9.4`
+Homepage: https://github.com/PeculiarVentures/asn1-schema/tree/master/packages/asym-key#readme
+
+Copyright (c) 2023 Peculiar Ventures, LLC
+
+### `@peculiar/asn1-cms@2.9.4`
+Homepage: https://github.com/PeculiarVentures/asn1-schema/tree/master/packages/cms#readme
+
+Copyright (c) 2020
+
+### `@peculiar/asn1-csr@2.9.4`
+Homepage: https://github.com/PeculiarVentures/asn1-schema/tree/master/packages/csr#readme
+
+Copyright (c) 2020
+
+### `@peculiar/asn1-ecc@2.9.4`
+Homepage: https://github.com/PeculiarVentures/asn1-schema/tree/master/packages/ecc#readme
+
+Copyright (c) 2020
+
+### `@peculiar/asn1-pfx@2.9.4`
+Homepage: https://github.com/PeculiarVentures/asn1-schema/tree/master/packages/pfx#readme
+
+Copyright (c) 2020
+
+### `@peculiar/asn1-pkcs8@2.9.4`
+Homepage: https://github.com/PeculiarVentures/asn1-schema/tree/master/packages/pkcs8#readme
+
+Copyright (c) 2020
+
+### `@peculiar/asn1-pkcs9@2.9.4`
+Homepage: https://github.com/PeculiarVentures/asn1-schema/tree/master/packages/pkcs9#readme
+
+Copyright (c) 2020
+
+### `@peculiar/asn1-rsa@2.9.4`
+Homepage: https://github.com/PeculiarVentures/asn1-schema/tree/master/packages/rsa#readme
+
+Copyright (c) 2020
+
+### `@peculiar/asn1-schema@2.9.4`
+Homepage: https://github.com/PeculiarVentures/asn1-schema/tree/master/packages/schema#readme
+
+Copyright (c) 2020
+
+### `@peculiar/asn1-x509@2.9.4`
+Homepage: https://github.com/PeculiarVentures/asn1-schema/tree/master/packages/x509#readme
+
+Copyright (c) 2020
+
+### `@peculiar/asn1-x509-attr@2.9.4`
+Homepage: https://github.com/PeculiarVentures/asn1-schema/tree/master/packages/x509-attr#readme
+
+Copyright (c) 2020
+
+### `@peculiar/asn1-x509-post-quantum@2.9.4`
+Homepage: https://github.com/PeculiarVentures/asn1-schema/tree/master/packages/x509-post-quantum#readme
+
+Copyright (c) 2023 Peculiar Ventures, LLC
+
+### `@peculiar/utils@2.0.3`
+Homepage: https://github.com/PeculiarVentures/pvtsutils#readme
+
+Copyright (c) 2017-2026 Peculiar Ventures, LLC
+
+### `@peculiar/x509@2.1.0`
+Homepage: https://github.com/PeculiarVentures/x509#readme
+
+Copyright (c) Peculiar Ventures. All rights reserved.
 
 ### `@pinojs/redact@0.4.0`
 Homepage: https://github.com/pinojs/redact#readme
@@ -2793,6 +2883,16 @@ _(No LICENSE file in package; SPDX identifier in `package.json` is the sole decl
 Homepage: https://github.com/steveukx/git-js
 
 _(No LICENSE file in package; SPDX identifier in `package.json` is the sole declared grant.)_
+
+### `@simplewebauthn/browser@14.0.0`
+Homepage: https://github.com/MasterKale/SimpleWebAuthn/tree/master/packages/browser#readme
+
+Copyright (c) 2020 Matthew Miller
+
+### `@simplewebauthn/server@14.0.1`
+Homepage: https://github.com/MasterKale/SimpleWebAuthn/tree/master/packages/server#readme
+
+Copyright (c) 2020 Matthew Miller
 
 ### `@sinclair/typebox@0.27.10`
 Homepage: https://github.com/sinclairzx81/typebox-legacy
@@ -5634,6 +5734,16 @@ Homepage: https://mths.be/punycode
 
 _(No LICENSE file in package; SPDX identifier in `package.json` is the sole declared grant.)_
 
+### `pvtsutils@1.3.6`
+Homepage: https://github.com/PeculiarVentures/pvtsutils#readme
+
+Copyright (c) 2017-2024 Peculiar Ventures, LLC
+
+### `pvutils@1.2.0`
+Homepage: https://github.com/PeculiarVentures/pvutils
+
+Copyright (c) 2016-2019, Peculiar Ventures
+
 ### `queue-microtask@1.2.3`
 Homepage: https://github.com/feross/queue-microtask
 
@@ -6257,6 +6367,11 @@ Homepage: https://github.com/dividab/tsconfig-paths
 
 Copyright (c) 2016 Jonas Kello
 
+### `tsyringe@4.10.0`
+Homepage: https://github.com/Microsoft/tsyringe#readme
+
+Copyright (c) Microsoft Corporation. All rights reserved.
+
 ### `turndown@7.2.4`
 Homepage: https://github.com/mixmark-io/turndown
 
@@ -6458,11 +6573,6 @@ Homepage: https://github.com/chalk/wrap-ansi
 Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
 
 ### `ws@8.21.1`
-Homepage: https://github.com/websockets/ws
-
-Copyright (c) 2011 Einar Otto Stangvik <einaros@gmail.com> Copyright (c) 2013 Arnout Kazemier and contributors Copyright (c) 2016 Luigi Pinca and contributors
-
-### `ws@8.20.0`
 Homepage: https://github.com/websockets/ws
 
 Copyright (c) 2011 Einar Otto Stangvik <einaros@gmail.com> Copyright (c) 2013 Arnout Kazemier and contributors Copyright (c) 2016 Luigi Pinca and contributors
@@ -6988,6 +7098,11 @@ Homepage: https://github.com/protobufjs/protobuf.js
 
 Copyright (c) 2016, Daniel Wirtz  All rights reserved.
 
+### `asn1js@3.0.10`
+Homepage: https://github.com/PeculiarVentures/ASN1.js
+
+Copyright (c) 2014, GMO GlobalSign Copyright (c) 2015-2022, Peculiar Ventures
+
 ### `d3-array@2.12.1`
 Homepage: https://d3js.org/d3-array/
 
@@ -7176,6 +7291,7 @@ The following packages are under licenses that do not require attribution (BlueO
 - `robust-predicates@3.0.3` — Unlicense
 - `sax@1.6.0` — BlueOak-1.0.0
 - `tslib@2.8.1` — 0BSD
+- `tslib@1.14.1` — 0BSD
 
 ---
 
