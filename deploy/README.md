@@ -127,12 +127,16 @@ kills every browser session minted from it.
 
 ## Backups
 
-Back up the `synapsenote-workspace` volume. It holds the documents, the shadow
-git repository behind version history, and the access tokens.
+Back up the workspace volume. It holds the documents, the shadow git repository
+behind version history, and the access tokens.
+
+Compose prefixes volume names with the project name, so the volume is
+`synapsenote-remote_synapsenote-workspace`. Confirm with `docker volume ls`
+rather than assuming.
 
 ```bash
-docker run --rm -v synapsenote-workspace:/w -v "$PWD":/out debian:stable-slim \
-  tar czf /out/synapsenote-workspace.tar.gz -C /w .
+docker run --rm -v synapsenote-remote_synapsenote-workspace:/w -v "$PWD":/out \
+  debian:stable-slim tar czf /out/synapsenote-workspace.tar.gz -C /w .
 ```
 
 ## Things that go wrong
