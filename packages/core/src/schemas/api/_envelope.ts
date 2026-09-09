@@ -184,6 +184,34 @@ export type ApiConfigSuccess = z.infer<typeof ApiConfigSuccessSchema>;
  * `doc-not-available`, `reserved-doc-name`. Avoid mixed/compound forms
  * (`document-`, `docname`) — they create cognitive load for SDK consumers.
  */
+/**
+ * Request body for `POST /api/auth/session` — trading a long-lived access
+ * token for a session cookie.
+ *
+ * `.strict()` so a client that sends the token under an unexpected key gets a
+ * validation failure rather than a silent 401 it cannot diagnose.
+ */
+export const AuthSessionCreateRequestSchema = z
+  .object({ token: z.string().min(1) })
+  .strict() satisfies StandardSchemaV1;
+export type AuthSessionCreateRequest = z.infer<typeof AuthSessionCreateRequestSchema>;
+
+/**
+ * Response body for `POST /api/auth/session`.
+ *
+ * Carries the token's operator-supplied label and the session expiry so the
+ * app can show who it is signed in as and when it will need to sign in again.
+ * The session secret itself never appears here — it goes out in an `HttpOnly`
+ * cookie, which is the point of the exchange.
+ */
+export const AuthSessionCreateSuccessSchema = z
+  .object({
+    label: z.string().min(1),
+    expiresAt: z.string().min(1),
+  })
+  .loose() satisfies StandardSchemaV1;
+export type AuthSessionCreateSuccess = z.infer<typeof AuthSessionCreateSuccessSchema>;
+
 export const ProblemTypeSchema = z.enum([
   // Upload-side (covers all 5 UploadWriteReason variants 1:1)
   'urn:ok:error:malformed-upload',

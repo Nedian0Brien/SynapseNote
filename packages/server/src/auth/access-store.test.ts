@@ -228,3 +228,61 @@ describe('store file handling', () => {
     expect(statSync(path).isFile()).toBe(true);
   });
 });
+
+describe('token-for-session exchange', () => {
+  test('a valid token secret mints a session', () => {
+    const store = openAccessStore(freshStorePath());
+    const token = store.createToken('browser');
+    const minted = store.exchangeToken(token.secret);
+    expect(minted).not.toBeNull();
+    expect(store.verify({ scheme: 'session', value: minted?.secret ?? '' })).toMatchObject({
+      kind: 'session',
+      label: 'browser',
+    });
+  });
+
+  test('an unknown secret mints nothing', () => {
+    const store = openAccessStore(freshStorePath());
+    store.createToken('browser');
+    expect(store.exchangeToken(`${TOKEN_PREFIX}nope`)).toBeNull();
+  });
+
+  test('a revoked token cannot be exchanged', () => {
+    const store = openAccessStore(freshStorePath());
+    const token = store.createToken('browser');
+    store.revokeToken(token.record.id);
+    expect(store.exchangeToken(token.secret)).toBeNull();
+  });
+
+  test('a session secret cannot be exchanged for another session', () => {
+    // Otherwise a stolen cookie could be rolled forward indefinitely without
+    // ever holding the long-lived token.
+    const store = openAccessStore(freshStorePath());
+    const token = store.createToken('browser');
+    const session = store.createSession(token.record.id);
+    expect(store.exchangeToken(session.secret)).toBeNull();
+  });
+
+  test('signing out revokes by the cookie secret', () => {
+    const store = openAccessStore(freshStorePath());
+    const token = store.createToken('browser');
+    const session = store.createSession(token.record.id);
+    expect(store.revokeSessionBySecret(session.secret)).toBe(true);
+    expect(store.verify({ scheme: 'session', value: session.secret })).toBeNull();
+  });
+
+  test('signing out with an unknown secret reports no change', () => {
+    const store = openAccessStore(freshStorePath());
+    expect(store.revokeSessionBySecret(`${TOKEN_PREFIX}nope`)).toBe(false);
+    expect(store.revokeSessionBySecret('not-ours')).toBe(false);
+  });
+
+  test('exchange works when destructured off the store', () => {
+    // The CLI and handlers pull methods off the object; a `this`-dependent
+    // implementation would throw here.
+    const store = openAccessStore(freshStorePath());
+    const token = store.createToken('browser');
+    const { exchangeToken } = store;
+    expect(exchangeToken(token.secret)).not.toBeNull();
+  });
+});

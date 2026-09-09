@@ -36,7 +36,7 @@ import { type AccessPolicy, authorizeRequest, LOCAL_ACCESS_POLICY } from './acce
 import { AgentFocusBroadcaster } from './agent-focus.ts';
 import { AgentPresenceBroadcaster } from './agent-presence.ts';
 import { AgentSessionManager } from './agent-sessions.ts';
-import { createApiExtension, isSafeDocName } from './api-extension.ts';
+import { type AccessSessionIssuer, createApiExtension, isSafeDocName } from './api-extension.ts';
 import { assetReferencesChanged } from './asset-references.ts';
 import { seedBasenameIndex, seedSingleDirBasenameIndex } from './asset-walk.ts';
 import { HocuspocusAuthRejection, parseHocuspocusAuthToken } from './auth-token-schema.ts';
@@ -382,6 +382,12 @@ export interface ServerOptions {
    * Defaults to `LOCAL_ACCESS_POLICY` — today's loopback + Host gate.
    */
   accessPolicy?: AccessPolicy;
+  /**
+   * Mints and revokes browser sessions for `/api/auth/session`. Forwarded to
+   * `createApiExtension`; `bootServer` supplies it only alongside a `remote`
+   * policy.
+   */
+  accessSessions?: AccessSessionIssuer;
 }
 
 export interface ServerInstance {
@@ -628,6 +634,7 @@ export function createServer(options: ServerOptions): ServerInstance {
     singleDocRelPath,
     ephemeral = false,
     accessPolicy = LOCAL_ACCESS_POLICY,
+    accessSessions,
   } = options;
 
   const log = getLogger('server');
@@ -1955,6 +1962,7 @@ export function createServer(options: ServerOptions): ServerInstance {
       hocuspocus,
       sessionManager,
       accessPolicy,
+      accessSessions,
       contentDir,
       databaseDataPlane,
       databaseCommentStore,

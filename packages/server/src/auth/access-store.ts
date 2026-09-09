@@ -109,7 +109,15 @@ export interface AccessStore {
   /** Number of tokens that are currently usable. */
   tokenCount(): number;
   createSession(tokenId: string, ttlMs?: number): MintedSession;
+  /**
+   * Verify a token secret and mint a session for it in one step — the
+   * browser's sign-in path. Returns null when the secret names no live token,
+   * so the caller cannot tell "unknown token" from "revoked token".
+   */
+  exchangeToken(tokenSecret: string, ttlMs?: number): MintedSession | null;
   revokeSession(id: string): boolean;
+  /** Revoke by the secret the cookie carries. The sign-out path. */
+  revokeSessionBySecret(secret: string): boolean;
   /** Drop expired sessions. Called on open and on every session mint. */
   pruneSessions(): number;
   /** The verifier handed to `access-control.ts`. */
@@ -260,6 +268,25 @@ export function openAccessStore(path: string): AccessStore {
     return null;
   };
 
+  function createSession(tokenId: string, ttlMs: number = DEFAULT_SESSION_TTL_MS): MintedSession {
+    if (!tokens.some((t) => t.id === tokenId)) {
+      throw new Error(`no access token with id ${tokenId}`);
+    }
+    pruneSessions();
+    const secret = mintSecret();
+    const now = Date.now();
+    const record: SessionRecord = {
+      id: randomUUID(),
+      tokenId,
+      hash: sha256Hex(secret),
+      createdAt: new Date(now).toISOString(),
+      expiresAt: new Date(now + ttlMs).toISOString(),
+    };
+    sessions = [...sessions, record];
+    flush();
+    return { record, secret };
+  }
+
   pruneSessions();
 
   return {
@@ -294,29 +321,31 @@ export function openAccessStore(path: string): AccessStore {
 
     tokenCount: () => tokens.length,
 
-    createSession(tokenId: string, ttlMs: number = DEFAULT_SESSION_TTL_MS): MintedSession {
-      if (!tokens.some((t) => t.id === tokenId)) {
-        throw new Error(`no access token with id ${tokenId}`);
-      }
-      pruneSessions();
-      const secret = mintSecret();
-      const now = Date.now();
-      const record: SessionRecord = {
-        id: randomUUID(),
-        tokenId,
-        hash: sha256Hex(secret),
-        createdAt: new Date(now).toISOString(),
-        expiresAt: new Date(now + ttlMs).toISOString(),
-      };
-      sessions = [...sessions, record];
-      flush();
-      return { record, secret };
+    createSession,
+
+    exchangeToken(
+      tokenSecret: string,
+      ttlMs: number = DEFAULT_SESSION_TTL_MS,
+    ): MintedSession | null {
+      const principal = verify({ scheme: 'bearer', value: tokenSecret });
+      if (principal === null) return null;
+      return createSession(principal.id, ttlMs);
     },
 
     revokeSession(id: string): boolean {
       const next = sessions.filter((s) => s.id !== id);
       if (next.length === sessions.length) return false;
       sessions = next;
+      flush();
+      return true;
+    },
+
+    revokeSessionBySecret(secret: string): boolean {
+      if (!secret.startsWith(TOKEN_PREFIX)) return false;
+      const hash = sha256Hex(secret);
+      const match = sessions.find((s) => hashesEqual(s.hash, hash));
+      if (match === undefined) return false;
+      sessions = sessions.filter((s) => s.id !== match.id);
       flush();
       return true;
     },

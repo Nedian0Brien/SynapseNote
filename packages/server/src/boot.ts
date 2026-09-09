@@ -38,7 +38,10 @@ import { context, propagation } from '@opentelemetry/api';
 import { simpleGit } from 'simple-git';
 import sirv from 'sirv';
 import { createAssetServeMiddleware } from './asset-serve-middleware.ts';
+import { formatAccessPolicyProblems, resolveAccessPolicy } from './auth/access-config.ts';
+import { accessStorePath, openAccessStore } from './auth/access-store.ts';
 import { bootElapsedMs, recordBootPhase, startBootTimings } from './boot-timings.ts';
+import { getLocalDir } from './config/paths.ts';
 import type { Config } from './config/schema.ts';
 import { ConflictStore } from './conflict-storage.ts';
 import { stripDocExtension } from './doc-extensions.ts';
@@ -649,8 +652,46 @@ async function bootServerInner(opts: BootServerOptions): Promise<BootedServer> {
   }
 
   // Compose createServer options from the subset we accept.
+  // Resolve how this process admits callers, before anything binds a socket.
+  //
+  // `opts.accessPolicy` is the test/embedder seam; production leaves it unset
+  // and the answer comes from the environment plus the on-disk token store.
+  // A remote configuration that is missing a piece stops the boot here, with
+  // every problem listed at once — a server that started and then refused
+  // every request would be a much worse way to learn the same thing.
+  const accessStore = openAccessStore(
+    accessStorePath(getLocalDir(opts.projectDir ?? opts.contentDir)),
+  );
+  let accessPolicy = opts.accessPolicy;
+  if (accessPolicy === undefined) {
+    const resolved = resolveAccessPolicy(process.env, { store: accessStore });
+    if (!resolved.ok) throw new Error(formatAccessPolicyProblems(resolved.problems));
+    accessPolicy = resolved.policy;
+  }
+  // The session endpoint exists only where sessions mean something. Under a
+  // local policy the api-extension answers 404 for it.
+  const accessSessions =
+    accessPolicy.mode === 'remote'
+      ? {
+          exchangeToken: (tokenSecret: string) => {
+            const minted = accessStore.exchangeToken(tokenSecret);
+            if (minted === null) return null;
+            const owner = accessStore
+              .listTokens()
+              .find((token) => token.id === minted.record.tokenId);
+            return {
+              secret: minted.secret,
+              expiresAt: minted.record.expiresAt,
+              label: owner?.name ?? 'session',
+            };
+          },
+          revokeSessionBySecret: (secret: string) => accessStore.revokeSessionBySecret(secret),
+        }
+      : undefined;
+
   const serverInstance = createServer({
-    accessPolicy: opts.accessPolicy,
+    accessPolicy,
+    accessSessions,
     contentDir: opts.contentDir,
     projectDir: opts.projectDir,
     contentRoot: opts.contentRoot,
@@ -823,7 +864,7 @@ async function bootServerInner(opts: BootServerOptions): Promise<BootedServer> {
     : undefined;
 
   const mount = mountMcpAndApi({
-    accessPolicy: opts.accessPolicy,
+    accessPolicy,
     httpServer,
     hocuspocus,
     mcpHttpHandler,

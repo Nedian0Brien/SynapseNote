@@ -20,7 +20,9 @@ function fakeStore(tokenCount: number): AccessStore {
     createSession: () => {
       throw new Error('unused');
     },
+    exchangeToken: () => null,
     revokeSession: () => false,
+    revokeSessionBySecret: () => false,
     pruneSessions: () => 0,
     verify: () => null,
   };

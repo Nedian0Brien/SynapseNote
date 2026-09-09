@@ -45,6 +45,8 @@ import {
   AgentWriteSuccessSchema,
   ApiConfigSuccessSchema,
   ASSET_EXTENSIONS,
+  AuthSessionCreateRequestSchema,
+  AuthSessionCreateSuccessSchema,
   applyPatchToFm,
   BacklinkCountsSuccessSchema,
   BacklinksSuccessSchema,
@@ -247,9 +249,12 @@ import {
   type AccessDenial,
   type AccessPolicy,
   accessRequestFromNode,
+  authorizeHost,
   authorizeOrigin,
   authorizeRequest,
   LOCAL_ACCESS_POLICY,
+  readCookie,
+  SESSION_COOKIE_NAME,
 } from './access-control.ts';
 import { captureEffect } from './activity-log.ts';
 import { listAgentActivity, synthesizeStackItemDiffText } from './agent-activity.ts';
@@ -408,6 +413,7 @@ import { reprojectAllManagedSkills } from './skill-reproject.ts';
 import { readSkillInstallStateSnapshot } from './skill-state.ts';
 import { readSkillTargets, writeSkillTargets } from './skill-targets-store.ts';
 import { handleSpawnCursor } from './spawn-cursor-api.ts';
+import { NO_TRUSTED_PROXY, resolveClientProtocolIsSecure } from './trusted-proxy.ts';
 import { readUiLock } from './ui-lock.ts';
 import {
   HashingPassThrough,
@@ -2563,6 +2569,12 @@ export interface ApiExtensionOptions {
    */
   accessPolicy?: AccessPolicy;
   /**
+   * Mints and revokes browser sessions for `POST`/`DELETE /api/auth/session`.
+   * Wired by `bootServer` alongside a `remote` policy; absent everywhere else,
+   * which makes the endpoint answer 404.
+   */
+  accessSessions?: AccessSessionIssuer;
+  /**
    * Per-process UUID advertised via `GET /api/server-info` and the
    * `__system__` CC1 `server-info` broadcast. Clients cache this value
    * and claim it in the `expectedServerInstanceId` field of their auth
@@ -2948,6 +2960,29 @@ export function getCurrentDocumentSnapshot(
  * wire shape stays identical to what each of these gates emitted before they
  * were routed through `access-control.ts`.
  */
+/**
+ * The one `/api/*` route a remote caller may reach without a credential:
+ * trading an access token for a session cookie. Naming it here keeps the
+ * admission gate and the handler from drifting apart.
+ */
+export const AUTH_SESSION_ROUTE = '/api/auth/session';
+
+/**
+ * The narrow slice of the access store the session endpoint needs.
+ *
+ * Declared as its own shape so `api-extension.ts` depends on two functions
+ * rather than on the store's file format, and so tests can drive the endpoint
+ * without touching disk.
+ */
+export interface AccessSessionIssuer {
+  /** Verify a token secret and mint a session. Null when the token is not live. */
+  exchangeToken(
+    tokenSecret: string,
+  ): { readonly secret: string; readonly expiresAt: string; readonly label: string } | null;
+  /** Drop the session a cookie names. False when it named none. */
+  revokeSessionBySecret(secret: string): boolean;
+}
+
 function denyAccess(res: ServerResponse, denial: AccessDenial, handler: string): void {
   errorResponse(res, denial.status, denial.type, denial.title, { handler });
 }
@@ -3012,6 +3047,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     embeddingsSecretsFile,
     ephemeral = false,
     accessPolicy = LOCAL_ACCESS_POLICY,
+    accessSessions,
   } = options;
 
   // Concurrency guard: at most 1 in-flight request per local-op endpoint
@@ -18341,7 +18377,124 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           )
       : undefined,
   );
+  /**
+   * `POST /api/auth/session` — trade an access token for a session cookie.
+   * `DELETE /api/auth/session` — drop the session the cookie names.
+   *
+   * The browser never holds the long-lived token after this exchange: the
+   * session secret goes out `HttpOnly`, so page JavaScript (and anything that
+   * manages to run in the page) cannot read either credential.
+   *
+   * Inert under a `local` policy. Loopback admission needs no credential, so
+   * an endpoint that mints one would be a way to manufacture a remote
+   * credential from a local foothold.
+   */
+  async function handleAuthSession(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    if (accessPolicy.mode !== 'remote' || accessSessions === undefined) {
+      errorResponse(res, 404, 'urn:ok:error:not-found', 'API endpoint not found.', {
+        handler: 'auth-session',
+        detail: 'Session exchange is available only when the server runs in remote access mode.',
+      });
+      return;
+    }
+
+    if (req.method === 'DELETE') {
+      const presented = readCookie(req.headers.cookie, SESSION_COOKIE_NAME);
+      if (presented !== undefined) accessSessions.revokeSessionBySecret(presented);
+      // Always clear the cookie and always answer 204, whether or not a live
+      // session was found. Signing out is not a place to disclose whether the
+      // cookie the caller held was still valid.
+      res.setHeader('Set-Cookie', clearSessionCookie(req));
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+
+    if (req.method !== 'POST') {
+      errorResponse(res, 405, 'urn:ok:error:method-not-allowed', 'Method not allowed.', {
+        handler: 'auth-session',
+        extraHeaders: { Allow: 'POST, DELETE' },
+      });
+      return;
+    }
+
+    await authSessionCreate(req, res);
+  }
+
+  const authSessionCreate = withValidation(
+    AuthSessionCreateRequestSchema,
+    async (req, res, body) => {
+      // Narrowed again inside the validated handler — `withValidation` gives
+      // us a fresh closure and TypeScript cannot carry the outer guard in.
+      if (accessPolicy.mode !== 'remote' || accessSessions === undefined) {
+        errorResponse(res, 404, 'urn:ok:error:not-found', 'API endpoint not found.', {
+          handler: 'auth-session',
+        });
+        return;
+      }
+      const minted = accessSessions.exchangeToken(body.token);
+      if (minted === null) {
+        // Same envelope the admission gate emits for a bad credential, so a
+        // caller cannot distinguish "wrong token" from "not signed in".
+        errorResponse(res, 401, 'urn:ok:error:unauthorized', 'Authentication required.', {
+          handler: 'auth-session',
+        });
+        return;
+      }
+      res.setHeader('Set-Cookie', sessionCookie(req, minted.secret, minted.expiresAt));
+      successResponse(
+        res,
+        200,
+        AuthSessionCreateSuccessSchema,
+        { label: minted.label, expiresAt: minted.expiresAt },
+        { handler: 'auth-session', extraHeaders: { 'Cache-Control': 'no-store' } },
+      );
+    },
+    { handler: 'auth-session', method: 'POST' },
+  );
+
+  /**
+   * Whether the client's own leg of this connection was encrypted.
+   *
+   * Drives the `Secure` cookie attribute. A wrong `true` mints a cookie the
+   * browser silently refuses to store over plaintext — a sign-in that appears
+   * to succeed and never sticks — so it is read through the same trusted-proxy
+   * rules as the client address rather than assumed.
+   */
+  function clientIsSecure(req: IncomingMessage): boolean {
+    const trustedProxy =
+      accessPolicy.mode === 'remote' ? accessPolicy.trustedProxy : NO_TRUSTED_PROXY;
+    return resolveClientProtocolIsSecure(trustedProxy, {
+      socketEncrypted: (req.socket as { encrypted?: boolean }).encrypted === true,
+      forwardedProto: req.headers['x-forwarded-proto'],
+    });
+  }
+
+  function sessionCookie(req: IncomingMessage, secret: string, expiresAt: string): string {
+    const maxAgeSeconds = Math.max(0, Math.floor((Date.parse(expiresAt) - Date.now()) / 1000));
+    // `SameSite=Lax` is what closes the cross-site write path for a
+    // cookie-authenticated API: a form or fetch from another origin does not
+    // carry this cookie, so the Origin allowlist is a second line rather than
+    // the only one.
+    const attrs = [
+      `${SESSION_COOKIE_NAME}=${secret}`,
+      'HttpOnly',
+      'SameSite=Lax',
+      'Path=/',
+      `Max-Age=${maxAgeSeconds}`,
+    ];
+    if (clientIsSecure(req)) attrs.push('Secure');
+    return attrs.join('; ');
+  }
+
+  function clearSessionCookie(req: IncomingMessage): string {
+    const attrs = [`${SESSION_COOKIE_NAME}=`, 'HttpOnly', 'SameSite=Lax', 'Path=/', 'Max-Age=0'];
+    if (clientIsSecure(req)) attrs.push('Secure');
+    return attrs.join('; ');
+  }
+
   const routes: Record<string, (req: IncomingMessage, res: ServerResponse) => Promise<void>> = {
+    [AUTH_SESSION_ROUTE]: handleAuthSession,
     '/api/databases/catalog': databaseApi.catalog,
     '/api/databases/describe': databaseApi.describe,
     '/api/databases/record': databaseApi.record,
@@ -18620,37 +18773,57 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       // `allowMissingPeer` — the Host-header gate still fires (tests set
       // `host: 'localhost'`), so the protection remains meaningful for any
       // production path.
-      if (MUTATING_ROUTES.has(url) || STATE_MUTATING_PREFIXES.some((p) => url.startsWith(p))) {
-        const admission = authorizeRequest(accessPolicy, accessRequestFromNode(request), {
-          allowMissingPeer: true,
-        });
-        if (!admission.ok) {
-          denyAccess(response, admission, 'api-mutating-gate');
-          return;
-        }
-      }
+      if (url.startsWith('/api/')) {
+        // Which requests must present admission depends on what the policy
+        // treats as proof:
+        //
+        //   remote   — all of them. A credential is the only proof, so a read
+        //              route is exactly as exposed as a write route. The one
+        //              exception is the token-for-session exchange, which
+        //              cannot demand a credential because presenting one is
+        //              what it is for; it gets the Host check on its own.
+        //   local,   — all of them. `ok <file>` points contentDir at a user
+        //   ephemeral  data dir, and the byte-read routes are bounded only by
+        //              `isWithinContentDir`, so a rebound page could exfiltrate
+        //              siblings.
+        //   local,   — the state-mutating subset. Reads are admitted by
+        //   project    reachability (the user chose the served root); the
+        //              rebinding defense covers the writes.
+        const mutating =
+          MUTATING_ROUTES.has(url) || STATE_MUTATING_PREFIXES.some((p) => url.startsWith(p));
+        const gate =
+          accessPolicy.mode === 'remote'
+            ? url === AUTH_SESSION_ROUTE
+              ? 'auth-exchange'
+              : 'api-admission-gate'
+            : ephemeral
+              ? 'api-ephemeral-gate'
+              : mutating
+                ? 'api-mutating-gate'
+                : 'none';
 
-      // No-project ephemeral single-file mode (`ok <file>`) sets contentDir to
-      // the opened file's PARENT — often a user-data dir (~/Downloads,
-      // ~/Documents). Several read routes (`/api/asset`, `/api/asset-text`,
-      // `/api/document`) return bytes under contentDir bounded only by
-      // `isWithinContentDir`, NOT by the single-file content scope (which is
-      // enforced at the indexing/listing layer, not the byte-read path). So
-      // without a host gate a DNS-rebound page could exfiltrate sibling files.
-      // Apply the same loopback + workspace-host check the mutating gate uses to
-      // EVERY `/api/*` request in ephemeral mode — one choke point, so future
-      // read routes inherit it rather than each needing its own gate. Project /
-      // desktop modes (`ephemeral` falsy) keep their prior origin-only posture
-      // for reads (the user chose the served root there); this mirrors the
-      // ephemeral-scoped content-asset gate in `mcp-mount.ts`, which covers the
-      // non-`/api/` static-serve path.
-      if (ephemeral && url.startsWith('/api/')) {
-        const admission = authorizeRequest(accessPolicy, accessRequestFromNode(request), {
-          allowMissingPeer: true,
-        });
-        if (!admission.ok) {
-          denyAccess(response, admission, 'api-ephemeral-gate');
-          return;
+        if (gate === 'auth-exchange') {
+          // No credential required, but the rebinding defense still holds:
+          // without it a rebound page could POST a stolen token here and
+          // collect a cookie scoped to this origin.
+          if (!authorizeHost(accessPolicy, request.headers.host)) {
+            errorResponse(
+              response,
+              403,
+              'urn:ok:error:host-not-allowed',
+              'Host header not allowed.',
+              { handler: 'auth-exchange' },
+            );
+            return;
+          }
+        } else if (gate !== 'none') {
+          const admission = authorizeRequest(accessPolicy, accessRequestFromNode(request), {
+            allowMissingPeer: true,
+          });
+          if (!admission.ok) {
+            denyAccess(response, admission, gate);
+            return;
+          }
         }
       }
 

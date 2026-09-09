@@ -251,8 +251,7 @@ export function authorizeRequest(
   // Remote mode. Host first: it is the cheapest check and refusing an
   // unrecognized hostname before touching the credential keeps a token from
   // being verified — and therefore timing-probed — through an arbitrary vhost.
-  const host = request.host?.toLowerCase();
-  if (host === undefined || !policy.allowedHosts.includes(host)) {
+  if (!authorizeHost(policy, request.host)) {
     return deny(
       403,
       'urn:ok:error:host-not-allowed',
@@ -301,6 +300,20 @@ export function authorizeOrigin(policy: AccessPolicy, origin: string | undefined
   // is accepted in local mode for the packaged Electron renderer; on a public
   // origin it is any hostile page that sandboxed itself, so it is refused.
   return policy.allowedOrigins.includes(origin);
+}
+
+/**
+ * Whether a `Host` header names this server.
+ *
+ * Split out of `authorizeRequest` for the one route that must answer before a
+ * credential exists: the token-for-session exchange. That endpoint cannot
+ * demand a credential — presenting one is what it is for — but it is still
+ * browser-facing, so the rebinding defense has to hold. Everything else calls
+ * `authorizeRequest`, which applies this check itself.
+ */
+export function authorizeHost(policy: AccessPolicy, host: string | undefined): boolean {
+  if (policy.mode === 'local') return isAllowedWorkspaceHostHeader(host);
+  return host !== undefined && policy.allowedHosts.includes(host.toLowerCase());
 }
 
 /** Node `IncomingMessage`-shaped input, kept minimal so tests can fake it. */
