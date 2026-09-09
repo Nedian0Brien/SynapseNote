@@ -139,6 +139,8 @@ export interface OAuthStore {
 
   /** Drop every token issued to a client. Used when a client is removed. */
   revokeClientTokens(clientId: string): number;
+  /** Forget a client entirely, so it must be approved again to reconnect. */
+  removeClient(clientId: string): boolean;
   /** Drop expired codes and tokens. */
   prune(): number;
 
@@ -357,6 +359,15 @@ export function openOAuthStore(path: string): OAuthStore {
         flush();
       }
       return dropped;
+    },
+
+    removeClient(clientId) {
+      reloadIfChanged();
+      const next = clients.filter((c) => c.clientId !== clientId);
+      if (next.length === clients.length) return false;
+      clients = next;
+      flush();
+      return true;
     },
 
     prune,

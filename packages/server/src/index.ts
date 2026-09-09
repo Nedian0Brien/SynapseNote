@@ -779,6 +779,16 @@ export {
   MissingOkConfigError,
   type MissingOkConfigKind,
 } from './missing-ok-config-error.ts';
+export {
+  type AuthorizationCodeRecord,
+  type IssuedGrant,
+  type OAuthClientRecord,
+  type OAuthStore,
+  type OAuthTokenPrincipal,
+  type OAuthTokenRecord,
+  oauthStorePath,
+  openOAuthStore,
+} from './oauth/store.ts';
 // perf-measurement.ts's HTTP route (installPerfMeasurementHttpRoute) is
 // DEV-only test instrumentation for the cap-graduation sweep harness, gated
 // behind NODE_ENV + OK_PERF_SERVER_MEMORY_ENABLED. It is intentionally NOT

@@ -182,9 +182,18 @@ specification prefers and the one ChatGPT uses. `POST /oauth/register`
 Access tokens last an hour and refresh tokens rotate: spending one retires the
 whole grant it belonged to, so a stolen pair cannot outlive the real client.
 
-To see or cut off what is connected, read `.ok/local/oauth.json` in the
-workspace volume. Deleting a client's entry and its tokens there ends its
-access at the next request.
+To see or cut off what is connected:
+
+```bash
+docker compose -f deploy/compose.yml exec synapsenote \
+  node /app/dist/cli.mjs access client list
+docker compose -f deploy/compose.yml exec synapsenote \
+  node /app/dist/cli.mjs access client revoke <client-id>
+```
+
+Revoking drops every token the client holds and forgets the approval, so it
+has to be approved again to reconnect. The running server picks this up
+without a restart.
 
 ## Not covered here
 

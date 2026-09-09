@@ -8,7 +8,13 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { accessStorePath, getLocalDir, openAccessStore } from '@nedian0brien/synapsenote-server';
+import {
+  accessStorePath,
+  getLocalDir,
+  oauthStorePath,
+  openAccessStore,
+  openOAuthStore,
+} from '@nedian0brien/synapsenote-server';
 import { accessCommand } from './index.ts';
 
 const dirs: string[] = [];
@@ -155,5 +161,67 @@ describe('access token revoke', () => {
     await run(dir, ['token', 'create', 'chatgpt']);
     const id = storeFor(dir).listTokens()[0]?.id ?? '';
     expect((await run(dir, ['token', 'revoke', id])).exitCode).toBe(0);
+  });
+});
+
+describe('access client', () => {
+  test('reports nothing when no application has been approved', async () => {
+    const dir = freshProject();
+    const result = await run(dir, ['client', 'list']);
+    expect(result.stderr).toContain('No OAuth clients have been approved');
+    expect(result.stdout).toBe('');
+  });
+
+  test('lists an approved client with its live token count', async () => {
+    const dir = freshProject();
+    const store = openOAuthStore(oauthStorePath(getLocalDir(dir)));
+    store.upsertClient({
+      clientId: 'dcr-1',
+      clientName: 'ChatGPT',
+      redirectUris: ['https://chatgpt.example/cb'],
+      source: 'dcr',
+    });
+    store.issueGrant({
+      clientId: 'dcr-1',
+      scope: 'synapsenote:workspace',
+      resource: 'https://notes.example.com/mcp',
+      principalId: 'tok-1',
+      principalLabel: 'owner',
+    });
+    const result = await run(dir, ['client', 'list']);
+    expect(result.stdout).toContain('ChatGPT');
+    expect(result.stdout).toContain('dcr-1');
+    // One live access token; the refresh token is not a connection.
+    expect(result.stdout).toMatch(/\bdcr\b.*\b1\b/);
+  });
+
+  test('revoking a client drops its tokens and forgets it', async () => {
+    const dir = freshProject();
+    const store = openOAuthStore(oauthStorePath(getLocalDir(dir)));
+    store.upsertClient({
+      clientId: 'dcr-1',
+      clientName: 'ChatGPT',
+      redirectUris: ['https://chatgpt.example/cb'],
+      source: 'dcr',
+    });
+    const grant = store.issueGrant({
+      clientId: 'dcr-1',
+      scope: 's',
+      resource: 'r',
+      principalId: 'p',
+      principalLabel: 'l',
+    });
+    const result = await run(dir, ['client', 'revoke', 'dcr-1']);
+    expect(result.stderr).toContain('Revoked dcr-1');
+    const after = openOAuthStore(oauthStorePath(getLocalDir(dir)));
+    expect(after.verifyAccessToken(grant.accessToken)).toBeNull();
+    expect(after.getClient('dcr-1')).toBeUndefined();
+  });
+
+  test('revoking an unknown client fails with a non-zero exit', async () => {
+    const dir = freshProject();
+    const result = await run(dir, ['client', 'revoke', 'nope']);
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain('No OAuth client with id nope');
   });
 });
