@@ -8,6 +8,7 @@
  */
 
 import { Command } from 'commander';
+import { accountCommand } from './account.ts';
 import { clientCommand } from './client.ts';
 import { tokenCommand } from './token.ts';
 
@@ -15,6 +16,7 @@ export function accessCommand(): Command {
   const cmd = new Command('access');
   cmd.description('Remote access credentials for this project’s server');
   cmd.addCommand(tokenCommand());
+  cmd.addCommand(accountCommand());
   cmd.addCommand(clientCommand());
   return cmd;
 }
