@@ -154,6 +154,7 @@ bun run dev
 - `packages/plugin` - agent integration package
 - `packages/server` - local collaboration server
 - `docs` - documentation site
+- `deploy` - Docker image, compose file, nginx config, and runbook for hosting the server
 
 ## Public repository rules
 

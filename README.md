@@ -88,6 +88,7 @@ The packaged CLI exposes `synapsenote`. The legacy `ok` command and `.ok` projec
 - `packages/plugin` - agent integration package
 - `packages/server` - local collaboration server
 - `docs` - documentation site
+- `deploy` - Docker image, compose file, nginx config, and runbook for hosting the server
 
 ## Contributions
 

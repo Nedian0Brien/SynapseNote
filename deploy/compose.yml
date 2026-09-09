@@ -1,0 +1,83 @@
+# SynapseNote server, behind the host's existing nginx.
+#
+# Run from the repository root:
+#   docker compose -f deploy/compose.yml up -d --build
+#
+# The published port binds to host loopback only. nginx terminates TLS for
+# synapse.lawdigest.kr and proxies here, so the container is never reachable
+# from the internet directly — which is also what makes OK_TRUSTED_PROXY_HOPS=1
+# a true statement rather than a hope.
+
+services:
+  synapsenote:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: synapsenote-server:local
+    restart: unless-stopped
+
+    # Loopback-only publish. Dropping the `127.0.0.1:` prefix would expose the
+    # container on every interface and bypass nginx — and with it the TLS that
+    # the session cookie's `Secure` attribute depends on.
+    ports:
+      - '127.0.0.1:8080:8080'
+
+    environment:
+      # The origin the browser is served from. The Host allowlist and the
+      # Origin allowlist are both derived from this one value.
+      OK_PUBLIC_ORIGIN: https://synapse.lawdigest.kr
+
+      # One reverse proxy (nginx) sits in front. This is what makes
+      # `X-Forwarded-For` trustworthy: with 0, the header is ignored entirely
+      # and every request would look like it came from nginx itself.
+      OK_TRUSTED_PROXY_HOPS: '1'
+
+      # Uncomment only to bring the stack up before TLS is in place, on a
+      # network you trust. It lets the server accept an http:// public origin,
+      # which means tokens and session cookies travel in the clear.
+      # OK_ALLOW_INSECURE_ORIGIN: '1'
+
+    volumes:
+      # The workspace: documents plus `.ok/`, which holds the shadow git
+      # repository and `.ok/local/access.json`. Back this up — losing it loses
+      # both the notes and the credentials.
+      - synapsenote-workspace:/workspace
+
+    # The server writes only under /workspace. Everything else can be read-only
+    # so a compromised process cannot rewrite its own code, with tmpfs for the
+    # paths that legitimately need writes.
+    read_only: true
+    tmpfs:
+      # The CLI's file logger writes under $HOME/.ok/logs, and git and node
+      # both want scratch space. Everything durable lives in the workspace
+      # volume, so these can be discarded on restart.
+      #
+      # The ownership is load-bearing. A tmpfs mounts root-owned by default,
+      # and the container runs as uid 1000, so a bare `- /home/node` makes the
+      # logger's first mkdir fail with EACCES and the process exits before it
+      # serves anything.
+      - /tmp:mode=1777
+      - /home/node:uid=1000,gid=1000,mode=0700
+
+    healthcheck:
+      # Healthy means the process answers AND refuses. `/api/config` is gated in
+      # remote mode, so a refusal proves both; a 200 would mean the gate is off.
+      #
+      # The refusal is 403 rather than 401 because Node's fetch will not let a
+      # caller set `Host`, so this request arrives naming the container itself
+      # and the Host allowlist answers first. Both codes are accepted: which
+      # check fires is an implementation detail, and pinning one would turn a
+      # harmless reordering into a false unhealthy.
+      test:
+        - CMD-SHELL
+        - >-
+          node -e "fetch('http://127.0.0.1:8080/api/config')
+          .then(r=>process.exit(r.status===401||r.status===403?0:1))
+          .catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 10s
+      start_period: 90s
+      retries: 3
+
+volumes:
+  synapsenote-workspace:

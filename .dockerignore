@@ -1,0 +1,66 @@
+# Build context for deploy/Dockerfile.
+#
+# The Dockerfile copies the whole repo and runs `bun install` inside the image,
+# so anything reproducible from source is dead weight here — and `node_modules`
+# copied from a macOS host would carry the wrong native binaries into a
+# linux/arm64 build.
+
+node_modules
+**/node_modules
+
+# Build output. Every stage that needs these produces them in the image.
+dist
+**/dist
+packages/desktop/out
+packages/desktop/dist-desktop
+packages/desktop/dist-desktop-local
+packages/desktop/dist-desktop-local-staging-*
+packages/desktop/dist-desktop-local-previous-*
+.next
+.source
+**/*.tsbuildinfo
+
+# Caches and scratch space.
+.turbo
+**/.turbo
+.bun
+tmp
+**/test-results
+**/playwright-report
+**/blob-report
+
+# Git metadata. The image never runs git against this repo — the shadow
+# repository it does use lives in the mounted workspace.
+.git
+.worktree
+
+# Local tooling and editor state.
+.vscode
+.idea
+.claude
+.codex
+.ok
+.skill-archive
+.changeset
+
+# Secrets and local overrides. `.env.example` stays: it is documentation.
+.env
+.env.local
+.env.*.local
+.mcp.json
+
+# The docs site's own build output is excluded above. Its sources stay: the
+# root package.json lists `docs` as a workspace, and `bun install
+# --frozen-lockfile` fails if that package.json is missing from the context.
+
+# The deployment files themselves. `docker build -f` reads the Dockerfile
+# outside the context rules, and nothing in the image references this
+# directory — so excluding it keeps an edit to the Dockerfile, the compose
+# file, or the runbook from invalidating `COPY . .` and re-running the whole
+# build.
+deploy
+
+# Local verification artifacts.
+untitled_database_*
+.DS_Store
+*.log
