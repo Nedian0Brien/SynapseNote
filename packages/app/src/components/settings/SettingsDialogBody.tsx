@@ -106,6 +106,7 @@ import { AccountSection } from './AccountSection';
 import { AiToolsSection } from './AiToolsSection';
 import { EmbeddingsKeySection } from './EmbeddingsKeySection';
 import { OkignoreSection } from './OkignoreSection';
+import { PasskeySection } from './PasskeySection';
 import { ProjectAiToolsSection } from './ProjectAiToolsSection';
 import { ProjectTemplatesSection } from './ProjectTemplatesSection';
 import { SearchSection } from './SearchSection';
@@ -162,10 +163,13 @@ export function SettingsDialogBody({
   if (activeId === 'account') {
     // Two machine-global credentials live here: the GitHub account and the
     // embeddings provider key (the latter shared across all projects; semantic
-    // search is enabled per-project in This project → Search).
+    // search is enabled per-project in This project → Search). Passkeys join
+    // them only on a server running in remote mode — the section renders
+    // nothing anywhere else.
     return (
       <div className="space-y-8">
         <AccountSection />
+        <PasskeySection />
         <EmbeddingsKeySection />
       </div>
     );

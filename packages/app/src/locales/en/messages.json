@@ -127,6 +127,7 @@
     "1KJ5ip": ["Database actions"],
     "1MGRQl": ["Terminal sessions"],
     "1MahVY": ["New view"],
+    "1OjhDl": ["This device already has a passkey for this workspace."],
     "1QfxQT": ["Dismiss"],
     "1RluQD": ["Show replace"],
     "1SwD0W": ["No sample pages will be included in the proposal."],
@@ -320,6 +321,7 @@
       ", speed ",
       ["speedLabel"]
     ],
+    "4i29eu": ["That username and password were not accepted."],
     "4jDd0j": ["Anyone can see"],
     "4lwmSM": ["Show title"],
     "4mLBx9": ["Subscriptions aren't available right now."],
@@ -518,6 +520,7 @@
     "7kLDSk": ["What will be created"],
     "7mQWC3": ["Stale identities"],
     "7qRHf0": ["Install for Claude Chat & Cowork"],
+    "7sNhEz": ["Username"],
     "7uBlRT": ["Copy the focused file-tree item so Paste can duplicate it."],
     "80KbAS": ["Active and revoked links"],
     "80c4-P": ["Code copied to clipboard"],
@@ -545,6 +548,7 @@
       ]
     ],
     "8Gzz2G": ["worktree of ", ["worktreeOf"]],
+    "8IJDYy": ["Name this device"],
     "8Jm2EP": ["Toggle heading levels 1 through 6."],
     "8OGgNM": ["Open or close visual-editor find."],
     "8OxKZy": ["Move succeeded but the sidebar may be out of date — refresh to resync"],
@@ -558,6 +562,7 @@
     "8Y4Sus": ["Cannot delete last view"],
     "8YnFxS": ["Shared from SynapseNote"],
     "8Yx75l": ["Linked interactions"],
+    "8ZsakT": ["Password"],
     "8_brI5": ["Name is required"],
     "8ac4GO": ["Connect your AI tools to SynapseNote"],
     "8ajdPm": ["Database page is unavailable"],
@@ -762,6 +767,7 @@
     "BymzO4": ["Document outline"],
     "Bz34-n": ["Link force"],
     "Bz96uj": ["review the exact plan before canonical creation"],
+    "BzEFor": ["or"],
     "C0wW-t": [
       "Grant exact actions for ",
       ["databaseName"],
@@ -1060,6 +1066,7 @@
     "H-vDm3": ["Relaunching to install the update…"],
     "H0WlWQ": ["Grid of rows and columns with a header row."],
     "H0nHT4": ["Customize database page"],
+    "H1EXO7": ["MacBook"],
     "H243O7": ["Use the row below to add a page."],
     "H2GQNp": ["Default in views"],
     "H2n5TH": ["Current database source"],
@@ -1100,8 +1107,10 @@
     "HptUxX": ["Number"],
     "Hrz9NY": ["Wiki link"],
     "Hs5VV7": ["Loading related records"],
+    "Ht0ZVg": ["No passkeys yet."],
     "Hurb0E": ["Database view actions for ", ["inlineDatabaseContext"]],
     "HvYPjW": ["One record means"],
+    "HyVOJQ": ["We couldn't load your passkeys."],
     "HyvSqq": ["Project Skill"],
     "I-xDx_": ["Show retrieval details"],
     "I1gRhX": ["Failed to rename"],
@@ -1186,6 +1195,7 @@
     "JiLsSJ": ["Database templates"],
     "JkCD2u": ["Sync paused — you don't have permission to push to this repo"],
     "JlFcis": ["Send"],
+    "Jm633r": ["This server is not asking you to sign in. Reload the page to continue."],
     "JmfgFc": ["(a worktree of ", ["0"], ")"],
     "Jqqevv": ["System error"],
     "JrpKb8": ["Formula source"],
@@ -1445,6 +1455,7 @@
     "O4wxl8": ["Export as PDF"],
     "O7_W_a": ["Open with AI"],
     "O9oQJS": ["Send report"],
+    "OASfcg": ["Waiting for your passkey"],
     "OD0FCX": ["Hidden “", ["basename"], "”"],
     "OETysD": ["No hub pages yet. Hubs appear once pages accumulate inbound graph links."],
     "OEu_0l": ["Failed to load skills: ", ["0"]],
@@ -1477,6 +1488,7 @@
     "OXeLkt": ["No records in this gallery."],
     "OYHzN1": ["Tags"],
     "OZJeTZ": ["Skill"],
+    "Oa4IM-": ["Add a passkey"],
     "Oawo4U": ["The report service couldn't be reached."],
     "OdmsFg": ["Failed to delete item"],
     "OeAl1e": ["e.g. assets/uploads"],
@@ -1544,6 +1556,7 @@
     "PiH3UR": ["Copied!"],
     "PkgGOu": ["Loading database diagnostics"],
     "Pkw7J9": ["This folder is empty."],
+    "PlxXOp": ["This workspace is served remotely."],
     "PmTCkl": ["Couldn't export the PDF."],
     "PmmvzS": ["Calculate"],
     "Pn5YvM": ["Dashboard layout"],
@@ -1553,6 +1566,7 @@
     "PrJYSN": ["This folder isn't on GitHub yet. The link won't work until it's pushed."],
     "Prefix": ["Prefix"],
     "PrhzDE": ["Pan up"],
+    "PrpvTQ": ["Loading your passkeys"],
     "Pv0md3": ["Change property type"],
     "PyP1TM": ["Commits"],
     "Pyp1NA": ["Restore to this point?"],
@@ -1721,7 +1735,6 @@
     "Si7mIR": ["Create report"],
     "SiUUCS": ["Next match"],
     "SkMZlS": ["Couldn't remove <0>", ["targetGitPath"], "</0>: ", ["removeGitError"]],
-    "SkUcEr": ["Access token"],
     "Skr_7L": ["Search worktrees"],
     "Sq8lf2": ["Editors to install skills into"],
     "SqERVU": ["Unsaved Rollup preview · UTC · permission-scoped · evaluated at ", ["0"]],
@@ -1782,6 +1795,7 @@
     "UVLlMV": ["Couldn't reach GitHub. Try again?"],
     "UW93oq": ["Replace key"],
     "UYcGIW": ["Connecting — waiting for collab server"],
+    "UZKLEA": ["Passkeys"],
     "Ua78MH": ["no response"],
     "Uay5NL": [
       "This ",
@@ -1827,6 +1841,7 @@
     "V0VoD-": ["First page preview"],
     "V48OUT": ["You deleted <0>", ["filePath"], "</0> locally, but it was modified upstream."],
     "V7QxyT": ["Connection dropped"],
+    "V9C5ub": ["Too many failed attempts. Try again in ", ["seconds"], " seconds."],
     "VAHWL_": ["Connected as <0>@", ["signedInLogin"], "</0>"],
     "VBE2dw": [
       "Build and keep track of the world behind your story. A home for your characters, places, factions, and the lore that ties them together, so details stay consistent as you write."
@@ -1914,9 +1929,9 @@
       "</0> and all its git history. Working files stay in place. If the parent git repo is intentional (e.g. you cloned it), cancel and pick a location outside it."
     ],
     "Waiy-j": ["The agent's persona, values, and voice."],
+    "WaqaCM": ["Sign in with a passkey"],
     "WcWS__": ["Download file"],
     "Wcv-Zi": ["Make this knowledge base available as a Claude Skill."],
-    "WdilDa": ["That token was not accepted. Check that it has not been revoked."],
     "We7h2I": ["📝 or assets/icon.png"],
     "WepeNQ": ["Loading records"],
     "Weq9zb": ["General"],
@@ -2144,6 +2159,9 @@
       "/ and all files inside? This action cannot be undone."
     ],
     "a5ggpW": ["No pages match this view."],
+    "a8PbhL": [
+      "Sign in with Touch ID, Face ID, or a security key instead of typing your password."
+    ],
     "a9OzSn": ["No pages found for \"", ["trimmedQuery"], "\""],
     "aB-LTx": ["Failed to load PDF: ", ["0"]],
     "aBgwis": ["Scope"],
@@ -2305,6 +2323,7 @@
     ],
     "dIYSqk": ["remote"],
     "dJw2_7": ["Saved with the project for your team."],
+    "dK1Tjf": ["Could not remove that passkey."],
     "dKps4W": [
       "Opening behavior, properties, order, sorts, groups, colors, and layout display options save together. Filters stay on the active view's Filters action and use the same canonical view boundary."
     ],
@@ -2446,6 +2465,7 @@
     "fwhX-N": ["Indent or outdent source"],
     "fx7VAH": ["New database view"],
     "fxbCNQ": ["Synced. The link is up to date."],
+    "g-KBXF": ["Could not register that passkey."],
     "g3QhmE": ["Other properties"],
     "g3UF2V": ["Accept"],
     "g4XBm0": ["Small section heading."],
@@ -2816,6 +2836,9 @@
     "mF9LxA": ["Purple"],
     "mGaZwZ": ["See the full install guide"],
     "mHVPm5": ["Reconnect required"],
+    "mI4uYd": [
+      "No account yet? Create one on the server with <0>synapsenote access account create</0>."
+    ],
     "mIjDLt": [
       "Formula preview · UTC · deterministic null and error semantics · evaluated at ",
       ["evaluationNow"]
@@ -2866,9 +2889,6 @@
       "Repositories you've already cloned may keep syncing through git's own saved credentials, even after you disconnect."
     ],
     "msqUNq": ["Ready-made folders and templates to get you started quickly."],
-    "mvkqTW": [
-      "This workspace is served remotely and needs an access token. Create one on the server with <0>synapsenote access token create</0>."
-    ],
     "mvrUoe": ["Convert property type"],
     "mwMF9u": ["Open CodeMirror search in source editor mode."],
     "mxY24F": ["Duplicate the focused file-tree item when focus is in the Files sidebar."],
@@ -2962,6 +2982,7 @@
       "A key is set, but the embeddings provider rejected it or was unreachable — search fell back to keyword matching. Check the key in <0>Settings → Account</0> and the embeddings endpoint setting."
     ],
     "oFTgFf": ["no continuation"],
+    "oGFPLA": ["Added ", ["0"], " · Last used ", ["1"]],
     "oGlwk-": ["Unfavorite"],
     "oJl7eO": ["Unknown component: ", ["componentName"], " — source editable below"],
     "oKBnk5": ["More requests were blocked."],
@@ -3069,6 +3090,7 @@
     "qEue6Q": [" or "],
     "qFWMl-": ["View as text"],
     "qGBulj": ["Could not reach the server. Check your connection and try again."],
+    "qMo8iW": ["This browser cannot create passkeys. You can still remove existing ones."],
     "qNOgUu": ["Edits at the source land here — no copy-paste drift."],
     "qRZh7J": ["Let Tab leave the source editor instead of indenting."],
     "qSKu2v": ["Source navigation and selection"],
@@ -3317,6 +3339,7 @@
       "Couldn't restart the server — it's running under a different account. Restart your computer to clear it, then reopen this project."
     ],
     "uSMfoN": ["Verify"],
+    "uUehLT": ["Waiting"],
     "uWuOmc": ["Committing exact plan"],
     "uWx2ZP": ["Last sync"],
     "u_W65p": ["Database properties use the verified editor"],
@@ -3367,7 +3390,6 @@
     "v7lbnC": ["Find next match"],
     "v8gXQ8": ["Add reminder"],
     "v98mow": ["No databases yet."],
-    "vA6abR": ["This server is not asking for a token. Reload the page to continue."],
     "vAYoCZ": ["Couldn't open the worktree. Try again."],
     "vB7pqj": ["1.5× faster"],
     "vDXqVv": ["Insert a markdown hard break."],

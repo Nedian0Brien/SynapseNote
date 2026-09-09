@@ -30,6 +30,7 @@
  * Electron per Fetch spec §4.3); the allowed Origin is reflected verbatim in
  * ACAO, all others get 403.
  */
+import { LOGIN_PATHS } from '@/lib/auth-login';
 import { AUTH_SESSION_PATH, notifyApiUnauthorized } from '@/lib/auth-session';
 import { browserClientVersionHeaders } from '@/lib/client-version';
 
@@ -84,13 +85,17 @@ export function installClientFetchWrapper(config: ClientFetchConfig = {}): void 
  * an empty pane. The response is returned untouched — callers keep whatever
  * error handling they already had.
  *
- * The session exchange is excluded: it answers 401 for a token the user just
- * typed wrong, and treating that as "you are signed out" would re-open the
- * prompt the user is already looking at.
+ * The sign-in routes are excluded: they answer 401 for a password the user
+ * just typed wrong, and treating that as "you are signed out" would re-open
+ * the prompt the user is already looking at and wipe what they typed.
  */
+const SIGN_IN_PATHS: readonly string[] = [AUTH_SESSION_PATH, ...LOGIN_PATHS];
+
 function reportUnauthorized(url: string): (res: Response) => Response {
   return (res) => {
-    if (res.status === 401 && !url.endsWith(AUTH_SESSION_PATH)) notifyApiUnauthorized();
+    if (res.status === 401 && !SIGN_IN_PATHS.some((path) => url.endsWith(path))) {
+      notifyApiUnauthorized();
+    }
     return res;
   };
 }

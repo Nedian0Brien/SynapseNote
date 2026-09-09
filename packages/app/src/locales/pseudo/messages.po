@@ -767,10 +767,6 @@ msgstr ""
 msgid "Accept their deletion"
 msgstr ""
 
-#: src/components/SignInGate.tsx
-msgid "Access token"
-msgstr ""
-
 #: src/components/settings/AccountSection.tsx
 #: src/components/settings/SettingsDialogShell.tsx
 msgid "Account"
@@ -853,6 +849,10 @@ msgstr ""
 
 #: src/editor/components/PdfSelectionMenu.tsx
 msgid "Add a memo"
+msgstr ""
+
+#: src/components/settings/PasskeySection.tsx
+msgid "Add a passkey"
 msgstr ""
 
 #: src/components/DatabaseRecordPeekPropertyPopover.tsx
@@ -979,6 +979,12 @@ msgstr ""
 
 #: src/components/DatabasePropertiesDialog.tsx
 msgid "Add, remove, and reorder this database's schema properties. Every change compiles into a reviewed, undoable plan before it commits."
+msgstr ""
+
+#. placeholder {0}: formatDate(passkey.createdAt)
+#. placeholder {1}: formatDate(passkey.lastUsedAt)
+#: src/components/settings/PasskeySection.tsx
+msgid "Added {0} · Last used {1}"
 msgstr ""
 
 #. Subtext for the synapsenote-write-skill skill row
@@ -2786,12 +2792,21 @@ msgstr ""
 msgid "Could not reach server"
 msgstr ""
 
+#: src/components/settings/PasskeySection.tsx
 #: src/components/SignInGate.tsx
 msgid "Could not reach the server. Check your connection and try again."
 msgstr ""
 
 #: src/components/ShareBranchSwitchDialog.tsx
 msgid "Could not read branch state for this project. Close this dialog and open the share link again."
+msgstr ""
+
+#: src/components/settings/PasskeySection.tsx
+msgid "Could not register that passkey."
+msgstr ""
+
+#: src/components/settings/PasskeySection.tsx
+msgid "Could not remove that passkey."
 msgstr ""
 
 #: src/components/AutoSyncOnboardingDialog.tsx
@@ -6097,6 +6112,10 @@ msgstr ""
 msgid "Loading verified database properties"
 msgstr ""
 
+#: src/components/settings/PasskeySection.tsx
+msgid "Loading your passkeys"
+msgstr ""
+
 #: src/components/PublishToGitHubDialog.tsx
 msgid "Loading..."
 msgstr ""
@@ -6140,6 +6159,10 @@ msgstr ""
 
 #: src/components/DocumentErrorBoundary.tsx
 msgid "Lost connection to \"{docName}\"."
+msgstr ""
+
+#: src/components/settings/PasskeySection.tsx
+msgid "MacBook"
 msgstr ""
 
 #: src/components/DatabaseViewTabMenu.tsx
@@ -6512,6 +6535,10 @@ msgstr ""
 msgid "Name is required"
 msgstr ""
 
+#: src/components/settings/PasskeySection.tsx
+msgid "Name this device"
+msgstr ""
+
 #: src/components/FolderOverview.tsx
 msgid "Name Z–A"
 msgstr ""
@@ -6729,6 +6756,10 @@ msgstr ""
 
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "No"
+msgstr ""
+
+#: src/components/SignInGate.tsx
+msgid "No account yet? Create one on the server with <0>synapsenote access account create</0>."
 msgstr ""
 
 #: src/components/FileSidebar.tsx
@@ -7025,6 +7056,10 @@ msgstr ""
 
 #: src/components/CommandPalette.tsx
 msgid "No pages matched \"{semanticQueryText}\" by meaning."
+msgstr ""
+
+#: src/components/settings/PasskeySection.tsx
+msgid "No passkeys yet."
 msgstr ""
 
 #: src/components/settings/OkignoreSection.tsx
@@ -7736,6 +7771,10 @@ msgstr ""
 msgid "Optional — you can rename it from the table header."
 msgstr ""
 
+#: src/components/SignInGate.tsx
+msgid "or"
+msgstr ""
+
 #: src/components/empty-state/CreateView.tsx
 #: src/components/PackCardGrid.tsx
 msgid "or create a new file <0/>"
@@ -7910,6 +7949,14 @@ msgstr ""
 
 #: src/editor/extensions/RawMdxFallbackCMView.tsx
 msgid "Parse failed"
+msgstr ""
+
+#: src/components/settings/PasskeySection.tsx
+msgid "Passkeys"
+msgstr ""
+
+#: src/components/SignInGate.tsx
+msgid "Password"
 msgstr ""
 
 #: src/components/FolderDocumentList.tsx
@@ -8715,6 +8762,7 @@ msgstr ""
 msgid "Remote branch <0>{remoteCheckoutRef}</0> will be checked out as a new local tracking branch <1>{trimmed}</1>, in its own window under <2>.ok/worktrees/</2>."
 msgstr ""
 
+#: src/components/settings/PasskeySection.tsx
 #: src/editor/extensions/InternalLinkPropPanel.tsx
 #: src/editor/extensions/WikiLinkPropPanel.tsx
 msgid "Remove"
@@ -10132,6 +10180,14 @@ msgstr ""
 msgid "Sign in to SynapseNote"
 msgstr ""
 
+#: src/components/SignInGate.tsx
+msgid "Sign in with a passkey"
+msgstr ""
+
+#: src/components/settings/PasskeySection.tsx
+msgid "Sign in with Touch ID, Face ID, or a security key instead of typing your password."
+msgstr ""
+
 #: src/components/AuthModal.tsx
 msgid "Sign-in stream ended without confirmation — please try again"
 msgstr ""
@@ -10811,7 +10867,7 @@ msgid "That folder isn't an SynapseNote project yet. Initialize it and open?"
 msgstr ""
 
 #: src/components/SignInGate.tsx
-msgid "That token was not accepted. Check that it has not been revoked."
+msgid "That username and password were not accepted."
 msgstr ""
 
 #: src/components/ShareBranchSwitchDialog.tsx
@@ -11021,6 +11077,10 @@ msgstr ""
 msgid "This branch is checked out in:"
 msgstr ""
 
+#: src/components/settings/PasskeySection.tsx
+msgid "This browser cannot create passkeys. You can still remove existing ones."
+msgstr ""
+
 #: src/components/DatabaseCalendar.tsx
 msgid "This Calendar view has an invalid Date mapping."
 msgstr ""
@@ -11035,6 +11095,10 @@ msgstr ""
 
 #: src/components/PropertyPanel.tsx
 msgid "This database property is read-only here"
+msgstr ""
+
+#: src/components/settings/PasskeySection.tsx
+msgid "This device already has a passkey for this workspace."
 msgstr ""
 
 #: src/components/ShareFreshnessWarning.tsx
@@ -11236,7 +11300,7 @@ msgid "This sends content off your machine"
 msgstr ""
 
 #: src/components/SignInGate.tsx
-msgid "This server is not asking for a token. Reload the page to continue."
+msgid "This server is not asking you to sign in. Reload the page to continue."
 msgstr ""
 
 #: src/components/settings/SearchSection.tsx
@@ -11278,7 +11342,7 @@ msgid "This will replace the current document content with the version from <0>{
 msgstr ""
 
 #: src/components/SignInGate.tsx
-msgid "This workspace is served remotely and needs an access token. Create one on the server with <0>synapsenote access token create</0>."
+msgid "This workspace is served remotely."
 msgstr ""
 
 #: src/components/DocPanel.tsx
@@ -11391,6 +11455,10 @@ msgstr ""
 
 #: src/components/DatabaseContextInspectorDialog.tsx
 msgid "Token budget"
+msgstr ""
+
+#: src/components/SignInGate.tsx
+msgid "Too many failed attempts. Try again in {seconds} seconds."
 msgstr ""
 
 #: src/components/GraphSurface.tsx
@@ -11853,6 +11921,10 @@ msgstr ""
 msgid "User"
 msgstr ""
 
+#: src/components/SignInGate.tsx
+msgid "Username"
+msgstr ""
+
 #: src/components/settings/EmbeddingsKeySection.tsx
 msgid "Using the <0>OK_EMBEDDINGS_API_KEY</0> environment variable (managed outside SynapseNote)."
 msgstr ""
@@ -11946,8 +12018,16 @@ msgstr ""
 msgid "Visual editor table selection"
 msgstr ""
 
+#: src/components/settings/PasskeySection.tsx
+msgid "Waiting"
+msgstr ""
+
 #: src/components/AuthModal.tsx
 msgid "Waiting for authorization"
+msgstr ""
+
+#: src/components/SignInGate.tsx
+msgid "Waiting for your passkey"
 msgstr ""
 
 #: src/components/ReportBugDialogBody.tsx
@@ -11960,6 +12040,10 @@ msgstr ""
 
 #: src/components/ShareReceiveDialog.tsx
 msgid "We couldn't clone this repository."
+msgstr ""
+
+#: src/components/settings/PasskeySection.tsx
+msgid "We couldn't load your passkeys."
 msgstr ""
 
 #: src/components/InstallInClaudeDesktopDialog.tsx
