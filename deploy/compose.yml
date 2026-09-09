@@ -7,6 +7,13 @@
 # synapse.lawdigest.kr and proxies here, so the container is never reachable
 # from the internet directly — which is also what makes OK_TRUSTED_PROXY_HOPS=1
 # a true statement rather than a hope.
+#
+# A shared host usually has 8080 spoken for. Set SYNAPSENOTE_HOST_PORT to
+# whatever is free and point nginx's upstream at the same number.
+
+# Named so the stack cannot collide with another compose project on a host
+# that already runs several.
+name: synapsenote-remote
 
 services:
   synapsenote:
@@ -20,7 +27,7 @@ services:
     # container on every interface and bypass nginx — and with it the TLS that
     # the session cookie's `Secure` attribute depends on.
     ports:
-      - '127.0.0.1:8080:8080'
+      - '127.0.0.1:${SYNAPSENOTE_HOST_PORT:-8080}:8080'
 
     environment:
       # The origin the browser is served from. The Host allowlist and the

@@ -63,30 +63,37 @@ docker compose -f deploy/compose.yml run --rm --entrypoint sh synapsenote \
 
 The token is printed on stdout, once. Copy it now.
 
-**3. Start the server.**
+**3. Start the server.** On a host where 8080 is already taken, pick a free
+port and use the same number in the nginx upstream.
 
 ```bash
+export SYNAPSENOTE_HOST_PORT=18081
 docker compose -f deploy/compose.yml up -d --build
 docker compose -f deploy/compose.yml logs -f synapsenote
 ```
 
-It listens on `127.0.0.1:8080` — loopback only, so nginx stays the only way in.
+It publishes on loopback only, so nginx stays the only way in.
 
-**4. Point nginx at it.**
+**4. Point nginx at it.** Back up whatever serves the hostname today first —
+this replaces it.
 
 ```bash
-sudo cp deploy/nginx/synapse.lawdigest.kr.conf /etc/nginx/sites-available/
-sudo ln -sf /etc/nginx/sites-available/synapse.lawdigest.kr.conf \
-            /etc/nginx/sites-enabled/synapse.lawdigest.kr.conf
+sudo cp /etc/nginx/sites-available/synapse.lawdigest.kr \
+        /etc/nginx/sites-available/synapse.lawdigest.kr.bak.$(date +%Y%m%d%H%M%S)
+
+# The map the server block depends on. Skip if $connection_upgrade already
+# exists on this host — nginx refuses to start on a duplicate map.
+sudo cp deploy/nginx/10-connection-upgrade.conf /etc/nginx/conf.d/
+
+sudo cp deploy/nginx/synapse.lawdigest.kr.conf \
+        /etc/nginx/sites-available/synapse.lawdigest.kr
+sudo ln -sf /etc/nginx/sites-available/synapse.lawdigest.kr \
+            /etc/nginx/sites-enabled/synapse.lawdigest.kr
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
 Read the config's comments before installing it: the `proxy_set_header` lines
-are load-bearing, and the `map $http_upgrade` block it depends on has to live
-in `http{}`.
-
-This **replaces the static page currently served at that hostname.** Keep a
-copy of the old server block if you may want it back.
+are load-bearing, and the upstream port has to match `SYNAPSENOTE_HOST_PORT`.
 
 **5. Check it.**
 
