@@ -46,7 +46,9 @@ date: 2026-09-09
 - [ ] R13. `skill/install-state`, `skill/install`, `installed-agents`가 원격
       계정 세션으로 동작한다.
 - [ ] R14. 스타터 팩 적용과 스킬 설치가 웹에서 끝까지 된다.
-- [ ] R14b. 공유·게시 5개(`share/*`)가 원격 계정 세션으로 동작한다.
+- [ ] R14b. 공유·게시 5개(`share/*`)는 원격에서 계속 거절된다. GitHub 자격증명이
+      없는 배포본에서는 열어도 실패한다 — 설계 절의 "배포본에는 GitHub 자격증명이
+      없다" 참조.
 
 ### P4 — GitHub 읽기
 
@@ -119,18 +121,17 @@ date: 2026-09-09
 호출 지점은 **28곳**이다(핸들러 태그 기준 전수). 게이트 자체는 한 곳에서 바뀌고,
 각 호출 지점은 어느 규칙을 요구할지만 정한다.
 
-**계정 세션으로 여는 것 (20곳)**
+**계정 세션으로 여는 것 (15곳)**
 
 | 계열 | 핸들러 | 단계 |
 |---|---|---|
 | 동기화 | `sync-status`, `sync-conflicts`, `sync-trigger`, `sync-resolve-conflict`, `sync-conflict-content` | P2 |
 | 스타터 팩 | `seed-plan`, `seed-packs`, `seed-apply` | P3 |
 | 스킬 | `install-skill`, `skill-install-state`, `installed-agents` | P3 |
-| 공유·게시 | `share-construct-url`, `share-target-status`, `share-publish-owners`, `share-publish-name-check`, `share-publish` | P3 |
 | GitHub 읽기 | `local-op-auth-status`, `local-op-auth-repos` | P4 |
 | 진단 | `client-logs` | P3 |
 
-**원격에서 계속 거절하는 것 (8곳)**
+**원격에서 계속 거절하는 것 (13곳)**
 
 | 핸들러 | 이유 |
 |---|---|
@@ -138,6 +139,32 @@ date: 2026-09-09
 | `local-op-clone`, `local-op-ok-init` | 원격은 워크스페이스 하나를 보는 창이다 |
 | `local-op-auth-login`, `local-op-auth-signout`, `local-op-auth-set-identity` | 서버의 GitHub 자격증명을 바꾼다 |
 | `local-op-embeddings-set-key`, `local-op-embeddings-clear-key` | 머신 전역 임베딩 제공자 키를 쓴다. 이 서버 하나가 아니라 그 머신의 모든 프로젝트에 걸린다 |
+| `share-construct-url`, `share-target-status`, `share-publish-owners`, `share-publish-name-check`, `share-publish` | GitHub 저장소를 만들고 push하거나 `git fetch origin`을 돈다. 아래 "배포본에는 GitHub 자격증명이 없다" 참조 |
+
+### 배포본에는 GitHub 자격증명이 없다
+
+P3를 계획하다 확인한 사실이다. 실행 중인 컨테이너에서:
+
+```
+$HOME/.ok/          → logs/ 와 machine-id 뿐. auth.yml 없음
+/workspace          → git remote 없음
+```
+
+CLI는 GitHub 토큰을 `$HOME/.ok/auth.yml`에 두는데 compose가 `/home/node`를
+**tmpfs**로 마운트한다. 재시작하면 사라진다. 그리고 그 파일을 채우는 유일한
+경로인 `local-op/auth/login`은 데스크톱 전용으로 두기로 했다.
+
+따라서 웹에서 GitHub에 의존하는 기능은 **열어도 마지막 단계에서 실패한다.**
+`share/publish`는 저장소를 만들고 push하다 실패하고, `share/target-status`는
+`git fetch origin`에 실패한다. 실패하는 마법사를 여는 것은 닫아두고 이유를
+적는 것보다 나쁘다.
+
+`local-op/auth/status`는 예외다. "연결 안 됨"이 정직한 답이고, 화면이 왜
+연결할 수 없는지 적을 근거가 된다. P4에서 연다.
+
+이 제약을 없애려면 `/home/node`를 볼륨으로 지속시키고 원격 GitHub 로그인을
+허용해야 한다. 그러면 이 서버가 원격 로그인으로 쓸 수 있는 GitHub 자격증명을
+갖게 된다 — 별도 결정이고 이 spec의 범위 밖이다.
 
 이 표가 P1의 산출물이다. 호출 지점마다 둘 중 하나를 명시적으로 고르게 하고,
 **기본값을 두지 않는다** — 새 `local-op` 핸들러가 생겼을 때 아무 것도 안 적으면
