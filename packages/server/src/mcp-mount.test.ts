@@ -728,6 +728,117 @@ describe('mountMcpAndApi remote access policy', () => {
     return { port, calls: () => calls };
   }
 
+  const remoteTmpDirs: string[] = [];
+
+  /** A remote-policy mount that serves content assets out of a temp dir. */
+  async function startRemoteAssets(): Promise<{ port: number }> {
+    const contentDir = mkdtempSync(join(tmpdir(), 'ok-mcp-remote-assets-'));
+    remoteTmpDirs.push(contentDir);
+    writeFileSync(
+      join(contentDir, 'secret.png'),
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    );
+    const httpServer = createServer();
+    const mount = mountMcpAndApi({
+      httpServer,
+      hocuspocus,
+      log,
+      accessPolicy: remotePolicy,
+      contentAssetMiddleware: createAssetServeMiddleware({
+        contentFilter: { isPathIgnored: () => false },
+        contentSirv: sirv(contentDir, { dev: true, dotfiles: false }),
+        inlineExtensions: INLINE_RENDERABLE_EXTENSIONS,
+        assetExtensions: ASSET_EXTENSIONS,
+        blocklistExtensions: EXECUTABLE_BLOCKLIST_EXTENSIONS,
+      }),
+    });
+    const port = await getFreeLoopbackPort();
+    await new Promise<void>((resolve) => httpServer.listen(port, '127.0.0.1', () => resolve()));
+    servers.push({ httpServer, mount });
+    return { port };
+  }
+
+  /** A remote-policy mount that serves the React shell. */
+  async function startRemoteShell(): Promise<{ port: number }> {
+    const shellDir = mkdtempSync(join(tmpdir(), 'ok-mcp-remote-shell-'));
+    remoteTmpDirs.push(shellDir);
+    writeFileSync(
+      join(shellDir, 'index.html'),
+      '<!DOCTYPE html><html><body data-test="shell">ok</body></html>',
+    );
+    const httpServer = createServer();
+    const mount = mountMcpAndApi({
+      httpServer,
+      hocuspocus,
+      log,
+      accessPolicy: remotePolicy,
+      reactShellMiddleware: sirv(shellDir, { dev: true, single: true }),
+    });
+    const port = await getFreeLoopbackPort();
+    await new Promise<void>((resolve) => httpServer.listen(port, '127.0.0.1', () => resolve()));
+    servers.push({ httpServer, mount });
+    return { port };
+  }
+
+  /** A remote-policy mount serving BOTH content assets and the React shell. */
+  async function startRemoteAssetsAndShell(): Promise<{ port: number }> {
+    const contentDir = mkdtempSync(join(tmpdir(), 'ok-mcp-remote-both-content-'));
+    const shellDir = mkdtempSync(join(tmpdir(), 'ok-mcp-remote-both-shell-'));
+    remoteTmpDirs.push(contentDir, shellDir);
+    writeFileSync(
+      join(contentDir, 'secret.png'),
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    );
+    writeFileSync(
+      join(shellDir, 'index.html'),
+      '<!DOCTYPE html><html><body data-test="shell">ok</body></html>',
+    );
+    const httpServer = createServer();
+    const mount = mountMcpAndApi({
+      httpServer,
+      hocuspocus,
+      log,
+      accessPolicy: remotePolicy,
+      contentAssetMiddleware: createAssetServeMiddleware({
+        contentFilter: { isPathIgnored: () => false },
+        contentSirv: sirv(contentDir, { dev: true, dotfiles: false }),
+        inlineExtensions: INLINE_RENDERABLE_EXTENSIONS,
+        assetExtensions: ASSET_EXTENSIONS,
+        blocklistExtensions: EXECUTABLE_BLOCKLIST_EXTENSIONS,
+      }),
+      reactShellMiddleware: sirv(shellDir, { dev: true, single: true }),
+    });
+    const port = await getFreeLoopbackPort();
+    await new Promise<void>((resolve) => httpServer.listen(port, '127.0.0.1', () => resolve()));
+    servers.push({ httpServer, mount });
+    return { port };
+  }
+
+  async function getWithHeaders(
+    port: number,
+    path: string,
+    headers: Record<string, string>,
+  ): Promise<{ status: number; body: string }> {
+    return new Promise((resolve, reject) => {
+      const req = httpRequest(
+        { hostname: '127.0.0.1', port, path, method: 'GET', headers },
+        (res) => {
+          const chunks: Buffer[] = [];
+          res.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+          res.on('end', () =>
+            resolve({ status: res.statusCode ?? 0, body: Buffer.concat(chunks).toString('utf-8') }),
+          );
+        },
+      );
+      req.on('error', reject);
+      req.end();
+    });
+  }
+
+  afterEach(() => {
+    for (const dir of remoteTmpDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
+  });
+
   async function postMcp(
     port: number,
     headers: Record<string, string>,
@@ -882,5 +993,61 @@ describe('mountMcpAndApi remote access policy', () => {
     });
     ws.close();
     expect(outcome).toBe('open');
+  });
+
+  test('a content asset needs a credential', async () => {
+    // Assets are user documents — every image, PDF, and attachment in the
+    // workspace is served from this surface.
+    const { port } = await startRemoteAssets();
+    const res = await getWithHost(port, '/secret.png', REMOTE_HOST);
+    expect(res.status).toBe(401);
+  });
+
+  test('the same asset serves with a bearer token', async () => {
+    const { port } = await startRemoteAssets();
+    const res = await getWithHeaders(port, '/secret.png', {
+      Host: REMOTE_HOST,
+      Authorization: `Bearer ${GOOD_TOKEN}`,
+    });
+    expect(res.status).toBe(200);
+  });
+
+  test('an unauthorized asset request yields no workspace bytes', async () => {
+    // The content gate and the shell share this handler, and it runs for every
+    // non-API path, so a refusal falls through to the shell rather than
+    // answering 401 — otherwise `/` would be refused too and the sign-in form
+    // would be unreachable. The shell's `single` rewrite covers only
+    // extension-less deep links, so a request for a file lands on 404: the
+    // caller learns nothing, and no workspace byte is served.
+    const { port } = await startRemoteAssetsAndShell();
+    const res = await getWithHost(port, '/secret.png', REMOTE_HOST);
+    expect(res.status).toBe(404);
+    expect(res.body).not.toContain('PNG');
+  });
+
+  test('the asset itself serves once a credential is present', async () => {
+    const { port } = await startRemoteAssetsAndShell();
+    const res = await getWithHeaders(port, '/secret.png', {
+      Host: REMOTE_HOST,
+      Authorization: `Bearer ${GOOD_TOKEN}`,
+    });
+    expect(res.status).toBe(200);
+    expect(res.body).not.toContain('data-test="shell"');
+  });
+
+  test('the root path serves the shell without a credential', async () => {
+    const { port } = await startRemoteAssetsAndShell();
+    const res = await getWithHost(port, '/', REMOTE_HOST);
+    expect(res.status).toBe(200);
+    expect(res.body).toContain('data-test="shell"');
+  });
+
+  test('the React shell stays reachable without one', async () => {
+    // It is a static bundle with no user data, and it is where the sign-in
+    // form lives. Gating it would leave a remote user nothing to sign in with.
+    const { port } = await startRemoteShell();
+    const res = await getWithHost(port, '/', REMOTE_HOST);
+    expect(res.status).toBe(200);
+    expect(res.body).toContain('data-test="shell"');
   });
 });

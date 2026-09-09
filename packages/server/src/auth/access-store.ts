@@ -31,7 +31,7 @@
  */
 
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type {
   AccessPrincipal,
@@ -189,6 +189,22 @@ function writeStoreFile(path: string, file: AccessStoreFile): void {
   renameSync(tmp, path);
 }
 
+/**
+ * The store file's last-modified time, or 0 when it is absent.
+ *
+ * Used to notice writes made by another process — the CLI mints and revokes in
+ * its own process against the same file, and a long-running server that only
+ * read the file at boot would refuse a token the operator just created until
+ * the next restart.
+ */
+function storeMtimeMs(path: string): number {
+  try {
+    return statSync(path).mtimeMs;
+  } catch {
+    return 0;
+  }
+}
+
 /** Absolute path to a project's access store. */
 export function accessStorePath(localDir: string): string {
   return join(localDir, ACCESS_STORE_FILENAME);
@@ -206,9 +222,29 @@ export function openAccessStore(path: string): AccessStore {
   let tokens = file.tokens;
   let sessions = file.sessions;
   let lastUsedFlushedAt = 0;
+  let loadedMtimeMs = storeMtimeMs(path);
 
   function flush(): void {
     writeStoreFile(path, { version: 1, tokens, sessions });
+    // Record our own write so the next `reloadIfChanged` does not mistake it
+    // for someone else's and re-read what we just wrote.
+    loadedMtimeMs = storeMtimeMs(path);
+  }
+
+  /**
+   * Pick up writes made by another process.
+   *
+   * A `stat` per credential check is cheap next to the request it belongs to,
+   * and it removes the papercut where `access token create` appears to succeed
+   * while the running server keeps answering 401 until it is restarted.
+   */
+  function reloadIfChanged(): void {
+    const current = storeMtimeMs(path);
+    if (current === loadedMtimeMs) return;
+    const fresh = readStoreFile(path);
+    tokens = fresh.tokens;
+    sessions = fresh.sessions;
+    loadedMtimeMs = current;
   }
 
   function pruneSessions(): number {
@@ -235,6 +271,7 @@ export function openAccessStore(path: string): AccessStore {
   const verify: CredentialVerifier = (
     credential: PresentedCredential,
   ): Omit<AccessPrincipal, 'clientAddress'> | null => {
+    reloadIfChanged();
     const presented = credential.value;
     // Reject a foreign-shaped string before hashing. Cheap, and it keeps the
     // log free of digests for values that were never ours.

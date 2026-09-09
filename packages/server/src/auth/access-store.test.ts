@@ -286,3 +286,45 @@ describe('token-for-session exchange', () => {
     expect(exchangeToken(token.secret)).not.toBeNull();
   });
 });
+
+describe('picking up another process’s writes', () => {
+  test('a token minted elsewhere verifies without reopening', async () => {
+    // The CLI mints in its own process while the server runs. Without this,
+    // `access token create` looks like it worked and the server keeps
+    // answering 401 until the next restart.
+    const path = freshStorePath();
+    const server = openAccessStore(path);
+    server.createToken('first');
+    // A distinct mtime — the filesystem timestamp resolution is coarse enough
+    // that two writes in the same millisecond would look identical.
+    await Bun.sleep(10);
+    const cli = openAccessStore(path);
+    const minted = cli.createToken('added-later');
+    expect(server.verify({ scheme: 'bearer', value: minted.secret })).toMatchObject({
+      label: 'added-later',
+    });
+  });
+
+  test('a revocation made elsewhere takes effect without reopening', async () => {
+    const path = freshStorePath();
+    const server = openAccessStore(path);
+    const token = server.createToken('phone');
+    expect(server.verify({ scheme: 'bearer', value: token.secret })).not.toBeNull();
+    await Bun.sleep(10);
+    openAccessStore(path).revokeToken(token.record.id);
+    expect(server.verify({ scheme: 'bearer', value: token.secret })).toBeNull();
+  });
+
+  test('the store’s own writes do not trigger a redundant reload', async () => {
+    // A self-inflicted reload would be harmless but would discard the
+    // in-memory `lastUsedAt` the throttled flush has not written yet.
+    const path = freshStorePath();
+    const store = openAccessStore(path);
+    const token = store.createToken('phone');
+    store.verify({ scheme: 'bearer', value: token.secret });
+    expect(store.listTokens().find((t) => t.id === token.record.id)?.lastUsedAt).toBeString();
+    await Bun.sleep(10);
+    store.createToken('second');
+    expect(store.listTokens().find((t) => t.id === token.record.id)?.lastUsedAt).toBeString();
+  });
+});

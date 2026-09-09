@@ -346,9 +346,36 @@ export function mountMcpAndApi(opts: MountMcpAndApiOptions): MountMcpAndApiHandl
       // omit it, and the Host-header check already rejects the rebinding
       // content-exfil vector without that dependency. Project / desktop modes
       // (`ephemeral` falsy) are unchanged — the user chose the served root.
-      if (ephemeral === true && contentAssetMiddleware !== undefined) {
+      // Content assets ARE user documents — every image, PDF, and attachment
+      // in the workspace is served from here. Two policies demand a credential
+      // for them:
+      //
+      //   ephemeral — `ok <file>` points contentDir at the opened file's
+      //               parent, often a user-data dir, so a DNS-rebound caller
+      //               could read siblings.
+      //   remote    — reachability is not authorization, and an asset is
+      //               exactly as private as the document that embeds it.
+      //
+      // The React shell below stays ungated on purpose: it is a static bundle
+      // carrying no user data, and it is where the sign-in form lives. Gating
+      // it would leave a remote user with nothing to sign in with.
+      if (
+        contentAssetMiddleware !== undefined &&
+        (ephemeral === true || accessPolicy.mode === 'remote')
+      ) {
         const assetAdmission = authorizeRequest(accessPolicy, accessRequestFromNode(req));
         if (!assetAdmission.ok) {
+          // This handler fronts the React shell as well as the content tree,
+          // and it runs for every non-API path — including `/`. Answering 401
+          // here would refuse the page the sign-in form lives on, leaving a
+          // remote user nothing to sign in with. So when a shell is mounted,
+          // treat the refusal as a content miss and let the shell answer: the
+          // caller gets the app, never workspace bytes. With no shell mounted
+          // there is nothing to fall through to, so the refusal is the answer.
+          if (reactShellMiddleware !== undefined) {
+            onMiss();
+            return;
+          }
           denyAccess(res, assetAdmission, 'content-asset');
           return;
         }
