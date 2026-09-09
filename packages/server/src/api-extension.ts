@@ -45,6 +45,9 @@ import {
   AgentWriteSuccessSchema,
   ApiConfigSuccessSchema,
   ASSET_EXTENSIONS,
+  AuthLoginSuccessSchema,
+  AuthPasskeyVerifyRequestSchema,
+  AuthPasswordLoginRequestSchema,
   AuthSessionCreateRequestSchema,
   AuthSessionCreateSuccessSchema,
   applyPatchToFm,
@@ -132,6 +135,8 @@ import {
   OrphansSuccessSchema,
   PageHeadingsSuccessSchema,
   PagesSuccessSchema,
+  PasskeyCeremonyOptionsSchema,
+  PasskeyListSchema,
   PROJECT_SKILL_EDITOR_IDS,
   type Principal,
   PrincipalSuccessSchema,
@@ -271,6 +276,10 @@ import {
 import { type NormalizedSummary, normalizeSummary } from './agent-write-summary.ts';
 import { collectReferencedAssets, toContentRelativePath } from './asset-references.ts';
 import { assetContentTypeForPath } from './asset-serve-middleware.ts';
+import type { AccountStore, PasskeyRecord } from './auth/account-store.ts';
+import { normalizeUsername } from './auth/account-store.ts';
+import type { LoginThrottle } from './auth/login-throttle.ts';
+import { consumeTimingBudget, verifyPassword } from './auth/password-hash.ts';
 import { buildClearedSessionCookie, buildSessionCookie } from './auth/session-cookie.ts';
 import { getLocalDir } from './config/paths.ts';
 import { CONFIG_VALIDATION_REVERT_ORIGIN } from './config-edit-origin.ts';
@@ -421,6 +430,13 @@ import {
   linkTempToFinalWithCollisionRetry,
   mintTempUploadPath,
 } from './upload-streaming.ts';
+import type { ChallengeStore, RelyingParty } from './webauthn/ceremony.ts';
+import {
+  finishPasskeyRegistration,
+  startPasskeyAuthentication,
+  startPasskeyRegistration,
+  verifyPasskey,
+} from './webauthn/ceremony.ts';
 
 export { extractPageTitle } from './page-identity.ts';
 
@@ -2576,6 +2592,11 @@ export interface ApiExtensionOptions {
    */
   accessSessions?: AccessSessionIssuer;
   /**
+   * Account login: password and passkey. Supplied only alongside a `remote`
+   * policy; without it the login routes answer 404.
+   */
+  accountAuth?: AccountAuthDeps;
+  /**
    * Per-process UUID advertised via `GET /api/server-info` and the
    * `__system__` CC1 `server-info` broadcast. Clients cache this value
    * and claim it in the `expectedServerInstanceId` field of their auth
@@ -2967,6 +2988,46 @@ export function getCurrentDocumentSnapshot(
  * admission gate and the handler from drifting apart.
  */
 export const AUTH_SESSION_ROUTE = '/api/auth/session';
+export const AUTH_PASSWORD_ROUTE = '/api/auth/password';
+export const AUTH_PASSKEY_AUTH_OPTIONS_ROUTE = '/api/auth/passkey/authenticate/options';
+export const AUTH_PASSKEY_AUTH_VERIFY_ROUTE = '/api/auth/passkey/authenticate/verify';
+export const AUTH_PASSKEY_REGISTER_OPTIONS_ROUTE = '/api/auth/passkey/register/options';
+export const AUTH_PASSKEY_REGISTER_VERIFY_ROUTE = '/api/auth/passkey/register/verify';
+export const AUTH_PASSKEYS_ROUTE = '/api/auth/passkeys';
+
+/**
+ * The `/api/*` routes a remote caller may reach without a credential.
+ *
+ * Exactly the ones that exist to obtain a credential: presenting one is what
+ * they are for. Everything else — including passkey *registration*, which
+ * happens after signing in — goes through the admission gate.
+ *
+ * A set rather than a chain of comparisons so the exemption is one list to
+ * read, and so the test that asserts "no other `/api/auth/*` route is exempt"
+ * has something to enumerate.
+ */
+export const UNAUTHENTICATED_API_ROUTES: ReadonlySet<string> = new Set([
+  AUTH_SESSION_ROUTE,
+  AUTH_PASSWORD_ROUTE,
+  AUTH_PASSKEY_AUTH_OPTIONS_ROUTE,
+  AUTH_PASSKEY_AUTH_VERIFY_ROUTE,
+]);
+
+/**
+ * Everything the login routes need, assembled by `bootServer`.
+ *
+ * Absent under a local policy, which is what makes every login route answer
+ * 404 there: a local server has no login because reachability is already the
+ * proof.
+ */
+export interface AccountAuthDeps {
+  readonly store: AccountStore;
+  readonly challenges: ChallengeStore;
+  readonly throttle: LoginThrottle;
+  readonly relyingParty: RelyingParty;
+  /** Mint a browser session for an account. */
+  createSession(accountId: string, label: string): { secret: string; expiresAt: string };
+}
 
 /**
  * The narrow slice of the access store the session endpoint needs.
@@ -3049,6 +3110,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     ephemeral = false,
     accessPolicy = LOCAL_ACCESS_POLICY,
     accessSessions,
+    accountAuth,
   } = options;
 
   // Concurrency guard: at most 1 in-flight request per local-op endpoint
@@ -18422,6 +18484,295 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     await authSessionCreate(req, res);
   }
 
+  /**
+   * Everything the login routes need, wired by `bootServer` only under a
+   * remote policy. Absent means the routes answer 404 — a local server has no
+   * login because reachability is already the proof.
+   */
+  const accounts = accountAuth;
+
+  /** Refuse a login route when this server does not do logins. */
+  function loginUnavailable(res: ServerResponse, handler: string): boolean {
+    if (accessPolicy.mode === 'remote' && accounts !== undefined) return false;
+    errorResponse(res, 404, 'urn:ok:error:not-found', 'API endpoint not found.', {
+      handler,
+      detail: 'Login is available only when the server runs in remote access mode.',
+    });
+    return true;
+  }
+
+  /** One shape for every successful login, whichever method produced it. */
+  function completeLogin(
+    req: IncomingMessage,
+    res: ServerResponse,
+    account: { id: string; username: string },
+    handler: string,
+  ): void {
+    if (accounts === undefined) return;
+    const minted = accounts.createSession(account.id, account.username);
+    res.setHeader('Set-Cookie', sessionCookie(req, minted.secret, minted.expiresAt));
+    successResponse(
+      res,
+      200,
+      AuthLoginSuccessSchema,
+      { label: account.username, expiresAt: minted.expiresAt },
+      { handler, extraHeaders: { 'Cache-Control': 'no-store' } },
+    );
+  }
+
+  /**
+   * `POST /api/auth/password` — sign in with the account password.
+   *
+   * The refusal is deliberately uniform. A wrong username and a wrong password
+   * return the same status and the same body, and a username that does not
+   * exist still costs one password hash, so neither the wording nor the
+   * response time says whether an account exists.
+   */
+  const handleAuthPassword = withValidation(
+    AuthPasswordLoginRequestSchema,
+    async (req, res, body) => {
+      if (accounts === undefined) return;
+      const refuse = () => {
+        errorResponse(res, 401, 'urn:ok:error:unauthorized', 'Authentication required.', {
+          handler: 'auth-password',
+        });
+      };
+
+      const account = accounts.store.findByUsername(body.username);
+      // Throttle by the account when there is one, and by the submitted name
+      // when there is not. Skipping the throttle for unknown names would make
+      // the endpoint enumerable through its own rate limit.
+      const throttleKey = account?.id ?? `unknown:${normalizeUsername(body.username)}`;
+      const gate = accounts.throttle.check(throttleKey);
+      if (!gate.allowed) {
+        errorResponse(res, 429, 'urn:ok:error:login-locked', 'Too many failed sign-in attempts.', {
+          handler: 'auth-password',
+          detail: `Try again in ${gate.retryAfterSeconds} seconds.`,
+          extraHeaders: { 'Retry-After': String(gate.retryAfterSeconds) },
+        });
+        return;
+      }
+
+      if (account === undefined) {
+        await consumeTimingBudget();
+        accounts.throttle.recordFailure(throttleKey);
+        refuse();
+        return;
+      }
+      if (!(await verifyPassword(body.password, account.password))) {
+        accounts.throttle.recordFailure(throttleKey);
+        refuse();
+        return;
+      }
+      accounts.throttle.recordSuccess(throttleKey);
+      completeLogin(req, res, account, 'auth-password');
+    },
+    { handler: 'auth-password', method: 'POST' },
+  );
+
+  /** `POST /api/auth/passkey/authenticate/options`. */
+  async function handlePasskeyAuthOptions(
+    _req: IncomingMessage,
+    res: ServerResponse,
+  ): Promise<void> {
+    if (loginUnavailable(res, 'auth-passkey-options') || accounts === undefined) return;
+    const ceremony = await startPasskeyAuthentication(accounts.relyingParty, accounts.challenges);
+    successResponse(
+      res,
+      200,
+      PasskeyCeremonyOptionsSchema,
+      { challengeHandle: ceremony.challengeHandle, options: ceremony.options },
+      { handler: 'auth-passkey-options', extraHeaders: { 'Cache-Control': 'no-store' } },
+    );
+  }
+
+  /** `POST /api/auth/passkey/authenticate/verify`. */
+  const handlePasskeyAuthVerify = withValidation(
+    AuthPasskeyVerifyRequestSchema,
+    async (req, res, body) => {
+      if (accounts === undefined) return;
+      const account = accounts.store.get();
+      const refuse = () => {
+        errorResponse(res, 401, 'urn:ok:error:unauthorized', 'Authentication required.', {
+          handler: 'auth-passkey-verify',
+        });
+      };
+      if (account === undefined) {
+        refuse();
+        return;
+      }
+      const outcome = await verifyPasskey(
+        accounts.relyingParty,
+        accounts.challenges,
+        body.challengeHandle,
+        // The library validates this shape far more thoroughly than a
+        // hand-written schema would, which is why it crosses the boundary
+        // unmodelled.
+        body.response as unknown as Parameters<typeof verifyPasskey>[3],
+        (credentialId) => account.passkeys.find((p) => p.id === credentialId),
+      );
+      if (!outcome.ok) {
+        if (outcome.reason === 'counter-regressed') {
+          // Two devices answering for one credential. Worth a loud line: the
+          // operator cannot see this any other way.
+          log.warn(
+            { event: 'auth.passkey.counter-regressed', accountId: account.id },
+            'Passkey signature counter went backwards — possible cloned authenticator',
+          );
+        }
+        refuse();
+        return;
+      }
+      accounts.store.touchPasskey(account.id, outcome.passkeyId, outcome.newCounter);
+      completeLogin(req, res, account, 'auth-passkey-verify');
+    },
+    { handler: 'auth-passkey-verify', method: 'POST' },
+  );
+
+  /**
+   * `POST /api/auth/passkey/register/options` — requires an existing session.
+   *
+   * Not in `UNAUTHENTICATED_API_ROUTES`: registering a passkey adds a way into
+   * the account, so it happens after signing in, never as a way of signing in.
+   */
+  async function handlePasskeyRegisterOptions(
+    _req: IncomingMessage,
+    res: ServerResponse,
+  ): Promise<void> {
+    if (loginUnavailable(res, 'auth-passkey-register-options') || accounts === undefined) return;
+    const account = accounts.store.get();
+    if (account === undefined) {
+      errorResponse(res, 404, 'urn:ok:error:not-found', 'No account exists.', {
+        handler: 'auth-passkey-register-options',
+      });
+      return;
+    }
+    const ceremony = await startPasskeyRegistration(
+      accounts.relyingParty,
+      account,
+      accounts.challenges,
+    );
+    successResponse(
+      res,
+      200,
+      PasskeyCeremonyOptionsSchema,
+      { challengeHandle: ceremony.challengeHandle, options: ceremony.options },
+      { handler: 'auth-passkey-register-options', extraHeaders: { 'Cache-Control': 'no-store' } },
+    );
+  }
+
+  /** `POST /api/auth/passkey/register/verify` — requires an existing session. */
+  const handlePasskeyRegisterVerify = withValidation(
+    AuthPasskeyVerifyRequestSchema,
+    async (_req, res, body) => {
+      if (accounts === undefined) return;
+      const account = accounts.store.get();
+      if (account === undefined) {
+        errorResponse(res, 404, 'urn:ok:error:not-found', 'No account exists.', {
+          handler: 'auth-passkey-register-verify',
+        });
+        return;
+      }
+      const outcome = await finishPasskeyRegistration(
+        accounts.relyingParty,
+        accounts.challenges,
+        body.challengeHandle,
+        body.response as unknown as Parameters<typeof finishPasskeyRegistration>[3],
+      );
+      if (!outcome.ok) {
+        errorResponse(res, 400, 'urn:ok:error:invalid-request', 'Passkey registration failed.', {
+          handler: 'auth-passkey-register-verify',
+          detail: outcome.reason,
+        });
+        return;
+      }
+      const label =
+        typeof body.label === 'string' && body.label.trim().length > 0
+          ? body.label.trim()
+          : outcome.passkey.deviceType === 'singleDevice'
+            ? 'Security key'
+            : 'Passkey';
+      accounts.store.addPasskey(account.id, {
+        ...outcome.passkey,
+        label,
+        createdAt: new Date().toISOString(),
+      });
+      successResponse(
+        res,
+        200,
+        PasskeyListSchema,
+        { passkeys: publicPasskeys(accounts.store.listPasskeys(account.id)) },
+        { handler: 'auth-passkey-register-verify', extraHeaders: { 'Cache-Control': 'no-store' } },
+      );
+    },
+    { handler: 'auth-passkey-register-verify', method: 'POST' },
+  );
+
+  /** Strip the public key and counter — the browser has no use for either. */
+  function publicPasskeys(passkeys: readonly PasskeyRecord[]) {
+    return passkeys.map((p) => ({
+      id: p.id,
+      label: p.label,
+      createdAt: p.createdAt,
+      lastUsedAt: p.lastUsedAt,
+      backedUp: p.backedUp,
+    }));
+  }
+
+  /** `GET`/`DELETE /api/auth/passkeys` — requires an existing session. */
+  async function handlePasskeys(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    if (loginUnavailable(res, 'auth-passkeys') || accounts === undefined) return;
+    const account = accounts.store.get();
+    if (account === undefined) {
+      errorResponse(res, 404, 'urn:ok:error:not-found', 'No account exists.', {
+        handler: 'auth-passkeys',
+      });
+      return;
+    }
+    if (req.method === 'GET') {
+      successResponse(
+        res,
+        200,
+        PasskeyListSchema,
+        { passkeys: publicPasskeys(accounts.store.listPasskeys(account.id)) },
+        { handler: 'auth-passkeys', extraHeaders: { 'Cache-Control': 'no-store' } },
+      );
+      return;
+    }
+    if (req.method === 'DELETE') {
+      const id = new URL(req.url ?? '', 'http://localhost').searchParams.get('id');
+      if (id === null || !accounts.store.removePasskey(account.id, id)) {
+        errorResponse(res, 404, 'urn:ok:error:not-found', 'No such passkey.', {
+          handler: 'auth-passkeys',
+        });
+        return;
+      }
+      successResponse(
+        res,
+        200,
+        PasskeyListSchema,
+        { passkeys: publicPasskeys(accounts.store.listPasskeys(account.id)) },
+        { handler: 'auth-passkeys', extraHeaders: { 'Cache-Control': 'no-store' } },
+      );
+      return;
+    }
+    errorResponse(res, 405, 'urn:ok:error:method-not-allowed', 'Method not allowed.', {
+      handler: 'auth-passkeys',
+      extraHeaders: { Allow: 'GET, DELETE' },
+    });
+  }
+
+  /** Wrap a login route so it 404s where logins do not exist. */
+  function loginRoute(
+    handler: (req: IncomingMessage, res: ServerResponse) => Promise<void>,
+    tag: string,
+  ): (req: IncomingMessage, res: ServerResponse) => Promise<void> {
+    return async (req, res) => {
+      if (loginUnavailable(res, tag)) return;
+      await handler(req, res);
+    };
+  }
+
   const authSessionCreate = withValidation(
     AuthSessionCreateRequestSchema,
     async (req, res, body) => {
@@ -18481,6 +18832,15 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
 
   const routes: Record<string, (req: IncomingMessage, res: ServerResponse) => Promise<void>> = {
     [AUTH_SESSION_ROUTE]: handleAuthSession,
+    [AUTH_PASSWORD_ROUTE]: loginRoute(handleAuthPassword, 'auth-password'),
+    [AUTH_PASSKEY_AUTH_OPTIONS_ROUTE]: handlePasskeyAuthOptions,
+    [AUTH_PASSKEY_AUTH_VERIFY_ROUTE]: loginRoute(handlePasskeyAuthVerify, 'auth-passkey-verify'),
+    [AUTH_PASSKEY_REGISTER_OPTIONS_ROUTE]: handlePasskeyRegisterOptions,
+    [AUTH_PASSKEY_REGISTER_VERIFY_ROUTE]: loginRoute(
+      handlePasskeyRegisterVerify,
+      'auth-passkey-register-verify',
+    ),
+    [AUTH_PASSKEYS_ROUTE]: handlePasskeys,
     '/api/databases/catalog': databaseApi.catalog,
     '/api/databases/describe': databaseApi.describe,
     '/api/databases/record': databaseApi.record,
@@ -18779,7 +19139,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           MUTATING_ROUTES.has(url) || STATE_MUTATING_PREFIXES.some((p) => url.startsWith(p));
         const gate =
           accessPolicy.mode === 'remote'
-            ? url === AUTH_SESSION_ROUTE
+            ? UNAUTHENTICATED_API_ROUTES.has(url)
               ? 'auth-exchange'
               : 'api-admission-gate'
             : ephemeral

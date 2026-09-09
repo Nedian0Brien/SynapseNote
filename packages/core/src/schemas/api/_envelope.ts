@@ -212,6 +212,92 @@ export const AuthSessionCreateSuccessSchema = z
   .loose() satisfies StandardSchemaV1;
 export type AuthSessionCreateSuccess = z.infer<typeof AuthSessionCreateSuccessSchema>;
 
+/**
+ * Request body for `POST /api/auth/password` — the operator signing in.
+ *
+ * `.strict()` so a client that names the fields differently gets a validation
+ * failure it can read, rather than a 401 that looks like a wrong password.
+ */
+export const AuthPasswordLoginRequestSchema = z
+  .object({
+    username: z.string().min(1),
+    password: z.string().min(1),
+  })
+  .strict() satisfies StandardSchemaV1;
+export type AuthPasswordLoginRequest = z.infer<typeof AuthPasswordLoginRequestSchema>;
+
+/**
+ * Request body for the two passkey verification endpoints.
+ *
+ * `response` is the browser's WebAuthn credential JSON, passed through
+ * unmodelled: its shape is defined by the WebAuthn spec, it nests several
+ * levels, and `@simplewebauthn` validates it far more thoroughly than a
+ * hand-written schema would. Re-declaring it here would create a second,
+ * weaker definition that drifts.
+ */
+export const AuthPasskeyVerifyRequestSchema = z
+  .object({
+    challengeHandle: z.string().min(1),
+    response: z.looseObject({}),
+    /** Only meaningful on registration: the operator's name for the device. */
+    label: z.string().optional(),
+  })
+  .loose() satisfies StandardSchemaV1;
+export type AuthPasskeyVerifyRequest = z.infer<typeof AuthPasskeyVerifyRequestSchema>;
+
+/**
+ * Response body for every successful login, whichever method was used.
+ *
+ * Carries who is signed in and when the session lapses. The session secret
+ * itself never appears here — it goes out in an `HttpOnly` cookie.
+ */
+export const AuthLoginSuccessSchema = z
+  .object({
+    label: z.string().min(1),
+    expiresAt: z.string().min(1),
+  })
+  .loose() satisfies StandardSchemaV1;
+export type AuthLoginSuccess = z.infer<typeof AuthLoginSuccessSchema>;
+
+/**
+ * Response body for the two "start a ceremony" endpoints.
+ *
+ * `options` is the WebAuthn options object built by `@simplewebauthn`, passed
+ * through as the library produced it. `challengeHandle` is this server's
+ * opaque reference to the challenge it remembered; the browser sends it back
+ * with the ceremony response.
+ */
+export const PasskeyCeremonyOptionsSchema = z
+  .object({
+    challengeHandle: z.string().min(1),
+    options: z.looseObject({}),
+  })
+  .loose() satisfies StandardSchemaV1;
+export type PasskeyCeremonyOptions = z.infer<typeof PasskeyCeremonyOptionsSchema>;
+
+/**
+ * The passkeys registered to the account, as the browser sees them.
+ *
+ * No public key and no counter: the browser has no use for either, and a
+ * credential's public key is not something to hand out for display.
+ */
+export const PasskeyListSchema = z
+  .object({
+    passkeys: z.array(
+      z
+        .object({
+          id: z.string().min(1),
+          label: z.string().min(1),
+          createdAt: z.string().min(1),
+          lastUsedAt: z.string().optional(),
+          backedUp: z.boolean(),
+        })
+        .loose(),
+    ),
+  })
+  .loose() satisfies StandardSchemaV1;
+export type PasskeyList = z.infer<typeof PasskeyListSchema>;
+
 export const ProblemTypeSchema = z.enum([
   // Upload-side (covers all 5 UploadWriteReason variants 1:1)
   'urn:ok:error:malformed-upload',
@@ -278,6 +364,11 @@ export const ProblemTypeSchema = z.enum([
   'urn:ok:error:too-many-agent-sessions',
   // Database Data Plane per-agent-session request and in-flight work guard.
   'urn:ok:error:too-many-requests',
+  // Password login refused because the account is inside its lockout window.
+  // Distinct from `too-many-requests` (the database data plane's per-session
+  // guard) so an operator reading logs can tell a locked account from a busy
+  // one, and so a client can surface the retry-after rather than retrying.
+  'urn:ok:error:login-locked',
   // an out-of-band disk edit diverged from the loaded base after the
   // agent's edit was prepared; the store-time backstop aborted the overwrite
   // (disk won), so the agent edit was NOT applied. 409 Conflict. Emitted by the
