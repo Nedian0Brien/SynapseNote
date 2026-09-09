@@ -157,7 +157,7 @@ export function resolveAccessPolicy(
 
   if (deps.store.tokenCount() === 0) {
     problems.push(
-      'remote mode needs at least one access token — mint one with `synapsenote auth token create <name>` before starting the server',
+      'remote mode needs at least one access token — mint one with `synapsenote access token create <name>` before starting the server',
     );
   }
 

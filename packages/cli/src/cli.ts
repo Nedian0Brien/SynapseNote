@@ -28,6 +28,7 @@ import { type Config, ConfigSchema } from '@nedian0brien/synapsenote-server';
  * Config loaded via preAction hook: CLI > ENV > project > user > Zod defaults.
  */
 import { Command } from 'commander';
+import { accessCommand } from './commands/access/index.ts';
 import { authCommand } from './commands/auth/index.ts';
 import { bugReportCommand } from './commands/bug-report.ts';
 import { cleanCommand } from './commands/clean.ts';
@@ -262,6 +263,10 @@ program.addCommand(configCommand());
 // hit/miss diagnostics to ~/.ok/logs/ (its stderr is captured by git, so
 // stderr-only logs are otherwise lost when a sync auth failure occurs).
 program.addCommand(authCommand(getCliLogger));
+
+// `access` command group — token create/list/revoke. Project-scoped remote
+// access credentials; a sibling of `auth`, which is GitHub-specific.
+program.addCommand(accessCommand());
 
 // embeddings command group — set-key / clear-key / status for semantic search.
 // A sibling of `auth` (which is GitHub-specific); manages the embeddings

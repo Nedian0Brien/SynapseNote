@@ -569,6 +569,26 @@ export function mountMcpAndApi(opts: MountMcpAndApiOptions): MountMcpAndApiHandl
     }
 
     if (req.url?.startsWith('/collab')) {
+      // Admission for the sync socket itself. Without it a remote deployment
+      // would gate `/api/*` and `/mcp` while leaving the Yjs channel open —
+      // and that channel reads and writes every document, so it is the most
+      // valuable thing on the server, not the least.
+      //
+      // Scoped to `remote` on purpose. Under a `local` policy this leg has
+      // never carried a check, and `--host 0.0.0.0` LAN sharing depends on
+      // that; tightening it is a separate decision from making remote access
+      // safe, and this milestone promises local mode does not change.
+      //
+      // Browsers cannot set an `Authorization` header on a WebSocket
+      // handshake, so a browser authenticates here with the session cookie the
+      // handshake carries; non-browser clients may send a bearer token.
+      if (
+        accessPolicy.mode === 'remote' &&
+        !authorizeRequest(accessPolicy, accessRequestFromNode(req)).ok
+      ) {
+        socket.destroy();
+        return;
+      }
       socket.on('error', (err: NodeJS.ErrnoException) => {
         if (handleCollabSocketError(err)) return;
         log.error({ err }, 'Upgrade socket error');

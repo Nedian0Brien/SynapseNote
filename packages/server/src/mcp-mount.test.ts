@@ -840,4 +840,47 @@ describe('mountMcpAndApi remote access policy', () => {
     expect((JSON.parse(res.body) as { type?: string }).type).toBe('urn:ok:error:invalid-origin');
     expect(calls()).toBe(0);
   });
+
+  test('the collab socket is refused without a credential', async () => {
+    // The sync channel reads and writes every document. Gating /api/* and
+    // /mcp while leaving this open would protect the least valuable surfaces.
+    const { port } = await startRemote();
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/collab`, {
+      headers: { Host: REMOTE_HOST },
+    });
+    const outcome = await new Promise<string>((resolve) => {
+      ws.on('open', () => resolve('open'));
+      ws.on('error', () => resolve('refused'));
+      ws.on('close', () => resolve('refused'));
+    });
+    expect(outcome).toBe('refused');
+  });
+
+  test('the collab socket opens with a session cookie', async () => {
+    const { port } = await startRemote();
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/collab`, {
+      headers: { Host: REMOTE_HOST, Cookie: `synapsenote_session=${GOOD_TOKEN}` },
+    });
+    const outcome = await new Promise<string>((resolve) => {
+      ws.on('open', () => resolve('open'));
+      ws.on('error', () => resolve('refused'));
+      ws.on('close', () => resolve('refused'));
+    });
+    ws.close();
+    expect(outcome).toBe('open');
+  });
+
+  test('the collab socket opens with a bearer token', async () => {
+    const { port } = await startRemote();
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/collab`, {
+      headers: { Host: REMOTE_HOST, Authorization: `Bearer ${GOOD_TOKEN}` },
+    });
+    const outcome = await new Promise<string>((resolve) => {
+      ws.on('open', () => resolve('open'));
+      ws.on('error', () => resolve('refused'));
+      ws.on('close', () => resolve('refused'));
+    });
+    ws.close();
+    expect(outcome).toBe('open');
+  });
 });

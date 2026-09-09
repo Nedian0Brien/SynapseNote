@@ -25,6 +25,9 @@ import { findEnclosingProjectRoot } from '@nedian0brien/synapsenote-server';
  * resolve relative arguments against the directory the user typed them in.
  */
 const PROJECT_ANCHORED_COMMANDS: ReadonlySet<string> = new Set([
+  // `access` reads and writes `<projectDir>/.ok/local/access.json`, so it
+  // must find the same root the server will when it opens that store.
+  'access',
   'start',
   'stop',
   'status',
