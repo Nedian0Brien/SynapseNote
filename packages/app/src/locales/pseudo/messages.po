@@ -767,6 +767,10 @@ msgstr ""
 msgid "Accept their deletion"
 msgstr ""
 
+#: src/components/SignInGate.tsx
+msgid "Access token"
+msgstr ""
+
 #: src/components/settings/AccountSection.tsx
 #: src/components/settings/SettingsDialogShell.tsx
 msgid "Account"
@@ -2782,6 +2786,10 @@ msgstr ""
 msgid "Could not reach server"
 msgstr ""
 
+#: src/components/SignInGate.tsx
+msgid "Could not reach the server. Check your connection and try again."
+msgstr ""
+
 #: src/components/ShareBranchSwitchDialog.tsx
 msgid "Could not read branch state for this project. Close this dialog and open the share link again."
 msgstr ""
@@ -4182,10 +4190,6 @@ msgstr ""
 msgid "Enter a valid URL (for example https://api.openai.com/v1)."
 msgstr ""
 
-#: src/editor/extensions/CodeBlockView.tsx
-msgid "Enter fullscreen"
-msgstr ""
-
 #: src/components/settings/AiToolsSection.tsx
 #: src/components/settings/ProjectAiToolsSection.tsx
 msgid "Entry"
@@ -4228,10 +4232,6 @@ msgstr ""
 msgid "Existing branch <0>{trimmed}</0> will be checked out into its own window, under <1>.ok/worktrees/</1>."
 msgstr ""
 
-#: src/editor/extensions/CodeBlockView.tsx
-msgid "Exit fullscreen"
-msgstr ""
-
 #: src/components/DiffView.tsx
 msgid "Exit merge"
 msgstr ""
@@ -4260,6 +4260,10 @@ msgstr ""
 
 #: src/components/ActivityPanelBurstRow.tsx
 msgid "Expand burst {burstNumber} diff"
+msgstr ""
+
+#: src/editor/extensions/CodeBlockView.tsx
+msgid "Expand HTML preview"
 msgstr ""
 
 #: src/components/MemoPanel.tsx
@@ -6276,6 +6280,10 @@ msgstr ""
 #. placeholder {0}: cli === 'codex' ? 'Codex' : 'Claude'
 #: src/components/chat/CliChatPanel.tsx
 msgid "Message {0}"
+msgstr ""
+
+#: src/editor/components/HtmlPreviewLightbox.tsx
+msgid "Minimize HTML preview"
 msgstr ""
 
 #: src/components/DatabaseDateCellEditor.tsx
@@ -10115,12 +10123,21 @@ msgid "Shows above the code body. Round-trips as `title=\"...\"` in markdown."
 msgstr ""
 
 #: src/components/settings/SettingsDialogBody.tsx
+#: src/components/SignInGate.tsx
 #: src/components/SyncStatusBadge.tsx
 msgid "Sign in"
 msgstr ""
 
+#: src/components/SignInGate.tsx
+msgid "Sign in to SynapseNote"
+msgstr ""
+
 #: src/components/AuthModal.tsx
 msgid "Sign-in stream ended without confirmation — please try again"
+msgstr ""
+
+#: src/components/SignInGate.tsx
+msgid "Signing in"
 msgstr ""
 
 #: src/editor/components/PdfEmbed.tsx
@@ -10793,6 +10810,10 @@ msgstr ""
 msgid "That folder isn't an SynapseNote project yet. Initialize it and open?"
 msgstr ""
 
+#: src/components/SignInGate.tsx
+msgid "That token was not accepted. Check that it has not been revoked."
+msgstr ""
+
 #: src/components/ShareBranchSwitchDialog.tsx
 msgid "The {targetNoun} could not be opened — try navigating to it manually."
 msgstr ""
@@ -11214,6 +11235,10 @@ msgstr ""
 msgid "This sends content off your machine"
 msgstr ""
 
+#: src/components/SignInGate.tsx
+msgid "This server is not asking for a token. Reload the page to continue."
+msgstr ""
+
 #: src/components/settings/SearchSection.tsx
 msgid "This setting is per-machine and isn't shared with collaborators. It needs an API key set with <0>ok embeddings set-key</0>."
 msgstr ""
@@ -11250,6 +11275,10 @@ msgstr ""
 
 #: src/components/TimelinePanel.tsx
 msgid "This will replace the current document content with the version from <0>{relative} ({absoluteTime}, {entrySha})</0> by <1>{authorName}</1>. Your current content is already saved in the timeline — you can restore it anytime."
+msgstr ""
+
+#: src/components/SignInGate.tsx
+msgid "This workspace is served remotely and needs an access token. Create one on the server with <0>synapsenote access token create</0>."
 msgstr ""
 
 #: src/components/DocPanel.tsx

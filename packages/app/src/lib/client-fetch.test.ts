@@ -36,20 +36,29 @@ const KIND = 'x-ok-client-kind';
 
 type Recorded = { input: RequestInfo | URL; init?: RequestInit };
 
-function stubWindowFetch() {
+function stubWindowFetch(status = 200) {
   const calls: Array<Recorded> = [];
   const fetchStub = mock((input: RequestInfo | URL, init?: RequestInit) => {
     calls.push({ input, init });
-    return Promise.resolve(new Response('{"ok":true}', { status: 200 }));
+    return Promise.resolve(new Response('{"ok":true}', { status }));
   });
+  const unauthorized: string[] = [];
   g.window = {
     fetch: fetchStub,
     location: { origin: 'http://localhost:5173' },
+    // Minimal event plumbing so the 401 signal has somewhere to land.
+    dispatchEvent: (event: Event) => {
+      unauthorized.push(event.type);
+      return true;
+    },
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    CustomEvent,
   } as unknown as Window;
   // Replace globalThis.fetch too since `window.fetch.bind(window)` reads the
   // identity from the `window` binding we just installed.
   g.fetch = fetchStub as unknown as typeof fetch;
-  return { calls, fetchStub };
+  return { calls, fetchStub, unauthorized };
 }
 
 /** Read a header off a recorded call's init (the wrapper always passes Headers). */
@@ -184,5 +193,49 @@ describe('installClientFetchWrapper', () => {
     await window.fetch('/api/documents');
     expect(calls[0]?.input).toBe('http://localhost:59534/api/documents');
     expect(header(calls[0], PROTOCOL)).toBe('1');
+  });
+});
+
+/**
+ * The 401 signal. Its job is to reach the shell from the one seam every
+ * `/api/*` call already passes through, so a route nobody thought about still
+ * surfaces the sign-in prompt.
+ */
+describe('unauthorized signal', () => {
+  test('announces a 401 from an /api/* route', async () => {
+    const { unauthorized } = stubWindowFetch(401);
+    installClientFetchWrapper();
+    await window.fetch('/api/config');
+    expect(unauthorized).toEqual(['ok:api-unauthorized']);
+  });
+
+  test('stays quiet on a successful response', async () => {
+    const { unauthorized } = stubWindowFetch(200);
+    installClientFetchWrapper();
+    await window.fetch('/api/config');
+    expect(unauthorized).toEqual([]);
+  });
+
+  test('stays quiet on other error statuses', async () => {
+    const { unauthorized } = stubWindowFetch(403);
+    installClientFetchWrapper();
+    await window.fetch('/api/config');
+    expect(unauthorized).toEqual([]);
+  });
+
+  test('stays quiet for the session exchange itself', async () => {
+    // That route answers 401 for a token the user just typed wrong. Treating
+    // it as "you are signed out" would re-open the prompt they are looking at.
+    const { unauthorized } = stubWindowFetch(401);
+    installClientFetchWrapper();
+    await window.fetch('/api/auth/session', { method: 'POST' });
+    expect(unauthorized).toEqual([]);
+  });
+
+  test('returns the response untouched so callers keep their own handling', async () => {
+    stubWindowFetch(401);
+    installClientFetchWrapper();
+    const res = await window.fetch('/api/config');
+    expect(res.status).toBe(401);
   });
 });

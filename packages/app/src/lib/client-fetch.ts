@@ -30,6 +30,7 @@
  * Electron per Fetch spec §4.3); the allowed Origin is reflected verbatim in
  * ACAO, all others get 403.
  */
+import { AUTH_SESSION_PATH, notifyApiUnauthorized } from '@/lib/auth-session';
 import { browserClientVersionHeaders } from '@/lib/client-version';
 
 /** Minimal shape we read from the desktop bridge config. */
@@ -61,16 +62,37 @@ export function installClientFetchWrapper(config: ClientFetchConfig = {}): void 
     const target = resolveApiTarget(input, apiOrigin);
     if (!target.isApi) return origFetch(input, init);
 
-    if (input instanceof Request) {
-      const headers = mergeHeaders(input.headers, versionHeaders);
-      return origFetch(new Request(target.url, input), { headers });
-    }
-    const headers = mergeHeaders(init?.headers, versionHeaders);
-    return origFetch(target.url, { ...init, headers });
+    const response =
+      input instanceof Request
+        ? origFetch(new Request(target.url, input), {
+            headers: mergeHeaders(input.headers, versionHeaders),
+          })
+        : origFetch(target.url, { ...init, headers: mergeHeaders(init?.headers, versionHeaders) });
+
+    return response.then(reportUnauthorized(target.url));
   }) as typeof window.fetch & { [FETCH_WRAPPER_MARKER]?: true };
 
   wrapped[FETCH_WRAPPER_MARKER] = true;
   window.fetch = wrapped;
+}
+
+/**
+ * Announce a 401 so the shell can show the sign-in prompt.
+ *
+ * Placed on the single seam every `/api/*` call already passes through, so a
+ * route nobody thought about still surfaces the prompt rather than rendering
+ * an empty pane. The response is returned untouched — callers keep whatever
+ * error handling they already had.
+ *
+ * The session exchange is excluded: it answers 401 for a token the user just
+ * typed wrong, and treating that as "you are signed out" would re-open the
+ * prompt the user is already looking at.
+ */
+function reportUnauthorized(url: string): (res: Response) => Response {
+  return (res) => {
+    if (res.status === 401 && !url.endsWith(AUTH_SESSION_PATH)) notifyApiUnauthorized();
+    return res;
+  };
 }
 
 /** Build a `Headers` from an existing init and overlay the version headers. */

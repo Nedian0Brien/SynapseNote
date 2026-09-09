@@ -29,6 +29,7 @@ import { AppErrorBoundary, CrashReportingBoundary } from '@/components/AppErrorB
 import { selectDesktopRootApp } from '@/components/desktop-root-app';
 import { PublicDatabaseSharePage } from '@/components/PublicDatabaseSharePage';
 import { ReportBugCrashInviteTrigger } from '@/components/ReportBugCrashInviteTrigger';
+import { SignInGate } from '@/components/SignInGate';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 // Side-effect import to load the `Window.okDesktop?` global augmentation.
@@ -240,7 +241,16 @@ createRoot(root).render(
            * i18n + theme.
            */}
           <TooltipProvider>
-            <AppErrorBoundary>{rootApp}</AppErrorBoundary>
+            {/*
+             * Remote-access sign-in. Renders the app untouched until an
+             * `/api/*` call answers 401, which only a server running in
+             * remote mode ever sends — the desktop app and `bun run dev`
+             * mount this and never see it. Inside the error boundary so a
+             * crash in the prompt still lands on the recoverable fallback.
+             */}
+            <AppErrorBoundary>
+              <SignInGate>{rootApp}</SignInGate>
+            </AppErrorBoundary>
             {/*
              * Crash-invite dialog host — a sibling of the root app, outside
              * the shell boundary, so an invitation still surfaces while the

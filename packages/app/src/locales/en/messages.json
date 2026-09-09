@@ -265,6 +265,7 @@
       "."
     ],
     "3scuO5": ["Check index again"],
+    "3tjXNl": ["Minimize HTML preview"],
     "3wiBAs": ["Where should it live?"],
     "3xvExJ": ["Calendar dates and display"],
     "3y6XTb": ["Semantic search"],
@@ -397,6 +398,7 @@
     "5lrAsI": ["Collapse original text"],
     "5mksg0": ["Failed to disable semantic search — ", ["detail"]],
     "5nYb1p": ["Loading public links"],
+    "5pYsL1": ["Signing in"],
     "5qNxOe": [
       [
         "count",
@@ -1153,6 +1155,7 @@
     ],
     "IyLOqi": ["No memos have been created from this PDF yet."],
     "Iys_O-": ["One folder path per line"],
+    "J1tq-C": ["Expand HTML preview"],
     "J2MgzQ": ["Undo all edits on ", ["docName"]],
     "J2Mv98": ["Name (e.g. ", ["login"], ")"],
     "J2eKUI": ["File"],
@@ -1172,7 +1175,6 @@
     "JLzQi_": ["Close ", ["accessibleLabel"]],
     "JM_aq-": ["Use an https:// URL — http:// is only allowed for localhost."],
     "JOcPqH": ["Bring a remote repository onto this machine."],
-    "JWj1N3": ["Enter fullscreen"],
     "JWsZlx": ["Open a project to edit."],
     "JY5Oyv": ["Database"],
     "JZ4Z7I": ["Context Packs truncated"],
@@ -1719,6 +1721,7 @@
     "Si7mIR": ["Create report"],
     "SiUUCS": ["Next match"],
     "SkMZlS": ["Couldn't remove <0>", ["targetGitPath"], "</0>: ", ["removeGitError"]],
+    "SkUcEr": ["Access token"],
     "Skr_7L": ["Search worktrees"],
     "Sq8lf2": ["Editors to install skills into"],
     "SqERVU": ["Unsaved Rollup preview · UTC · permission-scoped · evaluated at ", ["0"]],
@@ -1913,6 +1916,7 @@
     "Waiy-j": ["The agent's persona, values, and voice."],
     "WcWS__": ["Download file"],
     "Wcv-Zi": ["Make this knowledge base available as a Claude Skill."],
+    "WdilDa": ["That token was not accepted. Check that it has not been revoked."],
     "We7h2I": ["📝 or assets/icon.png"],
     "WepeNQ": ["Loading records"],
     "Weq9zb": ["General"],
@@ -2862,6 +2866,9 @@
       "Repositories you've already cloned may keep syncing through git's own saved credentials, even after you disconnect."
     ],
     "msqUNq": ["Ready-made folders and templates to get you started quickly."],
+    "mvkqTW": [
+      "This workspace is served remotely and needs an access token. Create one on the server with <0>synapsenote access token create</0>."
+    ],
     "mvrUoe": ["Convert property type"],
     "mwMF9u": ["Open CodeMirror search in source editor mode."],
     "mxY24F": ["Duplicate the focused file-tree item when focus is in the Files sidebar."],
@@ -2972,6 +2979,7 @@
     "oYlR4o": ["Archive page"],
     "ogAuyr": ["Back to document view"],
     "ohu37F": ["Proposed diff"],
+    "ohv6qD": ["Sign in to SynapseNote"],
     "olTIwK": [
       "Secrets like API keys and tokens are redacted automatically. You'll review the report before it's sent."
     ],
@@ -3060,6 +3068,7 @@
     "qEb0iT": ["Delete memo"],
     "qEue6Q": [" or "],
     "qFWMl-": ["View as text"],
+    "qGBulj": ["Could not reach the server. Check your connection and try again."],
     "qNOgUu": ["Edits at the source land here — no copy-paste drift."],
     "qRZh7J": ["Let Tab leave the source editor instead of indenting."],
     "qSKu2v": ["Source navigation and selection"],
@@ -3178,7 +3187,6 @@
       "This ghost value is not canonical until the exact plan commits and the table refreshes."
     ],
     "sOxZaS": ["Failed to load graph"],
-    "sQpDn6": ["Exit fullscreen"],
     "sQqnYh": ["Review property deletion"],
     "sYhTPQ": ["Choose an option"],
     "sZ2IOu": [
@@ -3359,6 +3367,7 @@
     "v7lbnC": ["Find next match"],
     "v8gXQ8": ["Add reminder"],
     "v98mow": ["No databases yet."],
+    "vA6abR": ["This server is not asking for a token. Reload the page to continue."],
     "vAYoCZ": ["Couldn't open the worktree. Try again."],
     "vB7pqj": ["1.5× faster"],
     "vDXqVv": ["Insert a markdown hard break."],

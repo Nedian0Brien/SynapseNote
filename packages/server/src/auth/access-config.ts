@@ -43,13 +43,17 @@ export const PUBLIC_ORIGIN_ENV = 'OK_PUBLIC_ORIGIN';
 export const TRUSTED_PROXY_HOPS_ENV = 'OK_TRUSTED_PROXY_HOPS';
 export const ALLOW_INSECURE_ORIGIN_ENV = 'OK_ALLOW_INSECURE_ORIGIN';
 
-/** The subset of the environment this module reads. */
-export interface AccessEnv {
-  readonly [ACCESS_MODE_ENV]?: string;
-  readonly [PUBLIC_ORIGIN_ENV]?: string;
-  readonly [TRUSTED_PROXY_HOPS_ENV]?: string;
-  readonly [ALLOW_INSECURE_ORIGIN_ENV]?: string;
-}
+/**
+ * An environment to read. Deliberately a plain string map rather than an
+ * interface of the four named keys: an all-optional interface is a weak type,
+ * and Node's `ProcessEnv` declares no properties in common with it, so
+ * `resolveAccessPolicy(process.env, …)` would not typecheck.
+ *
+ * The keys this module reads are `OK_ACCESS_MODE`, `OK_PUBLIC_ORIGIN`,
+ * `OK_TRUSTED_PROXY_HOPS`, and `OK_ALLOW_INSECURE_ORIGIN` — each exported as a
+ * constant above.
+ */
+export type AccessEnv = Readonly<Record<string, string | undefined>>;
 
 export type AccessPolicyResolution =
   | { readonly ok: true; readonly policy: AccessPolicy }
