@@ -18465,7 +18465,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     const trustedProxy =
       accessPolicy.mode === 'remote' ? accessPolicy.trustedProxy : NO_TRUSTED_PROXY;
     return resolveClientProtocolIsSecure(trustedProxy, {
-      socketEncrypted: (req.socket as { encrypted?: boolean }).encrypted === true,
+      socketEncrypted: (req.socket as { encrypted?: boolean } | undefined)?.encrypted === true,
       forwardedProto: req.headers['x-forwarded-proto'],
     });
   }
