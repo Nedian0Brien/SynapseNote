@@ -421,10 +421,24 @@ describe('account sessions', () => {
     const { store } = freshStore();
     const minted = store.createAccountSession('acct-1', 'libera3920');
     expect(store.verify({ scheme: 'session', value: minted.secret })).toEqual({
-      kind: 'session',
+      kind: 'account-session',
       id: 'acct-1',
       label: 'libera3920',
     });
+  });
+
+  test('are distinguishable from a session traded for a token', () => {
+    // Both are cookies. Endpoints that act on the operator's own machine
+    // credentials admit only the one a person signed in for, so the kind has
+    // to survive verification rather than being flattened to 'session'.
+    const { store } = freshStore();
+    const token = store.createToken('chatgpt');
+    const tokenSession = store.createSession(token.record.id);
+    const accountSession = store.createAccountSession('acct-1', 'libera3920');
+    expect(store.verify({ scheme: 'session', value: tokenSession.secret })?.kind).toBe('session');
+    expect(store.verify({ scheme: 'session', value: accountSession.secret })?.kind).toBe(
+      'account-session',
+    );
   });
 
   test('need no access token to exist', () => {

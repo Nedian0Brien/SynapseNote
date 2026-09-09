@@ -311,7 +311,9 @@ export function openAccessStore(path: string): AccessStore {
       const subject = sessionSubject(session);
       if (subject === null) return null;
       if (subject.kind === 'account') {
-        return { kind: 'session', id: subject.id, label: subject.label };
+        // Distinct from a token-derived session: this cookie was minted for a
+        // person who signed in. `local-op` endpoints admit only this kind.
+        return { kind: 'account-session', id: subject.id, label: subject.label };
       }
       const owner = tokens.find((t) => t.id === subject.id);
       // A session whose token was revoked dies with it. Checking here rather

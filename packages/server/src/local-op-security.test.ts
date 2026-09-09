@@ -605,26 +605,41 @@ describe('isPathWithinHome — fail-closed defensive guards', () => {
 
 // ─── checkLocalOpSecurity ────────────────────────────────────────────────────
 
+/**
+ * The gate now takes the access policy and the caller's principal. These cases
+ * are the `local` policy — the desktop app and the CLI — and are unchanged
+ * apart from carrying the new arguments. The `remote` branch lives in
+ * `local-op-security.remote.test.ts`.
+ */
+const LOCAL_GATE = {
+  handler: 'test-handler',
+  policy: { mode: 'local' },
+  principal: undefined,
+  remote: 'never',
+} as const satisfies Omit<Parameters<typeof checkLocalOpSecurity>[2], never>;
+
 describe('checkLocalOpSecurity', () => {
   test('allows loopback request with no origin', () => {
     const { res, calls } = makeRes();
-    const result = checkLocalOpSecurity(makeReq('127.0.0.1'), res, { handler: 'test-handler' });
+    const result = checkLocalOpSecurity(makeReq('127.0.0.1'), res, LOCAL_GATE);
     expect(result).toBe(true);
     expect(calls).toHaveLength(0);
   });
 
   test('allows loopback request with valid origin', () => {
     const { res, calls } = makeRes();
-    const result = checkLocalOpSecurity(makeReq('127.0.0.1', 'http://localhost:5173'), res, {
-      handler: 'test-handler',
-    });
+    const result = checkLocalOpSecurity(
+      makeReq('127.0.0.1', 'http://localhost:5173'),
+      res,
+      LOCAL_GATE,
+    );
     expect(result).toBe(true);
     expect(calls).toHaveLength(0);
   });
 
   test('rejects non-loopback request with RFC 9457 problem+json 403', () => {
     const { res, calls } = makeRes();
-    const result = checkLocalOpSecurity(makeReq('10.0.0.5'), res, { handler: 'test-handler' });
+    const result = checkLocalOpSecurity(makeReq('10.0.0.5'), res, LOCAL_GATE);
     expect(result).toBe(false);
     expect(calls).toHaveLength(1);
     expect(calls[0].status).toBe(403);
@@ -637,9 +652,11 @@ describe('checkLocalOpSecurity', () => {
 
   test('rejects invalid origin with RFC 9457 problem+json 403', () => {
     const { res, calls } = makeRes();
-    const result = checkLocalOpSecurity(makeReq('127.0.0.1', 'https://evil.example.com'), res, {
-      handler: 'test-handler',
-    });
+    const result = checkLocalOpSecurity(
+      makeReq('127.0.0.1', 'https://evil.example.com'),
+      res,
+      LOCAL_GATE,
+    );
     expect(result).toBe(false);
     expect(calls).toHaveLength(1);
     expect(calls[0].status).toBe(403);

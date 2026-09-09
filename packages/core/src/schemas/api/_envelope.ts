@@ -330,6 +330,14 @@ export const ProblemTypeSchema = z.enum([
   // /api/local-op/* security gate (shared by all local-op endpoints)
   'urn:ok:error:loopback-required',
   'urn:ok:error:invalid-origin',
+  // The same gate under a `remote` policy. These endpoints act on the machine
+  // the server runs on — its git checkout, its GitHub credential, its
+  // embeddings key — so some of them are refused to every remote caller, and
+  // the rest admit only an operator who signed in with a password or a
+  // passkey. Distinct from `unauthorized` (no credential) and from
+  // `loopback-required` (whose name is not true behind a proxy, where the
+  // socket peer is always loopback).
+  'urn:ok:error:desktop-only',
   // /api/local-op/clone
   'urn:ok:error:url-not-allowed',
   'urn:ok:error:dir-outside-home',

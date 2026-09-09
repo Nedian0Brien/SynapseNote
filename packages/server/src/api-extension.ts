@@ -258,7 +258,9 @@ import {
   authorizeOrigin,
   authorizeRequest,
   LOCAL_ACCESS_POLICY,
+  principalOf,
   readCookie,
+  rememberPrincipal,
   SESSION_COOKIE_NAME,
 } from './access-control.ts';
 import { captureEffect } from './activity-log.ts';
@@ -11617,7 +11619,13 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
   const handleLocalOpClone = withValidation(LocalOpCloneRequestSchema, handleLocalOpCloneInner, {
     handler: HANDLE_LOCAL_OP_CLONE,
     method: 'POST',
-    preBodyGate: (req, res) => checkLocalOpSecurity(req, res, { handler: HANDLE_LOCAL_OP_CLONE }),
+    preBodyGate: (req, res) =>
+      checkLocalOpSecurity(req, res, {
+        handler: HANDLE_LOCAL_OP_CLONE,
+        policy: accessPolicy,
+        principal: principalOf(req),
+        remote: 'never',
+      }),
   });
   async function handleLocalOpCloneInner(
     _req: IncomingMessage,
@@ -12172,7 +12180,12 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       handler: HANDLE_LOCAL_OP_OK_INIT,
       method: 'POST',
       preBodyGate: (req, res) =>
-        checkLocalOpSecurity(req, res, { handler: HANDLE_LOCAL_OP_OK_INIT }),
+        checkLocalOpSecurity(req, res, {
+          handler: HANDLE_LOCAL_OP_OK_INIT,
+          policy: accessPolicy,
+          principal: principalOf(req),
+          remote: 'never',
+        }),
     },
   );
 
@@ -12216,7 +12229,12 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       handler: HANDLE_LOCAL_OP_AUTH_LOGIN,
       method: 'POST',
       preBodyGate: (req, res) =>
-        checkLocalOpSecurity(req, res, { handler: HANDLE_LOCAL_OP_AUTH_LOGIN }),
+        checkLocalOpSecurity(req, res, {
+          handler: HANDLE_LOCAL_OP_AUTH_LOGIN,
+          policy: accessPolicy,
+          principal: principalOf(req),
+          remote: 'never',
+        }),
     },
   );
   async function handleLocalOpAuthLoginInner(
@@ -12471,6 +12489,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       preBodyGate: (req, res) =>
         checkLocalOpSecurity(req, res, {
           handler: HANDLE_LOCAL_OP_AUTH_STATUS,
+          policy: accessPolicy,
+          principal: principalOf(req),
+          remote: 'never',
         }),
     },
   );
@@ -12495,7 +12516,12 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       handler: HANDLE_LOCAL_OP_AUTH_REPOS,
       method: 'POST',
       preBodyGate: (req, res) =>
-        checkLocalOpSecurity(req, res, { handler: HANDLE_LOCAL_OP_AUTH_REPOS }),
+        checkLocalOpSecurity(req, res, {
+          handler: HANDLE_LOCAL_OP_AUTH_REPOS,
+          policy: accessPolicy,
+          principal: principalOf(req),
+          remote: 'never',
+        }),
     },
   );
   async function handleLocalOpAuthReposInner(
@@ -12721,6 +12747,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       preBodyGate: (req, res) =>
         checkLocalOpSecurity(req, res, {
           handler: HANDLE_LOCAL_OP_AUTH_SIGNOUT,
+          policy: accessPolicy,
+          principal: principalOf(req),
+          remote: 'never',
         }),
     },
   );
@@ -12799,6 +12828,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       preBodyGate: (req, res) =>
         checkLocalOpSecurity(req, res, {
           handler: HANDLE_LOCAL_OP_AUTH_SET_IDENTITY,
+          policy: accessPolicy,
+          principal: principalOf(req),
+          remote: 'never',
         }),
     },
   );
@@ -12810,7 +12842,15 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
   // ─── Sync endpoints ──────────────────────────────────────────────────────────
 
   async function handleSyncStatus(req: IncomingMessage, res: ServerResponse): Promise<void> {
-    if (!checkLocalOpSecurity(req, res, { handler: 'sync-status' })) return;
+    if (
+      !checkLocalOpSecurity(req, res, {
+        handler: 'sync-status',
+        policy: accessPolicy,
+        principal: principalOf(req),
+        remote: 'never',
+      })
+    )
+      return;
     if (req.method !== 'GET') {
       errorResponse(res, 405, 'urn:ok:error:method-not-allowed', 'Method not allowed.', {
         handler: 'sync-status',
@@ -12884,7 +12924,15 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       handler: 'sync-trigger',
       method: 'POST',
       preBodyGate: (req, res) => {
-        if (!checkLocalOpSecurity(req, res, { handler: 'sync-trigger' })) return false;
+        if (
+          !checkLocalOpSecurity(req, res, {
+            handler: 'sync-trigger',
+            policy: accessPolicy,
+            principal: principalOf(req),
+            remote: 'never',
+          })
+        )
+          return false;
         const engine = getSyncEngine?.();
         if (!engine) {
           errorResponse(res, 503, 'urn:ok:error:sync-not-active', 'Sync engine not active.', {
@@ -12898,7 +12946,15 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
   );
 
   async function handleSyncConflicts(req: IncomingMessage, res: ServerResponse): Promise<void> {
-    if (!checkLocalOpSecurity(req, res, { handler: 'sync-conflicts' })) return;
+    if (
+      !checkLocalOpSecurity(req, res, {
+        handler: 'sync-conflicts',
+        policy: accessPolicy,
+        principal: principalOf(req),
+        remote: 'never',
+      })
+    )
+      return;
     if (req.method !== 'GET') {
       errorResponse(res, 405, 'urn:ok:error:method-not-allowed', 'Method not allowed.', {
         handler: 'sync-conflicts',
@@ -12973,7 +13029,15 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       handler: 'sync-resolve-conflict',
       method: 'POST',
       preBodyGate: (req, res) => {
-        if (!checkLocalOpSecurity(req, res, { handler: 'sync-resolve-conflict' })) return false;
+        if (
+          !checkLocalOpSecurity(req, res, {
+            handler: 'sync-resolve-conflict',
+            policy: accessPolicy,
+            principal: principalOf(req),
+            remote: 'never',
+          })
+        )
+          return false;
         const engine = getSyncEngine?.();
         if (!engine) {
           errorResponse(res, 503, 'urn:ok:error:sync-not-active', 'Sync engine not active.', {
@@ -12990,7 +13054,15 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     req: IncomingMessage,
     res: ServerResponse,
   ): Promise<void> {
-    if (!checkLocalOpSecurity(req, res, { handler: 'sync-conflict-content' })) return;
+    if (
+      !checkLocalOpSecurity(req, res, {
+        handler: 'sync-conflict-content',
+        policy: accessPolicy,
+        principal: principalOf(req),
+        remote: 'never',
+      })
+    )
+      return;
     if (req.method !== 'GET') {
       errorResponse(res, 405, 'urn:ok:error:method-not-allowed', 'Method not allowed.', {
         handler: 'sync-conflict-content',
@@ -13257,7 +13329,15 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
    * a `detail` carrying the underlying message so renderers can echo it.
    */
   async function handleSeedPlan(req: IncomingMessage, res: ServerResponse): Promise<void> {
-    if (!checkLocalOpSecurity(req, res, { handler: 'seed-plan' })) return;
+    if (
+      !checkLocalOpSecurity(req, res, {
+        handler: 'seed-plan',
+        policy: accessPolicy,
+        principal: principalOf(req),
+        remote: 'never',
+      })
+    )
+      return;
     if (req.method !== 'GET') {
       errorResponse(res, 405, 'urn:ok:error:method-not-allowed', 'Method not allowed.', {
         handler: 'seed-plan',
@@ -13371,7 +13451,13 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     {
       handler: 'seed-apply',
       method: 'POST',
-      preBodyGate: (req, res) => checkLocalOpSecurity(req, res, { handler: 'seed-apply' }),
+      preBodyGate: (req, res) =>
+        checkLocalOpSecurity(req, res, {
+          handler: 'seed-apply',
+          policy: accessPolicy,
+          principal: principalOf(req),
+          remote: 'never',
+        }),
     },
   );
 
@@ -13382,7 +13468,15 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
    * same wire-format shape from one source.
    */
   async function handleSeedPacks(req: IncomingMessage, res: ServerResponse): Promise<void> {
-    if (!checkLocalOpSecurity(req, res, { handler: 'seed-packs' })) return;
+    if (
+      !checkLocalOpSecurity(req, res, {
+        handler: 'seed-packs',
+        policy: accessPolicy,
+        principal: principalOf(req),
+        remote: 'never',
+      })
+    )
+      return;
     if (req.method !== 'GET') {
       errorResponse(res, 405, 'urn:ok:error:method-not-allowed', 'Method not allowed.', {
         handler: 'seed-packs',
@@ -13454,7 +13548,13 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     {
       handler: 'install-skill',
       method: 'POST',
-      preBodyGate: (req, res) => checkLocalOpSecurity(req, res, { handler: 'install-skill' }),
+      preBodyGate: (req, res) =>
+        checkLocalOpSecurity(req, res, {
+          handler: 'install-skill',
+          policy: accessPolicy,
+          principal: principalOf(req),
+          remote: 'never',
+        }),
     },
   );
 
@@ -13471,7 +13571,15 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     // same-origin callers (the editor UI) and refuses cross-origin browser
     // contexts + DNS-rebinding attempts that would otherwise succeed.
     // `checkLocalOpSecurity` itself emits RFC 9457 problem+json on rejection.
-    if (!checkLocalOpSecurity(req, res, { handler: 'installed-agents' })) return;
+    if (
+      !checkLocalOpSecurity(req, res, {
+        handler: 'installed-agents',
+        policy: accessPolicy,
+        principal: principalOf(req),
+        remote: 'never',
+      })
+    )
+      return;
     try {
       await handleInstalledAgents(req, res, installedAgentsCache.probeAll);
     } catch (e) {
@@ -17321,7 +17429,13 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       handler: 'skill-install-state',
       method: 'GET',
       skipBodyParse: true,
-      preBodyGate: (req, res) => checkLocalOpSecurity(req, res, { handler: 'skill-install-state' }),
+      preBodyGate: (req, res) =>
+        checkLocalOpSecurity(req, res, {
+          handler: 'skill-install-state',
+          policy: accessPolicy,
+          principal: principalOf(req),
+          remote: 'never',
+        }),
     },
   );
 
@@ -17333,7 +17447,15 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     // as `/api/spawn-cursor` and `/api/installed-agents`. The handler also
     // enforces app-name allowlist + URL scheme matching + cursor path
     // containment as defense-in-depth.
-    if (!checkLocalOpSecurity(req, res, { handler: 'handoff' })) return;
+    if (
+      !checkLocalOpSecurity(req, res, {
+        handler: 'handoff',
+        policy: accessPolicy,
+        principal: principalOf(req),
+        remote: 'never',
+      })
+    )
+      return;
     try {
       await handleHandoffDispatch(req, res, {
         contentDir,
@@ -17363,7 +17485,15 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     // security model inside `handleSpawnCursor`. See the file-level comment
     // in `./spawn-cursor-api.ts` for the full threat model.
     // `checkLocalOpSecurity` itself emits RFC 9457 problem+json on rejection.
-    if (!checkLocalOpSecurity(req, res, { handler: 'spawn-cursor' })) return;
+    if (
+      !checkLocalOpSecurity(req, res, {
+        handler: 'spawn-cursor',
+        policy: accessPolicy,
+        principal: principalOf(req),
+        remote: 'never',
+      })
+    )
+      return;
     try {
       await handleSpawnCursor(req, res, {
         contentDir,
@@ -17579,6 +17709,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       preBodyGate: (req, res) =>
         checkLocalOpSecurity(req, res, {
           handler: SHARE_CONSTRUCT_URL_HANDLER_TAG,
+          policy: accessPolicy,
+          principal: principalOf(req),
+          remote: 'never',
         }),
     },
   );
@@ -17728,6 +17861,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       preBodyGate: (req, res) =>
         checkLocalOpSecurity(req, res, {
           handler: SHARE_TARGET_STATUS_HANDLER_TAG,
+          policy: accessPolicy,
+          principal: principalOf(req),
+          remote: 'never',
         }),
     },
   );
@@ -17909,6 +18045,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       preBodyGate: (req, res) =>
         checkLocalOpSecurity(req, res, {
           handler: SHARE_PUBLISH_OWNERS_HANDLER_TAG,
+          policy: accessPolicy,
+          principal: principalOf(req),
+          remote: 'never',
         }),
     },
   );
@@ -17990,6 +18129,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       preBodyGate: (req, res) =>
         checkLocalOpSecurity(req, res, {
           handler: SHARE_PUBLISH_NAME_CHECK_HANDLER_TAG,
+          policy: accessPolicy,
+          principal: principalOf(req),
+          remote: 'never',
         }),
     },
   );
@@ -18096,7 +18238,12 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       handler: SHARE_PUBLISH_HANDLER_TAG,
       method: 'POST',
       preBodyGate: (req, res) =>
-        checkLocalOpSecurity(req, res, { handler: SHARE_PUBLISH_HANDLER_TAG }),
+        checkLocalOpSecurity(req, res, {
+          handler: SHARE_PUBLISH_HANDLER_TAG,
+          policy: accessPolicy,
+          principal: principalOf(req),
+          remote: 'never',
+        }),
     },
   );
 
@@ -18149,7 +18296,13 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     {
       handler: 'client-logs',
       method: 'POST',
-      preBodyGate: (req, res) => checkLocalOpSecurity(req, res, { handler: 'client-logs' }),
+      preBodyGate: (req, res) =>
+        checkLocalOpSecurity(req, res, {
+          handler: 'client-logs',
+          policy: accessPolicy,
+          principal: principalOf(req),
+          remote: 'never',
+        }),
     },
   );
 
@@ -18276,6 +18429,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       preBodyGate: (req, res) =>
         checkLocalOpSecurity(req, res, {
           handler: HANDLE_LOCAL_OP_EMBEDDINGS_SET_KEY,
+          policy: accessPolicy,
+          principal: principalOf(req),
+          remote: 'never',
         }),
     },
   );
@@ -18323,6 +18479,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       preBodyGate: (req, res) =>
         checkLocalOpSecurity(req, res, {
           handler: HANDLE_LOCAL_OP_EMBEDDINGS_CLEAR_KEY,
+          policy: accessPolicy,
+          principal: principalOf(req),
+          remote: 'never',
         }),
     },
   );
@@ -19157,6 +19316,12 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
             denyAccess(response, admission, gate);
             return;
           }
+          // Kept, not re-derived. The `local-op` gate needs to know whether a
+          // person signed in or a token did, and this is the only place that
+          // answer exists. Attached to the request rather than threaded
+          // through every handler signature: the alternative is changing far
+          // more call sites than the gate itself has.
+          rememberPrincipal(request, admission.principal);
         }
       }
 

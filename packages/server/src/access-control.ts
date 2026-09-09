@@ -48,8 +48,17 @@ export const SESSION_COOKIE_NAME = 'synapsenote_session';
 
 /** Who the request turned out to be. Carried into logs and future rate limits. */
 export interface AccessPrincipal {
-  /** How the caller proved itself. */
-  readonly kind: 'loopback' | 'bearer' | 'session';
+  /**
+   * How the caller proved itself.
+   *
+   * `session` and `account-session` are both cookies, and the difference is
+   * who is behind them: `account-session` means a person signed in with a
+   * password or a passkey, while `session` was traded for an access token by
+   * something holding that token. Endpoints that act on the operator's own
+   * machine credentials — git, GitHub, the embeddings key — require the
+   * former. A token is a delegated machine credential and is not the operator.
+   */
+  readonly kind: 'loopback' | 'bearer' | 'session' | 'account-session';
   /**
    * Stable identifier. `'local'` under loopback admission; otherwise the token
    * record's id, so a revoked credential can be traced through past log lines.
@@ -329,6 +338,37 @@ export interface NodeRequestLike {
 }
 
 /** Adapt a Node request into the structural shape this module reads. */
+/**
+ * Where the admission gate parks its verdict for later gates on the same
+ * request.
+ *
+ * A symbol rather than a string key so nothing else on `IncomingMessage` can
+ * collide with it, and nothing outside this module can read or forge it
+ * without importing the symbol.
+ */
+const PRINCIPAL_KEY = Symbol.for('ok.access.principal');
+
+/**
+ * Record who the admission gate said this caller is.
+ *
+ * Called once, immediately after `authorizeRequest` succeeds. The `local-op`
+ * gate runs later in the same request and needs the answer; re-deriving it
+ * there would mean verifying the credential twice and risking two different
+ * answers for one request.
+ */
+export function rememberPrincipal(req: object, principal: AccessPrincipal): void {
+  (req as Record<symbol, unknown>)[PRINCIPAL_KEY] = principal;
+}
+
+/**
+ * Read back what {@link rememberPrincipal} stored, or undefined when admission
+ * never ran — which is the normal case under a `local` policy, where
+ * reachability is the proof and no credential is verified.
+ */
+export function principalOf(req: object): AccessPrincipal | undefined {
+  return (req as Record<symbol, AccessPrincipal | undefined>)[PRINCIPAL_KEY];
+}
+
 export function accessRequestFromNode(req: NodeRequestLike): AccessRequest {
   return {
     socketAddress: req.socket?.remoteAddress,

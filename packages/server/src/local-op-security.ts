@@ -15,6 +15,7 @@ import { lstatSync, realpathSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { homedir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import type { AccessPolicy, AccessPrincipal } from './access-control.ts';
 import { errorResponse } from './http/error-response.ts';
 
 // ─── Protocol checks ─────────────────────────────────────────────────────────
@@ -240,20 +241,94 @@ export function hasValidLocalOpOrigin(req: IncomingMessage): boolean {
 }
 
 /**
- * Convenience wrapper: runs loopback + origin checks, emits an RFC 9457 403
- * problem+json response if either fails, and returns false. Returns
- * true when the request is allowed.
+ * What a `local-op` endpoint allows under a `remote` access policy.
  *
- * The two failure modes use distinct URN tokens so operators can route on
- * the typed `problem.type`: `urn:ok:error:loopback-required` (network-level)
- * vs `urn:ok:error:invalid-origin` (header-level). `handler` is the
- * route-name tag for the `ok.api.error.count{handler}` counter.
+ * Every call site states one. There is no default: a new endpoint that forgets
+ * to choose fails to compile, which is the only reliable way to keep 28 call
+ * sites honest.
+ */
+export type LocalOpRemoteRule =
+  /**
+   * Refused to every remote caller. For endpoints whose effect is on the
+   * machine the server runs on rather than on the workspace — spawning a local
+   * editor, replacing the server's GitHub credential, writing a machine-global
+   * API key.
+   */
+  | 'never'
+  /**
+   * Admitted for an operator who signed in with a password or a passkey.
+   *
+   * Not for an access token: a token is a delegated machine credential handed
+   * to an MCP client or a script, and those are authorized to read and write
+   * documents, not to drive the operator's git and GitHub credentials.
+   */
+  | 'account-session';
+
+export interface LocalOpGateOptions {
+  /** Route-name tag for the `ok.api.error.count{handler}` counter. */
+  readonly handler: string;
+  readonly policy: AccessPolicy;
+  /**
+   * Who the admission gate decided this caller is. Undefined under a `local`
+   * policy, where admission is by reachability and there is no principal to
+   * speak of.
+   */
+  readonly principal: AccessPrincipal | undefined;
+  readonly remote: LocalOpRemoteRule;
+}
+
+/**
+ * The gate in front of every `local-op` endpoint. Emits an RFC 9457 403 and
+ * returns false when the request is refused.
+ *
+ * ## Why the rule differs by policy
+ *
+ * Under a `local` policy the checks are network-level: a loopback socket and a
+ * loopback `Origin`. That is the DNS-rebinding defense the desktop app and the
+ * CLI have always run behind, and it is left exactly as it was.
+ *
+ * Under a `remote` policy both of those checks are worthless, and worse than
+ * worthless — they refuse the legitimate browser while admitting a script:
+ *
+ * - The socket check always passes. Behind a reverse proxy the TCP peer is the
+ *   proxy on loopback, and `isLoopbackRequest` reads the socket rather than the
+ *   forwarded address. So "loopback-required" is not true of anything it lets
+ *   through.
+ * - The origin check passes when the header is absent, which is exactly the
+ *   case for a non-browser client. A browser at the public origin sends its
+ *   real `Origin` and is refused; `curl` sends none and is admitted.
+ *
+ * So the remote branch drops both and asks the question that actually
+ * separates the operator from everyone else: did a person sign in? Cross-site
+ * request forgery stays closed by `SameSite=Lax` on the session cookie, which
+ * is the same reasoning `authorizeOrigin` in `access-control.ts` already
+ * records for the admission gate.
  */
 export function checkLocalOpSecurity(
   req: IncomingMessage,
   res: ServerResponse,
-  options: { handler: string },
+  options: LocalOpGateOptions,
 ): boolean {
+  if (options.policy.mode === 'remote') {
+    if (options.remote === 'account-session' && options.principal?.kind === 'account-session') {
+      return true;
+    }
+    errorResponse(
+      res,
+      403,
+      'urn:ok:error:desktop-only',
+      'This endpoint is not available over a remote connection.',
+      {
+        handler: options.handler,
+        detail:
+          options.remote === 'never'
+            ? 'This action runs on the machine the server is installed on. Use the desktop app.'
+            : 'Sign in with your account to use this action.',
+      },
+    );
+    return false;
+  }
+
   if (!isLoopbackRequest(req)) {
     errorResponse(
       res,
