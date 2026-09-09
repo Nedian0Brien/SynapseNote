@@ -1042,6 +1042,58 @@ describe('mountMcpAndApi remote access policy', () => {
     expect(res.body).toContain('data-test="shell"');
   });
 
+  test('a refused /mcp request carries the discovery challenge', async () => {
+    // RFC 9728 §5.1: without `resource_metadata` on the 401, a client that
+    // gets refused has no way to find out where to authorize.
+    const httpServer = createServer();
+    const mount = mountMcpAndApi({
+      httpServer,
+      hocuspocus,
+      log,
+      accessPolicy: remotePolicy,
+      mcpChallenge:
+        'Bearer resource_metadata="https://notes.example.com/.well-known/oauth-protected-resource", scope="synapsenote:workspace"',
+      mcpHttpHandler: {
+        handle: async (_req, res) => {
+          res.writeHead(200);
+          res.end('ok');
+        },
+        close: async () => {},
+      },
+    });
+    const port = await getFreeLoopbackPort();
+    await new Promise<void>((resolve) => httpServer.listen(port, '127.0.0.1', () => resolve()));
+    servers.push({ httpServer, mount });
+
+    const res = await new Promise<{ status: number; challenge: string | undefined }>(
+      (resolve, reject) => {
+        const req = httpRequest(
+          {
+            hostname: '127.0.0.1',
+            port,
+            path: '/mcp',
+            method: 'POST',
+            headers: { Host: REMOTE_HOST, 'Content-Type': 'application/json' },
+          },
+          (r) => {
+            r.resume();
+            r.on('end', () =>
+              resolve({
+                status: r.statusCode ?? 0,
+                challenge: r.headers['www-authenticate'] as string | undefined,
+              }),
+            );
+          },
+        );
+        req.on('error', reject);
+        req.end('{}');
+      },
+    );
+    expect(res.status).toBe(401);
+    expect(res.challenge).toContain('resource_metadata=');
+    expect(res.challenge).toContain('/.well-known/oauth-protected-resource');
+  });
+
   test('the React shell stays reachable without one', async () => {
     // It is a static bundle with no user data, and it is where the sign-in
     // form lives. Gating it would leave a remote user nothing to sign in with.

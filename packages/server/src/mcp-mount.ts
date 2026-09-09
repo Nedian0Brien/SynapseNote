@@ -145,6 +145,22 @@ export interface MountMcpAndApiOptions {
    * `remote` policy when the operator configured one.
    */
   accessPolicy?: AccessPolicy;
+  /**
+   * OAuth authorization server surface: the two `.well-known` discovery
+   * documents plus `/oauth/*`. Mounted ahead of the content and shell
+   * middleware because RFC 9728 and RFC 8414 fix those paths at the root, so
+   * they cannot live under `/api/`.
+   *
+   * Absent under a local policy — there is nothing to authorize when
+   * reachability is already the proof.
+   */
+  oauthHandler?: { handle: (req: IncomingMessage, res: ServerResponse) => Promise<boolean> };
+  /**
+   * `WWW-Authenticate` value for a refused `/mcp` request. RFC 9728 §5.1 makes
+   * this the discovery entry point: without it a client that gets a 401 has no
+   * way to find out where to authorize.
+   */
+  mcpChallenge?: string;
 }
 
 export interface MountMcpAndApiHandle {
@@ -181,6 +197,23 @@ export interface MountMcpAndApiHandle {
  * Emit an admission refusal in the same RFC 9457 problem+json shape the gate
  * produced inline before it was routed through `access-control.ts`.
  */
+/**
+ * Whether a path belongs to the OAuth surface.
+ *
+ * Matched here rather than inside the handler so a request for anything else
+ * never pays for an async hop, and so the routing below stays readable.
+ */
+function isOAuthPath(url: string | undefined): boolean {
+  if (url === undefined) return false;
+  return (
+    url === '/.well-known/oauth-protected-resource' ||
+    url === '/.well-known/oauth-authorization-server' ||
+    url === '/oauth/authorize' ||
+    url === '/oauth/token' ||
+    url === '/oauth/register'
+  );
+}
+
 function denyAccess(res: ServerResponse, denial: AccessDenial, handler: string): void {
   errorResponse(res, denial.status, denial.type, denial.title, { handler });
 }
@@ -199,6 +232,8 @@ export function mountMcpAndApi(opts: MountMcpAndApiOptions): MountMcpAndApiHandl
     reactShellMiddleware,
     ephemeral,
     accessPolicy = LOCAL_ACCESS_POLICY,
+    oauthHandler,
+    mcpChallenge,
   } = opts;
   const keepaliveGraceMs = opts.keepaliveGraceMs ?? DEFAULT_KEEPALIVE_GRACE_MS;
 
@@ -226,6 +261,23 @@ export function mountMcpAndApi(opts: MountMcpAndApiOptions): MountMcpAndApiHandl
 
   const onRequest = (req: IncomingMessage, res: ServerResponse): void => {
     const url = req.url?.split('?')[0];
+    // The OAuth surface owns fixed root paths, so it is offered the request
+    // before anything else that serves from the root. It answers `false` for
+    // everything it does not own, and routing continues below.
+    if (oauthHandler !== undefined && isOAuthPath(url)) {
+      oauthHandler.handle(req, res).catch((err) => {
+        log.error({ err, url }, 'Unhandled OAuth HTTP error');
+        if (!res.writableEnded && !res.headersSent) {
+          errorResponse(res, 500, 'urn:ok:error:internal-server-error', 'Internal server error.', {
+            handler: 'oauth',
+            cause: err,
+          });
+        } else if (!res.writableEnded) {
+          res.end();
+        }
+      });
+      return;
+    }
     if (mcpHttpHandler !== undefined && url === '/mcp') {
       const origin = req.headers.origin;
       const sessionId = Array.isArray(req.headers['mcp-session-id'])
@@ -233,6 +285,12 @@ export function mountMcpAndApi(opts: MountMcpAndApiOptions): MountMcpAndApiHandl
         : req.headers['mcp-session-id'];
       const admission = authorizeRequest(accessPolicy, accessRequestFromNode(req));
       if (!admission.ok) {
+        // The challenge is what makes the refusal actionable: it names the
+        // protected-resource metadata document, which is where an MCP client
+        // starts the authorization flow.
+        if (mcpChallenge !== undefined && admission.status === 401) {
+          res.setHeader('WWW-Authenticate', mcpChallenge);
+        }
         denyAccess(res, admission, 'mcp');
         return;
       }

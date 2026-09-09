@@ -61,6 +61,11 @@ import { getLogger, loggerFactory, type PinoLogger } from './logger.ts';
 import { createMcpHttpHandler } from './mcp-http.ts';
 import { mountMcpAndApi } from './mcp-mount.ts';
 import { MissingOkConfigError } from './missing-ok-config-error.ts';
+import { createCimdResolver } from './oauth/cimd.ts';
+import { resourceMatches } from './oauth/endpoints.ts';
+import { createOAuthHttpHandler } from './oauth/http.ts';
+import { buildWwwAuthenticate, mcpResourceIdentifier } from './oauth/metadata.ts';
+import { oauthStorePath, openOAuthStore } from './oauth/store.ts';
 import { createServer, type ServerInstance, type ServerOptions } from './server-factory.ts';
 import { installServerMemoryGauge } from './server-memory-telemetry.ts';
 import { reconcileSkillInstalls } from './skill-reconcile.ts';
@@ -69,6 +74,7 @@ import {
   initToleranceTelemetryWriter,
   teardownToleranceTelemetryWriter,
 } from './tolerance-telemetry-writer.ts';
+import { resolveClientProtocolIsSecure } from './trusted-proxy.ts';
 // `ui.lock` is advertisement, NOT mutex. When a process serves the React shell
 // for a contentDir, it tries to write `ui.lock` so external consumers (agent
 // harnesses opening a preview browser via `preview-url.ts`, MCP tools
@@ -663,6 +669,8 @@ async function bootServerInner(opts: BootServerOptions): Promise<BootedServer> {
     accessStorePath(getLocalDir(opts.projectDir ?? opts.contentDir)),
   );
   let accessPolicy = opts.accessPolicy;
+  let oauthHandler: ReturnType<typeof createOAuthHttpHandler> | undefined;
+  let mcpChallenge: string | undefined;
   if (accessPolicy === undefined) {
     const resolved = resolveAccessPolicy(process.env, { store: accessStore });
     if (!resolved.ok) throw new Error(formatAccessPolicyProblems(resolved.problems));
@@ -688,6 +696,68 @@ async function bootServerInner(opts: BootServerOptions): Promise<BootedServer> {
           revokeSessionBySecret: (secret: string) => accessStore.revokeSessionBySecret(secret),
         }
       : undefined;
+
+  // OAuth authorization server. Only meaningful under a remote policy: a
+  // local server has nothing to authorize, because reachability is already
+  // the proof.
+  //
+  // Its access tokens become a third credential kind alongside personal
+  // tokens and browser sessions, so the policy's verifier tries both stores.
+  // Composed here rather than inside either store so neither has to know the
+  // other exists.
+  const oauthStore =
+    accessPolicy.mode === 'remote'
+      ? openOAuthStore(oauthStorePath(getLocalDir(opts.projectDir ?? opts.contentDir)))
+      : undefined;
+  if (accessPolicy.mode === 'remote' && oauthStore !== undefined) {
+    const publicOrigin = accessPolicy.allowedOrigins[0];
+    if (publicOrigin === undefined) {
+      throw new Error('remote access policy has no public origin');
+    }
+    const personalVerify = accessPolicy.verify;
+    // Captured before the policy is rebuilt below: the closures that follow
+    // must not depend on narrowing a variable that is about to be reassigned.
+    const trustedProxy = accessPolicy.trustedProxy;
+    // The policy the consent page authenticates against — personal tokens and
+    // browser sessions only. Approving a grant is an act by the operator, so a
+    // delegated OAuth token must not be able to perform it: otherwise any
+    // connected client could mint further grants for itself or for others.
+    const operatorPolicy = accessPolicy;
+    const cimd = createCimdResolver();
+    accessPolicy = {
+      ...accessPolicy,
+      verify: (credential) => {
+        const personal = personalVerify(credential);
+        if (personal !== null) return personal;
+        // Only bearer credentials can be OAuth tokens — a session cookie is
+        // minted by this server for a browser, never handed to an MCP client.
+        if (credential.scheme !== 'bearer') return null;
+        const granted = oauthStore.verifyAccessToken(credential.value);
+        if (granted === null) return null;
+        // Audience check (RFC 8707): a token issued for another resource must
+        // not open this one, even though this process minted it.
+        if (!resourceMatches(granted.resource, mcpResourceIdentifier(publicOrigin))) return null;
+        return {
+          kind: 'bearer',
+          id: granted.principalId,
+          label: `${granted.principalLabel} via ${granted.clientId}`,
+        };
+      },
+    };
+    oauthHandler = createOAuthHttpHandler({
+      store: oauthStore,
+      cimd,
+      publicOrigin,
+      accessPolicy: operatorPolicy,
+      accessSessions,
+      isSecureRequest: (req) =>
+        resolveClientProtocolIsSecure(trustedProxy, {
+          socketEncrypted: (req.socket as { encrypted?: boolean } | undefined)?.encrypted === true,
+          forwardedProto: req.headers['x-forwarded-proto'],
+        }),
+    });
+    mcpChallenge = buildWwwAuthenticate(publicOrigin);
+  }
 
   const serverInstance = createServer({
     accessPolicy,
@@ -865,6 +935,8 @@ async function bootServerInner(opts: BootServerOptions): Promise<BootedServer> {
 
   const mount = mountMcpAndApi({
     accessPolicy,
+    oauthHandler,
+    mcpChallenge,
     httpServer,
     hocuspocus,
     mcpHttpHandler,

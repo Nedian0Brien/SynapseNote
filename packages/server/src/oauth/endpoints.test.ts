@@ -6,6 +6,7 @@ import type { CimdResolver } from './cimd.ts';
 import {
   type AuthorizeRequest,
   approveAuthorization,
+  buildErrorRedirect,
   buildRedirect,
   evaluateAuthorizeRequest,
   handleRegistrationRequest,
@@ -268,7 +269,12 @@ describe('the full code-for-token exchange', () => {
   async function approvedCode(d = deps()) {
     const decision = await evaluateAuthorizeRequest(authorizeRequest(), d);
     if (decision.kind !== 'consent') throw new Error('expected consent');
-    const { redirectTo } = approveAuthorization(decision, { id: 'tok-1', label: 'owner' }, d);
+    const { redirectTo } = approveAuthorization(
+      decision,
+      { id: 'tok-1', label: 'owner' },
+      d,
+      ISSUER,
+    );
     const code = new URL(redirectTo).searchParams.get('code');
     if (code === null) throw new Error('no code');
     return { d, code, redirectTo };
@@ -473,5 +479,31 @@ describe('dynamic client registration', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.body.client_name).toBe('Unnamed client');
+  });
+});
+
+describe('issuer identification (RFC 9207)', () => {
+  test('the approval redirect carries iss', async () => {
+    // The metadata advertises `authorization_response_iss_parameter_supported`,
+    // which entitles a client to reject a response that omits it.
+    const d = deps();
+    const decision = await evaluateAuthorizeRequest(authorizeRequest(), d);
+    if (decision.kind !== 'consent') throw new Error('expected consent');
+    const { redirectTo } = approveAuthorization(decision, { id: 'p', label: 'l' }, d, ISSUER);
+    expect(new URL(redirectTo).searchParams.get('iss')).toBe(ISSUER);
+  });
+
+  test('the error redirect carries iss too', async () => {
+    // RFC 9207 §2.4 has clients validate the issuer on error responses as
+    // well, and refuse to display an error whose issuer does not match.
+    const decision = await evaluateAuthorizeRequest(
+      authorizeRequest({ responseType: 'token' }),
+      deps(),
+    );
+    if (decision.kind !== 'redirect-error') throw new Error('expected redirect-error');
+    const url = new URL(buildErrorRedirect(decision, ISSUER));
+    expect(url.searchParams.get('iss')).toBe(ISSUER);
+    expect(url.searchParams.get('error')).toBe('unsupported_response_type');
+    expect(url.searchParams.get('state')).toBe('st-1');
   });
 });

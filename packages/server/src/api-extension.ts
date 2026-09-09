@@ -271,6 +271,7 @@ import {
 import { type NormalizedSummary, normalizeSummary } from './agent-write-summary.ts';
 import { collectReferencedAssets, toContentRelativePath } from './asset-references.ts';
 import { assetContentTypeForPath } from './asset-serve-middleware.ts';
+import { buildClearedSessionCookie, buildSessionCookie } from './auth/session-cookie.ts';
 import { getLocalDir } from './config/paths.ts';
 import { CONFIG_VALIDATION_REVERT_ORIGIN } from './config-edit-origin.ts';
 import { DocInConflictError, isDocInConflict, respondDocInConflict } from './conflict-errors.ts';
@@ -18471,26 +18472,11 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
   }
 
   function sessionCookie(req: IncomingMessage, secret: string, expiresAt: string): string {
-    const maxAgeSeconds = Math.max(0, Math.floor((Date.parse(expiresAt) - Date.now()) / 1000));
-    // `SameSite=Lax` is what closes the cross-site write path for a
-    // cookie-authenticated API: a form or fetch from another origin does not
-    // carry this cookie, so the Origin allowlist is a second line rather than
-    // the only one.
-    const attrs = [
-      `${SESSION_COOKIE_NAME}=${secret}`,
-      'HttpOnly',
-      'SameSite=Lax',
-      'Path=/',
-      `Max-Age=${maxAgeSeconds}`,
-    ];
-    if (clientIsSecure(req)) attrs.push('Secure');
-    return attrs.join('; ');
+    return buildSessionCookie(secret, expiresAt, clientIsSecure(req));
   }
 
   function clearSessionCookie(req: IncomingMessage): string {
-    const attrs = [`${SESSION_COOKIE_NAME}=`, 'HttpOnly', 'SameSite=Lax', 'Path=/', 'Max-Age=0'];
-    if (clientIsSecure(req)) attrs.push('Secure');
-    return attrs.join('; ');
+    return buildClearedSessionCookie(clientIsSecure(req));
   }
 
   const routes: Record<string, (req: IncomingMessage, res: ServerResponse) => Promise<void>> = {

@@ -204,11 +204,20 @@ export function resourceMatches(candidate: string, canonical: string): boolean {
   }
 }
 
-/** Mint the code once the operator approves. */
+/**
+ * Mint the code once the operator approves.
+ *
+ * `issuer` is required rather than optional: the authorization server
+ * metadata advertises `authorization_response_iss_parameter_supported: true`,
+ * and a client reading that is entitled to reject any response without `iss`.
+ * Making it a parameter the caller must supply keeps the advertisement and the
+ * response from drifting apart.
+ */
 export function approveAuthorization(
   consent: Extract<AuthorizeDecision, { kind: 'consent' }>,
   owner: ResourceOwner,
   deps: Pick<AuthorizeDeps, 'store'>,
+  issuer: string,
 ): { readonly redirectTo: string } {
   const { code } = deps.store.createAuthorizationCode({
     clientId: consent.clientId,
@@ -219,7 +228,27 @@ export function approveAuthorization(
     principalId: owner.id,
     principalLabel: owner.label,
   });
-  return { redirectTo: buildRedirect(consent.redirectUri, { code, state: consent.state }) };
+  return {
+    redirectTo: buildRedirect(consent.redirectUri, { code, state: consent.state }, issuer),
+  };
+}
+
+/**
+ * Render an authorization error onto the client's redirect URI.
+ *
+ * Carries `iss` for the same reason the success path does: RFC 9207 §2.4 has
+ * clients validate the issuer on error responses too, and a mismatch means
+ * they must not even display the error.
+ */
+export function buildErrorRedirect(
+  decision: Extract<AuthorizeDecision, { kind: 'redirect-error' }>,
+  issuer: string,
+): string {
+  return buildRedirect(
+    decision.redirectUri,
+    { error: decision.error, error_description: decision.description, state: decision.state },
+    issuer,
+  );
 }
 
 /**
