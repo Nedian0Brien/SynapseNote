@@ -58,6 +58,28 @@ export {
 } from './asset-serve-middleware.ts';
 export { seedBasenameIndex } from './asset-walk.ts';
 export {
+  ACCESS_MODE_ENV,
+  type AccessEnv,
+  type AccessPolicyResolution,
+  ALLOW_INSECURE_ORIGIN_ENV,
+  formatAccessPolicyProblems,
+  PUBLIC_ORIGIN_ENV,
+  resolveAccessPolicy,
+  TRUSTED_PROXY_HOPS_ENV,
+} from './auth/access-config.ts';
+export {
+  ACCESS_STORE_FILENAME,
+  type AccessStore,
+  type AccessTokenRecord,
+  accessStorePath,
+  DEFAULT_SESSION_TTL_MS,
+  type MintedCredential,
+  type MintedSession,
+  openAccessStore,
+  type SessionRecord,
+  TOKEN_PREFIX,
+} from './auth/access-store.ts';
+export {
   formatAuthRejectionWire,
   HOCUSPOCUS_AUTH_REJECTION_REASONS,
   HocuspocusAuthRejection,
