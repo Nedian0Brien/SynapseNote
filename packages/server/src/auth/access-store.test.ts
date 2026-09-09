@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test';
+import { createHash } from 'node:crypto';
 import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -19,6 +20,12 @@ function freshDir(): string {
 
 function freshStorePath(): string {
   return accessStorePath(freshDir());
+}
+
+/** A store plus the path it writes to, for tests that inspect the file. */
+function freshStore(): { store: ReturnType<typeof openAccessStore>; path: string } {
+  const path = freshStorePath();
+  return { store: openAccessStore(path), path };
 }
 
 afterEach(() => {
@@ -326,5 +333,136 @@ describe('picking up another process’s writes', () => {
     await Bun.sleep(10);
     store.createToken('second');
     expect(store.listTokens().find((t) => t.id === token.record.id)?.lastUsedAt).toBeString();
+  });
+});
+
+describe('session subject — the pre-account record shape', () => {
+  test('a record written before account login still authenticates', () => {
+    // Sessions live 30 days, so records in the old shape are in flight on
+    // every deployed server the moment this lands. Reading them wrong would
+    // silently sign the operator out of every device.
+    const path = freshStorePath();
+    const seeded = openAccessStore(path);
+    const token = seeded.createToken('laptop');
+    const secret = `${TOKEN_PREFIX}legacy-session-secret`;
+
+    const file = JSON.parse(readFileSync(path, 'utf-8'));
+    file.sessions = [
+      {
+        id: 'legacy-1',
+        // The old field, and no `subject`.
+        tokenId: token.record.id,
+        hash: createHash('sha256').update(secret, 'utf-8').digest('hex'),
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      },
+    ];
+    writeFileSync(path, JSON.stringify(file, null, 2));
+
+    expect(openAccessStore(path).verify({ scheme: 'session', value: secret })).toMatchObject({
+      kind: 'session',
+      id: token.record.id,
+      label: 'laptop',
+    });
+  });
+
+  test('revoking the token still sweeps a legacy session', () => {
+    const path = freshStorePath();
+    const seeded = openAccessStore(path);
+    const token = seeded.createToken('laptop');
+    const secret = `${TOKEN_PREFIX}legacy-session-secret`;
+    const file = JSON.parse(readFileSync(path, 'utf-8'));
+    file.sessions = [
+      {
+        id: 'legacy-1',
+        tokenId: token.record.id,
+        hash: createHash('sha256').update(secret, 'utf-8').digest('hex'),
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      },
+    ];
+    writeFileSync(path, JSON.stringify(file, null, 2));
+
+    const store = openAccessStore(path);
+    store.revokeToken(token.record.id);
+    expect(store.verify({ scheme: 'session', value: secret })).toBeNull();
+  });
+
+  test('a record with neither field is refused rather than guessed at', () => {
+    const path = freshStorePath();
+    const seeded = openAccessStore(path);
+    seeded.createToken('laptop');
+    const secret = `${TOKEN_PREFIX}orphan-session-secret`;
+    const file = JSON.parse(readFileSync(path, 'utf-8'));
+    file.sessions = [
+      {
+        id: 'orphan-1',
+        hash: createHash('sha256').update(secret, 'utf-8').digest('hex'),
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      },
+    ];
+    writeFileSync(path, JSON.stringify(file, null, 2));
+    expect(openAccessStore(path).verify({ scheme: 'session', value: secret })).toBeNull();
+  });
+
+  test('new token sessions are written with a subject', () => {
+    const { store, path } = freshStore();
+    const token = store.createToken('laptop');
+    store.createSession(token.record.id);
+    const file = JSON.parse(readFileSync(path, 'utf-8'));
+    expect(file.sessions[0].subject).toEqual({ kind: 'token', id: token.record.id });
+    expect(file.sessions[0].tokenId).toBeUndefined();
+  });
+});
+
+describe('account sessions', () => {
+  test('authenticate as the account, carrying its label', () => {
+    const { store } = freshStore();
+    const minted = store.createAccountSession('acct-1', 'libera3920');
+    expect(store.verify({ scheme: 'session', value: minted.secret })).toEqual({
+      kind: 'session',
+      id: 'acct-1',
+      label: 'libera3920',
+    });
+  });
+
+  test('need no access token to exist', () => {
+    // Login is a separate path; an operator with an account but no tokens
+    // must still be able to sign in.
+    const { store } = freshStore();
+    expect(store.tokenCount()).toBe(0);
+    const minted = store.createAccountSession('acct-1', 'libera3920');
+    expect(store.verify({ scheme: 'session', value: minted.secret })).not.toBeNull();
+  });
+
+  test('are not accepted as a bearer token', () => {
+    const { store } = freshStore();
+    const minted = store.createAccountSession('acct-1', 'libera3920');
+    expect(store.verify({ scheme: 'bearer', value: minted.secret })).toBeNull();
+  });
+
+  test('revoking the account drops them and leaves token sessions alone', () => {
+    const { store } = freshStore();
+    const token = store.createToken('laptop');
+    const tokenSession = store.createSession(token.record.id);
+    const accountSession = store.createAccountSession('acct-1', 'libera3920');
+    expect(store.revokeAccountSessions('acct-1')).toBe(1);
+    expect(store.verify({ scheme: 'session', value: accountSession.secret })).toBeNull();
+    expect(store.verify({ scheme: 'session', value: tokenSession.secret })).not.toBeNull();
+  });
+
+  test('revoking an access token leaves account sessions alone', () => {
+    const { store } = freshStore();
+    const token = store.createToken('laptop');
+    const accountSession = store.createAccountSession('acct-1', 'libera3920');
+    store.revokeToken(token.record.id);
+    expect(store.verify({ scheme: 'session', value: accountSession.secret })).not.toBeNull();
+  });
+
+  test('expire like any other session', () => {
+    const { store } = freshStore();
+    const minted = store.createAccountSession('acct-1', 'libera3920', -1);
+    expect(store.verify({ scheme: 'session', value: minted.secret })).toBeNull();
   });
 });

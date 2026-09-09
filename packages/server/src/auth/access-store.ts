@@ -67,13 +67,50 @@ export interface AccessTokenRecord {
   readonly lastUsedAt?: string;
 }
 
+/**
+ * Who a session belongs to.
+ *
+ * Sessions used to be minted only by exchanging an access token, so the record
+ * carried a bare `tokenId`. Password and passkey login mint the same kind of
+ * session for an account instead, which needs a second shape.
+ *
+ * An account subject carries its own label rather than looking one up: this
+ * module knows nothing about the account store, and a display label is not
+ * worth a cross-store dependency.
+ */
+export type SessionSubject =
+  | { readonly kind: 'token'; readonly id: string }
+  | { readonly kind: 'account'; readonly id: string; readonly label: string };
+
 export interface SessionRecord {
   readonly id: string;
-  /** Token this session was exchanged from, so revoking a token can sweep it. */
-  readonly tokenId: string;
+  /**
+   * Present on records written by this version. Absent on records written
+   * before account login existed — see `sessionSubject`.
+   */
+  readonly subject?: SessionSubject;
+  /**
+   * Legacy field: the token this session was exchanged from. Still read, never
+   * written. Sessions live 30 days, so records in this shape are in flight on
+   * every deployed server at the moment this lands.
+   */
+  readonly tokenId?: string;
   readonly hash: string;
   readonly createdAt: string;
   readonly expiresAt: string;
+}
+
+/**
+ * Read a record's subject, tolerating the pre-account shape.
+ *
+ * A record with neither field is corrupt; it resolves to `null` and the
+ * session is refused rather than being attributed to whatever happens to be
+ * first in the token list.
+ */
+export function sessionSubject(record: SessionRecord): SessionSubject | null {
+  if (record.subject !== undefined) return record.subject;
+  if (record.tokenId !== undefined) return { kind: 'token', id: record.tokenId };
+  return null;
 }
 
 interface AccessStoreFile {
@@ -101,6 +138,10 @@ export interface AccessStore {
   /** Number of tokens that are currently usable. */
   tokenCount(): number;
   createSession(tokenId: string, ttlMs?: number): MintedSession;
+  /** Mint a session for an account, which password and passkey login both do. */
+  createAccountSession(accountId: string, label: string, ttlMs?: number): MintedSession;
+  /** Drop every session belonging to an account. Used when its password changes. */
+  revokeAccountSessions(accountId: string): number;
   /**
    * Verify a token secret and mint a session for it in one step — the
    * browser's sign-in path. Returns null when the secret names no live token,
@@ -267,7 +308,12 @@ export function openAccessStore(path: string): AccessStore {
       // path stays read-only apart from the throttled `lastUsedAt` write, and
       // `pruneSessions` on the next mint clears it.
       if (Date.parse(session.expiresAt) <= now) return null;
-      const owner = tokens.find((t) => t.id === session.tokenId);
+      const subject = sessionSubject(session);
+      if (subject === null) return null;
+      if (subject.kind === 'account') {
+        return { kind: 'session', id: subject.id, label: subject.label };
+      }
+      const owner = tokens.find((t) => t.id === subject.id);
       // A session whose token was revoked dies with it. Checking here rather
       // than sweeping on revoke means revocation takes effect immediately even
       // for sessions minted by another process against the same file.
@@ -287,7 +333,27 @@ export function openAccessStore(path: string): AccessStore {
     const now = Date.now();
     const record: SessionRecord = {
       id: randomUUID(),
-      tokenId,
+      subject: { kind: 'token', id: tokenId },
+      hash: sha256Hex(secret),
+      createdAt: new Date(now).toISOString(),
+      expiresAt: new Date(now + ttlMs).toISOString(),
+    };
+    sessions = [...sessions, record];
+    flush();
+    return { record, secret };
+  }
+
+  function createAccountSession(
+    accountId: string,
+    label: string,
+    ttlMs: number = DEFAULT_SESSION_TTL_MS,
+  ): MintedSession {
+    pruneSessions();
+    const secret = mintSecret();
+    const now = Date.now();
+    const record: SessionRecord = {
+      id: randomUUID(),
+      subject: { kind: 'account', id: accountId, label },
       hash: sha256Hex(secret),
       createdAt: new Date(now).toISOString(),
       expiresAt: new Date(now + ttlMs).toISOString(),
@@ -324,7 +390,10 @@ export function openAccessStore(path: string): AccessStore {
       // Sessions minted from this token go with it. `verify` would refuse them
       // anyway once their owner is gone; dropping them here keeps the file
       // from accumulating records that can never authenticate again.
-      sessions = sessions.filter((s) => s.tokenId !== id);
+      sessions = sessions.filter((s) => {
+        const subject = sessionSubject(s);
+        return !(subject?.kind === 'token' && subject.id === id);
+      });
       flush();
       return true;
     },
@@ -332,6 +401,21 @@ export function openAccessStore(path: string): AccessStore {
     tokenCount: () => tokens.length,
 
     createSession,
+    createAccountSession,
+
+    revokeAccountSessions(accountId: string): number {
+      reloadIfChanged();
+      const next = sessions.filter((s) => {
+        const subject = sessionSubject(s);
+        return !(subject?.kind === 'account' && subject.id === accountId);
+      });
+      const dropped = sessions.length - next.length;
+      if (dropped > 0) {
+        sessions = next;
+        flush();
+      }
+      return dropped;
+    },
 
     exchangeToken(
       tokenSecret: string,
