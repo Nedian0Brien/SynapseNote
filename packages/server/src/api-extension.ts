@@ -12491,7 +12491,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           handler: HANDLE_LOCAL_OP_AUTH_STATUS,
           policy: accessPolicy,
           principal: principalOf(req),
-          remote: 'never',
+          remote: 'account-session',
         }),
     },
   );
@@ -12520,7 +12520,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           handler: HANDLE_LOCAL_OP_AUTH_REPOS,
           policy: accessPolicy,
           principal: principalOf(req),
-          remote: 'never',
+          remote: 'account-session',
         }),
     },
   );

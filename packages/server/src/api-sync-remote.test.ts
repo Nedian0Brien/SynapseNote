@@ -78,6 +78,19 @@ function makeRes(): { res: ServerResponse; captured: Captured } {
     writableEnded: false,
     destroyed: false,
     setHeader() {},
+    // The GitHub-read handlers spawn a CLI subprocess and register a
+    // `close` listener so they can kill it if the client disappears. A mock
+    // without `on` crashes them after the gate has already said yes, which
+    // reads as a gate failure and is not one.
+    on() {
+      return this;
+    },
+    once() {
+      return this;
+    },
+    removeListener() {
+      return this;
+    },
     writeHead(status: number) {
       captured.status = status;
       (this as { headersSent: boolean }).headersSent = true;
@@ -151,6 +164,19 @@ const OPENED: ReadonlyArray<readonly [string, string]> = [
   ['POST', '/api/sync/conflict-content'],
 ];
 
+/**
+ * GitHub reads — opened by P4.
+ *
+ * On the deployed container these answer "not connected", because the CLI's
+ * credential lives on a tmpfs `$HOME` and the only route that writes it stays
+ * desktop-only. That honest answer is the point: it is what lets the settings
+ * panel say why, instead of rendering a failed check.
+ */
+const OPENED_P4: ReadonlyArray<readonly [string, string]> = [
+  ['POST', '/api/local-op/auth/status'],
+  ['POST', '/api/local-op/auth/repos'],
+];
+
 /** Project setup — opened by P3. Everything here stays inside the workspace. */
 const OPENED_P3: ReadonlyArray<readonly [string, string]> = [
   ['GET', '/api/seed/packs'],
@@ -175,7 +201,9 @@ const OPENED_P3: ReadonlyArray<readonly [string, string]> = [
 const STILL_CLOSED: ReadonlyArray<readonly [string, string]> = [
   ['POST', '/api/handoff'],
   ['POST', '/api/spawn-cursor'],
-  ['POST', '/api/local-op/auth/status'],
+  ['POST', '/api/local-op/auth/login'],
+  ['POST', '/api/local-op/auth/signout'],
+  ['POST', '/api/local-op/auth/set-identity'],
   ['POST', '/api/local-op/clone'],
   ['POST', '/api/local-op/ok-init'],
   ['POST', '/api/local-op/embeddings/set-key'],
@@ -270,6 +298,36 @@ describe('what an account session may do — project setup', () => {
         status: 403,
         type: 'urn:ok:error:desktop-only',
       });
+    }
+    cleanup();
+  });
+});
+
+describe('what an account session may do — GitHub reads', () => {
+  test('reaches status and repos', async () => {
+    const call = build();
+    for (const [method, url] of OPENED_P4) {
+      const result = await call(method, url, 'account');
+      expect({ url, refused: result.type === 'urn:ok:error:desktop-only' }).toEqual({
+        url,
+        refused: false,
+      });
+    }
+    cleanup();
+  });
+
+  test('but cannot change the connection', async () => {
+    // Reading which GitHub account this server uses is one thing; replacing
+    // its credential from the internet is another. Signing in remotely must
+    // not be a way to repoint the server's git identity.
+    const call = build();
+    for (const url of [
+      '/api/local-op/auth/login',
+      '/api/local-op/auth/signout',
+      '/api/local-op/auth/set-identity',
+    ]) {
+      const result = await call('POST', url, 'account');
+      expect({ url, type: result.type }).toEqual({ url, type: 'urn:ok:error:desktop-only' });
     }
     cleanup();
   });
