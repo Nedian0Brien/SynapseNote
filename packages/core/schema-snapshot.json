@@ -891,6 +891,11 @@
       "hasOptions": false
     },
     {
+      "name": "cjk-adjacent-strong-promoter",
+      "version": null,
+      "hasOptions": false
+    },
+    {
       "name": "details-accordion-promoter",
       "version": null,
       "hasOptions": false
@@ -911,12 +916,12 @@
       "hasOptions": false
     },
     {
-      "name": "implicit-math-promoter",
+      "name": "single-dollar-math-promoter",
       "version": null,
       "hasOptions": false
     },
     {
-      "name": "single-dollar-math-promoter",
+      "name": "implicit-math-promoter",
       "version": null,
       "hasOptions": false
     },

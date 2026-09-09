@@ -197,6 +197,14 @@ export const ProblemTypeSchema = z.enum([
   'urn:ok:error:method-not-allowed',
   'urn:ok:error:invalid-request',
   'urn:ok:error:permission-denied',
+  // Remote-access admission (`access-control.ts`, `remote` mode): the request
+  // carried no credential, or one the token store refused. Deliberately one
+  // token for every failure shape — absent, malformed, unknown, expired, and
+  // revoked all answer `401 unauthorized`, so a caller cannot probe which of
+  // those a given value is. Distinct from `permission-denied` (authenticated
+  // but not allowed) and from `loopback-required` (the `local`-mode gate,
+  // which stays on the wire unchanged for desktop and CLI clients).
+  'urn:ok:error:unauthorized',
   'urn:ok:error:payload-too-large',
   // Request-body read exceeded the per-function 30s timeout in `readRequestBody`.
   // Distinct URN from `payload-too-large` (size cap) and `invalid-request`
