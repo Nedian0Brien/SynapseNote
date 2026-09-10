@@ -1079,6 +1079,10 @@ msgstr "Agent Skills"
 msgid "Agent view"
 msgstr "Agent view"
 
+#: src/components/ChatSidebarSection.tsx
+msgid "Agents run on the machine SynapseNote is installed on, not on this server. Open the desktop app to chat."
+msgstr "Agents run on the machine SynapseNote is installed on, not on this server. Open the desktop app to chat."
+
 #: src/components/DatabaseComputedPropertyDialog.tsx
 msgid "Aggregation"
 msgstr "Aggregation"
@@ -2490,6 +2494,10 @@ msgstr "Connecting — waiting for collab server"
 #: src/components/DatabaseRecordPeekEditor.tsx
 msgid "Connecting editor"
 msgstr "Connecting editor"
+
+#: src/components/settings/AccountSection.tsx
+msgid "Connecting or disconnecting GitHub happens in the desktop app. This server syncs with the account set up there."
+msgstr "Connecting or disconnecting GitHub happens in the desktop app. This server syncs with the account set up there."
 
 #: src/components/DocumentErrorBoundary.tsx
 msgid "Connection dropped"

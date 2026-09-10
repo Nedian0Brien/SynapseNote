@@ -237,7 +237,20 @@ without a restart.
 
 The agent surface (Claude / Codex chat) does not run in this container: the
 image ships neither CLI binary nor any credential for one. Running agents
-server-side is a separate milestone.
+server-side is a separate milestone. The chat sidebar says so rather than
+showing an empty list.
+
+Anything that acts on the machine SynapseNote is installed on stays in the
+desktop app, and the web UI hides the control instead of offering a button
+that answers 403: opening a file in Cursor, cloning or initializing a project,
+connecting or disconnecting GitHub, and setting the machine-global embeddings
+key.
+
+Publishing to GitHub Pages is in the same group, for a reason worth knowing:
+the CLI keeps its GitHub token under `$HOME/.ok/auth.yml`, and this compose
+file mounts `/home/node` as tmpfs, so the token would not survive a restart
+even if it could be written. Reading the connection state works — Settings →
+Account reports which account the server syncs with, or that there is none.
 
 Scopes are not split by operation. `synapsenote:workspace` grants read and
 write together, because every MCP tool worth connecting for does both.

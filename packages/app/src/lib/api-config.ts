@@ -32,6 +32,12 @@ interface ApiConfig {
    * this endpoint). Absent/false on every normal project server.
    */
   singleFile: boolean;
+  /**
+   * How the server admits callers. Absent on an older server, which is why
+   * this narrows to `'local'` rather than staying `undefined` — see
+   * `access-mode.tsx` for why that is the safe direction.
+   */
+  accessMode: 'local' | 'remote';
 }
 
 export type FetchApiConfigResult =
@@ -73,6 +79,7 @@ export async function fetchApiConfig(signal?: AbortSignal): Promise<FetchApiConf
       previewUrl: typeof obj.previewUrl === 'string' ? obj.previewUrl : null,
       port: typeof obj.port === 'number' ? obj.port : 0,
       singleFile: obj.singleFile === true,
+      accessMode: obj.accessMode === 'remote' ? 'remote' : 'local',
     },
   };
 }

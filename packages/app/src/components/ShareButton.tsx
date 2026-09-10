@@ -36,6 +36,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 import { useGitSyncStatusDetailed } from '@/hooks/use-git-sync-status';
+import { useIsRemote } from '@/lib/access-mode';
 import { dispatchExternalLinkClick } from '@/lib/external-link';
 import { scheduleClipboardWrite } from '@/lib/share/clipboard-adapter';
 import {
@@ -68,6 +69,7 @@ export interface ShareButtonProps {
 
 export function ShareButton({ input, onClickWhenNoRemote }: ShareButtonProps) {
   const { t } = useLingui();
+  const isRemote = useIsRemote();
   const { status } = useGitSyncStatusDetailed();
   const [busy, setBusy] = useState(false);
   // Drives the share popover. On a successful share we open it to confirm the
@@ -142,6 +144,13 @@ export function ShareButton({ input, onClickWhenNoRemote }: ShareButtonProps) {
     }
     setBusy(false);
   }
+
+  // Sharing publishes the workspace to GitHub, and a server reached over the
+  // internet has no GitHub credential to publish with: the CLI keeps it under
+  // a `$HOME` the container mounts as tmpfs, and the only route that writes it
+  // is refused remotely. Offering the button would end in a failed push.
+  // Placed after every hook so the hook order is identical on both paths.
+  if (isRemote) return null;
 
   return (
     <Popover

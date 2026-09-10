@@ -18341,6 +18341,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           previewUrl: null,
           port,
           singleFile: ephemeral,
+          // Lets the shell hide controls that cannot work over the internet
+          // instead of rendering buttons that answer 403.
+          accessMode: accessPolicy.mode,
         };
         // HEAD carries the same headers but no body; `successResponse` always
         // writes a body, so the no-body verb stays a manual emit.

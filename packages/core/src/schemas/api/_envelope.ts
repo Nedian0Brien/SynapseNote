@@ -148,6 +148,20 @@ export const ApiConfigSuccessSchema = z
      * the editor editable. Absent/false on every normal project server.
      */
     singleFile: z.boolean().default(false),
+    /**
+     * How this server admits callers.
+     *
+     * `remote` means the shell is being served over the internet to a
+     * signed-in operator. Several things the desktop app can do act on the
+     * machine the server runs on — opening a file in Cursor, cloning a repo,
+     * replacing the server's GitHub credential — and cannot work from there.
+     * The shell reads this to hide those controls rather than offer buttons
+     * that answer 403.
+     *
+     * Defaults to `local` so a client talking to an older server, or one that
+     * omits the field, keeps today's full-featured rendering.
+     */
+    accessMode: z.enum(['local', 'remote']).default('local'),
   })
   .loose() satisfies StandardSchemaV1;
 export type ApiConfigSuccess = z.infer<typeof ApiConfigSuccessSchema>;

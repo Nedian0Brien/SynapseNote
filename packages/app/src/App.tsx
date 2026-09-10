@@ -41,6 +41,7 @@ import {
 import { parseEditorTabId } from '@/editor/editor-tabs';
 import { useInstalledClis } from '@/hooks/use-installed-clis';
 import { useReconcileSkillTabs } from '@/hooks/use-reconcile-skill-tabs';
+import { AccessModeProvider } from '@/lib/access-mode';
 import { ConfigProvider } from '@/lib/config-provider';
 import { emitCreateTopLevelFile } from '@/lib/create-file-events';
 import { DATABASE_SLASH_COMMAND_EVENT, type DatabaseSlashCommand } from '@/lib/database-events';
@@ -552,7 +553,9 @@ export function App() {
         <DocumentProvider>
           <ConfigProviderHost>
             <SingleFileModeProvider>
-              <AppBody />
+              <AccessModeProvider>
+                <AppBody />
+              </AccessModeProvider>
             </SingleFileModeProvider>
           </ConfigProviderHost>
         </DocumentProvider>

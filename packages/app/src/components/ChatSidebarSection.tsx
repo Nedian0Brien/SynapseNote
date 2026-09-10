@@ -28,6 +28,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { useIsRemote } from '@/lib/access-mode';
 import {
   archiveChat,
   archivedChatKey,
@@ -160,6 +161,7 @@ function ChatRow({
  */
 export function ChatSidebarSection({ bridge }: ChatSidebarSectionProps) {
   const { t } = useLingui();
+  const isRemote = useIsRemote();
   const terminalLaunch = useTerminalLaunch();
   const [open, setOpen] = useState(true);
   const [sessions, setSessions] = useState<readonly OkCliChatSession[]>([]);
@@ -356,7 +358,17 @@ export function ChatSidebarSection({ bridge }: ChatSidebarSectionProps) {
               ) : null}
               {loadState !== 'loading' && loadState !== 'error' && sessions.length === 0 ? (
                 <p className="px-2 py-1 text-xs text-muted-foreground">
-                  <Trans>No chats yet.</Trans>
+                  {isRemote ? (
+                    // "No chats yet" would read as "start one" on a server that
+                    // cannot. The image ships no agent CLI and no credential for
+                    // one, so say that rather than imply a button is missing.
+                    <Trans>
+                      Agents run on the machine SynapseNote is installed on, not on this server.
+                      Open the desktop app to chat.
+                    </Trans>
+                  ) : (
+                    <Trans>No chats yet.</Trans>
+                  )}
                 </p>
               ) : null}
               {loadState !== 'loading' &&

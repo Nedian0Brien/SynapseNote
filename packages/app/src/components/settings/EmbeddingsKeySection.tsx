@@ -15,6 +15,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useSemanticSearchStatus } from '@/hooks/use-semantic-search-status';
+import { useIsRemote } from '@/lib/access-mode';
 import {
   type EmbeddingsKeyTransport,
   httpEmbeddingsKeyTransport,
@@ -22,6 +23,7 @@ import {
 
 export function EmbeddingsKeySection({ transport }: { transport?: EmbeddingsKeyTransport }) {
   const { t } = useLingui();
+  const isRemote = useIsRemote();
   const resolved = transport ?? httpEmbeddingsKeyTransport();
   const { status, refresh } = useSemanticSearchStatus();
   const [keyInput, setKeyInput] = useState('');
@@ -56,6 +58,12 @@ export function EmbeddingsKeySection({ transport }: { transport?: EmbeddingsKeyT
     if (result.ok) refresh();
     else setError(result.error ?? t`Couldn't clear the key — please try again.`);
   }
+
+  // The embeddings key is machine-global: it is stored outside the
+  // workspace and every project on that machine uses it. A remote operator
+  // setting it here would be reaching past this workspace into the host, so
+  // the server refuses and the control does not appear.
+  if (isRemote) return null;
 
   return (
     <section

@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AuthModal } from '@/components/AuthModal';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useIsRemote } from '@/lib/access-mode';
 import { setLastKnownSignedIn } from '@/lib/auth-state-cache';
 import type { OkLocalOpAuthStatusResponse } from '@/lib/desktop-bridge-types';
 import {
@@ -37,6 +38,7 @@ interface AccountSectionProps {
 
 export function AccountSection({ authQueryTransport, authTransport }: AccountSectionProps) {
   const { t } = useLingui();
+  const isRemote = useIsRemote();
   const resolvedQuery = authQueryTransport ?? httpAuthQueryTransport();
   const [status, setStatus] = useState<StatusState>({ phase: 'loading' });
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -151,6 +153,11 @@ export function AccountSection({ authQueryTransport, authTransport }: AccountSec
             <Trans>Try again</Trans>
           </Button>
         </div>
+      ) : isRemote ? (
+        // The connection can be read from here but not changed: replacing this
+        // server's GitHub credential over the internet would let one password
+        // repoint where the workspace syncs.
+        <DesktopOnlyRow login={status.result.authenticated ? status.result.login : undefined} />
       ) : status.result.authenticated ? (
         status.result.tier === 'A' ? (
           // Tier A means the credential is delegated from the gh CLI. SynapseNote
@@ -249,6 +256,29 @@ function GhCliRow({ login }: { login: string }) {
           </Trans>
         </p>
       </div>
+    </div>
+  );
+}
+
+/**
+ * What the settings panel shows over a remote connection: the answer, and why
+ * there is no button next to it.
+ *
+ * The status read itself works — that is what makes this row honest rather
+ * than an empty space where a feature used to be.
+ */
+function DesktopOnlyRow({ login }: { login?: string }) {
+  return (
+    <div className="space-y-2 rounded-md border p-3" data-testid="settings-account-desktop-only">
+      <div className="font-medium text-sm">
+        {login === undefined ? <Trans>Not connected</Trans> : <Trans>Connected as @{login}</Trans>}
+      </div>
+      <p className="text-muted-foreground text-sm">
+        <Trans>
+          Connecting or disconnecting GitHub happens in the desktop app. This server syncs with the
+          account set up there.
+        </Trans>
+      </p>
     </div>
   );
 }

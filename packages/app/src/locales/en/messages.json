@@ -1034,6 +1034,9 @@
     "GK-IRZ": ["Undo buttons are disabled — per-session state has been garbage-collected."],
     "GLxIKR": ["How to push manually"],
     "GMVH0R": ["Hide archived"],
+    "GN3Bkb": [
+      "Agents run on the machine SynapseNote is installed on, not on this server. Open the desktop app to chat."
+    ],
     "GN6L5F": ["Filename"],
     "GQDSBN": ["Layout options"],
     "GSjK8X": ["Read-only cached database"],
@@ -1260,6 +1263,9 @@
     "KujtjC": ["Find"],
     "Kv44wJ": ["Linked view of database"],
     "Kx5ErD": ["Attached context: ", ["0"]],
+    "KzYv1W": [
+      "Connecting or disconnecting GitHub happens in the desktop app. This server syncs with the account set up there."
+    ],
     "KziH2K": ["Fast"],
     "L-rMC9": ["Reset to default"],
     "L1ZE3M": ["Document statistics"],
