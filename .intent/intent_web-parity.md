@@ -121,13 +121,25 @@ POST /api/sync/trigger           Origin 있음: 403  │ Origin 없음: 202  (�
 
 범위를 잃지 않도록 여기 적어 둔다. 각 단계는 자기 plan과 커밋을 갖는다.
 
-| 단계 | 내용 | 완료 기준 |
+| 단계 | 내용 | 상태 |
 |---|---|---|
-| P1 | 게이트 재설계 — `checkLocalOpSecurity`가 원격 정책에서 이름대로 동작한다 | Origin 헤더를 빼서 통과하는 경로가 없다. 로컬 모드 불변 |
-| P2 | 동기화 — `sync/*` 5개를 원격 세션에 연다 | 충돌 목록·배지·수동 동기화·충돌 해결이 웹에서 된다 |
-| P3 | 프로젝트 준비 — `seed/*` 3개, `skill/install-state` | 스타터 팩과 스킬 설치가 웹에서 된다 |
-| P4 | GitHub 읽기 — `local-op/auth/{status,repos}` | 설정 → 계정이 연결 상태를 표시한다 |
-| P5 | 원격에서 성립하지 않는 것의 UI — `handoff`, `spawn-cursor`, `clone`, `ok-init`, GitHub 쓰기, 에이전트 채팅 | 403으로 실패하는 버튼이 없다. 왜 없는지 화면에 적혀 있다 |
+| P1 | 게이트 재설계 — `checkLocalOpSecurity`가 원격 정책에서 이름대로 동작한다 | 완료 (`bcf1491c`) |
+| P2 | 동기화 — `sync/*` 5개를 원격 세션에 연다 | 완료 (`5a0074b6`) |
+| P3 | 프로젝트 준비 — `seed/*` 3개, 스킬 3개, `client-logs` | 완료 (`28ac3228`) |
+| P4 | GitHub 읽기 — `local-op/auth/{status,repos}` | 완료 (`1a618a81`) |
+| P5 | 원격에서 성립하지 않는 것의 UI | 완료 (`a3cb52cd`) |
 
-P5가 이 intent의 종료 조건이다. P1만 하고 멈추면 "웹에서도 같은 제품"이라는
-목표는 달성되지 않는다.
+P5가 이 intent의 종료 조건이었다. 게이트 규칙 집계는 `never` 14곳,
+`account-session` 14곳이다.
+
+## 남은 한계
+
+**웹에서 GitHub에 연결할 수 없다.** CLI의 토큰이 `$HOME/.ok/auth.yml`에 있고
+compose가 `/home/node`를 tmpfs로 마운트한다. 그래서 게시(`share/*`)는 원격에서
+닫혀 있고, 동기화도 데스크톱에서 원격을 붙여준 워크스페이스에서만 의미가 있다.
+이 제약을 없애려면 `/home/node`를 볼륨으로 지속시키고 원격 GitHub 로그인을
+허용해야 한다 — 비밀번호 하나가 곧 GitHub 접근이 된다는 뜻이라 별도 intent로
+다룬다.
+
+**서버측 에이전트는 여전히 마일스톤 3이다.** 이번에는 왜 없는지 화면에 적는
+것까지만 했다.
