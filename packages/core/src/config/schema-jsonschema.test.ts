@@ -201,6 +201,11 @@ describe('loose-mode forgiveness', () => {
     expect(config.appearance.preview.autoOpen).toBe(false);
   });
 
+  test('agents.chat accepts Astra as the preferred Codex model', () => {
+    const config = ConfigSchema.parse({ agents: { chat: { codexModel: 'gpt-6-astra' } } });
+    expect(config.agents.chat.codexModel).toBe('gpt-6-astra');
+  });
+
   test('agents.chat models have stable defaults', () => {
     const config = ConfigSchema.parse({});
     expect(config.agents.chat.codexModel).toBe('gpt-5.6-sol');

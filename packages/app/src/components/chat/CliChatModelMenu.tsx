@@ -33,6 +33,7 @@ interface CliChatModelMenuProps {
 }
 
 const CODEX_MODELS: readonly CliChatModel[] = [
+  'gpt-6-astra',
   'gpt-5.6-sol',
   'gpt-5.6-terra',
   'gpt-5.6-luna',
@@ -80,6 +81,7 @@ function displayValue(value: CliChatModel | CliChatEffort | CliChatSpeed): strin
   if (value === 'fable') return 'Fable';
   if (value === 'opus') return 'Opus';
   if (value === 'sonnet') return 'Sonnet';
+  if (value === 'gpt-6-astra') return 'GPT-6 Astra';
   if (value === 'gpt-5.6-sol') return 'GPT-5.6 Sol';
   if (value === 'gpt-5.6-terra') return 'GPT-5.6 Terra';
   if (value === 'gpt-5.6-luna') return 'GPT-5.6 Luna';
