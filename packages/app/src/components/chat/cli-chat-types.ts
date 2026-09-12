@@ -5,6 +5,7 @@ export type CliChatId = Extract<TerminalCli, 'codex' | 'claude'>;
 export type CliChatPermissionMode = 'read-only' | 'workspace-write' | 'full-access';
 
 export type CliChatModel =
+  | 'gpt-6-astra'
   | 'gpt-5.6-sol'
   | 'gpt-5.6-terra'
   | 'gpt-5.6-luna'

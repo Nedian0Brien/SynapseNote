@@ -2,6 +2,7 @@ import { msg } from '@lingui/core/macro';
 import type { SettingsFieldDef, SettingsTranslate } from './settings-types';
 
 function chatModelLabel(value: string): string {
+  if (value === 'gpt-6-astra') return 'GPT-6 Astra';
   if (value === 'gpt-5.6-sol') return 'GPT-5.6 Sol';
   if (value === 'gpt-5.6-terra') return 'GPT-5.6 Terra';
   if (value === 'gpt-5.6-luna') return 'GPT-5.6 Luna';

@@ -9,6 +9,28 @@ const codexModelSettings = {
 const claudeModelSettings = { model: 'sonnet', effort: 'medium', speed: 'default' } as const;
 
 describe('CLI chat command boundary', () => {
+  test('passes Astra model and reasoning settings through new and resumed Codex launches', () => {
+    for (const sessionId of [null, 'astra-session']) {
+      for (const effort of ['low', 'medium', 'high', 'xhigh', 'max', 'ultra'] as const) {
+        const input = {
+          cli: 'codex' as const,
+          prompt: 'Reply briefly',
+          sessionId,
+          permissionMode: 'read-only' as const,
+          modelSettings: { model: 'gpt-6-astra' as const, effort, speed: 'default' as const },
+        };
+        expect(isCliChatLaunchInput(input)).toBe(true);
+        const command = buildCliChatCommand(input);
+        expect(command).toContain("-m 'gpt-6-astra'");
+        expect(command).toContain(`model_reasoning_effort="${effort}"`);
+        if (sessionId) {
+          expect(command).toContain('codex exec resume --json');
+          expect(command).toContain(" 'astra-session'");
+        }
+      }
+    }
+  });
+
   test('cannot widen a data-plane-only launch through renderer permission input', () => {
     const command = buildCliChatCommand(
       {

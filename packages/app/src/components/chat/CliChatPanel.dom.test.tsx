@@ -755,7 +755,7 @@ describe('CliChatPanel', () => {
   });
 
   test('remembers model, effort, speed, and permission choices for the provider', async () => {
-    const { bridge } = makeBridge();
+    const { bridge, chatSend } = makeBridge();
     const first = render(
       <CliChatPanel bridge={bridge} cli="codex" ptyId="pty-1" initialPrompt={null} />,
     );
@@ -766,8 +766,8 @@ describe('CliChatPanel', () => {
       }),
       { button: 0, ctrlKey: false },
     );
-    fireEvent.click(await screen.findByRole('menuitemradio', { name: 'GPT-5.6 Terra' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Effort: High' }));
+    fireEvent.click(await screen.findByRole('menuitemradio', { name: 'GPT-6 Astra' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Effort: Ultra' }));
     fireEvent.click(screen.getByRole('button', { name: 'Fast speed: Off' }));
     fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
 
@@ -781,10 +781,18 @@ describe('CliChatPanel', () => {
     render(<CliChatPanel bridge={bridge} cli="codex" ptyId="pty-1" initialPrompt={null} />);
     expect(
       screen.getByRole('button', {
-        name: 'Model settings: GPT-5.6 Terra, effort High, speed Fast',
+        name: 'Model settings: GPT-6 Astra, effort Ultra, speed Fast',
       }),
     ).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Permissions: Read only' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Use Astra' } });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(chatSend).toHaveBeenCalledTimes(1));
+    expect(chatSend.mock.calls[0]?.[1].modelSettings).toEqual({
+      model: 'gpt-6-astra',
+      effort: 'ultra',
+      speed: 'fast',
+    });
   });
 
   test('reports a compact title from the first user message', async () => {
