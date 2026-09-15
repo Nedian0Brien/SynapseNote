@@ -1671,9 +1671,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-### assistant-ui (agent-chat-framework composer)
+### assistant-ui (agent-chat-framework composer and message actions)
 
-Copyright (c) 2025 AgentbaseAI Inc. Licensed under MIT (full text reproduced in the MIT section). Source: https://github.com/assistant-ui/assistant-ui. The composer in `packages/app/src/components/agent-chat-framework` is adapted from the same framework revision.
+Copyright (c) 2025 AgentbaseAI Inc. Licensed under MIT (full text reproduced in the MIT section). Source: https://github.com/assistant-ui/assistant-ui. The composer and message actions in `packages/app/src/components/agent-chat-framework` is adapted from the same framework revision.
 
 ### `@antfu/install-pkg@1.1.0`
 Homepage: https://github.com/antfu/install-pkg#readme

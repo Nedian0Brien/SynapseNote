@@ -192,6 +192,8 @@ interface ChatMessage {
   readonly type: 'message';
   readonly role: 'user' | 'assistant';
   readonly text: string;
+  /** Exact submitted prompt, including that turn's editor context. */
+  readonly requestPrompt?: string;
   readonly selectionContext?: CliChatSelectionContext;
   readonly imageAttachments?: readonly CliChatImageAttachment[];
 }

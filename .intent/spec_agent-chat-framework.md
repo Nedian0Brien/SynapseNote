@@ -27,3 +27,9 @@ A second chat runtime or the framework demo backend would duplicate session owne
 # Open questions
 
 None.
+
+# Message actions follow-up
+
+- User messages expose Copy; assistant messages expose Copy and Regenerate when a preceding user request exists.
+- Copy writes the message's Markdown, confirms success and reports failures. Icon actions provide focus-accessible tooltips.
+- Regenerate appends a new turn in the native session using the original submitted prompt and attachments. It preserves old answers and the current unsent draft. Busy/history-loading states and concurrent sends block regeneration.

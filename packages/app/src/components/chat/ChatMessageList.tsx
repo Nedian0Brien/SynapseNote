@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import type { OkDesktopBridge } from '@/lib/desktop-bridge-types';
 import { cn } from '@/lib/utils';
 import { ChatMarkdown } from './ChatMarkdown';
+import { ChatMessageActions } from './ChatMessageActions';
 import type {
   ChatActivity,
   ChatTimelineEntry,
@@ -39,6 +40,8 @@ import { extractWebPreviewLinks } from './web-preview-links';
 interface ChatMessageListProps {
   readonly timeline: readonly ChatTimelineEntry[];
   readonly running: boolean;
+  readonly actionsDisabled?: boolean;
+  readonly onRegenerate?: (messageId: string) => void;
   readonly isActive?: boolean;
   readonly bridge: OkDesktopBridge;
   readonly emptyLabel?: string;
@@ -415,6 +418,8 @@ function SentSelectionContext({ selection }: { selection: CliChatSelectionContex
 export function ChatMessageList({
   timeline,
   running,
+  actionsDisabled = false,
+  onRegenerate,
   isActive = true,
   bridge,
   emptyLabel,
@@ -555,6 +560,20 @@ export function ChatMessageList({
                 ) : null}
               </MessageContent>
             );
+            const canRegenerate =
+              entry.role === 'assistant' &&
+              onRegenerate !== undefined &&
+              timeline
+                .slice(0, index)
+                .some((prior) => prior.type === 'message' && prior.role === 'user');
+            const actions = (
+              <ChatMessageActions
+                text={entry.text}
+                bridge={bridge}
+                disabled={actionsDisabled || running}
+                onRegenerate={canRegenerate ? () => onRegenerate?.(entry.id) : undefined}
+              />
+            );
             const sentImages = entry.role === 'user' ? (entry.imageAttachments ?? []) : [];
             if (
               entry.role === 'user' &&
@@ -576,6 +595,7 @@ export function ChatMessageList({
                   ) : null}
                   {sentImages.length > 0 ? <SentImageAttachments images={sentImages} /> : null}
                   {messageBubble}
+                  {actions}
                 </Message>
               );
             }
@@ -589,12 +609,14 @@ export function ChatMessageList({
                 >
                   {messageBubble}
                   <WebPreviewCards links={previewLinks} bridge={bridge} />
+                  {actions}
                 </Message>
               );
             }
             return (
               <Message key={entry.id} from={entry.role}>
                 {messageBubble}
+                {actions}
               </Message>
             );
           }

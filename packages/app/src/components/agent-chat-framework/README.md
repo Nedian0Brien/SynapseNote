@@ -5,6 +5,7 @@ Selected source exports from `agent-chat-framework` revision
 
 | File | Source | License |
 | --- | --- | --- |
+| message-actions.tsx | src/registry/assistant-ui/elements/message-actions.tsx | MIT, AgentbaseAI Inc. |
 | composer.tsx | src/registry/assistant-ui/elements/composer.tsx | MIT, AgentbaseAI Inc. |
 | message.tsx | src/registry/ai-elements/message.tsx | Apache-2.0, Vercel, Inc. |
 | conversation.tsx | src/registry/ai-elements/conversation.tsx | Apache-2.0, Vercel, Inc. |

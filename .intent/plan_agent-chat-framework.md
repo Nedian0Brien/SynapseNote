@@ -39,3 +39,9 @@ Scroll behavior and controlled composer state are the main regression risks. Kee
 - The Codex tool host reported a missing `code_mode_host_duration_ns` field to the model during the read request, although command output reached the UI. This external CLI issue remains outside the UI integration.
 
 - Real streaming preserved the earlier reading position. After switching to a new chat and back, the old conversation restored scrollTop 200; jump-to-latest still reached the bottom. A DOM regression covers the hidden-tab restore.
+
+# Message actions follow-up
+
+Add framework message-actions.tsx and ChatMessageActions.tsx; connect every message footer. Retain requestPrompt on user timeline entries for regeneration; reuse the original session and lock concurrent sends during preflight. Extend CliChatPanel DOM tests for copying, failures, original context/attachment reuse, draft preservation and rejected regeneration. Update locales, provenance and changeset. Rebuild the desktop renderer and verify actual clipboard writes and regeneration from the footer.
+
+Message action results: 37 CliChatPanel DOM tests and 7 reducer tests passed, app typecheck and desktop production build passed. In the real desktop app, both copy buttons wrote the expected text to the system clipboard; focusing Regenerate displayed its tooltip; regeneration added a second answer to the same request while retaining the first. No renderer page errors were observed during the live check.

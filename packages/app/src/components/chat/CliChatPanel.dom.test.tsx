@@ -19,6 +19,7 @@ function makeBridge(
   const dataSubscribers: Array<(message: OkPtyData) => void> = [];
   const exitSubscribers: Array<(message: OkPtyExit) => void> = [];
   const input = mock((_ptyId: string, _data: string) => {});
+  const writeText = mock(async (_text: string) => {});
   const chatSend = mock(
     (
       _ptyId: string,
@@ -47,6 +48,7 @@ function makeBridge(
   const readChatSession = mock((_cli: 'codex' | 'claude', _sessionId: string) => readHistory());
   const cliPreflight = mock(async () => ({ onPath: 'present' as const }));
   const bridge = {
+    clipboard: { writeText },
     shell: { fetchWebPreview },
     terminal: {
       input,
@@ -70,6 +72,7 @@ function makeBridge(
   } as unknown as OkDesktopBridge;
   return {
     bridge,
+    writeText,
     input,
     chatSend,
     cliPreflight,
@@ -82,6 +85,136 @@ function makeBridge(
 }
 
 describe('CliChatPanel', () => {
+  test('copies the original Markdown from user and assistant message footers', async () => {
+    const { bridge, writeText } = makeBridge([
+      { role: 'user', text: '**Question**' },
+      { role: 'assistant', text: '**Answer**\n\n`code`' },
+    ]);
+    render(
+      <CliChatPanel
+        bridge={bridge}
+        cli="codex"
+        ptyId="pty-1"
+        initialPrompt={null}
+        initialSessionId="saved"
+      />,
+    );
+    await screen.findByText('Answer');
+    const user = screen.getByLabelText('You').closest('[data-slot="message"]') as HTMLElement;
+    const assistant = screen
+      .getByLabelText('Assistant')
+      .closest('[data-slot="message"]') as HTMLElement;
+    await userEvent.click(within(user).getByRole('button', { name: 'Copy message' }));
+    expect(writeText).toHaveBeenLastCalledWith('**Question**');
+    expect(within(user).getByRole('button', { name: 'Copied' })).toBeTruthy();
+    await userEvent.click(within(assistant).getByRole('button', { name: 'Copy message' }));
+    expect(writeText).toHaveBeenLastCalledWith('**Answer**\n\n`code`');
+    expect(within(user).queryByRole('button', { name: 'Regenerate response' })).toBeNull();
+  });
+
+  test('reports clipboard errors without showing a successful copy', async () => {
+    const { bridge, writeText } = makeBridge([{ role: 'assistant', text: 'Answer' }]);
+    writeText.mockRejectedValue(new Error('clipboard unavailable'));
+    render(
+      <CliChatPanel
+        bridge={bridge}
+        cli="codex"
+        ptyId="pty-1"
+        initialPrompt={null}
+        initialSessionId="saved"
+      />,
+    );
+    await screen.findByText('Answer');
+    await userEvent.click(screen.getByRole('button', { name: 'Copy message' }));
+    expect(screen.getByRole('alert').textContent).toContain('Could not copy');
+    expect(screen.queryByRole('button', { name: 'Copied' })).toBeNull();
+  });
+
+  test('regenerates with the original prompt and attachments while preserving the new draft', async () => {
+    const { bridge, chatSend, pushData } = makeBridge();
+    const originalProps = {
+      bridge,
+      cli: 'codex' as const,
+      ptyId: 'pty-1',
+      initialPrompt: null,
+      documentContext: { documentTitle: 'Original', documentPath: 'original.md' },
+      selectionContext: {
+        documentTitle: 'Original',
+        documentPath: 'original.md',
+        markdown: 'Original selection',
+        lineCount: 1,
+      },
+      imageAttachments: [{ path: 'original.png', previewSrc: 'data:image/png;base64,AQI=' }],
+    };
+    const view = render(<CliChatPanel {...originalProps} />);
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Explain this' } });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(chatSend).toHaveBeenCalledTimes(1));
+    act(() =>
+      pushData(
+        '{"type":"thread.started","thread_id":"original-session"}\n{"type":"item.completed","item":{"type":"agent_message","text":"First answer"}}\n',
+      ),
+    );
+    const disabledAction = screen.getByRole('button', {
+      name: 'Wait for the current response to finish',
+    });
+    expect(disabledAction.getAttribute('aria-disabled')).toBe('true');
+    fireEvent.click(disabledAction);
+    expect(chatSend).toHaveBeenCalledTimes(1);
+    act(() =>
+      pushData(
+        '{"type":"turn.completed"}\n{"type":"synapsenote.command_completed","exit_code":0}\n',
+      ),
+    );
+    view.rerender(
+      <CliChatPanel
+        {...originalProps}
+        documentContext={{ documentTitle: 'New document', documentPath: 'new.md' }}
+        selectionContext={null}
+        imageAttachments={[]}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Unsent draft' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Regenerate response' }));
+    await waitFor(() => expect(chatSend).toHaveBeenCalledTimes(2));
+    expect(chatSend.mock.calls[1]?.[1].prompt).toBe(chatSend.mock.calls[0]?.[1].prompt);
+    expect(chatSend.mock.calls[1]?.[1].prompt).toContain('Original selection');
+    expect(chatSend.mock.calls[1]?.[1].prompt).toContain('original.png');
+    expect(chatSend.mock.calls[1]?.[1].sessionId).toBe('original-session');
+    expect((screen.getByLabelText('Message') as HTMLTextAreaElement).value).toBe('Unsent draft');
+    expect(screen.getByText('First answer')).toBeTruthy();
+  });
+
+  test('keeps the original answer on rejected regeneration and prevents duplicate requests', async () => {
+    const { bridge, chatSend } = makeBridge([
+      { role: 'user', text: 'Old question' },
+      { role: 'assistant', text: 'Old answer' },
+    ]);
+    chatSend.mockReturnValue({ ok: false, reason: 'dispatch-failed' });
+    render(
+      <CliChatPanel
+        bridge={bridge}
+        cli="codex"
+        ptyId="pty-1"
+        initialPrompt={null}
+        initialSessionId="saved"
+        documentContext={{ documentTitle: 'New', documentPath: 'new.md' }}
+      />,
+    );
+    await screen.findByText('Old answer');
+    const retry = screen.getByRole('button', { name: 'Regenerate response' });
+    fireEvent.click(retry);
+    fireEvent.click(retry);
+    await screen.findByRole('alert');
+    expect(chatSend).toHaveBeenCalledTimes(1);
+    expect(chatSend.mock.calls[0]?.[1].prompt).toBe('Old question');
+    expect(screen.getAllByLabelText('You')).toHaveLength(1);
+    expect(screen.getByText('Old answer')).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Regenerate response' }).getAttribute('aria-disabled'),
+    ).toBe('false');
+  });
+
   test('shows a rejected transport and keeps the composer retryable', async () => {
     const { bridge, chatSend } = makeBridge();
     chatSend.mockReturnValue({ ok: false, reason: 'unknown-session' });
@@ -916,7 +1049,10 @@ describe('CliChatPanel', () => {
     expect(userMessage.contains(sentContext)).toBe(false);
     const messageGroup = userMessage.closest('[data-chat-message-group="selection"]');
     expect(messageGroup?.firstElementChild?.contains(sentContext)).toBe(true);
-    expect(messageGroup?.lastElementChild).toBe(userMessage);
+    expect(
+      messageGroup?.lastElementChild?.querySelector('[data-slot="message-actions"]'),
+    ).not.toBeNull();
+    expect(userMessage.nextElementSibling === messageGroup?.lastElementChild).toBe(true);
     expect(sentContext.textContent).toContain('Work Log');
     expect(sentContext.textContent).toContain('2 lines selected');
     expect(sentContext.textContent).toContain('brain/log.md:10-11');

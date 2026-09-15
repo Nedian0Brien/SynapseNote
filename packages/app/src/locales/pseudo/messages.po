@@ -2565,6 +2565,7 @@ msgstr ""
 msgid "Convert to inline view"
 msgstr ""
 
+#: src/components/chat/ChatMessageActions.tsx
 #: src/components/DatabaseContextInspectorDialog.tsx
 #: src/components/empty-state/CopyablePromptList.tsx
 #: src/components/InstallInClaudeDesktopDialog.tsx
@@ -2636,6 +2637,10 @@ msgstr ""
 msgid "Copy full path, No workspace"
 msgstr ""
 
+#: src/components/chat/ChatMessageActions.tsx
+msgid "Copy message"
+msgstr ""
+
 #: src/components/FileTree.tsx
 #: src/components/folder-item-context-menu.tsx
 msgid "Copy path"
@@ -2701,6 +2706,10 @@ msgstr ""
 #: src/components/FileSidebar.tsx
 #: src/components/path-menu-actions.ts
 msgid "Could not copy relative path"
+msgstr ""
+
+#: src/components/chat/ChatMessageActions.tsx
+msgid "Could not copy the message. Try again."
 msgstr ""
 
 #: src/components/CreateProjectDialog.tsx
@@ -8628,6 +8637,10 @@ msgstr ""
 msgid "Refresh preview"
 msgstr ""
 
+#: src/components/chat/ChatMessageActions.tsx
+msgid "Regenerate response"
+msgstr ""
+
 #: src/components/InstallInClaudeDesktopDialog.tsx
 #: src/components/settings/SettingsDialogBody.tsx
 msgid "Reinstall"
@@ -11919,6 +11932,10 @@ msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Visual editor table selection"
+msgstr ""
+
+#: src/components/chat/ChatMessageActions.tsx
+msgid "Wait for the current response to finish"
 msgstr ""
 
 #: src/components/AuthModal.tsx

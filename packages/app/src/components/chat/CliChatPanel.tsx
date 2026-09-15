@@ -179,7 +179,9 @@ export function CliChatPanel({
     );
   }, [cli, configContext, defaultModelReady, preferredModel]);
 
-  async function sendPrompt(
+  const sendingRef = useRef(false);
+
+  async function performSendPrompt(
     prompt: string,
     displayPrompt = prompt,
     displaySelection: CliChatSelectionContext | null = null,
@@ -197,6 +199,7 @@ export function CliChatPanel({
     dispatch({
       type: 'send',
       text: displayPrompt.trim() || trimmed,
+      requestPrompt: trimmed,
       ...(displaySelection === null ? {} : { selectionContext: displaySelection }),
       ...(displayImages.length === 0 ? {} : { imageAttachments: displayImages }),
     });
@@ -243,6 +246,40 @@ export function CliChatPanel({
       return false;
     }
     return true;
+  }
+
+  async function sendPrompt(...args: Parameters<typeof performSendPrompt>): Promise<boolean> {
+    if (sendingRef.current) return false;
+    sendingRef.current = true;
+    return performSendPrompt(...args).finally(() => {
+      sendingRef.current = false;
+    });
+  }
+
+  function regenerate(messageId: string) {
+    if (historyLoading || !state.transportReady) return;
+    const index = state.timeline.findIndex((entry) => entry.id === messageId);
+    const selected = state.timeline[index];
+    if (selected?.type !== 'message' || selected.role !== 'assistant') return;
+    for (let cursor = index - 1; cursor >= 0; cursor -= 1) {
+      const original = state.timeline[cursor];
+      if (original?.type !== 'message' || original.role !== 'user') continue;
+      // Native sessions are append-only. Keep the prior response and submit the
+      // original request as a new turn; never attach today's editor selection.
+      void sendPrompt(
+        original.requestPrompt ??
+          composeCliChatPrompt(
+            original.text,
+            null,
+            original.selectionContext ?? null,
+            original.imageAttachments ?? [],
+          ),
+        original.text,
+        original.selectionContext ?? null,
+        original.imageAttachments ?? [],
+      );
+      return;
+    }
   }
 
   const sendInitialPrompt = useEffectEvent(sendPrompt);
@@ -323,6 +360,8 @@ export function CliChatPanel({
       <ChatMessageList
         timeline={state.timeline}
         running={state.running}
+        actionsDisabled={ptyId === null || historyLoading || !state.transportReady}
+        onRegenerate={regenerate}
         isActive={isActive}
         bridge={bridge}
         emptyLabel={historyLoading ? t`Loading chat history` : undefined}

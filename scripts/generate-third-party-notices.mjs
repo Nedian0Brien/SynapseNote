@@ -803,9 +803,9 @@ function build() {
     );
     push('```', LICENSE_TEXTS.mit, '```', '');
     push(
-      '### assistant-ui (agent-chat-framework composer)',
+      '### assistant-ui (agent-chat-framework composer and message actions)',
       '',
-      'Copyright (c) 2025 AgentbaseAI Inc. Licensed under MIT (full text reproduced in the MIT section). Source: https://github.com/assistant-ui/assistant-ui. The composer in `packages/app/src/components/agent-chat-framework` is adapted from the same framework revision.',
+      'Copyright (c) 2025 AgentbaseAI Inc. Licensed under MIT (full text reproduced in the MIT section). Source: https://github.com/assistant-ui/assistant-ui. The composer and message actions in `packages/app/src/components/agent-chat-framework` is adapted from the same framework revision.',
       '',
     );
     for (const e of grouped.get('MIT')) {
