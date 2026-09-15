@@ -172,48 +172,75 @@ describe('CliChatPanel', () => {
     expect(chatSend.mock.calls[0]?.[1].sessionId).toBe('codex-session');
   });
 
-  test('scrolls restored history to the newest message when the chat becomes active', async () => {
-    const scrollIntoView = mock((_options?: ScrollIntoViewOptions) => {});
-    const scrollPrototype = HTMLElement.prototype as HTMLElement & {
-      scrollIntoView?: (options?: ScrollIntoViewOptions) => void;
+  test('restores history into the framework conversation when its tab becomes active', async () => {
+    const { bridge } = makeBridge([
+      { role: 'user', text: 'Earlier question' },
+      { role: 'assistant', text: 'Newest answer' },
+    ]);
+    const view = render(
+      <CliChatPanel
+        bridge={bridge}
+        cli="codex"
+        ptyId="pty-1"
+        initialPrompt={null}
+        initialSessionId="restored-session"
+        isActive={false}
+      />,
+    );
+    expect(await screen.findByText('Newest answer')).toBeTruthy();
+    view.rerender(
+      <CliChatPanel
+        bridge={bridge}
+        cli="codex"
+        ptyId="pty-1"
+        initialPrompt={null}
+        initialSessionId="restored-session"
+        isActive
+      />,
+    );
+    expect(screen.getByRole('log').getAttribute('data-slot')).toBe('conversation');
+    expect(screen.getAllByLabelText('Assistant')).toHaveLength(1);
+    expect(screen.getByLabelText('Message').getAttribute('data-slot')).toBe('composer-input');
+  });
+
+  test('restores a manual reading position after a hidden chat tab becomes active', async () => {
+    const { bridge } = makeBridge([{ role: 'assistant', text: 'Saved conversation' }]);
+    const props = {
+      bridge,
+      cli: 'codex' as const,
+      ptyId: 'pty-1',
+      initialPrompt: null,
+      initialSessionId: 'saved',
     };
-    const previousScrollIntoView = scrollPrototype.scrollIntoView;
-    scrollPrototype.scrollIntoView = scrollIntoView;
+    const view = render(<CliChatPanel {...props} isActive />);
+    await screen.findByText('Saved conversation');
+    const scroll = screen.getByRole('log').firstElementChild as HTMLElement;
+    Object.defineProperties(scroll, {
+      clientHeight: { configurable: true, value: 400 },
+      scrollHeight: { configurable: true, value: 1600 },
+    });
+    scroll.scrollTop = 200;
+    fireEvent.scroll(scroll);
+    view.rerender(<CliChatPanel {...props} isActive={false} />);
+    scroll.scrollTop = 0;
+    fireEvent.scroll(scroll);
+    view.rerender(<CliChatPanel {...props} isActive />);
+    expect(scroll.scrollTop).toBe(200);
+    expect(screen.getByText('Saved conversation')).toBeTruthy();
+  });
 
-    try {
-      const { bridge } = makeBridge([
-        { role: 'user', text: 'Earlier question' },
-        { role: 'assistant', text: 'Newest answer' },
-      ]);
-      const view = render(
-        <CliChatPanel
-          bridge={bridge}
-          cli="codex"
-          ptyId="pty-1"
-          initialPrompt={null}
-          initialSessionId="restored-session"
-          isActive={false}
-        />,
-      );
-
-      expect(await screen.findByText('Newest answer')).toBeTruthy();
-      expect(scrollIntoView).not.toHaveBeenCalled();
-
-      view.rerender(
-        <CliChatPanel
-          bridge={bridge}
-          cli="codex"
-          ptyId="pty-1"
-          initialPrompt={null}
-          initialSessionId="restored-session"
-          isActive
-        />,
-      );
-      await waitFor(() => expect(scrollIntoView).toHaveBeenCalledWith({ block: 'end' }));
-    } finally {
-      if (previousScrollIntoView === undefined) delete scrollPrototype.scrollIntoView;
-      else scrollPrototype.scrollIntoView = previousScrollIntoView;
-    }
+  test('preserves multiline and IME input and submits Enter through the framework composer', async () => {
+    const { bridge, chatSend } = makeBridge();
+    render(<CliChatPanel bridge={bridge} cli="codex" ptyId="pty-1" initialPrompt={null} />);
+    const input = screen.getByLabelText('Message');
+    fireEvent.change(input, { target: { value: '첫 줄\n둘째 줄' } });
+    fireEvent.keyDown(input, { key: 'Enter', shiftKey: true });
+    fireEvent.keyDown(input, { key: 'Enter', isComposing: true });
+    expect(chatSend).not.toHaveBeenCalled();
+    expect((input as HTMLTextAreaElement).value).toBe('첫 줄\n둘째 줄');
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await waitFor(() => expect(chatSend).toHaveBeenCalledTimes(1));
+    expect(chatSend.mock.calls[0]?.[1].prompt).toBe('첫 줄\n둘째 줄');
   });
 
   test('shows context, sends immediately, and accumulates a structured response', async () => {
@@ -398,11 +425,9 @@ describe('CliChatPanel', () => {
       );
     });
 
-    const expandable = document.querySelector<HTMLDetailsElement>(
-      '[data-chat-error-expandable="true"]',
-    );
+    const expandable = document.querySelector<HTMLElement>('[data-chat-error-expandable="true"]');
     const summary = expandable?.querySelector('[data-chat-error-summary="true"]');
-    expect(expandable?.open).toBe(false);
+    expect(expandable?.getAttribute('data-state')).toBe('closed');
     expect(summary?.textContent).toBe('user cancelled MCP tool call');
     expect(expandable?.textContent).toContain('exec · failed');
     expect(expandable?.querySelector('[data-chat-tool-icon="command"]')).not.toBeNull();
@@ -410,8 +435,8 @@ describe('CliChatPanel', () => {
     expect(failureStatus).not.toBeNull();
     expect(failureStatus?.previousElementSibling?.textContent).toBe('exec · failed');
 
-    await userEvent.click(expandable?.querySelector('summary') as HTMLElement);
-    expect(expandable?.open).toBe(true);
+    await userEvent.click(expandable?.querySelector('button[aria-expanded]') as HTMLElement);
+    expect(expandable?.getAttribute('data-state')).toBe('open');
     expect(expandable?.querySelector('[data-chat-error-details="true"]')?.textContent).toContain(
       'Server: open-knowledge\nRetry after reconnecting.',
     );
@@ -429,14 +454,12 @@ describe('CliChatPanel', () => {
       );
     });
 
-    const failed = document.querySelector<HTMLDetailsElement>(
-      '[data-chat-error-expandable="true"]',
-    );
+    const failed = document.querySelector<HTMLElement>('[data-chat-error-expandable="true"]');
     expect(failed?.textContent).toContain('mcp__synapsenote__current_document · failed');
     expect(failed?.querySelector('[data-chat-error-summary]')?.textContent).toBe(
       'Claude requested permissions, but they were not granted.',
     );
-    await userEvent.click(failed?.querySelector('summary') as HTMLElement);
+    await userEvent.click(failed?.querySelector('button[aria-expanded]') as HTMLElement);
     expect(failed?.querySelector('[data-chat-error-details]')?.textContent).toContain(
       'Error: permission denied',
     );
@@ -455,7 +478,7 @@ describe('CliChatPanel', () => {
     });
 
     const expandables = Array.from(
-      document.querySelectorAll<HTMLDetailsElement>('[data-chat-tool-expandable="true"]'),
+      document.querySelectorAll<HTMLElement>('[data-chat-tool-expandable="true"]'),
     );
     expect(expandables).toHaveLength(2);
     expect(
@@ -469,8 +492,8 @@ describe('CliChatPanel', () => {
       ),
     ).toBe(true);
 
-    await userEvent.click(expandables[1]?.querySelector('summary') as HTMLElement);
-    expect(expandables[1]?.open).toBe(true);
+    await userEvent.click(expandables[1]?.querySelector('button[aria-expanded]') as HTMLElement);
+    expect(expandables[1]?.getAttribute('data-state')).toBe('open');
     const detail = expandables[1]?.querySelector('[data-chat-tool-details]')?.textContent;
     expect(detail).toContain('Arguments\n{\n  "document":');
     expect(detail).toContain('Result\n{');

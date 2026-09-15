@@ -25,3 +25,17 @@ status: accepted
 # Risk and recovery
 
 Scroll behavior and controlled composer state are the main regression risks. Keep CLI transport untouched and test send/reject/stop transitions. The isolated branch can be reverted without altering saved user conversations or the installed application.
+
+# Implementation notes
+
+- Added one localized label to the English/pseudo catalogs and updated the notices generator so vendored source attribution survives regeneration.
+- Conversation activation uses a layout effect to comply with React Compiler. Scrolling behavior is verified in the real browser surface; the DOM tests cover transcript restoration and composer submission.
+
+# Results
+
+- CliChatPanel: 33 DOM tests passed, including IME/newline submission, rejected sends, session restoration, permissions, selected context, attachments and tool disclosures.
+- CliChatSession: 1 DOM test passed. App typecheck, changed-source Biome/oxlint checks, desktop production build and notice regeneration passed.
+- A real Codex request produced tool output and a final response in the desktop app. Tool details opened by mouse and collapsed with Enter; jump-to-latest reached the bottom. Generation cancellation released the transport and a follow-up received an answer.
+- The Codex tool host reported a missing `code_mode_host_duration_ns` field to the model during the read request, although command output reached the UI. This external CLI issue remains outside the UI integration.
+
+- Real streaming preserved the earlier reading position. After switching to a new chat and back, the old conversation restored scrollTop 200; jump-to-latest still reached the bottom. A DOM regression covers the hidden-tab restore.

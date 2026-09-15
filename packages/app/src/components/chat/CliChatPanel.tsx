@@ -1,5 +1,5 @@
 import { useLingui } from '@lingui/react/macro';
-import { SendIcon, SquareIcon, TextQuoteIcon, XIcon } from 'lucide-react';
+import { TextQuoteIcon, XIcon } from 'lucide-react';
 import {
   type KeyboardEvent,
   type SyntheticEvent,
@@ -11,8 +11,15 @@ import {
   useRef,
   useState,
 } from 'react';
+import {
+  Composer,
+  ComposerActions,
+  ComposerBar,
+  ComposerInput,
+  ComposerSend,
+  ComposerToolbar,
+} from '@/components/agent-chat-framework/composer';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { lightRenderMarkdownPreview } from '@/editor/selection-context';
 import { ConfigContext } from '@/lib/config-context';
 import type { OkDesktopBridge } from '@/lib/desktop-bridge-types';
@@ -230,7 +237,7 @@ export function CliChatPanel({
     } catch {
       dispatchResult = { ok: false, reason: 'dispatch-failed' };
     }
-    if (!dispatchResult || !dispatchResult.ok) {
+    if (!dispatchResult?.ok) {
       setSendError(t`The chat turn could not be sent. Try again.`);
       dispatch({ type: 'dispatch_rejected' });
       return false;
@@ -328,164 +335,149 @@ export function CliChatPanel({
         }}
       />
       <form onSubmit={submit} className="min-w-0 max-w-full p-3">
-        <div
-          data-chat-composer="true"
-          className="mx-auto max-w-3xl overflow-hidden rounded-2xl border border-input bg-background shadow-xs transition-shadow focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50"
-        >
-          {context.length > 0 ? (
-            <fieldset
-              data-chat-composer-context="true"
-              className="mx-2 mt-2 flex min-w-0 flex-wrap gap-1.5"
-            >
-              <legend className="sr-only">{t`Context`}</legend>
-              {context.map((chip) => (
-                <span
-                  key={`${chip.kind}-${chip.label}`}
-                  data-chat-context-chip="true"
-                  className="max-w-56 truncate rounded-full border border-border bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground"
-                  title={chip.label}
-                >
-                  {chip.kind === 'selection' ? t`Selection` : chip.label}
-                </span>
-              ))}
-            </fieldset>
-          ) : null}
-          {attachedSelection !== null ? (
-            <div
-              data-chat-selection="true"
-              className="mx-2 mt-2 flex min-w-0 items-center gap-1.5 rounded-lg bg-muted/70 px-2 py-1 text-xs text-muted-foreground"
-              title={`${attachedSelectionPreview}\n${attachedSelection.documentTitle} — ${attachedSelection.documentPath}`}
-            >
-              <TextQuoteIcon aria-hidden="true" className="size-3.5 shrink-0" />
-              <span className="shrink-0 font-medium text-foreground">
-                {attachedBlockReference === undefined
-                  ? attachedSelection.lineCount === 1
-                    ? t`1 line selected`
-                    : t`${attachedSelection.lineCount} lines selected`
-                  : t`Code block ${attachedBlockReference.index}`}
-              </span>
-              <span className="min-w-0 truncate" data-chat-selection-preview="true">
-                · {attachedSelectionPreview || attachedSelection.documentTitle}
-              </span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-xs"
-                className="ml-auto -mr-1 size-5"
-                onClick={() => setDismissedSelection(attachedSelection)}
-                aria-label={t`Remove selected lines`}
+        <Composer className="mx-auto max-w-3xl">
+          <ComposerBar data-chat-composer="true">
+            {context.length > 0 ? (
+              <fieldset
+                data-chat-composer-context="true"
+                className="mx-2 mt-2 flex min-w-0 flex-wrap gap-1.5"
               >
-                <XIcon aria-hidden="true" />
-              </Button>
-            </div>
-          ) : null}
-          {sendError === null ? null : (
-            <p role="alert" className="mx-3 mt-2 text-xs text-destructive">
-              {sendError}
-            </p>
-          )}
-          {imageAttachments.length > 0 ? (
-            <ul
-              data-chat-image-attachments="true"
-              className="mx-2 mt-2 flex min-w-0 flex-wrap gap-2"
-            >
-              {imageAttachments.map((image) => {
-                const label = attachmentBasename(image.path);
-                return (
-                  <li
-                    key={image.path}
-                    data-chat-image-attachment={image.path}
-                    className="relative shrink-0"
+                <legend className="sr-only">{t`Context`}</legend>
+                {context.map((chip) => (
+                  <span
+                    key={`${chip.kind}-${chip.label}`}
+                    data-chat-context-chip="true"
+                    className="max-w-56 truncate rounded-full border border-border bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground"
+                    title={chip.label}
                   >
-                    {/* The thumbnail is the whole affordance: the reader
+                    {chip.kind === 'selection' ? t`Selection` : chip.label}
+                  </span>
+                ))}
+              </fieldset>
+            ) : null}
+            {attachedSelection !== null ? (
+              <div
+                data-chat-selection="true"
+                className="mx-2 mt-2 flex min-w-0 items-center gap-1.5 rounded-lg bg-muted/70 px-2 py-1 text-xs text-muted-foreground"
+                title={`${attachedSelectionPreview}\n${attachedSelection.documentTitle} — ${attachedSelection.documentPath}`}
+              >
+                <TextQuoteIcon aria-hidden="true" className="size-3.5 shrink-0" />
+                <span className="shrink-0 font-medium text-foreground">
+                  {attachedBlockReference === undefined
+                    ? attachedSelection.lineCount === 1
+                      ? t`1 line selected`
+                      : t`${attachedSelection.lineCount} lines selected`
+                    : t`Code block ${attachedBlockReference.index}`}
+                </span>
+                <span className="min-w-0 truncate" data-chat-selection-preview="true">
+                  · {attachedSelectionPreview || attachedSelection.documentTitle}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  className="ml-auto -mr-1 size-5"
+                  onClick={() => setDismissedSelection(attachedSelection)}
+                  aria-label={t`Remove selected lines`}
+                >
+                  <XIcon aria-hidden="true" />
+                </Button>
+              </div>
+            ) : null}
+            {sendError === null ? null : (
+              <p role="alert" className="mx-3 mt-2 text-xs text-destructive">
+                {sendError}
+              </p>
+            )}
+            {imageAttachments.length > 0 ? (
+              <ul
+                data-chat-image-attachments="true"
+                className="mx-2 mt-2 flex min-w-0 flex-wrap gap-2"
+              >
+                {imageAttachments.map((image) => {
+                  const label = attachmentBasename(image.path);
+                  return (
+                    <li
+                      key={image.path}
+                      data-chat-image-attachment={image.path}
+                      className="relative shrink-0"
+                    >
+                      {/* The thumbnail is the whole affordance: the reader
                         recognizes the picture they picked far faster than a
                         filename, and the path stays available on hover for the
                         rare same-looking pair. */}
-                    <img
-                      src={image.previewSrc}
-                      alt={image.alt === undefined || image.alt === '' ? label : image.alt}
-                      title={image.path}
-                      className="size-14 rounded-lg border border-border bg-muted object-cover"
-                    />
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="icon-xs"
-                      className="-top-1.5 -right-1.5 absolute size-5 rounded-full border border-border shadow-sm"
-                      onClick={() =>
-                        onImageAttachmentsChange?.(
-                          imageAttachments.filter((other) => other.path !== image.path),
-                        )
-                      }
-                      aria-label={t`Remove attached image ${label}`}
-                    >
-                      <XIcon aria-hidden="true" className="size-3" />
-                    </Button>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : null}
-          <Textarea
-            ref={textareaRef}
-            aria-label={t`Message`}
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={t`Message ${cli === 'codex' ? 'Codex' : 'Claude'}`}
-            disabled={ptyId === null || historyLoading}
-            rows={2}
-            className="max-h-40 min-h-12 resize-none border-0 bg-transparent px-3 pt-3 pb-1 shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent"
-          />
-          <div
-            data-chat-composer-actions="true"
-            className="flex items-center justify-between px-2 pb-2 pt-1"
-          >
-            <div className="flex min-w-0 items-center gap-1">
-              <CliChatModelMenu
-                cli={cli}
-                value={modelSettings}
-                onValueChange={(next) => {
-                  modelWasChangedRef.current = true;
-                  setModelSettings(next);
-                  writeCliChatPreferences(cli, { modelSettings: next, permissionMode });
-                }}
-                disabled={!state.transportReady}
-                onClose={() => textareaRef.current?.focus()}
+                      <img
+                        src={image.previewSrc}
+                        alt={image.alt === undefined || image.alt === '' ? label : image.alt}
+                        title={image.path}
+                        className="size-14 rounded-lg border border-border bg-muted object-cover"
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="icon-xs"
+                        className="-top-1.5 -right-1.5 absolute size-5 rounded-full border border-border shadow-sm"
+                        onClick={() =>
+                          onImageAttachmentsChange?.(
+                            imageAttachments.filter((other) => other.path !== image.path),
+                          )
+                        }
+                        aria-label={t`Remove attached image ${label}`}
+                      >
+                        <XIcon aria-hidden="true" className="size-3" />
+                      </Button>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+            <ComposerInput
+              ref={textareaRef}
+              aria-label={t`Message`}
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={t`Message ${cli === 'codex' ? 'Codex' : 'Claude'}`}
+              disabled={ptyId === null || historyLoading}
+              rows={2}
+            />
+            <ComposerToolbar data-chat-composer-actions="true">
+              <ComposerActions>
+                <CliChatModelMenu
+                  cli={cli}
+                  value={modelSettings}
+                  onValueChange={(next) => {
+                    modelWasChangedRef.current = true;
+                    setModelSettings(next);
+                    writeCliChatPreferences(cli, { modelSettings: next, permissionMode });
+                  }}
+                  disabled={!state.transportReady}
+                  onClose={() => textareaRef.current?.focus()}
+                />
+                <CliChatPermissionMenu
+                  value={permissionMode}
+                  onValueChange={(next) => {
+                    setPermissionMode(next);
+                    writeCliChatPreferences(cli, { modelSettings, permissionMode: next });
+                  }}
+                  disabled={!state.transportReady}
+                  onClose={() => textareaRef.current?.focus()}
+                />
+              </ComposerActions>
+              <ComposerSend
+                streaming={!state.transportReady}
+                type={state.transportReady ? 'submit' : 'button'}
+                onClick={state.transportReady ? undefined : interrupt}
+                disabled={
+                  state.transportReady
+                    ? ptyId === null || historyLoading || draft.trim() === ''
+                    : !state.running
+                }
+                aria-label={state.transportReady ? t`Send` : t`Stop`}
               />
-              <CliChatPermissionMenu
-                value={permissionMode}
-                onValueChange={(next) => {
-                  setPermissionMode(next);
-                  writeCliChatPreferences(cli, { modelSettings, permissionMode: next });
-                }}
-                disabled={!state.transportReady}
-                onClose={() => textareaRef.current?.focus()}
-              />
-            </div>
-            {!state.transportReady ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={interrupt}
-                disabled={!state.running}
-                aria-label={t`Stop`}
-              >
-                <SquareIcon />
-              </Button>
-            ) : (
-              <Button
-                type="submit"
-                size="icon"
-                disabled={ptyId === null || historyLoading || draft.trim() === ''}
-                aria-label={t`Send`}
-              >
-                <SendIcon />
-              </Button>
-            )}
-          </div>
-        </div>
+            </ComposerToolbar>
+          </ComposerBar>
+        </Composer>
       </form>
     </section>
   );

@@ -9491,6 +9491,10 @@ msgstr "Scope: "
 msgid "Scope: assign stable record identities to files in this source only. This does not change the database schema or upgrade a manifest version."
 msgstr "Scope: assign stable record identities to files in this source only. This does not change the database schema or upgrade a manifest version."
 
+#: src/components/chat/ChatMessageList.tsx
+msgid "Scroll to latest message"
+msgstr "Scroll to latest message"
+
 #: src/components/CommandPalette.tsx
 #: src/components/settings/SettingsDialogShell.tsx
 #: src/components/SidebarSearchBar.tsx

@@ -12,7 +12,14 @@ import {
   WorkflowIcon,
   WrenchIcon,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
+import {
+  Conversation,
+  ConversationContent,
+  ConversationScrollButton,
+} from '@/components/agent-chat-framework/conversation';
+import { Message, MessageContent } from '@/components/agent-chat-framework/message';
+import { Tool, ToolContent, ToolHeader } from '@/components/agent-chat-framework/tool';
 import { TargetIcon } from '@/components/handoff/OpenInAgentMenuItem';
 import { cliIconTargetId } from '@/components/handoff/terminal-cli-display';
 import { Button } from '@/components/ui/button';
@@ -186,14 +193,14 @@ function ChatActivityEntry({
 
   if (expandable && entry.fullDetail !== undefined) {
     return (
-      <details
+      <Tool
         data-chat-entry="activity"
         data-chat-activity-state={visualState}
         data-chat-tool-expandable="true"
         data-chat-error-expandable={visualState === 'failed' ? 'true' : undefined}
-        className={cn(activityClassName, 'group w-full')}
+        className={cn(activityClassName, 'p-0')}
       >
-        <summary className="flex cursor-pointer list-none items-start gap-1.5 pr-1 outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+        <ToolHeader>
           <ActivityLeadingIcon entry={entry} visualState={visualState} />
           <span className="min-w-0 flex-1">
             <ActivityLabel entry={entry} visualState={visualState} />
@@ -211,24 +218,22 @@ function ChatActivityEntry({
               </span>
             ) : null}
           </span>
-          <ChevronDownIcon
-            aria-hidden="true"
-            className="mt-0.5 size-3 shrink-0 transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none"
-          />
-        </summary>
-        <pre
-          data-chat-tool-details="true"
-          data-chat-error-details={visualState === 'failed' ? 'true' : undefined}
-          className={cn(
-            'mt-1.5 max-h-56 overflow-auto whitespace-pre-wrap rounded-md px-2 py-1.5 font-mono text-[11px] leading-relaxed [overflow-wrap:anywhere]',
-            visualState === 'failed'
-              ? 'bg-destructive/5 text-destructive'
-              : 'bg-muted/50 text-foreground/80',
-          )}
-        >
-          {entry.fullDetail}
-        </pre>
-      </details>
+        </ToolHeader>
+        <ToolContent>
+          <pre
+            data-chat-tool-details="true"
+            data-chat-error-details={visualState === 'failed' ? 'true' : undefined}
+            className={cn(
+              'mt-1.5 max-h-56 overflow-auto whitespace-pre-wrap rounded-md px-2 py-1.5 font-mono text-[11px] leading-relaxed [overflow-wrap:anywhere]',
+              visualState === 'failed'
+                ? 'bg-destructive/5 text-destructive'
+                : 'bg-muted/50 text-foreground/80',
+            )}
+          >
+            {entry.fullDetail}
+          </pre>
+        </ToolContent>
+      </Tool>
     );
   }
 
@@ -419,21 +424,6 @@ export function ChatMessageList({
   onProviderSelect,
 }: ChatMessageListProps) {
   const { t } = useLingui();
-  const endRef = useRef<HTMLDivElement | null>(null);
-  const lastEntry = timeline.at(-1);
-  const lastEntryContent = `${lastEntry?.id ?? ''}:${
-    lastEntry?.type === 'message'
-      ? lastEntry.text
-      : `${lastEntry?.label ?? ''}${lastEntry?.detail ?? ''}`
-  }`;
-
-  useEffect(() => {
-    // Re-run as streamed text or the chronological feed grows.
-    void lastEntryContent;
-    if (!isActive) return;
-    endRef.current?.scrollIntoView({ block: 'end' });
-  }, [isActive, lastEntryContent]);
-
   if (!timeline.some((entry) => entry.type === 'message')) {
     const showProviderChooser =
       !emptyLoading && onProviderSelect !== undefined && providerOptions.length > 0;
@@ -517,13 +507,14 @@ export function ChatMessageList({
   }
 
   return (
-    <div
+    <Conversation
+      isActive={isActive}
       role="log"
       aria-live="polite"
       aria-label={t`Conversation`}
-      className="min-h-0 min-w-0 max-w-full flex-1 overflow-x-hidden overflow-y-auto px-4 py-5"
+      className="overflow-x-hidden"
     >
-      <div className="mx-auto flex min-w-0 w-full max-w-3xl flex-col gap-3">
+      <ConversationContent>
         {timeline.map((entry, index) => {
           if (entry.type === 'message') {
             let followsWebSearch = false;
@@ -543,7 +534,8 @@ export function ChatMessageList({
             // User turns stay in a compact bubble; assistant turns are long-form
             // prose, so they drop the bubble and read across the full column.
             const messageBubble = (
-              <article
+              <MessageContent
+                from={entry.role}
                 data-chat-entry="message"
                 data-chat-motion={entry.role === 'user' ? 'send' : 'assistant'}
                 data-chat-generating={generating ? 'true' : undefined}
@@ -551,8 +543,8 @@ export function ChatMessageList({
                 className={cn(
                   'min-w-0 transform-gpu text-sm leading-relaxed motion-reduce:animate-none',
                   entry.role === 'user'
-                    ? 'ml-auto w-fit max-w-[88%] origin-bottom-right animate-chat-send overflow-hidden rounded-2xl bg-primary px-3.5 py-2.5 text-primary-foreground'
-                    : 'w-full max-w-full animate-chat-assistant py-1 text-foreground',
+                    ? 'origin-bottom-right animate-chat-send'
+                    : 'animate-chat-assistant',
                 )}
               >
                 <ChatMarkdown text={entry.text} bridge={bridge} />
@@ -561,7 +553,7 @@ export function ChatMessageList({
                     <GenerationDots />
                   </span>
                 ) : null}
-              </article>
+              </MessageContent>
             );
             const sentImages = entry.role === 'user' ? (entry.imageAttachments ?? []) : [];
             if (
@@ -569,7 +561,8 @@ export function ChatMessageList({
               (entry.selectionContext !== undefined || sentImages.length > 0)
             ) {
               return (
-                <div
+                <Message
+                  from={entry.role}
                   key={entry.id}
                   data-chat-message-group={
                     entry.selectionContext !== undefined ? 'selection' : 'images'
@@ -583,33 +576,37 @@ export function ChatMessageList({
                   ) : null}
                   {sentImages.length > 0 ? <SentImageAttachments images={sentImages} /> : null}
                   {messageBubble}
-                </div>
+                </Message>
               );
             }
             if (entry.role === 'assistant' && previewLinks.length > 0) {
               return (
-                <div
+                <Message
+                  from={entry.role}
                   key={entry.id}
                   data-chat-message-group="assistant-with-sources"
                   className="flex w-full min-w-0 flex-col items-start gap-1"
                 >
                   {messageBubble}
                   <WebPreviewCards links={previewLinks} bridge={bridge} />
-                </div>
+                </Message>
               );
             }
             return (
-              <div key={entry.id} className="w-full min-w-0 max-w-full">
+              <Message key={entry.id} from={entry.role}>
                 {messageBubble}
-              </div>
+              </Message>
             );
           }
 
           const visualState = activityVisualState(entry, index, timeline.length, running);
           return <ChatActivityEntry key={entry.id} entry={entry} visualState={visualState} />;
         })}
-        <div ref={endRef} />
-      </div>
-    </div>
+      </ConversationContent>
+      <ConversationScrollButton
+        aria-label={t`Scroll to latest message`}
+        title={t`Scroll to latest message`}
+      />
+    </Conversation>
   );
 }
