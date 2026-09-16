@@ -2012,6 +2012,7 @@
     "YjhKI5": ["Cloning..."],
     "YlDuro": ["Fit height"],
     "YoGdcv": ["Discard queued writes"],
+    "YocCJW": ["Scroll to latest message"],
     "YqbZSs": ["Database pages share their content with every linked view."],
     "Yr74Ht": ["Neighbors"],
     "Yr8Yhw": ["Save appearance"],
@@ -2496,6 +2497,7 @@
     "gp3I7-": ["Before syncing, set your identity for git commits:"],
     "gt7daN": ["No database agent runs yet."],
     "gtEbeW": ["Highlight"],
+    "gul7is": ["Regenerate response"],
     "gvApb7": [
       "Turn the things you read into clear, trusted articles. Save a source, figure out what it means, then keep the final version so you can rely on it later."
     ],
@@ -2709,6 +2711,7 @@
     ],
     "kNiQp6": ["Pinned"],
     "kNqMMd": ["Folder"],
+    "kPOw9O": ["Copy message"],
     "kUn-CN": ["Sync off"],
     "kV2YZv": [
       "Don't see <0>Skills</0>? Enable <1>Settings <2/> Capabilities <3/> Code execution and file creation</1> first."
@@ -3239,6 +3242,7 @@
     "tCHy2K": ["Manage the GitHub account SynapseNote uses to browse and sync your repositories."],
     "tEihnS": ["Verifying database change"],
     "tHKQ6j": ["Renaming"],
+    "tKqDTo": ["Could not copy the message. Try again."],
     "tP5DDk": ["Apply link"],
     "tPm-dt": ["Target type"],
     "tQ-GT7": [
@@ -3606,6 +3610,7 @@
     "zQ_oUF": ["Workspace grant"],
     "zUhPuR": ["Open containing folder, ", ["hint"]],
     "zVzslF": ["PDF save failed. Retry"],
+    "zWyIM3": ["Wait for the current response to finish"],
     "zXY8th": ["Review required"],
     "zXj1rA": ["Search by meaning"],
     "zZ_I5K": ["Open project menu"],

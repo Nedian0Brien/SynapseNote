@@ -1596,6 +1596,12 @@ OpenAI Codex
 Copyright 2025 OpenAI
 ```
 
+### AI Elements (agent-chat-framework components)
+
+Copyright 2023 Vercel, Inc. Licensed under Apache-2.0.
+
+Source: https://github.com/vercel/ai-elements. Message, conversation and tool components in `packages/app/src/components/agent-chat-framework` are adapted from agent-chat-framework revision `62f5587613847d624a22a6735abd7d6dbc726324`. Changes are documented in source headers.
+
 ---
 
 ## Bundled Rust crates (native-config addon)
@@ -1664,6 +1670,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+### assistant-ui (agent-chat-framework composer and message actions)
+
+Copyright (c) 2025 AgentbaseAI Inc. Licensed under MIT (full text reproduced in the MIT section). Source: https://github.com/assistant-ui/assistant-ui. The composer and message actions in `packages/app/src/components/agent-chat-framework` is adapted from the same framework revision.
 
 ### `@antfu/install-pkg@1.1.0`
 Homepage: https://github.com/antfu/install-pkg#readme
@@ -6382,6 +6392,11 @@ Homepage: https://github.com/theKashey/use-sidecar
 
 Copyright (c) 2017 Anton Korzunov
 
+### `use-stick-to-bottom@1.1.6`
+Homepage: https://use-stick-to-bottom.samdenty.io
+
+Copyright (c) 2024 - present StackBlitz
+
 ### `use-sync-external-store@1.6.0`
 Homepage: https://github.com/facebook/react
 
@@ -6458,11 +6473,6 @@ Homepage: https://github.com/chalk/wrap-ansi
 Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
 
 ### `ws@8.21.1`
-Homepage: https://github.com/websockets/ws
-
-Copyright (c) 2011 Einar Otto Stangvik <einaros@gmail.com> Copyright (c) 2013 Arnout Kazemier and contributors Copyright (c) 2016 Luigi Pinca and contributors
-
-### `ws@8.20.0`
 Homepage: https://github.com/websockets/ws
 
 Copyright (c) 2011 Einar Otto Stangvik <einaros@gmail.com> Copyright (c) 2013 Arnout Kazemier and contributors Copyright (c) 2016 Luigi Pinca and contributors

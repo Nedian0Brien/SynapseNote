@@ -775,6 +775,14 @@ function build() {
     push(apacheEntry(e), '');
   }
   push(vendoredCodexEntry(), '');
+  push(
+    '### AI Elements (agent-chat-framework components)',
+    '',
+    'Copyright 2023 Vercel, Inc. Licensed under Apache-2.0.',
+    '',
+    'Source: https://github.com/vercel/ai-elements. Message, conversation and tool components in `packages/app/src/components/agent-chat-framework` are adapted from agent-chat-framework revision `62f5587613847d624a22a6735abd7d6dbc726324`. Changes are documented in source headers.',
+    '',
+  );
   hr();
 
   // Native-config addon — the Rust crates its `.node` statically links. The
@@ -794,6 +802,12 @@ function build() {
       '',
     );
     push('```', LICENSE_TEXTS.mit, '```', '');
+    push(
+      '### assistant-ui (agent-chat-framework composer and message actions)',
+      '',
+      'Copyright (c) 2025 AgentbaseAI Inc. Licensed under MIT (full text reproduced in the MIT section). Source: https://github.com/assistant-ui/assistant-ui. The composer and message actions in `packages/app/src/components/agent-chat-framework` is adapted from the same framework revision.',
+      '',
+    );
     for (const e of grouped.get('MIT')) {
       push(shortEntry(e), '');
     }

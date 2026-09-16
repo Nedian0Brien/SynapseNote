@@ -20,6 +20,7 @@ export type CliChatAction =
   | {
       readonly type: 'send';
       readonly text: string;
+      readonly requestPrompt?: string;
       readonly selectionContext?: CliChatSelectionContext;
       readonly imageAttachments?: readonly CliChatImageAttachment[];
     }
@@ -81,6 +82,7 @@ export function cliChatReducer(state: CliChatState, action: CliChatAction): CliC
           type: 'message',
           role: 'user',
           text: action.text,
+          ...(action.requestPrompt === undefined ? {} : { requestPrompt: action.requestPrompt }),
           ...(action.selectionContext === undefined
             ? {}
             : { selectionContext: action.selectionContext }),
