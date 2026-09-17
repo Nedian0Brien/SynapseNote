@@ -32,6 +32,8 @@ wiki/
 
 Don't free-hand it — call **`workflow({ kind: "wiki" })`** and follow the phased, STOP-gated guide. It auto-detects mode: a stubbed `OVERVIEW.md` (empty `source_commit`) → **generate** (survey → overview → architecture → modules → flows → concepts → link-graph audit); a stamped `source_commit` → **refresh** (diff `source_commit..HEAD`, update only affected pages, re-stamp).
 
+**Persist incrementally (MUST).** Wiki generation is multi-page and tool-call-heavy — host platforms (Factory, Cursor, Claude, etc.) may rate-limit or end sessions mid-run. Write each page immediately after reading its source; never hold finished module write-ups in context for a trailing batch. The workflow guide carries the full crash-safe + resume rules; re-invoking `workflow({ kind: "wiki" })` picks up from partial pages already in `wiki/`.
+
 **Two toolsets.** Read source code with NATIVE tools (`Read`/`Grep`/`Glob`/`Bash`) — OK MCP does not index non-markdown source. Author and audit the wiki with OK MCP verbs (`write`/`edit` for pages, `links`/`search` for the graph). Never hand-write wiki markdown with native `Write`/`Edit`.
 
 ## The two knobs
