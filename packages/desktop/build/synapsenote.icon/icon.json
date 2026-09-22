@@ -16,10 +16,10 @@
     {
       "layers": [
         {
-          "image-name": "Frame 10 (10) 1.svg",
-          "name": "Frame 10 (10) 1",
+          "image-name": "synapsenote-logo.png",
+          "name": "synapsenote-logo",
           "position": {
-            "scale": 0.8,
+            "scale": 1,
             "translation-in-points": [0, 0]
           }
         }

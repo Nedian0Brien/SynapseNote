@@ -1,4 +1,5 @@
 node_modules/
+worktree/
 dist/
 packages/*/bun.lock
 packages/desktop/out/
