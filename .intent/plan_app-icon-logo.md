@@ -17,7 +17,7 @@ date: 2026-09-22
 | `.gitignore` | 저장소 안의 `worktree/`를 추적 대상에서 제외 |
 | `packages/desktop/build/icon.png` | 개발 모드 Dock용 1024×1024 PNG 교체 |
 | `packages/desktop/build/synapsenote.icon/Assets/synapsenote-logo.png` | Icon Composer용 새 원본 PNG |
-| `packages/desktop/build/synapsenote.icon/icon.json` | 새 전경 레이어와 전체 크기 배율 지정 |
+| `packages/desktop/build/synapsenote.icon/icon.json` | 새 전경 레이어를 불투명하게 렌더링하고 자동 파란 배경 제거 |
 | `packages/desktop/build/synapsenote.icon/Assets/Frame 10 (10) 1.svg` | 더 이상 참조하지 않는 이전 전경 SVG 제거 |
 | `.changeset/<name>.md` | 사용자가 볼 앱 아이콘 변경 기록 |
 
@@ -27,8 +27,9 @@ date: 2026-09-22
 
 1. 이전 SVG 참조가 `icon.json`뿐인지 확인하고 제공 PNG를 1024×1024로 생성한다 — `sips` 크기로 확인한다.
 2. Icon Composer의 전경 레이어를 새 PNG로 바꾸고 1.0 배율로 설정한 뒤 이전 SVG를 제거한다 — `rg`로 잔여 참조가 없는지 확인한다.
-3. 변경 안내와 `worktree/` 제외 규칙을 추가한다 — staged diff로 대상 파일만 확인한다.
-4. 데스크톱 정적 검증과 로컬 macOS 번들 생성을 실행한다 — `check:desktop:local`, `build:desktop:local` 성공을 확인한다.
+3. Icon Composer의 자동 그라데이션을 제거하고 전경 레이어의 반투명도를 끈다 — Finder 미리보기에서 제공 이미지의 흰 배경이 유지되는지 확인한다.
+4. 변경 안내와 `worktree/` 제외 규칙을 추가한다 — staged diff로 대상 파일만 확인한다.
+5. 데스크톱 정적 검증과 로컬 macOS 번들 생성을 실행한다 — `check:desktop:local`, `build:desktop:local` 성공을 확인한다.
 
 ## 가장 위험한 단계
 

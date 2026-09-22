@@ -1,17 +1,4 @@
 {
-  "fill": {
-    "automatic-gradient": "display-p3:0.21569,0.51765,1.00000,1.00000",
-    "orientation": {
-      "start": {
-        "x": 0.5,
-        "y": 0
-      },
-      "stop": {
-        "x": 0.5,
-        "y": 0.7
-      }
-    }
-  },
   "groups": [
     {
       "layers": [
@@ -29,8 +16,8 @@
         "opacity": 0.5
       },
       "translucency": {
-        "enabled": true,
-        "value": 0.5
+        "enabled": false,
+        "value": 0
       }
     }
   ],
