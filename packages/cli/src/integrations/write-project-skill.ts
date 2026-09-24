@@ -1,13 +1,7 @@
-/**
- * Project-local Agent Skill installer + the path-safety guard it relies on.
- *
- * Both `ok init` and the desktop project-setup path
- * (`writeProjectAiIntegrations`) install the project-level runtime skill
- * through this one shared implementation.
- */
-import { cpSync, existsSync, lstatSync, mkdirSync, realpathSync, rmSync } from 'node:fs';
+/** Legacy runtime-skill migration and shared project-path guards. */
+import { existsSync, lstatSync, realpathSync, rmSync } from 'node:fs';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
-import { resolveBundledSkillDir } from '@nedian0brien/synapsenote-server';
+import { retireRuntimeSkills } from '@nedian0brien/synapsenote-server';
 import type { EditorId, EditorMcpTarget } from '../commands/editors.ts';
 
 // ---------------------------------------------------------------------------
@@ -110,45 +104,14 @@ export interface ProjectSkillResult {
 }
 
 export function writeProjectSkill(target: EditorMcpTarget, cwd: string): ProjectSkillResult {
-  const skillPath = target.projectSkillPath?.(cwd);
-  if (!skillPath) {
-    return {
-      editorId: target.id,
-      label: target.label,
-      action: 'skipped-unsupported',
-      path: '',
-    };
-  }
-
-  try {
-    // The rich `project` bundle — `name: synapsenote` — installs
-    // project-local. checkDesktop:true so a co-installed OK Desktop's
-    // (possibly newer) bundled assets win.
-    const sourceDir = resolveBundledSkillDir('project', { checkDesktop: true });
-    const targetDir = dirname(skillPath);
-    // Refuse before `rmSync(targetDir)` runs — without this, a symlinked
-    // ancestor (e.g. `.claude -> /etc`) would route the recursive removal +
-    // copy through the symlink target.
-    assertProjectPathSafe(targetDir, cwd);
-    const action = existsSync(skillPath) ? 'overwritten' : 'written';
-    rmSync(targetDir, { recursive: true, force: true });
-    mkdirSync(dirname(targetDir), { recursive: true });
-    cpSync(sourceDir, targetDir, { recursive: true });
-    return {
-      editorId: target.id,
-      label: target.label,
-      action,
-      path: skillPath,
-    };
-  } catch (err) {
-    return {
-      editorId: target.id,
-      label: target.label,
-      action: 'failed',
-      path: skillPath,
-      error: err instanceof Error ? err.message : String(err),
-    };
-  }
+  const failures = retireRuntimeSkills(cwd).filter((entry) => entry.status === 'failed');
+  return {
+    editorId: target.id,
+    label: target.label,
+    action: failures.length ? 'failed' : 'skipped-unsupported',
+    path: '',
+    ...(failures.length ? { error: failures.map((entry) => entry.error).join('; ') } : {}),
+  };
 }
 
 // ---------------------------------------------------------------------------

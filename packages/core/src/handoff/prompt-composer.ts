@@ -135,7 +135,7 @@ function sanitizePathForAtMention(path: string): string {
  * locus mode sooner.
  */
 export const OK_PROJECT_SKILL_POINTER =
-  "This is an SynapseNote project: load the `synapsenote` skill and use the SynapseNote MCP tools for all markdown — don't probe for `.ok/` or use native file tools on `.md` / `.mdx`.";
+  'Use the connected SynapseNote document tools for this request. Detailed reference guides are available through workflow({ kind: "guide", topic: "writing" }).';
 
 /** Prepend the standing skill pointer to a directive prompt body. */
 export function withSkillPointer(directive: string): string {

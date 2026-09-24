@@ -1,3 +1,4 @@
+import { SYNAPSENOTE_AGENT_INSTRUCTIONS, shellSingleQuote } from '@nedian0brien/synapsenote-core';
 /**
  * Behavioral tests for the "Open in terminal" launch path in TerminalSession.
  *
@@ -151,7 +152,16 @@ const { TerminalPanel, STAGE_PASTE_SETTLE_MS } = await import('./TerminalPanel')
 function bakedLaunch(createMock: ReturnType<typeof mock>): string | undefined {
   const calls = createMock.mock.calls;
   const last = calls.at(-1)?.[0] as { launchCommand?: string } | undefined;
-  return last?.launchCommand;
+  const command = last?.launchCommand;
+  if (!command) return command;
+  // Existing transport assertions inspect the prompt/approval portion, while
+  // every managed launch must independently carry the app contract.
+  expect(command).toContain('SynapseNote knowledge steward');
+  const runtime = SYNAPSENOTE_AGENT_INSTRUCTIONS.replaceAll('\n', '\u2028');
+  return command
+    .replace(` --append-system-prompt ${shellSingleQuote(runtime)}`, '')
+    .replace(` -c ${shellSingleQuote(`developer_instructions=${JSON.stringify(runtime)}`)}`, '')
+    .replace(`${shellSingleQuote(runtime).slice(1, -1)}\n\n`, '');
 }
 
 /** Any `terminal.input` write that looks like a baked launch command — must stay

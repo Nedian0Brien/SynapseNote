@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 /**
  * `workflow` MCP tool — the procedural-guide primers, dispatched on `kind`.
  *
@@ -18,6 +20,7 @@
  * teaching error.
  */
 import { z } from 'zod';
+import { resolveBundledSkillDir } from '../../build-skill-zip.ts';
 import { buildConsolidateBody } from './consolidate-body.ts';
 import { buildDiscoverBody } from './discover-body.ts';
 import { buildIngestBody } from './ingest-body.ts';
@@ -34,7 +37,22 @@ import {
 } from './shared.ts';
 import { buildWikiBody } from './wiki-body.ts';
 
+export const RUNTIME_GUIDE_TOPICS = [
+  'writing',
+  'linking',
+  'folder-model',
+  'doc-editing',
+  'conflict-resolution',
+  'components-and-visuals',
+  'media-and-assets',
+  'corpus-qa',
+  'template-authoring',
+  'cadence-and-logs',
+  'ingest-and-sources',
+] as const;
+
 export const DESCRIPTION = [
+  `- kind: "guide" — SynapseNote document reference; topic must be one of: ${RUNTIME_GUIDE_TOPICS.join(', ')}. Read on demand; no skill installation is needed.`,
   'Procedural guides for the three-layer wiki workflow + brownfield onboarding. Returns a numbered plan (instructional text, not data) — you execute it. Dispatches on `kind`:',
   '',
   '- `kind: "ingest"` — capture an external source (URL or local file) into the KB as raw, verbatim reference material (no analysis). Requires `source`.',
@@ -63,7 +81,7 @@ export function register(server: ServerInstance, deps: WorkflowToolDeps): void {
       description: DESCRIPTION,
       inputSchema: {
         kind: z
-          .enum(['ingest', 'research', 'consolidate', 'discover', 'wiki'])
+          .enum(['ingest', 'research', 'consolidate', 'discover', 'wiki', 'guide'])
           .describe('Which workflow guide to return.'),
         source: z
           .string()
@@ -84,12 +102,32 @@ export function register(server: ServerInstance, deps: WorkflowToolDeps): void {
       }),
     },
     async (args: {
-      kind: 'ingest' | 'research' | 'consolidate' | 'discover' | 'wiki';
+      kind: 'ingest' | 'research' | 'consolidate' | 'discover' | 'wiki' | 'guide';
       source?: string;
       topic?: string;
       cwd?: string;
     }) => {
       switch (args.kind) {
+        case 'guide': {
+          if (!RUNTIME_GUIDE_TOPICS.some((topic) => topic === args.topic)) {
+            return textResult(
+              `Error: choose a guide topic from ${RUNTIME_GUIDE_TOPICS.join(', ')}.`,
+              true,
+            );
+          }
+          try {
+            const root = resolveBundledSkillDir('project', { checkDesktop: false });
+            return textPlusStructured(
+              readFileSync(join(root, 'references', `${args.topic}.md`), 'utf8'),
+              { previewUrl: null },
+            );
+          } catch {
+            return textResult(
+              'Error: the bundled reference guide is unavailable. Update or repair the SynapseNote app installation.',
+              true,
+            );
+          }
+        }
         case 'ingest':
           if (!args.source) {
             return textResult(

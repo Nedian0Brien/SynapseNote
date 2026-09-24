@@ -1,23 +1,4 @@
-/**
- * CLI parity for the Desktop's skill-reclaim sweeps:
- *   - `reclaimProjectSkillsOnProjectOpen` (refresh existing SKILL.md + create
- *     for OK-wired editors; here it is always create-enabled because the sweep
- *     only ever runs inside a confirmed `.ok/` project)
- *   - `reclaimUserSkillsOnLaunch` (force-write user-global central + per-host)
- *
- * Why this exists: a teammate using only `@nedian0brien/synapsenote` (no
- * Desktop install) sees `SKILL.md` written once by `ok init` and never
- * refreshed. The Desktop already has these two sweeps; this is the CLI
- * port. Wired into `bootStartServer` and exposed as `ok repair-skills` for
- * explicit invocation. Reference: packages/desktop/src/main/skill-reclaim.ts.
- *
- * Version-gate asymmetry with Desktop: the user-scope sweep here checks
- * `~/.ok/skill-state.yml`'s `cli-hosts` entry and skips when the recorded
- * version equals the bundled version. Desktop force-writes every launch.
- * Justified by invocation frequency — `ok start` runs many times per day
- * vs. an Electron app launching 1-2 times. The project-scope sweep is NOT
- * version-gated (drift via manual edits can outlast a version bump).
- */
+/** Refresh optional user skills; archive project runtime rules now injected by the app. */
 import {
   existsSync as fsExistsSync,
   mkdirSync as fsMkdirSync,
@@ -38,6 +19,7 @@ import {
   recordSkillInstallEvent,
   resolveBundledSkillDir,
   resolveBundleEnabled,
+  retireRuntimeSkills,
   type SkillInstallEvent,
   USER_GLOBAL_BUNDLE_IDS,
   writeBundleDecision,
@@ -45,17 +27,8 @@ import {
 } from '@nedian0brien/synapsenote-server';
 import { Command } from 'commander';
 import { removeUserGlobalSkillBundle } from '../integrations/skill-teardown.ts';
-import {
-  assertProjectPathSafe,
-  assertProjectRemovalSafe,
-} from '../integrations/write-project-skill.ts';
-import {
-  CHAIN_VERSION_SENTINEL,
-  CHAIN_WIN_VERSION_SENTINEL,
-  EDITOR_TARGETS,
-  type EditorId,
-  HOSTS_WITH_USER_SKILL_DIR,
-} from './editors.ts';
+import { assertProjectRemovalSafe } from '../integrations/write-project-skill.ts';
+import { HOSTS_WITH_USER_SKILL_DIR } from './editors.ts';
 
 // `HOSTS_WITH_USER_SKILL_DIR` is the canonical core constant (derived from
 // PROJECT_SKILL_EDITOR_IDS + EDITOR_PROJECT_SKILL_ROOT), shared with the desktop
@@ -273,7 +246,13 @@ export interface RepairSkillsContext {
   fs?: RepairSkillsFsOps;
 }
 
-export type ProjectSkillOutcome = 'no-token' | 'reclaimed' | 'created' | 'failed';
+export type ProjectSkillOutcome =
+  | 'no-token'
+  | 'reclaimed'
+  | 'created'
+  | 'archived'
+  | 'preserved'
+  | 'failed';
 export type UserSkillCentralOutcome = 'written' | 'overwritten' | 'failed';
 export type UserSkillHostOutcome =
   | 'written'
@@ -476,119 +455,27 @@ function installUserBundleToHostDirs(
  * unreadable config) classifies as "not wired" rather than throwing, so one
  * bad config never blocks the other hosts.
  */
-function editorWiredForOk(configPath: string | undefined, fs: RepairSkillsFsOps): boolean {
-  if (!configPath) return false;
-  try {
-    if (!fs.existsSync(configPath)) return false;
-    const bytes = fs.readFileSync(configPath).toString('utf8');
-    return bytes.includes(CHAIN_VERSION_SENTINEL) || bytes.includes(CHAIN_WIN_VERSION_SENTINEL);
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Project-scope sweep. Per-host gate: refresh a host whose `SKILL.md` already
- * exists; additionally CREATE the skill for any host whose project MCP config
- * already carries the OK marker (`editorWiredForOk`). Always create-enabled:
- * the only callers are `ok start` (guarded to run inside an `.ok/` project root)
- * and the explicit `ok repair-skills` subcommand, so "this is an OK project" is
- * already established — there is no fresh/non-OK open to guard against here (the
- * Desktop, which DOES see non-OK opens, gates with its own `createIfWired`
- * flag). Heals the cohort of OK projects wired for MCP before the project-skill
- * writer existed.
- */
 function runProjectSweep(
   projectDir: string,
-  deps: Required<RepairSkillsDeps>,
-  fs: RepairSkillsFsOps,
+  _deps: Required<RepairSkillsDeps>,
+  _fs: RepairSkillsFsOps,
   logger: (event: RepairSkillsLogEvent) => void,
 ): ProjectSweepResult {
-  let sourceDir: string;
-  try {
-    sourceDir = deps.resolveProjectBundledSkillDir();
-  } catch (err) {
-    const error = err instanceof Error ? err.message : String(err);
-    logger({ event: 'project-skill-reclaim-bundle-missing', scope: 'project', error });
-    return { outcome: 'skipped', reason: 'bundle-missing' };
-  }
-
-  const entries: ProjectSkillEntry[] = [];
-  for (const host of HOSTS_WITH_USER_SKILL_DIR) {
-    const dest = join(projectDir, host.hostDir, 'skills', PROJECT_SKILL_DIR_NAME);
-    const skillFile = join(dest, 'SKILL.md');
-    const skillExists = fs.existsSync(skillFile);
-    // Create only when the editor is OK-wired for this project. The config read
-    // is skipped on the refresh path. The host's `editorId` is a valid
-    // `EDITOR_TARGETS` key by the coverage meta-test, so the lookup +
-    // `projectConfigPath` resolution reuse the single source of truth (no
-    // duplicated per-editor path table).
-    const projectConfigPath =
-      EDITOR_TARGETS[host.editorId as EditorId]?.projectConfigPath?.(projectDir);
-    const wired = !skillExists && editorWiredForOk(projectConfigPath, fs);
-    if (!skillExists && !wired) {
-      // Three scenarios surface here: (a) greenfield host that never ran
-      // `ok init` AND isn't OK-wired — nothing to do; (b) a host wired for some
-      // OTHER editor's MCP but not this one — also nothing; (c) the rare torn
-      // case — a prior `replaceDir` crashed between `rmSync(dest)` and
-      // `copyDirContents`, leaving the destination absent while the config
-      // still carries the marker (this re-creates it via the `wired` path).
-      entries.push({
-        editorId: host.editorId,
-        hostDir: host.hostDir,
-        path: dest,
-        outcome: 'no-token',
-      });
-      logger({
-        event: 'project-skill-reclaim-no-token',
-        scope: 'project',
-        editorId: host.editorId,
-        path: dest,
-      });
-      continue;
-    }
-    try {
-      // Symlink-escape guard before `replaceDir`'s rmSync — without this, a
-      // pre-existing `.claude -> /etc` (or similar) inside a malicious cloned
-      // repo would route the recursive removal + copy through the symlink
-      // target. Same defense `writeProjectSkill` (the `ok init` writer) has
-      // run since project-scope writes were added. The gate above is only
-      // partial defense — a planted SKILL.md symlink can satisfy `existsSync`,
-      // and the create path authors a fresh dir, so the guard is mandatory.
-      assertProjectPathSafe(dest, projectDir);
-      replaceDir(sourceDir, dest, fs);
-      const outcome: ProjectSkillOutcome = skillExists ? 'reclaimed' : 'created';
-      entries.push({
-        editorId: host.editorId,
-        hostDir: host.hostDir,
-        path: dest,
-        outcome,
-      });
-      logger({
-        event: skillExists ? 'project-skill-reclaim-reclaimed' : 'project-skill-reclaim-created',
-        scope: 'project',
-        editorId: host.editorId,
-        path: dest,
-      });
-    } catch (err) {
-      const error = err instanceof Error ? err.message : String(err);
-      entries.push({
-        editorId: host.editorId,
-        hostDir: host.hostDir,
-        path: dest,
-        outcome: 'failed',
-        error,
-      });
-      logger({
-        event: 'project-skill-reclaim-failed',
-        scope: 'project',
-        editorId: host.editorId,
-        path: dest,
-        error,
-      });
-    }
-  }
-
+  const entries: ProjectSkillEntry[] = retireRuntimeSkills(projectDir).map((entry) => {
+    logger({
+      event: `project-runtime-skill-${entry.status}`,
+      scope: 'project',
+      path: entry.path,
+      ...(entry.error ? { error: entry.error } : {}),
+    });
+    return {
+      editorId: 'runtime',
+      hostDir: '',
+      path: entry.path,
+      outcome: entry.status,
+      ...(entry.error ? { error: entry.error } : {}),
+    };
+  });
   return { outcome: 'done', entries };
 }
 
@@ -851,8 +738,9 @@ export async function repairSkills(ctx: RepairSkillsContext): Promise<RepairSkil
     return { status: 'skipped', reason: 'reclaim-disabled' };
   }
 
-  removeLegacyProjectRuntimeSkills(ctx.projectDir, fs, logger);
+  // Runtime migration preserves installed contents rather than refreshing them.
   const project = runProjectSweep(ctx.projectDir, deps, fs, logger);
+  retireRuntimeSkills(home);
   removeLegacyUserSkills(home, fs, logger);
   const user = await runUserSweep(home, deps, fs, logger);
 
@@ -895,12 +783,14 @@ function formatRepairSkillsResult(result: RepairSkillsResult): string {
   }
   const lines: string[] = ['Skill reclaim complete.'];
   if (result.project.outcome === 'done') {
+    const archived = result.project.entries.filter((e) => e.outcome === 'archived').length;
+    const preserved = result.project.entries.filter((e) => e.outcome === 'preserved').length;
     const reclaimed = result.project.entries.filter((e) => e.outcome === 'reclaimed').length;
     const created = result.project.entries.filter((e) => e.outcome === 'created').length;
     const noToken = result.project.entries.filter((e) => e.outcome === 'no-token').length;
     const failed = result.project.entries.filter((e) => e.outcome === 'failed').length;
     lines.push(
-      `  Project: ${reclaimed} reclaimed, ${created} created, ${noToken} no-token, ${failed} failed.`,
+      `  Project: ${archived} archived, ${preserved} preserved, ${reclaimed} reclaimed, ${created} created, ${noToken} no-token, ${failed} failed.`,
     );
   } else {
     lines.push(`  Project: skipped (${result.project.reason}).`);
@@ -929,7 +819,7 @@ export function repairSkillsCommand(): Command {
   // here would split semantics when both flags are passed simultaneously.
   return new Command('repair-skills')
     .description(
-      'Refresh bundled SKILL.md files for installed AI editors (project-local + user-global). Runs automatically during `ok start`; this command forces an explicit sweep.',
+      'Archive legacy app runtime skills and refresh optional user skills. Runs automatically during `ok start`.',
     )
     .action(async () => {
       const result = await repairSkills({

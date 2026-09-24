@@ -1,4 +1,5 @@
 import {
+  buildAppMcpArgs,
   buildClaudeSettingsArg,
   shellSingleQuote,
   TERMINAL_CLIS,
@@ -27,6 +28,8 @@ export interface CliChatLaunchInput {
 }
 
 export interface CliChatCommandOptions {
+  readonly appMcpUrl?: string;
+  readonly disableLegacyMcp?: boolean;
   /**
    * Codex's per-server approval override is only valid when the named MCP
    * server already exists in the user's global config. A partial `-c` override
@@ -116,6 +119,11 @@ export function buildCliChatCommand(
   input: CliChatLaunchInput,
   options: CliChatCommandOptions & { readonly promptViaStdin?: boolean } = {},
 ): string {
+  const appMcp = buildAppMcpArgs(input.cli, {
+    ...options,
+    autoApproveOkTools: input.permissionMode !== 'read-only' && options.autoApproveOkTools === true,
+  });
+  const mcpArgs = appMcp ? ` ${appMcp}` : '';
   const permissionMode = options.dataPlaneOnlyWrites === true ? 'read-only' : input.permissionMode;
   const quotedPrompt = shellSingleQuote(printablePtyArgument(input.prompt));
   const promptInput =
@@ -125,14 +133,14 @@ export function buildCliChatCommand(
   if (input.cli === 'codex') {
     const permissions = codexPermissionArgs(
       permissionMode,
-      options.autoApproveOkTools === true,
+      !options.appMcpUrl && options.autoApproveOkTools === true,
       options.dataPlaneOnlyWrites === true,
     );
     const model = codexModelArgs(input.modelSettings);
     const systemInstructions = systemInstructionArgs(input.cli);
     return input.sessionId === null
-      ? `codex exec --json --color never${permissions}${model}${systemInstructions}${promptInput}`
-      : `codex exec resume --json${permissions}${model}${systemInstructions} ${quotedSessionId}${promptInput}`;
+      ? `codex exec --json --color never${permissions}${model}${systemInstructions}${mcpArgs}${promptInput}`
+      : `codex exec resume --json${permissions}${model}${systemInstructions}${mcpArgs} ${quotedSessionId}${promptInput}`;
   }
   const permissions = claudePermissionArgs(permissionMode);
   const claudeSettings = buildClaudeSettingsArg({
@@ -145,7 +153,7 @@ export function buildCliChatCommand(
   const model = claudeModelArgs(input.modelSettings);
   const systemInstructions = systemInstructionArgs(input.cli);
   const resume = quotedSessionId === null ? '' : ` --resume ${quotedSessionId}`;
-  return `claude --print --verbose --output-format stream-json --include-partial-messages${permissions}${settings}${model}${systemInstructions}${resume}${promptInput}`;
+  return `claude --print --verbose --output-format stream-json --include-partial-messages${permissions}${settings}${model}${systemInstructions}${mcpArgs}${resume}${promptInput}`;
 }
 
 /**

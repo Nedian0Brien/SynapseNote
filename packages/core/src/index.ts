@@ -1,3 +1,4 @@
+export { SYNAPSENOTE_AGENT_INSTRUCTIONS } from './agent-runtime.ts';
 // Burst-grouping utility
 
 export {
@@ -985,6 +986,7 @@ export {
   assembleHandoffPrompt,
   assertNeverUrnIpcLookup,
   type BuildCliLaunchOptions,
+  buildAppMcpArgs,
   buildClaudeLaunchCommand,
   buildClaudeSettingsArg,
   buildClaudeUrl,

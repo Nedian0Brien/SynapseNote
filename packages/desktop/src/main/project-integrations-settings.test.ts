@@ -150,14 +150,8 @@ describe('registerProjectIntegrationsSettings — status', () => {
     expect(s.editors.find((e) => e.id === 'codex')?.state).toBe('foreign');
   });
 
-  test('surfaces a single skill row across capable editors', async () => {
-    const { status } = register(makeCli({ skillInstalled: true }));
-    const s = await status();
-    expect(s.skill?.installed).toBe(true);
-    expect(s.skill?.paths).toEqual([
-      '.claude/skills/synapsenote/SKILL.md',
-      '.codex/skills/synapsenote/SKILL.md',
-    ]);
+  test('does not offer an installable runtime skill', async () => {
+    expect((await register(makeCli({ skillInstalled: true })).status()).skill).toBeNull();
   });
 
   test('no project resolved → empty, hasProject false, still returns', async () => {
@@ -204,12 +198,12 @@ describe('registerProjectIntegrationsSettings — set', () => {
     if (!r.ok) expect(r.error).toContain('left unchanged');
   });
 
-  test('skill install fans out to every capable editor', async () => {
+  test('legacy install requests cannot reinstall the runtime skill', async () => {
     const cli = makeCli();
     const { set } = register(cli);
     const r = await set({ component: { kind: 'skill' }, enabled: true });
-    expect(r.ok).toBe(true);
-    expect(cli.skillWrites).toEqual(['claude', 'codex']);
+    expect(r.ok).toBe(false);
+    expect(cli.skillWrites).toEqual([]);
   });
 
   test('skill install reports the editors that failed', async () => {
@@ -217,7 +211,7 @@ describe('registerProjectIntegrationsSettings — set', () => {
     const { set } = register(cli);
     const r = await set({ component: { kind: 'skill' }, enabled: true });
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.error).toContain('codex');
+    if (!r.ok) expect(r.error).toContain('no longer installed');
   });
 
   test('skill uninstall fans out removeProjectSkill to every capable editor', async () => {

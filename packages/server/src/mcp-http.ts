@@ -69,9 +69,8 @@ function createSessionServer(
   forwardedConnectionId: string | undefined,
 ): McpHttpSession {
   const config = opts.config;
-  // No `instructions` handshake — see startGlobalMcpServer. The
-  // project skill is the single steering channel; the HTTP server only ever
-  // runs inside an OK project, where that skill is installed.
+  // Product guidance is injected by app-managed launches. Connecting this MCP
+  // endpoint from an external editor must not activate app-wide instructions.
   const server = new McpServer({
     name: MCP_SERVER_NAME,
     version: RUNTIME_VERSION,

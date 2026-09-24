@@ -1,46 +1,5 @@
-/**
- * User-level + project-level Agent Skill reclaim, PATH-independent.
- *
- * Why this exists: the prior path (`installUserSkill` → `npx -y skills@~1.5.0
- * add … --agent '*' -g --copy`) only succeeds when `npx` is on the spawn
- * env's PATH. macOS GUI launches (Dock click, LaunchServices, `open -b`)
- * carry the minimal GUI PATH (`/usr/bin:/bin:/usr/sbin:/sbin`) — Node/npm
- * installed under `/opt/homebrew/bin` or `~/.nvm/…` is invisible. The
- * subprocess `ENOENT`s, the fire-and-forget catch in `index.ts` swallows
- * it, and `~/.ok/skill-state.yml` never advances past whichever version a
- * past `ok init` (in a terminal with full PATH) recorded. Confirmed in
- * `~/.ok/skill-install-events.jsonl` — desktop-direct entries show
- * `outcome: "failed", reason: "spawn-error"` across multiple beta cuts.
- *
- * Fix: copy the bundled SKILL directory directly into the same on-disk
- * locations `npx skills add --copy` produces. No subprocess; no PATH
- * dependency; tracks the bundled version on every launch.
- *
- * Two bundles ship side by side: the user-global scope installs the slim
- * `discovery` bundle; the project-local scope installs the rich `project`
- * bundle. The two take different dir names so they cannot shadow each other.
- *
- * On-disk layout this mirrors (user scope — slim `discovery` bundle):
- *   - `<home>/.agents/skills/synapsenote-discovery/` — central store;
- *     `centralSkillExists` in `skill-install.ts` keys off this dir.
- *   - `<home>/.<host>/skills/synapsenote-discovery/` — per-host copy.
- *     Today's set is {claude, cursor, codex(`.codex`)}.
- * Any pre-split `<home>/.<host>/skills/synapsenote/` dir is removed first
- * (legacy migration).
- *
- * Project-scope variant: same primitive, scoped to `<projectDir>/.<host>/
- * skills/synapsenote/` — the rich `project` bundle keeps `name:
- * synapsenote` so the dir name is unchanged. Per-host gate: always refresh
- * a host whose `SKILL.md` already exists; additionally, when `createIfWired`
- * is set (managed-project opens only), CREATE the skill for any host whose
- * project MCP config already carries the OK marker. This heals the cohort of
- * managed projects onboarded before the project-skill writer existed — they
- * have OK MCP wiring but no skill, and the old no-create gate never fixed
- * them. Non-OK folders (no marker) and greenfield hosts still get nothing.
- *
- * Surface attribution recorded as `desktop-direct` so the existing event-log
- * vocabulary stays one set across `installUserSkill` and this writer.
- */
+import { retireRuntimeSkills } from '@nedian0brien/synapsenote-server';
+/** Refresh optional user skills and retire app-runtime projections. */
 
 import {
   existsSync as fsExistsSync,
@@ -52,13 +11,7 @@ import {
   writeFileSync as fsWriteFileSync,
 } from 'node:fs';
 import { dirname, join } from 'node:path';
-import {
-  assertProjectPathSafe,
-  EDITOR_TARGETS,
-  HOSTS_WITH_USER_SKILL_DIR,
-  removeLegacyProjectRuntimeSkills,
-  removeLegacyUserSkills,
-} from '@nedian0brien/synapsenote';
+import { HOSTS_WITH_USER_SKILL_DIR, removeLegacyUserSkills } from '@nedian0brien/synapsenote';
 import { resolveBundleEnabled } from '@nedian0brien/synapsenote-core';
 
 interface SkillReclaimLogger {
@@ -77,42 +30,6 @@ const DEFAULT_LOGGER: SkillReclaimLogger = {
 // PROJECT_SKILL_EDITOR_IDS + EDITOR_PROJECT_SKILL_ROOT, so it can no longer drift
 // from the CLI sibling (this list and the CLI's were previously hand-maintained
 // literals kept in lockstep by comment + a one-sided meta-test).
-
-/**
- * The version sentinel that `ok init` / project-setup writes as the first line
- * of every managed MCP server entry's resilient-chain body. Substring-present
- * in both the JSON (`.mcp.json`, `.cursor/mcp.json`) and TOML
- * (`.codex/config.toml`) on-disk forms. The `createIfWired` gate treats its
- * presence in an editor's project config as proof the editor is wired for this
- * OK project. Same string as `CHAIN_VERSION_SENTINEL` in the CLI's `editors.ts`,
- * kept as a local copy because that sentinel is `@internal` and deliberately
- * not re-exported from `@nedian0brien/synapsenote`; if it ever bumps (`v2`, …),
- * update this copy in the same change.
- */
-const OK_MCP_MARKER = '# ok-mcp-v1';
-
-/**
- * Windows sibling of `OK_MCP_MARKER` (`CHAIN_WIN_VERSION_SENTINEL` in the
- * CLI's `editors.ts`) — same local-copy rule as above. A shared project
- * config written by a Windows teammate carries this sentinel instead; both
- * count as "wired for OK".
- */
-const OK_MCP_WIN_MARKER = '# ok-mcp-win-v1';
-
-/**
- * Project-local install dir name. The rich `project` bundle keeps
- * `name: synapsenote`, so the project-scope dir stays `synapsenote` —
- * only the user-global dir takes the `-discovery` suffix.
- */
-const PROJECT_SKILL_DIR_NAME = 'synapsenote';
-/**
- * Pre-split skill dir name. The legacy migration removes any user-global
- * install under this name before the `discovery` bundle lands. Sibling
- * constant: `LEGACY_USER_SKILL_NAME` in
- * `packages/server/src/skill-install.ts` (kept separate so this desktop
- * module stays free of server imports).
- */
-const LEGACY_SKILL_DIR_NAME = 'synapsenote';
 
 interface SkillFsOps {
   existsSync(path: string): boolean;
@@ -178,38 +95,6 @@ function copyDirContents(sourceDir: string, destDir: string, fs: SkillFsOps): vo
       copyDirContents(src, dst, fs);
     } else {
       fs.writeFileSync(dst, fs.readFileSync(src));
-    }
-  }
-}
-
-/**
- * Legacy migration: remove any pre-split user-global `synapsenote` skill
- * dir (`~/.{claude,cursor,agents}/skills/synapsenote/`) before the new
- * `synapsenote-discovery` bundle lands. Direct `rmSync` — PATH-independent,
- * no `npx` shell-out. Idempotent: a no-op when the dir is already absent.
- * Failures are logged + swallowed.
- */
-function removeLegacyUserSkillDirs(home: string, fs: SkillFsOps, logger: SkillReclaimLogger): void {
-  // Sweep each install host PLUS `.agents` — the central store's parent, and
-  // codex's former home before it moved to `.codex`. A pre-split
-  // `~/.agents/skills/synapsenote` (the central store's old name) must
-  // still be cleaned even though `.agents` is no longer a per-host install dir.
-  const legacyHostDirs = [...HOSTS_WITH_USER_SKILL_DIR.map((h) => h.hostDir), '.agents'];
-  for (const hostDir of legacyHostDirs) {
-    const legacyDir = join(home, hostDir, 'skills', LEGACY_SKILL_DIR_NAME);
-    if (!fs.existsSync(legacyDir)) continue;
-    try {
-      fs.rmSync(legacyDir, { recursive: true, force: true });
-      logger.event({ event: 'user-skill-reclaim-legacy-removed', path: legacyDir });
-    } catch (err) {
-      // Structured `logger.event` (not just `logger.warn`) so the failure
-      // lands in the JSONL log alongside the success event above and the
-      // sibling central/host failure events — operators tail one stream.
-      logger.event({
-        event: 'user-skill-reclaim-legacy-remove-failed',
-        path: legacyDir,
-        error: err instanceof Error ? err.message : String(err),
-      });
     }
   }
 }
@@ -406,6 +291,10 @@ export async function reclaimUserSkillsOnLaunch(
     return { status: 'skipped', reason: 'bad-executable-path' };
   }
 
+  for (const entry of retireRuntimeSkills(home)) {
+    logger.event({ event: `user-runtime-skill-${entry.status}`, ...entry });
+  }
+
   // Resolve every user-global built-in bundle's source up front (discovery +
   // write-skill, wired from core's `USER_GLOBAL_BUNDLE_IDS`). The bundles ship
   // together, so if NONE resolve the assets dir is missing — skip exactly like
@@ -459,7 +348,6 @@ export async function reclaimUserSkillsOnLaunch(
 
   // Drop any pre-split `synapsenote` user-global install before the new
   // `synapsenote-discovery` bundle lands. Fail-soft.
-  removeLegacyUserSkillDirs(home, fs, logger);
   removeLegacyUserSkills(home, fs, (payload) => logger.event({ ...payload }));
 
   // Per-bundle opt-in gate. Explicit decline (`enabled: false`) is removed and
@@ -575,7 +463,7 @@ type ProjectSkillReclaimEntry = {
   editorId: string;
   hostDir: string;
   path: string;
-  status: 'no-token' | 'reclaimed' | 'created' | 'failed';
+  status: 'archived' | 'preserved' | 'failed';
   error?: string;
 };
 
@@ -607,133 +495,20 @@ interface ReclaimProjectSkillsOpts {
   logger?: SkillReclaimLogger;
 }
 
-/**
- * True iff `configPath` exists and its bytes contain `OK_MCP_MARKER` — proof
- * the editor is wired for this OK project. Read via the injectable fs; a read
- * error (torn / unreadable config) classifies as "not wired" rather than
- * throwing, so one bad config never blocks the other hosts.
- *
- * Distinct from `isEntryUpToDate` (the structured JSON-entry predicate used in
- * `project-mcp-reclaim.ts` / `mcp-wiring.ts`): this check is intentionally
- * format-agnostic — the marker is substring-present in both the JSON
- * (`.mcp.json`, `.cursor/mcp.json`) and the TOML (`.codex/config.toml`) forms —
- * and looser: it detects any config carrying the marker, not a well-formed
- * MCP entry.
- */
-function editorWiredForOk(configPath: string | undefined, fs: SkillFsOps): boolean {
-  if (!configPath) return false;
-  try {
-    if (!fs.existsSync(configPath)) return false;
-    const bytes = fs.readFileSync(configPath).toString('utf8');
-    return bytes.includes(OK_MCP_MARKER) || bytes.includes(OK_MCP_WIN_MARKER);
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Project-scope SKILL reclaim. Per-host gate: write
- * `<projectDir>/.<host>/skills/synapsenote/` when `SKILL.md` already exists
- * (refresh, always) OR — when `createIfWired` is set — when that editor's
- * project MCP config carries `OK_MCP_MARKER` (create; heals the managed
- * MCP-but-no-skill cohort). Without `createIfWired` this stays no-create:
- * greenfield / non-OK folders get nothing.
- */
 export async function reclaimProjectSkillsOnProjectOpen(
   opts: ReclaimProjectSkillsOpts,
 ): Promise<ProjectSkillReclaimResult> {
-  const {
-    projectDir,
-    executablePath,
-    isPackaged,
-    platform,
-    forceEnv,
-    reclaimDisableEnv,
-    createIfWired = false,
-    deps,
-    fs = defaultFsOps,
-    logger = DEFAULT_LOGGER,
-  } = opts;
-
-  if (reclaimDisableEnv === '1') return { status: 'skipped', reason: 'reclaim-disabled' };
-  if (platform !== 'darwin') return { status: 'skipped', reason: 'platform' };
-  if (!isPackaged && forceEnv !== '1') return { status: 'skipped', reason: 'dev-mode' };
-  if (!/\.app\/Contents\/MacOS\/[^/]+$/.test(executablePath)) {
-    return { status: 'skipped', reason: 'bad-executable-path' };
-  }
-
-  removeLegacyProjectRuntimeSkills(projectDir, fs, (payload) => logger.event({ ...payload }));
-
-  let sourceDir: string;
-  try {
-    sourceDir = deps.resolveBundledSkillDir();
-  } catch (err) {
-    const error = err instanceof Error ? err.message : String(err);
-    logger.event({ event: 'project-skill-reclaim-bundle-missing', error });
-    return { status: 'skipped', reason: 'bundle-missing' };
-  }
-
-  const entries: ProjectSkillReclaimEntry[] = [];
-  for (const host of HOSTS_WITH_USER_SKILL_DIR) {
-    const dest = join(projectDir, host.hostDir, 'skills', PROJECT_SKILL_DIR_NAME);
-    const skillFile = join(dest, 'SKILL.md');
-    const skillExists = fs.existsSync(skillFile);
-    // Create only when explicitly enabled AND the editor is OK-wired for this
-    // project. The config path comes from `EDITOR_TARGETS` (single source of
-    // truth); the read is skipped entirely on the refresh path.
-    const projectConfigPath = EDITOR_TARGETS[host.editorId]?.projectConfigPath?.(projectDir);
-    const wired = !skillExists && createIfWired && editorWiredForOk(projectConfigPath, fs);
-    if (!skillExists && !wired) {
-      entries.push({
-        editorId: host.editorId,
-        hostDir: host.hostDir,
-        path: dest,
-        status: 'no-token',
-      });
-      logger.event({
-        event: 'project-skill-reclaim-no-token',
-        editorId: host.editorId,
-        path: dest,
-      });
-      continue;
-    }
-    try {
-      // Symlink-escape guard before `replaceDir`'s rmSync — a planted
-      // `.claude -> /etc` (or symlinked ancestor escaping projectDir) must not
-      // route the recursive removal + copy through the symlink target. Matters
-      // most on the create path (fresh dir), but a planted SKILL.md symlink can
-      // also satisfy the refresh gate, so guard both.
-      assertProjectPathSafe(dest, projectDir);
-      replaceDir(sourceDir, dest, fs);
-      const status = skillExists ? 'reclaimed' : 'created';
-      entries.push({
-        editorId: host.editorId,
-        hostDir: host.hostDir,
-        path: dest,
-        status,
-      });
-      logger.event({
-        event: skillExists ? 'project-skill-reclaim-reclaimed' : 'project-skill-reclaim-created',
-        editorId: host.editorId,
-        path: dest,
-      });
-    } catch (err) {
-      const error = err instanceof Error ? err.message : String(err);
-      entries.push({
-        editorId: host.editorId,
-        hostDir: host.hostDir,
-        path: dest,
-        status: 'failed',
-        error,
-      });
-      logger.event({
-        event: 'project-skill-reclaim-failed',
-        editorId: host.editorId,
-        path: dest,
-        error,
-      });
-    }
-  }
-
+  if (opts.reclaimDisableEnv === '1') return { status: 'skipped', reason: 'reclaim-disabled' };
+  const logger = opts.logger ?? DEFAULT_LOGGER;
+  const entries = retireRuntimeSkills(opts.projectDir).map((entry) => {
+    logger.event({ event: `project-runtime-skill-${entry.status}`, ...entry });
+    return {
+      editorId: 'runtime',
+      hostDir: '',
+      path: entry.path,
+      status: entry.status,
+      ...(entry.error ? { error: entry.error } : {}),
+    };
+  });
   return { status: 'done', entries };
 }

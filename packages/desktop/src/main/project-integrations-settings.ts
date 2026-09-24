@@ -204,24 +204,7 @@ export function registerProjectIntegrationsSettings(
       });
       editors = [];
     }
-    const skillPaths = editorsWithProjectSkill(projectDir)
-      .map((id) => cli.projectSkillPath(id, projectDir))
-      .filter((p): p is string => p !== null)
-      .map((p) => relative(projectDir, p));
-    let skill: ProjectIntegrationsStatus['skill'] = null;
-    if (skillPaths.length > 0) {
-      let installed = false;
-      try {
-        installed = cli.isProjectSkillInstalled(projectDir);
-      } catch (err) {
-        logger.warn('project skill status failed', {
-          projectDir,
-          error: err instanceof Error ? err.message : String(err),
-        });
-      }
-      skill = { installed, paths: skillPaths };
-    }
-    return { available, hasProject: true, projectDir: tildify(projectDir), editors, skill };
+    return { available, hasProject: true, projectDir: tildify(projectDir), editors, skill: null };
   }
 
   async function setEditor(
@@ -290,6 +273,12 @@ export function registerProjectIntegrationsSettings(
     projectDir: string,
     enabled: boolean,
   ): Promise<{ ok: true } | { ok: false; error: string }> {
+    if (enabled)
+      return {
+        ok: false,
+        error:
+          'SynapseNote supplies agent instructions inside the app. A project runtime skill is no longer installed.',
+      };
     const editors = editorsWithProjectSkill(projectDir);
     if (editors.length === 0) {
       return { ok: false, error: 'No installed editor supports a project skill.' };

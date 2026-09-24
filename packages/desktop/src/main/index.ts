@@ -1850,18 +1850,9 @@ async function openProject(
     }
   }
 
-  // Project-skill reclaim — gated to committed managed opens. Reaching here
-  // means the open is committed (every cancel path returned earlier), so for a
-  // `managed` / confirmed `managed-requires-confirmation` open we pass
-  // `createIfWired: true`: any editor already wired for this OK project gets its
-  // SKILL.md created if missing (and refreshed if present), healing the
-  // MCP-but-no-skill cohort. A `fresh` open is handled by
-  // `writeProjectAiIntegrations` above (it writes skills for the editors the
-  // user consented to), so the reclaim doesn't run for it — no redundant
-  // double-write, and no seeding a folder the consent dialog just configured a
-  // different way.
+  // Retire earlier runtime-skill installations before an agent can start.
   if (discovery.kind === 'managed' || discovery.kind === 'managed-requires-confirmation') {
-    void reclaimProjectSkillsOnProjectOpen({
+    await reclaimProjectSkillsOnProjectOpen({
       projectDir: resolvedProjectDir,
       executablePath: app.getPath('exe'),
       isPackaged: app.isPackaged,
@@ -3257,7 +3248,8 @@ function registerIpcHandlers() {
         req.chat.cli === 'claude' && isProjectClaudeMcpOwn(projectRoot ?? undefined);
       const autoApproveOkTools =
         req.chat.autoApproveOkTools !== false &&
-        (claudeMcpOwn ||
+        (Boolean(editorCtx?.apiOrigin) ||
+          claudeMcpOwn ||
           (req.chat.cli === 'codex' &&
             classifyExistingMcpEntry(EDITOR_TARGETS.codex, '', osHomedir()).kind === 'present'));
       if (!terminalManager.hasSession(win.id, req.ptyId)) {
@@ -3272,12 +3264,20 @@ function registerIpcHandlers() {
         mcpPreApprove: claudeMcpOwn,
         dataPlaneOnlyWrites: process.env.SYNAPSENOTE_DATABASE_SANDBOX_MODE === 'data-plane-only',
         promptViaStdin: true,
+        ...(editorCtx?.apiOrigin
+          ? {
+              appMcpUrl: `${editorCtx.apiOrigin}/mcp`,
+              disableLegacyMcp:
+                req.chat.cli === 'codex' &&
+                classifyExistingMcpEntry(EDITOR_TARGETS.codex, '', osHomedir()).kind === 'present',
+            }
+          : {}),
       });
       try {
         const child = spawn('/bin/zsh', ['-l', '-c', command], {
           cwd: projectRoot ?? osHomedir(),
           detached: true,
-          env: process.env,
+          env: { ...process.env, OK_DESKTOP_TERMINAL: '1' },
           stdio: ['pipe', 'pipe', 'pipe'],
         });
         activeCliChatProcesses.set(processKey, child);

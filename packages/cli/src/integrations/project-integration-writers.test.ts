@@ -137,81 +137,13 @@ describe('mcpConfigWriter', () => {
 // ---------------------------------------------------------------------------
 
 describe('projectSkillWriter', () => {
-  test('id is "project-skill"', () => {
-    expect(projectSkillWriter.id).toBe('project-skill');
-  });
-
-  test('writes a fresh project-local skill and reports action "written"', () => {
-    const outcome = projectSkillWriter.write(EDITOR_TARGETS.claude, projectDir, {});
-
-    expect(outcome.integration).toBe('project-skill');
-    expect(outcome.editorId).toBe('claude');
-    expect(outcome.action).toBe('written');
-    expect(outcome.path).toBe(join(projectDir, '.claude', 'skills', 'synapsenote', 'SKILL.md'));
-    expect(outcome.error).toBeUndefined();
-    expect(existsSync(outcome.path ?? '')).toBe(true);
-  });
-
-  test('writes for cursor (.cursor/skills/synapsenote/SKILL.md)', () => {
-    const outcome = projectSkillWriter.write(EDITOR_TARGETS.cursor, projectDir, {});
-
-    expect(outcome.action).toBe('written');
-    expect(outcome.path).toBe(join(projectDir, '.cursor', 'skills', 'synapsenote', 'SKILL.md'));
-    expect(existsSync(outcome.path ?? '')).toBe(true);
-  });
-
-  test('writes for codex (.codex/skills/synapsenote/SKILL.md)', () => {
-    const outcome = projectSkillWriter.write(EDITOR_TARGETS.codex, projectDir, {});
-
-    expect(outcome.action).toBe('written');
-    expect(outcome.path).toBe(join(projectDir, '.codex', 'skills', 'synapsenote', 'SKILL.md'));
-    expect(existsSync(outcome.path ?? '')).toBe(true);
-  });
-
-  test('replaces an existing skill and reports action "overwritten"', () => {
-    // First write seeds the skill tree.
-    const first = projectSkillWriter.write(EDITOR_TARGETS.claude, projectDir, {});
-    expect(first.action).toBe('written');
-
-    // Second write against the now-present skill is "overwritten".
-    const second = projectSkillWriter.write(EDITOR_TARGETS.claude, projectDir, {});
-
-    expect(second.action).toBe('overwritten');
-    expect(second.path).toBe(first.path);
-    expect(existsSync(second.path ?? '')).toBe(true);
-  });
-
-  test('reports "skipped-unsupported" for an editor without projectSkillPath', () => {
-    const outcome = projectSkillWriter.write(EDITOR_TARGETS['claude-desktop'], projectDir, {});
-
-    expect(outcome.integration).toBe('project-skill');
-    expect(outcome.editorId).toBe('claude-desktop');
-    expect(outcome.action).toBe('skipped-unsupported');
-    expect(outcome.path).toBeUndefined();
-    expect(outcome.error).toBeUndefined();
-  });
-
-  test('reports "failed" with a non-empty error when the destination is blocked', () => {
-    // Plant a regular file at the skills parent so mkdirSync of the parent
-    // directory fails — writeProjectSkill catches and surfaces 'failed'.
-    mkdirSync(join(projectDir, '.claude'), { recursive: true });
-    writeFileSync(join(projectDir, '.claude', 'skills'), 'block');
-
-    const outcome = projectSkillWriter.write(EDITOR_TARGETS.claude, projectDir, {});
-
-    expect(outcome.action).toBe('failed');
-    expect(outcome.error).toBeDefined();
-    expect(outcome.error?.length ?? 0).toBeGreaterThan(0);
-    expect(outcome.path).toBe(join(projectDir, '.claude', 'skills', 'synapsenote', 'SKILL.md'));
-  });
-
-  test('never throws even when the target path environment is hostile', () => {
-    writeFileSync(join(projectDir, '.cursor'), 'block');
-
-    const editorIds: EditorId[] = ['claude', 'cursor', 'codex', 'claude-desktop'];
-    for (const id of editorIds) {
-      expect(() => projectSkillWriter.write(EDITOR_TARGETS[id], projectDir, {})).not.toThrow();
+  test('never installs runtime skills, including explicit legacy writer calls', () => {
+    for (const id of ['claude', 'cursor', 'codex', 'claude-desktop'] as const) {
+      const outcome = projectSkillWriter.write(EDITOR_TARGETS[id], projectDir, {});
+      expect(outcome.action).toBe('skipped-unsupported');
+      expect(outcome.path).toBeUndefined();
     }
+    expect(existsSync(join(projectDir, '.codex/skills/synapsenote/SKILL.md'))).toBe(false);
   });
 });
 
@@ -226,92 +158,43 @@ const outcomesFor = (
 
 describe('DEFAULT_PROJECT_INTEGRATIONS', () => {
   test('contains exactly [mcp-config, project-skill] in apply order', () => {
-    expect(DEFAULT_PROJECT_INTEGRATIONS.map((w) => w.id)).toEqual(['mcp-config', 'project-skill']);
+    expect(DEFAULT_PROJECT_INTEGRATIONS.map((w) => w.id)).toEqual(['mcp-config']);
   });
 
   test('the writers in the default set are the exported singletons', () => {
     expect(DEFAULT_PROJECT_INTEGRATIONS[0]).toBe(mcpConfigWriter);
-    expect(DEFAULT_PROJECT_INTEGRATIONS[1]).toBe(projectSkillWriter);
+    expect(DEFAULT_PROJECT_INTEGRATIONS).toHaveLength(1);
   });
 });
 
 describe('applyProjectIntegrations', () => {
-  test('runs every default writer for every selected editor (editor × writer)', () => {
+  test('installs MCP connections without projecting the runtime skill', () => {
     const outcomes = applyProjectIntegrations(projectDir, ['claude', 'cursor', 'codex']);
-
-    // 3 editors × 2 writers = 6 outcomes.
-    expect(outcomes).toHaveLength(6);
-
-    // Per-editor ordering: mcp-config, then project-skill.
-    expect(outcomesFor(outcomes, 'claude').map((o) => o.integration)).toEqual([
-      'mcp-config',
-      'project-skill',
-    ]);
-    expect(outcomesFor(outcomes, 'cursor').map((o) => o.integration)).toEqual([
-      'mcp-config',
-      'project-skill',
-    ]);
-    expect(outcomesFor(outcomes, 'codex').map((o) => o.integration)).toEqual([
-      'mcp-config',
-      'project-skill',
-    ]);
-
-    // Editor ordering preserved across the result.
-    expect(outcomes.map((o) => o.editorId)).toEqual([
-      'claude',
-      'claude',
-      'cursor',
-      'cursor',
-      'codex',
-      'codex',
-    ]);
-
-    // Sanity: all six landed on disk as the expected files.
+    expect(outcomes).toHaveLength(3);
+    expect(outcomes.map((o) => o.integration)).toEqual(['mcp-config', 'mcp-config', 'mcp-config']);
+    expect(outcomes.map((o) => o.editorId)).toEqual(['claude', 'cursor', 'codex']);
+    for (const host of ['.claude', '.cursor', '.codex']) {
+      expect(existsSync(join(projectDir, host, 'skills/synapsenote/SKILL.md'))).toBe(false);
+    }
     expect(existsSync(join(projectDir, '.mcp.json'))).toBe(true);
-    expect(existsSync(join(projectDir, '.claude', 'skills', 'synapsenote', 'SKILL.md'))).toBe(true);
-    expect(existsSync(join(projectDir, '.cursor', 'mcp.json'))).toBe(true);
-    expect(existsSync(join(projectDir, '.cursor', 'skills', 'synapsenote', 'SKILL.md'))).toBe(true);
-    expect(existsSync(join(projectDir, '.codex', 'config.toml'))).toBe(true);
-    expect(existsSync(join(projectDir, '.codex', 'skills', 'synapsenote', 'SKILL.md'))).toBe(true);
   });
 
   test('returns an empty array for an empty editorIds selection', () => {
     expect(applyProjectIntegrations(projectDir, [])).toEqual([]);
   });
 
-  test('one editor failing one integration never aborts the rest of the batch', () => {
-    // Block cursor's project-skill destination only.
-    mkdirSync(join(projectDir, '.cursor'), { recursive: true });
-    writeFileSync(join(projectDir, '.cursor', 'skills'), 'block');
-
+  test('an editor failure does not prevent other connections', () => {
+    writeFileSync(join(projectDir, '.cursor'), 'blocked');
     const outcomes = applyProjectIntegrations(projectDir, ['claude', 'cursor', 'codex']);
-
-    // Cursor's project-skill is 'failed' but every other (editor × writer)
-    // completed as expected.
-    const cursorSkill = outcomesFor(outcomes, 'cursor').find(
-      (o) => o.integration === 'project-skill',
-    );
-    expect(cursorSkill?.action).toBe('failed');
-    expect(cursorSkill?.error).toBeDefined();
-
-    // The other writers ran and either succeeded or skipped — none threw.
-    const cursorMcp = outcomesFor(outcomes, 'cursor').find((o) => o.integration === 'mcp-config');
-    expect(cursorMcp?.action).toBe('written');
-
-    for (const editorId of ['claude', 'codex'] as const) {
-      for (const integrationId of ['mcp-config', 'project-skill'] as const) {
-        const found = outcomes.find(
-          (o) => o.editorId === editorId && o.integration === integrationId,
-        );
-        expect(found?.action).toBe('written');
-      }
-    }
+    expect(outcomesFor(outcomes, 'cursor')[0]?.action).toBe('failed');
+    expect(outcomesFor(outcomes, 'claude')[0]?.action).toBe('written');
+    expect(outcomesFor(outcomes, 'codex')[0]?.action).toBe('written');
   });
 
-  test('claude-desktop yields skipped-unsupported for both default writers', () => {
+  test('claude-desktop has no project config', () => {
     const outcomes = applyProjectIntegrations(projectDir, ['claude-desktop']);
 
-    expect(outcomes).toHaveLength(2);
+    expect(outcomes).toHaveLength(1);
     for (const outcome of outcomes) {
       expect(outcome.action).toBe('skipped-unsupported');
       expect(outcome.error).toBeUndefined();

@@ -686,6 +686,8 @@ function TerminalSession({
             // tools need rewiring, and stays silent when fully wired.
             if (!cancelled) setReadiness(fresh);
             return buildCliLaunchArgString('claude', intent.prompt, {
+              appRuntime: true,
+              ...(bridge.config.apiOrigin ? { appMcpUrl: `${bridge.config.apiOrigin}/mcp` } : {}),
               mcpPreApprove: fresh.mcpPreApprovable === true,
               // Auto-approve OK's tools only when the project's `.mcp.json` entry is
               // verified OK's own (same gate as server-trust): auto-approving an
@@ -730,6 +732,13 @@ function TerminalSession({
           // else the `-c` override would break codex's config load. Other CLIs
           // (cursor/opencode/pi) never receive it.
           return buildCliLaunchArgString(intent.cli, intent.prompt, {
+            appRuntime: true,
+            ...(bridge.config.apiOrigin
+              ? {
+                  appMcpUrl: `${bridge.config.apiOrigin}/mcp`,
+                  disableLegacyMcp: res.okServerConfigured === true,
+                }
+              : {}),
             autoApproveOkTools:
               intent.cli === 'codex' &&
               res.okServerConfigured === true &&

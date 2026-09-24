@@ -789,6 +789,7 @@ export {
   splitMarkdownBlocks,
 } from './reconciliation.ts';
 export { resolvePackageVersion } from './resolve-package-version.ts';
+export { type RetiredRuntimeSkill, retireRuntimeSkills } from './retire-runtime-skills.ts';
 // Seed scaffolder (`ok seed`) — shared module for the CLI Commander wrapper
 // and the Electron IPC handler. Deterministic plan/apply split; writes the
 // Karpathy three-layer starter + optional log.md + per-folder

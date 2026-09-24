@@ -143,3 +143,31 @@ describe('CLI chat command', () => {
     expect(command.endsWith(' ')).toBe(false);
   });
 });
+
+test('new and resumed Claude chats always receive the app document contract', () => {
+  for (const sessionId of [null, 'existing-session']) {
+    const command = buildCliChatCommand({
+      ...input,
+      cli: 'claude',
+      sessionId,
+      modelSettings: { model: 'sonnet', effort: 'medium', speed: 'default' },
+    });
+    expect(command).toContain('--append-system-prompt');
+    expect(command).toContain('never fall back to direct filesystem writes');
+    expect(command).not.toContain('installed SynapseNote skill');
+  }
+});
+
+test('app chats use the live server without needing installed MCP config or runtime skills', () => {
+  const options = { appMcpUrl: 'http://127.0.0.1:49152/mcp', autoApproveOkTools: true };
+  for (const sessionId of [null, 'saved']) {
+    const command = buildCliChatCommand({ ...input, sessionId }, options);
+    expect(command).toContain('mcp_servers.synapsenote_app=');
+    expect(command).toContain(options.appMcpUrl);
+    expect(command).not.toContain('mcp_servers.synapsenote.default_tools');
+  }
+  expect(buildCliChatCommand({ ...input, permissionMode: 'read-only' }, options)).not.toContain(
+    'default_tools_approval_mode',
+  );
+  expect(() => buildCliChatCommand(input, { appMcpUrl: 'https://example.com/mcp' })).toThrow();
+});

@@ -1,13 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test';
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  symlinkSync,
-  writeFileSync,
-} from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { reclaimProjectSkillsOnProjectOpen, reclaimUserSkillsOnLaunch } from './skill-reclaim.ts';
@@ -22,17 +14,9 @@ const OK_WIRED_MCP_JSON = JSON.stringify({
   },
 });
 /** A `.mcp.json` with an unrelated server and no OK marker. */
-const UNWIRED_MCP_JSON = JSON.stringify({ mcpServers: { other: { command: 'node' } } });
+
 /** A `.mcp.json` carrying the WINDOWS chain sentinel — written by a Windows
  *  teammate into a shared repo; must still count as wired here. */
-const OK_WIRED_MCP_JSON_WIN = JSON.stringify({
-  mcpServers: {
-    synapsenote: {
-      command: 'powershell',
-      args: ['-NoProfile', '-NonInteractive', '-Command', '# ok-mcp-win-v1\nexit 127'],
-    },
-  },
-});
 
 const cleanupPaths: string[] = [];
 
@@ -352,7 +336,10 @@ describe('reclaimUserSkillsOnLaunch', () => {
     for (const hostDir of legacyHosts) {
       const legacy = join(home, hostDir, 'skills', 'synapsenote');
       mkdirSync(legacy, { recursive: true });
-      writeFileSync(join(legacy, 'SKILL.md'), '---\nname: synapsenote\n---\n# legacy\n');
+      writeFileSync(
+        join(legacy, 'SKILL.md'),
+        '---\nname: synapsenote\nmetadata:\n  author: SynapseNote\n  repository: https://github.com/Nedian0Brien/SynapseNote\n---\n# legacy\n',
+      );
     }
     const bundle = setupBundle();
     const deps = makeDeps({ bundle, version: '1.2.3' });
@@ -566,327 +553,47 @@ describe('reclaimUserSkillsOnLaunch — per-bundle opt-in gate', () => {
   });
 });
 
-describe('reclaimProjectSkillsOnProjectOpen', () => {
-  test('skipped on non-darwin', async () => {
-    const projectDir = mkdtempSync(join(tmpdir(), 'ok-proj-'));
-    cleanupPaths.push(projectDir);
-    const r = await reclaimProjectSkillsOnProjectOpen({
-      projectDir,
-      executablePath: EXE,
-      isPackaged: true,
-      platform: 'linux',
-      deps: { resolveBundledSkillDir: () => setupBundle() },
-    });
-    expect(r.status).toBe('skipped');
-  });
-
-  test('no SKILL.md on disk → no-token, no creation', async () => {
-    const projectDir = mkdtempSync(join(tmpdir(), 'ok-proj-'));
-    cleanupPaths.push(projectDir);
-    const r = await reclaimProjectSkillsOnProjectOpen({
-      projectDir,
-      executablePath: EXE,
-      isPackaged: true,
-      platform: 'darwin',
-      deps: { resolveBundledSkillDir: () => setupBundle() },
-    });
-    expect(r.status).toBe('done');
-    if (r.status === 'done') {
-      expect(r.entries.every((e) => e.status === 'no-token')).toBe(true);
-    }
-    expect(existsSync(join(projectDir, '.claude'))).toBe(false);
-    expect(existsSync(join(projectDir, '.cursor'))).toBe(false);
-    expect(existsSync(join(projectDir, '.agents'))).toBe(false);
-  });
-
-  test('codex project skill at .codex/skills/synapsenote is reclaimed when present', async () => {
-    const projectDir = mkdtempSync(join(tmpdir(), 'ok-proj-'));
-    cleanupPaths.push(projectDir);
-    const codexSkill = join(projectDir, '.codex', 'skills', 'synapsenote');
-    mkdirSync(codexSkill, { recursive: true });
-    writeFileSync(join(codexSkill, 'SKILL.md'), '---\nname: synapsenote\n---\n# v-old\n');
-    const bundle = setupBundle();
-    const r = await reclaimProjectSkillsOnProjectOpen({
-      projectDir,
-      executablePath: EXE,
-      isPackaged: true,
-      platform: 'darwin',
-      deps: { resolveBundledSkillDir: () => bundle },
-    });
-    expect(r.status).toBe('done');
-    if (r.status === 'done') {
-      const codex = r.entries.find((e) => e.editorId === 'codex');
-      expect(codex?.status).toBe('reclaimed');
-    }
-    expect(readFileSync(join(codexSkill, 'SKILL.md'), 'utf8')).toContain('v-new');
-    expect(existsSync(join(projectDir, '.claude'))).toBe(false);
-  });
-
-  test('existing SKILL.md is reclaimed with latest content', async () => {
-    const projectDir = mkdtempSync(join(tmpdir(), 'ok-proj-'));
-    cleanupPaths.push(projectDir);
-    const claudeSkill = join(projectDir, '.claude', 'skills', 'synapsenote');
-    mkdirSync(claudeSkill, { recursive: true });
-    writeFileSync(join(claudeSkill, 'SKILL.md'), '---\nname: synapsenote\n---\n# v-old\n');
-    const bundle = setupBundle();
-    const r = await reclaimProjectSkillsOnProjectOpen({
-      projectDir,
-      executablePath: EXE,
-      isPackaged: true,
-      platform: 'darwin',
-      deps: { resolveBundledSkillDir: () => bundle },
-    });
-    expect(r.status).toBe('done');
-    if (r.status === 'done') {
-      const claude = r.entries.find((e) => e.editorId === 'claude');
-      expect(claude?.status).toBe('reclaimed');
-    }
-    expect(readFileSync(join(claudeSkill, 'SKILL.md'), 'utf8')).toContain('v-new');
-    // Other host stayed no-token.
-    expect(existsSync(join(projectDir, '.cursor'))).toBe(false);
-  });
-
-  test('a host whose replaceDir throws is reported failed, not crashed', async () => {
-    const projectDir = mkdtempSync(join(tmpdir(), 'ok-proj-'));
-    cleanupPaths.push(projectDir);
-    const claudeSkill = join(projectDir, '.claude', 'skills', 'synapsenote');
-    mkdirSync(claudeSkill, { recursive: true });
-    writeFileSync(join(claudeSkill, 'SKILL.md'), '---\nname: synapsenote\n---\n# v-old\n');
-    const r = await reclaimProjectSkillsOnProjectOpen({
-      projectDir,
-      executablePath: EXE,
-      isPackaged: true,
-      platform: 'darwin',
-      deps: { resolveBundledSkillDir: () => setupBundle() },
-      // existsSync:true makes every host look reclaim-eligible; the throwing
-      // mkdirSync forces replaceDir to fail for each one.
-      fs: {
-        existsSync: () => true,
-        isDirectory: () => false,
-        readdirSync: () => [],
-        readFileSync: () => Buffer.from(''),
-        writeFileSync: () => {
-          throw new Error('EACCES: permission denied');
+describe('project runtime retirement on open', () => {
+  test('never creates a runtime skill for an MCP-wired project, on any platform', async () => {
+    const projectDir = makeHome();
+    writeFileSync(join(projectDir, '.mcp.json'), OK_WIRED_MCP_JSON);
+    for (const platform of ['darwin', 'linux', 'win32']) {
+      const result = await reclaimProjectSkillsOnProjectOpen({
+        projectDir,
+        executablePath: EXE,
+        isPackaged: false,
+        platform,
+        createIfWired: true,
+        deps: {
+          resolveBundledSkillDir: () => {
+            throw new Error('must not read bundle');
+          },
         },
-        mkdirSync: () => {
-          throw new Error('EACCES: permission denied');
-        },
-        rmSync: () => {},
-      },
-    });
-    expect(r.status).toBe('done');
-    if (r.status === 'done') {
-      expect(r.entries.length).toBeGreaterThan(0);
-      expect(r.entries.every((e) => e.status === 'failed')).toBe(true);
+      });
+      expect(result.status).toBe('done');
+      expect(existsSync(join(projectDir, '.claude/skills/synapsenote/SKILL.md'))).toBe(false);
     }
   });
 
-  test('reclaim disable env short-circuits', async () => {
-    const projectDir = mkdtempSync(join(tmpdir(), 'ok-proj-'));
-    cleanupPaths.push(projectDir);
-    const r = await reclaimProjectSkillsOnProjectOpen({
+  test('archives existing product rules with user edits and never recreates them', async () => {
+    const projectDir = makeHome();
+    const dir = join(projectDir, '.codex/skills/synapsenote');
+    mkdirSync(dir, { recursive: true });
+    const content =
+      '---\nname: synapsenote\nmetadata:\n  author: SynapseNote\n  repository: https://github.com/Nedian0Brien/SynapseNote\n---\nUser addition';
+    writeFileSync(join(dir, 'SKILL.md'), content);
+    const opts = {
       projectDir,
       executablePath: EXE,
-      isPackaged: true,
+      isPackaged: false,
       platform: 'darwin',
-      reclaimDisableEnv: '1',
-      deps: { resolveBundledSkillDir: () => setupBundle() },
-    });
-    expect(r.status).toBe('skipped');
-    if (r.status === 'skipped') expect(r.reason).toBe('reclaim-disabled');
-  });
-});
-
-describe('reclaimProjectSkillsOnProjectOpen — createIfWired (managed heal path)', () => {
-  test('creates SKILL.md for a host wired for OK MCP but missing the skill', async () => {
-    const projectDir = mkdtempSync(join(tmpdir(), 'ok-proj-'));
-    cleanupPaths.push(projectDir);
-    // Claude wired (`.mcp.json` carries the marker) but no skill on disk —
-    // the exact MCP-but-no-skill cohort this heals. cursor/codex unwired.
-    writeFileSync(join(projectDir, '.mcp.json'), OK_WIRED_MCP_JSON);
-    const bundle = setupBundle();
-    const events: Array<Record<string, unknown>> = [];
-    const r = await reclaimProjectSkillsOnProjectOpen({
-      projectDir,
-      executablePath: EXE,
-      isPackaged: true,
-      platform: 'darwin',
-      createIfWired: true,
-      deps: { resolveBundledSkillDir: () => bundle },
-      logger: { event: (e) => events.push(e), warn: () => {} },
-    });
-    expect(r.status).toBe('done');
-    if (r.status === 'done') {
-      expect(r.entries.find((e) => e.editorId === 'claude')?.status).toBe('created');
-      // The other hosts have no wired config → still no-token.
-      expect(r.entries.find((e) => e.editorId === 'cursor')?.status).toBe('no-token');
-      expect(r.entries.find((e) => e.editorId === 'codex')?.status).toBe('no-token');
-    }
-    const skillFile = join(projectDir, '.claude', 'skills', 'synapsenote', 'SKILL.md');
-    expect(existsSync(skillFile)).toBe(true);
-    expect(readFileSync(skillFile, 'utf8')).toContain('v-new');
-    expect(
-      events.some((e) => e.event === 'project-skill-reclaim-created' && e.editorId === 'claude'),
-    ).toBe(true);
-  });
-
-  test('creates SKILL.md for a host wired with the Windows chain sentinel', async () => {
-    const projectDir = mkdtempSync(join(tmpdir(), 'ok-proj-'));
-    cleanupPaths.push(projectDir);
-    writeFileSync(join(projectDir, '.mcp.json'), OK_WIRED_MCP_JSON_WIN);
-    const r = await reclaimProjectSkillsOnProjectOpen({
-      projectDir,
-      executablePath: EXE,
-      isPackaged: true,
-      platform: 'darwin',
-      createIfWired: true,
-      deps: { resolveBundledSkillDir: () => setupBundle() },
-    });
-    expect(r.status).toBe('done');
-    if (r.status === 'done') {
-      expect(r.entries.find((e) => e.editorId === 'claude')?.status).toBe('created');
-    }
-    expect(existsSync(join(projectDir, '.claude', 'skills', 'synapsenote', 'SKILL.md'))).toBe(true);
-  });
-
-  test('creates SKILL.md for cursor host wired via .cursor/mcp.json', async () => {
-    const projectDir = mkdtempSync(join(tmpdir(), 'ok-proj-'));
-    cleanupPaths.push(projectDir);
-    mkdirSync(join(projectDir, '.cursor'), { recursive: true });
-    writeFileSync(join(projectDir, '.cursor', 'mcp.json'), OK_WIRED_MCP_JSON);
-    const r = await reclaimProjectSkillsOnProjectOpen({
-      projectDir,
-      executablePath: EXE,
-      isPackaged: true,
-      platform: 'darwin',
-      createIfWired: true,
-      deps: { resolveBundledSkillDir: () => setupBundle() },
-    });
-    expect(r.status).toBe('done');
-    if (r.status === 'done') {
-      expect(r.entries.find((e) => e.editorId === 'cursor')?.status).toBe('created');
-      expect(r.entries.find((e) => e.editorId === 'claude')?.status).toBe('no-token');
-    }
-    expect(existsSync(join(projectDir, '.cursor', 'skills', 'synapsenote', 'SKILL.md'))).toBe(true);
-  });
-
-  test('creates SKILL.md for codex host wired via .codex/config.toml (TOML, marker substring)', async () => {
-    // Codex's wired signal lives in `.codex/config.toml` (TOML), and its skill
-    // installs to `.codex/skills/synapsenote/` — the config-path → skill-path
-    // mapping a typo could silently break. The marker is a substring of the TOML
-    // bytes, so the format-agnostic `includes` check detects it.
-    const projectDir = mkdtempSync(join(tmpdir(), 'ok-proj-'));
-    cleanupPaths.push(projectDir);
-    mkdirSync(join(projectDir, '.codex'), { recursive: true });
-    writeFileSync(
-      join(projectDir, '.codex', 'config.toml'),
-      '[mcp_servers.synapsenote]\ncommand = "/bin/sh"\nargs = ["-l", "-c", "# ok-mcp-v1\\nexec ok mcp"]\n',
-    );
-    const r = await reclaimProjectSkillsOnProjectOpen({
-      projectDir,
-      executablePath: EXE,
-      isPackaged: true,
-      platform: 'darwin',
-      createIfWired: true,
-      deps: { resolveBundledSkillDir: () => setupBundle() },
-    });
-    expect(r.status).toBe('done');
-    if (r.status === 'done') {
-      expect(r.entries.find((e) => e.editorId === 'codex')?.status).toBe('created');
-      expect(r.entries.find((e) => e.editorId === 'claude')?.status).toBe('no-token');
-    }
-    expect(existsSync(join(projectDir, '.codex', 'skills', 'synapsenote', 'SKILL.md'))).toBe(true);
-  });
-
-  test('does NOT create when a host config exists but has no OK marker', async () => {
-    const projectDir = mkdtempSync(join(tmpdir(), 'ok-proj-'));
-    cleanupPaths.push(projectDir);
-    // A `.mcp.json` with an unrelated server — host dir/config present, but the
-    // editor is NOT wired for THIS OK project. Guards the gate against seeding
-    // non-OK-wired editors.
-    writeFileSync(join(projectDir, '.mcp.json'), UNWIRED_MCP_JSON);
-    const r = await reclaimProjectSkillsOnProjectOpen({
-      projectDir,
-      executablePath: EXE,
-      isPackaged: true,
-      platform: 'darwin',
-      createIfWired: true,
-      deps: { resolveBundledSkillDir: () => setupBundle() },
-    });
-    expect(r.status).toBe('done');
-    if (r.status === 'done') {
-      expect(r.entries.every((e) => e.status === 'no-token')).toBe(true);
-    }
-    expect(existsSync(join(projectDir, '.claude', 'skills'))).toBe(false);
-  });
-
-  test('without createIfWired, a wired host stays no-token (default no-create preserved)', async () => {
-    const projectDir = mkdtempSync(join(tmpdir(), 'ok-proj-'));
-    cleanupPaths.push(projectDir);
-    writeFileSync(join(projectDir, '.mcp.json'), OK_WIRED_MCP_JSON);
-    const r = await reclaimProjectSkillsOnProjectOpen({
-      projectDir,
-      executablePath: EXE,
-      isPackaged: true,
-      platform: 'darwin',
-      // createIfWired omitted → defaults to false.
-      deps: { resolveBundledSkillDir: () => setupBundle() },
-    });
-    expect(r.status).toBe('done');
-    if (r.status === 'done') {
-      expect(r.entries.every((e) => e.status === 'no-token')).toBe(true);
-    }
-    expect(existsSync(join(projectDir, '.claude'))).toBe(false);
-  });
-
-  test('existing SKILL.md is refreshed (reclaimed), not re-created, even when wired', async () => {
-    const projectDir = mkdtempSync(join(tmpdir(), 'ok-proj-'));
-    cleanupPaths.push(projectDir);
-    const claudeSkill = join(projectDir, '.claude', 'skills', 'synapsenote');
-    mkdirSync(claudeSkill, { recursive: true });
-    writeFileSync(join(claudeSkill, 'SKILL.md'), '---\nname: synapsenote\n---\n# v-old\n');
-    writeFileSync(join(projectDir, '.mcp.json'), OK_WIRED_MCP_JSON);
-    const r = await reclaimProjectSkillsOnProjectOpen({
-      projectDir,
-      executablePath: EXE,
-      isPackaged: true,
-      platform: 'darwin',
-      createIfWired: true,
-      deps: { resolveBundledSkillDir: () => setupBundle() },
-    });
-    expect(r.status).toBe('done');
-    if (r.status === 'done') {
-      expect(r.entries.find((e) => e.editorId === 'claude')?.status).toBe('reclaimed');
-    }
-    expect(readFileSync(join(claudeSkill, 'SKILL.md'), 'utf8')).toContain('v-new');
-  });
-
-  test('refuses to create through a host-dir symlink escaping the project', async () => {
-    const projectDir = mkdtempSync(join(tmpdir(), 'ok-proj-'));
-    cleanupPaths.push(projectDir);
-    // `.claude` is a symlink to a directory OUTSIDE the project; a wired config
-    // makes the create path eligible. The escape guard must fire BEFORE any
-    // rm/copy so the symlink target stays untouched.
-    const escapeTarget = mkdtempSync(join(tmpdir(), 'ok-escape-'));
-    cleanupPaths.push(escapeTarget);
-    const witness = join(escapeTarget, 'witness.txt');
-    writeFileSync(witness, 'do-not-touch');
-    symlinkSync(escapeTarget, join(projectDir, '.claude'));
-    writeFileSync(join(projectDir, '.mcp.json'), OK_WIRED_MCP_JSON);
-    const r = await reclaimProjectSkillsOnProjectOpen({
-      projectDir,
-      executablePath: EXE,
-      isPackaged: true,
-      platform: 'darwin',
-      createIfWired: true,
-      deps: { resolveBundledSkillDir: () => setupBundle() },
-    });
-    expect(r.status).toBe('done');
-    if (r.status === 'done') {
-      const claude = r.entries.find((e) => e.editorId === 'claude');
-      expect(claude?.status).toBe('failed');
-      expect(claude?.error ?? '').toMatch(/outside the project directory|symbolic link/i);
-    }
-    expect(readFileSync(witness, 'utf8')).toBe('do-not-touch');
+      deps: { resolveBundledSkillDir: setupBundle },
+    };
+    const first = await reclaimProjectSkillsOnProjectOpen(opts);
+    expect(first.status).toBe('done');
+    if (first.status === 'done') expect(first.entries[0]?.status).toBe('archived');
+    expect(existsSync(join(dir, 'SKILL.md'))).toBe(false);
+    const second = await reclaimProjectSkillsOnProjectOpen(opts);
+    if (second.status === 'done') expect(second.entries).toEqual([]);
   });
 });

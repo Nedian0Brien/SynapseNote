@@ -1734,24 +1734,15 @@ export async function runInit(options: InitCommandOptions = {}): Promise<InitCom
     }
   }
 
-  // Project-local skill install. The rich `project` bundle rides with the
-  // repo. Decoupled from the MCP-config scope flag AND from `--no-mcp` —
-  // skills are independent of MCP wiring (the rich skill applies whenever an
-  // MCP server IS registered, which a `--no-mcp` user may do via custom
-  // wiring). Runs once per project-capable target; `projectTargets` is
-  // computed regardless of `skipMcp` and is already de-duplicated by editor id.
-  //
-  // De-dupe by RESOLVED skill path too: most editors resolve to their own
-  // per-editor dir (`.codex/skills`, `.opencode/skills`, …) so this is usually a
-  // no-op, but should two targets ever share a `projectSkillPath` it is written
-  // once — keeping the post-init notice clean — and the first target in
-  // `projectTargets` order owns the write.
+  // Migrate older runtime skill copies without reinstalling them. MCP scope
+  // flags do not change the app-only instruction boundary.
   const writtenSkillPaths = new Set<string>();
   for (const target of projectTargets) {
     const skillPath = target.projectSkillPath?.(projectRoot);
     if (!skillPath || writtenSkillPaths.has(skillPath)) continue;
     writtenSkillPaths.add(skillPath);
-    projectSkillResults.push(writeProjectSkill(target, projectRoot));
+    const migration = writeProjectSkill(target, projectRoot);
+    if (migration.action === 'failed') projectSkillResults.push(migration);
   }
 
   // Editors skipped for project-scope because they have no project-local config format.

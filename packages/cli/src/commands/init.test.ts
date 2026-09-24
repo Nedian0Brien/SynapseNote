@@ -504,17 +504,17 @@ describe('runInit', () => {
       expect(config.mcp[result.editors[0].serverName]).toEqual(PUBLISHED_OPENCODE_ENTRY);
     });
 
-    it('writes a distinct project skill for Codex and OpenCode in their own dirs', async () => {
+    it('keeps Codex and OpenCode free of app runtime skills', async () => {
       const result = await runInitForTest({ editors: ['codex', 'opencode'], scope: 'project' });
       const codexSkill = join(testDir, '.codex', 'skills', 'synapsenote', 'SKILL.md');
       const opencodeSkill = join(testDir, '.opencode', 'skills', 'synapsenote', 'SKILL.md');
       // Codex and OpenCode resolve to their OWN per-editor dirs (`.codex/skills`,
       // `.opencode/skills`) — not a shared `.agents/skills/` — so each writes a
       // distinct project-skill bundle (the resolved-path de-dupe is a no-op here).
-      expect(result.projectSkills.some((s) => s.path === codexSkill)).toBe(true);
-      expect(result.projectSkills.some((s) => s.path === opencodeSkill)).toBe(true);
-      expect(existsSync(codexSkill)).toBe(true);
-      expect(existsSync(opencodeSkill)).toBe(true);
+      expect(result.projectSkills).toEqual([]);
+      expect(existsSync(opencodeSkill)).toBe(false);
+      expect(existsSync(codexSkill)).toBe(false);
+      expect(existsSync(opencodeSkill)).toBe(false);
       expect(existsSync(join(testDir, '.agents', 'skills', 'synapsenote', 'SKILL.md'))).toBe(false);
     });
   });
@@ -547,11 +547,11 @@ describe('runInit', () => {
       expect(readFileSync(piBridgePath(), 'utf-8')).toBe(first);
     });
 
-    it('writes the Pi project skill into .pi/skills/', async () => {
+    it('does not install the runtime skill into Pi', async () => {
       const result = await runInitForTest({ editors: ['pi'], scope: 'project' });
       const piSkill = join(testDir, '.pi', 'skills', 'synapsenote', 'SKILL.md');
-      expect(result.projectSkills.some((s) => s.path === piSkill)).toBe(true);
-      expect(existsSync(piSkill)).toBe(true);
+      expect(result.projectSkills).toEqual([]);
+      expect(existsSync(piSkill)).toBe(false);
     });
 
     it('user scope produces NO pi result and never touches ~/.pi (project-scope-only editor)', async () => {
@@ -1301,14 +1301,13 @@ describe('runInit', () => {
       expect(existsSync(join(testDir, '.mcp.json'))).toBe(false);
     });
 
-    it('scope=user still writes the project-local skill (project-skill decoupled from MCP scope)', async () => {
+    it('scope=user does not install an app runtime skill', async () => {
       // The rich project skill rides with the repo regardless of MCP-config
       // scope — `scope=user` writes no project MCP config but still installs it.
       const result = await runInitForTest({ editors: ['claude'], scope: 'user' });
       expect(existsSync(join(testDir, '.mcp.json'))).toBe(false);
-      const claudeSkill = result.projectSkills.find((s) => s.editorId === 'claude');
-      expect(claudeSkill?.action).toBe('written');
-      expect(existsSync(join(testDir, '.claude', 'skills', 'synapsenote', 'SKILL.md'))).toBe(true);
+      expect(result.projectSkills).toEqual([]);
+      expect(existsSync(join(testDir, '.claude', 'skills', 'synapsenote', 'SKILL.md'))).toBe(false);
     });
 
     it('scope=project writes only project-level config for Claude', async () => {
@@ -1323,13 +1322,8 @@ describe('runInit', () => {
       expect(existsSync(claudeConfigPath())).toBe(false);
       // Project-level config IS written
       expect(existsSync(join(testDir, '.mcp.json'))).toBe(true);
-      expect(result.projectSkills).toHaveLength(1);
-      expect(result.projectSkills[0]).toMatchObject({
-        editorId: 'claude',
-        action: 'written',
-        path: join(testDir, '.claude', 'skills', 'synapsenote', 'SKILL.md'),
-      });
-      expect(existsSync(join(testDir, '.claude', 'skills', 'synapsenote', 'SKILL.md'))).toBe(true);
+      expect(result.projectSkills).toEqual([]);
+      expect(existsSync(join(testDir, '.claude', 'skills', 'synapsenote', 'SKILL.md'))).toBe(false);
     });
 
     it('scope=project writes project-level configs for claude, cursor, codex', async () => {
@@ -1345,27 +1339,9 @@ describe('runInit', () => {
       expect(existsSync(join(testDir, '.mcp.json'))).toBe(true);
       expect(existsSync(join(testDir, '.cursor', 'mcp.json'))).toBe(true);
       expect(existsSync(join(testDir, '.codex', 'config.toml'))).toBe(true);
-      expect(result.projectSkills).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            editorId: 'claude',
-            action: 'written',
-            path: join(testDir, '.claude', 'skills', 'synapsenote', 'SKILL.md'),
-          }),
-          expect.objectContaining({
-            editorId: 'cursor',
-            action: 'written',
-            path: join(testDir, '.cursor', 'skills', 'synapsenote', 'SKILL.md'),
-          }),
-          expect.objectContaining({
-            editorId: 'codex',
-            action: 'written',
-            path: join(testDir, '.codex', 'skills', 'synapsenote', 'SKILL.md'),
-          }),
-        ]),
-      );
-      expect(existsSync(join(testDir, '.cursor', 'skills', 'synapsenote', 'SKILL.md'))).toBe(true);
-      expect(existsSync(join(testDir, '.codex', 'skills', 'synapsenote', 'SKILL.md'))).toBe(true);
+      expect(result.projectSkills).toEqual([]);
+      expect(existsSync(join(testDir, '.cursor', 'skills', 'synapsenote', 'SKILL.md'))).toBe(false);
+      expect(existsSync(join(testDir, '.codex', 'skills', 'synapsenote', 'SKILL.md'))).toBe(false);
     });
 
     it('scope=project silently skips editors without projectConfigPath (claude-desktop)', async () => {
@@ -1388,7 +1364,7 @@ describe('runInit', () => {
       expect(projResult?.action).toBe('written');
       expect(existsSync(claudeConfigPath())).toBe(true);
       expect(existsSync(join(testDir, '.mcp.json'))).toBe(true);
-      expect(existsSync(join(testDir, '.claude', 'skills', 'synapsenote', 'SKILL.md'))).toBe(true);
+      expect(existsSync(join(testDir, '.claude', 'skills', 'synapsenote', 'SKILL.md'))).toBe(false);
     });
 
     it('scope=both suppresses project-config notice for paths just written', async () => {
@@ -1403,8 +1379,8 @@ describe('runInit', () => {
       const result = await runInitForTest({ editors: ['claude'], scope: 'project' });
       const output = formatInitResult(result, testDir);
       expect(output).toContain('Claude (project)');
-      expect(output).toContain('Project-local skills:');
-      expect(output).toContain('.claude/skills/synapsenote/SKILL.md');
+      expect(output).not.toContain('Project-local skills:');
+      expect(output).not.toContain('.claude/skills/synapsenote/SKILL.md');
     });
 
     it('--no-mcp skips all MCP writes regardless of scope', async () => {
@@ -1415,15 +1391,14 @@ describe('runInit', () => {
       expect(existsSync(join(testDir, '.mcp.json'))).toBe(false);
     });
 
-    it('--no-mcp still writes the project-local skill (SPEC 2026-05-19-ok-skill-split FR7 / AC7)', async () => {
+    it('--no-mcp does not install an app runtime skill', async () => {
       // Skills are decoupled from MCP-config writes: `--no-mcp` controls MCP
       // wiring only — the rich project skill still installs.
       const result = await runInitForTest({ editors: ['claude'], mcp: false });
       expect(result.editors[0].action).toBe('skipped-flag');
       expect(existsSync(join(testDir, '.mcp.json'))).toBe(false);
-      const claudeSkill = result.projectSkills.find((s) => s.editorId === 'claude');
-      expect(claudeSkill?.action).toBe('written');
-      expect(existsSync(join(testDir, '.claude', 'skills', 'synapsenote', 'SKILL.md'))).toBe(true);
+      expect(result.projectSkills).toEqual([]);
+      expect(existsSync(join(testDir, '.claude', 'skills', 'synapsenote', 'SKILL.md'))).toBe(false);
     });
 
     it('scope=both "Next steps" deduplicates editor labels (no double-count)', async () => {
@@ -1500,8 +1475,7 @@ describe('runInit', () => {
         const result = await runInitForTest({ editors: ['claude'], scope: 'project' });
 
         const skill = result.projectSkills.find((s) => s.editorId === 'claude');
-        expect(skill?.action).toBe('failed');
-        expect(skill?.error).toMatch(/outside the project directory/);
+        expect(skill).toBeUndefined();
         expect(readFileSync(join(escapeTarget, 'sentinel.txt'), 'utf-8')).toBe('untouched\n');
       } finally {
         rmSync(escapeTarget, { recursive: true, force: true });

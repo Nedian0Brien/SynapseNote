@@ -16,6 +16,7 @@
  * or inject shell, regardless of what bytes the composed prompt carries.
  */
 
+import { SYNAPSENOTE_AGENT_INSTRUCTIONS } from '../agent-runtime.ts';
 import { MCP_SERVER_NAME } from '../constants/mcp.ts';
 import type { HandoffTarget } from './types.ts';
 
@@ -240,6 +241,11 @@ export const TERMINAL_CLI_IDS = [
 ] as const satisfies readonly TerminalCli[];
 
 export interface BuildCliLaunchOptions {
+  /** Set only for an agent launched inside SynapseNote. Never persisted to user config. */
+  readonly appRuntime?: boolean;
+  /** Live app server, scoped to this launch. Never stored in an editor config. */
+  readonly appMcpUrl?: string;
+  readonly disableLegacyMcp?: boolean;
   /**
    * Include Claude's MCP server-trust pre-approval (`enabledMcpjsonServers`).
    * Honored only for `claude`. Defaults to false — the SAFE default. The launch
@@ -295,10 +301,25 @@ export function buildCliLaunchArgString(
   const fixedArgs =
     cli === 'claude'
       ? buildClaudeSettingsArg(opts)
-      : opts.autoApproveOkTools === true && info.autoApproveArg
+      : !opts.appMcpUrl && opts.autoApproveOkTools === true && info.autoApproveArg
         ? info.autoApproveArg
         : '';
-  const fixedPrefix = fixedArgs ? `${fixedArgs} ` : '';
+  const runtime =
+    opts.appRuntime === true ? SYNAPSENOTE_AGENT_INSTRUCTIONS.replaceAll('\n', '\u2028') : '';
+  const runtimeArgs = !runtime
+    ? ''
+    : cli === 'codex'
+      ? `-c ${shellSingleQuote(`developer_instructions=${JSON.stringify(runtime)}`)}`
+      : cli === 'claude'
+        ? `--append-system-prompt ${shellSingleQuote(runtime)}`
+        : '';
+  const args = [fixedArgs, runtimeArgs, opts.appRuntime === true ? buildAppMcpArgs(cli, opts) : '']
+    .filter(Boolean)
+    .join(' ');
+  const fixedPrefix = args ? `${args} ` : '';
+  // Providers without a dedicated instruction flag receive the contract in their
+  // launch prompt. No skill directory or persistent provider config is changed.
+  if (runtime && !runtimeArgs) prompt = `${runtime}\n\n${prompt ?? ''}`;
   // Promptless: emit a bare `<bin>` (plus any opted-in fixed args). `fixedPrefix`
   // carries its own trailing separator space, redundant with nothing after it.
   if (prompt == null || prompt.length === 0) {
@@ -324,6 +345,32 @@ export function buildCliLaunchCommand(
   opts: BuildCliLaunchOptions = {},
 ): string {
   return `${buildCliLaunchArgString(cli, prompt, opts)}\r`;
+}
+
+/** Session-local MCP connection; use a separate Codex ID to avoid merging
+ * an HTTP URL into an existing stdio table. URL comes from the app server. */
+export function buildAppMcpArgs(cli: TerminalCli, opts: BuildCliLaunchOptions): string {
+  if (!opts.appMcpUrl || (cli !== 'codex' && cli !== 'claude')) return '';
+  const url = new URL(opts.appMcpUrl);
+  if (
+    url.protocol !== 'http:' ||
+    !['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname) ||
+    url.pathname !== '/mcp' ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash
+  ) {
+    throw new Error('App MCP must use the local SynapseNote server');
+  }
+  if (cli === 'claude')
+    return `--mcp-config ${shellSingleQuote(JSON.stringify({ mcpServers: { synapsenote: { type: 'http', url: url.href } } }))}`;
+  const approval =
+    opts.autoApproveOkTools === true ? ', default_tools_approval_mode="approve"' : '';
+  const config = `mcp_servers.synapsenote_app={url=${JSON.stringify(url.href)}${approval}}`;
+  const legacy =
+    opts.disableLegacyMcp === true ? ` -c 'mcp_servers.synapsenote.enabled=false'` : '';
+  return `-c ${shellSingleQuote(config)}${legacy}`;
 }
 
 /**

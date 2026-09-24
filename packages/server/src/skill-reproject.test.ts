@@ -124,3 +124,15 @@ describe('reprojectAllManagedSkills', () => {
     expect(r.reprojected.find((s) => s.name === 'personal-skill')).toBeUndefined();
   });
 });
+
+test('changing editor targets keeps authored skills while never installing app runtime rules', async () => {
+  makeSource('my-workflow');
+  await install('my-workflow', ['claude']);
+  for (const targets of [['codex'], ['claude', 'cursor']] as const) {
+    const result = await reprojectAllManagedSkills({ projectDir: root, skillsRoot, targets });
+    expect(result.bundleHosts).toEqual([]);
+    for (const host of ['.codex', '.claude', '.cursor'])
+      expect(projected(`${host}/skills`, 'synapsenote')).toBe(false);
+    for (const host of targets) expect(projected(`.${host}/skills`, 'my-workflow')).toBe(true);
+  }
+});

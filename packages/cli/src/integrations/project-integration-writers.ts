@@ -3,7 +3,7 @@
  *
  * Gives the desktop project-setup path one shared abstraction: a uniform
  * `ProjectIntegrationWriter` interface, the default writer set
- * `[mcp-config, project-skill]`, and an `applyProjectIntegrations`
+ * `[mcp-config]`, and an `applyProjectIntegrations`
  * orchestrator. OK Desktop's `writeProjectAiIntegrations` runs this
  * orchestrator. `ok init` installs the same integrations via the shared
  * primitives the writers wrap (`writeProjectSkill`, `writeEditorMcpConfig`)
@@ -155,9 +155,7 @@ export const mcpConfigWriter: ProjectIntegrationWriter = {
 
 export const projectSkillWriter: ProjectIntegrationWriter = {
   id: 'project-skill',
-  // `_options` is intentionally unused — `writeProjectSkill` copies a bundled
-  // asset directory; none of the McpInstallOptions fields apply. Accepted so
-  // every writer has the same call signature.
+  // Compatibility entrypoint: retires old copies and never installs a skill.
   write(target, projectDir, _options) {
     try {
       const result = writeProjectSkill(target, projectDir);
@@ -192,7 +190,7 @@ export const projectSkillWriter: ProjectIntegrationWriter = {
  * with this default set. `as const` fixes the tuple shape so the writer at
  * each index stays statically known.
  */
-export const DEFAULT_PROJECT_INTEGRATIONS = [mcpConfigWriter, projectSkillWriter] as const;
+export const DEFAULT_PROJECT_INTEGRATIONS = [mcpConfigWriter] as const;
 
 /**
  * Apply every writer to every editor and collect per-(editor × integration)

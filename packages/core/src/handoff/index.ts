@@ -30,6 +30,7 @@ export {
 } from './prompt-composer.ts';
 export {
   type BuildCliLaunchOptions,
+  buildAppMcpArgs,
   buildClaudeLaunchCommand,
   buildClaudeSettingsArg,
   buildCliLaunchArgString,

@@ -9,6 +9,7 @@ import {
 } from './build-skill-zip.ts';
 import { withHiddenWindowsConsole } from './child-process-windows-hide.ts';
 import { tracedMkdir } from './fs-traced.ts';
+import { retireRuntimeSkills } from './retire-runtime-skills.ts';
 import { BUNDLE_SKILL_NAME, type BundleId } from './skill-bundles.ts';
 import { recordSkillInstallEvent, type SkillInstallEventOutcome } from './skill-install-events.ts';
 import {
@@ -96,20 +97,6 @@ export interface InstallUserSkillOptions {
 }
 
 export type InstallUserSkillResult = 'installed' | 'skip-current' | 'failed';
-
-/**
- * Pre-split user-global skill name. The legacy migration removes any install
- * under this name before the new `discovery` bundle lands. Sibling constant:
- * `LEGACY_SKILL_DIR_NAME` in `packages/desktop/src/main/skill-reclaim.ts`
- * (kept separate so the desktop module stays free of server imports).
- */
-const LEGACY_USER_SKILL_NAME = 'synapsenote';
-
-/**
- * Host dirs that may carry a pre-split `synapsenote` user-global skill —
- * the `--copy`-mode install targets. Mirrors the desktop reclaim's host set.
- */
-const LEGACY_USER_SKILL_HOST_DIRS = ['.claude', '.cursor', '.agents'] as const;
 
 /** Pinned patch-range for the `skills` CLI. */
 const SKILLS_CLI_SPEC = 'skills@~1.5.0';
@@ -215,56 +202,6 @@ function runSpawn(
 }
 
 /**
- * True when any pre-split `synapsenote` user-global skill dir is on disk.
- * Gates the subprocess-spawning `npx skills remove` so a fresh machine with
- * nothing to migrate pays no `npx` cost — mirrors the desktop reclaim's
- * `existsSync` gate in `skill-reclaim.ts`.
- */
-async function anyLegacyUserSkillExists(home: string): Promise<boolean> {
-  for (const hostDir of LEGACY_USER_SKILL_HOST_DIRS) {
-    try {
-      const info = await stat(join(home, hostDir, 'skills', LEGACY_USER_SKILL_NAME));
-      if (info.isDirectory()) return true;
-    } catch {
-      /* absent — keep checking the remaining hosts */
-    }
-  }
-  return false;
-}
-
-/**
- * Legacy migration: remove any pre-split user-global `synapsenote` skill
- * install before the new `discovery` bundle lands. No-op (no subprocess) when
- * no legacy dir is on disk — a fresh machine pays no `npx` cost. Fail-soft:
- * `npx skills remove` of an absent skill is expected to exit 0, but the
- * outcome is not load-bearing — non-zero exit / timeout / spawn error is
- * logged and swallowed. The subsequent `add` is what the install gates on.
- */
-async function removeLegacyUserSkill(
-  home: string,
-  spawnFn: SpawnLike,
-  env: NodeJS.ProcessEnv,
-  timeoutMs: number,
-  logger: SkillInstallLogger,
-  platform: NodeJS.Platform,
-): Promise<void> {
-  if (!(await anyLegacyUserSkillExists(home))) return;
-  const args = ['-y', SKILLS_CLI_SPEC, 'remove', '--agent', '*', '-g', LEGACY_USER_SKILL_NAME];
-  const outcome = await runSpawn(spawnFn, 'npx', args, env, timeoutMs, platform);
-  if (outcome.kind !== 'ok') {
-    logger.warn(
-      {
-        event: 'skill-install.legacy-remove-failed',
-        reason: outcome.kind,
-        exitCode: outcome.exitCode,
-        stderr: outcome.stderr,
-      },
-      'Legacy `synapsenote` skill removal did not exit cleanly; continuing with install.',
-    );
-  }
-}
-
-/**
  * Install SynapseNote's user-global Agent Skill to every detected agent host.
  *
  * Installs the SLIM `discovery` bundle only — the rich `project` bundle never
@@ -299,7 +236,20 @@ export async function installUserSkill(
   const surfaceAttribution: SkillStateSurface = opts.surface ?? 'cli-npx-skills-add';
   const platform = opts.platform ?? process.platform;
   const bundleId = opts.bundleId ?? 'discovery';
+  if (bundleId === 'project') {
+    logger.warn(
+      { event: 'runtime-skill-install-refused' },
+      'SynapseNote runtime instructions are supplied inside the app.',
+    );
+    return 'failed';
+  }
   const bundleName = BUNDLE_SKILL_NAME[bundleId];
+  for (const entry of retireRuntimeSkills(home)) {
+    logger.info?.(
+      { event: `runtime-skill-${entry.status}`, ...entry },
+      'Retired app runtime skill',
+    );
+  }
 
   const report = async (
     outcome: SkillInstallEventOutcome,
@@ -383,7 +333,12 @@ export async function installUserSkill(
 
   // Drop any pre-split `synapsenote` user-global install first (no-op on a
   // fresh machine). Fail-soft — the `add` below is what the install gates on.
-  await removeLegacyUserSkill(home, spawnFn, env, timeoutMs, logger, platform);
+  for (const entry of retireRuntimeSkills(home)) {
+    logger.info?.(
+      { event: `runtime-skill-${entry.status}`, ...entry },
+      'Retired app runtime skill',
+    );
+  }
 
   // Install the bundle to every detected agent host.
   const args = ['-y', SKILLS_CLI_SPEC, 'add', bundleDir, '--agent', '*', '-g', '-y', '--copy'];

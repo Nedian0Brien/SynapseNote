@@ -8,24 +8,18 @@
 
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { type EditorId, PROJECT_SKILL_EDITOR_IDS } from '@nedian0brien/synapsenote-core';
+import type { EditorId } from '@nedian0brien/synapsenote-core';
 import { readInstalledSkills, recordSkillInstall } from './installed-skills-marker.ts';
 import { getLogger } from './logger.ts';
 import {
   projectBundleSkill,
   projectSkill,
   resolvedHosts,
-  reverseBundleSkill,
   reverseProjectSkill,
   validateSkillForInstall,
 } from './skill-projection.ts';
 
 const logger = getLogger('skill-reproject');
-
-/** Editor ids that have a project skill surface (valid projection targets).
- *  Reuses core's derived list so a new skill-surface editor is picked up here
- *  automatically (don't hand-maintain a parallel set). */
-const SKILL_SURFACE_EDITORS: readonly EditorId[] = PROJECT_SKILL_EDITOR_IDS;
 
 export interface ReprojectResult {
   /** Per authored skill: the editor ids it now lives in after re-projection. */
@@ -97,10 +91,6 @@ export async function reprojectAllManagedSkills(opts: {
     }
   }
 
-  // OK's shipped bundle follows the same set: reverse from every skill-surface
-  // editor no longer targeted, then project to the new set.
-  const bundleRemoved = SKILL_SURFACE_EDITORS.filter((e) => !newSet.has(e));
-  reverseBundleSkill(projectDir, bundleRemoved);
   const bundleHosts = projectBundleSkill(projectDir, targets);
 
   return { reprojected, bundleHosts };

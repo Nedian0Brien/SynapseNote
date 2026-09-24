@@ -1,3 +1,4 @@
+import { retireRuntimeSkills } from './retire-runtime-skills.ts';
 /**
  * Skill install-projection: install a `.ok/skills/<name>/` source dir into
  * editor host dirs (`.claude/skills/<name>/` etc.) by SYMLINK, plus the
@@ -36,8 +37,7 @@ import {
   PROJECT_SKILL_EDITOR_IDS,
 } from '@nedian0brien/synapsenote-core';
 import { parse as parseYaml } from 'yaml';
-import { resolveBundledSkillDir } from './build-skill-zip.ts';
-import { tracedCpSync, tracedMkdirSync, tracedRmSync, tracedSymlinkSync } from './fs-traced.ts';
+import { tracedMkdirSync, tracedRmSync, tracedSymlinkSync } from './fs-traced.ts';
 
 /**
  * Narrow a persisted `string[]` host list (from the marker, whose JSON is
@@ -287,30 +287,10 @@ export function reverseProjectSkill(
   return removed;
 }
 
-/**
- * Project OK's shipped `synapsenote` bundle into each target editor's host
- * dir, so OK's own project skill follows the same `skill_targets` set as
- * authored skills. Source is the bundled asset (`resolveBundledSkillDir`),
- * NOT a `.ok/skills/` dir. Returns the editor ids written; `[]` when the
- * bundle can't be resolved (e.g. a dev tree with no built assets).
- */
-export function projectBundleSkill(cwd: string, targets: readonly EditorId[]): EditorId[] {
-  let bundleDir: string;
-  try {
-    bundleDir = resolveBundledSkillDir('project', { checkDesktop: true });
-  } catch {
-    return [];
-  }
-  const written: EditorId[] = [];
-  for (const editor of targets) {
-    const dest = skillHostDir(cwd, editor, SHIPPED_SKILL_NAME);
-    if (dest === null) continue;
-    if (hostSkillsRootEscapes(cwd, dirname(dest))) continue;
-    tracedRmSync(dest, { recursive: true, force: true });
-    tracedCpSync(bundleDir, dest, { recursive: true });
-    written.push(editor);
-  }
-  return written;
+/** @deprecated Runtime guidance is supplied by app-managed sessions. */
+export function projectBundleSkill(cwd: string, _targets: readonly EditorId[]): EditorId[] {
+  retireRuntimeSkills(cwd);
+  return [];
 }
 
 /** Remove OK's shipped bundle projection from each target editor's host dir. */

@@ -543,50 +543,24 @@ describe('runCreateNew — idempotency', () => {
   });
 });
 
-describe('runCreateNew — installs the project-local skill (PRD-6733)', () => {
-  // Regression pin: the desktop project-setup path
-  // (`writeProjectAiIntegrations`) previously wired MCP config ONLY — the
-  // project-local runtime `synapsenote` skill was never created, so a
-  // Desktop-primary user got a project with no agent behavioral contract.
-  // `writeProjectAiIntegrations` now routes through `applyProjectIntegrations`
-  // (the same orchestrator the onboarding-consent path uses), so both desktop
-  // project-setup entry points install the skill.
-  test('installs the synapsenote project skill for claude, cursor, and codex', async () => {
+describe('runCreateNew — app-managed runtime', () => {
+  test('creates requested editor connections without installing runtime skills', async () => {
     const result = await runCreateNew({
       parent: tmpRoot,
-      name: 'Skill Install',
+      name: 'App Runtime',
       editors: [...ALL_EDITOR_IDS],
     });
-
+    for (const host of ['.claude', '.cursor', '.codex', '.opencode', '.pi']) {
+      expect(existsSync(join(result.projectDir, host, 'skills/synapsenote/SKILL.md'))).toBe(false);
+    }
     expect(
-      existsSync(join(result.projectDir, '.claude', 'skills', 'synapsenote', 'SKILL.md')),
+      result.aiIntegrations.integrations.some(
+        (item) => item.integration === 'mcp-config' && item.action === 'written',
+      ),
     ).toBe(true);
     expect(
-      existsSync(join(result.projectDir, '.cursor', 'skills', 'synapsenote', 'SKILL.md')),
-    ).toBe(true);
-    expect(existsSync(join(result.projectDir, '.codex', 'skills', 'synapsenote', 'SKILL.md'))).toBe(
-      true,
-    );
-    expect(
-      existsSync(join(result.projectDir, '.opencode', 'skills', 'synapsenote', 'SKILL.md')),
-    ).toBe(true);
-    expect(existsSync(join(result.projectDir, '.pi', 'skills', 'synapsenote', 'SKILL.md'))).toBe(
-      true,
-    );
-
-    // The result's `aiIntegrations` carries the per-(editor × integration)
-    // outcomes — the project-skill writer ran and reported success for every
-    // editor that has a project skill surface.
-    const skillWrites = result.aiIntegrations.integrations.filter(
-      (o) => o.integration === 'project-skill' && o.action === 'written',
-    );
-    expect(skillWrites.map((o) => o.editorId).sort()).toEqual([
-      'claude',
-      'codex',
-      'cursor',
-      'opencode',
-      'pi',
-    ]);
+      result.aiIntegrations.integrations.some((item) => item.integration === 'project-skill'),
+    ).toBe(false);
   });
 });
 

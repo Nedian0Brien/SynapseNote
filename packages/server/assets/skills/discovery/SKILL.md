@@ -1,6 +1,6 @@
 ---
 name: synapsenote-discovery
-description: "Read when the user asks what SynapseNote is, wants to install it on a repository, wants to share an SynapseNote project with collaborators, or asks how `ok init` / `ok cowork` / OK Desktop set up a project. Do NOT load to perform SynapseNote reads/writes — the runtime guidance for editing markdown inside an initialized OK project ships as a separate project-local skill at `.claude/skills/synapsenote/` whenever `ok init` runs. If the user appears to be editing markdown inside a `.ok/` project and this is the only OK skill loaded, advise them to re-run `ok init` to install the project-local skill."
+description: "Read when the user asks what SynapseNote is, wants to install it on a repository, wants to share an SynapseNote project with collaborators, or asks how `ok init` / `ok cowork` / OK Desktop set up a project. Do NOT load to perform SynapseNote reads/writes — the app supplies runtime guidance directly to its own agent sessions. Do not activate for ordinary Markdown work. App-managed sessions receive their document contract directly; never install a runtime skill to repair a session."
 compatibility: "Any agent host — no MCP server required. Pure discovery + install guidance."
 metadata:
   version: "0.30.1"
@@ -14,13 +14,7 @@ directory of `.md` / `.mdx` files into a live, multi-writer knowledge base:
 agents and humans edit the same documents in real time, every change is
 attributed, and a browser preview renders edits as they land.
 
-This skill covers **discovery, install, and opening SynapseNote files** —
-including single files that are not part of a project (see *Opening a file
-outside a project* below). It does **not** carry the in-project read/write
-runtime contract (the STOP rules for native file tools, the grounding and
-linking rules, the MCP routing table) — that ships separately as the
-project-local skill installed by `ok init` (see *Working inside a project*
-below).
+This skill covers discovery, setup, and opening files. SynapseNote supplies the document contract directly to its app-managed agent sessions.
 
 ## Install SynapseNote on a repository
 
@@ -38,41 +32,26 @@ ok init
 - scaffolds a `.ok/` directory (project config — `content.dir` defaults to `.`);
 - wires the SynapseNote MCP server into detected editors (Claude Code,
   Cursor, Codex) — skip with `--no-mcp`;
-- installs the **project-local runtime skill** at `.claude/skills/synapsenote/`
-  and `.cursor/skills/synapsenote/` so agents working in this repo get the
-  full read/write contract;
 - ensures the project has a `.git/`.
 
-Re-run `ok init` any time to refresh wiring and skills to the installed CLI
-version.
+Re-run `ok init` to refresh explicitly selected editor connections. Runtime skills are no longer installed.
 
 ## Share an SynapseNote project with collaborators
 
 An OK project travels with its repository. To share one:
 
-1. Commit the `.ok/` directory and the project-local
-   `.claude/skills/synapsenote/` (and `.cursor/skills/synapsenote/`)
-   directories along with your `.md` content.
-2. Collaborators clone the repo and run `ok init` once — that registers the
-   MCP server on their machine and refreshes the project skill.
-3. Start the editor + preview with `ok start` (or open the project in OK
-   Desktop).
+1. Commit the `.ok/` project configuration and Markdown content.
+2. Collaborators clone the repo and open it in SynapseNote, or run `ok init` to configure explicitly requested external editor connections.
+3. Start the editor with `ok start`, or open the project in SynapseNote Desktop.
 
 Collaboration is real-time once two writers have the project open against the
 same content directory.
-
-## `ok cowork` — Claude Chat & Cowork
-
-`ok init`'s editor wiring does not reach Claude Chat or Cowork — those read a
-separate Skills list inside the Claude Desktop App. Run `ok cowork` to
-build `synapsenote.skill` and open Claude Desktop so the user can upload it
-(Customize → Skills → + → Create skill → Upload skill).
 
 ## OK Desktop
 
 OK Desktop is the standalone macOS app (`@nedian0brien/synapsenote-desktop`). It
 bundles its own CLI, opens a project as an editor + preview window, and keeps
-the project's MCP wiring and skills current on every launch. Download DMGs
+app-managed agent guidance current with the installed app version. Download DMGs
 from the releases page.
 
 ## Opening a file outside a project
@@ -115,20 +94,8 @@ The path must be absolute (a file outside a project has no cwd to anchor a
 relative path). Re-opening the same file lands on the same session. Never
 construct or guess the URL — use the one `preview_url` returns.
 
-## Working inside a project — use the project-local skill, not this one
+## Working inside the app
 
-Do **not** use this skill to perform SynapseNote reads or writes. The
-runtime contract — STOP rules for native file tools on in-scope markdown, the
-preview-attach handshake, grounding and linking rules, the MCP tool routing
-table — lives in a **separate project-local skill** installed at
-`.claude/skills/synapsenote/SKILL.md` whenever `ok init` runs.
+SynapseNote injects its document contract into app-managed agent launches, including new and resumed chat sessions. No project-local runtime skill is required. Detailed document reference material is available from `workflow({ kind: "guide", topic: "writing" })`.
 
-If the user is editing markdown inside a project that has a `.ok/` directory
-and this discovery skill is the only SynapseNote skill loaded, the
-project-local skill is missing (the repo was never `ok init`'d, or the skill
-directory was not committed). Advise the user to run `ok init` to install it.
-
-## Learn more
-
-- Repository: <https://github.com/Nedian0Brien/SynapseNote>
-- Run `ok --help` for the full command list.
+When using an external editor, connect MCP only when the user requests SynapseNote document operations. Do not install or load a `synapsenote` runtime skill, and do not impose its rules on ordinary Markdown tasks. If an app session has no tools, repair its MCP connection.

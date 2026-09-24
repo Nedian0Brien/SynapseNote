@@ -317,3 +317,15 @@ describe('OK auto-approve (autoApproveOkTools)', () => {
     );
   });
 });
+
+it('runtime instructions are scoped to app-managed launches, including promptless sessions', () => {
+  for (const cli of ['codex', 'claude', 'cursor', 'opencode', 'pi', 'antigravity'] as const) {
+    const external = buildCliLaunchArgString(cli, 'hello');
+    expect(external).not.toContain('SynapseNote knowledge steward');
+    for (const prompt of ['hello', null]) {
+      const internal = buildCliLaunchArgString(cli, prompt, { appRuntime: true });
+      expect(internal).toContain('SynapseNote knowledge steward');
+      expect(internal).not.toContain('load the `synapsenote` skill');
+    }
+  }
+});

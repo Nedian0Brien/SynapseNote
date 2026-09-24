@@ -8,7 +8,14 @@
 import { beforeEach, describe, expect, test } from 'bun:test';
 import type { SpawnOptions } from 'node:child_process';
 import { EventEmitter } from 'node:events';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -150,7 +157,11 @@ function findWarn(records: RecordedLog[], event: string): RecordedLog | undefine
 function writeLegacyUserSkill(home: string, hostDir = '.claude'): void {
   const dir = join(home, hostDir, 'skills', 'synapsenote');
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, 'SKILL.md'), '# legacy\n', 'utf-8');
+  writeFileSync(
+    join(dir, 'SKILL.md'),
+    '---\nname: synapsenote\nmetadata:\n  author: SynapseNote\n  repository: https://github.com/Nedian0Brien/SynapseNote\n---\n# legacy with user edits\n',
+    'utf-8',
+  );
 }
 
 /**
@@ -309,44 +320,38 @@ describe('installUserSkill — fresh install', () => {
   });
 });
 
-describe('installUserSkill — legacy migration', () => {
-  test('pre-split synapsenote dir present → npx skills remove runs before the add', async () => {
+describe('installUserSkill — runtime migration', () => {
+  test('archives runtime copies without a destructive skills-remove subprocess', async () => {
     const home = freshHome();
-    writeLegacyUserSkill(home, '.claude');
+    writeLegacyUserSkill(home);
     const { spawn, calls } = makeSpawnFake({ outcome: { kind: 'exit', code: 0 } });
-
-    const result = await installUserSkill({ home, spawn });
-
-    expect(result).toBe('installed');
-    // Two subprocesses: the legacy `remove`, then the `add`.
-    expect(calls.length).toBe(2);
-    expect(calls[0]?.args).toEqual([
-      '-y',
-      'skills@~1.5.0',
-      'remove',
-      '--agent',
-      '*',
-      '-g',
-      'synapsenote',
-    ]);
-    expect(calls[1]?.args).toContain('add');
+    expect(await installUserSkill({ home, spawn })).toBe('installed');
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.args).toContain('add');
+    expect(existsSync(join(home, '.claude/skills/synapsenote/SKILL.md'))).toBe(false);
+    const archive = join(home, '.ok/retired-agent-skills');
+    expect(
+      readFileSync(join(archive, readdirSync(archive)[0] ?? '', 'SKILL.md'), 'utf8'),
+    ).toContain('user edits');
   });
 
-  test('legacy remove exiting non-zero is logged + swallowed; install still proceeds', async () => {
+  test('retires runtime copies even when optional user skills are already current', async () => {
     const home = freshHome();
-    writeLegacyUserSkill(home, '.cursor');
-    // The shared fake scripts every spawn — both `remove` and `add` exit 1.
-    // The non-zero `remove` must NOT abort the install; only the `add` gates it.
-    const { spawn, calls } = makeSpawnFake({ outcome: { kind: 'exit', code: 1 } });
-    const { logger, records } = makeRecordingLogger();
+    writeLegacyUserSkill(home);
+    writeSidecar(home, currentVersion);
+    writeCentralSkill(home);
+    const { spawn, calls } = makeSpawnFake({ outcome: { kind: 'exit', code: 0 } });
+    expect(await installUserSkill({ home, spawn })).toBe('skip-current');
+    expect(calls).toHaveLength(0);
+    expect(existsSync(join(home, '.claude/skills/synapsenote/SKILL.md'))).toBe(false);
+  });
 
-    const result = await installUserSkill({ home, logger, spawn });
-
-    // `add` failed (exit 1) → 'failed'; the run did not throw, and the
-    // legacy-remove failure surfaced as its own swallowed warning.
-    expect(result).toBe('failed');
-    expect(calls[0]?.args).toContain('remove');
-    expect(findWarn(records, 'skill-install.legacy-remove-failed')).toBeDefined();
+  test('rejects an explicit request to globally install the app runtime bundle', async () => {
+    const { spawn, calls } = makeSpawnFake({ outcome: { kind: 'exit', code: 0 } });
+    expect(await installUserSkill({ home: freshHome(), spawn, bundleId: 'project' })).toBe(
+      'failed',
+    );
+    expect(calls).toHaveLength(0);
   });
 });
 

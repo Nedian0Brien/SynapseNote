@@ -95,3 +95,26 @@ describe('workflow — kind discriminator + per-kind teaching errors', () => {
     expect(textOf(r)).toContain('requires `topic`');
   });
 });
+
+test('bundled guides are available without project skill installations', async () => {
+  for (const topic of [
+    'writing',
+    'linking',
+    'folder-model',
+    'doc-editing',
+    'conflict-resolution',
+    'components-and-visuals',
+    'media-and-assets',
+    'corpus-qa',
+    'template-authoring',
+    'cadence-and-logs',
+    'ingest-and-sources',
+  ]) {
+    const result = await capture(cwd).handler({ kind: 'guide', topic });
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result).length).toBeGreaterThan(100);
+  }
+  expect(
+    (await capture(cwd).handler({ kind: 'guide', topic: '../../../../../etc/passwd' })).isError,
+  ).toBe(true);
+});
