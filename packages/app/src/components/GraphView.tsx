@@ -39,7 +39,7 @@ import {
 } from './graph-collision';
 import { GRAPH_COLOR_PAIRS } from './graph-colors';
 import { applyGraphFilters } from './graph-filter';
-import { buildGraphFolderNodes, graphFolderDepthOf, isGraphFolderLink } from './graph-folders';
+import { buildGraphFolderNodes, isGraphFolderLink } from './graph-folders';
 import { matchGraphGroup, resolveGraphGroupColor } from './graph-groups';
 import { buildGraphAdjacency, isGraphLinkHighlighted } from './graph-highlight';
 import {
@@ -50,12 +50,10 @@ import {
   isGraphFocusMode,
 } from './graph-interaction-mode';
 import {
-  type GraphLabelLayoutLink,
   type GraphLabelLayoutNode,
   type GraphLabelPlacement,
   planGraphLabels,
 } from './graph-label-layout';
-import { MIN_GRAPH_LABEL_ZOOM_FACTOR } from './graph-label-tiers';
 import { buildGraphLabelDescriptors } from './graph-label-utils';
 import {
   getGraphNodeStyle,
@@ -892,7 +890,6 @@ export function GraphView({
   const displayData = renderData;
 
   const layoutNodes = displayData.nodes as GraphLabelLayoutNode[];
-  const layoutLinks = displayData.links as GraphLabelLayoutLink[];
   const labelDescriptors = buildGraphLabelDescriptors(displayData.nodes);
   const focusKey = `${activeDocName}|${focusZoom}`;
   const displayLinks = displayData.links;
@@ -978,36 +975,6 @@ export function GraphView({
       ? buildGraphAreas(displayData.nodes, displayData.links)
       : EMPTY_GRAPH_AREAS;
   const areaBoundsRef = useRef<Map<string, GraphAreaBounds>>(new Map());
-  // The deepest region each node sits in, which is the one whose on-screen size
-  // decides when that node's name is revealed. An area's `memberIds` already
-  // includes its descendants, so the deepest match is the innermost folder.
-  // Built here rather than per frame — it only changes when the areas do.
-  // Each node's own place in the folder tree, which is what paces the label
-  // reveal. Folder nodes carry their path directly; a page's is the folder it
-  // sits in.
-  const nodeDepthById = new Map(
-    displayData.nodes.map((node) => {
-      // A folder's own depth is the length of its path; a page's is the depth
-      // of the folder it sits in. Tags and external URLs belong to no folder,
-      // so they sit at the top and reveal first.
-      if (node.kind === 'folder') return [node.id, graphFolderDepthOf(`${node.path}/leaf`)];
-      if (node.kind === 'doc') return [node.id, graphFolderDepthOf(node.docName)];
-      return [node.id, 0];
-    }),
-  );
-  const innermostAreaByNodeId = new Map<string, GraphArea>();
-  for (const area of areas) {
-    for (const memberId of area.memberIds) {
-      const current = innermostAreaByNodeId.get(memberId);
-      if (!current || area.depth > current.depth) {
-        innermostAreaByNodeId.set(memberId, area);
-      }
-    }
-  }
-  // Last frame's label decisions, so this frame can keep them — see
-  // `previousOffsetStepByNodeId`. Held in a ref rather than state because it is
-  // written from the canvas render hook and must never trigger a re-render.
-  const labelOffsetStepsRef = useRef<Map<string, number>>(new Map());
   // Which region names were written last frame, for the same reason.
   const areaLabelShownRef = useRef<Set<string>>(new Set());
   // Each region's final opacity this frame: its own size-driven fade, times its
@@ -1019,11 +986,6 @@ export function GraphView({
   // level you have already passed keeps its colour as ground. That split is
   // what the original did, and it is why the map never went blank mid-handover.
   const areaNameAlphaRef = useRef<Map<string, number>>(new Map());
-  // Which storey the map has descended to, from the same computation. A page's
-  // name is revealed when the map reaches the folder it lives in, so the
-  // territories and the node labels are driven by one number rather than two
-  // definitions of "we are inside this now" that could drift apart.
-  const focusDepthRef = useRef<number | null>(null);
   // Offscreen layer the territories are partitioned onto before being
   // composited in one pass — see `paintGraphAreaPartition`. Created in an
   // effect rather than lazily on first render: the React Compiler rejects
@@ -1643,7 +1605,6 @@ export function GraphView({
               const focusDepth = getGraphAreaFocusDepth(
                 sized.map(({ area, share }) => ({ depth: area.depth, share })),
               );
-              focusDepthRef.current = focusDepth;
               // The TINT never descends past the deepest level there is.
               //
               // The crossfade assumes a level below to hand over to; at the
@@ -1710,7 +1671,7 @@ export function GraphView({
                 // 0.82. They can afford the ink now that the level of detail
                 // above draws only the few regions that are a useful size,
                 // rather than every folder at once.
-                ctx.globalAlpha = globalScale >= settings.display.textFadeThreshold ? 0.42 : 0.78;
+                ctx.globalAlpha = 0.78;
                 // Biggest region first, and a name is dropped when its box
                 // would land on one already written. Without this every folder
                 // writes at its own centroid and a dense project stacks a dozen
@@ -1793,13 +1754,6 @@ export function GraphView({
                 ctx.restore();
               }
 
-              // No single cutoff any more: hubs earn a label further out than
-              // leaves do, so the planner decides per node and this only skips
-              // the work when not even the most permissive tier qualifies.
-              if (globalScale < settings.display.textFadeThreshold * MIN_GRAPH_LABEL_ZOOM_FACTOR) {
-                return;
-              }
-
               const fg = fgRef.current;
               if (!fg) return;
 
@@ -1812,40 +1766,12 @@ export function GraphView({
 
               const placements = planGraphLabels({
                 nodes: layoutNodes,
-                links: layoutLinks,
-                activeDocName,
-                viewport: dimensions,
-                maxLabels: settings.display.maxLabels,
-                zoomScale: globalScale,
-                leafLabelThreshold: settings.display.textFadeThreshold,
                 maxLabelWidthPx,
                 labelDescriptors,
                 measureTextWidthPx: (text) => ctx.measureText(text).width,
                 projectToScreen: (x, y) => fg.graph2ScreenCoords(x, y),
                 getNodeRadiusPx: (node) => graphNodeRadius(node, globalScale) * globalScale + 4,
-                previousOffsetStepByNodeId: labelOffsetStepsRef.current,
-                // Keyed on the page's OWN depth in the folder tree, not on the
-                // depth of the territory holding it. Territories stop at depth
-                // 2, so everything below that shares one region and used to
-                // reveal in a single step — a wall of names arriving at once.
-                // The focus depth keeps counting past the deepest territory
-                // (one level per 2x zoom), so this gives the descent as many
-                // steps as the tree actually has.
-                isDepthRevealedForNode: (nodeId) => {
-                  const focusDepth = focusDepthRef.current;
-                  if (focusDepth === null) return null;
-                  return focusDepth >= (nodeDepthById.get(nodeId) ?? 0);
-                },
               });
-
-              // Hand this frame's decisions to the next one. Without it the
-              // plan is recomputed from scratch against inputs that move with
-              // the view, and the labels shake themselves apart while you zoom.
-              const nextOffsetSteps = new Map<string, number>();
-              for (const placement of placements) {
-                nextOffsetSteps.set(placement.nodeId, placement.offsetStep);
-              }
-              labelOffsetStepsRef.current = nextOffsetSteps;
 
               drawGraphLabelPlacements({ ctx, placements, labelColor });
               ctx.restore();

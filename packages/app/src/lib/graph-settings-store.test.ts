@@ -31,7 +31,6 @@ function memoryStorage(seed: Record<string, string> = {}): GraphSettingsStorage 
 describe('getDefaultGraphSettings', () => {
   test('uses the physical defaults from Obsidian’s graph worker', () => {
     const docked = getDefaultGraphSettings('docked');
-    expect(docked.display.textFadeThreshold).toBe(1.8);
     expect(docked.filters.showExternalNodes).toBe(false);
     expect(docked.display.showFolderAreas).toBe(false);
     expect(docked.forces).toEqual(GRAPH_FORCE_DEFAULTS);
@@ -41,14 +40,6 @@ describe('getDefaultGraphSettings', () => {
       linkStrength: 1,
       linkDistance: 250,
     });
-  });
-
-  test('budgets labels generously, leaving overlap to the collision planner', () => {
-    // A budget of 10 on a canvas showing sixty nodes left it unreadable: the
-    // planner already refuses to place a label that would collide, so this is
-    // only a ceiling on the work, not the thing preventing a mess.
-    expect(getDefaultGraphSettings('fullscreen').display.maxLabels).toBe(60);
-    expect(getDefaultGraphSettings('docked').display.maxLabels).toBe(30);
   });
 
   test('leaves arrowheads off, as Obsidian does', () => {
@@ -91,14 +82,13 @@ describe('clampGraphSettings', () => {
   test('clamps out-of-range numbers to the bounds', () => {
     const result = clampGraphSettings(
       {
-        display: { nodeSize: 99, linkThickness: -5, textFadeThreshold: 100 },
+        display: { nodeSize: 99, linkThickness: -5 },
         forces: { repelStrength: 50_000, linkDistance: 0 },
       },
       'docked',
     );
     expect(result.display.nodeSize).toBe(GRAPH_SETTINGS_BOUNDS.nodeSize.max);
     expect(result.display.linkThickness).toBe(GRAPH_SETTINGS_BOUNDS.linkThickness.min);
-    expect(result.display.textFadeThreshold).toBe(GRAPH_SETTINGS_BOUNDS.textFadeThreshold.max);
     expect(result.forces.repelStrength).toBe(GRAPH_SETTINGS_BOUNDS.repelStrength.max);
     expect(result.forces.linkDistance).toBe(GRAPH_SETTINGS_BOUNDS.linkDistance.min);
   });
@@ -106,22 +96,25 @@ describe('clampGraphSettings', () => {
   test('falls back per field on NaN, Infinity, and wrong types', () => {
     const result = clampGraphSettings(
       {
-        display: { nodeSize: Number.NaN, linkThickness: Number.POSITIVE_INFINITY, maxLabels: '20' },
+        display: { nodeSize: Number.NaN, linkThickness: Number.POSITIVE_INFINITY },
         filters: { showOrphans: 'yes', query: 7 },
       },
       'docked',
     );
     expect(result.display.nodeSize).toBe(1);
     expect(result.display.linkThickness).toBe(1);
-    expect(result.display.maxLabels).toBe(30);
     expect(result.filters.showOrphans).toBe(true);
     expect(result.filters.query).toBe('');
   });
 
-  test('rounds the label budget to a whole number', () => {
-    expect(clampGraphSettings({ display: { maxLabels: 12.7 } }, 'docked').display.maxLabels).toBe(
-      13,
-    );
+  test('drops retired label-selection settings from stored presets', () => {
+    const display = clampGraphSettings(
+      { display: { textFadeThreshold: 3, maxLabels: 1 } },
+      'docked',
+    ).display as Record<string, unknown>;
+
+    expect(display.textFadeThreshold).toBeUndefined();
+    expect(display.maxLabels).toBeUndefined();
   });
 
   test('keeps well-formed groups and drops malformed ones', () => {

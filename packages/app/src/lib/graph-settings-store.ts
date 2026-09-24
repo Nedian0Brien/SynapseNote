@@ -39,10 +39,6 @@ export interface GraphDisplaySettings {
   showArrows: boolean;
   /** Draw tinted folder territories and their large map labels. */
   showFolderAreas: boolean;
-  /** Zoom scale below which labels are not drawn at all. 0 draws them at every zoom. */
-  textFadeThreshold: number;
-  /** Upper bound on simultaneously placed labels — the collision planner's budget. */
-  maxLabels: number;
 }
 
 export interface GraphForceSettings {
@@ -99,16 +95,6 @@ export const GRAPH_FORCE_DEFAULTS: GraphForceSettings = {
   linkDistance: 250,
 };
 
-// The planner already refuses to place a label that would collide with one it
-// has placed, so overlap is handled and this is only a ceiling on the work.
-// It used to be 10 for the whole project, which meant a canvas showing sixty
-// nodes and ten names — you could not tell what you were looking at. A generous
-// budget lets collision decide, which is the thing that actually knows.
-const DEFAULT_MAX_LABELS: Record<GraphSettingsScope, number> = {
-  docked: 30,
-  fullscreen: 60,
-};
-
 // Folder nodes exist to break a large graph into places. The fullscreen view is
 // the large graph, so they are on there; the docked view is a 2-hop
 // neighborhood that has no blob to break up, and a folder node in it is one
@@ -121,8 +107,6 @@ const DEFAULT_SHOW_FOLDER_NODES: Record<GraphSettingsScope, boolean> = {
 export const GRAPH_SETTINGS_BOUNDS = {
   nodeSize: { min: 0.25, max: 3 },
   linkThickness: { min: 0.25, max: 5 },
-  textFadeThreshold: { min: 0, max: 4 },
-  maxLabels: { min: 0, max: 200 },
   centerStrength: { min: 0, max: 1 },
   repelStrength: { min: 0, max: 8000 },
   linkStrength: { min: 0, max: 1 },
@@ -157,9 +141,6 @@ export function getDefaultGraphSettings(scope: GraphSettingsScope): GraphSetting
       // graph and a thicket.
       showArrows: false,
       showFolderAreas: false,
-      // 1.8 is the zoom scale the pre-settings build hardcoded.
-      textFadeThreshold: 1.8,
-      maxLabels: DEFAULT_MAX_LABELS[scope],
     },
     forces: { ...GRAPH_FORCE_DEFAULTS },
     groups: [],
@@ -267,14 +248,6 @@ export function clampGraphSettings(value: unknown, scope: GraphSettingsScope): G
       ),
       showArrows: readBoolean(display.showArrows, defaults.display.showArrows),
       showFolderAreas: readBoolean(display.showFolderAreas, defaults.display.showFolderAreas),
-      textFadeThreshold: clampNumber(
-        display.textFadeThreshold,
-        GRAPH_SETTINGS_BOUNDS.textFadeThreshold,
-        defaults.display.textFadeThreshold,
-      ),
-      maxLabels: Math.round(
-        clampNumber(display.maxLabels, GRAPH_SETTINGS_BOUNDS.maxLabels, defaults.display.maxLabels),
-      ),
     },
     forces: {
       centerStrength: clampNumber(
