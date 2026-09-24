@@ -141,6 +141,12 @@ import {
   channelFromVersion,
   type StartAutoUpdaterHandle,
 } from './auto-updater.ts';
+import { bootAutoUpdaterForPrimaryInstance } from './boot-auto-updater.ts';
+import { bootPrimaryInstance as bootPrimaryInstanceComposition } from './boot-composition.ts';
+import { installBootLifecycle } from './boot-lifecycle.ts';
+import { installBootPreReady } from './boot-pre-ready.ts';
+import { registerBootProtocol } from './boot-protocol.ts';
+import { runBootReady } from './boot-ready.ts';
 import { resolveBootRestoreDecision } from './boot-restore-decision.ts';
 import { runBootstrap } from './bootstrap.ts';
 import {
@@ -318,7 +324,6 @@ import {
   setProjectSessionState,
   setProjectWindowBounds,
   setSpellCheckEnabled as setSpellCheckEnabledState,
-  type UpdateChannel,
 } from './state-store.ts';
 import { isTerminalConsented, isTerminalConsentedWithGrace } from './terminal-consent.ts';
 import { type TerminalReaper, wireWindowTerminalReap } from './terminal-lifecycle.ts';
@@ -350,7 +355,6 @@ import {
 } from './update-state-handlers.ts';
 import {
   registerProtocolHandler,
-  type ScreenTarget,
   type ShareDeepLinkBranchSwitchPayload,
   type ShareNavigatorPayload,
 } from './url-scheme.ts';
@@ -369,7 +373,7 @@ import {
   WindowManager,
 } from './window-manager.ts';
 import { WINDOW_MIN_SIZE } from './window-min-size.ts';
-import { resolveRestoredPlacement, sortByFocusSequence } from './window-placement.ts';
+import { resolveRestoredPlacement } from './window-placement.ts';
 import {
   classifyRecentGit,
   classifyRecentGitAsync,
@@ -4998,828 +5002,209 @@ if (isDriverBootSmokeMode(process.env)) {
 }
 
 function bootPrimaryInstance(): void {
-  getRootDesktopLogger().info(
-    {
-      event: 'desktop.boot',
-      version: app.getVersion(),
-      isPackaged: app.isPackaged,
-      electronVersion: process.versions.electron,
-      nodeVersion: process.version,
-      platform: process.platform,
-      arch: process.arch,
-    },
-    'desktop main process starting',
-  );
-
-  // Crash handling is strictly local: Crashpad writes minidumps under
-  // `app.getPath('crashDumps')` and uploads nothing. Started before any
-  // window so every child process inherits coverage, then the boot-time scan
-  // arms a report invitation if the previous session ended uncleanly. NO
-  // userland `uncaughtException` handler is involved anywhere in this
-  // pipeline — see process-safety-net.ts for why one must never be added.
-  startLocalCrashReporter(crashReporter);
-  crashDetection = createCrashDetection({
-    sentinelPath: join(app.getPath('userData'), 'bug-report-dirty-shutdown.json'),
-    ackStorePath: join(app.getPath('userData'), 'bug-report-crash-acks.json'),
-    crashDumpsDir: app.getPath('crashDumps'),
-    // Deliver to one live window — focused first — and report undeliverable
-    // so the invitation waits for the next renderer-ready signal instead of
-    // dropping (at boot, or when the only window is the one that crashed).
-    emit: (event) => {
-      const focused = BrowserWindow.getFocusedWindow();
-      const candidates = focused
-        ? [focused, ...BrowserWindow.getAllWindows()]
-        : BrowserWindow.getAllWindows();
-      for (const win of candidates) {
-        const contents = win.webContents;
-        if (contents.isDestroyed() || contents.isCrashed() || contents.isLoading()) continue;
-        sendToRenderer(contents, 'ok:bug-report:crash-detected', event);
-        return true;
-      }
-      return false;
-    },
-    now: () => new Date(),
-    logger: getLogger('crash-detection'),
-  });
-  crashDetection.detectBootCrash();
-  app.on('child-process-gone', (_event, details) => {
-    crashDetection?.handleChildProcessGone(details);
-  });
-
-  // Capture renderer console output into the desktop pino log
-  // (`~/.ok/logs/desktop.<date>.log`, bundled by `ok bug-report`). Registered
-  // before `whenReady` so every window's webContents is covered from creation.
-  app.on('web-contents-created', (_event, contents) => {
-    attachRendererConsoleCapture(contents);
-    contents.on('render-process-gone', (_e, details) => {
-      crashDetection?.handleRenderProcessGone(details);
-    });
-    // A freshly-loaded renderer can take a waiting crash invitation (boot
-    // events detect before any window exists; delivery must not race load).
-    // Both `did-finish-load` AND `did-stop-loading` retry delivery: a boot
-    // invite's `emit` skips a window that is `isLoading()`, and for a sole
-    // editor window whose `did-finish-load` fires while a follow-on load is
-    // still in flight, `did-finish-load` alone never retries once the window
-    // settles — the invitation would stay armed but undelivered. `did-stop-
-    // loading` is that missing "load settled" signal. `notifyRendererReady`
-    // is idempotent (guarded by the delivered flag), so the extra call is a
-    // no-op once delivered.
-    const retryDelivery = () => crashDetection?.notifyRendererReady();
-    contents.on('did-finish-load', retryDelivery);
-    contents.on('did-stop-loading', retryDelivery);
-  });
-
-  // Assistive-tech flips (e.g. VoiceOver, NVDA attach/detach) fan out to every window so
-  // the preload's live mirror stays current and an open terminal can toggle
-  // xterm's `screenReaderMode` in place. Cold-start value rides window
-  // creation via `--ok-screen-reader-active` (see withDebugFlagIfAllowed).
-  app.on('accessibility-support-changed', (_event, screenReaderActive) => {
-    for (const win of BrowserWindow.getAllWindows()) {
-      if (win.webContents.isDestroyed()) continue;
-      sendToRenderer(win.webContents, 'ok:accessibility:changed', { screenReaderActive });
-    }
-  });
-
-  // URL-scheme handler — register BEFORE `whenReady` so macOS cold-start
-  // `open-url` Apple Events are caught even if they fire before the ready hook.
-  // Listener registration is synchronous; the actual routing defers URLs into a
-  // queue and drains them after `whenReady` + the first BrowserWindow exists.
-  // Also wires `second-instance` for CLI / dev invocations that deliver the URL
-  // via argv rather than Apple Events.
-  const protocolControl = registerProtocolHandler({
-    app: {
-      on: (event, cb) => {
-        // electron's `app.on` is overloaded — inject our typed shape by casting at
-        // the call site. The `url-scheme` module owns the narrowing; this is just
-        // the dispatch plumbing.
-        app.on(event as Parameters<typeof app.on>[0], cb as Parameters<typeof app.on>[1]);
-      },
-      whenReady: () => app.whenReady(),
-      isPackaged: app.isPackaged,
-      setAsDefaultProtocolClient: (scheme) => app.setAsDefaultProtocolClient(scheme),
-      removeAsDefaultProtocolClient: (scheme) => app.removeAsDefaultProtocolClient(scheme),
-    },
-    focusWindowForProject: (projectPath) => {
-      if (!wm) return null;
-      return wm.focusWindowForProject(projectPath) as unknown as object | null;
-    },
-    openProject: async (projectPath, opts) => {
-      // Use the Navigator-fallback path: on failure (bad path, git-init error,
-      // stale lock) the user sees a dialog and is returned to the Navigator
-      // rather than a silent "link doesn't work." Success path returns the
-      // BrowserWindow so the caller can dispatch `ok:deep-link`.
-      //
-      // `pendingDeepLinkTarget` + `pendingBranch` + `pendingMultiCandidate`
-      // + `pendingTargetMissing` + `pendingShareBranchSwitch` thread through
-      // `wm.createProjectWindow`, which registers each one's readiness-gated
-      // delivery BEFORE `loadURL` awaits. Delivery happens inside the
-      // window-manager hook — no post-load dispatch here.
-      await openProjectOrFallbackToNavigator(
-        projectPath,
-        'deep-link',
-        opts?.pendingDeepLinkTarget,
-        opts?.pendingBranch,
-        opts?.pendingMultiCandidate,
-        opts?.pendingShareBranchSwitch,
-        opts?.pendingTargetMissing,
+  bootPrimaryInstanceComposition({
+    logBoot: () => {
+      getRootDesktopLogger().info(
+        {
+          event: 'desktop.boot',
+          version: app.getVersion(),
+          isPackaged: app.isPackaged,
+          electronVersion: process.versions.electron,
+          nodeVersion: process.version,
+          platform: process.platform,
+          arch: process.arch,
+        },
+        'desktop main process starting',
       );
-      const ctx = wm?.getWindowFor(projectPath);
-      if (!ctx) {
-        // The fallback ran — dialog shown, Navigator reopened. Return null so
-        // the caller knows the spawn failed (nothing to dispatch).
-        return null;
-      }
-      return ctx.window as unknown as object;
     },
-    // `synapsenote://open?file=<abs>` — the desktop side of `ok <file>`.
-    // `openEphemeralFile` re-derives the plan and routes project-vs-
-    // ephemeral itself, so the url-scheme layer just hands off the path.
-    openEphemeralFile: (filePath) => openEphemeralFile(filePath),
-    sendDeepLink: (win, payload) => {
-      const w = win as BrowserWindowLike;
-      sendToRenderer(w.webContents, 'ok:deep-link', payload);
+    installPreReady: () => {
+      installBootPreReady({
+        app,
+        browserWindows: BrowserWindow,
+        crashReporter,
+        startLocalCrashReporter,
+        createCrashDetection,
+        setCrashDetection: (next) => {
+          crashDetection = next;
+        },
+        sendToRenderer,
+        getLogger,
+        attachRendererConsoleCapture,
+      });
     },
-    sendShareDeepLink: (win, payload) => {
-      const w = win as BrowserWindowLike;
-      sendToRenderer(w.webContents, 'ok:share:received', payload);
-    },
-    resolveShareTarget: (share) =>
-      resolveShareTargetMain(share, {
-        // The shared selector inline-filters `missing:true` entries from
-        // its input, so the annotated projection is the production wiring
-        // (mirrors how the renderer's bridge.listRecentProjects() surfaces
-        // the same list).
-        listRecent: () => annotateMissing(appState),
+    registerProtocol: () =>
+      registerBootProtocol({
+        app,
+        browserWindows: BrowserWindow,
+        registerProtocolHandler,
+        getWindowManager: () => wm ?? null,
+        openProjectOrFallbackToNavigator,
+        openEphemeralFile,
+        sendToRenderer,
+        resolveShareTarget: resolveShareTargetMain,
+        getAppState: () => appState,
+        annotateMissing,
+        checkShareTargetExists: checkTargetExistsImpl,
+        openNavigator,
+        initialArgv: process.argv,
+        console,
       }),
-    // Kind-aware target-existence gate, run after `branch-match-ok` and before
-    // dispatch (see `dispatchResolvedShare`). Native synchronous probe — no IPC.
-    checkShareTargetExists: (projectPath, kind, path) =>
-      checkTargetExistsImpl(projectPath, kind, path),
-    routeShareToNavigator: (payload) => {
-      // `openNavigator(payload)` handles both cold-create (cold path:
-      // `createNavigatorWindow` registers `once('dom-ready', ...)` BEFORE
-      // `loadFile`/`loadURL`) and warm-focus (warm path: `isLoading()`
-      // gate → immediate send when loaded, `once('did-finish-load')` when
-      // still mid-load). It always leaves `navigatorWindow` set (or throws on
-      // an unrecoverable BrowserWindow failure that propagates), so there is
-      // no post-call null state to guard. No post-call dispatch needed here.
-      openNavigator(payload);
-    },
-    openScreen: (win, screen) => {
-      // Same URL-hash trigger the app menu uses (`openSettings` /
-      // `openInstallSkillDialog` above) — funnels deep links through the
-      // renderer's existing client-side mount path. The Record gives
-      // exhaustiveness: a new ScreenTarget without a hash here is a type error.
-      const w = win as BrowserWindowLike;
-      const hashByScreen: Record<ScreenTarget, string> = {
-        settings: '#settings',
-        'install-claude': '#install-claude-desktop',
-      };
-      w.webContents.executeJavaScript(
-        `window.location.hash = '${hashByScreen[screen]}'; undefined`,
-      );
-    },
-    getFocusedWindow: () => {
-      const focused = BrowserWindow.getFocusedWindow();
-      return focused ? (focused as unknown as object) : null;
-    },
-    getAnyReadyWindow: () => {
-      const first = BrowserWindow.getAllWindows()[0];
-      return first ? (first as unknown as object) : null;
-    },
-    getInitialArgv: () => process.argv,
-    log: {
-      warn: (obj, msg) => console.warn(msg, obj),
-      info: (obj, msg) => console.info(msg, obj),
-    },
-  });
-
-  app
-    .whenReady()
-    .then(async () => {
-      // Startup instrumentation: stamp the launch origin and stand up the
-      // OTel root (Plan A). `beginRoot` is fault-isolated + gated on
-      // OTEL_SDK_DISABLED, so this is a near-free no-op when telemetry is off;
-      // its return tells the waterfall whether main spans are live.
-      startupWaterfall.mark('appReady');
-      startupWaterfall.otelEnabled = beginRoot();
-      // One-time userData migration for the "SynapseNote" → "SynapseNote"
-      // rename. Dormant until the packaged productName flips the userData
-      // basename to "SynapseNote"; then it relocates a verified-ours legacy
-      // "SynapseNote" dir and cleans it up. Runs BEFORE the first-run probe
-      // + loadAppState below so the migrated state is loaded, not treated as a
-      // fresh first run. Routes events to the pino file logger so a failed
-      // migration is visible in production logs, not just on the console.
-      const userDataMigrationLog = getLogger('userdata-migration');
-      const userDataMigration = await migrateLegacyUserDataDir({
-        userDataDir: app.getPath('userData'),
-        platform: process.platform,
-        logger: { event: (payload) => userDataMigrationLog.info(payload, payload.event) },
-      });
-      if (userDataMigration.status === 'failed') {
-        userDataMigrationLog.warn(
-          { status: userDataMigration.status, error: userDataMigration.error },
-          'userData migration failed; starting as first run',
-        );
-      }
-
-      // Configure the native About panel with the project copyright + GPLv3
-      // notice (the GUI "Appropriate Legal Notices" surface). Idempotent.
-      app.setAboutPanelOptions(buildAboutPanelOptions(app.getVersion()));
-
-      const result = await runBootstrap({
-        loadAppState,
-        evaluateSchemaCompatibility,
-        installLocalhostCorsInjector,
-        installEmbedRefererRewriter,
-        registerIpcHandlers,
-        setNativeThemeSource: (source) => {
-          nativeTheme.themeSource = source;
-        },
-        refreshApplicationMenu,
-        installDockIcon,
-        log: { warn: (msg, obj) => console.warn(msg, obj) },
-        appVersion: app.getVersion(),
-        maxSupportedSchemaVersion: MAX_SUPPORTED_SCHEMA_VERSION,
-      });
-      appState = result.appState;
-      pendingSchemaIncompatibility = result.pendingSchemaIncompatibility;
-      // Startup instrumentation: bootstrap (IPC handlers, menu, dock, state)
-      // is complete; the next launch phase is the project-window open + spawn.
-      startupWaterfall.mark('bootstrapDone');
-
-      // Re-broadcast a pending downloaded-update to any window opened from now
-      // on. The relaunch banner (Toast A, `ok:update:downloaded`) fans out once
-      // per `update-downloaded` to every window then-open; a window opened
-      // *afterwards* missed that event, so resend it once the new window's
-      // renderer has loaded its subscriber (the module-level update-notices
-      // store attaches it before React mounts). `versionPendingInstall` is read
-      // inside the `did-finish-load` callback, not at window-create time, so a
-      // user who clicked "Relaunch now" in another window in the meantime
-      // (`ok:update:relaunch-now` clears the field before `quitAndInstall()`)
-      // doesn't get a stale banner here. Nothing staged → no-op.
-      app.on('browser-window-created', (_event, win) => {
-        win.webContents.once('did-finish-load', () => {
-          // Update notices are a production-only surface. In a dev build
-          // (unpackaged, no OK_UPDATER_FORCE_DEV) a persisted
-          // `versionPendingInstall` is stale dev/test residue — the auto-updater
-          // suppresses its boot-time emits there, so suppress this late-window
-          // re-broadcast on the same signal for parity (else a newly-opened dev
-          // window resurfaces the staged-update banner the boot path withheld).
-          if (!(app.isPackaged || process.env.OK_UPDATER_FORCE_DEV === '1')) return;
-          const pending = appState.versionPendingInstall;
-          if (pending) {
-            sendToRenderer(win.webContents, 'ok:update:downloaded', { version: pending });
-          }
-          // Late-window release-notes delivery: a project opened while the
-          // what's-new notice is still live (within its ~60s window and not
-          // dismissed) still shows the card. `getActiveWhatsNew` returns null
-          // once that window elapses or the notice was dismissed, so an
-          // unrelated window opened later gets nothing.
-          const whatsNew = autoUpdaterHandle?.getActiveWhatsNew();
-          if (whatsNew) {
-            sendToRenderer(win.webContents, 'ok:update:whats-new', whatsNew);
-          }
-        });
-      });
-
-      // First-launch MCP consent. Armed before the window-open branch so the
-      // `ok:mcp-wiring:renderer-ready` listener is installed BEFORE any
-      // renderer could possibly fire it — otherwise a fast `did-finish-load`
-      // → React-mount would race and the ack event lands on a dead channel.
-      // `runMcpWiringOnFirstLaunch` no-ops (returns an inert handle) when the
-      // platform is non-darwin, the app is in dev mode without
-      // `OK_M6B_FORCE=1`, the user-scoped marker is present, or
-      // `app.getPath('exe')` doesn't match the bundle shape. The cli surface
-      // is imported via the published-package name `@nedian0brien/synapsenote`
-      // so turbo's `^build` topology correctly invalidates desktop's cache
-      // when CLI internals change. Rollup tree-shakes unused CLI code at
-      // electron-vite build time, keeping the DMG bundle size bounded.
-      mcpWiringHandle = armMcpWiring();
-      // Startup path-install runs WITHOUT a consent decision: OK-owned
-      // steps (`~/.ok/bin` symlinks, `~/.ok/env.sh`) always self-heal, but
-      // the rc-file append requires a recorded `consent: granted` on the
-      // marker or grandfather evidence (a healthy managed block already on
-      // disk). A fresh machine gets no rc write here — the consent dialog's
-      // confirm path is the sole finalizer of a new decision.
-      void Promise.allSettled([
-        checkAndRepairMcpWiringOnStartup(createMcpWiringOpts()),
-        ensureCliOnPath(buildEnsureCliOnPathOpts()),
-      ])
-        .then(([mcpSettled, pathSettled]) => {
-          // A hard rejection here is a whole-operation failure, not editor-
-          // specific — keep failedEditors empty (the failed-toast copy never
-          // names editors) and log the real error instead.
-          if (mcpSettled.status === 'rejected') {
-            console.warn('[main] MCP startup repair threw', {
-              error: formatUnknownError(mcpSettled.reason),
-            });
-          }
-          const mcp: McpStartupRepairResult =
-            mcpSettled.status === 'fulfilled'
-              ? mcpSettled.value
-              : { status: 'failed', failedEditors: [] };
-          const path: EnsureCliOnPathResult =
-            pathSettled.status === 'fulfilled'
-              ? pathSettled.value
-              : { status: 'failed-all', error: formatUnknownError(pathSettled.reason) };
-          dispatchStartupReclaimToastWhenReady({ mcp, path });
-        })
-        .catch((err) => {
-          console.warn('[main] startup reclaim dispatch threw', {
-            error: formatUnknownError(err),
-          });
-        });
-
-      // Every project open spawns a NEW editor window. Boot restore order:
-      //   1. An update relaunch left a `pendingWindowRestore` snapshot — open
-      //      EVERY project that was open before the relaunch, not just the
-      //      last one. The snapshot is consumed unconditionally (cleared to
-      //      null + persisted) before any window opens, so a crash mid-restore
-      //      can't loop it. A non-null-but-empty/all-missing snapshot opens
-      //      the Navigator and deliberately does NOT fall through to
-      //      `lastOpenedProject` — the relaunch is honored as "nothing was
-      //      open" rather than reopening a stale project.
-      //   2. Otherwise restore `lastOpenedProject` into one editor window.
-      //   3. Holding Option (`--navigator`) or having nothing to restore
-      //      opens the Navigator instead.
-      const decision = await resolveBootRestoreDecision({
-        pendingRestore: appState.pendingWindowRestore,
-        lastOpenedProject: appState.lastOpenedProject,
-        optionHeld: process.argv.includes('--navigator'),
-        pathExists: existsSync,
-        // A launch-claiming URL that opens its own window — a single-file open
-        // (`ok <file>`) OR a valid share — suppresses the default boot-restore
-        // window so the URL flush owns the launch. Read AFTER the settle barrier
-        // resolves: on macOS the `open-url` Apple Event can land after this point
-        // in the boot chain, so reading the flag synchronously here would miss a
-        // cold-start share and open the previously-opened project instead.
-        urlLaunchOwnsWindow: protocolControl.urlLaunchOwnsWindow,
-        waitForUrlLaunchSettled: protocolControl.waitForUrlLaunchSettled,
-      });
-      // Field signal distinguishing "a URL owned the launch" from "restored
-      // despite an inbound share" — the settled flag/decision pair is otherwise
-      // unobservable outside a debugger.
-      getLogger('startup').info(
-        { urlLaunch: protocolControl.urlLaunchOwnsWindow(), action: decision.action },
-        'boot-restore decision',
-      );
-      if (decision.clearSnapshot) {
-        appState = { ...appState, pendingWindowRestore: null };
-        if (!saveAppState(appState)) {
-          // Persisting the cleared snapshot failed, so it may replay on the
-          // next boot. The existsSync filter limits the blast radius to
-          // projects that still exist on disk.
-          console.warn('[main] failed to persist cleared window-restore snapshot', {
-            projectCount: decision.action === 'restore' ? decision.projects.length : 0,
-          });
-        }
-      }
-
-      // Git preflight — runs for every launch EXCEPT a single-file deep-link,
-      // whose ephemeral server boots git-off. Projects use git for the shadow
-      // repo, so a missing/old binary surfaces here as a recoverable native
-      // dialog (Open Install Page / Retry / Quit) instead of a spawn-ENOENT deep
-      // in a later CRDT trace, BEFORE the project window + detached server child
-      // are created. The Navigator preflights too — it opens no git-backed server
-      // itself, but it's the gateway to project opens, so the gate stays where it
-      // was pre-fix. Only the no-project ephemeral single-file shape skips it:
-      // that server boots git-off, so requiring git would block `ok <file>` for a
-      // user without it. A share launch ALSO yields `action: 'none'` (it
-      // suppresses the default window) but opens/clones a git-backed project, so
-      // it still preflights — gate on `singleFileLaunch()`, not the bare `'none'`.
-      // A project later opened from a single-file session falls back to the
-      // server child's own bootServer() preflight as the backstop.
-      const skipGitPreflight = decision.action === 'none' && protocolControl.singleFileLaunch();
-      if (!skipGitPreflight) {
-        const gitOutcome = await ensureGitAvailable({
-          assertGitAvailable,
-          // Electron's MessageBoxOptions wants a mutable `buttons: string[]`; the
-          // handler's contract uses `readonly string[]`. Spread to a fresh
-          // mutable copy at the boundary.
-          showMessageBox: async (opts) =>
-            dialog.showMessageBox({ ...opts, buttons: [...opts.buttons] }),
-          openExternal: (url) => shell.openExternal(url),
-          log: { warn: (msg, obj) => console.warn(msg, obj) },
-        });
-        if (gitOutcome === 'aborted') {
-          // User clicked Quit (or an unrecoverable non-typed error fired). Open
-          // no window; bootstrap ran but no project window/server was spawned.
-          app.quit();
-          return;
-        }
-      }
-
-      if (decision.action === 'restore') {
-        // Parallel opens — the snapshot is ordered least → most recently
-        // focused (see `pendingWindowRestore`), but each window shows only
-        // when its own theme gate releases, so completion order (and thus
-        // which window ends up focused) is nondeterministic. Raise the
-        // snapshot's LAST entry once every open settles AND its window is
-        // actually visible: `bringToFront` calls `show()`, so raising a
-        // still-gated window would bypass the dual-signal show gate and
-        // resurface the un-themed first paint.
-        const opens = decision.projects.map((projectPath) =>
-          openProjectOrFallbackToNavigator(projectPath, 'recents'),
-        );
-        const lastActiveProject = decision.projects[decision.projects.length - 1];
-        void Promise.allSettled(opens).then(() => {
-          if (lastActiveProject === undefined) return;
-          const ctx = wm?.getWindowFor(lastActiveProject);
-          // Absent context = the open failed and fell back to the Navigator;
-          // nothing to raise.
-          if (!ctx || ctx.window.isDestroyed?.() === true) return;
-          const raise = () => {
-            if (ctx.window.isDestroyed?.() !== true) wm?.focusWindowForProject(lastActiveProject);
-          };
-          if (ctx.window.isVisible?.() === true) raise();
-          else (ctx.window as unknown as BrowserWindow).once('show', raise);
-        });
-      } else if (decision.action === 'lastOpened') {
-        void openProjectOrFallbackToNavigator(decision.project, 'recents');
-      } else if (decision.action === 'navigator') {
-        openNavigator();
-      } else {
-        // 'none' — a launch-claiming URL (single-file deep-link or valid share)
-        // owns this launch. Open no default window; drain the queued URL now (the
-        // window manager is ready post-bootstrap) so the URL-driven window opens
-        // immediately rather than waiting out the auto-flush's window-ready retry
-        // budget.
-        protocolControl.drainQueuedUrls();
-      }
-
-      // Fire-and-forget user-global Agent Skill reclaim. Runs on every launch
-      // — force-writes each ENABLED bundle's SKILL into the central store and
-      // per-host dirs (per-bundle opt-in gated; declined bundles are removed).
-      // PATH-independent (no npx subprocess), so it survives the GUI launch
-      // context where /opt/homebrew/bin and ~/.nvm/… are off PATH. Never
-      // awaited so window rendering + menu are unblocked.
-      void reclaimUserSkillsOnLaunch(buildReclaimUserSkillsOpts()).catch((err) => {
-        console.warn('[main] user-skill reclaim failed', {
-          err: err instanceof Error ? err.message : String(err),
-        });
-      });
-
-      // Auto-updater — wired as the LAST step in whenReady, after the window-
-      // open branch (either openProjectOrFallbackToNavigator OR openNavigator).
-      // Not gated on createNavigatorWindow specifically — Navigator only opens
-      // on the Option-held / no-last-project path, but the updater must run on
-      // every boot path. `electron-updater` is imported dynamically so unit
-      // tests that import main/index.ts indirectly don't pull in the
-      // Electron-only runtime dependency.
-      //
-      // Routed through `bootAutoUpdater` — a thin testable wrapper that
-      // centralizes the dynamic-import + startAutoUpdater try/catch contract.
-      // A silent dynamic-import failure (bundling drift, corrupt node_modules,
-      // future Electron upgrade that desyncs the electron-updater version)
-      // would leave the app session un-updateable with no signal; the wrapper
-      // logs the failure at `error` level so operators see it in the
-      // packaged-app console output and returns null so `autoUpdaterHandle`
-      // stays null (destroy on will-quit no-ops).
-      autoUpdaterHandle = await bootAutoUpdater(() => import('electron-updater'), {
-        // Route the auto-updater's diagnostics into the pino file logger. Its
-        // Logger interface is `(msg, ctx?)`; `getLogger` is `(data, msg)`, so
-        // adapt the shape. Without this the updater falls back to its
-        // console-only DEFAULT_LOGGER, which a packaged build never persists —
-        // leaving the relaunch trigger, channel vetoes, and update events
-        // invisible in `~/.ok/logs/`.
-        logger: {
-          info: (msg: string, ctx?: object) =>
-            getLogger('updater').info((ctx ?? {}) as Record<string, unknown>, msg),
-          warn: (msg: string, ctx?: object) =>
-            getLogger('updater').warn((ctx ?? {}) as Record<string, unknown>, msg),
-          error: (msg: string, ctx?: object) =>
-            getLogger('updater').error((ctx ?? {}) as Record<string, unknown>, msg),
-          debug: (msg: string, ctx?: object) =>
-            getLogger('updater').debug((ctx ?? {}) as Record<string, unknown>, msg),
-        },
-        ipcMain,
-        readState: () => appState,
-        writeState: (next) => {
-          // Rollback in-memory on disk-save failure so persistSafely-false in
-          // auto-updater.ts truly means "no gate armed". `saveAppStateToDir`
-          // returns a success boolean — on failure it has already logged +
-          // cleaned up; we just revert the in-memory commit and throw so
-          // persistSafely's catch registers the failure, skips the broadcast,
-          // and leaves memory + disk agreeing on "nothing armed."
-          // `saveAppStateToDir` itself never throws, so the rollback path is
-          // reached purely via the return value.
-          const prev = appState;
-          appState = next;
-          const ok = saveAppState(appState);
-          if (!ok) {
-            appState = prev;
-            throw new Error('saveAppState failed — rolled back in-memory state');
-          }
-        },
-        // Single-window target for the one-shot prompts that shouldn't multiply
-        // (Toast C stuck-hint). Prefer the focused window so the prompt lands
-        // where the user is looking; fall back to the first open window; null
-        // when none is open so the broadcast helper no-ops.
-        getPrimaryWindow: () => {
-          const focused = BrowserWindow.getFocusedWindow();
-          if (focused) return focused;
-          const all = BrowserWindow.getAllWindows();
-          return all[0] ?? null;
-        },
-        // Fan-out target for the relaunch banner (Toast A), the release-notes
-        // notice (Toast B), and its cross-window dismiss — a staged update and
-        // "what's new" should be actionable/visible from whichever window the
-        // user is looking at, and a dismiss must reach every window.
-        getAllWindows: () => BrowserWindow.getAllWindows(),
-        getAppVersion: () => app.getVersion(),
-        isPackaged: app.isPackaged,
-        forceDevBypass: process.env.OK_UPDATER_FORCE_DEV === '1',
-        // smoke override: point the updater at a local mock HTTP server
-        // that serves a hand-crafted `latest-mac.yml` + fake .zip with valid
-        // sha512. Production leaves this unset and reads `publish: github`
-        // from `app-update.yml`. Paired with `OK_UPDATER_FORCE_DEV=1` (above)
-        // so the `checkForUpdates()` gate actually hits the network in a dev
-        // build. See `packages/desktop/scripts/smoke-mock-update.mjs --keep-alive`
-        // for the server side.
-        feedUrl: process.env.OK_UPDATER_FEED_URL || undefined,
-        // Point the updater feed at the synapse.lawdigest.kr proxy so updates are
-        // counted per version. The proxy 302s to the byte-identical GitHub
-        // asset, preserving the manifest sha512 and the macOS signature; a feed
-        // failure reverts to the GitHub provider for the session. Both channels
-        // are enabled now that an end-to-end beta auto-update
-        // has been confirmed through the proxy; the `latest` (stable) path
-        // resolves via GitHub's authoritative `releases/latest` alias.
-        proxyFeed: {
-          base: 'https://synapse.lawdigest.kr/updates',
-          channels: new Set<UpdateChannel>(['beta', 'latest']),
-        },
-        // Toast B renderer-mount race —
-        // defer the dispatch until the primary window's renderer has
-        // finished loading so its `<UpdateToast/>` subscribers are
-        // attached. Without this, `webContents.send` sent from this very
-        // `app.whenReady()` handler is dropped on the floor (Electron does
-        // NOT buffer renderer-bound events before `did-finish-load`). If
-        // the primary window has already loaded by the time Toast B fires
-        // (rare — updater wires before loadURL resolves), fire immediately.
-        whenRendererReady: (fn) => {
-          // Three cases, all must deliver Toast B eventually because
-          // `lastSeenVersion` has already advanced at the call site and the
-          // contract ("user sees a toast on first launch post-update")
-          // does not allow silent-drop — close the
-          // `lastSeenVersion`-advanced-but-broadcast-lost gap that the
-          // no-window race would otherwise open.
-          //
-          //   1. Window exists + already loaded → fire immediately.
-          //   2. Window exists + still loading  → wait for did-finish-load.
-          //   3. No window yet                  → wait for the next
-          //      `browser-window-created` event, then recurse into cases
-          //      1/2 against the fresh window.
-          //
-          // Electron emits `browser-window-created` synchronously inside
-          // `new BrowserWindow(opts)`; `once` self-detaches after the first
-          // firing so this listener can't leak across future spawns. If
-          // the user quits the app before any window ever opens (pathological
-          // — macOS doesn't dispatch Cmd+Q without a window), the listener is
-          // garbage-collected alongside the `app` object at process exit.
-          //
-          // `getURL() === ''` distinguishes a freshly-constructed window
-          // (loadURL not yet called) from an already-loaded one. Without it,
-          // a fresh window emerging via `browser-window-created` registers
-          // `isLoading() === false` and falls through to `fn()` synchronously
-          // — sending the IPC before the renderer's main.tsx has run + before
-          // `installUpdateNoticesBridge()` has attached the subscriber.
-          // Electron drops main→renderer IPC sent against an unloaded page.
-          const tryFire = (win: BrowserWindow): void => {
-            if (win.webContents.isLoading() || win.webContents.getURL() === '') {
-              win.webContents.once('did-finish-load', fn);
-            } else {
-              fn();
-            }
-          };
-          const focused = BrowserWindow.getFocusedWindow();
-          const existing = focused ?? BrowserWindow.getAllWindows()[0] ?? null;
-          if (existing) {
-            tryFire(existing);
-            return;
-          }
-          app.once('browser-window-created', (_event, createdWin) => {
-            tryFire(createdWin as BrowserWindow);
-          });
-        },
-        // Pre-relaunch teardown — synchronously hard-kill every project-window
-        // utility (Hocuspocus host) right before
-        // `autoUpdater.quitAndInstall()` so Squirrel.Mac's `pgrep` against
-        // the bundle path doesn't see a stale process and abort with code -9
-        // ("App Still Running Error"). The graceful `{type:'shutdown'}`
-        // window-close IPC isn't fast enough — Hocuspocus drain + file-watcher
-        // teardown can outlast ShipIt's poll budget.
-        prepareForRelaunch: async () => {
-          // Freeze focus tracking BEFORE any teardown: the window-close
-          // cascade below re-focuses each surviving window, and tracking
-          // those events would rewrite `lastOpenedProject` / the focus
-          // sequence with close-order noise after the snapshot is taken.
-          freezeFocusTracking('prepare-for-relaunch');
-          // Snapshot every open project window so the post-update boot
-          // restores all of them — not just `lastOpenedProject` — ordered
-          // least → most recently focused so the boot can raise the last
-          // entry and land the user in the window they were working in.
-          // Persist BEFORE the server shutdown: `saveAppState` is a
-          // synchronous tmp-write + rename that completes well before
-          // `stopAllOwnedServers` returns or `quitAndInstall()` fires.
-          const openProjects = sortByFocusSequence(
-            wm?.getOpenProjectPaths() ?? [],
-            projectFocusSeq,
-          );
-          appState = { ...appState, pendingWindowRestore: openProjects };
-          if (!saveAppState(appState)) {
-            // Persisting the snapshot failed, so the post-update boot may not
-            // reopen all the windows that were open before the relaunch.
-            console.warn('[main] failed to persist window-restore snapshot before relaunch', {
-              projectCount: openProjects.length,
-            });
-          }
-          // Two-phase shutdown: SIGTERM detached server pids (and SIGKILL any
-          // dev-path utilityProcess.fork helpers), then poll the lock files
-          // until they release or 10 s elapses, then escalate to SIGKILL on
-          // detached pids whose drain ran long. Awaiting here means the
-          // updater's `quitAndInstall` waits for the process tree to be
-          // genuinely clean before ShipIt's pre-swap `pgrep` runs.
-          await wm?.stopAllOwnedServers();
-          // Drain the async log buffer before `quitAndInstall()` hands off to
-          // Squirrel, which SIGKILLs this process for the bundle swap. Without
-          // this, the relaunch-trigger + update lines emitted moments earlier
-          // never reach disk (the destination is `sync: false`).
-          flushDesktopLogger();
-        },
-        // User feedback for menu-driven `Check for Updates…` clicks. The
-        // periodic hourly check stays silent on a no-update outcome (the
-        // existing `update-not-available` log-only handler), but a manual
-        // gesture deserves explicit confirmation. macOS HIG / Sparkle
-        // convention is a modal dialog parented to the active window.
-        showCheckNowResult: (result) => {
-          const target = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
-          // No-window case is rare on macOS (the app keeps the dock icon
-          // alive past last-window-close, and the menu is unreachable
-          // without at least one window) but cleanly degrade if it
-          // happens — a missing parent makes showMessageBox throw on some
-          // Electron versions.
-          if (!target) return;
-          if (result.kind === 'not-available') {
-            void dialog.showMessageBox(target, {
-              type: 'info',
-              buttons: ['OK'],
-              defaultId: 0,
-              title: 'Up to Date',
-              message: "You're on the latest version of SynapseNote.",
-              detail: `SynapseNote ${result.currentVersion} is the most current version available.`,
-            });
-          } else if (result.kind === 'available') {
-            void dialog.showMessageBox(target, {
-              type: 'info',
-              buttons: ['OK'],
-              defaultId: 0,
-              title: 'Update Available',
-              message: `SynapseNote ${result.latestVersion} is available.`,
-              detail: `It's downloading in the background. You'll be prompted to relaunch when the install is ready.`,
-            });
-          } else {
-            void dialog.showMessageBox(target, {
-              type: 'warning',
-              buttons: ['OK'],
-              defaultId: 0,
-              title: "Couldn't Check for Updates",
-              message: "SynapseNote couldn't check for updates right now.",
-              detail: result.message,
-            });
-          }
-        },
-      });
-      // Re-install the menu now that the auto-updater handle exists, so the
-      // "Check for Updates…" entries actually have something to invoke.
-      refreshApplicationMenu();
-
-      // Mid-session drag-replace detector. AppKit caches `Info.plist` at
-      // process launch (`NSBundle.mainBundle`); when a user drags a new
-      // `.app` over `/Applications/SynapseNote.app` while the app is
-      // running, every in-process reader (About panel, telemetry, Activity
-      // Monitor Get Info) keeps serving the OLD version until the user
-      // quits and relaunches. The auto-updater's `quitAndInstall` doesn't
-      // hit this — it fully terminates the process before swapping — so
-      // this watcher only ever fires for the manual drag-replace path.
-      // Packaged macOS only: dev builds run from a non-bundle layout
-      // (electron-vite → unpacked Resources), so there's no on-disk
-      // `.app/Contents/Info.plist` to compare against `app.getVersion()`.
-      if (process.platform === 'darwin' && app.isPackaged) {
-        const exePath = app.getPath('exe');
-        // `<exe>` resolves to `<…>/SynapseNote.app/Contents/MacOS/SynapseNote`,
-        // so the Info.plist sits two dirnames up.
-        const infoPlistPath = join(dirname(dirname(exePath)), 'Info.plist');
-        bundleReplaceWatcherHandle = startBundleReplaceWatcher({
-          infoPlistPath,
-          getCurrentVersion: () => app.getVersion(),
-          dialog,
+    whenReady: () => app.whenReady(),
+    runReady: (protocol) =>
+      runBootReady(
+        {
           app,
-        });
-      }
-    })
-    .catch((err: unknown) => {
-      // Boot diagnostic safety net. Without this, an unhandled rejection in
-      // the whenReady chain (runBootstrap throw, dynamic import failure,
-      // armMcpWiring synchronous error, etc.) leaves the user with no
-      // window and only the unhandled-rejection banner in stderr.
-      // Structured warn is the grep-able diagnostic trail.
-      //
-      // No `dialog.showErrorBox` here — that call is blocking on macOS.
-      // firing it from the
-      // unhandled-rejection path freezes the main process and prevents
-      // show-gate's setTimeout from resolving, which causes smoke tests
-      // (and real cold-launches in the same failure shape) to hang
-      // instead of fail loudly. The "no window" failure mode is
-      // acceptable here because boot already failed unrecoverably.
+          browserWindows: BrowserWindow,
+          platform: process.platform,
+          env: process.env,
+          argv: process.argv,
+          startupWaterfall,
+          beginRoot,
+          migrateLegacyUserDataDir,
+          getLogger,
+          buildAboutPanelOptions,
+          runBootstrap: () =>
+            runBootstrap({
+              loadAppState,
+              evaluateSchemaCompatibility,
+              installLocalhostCorsInjector,
+              installEmbedRefererRewriter,
+              registerIpcHandlers,
+              setNativeThemeSource: (source) => {
+                nativeTheme.themeSource = source;
+              },
+              refreshApplicationMenu,
+              installDockIcon,
+              log: { warn: (msg, obj) => console.warn(msg, obj) },
+              appVersion: app.getVersion(),
+              maxSupportedSchemaVersion: MAX_SUPPORTED_SCHEMA_VERSION,
+            }),
+          state: {
+            get: () => appState,
+            set: (next) => {
+              appState = next;
+            },
+            save: saveAppState,
+          },
+          setPendingSchemaIncompatibility: (diagnostic) => {
+            pendingSchemaIncompatibility = diagnostic;
+          },
+          sendToRenderer,
+          getAutoUpdaterHandle: () => autoUpdaterHandle,
+          armMcpWiring: () => {
+            mcpWiringHandle = armMcpWiring();
+          },
+          startStartupReclaim: () => {
+            void Promise.allSettled([
+              checkAndRepairMcpWiringOnStartup(createMcpWiringOpts()),
+              ensureCliOnPath(buildEnsureCliOnPathOpts()),
+            ])
+              .then(([mcpSettled, pathSettled]) => {
+                if (mcpSettled.status === 'rejected') {
+                  console.warn('[main] MCP startup repair threw', {
+                    error: formatUnknownError(mcpSettled.reason),
+                  });
+                }
+                const mcp: McpStartupRepairResult =
+                  mcpSettled.status === 'fulfilled'
+                    ? mcpSettled.value
+                    : { status: 'failed', failedEditors: [] };
+                const path: EnsureCliOnPathResult =
+                  pathSettled.status === 'fulfilled'
+                    ? pathSettled.value
+                    : { status: 'failed-all', error: formatUnknownError(pathSettled.reason) };
+                dispatchStartupReclaimToastWhenReady({ mcp, path });
+              })
+              .catch((err) => {
+                console.warn('[main] startup reclaim dispatch threw', {
+                  error: formatUnknownError(err),
+                });
+              });
+          },
+          resolveBootRestoreDecision,
+          pathExists: existsSync,
+          preflightGit: async () => {
+            const outcome = await ensureGitAvailable({
+              assertGitAvailable,
+              showMessageBox: async (opts) =>
+                dialog.showMessageBox({ ...opts, buttons: [...opts.buttons] }),
+              openExternal: (url) => shell.openExternal(url),
+              log: { warn: (msg, obj) => console.warn(msg, obj) },
+            });
+            return outcome === 'aborted' ? 'aborted' : 'ready';
+          },
+          openProjectOrFallbackToNavigator,
+          getWindowManager: () => wm ?? null,
+          openNavigator,
+          reclaimUserSkillsOnLaunch: () => reclaimUserSkillsOnLaunch(buildReclaimUserSkillsOpts()),
+          bootAutoUpdater: () =>
+            bootAutoUpdaterForPrimaryInstance({
+              app,
+              browserWindows: BrowserWindow,
+              dialog,
+              ipcMain,
+              platform: process.platform,
+              env: process.env,
+              bootAutoUpdater,
+              getLogger,
+              state: {
+                get: () => appState,
+                set: (next) => {
+                  appState = next;
+                },
+                save: saveAppState,
+              },
+              getWindowManager: () => wm ?? null,
+              projectFocusSeq,
+              freezeFocusTracking,
+              flushDesktopLogger,
+              setAutoUpdaterHandle: (handle) => {
+                autoUpdaterHandle = handle;
+              },
+              startBundleReplaceWatcher,
+              setBundleReplaceWatcherHandle: (handle) => {
+                bundleReplaceWatcherHandle = handle;
+              },
+            }),
+          refreshApplicationMenu,
+        },
+        protocol,
+      ),
+    installLifecycle: () => {
+      installBootLifecycle({
+        app,
+        nativeAutoUpdater: electronAutoUpdater,
+        browserWindows: BrowserWindow,
+        platform: process.platform,
+        getLogger,
+        freezeFocusTracking,
+        emitStartupWaterfall,
+        endRoot,
+        flushDesktopLogger,
+        getWindowManager: () => wm ?? null,
+        getCrashDetection: () => crashDetection,
+        getTerminalReaper: () => terminalReaper,
+        clearDockVisibility: () => dockVisibleForWindow.clear(),
+        getAutoUpdaterHandle: () => autoUpdaterHandle,
+        clearAutoUpdaterHandle: () => {
+          autoUpdaterHandle = null;
+        },
+        getBundleReplaceWatcherHandle: () => bundleReplaceWatcherHandle,
+        clearBundleReplaceWatcherHandle: () => {
+          bundleReplaceWatcherHandle = null;
+        },
+        getMcpWiringHandle: () => mcpWiringHandle,
+        clearMcpWiringHandle: () => {
+          mcpWiringHandle = null;
+        },
+        openNavigator,
+      });
+    },
+    reportReadyFailure: (err) => {
       const message = err instanceof Error ? err.message : String(err);
       const stack = err instanceof Error ? (err.stack ?? '') : '';
       console.error(JSON.stringify({ event: 'whenReady-unhandled-rejection', message, stack }));
-    });
-
-  // App-lifecycle breadcrumbs for diagnosing unexpected restarts. A genuine
-  // crash fires NONE of these (the process dies with no quit sequence); a
-  // controlled quit fires `before-quit` → `will-quit`; an auto-update install
-  // additionally fires `before-quit-for-update`. Each flushes so the line
-  // survives the imminent exit.
-  app.on('before-quit', () => {
-    getLogger('lifecycle').info({}, 'before-quit');
-    // Stop tracking focus before the quit sequence closes windows — each
-    // close re-focuses a surviving window, and recording that churn would
-    // overwrite `lastOpenedProject` with whichever window closed last.
-    freezeFocusTracking('before-quit');
-    // Flush pending startup telemetry before exit. `emitStartupWaterfall`
-    // covers a quit during the post-window-shown flush-deadline window (the
-    // `.unref()`'d deadline timer won't fire once the process is exiting): it
-    // emits the partial timeline and ends the OTel root. `endRoot` then also
-    // covers a quit BEFORE any window was shown (emit no-ops without the
-    // `windowShown` mark). Both are idempotent, so the normal post-emit quit
-    // path is a no-op here.
-    emitStartupWaterfall();
-    endRoot();
-    flushDesktopLogger();
-  });
-  // electron-updater's MacUpdater installs via Electron's native autoUpdater
-  // singleton, so this fires for BOTH the "Relaunch now" toast `quitAndInstall()`
-  // and the `autoInstallOnAppQuit` install-on-quit path — it is the single
-  // signal that distinguishes "an update swapped the bundle and relaunched"
-  // from "the user just quit".
-  electronAutoUpdater.on('before-quit-for-update', () => {
-    getLogger('updater').info({}, 'before-quit-for-update — update install will relaunch the app');
-    // Same focus-churn guard as `before-quit` — this event precedes it on the
-    // silent install-on-quit path and is idempotent with the earlier
-    // `prepareForRelaunch` freeze on the "Relaunch now" path.
-    freezeFocusTracking('before-quit-for-update');
-    // Shut down the servers this desktop spawned BEFORE the swap completes, so
-    // the relaunched (new-version) app spawns fresh instead of attaching to a
-    // stale old-version server and showing the version-drift toast. Fires on
-    // both install paths: the "Relaunch now" path already drained its servers
-    // via `prepareForRelaunch` (so this no-ops there), while the silent
-    // `autoInstallOnAppQuit` install-on-quit path has no other teardown and is
-    // the case this closes. Synchronous best-effort — the event can't hold the
-    // quit open, but the server flushes pending writes + releases its lock far
-    // faster than the reinstall+relaunch takes. A plain quit never fires this
-    // event, so a normal app-quit leaves the detached server running, by design.
-    wm?.signalStopAllOwnedServers();
-    flushDesktopLogger();
-  });
-
-  // Cleared on `will-quit` (canonical shutdown ordering — NOT `before-quit`,
-  // which fires earlier in the shutdown sequence). Each handle's teardown
-  // method (`destroy()` or `stop()`) is idempotent, and the null-assignment
-  // after each call makes subsequent will-quit re-entrances no-ops.
-  app.on('will-quit', () => {
-    getLogger('lifecycle').info({}, 'will-quit');
-    // A quit that reaches here was orderly — clear the dirty-shutdown
-    // sentinel so the next boot doesn't read this session as a crash.
-    crashDetection?.markCleanQuit();
-    // Reap every window's PTY host first so no user shell / spawn-helper
-    // outlives the app. Idempotent (clears the map; a second pass no-ops).
-    terminalReaper?.killAll();
-    dockVisibleForWindow.clear();
-    autoUpdaterHandle?.destroy();
-    autoUpdaterHandle = null;
-    bundleReplaceWatcherHandle?.stop();
-    bundleReplaceWatcherHandle = null;
-    mcpWiringHandle?.destroy();
-    mcpWiringHandle = null;
-    // Final drain so the lifecycle + teardown lines reach disk before exit
-    // (the destination is `sync: false`).
-    flushDesktopLogger();
-  });
-
-  app.on('window-all-closed', () => {
-    // macOS convention — keep app running so Dock icon click can re-open Navigator.
-    if (process.platform !== 'darwin') {
-      app.quit();
-    }
-  });
-
-  app.on('activate', () => {
-    // macOS Dock icon click while no windows visible — re-open Navigator.
-    if (BrowserWindow.getAllWindows().length === 0) {
-      openNavigator();
-    }
+    },
   });
 } // end bootPrimaryInstance
 
