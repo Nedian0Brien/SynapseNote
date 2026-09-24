@@ -503,7 +503,11 @@ describe('database context packs', () => {
     expect(pack.retrieval).toMatchObject({
       query: { filter: null, sort: [], includeArchived: false },
       filters: { propertyIds: [] },
-      ranking: { strategy: 'typed_sort_then_record_id', sort: [], tieBreakers: ['record_id'] },
+      ranking: {
+        strategy: 'typed_sort_then_created_at_then_record_id',
+        sort: [],
+        tieBreakers: ['created_at', 'record_id'],
+      },
       projection: {
         requestedPropertyIds: ['prop_title', 'prop_status'],
         returnedPropertyIds: ['prop_title', 'prop_status'],

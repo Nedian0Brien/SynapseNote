@@ -61,9 +61,9 @@ export interface DatabaseContextPackRetrieval {
     propertyIds: readonly string[];
   };
   ranking: {
-    strategy: 'typed_sort_then_record_id';
+    strategy: 'typed_sort_then_created_at_then_record_id';
     sort: DatabaseQuery['sort'];
-    tieBreakers: readonly ['record_id'];
+    tieBreakers: readonly ['created_at', 'record_id'];
   };
   projection: {
     requestedPropertyIds: readonly string[];
@@ -1029,9 +1029,9 @@ export function createDatabaseContextPack(
       propertyIds: filterPropertyIdsForPack(input.query?.where),
     },
     ranking: {
-      strategy: 'typed_sort_then_record_id',
+      strategy: 'typed_sort_then_created_at_then_record_id',
       sort: structuredClone(input.query?.sort ?? []),
-      tieBreakers: ['record_id'],
+      tieBreakers: ['created_at', 'record_id'],
     },
     projection: {
       requestedPropertyIds: [...requestedSelectedIds],

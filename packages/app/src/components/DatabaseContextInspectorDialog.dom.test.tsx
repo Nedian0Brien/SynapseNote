@@ -32,9 +32,9 @@ function inspection(): DatabaseContextInspection {
       },
       filters: { propertyIds: ['prop_status'] },
       ranking: {
-        strategy: 'typed_sort_then_record_id',
+        strategy: 'typed_sort_then_created_at_then_record_id',
         sort: [{ propertyId: 'prop_title', direction: 'ascending' }],
-        tieBreakers: ['record_id'],
+        tieBreakers: ['created_at', 'record_id'],
       },
       projection: {
         requestedPropertyIds: ['prop_title', 'prop_private'],
