@@ -20,6 +20,8 @@ date: 2026-09-28
 | `native/editor-spike/yrs-ffi/Cargo.toml` | `yrs` 0.28, `uniffi` 0.32, `uniffi-bindgen` bin |
 | `native/editor-spike/yrs-ffi/src/lib.rs` | `SpikeDoc`(Utf16 텍스트 편집, update 적용·인코딩, 원격 delta 콜백), `yrs::sync` 메시지 인코딩·수신 |
 | `native/editor-spike/yrs-ffi/src/bin/uniffi-bindgen.rs` | 바인딩 생성기 |
+| `native/editor-spike/yrs-ffi/tests/sync.rs` | UTF-16 오프셋, 핸드셰이크, 수렴, 에코 없음 테스트 |
+| `native/editor-spike/yrs-ffi/Cargo.lock` | 의존성 고정 |
 | `native/editor-spike/scripts/build-xcframework.sh` | 시뮬레이터용 정적 라이브러리 → xcframework + Swift 바인딩 |
 | `native/editor-spike/project.yml` | xcodegen: iPad 앱 `EditorSpike` + 단위 테스트 타깃 |
 | `native/editor-spike/App/*.swift` | 앱 진입, 편집 화면 |
