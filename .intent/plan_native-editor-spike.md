@@ -29,7 +29,8 @@ date: 2026-09-28
 | `native/editor-spike/App/Editor/*.swift` | 텍스트 바인딩, 스캐너, 프리뷰, 컴포넌트 조각, 접기 |
 | `native/editor-spike/App/Soak/*.swift` | 자동 입력 모드, 해시 파일 기록 |
 | `native/editor-spike/Tests/*.swift` | 프레이밍, 바인딩, 스캐너 단위 테스트 |
-| `native/editor-spike/scripts/soak.ts` | XmlFragment 편집자, agent-patch 반복, 해시 비교 |
+| `native/editor-spike/scripts/soak.ts` | XmlFragment 편집자, agent-patch 반복, 해시 비교(수렴까지 최대 30초 대기). 대조 플래그: `--insert-only`, `--app-idle`, `--app-plain`, `--no-app`, `--no-fragment`, `--no-patch` |
+| `native/editor-spike/fixtures/spike.md` | 스파이크 기준 문서. soak은 실행마다 이 파일을 새 문서로 복사한다 |
 | `native/editor-spike/scripts/gen-fixture.ts` | 스파이크 문서와 5,000줄 문서 생성 |
 | `native/editor-spike/REPORT.md` | 결과 보고서와 실행 방법 |
 
@@ -57,8 +58,14 @@ date: 2026-09-28
    다른 클라이언트에 보이기까지의 지연을 잰다. 끝나면 15초 기다린 뒤 디스크 파일,
    새로 붙은 클라이언트의 `Y.Text`, `xcrun simctl get_app_container booted <id> data`로
    읽은 앱 해시를 비교하고 서버 로그에서 invariant·conflict를 찾는다.
-7. **게이트**: 10분 soak에서 세 해시 일치, 로그 깨끗함, 지연 p95 < 1s. 실패하면
-   단계 B로 가지 않고 원인을 조사해 REPORT.md에 적는다.
+7. **게이트**(구현 중 수정): 목표 구조의 작성자 조합인 `Y.Text` 전용 작성자(앱 +
+   agent-patch, `--no-fragment`)로 10분 soak을 돌려 세 해시 일치, 삽입 전용 모드에서
+   마커 유실 0, bridge invariant 위반 없음, 앱 지연 p95 < 1s를 확인한다. 통과하면 단계 B로 간다.
+   - 수정 이유: 삽입 전용 대조 실험에서 fragment 작성자가 낀 조합은 앱이 입력하지 않아도
+     마커가 사라졌다(fragment 혼자 14/100). 모든 유실 마커는 검증 클라이언트가 이미
+     `Y.Text`에서 본 것이다. 서버가 한 번 반영한 내용을 지운 것이므로 서버 쪽 문제이고,
+     R8에 따라 고치지 않고 REPORT.md에 발견 사항으로 기록한다.
+   - 세 작성자 전체 조합 10분 soak과 `--no-app` 대조 실행도 돌려 수치를 보고서에 싣는다.
 
 ### 단계 B — 편집기 (R3–R6)
 

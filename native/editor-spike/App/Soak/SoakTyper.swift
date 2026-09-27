@@ -14,6 +14,10 @@ import UIKit
 final class SoakTyper {
     private weak var textView: UITextView?
     private let duration: TimeInterval
+    /// Insert-only mode (`-soakInsertOnly 1`): no deletions, so every marker
+    /// must survive — a missing one means an edit was lost, not deleted.
+    private let insertOnly: Bool
+    private let plainTokens: Bool
     private var timer: Timer?
     private var startedAt = Date()
     private var editCount = 0
@@ -27,12 +31,18 @@ final class SoakTyper {
         "[link](", "https://example.com)", "<", "/>", "{", "}",
     ]
 
+    /// `-soakPlainTokens 1`: words and spaces only, for control runs that
+    /// separate sync behavior from Markdown/MDX re-serialization.
+    static let plainTokens: [String] = ["hello", "세상", "노트", "sync", " ", " ", "word", "😀"]
+
     /// Documents above this length get trimmed so the soak stays bounded.
     static let maxLength = 12_000
 
-    init(textView: UITextView, duration: TimeInterval) {
+    init(textView: UITextView, duration: TimeInterval, insertOnly: Bool = false, plainTokens: Bool = false) {
         self.textView = textView
         self.duration = duration
+        self.insertOnly = insertOnly
+        self.plainTokens = plainTokens
     }
 
     func start() {
@@ -57,7 +67,7 @@ final class SoakTyper {
         editCount += 1
         let length = textView.textStorage.length
 
-        if length > Self.maxLength {
+        if length > Self.maxLength && !insertOnly {
             replace(in: textView, range: NSRange(location: Int.random(in: 0..<(length - 60), using: &rng), length: 50), with: "")
             return
         }
@@ -66,12 +76,12 @@ final class SoakTyper {
         let location = Self.safeLocation(in: textView.textStorage.string as NSString, near: Int.random(in: 0...length, using: &rng))
         if editCount % 10 == 0 {
             replace(in: textView, range: NSRange(location: location, length: 0), with: "⟦a:\(SoakRecorder.nowMs())⟧")
-        } else if roll < 30 && length > 10 {
+        } else if roll < 30 && length > 10 && !insertOnly {
             let deleteLength = min(Int.random(in: 1...5, using: &rng), length - location)
             let range = Self.composedRange(in: textView.textStorage.string as NSString, NSRange(location: location, length: deleteLength))
             replace(in: textView, range: range, with: "")
         } else {
-            let token = Self.tokens.randomElement(using: &rng)!
+            let token = (plainTokens ? Self.plainTokens : Self.tokens).randomElement(using: &rng)!
             replace(in: textView, range: NSRange(location: location, length: 0), with: token)
         }
     }
@@ -85,10 +95,18 @@ final class SoakTyper {
         textView.replace(textRange, withText: text)
     }
 
-    /// Never split a surrogate pair or composed character when picking a spot.
+    private static let markerPattern = try! NSRegularExpression(pattern: "⟦[a-z]:\\d{13}⟧")
+
+    /// Never split a surrogate pair, a composed character, or a soak marker
+    /// (a split marker would read as a lost edit) when picking a spot.
     static func safeLocation(in string: NSString, near location: Int) -> Int {
         guard location < string.length else { return string.length }
-        return string.rangeOfComposedCharacterSequence(at: location).location
+        var spot = string.rangeOfComposedCharacterSequence(at: location).location
+        let window = NSRange(location: max(0, spot - 20), length: min(40, string.length - max(0, spot - 20)))
+        for match in markerPattern.matches(in: string as String, range: window) where match.range.location < spot && spot < NSMaxRange(match.range) {
+            spot = NSMaxRange(match.range)
+        }
+        return spot
     }
 
     static func composedRange(in string: NSString, _ range: NSRange) -> NSRange {

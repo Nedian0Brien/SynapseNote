@@ -6,12 +6,16 @@ struct SpikeConfig {
     let serverURL: URL
     let documentName: String
     let soakSeconds: TimeInterval
+    let soakInsertOnly: Bool
+    let soakPlainTokens: Bool
 
     static func fromDefaults(_ defaults: UserDefaults = .standard) -> SpikeConfig {
         SpikeConfig(
             serverURL: URL(string: defaults.string(forKey: "serverURL") ?? "ws://localhost:5180/collab")!,
             documentName: defaults.string(forKey: "docName") ?? "spike",
-            soakSeconds: defaults.double(forKey: "soakSeconds")
+            soakSeconds: defaults.double(forKey: "soakSeconds"),
+            soakInsertOnly: defaults.bool(forKey: "soakInsertOnly"),
+            soakPlainTokens: defaults.bool(forKey: "soakPlainTokens")
         )
     }
 }
@@ -28,6 +32,9 @@ final class EditorViewController: UIViewController {
     private var typer: SoakTyper?
     private var hashTimer: Timer?
     private var synced = false
+    /// Markers already seen here. A marker arriving again means the server
+    /// rewrote the span around it (logged as source `r`, not as latency).
+    private var seenMarkers = Set<String>()
 
     private static let markerPattern = try! NSRegularExpression(pattern: "⟦([a-z]):(\\d{13})⟧")
 
@@ -89,7 +96,7 @@ final class EditorViewController: UIViewController {
         textView.isEditable = true
         log("synced \(doc.len()) utf16 units")
         if config.soakSeconds > 0 {
-            let typer = SoakTyper(textView: textView, duration: config.soakSeconds)
+            let typer = SoakTyper(textView: textView, duration: config.soakSeconds, insertOnly: config.soakInsertOnly, plainTokens: config.soakPlainTokens)
             typer.onFinish = { [weak self] in
                 self?.log("soak typing finished")
                 self?.updateStatus("soak finished")
@@ -104,9 +111,14 @@ final class EditorViewController: UIViewController {
         let ns = text as NSString
         let now = SoakRecorder.nowMs()
         for match in Self.markerPattern.matches(in: text, range: NSRange(location: 0, length: ns.length)) {
+            let marker = ns.substring(with: match.range)
             let source = ns.substring(with: match.range(at: 1))
-            guard source != "a", let sent = Int(ns.substring(with: match.range(at: 2))) else { continue }
-            recorder.latency(source: source, ms: now - sent)
+            guard let sent = Int(ns.substring(with: match.range(at: 2))) else { continue }
+            if !seenMarkers.insert(marker).inserted {
+                recorder.latency(source: "r", ms: 0)
+                continue
+            }
+            if source != "a" { recorder.latency(source: source, ms: now - sent) }
         }
     }
 
