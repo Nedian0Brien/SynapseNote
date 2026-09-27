@@ -16,9 +16,19 @@ final class ComponentOverlays: NSObject, UIScrollViewDelegate {
     /// Drags that began on a placeholder (UI tests read it).
     private(set) var dragBeganCount = 0
 
+    /// Called when a placeholder scrolls (UI test state is republished).
+    var onScroll: (() -> Void)?
+
     nonisolated func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
         MainActor.assumeIsolated { dragBeganCount += 1 }
     }
+
+    nonisolated func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        MainActor.assumeIsolated { onScroll?() }
+    }
+
+    /// Frames (text view coordinates) of the placeholders on screen.
+    var frames: [CGRect] { views.values.filter { $0.superview != nil }.map(\.frame) }
 
     /// Class of the view that receives a touch at the first placeholder's
     /// center (UI tests read it to diagnose gesture routing).
@@ -86,9 +96,20 @@ final class ComponentOverlays: NSObject, UIScrollViewDelegate {
     }
 }
 
-/// `UITextView` that reports layout passes so overlays can follow the text.
+/// `UITextView` that reports layout passes so overlays can follow the text,
+/// and keeps its text-interaction gestures (selection, loupe, drag) from
+/// claiming touches that start on an embedded native view.
 final class EditorTextView: UITextView {
     var onLayout: (() -> Void)?
+    var embeddedViewFrames: () -> [CGRect] = { [] }
+
+    override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        if gestureRecognizer !== panGestureRecognizer {
+            let point = gestureRecognizer.location(in: self)
+            if embeddedViewFrames().contains(where: { $0.contains(point) }) { return false }
+        }
+        return super.gestureRecognizerShouldBegin(gestureRecognizer)
+    }
 
     override func layoutSubviews() {
         super.layoutSubviews()

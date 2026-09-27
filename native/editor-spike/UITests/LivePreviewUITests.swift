@@ -193,6 +193,22 @@ final class LivePreviewUITests: XCTestCase {
         screenshot("component-scrolled")
     }
 
+    /// Control for the harness: a vertical drag on a long document must start
+    /// the text view's own scrolling. If it does not, synthesized drags are not
+    /// reaching the app and the placeholder result above says nothing.
+    func testControlTextViewDragScrolls() throws {
+        launch("large")
+        let before = try state()
+        let editor = app.textViews["editor"]
+        let start = editor.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
+        let end = editor.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2))
+        start.press(forDuration: 0.1, thenDragTo: end, withVelocity: 600, thenHoldForDuration: 0.1)
+        settle()
+        let after = try state()
+        XCTAssertGreaterThan(after.textDragBegan, before.textDragBegan, "no drag began on the text view")
+        XCTAssertGreaterThan(after.textOffsetY, before.textOffsetY + 50, "text view did not scroll")
+    }
+
     // MARK: - R5 folding
 
     func testFoldHidesBodyAndSurvivesRemoteEdit() throws {

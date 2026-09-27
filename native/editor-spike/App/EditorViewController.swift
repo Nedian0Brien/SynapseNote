@@ -102,6 +102,8 @@ final class EditorViewController: UIViewController, UITextViewDelegate, UIGestur
         folding.styler = styler
         styler.isFolded = { [folding] in folding.isFolded($0) }
         overlays = ComponentOverlays(textView: textView)
+        textView.embeddedViewFrames = { [weak self] in self?.overlays.frames ?? [] }
+        overlays.onScroll = { [weak self] in self?.scheduleDebugState() }
         textView.onLayout = { [weak self] in
             self?.updateOverlays()
             self?.scheduleDebugState()
@@ -157,6 +159,10 @@ final class EditorViewController: UIViewController, UITextViewDelegate, UIGestur
 
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
         textDragBeganCount += 1
+    }
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        scheduleDebugState()
     }
 
     // MARK: - UI test state

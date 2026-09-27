@@ -32,6 +32,7 @@ date: 2026-09-28
 | `native/editor-spike/UITests/*.swift` | R3–R5 UI 테스트. 앱이 `-uiTest`에서 내보내는 줄 좌표로 실제 탭·드래그하고 서버 API로 결과를 확인한다(시뮬레이터 패널 권한 없이 검증하기 위해 추가) |
 | `native/editor-spike/scripts/soak.ts` | XmlFragment 편집자, agent-patch 반복, 해시 비교(수렴까지 최대 30초 대기). 대조 플래그: `--insert-only`, `--app-idle`, `--app-plain`, `--no-app`, `--no-fragment`, `--no-patch` |
 | `native/editor-spike/fixtures/spike.md` | 스파이크 기준 문서. soak은 실행마다 이 파일을 새 문서로 복사한다 |
+| `native/editor-spike/scripts/server-load.ts` | 큰 문서에 `Y.Text`·fragment 편집을 넣으며 서버 반영 지연과 API 응답 시간을 잰다(R6 측정 중 서버 정체를 발견해 추가) |
 | `native/editor-spike/scripts/gen-fixture.ts` | 스파이크 문서와 5,000줄 문서 생성 |
 | `native/editor-spike/REPORT.md` | 결과 보고서와 실행 방법 |
 
