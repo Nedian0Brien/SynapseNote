@@ -23,12 +23,13 @@ date: 2026-09-28
 | `native/editor-spike/yrs-ffi/tests/sync.rs` | UTF-16 오프셋, 핸드셰이크, 수렴, 에코 없음 테스트 |
 | `native/editor-spike/yrs-ffi/Cargo.lock` | 의존성 고정 |
 | `native/editor-spike/scripts/build-xcframework.sh` | 시뮬레이터용 정적 라이브러리 → xcframework + Swift 바인딩 |
-| `native/editor-spike/project.yml` | xcodegen: iPad 앱 `EditorSpike` + 단위 테스트 타깃 |
+| `native/editor-spike/project.yml` | xcodegen: iPad 앱 `EditorSpike` + 단위 테스트 + UI 테스트 타깃 |
 | `native/editor-spike/App/*.swift` | 앱 진입, 편집 화면 |
 | `native/editor-spike/App/Sync/*.swift` | Hocuspocus 프레이밍·WebSocket 클라이언트, yrs 래퍼 |
 | `native/editor-spike/App/Editor/*.swift` | 텍스트 바인딩, 스캐너, 프리뷰, 컴포넌트 조각, 접기 |
 | `native/editor-spike/App/Soak/*.swift` | 자동 입력 모드, 해시 파일 기록 |
 | `native/editor-spike/Tests/*.swift` | 프레이밍, 바인딩, 스캐너 단위 테스트 |
+| `native/editor-spike/UITests/*.swift` | R3–R5 UI 테스트. 앱이 `-uiTest`에서 내보내는 줄 좌표로 실제 탭·드래그하고 서버 API로 결과를 확인한다(시뮬레이터 패널 권한 없이 검증하기 위해 추가) |
 | `native/editor-spike/scripts/soak.ts` | XmlFragment 편집자, agent-patch 반복, 해시 비교(수렴까지 최대 30초 대기). 대조 플래그: `--insert-only`, `--app-idle`, `--app-plain`, `--no-app`, `--no-fragment`, `--no-patch` |
 | `native/editor-spike/fixtures/spike.md` | 스파이크 기준 문서. soak은 실행마다 이 파일을 새 문서로 복사한다 |
 | `native/editor-spike/scripts/gen-fixture.ts` | 스파이크 문서와 5,000줄 문서 생성 |

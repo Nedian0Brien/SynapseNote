@@ -70,6 +70,18 @@ function outsideMarkers(text: string, offset: number): number {
   return offset;
 }
 
+// Yjs (JS) lets a peer split a surrogate pair; yrs cannot represent the
+// resulting lone surrogate and diverges (see REPORT.md). Real editors do not
+// split pairs, so the synthetic writers must not either.
+const isHigh = (c: number) => c >= 0xd800 && c <= 0xdbff;
+const isLow = (c: number) => c >= 0xdc00 && c <= 0xdfff;
+/** Move a boundary off the middle of a surrogate pair. */
+function onCodePoint(text: string, offset: number): number {
+  return offset > 0 && offset < text.length && isLow(text.charCodeAt(offset)) && isHigh(text.charCodeAt(offset - 1))
+    ? offset + 1
+    : offset;
+}
+
 function overlapsMarker(text: string, start: number, end: number): boolean {
   for (const m of text.matchAll(MARKER)) {
     const ms = m.index ?? 0;
@@ -152,10 +164,11 @@ function fragmentStep() {
   fragmentWriter.doc.transact(() => {
     const current = text.toString();
     if (!insertOnly && fragmentEdits % 3 === 2 && text.length > 8) {
-      const at = rand(text.length - 3);
-      if (!overlapsMarker(current, at, at + 2)) text.delete(at, 2);
+      const at = onCodePoint(current, rand(text.length - 3));
+      const end = onCodePoint(current, Math.min(current.length, at + 2));
+      if (end > at && !overlapsMarker(current, at, end)) text.delete(at, end - at);
     } else {
-      const at = outsideMarkers(current, rand(text.length + 1));
+      const at = onCodePoint(current, outsideMarkers(current, rand(text.length + 1)));
       text.insert(at, fragmentEdits % 3 === 0 ? `⟦f:${Date.now()}⟧` : ' 편집');
     }
   });
@@ -169,8 +182,8 @@ async function patchStep() {
   const res = await fetch(`${httpBase}/api/document?docName=${encodeURIComponent(docName)}`);
   const { content } = (await res.json()) as { content: string };
   if (content.length < 40) return;
-  const start = rand(content.length - 20);
-  const find = content.slice(start, start + 12);
+  const start = onCodePoint(content, rand(content.length - 20));
+  const find = content.slice(start, onCodePoint(content, start + 12));
   if (!find.trim() || overlapsMarker(content, start, start + 12) || find.includes('⟦') || find.includes('⟧')) return;
   const patch = await fetch(`${httpBase}/api/agent-patch`, {
     method: 'POST',

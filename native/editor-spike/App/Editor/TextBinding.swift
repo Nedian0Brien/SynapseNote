@@ -17,6 +17,9 @@ final class TextBinding: NSObject, NSTextStorageDelegate {
     /// Called after every local edit with the time spent in the binding
     /// (storage edit → yrs transaction → send), for the keystroke metric.
     var onLocalEdit: ((_ elapsed: TimeInterval, _ range: NSRange, _ inserted: String) -> Void)?
+    /// Called inside `processEditing` for every character edit, local or
+    /// remote, after the Y.Text side is handled — the styler hooks in here.
+    var onCharactersEdited: ((_ storage: NSTextStorage, _ editedRange: NSRange, _ delta: Int) -> Void)?
     /// Called with the text a remote change inserted, and the range it now occupies.
     var onRemoteInsert: ((_ text: String, _ range: NSRange) -> Void)?
     /// Called after remote deltas were applied.
@@ -46,7 +49,12 @@ final class TextBinding: NSObject, NSTextStorageDelegate {
     }
 
     private func handleEdit(_ storage: NSTextStorage, editedMask: NSTextStorage.EditActions, range: NSRange, delta: Int) {
-        guard editedMask.contains(.editedCharacters), !applyingRemote else { return }
+        guard editedMask.contains(.editedCharacters) else { return }
+        if !applyingRemote { syncLocalEdit(storage, range: range, delta: delta) }
+        onCharactersEdited?(storage, range, delta)
+    }
+
+    private func syncLocalEdit(_ storage: NSTextStorage, range: NSRange, delta: Int) {
         let start = CACurrentMediaTime()
         let deleted = range.length - delta
         let inserted = (storage.string as NSString).substring(with: range)

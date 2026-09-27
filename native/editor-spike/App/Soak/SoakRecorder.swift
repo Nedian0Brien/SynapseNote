@@ -6,7 +6,9 @@ import Foundation
 ///
 /// - `soak-hash.txt`: `<sha256 of Y.Text UTF-8> <utf16 length> <unix ms>`, rewritten.
 /// - `soak-latency.txt`: `<source> <ms>` per marker first seen here, appended.
-/// - `soak-keystroke.txt`: `<ms>` per local edit, appended (R6).
+/// - `soak-keystroke.txt`: `<stage> <ms>` per local edit, appended (R6). Stages:
+///   `sync` (binding → yrs → send), `style` (scanner + attributes), `full`
+///   (perf driver: replace + synchronous layout).
 /// - `soak-log.txt`: diagnostics, appended.
 final class SoakRecorder {
     private let directory: URL
@@ -31,7 +33,7 @@ final class SoakRecorder {
     }
 
     func latency(source: String, ms: Int) { append("soak-latency.txt", "\(source) \(ms)\n") }
-    func keystroke(ms: Double) { append("soak-keystroke.txt", String(format: "%.3f\n", ms)) }
+    func keystroke(_ stage: String, ms: Double) { append("soak-keystroke.txt", String(format: "%@ %.3f\n", stage, ms)) }
     func log(_ message: String) { append("soak-log.txt", "\(Self.nowMs()) \(message)\n") }
 
     private func append(_ name: String, _ line: String) {

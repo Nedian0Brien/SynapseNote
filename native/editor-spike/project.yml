@@ -51,12 +51,25 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         BUNDLE_LOADER: "$(TEST_HOST)"
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/EditorSpike.app/EditorSpike"
+  EditorSpikeUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    dependencies:
+      - target: EditorSpike
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: EditorSpike
 schemes:
   EditorSpike:
     build:
       targets:
         EditorSpike: all
         EditorSpikeTests: [test]
+        EditorSpikeUITests: [test]
     test:
       targets:
         - EditorSpikeTests
+        - EditorSpikeUITests
