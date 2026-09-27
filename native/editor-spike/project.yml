@@ -1,0 +1,62 @@
+# xcodegen spec for the editor spike. The generated EditorSpike.xcodeproj is
+# gitignored: run `xcodegen generate` in this directory after
+# `scripts/build-xcframework.sh`.
+name: EditorSpike
+options:
+  bundleIdPrefix: dev.synapsenote.spike
+  deploymentTarget:
+    iOS: "18.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    SWIFT_STRICT_CONCURRENCY: minimal
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "-"
+    DEVELOPMENT_TEAM: ""
+targets:
+  EditorSpike:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+      - path: Generated
+    dependencies:
+      - framework: YrsFFI.xcframework
+        embed: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.synapsenote.spike.editor
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+    info:
+      path: build/EditorSpike-Info.plist
+      properties:
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        # Plain ws:// to the Mac's local dev server.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+  EditorSpikeTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: EditorSpike
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/EditorSpike.app/EditorSpike"
+schemes:
+  EditorSpike:
+    build:
+      targets:
+        EditorSpike: all
+        EditorSpikeTests: [test]
+    test:
+      targets:
+        - EditorSpikeTests
