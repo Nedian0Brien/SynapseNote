@@ -48,24 +48,27 @@ const watcher = await connect();
 const text = typist.doc.getText('source');
 console.log(`doc '${docName}': ${text.length} utf16 units, mode ${values.mode}`);
 
+// Tokens from earlier runs stay in the document; the run id keeps them apart.
+const runId = Date.now().toString(36);
 const sent = new Map<string, number>();
 const echo: number[] = [];
 const startedAt = Date.now();
 // Worst echo latency per second of the run, to tell start-up stalls from periodic ones.
 const worstBySecond: number[] = [];
-watcher.doc.getText('source').observe((event) => {
-  for (const op of event.delta) {
-    if (typeof op.insert !== 'string') continue;
-    for (const m of op.insert.matchAll(/⟦k(\d+)⟧/g)) {
-      const t = sent.get(m[1]);
-      if (t !== undefined) {
-        const latency = Date.now() - t;
-        echo.push(latency);
-        sent.delete(m[1]);
-        const second = Math.floor((t - startedAt) / 1000);
-        worstBySecond[second] = Math.max(worstBySecond[second] ?? 0, latency);
-      }
-    }
+// Look pending tokens up in the whole text: the server writes only the span
+// between the common prefix and suffix, so a token typed in front of an
+// earlier one (`⟦k12⟧⟦k11⟧`) never arrives as one inserted string.
+const watchedText = watcher.doc.getText('source');
+watchedText.observe(() => {
+  if (sent.size === 0) return;
+  const current = watchedText.toString();
+  for (const [id, t] of sent) {
+    if (!current.includes(`⟦k${runId}.${id}⟧`)) continue;
+    const latency = Date.now() - t;
+    echo.push(latency);
+    sent.delete(id);
+    const second = Math.floor((t - startedAt) / 1000);
+    worstBySecond[second] = Math.max(worstBySecond[second] ?? 0, latency);
   }
 });
 
@@ -81,8 +84,8 @@ if (values.mode === 'fragment' && !target) throw new Error('no paragraph to edit
 const typing = setInterval(() => {
   n++;
   sent.set(String(n), Date.now());
-  if (values.mode === 'fragment') target?.insert(0, `⟦k${n}⟧`);
-  else text.insert(middle, `⟦k${n}⟧`);
+  if (values.mode === 'fragment') target?.insert(0, `⟦k${runId}.${n}⟧`);
+  else text.insert(middle, `⟦k${runId}.${n}⟧`);
 }, Number(values['rate-ms']));
 const probing = setInterval(async () => {
   const t = Date.now();
