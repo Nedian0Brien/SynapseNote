@@ -60,6 +60,7 @@ import {
 } from './bridge-watchdog.ts';
 import { isConfigDoc, isSystemDoc } from './cc1-broadcast.ts';
 import { recordFrontmatterEditSurface } from './frontmatter-telemetry.ts';
+import { IncrementalBlockParser } from './incremental-block-parse.ts';
 import { computeMapDrivenBodySplice } from './map-driven-splice.ts';
 import {
   incrementBridgeMergeCheckpointCreated,
@@ -862,7 +863,32 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
   // where the router strict-compares raw bytes misroutes the first fragment
   // change on any residual-bearing doc to Path B.
   let lastSyncedCanonicalMd = '';
+  // Observer B's incremental path settles without serializing the whole
+  // document (that serialize is the dominant per-keystroke cost on long
+  // documents). It leaves the canonical witness as a thunk instead, resolved
+  // the first time Observer A reads it. Every direct assignment of
+  // `lastSyncedCanonicalMd` clears it.
+  let pendingCanonicalMd: (() => string) | null = null;
+  const canonicalWitness = (): string => {
+    if (pendingCanonicalMd) {
+      lastSyncedCanonicalMd = pendingCanonicalMd();
+      pendingCanonicalMd = null;
+    }
+    return lastSyncedCanonicalMd;
+  };
   let lastSyncedYTextBytes = '';
+  // normalizeBridge(lastSyncedYTextBytes), computed once per raw-witness change
+  // so Observer B's early-exit normalizes only the incoming text.
+  let normalizedRawWitness: { raw: string; normalized: string } | null = null;
+  const normalizedRawWitnessValue = (): string => {
+    if (normalizedRawWitness?.raw !== lastSyncedYTextBytes) {
+      normalizedRawWitness = {
+        raw: lastSyncedYTextBytes,
+        normalized: normalizeBridge(lastSyncedYTextBytes),
+      };
+    }
+    return normalizedRawWitness.normalized;
+  };
   // Coherence flag — true iff BOTH witnesses were recorded together at a
   // real settlement. The router's witness-vs-witness residual-tolerance
   // comparison is only meaningful within one settlement generation:
@@ -907,6 +933,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
    */
   const recordSettledBaselines = (canonicalMd: string): void => {
     lastSyncedCanonicalMd = canonicalMd;
+    pendingCanonicalMd = null;
     refreshYTextWitness();
     canonicalWitnessCoherent = canonicalMd !== '';
   };
@@ -924,6 +951,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
    */
   const recordDivergedAttachBaselines = (canonicalMd: string): void => {
     lastSyncedCanonicalMd = canonicalMd;
+    pendingCanonicalMd = null;
     lastSyncedYTextBytes = canonicalMd;
     // A diverged attach is NOT a real settlement, so the flag stays false to
     // match the `canonicalWitnessCoherent` invariant. Behavior-neutral here:
@@ -944,6 +972,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
    */
   const refreshCanonicalWitnessOnly = (canonicalMd: string): void => {
     lastSyncedCanonicalMd = canonicalMd;
+    pendingCanonicalMd = null;
     canonicalWitnessCoherent = false;
   };
 
@@ -961,6 +990,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
    */
   const recordSplitBrainRecoveryBaselines = (canonicalMd: string): void => {
     lastSyncedCanonicalMd = canonicalMd;
+    pendingCanonicalMd = null;
     lastSyncedYTextBytes = ytext.toString();
     canonicalWitnessCoherent = true;
   };
@@ -985,6 +1015,21 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
           sourcePath: opts.docName,
         }
       : undefined;
+
+  /** Observer B's text→tree parse: re-parses only the blocks an edit touched
+   *  and falls back to a full parse whenever that is not provably the same. */
+  const incrementalParser = new IncrementalBlockParser({
+    parse: (markdown) => mdManager.parseWithFallback(markdown, observerParseOpts),
+    parseMdast: (markdown) => mdManager.parseToMdast(markdown),
+    schema,
+  });
+  /** `updateYFragment` metadata kept across Observer B fires, so unchanged
+   *  blocks match by identity instead of a structural walk. Any fragment
+   *  change that did not come from this observer invalidates it. */
+  let bUpdateMeta = { mapping: new Map(), isOMark: new Map() };
+  const resetBUpdateMeta = (): void => {
+    bUpdateMeta = { mapping: new Map(), isOMark: new Map() };
+  };
 
   /** Canonicalize a body through this doc's own parse pipeline — the
    *  parse-equivalence fallback's callback (`isParseEquivalentBridge`). */
@@ -1331,7 +1376,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
       //     === md` is a cross-generation coincidence that does NOT certify
       //     Y.Text is in sync — fall through to the raw-witness router so the
       //     content propagates.
-      if (canonicalWitnessCoherent && lastSyncedCanonicalMd === md) {
+      if (canonicalWitnessCoherent && canonicalWitness() === md) {
         // Fragment serialization is identical to the canonical witness AND the
         // witness is coherent (recorded with the raw witness at a real
         // settlement). Two outcomes:
@@ -1416,8 +1461,8 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
       const residualMergeEligible =
         ytextInSync &&
         canonicalWitnessCoherent &&
-        lastSyncedYTextBytes !== lastSyncedCanonicalMd &&
-        normCurrent !== normalizeBridge(lastSyncedCanonicalMd);
+        lastSyncedYTextBytes !== canonicalWitness() &&
+        normCurrent !== normalizeBridge(canonicalWitness());
       // Routing decision, span-visible. The outcomes are byte-different
       // write behaviors that are otherwise indistinguishable in traces.
       // Bounded cardinality: a 4-value enum — 'map-driven-splice' overrides
@@ -1507,7 +1552,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
           // the pre-merge state (`saveInMemoryCheckpoint`), and apply the
           // merge as-computed so the editor keeps responding. Dev/test
           // re-throws so integration tests and fuzz runs fail loudly.
-          const mergeBase = ytextInSync ? lastSyncedCanonicalMd : preMergeBaseline;
+          const mergeBase = ytextInSync ? canonicalWitness() : preMergeBaseline;
           // Doc-boundary byte-space alignment (full mechanism in
           // doc-boundary-space.ts): `md` is a fragment serialization that
           // lacks the FM-close-fence-to-body newline run the raw-space inputs
@@ -1716,6 +1761,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
         // (empty) ancestor rather than a wholesale Path A rewrite that would
         // destroy the divergent source. Coherence stays false.
         lastSyncedCanonicalMd = '';
+        pendingCanonicalMd = null;
         lastSyncedYTextBytes = '';
         canonicalWitnessCoherent = false;
       }
@@ -1746,6 +1792,9 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
   const observerA = (_events: Y.YEvent<Y.XmlFragment>[], transaction: Y.Transaction) => {
     // Self-skip: our own cross-CRDT write
     if (transaction.origin === OBSERVER_SYNC_ORIGIN) return;
+    // Someone else changed the fragment: Observer B's identity mapping no
+    // longer describes it.
+    resetBUpdateMeta();
 
     // Paired-write origins atomically wrote both XmlFragment and Y.Text inside
     // this transaction. Under the Y.Text-is-truth contract, ytext holds the
@@ -1847,7 +1896,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
       // WITHOUT refreshing any witness, so the router still sees it as
       // real divergence and routes the next fragment change through the
       // byte-preserving Path B merge.
-      if (normalizeBridge(lastSyncedYTextBytes) === normalizeBridge(md)) {
+      if (md === lastSyncedYTextBytes || normalizedRawWitnessValue() === normalizeBridge(md)) {
         // Tree and text are already in sync. FM region is already where it
         // should be (Y.Text is the source of truth). Just emit telemetry if
         // the FM changed.
@@ -1866,14 +1915,30 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
       // (precedent #14), this observer is the sole writer for XmlFragment —
       // the "always-live" contract here means no client sees frozen WYSIWYG
       // when another peer is mid-typing a broken MDX tag.
-      const parsedJson = mdManager.parseWithFallback(body, observerParseOpts);
-
-      const pmNode = opts.schema.nodeFromJSON(parsedJson);
+      const incrementalNode = incrementalParser.update(body);
+      const pmNode = incrementalNode ?? incrementalParser.parseFull(body);
 
       doc.transact(() => {
-        const meta = { mapping: new Map(), isOMark: new Map() };
-        updateYFragment(doc, xmlFragment, pmNode, meta);
+        updateYFragment(doc, xmlFragment, pmNode, bUpdateMeta);
       }, OBSERVER_SYNC_ORIGIN);
+
+      if (incrementalNode) {
+        // Incremental settlement: the full serialize below (bridge invariant +
+        // canonical witness) is the dominant cost on long documents and is
+        // deferred — the canonical witness resolves on Observer A's first
+        // read, and the persistence store path still checks the invariant.
+        if (priorFmForTelemetry !== frontmatter) {
+          recordFrontmatterEditSurface('source-mode');
+          priorFmForTelemetry = frontmatter;
+        }
+        incrementServerObserverFire('b');
+        refreshYTextWitness();
+        pendingCanonicalMd = () =>
+          prependFrontmatter(frontmatter, mdManager.serialize(pmNode.toJSON()));
+        canonicalWitnessCoherent = true;
+        return;
+      }
+      const parsedJson = pmNode.toJSON();
 
       if (priorFmForTelemetry !== frontmatter) {
         recordFrontmatterEditSurface('source-mode');

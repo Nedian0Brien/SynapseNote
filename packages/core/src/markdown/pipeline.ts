@@ -156,9 +156,41 @@ const GAP_CAPTURE_MIN_NEWLINES = 3;
 
 const LEADING_BOUNDARY_SHAPE = /^\n+$/;
 const TRAILING_BOUNDARY_SHAPE = /^\n{2,}$/;
+const WIDE_GAP_SHAPE = new RegExp(`^\\n{${GAP_CAPTURE_MIN_NEWLINES},}$`);
+
+/** A top-level block's source range; either end may be unknown. */
+export interface BlockSourceRange {
+  start: number | undefined;
+  end: number | undefined;
+}
 
 function captureDocBoundary(
   root: MdastRoot,
+  source: string,
+  hadBom: boolean,
+): SourceDocBoundary | undefined {
+  const boundary = computeDocBoundary(
+    root.children.map((child) => ({
+      start: child?.position?.start?.offset,
+      end: child?.position?.end?.offset,
+    })),
+    source,
+    hadBom,
+  );
+  if (!boundary) return undefined;
+  root.data ??= {};
+  root.data.sourceDocBoundary = boundary;
+  return boundary;
+}
+
+/**
+ * The document-level whitespace record (leading/trailing blank lines, and
+ * the blank-line count of every wide gap between top-level blocks) for a
+ * document whose top-level blocks sit at `ranges`. Exposed so a caller that
+ * re-parses only part of a document can rebuild the record for the whole.
+ */
+export function computeDocBoundary(
+  ranges: ReadonlyArray<BlockSourceRange>,
   source: string,
   hadBom: boolean,
 ): SourceDocBoundary | undefined {
@@ -166,27 +198,26 @@ function captureDocBoundary(
   let trailing: string | undefined;
   let gapBlankLines: Array<number | null> | undefined;
 
-  const children = root.children;
-  if (children.length > 0) {
-    const firstStart = children[0]?.position?.start?.offset;
+  if (ranges.length > 0) {
+    const firstStart = ranges[0]?.start;
     if (typeof firstStart === 'number' && firstStart > 0) {
       const gap = source.slice(0, firstStart);
       if (LEADING_BOUNDARY_SHAPE.test(gap)) leading = gap;
     }
-    const lastEnd = children[children.length - 1]?.position?.end?.offset;
+    const lastEnd = ranges[ranges.length - 1]?.end;
     if (typeof lastEnd === 'number' && lastEnd <= source.length) {
       const gap = source.slice(lastEnd);
       if (TRAILING_BOUNDARY_SHAPE.test(gap)) trailing = gap;
     }
     const gaps: Array<number | null> = [];
     let anyGap = false;
-    for (let i = 1; i < children.length; i++) {
-      const prevEnd = children[i - 1]?.position?.end?.offset;
-      const nextStart = children[i]?.position?.start?.offset;
+    for (let i = 1; i < ranges.length; i++) {
+      const prevEnd = ranges[i - 1]?.end;
+      const nextStart = ranges[i]?.start;
       let blanks: number | null = null;
       if (typeof prevEnd === 'number' && typeof nextStart === 'number' && nextStart >= prevEnd) {
         const gap = source.slice(prevEnd, nextStart);
-        if (new RegExp(`^\\n{${GAP_CAPTURE_MIN_NEWLINES},}$`).test(gap)) {
+        if (WIDE_GAP_SHAPE.test(gap)) {
           blanks = gap.length - 1;
           anyGap = true;
         }
@@ -199,15 +230,12 @@ function captureDocBoundary(
   if (!hadBom && leading === undefined && trailing === undefined && !gapBlankLines) {
     return undefined;
   }
-  const boundary: SourceDocBoundary = {
+  return {
     ...(hadBom ? { bom: true as const } : {}),
     ...(leading !== undefined ? { leading } : {}),
     ...(trailing !== undefined ? { trailing } : {}),
     ...(gapBlankLines ? { gapBlankLines } : {}),
   };
-  root.data ??= {};
-  root.data.sourceDocBoundary = boundary;
-  return boundary;
 }
 
 function readDocBoundary(value: unknown): SourceDocBoundary | undefined {
