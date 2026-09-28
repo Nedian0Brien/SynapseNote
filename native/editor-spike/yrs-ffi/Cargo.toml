@@ -18,3 +18,7 @@ path = "src/bin/uniffi-bindgen.rs"
 yrs = { version = "=0.28.0", features = ["sync"] }
 thiserror = "2"
 uniffi = { version = "=0.32.2", features = ["cli"] }
+
+# yrs with the patches in ../yrs-patches applied (scripts/prepare-yrs.sh).
+[patch.crates-io]
+yrs = { path = "../build/yrs-0.28.0" }

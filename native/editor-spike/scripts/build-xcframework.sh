@@ -11,6 +11,7 @@ HEADERS_DIR="$SPIKE_DIR/build/headers"
 XCFRAMEWORK="$SPIKE_DIR/YrsFFI.xcframework"
 SIM_TARGET="aarch64-apple-ios-sim"
 
+"$SPIKE_DIR/scripts/prepare-yrs.sh"
 cd "$CRATE_DIR"
 
 # Host build: UniFFI reads the interface metadata from a dylib.
