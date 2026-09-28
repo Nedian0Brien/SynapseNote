@@ -17,6 +17,10 @@ import { copyFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { HocuspocusProvider } from '@hocuspocus/provider';
+import { sharedExtensions } from '@nedian0brien/synapsenote-core';
+import { getSchema } from '@tiptap/core';
+import { EditorState } from '@tiptap/pm/state';
+import { initProseMirrorDoc, updateYFragment } from '@tiptap/y-tiptap';
 import * as Y from 'yjs';
 
 const { values } = parseArgs({
@@ -40,6 +44,11 @@ const { values } = parseArgs({
     'no-patch': { type: 'boolean', default: false },
     // Leave the app out entirely: only the fragment/patch writers and the server.
     'no-app': { type: 'boolean', default: false },
+    // synthetic: insert straight into a paragraph's Y.XmlText.
+    // prosemirror: the web editor's path — a ProseMirror transaction
+    // (insertText, with ProseMirror's mark inheritance) applied through
+    // y-tiptap's updateYFragment, as ProsemirrorBinding does on a local change.
+    'fragment-writer': { type: 'string', default: 'synthetic' },
   },
 });
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -152,7 +161,35 @@ observer.doc.getText('source').observe((event) => {
 // ── f: fragment writer ──────────────────────────────────────────────────────
 const fragmentWriter = await connect('fragment-writer');
 let fragmentEdits = 0;
+const pmSchema = getSchema(sharedExtensions);
+function prosemirrorStep() {
+  const fragment = fragmentWriter.doc.getXmlFragment('default');
+  const { doc: pmDoc, meta } = initProseMirrorDoc(fragment, pmSchema);
+  const spots: { from: number; text: string }[] = [];
+  pmDoc.descendants((node, pos) => {
+    if (node.type.name === 'paragraph' && node.content.size > 0) spots.push({ from: pos + 1, text: node.textContent });
+    return node.type.name !== 'paragraph';
+  });
+  if (spots.length === 0) return;
+  const spot = spots[rand(spots.length)];
+  const state = EditorState.create({ doc: pmDoc });
+  const offset = onCodePoint(spot.text, outsideMarkers(spot.text, rand(spot.text.length + 1)));
+  const insert = fragmentEdits % 3 === 0 ? `⟦f:${Date.now()}⟧` : ' 편집';
+  let tr = state.tr;
+  if (!insertOnly && fragmentEdits % 3 === 2 && spot.text.length > 8) {
+    const at = onCodePoint(spot.text, rand(spot.text.length - 3));
+    const end = onCodePoint(spot.text, Math.min(spot.text.length, at + 2));
+    if (end > at && !overlapsMarker(spot.text, at, end)) tr = tr.delete(spot.from + at, spot.from + end);
+  } else {
+    tr = tr.insertText(insert, spot.from + offset);
+  }
+  // textContent offsets equal document positions only inside a paragraph
+  // without inline atoms; the paragraph fixture has none.
+  fragmentWriter.doc.transact(() => updateYFragment(fragmentWriter.doc, fragment, tr.doc, meta));
+  fragmentEdits++;
+}
 function fragmentStep() {
+  if (values['fragment-writer'] === 'prosemirror') return prosemirrorStep();
   const fragment = fragmentWriter.doc.getXmlFragment('default');
   const paragraphs = fragment
     .toArray()
