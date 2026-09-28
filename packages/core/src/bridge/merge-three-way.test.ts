@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { diff3Merge } from 'node-diff3';
-import { mergeThreeWay } from './merge-three-way.ts';
+import { mergeThreeWay, mergeWholeText } from './merge-three-way.ts';
 
 /** diff3 over the whole documents, without the shared head/tail trim. Only
  *  conflict-free inputs are compared, so conflict resolution is not needed. */
@@ -93,6 +93,43 @@ describe('mergeThreeWay', () => {
         expected as string,
       );
     }
+  });
+
+  test('equals the whole-text merge with scattered edits on both sides, conflicts included', () => {
+    const random = rng(5);
+    const scatter = (lines: string[], edits: number): string[] => {
+      const out = [...lines];
+      for (let k = 0; k < edits; k++) {
+        const at = Math.floor(random() * out.length);
+        const op = Math.floor(random() * 3);
+        if (op === 0) out[at] = `${out[at]} e${k}`;
+        else if (op === 1) out.splice(at, 0, `new ${k} ${Math.floor(random() * 1e6)}`);
+        else out.splice(at, 1);
+      }
+      return out;
+    };
+    let conflicts = 0;
+    for (let round = 0; round < 600; round++) {
+      const base = makeDoc(30);
+      const user = scatter(base, 1 + Math.floor(random() * 3));
+      const agent = scatter(base, 1 + Math.floor(random() * 20));
+      if (diff3Merge(user, base, agent).some((region) => 'conflict' in region && region.conflict))
+        conflicts++;
+      let expected: string;
+      try {
+        expected = mergeWholeText(base, user, agent);
+      } catch {
+        continue;
+      }
+      let merged: string;
+      try {
+        merged = mergeThreeWay(base.join('\n'), user.join('\n'), agent.join('\n'));
+      } catch {
+        continue; // content-preservation post-condition, same for both
+      }
+      expect(merged).toBe(expected);
+    }
+    expect(conflicts).toBeGreaterThan(20);
   });
 
   test('keeps both sides of edits far apart in a long document', () => {
