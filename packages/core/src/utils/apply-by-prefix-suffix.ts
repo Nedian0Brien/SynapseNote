@@ -1,4 +1,5 @@
 import type * as Y from 'yjs';
+import { alignOpsToCodePoints, applyTextOps } from './utf16.ts';
 
 /**
  * Apply `newText` to `ytext` with minimal CRDT mutation: find matching prefix
@@ -27,8 +28,15 @@ export function applyByPrefixSuffix(ytext: Y.Text, currentText: string, newText:
     suffixLen++;
   }
 
-  const deleteLen = currentText.length - prefixLen - suffixLen;
-  const insertStr = newText.slice(prefixLen, newText.length - suffixLen);
-  if (deleteLen > 0) ytext.delete(prefixLen, deleteLen);
-  if (insertStr.length > 0) ytext.insert(prefixLen, insertStr);
+  // Prefix and suffix are compared per UTF-16 code unit; keep the change
+  // from starting or ending between the halves of a surrogate pair.
+  applyTextOps(
+    ytext,
+    alignOpsToCodePoints([
+      { type: 'retain', text: currentText.slice(0, prefixLen) },
+      { type: 'delete', text: currentText.slice(prefixLen, currentText.length - suffixLen) },
+      { type: 'insert', text: newText.slice(prefixLen, newText.length - suffixLen) },
+      { type: 'retain', text: currentText.slice(currentText.length - suffixLen) },
+    ]),
+  );
 }

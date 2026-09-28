@@ -228,6 +228,7 @@ import {
   shadowGit,
 } from './shadow-repo.ts';
 import { assertCompatibleStateManifest } from './state-manifest.ts';
+import { createSurrogateNormalizerExtension } from './surrogate-normalizer.ts';
 import { SyncEngine } from './sync-engine.ts';
 import { createSyncHandshakeSpanExtension } from './sync-handshake-span-extension.ts';
 import { TagIndex } from './tag-index.ts';
@@ -2015,6 +2016,15 @@ export function createServer(options: ServerOptions): ServerInstance {
         getCurrentBranch: () => headWatcher?.getLastKnownBranch() ?? null,
         resolveEmbed,
         resolveSize,
+      }),
+    );
+
+    // Replace unpaired UTF-16 surrogates in Y.Text('source') with U+FFFD, the
+    // character every peer already decoded — see surrogate-normalizer.ts.
+    hocuspocus.configuration.extensions.push(
+      createSurrogateNormalizerExtension({
+        onRepair: (docName, count) =>
+          log.warn({ docName, count }, '[surrogate] replaced unpaired surrogates with U+FFFD'),
       }),
     );
 

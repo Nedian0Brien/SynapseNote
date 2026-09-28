@@ -1036,6 +1036,7 @@ export {
 } from './markdown/html-to-mdast.ts';
 export { MarkdownManager, type SerializeCallOptions } from './markdown/index.ts';
 export { markdownToHtml, mdastToHtml } from './markdown/mdast-to-html.ts';
+export { type BlockSourceRange, computeDocBoundary } from './markdown/pipeline.ts';
 export { normalizeDocRelativeAssetUrl } from './markdown/resolve-image-url.ts';
 export {
   isRelativeUrl,
@@ -1910,3 +1911,12 @@ export {
   wikiLinkHref,
 } from './utils/slug.ts';
 export { expandTagToHierarchy, tagsMatchingPrefix } from './utils/tag-rollup.ts';
+export {
+  alignOpsToCodePoints,
+  applyTextOps,
+  isWellFormedUtf16,
+  loneSurrogateOffsets,
+  replaceLoneSurrogates,
+  splitsSurrogatePair,
+  type TextOp,
+} from './utils/utf16.ts';

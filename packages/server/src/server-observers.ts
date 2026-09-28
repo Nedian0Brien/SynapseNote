@@ -29,6 +29,7 @@ import type {
   StructuralDivergenceReason,
 } from '@nedian0brien/synapsenote-core';
 import {
+  applyByPrefixSuffix,
   applyFastDiff,
   applyIncrementalDiff,
   BridgeInvariantViolationError,
@@ -45,6 +46,7 @@ import {
   splitLeadingDocBoundary,
   stripFrontmatter,
 } from '@nedian0brien/synapsenote-core';
+import type { JSONContent } from '@tiptap/core';
 import type { Schema } from '@tiptap/pm/model';
 import { updateYFragment, yXmlFragmentToProseMirrorRootNode } from '@tiptap/y-tiptap';
 // Value import (not `import type`): `carrierKind` uses `instanceof Y.XmlElement`
@@ -59,7 +61,18 @@ import {
   emitObserverAPathBFired,
 } from './bridge-watchdog.ts';
 import { isConfigDoc, isSystemDoc } from './cc1-broadcast.ts';
+import {
+  clearFragmentDerivation,
+  type FragmentDerivation,
+  fragmentDerivation,
+  markFragmentDerivedFromText,
+} from './fragment-derivation.ts';
 import { recordFrontmatterEditSurface } from './frontmatter-telemetry.ts';
+import {
+  IncrementalBlockParser,
+  sameIgnoringPositions,
+  sameVisibleContent,
+} from './incremental-block-parse.ts';
 import { computeMapDrivenBodySplice } from './map-driven-splice.ts';
 import {
   incrementBridgeMergeCheckpointCreated,
@@ -70,8 +83,10 @@ import {
   incrementMapDrivenSpliceFallback,
   incrementObserverADuplicationCheckpointCreated,
   incrementObserverADuplicationRederives,
+  incrementObserverAPath,
   incrementObserverAPathBFires,
   incrementObserverAResidualMergeRuns,
+  incrementObserverBPath,
   incrementProducerGuardCheckpointCreated,
   incrementProducerGuardFires,
   incrementProducerGuardFiresSuppressed,
@@ -155,6 +170,19 @@ export type PairedWriteOrigin = LocalTransactionOrigin & {
  * whose proximate cause is a duplicated `M0-alpha echo` line that a later
  * agent-patch `indexOf('alpha')` locks onto instead of the intended target.
  */
+/** Why a client edit took Observer A's full path instead of the incremental one. */
+export type ObserverAFallbackReason =
+  | 'structure' // top-level children added/removed, or more than 4 changed
+  | 'text-moved' // Y.Text changed since the last reconcile, not certified parse-invisible
+  | 'text-moved-in-block' // a parse-invisible Y.Text change touches an edited block
+  | 'node-shape' // a changed child is not one element node
+  | 'full-path-node' // component, table, or raw MDX
+  | 'block-count' // source blocks do not line up with fragment children
+  | 'neighbour' // an unchanged neighbour differs from its source block
+  | 'duplication' // an edited block repeats a line more often than its source
+  | 'reparse' // the new source does not parse back to the client's nodes
+  | 'error';
+
 export const isPairedWriteOrigin = (origin: unknown): origin is PairedWriteOrigin => {
   if (origin == null || typeof origin !== 'object') return false;
   const ctx = (origin as { context?: { paired?: boolean } }).context;
@@ -422,6 +450,8 @@ export interface SetupServerObserversOpts {
    * decision the settlement handler made.
    */
   onDispatch?: ObserverDispatchHook;
+  /** Test/telemetry seam: which Observer A path settled a fragment change. */
+  onObserverAPath?: (path: 'incremental' | 'full', reason?: ObserverAFallbackReason) => void;
   /**
    * Test-only seam for Observer A Path B's three-way merge. Omitted in
    * production (defaults to the real `mergeThreeWay`). The
@@ -862,7 +892,32 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
   // where the router strict-compares raw bytes misroutes the first fragment
   // change on any residual-bearing doc to Path B.
   let lastSyncedCanonicalMd = '';
+  // Observer B's incremental path settles without serializing the whole
+  // document (that serialize is the dominant per-keystroke cost on long
+  // documents). It leaves the canonical witness as a thunk instead, resolved
+  // the first time Observer A reads it. Every direct assignment of
+  // `lastSyncedCanonicalMd` clears it.
+  let pendingCanonicalMd: (() => string) | null = null;
+  const canonicalWitness = (): string => {
+    if (pendingCanonicalMd) {
+      lastSyncedCanonicalMd = pendingCanonicalMd();
+      pendingCanonicalMd = null;
+    }
+    return lastSyncedCanonicalMd;
+  };
   let lastSyncedYTextBytes = '';
+  // normalizeBridge(lastSyncedYTextBytes), computed once per raw-witness change
+  // so Observer B's early-exit normalizes only the incoming text.
+  let normalizedRawWitness: { raw: string; normalized: string } | null = null;
+  const normalizedRawWitnessValue = (): string => {
+    if (normalizedRawWitness?.raw !== lastSyncedYTextBytes) {
+      normalizedRawWitness = {
+        raw: lastSyncedYTextBytes,
+        normalized: normalizeBridge(lastSyncedYTextBytes),
+      };
+    }
+    return normalizedRawWitness.normalized;
+  };
   // Coherence flag — true iff BOTH witnesses were recorded together at a
   // real settlement. The router's witness-vs-witness residual-tolerance
   // comparison is only meaningful within one settlement generation:
@@ -907,6 +962,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
    */
   const recordSettledBaselines = (canonicalMd: string): void => {
     lastSyncedCanonicalMd = canonicalMd;
+    pendingCanonicalMd = null;
     refreshYTextWitness();
     canonicalWitnessCoherent = canonicalMd !== '';
   };
@@ -924,6 +980,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
    */
   const recordDivergedAttachBaselines = (canonicalMd: string): void => {
     lastSyncedCanonicalMd = canonicalMd;
+    pendingCanonicalMd = null;
     lastSyncedYTextBytes = canonicalMd;
     // A diverged attach is NOT a real settlement, so the flag stays false to
     // match the `canonicalWitnessCoherent` invariant. Behavior-neutral here:
@@ -944,6 +1001,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
    */
   const refreshCanonicalWitnessOnly = (canonicalMd: string): void => {
     lastSyncedCanonicalMd = canonicalMd;
+    pendingCanonicalMd = null;
     canonicalWitnessCoherent = false;
   };
 
@@ -961,6 +1019,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
    */
   const recordSplitBrainRecoveryBaselines = (canonicalMd: string): void => {
     lastSyncedCanonicalMd = canonicalMd;
+    pendingCanonicalMd = null;
     lastSyncedYTextBytes = ytext.toString();
     canonicalWitnessCoherent = true;
   };
@@ -985,6 +1044,47 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
           sourcePath: opts.docName,
         }
       : undefined;
+
+  /** Observer B's text→tree parse: re-parses only the blocks an edit touched
+   *  and falls back to a full parse whenever that is not provably the same. */
+  /** Why the parser's last `update` fell back to a full parse (metrics). */
+  let parserFallback: string | null = null;
+  const incrementalParser = new IncrementalBlockParser({
+    onFallback: (reason) => {
+      parserFallback = reason;
+    },
+    parseWithRanges: (markdown) => mdManager.parseWithBlockRanges(markdown, observerParseOpts),
+    parse: (markdown) => mdManager.parseWithFallback(markdown, observerParseOpts),
+    schema,
+  });
+  /** `updateYFragment` metadata kept across Observer B fires, so unchanged
+   *  blocks match by identity instead of a structural walk. Any fragment
+   *  change that did not come from this observer invalidates it. */
+  let bUpdateMeta = { mapping: new Map(), isOMark: new Map() };
+  const resetBUpdateMeta = (): void => {
+    bUpdateMeta = { mapping: new Map(), isOMark: new Map() };
+  };
+  /** The Y.Text that Observer B last found parse-equivalent to the raw
+   *  witness, with that witness, when it left the witness unrefreshed (its
+   *  normalize early exit). */
+  let bNormalizeEqual: { text: string; witness: string } | null = null;
+  /** Top-level fragment children a client changed during this drain, and
+   *  whether the top-level child list itself changed (Observer A fast path). */
+  let changedTopLevel = new Set<Y.AbstractType<unknown>>();
+  let topLevelStructureChanged = false;
+  /** The fragment's derivation mark when this drain's first client change
+   *  arrived (`undefined` until then, `null` if there was none). */
+  let drainStartDerivation: FragmentDerivation | null | undefined;
+  const resetChangedTopLevel = (): void => {
+    changedTopLevel = new Set();
+    topLevelStructureChanged = false;
+    drainStartDerivation = undefined;
+  };
+
+  /** True while Observer B's own `updateYFragment` transaction runs. Other
+   *  code that writes the fragment under `OBSERVER_SYNC_ORIGIN` (persistence's
+   *  `reconcileFragmentNow`) is not B, and must invalidate B's mapping. */
+  let bWritingFragment = false;
 
   /** Canonicalize a body through this doc's own parse pipeline — the
    *  parse-equivalence fallback's callback (`isParseEquivalentBridge`). */
@@ -1331,7 +1431,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
       //     === md` is a cross-generation coincidence that does NOT certify
       //     Y.Text is in sync — fall through to the raw-witness router so the
       //     content propagates.
-      if (canonicalWitnessCoherent && lastSyncedCanonicalMd === md) {
+      if (canonicalWitnessCoherent && canonicalWitness() === md) {
         // Fragment serialization is identical to the canonical witness AND the
         // witness is coherent (recorded with the raw witness at a real
         // settlement). Two outcomes:
@@ -1416,8 +1516,8 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
       const residualMergeEligible =
         ytextInSync &&
         canonicalWitnessCoherent &&
-        lastSyncedYTextBytes !== lastSyncedCanonicalMd &&
-        normCurrent !== normalizeBridge(lastSyncedCanonicalMd);
+        lastSyncedYTextBytes !== canonicalWitness() &&
+        normCurrent !== normalizeBridge(canonicalWitness());
       // Routing decision, span-visible. The outcomes are byte-different
       // write behaviors that are otherwise indistinguishable in traces.
       // Bounded cardinality: a 4-value enum — 'map-driven-splice' overrides
@@ -1507,7 +1607,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
           // the pre-merge state (`saveInMemoryCheckpoint`), and apply the
           // merge as-computed so the editor keeps responding. Dev/test
           // re-throws so integration tests and fuzz runs fail loudly.
-          const mergeBase = ytextInSync ? lastSyncedCanonicalMd : preMergeBaseline;
+          const mergeBase = ytextInSync ? canonicalWitness() : preMergeBaseline;
           // Doc-boundary byte-space alignment (full mechanism in
           // doc-boundary-space.ts): `md` is a fragment serialization that
           // lacks the FM-close-fence-to-body newline run the raw-space inputs
@@ -1716,6 +1816,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
         // (empty) ancestor rather than a wholesale Path A rewrite that would
         // destroy the divergent source. Coherence stays false.
         lastSyncedCanonicalMd = '';
+        pendingCanonicalMd = null;
         lastSyncedYTextBytes = '';
         canonicalWitnessCoherent = false;
       }
@@ -1730,7 +1831,180 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
   // 'gated-in-sync', so every exit path of the sync impl sets the attribute.
   // Zero-overhead when OTEL_SDK_DISABLED is true (recordException
   // is no-op when the tracer is disabled).
+  /** Node types whose serialization needs Observer A's full safeguards
+   *  (freshness re-derive, producer guard). */
+  const FULL_PATH_NODE_TYPES = ['"jsxComponent"', '"jsxInline"', '"rawMdxFallback"', '"table"'];
+
+  /**
+   * Observer A fast path for a client edit inside a few top-level blocks.
+   *
+   * Runs when Y.Text has not changed since the last reconcile (it equals the
+   * raw witness) and the edit stayed inside 1–4 simple top-level blocks. The
+   * incremental parser holds parse(Y.Text) with each block's source range
+   * (re-parsing only what changed since its last body). Each edited block's
+   * nearest unchanged neighbours must equal the parser's blocks at the same
+   * index — otherwise fragment children and source blocks are not aligned
+   * there. Edited blocks that repeat a line more often than their source did
+   * go to the full path, whose duplication gate tells a CRDT race from a
+   * paste. Only the edited blocks are serialized; their text replaces their
+   * source ranges, and the edit is written only if every edited block parses
+   * back to exactly the client's node. Otherwise it returns why not, and the
+   * full path runs.
+   */
+  const tryIncrementalObserverA = (): ObserverAFallbackReason | null => {
+    if (topLevelStructureChanged || changedTopLevel.size === 0 || changedTopLevel.size > 4)
+      return 'structure';
+    const text = ytext.toString();
+    // A Y.Text edit since the last reconcile is allowed only when Observer B
+    // already found it parse-invisible (the witness stays stale on purpose so
+    // the full path's merge keeps those bytes) and it lies outside every
+    // edited block: splicing just the edited blocks keeps its bytes too.
+    let moved: { start: number; end: number } | null = null;
+    if (text !== lastSyncedYTextBytes) {
+      if (bNormalizeEqual?.text !== text || bNormalizeEqual.witness !== lastSyncedYTextBytes) {
+        return 'text-moved';
+      }
+      moved = changedSpan(lastSyncedYTextBytes, text);
+    }
+    const children = xmlFragment.toArray();
+
+    const edits: { index: number; markdown: string; json: string }[] = [];
+    for (const changed of changedTopLevel) {
+      const index = children.indexOf(changed as (typeof children)[number]);
+      if (index < 0 || !(changed instanceof Y.XmlElement)) return 'node-shape';
+      const json = topLevelJson(changed);
+      if (json === null) return 'node-shape';
+      const serializedJson = JSON.stringify(json);
+      if (FULL_PATH_NODE_TYPES.some((type) => serializedJson.includes(`"type":${type}`)))
+        return 'full-path-node';
+      const markdown = mdManager.serialize({ type: 'doc', content: [json] }).replace(/\n+$/, '');
+      edits.push({ index, markdown, json: serializedJson });
+    }
+
+    const { frontmatter, body } = stripFrontmatter(text);
+    if (incrementalParser.cachedBody !== body) {
+      incrementalParser.update(body) ?? incrementalParser.parseFull(body);
+    }
+    const ranges = incrementalParser.cachedBlockRanges();
+    const blocks = incrementalParser.cachedBlockJson();
+    if (!ranges || !blocks || ranges.length !== children.length) return 'block-count';
+    if (moved) {
+      const bodyOffset = text.length - body.length;
+      for (const { index } of edits) {
+        const start = bodyOffset + ranges[index].start;
+        const end = bodyOffset + ranges[index].end;
+        if (moved.start <= end && start <= moved.end) return 'text-moved-in-block';
+      }
+    }
+
+    // Alignment: the nearest unchanged neighbour on each side of every edit.
+    const edited = new Set(edits.map((edit) => edit.index));
+    const checked = new Set<number>();
+    for (const { index } of edits) {
+      for (const step of [-1, 1]) {
+        let neighbour = index + step;
+        while (edited.has(neighbour)) neighbour += step;
+        if (neighbour < 0 || neighbour >= children.length || checked.has(neighbour)) continue;
+        checked.add(neighbour);
+        const json = topLevelJson(children[neighbour]);
+        if (json === null || !sameVisibleContent(json, blocks[neighbour])) return 'neighbour';
+      }
+    }
+
+    edits.sort((a, b) => a.index - b.index);
+    // Duplication gate pre-filter, scoped to the edited blocks: a line they
+    // now carry more often than their source did may be a CRDT race
+    // duplicate, which only the full path can tell from a paste and recover.
+    const editedBefore = edits
+      .map((edit) => body.slice(ranges[edit.index].start, ranges[edit.index].end))
+      .join('\n\n');
+    const editedAfter = edits.map((edit) => edit.markdown).join('\n\n');
+    if (overMultipliedBridgeBodyLines(editedAfter, editedBefore).length > 0) return 'duplication';
+
+    let newBody = '';
+    let cursor = 0;
+    for (const edit of edits) {
+      newBody += body.slice(cursor, ranges[edit.index].start) + edit.markdown;
+      cursor = ranges[edit.index].end;
+    }
+    newBody += body.slice(cursor);
+
+    const reparsed = incrementalParser.update(newBody);
+    if (reparsed === null || reparsed.childCount !== children.length) return 'reparse';
+    // Exact: the edited blocks are the parse of the new text. Visible: they
+    // differ only in source-spelling marks the parse adds (the new text keeps
+    // every character); the write is the same, but the fragment is then not
+    // the exact parse of the text.
+    let exact = true;
+    for (const edit of edits) {
+      const got = reparsed.child(edit.index).toJSON();
+      if (JSON.stringify(got) === edit.json) continue;
+      if (!sameVisibleContent(got, JSON.parse(edit.json))) return 'reparse';
+      exact = false;
+    }
+
+    const newText = prependFrontmatter(frontmatter, newBody);
+    doc.transact(() => {
+      applyByPrefixSuffix(ytext, text, newText);
+    }, OBSERVER_SYNC_ORIGIN);
+    refreshYTextWitness();
+    // The fragment matches newText only if it matched text before this edit:
+    // then every unchanged block is the parser's, and the edited ones were
+    // just checked. After a full-path or paired write it may not be.
+    if (drainStartDerivation?.text === text) {
+      const exactNow = exact && drainStartDerivation.exact;
+      markFragmentDerivedFromText(doc, newText, exactNow);
+      if (exactNow) {
+        pendingCanonicalMd = () =>
+          prependFrontmatter(frontmatter, mdManager.serialize(reparsed.toJSON()));
+        canonicalWitnessCoherent = true;
+      }
+    }
+    incrementServerObserverFire('a');
+    return null;
+  };
+
+  /** The span of `after` that differs from `before` (common prefix and suffix removed). */
+  const changedSpan = (before: string, after: string): { start: number; end: number } => {
+    let start = 0;
+    const max = Math.min(before.length, after.length);
+    while (start < max && before.charCodeAt(start) === after.charCodeAt(start)) start++;
+    let tail = 0;
+    while (
+      tail < max - start &&
+      before.charCodeAt(before.length - 1 - tail) === after.charCodeAt(after.length - 1 - tail)
+    )
+      tail++;
+    return { start, end: after.length - tail };
+  };
+
+  /** One fragment child as PM JSON, or `null` if it is not a single node. */
+  const topLevelJson = (child: unknown): JSONContent | null => {
+    if (!(child instanceof Y.XmlElement)) return null;
+    const scratch = new Y.Doc().getXmlFragment('block');
+    scratch.insert(0, [child.clone()]);
+    const root = yXmlFragmentToProseMirrorRootNode(scratch, schema);
+    return root.childCount === 1 ? (root.child(0).toJSON() as JSONContent) : null;
+  };
+
   const runObserverASync = (): void => {
+    let reason: ObserverAFallbackReason | null;
+    try {
+      reason = tryIncrementalObserverA();
+      if (reason === null) {
+        incrementObserverAPath('incremental');
+        opts.onObserverAPath?.('incremental');
+        return;
+      }
+    } catch (err) {
+      console.warn('[Server Observer A] incremental path failed — using the full path:', err);
+      incrementalParser.reset();
+      reason = 'error';
+    } finally {
+      resetChangedTopLevel();
+    }
+    incrementObserverAPath('full', reason);
+    opts.onObserverAPath?.('full', reason);
     withSpanSync(
       'observer.runASync',
       { attributes: { 'doc.name': opts.docName ?? '' } },
@@ -1743,9 +2017,21 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
    * Origin guards prevent infinite loops and opt the paired-write fast-path
    * out of settlement-handler dispatch.
    */
-  const observerA = (_events: Y.YEvent<Y.XmlFragment>[], transaction: Y.Transaction) => {
+  const observerA = (events: Y.YEvent<Y.XmlFragment>[], transaction: Y.Transaction) => {
     // Self-skip: our own cross-CRDT write
-    if (transaction.origin === OBSERVER_SYNC_ORIGIN) return;
+    if (transaction.origin === OBSERVER_SYNC_ORIGIN) {
+      // Persistence reconciles the fragment under this origin too; only B's
+      // own write keeps B's mapping valid.
+      if (!bWritingFragment) resetBUpdateMeta();
+      return;
+    }
+    // Someone else changed the fragment: Observer B's identity mapping no
+    // longer describes it, and it is no longer known to be parse(Y.Text).
+    resetBUpdateMeta();
+    if (drainStartDerivation === undefined) {
+      drainStartDerivation = fragmentDerivation(doc) ?? null;
+    }
+    clearFragmentDerivation(doc);
 
     // Paired-write origins atomically wrote both XmlFragment and Y.Text inside
     // this transaction. Under the Y.Text-is-truth contract, ytext holds the
@@ -1765,6 +2051,8 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
     // generations, so the router's residual-tolerance comparison is
     // meaningless and it falls back to Path A in this window.
     if (isPairedWriteOrigin(transaction.origin)) {
+      // The fragment is no longer known to be the parse of any text.
+      drainStartDerivation = undefined;
       try {
         const frontmatter = readCurrentFm();
         refreshYTextWitness();
@@ -1790,6 +2078,18 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
       return;
     }
 
+    for (const event of events) {
+      let target: Y.AbstractType<unknown> | null = event.target as Y.AbstractType<unknown>;
+      if (target === (xmlFragment as unknown)) {
+        topLevelStructureChanged = true;
+        continue;
+      }
+      while (target && target.parent !== (xmlFragment as unknown)) {
+        target = target.parent as Y.AbstractType<unknown> | null;
+      }
+      if (target) changedTopLevel.add(target);
+      else topLevelStructureChanged = true;
+    }
     xmlDirty = true;
   };
 
@@ -1830,6 +2130,34 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
    * within the same drain (when both flags are set), so any fresh XmlFragment
    * state from Observer A's write is already visible to this pass.
    */
+  /**
+   * Observer B's normalize early exit leaves the fragment as it is. If the
+   * fragment was exactly parse(witness) and the incremental parser shows the
+   * new text's blocks unchanged, it is exactly parse(md) too: move the mark,
+   * so persistence does not re-derive it on every store. normalizeBridge
+   * equality alone is not parse equality (`foo\n2. bar` normalizes like
+   * `foo\n\n2. bar`), so without that check the mark is dropped.
+   */
+  const keepDerivationAcross = (md: string, body: string): void => {
+    const derivation = fragmentDerivation(doc);
+    if (!derivation?.exact || derivation.text !== lastSyncedYTextBytes) return;
+    if (incrementalParser.cachedBody !== stripFrontmatter(derivation.text).body) return;
+    const before = incrementalParser.cachedBlockJson();
+    const node = incrementalParser.update(body);
+    const after = incrementalParser.cachedBlockJson();
+    if (
+      node === null ||
+      !before ||
+      !after ||
+      before.length !== after.length ||
+      !before.every((block, i) => sameIgnoringPositions(block, after[i]))
+    ) {
+      clearFragmentDerivation(doc);
+      return;
+    }
+    markFragmentDerivedFromText(doc, md);
+  };
+
   let priorFmForTelemetry = readCurrentFm();
   const runObserverBSyncImpl = (): void => {
     try {
@@ -1847,7 +2175,12 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
       // WITHOUT refreshing any witness, so the router still sees it as
       // real divergence and routes the next fragment change through the
       // byte-preserving Path B merge.
-      if (normalizeBridge(lastSyncedYTextBytes) === normalizeBridge(md)) {
+      if (md === lastSyncedYTextBytes || normalizedRawWitnessValue() === normalizeBridge(md)) {
+        if (md !== lastSyncedYTextBytes) {
+          bNormalizeEqual = { text: md, witness: lastSyncedYTextBytes };
+          keepDerivationAcross(md, body);
+        }
+        incrementObserverBPath('early-exit');
         // Tree and text are already in sync. FM region is already where it
         // should be (Y.Text is the source of truth). Just emit telemetry if
         // the FM changed.
@@ -1866,14 +2199,40 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
       // (precedent #14), this observer is the sole writer for XmlFragment —
       // the "always-live" contract here means no client sees frozen WYSIWYG
       // when another peer is mid-typing a broken MDX tag.
-      const parsedJson = mdManager.parseWithFallback(body, observerParseOpts);
+      parserFallback = null;
+      const incrementalNode = incrementalParser.update(body);
+      const pmNode = incrementalNode ?? incrementalParser.parseFull(body);
+      incrementObserverBPath(
+        incrementalNode ? 'incremental' : `full:${parserFallback ?? 'unknown'}`,
+      );
 
-      const pmNode = opts.schema.nodeFromJSON(parsedJson);
+      bWritingFragment = true;
+      try {
+        doc.transact(() => {
+          updateYFragment(doc, xmlFragment, pmNode, bUpdateMeta);
+        }, OBSERVER_SYNC_ORIGIN);
+      } finally {
+        bWritingFragment = false;
+      }
+      markFragmentDerivedFromText(doc, md);
 
-      doc.transact(() => {
-        const meta = { mapping: new Map(), isOMark: new Map() };
-        updateYFragment(doc, xmlFragment, pmNode, meta);
-      }, OBSERVER_SYNC_ORIGIN);
+      if (incrementalNode) {
+        // Incremental settlement: the full serialize below (bridge invariant +
+        // canonical witness) is the dominant cost on long documents and is
+        // deferred — the canonical witness resolves on Observer A's first
+        // read, and the persistence store path still checks the invariant.
+        if (priorFmForTelemetry !== frontmatter) {
+          recordFrontmatterEditSurface('source-mode');
+          priorFmForTelemetry = frontmatter;
+        }
+        incrementServerObserverFire('b');
+        refreshYTextWitness();
+        pendingCanonicalMd = () =>
+          prependFrontmatter(frontmatter, mdManager.serialize(pmNode.toJSON()));
+        canonicalWitnessCoherent = true;
+        return;
+      }
+      const parsedJson = pmNode.toJSON();
 
       if (priorFmForTelemetry !== frontmatter) {
         recordFrontmatterEditSurface('source-mode');

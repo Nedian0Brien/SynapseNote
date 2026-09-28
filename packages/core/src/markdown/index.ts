@@ -57,6 +57,7 @@ import type { LinkStyle } from '../extensions/link-fidelity.ts';
 import { isValidSourceLiteralRaw } from '../extensions/source-literal-mark.ts';
 import { createRegistry } from '../registry/index.ts';
 import type { PropDef } from '../registry/types.ts';
+import { ESCAPABLE_CHARS } from './escapable-chars.ts';
 import type {
   CommentBlockMdast,
   CommentMdast,
@@ -65,10 +66,12 @@ import type {
 } from './mdast-augmentation.ts';
 import { parseWithFallback } from './parse-with-fallback.ts';
 import {
+  type BlockSourceRange,
   createParseProcessor,
   createSerializeProcessor,
   parseMd,
   parseMdToMdast,
+  parseMdWithBlockRanges,
   serializeMd,
 } from './pipeline.ts';
 import { normalizeDocRelativeAssetUrl } from './resolve-image-url.ts';
@@ -155,6 +158,27 @@ export class MarkdownManager {
     try {
       const doc = parseMd(markdown, this.parseProcessor);
       return doc.toJSON() as JSONContent;
+    } finally {
+      this.parseCtx.current = {};
+    }
+  }
+
+  /**
+   * `parse`, plus each top-level block's source range from the same parse
+   * (see `parseMdWithBlockRanges`; `ranges` is null when offsets do not map
+   * onto `markdown`). Throws where `parse` throws.
+   */
+  parseWithBlockRanges(
+    markdown: string,
+    opts?: ParseContext,
+  ): { json: JSONContent; ranges: BlockSourceRange[] | null } {
+    if (!markdown.trim()) {
+      return { json: { type: 'doc', content: [{ type: 'paragraph', content: [] }] }, ranges: null };
+    }
+    this.parseCtx.current = opts ?? {};
+    try {
+      const { doc, ranges } = parseMdWithBlockRanges(markdown, this.parseProcessor);
+      return { json: doc.toJSON() as JSONContent, ranges };
     } finally {
       this.parseCtx.current = {};
     }
@@ -1590,7 +1614,11 @@ function buildPmToMdastHandlers(
           const textChild = child as Text;
           textChild.data ??= {};
           textChild.data.escapedChars ??= [];
+          // The mark can spread past the character it was parsed from (Yjs and
+          // ProseMirror hand an insertion the marks of its neighbour), so only
+          // characters a backslash can escape are written escaped.
           for (let i = 0; i < textChild.value.length; i++) {
+            if (!ESCAPABLE_CHARS.has(textChild.value[i])) continue;
             textChild.data.escapedChars.push({ offset: i, char: textChild.value[i] });
           }
         }

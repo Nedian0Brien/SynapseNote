@@ -78,6 +78,9 @@ const TRANSITIVE_PRIMITIVE_CALLERS = new Set<string>([
  *     so no primitive applies.
  *   EFFECT_CAPTURE_ORIGIN — `paired: false`; mutates only Y.Map('agent-effects')
  *     ring-buffer, not the Y.Text/Y.XmlFragment pair (`activity-log.ts`).
+ *   SURROGATE_REPAIR_ORIGIN — Y.Text-only: replaces unpaired surrogates with
+ *     U+FFFD (`surrogate-normalizer.ts`). Deliberately not paired, so Observer B
+ *     re-derives the fragment from the repaired text through the normal bridge.
  *
  * When `FORM_WRITE_ORIGIN` (currently parked — see `mcp/tools/index.ts`,
  * `mcp/tools/frontmatter-patch.ts`) is reintroduced as a typed origin, add
@@ -91,6 +94,7 @@ const SANCTIONED_NON_PRIMITIVE_ORIGINS = new Set<string>([
   'MERMAID_SOURCE_ORIGIN',
   'PARK_SNAPSHOT_ORIGIN',
   'EFFECT_CAPTURE_ORIGIN',
+  'SURROGATE_REPAIR_ORIGIN',
 ]);
 
 /**

@@ -1,6 +1,5 @@
 import type { Nodes } from 'mdast';
-
-const ESCAPABLE_CHARS = new Set('!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'.split(''));
+import { ESCAPABLE_CHARS } from './escapable-chars.ts';
 
 interface EscapedChar {
   offset: number;

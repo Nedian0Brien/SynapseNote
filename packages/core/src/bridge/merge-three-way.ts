@@ -20,9 +20,93 @@ function mergeThreeWayImpl(baseline: string, userText: string, agentText: string
   const userLines = userText.split('\n');
   const baseLines = baseline.split('\n');
   const agentLines = agentText.split('\n');
-  const regions = diff3Merge(userLines, baseLines, agentLines);
+  // node-diff3's LCS compares every line with every equal line of the other
+  // side, so on a long document its blank lines alone make one whole-text
+  // merge take seconds. Lines all three share at the start and end are
+  // stable regions diff3 copies through, and so is every line that occurs
+  // exactly once in each version, in the same order (patience-diff anchors).
+  // Merging per segment between them gives the whole-text result when no
+  // segment conflicts. A conflict is different: the segment boundary moves
+  // diff3's alignment of blank lines, which changes the conflict region the
+  // character-level resolver sees (it duplicated lines in fuzzing). Any
+  // conflict therefore reruns the merge over the whole text.
+  const shortest = Math.min(userLines.length, baseLines.length, agentLines.length);
+  let head = 0;
+  while (
+    head < shortest &&
+    userLines[head] === baseLines[head] &&
+    baseLines[head] === agentLines[head]
+  )
+    head++;
+  let tail = 0;
+  while (
+    tail < shortest - head &&
+    userLines[userLines.length - 1 - tail] === baseLines[baseLines.length - 1 - tail] &&
+    baseLines[baseLines.length - 1 - tail] === agentLines[agentLines.length - 1 - tail]
+  )
+    tail++;
+  const user = userLines.slice(head, userLines.length - tail);
+  const base = baseLines.slice(head, baseLines.length - tail);
+  const agent = agentLines.slice(head, agentLines.length - tail);
 
   const parts: string[] = [];
+  if (head > 0) parts.push(baseLines.slice(0, head).join('\n'));
+  let from = { user: 0, base: 0, agent: 0 };
+  let clean = true;
+  for (const anchor of stableAnchors(user, base, agent)) {
+    clean = mergeCleanSegment(
+      user.slice(from.user, anchor.user),
+      base.slice(from.base, anchor.base),
+      agent.slice(from.agent, anchor.agent),
+      parts,
+    );
+    if (!clean) break;
+    parts.push(base[anchor.base]);
+    from = { user: anchor.user + 1, base: anchor.base + 1, agent: anchor.agent + 1 };
+  }
+  if (clean) {
+    clean = mergeCleanSegment(
+      user.slice(from.user),
+      base.slice(from.base),
+      agent.slice(from.agent),
+      parts,
+    );
+  }
+  if (!clean) return mergeWholeText(baseLines, userLines, agentLines);
+  if (tail > 0) parts.push(baseLines.slice(baseLines.length - tail).join('\n'));
+
+  return parts.join('\n');
+}
+
+/** The line merge over the whole text — what `mergeThreeWay` equals. Exported for tests. */
+export function mergeWholeText(
+  baseLines: string[],
+  userLines: string[],
+  agentLines: string[],
+): string {
+  const parts: string[] = [];
+  mergeSegment(userLines, baseLines, agentLines, parts);
+  return parts.join('\n');
+}
+
+/** diff3 one segment into `parts`; false (nothing appended) if it conflicts. */
+function mergeCleanSegment(
+  user: string[],
+  base: string[],
+  agent: string[],
+  parts: string[],
+): boolean {
+  if (user.length === 0 && base.length === 0 && agent.length === 0) return true;
+  const regions = diff3Merge(user, base, agent);
+  if (regions.some((region) => !('ok' in region && region.ok))) return false;
+  for (const region of regions) parts.push((region as { ok: string[] }).ok.join('\n'));
+  return true;
+}
+
+/** diff3 one segment, appending its merged lines to `parts`. */
+function mergeSegment(user: string[], base: string[], agent: string[], parts: string[]): void {
+  if (user.length === 0 && base.length === 0 && agent.length === 0) return;
+  const regions = diff3Merge(user, base, agent);
   for (let i = 0; i < regions.length; i++) {
     const region = regions[i];
     if ('ok' in region && region.ok) {
@@ -34,8 +118,43 @@ function mergeThreeWayImpl(baseline: string, userText: string, agentText: string
       parts.push(mergeConflictRegion(conflictBase, conflictUser, conflictAgent));
     }
   }
+}
 
-  return parts.join('\n');
+/**
+ * Lines that occur exactly once in each version, taken in base order while
+ * they also increase in the other two (greedy). A line moved between
+ * versions only costs anchors, never correctness: segments stay aligned.
+ */
+function stableAnchors(
+  user: string[],
+  base: string[],
+  agent: string[],
+): { user: number; base: number; agent: number }[] {
+  const uniqueIndex = (lines: string[]): Map<string, number> => {
+    const index = new Map<string, number>();
+    for (let i = 0; i < lines.length; i++) {
+      index.set(lines[i], index.has(lines[i]) ? -1 : i);
+    }
+    return index;
+  };
+  const inUser = uniqueIndex(user);
+  const inBase = uniqueIndex(base);
+  const inAgent = uniqueIndex(agent);
+  const anchors: { user: number; base: number; agent: number }[] = [];
+  let lastUser = -1;
+  let lastAgent = -1;
+  for (let b = 0; b < base.length; b++) {
+    const line = base[b];
+    if (inBase.get(line) !== b) continue;
+    const u = inUser.get(line) ?? -1;
+    const a = inAgent.get(line) ?? -1;
+    if (u > lastUser && a > lastAgent) {
+      anchors.push({ user: u, base: b, agent: a });
+      lastUser = u;
+      lastAgent = a;
+    }
+  }
+  return anchors;
 }
 
 export type BridgeMergeContentLossSide = 'user' | 'agent';

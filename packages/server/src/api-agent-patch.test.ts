@@ -266,3 +266,56 @@ describe('POST /api/agent-patch — surgical/incremental write shape', () => {
     }
   });
 });
+
+describe('POST /api/agent-patch — surrogate pairs', () => {
+  async function withDoc(
+    initial: string,
+    run: (ctx: {
+      ytext: Y.Text;
+      call: (body: unknown) => Promise<CapturedResponse>;
+    }) => Promise<void>,
+  ): Promise<void> {
+    const projectDir = mkdtempSync(join(tmpdir(), 'ok-api-agent-patch-surrogate-'));
+    const contentDir = join(projectDir, 'content');
+    mkdirSync(contentDir, { recursive: true });
+    const hocuspocus = new Hocuspocus({ quiet: true });
+    const sessionManager = new AgentSessionManager(hocuspocus);
+    try {
+      const session = await sessionManager.getSession('test-doc');
+      session.dc.document.transact(() => {
+        applyAgentMarkdownWrite(session.dc.document, initial, 'replace');
+      }, AGENT_WRITE_ORIGIN);
+      await run({
+        ytext: session.dc.document.getText('source'),
+        call: (body) => callAgentPatch(hocuspocus, sessionManager, contentDir, body),
+      });
+    } finally {
+      await sessionManager.closeAll();
+      rmSync(projectDir, { recursive: true, force: true });
+    }
+  }
+
+  test('swapping one emoji for another that shares its high half keeps both intact', async () => {
+    await withDoc('Mood: 😀 today\n', async ({ ytext, call }) => {
+      const response = await call({ docName: 'test-doc', find: '😀', replace: '😁' });
+      expect(response.status).toBe(200);
+      // Before the fix the diff retained the shared high half and Yjs turned
+      // it into U+FFFD, leaving "Mood: \uFFFD\uDE01 today".
+      expect(ytext.toString()).toBe('Mood: 😁 today\n');
+    });
+  });
+
+  test('rejects a find or replace holding half a surrogate pair and leaves the document unchanged', async () => {
+    await withDoc('Mood: 😀 today\n', async ({ ytext, call }) => {
+      const loneFind = await call({ docName: 'test-doc', find: '\uD83D', replace: 'x' });
+      expect(loneFind.status).toBe(400);
+      const loneReplace = await call({
+        docName: 'test-doc',
+        find: 'today',
+        replace: 'to\uDE00day',
+      });
+      expect(loneReplace.status).toBe(400);
+      expect(ytext.toString()).toBe('Mood: 😀 today\n');
+    });
+  });
+});
