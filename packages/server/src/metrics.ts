@@ -47,6 +47,11 @@ export interface ReconciliationMetrics {
   /** Observer A client-edit drains by path: `incremental`, or `full:<reason>`
    *  with the fast path's fallback reason (`ObserverAFallbackReason`). */
   observerAPaths: Record<string, number>;
+  /** Observer B drains by path: `early-exit`, `incremental`, or
+   *  `full:<reason>` with the incremental parser's fallback reason. */
+  observerBPaths: Record<string, number>;
+  /** Persistence stores by whether the full bridge sanity check ran. */
+  storeSanityChecks: Record<string, number>;
   serverObserverErrorsA: number;
   serverObserverErrorsB: number;
   /** Count of successful atomic disk writes from persistence.onStoreDocument.
@@ -415,6 +420,8 @@ const counters: ReconciliationMetrics = {
   serverObserverFiresA: 0,
   serverObserverFiresB: 0,
   observerAPaths: {},
+  observerBPaths: {},
+  storeSanityChecks: {},
   serverObserverErrorsA: 0,
   serverObserverErrorsB: 0,
   persistenceDiskWrites: 0,
@@ -524,6 +531,15 @@ export function incrementServerObserverFire(direction: 'a' | 'b'): void {
 export function incrementObserverAPath(path: 'incremental' | 'full', reason?: string): void {
   const key = path === 'incremental' ? path : `full:${reason ?? 'unknown'}`;
   counters.observerAPaths[key] = (counters.observerAPaths[key] ?? 0) + 1;
+}
+
+export function incrementObserverBPath(key: string): void {
+  counters.observerBPaths[key] = (counters.observerBPaths[key] ?? 0) + 1;
+}
+
+export function incrementStoreSanityCheck(ran: boolean): void {
+  const key = ran ? 'ran' : 'skipped';
+  counters.storeSanityChecks[key] = (counters.storeSanityChecks[key] ?? 0) + 1;
 }
 
 export function incrementPersistenceDiskWrite(): void {
@@ -781,6 +797,8 @@ export function getMetrics(): ReconciliationMetrics {
     ...counters,
     cc1LastSeq: { ...counters.cc1LastSeq },
     observerAPaths: { ...counters.observerAPaths },
+    observerBPaths: { ...counters.observerBPaths },
+    storeSanityChecks: { ...counters.storeSanityChecks },
     bridgeToleranceApplied: { ...counters.bridgeToleranceApplied },
     mapDrivenSpliceFallback: { ...counters.mapDrivenSpliceFallback },
   };
@@ -804,6 +822,8 @@ export function resetMetrics(): void {
   counters.serverObserverFiresA = 0;
   counters.serverObserverFiresB = 0;
   counters.observerAPaths = {};
+  counters.observerBPaths = {};
+  counters.storeSanityChecks = {};
   counters.serverObserverErrorsA = 0;
   counters.serverObserverErrorsB = 0;
   counters.persistenceDiskWrites = 0;

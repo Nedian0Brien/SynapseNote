@@ -376,6 +376,21 @@ function sameAttrs(a: unknown, b: unknown): boolean {
   return deepEqual(a ?? null, b ?? null);
 }
 
+/** Deep equality ignoring mdast `position` values (they move with edits elsewhere). */
+export function sameIgnoringPositions(a: unknown, b: unknown): boolean {
+  return deepEqual(withoutPositions(a), withoutPositions(b));
+}
+
+function withoutPositions(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(withoutPositions);
+  if (typeof value !== 'object' || value === null) return value;
+  const out: Record<string, unknown> = {};
+  for (const [key, item] of Object.entries(value)) {
+    if (key !== 'position') out[key] = withoutPositions(item);
+  }
+  return out;
+}
+
 /** Marks that only tell the serializer how to spell text (`\*`, `&#x20;`). */
 const SOURCE_SPELLING_MARKS = new Set(['escapeMark', 'sourceLiteral']);
 

@@ -84,6 +84,7 @@ import {
   incrementPersistenceSanityCheckSerializeFailures,
   incrementPersistenceSkipNonQuiescent,
   incrementPersistenceStoreRemovedDoc,
+  incrementStoreSanityCheck,
 } from './metrics.ts';
 import { isWithinDir, toPosix } from './path-utils.ts';
 import { classifyDuplication } from './persistence-tripwire.ts';
@@ -1392,8 +1393,10 @@ export function createPersistenceExtension(options?: PersistenceOptions): Persis
         // sanity check can compare ytext bytes against the canonical
         // fragment view.
         //
-        // When Observer B has just set the fragment to parse(this exact
-        // Y.Text), the fragment matches by construction and the sanity check
+        // When the observers mark the fragment as matching this exact Y.Text
+        // (Observer B derived it, or Observer A's fast path spliced blocks
+        // that parse back to the client's nodes — see
+        // `fragment-derivation.ts`), it matches by construction and the sanity check
         // below mostly re-derives it — a full-document serialize, and on
         // non-round-trip text a full parse, which on long documents stalled
         // the event loop every few seconds while the user typed. For such a
@@ -1412,6 +1415,7 @@ export function createPersistenceExtension(options?: PersistenceOptions): Persis
               DERIVED_SANITY_CHECK_INTERVAL_MS);
         if (fragmentIsParseOfSnapshot && runSanityCheck)
           lastDerivedSanityCheckMs.set(documentName, now);
+        incrementStoreSanityCheck(runSanityCheck);
         const { sv: stateVectorAtRead, json } = runSanityCheck
           ? captureDocSnapshotForPersistence(document)
           : { sv: Y.encodeStateVector(document), json: null };

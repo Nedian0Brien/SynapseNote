@@ -203,6 +203,16 @@ describe('Observer A incremental path', () => {
     cleanup();
   });
 
+  test('a match that differs only in source-spelling marks leaves a non-exact mark', () => {
+    const { doc, xmlFragment, ytext, paths, cleanup } = setup(DOC);
+    doc.transact(() => ytext.insert(0, 'Intro.\n\n'), remote); // Observer B derives
+    const last = textblockPositions(xmlFragment, 'paragraph').at(-1) ?? 0;
+    webEdit(doc, xmlFragment, (state) => state.tr.insertText('*', last + 1));
+    expect(paths.at(-1)).toBe('incremental');
+    expect(fragmentDerivation(doc)).toEqual({ text: ytext.toString(), exact: false });
+    cleanup();
+  });
+
   test('a parse-invisible Y.Text edit in another block keeps the fast path and its bytes', () => {
     const { doc, xmlFragment, ytext, paths, cleanup } = setup(DOC);
     const titleEnd = ytext.toString().indexOf('\n');

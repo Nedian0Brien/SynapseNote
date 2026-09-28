@@ -37,6 +37,27 @@ describe('fragment derivation mark', () => {
     cleanup();
   });
 
+  test('a parse-invisible Y.Text edit keeps an exact mark on the new text', () => {
+    const { doc, ytext, cleanup } = setup('# Title\n\nFirst paragraph.\n');
+    doc.transact(() => ytext.insert(ytext.length, '\nMore.\n'), remote); // B derives
+    const titleEnd = ytext.toString().indexOf('\n');
+    doc.transact(() => ytext.insert(titleEnd, '   '), remote); // trailing spaces
+    expect(fragmentDerivation(doc)).toEqual({ text: ytext.toString(), exact: true });
+    cleanup();
+  });
+
+  test('a normalize-equal edit that parses differently drops the mark', () => {
+    const { doc, ytext, cleanup } = setup('foo\n\nbar\n');
+    doc.transact(() => ytext.insert(ytext.length, '\n2. item\n'), remote); // B derives
+    expect(fragmentDerivation(doc)?.text).toBe(ytext.toString());
+    // `foo\n\n...\n\n2. item` → `...\n2. item`: a list item that cannot
+    // interrupt a paragraph becomes paragraph text, yet normalizes the same.
+    const at = ytext.toString().lastIndexOf('\n2. item');
+    doc.transact(() => ytext.delete(at, 1), remote);
+    expect(fragmentDerivation(doc)?.text).not.toBe(ytext.toString());
+    cleanup();
+  });
+
   test('a client edit to the fragment clears the mark', () => {
     const { doc, xmlFragment, ytext, cleanup } = setup('# Title\n\nFirst paragraph.\n');
     doc.transact(() => ytext.insert(ytext.length, '\nMore.\n'), remote);

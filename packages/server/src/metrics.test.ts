@@ -108,13 +108,16 @@ describe('reconciliation metrics', () => {
       // Map-shaped metrics reset to {} (empty record) — cc1LastSeq tracks
       // CC1 channel watermarks; bridgeToleranceApplied tracks per-class
       // tolerance counts; mapDrivenSpliceFallback tracks per-reason splice
-      // fallbacks; observerAPaths tracks Observer A drains per path/reason.
+      // fallbacks; observerAPaths/observerBPaths track observer drains per
+      // path/reason; storeSanityChecks tracks stores by check run/skipped.
       // All are populated keyed by string at runtime.
       if (
         key === 'cc1LastSeq' ||
         key === 'bridgeToleranceApplied' ||
         key === 'mapDrivenSpliceFallback' ||
-        key === 'observerAPaths'
+        key === 'observerAPaths' ||
+        key === 'observerBPaths' ||
+        key === 'storeSanityChecks'
       ) {
         expect(value).toEqual({});
       } else {

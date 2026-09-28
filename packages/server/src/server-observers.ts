@@ -63,11 +63,16 @@ import {
 import { isConfigDoc, isSystemDoc } from './cc1-broadcast.ts';
 import {
   clearFragmentDerivation,
+  type FragmentDerivation,
   fragmentDerivation,
   markFragmentDerivedFromText,
 } from './fragment-derivation.ts';
 import { recordFrontmatterEditSurface } from './frontmatter-telemetry.ts';
-import { IncrementalBlockParser, sameVisibleContent } from './incremental-block-parse.ts';
+import {
+  IncrementalBlockParser,
+  sameIgnoringPositions,
+  sameVisibleContent,
+} from './incremental-block-parse.ts';
 import { computeMapDrivenBodySplice } from './map-driven-splice.ts';
 import {
   incrementBridgeMergeCheckpointCreated,
@@ -81,6 +86,7 @@ import {
   incrementObserverAPath,
   incrementObserverAPathBFires,
   incrementObserverAResidualMergeRuns,
+  incrementObserverBPath,
   incrementProducerGuardCheckpointCreated,
   incrementProducerGuardFires,
   incrementProducerGuardFiresSuppressed,
@@ -1041,7 +1047,12 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
 
   /** Observer B's text→tree parse: re-parses only the blocks an edit touched
    *  and falls back to a full parse whenever that is not provably the same. */
+  /** Why the parser's last `update` fell back to a full parse (metrics). */
+  let parserFallback: string | null = null;
   const incrementalParser = new IncrementalBlockParser({
+    onFallback: (reason) => {
+      parserFallback = reason;
+    },
     parseWithRanges: (markdown) => mdManager.parseWithBlockRanges(markdown, observerParseOpts),
     parse: (markdown) => mdManager.parseWithFallback(markdown, observerParseOpts),
     schema,
@@ -1061,13 +1072,13 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
    *  whether the top-level child list itself changed (Observer A fast path). */
   let changedTopLevel = new Set<Y.AbstractType<unknown>>();
   let topLevelStructureChanged = false;
-  /** The text the fragment was the parse of when this drain's first client
-   *  change arrived (`undefined` until then, `null` if it was not). */
-  let drainStartDerivedText: string | null | undefined;
+  /** The fragment's derivation mark when this drain's first client change
+   *  arrived (`undefined` until then, `null` if there was none). */
+  let drainStartDerivation: FragmentDerivation | null | undefined;
   const resetChangedTopLevel = (): void => {
     changedTopLevel = new Set();
     topLevelStructureChanged = false;
-    drainStartDerivedText = undefined;
+    drainStartDerivation = undefined;
   };
 
   /** True while Observer B's own `updateYFragment` transaction runs. Other
@@ -1937,14 +1948,17 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
       applyByPrefixSuffix(ytext, text, newText);
     }, OBSERVER_SYNC_ORIGIN);
     refreshYTextWitness();
-    // The fragment is parse(newText) only if it was parse(text) before this
-    // edit: then every unchanged block is the parser's, and the edited ones
-    // were just checked. After a full-path or paired write it may not be.
-    if (exact && drainStartDerivedText === text) {
-      markFragmentDerivedFromText(doc, newText);
-      pendingCanonicalMd = () =>
-        prependFrontmatter(frontmatter, mdManager.serialize(reparsed.toJSON()));
-      canonicalWitnessCoherent = true;
+    // The fragment matches newText only if it matched text before this edit:
+    // then every unchanged block is the parser's, and the edited ones were
+    // just checked. After a full-path or paired write it may not be.
+    if (drainStartDerivation?.text === text) {
+      const exactNow = exact && drainStartDerivation.exact;
+      markFragmentDerivedFromText(doc, newText, exactNow);
+      if (exactNow) {
+        pendingCanonicalMd = () =>
+          prependFrontmatter(frontmatter, mdManager.serialize(reparsed.toJSON()));
+        canonicalWitnessCoherent = true;
+      }
     }
     incrementServerObserverFire('a');
     return null;
@@ -2014,8 +2028,8 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
     // Someone else changed the fragment: Observer B's identity mapping no
     // longer describes it, and it is no longer known to be parse(Y.Text).
     resetBUpdateMeta();
-    if (drainStartDerivedText === undefined) {
-      drainStartDerivedText = fragmentDerivation(doc)?.text ?? null;
+    if (drainStartDerivation === undefined) {
+      drainStartDerivation = fragmentDerivation(doc) ?? null;
     }
     clearFragmentDerivation(doc);
 
@@ -2038,7 +2052,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
     // meaningless and it falls back to Path A in this window.
     if (isPairedWriteOrigin(transaction.origin)) {
       // The fragment is no longer known to be the parse of any text.
-      drainStartDerivedText = undefined;
+      drainStartDerivation = undefined;
       try {
         const frontmatter = readCurrentFm();
         refreshYTextWitness();
@@ -2116,6 +2130,34 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
    * within the same drain (when both flags are set), so any fresh XmlFragment
    * state from Observer A's write is already visible to this pass.
    */
+  /**
+   * Observer B's normalize early exit leaves the fragment as it is. If the
+   * fragment was exactly parse(witness) and the incremental parser shows the
+   * new text's blocks unchanged, it is exactly parse(md) too: move the mark,
+   * so persistence does not re-derive it on every store. normalizeBridge
+   * equality alone is not parse equality (`foo\n2. bar` normalizes like
+   * `foo\n\n2. bar`), so without that check the mark is dropped.
+   */
+  const keepDerivationAcross = (md: string, body: string): void => {
+    const derivation = fragmentDerivation(doc);
+    if (!derivation?.exact || derivation.text !== lastSyncedYTextBytes) return;
+    if (incrementalParser.cachedBody !== stripFrontmatter(derivation.text).body) return;
+    const before = incrementalParser.cachedBlockJson();
+    const node = incrementalParser.update(body);
+    const after = incrementalParser.cachedBlockJson();
+    if (
+      node === null ||
+      !before ||
+      !after ||
+      before.length !== after.length ||
+      !before.every((block, i) => sameIgnoringPositions(block, after[i]))
+    ) {
+      clearFragmentDerivation(doc);
+      return;
+    }
+    markFragmentDerivedFromText(doc, md);
+  };
+
   let priorFmForTelemetry = readCurrentFm();
   const runObserverBSyncImpl = (): void => {
     try {
@@ -2136,7 +2178,9 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
       if (md === lastSyncedYTextBytes || normalizedRawWitnessValue() === normalizeBridge(md)) {
         if (md !== lastSyncedYTextBytes) {
           bNormalizeEqual = { text: md, witness: lastSyncedYTextBytes };
+          keepDerivationAcross(md, body);
         }
+        incrementObserverBPath('early-exit');
         // Tree and text are already in sync. FM region is already where it
         // should be (Y.Text is the source of truth). Just emit telemetry if
         // the FM changed.
@@ -2155,8 +2199,12 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
       // (precedent #14), this observer is the sole writer for XmlFragment —
       // the "always-live" contract here means no client sees frozen WYSIWYG
       // when another peer is mid-typing a broken MDX tag.
+      parserFallback = null;
       const incrementalNode = incrementalParser.update(body);
       const pmNode = incrementalNode ?? incrementalParser.parseFull(body);
+      incrementObserverBPath(
+        incrementalNode ? 'incremental' : `full:${parserFallback ?? 'unknown'}`,
+      );
 
       bWritingFragment = true;
       try {
