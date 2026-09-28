@@ -59,6 +59,7 @@ import {
   emitObserverAPathBFired,
 } from './bridge-watchdog.ts';
 import { isConfigDoc, isSystemDoc } from './cc1-broadcast.ts';
+import { clearFragmentDerivation, markFragmentDerivedFromText } from './fragment-derivation.ts';
 import { recordFrontmatterEditSurface } from './frontmatter-telemetry.ts';
 import { IncrementalBlockParser } from './incremental-block-parse.ts';
 import { computeMapDrivenBodySplice } from './map-driven-splice.ts';
@@ -1030,6 +1031,10 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
   const resetBUpdateMeta = (): void => {
     bUpdateMeta = { mapping: new Map(), isOMark: new Map() };
   };
+  /** True while Observer B's own `updateYFragment` transaction runs. Other
+   *  code that writes the fragment under `OBSERVER_SYNC_ORIGIN` (persistence's
+   *  `reconcileFragmentNow`) is not B, and must invalidate B's mapping. */
+  let bWritingFragment = false;
 
   /** Canonicalize a body through this doc's own parse pipeline — the
    *  parse-equivalence fallback's callback (`isParseEquivalentBridge`). */
@@ -1791,10 +1796,16 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
    */
   const observerA = (_events: Y.YEvent<Y.XmlFragment>[], transaction: Y.Transaction) => {
     // Self-skip: our own cross-CRDT write
-    if (transaction.origin === OBSERVER_SYNC_ORIGIN) return;
+    if (transaction.origin === OBSERVER_SYNC_ORIGIN) {
+      // Persistence reconciles the fragment under this origin too; only B's
+      // own write keeps B's mapping valid.
+      if (!bWritingFragment) resetBUpdateMeta();
+      return;
+    }
     // Someone else changed the fragment: Observer B's identity mapping no
-    // longer describes it.
+    // longer describes it, and it is no longer known to be parse(Y.Text).
     resetBUpdateMeta();
+    clearFragmentDerivation(doc);
 
     // Paired-write origins atomically wrote both XmlFragment and Y.Text inside
     // this transaction. Under the Y.Text-is-truth contract, ytext holds the
@@ -1918,9 +1929,15 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
       const incrementalNode = incrementalParser.update(body);
       const pmNode = incrementalNode ?? incrementalParser.parseFull(body);
 
-      doc.transact(() => {
-        updateYFragment(doc, xmlFragment, pmNode, bUpdateMeta);
-      }, OBSERVER_SYNC_ORIGIN);
+      bWritingFragment = true;
+      try {
+        doc.transact(() => {
+          updateYFragment(doc, xmlFragment, pmNode, bUpdateMeta);
+        }, OBSERVER_SYNC_ORIGIN);
+      } finally {
+        bWritingFragment = false;
+      }
+      markFragmentDerivedFromText(doc, md);
 
       if (incrementalNode) {
         // Incremental settlement: the full serialize below (bridge invariant +

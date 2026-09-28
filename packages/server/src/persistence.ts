@@ -59,6 +59,7 @@ import {
 import { docNameToRelativePath } from './doc-extensions.ts';
 import { applyDiskContentToDoc, FILE_WATCHER_ORIGIN } from './external-change.ts';
 import { contentHash, registerWrite } from './file-watcher.ts';
+import { fragmentDerivation } from './fragment-derivation.ts';
 import { tracedMkdir, tracedRename, tracedUnlinkSync, tracedWriteFile } from './fs-traced.ts';
 import { getLogger } from './logger.ts';
 import {
@@ -753,6 +754,10 @@ export function createPersistenceExtension(options?: PersistenceOptions): Persis
    * the map lean across long sessions.
    */
   const QUIESCENCE_MAX_DEFER = 8;
+  // Last full sanity check per document whose fragment Observer B derived
+  // from the stored text (see the pre-write sanity check in onStoreDocument).
+  const lastDerivedSanityCheckMs = new Map<string, number>();
+  const DERIVED_SANITY_CHECK_INTERVAL_MS = 60_000;
   const persistenceDeferCounts = new Map<string, number>();
 
   // Last disk-store failure per docName. Set when `storeDocumentNow`'s atomic
@@ -1386,8 +1391,30 @@ export function createPersistenceExtension(options?: PersistenceOptions): Persis
         // longer the body source — but we still capture it so the pre-write
         // sanity check can compare ytext bytes against the canonical
         // fragment view.
-        const { sv: stateVectorAtRead, json } = captureDocSnapshotForPersistence(document);
+        //
+        // When Observer B has just set the fragment to parse(this exact
+        // Y.Text), the fragment matches by construction and the sanity check
+        // below mostly re-derives it — a full-document serialize, and on
+        // non-round-trip text a full parse, which on long documents stalled
+        // the event loop every few seconds while the user typed. For such a
+        // document the check runs only when it is quiescent and at most once
+        // a minute; it still reports round-trip instability, and a mismatch
+        // still rebuilds the fragment from a full parse, which also bounds
+        // how long an incremental-parse error could live. Otherwise only the
+        // state vector is captured (see `fragment-derivation.ts`).
         const ytextSnapshot = document.getText('source').toString();
+        const fragmentIsParseOfSnapshot = fragmentDerivation(document)?.text === ytextSnapshot;
+        const now = Date.now();
+        const runSanityCheck =
+          !fragmentIsParseOfSnapshot ||
+          (quiescent &&
+            now - (lastDerivedSanityCheckMs.get(documentName) ?? 0) >=
+              DERIVED_SANITY_CHECK_INTERVAL_MS);
+        if (fragmentIsParseOfSnapshot && runSanityCheck)
+          lastDerivedSanityCheckMs.set(documentName, now);
+        const { sv: stateVectorAtRead, json } = runSanityCheck
+          ? captureDocSnapshotForPersistence(document)
+          : { sv: Y.encodeStateVector(document), json: null };
 
         // Y.Text holds the user's intended source-form bytes. The markdown
         // that lands on disk is exactly those bytes (FM included), not
@@ -1431,48 +1458,52 @@ export function createPersistenceExtension(options?: PersistenceOptions): Persis
         // serialize failure as definite divergence, queue fragment
         // reconciliation, and proceed to write Y.Text bytes verbatim.
         let normalizeEqual: boolean;
-        try {
-          const fragmentBody = mgr.serialize(json);
-          const fragmentMarkdown = prependFrontmatter(frontmatter, fragmentBody);
-          normalizeEqual = assertBridgeInvariant(markdown, fragmentMarkdown, {
-            site: 'persistence',
-            docName: documentName,
-            suppressDevThrow: true,
-            // Parse-equivalence fallback: a doc resting on a serializer
-            // canonicalization (CommonMark lazy continuations et al.) is
-            // NOT a divergence — without this, every persist of such a doc
-            // would warn AND run the synchronous reconcileFragmentNow below
-            // for a fragment that already equals parse(ytext). Same `mgr` +
-            // parse surface as the fragment derivation, by construction.
-            canonicalizeBody: createDocCanonicalizer(mgr, {
-              resolveEmbed: options?.resolveEmbed,
-              resolveSize: options?.resolveSize,
+        if (json === null) {
+          normalizeEqual = true;
+        } else {
+          try {
+            const fragmentBody = mgr.serialize(json);
+            const fragmentMarkdown = prependFrontmatter(frontmatter, fragmentBody);
+            normalizeEqual = assertBridgeInvariant(markdown, fragmentMarkdown, {
+              site: 'persistence',
               docName: documentName,
-            }),
-          });
-        } catch (err) {
-          // Counter + structured event give the serialize-throw failure
-          // class its own operator-visible signal — distinct from
-          // `bridgeInvariantViolations` (assertion ran and detected
-          // divergence) and `persistenceReconciliationFailures` (queued
-          // repair failed). Without this, a sustained schema-rejection
-          // pattern produces only freeform log lines and zero counter
-          // signal in the success-recovery case (reconcile succeeds);
-          // the regression class would only surface via log-text search.
-          incrementPersistenceSanityCheckSerializeFailures();
-          console.warn(
-            JSON.stringify({
-              event: 'persistence-sanity-check-serialize-failed',
-              'doc.name': documentName,
-              'error.type': err instanceof Error ? err.constructor.name : typeof err,
-              timestamp: new Date().toISOString(),
-            }),
-          );
-          log.warn(
-            { err, documentName },
-            `[persistence] Sanity-check serialize failed for ${documentName}; proceeding with ytext bytes`,
-          );
-          normalizeEqual = false;
+              suppressDevThrow: true,
+              // Parse-equivalence fallback: a doc resting on a serializer
+              // canonicalization (CommonMark lazy continuations et al.) is
+              // NOT a divergence — without this, every persist of such a doc
+              // would warn AND run the synchronous reconcileFragmentNow below
+              // for a fragment that already equals parse(ytext). Same `mgr` +
+              // parse surface as the fragment derivation, by construction.
+              canonicalizeBody: createDocCanonicalizer(mgr, {
+                resolveEmbed: options?.resolveEmbed,
+                resolveSize: options?.resolveSize,
+                docName: documentName,
+              }),
+            });
+          } catch (err) {
+            // Counter + structured event give the serialize-throw failure
+            // class its own operator-visible signal — distinct from
+            // `bridgeInvariantViolations` (assertion ran and detected
+            // divergence) and `persistenceReconciliationFailures` (queued
+            // repair failed). Without this, a sustained schema-rejection
+            // pattern produces only freeform log lines and zero counter
+            // signal in the success-recovery case (reconcile succeeds);
+            // the regression class would only surface via log-text search.
+            incrementPersistenceSanityCheckSerializeFailures();
+            console.warn(
+              JSON.stringify({
+                event: 'persistence-sanity-check-serialize-failed',
+                'doc.name': documentName,
+                'error.type': err instanceof Error ? err.constructor.name : typeof err,
+                timestamp: new Date().toISOString(),
+              }),
+            );
+            log.warn(
+              { err, documentName },
+              `[persistence] Sanity-check serialize failed for ${documentName}; proceeding with ytext bytes`,
+            );
+            normalizeEqual = false;
+          }
         }
         if (!normalizeEqual) {
           // Watchdog already emitted the rate-limited telemetry +
