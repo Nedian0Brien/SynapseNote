@@ -199,7 +199,13 @@ function fragmentStep() {
   if (paragraphs.length === 0) return;
   const text = paragraphs[rand(paragraphs.length)];
   fragmentWriter.doc.transact(() => {
-    const current = text.toString();
+    // Plain text with Y.XmlText offsets. `toString()` renders marks as tags
+    // (`<strong …>`), so its offsets do not match insert/delete positions;
+    // using it made this writer split its own markers, which read as loss.
+    const current = text
+      .toDelta()
+      .map((op: { insert: unknown }) => (typeof op.insert === 'string' ? op.insert : '\uFFFC'))
+      .join('');
     if (!insertOnly && fragmentEdits % 3 === 2 && text.length > 8) {
       const at = onCodePoint(current, rand(text.length - 3));
       const end = onCodePoint(current, Math.min(current.length, at + 2));
