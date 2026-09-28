@@ -132,7 +132,9 @@ function stableAnchors(
 ): { user: number; base: number; agent: number }[] {
   const uniqueIndex = (lines: string[]): Map<string, number> => {
     const index = new Map<string, number>();
-    lines.forEach((line, i) => index.set(line, index.has(line) ? -1 : i));
+    for (let i = 0; i < lines.length; i++) {
+      index.set(lines[i], index.has(lines[i]) ? -1 : i);
+    }
     return index;
   };
   const inUser = uniqueIndex(user);
