@@ -1910,3 +1910,12 @@ export {
   wikiLinkHref,
 } from './utils/slug.ts';
 export { expandTagToHierarchy, tagsMatchingPrefix } from './utils/tag-rollup.ts';
+export {
+  alignOpsToCodePoints,
+  applyTextOps,
+  isWellFormedUtf16,
+  loneSurrogateOffsets,
+  replaceLoneSurrogates,
+  splitsSurrogatePair,
+  type TextOp,
+} from './utils/utf16.ts';

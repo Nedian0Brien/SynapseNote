@@ -16,7 +16,19 @@ import { z } from 'zod';
 import { SUPPORTED_DOC_EXTENSIONS } from '../../constants/doc-extensions.ts';
 
 import { FRONTMATTER_TYPES, FrontmatterValueSchema } from '../../frontmatter/schema.ts';
+import { isWellFormedUtf16 } from '../../utils/utf16.ts';
 import { agentIdentityFields, safeDocNameField, summaryField } from './_shared.ts';
+
+/**
+ * Text the handler splices into Y.Text. A lone surrogate half (reachable
+ * through a JSON `\uD83D` escape) would split a pair in the document: JS Yjs
+ * peers turn it into U+FFFD and other CRDT implementations diverge.
+ */
+const wellFormedText = (minLength = 0) =>
+  z
+    .string()
+    .min(minLength)
+    .refine(isWellFormedUtf16, { message: 'must not contain an unpaired UTF-16 surrogate' });
 
 /**
  * Request body for `POST /api/agent-write`. Free-text content append (the
@@ -26,7 +38,7 @@ export const AgentWriteRequestSchema = z
   .object({
     docName: safeDocNameField,
     summary: summaryField,
-    content: z.string().optional(),
+    content: wellFormedText().optional(),
     ...agentIdentityFields,
   })
   .loose() satisfies StandardSchemaV1;
@@ -46,7 +58,7 @@ export const AgentWriteMdRequestSchema = z
   .object({
     docName: safeDocNameField,
     summary: summaryField,
-    markdown: z.string(),
+    markdown: wellFormedText(),
     position: z.enum(['append', 'prepend', 'replace']).optional(),
     // Explicit on-disk extension, honored only when the doc does not yet
     // exist (a pure create) — lets a caller author a `.mdx` file instead of
@@ -71,8 +83,8 @@ export const AgentPatchRequestSchema = z
   .object({
     docName: safeDocNameField,
     summary: summaryField,
-    find: z.string().min(1),
-    replace: z.string(),
+    find: wellFormedText(1),
+    replace: wellFormedText(),
     offset: z.number().int().nonnegative().optional(),
     ...agentIdentityFields,
   })

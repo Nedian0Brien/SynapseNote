@@ -1,5 +1,6 @@
 import DiffMatchPatch from 'diff-match-patch';
 import type * as Y from 'yjs';
+import { alignOpsToCodePoints, applyTextOps, type TextOp } from '../utils/utf16.ts';
 import { diffLinesFast } from './diff-lines.ts';
 
 const dmpDiff = new DiffMatchPatch();
@@ -48,17 +49,14 @@ export function applyFastDiff(ytext: Y.Text, currentText: string, newText: strin
   }
   const diffs = dmpDiff.diff_main(currentText, newText);
   dmpDiff.diff_cleanupSemantic(diffs);
-  let offset = 0;
-  for (const [type, text] of diffs) {
-    if (type === 0) {
-      offset += text.length;
-    } else if (type === -1) {
-      ytext.delete(offset, text.length);
-    } else if (type === 1) {
-      ytext.insert(offset, text);
-      offset += text.length;
-    }
-  }
+  // diff-match-patch compares UTF-16 code units, so a change to one half of a
+  // surrogate pair (😀→😁 share the high half) comes out as a split. Move the
+  // boundaries onto code points before the ops reach the wire.
+  const ops: TextOp[] = diffs.map(([type, text]) => ({
+    type: type === 0 ? 'retain' : type === -1 ? 'delete' : 'insert',
+    text,
+  }));
+  applyTextOps(ytext, alignOpsToCodePoints(ops));
 }
 
 function applyByPrefixSuffixMiddleReplace(
@@ -84,8 +82,13 @@ function applyByPrefixSuffixMiddleReplace(
     suffixLen++;
   }
 
-  const deleteLen = currentText.length - prefixLen - suffixLen;
-  const insertStr = newText.slice(prefixLen, newText.length - suffixLen);
-  if (deleteLen > 0) ytext.delete(prefixLen, deleteLen);
-  if (insertStr.length > 0) ytext.insert(prefixLen, insertStr);
+  applyTextOps(
+    ytext,
+    alignOpsToCodePoints([
+      { type: 'retain', text: currentText.slice(0, prefixLen) },
+      { type: 'delete', text: currentText.slice(prefixLen, currentText.length - suffixLen) },
+      { type: 'insert', text: newText.slice(prefixLen, newText.length - suffixLen) },
+      { type: 'retain', text: currentText.slice(currentText.length - suffixLen) },
+    ]),
+  );
 }
