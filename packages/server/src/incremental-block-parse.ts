@@ -376,21 +376,49 @@ function sameAttrs(a: unknown, b: unknown): boolean {
   return deepEqual(a ?? null, b ?? null);
 }
 
+/** Marks that only tell the serializer how to spell text (`\*`, `&#x20;`). */
+const SOURCE_SPELLING_MARKS = new Set(['escapeMark', 'sourceLiteral']);
+
 /**
- * Deep equality that ignores mdast `position` values. A client's fragment
- * keeps the positions it was parsed with; a later parse of the same block
- * elsewhere in the document gives new ones.
+ * Whether two PM JSON nodes show the same content: mdast `position` values
+ * are ignored (a client's fragment keeps the positions it was parsed with),
+ * as are the source-spelling marks, and adjacent text nodes with the same
+ * marks count as one. A client never adds those marks, while parsing the
+ * serialized text does — `*` typed into a paragraph comes back as an
+ * escaped `\*` carrying `escapeMark`.
  */
-export function sameIgnoringPositions(a: unknown, b: unknown): boolean {
-  return deepEqual(withoutPositions(a), withoutPositions(b));
+export function sameVisibleContent(a: unknown, b: unknown): boolean {
+  return deepEqual(visibleForm(a), visibleForm(b));
 }
 
-function withoutPositions(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(withoutPositions);
+function visibleForm(value: unknown): unknown {
+  if (Array.isArray(value)) return mergeTextRuns(value.map(visibleForm));
   if (typeof value !== 'object' || value === null) return value;
   const out: Record<string, unknown> = {};
   for (const [key, item] of Object.entries(value)) {
-    if (key !== 'position') out[key] = withoutPositions(item);
+    if (key === 'position') continue;
+    if (key === 'marks' && Array.isArray(item)) {
+      const kept = item.filter(
+        (mark) => !SOURCE_SPELLING_MARKS.has((mark as { type?: string }).type ?? ''),
+      );
+      if (kept.length > 0) out[key] = visibleForm(kept);
+      continue;
+    }
+    out[key] = visibleForm(item);
+  }
+  return out;
+}
+
+function mergeTextRuns(items: unknown[]): unknown[] {
+  const out: unknown[] = [];
+  for (const item of items) {
+    const prev = out.at(-1) as { type?: string; text?: string; marks?: unknown } | undefined;
+    const cur = item as { type?: string; text?: string; marks?: unknown };
+    if (prev?.type === 'text' && cur?.type === 'text' && deepEqual(prev.marks, cur.marks)) {
+      out[out.length - 1] = { ...prev, text: `${prev.text ?? ''}${cur.text ?? ''}` };
+    } else {
+      out.push(item);
+    }
   }
   return out;
 }

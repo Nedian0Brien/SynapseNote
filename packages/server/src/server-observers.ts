@@ -67,7 +67,7 @@ import {
   markFragmentDerivedFromText,
 } from './fragment-derivation.ts';
 import { recordFrontmatterEditSurface } from './frontmatter-telemetry.ts';
-import { IncrementalBlockParser, sameIgnoringPositions } from './incremental-block-parse.ts';
+import { IncrementalBlockParser, sameVisibleContent } from './incremental-block-parse.ts';
 import { computeMapDrivenBodySplice } from './map-driven-splice.ts';
 import {
   incrementBridgeMergeCheckpointCreated,
@@ -78,6 +78,7 @@ import {
   incrementMapDrivenSpliceFallback,
   incrementObserverADuplicationCheckpointCreated,
   incrementObserverADuplicationRederives,
+  incrementObserverAPath,
   incrementObserverAPathBFires,
   incrementObserverAResidualMergeRuns,
   incrementProducerGuardCheckpointCreated,
@@ -166,7 +167,8 @@ export type PairedWriteOrigin = LocalTransactionOrigin & {
 /** Why a client edit took Observer A's full path instead of the incremental one. */
 export type ObserverAFallbackReason =
   | 'structure' // top-level children added/removed, or more than 4 changed
-  | 'text-moved' // Y.Text changed since the last reconcile
+  | 'text-moved' // Y.Text changed since the last reconcile, not certified parse-invisible
+  | 'text-moved-in-block' // a parse-invisible Y.Text change touches an edited block
   | 'node-shape' // a changed child is not one element node
   | 'full-path-node' // component, table, or raw MDX
   | 'block-count' // source blocks do not line up with fragment children
@@ -1051,6 +1053,10 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
   const resetBUpdateMeta = (): void => {
     bUpdateMeta = { mapping: new Map(), isOMark: new Map() };
   };
+  /** The Y.Text that Observer B last found parse-equivalent to the raw
+   *  witness, with that witness, when it left the witness unrefreshed (its
+   *  normalize early exit). */
+  let bNormalizeEqual: { text: string; witness: string } | null = null;
   /** Top-level fragment children a client changed during this drain, and
    *  whether the top-level child list itself changed (Observer A fast path). */
   let changedTopLevel = new Set<Y.AbstractType<unknown>>();
@@ -1838,7 +1844,17 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
     if (topLevelStructureChanged || changedTopLevel.size === 0 || changedTopLevel.size > 4)
       return 'structure';
     const text = ytext.toString();
-    if (text !== lastSyncedYTextBytes) return 'text-moved';
+    // A Y.Text edit since the last reconcile is allowed only when Observer B
+    // already found it parse-invisible (the witness stays stale on purpose so
+    // the full path's merge keeps those bytes) and it lies outside every
+    // edited block: splicing just the edited blocks keeps its bytes too.
+    let moved: { start: number; end: number } | null = null;
+    if (text !== lastSyncedYTextBytes) {
+      if (bNormalizeEqual?.text !== text || bNormalizeEqual.witness !== lastSyncedYTextBytes) {
+        return 'text-moved';
+      }
+      moved = changedSpan(lastSyncedYTextBytes, text);
+    }
     const children = xmlFragment.toArray();
 
     const edits: { index: number; markdown: string; json: string }[] = [];
@@ -1861,6 +1877,14 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
     const ranges = incrementalParser.cachedBlockRanges();
     const blocks = incrementalParser.cachedBlockJson();
     if (!ranges || !blocks || ranges.length !== children.length) return 'block-count';
+    if (moved) {
+      const bodyOffset = text.length - body.length;
+      for (const { index } of edits) {
+        const start = bodyOffset + ranges[index].start;
+        const end = bodyOffset + ranges[index].end;
+        if (moved.start <= end && start <= moved.end) return 'text-moved-in-block';
+      }
+    }
 
     // Alignment: the nearest unchanged neighbour on each side of every edit.
     const edited = new Set(edits.map((edit) => edit.index));
@@ -1872,7 +1896,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
         if (neighbour < 0 || neighbour >= children.length || checked.has(neighbour)) continue;
         checked.add(neighbour);
         const json = topLevelJson(children[neighbour]);
-        if (json === null || !sameIgnoringPositions(json, blocks[neighbour])) return 'neighbour';
+        if (json === null || !sameVisibleContent(json, blocks[neighbour])) return 'neighbour';
       }
     }
 
@@ -1895,12 +1919,17 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
     newBody += body.slice(cursor);
 
     const reparsed = incrementalParser.update(newBody);
-    if (
-      reparsed === null ||
-      reparsed.childCount !== children.length ||
-      !edits.every((edit) => JSON.stringify(reparsed.child(edit.index).toJSON()) === edit.json)
-    ) {
-      return 'reparse';
+    if (reparsed === null || reparsed.childCount !== children.length) return 'reparse';
+    // Exact: the edited blocks are the parse of the new text. Visible: they
+    // differ only in source-spelling marks the parse adds (the new text keeps
+    // every character); the write is the same, but the fragment is then not
+    // the exact parse of the text.
+    let exact = true;
+    for (const edit of edits) {
+      const got = reparsed.child(edit.index).toJSON();
+      if (JSON.stringify(got) === edit.json) continue;
+      if (!sameVisibleContent(got, JSON.parse(edit.json))) return 'reparse';
+      exact = false;
     }
 
     const newText = prependFrontmatter(frontmatter, newBody);
@@ -1911,7 +1940,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
     // The fragment is parse(newText) only if it was parse(text) before this
     // edit: then every unchanged block is the parser's, and the edited ones
     // were just checked. After a full-path or paired write it may not be.
-    if (drainStartDerivedText === text) {
+    if (exact && drainStartDerivedText === text) {
       markFragmentDerivedFromText(doc, newText);
       pendingCanonicalMd = () =>
         prependFrontmatter(frontmatter, mdManager.serialize(reparsed.toJSON()));
@@ -1919,6 +1948,20 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
     }
     incrementServerObserverFire('a');
     return null;
+  };
+
+  /** The span of `after` that differs from `before` (common prefix and suffix removed). */
+  const changedSpan = (before: string, after: string): { start: number; end: number } => {
+    let start = 0;
+    const max = Math.min(before.length, after.length);
+    while (start < max && before.charCodeAt(start) === after.charCodeAt(start)) start++;
+    let tail = 0;
+    while (
+      tail < max - start &&
+      before.charCodeAt(before.length - 1 - tail) === after.charCodeAt(after.length - 1 - tail)
+    )
+      tail++;
+    return { start, end: after.length - tail };
   };
 
   /** One fragment child as PM JSON, or `null` if it is not a single node. */
@@ -1935,6 +1978,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
     try {
       reason = tryIncrementalObserverA();
       if (reason === null) {
+        incrementObserverAPath('incremental');
         opts.onObserverAPath?.('incremental');
         return;
       }
@@ -1945,6 +1989,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
     } finally {
       resetChangedTopLevel();
     }
+    incrementObserverAPath('full', reason);
     opts.onObserverAPath?.('full', reason);
     withSpanSync(
       'observer.runASync',
@@ -2089,6 +2134,9 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
       // real divergence and routes the next fragment change through the
       // byte-preserving Path B merge.
       if (md === lastSyncedYTextBytes || normalizedRawWitnessValue() === normalizeBridge(md)) {
+        if (md !== lastSyncedYTextBytes) {
+          bNormalizeEqual = { text: md, witness: lastSyncedYTextBytes };
+        }
         // Tree and text are already in sync. FM region is already where it
         // should be (Y.Text is the source of truth). Just emit telemetry if
         // the FM changed.

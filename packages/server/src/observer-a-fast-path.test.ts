@@ -187,6 +187,46 @@ describe('Observer A incremental path', () => {
     cleanup();
   });
 
+  test('typing Markdown punctuation stays incremental and keeps the characters', () => {
+    const { doc, xmlFragment, ytext, paths, cleanup } = setup(DOC);
+    const last = textblockPositions(xmlFragment, 'paragraph').at(-1) ?? 0;
+    webEdit(doc, xmlFragment, (state) => state.tr.insertText('*', last + 1));
+    webEdit(doc, xmlFragment, (state) => state.tr.insertText(' ', last));
+    expect(paths.slice(-2)).toEqual(['incremental', 'incremental']);
+    // The parse of the new text shows the same characters as the fragment.
+    const paragraphs = (json: string) =>
+      (JSON.parse(json).content as { type: string; content?: { text?: string }[] }[])
+        .filter((node) => node.type === 'paragraph')
+        .map((node) => (node.content ?? []).map((c) => c.text ?? '').join(''));
+    expect(paragraphs(parsedJson(ytext.toString()))).toEqual(paragraphs(fragmentJson(xmlFragment)));
+    expect(paragraphs(fragmentJson(xmlFragment)).at(-1)).toBe(' L*ast paragraph.');
+    cleanup();
+  });
+
+  test('a parse-invisible Y.Text edit in another block keeps the fast path and its bytes', () => {
+    const { doc, xmlFragment, ytext, paths, cleanup } = setup(DOC);
+    const titleEnd = ytext.toString().indexOf('\n');
+    doc.transact(() => ytext.insert(titleEnd, '   '), remote); // trailing spaces: parse-invisible
+    const last = textblockPositions(xmlFragment, 'paragraph').at(-1) ?? 0;
+    webEdit(doc, xmlFragment, (state) => state.tr.insertText('!', last + 1));
+    expect(paths.at(-1)).toBe('incremental');
+    expect(ytext.toString()).toContain('# Title   \n');
+    expect(ytext.toString()).toContain('L!ast paragraph.');
+    cleanup();
+  });
+
+  test('a parse-invisible Y.Text edit inside the edited block takes the full path', () => {
+    const { doc, xmlFragment, ytext, paths, reasons, cleanup } = setup(DOC);
+    const lastLine = ytext.toString().indexOf('Last paragraph.') + 'Last paragraph.'.length;
+    doc.transact(() => ytext.insert(lastLine, '   '), remote);
+    const last = textblockPositions(xmlFragment, 'paragraph').at(-1) ?? 0;
+    webEdit(doc, xmlFragment, (state) => state.tr.insertText('!', last + 1));
+    expect(paths.at(-1)).toBe('full');
+    expect(reasons.at(-1)).toBe('text-moved-in-block');
+    expect(ytext.toString()).toContain('L!ast paragraph.');
+    cleanup();
+  });
+
   test('a neighbour that is not the parse of its source sends the edit to the full path', () => {
     const { doc, xmlFragment, ytext, paths, reasons, cleanup } = setup(
       'First.\n\nMiddle.\n\nLast.\n',

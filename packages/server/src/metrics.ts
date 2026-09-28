@@ -44,6 +44,9 @@ export interface ReconciliationMetrics {
   cc1LastSeq: Partial<Record<CC1Channel, number>>;
   serverObserverFiresA: number;
   serverObserverFiresB: number;
+  /** Observer A client-edit drains by path: `incremental`, or `full:<reason>`
+   *  with the fast path's fallback reason (`ObserverAFallbackReason`). */
+  observerAPaths: Record<string, number>;
   serverObserverErrorsA: number;
   serverObserverErrorsB: number;
   /** Count of successful atomic disk writes from persistence.onStoreDocument.
@@ -411,6 +414,7 @@ const counters: ReconciliationMetrics = {
   cc1LastSeq: {},
   serverObserverFiresA: 0,
   serverObserverFiresB: 0,
+  observerAPaths: {},
   serverObserverErrorsA: 0,
   serverObserverErrorsB: 0,
   persistenceDiskWrites: 0,
@@ -515,6 +519,11 @@ export function setCC1SubscriberCount(count: number): void {
 export function incrementServerObserverFire(direction: 'a' | 'b'): void {
   if (direction === 'a') counters.serverObserverFiresA++;
   else counters.serverObserverFiresB++;
+}
+
+export function incrementObserverAPath(path: 'incremental' | 'full', reason?: string): void {
+  const key = path === 'incremental' ? path : `full:${reason ?? 'unknown'}`;
+  counters.observerAPaths[key] = (counters.observerAPaths[key] ?? 0) + 1;
 }
 
 export function incrementPersistenceDiskWrite(): void {
@@ -771,6 +780,7 @@ export function getMetrics(): ReconciliationMetrics {
   return {
     ...counters,
     cc1LastSeq: { ...counters.cc1LastSeq },
+    observerAPaths: { ...counters.observerAPaths },
     bridgeToleranceApplied: { ...counters.bridgeToleranceApplied },
     mapDrivenSpliceFallback: { ...counters.mapDrivenSpliceFallback },
   };
@@ -793,6 +803,7 @@ export function resetMetrics(): void {
   counters.cc1LastSeq = {};
   counters.serverObserverFiresA = 0;
   counters.serverObserverFiresB = 0;
+  counters.observerAPaths = {};
   counters.serverObserverErrorsA = 0;
   counters.serverObserverErrorsB = 0;
   counters.persistenceDiskWrites = 0;

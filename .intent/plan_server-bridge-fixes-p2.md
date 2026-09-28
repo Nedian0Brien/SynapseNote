@@ -39,3 +39,9 @@ bun run test:file -- packages/core/src/markdown/escape-mark-spread.test.ts
 (cd packages/core && bun test --timeout 30000 src/markdown src/extensions)
 bun native/editor-spike/scripts/soak.ts --port 5181 --minutes 2 --insert-only --no-app --no-patch --content-dir <dir>
 ```
+
+## 결과 (2026-09-28)
+
+- 1·2번: `escape-mark-spread.test.ts` 새 테스트가 수정 전 실패, 수정 후 통과. core markdown 테스트 통과.
+- 3번은 따로 돌리지 않고 P3 1번 조합(38줄, 합성 fragment 작성자 단독, 삽입 전용 3분)으로 쟀다: 마커 150개 중
+  유실 0(P0 2분 21/99), 크기 617 → 4,066 UTF-16(삽입 3,444, 상한 7,505).
