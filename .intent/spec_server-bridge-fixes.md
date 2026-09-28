@@ -13,7 +13,11 @@ date: 2026-09-28
 
 결함 3은 core에서 직접 실험해 재현했다. 나머지는 코드를 읽고 세운 가설이다.
 
-- **결함 4, 서로게이트.** 서버 스스로도 쌍을 쪼갠다. `applyFastDiff`
+- **결함 4, 서로게이트.** (실험으로 확인) Yjs는 쌍 중간에서 문자열 항목을 나눌 때 두 반쪽을
+  U+FFFD로 바꾸고, yrs 0.28은 같은 op를 다르게 적용한다(`block.rs` `ItemContent::splice`,
+  Yjs 규칙이 주석으로만 있음). 이 규칙을 넣은 yrs는 삭제·사이 삽입·반쪽 교체 네 경우 모두 Yjs와
+  같은 텍스트를 냈다. 반쪽을 삽입하는 op는 op를 만든 문서에만 반쪽이 남고, 인코딩된 update를
+  받는 쪽은 모두 U+FFFD가 된다. 그리고 서버 스스로도 쌍을 쪼갠다. `applyFastDiff`
   (`core/src/bridge/apply-diff.ts:40-91`)와 `apply-by-prefix-suffix.ts`가 UTF-16 단위로
   diff를 내서, 😀→😁처럼 앞쪽 절반이 같은 교체를 뒤쪽 절반만 지우고 넣는 op로 보낸다.
   agent-patch는 `find`/`replace`의 짝 없는 서로게이트를 거르지 않는다. 짝 없는
@@ -41,9 +45,10 @@ date: 2026-09-28
 
 ## 요구사항
 
-- [ ] R1 서로게이트: 어떤 origin의 transaction 뒤에도 모든 문서의 `Y.Text('source')`에
-      짝 없는 서로게이트가 남지 않는다. 쪼개진 쌍은 서버가 반쪽을 지우는 보정 편집으로
-      정리하고, 그 편집이 모든 클라이언트에 간다.
+- [ ] R1 서로게이트: (a) 패치한 yrs가 네 가지 분할 경우(앞·뒤 반쪽 삭제, 사이 삽입, 반쪽
+      교체)에서 Yjs와 같은 텍스트를 낸다(`yrs-ffi` 테스트). (b) 어떤 origin의 transaction
+      뒤에도 서버 문서의 `Y.Text('source')`에 짝 없는 서로게이트가 남지 않는다. 남은 반쪽은
+      서버가 U+FFFD로 바꾸고, 그 편집이 모든 클라이언트에 간다.
 - [ ] R2 서버가 만드는 diff(`applyFastDiff`, prefix/suffix 교체)는 쌍을 쪼개지 않는다.
 - [ ] R3 agent-patch·agent-write는 `find`/`replace`/`content`에 짝 없는 서로게이트가 있으면
       400으로 거절한다.
@@ -69,9 +74,11 @@ date: 2026-09-28
   스파이크의 `soak.ts`·`server-load.ts`를 `.worktree/native-editor-spike`에서 이 브랜치의
   dev 서버에 대고 돌린다. y-prosemirror 알고리즘 작성자는 soak에 옵션으로 추가한다
   (별도 브랜치의 스크립트이므로 그 브랜치에서 커밋).
-- **P1 서로게이트.** 새 서버 확장이 모든 문서(시스템·config 문서 포함)에
-  `afterAllTransactions` 리스너를 달고, 그 드레인에서 `Y.Text('source')`가 바뀐 경우에만
-  바뀐 범위 주변을 검사해 반쪽을 지운다. origin은 새 비-paired origin
+- **P1 서로게이트.** (1) 스파이크 브랜치의 `native/editor-spike/yrs-patches/`에 yrs 패치를
+  두고 `build-xcframework.sh`가 crates.io 소스를 받아 적용한 뒤 `[patch.crates-io]`로 쓴다.
+  (2) 새 서버 확장이 모든 문서(시스템·config 문서 포함)에 `afterAllTransactions` 리스너를
+  달고, 그 드레인에서 `Y.Text('source')`가 바뀐 경우에만 바뀐 범위 주변을 검사해 짝 없는
+  반쪽을 U+FFFD로 바꾼다. origin은 새 비-paired origin
   (`surrogate-repair`, `skipStoreHooks:false`)이라 Observer B가 fragment를 다시 맞추고 저장이
   일어난다. `applyFastDiff`와 prefix/suffix 교체는 경계를 코드 포인트 단위로 맞춘다.
   agent API 스키마에 well-formed 검사를 넣는다. 검출 정규식은 `api-extension.ts:16222`의
@@ -94,10 +101,11 @@ date: 2026-09-28
 
 ## 버린 대안
 
+- **서버가 반쪽을 지우는 보정.** 처음 채택했던 안. Yjs는 분할 시 이미 U+FFFD로 바꾸므로 지울
+  반쪽이 거의 없고, yrs는 내부 상태부터 갈라져 서버 보정으로 되돌릴 수 없다(구간 재작성은
+  네 경우 중 한 경우만 수렴).
 - **서로게이트 update 거부.** Hocuspocus는 update를 훅보다 먼저 모든 연결에 보낸다
   (`Document.handleUpdate`). 거부가 성립하지 않는다.
-- **U+FFFD로 치환.** 두 구현 모두 표현할 수 있지만 글자 하나가 사라지는 대신 이상한 글자가
-  남는다. 반쪽을 지우는 쪽이 yrs 결과와도 같다.
 - **관찰자 작업을 워커 스레드로.** Y.Doc은 스레드 사이에 공유되지 않아 문서 전체를 복사해야
   하고, 결과를 다시 main에서 적용해야 한다.
 - **`escapeMark` 폐기.** 원문 바이트 보존(`\*`를 유지)에 필요하다.
