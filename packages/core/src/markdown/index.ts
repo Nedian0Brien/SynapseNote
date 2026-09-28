@@ -57,6 +57,7 @@ import type { LinkStyle } from '../extensions/link-fidelity.ts';
 import { isValidSourceLiteralRaw } from '../extensions/source-literal-mark.ts';
 import { createRegistry } from '../registry/index.ts';
 import type { PropDef } from '../registry/types.ts';
+import { ESCAPABLE_CHARS } from './escapable-chars.ts';
 import type {
   CommentBlockMdast,
   CommentMdast,
@@ -1590,7 +1591,11 @@ function buildPmToMdastHandlers(
           const textChild = child as Text;
           textChild.data ??= {};
           textChild.data.escapedChars ??= [];
+          // The mark can spread past the character it was parsed from (Yjs and
+          // ProseMirror hand an insertion the marks of its neighbour), so only
+          // characters a backslash can escape are written escaped.
           for (let i = 0; i < textChild.value.length; i++) {
+            if (!ESCAPABLE_CHARS.has(textChild.value[i])) continue;
             textChild.data.escapedChars.push({ offset: i, char: textChild.value[i] });
           }
         }
