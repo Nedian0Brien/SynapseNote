@@ -36,12 +36,8 @@ date: 2026-09-28
   normalize 약 4회. Observer A는 직렬화 2회, 파싱 2~3회, 그리고 Gate 1 앞의
   `overMultipliedBridgeBodyLines`(`:559-577`)가 줄 수 × 바이트 수만큼 `indexOf`를 돈다.
   저장(`persistence.ts`)도 전체 직렬화와 invariant 검사를 반복한다.
-- **결함 2, 유실.** 서버가 fragment에 쓰는 경로는 모두 빈 mapping의 `updateYFragment`라,
-  노드 종류가 다르거나 개수가 달라지면 요소를 지우고 새로 만든다. 그 안에 들어온 동시
-  입력은 사라지고, Observer A가 그 결과를 `Y.Text`로 옮겨 다른 클라이언트가 이미 본 입력까지
-  지운다. 저장 시 invariant 실패(`fragmentLen > ytextLen`)는 `reconcileFragmentNow`로
-  fragment를 `Y.Text`에서 다시 만들어, A가 아직 옮기지 않은 fragment 전용 내용을 지운다.
-  드레인이 수 초 걸리면 이 "동시" 구간도 수 초로 넓어진다.
+- **결함 2, 유실.** (철회) 합성 작성자가 `Y.XmlText.toString()`(서식 태그 포함) 위치로 삽입해
+  자기 마커를 쪼갠 측정 결함이었다. 위치를 고친 작성자와 ProseMirror 경로 작성자 모두 유실 0.
 
 ## 요구사항
 
@@ -57,9 +53,8 @@ date: 2026-09-28
       바뀌지 않고, 이스케이프 글자 옆 삽입을 반복해도 삽입 글자당 늘어나는 바이트가 2 이하다.
 - [ ] R5 처리량: 5,000줄 문서에 초당 10회 편집 30초(`Y.Text`, fragment 각각)에서 전 편집
       반영, 반영 지연 p95 ≤ 100ms, `GET /api/config` p95 ≤ 100ms(로컬 서버 처리 시간).
-- [ ] R6 유실: 삽입 전용 soak에서 사라진 마커 0 — fragment 합성 작성자 단독, 세 작성자 전체,
-      그리고 y-prosemirror 알고리즘(ProseMirror 트랜잭션 → `updateYFragment` + mapping)을
-      쓰는 작성자.
+- [ ] R6 유실(회귀 검증): 삽입 전용 soak에서 사라진 마커 0 — 합성 작성자 단독, ProseMirror 경로
+      작성자 단독, 세 작성자 전체. 38줄 문서와 5,000줄 문서 모두.
 - [ ] R7 크기 안정: 세 작성자 10분 soak 뒤 해시 30초 안 일치, 문서 크기 ≤ 초기 크기 +
       삽입 글자 수 × 2바이트(삽입한 `*` 등이 `\*`로 저장되는 정상 이스케이프를 허용).
 - [ ] R8 결함마다 재현 테스트가 있고 `server-test-manifest.ts`에 등록된다. 바꾼 파일을
@@ -67,8 +62,8 @@ date: 2026-09-28
 
 ## 설계
 
-단계 순서를 intent 표에서 바꾼다: **P0 → P1 → P2 → P4 → P3.** 결함 2의 재현율은 드레인
-시간에 달려 있어서, 처리량을 먼저 고쳐야 유실 수정의 효과를 따로 잴 수 있다.
+단계 순서를 intent 표에서 바꾼다: **P0 → P1 → P2 → P4 → P3.** P3는 유실 회귀 검증이라
+처리량을 고친 뒤 큰 문서에서 함께 잰다.
 
 - **P0 재현 테스트.** 네 결함 각각을 서버·core 테스트로 먼저 실패시킨다. 수치 측정은
   스파이크의 `soak.ts`·`server-load.ts`를 `.worktree/native-editor-spike`에서 이 브랜치의
@@ -91,13 +86,8 @@ date: 2026-09-28
   Observer A의 `overMultipliedBridgeBodyLines`를 바뀐 블록으로 한정한다. (3) Observer B를
   바뀐 블록만 다시 파싱해 해당 fragment 구간만 갱신한다. 각 갈래 뒤에 `server-load.ts`로
   재측정하고, 목표에 도달하면 멈춘다.
-- **P3 유실.** 결함 2와 3은 이어져 있을 가능성이 크다. 이스케이프 누적이 재파싱 결과의 블록
-  구조를 바꾸면 노드가 새로 만들어지고 그 안의 동시 입력이 사라진다. 그래서 P2·P4 뒤에
-  삽입 전용 fragment soak을 다시 돌리고, 남은 유실이 있을 때만 아래 후보에서 고른다.
-  (1) 저장 시 invariant 실패에서 fragment 전용 내용을 `Y.Text`로 먼저 옮긴 뒤 판정한다.
-  (2) A가 편집을 옮기지 않고 나가는 출구(in-sync, duplication, freshness)에서 fragment 전용
-  내용을 버리지 않는다. (3) `updateYFragment`에 드레인 사이 mapping을 넘긴다 — y-tiptap
-  내부에 기대는 방법이라 마지막 수단이다.
+- **P3 유실 검증.** P4 뒤에 R6의 조합을 38줄·5,000줄 문서로 돌린다. 유실이 나오면 그때 원인을
+  조사하고 수정 방법을 이 spec에 추가한다.
 
 ## 버린 대안
 
