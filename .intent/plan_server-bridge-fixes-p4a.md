@@ -52,7 +52,7 @@ P4는 세 부분으로 나눈다. P4a(`Y.Text` 편집 → fragment, 네이티브
 
 1. `IncrementalBlockParser` + 차등 테스트. 확인: 차등 테스트 통과, 폴백 비율 기록.
 2. Observer B 연결 + mapping 유지. 확인: `server-observers*.test.ts`, `bridge-*.test.ts`, `persistence*.test.ts` 통과.
-3. 저장 시 전체 비교. 확인: 일부러 캐시를 틀리게 만든 테스트에서 저장 후 fragment가 전체 파싱과 같아짐.
+3. (P4b로 옮김 — 저장 경로를 함께 바꾼다) 저장 시 전체 비교.
 4. 재측정: `bench-bridge-drain.ts`(text), dev 서버 `server-load.ts --mode text`.
 
 ## 가장 위험한 단계
@@ -69,3 +69,17 @@ bun run test:file -- packages/server/src/server-observers.test.ts   # 외 관찰
 bun packages/server/scripts/bench-bridge-drain.ts --lines 38,1000,5000
 bun native/editor-spike/scripts/server-load.ts --port 5181 --doc <5,000줄> --mode text
 ```
+
+## 결과 (2026-09-28)
+
+- 차등 테스트 10개 통과. 무작위 편집에서 증분 결과는 모두 전체 파싱과 같았다. 증분 비율: 스파이크
+  29/29, GFM 22/22, perf 100 27/28, 회귀 15/15. MDX 문서는 편집이 MDX 문법을 깨면 문서가 다시
+  정상이 될 때까지 전체 경로를 탄다(`no-cache`).
+- 처음 구현에서 차등 테스트가 두 가지를 잡았다: 문서 경계 기록(`sourceDocBoundary`)과 MDX 컴포넌트
+  속성의 원문 위치. 둘 다 전체 파싱과 같게 맞췄다.
+- 관찰자·bridge·저장 테스트 30개 파일 통과(`paired-write-enforcement`의 실패는 P1 누락이라 따로 고침).
+- `bench-bridge-drain.ts` text 드레인 p50/p95: 38줄 3.9/6.3ms, 1,000줄 3.1/5.7ms, 5,000줄 6.1/14.7ms
+  (P0: 21.7/33.6, 319.5/780.6, 2,189/4,558ms).
+- dev 서버 `server-load.ts --mode text`(5,000줄, 초당 10회 30초): 292/292 반영, 반영 지연 p50 1ms,
+  p95 367ms, 최대 1,010ms. `GET /api/config` p95 305ms. 목표(100ms) 미달 — 몇 초마다 수백 ms씩 멈추는
+  형태라 저장 경로(P4b)를 본다.
