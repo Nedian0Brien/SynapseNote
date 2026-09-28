@@ -76,6 +76,25 @@ describe('mergeThreeWay', () => {
     expect(mergeThreeWay(base, user, agent)).toBe('Agent.\n\nIntro.\n\nOutro.\n\nUser.');
   });
 
+  test('equals a whole-document diff3 merge when one side differs all over', () => {
+    const random = rng(3);
+    for (let round = 0; round < 40; round++) {
+      const base = makeDoc(200);
+      // The raw source spells many lines differently from the canonical
+      // serialization; the client edits one block.
+      const agent = base.map((line, i) => (line && i % 3 === 0 ? `${line}  ` : line));
+      const user = [...base];
+      const at = 2 * Math.floor(random() * 199);
+      if (at % 3 === 0) continue; // both sides touched this line: a conflict
+      user[at] = `${user[at]} from the web editor`;
+      const expected = untrimmedMerge(base.join('\n'), user.join('\n'), agent.join('\n'));
+      expect(expected).not.toBeNull();
+      expect(mergeThreeWay(base.join('\n'), user.join('\n'), agent.join('\n'))).toBe(
+        expected as string,
+      );
+    }
+  });
+
   test('keeps both sides of edits far apart in a long document', () => {
     const base = makeDoc(2500);
     const user = [...base];
