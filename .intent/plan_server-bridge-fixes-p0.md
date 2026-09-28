@@ -45,6 +45,36 @@ bun native/editor-spike/scripts/soak.ts --port 5181 --minutes 2 --insert-only --
 bun native/editor-spike/scripts/soak.ts --port 5181 --minutes 2 --insert-only --no-app --no-patch --fragment-writer prosemirror --content-dir <dir>
 ```
 
-## 결과
+## 결과 (2026-09-28, main 기준 코드, 로컬 dev 서버)
 
-(측정 후 채운다)
+**드레인 벤치마크** (`bench-bridge-drain.ts`, 10회, 가장 바깥 호출만 계산)
+
+| 줄 수 | 편집 | 드레인 p50 / p95 | 파싱 p50 (호출) | 직렬화 p50 (호출) |
+|---|---|---|---|---|
+| 38 | `Y.Text` | 21.7 / 33.6ms | 12.7ms (1) | 5.3ms (1) |
+| 38 | fragment | 82.5 / 146.1ms | 44.9ms (2) | 24.7ms (2) |
+| 1,000 | `Y.Text` | 319.5 / 780.6ms | 206.4ms (1) | 101.3ms (1) |
+| 1,000 | fragment | 758.5 / 982.0ms | 451.1ms (2) | 214.5ms (2) |
+| 5,000 | `Y.Text` | 2,189 / 4,558ms | 1,394ms (1) | 616ms (1) |
+| 5,000 | fragment | 3,643 / 6,421ms | 2,324ms (2) | 934ms (2) |
+
+드레인 시간의 약 90%가 문서 전체 파싱·직렬화다. fragment 경로의 줄 수 × 바이트 중복 검사는
+주원인이 아니었다(spec의 가설 수정). 편집 묶기만으로는 목표(p95 100ms)에 닿지 않는다.
+
+**서버 부하** (`server-load.ts`, 5,000줄, 초당 10회 30초): `Y.Text` 296회 중 50회 반영(p50 16.1초),
+fragment 289회 중 12회 반영(p50 26.3초). 두 경우 모두 `GET /api/config` 30초간 응답 없음.
+
+**삽입 전용 soak** (2분, fragment 작성자 단독, 38줄 문서)
+
+| 작성자 | 유실 | 반영 지연 p95 |
+|---|---|---|
+| 합성(`Y.XmlText.insert` 직접) | 21 / 99 | 1,510ms |
+| ProseMirror 경로(`insertText` → `updateYFragment`) | 0 / 99 | 342ms |
+
+웹 편집기와 같은 경로로는 이 조건에서 유실이 없었다. 합성 작성자는 `Y.XmlText.insert`가 앞
+글자의 속성(`escapeMark` 포함)을 물려받게 해 결함 3을 일으키고, 그 뒤 블록 구조가 바뀌며 노드가
+교체되는 것으로 보인다. 그래서 P2 뒤에 합성 작성자로 다시 재고, P3는 그 결과와 큰 문서 조건을
+보고 필요 여부를 정한다.
+
+**서로게이트 분할 실험** (Yjs origin → Yjs peer vs yrs 0.28): 네 경우 모두 yrs가 달랐고, Yjs 규칙을
+넣은 yrs는 모두 같았다(intent 답이 나온 질문 2).
