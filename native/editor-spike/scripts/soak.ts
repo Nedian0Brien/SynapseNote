@@ -142,19 +142,26 @@ const observedLatency: Record<string, number[]> = { a: [], f: [], p: [] };
 // A marker inserted again means the server deleted and re-inserted the span
 // around it (a block rewrite during fragment → Y.Text serialization).
 let observedReinserts = 0;
-observer.doc.getText('source').observe((event) => {
+/** Markers the fragment and patch writers wrote; the app's are known only once seen. */
+const written = new Set<string>();
+/** UTF-16 units each script writer inserted (the app reports its own). */
+const insertedUnits = { f: 0, p: 0 };
+const observedText = observer.doc.getText('source');
+const initialLength = observedText.length;
+observedText.observe((event) => {
   const now = Date.now();
+  // A marker already seen arriving again in one inserted string is a block
+  // rewrite. First sightings come from the whole text: the server writes only
+  // the span between the common prefix and suffix, so a marker next to an
+  // earlier one (`⟦f:…1⟧⟦f:…0⟧`) may never arrive as one inserted string.
   for (const op of event.delta) {
     if (typeof op.insert !== 'string') continue;
-    for (const m of op.insert.matchAll(MARKER)) {
-      if (Number(m[2]) < runStartedAt) continue;
-      if (seen.has(m[0])) {
-        observedReinserts++;
-        continue;
-      }
-      seen.set(m[0], now);
-      observedLatency[m[1]].push(now - Number(m[2]));
-    }
+    for (const m of op.insert.matchAll(MARKER)) if (seen.has(m[0])) observedReinserts++;
+  }
+  for (const m of observedText.toString().matchAll(MARKER)) {
+    if (Number(m[2]) < runStartedAt || seen.has(m[0])) continue;
+    seen.set(m[0], now);
+    observedLatency[m[1]].push(now - Number(m[2]));
   }
 });
 
@@ -176,17 +183,24 @@ function prosemirrorStep() {
   const offset = onCodePoint(spot.text, outsideMarkers(spot.text, rand(spot.text.length + 1)));
   const insert = fragmentEdits % 3 === 0 ? `⟦f:${Date.now()}⟧` : ' 편집';
   let tr = state.tr;
+  let inserted: string | null = null;
   if (!insertOnly && fragmentEdits % 3 === 2 && spot.text.length > 8) {
     const at = onCodePoint(spot.text, rand(spot.text.length - 3));
     const end = onCodePoint(spot.text, Math.min(spot.text.length, at + 2));
     if (end > at && !overlapsMarker(spot.text, at, end)) tr = tr.delete(spot.from + at, spot.from + end);
   } else {
     tr = tr.insertText(insert, spot.from + offset);
+    inserted = insert;
   }
   // textContent offsets equal document positions only inside a paragraph
   // without inline atoms; the paragraph fixture has none.
   fragmentWriter.doc.transact(() => updateYFragment(fragmentWriter.doc, fragment, tr.doc, meta));
+  if (inserted !== null) recordInsert(inserted);
   fragmentEdits++;
+}
+function recordInsert(text: string) {
+  insertedUnits.f += text.length;
+  for (const m of text.matchAll(MARKER)) written.add(m[0]);
 }
 function fragmentStep() {
   if (values['fragment-writer'] === 'prosemirror') return prosemirrorStep();
@@ -212,7 +226,9 @@ function fragmentStep() {
       if (end > at && !overlapsMarker(current, at, end)) text.delete(at, end - at);
     } else {
       const at = onCodePoint(current, outsideMarkers(current, rand(text.length + 1)));
-      text.insert(at, fragmentEdits % 3 === 0 ? `⟦f:${Date.now()}⟧` : ' 편집');
+      const insert = fragmentEdits % 3 === 0 ? `⟦f:${Date.now()}⟧` : ' 편집';
+      text.insert(at, insert);
+      recordInsert(insert);
     }
   });
   fragmentEdits++;
@@ -228,13 +244,17 @@ async function patchStep() {
   const start = onCodePoint(content, rand(content.length - 20));
   const find = content.slice(start, onCodePoint(content, start + 12));
   if (!find.trim() || overlapsMarker(content, start, start + 12) || find.includes('⟦') || find.includes('⟧')) return;
+  const marker = `⟦p:${Date.now()}⟧`;
   const patch = await fetch(`${httpBase}/api/agent-patch`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ docName, find, replace: `${find}⟦p:${Date.now()}⟧`, summary: 'native spike soak' }),
+    body: JSON.stringify({ docName, find, replace: `${find}${marker}`, summary: 'native spike soak' }),
   });
-  if (patch.ok) patchOk++;
-  else patchMiss++;
+  if (patch.ok) {
+    patchOk++;
+    written.add(marker);
+    insertedUnits.p += marker.length;
+  } else patchMiss++;
 }
 
 // ── a: launch the app in soak mode ──────────────────────────────────────────
@@ -320,7 +340,21 @@ for (const line of appFile('soak-latency.txt').split('\n')) {
 const appLog = appFile('soak-log.txt');
 const divergences = appLog.split('\n').filter((l) => l.includes('diverged') || l.includes('rejected')).length;
 
-const missing = insertOnly ? [...seen.keys()].filter((m) => !serverText.includes(m)) : [];
+const expected = new Set([...seen.keys(), ...written]);
+const missing = insertOnly ? [...expected].filter((m) => !serverText.includes(m)) : [];
+// Written when the app's typing timer ends; missing means it had not ended.
+const appInserted = (() => {
+  if (noApp) return 0;
+  try {
+    return Number(appFile('soak-inserted.txt').trim());
+  } catch {
+    return Number.NaN;
+  }
+})();
+const totalInserted = insertedUnits.f + insertedUnits.p + appInserted;
+// Every inserted character may gain one escaping backslash, and nothing else may grow.
+const sizeLimit = initialLength + 2 * totalInserted;
+const sizeOk = !insertOnly || serverText.length <= sizeLimit;
 const hashes = { disk: sha256(disk), server: sha256(serverText), app: appHash };
 const match = hashes.disk === hashes.server && (noApp || hashes.server === hashes.app);
 console.log('\nresult');
@@ -334,7 +368,8 @@ console.log(`  app binding divergences/rejections: ${divergences}`);
 if (insertOnly) {
   const bySource = { a: 0, f: 0, p: 0 } as Record<string, number>;
   for (const m of missing) bySource[m[1]]++;
-  console.log(`  insert-only: markers seen=${seen.size} missing from final text=${missing.length} (a=${bySource.a} f=${bySource.f} p=${bySource.p})${missing.length ? ` e.g. ${missing.slice(0, 5).join(' ')}` : ''}`);
+  console.log(`  insert-only: markers expected=${expected.size} (seen=${seen.size} written=${written.size}) missing from final text=${missing.length} (a=${bySource.a} f=${bySource.f} p=${bySource.p})${missing.length ? ` e.g. ${missing.slice(0, 5).join(' ')}` : ''}`);
+  console.log(`  size: initial=${initialLength} inserted=${totalInserted} (a=${appInserted} f=${insertedUnits.f} p=${insertedUnits.p}) final=${serverText.length} limit=${sizeLimit} ${sizeOk ? 'OK' : 'EXCEEDED'} (utf16)`);
 }
 console.log(`  marker re-inserts (block rewrites): observer=${observedReinserts} app=${appReinserts}`);
 console.log(`  writes: fragment=${fragmentEdits} patch ok=${patchOk} miss=${patchMiss}`);
@@ -346,4 +381,4 @@ for (const [source, samples] of Object.entries(appLatency)) console.log(`  ${sum
 observer.provider.destroy();
 fragmentWriter.provider.destroy();
 fresh.provider.destroy();
-process.exit(match && missing.length === 0 ? 0 : 1);
+process.exit(match && missing.length === 0 && sizeOk ? 0 : 1);

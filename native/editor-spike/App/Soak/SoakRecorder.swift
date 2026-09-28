@@ -9,6 +9,7 @@ import Foundation
 /// - `soak-keystroke.txt`: `<stage> <ms>` per local edit, appended (R6). Stages:
 ///   `sync` (binding → yrs → send), `style` (scanner + attributes), `full`
 ///   (perf driver: replace + synchronous layout).
+/// - `soak-inserted.txt`: `<utf16 units the typer inserted>`, rewritten when typing ends.
 /// - `soak-log.txt`: diagnostics, appended.
 final class SoakRecorder {
     private let directory: URL
@@ -16,6 +17,7 @@ final class SoakRecorder {
 
     init() {
         directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        try? FileManager.default.removeItem(at: directory.appendingPathComponent("soak-inserted.txt"))
         for name in ["soak-latency.txt", "soak-keystroke.txt", "soak-log.txt"] {
             let url = directory.appendingPathComponent(name)
             FileManager.default.createFile(atPath: url.path, contents: nil)
@@ -30,6 +32,10 @@ final class SoakRecorder {
     func writeHash(of text: String) {
         let line = "\(Self.sha256(text)) \((text as NSString).length) \(Self.nowMs())\n"
         try? line.write(to: directory.appendingPathComponent("soak-hash.txt"), atomically: true, encoding: .utf8)
+    }
+
+    func writeInserted(units: Int) {
+        try? "\(units)\n".write(to: directory.appendingPathComponent("soak-inserted.txt"), atomically: true, encoding: .utf8)
     }
 
     func latency(source: String, ms: Int) { append("soak-latency.txt", "\(source) \(ms)\n") }

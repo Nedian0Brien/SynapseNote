@@ -21,6 +21,8 @@ final class SoakTyper {
     private var timer: Timer?
     private var startedAt = Date()
     private var editCount = 0
+    /// UTF-16 units this typer inserted (the soak's size bound in insert-only mode).
+    private(set) var insertedUnits = 0
     private var rng = SystemRandomNumberGenerator()
     var onFinish: (() -> Void)?
 
@@ -93,6 +95,7 @@ final class SoakTyper {
             let textRange = textView.textRange(from: start, to: end)
         else { return }
         textView.replace(textRange, withText: text)
+        insertedUnits += (text as NSString).length
     }
 
     private static let markerPattern = try! NSRegularExpression(pattern: "⟦[a-z]:\\d{13}⟧")
