@@ -8,7 +8,7 @@ import {
 import * as Y from 'yjs';
 import { fragmentDerivation } from './fragment-derivation.ts';
 import { mdManager, schema } from './md-manager.ts';
-import { setupServerObservers } from './server-observers.ts';
+import { type ObserverAFallbackReason, setupServerObservers } from './server-observers.ts';
 
 const DOC = `# Title
 
@@ -42,6 +42,7 @@ function setup(markdown: string) {
     });
   });
   const paths: ('incremental' | 'full')[] = [];
+  const reasons: (ObserverAFallbackReason | undefined)[] = [];
   const cleanup = setupServerObservers({
     doc,
     xmlFragment,
@@ -49,9 +50,12 @@ function setup(markdown: string) {
     mdManager,
     schema,
     docName: 'fast-path',
-    onObserverAPath: (path) => paths.push(path),
+    onObserverAPath: (path, reason) => {
+      paths.push(path);
+      reasons.push(reason);
+    },
   });
-  return { doc, xmlFragment, ytext, paths, cleanup };
+  return { doc, xmlFragment, ytext, paths, reasons, cleanup };
 }
 
 /** The web editor's path: a ProseMirror transaction applied with updateYFragment. */
@@ -138,7 +142,7 @@ describe('Observer A incremental path', () => {
   });
 
   test('an edit inside a component takes the full path', () => {
-    const { doc, xmlFragment, paths, cleanup } = setup(DOC);
+    const { doc, xmlFragment, paths, reasons, cleanup } = setup(DOC);
     const { doc: pmDoc } = initProseMirrorDoc(xmlFragment, schema);
     let componentIndex = -1;
     pmDoc.forEach((node, _offset, index) => {
@@ -148,14 +152,16 @@ describe('Observer A incremental path', () => {
     const component = xmlFragment.get(componentIndex) as Y.XmlElement;
     doc.transact(() => component.setAttribute('sourceDirty', true as unknown as string), remote);
     expect(paths.at(-1)).toBe('full');
+    expect(reasons.at(-1)).toBe('full-path-node');
     cleanup();
   });
 
   test('splitting a paragraph takes the full path, and the next edit is incremental again', () => {
-    const { doc, xmlFragment, ytext, paths, cleanup } = setup(DOC);
+    const { doc, xmlFragment, ytext, paths, reasons, cleanup } = setup(DOC);
     const at = textblockPositions(xmlFragment, 'paragraph')[0];
     webEdit(doc, xmlFragment, (state) => state.tr.split(at + 3));
     expect(paths.at(-1)).toBe('full');
+    expect(reasons.at(-1)).toBe('structure');
     expect(parsedJson(ytext.toString())).toBe(fragmentJson(xmlFragment));
 
     const last = textblockPositions(xmlFragment, 'paragraph').at(-1) ?? 0;
@@ -166,7 +172,7 @@ describe('Observer A incremental path', () => {
   });
 
   test('a Y.Text write in the same drain as a client edit takes the full path', () => {
-    const { doc, xmlFragment, ytext, paths, cleanup } = setup(DOC);
+    const { doc, xmlFragment, ytext, paths, reasons, cleanup } = setup(DOC);
     const { doc: pmDoc, meta } = initProseMirrorDoc(xmlFragment, schema);
     const at = textblockPositions(xmlFragment, 'paragraph').at(-1) ?? 0;
     const tr = EditorState.create({ doc: pmDoc }).tr.insertText('!', at + 1);
@@ -175,13 +181,16 @@ describe('Observer A incremental path', () => {
       updateYFragment(doc, xmlFragment, tr.doc, meta);
     }, remote);
     expect(paths.at(-1)).toBe('full');
+    expect(reasons.at(-1)).toBe('text-moved');
     expect(ytext.toString()).toContain('Agent line.');
     expect(ytext.toString()).toContain('L!ast paragraph.');
     cleanup();
   });
 
   test('a neighbour that is not the parse of its source sends the edit to the full path', () => {
-    const { doc, xmlFragment, ytext, paths, cleanup } = setup('First.\n\nMiddle.\n\nLast.\n');
+    const { doc, xmlFragment, ytext, paths, reasons, cleanup } = setup(
+      'First.\n\nMiddle.\n\nLast.\n',
+    );
     // A paired writer leaves the middle block different from its source bytes.
     const paired = { source: 'local', context: { origin: 'fast-path-test', paired: true } };
     const middle = xmlFragment.get(1) as Y.XmlElement;
@@ -192,6 +201,7 @@ describe('Observer A incremental path', () => {
     const at = textblockPositions(xmlFragment, 'paragraph')[0];
     webEdit(doc, xmlFragment, (state) => state.tr.insertText('!', at + 'First'.length));
     expect(paths.at(-1)).toBe('full');
+    expect(reasons.at(-1)).toBe('neighbour');
     expect(ytext.toString()).not.toBe(before);
     expect(ytext.toString()).toContain('First!');
     cleanup();

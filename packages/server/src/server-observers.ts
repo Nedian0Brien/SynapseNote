@@ -163,6 +163,18 @@ export type PairedWriteOrigin = LocalTransactionOrigin & {
  * whose proximate cause is a duplicated `M0-alpha echo` line that a later
  * agent-patch `indexOf('alpha')` locks onto instead of the intended target.
  */
+/** Why a client edit took Observer A's full path instead of the incremental one. */
+export type ObserverAFallbackReason =
+  | 'structure' // top-level children added/removed, or more than 4 changed
+  | 'text-moved' // Y.Text changed since the last reconcile
+  | 'node-shape' // a changed child is not one element node
+  | 'full-path-node' // component, table, or raw MDX
+  | 'block-count' // source blocks do not line up with fragment children
+  | 'neighbour' // an unchanged neighbour differs from its source block
+  | 'duplication' // an edited block repeats a line more often than its source
+  | 'reparse' // the new source does not parse back to the client's nodes
+  | 'error';
+
 export const isPairedWriteOrigin = (origin: unknown): origin is PairedWriteOrigin => {
   if (origin == null || typeof origin !== 'object') return false;
   const ctx = (origin as { context?: { paired?: boolean } }).context;
@@ -431,7 +443,7 @@ export interface SetupServerObserversOpts {
    */
   onDispatch?: ObserverDispatchHook;
   /** Test/telemetry seam: which Observer A path settled a fragment change. */
-  onObserverAPath?: (path: 'incremental' | 'full') => void;
+  onObserverAPath?: (path: 'incremental' | 'full', reason?: ObserverAFallbackReason) => void;
   /**
    * Test-only seam for Observer A Path B's three-way merge. Omitted in
    * production (defaults to the real `mergeThreeWay`). The
@@ -1819,25 +1831,25 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
    * go to the full path, whose duplication gate tells a CRDT race from a
    * paste. Only the edited blocks are serialized; their text replaces their
    * source ranges, and the edit is written only if every edited block parses
-   * back to exactly the client's node. Anything else returns false and the
+   * back to exactly the client's node. Otherwise it returns why not, and the
    * full path runs.
    */
-  const tryIncrementalObserverA = (): boolean => {
+  const tryIncrementalObserverA = (): ObserverAFallbackReason | null => {
     if (topLevelStructureChanged || changedTopLevel.size === 0 || changedTopLevel.size > 4)
-      return false;
+      return 'structure';
     const text = ytext.toString();
-    if (text !== lastSyncedYTextBytes) return false;
+    if (text !== lastSyncedYTextBytes) return 'text-moved';
     const children = xmlFragment.toArray();
 
     const edits: { index: number; markdown: string; json: string }[] = [];
     for (const changed of changedTopLevel) {
       const index = children.indexOf(changed as (typeof children)[number]);
-      if (index < 0 || !(changed instanceof Y.XmlElement)) return false;
+      if (index < 0 || !(changed instanceof Y.XmlElement)) return 'node-shape';
       const json = topLevelJson(changed);
-      if (json === null) return false;
+      if (json === null) return 'node-shape';
       const serializedJson = JSON.stringify(json);
       if (FULL_PATH_NODE_TYPES.some((type) => serializedJson.includes(`"type":${type}`)))
-        return false;
+        return 'full-path-node';
       const markdown = mdManager.serialize({ type: 'doc', content: [json] }).replace(/\n+$/, '');
       edits.push({ index, markdown, json: serializedJson });
     }
@@ -1848,7 +1860,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
     }
     const ranges = incrementalParser.cachedBlockRanges();
     const blocks = incrementalParser.cachedBlockJson();
-    if (!ranges || !blocks || ranges.length !== children.length) return false;
+    if (!ranges || !blocks || ranges.length !== children.length) return 'block-count';
 
     // Alignment: the nearest unchanged neighbour on each side of every edit.
     const edited = new Set(edits.map((edit) => edit.index));
@@ -1860,7 +1872,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
         if (neighbour < 0 || neighbour >= children.length || checked.has(neighbour)) continue;
         checked.add(neighbour);
         const json = topLevelJson(children[neighbour]);
-        if (json === null || !sameIgnoringPositions(json, blocks[neighbour])) return false;
+        if (json === null || !sameIgnoringPositions(json, blocks[neighbour])) return 'neighbour';
       }
     }
 
@@ -1872,7 +1884,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
       .map((edit) => body.slice(ranges[edit.index].start, ranges[edit.index].end))
       .join('\n\n');
     const editedAfter = edits.map((edit) => edit.markdown).join('\n\n');
-    if (overMultipliedBridgeBodyLines(editedAfter, editedBefore).length > 0) return false;
+    if (overMultipliedBridgeBodyLines(editedAfter, editedBefore).length > 0) return 'duplication';
 
     let newBody = '';
     let cursor = 0;
@@ -1888,7 +1900,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
       reparsed.childCount !== children.length ||
       !edits.every((edit) => JSON.stringify(reparsed.child(edit.index).toJSON()) === edit.json)
     ) {
-      return false;
+      return 'reparse';
     }
 
     const newText = prependFrontmatter(frontmatter, newBody);
@@ -1906,7 +1918,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
       canonicalWitnessCoherent = true;
     }
     incrementServerObserverFire('a');
-    return true;
+    return null;
   };
 
   /** One fragment child as PM JSON, or `null` if it is not a single node. */
@@ -1919,18 +1931,21 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
   };
 
   const runObserverASync = (): void => {
+    let reason: ObserverAFallbackReason | null;
     try {
-      if (tryIncrementalObserverA()) {
+      reason = tryIncrementalObserverA();
+      if (reason === null) {
         opts.onObserverAPath?.('incremental');
         return;
       }
     } catch (err) {
       console.warn('[Server Observer A] incremental path failed — using the full path:', err);
       incrementalParser.reset();
+      reason = 'error';
     } finally {
       resetChangedTopLevel();
     }
-    opts.onObserverAPath?.('full');
+    opts.onObserverAPath?.('full', reason);
     withSpanSync(
       'observer.runASync',
       { attributes: { 'doc.name': opts.docName ?? '' } },
