@@ -9,7 +9,7 @@ import Foundation
 /// - `soak-keystroke.txt`: `<stage> <ms>` per local edit, appended (R6). Stages:
 ///   `sync` (binding → yrs → send), `style` (scanner + attributes), `full`
 ///   (perf driver: replace + synchronous layout).
-/// - `soak-inserted.txt`: `<utf16 units the typer inserted>`, rewritten when typing ends.
+/// - `soak-inserted.txt`: `<utf16 units> <markers>` the typer inserted, written when typing ends.
 /// - `soak-log.txt`: diagnostics, appended.
 final class SoakRecorder {
     private let directory: URL
@@ -34,8 +34,8 @@ final class SoakRecorder {
         try? line.write(to: directory.appendingPathComponent("soak-hash.txt"), atomically: true, encoding: .utf8)
     }
 
-    func writeInserted(units: Int) {
-        try? "\(units)\n".write(to: directory.appendingPathComponent("soak-inserted.txt"), atomically: true, encoding: .utf8)
+    func writeInserted(units: Int, markers: Int) {
+        try? "\(units) \(markers)\n".write(to: directory.appendingPathComponent("soak-inserted.txt"), atomically: true, encoding: .utf8)
     }
 
     func latency(source: String, ms: Int) { append("soak-latency.txt", "\(source) \(ms)\n") }

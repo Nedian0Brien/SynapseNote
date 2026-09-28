@@ -23,6 +23,8 @@ final class SoakTyper {
     private var editCount = 0
     /// UTF-16 units this typer inserted (the soak's size bound in insert-only mode).
     private(set) var insertedUnits = 0
+    /// Markers this typer inserted; the soak checks each one reached the server.
+    private(set) var insertedMarkers = 0
     private var rng = SystemRandomNumberGenerator()
     var onFinish: (() -> Void)?
 
@@ -78,6 +80,7 @@ final class SoakTyper {
         let location = Self.safeLocation(in: textView.textStorage.string as NSString, near: Int.random(in: 0...length, using: &rng))
         if editCount % 10 == 0 {
             replace(in: textView, range: NSRange(location: location, length: 0), with: "⟦a:\(SoakRecorder.nowMs())⟧")
+            insertedMarkers += 1
         } else if roll < 30 && length > 10 && !insertOnly {
             let deleteLength = min(Int.random(in: 1...5, using: &rng), length - location)
             let range = Self.composedRange(in: textView.textStorage.string as NSString, NSRange(location: location, length: deleteLength))

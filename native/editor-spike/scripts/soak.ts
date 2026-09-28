@@ -343,14 +343,20 @@ const divergences = appLog.split('\n').filter((l) => l.includes('diverged') || l
 const expected = new Set([...seen.keys(), ...written]);
 const missing = insertOnly ? [...expected].filter((m) => !serverText.includes(m)) : [];
 // Written when the app's typing timer ends; missing means it had not ended.
-const appInserted = (() => {
-  if (noApp) return 0;
+const [appInserted, appMarkers] = (() => {
+  if (noApp) return [0, 0];
   try {
-    return Number(appFile('soak-inserted.txt').trim());
+    return appFile('soak-inserted.txt').trim().split(' ').map(Number);
   } catch {
-    return Number.NaN;
+    return [Number.NaN, Number.NaN];
   }
 })();
+// App markers are known to this script only once seen, so count them instead:
+// every marker the app typed must be in the final text.
+const appMarkersFound = [...serverText.matchAll(MARKER)].filter(
+  (m) => m[1] === 'a' && Number(m[2]) >= runStartedAt,
+).length;
+const appMissing = noApp || !insertOnly ? 0 : appMarkers - appMarkersFound;
 const totalInserted = insertedUnits.f + insertedUnits.p + appInserted;
 // Every inserted character may gain one escaping backslash, and nothing else may grow.
 const sizeLimit = initialLength + 2 * totalInserted;
@@ -369,6 +375,7 @@ if (insertOnly) {
   const bySource = { a: 0, f: 0, p: 0 } as Record<string, number>;
   for (const m of missing) bySource[m[1]]++;
   console.log(`  insert-only: markers expected=${expected.size} (seen=${seen.size} written=${written.size}) missing from final text=${missing.length} (a=${bySource.a} f=${bySource.f} p=${bySource.p})${missing.length ? ` e.g. ${missing.slice(0, 5).join(' ')}` : ''}`);
+  console.log(`  app markers: typed=${appMarkers} in final text=${appMarkersFound} missing=${appMissing}`);
   console.log(`  size: initial=${initialLength} inserted=${totalInserted} (a=${appInserted} f=${insertedUnits.f} p=${insertedUnits.p}) final=${serverText.length} limit=${sizeLimit} ${sizeOk ? 'OK' : 'EXCEEDED'} (utf16)`);
 }
 console.log(`  marker re-inserts (block rewrites): observer=${observedReinserts} app=${appReinserts}`);
@@ -381,4 +388,4 @@ for (const [source, samples] of Object.entries(appLatency)) console.log(`  ${sum
 observer.provider.destroy();
 fragmentWriter.provider.destroy();
 fresh.provider.destroy();
-process.exit(match && missing.length === 0 && sizeOk ? 0 : 1);
+process.exit(match && missing.length === 0 && appMissing === 0 && sizeOk ? 0 : 1);

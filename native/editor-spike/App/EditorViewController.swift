@@ -300,7 +300,7 @@ final class EditorViewController: UIViewController, UITextViewDelegate, UIGestur
         if config.soakSeconds > 0 {
             let typer = SoakTyper(textView: textView, duration: config.soakSeconds, insertOnly: config.soakInsertOnly, plainTokens: config.soakPlainTokens)
             typer.onFinish = { [weak self, weak typer] in
-                self?.recorder.writeInserted(units: typer?.insertedUnits ?? 0)
+                self?.recorder.writeInserted(units: typer?.insertedUnits ?? 0, markers: typer?.insertedMarkers ?? 0)
                 self?.log("soak typing finished")
                 self?.updateStatus("soak finished")
             }
