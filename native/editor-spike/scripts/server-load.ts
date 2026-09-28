@@ -50,12 +50,21 @@ console.log(`doc '${docName}': ${text.length} utf16 units, mode ${values.mode}`)
 
 const sent = new Map<string, number>();
 const echo: number[] = [];
+const startedAt = Date.now();
+// Worst echo latency per second of the run, to tell start-up stalls from periodic ones.
+const worstBySecond: number[] = [];
 watcher.doc.getText('source').observe((event) => {
   for (const op of event.delta) {
     if (typeof op.insert !== 'string') continue;
     for (const m of op.insert.matchAll(/⟦k(\d+)⟧/g)) {
       const t = sent.get(m[1]);
-      if (t !== undefined) { echo.push(Date.now() - t); sent.delete(m[1]); }
+      if (t !== undefined) {
+        const latency = Date.now() - t;
+        echo.push(latency);
+        sent.delete(m[1]);
+        const second = Math.floor((t - startedAt) / 1000);
+        worstBySecond[second] = Math.max(worstBySecond[second] ?? 0, latency);
+      }
     }
   }
 });
@@ -88,6 +97,7 @@ await new Promise((r) => setTimeout(r, 5000));
 console.log(`keystrokes sent=${n} echoed=${echo.length} (unechoed after 5s: ${sent.size})`);
 console.log(`echo to second client: ${stats(echo)}`);
 console.log(`GET /api/config:       ${stats(api)}`);
+console.log(`worst echo per second: ${worstBySecond.map((v) => v ?? '-').join(' ')}`);
 typist.provider.destroy();
 watcher.provider.destroy();
 process.exit(0);
