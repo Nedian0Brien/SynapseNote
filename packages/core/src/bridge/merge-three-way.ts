@@ -20,9 +20,33 @@ function mergeThreeWayImpl(baseline: string, userText: string, agentText: string
   const userLines = userText.split('\n');
   const baseLines = baseline.split('\n');
   const agentLines = agentText.split('\n');
-  const regions = diff3Merge(userLines, baseLines, agentLines);
+  // Lines all three share at the start and end are stable regions diff3
+  // would copy through unchanged. node-diff3's LCS compares every line with
+  // every equal line of the other side, so on a long document its blank
+  // lines alone make one merge take seconds; the edits are usually local.
+  const shortest = Math.min(userLines.length, baseLines.length, agentLines.length);
+  let head = 0;
+  while (
+    head < shortest &&
+    userLines[head] === baseLines[head] &&
+    baseLines[head] === agentLines[head]
+  )
+    head++;
+  let tail = 0;
+  while (
+    tail < shortest - head &&
+    userLines[userLines.length - 1 - tail] === baseLines[baseLines.length - 1 - tail] &&
+    baseLines[baseLines.length - 1 - tail] === agentLines[agentLines.length - 1 - tail]
+  )
+    tail++;
+  const regions = diff3Merge(
+    userLines.slice(head, userLines.length - tail),
+    baseLines.slice(head, baseLines.length - tail),
+    agentLines.slice(head, agentLines.length - tail),
+  );
 
   const parts: string[] = [];
+  if (head > 0) parts.push(baseLines.slice(0, head).join('\n'));
   for (let i = 0; i < regions.length; i++) {
     const region = regions[i];
     if ('ok' in region && region.ok) {
@@ -34,6 +58,7 @@ function mergeThreeWayImpl(baseline: string, userText: string, agentText: string
       parts.push(mergeConflictRegion(conflictBase, conflictUser, conflictAgent));
     }
   }
+  if (tail > 0) parts.push(baseLines.slice(baseLines.length - tail).join('\n'));
 
   return parts.join('\n');
 }
