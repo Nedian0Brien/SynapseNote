@@ -106,7 +106,7 @@ function makeRng(seed: number) {
 
 /** Parse with the observer's settings: B uses parseWithFallback. */
 const parse = (md: string) => mdManager.parseWithFallback(md);
-const parseMdast = (md: string) => mdManager.parseToMdast(md);
+const parseWithRanges = (md: string) => mdManager.parseWithBlockRanges(md);
 
 describe('IncrementalBlockParser', () => {
   test.each(
@@ -116,7 +116,7 @@ describe('IncrementalBlockParser', () => {
     const reasons: Record<string, number> = {};
     const parser = new IncrementalBlockParser({
       parse,
-      parseMdast,
+      parseWithRanges,
       schema,
       onFallback: (reason) => {
         reasons[reason] = (reasons[reason] ?? 0) + 1;
@@ -160,7 +160,7 @@ describe('IncrementalBlockParser', () => {
     'mdx built-ins',
   ])('%s: component positions move with edits like a full parse', (name) => {
     const rng = makeRng(7);
-    const parser = new IncrementalBlockParser({ parse, parseMdast, schema });
+    const parser = new IncrementalBlockParser({ parse, parseWithRanges, schema });
     let body = CORPUS[name];
     parser.parseFull(body);
     let mismatch: string | null = null;
@@ -187,7 +187,7 @@ describe('IncrementalBlockParser', () => {
   });
 
   test('an unchanged body returns the cached document', () => {
-    const parser = new IncrementalBlockParser({ parse, parseMdast, schema });
+    const parser = new IncrementalBlockParser({ parse, parseWithRanges, schema });
     const first = parser.parseFull(SPIKE_DOC);
     const again = parser.update(SPIKE_DOC);
     expect(again?.childCount).toBe(first.childCount);
@@ -195,7 +195,7 @@ describe('IncrementalBlockParser', () => {
   });
 
   test('untouched blocks keep their node objects', () => {
-    const parser = new IncrementalBlockParser({ parse, parseMdast, schema });
+    const parser = new IncrementalBlockParser({ parse, parseWithRanges, schema });
     const before = parser.parseFull(SPIKE_DOC);
     const edited = SPIKE_DOC.replace('The end.', 'The very end.');
     const after = parser.update(edited);
@@ -205,7 +205,7 @@ describe('IncrementalBlockParser', () => {
   });
 
   test('a new link reference definition forces a full parse', () => {
-    const parser = new IncrementalBlockParser({ parse, parseMdast, schema });
+    const parser = new IncrementalBlockParser({ parse, parseWithRanges, schema });
     parser.parseFull('See [x].\n\nEnd.\n');
     expect(parser.update('See [x].\n\n[x]: https://example.com\n\nEnd.\n')).toBeNull();
   });

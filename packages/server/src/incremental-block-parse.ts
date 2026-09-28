@@ -7,9 +7,9 @@
  * event loop for every keystroke. Parsing a few blocks costs about 1 ms.
  *
  * The cache holds, for the last parsed body, each top-level block's source
- * range and PM node. After promoters, top-level mdast children and top-level
- * PM nodes correspond 1:1; a document where they do not is never parsed
- * incrementally. For a new body, the changed span is found from the common
+ * range and PM node, both from one parse (`parseWithBlockRanges`). After
+ * promoters, top-level mdast children and top-level PM nodes correspond 1:1;
+ * a document where they do not is never parsed incrementally. For a new body, the changed span is found from the common
  * prefix and suffix, and the blocks it touches are re-parsed together with
  * one unchanged guard block on each side. The result is used only when:
  *
@@ -32,8 +32,9 @@
  * The one document-level attribute, `sourceDocBoundary` (leading/trailing
  * blank lines and the blank-line count of each wide gap between top-level
  * blocks), is rebuilt from the new block ranges with the same core function
- * the parser uses. Documents that start with a BOM are not parsed
- * incrementally: the parser strips it, so block offsets would be off by one.
+ * the parser uses. Documents whose block offsets do not map onto the text
+ * are not parsed incrementally: a leading BOM (the parser strips it) and
+ * indented JSX closing tags (the parser rewrites them).
  *
  * Anything else returns `null`, and the caller parses the whole body and
  * resets the cache with `parseFull`.
@@ -41,7 +42,6 @@
 import { computeDocBoundary } from '@nedian0brien/synapsenote-core';
 import type { JSONContent } from '@tiptap/core';
 import { Fragment, type Node as PmNode, type Schema } from '@tiptap/pm/model';
-import type { Root } from 'mdast';
 
 interface CachedBlock {
   /** Source range in the body, from the mdast position (end exclusive). */
@@ -53,6 +53,8 @@ interface CachedBlock {
   positioned: boolean;
 }
 
+type BlockRanges = ReadonlyArray<{ start: number | undefined; end: number | undefined }>;
+
 /** Maps a 1-based mdast position point to where it now lies. */
 type PointShift = (point: { line: number; column: number; offset: number }) => {
   line: number;
@@ -61,10 +63,14 @@ type PointShift = (point: { line: number; column: number; offset: number }) => {
 };
 
 export interface IncrementalBlockParserDeps {
-  /** Same parse the full path uses (e.g. `parseWithFallback` with the observer's options). */
+  /**
+   * One parse giving the PM JSON and each top-level block's source range
+   * (`MarkdownManager.parseWithBlockRanges`). May throw on input the full
+   * path only handles by fallback; `ranges` is null when offsets do not map.
+   */
+  parseWithRanges: (markdown: string) => { json: JSONContent; ranges: BlockRanges | null };
+  /** The full path's parse, used when `parseWithRanges` throws (`parseWithFallback`). */
   parse: (markdown: string) => JSONContent;
-  /** Block positions; may throw on input the full parser only handles by fallback. */
-  parseMdast: (markdown: string) => Root;
   schema: Schema;
   /** How many times a slice may widen past a changed guard. */
   maxWidenings?: number;
@@ -101,6 +107,21 @@ export class IncrementalBlockParser {
     this.#deps = { maxWidenings: 4, onFallback: () => {}, ...deps };
   }
 
+  /** The body the cache describes, or `null` when there is no cache. */
+  get cachedBody(): string | null {
+    return this.#blocks ? this.#body : null;
+  }
+
+  /** Source ranges of the cached top-level blocks, in body offsets. */
+  cachedBlockRanges(): ReadonlyArray<{ start: number; end: number }> | null {
+    return this.#blocks?.map(({ start, end }) => ({ start, end })) ?? null;
+  }
+
+  /** PM JSON of the cached top-level blocks, in document order. */
+  cachedBlockJson(): ReadonlyArray<JSONContent> | null {
+    return this.#blocks?.map((b) => b.json) ?? null;
+  }
+
   /** Forget the cache (e.g. the fragment was rebuilt some other way). */
   reset(): void {
     this.#body = null;
@@ -110,11 +131,17 @@ export class IncrementalBlockParser {
   /** Parse the whole body and cache its blocks. */
   parseFull(body: string): PmNode {
     this.stats.full++;
-    const json = this.#deps.parse(body);
+    let json: JSONContent;
+    let ranges: BlockRanges | null = null;
+    try {
+      ({ json, ranges } = this.#deps.parseWithRanges(body));
+    } catch {
+      json = this.#deps.parse(body);
+    }
     const doc = this.#deps.schema.nodeFromJSON(json);
     this.#body = body;
     this.#docAttrs = json.attrs;
-    this.#blocks = body.charCodeAt(0) === 0xfeff ? null : this.#blocksFor(body, json, doc, 0);
+    this.#blocks = ranges ? this.#blocksFor(json, ranges, doc, 0) : null;
     this.#hasDefinitions = DEFINITION_LINE.test(body);
     return doc;
   }
@@ -206,16 +233,19 @@ export class IncrementalBlockParser {
       let json: JSONContent;
       let parsed: CachedBlock[] | null;
       try {
-        json = this.#deps.parse(slice);
+        const result = this.#deps.parseWithRanges(slice);
+        json = result.json;
         if (!sameAttrs(withoutBoundary(json.attrs), withoutBoundary(this.#docAttrs)))
           return 'doc-attrs';
-        parsed = this.#blocksFor(
-          slice,
-          json,
-          this.#deps.schema.nodeFromJSON(json),
-          sliceStart,
-          toDocument,
-        );
+        parsed = result.ranges
+          ? this.#blocksFor(
+              json,
+              result.ranges,
+              this.#deps.schema.nodeFromJSON(json),
+              sliceStart,
+              toDocument,
+            )
+          : null;
       } catch {
         return 'parse-error';
       }
@@ -259,25 +289,17 @@ export class IncrementalBlockParser {
    * slice-relative to document-relative and those blocks get fresh nodes.
    */
   #blocksFor(
-    markdown: string,
     json: JSONContent,
+    ranges: BlockRanges,
     doc: PmNode,
     offset: number,
     shift?: PointShift,
   ): CachedBlock[] | null {
-    let mdast: Root;
-    try {
-      mdast = this.#deps.parseMdast(markdown);
-    } catch {
-      return null;
-    }
     const content = json.content ?? [];
-    if (mdast.children.length !== content.length || doc.childCount !== content.length) return null;
+    if (ranges.length !== content.length || doc.childCount !== content.length) return null;
     const blocks: CachedBlock[] = [];
     for (let i = 0; i < content.length; i++) {
-      const position = mdast.children[i].position;
-      const start = position?.start.offset;
-      const end = position?.end.offset;
+      const { start, end } = ranges[i];
       if (start === undefined || end === undefined) return null;
       const positioned = JSON.stringify(content[i]).includes('"position":');
       if (shift && positioned) {
@@ -352,6 +374,25 @@ function withoutBoundary(attrs: Record<string, unknown> | undefined): Record<str
 
 function sameAttrs(a: unknown, b: unknown): boolean {
   return deepEqual(a ?? null, b ?? null);
+}
+
+/**
+ * Deep equality that ignores mdast `position` values. A client's fragment
+ * keeps the positions it was parsed with; a later parse of the same block
+ * elsewhere in the document gives new ones.
+ */
+export function sameIgnoringPositions(a: unknown, b: unknown): boolean {
+  return deepEqual(withoutPositions(a), withoutPositions(b));
+}
+
+function withoutPositions(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(withoutPositions);
+  if (typeof value !== 'object' || value === null) return value;
+  const out: Record<string, unknown> = {};
+  for (const [key, item] of Object.entries(value)) {
+    if (key !== 'position') out[key] = withoutPositions(item);
+  }
+  return out;
 }
 
 function deepEqual(a: unknown, b: unknown): boolean {

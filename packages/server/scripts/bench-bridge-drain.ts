@@ -76,6 +76,7 @@ function wrap<K extends 'parse' | 'parseWithFallback' | 'parseToMdast' | 'serial
 wrap('parse', 'parse');
 wrap('parseWithFallback', 'parse');
 wrap('parseToMdast', 'parse');
+wrap('parseWithBlockRanges', 'parse');
 wrap('serialize', 'serialize');
 
 function resetStages(): void {
@@ -92,6 +93,7 @@ function setup(markdown: string) {
     const node = schema.nodeFromJSON(mdManager.parse(markdown));
     updateYFragment(doc, xmlFragment, node, { mapping: new Map(), isOMark: new Map() });
   });
+  const aPaths = { incremental: 0, full: 0 };
   const cleanup = setupServerObservers({
     doc,
     xmlFragment,
@@ -99,8 +101,9 @@ function setup(markdown: string) {
     mdManager,
     schema,
     docName: 'bench',
+    onObserverAPath: (path) => aPaths[path]++,
   });
-  return { doc, xmlFragment, ytext, cleanup };
+  return { doc, xmlFragment, ytext, aPaths, cleanup };
 }
 
 function middleParagraphText(fragment: Y.XmlFragment): Y.XmlText {
@@ -119,15 +122,18 @@ const q = (xs: number[], p: number) =>
 const fmt = (n: number) => n.toFixed(1).padStart(8);
 
 console.log(`samples per cell: ${samples} (after 3 warmups)`);
-console.log('lines   kind      drain p50  drain p95   parse p50  serialize p50  parse/ser calls');
+console.log(
+  'lines   kind      first      drain p50  drain p95   parse p50  serialize p50  parse/ser calls  A inc/full',
+);
 for (const lines of sizes) {
   for (const kind of ['text', 'fragment'] as const) {
-    const { doc, xmlFragment, ytext, cleanup } = setup(makeMarkdown(lines));
+    const { doc, xmlFragment, ytext, aPaths, cleanup } = setup(makeMarkdown(lines));
     const remote = {}; // any non-bridge origin, like a Hocuspocus connection
     const drain: number[] = [];
     const parse: number[] = [];
     const serialize: number[] = [];
     let calls = '';
+    let first = 0;
     for (let i = 0; i < samples + 3; i++) {
       resetStages();
       const t = performance.now();
@@ -136,6 +142,7 @@ for (const lines of sizes) {
         else middleParagraphText(xmlFragment).insert(0, 'x');
       }, remote);
       const elapsed = performance.now() - t;
+      if (i === 0) first = elapsed;
       if (i >= 3) {
         drain.push(elapsed);
         parse.push(stageMs.parse);
@@ -145,7 +152,7 @@ for (const lines of sizes) {
     }
     cleanup();
     console.log(
-      `${String(lines).padStart(5)}   ${kind.padEnd(8)}${fmt(q(drain, 0.5))}ms${fmt(q(drain, 0.95))}ms  ${fmt(q(parse, 0.5))}ms   ${fmt(q(serialize, 0.5))}ms      ${calls}`,
+      `${String(lines).padStart(5)}   ${kind.padEnd(8)}${fmt(first)}ms${fmt(q(drain, 0.5))}ms${fmt(q(drain, 0.95))}ms  ${fmt(q(parse, 0.5))}ms   ${fmt(q(serialize, 0.5))}ms      ${calls.padEnd(15)}  ${kind === 'fragment' ? `${aPaths.incremental}/${aPaths.full}` : '-'}`,
     );
   }
 }

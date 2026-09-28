@@ -268,6 +268,20 @@ function readDocBoundary(value: unknown): SourceDocBoundary | undefined {
 }
 
 export function parseMd(rawSource: string, processor: Processor): PmNode {
+  return parseMdWithBlockRanges(rawSource, processor).doc;
+}
+
+/**
+ * `parseMd`, plus the source range of every top-level block (after
+ * promoters) in `rawSource` offsets — from the same parse, so a caller that
+ * needs both does not parse twice. `ranges` is `null` when offsets in the
+ * parsed tree do not map 1:1 onto `rawSource`: a leading BOM is stripped, and
+ * `dedentBlockJsxClose` can rewrite indented JSX closing tags before parsing.
+ */
+export function parseMdWithBlockRanges(
+  rawSource: string,
+  processor: Processor,
+): { doc: PmNode; ranges: BlockSourceRange[] | null } {
   const { source: rawAfterBom, hadBom } = splitDocumentHeadBom(rawSource);
   const source = dedentBlockJsxClose(rawAfterBom);
   const protectedFr14 = encodeBackslashEscapes(source);
@@ -278,10 +292,25 @@ export function parseMd(rawSource: string, processor: Processor): PmNode {
   const tree = processor.parse(file);
   file.value = source;
   const transformed = processor.runSync(tree, file) as MdastRoot;
+  const ranges =
+    hadBom || source !== rawAfterBom
+      ? null
+      : transformed.children.map((child) => ({
+          start: child?.position?.start?.offset,
+          end: child?.position?.end?.offset,
+        }));
   const boundary = captureDocBoundary(transformed, source, hadBom);
-  const doc = (processor as unknown as { stringify(tree: unknown): PmNode }).stringify(transformed);
-  if (!boundary) return doc;
-  return doc.type.create({ ...doc.attrs, sourceDocBoundary: boundary }, doc.content, doc.marks);
+  const parsed = (processor as unknown as { stringify(tree: unknown): PmNode }).stringify(
+    transformed,
+  );
+  const doc = boundary
+    ? parsed.type.create(
+        { ...parsed.attrs, sourceDocBoundary: boundary },
+        parsed.content,
+        parsed.marks,
+      )
+    : parsed;
+  return { doc, ranges };
 }
 
 export function parseMdToMdast(rawSource: string, processor: Processor): MdastRoot {

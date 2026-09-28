@@ -29,6 +29,7 @@ import type {
   StructuralDivergenceReason,
 } from '@nedian0brien/synapsenote-core';
 import {
+  applyByPrefixSuffix,
   applyFastDiff,
   applyIncrementalDiff,
   BridgeInvariantViolationError,
@@ -45,6 +46,7 @@ import {
   splitLeadingDocBoundary,
   stripFrontmatter,
 } from '@nedian0brien/synapsenote-core';
+import type { JSONContent } from '@tiptap/core';
 import type { Schema } from '@tiptap/pm/model';
 import { updateYFragment, yXmlFragmentToProseMirrorRootNode } from '@tiptap/y-tiptap';
 // Value import (not `import type`): `carrierKind` uses `instanceof Y.XmlElement`
@@ -59,9 +61,13 @@ import {
   emitObserverAPathBFired,
 } from './bridge-watchdog.ts';
 import { isConfigDoc, isSystemDoc } from './cc1-broadcast.ts';
-import { clearFragmentDerivation, markFragmentDerivedFromText } from './fragment-derivation.ts';
+import {
+  clearFragmentDerivation,
+  fragmentDerivation,
+  markFragmentDerivedFromText,
+} from './fragment-derivation.ts';
 import { recordFrontmatterEditSurface } from './frontmatter-telemetry.ts';
-import { IncrementalBlockParser } from './incremental-block-parse.ts';
+import { IncrementalBlockParser, sameIgnoringPositions } from './incremental-block-parse.ts';
 import { computeMapDrivenBodySplice } from './map-driven-splice.ts';
 import {
   incrementBridgeMergeCheckpointCreated,
@@ -424,6 +430,8 @@ export interface SetupServerObserversOpts {
    * decision the settlement handler made.
    */
   onDispatch?: ObserverDispatchHook;
+  /** Test/telemetry seam: which Observer A path settled a fragment change. */
+  onObserverAPath?: (path: 'incremental' | 'full') => void;
   /**
    * Test-only seam for Observer A Path B's three-way merge. Omitted in
    * production (defaults to the real `mergeThreeWay`). The
@@ -1020,8 +1028,8 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
   /** Observer B's text→tree parse: re-parses only the blocks an edit touched
    *  and falls back to a full parse whenever that is not provably the same. */
   const incrementalParser = new IncrementalBlockParser({
+    parseWithRanges: (markdown) => mdManager.parseWithBlockRanges(markdown, observerParseOpts),
     parse: (markdown) => mdManager.parseWithFallback(markdown, observerParseOpts),
-    parseMdast: (markdown) => mdManager.parseToMdast(markdown),
     schema,
   });
   /** `updateYFragment` metadata kept across Observer B fires, so unchanged
@@ -1031,6 +1039,19 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
   const resetBUpdateMeta = (): void => {
     bUpdateMeta = { mapping: new Map(), isOMark: new Map() };
   };
+  /** Top-level fragment children a client changed during this drain, and
+   *  whether the top-level child list itself changed (Observer A fast path). */
+  let changedTopLevel = new Set<Y.AbstractType<unknown>>();
+  let topLevelStructureChanged = false;
+  /** The text the fragment was the parse of when this drain's first client
+   *  change arrived (`undefined` until then, `null` if it was not). */
+  let drainStartDerivedText: string | null | undefined;
+  const resetChangedTopLevel = (): void => {
+    changedTopLevel = new Set();
+    topLevelStructureChanged = false;
+    drainStartDerivedText = undefined;
+  };
+
   /** True while Observer B's own `updateYFragment` transaction runs. Other
    *  code that writes the fragment under `OBSERVER_SYNC_ORIGIN` (persistence's
    *  `reconcileFragmentNow`) is not B, and must invalidate B's mapping. */
@@ -1781,7 +1802,135 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
   // 'gated-in-sync', so every exit path of the sync impl sets the attribute.
   // Zero-overhead when OTEL_SDK_DISABLED is true (recordException
   // is no-op when the tracer is disabled).
+  /** Node types whose serialization needs Observer A's full safeguards
+   *  (freshness re-derive, producer guard). */
+  const FULL_PATH_NODE_TYPES = ['"jsxComponent"', '"jsxInline"', '"rawMdxFallback"', '"table"'];
+
+  /**
+   * Observer A fast path for a client edit inside a few top-level blocks.
+   *
+   * Runs when Y.Text has not changed since the last reconcile (it equals the
+   * raw witness) and the edit stayed inside 1–4 simple top-level blocks. The
+   * incremental parser holds parse(Y.Text) with each block's source range
+   * (re-parsing only what changed since its last body). Each edited block's
+   * nearest unchanged neighbours must equal the parser's blocks at the same
+   * index — otherwise fragment children and source blocks are not aligned
+   * there. Edited blocks that repeat a line more often than their source did
+   * go to the full path, whose duplication gate tells a CRDT race from a
+   * paste. Only the edited blocks are serialized; their text replaces their
+   * source ranges, and the edit is written only if every edited block parses
+   * back to exactly the client's node. Anything else returns false and the
+   * full path runs.
+   */
+  const tryIncrementalObserverA = (): boolean => {
+    if (topLevelStructureChanged || changedTopLevel.size === 0 || changedTopLevel.size > 4)
+      return false;
+    const text = ytext.toString();
+    if (text !== lastSyncedYTextBytes) return false;
+    const children = xmlFragment.toArray();
+
+    const edits: { index: number; markdown: string; json: string }[] = [];
+    for (const changed of changedTopLevel) {
+      const index = children.indexOf(changed as (typeof children)[number]);
+      if (index < 0 || !(changed instanceof Y.XmlElement)) return false;
+      const json = topLevelJson(changed);
+      if (json === null) return false;
+      const serializedJson = JSON.stringify(json);
+      if (FULL_PATH_NODE_TYPES.some((type) => serializedJson.includes(`"type":${type}`)))
+        return false;
+      const markdown = mdManager.serialize({ type: 'doc', content: [json] }).replace(/\n+$/, '');
+      edits.push({ index, markdown, json: serializedJson });
+    }
+
+    const { frontmatter, body } = stripFrontmatter(text);
+    if (incrementalParser.cachedBody !== body) {
+      incrementalParser.update(body) ?? incrementalParser.parseFull(body);
+    }
+    const ranges = incrementalParser.cachedBlockRanges();
+    const blocks = incrementalParser.cachedBlockJson();
+    if (!ranges || !blocks || ranges.length !== children.length) return false;
+
+    // Alignment: the nearest unchanged neighbour on each side of every edit.
+    const edited = new Set(edits.map((edit) => edit.index));
+    const checked = new Set<number>();
+    for (const { index } of edits) {
+      for (const step of [-1, 1]) {
+        let neighbour = index + step;
+        while (edited.has(neighbour)) neighbour += step;
+        if (neighbour < 0 || neighbour >= children.length || checked.has(neighbour)) continue;
+        checked.add(neighbour);
+        const json = topLevelJson(children[neighbour]);
+        if (json === null || !sameIgnoringPositions(json, blocks[neighbour])) return false;
+      }
+    }
+
+    edits.sort((a, b) => a.index - b.index);
+    // Duplication gate pre-filter, scoped to the edited blocks: a line they
+    // now carry more often than their source did may be a CRDT race
+    // duplicate, which only the full path can tell from a paste and recover.
+    const editedBefore = edits
+      .map((edit) => body.slice(ranges[edit.index].start, ranges[edit.index].end))
+      .join('\n\n');
+    const editedAfter = edits.map((edit) => edit.markdown).join('\n\n');
+    if (overMultipliedBridgeBodyLines(editedAfter, editedBefore).length > 0) return false;
+
+    let newBody = '';
+    let cursor = 0;
+    for (const edit of edits) {
+      newBody += body.slice(cursor, ranges[edit.index].start) + edit.markdown;
+      cursor = ranges[edit.index].end;
+    }
+    newBody += body.slice(cursor);
+
+    const reparsed = incrementalParser.update(newBody);
+    if (
+      reparsed === null ||
+      reparsed.childCount !== children.length ||
+      !edits.every((edit) => JSON.stringify(reparsed.child(edit.index).toJSON()) === edit.json)
+    ) {
+      return false;
+    }
+
+    const newText = prependFrontmatter(frontmatter, newBody);
+    doc.transact(() => {
+      applyByPrefixSuffix(ytext, text, newText);
+    }, OBSERVER_SYNC_ORIGIN);
+    refreshYTextWitness();
+    // The fragment is parse(newText) only if it was parse(text) before this
+    // edit: then every unchanged block is the parser's, and the edited ones
+    // were just checked. After a full-path or paired write it may not be.
+    if (drainStartDerivedText === text) {
+      markFragmentDerivedFromText(doc, newText);
+      pendingCanonicalMd = () =>
+        prependFrontmatter(frontmatter, mdManager.serialize(reparsed.toJSON()));
+      canonicalWitnessCoherent = true;
+    }
+    incrementServerObserverFire('a');
+    return true;
+  };
+
+  /** One fragment child as PM JSON, or `null` if it is not a single node. */
+  const topLevelJson = (child: unknown): JSONContent | null => {
+    if (!(child instanceof Y.XmlElement)) return null;
+    const scratch = new Y.Doc().getXmlFragment('block');
+    scratch.insert(0, [child.clone()]);
+    const root = yXmlFragmentToProseMirrorRootNode(scratch, schema);
+    return root.childCount === 1 ? (root.child(0).toJSON() as JSONContent) : null;
+  };
+
   const runObserverASync = (): void => {
+    try {
+      if (tryIncrementalObserverA()) {
+        opts.onObserverAPath?.('incremental');
+        return;
+      }
+    } catch (err) {
+      console.warn('[Server Observer A] incremental path failed — using the full path:', err);
+      incrementalParser.reset();
+    } finally {
+      resetChangedTopLevel();
+    }
+    opts.onObserverAPath?.('full');
     withSpanSync(
       'observer.runASync',
       { attributes: { 'doc.name': opts.docName ?? '' } },
@@ -1794,7 +1943,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
    * Origin guards prevent infinite loops and opt the paired-write fast-path
    * out of settlement-handler dispatch.
    */
-  const observerA = (_events: Y.YEvent<Y.XmlFragment>[], transaction: Y.Transaction) => {
+  const observerA = (events: Y.YEvent<Y.XmlFragment>[], transaction: Y.Transaction) => {
     // Self-skip: our own cross-CRDT write
     if (transaction.origin === OBSERVER_SYNC_ORIGIN) {
       // Persistence reconciles the fragment under this origin too; only B's
@@ -1805,6 +1954,9 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
     // Someone else changed the fragment: Observer B's identity mapping no
     // longer describes it, and it is no longer known to be parse(Y.Text).
     resetBUpdateMeta();
+    if (drainStartDerivedText === undefined) {
+      drainStartDerivedText = fragmentDerivation(doc)?.text ?? null;
+    }
     clearFragmentDerivation(doc);
 
     // Paired-write origins atomically wrote both XmlFragment and Y.Text inside
@@ -1825,6 +1977,8 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
     // generations, so the router's residual-tolerance comparison is
     // meaningless and it falls back to Path A in this window.
     if (isPairedWriteOrigin(transaction.origin)) {
+      // The fragment is no longer known to be the parse of any text.
+      drainStartDerivedText = undefined;
       try {
         const frontmatter = readCurrentFm();
         refreshYTextWitness();
@@ -1850,6 +2004,18 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
       return;
     }
 
+    for (const event of events) {
+      let target: Y.AbstractType<unknown> | null = event.target as Y.AbstractType<unknown>;
+      if (target === (xmlFragment as unknown)) {
+        topLevelStructureChanged = true;
+        continue;
+      }
+      while (target && target.parent !== (xmlFragment as unknown)) {
+        target = target.parent as Y.AbstractType<unknown> | null;
+      }
+      if (target) changedTopLevel.add(target);
+      else topLevelStructureChanged = true;
+    }
     xmlDirty = true;
   };
 

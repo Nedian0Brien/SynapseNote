@@ -41,14 +41,12 @@ describe('fragment derivation mark', () => {
     const { doc, xmlFragment, ytext, cleanup } = setup('# Title\n\nFirst paragraph.\n');
     doc.transact(() => ytext.insert(ytext.length, '\nMore.\n'), remote);
     expect(fragmentDerivation(doc)).toBeDefined();
-    const paragraph = xmlFragment
-      .toArray()
-      .find((n) => n instanceof Y.XmlElement && n.nodeName === 'paragraph');
-    const text = (paragraph as Y.XmlElement)
-      .toArray()
-      .find((c) => c instanceof Y.XmlText) as Y.XmlText;
-    doc.transact(() => text.insert(0, 'Edited '), remote);
-    // Observer A rewrote Y.Text from the fragment; the fragment was not derived from it.
+    // A new top-level block goes through Observer A's full path, which
+    // rewrites Y.Text from the fragment; the fragment was not derived from it.
+    const paragraph = new Y.XmlElement('paragraph');
+    paragraph.insert(0, [new Y.XmlText('Inserted.')]);
+    doc.transact(() => xmlFragment.insert(1, [paragraph]), remote);
+    expect(ytext.toString()).toContain('Inserted.');
     expect(fragmentDerivation(doc)).toBeUndefined();
     cleanup();
   });
