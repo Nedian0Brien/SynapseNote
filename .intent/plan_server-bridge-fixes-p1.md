@@ -56,3 +56,13 @@ bun run test:file -- packages/server/src/api-agent-patch.test.ts
 bun run --filter @nedian0brien/synapsenote-server test:manifest
 cargo test --manifest-path native/editor-spike/yrs-ffi/Cargo.toml   # 스파이크 브랜치
 ```
+
+## 결과 (2026-09-28)
+
+- core: `utf16.test.ts` 6개, `apply-diff.surrogate.test.ts` 12개 통과. 고치기 전 `applyFastDiff`는
+  `a😀b`→`a😁b`에서 `retain 2`로 쌍을 갈라 서버 문서가 `a�\uDE01b`로 깨졌다.
+- 서버: `surrogate-normalizer.test.ts` 5개, `api-agent-patch.test.ts` 6개(서로게이트 2개 추가) 통과.
+  기존 `bridge-intake`(33), `agent-patch-crdt-convergence`(2), `api-agent-patch-ytext-truth`(6),
+  `external-change`(12), `server-observers`(51) 통과. `test:manifest`에서 새 테스트는 `unit`에 한 번.
+- 스파이크 브랜치: 패치한 yrs에서 `tests/surrogate.rs` 통과, 패치 전 yrs에서는 `delete-high`부터 실패.
+- dev 서버(:5181): agent-patch 😀→😁 뒤 서버 문서와 디스크 파일이 `😁`, 짝 없는 `find`는 400.
