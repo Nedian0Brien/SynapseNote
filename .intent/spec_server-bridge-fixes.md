@@ -9,7 +9,9 @@ date: 2026-09-28
 
 # 서버 문서 동기화 결함 수정 — 명세
 
-## 원인 (P0 조사로 확정)
+## 원인 (가설, P0에서 재현으로 확정)
+
+결함 3은 core에서 직접 실험해 재현했다. 나머지는 코드를 읽고 세운 가설이다.
 
 - **결함 4, 서로게이트.** 서버 스스로도 쌍을 쪼갠다. `applyFastDiff`
   (`core/src/bridge/apply-diff.ts:40-91`)와 `apply-by-prefix-suffix.ts`가 UTF-16 단위로
@@ -46,13 +48,15 @@ date: 2026-09-28
 - [ ] R3 agent-patch·agent-write는 `find`/`replace`/`content`에 짝 없는 서로게이트가 있으면
       400으로 거절한다.
 - [ ] R4 이스케이프: 직렬화는 ASCII 문장부호에만 `\`를 붙인다. `escapeMark`가 붙은 다른
-      글자는 그대로 쓴다. 이스케이프 글자 옆 삽입을 반복해도 결과 길이는 넣은 글자 수만큼만 는다.
+      글자는 그대로 쓴다. 편집 뒤 새 편집 없이 `serialize∘parse`를 한 번 더 돌려도 결과가
+      바뀌지 않고, 이스케이프 글자 옆 삽입을 반복해도 삽입 글자당 늘어나는 바이트가 2 이하다.
 - [ ] R5 처리량: 5,000줄 문서에 초당 10회 편집 30초(`Y.Text`, fragment 각각)에서 전 편집
       반영, 반영 지연 p95 ≤ 100ms, `GET /api/config` p95 ≤ 100ms(로컬 서버 처리 시간).
 - [ ] R6 유실: 삽입 전용 soak에서 사라진 마커 0 — fragment 합성 작성자 단독, 세 작성자 전체,
       그리고 y-prosemirror 알고리즘(ProseMirror 트랜잭션 → `updateYFragment` + mapping)을
       쓰는 작성자.
-- [ ] R7 크기 안정: 세 작성자 10분 soak 뒤 해시 30초 안 일치, 문서 크기 ≤ 초기 + 삽입량.
+- [ ] R7 크기 안정: 세 작성자 10분 soak 뒤 해시 30초 안 일치, 문서 크기 ≤ 초기 크기 +
+      삽입 글자 수 × 2바이트(삽입한 `*` 등이 `\*`로 저장되는 정상 이스케이프를 허용).
 - [ ] R8 결함마다 재현 테스트가 있고 `server-test-manifest.ts`에 등록된다. 바꾼 파일을
       덮는 기존 테스트가 통과한다.
 
@@ -80,10 +84,13 @@ date: 2026-09-28
   Observer A의 `overMultipliedBridgeBodyLines`를 바뀐 블록으로 한정한다. (3) Observer B를
   바뀐 블록만 다시 파싱해 해당 fragment 구간만 갱신한다. 각 갈래 뒤에 `server-load.ts`로
   재측정하고, 목표에 도달하면 멈춘다.
-- **P3 유실.** (1) 저장 시 invariant 실패에서 fragment 전용 내용이 있으면 `Y.Text`로 먼저
-  옮기고(A 실행) 그다음 판정한다. (2) `updateYFragment`에 이전 드레인의 mapping을 넘겨
-  같은 노드를 제자리 갱신하게 한다. (3) A가 편집을 옮기지 않고 나가는 출구(in-sync,
-  duplication, freshness)에서 fragment 전용 내용을 버리지 않는다. 각 수정 뒤 soak으로 잰다.
+- **P3 유실.** 결함 2와 3은 이어져 있을 가능성이 크다. 이스케이프 누적이 재파싱 결과의 블록
+  구조를 바꾸면 노드가 새로 만들어지고 그 안의 동시 입력이 사라진다. 그래서 P2·P4 뒤에
+  삽입 전용 fragment soak을 다시 돌리고, 남은 유실이 있을 때만 아래 후보에서 고른다.
+  (1) 저장 시 invariant 실패에서 fragment 전용 내용을 `Y.Text`로 먼저 옮긴 뒤 판정한다.
+  (2) A가 편집을 옮기지 않고 나가는 출구(in-sync, duplication, freshness)에서 fragment 전용
+  내용을 버리지 않는다. (3) `updateYFragment`에 드레인 사이 mapping을 넘긴다 — y-tiptap
+  내부에 기대는 방법이라 마지막 수단이다.
 
 ## 버린 대안
 
