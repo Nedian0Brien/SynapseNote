@@ -6,7 +6,7 @@
  * comes from the core parser through `IncrementalLayout`; typing, keys,
  * formatting shortcuts, paste and copy go through the core editing model
  * (`applyActionsInWindow`), whose result is sent back as minimal changes.
- * Code fences and tables use editable block widgets. Remaining block types
+ * Code fences, tables, math and Mermaid use editable block widgets. Remaining block types
  * keep their source until their P3 widgets land.
  */
 
@@ -23,6 +23,7 @@ import {
 import {
   applyActionsInWindow,
   type BlockKind,
+  diagramWidgetSource,
   type EditAction,
   type EditState,
   IncrementalLayout,
@@ -33,6 +34,7 @@ import {
 import { isMarkdown } from '../clipboard/is-markdown';
 import { pasteShiftHeld } from '../clipboard/shift-tracker';
 import { CodeBlockWidget, TableBlockWidget } from './block-widgets';
+import { DiagramBlockWidget } from './diagram-widgets';
 
 // ── state ───────────────────────────────────────────────────────────────────
 
@@ -87,9 +89,12 @@ function blockDecorations(layout: IncrementalLayout, source: string): Decoration
       const inner =
         widget.node === 'table'
           ? new TableBlockWidget(raw, widget.from, widget.to, createLiveExtension)
-          : widget.node === 'code' && /^ {0,3}(?:`{3,}|~{3,})/.test(raw)
-            ? new CodeBlockWidget(raw, widget.from, widget.to)
-            : null;
+          : widget.node === 'mdxJsxFlowElement' &&
+              diagramWidgetSource(source, widget.from, widget.to)
+            ? new DiagramBlockWidget(raw, widget.from, widget.to)
+            : widget.node === 'code' && /^ {0,3}(?:`{3,}|~{3,})/.test(raw)
+              ? new CodeBlockWidget(raw, widget.from, widget.to)
+              : null;
       if (inner) {
         ranges.push({
           from: widget.from,

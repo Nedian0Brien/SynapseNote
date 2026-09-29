@@ -52,5 +52,32 @@
     "from": 0,
     "edit": { "type": "table-cell", "row": 1, "column": 0, "text": "a|b" },
     "after": "| a | b |\n| --- | --- |\n|  a\\|b| y |"
+  },
+  {
+    "id": "math-dollar-body",
+    "group": "widget.math-body",
+    "rule": "3",
+    "before": "before\n\n$$\nx^2\n$$\n\nafter",
+    "from": 8,
+    "edit": { "type": "diagram-body", "text": "y^2" },
+    "after": "before\n\n$$\ny^2\n$$\n\nafter"
+  },
+  {
+    "id": "math-fence-body",
+    "group": "widget.math-body",
+    "rule": "3",
+    "before": "```math\nx^2\n```",
+    "from": 0,
+    "edit": { "type": "diagram-body", "text": "y^2" },
+    "after": "```math\ny^2\n```"
+  },
+  {
+    "id": "mermaid-fence-body",
+    "group": "widget.mermaid-body",
+    "rule": "3",
+    "before": "```mermaid\ngraph TD; A-->B\n```",
+    "from": 0,
+    "edit": { "type": "diagram-body", "text": "graph TD; B-->C" },
+    "after": "```mermaid\ngraph TD; B-->C\n```"
   }
 ]

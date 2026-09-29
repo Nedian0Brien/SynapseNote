@@ -91,7 +91,7 @@
 }
 
 [data-editor-variant="live"] .cm-live-code-block {
-  @apply my-2 overflow-hidden rounded-md border border-border bg-muted;
+  @apply overflow-hidden rounded-md border border-border bg-muted;
 }
 [data-editor-variant="live"] .cm-live-code-language {
   @apply block w-full border-0 border-b border-border bg-transparent px-3 py-1 font-mono text-xs text-muted-foreground outline-none;
@@ -104,7 +104,7 @@
   @apply ring-2 ring-ring ring-inset;
 }
 [data-editor-variant="live"] .cm-live-table-wrap {
-  @apply my-2 overflow-x-auto;
+  @apply overflow-x-auto;
 }
 [data-editor-variant="live"] .cm-live-table {
   @apply w-full border-collapse;
@@ -127,4 +127,17 @@
 }
 [data-editor-variant="live"] .cm-live-table-cell .cm-gutters {
   display: none;
+}
+
+[data-editor-variant="live"] .cm-live-diagram-block {
+  @apply overflow-hidden rounded-md border border-border bg-background;
+}
+[data-editor-variant="live"] .cm-live-diagram-preview {
+  @apply min-h-12 overflow-auto px-3 py-4;
+}
+[data-editor-variant="live"] .cm-live-diagram-body {
+  @apply block min-h-20 w-full resize-y border-0 border-t border-border bg-muted px-3 py-2 font-mono text-sm leading-relaxed outline-none;
+}
+[data-editor-variant="live"] .cm-live-diagram-body:focus-visible {
+  @apply ring-2 ring-ring ring-inset;
 }

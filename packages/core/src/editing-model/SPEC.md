@@ -46,6 +46,8 @@ SynapseNote의 편집기는 Markdown 원문(`Y.Text('source')`)을 직접 편집
 바꾼다. 본문에 닫는 울타리와 같은 줄이 생기면 두 울타리를 함께 늘린다. (widget.code-body, widget.code-language)
 표 위젯은 각 칸을 따로 편집한다. 칸을 고쳐도 주변 공백·파이프·정렬선·다른 칸의 원문은 그대로 둔다. 칸 안의
 파이프는 이스케이프하고 줄바꿈은 공백으로 바꾼다. (widget.table-cell)
+수식(`$$`, `\\[`, ` ```math `)과 Mermaid(` ```mermaid `) 위젯은 원문 구분자를 숨기고 기존 렌더러로 미리 보인다.
+본문 편집은 구분자 사이의 원문 범위만 바꾼다. (widget.math-body, widget.mermaid-body)
 
 - 문단 안의 한 줄 바꿈(soft break)은 줄바꿈으로 보인다. 원문의 줄 구조를 그대로 보이기 위해서다. (hide.soft-break)
 - 블록 사이의 빈 줄은 빈 줄로 보이고, 커서가 놓일 수 있다. (hide.blank-lines)
@@ -174,7 +176,7 @@ id가 `*`로 끝나면 그 접두어로 시작하는 group을 모두 가리킨�
 정규화한다). `actions`는 차례로 적용하는 동작의 목록이다.
 
 `fixtures/widget.json`: `{ id, group, rule, before, from, edit, after }`. `from`은 블록 시작 오프셋이고,
-`edit`는 `code-body`·`code-language`·`table-cell` 중 하나다. 결과는 바뀐 원문 전체로 비교한다.
+`edit`는 `code-body`·`code-language`·`table-cell`·`diagram-body` 중 하나다. 결과는 바뀐 원문 전체로 비교한다.
 
 - `{ "type": "text", "text": "…" }`: 글자를 하나씩 친다.
 - `{ "type": "key", "key": "Backspace" | "Delete" | "Enter" | "Shift-Enter" | "Tab" | "Shift-Tab" | "ArrowRight" |

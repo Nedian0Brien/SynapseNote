@@ -2,6 +2,8 @@ export {
   type BlockWidgetEdit,
   type CodeWidgetSource,
   codeWidgetSource,
+  type DiagramWidgetSource,
+  diagramWidgetSource,
   type TableCellSource,
   type TableWidgetSource,
   tableWidgetSource,

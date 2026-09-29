@@ -4859,6 +4859,10 @@ msgstr "Forces"
 msgid "Form closed"
 msgstr "Form closed"
 
+#: src/editor/live/diagram-widgets.ts
+msgid "Formula"
+msgstr "Formula"
+
 #: src/components/DatabaseComputedPropertyDialog.tsx
 msgid "Formula is valid"
 msgstr "Formula is valid"
@@ -6274,6 +6278,10 @@ msgstr "Memos"
 #: src/editor/paste-format/PasteFormatMenu.tsx
 msgid "Mention"
 msgstr "Mention"
+
+#: src/editor/live/diagram-widgets.ts
+msgid "Mermaid chart"
+msgstr "Mermaid chart"
 
 #: src/components/MermaidDocEditor.tsx
 msgid "Mermaid diagram"

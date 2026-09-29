@@ -16,14 +16,18 @@ interface WidgetPosition {
   to: number;
 }
 
-function writeWidget(view: EditorView, position: WidgetPosition, edit: BlockWidgetEdit): void {
+export function writeWidget(
+  view: EditorView,
+  position: WidgetPosition,
+  edit: BlockWidgetEdit,
+): void {
   const source = view.state.doc.toString();
   const updated = updateBlockWidget(source, position.from, position.to, edit);
   if (updated === null || updated === source) return;
   view.dispatch({ changes: sourceChanges(source, updated), userEvent: 'input.widget' });
 }
 
-function syncInput(input: HTMLInputElement | HTMLTextAreaElement, value: string): void {
+export function syncInput(input: HTMLInputElement | HTMLTextAreaElement, value: string): void {
   if (input.value === value) return;
   const active = document.activeElement === input;
   const start = active ? (input.selectionStart ?? 0) : 0;

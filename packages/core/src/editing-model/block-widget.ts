@@ -20,9 +20,17 @@ export interface TableWidgetSource {
   align: Table['align'];
 }
 
+export interface DiagramWidgetSource {
+  kind: 'math' | 'mermaid';
+  body: Range;
+  /** Formula or chart text as interpreted by the shared parser. */
+  preview: string;
+}
+
 export type BlockWidgetEdit =
   | { type: 'code-body'; text: string }
   | { type: 'code-language'; text: string }
+  | { type: 'diagram-body'; text: string }
   | { type: 'table-cell'; row: number; column: number; text: string };
 
 let parser: MarkdownManager | undefined;
@@ -89,6 +97,50 @@ export function tableWidgetSource(
   return { rows: rows as TableCellSource[][], align: table.align };
 }
 
+/** Locate the editable source inside a promoted math or Mermaid block. */
+export function diagramWidgetSource(
+  source: string,
+  from: number,
+  to: number,
+): DiagramWidgetSource | null {
+  const raw = source.slice(from, to);
+  if (!/^(?:\$\$|\\\[|\[| {0,3}(?:`{3,}|~{3,}))/.test(raw)) return null;
+  const node = md().parseToMdast(raw).children[0];
+  if (node?.type !== 'mdxJsxFlowElement') return null;
+  const kind =
+    node.name === 'MermaidFence'
+      ? 'mermaid'
+      : node.name === 'DollarMath' || node.name === 'MathFence'
+        ? 'math'
+        : null;
+  if (!kind) return null;
+  const attribute = node.attributes.find(
+    (item) =>
+      item.type === 'mdxJsxAttribute' && item.name === (kind === 'math' ? 'formula' : 'chart'),
+  );
+  const preview =
+    attribute?.type === 'mdxJsxAttribute' && typeof attribute.value === 'string'
+      ? attribute.value
+      : '';
+  const fenced = codeWidgetSource(source, from, to);
+  if (fenced) return { kind, body: fenced.body, preview };
+  if (node.name !== 'DollarMath') return null;
+  const firstNewline = raw.indexOf('\n');
+  const lastNewline = raw.lastIndexOf('\n');
+  if (firstNewline < 0 || lastNewline <= firstNewline) return null;
+  const opening = raw.slice(0, firstNewline).trim();
+  const closing = raw.slice(lastNewline + 1).trim();
+  if (
+    !(
+      (opening === '$$' && closing === '$$') ||
+      (opening === '\\[' && closing === '\\]') ||
+      (opening === '[' && closing === ']')
+    )
+  )
+    return null;
+  return { kind, body: [from + firstNewline + 1, from + lastNewline], preview };
+}
+
 /** Replace only the source range owned by an editable widget part. */
 export function updateBlockWidget(
   source: string,
@@ -108,6 +160,14 @@ export function updateBlockWidget(
         slashes.length % 2 ? `${slashes}|` : `${slashes}\\|`,
       );
     return replace([cell.from, cell.to], text);
+  }
+  if (edit.type === 'diagram-body') {
+    const diagram = diagramWidgetSource(source, from, to);
+    if (!diagram) return null;
+    if (codeWidgetSource(source, from, to)) {
+      return updateBlockWidget(source, from, to, { type: 'code-body', text: edit.text });
+    }
+    return replace(diagram.body, edit.text);
   }
   const code = codeWidgetSource(source, from, to);
   if (!code) return null;

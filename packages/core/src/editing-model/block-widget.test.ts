@@ -1,5 +1,10 @@
 import { describe, expect, test } from 'bun:test';
-import { codeWidgetSource, tableWidgetSource, updateBlockWidget } from './block-widget.ts';
+import {
+  codeWidgetSource,
+  diagramWidgetSource,
+  tableWidgetSource,
+  updateBlockWidget,
+} from './block-widget.ts';
 import { widgetFixtures } from './fixtures.ts';
 import { computeLayout } from './layout.ts';
 
@@ -32,5 +37,18 @@ describe('block widget source edits', () => {
     const code = codeWidgetSource(source, 0, source.length);
     expect(source.slice(...(code?.language ?? [0, 0]))).toBe('ts');
     expect(source.slice(...(code?.body ?? [0, 0]))).toBe('a');
+  });
+
+  test('diagram ranges use parsed formula and chart text', () => {
+    const math = '$$\nx^2\n$$';
+    const bracket = '\\[\nx^2\n\\]';
+    const mermaid = '```mermaid\ngraph TD; A-->B\n```';
+    expect(diagramWidgetSource(math, 0, math.length)).toEqual({
+      kind: 'math',
+      body: [3, 6],
+      preview: 'x^2',
+    });
+    expect(diagramWidgetSource(bracket, 0, bracket.length)?.preview).toBe('x^2');
+    expect(diagramWidgetSource(mermaid, 0, mermaid.length)?.preview).toBe('graph TD; A-->B');
   });
 });

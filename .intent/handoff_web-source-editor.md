@@ -4,7 +4,7 @@
 
 웹 앱에 Markdown 원문(`Y.Text('source')`)을 CodeMirror 6로 직접 편집하면서 기호를 숨기는 `live` 편집 모드가
 생겼다. 편집 규칙은 core의 순수 함수이고, 네이티브 앱도 같은 명세와 fixture를 쓴다. P0~P2(뼈대), P2c(기존
-편집기 동작 옮기기), P3a(코드 울타리·표 위젯)가 끝났다. P3의 나머지 블록은 진행 전이다.
+편집기 동작 옮기기), P3a(코드 울타리·표 위젯), P3b(수식·Mermaid 위젯)가 끝났다. P3의 나머지 블록은 진행 전이다.
 
 ## 1. 사용자가 정한 것
 
@@ -33,7 +33,7 @@
 ## 2. 작업 위치와 상태
 
 - **브랜치·워크트리:** `codex/web-source-editor`, `.worktree/web-source-editor`
-  - P3a 구현 커밋은 이후 `git log -1`로 확인한다. PR은 아직 없다.
+  - P3b 구현 커밋은 이후 `git log -1`로 확인한다. PR은 아직 없다.
   - main에는 사용자가 끝났다고 명시적으로 확인한 뒤에만 병합한다.
 - **아티팩트:** `.intent/intent_web-source-editor.md`(수락됨), `spec_web-source-editor.md`(R1~R10, 단계 P0~P6),
   `plan_web-source-editor-p0.md` `-p1.md` `-p2.md` `-p2c.md`. 계획 파일 끝에 단계별 결과가 있다.
@@ -54,6 +54,16 @@
 - 뒤에 남은 P3: 들여쓴 코드, 수식, Mermaid, 콜아웃·아코디언, 이미지·파일 임베드, MDX, 인라인 데이터베이스,
   frontmatter. P2c 사용자 확인도 아직 별도로 받지 않았다.
 
+### P3b 추가 (2026-09-29)
+
+- `.intent/plan_web-source-editor-p3b.md`에 범위와 검증 결과를 적었다. `diagramWidgetSource`가 `DollarMath`,
+  `MathFence`, `MermaidFence`의 본문 범위를 core 파서로 찾고 `diagram-body`가 그 범위만 바꾼다.
+- `packages/app/src/editor/live/diagram-widgets.ts`가 기존 KaTeX·Mermaid 렌더러를 위젯 미리보기에 쓴다. 입력은
+  별도 본문 칸에서 원문으로 보낸다. 블록 장식의 세로 margin을 제거해 CodeMirror의 높이 계산을 따른다.
+- 브라우저 확인 문서: `http://localhost:5183/#/p3b-widget-review-1790690021249` (임시 콘텐츠 폴더가 살아 있는 동안).
+  수식·Mermaid 표시와 본문 수정 후 새로고침 저장을 확인했다.
+- 뒤에 남은 P3: 콜아웃·아코디언, 이미지·파일 임베드, MDX, 인라인 데이터베이스, frontmatter, 들여쓴 코드.
+
 ## 3. 끝난 단계
 
 | 단계 | 커밋 | 내용 |
@@ -64,7 +74,8 @@
 | P2b | `20b63281` | 앱 `live` 모드: `packages/app/src/editor/live/live-extension.ts`, `styles/editor/live-mode.css`, 모드 전환 |
 | — | `68040e03` | 줄 첫머리 블록 기호는 스페이스·Enter에서 블록이 된다 |
 | P2c | `ce0ef92f` | 기존 편집기 동작 이식(아래), 번호 목록 표시 번호, 블록 안 원문 편집, 레이아웃 캐시 |
-| P3a | 구현 커밋은 `git log -1` | 코드 울타리·표의 편집 가능한 블록 위젯과 범위별 원문 변경 |
+| P3a | `0791f80f` | 코드 울타리·표의 편집 가능한 블록 위젯과 범위별 원문 변경 |
+| P3b | 구현 커밋은 `git log -1` | 수식·Mermaid의 편집 가능한 미리보기와 범위별 원문 변경 |
 
 P2c에서 옮긴 동작은 다음과 같다. 각 동작의 근거 파일은 `plan_web-source-editor-p2c.md`에 있다.
 
@@ -97,7 +108,7 @@ P2c에서 옮긴 동작은 다음과 같다. 각 동작의 근거 파일은 `pla
    - 다음 할 일: `use-document-stats` 문제(5절)를 비켜서 브라우저에서 다시 재고, 장식 반영과 React 처리를 나눠 잰다.
 4. **P3 블록 위젯.** 대상: 코드 블록, 표(칸 단위), 수식, Mermaid, 콜아웃·아코디언, 이미지·파일 임베드, MDX 컴포넌트,
    인라인 데이터베이스, frontmatter.
-   - 코드 울타리와 표는 P3a에서 위젯으로 옮겼다. 들여쓴 코드와 나머지 블록은 아직 원문 그대로 보인다.
+   - 코드 울타리·표·수식·Mermaid는 P3a·P3b에서 위젯으로 옮겼다. 들여쓴 코드와 나머지 블록은 아직 원문 그대로 보인다.
    - 남은 위젯을 그리면 `editBlockSource`의 원문 편집 경로를 해당 위젯 편집으로 바꾼다. 속성 변경은 해당 원문 범위만 바꾼다.
 5. **P4 기능 이전.**
    - 슬래시 메뉴, 도구 막대, 찾기.
@@ -161,6 +172,7 @@ main에도 있는 문제다. 작업 칩 두 개를 사용자에게 제안해 두
   - `packages/app/src/editor/live/live-extension.ts`: 레이아웃 StateField, 커서 의도 필드(`side`·`pending`·`undo`),
     keymap, inputHandler(IME 조합 중에는 건너뜀), 붙여넣기·복사, 장식과 위젯.
   - `packages/app/src/editor/live/block-widgets.ts`: 코드·표 블록 위젯, 표 칸 안의 작은 live 편집기.
+  - `packages/app/src/editor/live/diagram-widgets.ts`: 수식·Mermaid 본문 입력과 기존 렌더러 미리보기.
   - `SourceEditor.tsx`: `variant` Compartment로 source와 live를 바꾼다.
   - `use-editor-mode.ts`: 모드는 `'wysiwyg' | 'source' | 'live'`이고 localStorage 키는 `ok-editor-mode-v1`다.
 
@@ -174,6 +186,8 @@ bun run test:file -- packages/app/src/editor/live/live-extension.dom.test.tsx
 - P2c 결과: core 158개 통과(무작위 편집 2,840건 실패 0, 5,008줄 창 편집 p50 3.4ms / p95 5.0ms). live DOM 108개 통과.
 - P3a 추가 검증: core 블록 범위·fixture 테스트 16개와 live DOM 113개 통과. core·app 타입 검사 통과. 브라우저에서
   코드 본문·표 칸 수정 후 새로고침해 저장을 확인했다.
+- P3b 추가 검증: core 위젯·fixture 테스트 20개와 live DOM 115개 통과. core·app 타입 검사 통과. 브라우저에서
+  수식·Mermaid 렌더링, 편집, 새로고침 저장을 확인했다.
 - **DOM 테스트:** edit fixture를 실제 EditorView의 inputHandler와 keymap으로 재생한다. 키 이벤트는 브라우저처럼
   보낸다(Shift는 글자를 대문자로 바꾸고 `keyCode`를 넣는다). 이렇게 하지 않으면 Cmd+Shift+B가 Cmd+B로 잡힌다.
 - **새 동작을 넣는 순서:** SPEC.md 문구 → `edit.json` fixture → `edit.ts` → 앱 keymap → DOM 테스트 대응표.

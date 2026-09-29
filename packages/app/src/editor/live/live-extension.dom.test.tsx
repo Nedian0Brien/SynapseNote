@@ -209,4 +209,28 @@ describe('live editor block widgets', () => {
     expect(body.value).toBe('remote');
     expect(document.activeElement).toBe(body);
   });
+
+  test('math delimiters are hidden and formula edits preserve surrounding source', () => {
+    const view = mount('before\n\n$$\nx^2\n$$\n\nafter', 0, 0);
+    const widget = view.dom.querySelector('.cm-live-diagram-block');
+    const body = widget?.querySelector<HTMLTextAreaElement>('.cm-live-diagram-body');
+    expect(body?.value).toBe('x^2');
+    expect(widget?.textContent).not.toContain('$$');
+    if (!body) throw new Error('Math body missing');
+    body.value = 'y^2';
+    body.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(view.state.doc.toString()).toBe('before\n\n$$\ny^2\n$$\n\nafter');
+  });
+
+  test('Mermaid fence is hidden and chart source edits preserve the fence', () => {
+    const view = mount('```mermaid\ngraph TD; A-->B\n```', 0, 0);
+    const widget = view.dom.querySelector('.cm-live-diagram-block');
+    const body = widget?.querySelector<HTMLTextAreaElement>('.cm-live-diagram-body');
+    expect(body?.value).toBe('graph TD; A-->B');
+    if (!body) throw new Error('Mermaid body missing');
+    body.value = 'graph TD; B-->C';
+    body.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(view.state.doc.toString()).toBe('```mermaid\ngraph TD; B-->C\n```');
+    expect(view.dom.querySelector('.cm-live-diagram-body')).toBe(body);
+  });
 });
