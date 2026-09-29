@@ -74,6 +74,11 @@ SynapseNote의 편집기는 Markdown 원문(`Y.Text('source')`)을 직접 편집
   이스케이프한다. (edit.escape-opener, edit.escape-no-trigger)
   - 줄 첫머리 `# `~`###### `: 제목. (edit.rule-heading)
   - `- ` `* ` `1. `: 목록. `[ ] ` `[x] `: 작업 항목. `> `: 인용. (edit.rule-list, edit.rule-task, edit.rule-quote)
+  - 줄 첫머리의 블록 기호는 발동 글자를 칠 때까지 친 글자 그대로 보인다. Markdown은 기호만 있는 줄도 블록으로
+    읽으므로(`-`는 빈 목록 항목, `#`은 빈 제목, ```` ``` ````는 코드 블록), 친 기호를 이스케이프해 둔다(`\-`, `1\.`,
+    ``` ``\` ```). 발동 글자(공백, 코드 블록·수평선·수식 블록은 Enter)를 치면 이스케이프를 풀어 블록으로 바꾼다. 기호
+    뒤에 다른 글자를 쳐서 줄이 블록이 되지 않으면(`-5`, `#태그`, `**굵게**`) 이스케이프를 푼다. 줄이 블록이 되면
+    (`>a`는 인용) 이스케이프를 남긴다. (edit.rule-list, edit.rule-heading, edit.rule-quote, edit.rule-fence)
   - 닫는 기호 입력(`**a**`의 마지막 `*`, `` `a` ``의 닫는 백틱): 강조·코드. (edit.rule-emphasis, edit.rule-code)
   - ` ``` `+Enter: 코드 블록. `---`+Enter: 수평선. `$$`+Enter: 수식 블록. (edit.rule-fence)
   - `[[`: 위키 링크 제안. `/`: 슬래시 메뉴. `#`+글자: 태그 제안. (edit.rule-suggest)

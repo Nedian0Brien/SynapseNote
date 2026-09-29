@@ -51,13 +51,19 @@ const MARK_TYPE: Record<ToggleMark, MarkType> = {
 const ESCAPABLE = /[!-/:-@[-`{-~]/;
 /** Characters escaped when pasted as plain text anywhere on a line (SPEC.md §8). */
 const PASTE_INLINE = /[\\*_`[\]<>~=|]/g;
-/** A line holding only a block marker being typed (§5: not judged for escaping yet). */
+/**
+ * A line holding only a block marker still being typed. Markdown already reads
+ * most of these as a block (`-` is an empty list item, `#` an empty heading),
+ * so the editor keeps the typed marker escaped until its trigger (§5).
+ */
 const PARTIAL_BLOCK_MARKER =
   /^\s*(?:#{1,6}|[-*+]|\d+[.)]?|>|[-*+] \[[ xX]?\]?|-{2,}|\*{2,}|_{2,}|`+|~{2,}|\${1,2})$/;
 /** A block marker completed by a space (§5 trigger). */
 const BLOCK_MARKER = /^\s*(?:#{1,6}|[-*+]|\d+[.)]|>|[-*+] \[[ xX]\])$/;
 const LIST_ITEM = /^(\s*)([-*+]|(\d+)([.)]))( \[[ xX]\])? /;
 const FENCE_LINE = /^\s*(`{3,}|~{3,}|\$\$)[\w-]*\s*$/;
+/** A thematic break completed by Enter (§5 trigger). */
+const THEMATIC_LINE = /^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/;
 
 export function initialState(source: string, anchor: number, head = anchor): EditState {
   return { source, anchor, head, side: 'default', pending: [] };
@@ -258,21 +264,15 @@ function typeCharAt(state: EditState, ch: string): EditState {
     return collapsed(source, at + open.length + ch.length);
   }
 
+  const marker = blockMarkerInput(base.source, s.layout, at, ch);
+  if (marker) return marker;
+
   const source = base.source.slice(0, at) + ch + base.source.slice(at);
   const after = computeLayout(source);
   if (keepsLayout(s.layout, after, at, 0)) return collapsed(source, at + ch.length);
   // The interpretation changed beyond the typed character.
   if (closesMarkAt(after, s.layout, at, at + ch.length)) {
     return collapsed(source, at + ch.length, 'outside');
-  }
-  const line = lineAround(source, at);
-  const lineBefore = source.slice(line.start, at + ch.length);
-  const lineAfter = source.slice(at + ch.length, line.end);
-  if (ch === ' ' && BLOCK_MARKER.test(source.slice(line.start, at))) {
-    return collapsed(source, at + ch.length);
-  }
-  if (!lineAfter.trim() && PARTIAL_BLOCK_MARKER.test(lineBefore)) {
-    return collapsed(source, at + ch.length);
   }
   // Keep the character literal (§5): try spellings and, failing those, the
   // other side of the syntax at the same screen position. Code spans and wiki
@@ -301,6 +301,72 @@ function typeCharAt(state: EditState, ch: string): EditState {
     }
   }
   return collapsed(source, at + ch.length);
+}
+
+/**
+ * Block markers at a line start (§5). A marker becomes a block only at its
+ * trigger: the space after it turns the escaped marker the editor kept
+ * (`\-`, `1\.`) into the block (`- `, `1. `). Any other character after a
+ * marker that was kept escaped releases the escape when the line then forms
+ * no block (`-5`, a `#tag`, `**bold`), so the escape lasts only while the
+ * marker alone would read as a block. Returns null when neither applies.
+ */
+function blockMarkerInput(
+  source: string,
+  layout: Layout,
+  at: number,
+  ch: string,
+): EditState | null {
+  const line = lineAround(source, at);
+  const prefix = source.slice(line.start, at);
+  const plain = unescapeMarker(prefix);
+  const rest = source.slice(at);
+  if (ch === ' ' && BLOCK_MARKER.test(plain)) {
+    const next = `${source.slice(0, line.start)}${plain} ${rest}`;
+    const end = line.start + plain.length + 1;
+    const after = computeLayout(next);
+    if (blockStartsIn(after, line.start, end) && sameBefore(layout, after, line.start)) {
+      return collapsed(next, end);
+    }
+    return null;
+  }
+  if (ch === ' ' || plain === prefix || !PARTIAL_BLOCK_MARKER.test(plain)) return null;
+  const next = `${source.slice(0, line.start)}${plain}${ch}${rest}`;
+  const end = line.start + plain.length + ch.length;
+  const after = computeLayout(next);
+  const lineEnd = lineAround(next, end).end;
+  if (blockStartsIn(after, line.start, lineEnd) || !sameBefore(layout, after, line.start)) {
+    return null;
+  }
+  return collapsed(next, end);
+}
+
+/** The marker text with its backslash escapes and character references spelled out. */
+function unescapeMarker(text: string): string {
+  return text
+    .replace(/\\([!-/:-@[-`{-~])/g, '$1')
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) =>
+      String.fromCodePoint(Number.parseInt(hex, 16)),
+    );
+}
+
+/** A list marker, block widget or line prefix (heading, quote) starting in `[from, to)`. */
+function blockStartsIn(layout: Layout, from: number, to: number): boolean {
+  return (
+    layout.widgets.some(
+      (w) => (w.kind === 'list-marker' || w.kind === 'block') && w.from >= from && w.from < to,
+    ) || layout.hidden.some((h) => h.kind === 'prefix' && h.from >= from && h.from < to)
+  );
+}
+
+/** The layout before `at` is the same in both. */
+function sameBefore(a: Layout, b: Layout, at: number): boolean {
+  const cut = (l: Layout): Layout => ({
+    ...l,
+    hidden: l.hidden.filter((h) => h.to <= at),
+    widgets: l.widgets.filter((w) => w.to <= at),
+  });
+  return sameLayout(cut(a), cut(b));
 }
 
 /** Put a backtick inside a code span by rewriting its fences one backtick longer than any run inside. */
@@ -577,9 +643,20 @@ function enter(state: EditState): EditResult {
   const line = lineAround(source, at);
   const text = source.slice(line.start, line.end);
 
-  if (at === line.end && FENCE_LINE.test(text)) {
-    const fence = /(`{3,}|~{3,}|\$\$)/.exec(text)?.[1] ?? '```';
-    return collapsed(`${source.slice(0, at)}\n\n${fence}${source.slice(at)}`, at + 1);
+  // A fence or thematic break typed at a line start was kept escaped (§5);
+  // Enter is its trigger.
+  const plain = at === line.end ? unescapeMarker(text) : text;
+  if (at === line.end && FENCE_LINE.test(plain)) {
+    const fence = /(`{3,}|~{3,}|\$\$)/.exec(plain)?.[1] ?? '```';
+    const end = line.start + plain.length;
+    return collapsed(
+      `${source.slice(0, line.start)}${plain}\n\n${fence}${source.slice(at)}`,
+      end + 1,
+    );
+  }
+  if (at === line.end && plain !== text && THEMATIC_LINE.test(plain)) {
+    const end = line.start + plain.length;
+    return collapsed(`${source.slice(0, line.start)}${plain}\n\n${source.slice(at)}`, end + 2);
   }
   const item = LIST_ITEM.exec(text);
   if (item) {

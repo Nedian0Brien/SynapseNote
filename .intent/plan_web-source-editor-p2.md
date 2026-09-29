@@ -86,3 +86,13 @@ bun run test:file -- packages/app/src/editor/live/live-extension.dom.test.tsx
 - 이어서 할 일: 16ms는 1번 해결 뒤 live 모드 몫(약 20ms)을 줄여야 닿는다. 장식 반영과 React `input` 처리를 먼저
   나눠 잰다. 2번은 Tiptap과 fragment를 없애는 P6에서 사라진다. 그 전에 큰 문서의 브라우저 동기화를 검증하려면 2번을
   따로 고쳐야 한다.
+
+### 고침 — 줄 첫머리 블록 기호는 발동 글자에서 바뀐다 (2026-09-29)
+
+- 사용자 확인에서 `-`만 쳐도 스페이스 전에 불렛이 나타났다. Markdown은 기호만 있는 줄(`-`, `#`, `1.`, `>`, ```` ``` ````)도
+  블록으로 읽는데, 엔진이 이 미완성 기호를 원문에 그대로 넣는 예외를 두고 있었다.
+- 친 기호를 이스케이프해 글자 그대로 보이게 두고(`\-`, `1\.`), 스페이스(fence·수평선·수식 블록은 Enter)를 치면
+  이스케이프를 풀어 블록으로 바꾼다. 기호 뒤에 다른 글자가 와서 블록이 되지 않으면(`-5`, `#태그`, `**굵게**`)
+  이스케이프를 푼다. SPEC.md 5절과 fixture 11개(`rule-*-waits`, `rule-list-trigger`, `rule-marker-released`,
+  `rule-tag-after-hash`, `rule-bold-line-start`, `rule-quote-no-space`, `rule-math-fence`)에 반영했다.
+- 브라우저: `-`·`##`·`1.`이 스페이스 전까지 글자로 보이고, 스페이스를 치는 순간 불렛·제목·번호 목록이 된다.

@@ -772,5 +772,152 @@
       }
     ],
     "after": "x **bold X│**, y"
+  },
+  {
+    "id": "rule-list-waits",
+    "group": "edit.rule-list",
+    "rule": "5",
+    "before": "a\n\n│",
+    "actions": [
+      {
+        "type": "text",
+        "text": "-"
+      }
+    ],
+    "after": "a\n\n\\-│"
+  },
+  {
+    "id": "rule-list-trigger",
+    "group": "edit.rule-list",
+    "rule": "5",
+    "before": "a\n\n\\-│",
+    "actions": [
+      {
+        "type": "text",
+        "text": " "
+      }
+    ],
+    "after": "a\n\n- │"
+  },
+  {
+    "id": "rule-heading-waits",
+    "group": "edit.rule-heading",
+    "rule": "5",
+    "before": "│",
+    "actions": [
+      {
+        "type": "text",
+        "text": "##"
+      }
+    ],
+    "after": "\\##│"
+  },
+  {
+    "id": "rule-ordered-waits",
+    "group": "edit.rule-list",
+    "rule": "5",
+    "before": "│",
+    "actions": [
+      {
+        "type": "text",
+        "text": "1."
+      }
+    ],
+    "after": "1\\.│"
+  },
+  {
+    "id": "rule-quote-waits",
+    "group": "edit.rule-quote",
+    "rule": "5",
+    "before": "│",
+    "actions": [
+      {
+        "type": "text",
+        "text": ">"
+      }
+    ],
+    "after": "\\>│"
+  },
+  {
+    "id": "rule-quote-no-space",
+    "group": "edit.rule-quote",
+    "rule": "5",
+    "before": "│",
+    "actions": [
+      {
+        "type": "text",
+        "text": ">a"
+      }
+    ],
+    "after": "\\>a│"
+  },
+  {
+    "id": "rule-marker-released",
+    "group": "edit.rule-list",
+    "rule": "5",
+    "before": "│",
+    "actions": [
+      {
+        "type": "text",
+        "text": "-5"
+      }
+    ],
+    "after": "-5│"
+  },
+  {
+    "id": "rule-tag-after-hash",
+    "group": "edit.rule-heading",
+    "rule": "5",
+    "before": "│",
+    "actions": [
+      {
+        "type": "text",
+        "text": "#a"
+      }
+    ],
+    "after": "#a│"
+  },
+  {
+    "id": "rule-bold-line-start",
+    "group": "edit.rule-emphasis",
+    "rule": "5",
+    "before": "│",
+    "actions": [
+      {
+        "type": "text",
+        "text": "**a**"
+      }
+    ],
+    "after": "**a**│"
+  },
+  {
+    "id": "rule-fence-waits",
+    "group": "edit.rule-fence",
+    "rule": "5",
+    "before": "│",
+    "actions": [
+      {
+        "type": "text",
+        "text": "```"
+      }
+    ],
+    "after": "``\\`│"
+  },
+  {
+    "id": "rule-math-fence",
+    "group": "edit.rule-fence",
+    "rule": "5",
+    "before": "│",
+    "actions": [
+      {
+        "type": "text",
+        "text": "$$"
+      },
+      {
+        "type": "key",
+        "key": "Enter"
+      }
+    ],
+    "after": "$$\n│\n$$"
   }
 ]
