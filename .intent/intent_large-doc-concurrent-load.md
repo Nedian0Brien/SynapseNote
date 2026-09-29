@@ -2,7 +2,7 @@
 title: 긴 문서를 세 작성자가 동시에 편집해도 서버가 뒤처지지 않는다
 slug: large-doc-concurrent-load
 stage: intent
-status: draft
+status: accepted
 author: Dennis Park
 date: 2026-09-29
 ---
@@ -58,7 +58,9 @@ date: 2026-09-29
 
 ## 열린 질문
 
-1. **목표 수치.** 위 수치(p95 300ms, 최대 2초)는 원격 서버의 네트워크 지연을 빼고 잡은 제안값이다. 이 기준으로
-   할 것인가.
+작업 순서: `concurrent-edit-duplication` 다음에 한다.
+
+
+1. **목표 수치.** (답: 2026-09-29) 제안값대로 한다. 네트워크 지연을 뺀 서버 처리 기준이다.
 2. **폴백 노드의 위치 속성.** `rawMdxFallback`의 `originalSpan`은 분할 구간 기준 오프셋이라, 증분 결과를 전체
    파싱과 같게 맞추려면 이 값을 문서 기준으로 바꿔야 할 수 있다. 이 값을 읽는 곳을 확인한 뒤 정한다.
