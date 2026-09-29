@@ -58,4 +58,11 @@ export {
   mdxWidgetSource,
   updateMdxWidget,
 } from './mdx-widget.ts';
+export {
+  type TabsWidgetEdit,
+  type TabsWidgetPanel,
+  type TabsWidgetSource,
+  tabsWidgetSource,
+  updateTabsWidget,
+} from './tabs-widget.ts';
 export { applyActionsInWindow, editWindow, type WindowRange } from './window.ts';

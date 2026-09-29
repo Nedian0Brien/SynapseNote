@@ -11,6 +11,7 @@ import {
 import { widgetFixtures } from './fixtures.ts';
 import { computeLayout } from './layout.ts';
 import { mdxWidgetSource } from './mdx-widget.ts';
+import { tabsWidgetSource } from './tabs-widget.ts';
 
 describe('block widget source edits', () => {
   for (const fixture of widgetFixtures) {
@@ -51,6 +52,14 @@ describe('block widget source edits', () => {
       indent: '    ',
     });
     expect(indentedCodeWidgetSource('```\na\n```', 0, 9)).toBeNull();
+  });
+
+  test('Tabs uses only direct children when a panel contains nested Tabs', () => {
+    const source =
+      '<Tabs>\n<Tab label="Outer">\n<Tabs>\n<Tab label="Inner">\nbody\n</Tab>\n</Tabs>\n</Tab>\n<Tab label="Next">\nnext\n</Tab>\n</Tabs>';
+    const model = tabsWidgetSource(source, 0, source.length);
+    expect(model?.panels.map((panel) => panel.label)).toEqual(['Outer', 'Next']);
+    expect(model?.panels[0]?.body).toContain('<Tabs>');
   });
 
   test('diagram ranges use parsed formula and chart text', () => {

@@ -67,6 +67,9 @@ Markdown 이미지와 위키 이미지·파일 임베드, MDX `img`·`File`·`Em
 일반 MDX 블록은 등록된 제품 컴포넌트를 앱의 React 문맥에서 그린다. 문자열 속성을 고치면 해당 속성 값 범위만,
 본문을 고치면 여닫는 태그 안의 본문 범위만 바꾼다. JSON으로 해석 가능한 리터럴 표현식만 컴포넌트에 전달한다.
 (widget.mdx-prop, widget.mdx-body, hide.block-mdx)
+`<Tabs>`의 직접 자식 `<Tab>`은 탭 목록과 선택한 패널로 보여 준다. 라벨·본문 변경은 해당 자식의 원문 범위만
+바꾸고, 탭 추가·삭제는 해당 자식의 원문만 삽입·삭제한다. 중첩된 `<Tabs>`는 부모 탭의 본문 안에서 독립된 탭 목록으로 다룬다. (widget.tabs-label,
+widget.tabs-body)
 
 - 문단 안의 한 줄 바꿈(soft break)은 줄바꿈으로 보인다. 원문의 줄 구조를 그대로 보이기 위해서다. (hide.soft-break)
 - 블록 사이의 빈 줄은 빈 줄로 보이고, 커서가 놓일 수 있다. (hide.blank-lines)

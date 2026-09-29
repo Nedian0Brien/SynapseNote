@@ -1102,6 +1102,7 @@
     "HptUxX": ["Number"],
     "Hrz9NY": ["Wiki link"],
     "Hs5VV7": ["Loading related records"],
+    "HuA3RU": ["Tab"],
     "Hurb0E": ["Database view actions for ", ["inlineDatabaseContext"]],
     "HvYPjW": ["One record means"],
     "HyvSqq": ["Project Skill"],
@@ -1993,6 +1994,7 @@
     "Xzy0s0": ["Remove ", ["fullLabel"], " from context"],
     "Y-Urt2": ["Block math equation rendered with KaTeX from a LaTeX source string."],
     "Y-mFVo": ["Code language"],
+    "Y054pd": ["Tab label"],
     "Y1QMlM": ["Get set up"],
     "Y6SK9K": ["Show source"],
     "Y7InJb": ["Inspecting all records"],
@@ -3444,6 +3446,7 @@
     "wccmX0": [
       "Your embeddings provider API key, used only to create embeddings of your content for semantic search. Stored once for this machine in <0>~/.ok/secrets.yml</0> (readable only by your user account) and shared across all projects. Turn the feature on per project in This project → Search, where you can also override the endpoint."
     ],
+    "wd9NOB": ["Remove tab"],
     "wdxz7K": ["Source"],
     "weP6me": ["Couldn't load docs — type @ again to retry"],
     "wlwXUk": [

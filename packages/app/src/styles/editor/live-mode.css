@@ -96,6 +96,9 @@
 [data-editor-variant="live"] .cm-live-code-language {
   @apply block w-full border-0 border-b border-border bg-transparent px-3 py-1 font-mono text-xs text-muted-foreground outline-none;
 }
+[data-editor-variant="live"] .cm-live-code-language[hidden] {
+  display: none;
+}
 [data-editor-variant="live"] .cm-live-code-body {
   @apply block min-h-20 w-full resize-y border-0 bg-transparent px-3 py-2 font-mono text-sm leading-relaxed outline-none;
 }
@@ -232,4 +235,27 @@
 [data-editor-variant="live"] .cm-live-mdx-loading,
 [data-editor-variant="live"] .cm-live-mdx-fallback {
   @apply px-2 py-3 text-sm text-muted-foreground;
+}
+
+[data-editor-variant="live"] .cm-live-tabs-widget {
+  @apply overflow-hidden;
+}
+[data-editor-variant="live"] .cm-live-tabs-toolbar {
+  @apply mb-2 flex items-center gap-2;
+}
+[data-editor-variant="live"] .cm-live-tabs-label {
+  @apply h-7 max-w-48 text-xs;
+}
+[data-editor-variant="live"] .cm-live-tabs-remove {
+  @apply rounded-sm px-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground;
+}
+[data-editor-variant="live"] .cm-live-tabs-body .cm-editor {
+  min-height: 0;
+  background: transparent;
+}
+[data-editor-variant="live"] .cm-live-tabs-body .cm-content {
+  @apply min-h-8 py-1;
+}
+[data-editor-variant="live"] .cm-live-tabs-body .cm-gutters {
+  display: none;
 }

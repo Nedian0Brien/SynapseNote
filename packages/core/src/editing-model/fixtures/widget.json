@@ -216,6 +216,42 @@
     "after": "before\n\n<details open><summary>Details</summary>\n\nnew\n\n</details>\n\nafter"
   },
   {
+    "id": "tabs-second-label",
+    "group": "widget.tabs-label",
+    "rule": "3",
+    "before": "<Tabs id=\"set\">\n<Tab label=\"One\">\nalpha\n</Tab>\n<Tab label=\"Two\">\nbeta\n</Tab>\n</Tabs>",
+    "from": 0,
+    "edit": { "type": "tabs-label", "index": 1, "text": "Other" },
+    "after": "<Tabs id=\"set\">\n<Tab label=\"One\">\nalpha\n</Tab>\n<Tab label=\"Other\">\nbeta\n</Tab>\n</Tabs>"
+  },
+  {
+    "id": "tabs-first-body",
+    "group": "widget.tabs-body",
+    "rule": "3",
+    "before": "<Tabs>\n<Tab label=\"One\">\nalpha\n</Tab>\n<Tab label=\"Two\">\nbeta\n</Tab>\n</Tabs>",
+    "from": 0,
+    "edit": { "type": "tabs-body", "index": 0, "text": "new" },
+    "after": "<Tabs>\n<Tab label=\"One\">\nnew\n</Tab>\n<Tab label=\"Two\">\nbeta\n</Tab>\n</Tabs>"
+  },
+  {
+    "id": "tabs-add-panel",
+    "group": "widget.tabs-body",
+    "rule": "3",
+    "before": "<Tabs>\n<Tab label=\"One\">\nalpha\n</Tab>\n</Tabs>",
+    "from": 0,
+    "edit": { "type": "tabs-add", "label": "Tab 2" },
+    "after": "<Tabs>\n<Tab label=\"One\">\nalpha\n</Tab>\n<Tab label=\"Tab 2\">\n\n</Tab>\n</Tabs>"
+  },
+  {
+    "id": "tabs-remove-panel",
+    "group": "widget.tabs-body",
+    "rule": "3",
+    "before": "<Tabs>\n<Tab label=\"One\">\nalpha\n</Tab>\n<Tab label=\"Two\">\nbeta\n</Tab>\n</Tabs>",
+    "from": 0,
+    "edit": { "type": "tabs-remove", "index": 0 },
+    "after": "<Tabs>\n<Tab label=\"Two\">\nbeta\n</Tab>\n</Tabs>"
+  },
+  {
     "id": "markdown-image-src",
     "group": "widget.media-src",
     "rule": "3",

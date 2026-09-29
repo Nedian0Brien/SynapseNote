@@ -960,6 +960,7 @@ msgid "Add sort"
 msgstr "Add sort"
 
 #: src/editor/components/Tabs.tsx
+#: src/editor/live/tabs-widgets.tsx
 msgid "Add tab"
 msgstr "Add tab"
 
@@ -8863,6 +8864,10 @@ msgstr "Remove property"
 msgid "Remove selected lines"
 msgstr "Remove selected lines"
 
+#: src/editor/live/tabs-widgets.tsx
+msgid "Remove tab"
+msgstr "Remove tab"
+
 #: src/components/CreateProjectDialog.tsx
 msgid "Remove the parent <0>.git</0> folder"
 msgstr "Remove the parent <0>.git</0> folder"
@@ -10686,6 +10691,14 @@ msgstr "Syncing"
 #: src/components/TrashFailureModal.tsx
 msgid "System error"
 msgstr "System error"
+
+#: src/editor/live/tabs-widgets.tsx
+msgid "Tab"
+msgstr "Tab"
+
+#: src/editor/live/tabs-widgets.tsx
+msgid "Tab label"
+msgstr "Tab label"
 
 #: src/components/MarkdownFormatToolbar.tsx
 #: src/editor/slash-command/items.tsx

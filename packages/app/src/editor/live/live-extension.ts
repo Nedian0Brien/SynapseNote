@@ -42,6 +42,7 @@ import {
   mediaWidgetSource,
   sourceChanges,
   type ToggleMark,
+  tabsWidgetSource,
 } from '@nedian0brien/synapsenote-core';
 import { isMarkdown } from '../clipboard/is-markdown';
 import { pasteShiftHeld } from '../clipboard/shift-tracker';
@@ -50,6 +51,7 @@ import { ContainerBlockWidget } from './container-widgets';
 import { DiagramBlockWidget } from './diagram-widgets';
 import { MdxBlockWidget } from './mdx-widgets';
 import { MediaBlockWidget, type MediaContext, MediaInlineWidget } from './media-widgets';
+import { TabsBlockWidget } from './tabs-widgets';
 
 const mediaContext = Facet.define<MediaContext, MediaContext>({
   combine: (values) => values.at(-1) ?? {},
@@ -148,9 +150,12 @@ function blockDecorations(
                 : widget.node === 'code'
                   ? new CodeBlockWidget(raw, widget.from, widget.to)
                   : widget.node === 'mdxJsxFlowElement' &&
-                      mdxWidgetSource(source, widget.from, widget.to)
-                    ? new MdxBlockWidget(raw, widget.from, widget.to, context, nestedExtension)
-                    : null;
+                      tabsWidgetSource(source, widget.from, widget.to)
+                    ? new TabsBlockWidget(raw, widget.from, widget.to, context, nestedExtension)
+                    : widget.node === 'mdxJsxFlowElement' &&
+                        mdxWidgetSource(source, widget.from, widget.to)
+                      ? new MdxBlockWidget(raw, widget.from, widget.to, context, nestedExtension)
+                      : null;
       if (inner) {
         ranges.push({
           from: widget.from,
