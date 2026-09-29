@@ -50,3 +50,11 @@ P1의 편집 모델은 동작마다 문서 전체를 파싱한다(5,000줄 약 1
 bun run test:file -- packages/core/src/editing-model/incremental-layout.test.ts packages/core/src/editing-model/window.test.ts
 bun run test:file -- packages/app/src/editor/live/live-editor.dom.test.tsx
 ```
+
+## 결과 — P2a (2026-09-29)
+
+- `IncrementalLayout`: 무작위 문서 40개 × 편집 25번(1,000번) 모두 전체 파싱의 레이아웃과 같았다. 983번은 증분, 17번은
+  전체 파싱. 처음 구현은 경계 블록 비교에서 객체 키 순서 차이로 44%가 전체 파싱으로 떨어졌다. 값으로 비교하게 고쳤다.
+- `applyActionsInWindow`: 편집 fixture 57개를 긴 문서 가운데에 넣은 경우와 무작위 문서·동작 400건 모두, 문서 전체로
+  돌린 결과와 원문·커서가 같았다. 링크 참조·각주 정의가 있는 문서는 문서 전체로 돌린다.
+- 5,008줄 문서에서 글자 하나 입력(창 편집 + 레이아웃 갱신): p50 4.5ms, p95 6.1ms(목표 8ms).

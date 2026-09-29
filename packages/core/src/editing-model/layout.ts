@@ -86,28 +86,86 @@ type Positioned = { position?: { start: { offset?: number }; end: { offset?: num
 const start = (n: Positioned): number | undefined => n.position?.start.offset;
 const end = (n: Positioned): number | undefined => n.position?.end.offset;
 
-export function computeLayout(source: string, markdown: MarkdownManager = manager()): Layout {
-  const layout: Layout = { hidden: [], widgets: [], marks: [], spans: [] };
+/** One top-level block of the body, with its layout in document offsets. */
+export interface BlockLayout {
+  from: number;
+  to: number;
+  type: string;
+  layout: Layout;
+}
+
+export function emptyLayout(): Layout {
+  return { hidden: [], widgets: [], marks: [], spans: [] };
+}
+
+/** Source range of the frontmatter (a block widget), or null. */
+export function frontmatterRange(source: string): Range | null {
   const fm = FRONTMATTER.exec(source);
-  const offset = fm ? fm[0].length : 0;
-  if (fm) layout.widgets.push({ from: 0, to: fm[0].length, kind: 'block', node: 'yaml' });
-  const body = source.slice(offset);
-  if (!body.trim()) return layout;
+  return fm ? [0, fm[0].length] : null;
+}
+
+export function computeLayout(source: string, markdown: MarkdownManager = manager()): Layout {
+  const fm = frontmatterRange(source);
+  const blocks = computeBlockLayouts(source, fm ? fm[1] : 0, source.length, markdown);
+  if (blocks === null) return fm ? frontmatterLayout(fm) : emptyLayout();
+  return mergeLayouts([...(fm ? [frontmatterLayout(fm)] : []), ...blocks.map((b) => b.layout)]);
+}
+
+export function frontmatterLayout(fm: Range): Layout {
+  return { ...emptyLayout(), widgets: [{ from: fm[0], to: fm[1], kind: 'block', node: 'yaml' }] };
+}
+
+/**
+ * Parse `source.slice(from, to)` and return each top-level block's layout in
+ * document offsets. Null when the slice does not parse.
+ */
+export function computeBlockLayouts(
+  source: string,
+  from: number,
+  to: number,
+  markdown: MarkdownManager = manager(),
+): BlockLayout[] | null {
+  const body = source.slice(from, to);
+  if (!body.trim()) return [];
   let tree: MdastRoot;
   try {
     tree = markdown.parseToMdast(body) as MdastRoot;
   } catch {
     // Unparseable (e.g. broken MDX): show it as source rather than guess.
-    return layout;
+    return null;
   }
-  const walker = new Walker(source, offset, layout);
-  for (const child of tree.children) walker.block(child);
+  const blocks: BlockLayout[] = [];
+  for (const child of tree.children) {
+    const childFrom = start(child);
+    const childTo = end(child);
+    if (childFrom === undefined || childTo === undefined) continue;
+    const layout = emptyLayout();
+    new Walker(source, from, layout).block(child);
+    sortLayout(layout);
+    blocks.push({ from: childFrom + from, to: childTo + from, type: child.type, layout });
+  }
+  return blocks;
+}
+
+/** Concatenate layouts of consecutive, non-overlapping parts of one document. */
+export function mergeLayouts(parts: readonly Layout[]): Layout {
+  const merged = emptyLayout();
+  for (const part of parts) {
+    merged.hidden.push(...part.hidden);
+    merged.widgets.push(...part.widgets);
+    merged.marks.push(...part.marks);
+    merged.spans.push(...part.spans);
+  }
+  return merged;
+}
+
+function sortLayout(layout: Layout): void {
   const byFrom = (a: { from: number; to: number }, b: { from: number; to: number }) =>
     a.from - b.from || a.to - b.to;
   layout.hidden.sort(byFrom);
   layout.widgets.sort(byFrom);
+  layout.spans.sort(byFrom);
   layout.marks.sort((a, b) => a.open[0] - b.open[0]);
-  return layout;
 }
 
 class Walker {

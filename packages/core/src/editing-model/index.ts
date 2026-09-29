@@ -15,7 +15,10 @@ export {
   parseCursor,
   parseMarked,
 } from './fixtures.ts';
+export { IncrementalLayout, type IncrementalLayoutStats } from './incremental-layout.ts';
 export {
+  type BlockLayout,
+  computeBlockLayouts,
   computeLayout,
   type HiddenKind,
   type HiddenRange,
@@ -26,3 +29,4 @@ export {
   type WidgetKind,
   type WidgetRange,
 } from './layout.ts';
+export { applyActionsInWindow, editWindow, type WindowRange } from './window.ts';
