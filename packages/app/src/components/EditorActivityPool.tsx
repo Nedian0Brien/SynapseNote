@@ -1103,15 +1103,15 @@ function ActivityEntry({
                   visible editor to 8000px and creating bottom whitespace on
                   short docs — see `styles/editor/source-mode.css`). */
                     <div className="flex h-full flex-col">
-                      {/* Property region (WYSIWYG only — source mode surfaces the
-                        raw YAML directly in CodeMirror). Managed-artifact docs
+                      {/* Property region in WYSIWYG and live. Plain source mode
+                        surfaces the raw YAML directly in CodeMirror. Managed-artifact docs
                         (skills/templates) render their own identity panel in
                         place of the document PageHeader + PropertyPanel: `name`
                         (and a skill's `scope`) are identity, not free-form
                         frontmatter, and they have no cover/icon. Regular docs get
                         PageHeader (decorative cover+icon, null when unset) +
                         PropertyPanel (frontmatter table, null when empty). */}
-                      {!isSourceMode && isManagedArtifact ? (
+                      {(!isSourceMode || sourceVariant === 'live') && isManagedArtifact ? (
                         <Suspense fallback={null}>
                           <ManagedArtifactProperties
                             docName={entry.docName}
@@ -1119,7 +1119,7 @@ function ActivityEntry({
                           />
                         </Suspense>
                       ) : null}
-                      {!isSourceMode && !isManagedArtifact ? (
+                      {(!isSourceMode || sourceVariant === 'live') && !isManagedArtifact ? (
                         <DatabaseRecordPageChrome
                           provider={entry.provider}
                           docName={entry.docName}
@@ -1128,7 +1128,9 @@ function ActivityEntry({
                           body={editorBody}
                         />
                       ) : null}
-                      {isSourceMode || isManagedArtifact ? editorBody : null}
+                      {(isSourceMode && sourceVariant === 'source') || isManagedArtifact
+                        ? editorBody
+                        : null}
                     </div>
                   )}
                 </DocumentBoundary>

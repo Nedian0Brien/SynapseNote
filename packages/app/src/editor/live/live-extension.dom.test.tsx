@@ -142,6 +142,18 @@ describe('live editor — edit.json through CodeMirror', () => {
 });
 
 describe('live editor block widgets', () => {
+  test('frontmatter is hidden while the source remains intact', () => {
+    const source = '---\ntitle: Note\ntags: [one, two]\n---\n\nBody';
+    const view = mount(source, source.length, source.length);
+    expect(view.state.doc.toString()).toBe(source);
+    expect(view.contentDOM.textContent).not.toContain('title: Note');
+    expect(view.contentDOM.textContent).toContain('Body');
+    view.dispatch({ changes: { from: 0, to: 1, insert: '' }, userEvent: 'delete' });
+    expect(view.state.doc.toString()).toBe(source);
+    view.dispatch({ changes: { from: source.length, insert: ' more' }, userEvent: 'input.type' });
+    expect(view.state.doc.toString()).toBe(`${source} more`);
+  });
+
   test('code fence is hidden and body and language edit only their source spans', () => {
     const view = mount('before\n\n```js title=x\nold\n```\n\nafter', 0, 0);
     const widget = view.dom.querySelector('.cm-live-code-block');

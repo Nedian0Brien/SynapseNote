@@ -10,7 +10,15 @@
  * keep their source until their P3 widgets land.
  */
 
-import { type Extension, Prec, RangeSet, StateEffect, StateField } from '@codemirror/state';
+import {
+  EditorState,
+  type Extension,
+  Prec,
+  RangeSet,
+  StateEffect,
+  StateField,
+  Transaction,
+} from '@codemirror/state';
 import {
   Decoration,
   type DecorationSet,
@@ -80,8 +88,27 @@ const blockWidgetField = StateField.define<DecorationSet>({
   ],
 });
 
+/** Properties are edited through PropertyPanel; user typing cannot rewrite hidden YAML. */
+const protectFrontmatter = EditorState.transactionFilter.of((transaction) => {
+  if (!transaction.docChanged || !transaction.annotation(Transaction.userEvent)) return transaction;
+  const frontmatter = transaction.startState.field(layoutField).frontmatter;
+  if (!frontmatter) return transaction;
+  let touches = false;
+  transaction.changes.iterChangedRanges((from, _to) => {
+    if (from < frontmatter[1]) touches = true;
+  });
+  return touches ? [] : transaction;
+});
+
 function blockDecorations(layout: IncrementalLayout, source: string): DecorationSet {
   const ranges: { from: number; to: number; deco: Decoration }[] = [];
+  if (layout.frontmatter) {
+    ranges.push({
+      from: layout.frontmatter[0],
+      to: layout.frontmatter[1],
+      deco: Decoration.replace({ block: true }),
+    });
+  }
   for (const block of layout.blocks) {
     for (const widget of block.layout.widgets) {
       if (widget.kind !== 'block') continue;
@@ -419,6 +446,7 @@ export function createLiveExtension(): Extension {
   return [
     layoutField,
     blockWidgetField,
+    protectFrontmatter,
     cursorIntentField,
     livePlugin,
     Prec.highest([liveKeymap, liveInput, liveClipboard]),

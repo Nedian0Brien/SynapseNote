@@ -42,6 +42,10 @@ SynapseNote의 편집기는 Markdown 원문(`Y.Text('source')`)을 직접 편집
 | 이미지 | `![대체](src)` `![[a.png]]` | 전체 | 이미지(위젯) | hide.image |
 | 블록 | 표, 코드 블록, 수식, Mermaid, 콜아웃, 아코디언, MDX 컴포넌트, 인라인 데이터베이스, 수평선, HTML 블록, 링크 참조 정의, 각주 정의, frontmatter | 전체 | 블록 위젯 | hide.block-* |
 
+frontmatter는 `live` 편집기에서 YAML 원문 범위를 숨기고, 같은 문서 화면의 기존 속성 패널로 표시·편집한다.
+속성 패널은 `Y.Text('source')`의 frontmatter 바인딩에 쓴다. 원문 보기에서는 YAML을 그대로 보여 준다.
+`live` 편집기의 입력·삭제는 숨겨진 YAML 범위를 바꿀 수 없다. (hide.block-frontmatter)
+
 코드 블록 위젯은 울타리와 언어·메타데이터를 본문과 분리해 보여 준다. 본문과 언어를 고치면 각각 해당 원문 범위만
 바꾼다. 본문에 닫는 울타리와 같은 줄이 생기면 두 울타리를 함께 늘린다. (widget.code-body, widget.code-language)
 표 위젯은 각 칸을 따로 편집한다. 칸을 고쳐도 주변 공백·파이프·정렬선·다른 칸의 원문은 그대로 둔다. 칸 안의

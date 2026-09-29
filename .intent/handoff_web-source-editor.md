@@ -4,7 +4,8 @@
 
 웹 앱에 Markdown 원문(`Y.Text('source')`)을 CodeMirror 6로 직접 편집하면서 기호를 숨기는 `live` 편집 모드가
 생겼다. 편집 규칙은 core의 순수 함수이고, 네이티브 앱도 같은 명세와 fixture를 쓴다. P0~P2(뼈대), P2c(기존
-편집기 동작 옮기기), P3a(코드 울타리·표 위젯), P3b(수식·Mermaid 위젯)가 끝났다. P3의 나머지 블록은 진행 전이다.
+편집기 동작 옮기기), P3a(코드 울타리·표 위젯), P3b(수식·Mermaid 위젯), P3c(frontmatter 속성 화면)가 끝났다.
+P3의 나머지 블록은 진행 전이다.
 
 ## 1. 사용자가 정한 것
 
@@ -33,7 +34,7 @@
 ## 2. 작업 위치와 상태
 
 - **브랜치·워크트리:** `codex/web-source-editor`, `.worktree/web-source-editor`
-  - P3b 구현 커밋은 이후 `git log -1`로 확인한다. PR은 아직 없다.
+  - P3c 구현 커밋은 이후 `git log -1`로 확인한다. PR은 아직 없다.
   - main에는 사용자가 끝났다고 명시적으로 확인한 뒤에만 병합한다.
 - **아티팩트:** `.intent/intent_web-source-editor.md`(수락됨), `spec_web-source-editor.md`(R1~R10, 단계 P0~P6),
   `plan_web-source-editor-p0.md` `-p1.md` `-p2.md` `-p2c.md`. 계획 파일 끝에 단계별 결과가 있다.
@@ -64,6 +65,17 @@
   수식·Mermaid 표시와 본문 수정 후 새로고침 저장을 확인했다.
 - 뒤에 남은 P3: 콜아웃·아코디언, 이미지·파일 임베드, MDX, 인라인 데이터베이스, frontmatter, 들여쓴 코드.
 
+### P3c 추가 (2026-09-29)
+
+- `.intent/plan_web-source-editor-p3c.md`에 범위와 검증 결과를 적었다.
+- `live` 모드가 기존 문서 헤더·속성 패널을 보여 주고 편집기에서는 YAML 원문을 숨긴다. 일반 문서 속성 값 변경은
+  기존 바인딩으로 Y.Text에 반영된다. 사용자 입력으로 숨겨진 YAML을 삭제하는 트랜잭션은 막는다.
+- 브라우저 확인 문서: `http://localhost:5183/#/p3c-properties-review-1790690376095` (임시 콘텐츠 폴더가 살아 있는 동안).
+  `status` 변경 후 원문과 새로고침 상태를 확인했다. `source`는 YAML 원문, `wysiwyg`·`live`는 속성 패널을 보여 준다.
+- 실제 데이터베이스 레코드 `untitled_database_creation_f7d8cf21243447af95e2cbc0437bd7f9/rec_89fa230961f9421b93781c6987ee9dc4`
+  에서도 `live` 속성 화면이 열렸다. `_sn` 원문이 화면에 보이지 않고 사용자 삭제 트랜잭션은 차단됐다.
+- 뒤에 남은 P3: 콜아웃·아코디언, 이미지·파일 임베드, MDX, 인라인 데이터베이스, 들여쓴 코드.
+
 ## 3. 끝난 단계
 
 | 단계 | 커밋 | 내용 |
@@ -75,7 +87,8 @@
 | — | `68040e03` | 줄 첫머리 블록 기호는 스페이스·Enter에서 블록이 된다 |
 | P2c | `ce0ef92f` | 기존 편집기 동작 이식(아래), 번호 목록 표시 번호, 블록 안 원문 편집, 레이아웃 캐시 |
 | P3a | `0791f80f` | 코드 울타리·표의 편집 가능한 블록 위젯과 범위별 원문 변경 |
-| P3b | 구현 커밋은 `git log -1` | 수식·Mermaid의 편집 가능한 미리보기와 범위별 원문 변경 |
+| P3b | `124a9b53` | 수식·Mermaid의 편집 가능한 미리보기와 범위별 원문 변경 |
+| P3c | 구현 커밋은 `git log -1` | `live` 문서 속성 패널과 숨긴 YAML 보호 |
 
 P2c에서 옮긴 동작은 다음과 같다. 각 동작의 근거 파일은 `plan_web-source-editor-p2c.md`에 있다.
 
@@ -108,7 +121,8 @@ P2c에서 옮긴 동작은 다음과 같다. 각 동작의 근거 파일은 `pla
    - 다음 할 일: `use-document-stats` 문제(5절)를 비켜서 브라우저에서 다시 재고, 장식 반영과 React 처리를 나눠 잰다.
 4. **P3 블록 위젯.** 대상: 코드 블록, 표(칸 단위), 수식, Mermaid, 콜아웃·아코디언, 이미지·파일 임베드, MDX 컴포넌트,
    인라인 데이터베이스, frontmatter.
-   - 코드 울타리·표·수식·Mermaid는 P3a·P3b에서 위젯으로 옮겼다. 들여쓴 코드와 나머지 블록은 아직 원문 그대로 보인다.
+   - 코드 울타리·표·수식·Mermaid는 P3a·P3b에서 위젯으로 옮겼다. frontmatter는 P3c에서 속성 패널로 연결했다.
+     들여쓴 코드와 나머지 블록은 아직 원문 그대로 보인다.
    - 남은 위젯을 그리면 `editBlockSource`의 원문 편집 경로를 해당 위젯 편집으로 바꾼다. 속성 변경은 해당 원문 범위만 바꾼다.
 5. **P4 기능 이전.**
    - 슬래시 메뉴, 도구 막대, 찾기.
@@ -188,6 +202,7 @@ bun run test:file -- packages/app/src/editor/live/live-extension.dom.test.tsx
   코드 본문·표 칸 수정 후 새로고침해 저장을 확인했다.
 - P3b 추가 검증: core 위젯·fixture 테스트 20개와 live DOM 115개 통과. core·app 타입 검사 통과. 브라우저에서
   수식·Mermaid 렌더링, 편집, 새로고침 저장을 확인했다.
+- P3c 추가 검증: live DOM 116개와 app 타입 검사 통과. 브라우저에서 속성 패널 편집·저장 및 모드별 표시를 확인했다.
 - **DOM 테스트:** edit fixture를 실제 EditorView의 inputHandler와 keymap으로 재생한다. 키 이벤트는 브라우저처럼
   보낸다(Shift는 글자를 대문자로 바꾸고 `keyCode`를 넣는다). 이렇게 하지 않으면 Cmd+Shift+B가 Cmd+B로 잡힌다.
 - **새 동작을 넣는 순서:** SPEC.md 문구 → `edit.json` fixture → `edit.ts` → 앱 keymap → DOM 테스트 대응표.
