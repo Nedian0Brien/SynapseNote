@@ -230,6 +230,8 @@ const LazySourceEditor = lazy(async () => {
 interface EditorActivityPoolProps {
   activeDocName: string;
   isSourceMode: boolean;
+  /** Which CodeMirror editor source mode shows: plain source or live (syntax hidden). */
+  sourceVariant?: 'source' | 'live';
   editorPlaceholder?: string;
   /**
    * Forwarded to each per-Activity `DocumentErrorBoundary` so the
@@ -343,6 +345,7 @@ export function EditorActivityPool(props: EditorActivityPoolProps) {
 function EditorActivityPoolInner({
   activeDocName,
   isSourceMode,
+  sourceVariant = 'source',
   editorPlaceholder,
   previousDocName,
   onNavigateBack,
@@ -433,6 +436,7 @@ function EditorActivityPoolInner({
           documentExtension={pageMeta.get(entry.docName)?.docExt ?? '.md'}
           isActive={entry.docName === activeDocName}
           isSourceMode={isSourceMode}
+          sourceVariant={sourceVariant}
           editorPlaceholder={editorPlaceholder}
           isNewDoc={
             !loading &&
@@ -456,6 +460,7 @@ interface ActivityEntryProps {
   documentExtension: string;
   isActive: boolean;
   isSourceMode: boolean;
+  sourceVariant: 'source' | 'live';
   editorPlaceholder?: string;
   isNewDoc: boolean;
   previousDocName?: string;
@@ -670,11 +675,14 @@ function SourceEditorSlot({
   entry,
   isActive,
   isSourceMode,
+  sourceVariant,
   editorPlaceholder,
 }: {
   entry: PoolEntrySnapshot;
   isActive: boolean;
   isSourceMode: boolean;
+  /** `live`: the source with its syntax hidden (editor/live). */
+  sourceVariant: 'source' | 'live';
   editorPlaceholder?: string;
 }) {
   const sourceModeRequested = isActive && isSourceMode;
@@ -698,6 +706,7 @@ function SourceEditorSlot({
         provider={entry.provider}
         placeholder={editorPlaceholder}
         isSourceModeActive={sourceModeRequested}
+        variant={sourceVariant}
       />
     </Suspense>
   );
@@ -751,6 +760,7 @@ function ActivityEntry({
   documentExtension,
   isActive,
   isSourceMode,
+  sourceVariant,
   editorPlaceholder,
   isNewDoc,
   previousDocName,
@@ -935,6 +945,7 @@ function ActivityEntry({
             entry={entry}
             isActive={isActive}
             isSourceMode={isSourceMode}
+            sourceVariant={sourceVariant}
             editorPlaceholder={editorPlaceholder}
           />
         </div>

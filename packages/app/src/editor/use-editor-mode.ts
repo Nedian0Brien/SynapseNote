@@ -19,7 +19,7 @@ const STORAGE_KEY = 'ok-editor-mode-v1';
 
 // Single source for the persistable mode set — `EditorModeValue` and the
 // type guard both derive from this so adding a value updates both atomically.
-export const EDITOR_MODE_VALUES = ['wysiwyg', 'source'] as const;
+export const EDITOR_MODE_VALUES = ['wysiwyg', 'source', 'live'] as const;
 
 export type EditorModeValue = (typeof EDITOR_MODE_VALUES)[number];
 

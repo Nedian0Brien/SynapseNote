@@ -264,6 +264,7 @@
       "."
     ],
     "3scuO5": ["Check index again"],
+    "3tjXNl": ["Minimize HTML preview"],
     "3wiBAs": ["Where should it live?"],
     "3xvExJ": ["Calendar dates and display"],
     "3y6XTb": ["Semantic search"],
@@ -770,6 +771,7 @@
     "C7XjNB": ["Global Skill"],
     "C7zMja": ["Fix import values before planning"],
     "C8x1iq": ["Current view"],
+    "C9FfzJ": ["Live editor"],
     "C9TBvF": ["No Outgoing"],
     "CCMPW8": ["Oldest modified"],
     "CCTop_": ["Recent"],
@@ -1152,6 +1154,7 @@
     ],
     "IyLOqi": ["No memos have been created from this PDF yet."],
     "Iys_O-": ["One folder path per line"],
+    "J1tq-C": ["Expand HTML preview"],
     "J2MgzQ": ["Undo all edits on ", ["docName"]],
     "J2Mv98": ["Name (e.g. ", ["login"], ")"],
     "J2eKUI": ["File"],
@@ -1171,7 +1174,6 @@
     "JLzQi_": ["Close ", ["accessibleLabel"]],
     "JM_aq-": ["Use an https:// URL — http:// is only allowed for localhost."],
     "JOcPqH": ["Bring a remote repository onto this machine."],
-    "JWj1N3": ["Enter fullscreen"],
     "JWsZlx": ["Open a project to edit."],
     "JY5Oyv": ["Database"],
     "JZ4Z7I": ["Context Packs truncated"],
@@ -1895,6 +1897,7 @@
       " selected items? Folders and all files inside them will be deleted. This action cannot be undone."
     ],
     "WN8b2p": ["Avg commit latency"],
+    "WPLZGV": ["Live (Markdown with syntax hidden)"],
     "WPwDin": ["Open folder on disk"],
     "WR0y2O": ["Share folder"],
     "WRNXKp": ["Searching"],
@@ -3178,7 +3181,6 @@
       "This ghost value is not canonical until the exact plan commits and the table refreshes."
     ],
     "sOxZaS": ["Failed to load graph"],
-    "sQpDn6": ["Exit fullscreen"],
     "sQqnYh": ["Review property deletion"],
     "sYhTPQ": ["Choose an option"],
     "sZ2IOu": [

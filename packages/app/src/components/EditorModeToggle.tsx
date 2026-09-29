@@ -1,4 +1,5 @@
 import { Trans, useLingui } from '@lingui/react/macro';
+import { Eye } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { EditorModeValue } from '@/editor/use-editor-mode';
@@ -7,6 +8,8 @@ import { Textbox } from './icons/textbox';
 
 interface EditorModeToggleProps {
   isSourceMode: boolean;
+  /** The actual mode; when given, the toggle also offers the live editor. */
+  mode?: EditorModeValue;
   onModeChange: (mode: EditorModeValue) => void;
   /** Disables the Markdown (source) option (e.g. doc editor when offline). */
   sourceDisabled?: boolean;
@@ -19,6 +22,7 @@ interface EditorModeToggleProps {
  */
 export function EditorModeToggle({
   isSourceMode,
+  mode,
   onModeChange,
   sourceDisabled = false,
 }: EditorModeToggleProps) {
@@ -26,7 +30,7 @@ export function EditorModeToggle({
   return (
     <ToggleGroup
       type="single"
-      value={isSourceMode ? 'source' : 'wysiwyg'}
+      value={mode ?? (isSourceMode ? 'source' : 'wysiwyg')}
       onValueChange={(v: EditorModeValue | '') => {
         if (v) onModeChange(v);
       }}
@@ -76,6 +80,25 @@ export function EditorModeToggle({
           )}
         </TooltipContent>
       </Tooltip>
+      {mode !== undefined ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div>
+              <ToggleGroupItem
+                value="live"
+                aria-label={t`Live editor`}
+                disabled={sourceDisabled}
+                className="size-7 px-0 dark:data-[state=on]:bg-foreground/15"
+              >
+                <Eye className="size-4" />
+              </ToggleGroupItem>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            <Trans>Live (Markdown with syntax hidden)</Trans>
+          </TooltipContent>
+        </Tooltip>
+      ) : null}
     </ToggleGroup>
   );
 }

@@ -192,7 +192,7 @@ function EditorAreaInner({
   const stats = useDocumentStats(activeProvider, activeDocName);
   const selectionStats = useSelectionStats(
     activeDocName,
-    editorMode === 'source' ? 'source' : 'wysiwyg',
+    editorMode !== 'wysiwyg' ? 'source' : 'wysiwyg',
   );
   const syncStatus = useSyncStatus(activeProvider);
   const isConnected = syncStatus === 'connected' || syncStatus === 'synced';
@@ -441,7 +441,8 @@ function EditorAreaInner({
       );
     }
   } else {
-    const isSourceMode = editorMode === 'source';
+    // Source and live both run the CodeMirror editor over Y.Text.
+    const isSourceMode = editorMode !== 'wysiwyg';
     const sourceDisabled = !isConnected;
 
     function openAddPropertyForm() {
@@ -474,6 +475,7 @@ function EditorAreaInner({
               // itself is null, so we can assert non-null here.
               activeDocName={deferredActiveDocName ?? activeDocName}
               isSourceMode={isSourceMode}
+              sourceVariant={editorMode === 'live' ? 'live' : 'source'}
               editorPlaceholder={editorPlaceholder}
               previousDocName={previousDocName ?? undefined}
               onNavigateBack={navigateBackToDoc}
@@ -528,6 +530,7 @@ function EditorAreaInner({
             <EditorToolbar
               activeDocName={activeDocName}
               isSourceMode={isSourceMode}
+              editorMode={editorMode}
               sourceDisabled={sourceDisabled}
               onModeChange={onModeChange}
               showAddPropertyButton={!isSourceMode}

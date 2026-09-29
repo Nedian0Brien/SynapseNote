@@ -1,0 +1,91 @@
+/* ========================================================================
+   Live editing mode (editor/live): the Markdown source with its syntax
+   hidden. Values match the visual editor (prose-base.css, links.css,
+   inline-code.css) so switching modes does not change how a note reads.
+   ======================================================================== */
+
+/* Read like the visual editor: body font and rhythm, no code-editor chrome. */
+/* `font-sans!` because codemirror-base.css sets the monospace font on every
+   `.cm-scroller` with `font-mono!`. */
+.cm-editor[data-editor-variant="live"],
+.cm-editor[data-editor-variant="live"] .cm-scroller {
+  @apply font-sans!;
+  font-size: 16px;
+}
+.cm-editor[data-editor-variant="live"] .cm-content {
+  line-height: 1.7;
+  @apply text-gray-800 dark:text-white/80;
+}
+/* Markdown syntax colors belong to the source view; here text keeps the
+   editor color unless a live style (link, tag, code) sets one. */
+.cm-editor[data-editor-variant="live"] .cm-content span:not([class*="cm-live"]) {
+  color: inherit;
+}
+.cm-editor[data-editor-variant="live"] .cm-gutters {
+  display: none;
+}
+.cm-editor[data-editor-variant="live"] .cm-activeLine {
+  background-color: transparent;
+}
+
+[data-editor-variant="live"] .cm-live-h1 {
+  font-size: 1.5em;
+  font-weight: 600;
+  @apply tracking-tighter;
+}
+[data-editor-variant="live"] .cm-live-h2 {
+  font-size: 1.25em;
+  font-weight: 600;
+  @apply tracking-tight;
+}
+[data-editor-variant="live"] .cm-live-h3 {
+  font-size: 1.1em;
+  font-weight: 600;
+  @apply tracking-tight;
+}
+[data-editor-variant="live"] .cm-live-h4,
+[data-editor-variant="live"] .cm-live-h5,
+[data-editor-variant="live"] .cm-live-h6 {
+  font-weight: 600;
+}
+
+[data-editor-variant="live"] .cm-live-strong {
+  font-weight: 600;
+}
+[data-editor-variant="live"] .cm-live-emphasis {
+  font-style: italic;
+}
+[data-editor-variant="live"] .cm-live-delete {
+  text-decoration: line-through;
+}
+[data-editor-variant="live"] .cm-live-highlight {
+  color: inherit;
+  @apply rounded-sm bg-amber-100 dark:bg-amber-900/50;
+}
+[data-editor-variant="live"] .cm-live-code {
+  @apply font-mono bg-muted rounded-md px-1 text-sm;
+}
+[data-editor-variant="live"] .cm-live-link {
+  color: var(--color-azure-blue);
+  @apply font-medium dark:text-sky-blue;
+}
+[data-editor-variant="live"] .cm-live-tag {
+  color: var(--color-azure-blue);
+}
+
+[data-editor-variant="live"] .cm-live-quote {
+  border-left: 3px solid var(--color-gray-300);
+  padding-left: 1em;
+  color: var(--color-gray-600);
+}
+
+[data-editor-variant="live"] .cm-live-list-marker {
+  display: inline-block;
+  min-width: 1.5em;
+  color: var(--muted-foreground);
+}
+[data-editor-variant="live"] .cm-live-task {
+  margin: 0 0.5em 0 0;
+  vertical-align: middle;
+  cursor: pointer;
+}

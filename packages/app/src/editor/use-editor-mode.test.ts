@@ -101,7 +101,7 @@ describe('isEditorModeValue — type guard', () => {
   });
 
   test('EDITOR_MODE_VALUES contains exactly the current mode set', () => {
-    expect([...EDITOR_MODE_VALUES].sort()).toEqual(['source', 'wysiwyg']);
+    expect([...EDITOR_MODE_VALUES].sort()).toEqual(['live', 'source', 'wysiwyg']);
   });
 });
 
@@ -326,6 +326,6 @@ describe('module exports — type-level shape', () => {
     // Type-only assertion: the `as const` produces `readonly [...]`; this line
     // compiles iff the constant keeps its tuple-literal shape.
     const values: readonly EditorModeValue[] = EDITOR_MODE_VALUES;
-    expect(values).toHaveLength(2);
+    expect(values).toHaveLength(3);
   });
 });

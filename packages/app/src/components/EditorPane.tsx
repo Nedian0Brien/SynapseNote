@@ -326,7 +326,9 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
         : `${activePath}${pageMeta.get(activePath)?.docExt ?? '.md'}`;
     return { documentTitle, documentPath };
   })();
-  const activeBodySelection = useSelectionContext(activeDocName, editorMode);
+  // The live editor is the CodeMirror source editor; it publishes as `source`.
+  const selectionSurface = editorMode === 'wysiwyg' ? 'wysiwyg' : 'source';
+  const activeBodySelection = useSelectionContext(activeDocName, selectionSurface);
   // Inline PDFs publish under their owning doc name; a standalone PDF asset
   // publishes under its asset path. Both feed the same chat attachment model.
   const activePdfSelectionName =
@@ -451,7 +453,7 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
     // `activeSelection` drives render state, but a key/menu event can land in the
     // same task as the selection publish, before React commits that snapshot.
     const selection =
-      getSelectionContext(activeDocName, editorMode) ??
+      getSelectionContext(activeDocName, selectionSurface) ??
       getSelectionContext(activePdfSelectionName, 'pdf');
     if (selection === null) return false;
     const selectionMarkdown = selection.markdown;
@@ -688,7 +690,7 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
       <RightRailLayout
         activeTab={activeTab}
         onActiveTabChange={handleActiveTabChange}
-        isSourceMode={editorMode === 'source'}
+        isSourceMode={editorMode !== 'wysiwyg'}
         terminalBridge={desktopBridge}
         terminalVisible={resolvedTerminalSurface === 'dock' ? terminalVisible : false}
         onTerminalVisibleChange={handleTerminalVisibleChange}

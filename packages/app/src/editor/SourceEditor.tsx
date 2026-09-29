@@ -25,6 +25,7 @@ import { matchesKeyboardShortcut } from '@/lib/keyboard-shortcuts';
 import { createSourceClipboardExtension } from './clipboard/index.ts';
 import { sourceChangeTouchesDatabaseFrontmatter } from './database-source-guard';
 import { type CmCacheEntry, mountCmEditor, parkCmEditor } from './editor-cache';
+import { createLiveExtension } from './live/live-extension';
 import { getMountId } from './mount-id-registry';
 import { markUserTyping } from './observers';
 import { publishSelectionContext, selectionSnapshotFromSource } from './selection-context';
@@ -57,6 +58,12 @@ interface SourceEditorProps {
   provider: HocuspocusProvider;
   placeholder?: string;
   isSourceModeActive: boolean;
+  /** `live`: hide the Markdown syntax and edit through the core editing model. */
+  variant?: 'source' | 'live';
+}
+
+function variantExtension(variant: 'source' | 'live') {
+  return variant === 'live' ? createLiveExtension() : createSourcePolishExtension();
 }
 
 function applyOutlineNavigation(view: EditorView, detail: OutlineNavDetail): void {
@@ -116,6 +123,7 @@ export function SourceEditor({
   provider,
   placeholder,
   isSourceModeActive,
+  variant = 'source',
 }: SourceEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -210,6 +218,7 @@ export function SourceEditor({
           const themeCompartment = new Compartment();
           const wordWrapCompartment = new Compartment();
           const placeholderCompartment = new Compartment();
+          const variantCompartment = new Compartment();
           const state = EditorState.create({
             doc: ytext.toString(),
             extensions: [
@@ -268,7 +277,7 @@ export function SourceEditor({
                 wordWrap,
                 currentDocName: resolvedDocName,
               }),
-              createSourcePolishExtension(),
+              variantCompartment.of(variantExtension(variant)),
               sourceClipboard,
               EditorView.updateListener.of((update) => {
                 if (!update.selectionSet && !update.docChanged) return;
@@ -333,6 +342,7 @@ export function SourceEditor({
             themeCompartment,
             wordWrapCompartment,
             placeholderCompartment,
+            variantCompartment,
           };
         },
       });
@@ -447,6 +457,15 @@ export function SourceEditor({
       effects: entry.placeholderCompartment.reconfigure(cmPlaceholder(placeholder ?? '')),
     });
   }, [placeholder]);
+
+  // Switch between plain source and the live editor on the cached view.
+  useEffect(() => {
+    const entry = cmEntryRef.current;
+    if (!entry?.variantCompartment) return;
+    entry.view.dispatch({
+      effects: entry.variantCompartment.reconfigure(variantExtension(variant)),
+    });
+  }, [variant]);
 
   // Outline panel click → jump to the Nth heading line in the CodeMirror doc.
   useEffect(() => {

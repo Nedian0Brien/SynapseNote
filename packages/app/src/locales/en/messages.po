@@ -4192,10 +4192,6 @@ msgstr "Enter a valid branch name (no spaces, no leading dot, no \"..\")."
 msgid "Enter a valid URL (for example https://api.openai.com/v1)."
 msgstr "Enter a valid URL (for example https://api.openai.com/v1)."
 
-#: src/editor/extensions/CodeBlockView.tsx
-msgid "Enter fullscreen"
-msgstr "Enter fullscreen"
-
 #: src/components/settings/AiToolsSection.tsx
 #: src/components/settings/ProjectAiToolsSection.tsx
 msgid "Entry"
@@ -4238,10 +4234,6 @@ msgstr "Execution"
 msgid "Existing branch <0>{trimmed}</0> will be checked out into its own window, under <1>.ok/worktrees/</1>."
 msgstr "Existing branch <0>{trimmed}</0> will be checked out into its own window, under <1>.ok/worktrees/</1>."
 
-#: src/editor/extensions/CodeBlockView.tsx
-msgid "Exit fullscreen"
-msgstr "Exit fullscreen"
-
 #: src/components/DiffView.tsx
 msgid "Exit merge"
 msgstr "Exit merge"
@@ -4271,6 +4263,10 @@ msgstr "Expand attached context"
 #: src/components/ActivityPanelBurstRow.tsx
 msgid "Expand burst {burstNumber} diff"
 msgstr "Expand burst {burstNumber} diff"
+
+#: src/editor/extensions/CodeBlockView.tsx
+msgid "Expand HTML preview"
+msgstr "Expand HTML preview"
 
 #: src/components/MemoPanel.tsx
 msgid "Expand original text"
@@ -5925,6 +5921,14 @@ msgstr "List hierarchy and display"
 msgid "List view"
 msgstr "List view"
 
+#: src/components/EditorModeToggle.tsx
+msgid "Live (Markdown with syntax hidden)"
+msgstr "Live (Markdown with syntax hidden)"
+
+#: src/components/EditorModeToggle.tsx
+msgid "Live editor"
+msgstr "Live editor"
+
 #: src/components/DatabaseWorkspaceViewRenderer.tsx
 msgid "Load more pages"
 msgstr "Load more pages"
@@ -6283,6 +6287,10 @@ msgstr "Message"
 #: src/components/chat/CliChatPanel.tsx
 msgid "Message {0}"
 msgstr "Message {0}"
+
+#: src/editor/components/HtmlPreviewLightbox.tsx
+msgid "Minimize HTML preview"
+msgstr "Minimize HTML preview"
 
 #: src/components/DatabaseDateCellEditor.tsx
 msgid "Minutes before"

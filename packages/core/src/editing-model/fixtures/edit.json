@@ -759,5 +759,18 @@
       }
     ],
     "after": "x ``a`│b`` y"
+  },
+  {
+    "id": "escape-entity-tidied",
+    "group": "edit.escape-entity",
+    "rule": "5",
+    "before": "x **bold│**, y",
+    "actions": [
+      {
+        "type": "text",
+        "text": " X"
+      }
+    ],
+    "after": "x **bold X│**, y"
   }
 ]

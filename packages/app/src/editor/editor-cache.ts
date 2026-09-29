@@ -264,6 +264,8 @@ export interface CmCacheEntry {
   /** Placeholder compartment embedded in `view`. Same per-entry rationale as
    * `themeCompartment` (lowest impact — placeholder only shows on empty docs). */
   placeholderCompartment: Compartment;
+  /** Plain source polish or the live (syntax-hidden) editor; per-entry for the same reason. */
+  variantCompartment?: Compartment;
   scrollTop: number;
   /** See `TiptapCacheEntry.hadFocus`. */
   hadFocus: boolean;
@@ -300,6 +302,8 @@ interface CmFactoryResult {
   wordWrapCompartment: Compartment;
   /** Placeholder compartment embedded in `view`. See `CmCacheEntry.placeholderCompartment`. */
   placeholderCompartment: Compartment;
+  /** Plain source polish or the live (syntax-hidden) editor; per-entry for the same reason. */
+  variantCompartment?: Compartment;
 }
 
 type CmFactory = (container: HTMLElement) => CmFactoryResult;

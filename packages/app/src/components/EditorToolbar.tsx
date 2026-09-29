@@ -23,6 +23,8 @@ const SkillEditorActions = lazy(async () => ({
 interface EditorToolbarProps {
   activeDocName: string | null;
   isSourceMode: boolean;
+  /** The actual mode, when the toggle should show the live (syntax-hidden) editor too. */
+  editorMode?: EditorModeValue;
   sourceDisabled: boolean;
   onModeChange: (mode: EditorModeValue) => void;
   showAddPropertyButton: boolean;
@@ -32,6 +34,7 @@ interface EditorToolbarProps {
 export function EditorToolbar({
   activeDocName,
   isSourceMode,
+  editorMode,
   sourceDisabled,
   onModeChange,
   showAddPropertyButton,
@@ -101,6 +104,7 @@ export function EditorToolbar({
           <Fragment>
             <EditorModeToggle
               isSourceMode={isSourceMode}
+              mode={editorMode}
               onModeChange={onModeChange}
               sourceDisabled={sourceDisabled}
             />

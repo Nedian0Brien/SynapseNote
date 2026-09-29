@@ -1,3 +1,4 @@
+export { type SourceChange, sourceChanges } from './changes.ts';
 export {
   applyAction,
   applyActions,

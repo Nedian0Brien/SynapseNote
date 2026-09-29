@@ -36,6 +36,7 @@
 @import "./styles/components/database.css";
 @import "./styles/overrides/dark.css";
 @import "./styles/editor/source-mode.css";
+@import "./styles/editor/live-mode.css";
 @import "./styles/editor/tags.css";
 @import "./styles/editor/large-document.css";
 @import "./styles/shell/page-header.css";

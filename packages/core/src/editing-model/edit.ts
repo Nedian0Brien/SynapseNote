@@ -201,6 +201,48 @@ function uiFor(source: string, at: number, typed: string): string | undefined {
 }
 
 function typeChar(state: EditState, ch: string): EditState {
+  return tidyCharacterReference(typeCharAt(state, ch));
+}
+
+/**
+ * A whitespace character reference the editor wrote because a bare space
+ * could not close a mark (`**bold&#x20;**`) is no longer needed once more
+ * text follows it (`**bold X**`): turn it back into the character when the
+ * screen stays the same.
+ */
+function tidyCharacterReference(state: EditState): EditState {
+  const window = state.source.slice(Math.max(0, state.head - 16), state.head);
+  const found = /&#x(9|A|20);(?=[^;]*$)/i.exec(window);
+  if (!found) return state;
+  const from = state.head - window.length + found.index;
+  const to = from + found[0].length;
+  if (to >= state.head) return state;
+  const plain = String.fromCodePoint(Number.parseInt(found[1], 16));
+  const source = state.source.slice(0, from) + plain + state.source.slice(to);
+  if (screenSignature(source) !== screenSignature(state.source)) return state;
+  const shift = found[0].length - plain.length;
+  return { ...state, source, anchor: state.anchor - shift, head: state.head - shift };
+}
+
+/** What the screen shows: each unit's text (character references decoded) and the marks over it. */
+function screenSignature(source: string): string {
+  const s = screen(source);
+  return JSON.stringify(
+    s.units.map((u) => {
+      const raw = source.slice(u.from, u.to);
+      const ref = u.widget === 'entity' ? /^&#x([0-9a-f]+);$/i.exec(raw) : null;
+      const text = ref ? String.fromCodePoint(Number.parseInt(ref[1], 16)) : raw;
+      const marks = s.layout.marks
+        .filter((m) => m.open[1] <= u.from && u.to <= m.close[0])
+        .map((m) => m.type)
+        .sort()
+        .join(',');
+      return `${text}|${marks}`;
+    }),
+  );
+}
+
+function typeCharAt(state: EditState, ch: string): EditState {
   let base = state;
   if (base.anchor !== base.head) base = deleteSelection(base);
   const s = screen(base.source);

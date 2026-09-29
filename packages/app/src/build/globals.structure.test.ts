@@ -45,6 +45,7 @@ const EXPECTED_LOCAL_IMPORTS = [
   './styles/components/database.css',
   './styles/overrides/dark.css',
   './styles/editor/source-mode.css',
+  './styles/editor/live-mode.css',
   './styles/editor/tags.css',
   './styles/editor/large-document.css',
   './styles/shell/page-header.css',
