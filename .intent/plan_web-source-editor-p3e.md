@@ -2,7 +2,7 @@
 title: P3e 이미지와 파일 임베드 위젯
 slug: web-source-editor
 stage: plan
-status: active
+status: implemented
 intent: .intent/intent_web-source-editor.md
 spec: .intent/spec_web-source-editor.md
 date: 2026-09-29
@@ -23,3 +23,11 @@ Markdown 이미지, 위키 이미지·파일 임베드, MDX `img`·`File`·`Embe
 
 - core 위젯·레이아웃·fixture 테스트와 app live DOM 테스트를 실행한다.
 - core·app 타입 검사, 변경 파일 Biome 검사, 브라우저 편집·새로고침을 확인한다.
+
+## 결과 (2026-09-29)
+
+- Markdown·위키·MDX 미디어의 `src`와 대체 텍스트·이름 범위를 core 파서 기준으로 구해 해당 범위만 바꾼다.
+- 기존 Image·File·Embed 렌더러를 `live` 블록·인라인 위젯에서 쓴다. 문서 상대 경로와 위키 자산 경로를 해석하고 URL을 렌더링 전에 검사한다.
+- core 관련 테스트 79개, app live DOM 테스트 121개, 미디어 경로 테스트가 통과했다. core·app 타입 검사와 Biome 검사도 통과했다.
+- 브라우저에서 네 이미지가 같은 공개 자산으로 렌더링됐고, Markdown·위키·MDX 속성을 편집한 뒤 새로고침해 원문 유지를 확인했다. 위험한 URL은 iframe을 만들지 않았고 파일 링크를 `#`으로 제한했다.
+- 다음 P3 대상: 일반 MDX 컴포넌트, 인라인 데이터베이스, 들여쓴 코드, 레거시 HTML details, 참조 이미지와 명시적 PDF 뷰어.

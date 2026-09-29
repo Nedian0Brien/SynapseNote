@@ -13,6 +13,7 @@
 import {
   EditorState,
   type Extension,
+  Facet,
   Prec,
   RangeSet,
   StateEffect,
@@ -37,6 +38,7 @@ import {
   type EditState,
   IncrementalLayout,
   type MarkType,
+  mediaWidgetSource,
   sourceChanges,
   type ToggleMark,
 } from '@nedian0brien/synapsenote-core';
@@ -45,6 +47,11 @@ import { pasteShiftHeld } from '../clipboard/shift-tracker';
 import { CodeBlockWidget, TableBlockWidget } from './block-widgets';
 import { ContainerBlockWidget } from './container-widgets';
 import { DiagramBlockWidget } from './diagram-widgets';
+import { MediaBlockWidget, type MediaContext, MediaInlineWidget } from './media-widgets';
+
+const mediaContext = Facet.define<MediaContext, MediaContext>({
+  combine: (values) => values.at(-1) ?? {},
+});
 
 // ── state ───────────────────────────────────────────────────────────────────
 
@@ -78,10 +85,15 @@ const cursorIntentField = StateField.define<CursorIntent>({
 
 /** Block replacements must be a direct decoration source so they can span lines. */
 const blockWidgetField = StateField.define<DecorationSet>({
-  create: (state) => blockDecorations(state.field(layoutField), state.doc.toString()),
+  create: (state) =>
+    blockDecorations(state.field(layoutField), state.doc.toString(), state.facet(mediaContext)),
   update(value, tr) {
-    return tr.docChanged
-      ? blockDecorations(tr.state.field(layoutField), tr.newDoc.toString())
+    return tr.docChanged || tr.reconfigured
+      ? blockDecorations(
+          tr.state.field(layoutField),
+          tr.newDoc.toString(),
+          tr.state.facet(mediaContext),
+        )
       : value;
   },
   provide: (field) => [
@@ -102,7 +114,11 @@ const protectFrontmatter = EditorState.transactionFilter.of((transaction) => {
   return touches ? [] : transaction;
 });
 
-function blockDecorations(layout: IncrementalLayout, source: string): DecorationSet {
+function blockDecorations(
+  layout: IncrementalLayout,
+  source: string,
+  context: MediaContext,
+): DecorationSet {
   const ranges: { from: number; to: number; deco: Decoration }[] = [];
   if (layout.frontmatter) {
     ranges.push({
@@ -118,15 +134,17 @@ function blockDecorations(layout: IncrementalLayout, source: string): Decoration
       const inner =
         widget.node === 'table'
           ? new TableBlockWidget(raw, widget.from, widget.to, createLiveExtension)
-          : widget.node === 'mdxJsxFlowElement' &&
-              containerWidgetSource(source, widget.from, widget.to)
-            ? new ContainerBlockWidget(raw, widget.from, widget.to, createLiveExtension)
+          : widget.node === 'mdxJsxFlowElement' && mediaWidgetSource(source, widget.from, widget.to)
+            ? new MediaBlockWidget(raw, widget.from, widget.to, context)
             : widget.node === 'mdxJsxFlowElement' &&
-                diagramWidgetSource(source, widget.from, widget.to)
-              ? new DiagramBlockWidget(raw, widget.from, widget.to)
-              : widget.node === 'code' && /^ {0,3}(?:`{3,}|~{3,})/.test(raw)
-                ? new CodeBlockWidget(raw, widget.from, widget.to)
-                : null;
+                containerWidgetSource(source, widget.from, widget.to)
+              ? new ContainerBlockWidget(raw, widget.from, widget.to, createLiveExtension)
+              : widget.node === 'mdxJsxFlowElement' &&
+                  diagramWidgetSource(source, widget.from, widget.to)
+                ? new DiagramBlockWidget(raw, widget.from, widget.to)
+                : widget.node === 'code' && /^ {0,3}(?:`{3,}|~{3,})/.test(raw)
+                  ? new CodeBlockWidget(raw, widget.from, widget.to)
+                  : null;
       if (inner) {
         ranges.push({
           from: widget.from,
@@ -345,6 +363,7 @@ interface Drawn {
 function draw(view: EditorView): Drawn {
   const layout = view.state.field(layoutField);
   const doc = view.state.doc;
+  const context = view.state.facet(mediaContext);
   const replaced: { from: number; to: number; deco: Decoration }[] = [];
   const styled: { from: number; to: number; deco: Decoration }[] = [];
   const lines = new Map<number, string>();
@@ -385,6 +404,15 @@ function draw(view: EditorView): Drawn {
             widget: new CharacterWidget(decodeReference(doc.sliceString(w.from, w.to))),
           }),
         });
+      } else if (w.kind === 'inline' && (w.node === 'image' || w.node === 'wikiLinkEmbed')) {
+        const raw = doc.sliceString(w.from, w.to);
+        if (mediaWidgetSource(raw, 0, raw.length)) {
+          replaced.push({
+            from: w.from,
+            to: w.to,
+            deco: Decoration.replace({ widget: new MediaInlineWidget(raw, w.from, w.to, context) }),
+          });
+        }
       }
     }
     for (const m of marks) {
@@ -434,7 +462,12 @@ const livePlugin = ViewPlugin.fromClass(
         this.atomic = this.atomic.map(update.changes);
         return;
       }
-      if (update.docChanged || update.viewportChanged || this.composing) {
+      if (
+        update.docChanged ||
+        update.viewportChanged ||
+        update.transactions.some((tr) => tr.reconfigured) ||
+        this.composing
+      ) {
         this.composing = false;
         ({ decorations: this.decorations, atomic: this.atomic } = draw(update.view));
       }
@@ -447,8 +480,9 @@ const livePlugin = ViewPlugin.fromClass(
   },
 );
 
-export function createLiveExtension(): Extension {
+export function createLiveExtension(context: MediaContext = {}): Extension {
   return [
+    mediaContext.of(context),
     layoutField,
     blockWidgetField,
     protectFrontmatter,

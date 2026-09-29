@@ -5,7 +5,7 @@
 웹 앱에 Markdown 원문(`Y.Text('source')`)을 CodeMirror 6로 직접 편집하면서 기호를 숨기는 `live` 편집 모드가
 생겼다. 편집 규칙은 core의 순수 함수이고, 네이티브 앱도 같은 명세와 fixture를 쓴다. P0~P2(뼈대), P2c(기존
 편집기 동작 옮기기), P3a(코드 울타리·표 위젯), P3b(수식·Mermaid 위젯), P3c(frontmatter 속성 화면),
-P3d(콜아웃·아코디언 위젯)가 끝났다.
+P3d(콜아웃·아코디언 위젯), P3e(이미지·파일 임베드 위젯)가 끝났다.
 P3의 나머지 블록은 진행 전이다.
 
 ## 1. 사용자가 정한 것
@@ -35,7 +35,7 @@ P3의 나머지 블록은 진행 전이다.
 ## 2. 작업 위치와 상태
 
 - **브랜치·워크트리:** `codex/web-source-editor`, `.worktree/web-source-editor`
-  - P3d 구현 커밋은 이후 `git log -1`로 확인한다. PR은 아직 없다.
+  - P3e 구현 커밋은 이후 `git log -1`로 확인한다. PR은 아직 없다.
   - main에는 사용자가 끝났다고 명시적으로 확인한 뒤에만 병합한다.
 - **아티팩트:** `.intent/intent_web-source-editor.md`(수락됨), `spec_web-source-editor.md`(R1~R10, 단계 P0~P6),
   `plan_web-source-editor-p0.md` `-p1.md` `-p2.md` `-p2c.md`. 계획 파일 끝에 단계별 결과가 있다.
@@ -88,6 +88,17 @@ P3의 나머지 블록은 진행 전이다.
   세 위젯의 제목·종류·본문을 수정하고 새로고침 뒤 원문 유지를 확인했다.
 - 뒤에 남은 P3: 이미지·파일 임베드, 일반 MDX 컴포넌트, 인라인 데이터베이스, 들여쓴 코드, 레거시 HTML details.
 
+### P3e 추가 (2026-09-29)
+
+- `.intent/plan_web-source-editor-p3e.md`에 범위와 결과를 적었다.
+- `mediaWidgetSource`가 Markdown·위키·MDX 이미지·파일·Embed의 편집 가능한 원문 범위를 찾는다.
+  `packages/app/src/editor/live/media-widgets.tsx`가 기존 Image·File·Embed 컴포넌트를 블록·인라인 위젯으로 그린다.
+- SourceEditor가 문서 이름과 자산·파일 목록을 live 확장에 전달한다. 기존 URL 안전 검사, 문서 상대 경로,
+  위키 파일명 해석을 적용한다. 위험한 URL의 `#`을 문서 경로로 바꾸던 공통 정규화 문제도 고쳤다.
+- 브라우저 확인 문서: `http://localhost:5183/#/notes/p3e-media-review-1790693239824` (임시 콘텐츠 폴더가 살아 있는 동안).
+  네 이미지가 같은 테스트 자산으로 표시됐고 Markdown·위키·MDX 속성을 편집·새로고침했다.
+- 뒤에 남은 P3: 일반 MDX, 인라인 데이터베이스, 들여쓴 코드, 레거시 HTML details, 참조 이미지, 명시적 PDF 뷰어.
+
 ## 3. 끝난 단계
 
 | 단계 | 커밋 | 내용 |
@@ -101,7 +112,8 @@ P3의 나머지 블록은 진행 전이다.
 | P3a | `0791f80f` | 코드 울타리·표의 편집 가능한 블록 위젯과 범위별 원문 변경 |
 | P3b | `124a9b53` | 수식·Mermaid의 편집 가능한 미리보기와 범위별 원문 변경 |
 | P3c | `02c7dd76` | `live` 문서 속성 패널과 숨긴 YAML 보호 |
-| P3d | 구현 커밋은 `git log -1` | GFM·MDX 콜아웃과 아코디언의 편집 가능한 블록 위젯 |
+| P3d | `ea1f2f51` | GFM·MDX 콜아웃과 아코디언의 편집 가능한 블록 위젯 |
+| P3e | 구현 커밋은 `git log -1` | Markdown·위키·MDX 이미지·파일 임베드 위젯 |
 
 P2c에서 옮긴 동작은 다음과 같다. 각 동작의 근거 파일은 `plan_web-source-editor-p2c.md`에 있다.
 
@@ -134,7 +146,7 @@ P2c에서 옮긴 동작은 다음과 같다. 각 동작의 근거 파일은 `pla
    - 다음 할 일: `use-document-stats` 문제(5절)를 비켜서 브라우저에서 다시 재고, 장식 반영과 React 처리를 나눠 잰다.
 4. **P3 블록 위젯.** 대상: 코드 블록, 표(칸 단위), 수식, Mermaid, 콜아웃·아코디언, 이미지·파일 임베드, MDX 컴포넌트,
    인라인 데이터베이스, frontmatter.
-   - 코드 울타리·표·수식·Mermaid·콜아웃·아코디언은 P3a·P3b·P3d에서 위젯으로 옮겼다.
+   - 코드 울타리·표·수식·Mermaid·콜아웃·아코디언·이미지·파일 임베드는 P3a·P3b·P3d·P3e에서 위젯으로 옮겼다.
      frontmatter는 P3c에서 속성 패널로 연결했다.
      들여쓴 코드와 나머지 블록은 아직 원문 그대로 보인다.
    - 남은 위젯을 그리면 `editBlockSource`의 원문 편집 경로를 해당 위젯 편집으로 바꾼다. 속성 변경은 해당 원문 범위만 바꾼다.
@@ -196,12 +208,14 @@ main에도 있는 문제다. 작업 칩 두 개를 사용자에게 제안해 두
     사이에서 옮긴다.
   - `changes.ts`: `sourceChanges`는 편집 결과를 코드 포인트 경계의 최소 변경으로 바꾼다.
   - `block-widget.ts`: 코드 언어·본문과 표 칸의 원문 범위, 해당 범위만 바꾸는 위젯 편집 규칙.
+    P3e에서는 미디어 속성 범위도 여기에 추가했다.
 - **app**
   - `packages/app/src/editor/live/live-extension.ts`: 레이아웃 StateField, 커서 의도 필드(`side`·`pending`·`undo`),
     keymap, inputHandler(IME 조합 중에는 건너뜀), 붙여넣기·복사, 장식과 위젯.
   - `packages/app/src/editor/live/block-widgets.ts`: 코드·표 블록 위젯, 표 칸 안의 작은 live 편집기.
   - `packages/app/src/editor/live/diagram-widgets.ts`: 수식·Mermaid 본문 입력과 기존 렌더러 미리보기.
   - `packages/app/src/editor/live/container-widgets.tsx`: 콜아웃·아코디언 렌더링과 내부 live 편집기.
+  - `packages/app/src/editor/live/media-widgets.tsx`: 이미지·파일·Embed 미리보기와 속성 편집.
   - `SourceEditor.tsx`: `variant` Compartment로 source와 live를 바꾼다.
   - `use-editor-mode.ts`: 모드는 `'wysiwyg' | 'source' | 'live'`이고 localStorage 키는 `ok-editor-mode-v1`다.
 
@@ -220,6 +234,8 @@ bun run test:file -- packages/app/src/editor/live/live-extension.dom.test.tsx
 - P3c 추가 검증: live DOM 116개와 app 타입 검사 통과. 브라우저에서 속성 패널 편집·저장 및 모드별 표시를 확인했다.
 - P3d 추가 검증: core 관련 테스트 66개, live DOM 118개, 기존 컴포넌트 테스트 10개 통과. core·app 타입 검사 통과. 브라우저에서
   GFM·MDX 콜아웃과 아코디언 표시·편집·새로고침 저장을 확인했다.
+- P3e 추가 검증: core 관련 테스트 79개, live DOM 121개, 미디어 경로 테스트 통과. core·app 타입 검사 통과.
+  브라우저에서 문서 상대·위키 파일명 경로, 편집·새로고침, 위험 URL 렌더링 제한을 확인했다.
 - **DOM 테스트:** edit fixture를 실제 EditorView의 inputHandler와 keymap으로 재생한다. 키 이벤트는 브라우저처럼
   보낸다(Shift는 글자를 대문자로 바꾸고 `keyCode`를 넣는다). 이렇게 하지 않으면 Cmd+Shift+B가 Cmd+B로 잡힌다.
 - **새 동작을 넣는 순서:** SPEC.md 문구 → `edit.json` fixture → `edit.ts` → 앱 keymap → DOM 테스트 대응표.

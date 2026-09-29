@@ -178,5 +178,77 @@
     "from": 0,
     "edit": { "type": "container-title", "text": "More" },
     "after": "<Accordion title=\"More\">\nbody\n</Accordion>"
+  },
+  {
+    "id": "markdown-image-src",
+    "group": "widget.media-src",
+    "rule": "3",
+    "before": "a ![Alt](old.png) z",
+    "from": 2,
+    "edit": { "type": "media-src", "text": "new.png" },
+    "after": "a ![Alt](new.png) z"
+  },
+  {
+    "id": "markdown-image-alt",
+    "group": "widget.media-label",
+    "rule": "3",
+    "before": "![Old](a.png \"Title\")",
+    "from": 0,
+    "edit": { "type": "media-label", "text": "New" },
+    "after": "![New](a.png \"Title\")"
+  },
+  {
+    "id": "wiki-image-target",
+    "group": "widget.media-src",
+    "rule": "3",
+    "before": "![[old.png]]",
+    "from": 0,
+    "edit": { "type": "media-src", "text": "new.png" },
+    "after": "![[new.png]]"
+  },
+  {
+    "id": "wiki-file-alias",
+    "group": "widget.media-label",
+    "rule": "3",
+    "before": "![[report.pdf]]",
+    "from": 0,
+    "edit": { "type": "media-label", "text": "Report" },
+    "after": "![[report.pdf|Report]]"
+  },
+  {
+    "id": "mdx-image-alt",
+    "group": "widget.media-label",
+    "rule": "3",
+    "before": "<img src=\"a.png\" alt=\"Old\" />",
+    "from": 0,
+    "edit": { "type": "media-label", "text": "New" },
+    "after": "<img src=\"a.png\" alt=\"New\" />"
+  },
+  {
+    "id": "mdx-file-name",
+    "group": "widget.media-label",
+    "rule": "3",
+    "before": "<File src=\"report.pdf\" name=\"Old\" />",
+    "from": 0,
+    "edit": { "type": "media-label", "text": "New" },
+    "after": "<File src=\"report.pdf\" name=\"New\" />"
+  },
+  {
+    "id": "mdx-embed-src",
+    "group": "widget.media-src",
+    "rule": "3",
+    "before": "<Embed src=\"https://old.example\" />",
+    "from": 0,
+    "edit": { "type": "media-src", "text": "https://new.example" },
+    "after": "<Embed src=\"https://new.example\" />"
+  },
+  {
+    "id": "mdx-embed-add-title",
+    "group": "widget.media-label",
+    "rule": "3",
+    "before": "<Embed src=\"https://example.com\" />",
+    "from": 0,
+    "edit": { "type": "media-label", "text": "Example" },
+    "after": "<Embed src=\"https://example.com\" title=\"Example\" />"
   }
 ]

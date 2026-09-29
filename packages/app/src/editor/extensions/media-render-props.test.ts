@@ -40,6 +40,11 @@ describe('normalizeDocRelativeMediaRenderProps', () => {
     expect(normalizeDocRelativeMediaRenderProps('img', remote, 'notes/today')).toBe(remote);
   });
 
+  test('does not turn an inert sanitized URL into a document path', () => {
+    const blocked = { src: '#' };
+    expect(normalizeDocRelativeMediaRenderProps('File', blocked, 'notes/today')).toBe(blocked);
+  });
+
   test('does not guess without a source document', () => {
     const props = { src: './pasted-20260520-165209.png' };
     expect(normalizeDocRelativeMediaRenderProps('img', props, null)).toBe(props);

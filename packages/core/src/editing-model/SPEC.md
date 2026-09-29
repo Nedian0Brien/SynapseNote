@@ -40,6 +40,7 @@ SynapseNote의 편집기는 Markdown 원문(`Y.Text('source')`)을 직접 편집
 | 작업 항목 | `- [ ] a` | `- [ ] ` | 체크박스(인라인 위젯) | hide.task |
 | 인용 | `> a` | `> ` | 인용 막대 | hide.quote |
 | 이미지 | `![대체](src)` `![[a.png]]` | 전체 | 이미지(위젯) | hide.image |
+| 파일 임베드 | `![[report.pdf]]` | 전체 | 파일(위젯) | hide.file |
 | 블록 | 표, 코드 블록, 수식, Mermaid, 콜아웃, 아코디언, MDX 컴포넌트, 인라인 데이터베이스, 수평선, HTML 블록, 링크 참조 정의, 각주 정의, frontmatter | 전체 | 블록 위젯 | hide.block-* |
 
 frontmatter는 `live` 편집기에서 YAML 원문 범위를 숨기고, 같은 문서 화면의 기존 속성 패널로 표시·편집한다.
@@ -56,6 +57,9 @@ GFM 콜아웃(`> [!TYPE]`)과 MDX `<Callout>`·`<Accordion>`은 기존 컴포넌
 규칙으로 편집한다. GFM의 `>` 접두어는 감춘 채 삽입·삭제·줄바꿈을 원문 위치에 적용한다. 제목·종류 변경은
 헤더나 해당 MDX 속성 값만 바꾼다. (widget.callout-body, widget.callout-attribute,
 widget.accordion-body, widget.accordion-attribute)
+Markdown 이미지와 위키 이미지·파일 임베드, MDX `img`·`File`·`Embed`는 미디어 위젯으로 그린다. `src`와 대체
+텍스트·표시 이름의 변경은 해당 원문 범위만 바꾼다. 렌더링 전에 앱의 URL 안전 검사와 문서 상대 경로 해석을
+적용한다. (widget.media-src, widget.media-label, hide.block-media)
 
 - 문단 안의 한 줄 바꿈(soft break)은 줄바꿈으로 보인다. 원문의 줄 구조를 그대로 보이기 위해서다. (hide.soft-break)
 - 블록 사이의 빈 줄은 빈 줄로 보이고, 커서가 놓일 수 있다. (hide.blank-lines)
@@ -185,7 +189,7 @@ id가 `*`로 끝나면 그 접두어로 시작하는 group을 모두 가리킨�
 
 `fixtures/widget.json`: `{ id, group, rule, before, from, edit, after }`. `from`은 블록 시작 오프셋이고,
 `edit`는 `code-body`·`code-language`·`table-cell`·`diagram-body`·`container-body`·`container-title`·
-`container-type` 중 하나다. 결과는 바뀐 원문 전체로 비교한다.
+`container-type`·`media-src`·`media-label` 중 하나다. 결과는 바뀐 원문 전체로 비교한다.
 
 - `{ "type": "text", "text": "…" }`: 글자를 하나씩 친다.
 - `{ "type": "key", "key": "Backspace" | "Delete" | "Enter" | "Shift-Enter" | "Tab" | "Shift-Tab" | "ArrowRight" |

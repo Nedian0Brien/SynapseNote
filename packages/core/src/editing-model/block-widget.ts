@@ -1,5 +1,6 @@
 /** Source ranges used by the live editor's code and table widgets. */
 import type { Table } from 'mdast';
+import { IMAGE_EXTENSIONS } from '../constants/upload.ts';
 import { sharedExtensions } from '../extensions/shared.ts';
 import { MarkdownManager } from '../markdown/index.ts';
 import { sourceChanges } from './changes.ts';
@@ -45,6 +46,18 @@ export interface ContainerWidgetSource {
   attributeInsert: number;
 }
 
+export interface MediaWidgetSource {
+  kind: 'image' | 'file' | 'embed';
+  syntax: 'markdown' | 'wiki' | 'mdx';
+  nodeName: string;
+  src: string;
+  label: string;
+  props: Readonly<Record<string, string | boolean>>;
+  srcRange: Range | null;
+  labelRange: Range | null;
+  attributeInsert: number;
+}
+
 export type BlockWidgetEdit =
   | { type: 'code-body'; text: string }
   | { type: 'code-language'; text: string }
@@ -52,6 +65,8 @@ export type BlockWidgetEdit =
   | { type: 'container-body'; text: string }
   | { type: 'container-title'; text: string }
   | { type: 'container-type'; text: string }
+  | { type: 'media-src'; text: string }
+  | { type: 'media-label'; text: string }
   | { type: 'table-cell'; row: number; column: number; text: string };
 
 let parser: MarkdownManager | undefined;
@@ -304,6 +319,140 @@ function quotedBody(
   return { body, boundaries };
 }
 
+/** Locate the editable source fields of a Markdown, wiki, or MDX media node. */
+export function mediaWidgetSource(
+  source: string,
+  from: number,
+  to: number,
+): MediaWidgetSource | null {
+  const raw = source.slice(from, to);
+  if (!raw.startsWith('![') && !/^<(?:img|File|Embed)\b/.test(raw)) return null;
+  if (raw.startsWith('![[') && raw.endsWith(']]')) {
+    const pipe = raw.indexOf('|', 3);
+    const targetEnd = pipe < 0 ? raw.length - 2 : pipe;
+    const target = raw.slice(3, targetEnd);
+    const extension = target.split(/[?#]/, 1)[0]?.split('.').at(-1)?.toLowerCase() ?? '';
+    const image = IMAGE_EXTENSIONS.has(extension);
+    return {
+      kind: image ? 'image' : 'file',
+      syntax: 'wiki',
+      nodeName: 'wikiLinkEmbed',
+      src: target,
+      label: pipe < 0 ? target : raw.slice(pipe + 1, -2),
+      props: {},
+      srcRange: [from + 3, from + targetEnd],
+      labelRange: pipe < 0 ? null : [from + pipe + 1, to - 2],
+      attributeInsert: to - 2,
+    };
+  }
+  if (raw.startsWith('![')) {
+    const node = md().parseToMdast(raw).children[0];
+    const image =
+      node?.type === 'mdxJsxFlowElement' && node.name === 'CommonMarkImage'
+        ? node
+        : node?.type === 'paragraph' &&
+            node.children.length === 1 &&
+            node.children[0]?.type === 'image'
+          ? node.children[0]
+          : null;
+    if (!image) return null;
+    let depth = 1;
+    let bracket = -1;
+    for (let i = 2; i < raw.length; i++) {
+      if (raw[i] === '\\') {
+        i++;
+        continue;
+      }
+      if (raw[i] === '[') depth++;
+      if (raw[i] === ']' && --depth === 0) {
+        bracket = i;
+        break;
+      }
+    }
+    if (bracket < 0 || raw[bracket + 1] !== '(') return null;
+    let start = bracket + 2;
+    while (raw[start] === ' ') start++;
+    const angle = raw[start] === '<';
+    if (angle) start++;
+    let end = start;
+    let parens = 0;
+    for (; end < raw.length; end++) {
+      const ch = raw[end];
+      if (ch === '\\') {
+        end++;
+        continue;
+      }
+      if (angle && ch === '>') break;
+      if (!angle && ch === '(') parens++;
+      else if (!angle && ch === ')') {
+        if (parens === 0) break;
+        parens--;
+      } else if (!angle && /\s/.test(ch) && parens === 0) break;
+    }
+    const alt = raw.slice(2, bracket);
+    const url = raw.slice(start, end);
+    return {
+      kind: 'image',
+      syntax: 'markdown',
+      nodeName: 'image',
+      src: url,
+      label: alt,
+      props: {
+        title:
+          image.type === 'mdxJsxFlowElement'
+            ? String(
+                image.attributes.find((a) => a.type === 'mdxJsxAttribute' && a.name === 'title')
+                  ?.value ?? '',
+              )
+            : (image.title ?? ''),
+      },
+      srcRange: [from + start, from + end],
+      labelRange: [from + 2, from + bracket],
+      attributeInsert: from + bracket,
+    };
+  }
+  if (!raw.startsWith('<')) return null;
+  const node = md().parseToMdast(raw).children[0];
+  if (node?.type !== 'mdxJsxFlowElement') return null;
+  const name = node.name;
+  if (!name) return null;
+  const kind =
+    name === 'img' ? 'image' : name === 'File' ? 'file' : name === 'Embed' ? 'embed' : null;
+  if (!kind) return null;
+  const props: Record<string, string | boolean> = {};
+  const range = (key: string): Range | null => {
+    const attr = node.attributes.find((a) => a.type === 'mdxJsxAttribute' && a.name === key);
+    if (attr?.type !== 'mdxJsxAttribute' || typeof attr.value !== 'string') return null;
+    const a = attr.position?.start.offset;
+    const b = attr.position?.end.offset;
+    if (a === undefined || b === undefined) return null;
+    const spelling = raw.slice(a, b);
+    const quote = /=[ \t]*(["'])/.exec(spelling);
+    if (!quote) return null;
+    return [from + a + quote.index + quote[0].length, from + b - 1];
+  };
+  for (const attr of node.attributes) {
+    if (attr.type !== 'mdxJsxAttribute') continue;
+    if (typeof attr.value === 'string') props[attr.name] = attr.value;
+    else if (attr.value === null) props[attr.name] = true;
+  }
+  const openerEnd = mdxOpenerEnd(raw);
+  if (openerEnd < 0) return null;
+  const labelKey = kind === 'image' ? 'alt' : kind === 'file' ? 'name' : 'title';
+  const insertAt = from + openerEnd - (raw[openerEnd - 1] === '/' ? 1 : 0);
+  return {
+    kind,
+    syntax: 'mdx',
+    nodeName: name,
+    src: typeof props.src === 'string' ? props.src : '',
+    label: typeof props[labelKey] === 'string' ? props[labelKey] : '',
+    props,
+    srcRange: range('src'),
+    labelRange: range(labelKey),
+    attributeInsert: insertAt,
+  };
+}
+
 /** Replace only the source range owned by an editable widget part. */
 export function updateBlockWidget(
   source: string,
@@ -377,6 +526,48 @@ export function updateBlockWidget(
         ? ` ${text}`
         : ` ${label}="${text.replace(/&/g, '&amp;').replace(/"/g, '&quot;')}"`;
     return replace([container.attributeInsert, container.attributeInsert], insertion);
+  }
+  if (edit.type === 'media-src' || edit.type === 'media-label') {
+    const media = mediaWidgetSource(source, from, to);
+    if (!media) return null;
+    const range = edit.type === 'media-src' ? media.srcRange : media.labelRange;
+    const labelKey = media.kind === 'image' ? 'alt' : media.kind === 'file' ? 'name' : 'title';
+    const text = edit.text.replace(/[\r\n]/g, ' ');
+    if (range) {
+      if (media.syntax === 'mdx') {
+        const quote = source[range[0] - 1];
+        const escaped = text
+          .replace(/&/g, '&amp;')
+          .replace(quote === "'" ? /'/g : /"/g, quote === "'" ? '&#39;' : '&quot;');
+        return replace(range, escaped);
+      }
+      if (media.syntax === 'markdown') {
+        const escaped =
+          edit.type === 'media-label'
+            ? text.replace(/([\\[\]])/g, '\\$1')
+            : text.replace(/ /g, '%20').replace(/\)/g, '\\)');
+        return replace(range, escaped);
+      }
+      return replace(range, text.replace(/\]/g, '\\]'));
+    }
+    if (!text) return source;
+    if (media.syntax === 'wiki') {
+      return replace(
+        [media.attributeInsert, media.attributeInsert],
+        `|${text.replace(/\]/g, '\\]')}`,
+      );
+    }
+    if (media.syntax === 'mdx') {
+      const key = edit.type === 'media-src' ? 'src' : labelKey;
+      const escaped = text.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+      const before = /\s/.test(source[media.attributeInsert - 1] ?? '') ? '' : ' ';
+      const after = source[media.attributeInsert] === '/' ? ' ' : '';
+      return replace(
+        [media.attributeInsert, media.attributeInsert],
+        `${before}${key}="${escaped}"${after}`,
+      );
+    }
+    return null;
   }
   const code = codeWidgetSource(source, from, to);
   if (!code) return null;

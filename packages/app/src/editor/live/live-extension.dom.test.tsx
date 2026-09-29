@@ -20,7 +20,12 @@ afterEach(() => {
   for (const view of views.splice(0)) view.destroy();
 });
 
-function mount(source: string, anchor: number, head: number): EditorView {
+function mount(
+  source: string,
+  anchor: number,
+  head: number,
+  context: Parameters<typeof createLiveExtension>[0] = {},
+): EditorView {
   const parent = document.createElement('div');
   document.body.appendChild(parent);
   const view = new EditorView({
@@ -28,7 +33,7 @@ function mount(source: string, anchor: number, head: number): EditorView {
     state: EditorState.create({
       doc: source,
       selection: EditorSelection.single(anchor, head),
-      extensions: [createLiveExtension()],
+      extensions: [createLiveExtension(context)],
     }),
   });
   views.push(view);
@@ -281,5 +286,41 @@ describe('live editor block widgets', () => {
     expect(view.state.doc.toString()).toBe(
       '<Accordion title="Details" defaultOpen>\nold!\n</Accordion>',
     );
+  });
+
+  test('MDX file widget edits only its name attribute', () => {
+    const view = mount('<File src="report.pdf" name="Old" />', 0, 0);
+    const widget = view.dom.querySelector('.cm-live-media-block');
+    const name = widget?.querySelector<HTMLInputElement>('input[aria-label="File name"]');
+    expect(name?.value).toBe('Old');
+    expect(widget?.textContent).not.toContain('<File');
+    if (!name) throw new Error('File name input missing');
+    name.value = 'New';
+    name.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(view.state.doc.toString()).toBe('<File src="report.pdf" name="New" />');
+  });
+
+  test('inline wiki file opens property controls and adds an alias', () => {
+    const view = mount('![[report.pdf]]', 0, 0);
+    const widget = view.dom.querySelector('.cm-live-media-inline');
+    const edit = widget?.querySelector<HTMLButtonElement>('.cm-live-media-edit');
+    if (!edit) throw new Error('Inline media edit button missing');
+    edit.click();
+    const name = widget?.querySelector<HTMLInputElement>('input[aria-label="File name"]');
+    expect(name?.value).toBe('report.pdf');
+    if (!name) throw new Error('Inline file name input missing');
+    name.value = 'Report';
+    name.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(view.state.doc.toString()).toBe('![[report.pdf|Report]]');
+  });
+
+  test('inline Markdown image edits its URL without changing surrounding text', () => {
+    const view = mount('before ![Alt](old.png) after', 0, 0);
+    const widget = view.dom.querySelector('.cm-live-media-inline');
+    const source = widget?.querySelector<HTMLInputElement>('.cm-live-media-source');
+    if (!source) throw new Error('Image source input missing');
+    source.value = 'new.png';
+    source.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(view.state.doc.toString()).toBe('before ![Alt](new.png) after');
   });
 });

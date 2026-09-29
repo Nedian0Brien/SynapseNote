@@ -3997,6 +3997,10 @@ msgstr ""
 msgid "Edit markdown link"
 msgstr ""
 
+#: src/editor/live/media-widgets.tsx
+msgid "Edit media"
+msgstr ""
+
 #: src/components/MemoPanel.tsx
 msgid "Edit memo"
 msgstr ""
@@ -4107,6 +4111,14 @@ msgstr ""
 
 #: src/editor/slash-command/component-items.tsx
 msgid "Embed an image with optional alt text."
+msgstr ""
+
+#: src/editor/live/media-widgets.tsx
+msgid "Embed title"
+msgstr ""
+
+#: src/editor/live/media-widgets.tsx
+msgid "Embed URL"
 msgstr ""
 
 #: src/components/settings/SearchSection.tsx
@@ -4652,8 +4664,16 @@ msgstr ""
 msgid "File duplicated"
 msgstr ""
 
+#: src/editor/live/media-widgets.tsx
+msgid "File name"
+msgstr ""
+
 #: src/components/TrashFailureModal.tsx
 msgid "File not found"
+msgstr ""
+
+#: src/editor/live/media-widgets.tsx
+msgid "File path or URL"
 msgstr ""
 
 #: src/components/InstallInClaudeDesktopDialog.tsx
@@ -5352,6 +5372,10 @@ msgstr ""
 
 #: src/components/settings/OkignoreSection.tsx
 msgid "Ignore patterns (raw text)"
+msgstr ""
+
+#: src/editor/live/media-widgets.tsx
+msgid "Image alt text"
 msgstr ""
 
 #: src/components/SkillsSidebarSection.tsx

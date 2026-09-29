@@ -4002,6 +4002,10 @@ msgstr "Edit grant"
 msgid "Edit markdown link"
 msgstr "Edit markdown link"
 
+#: src/editor/live/media-widgets.tsx
+msgid "Edit media"
+msgstr "Edit media"
+
 #: src/components/MemoPanel.tsx
 msgid "Edit memo"
 msgstr "Edit memo"
@@ -4113,6 +4117,14 @@ msgstr "Embed an external page in an inline iframe (docs, demos, Figma, CodeSand
 #: src/editor/slash-command/component-items.tsx
 msgid "Embed an image with optional alt text."
 msgstr "Embed an image with optional alt text."
+
+#: src/editor/live/media-widgets.tsx
+msgid "Embed title"
+msgstr "Embed title"
+
+#: src/editor/live/media-widgets.tsx
+msgid "Embed URL"
+msgstr "Embed URL"
 
 #: src/components/settings/SearchSection.tsx
 msgid "Embeddings API endpoint"
@@ -4657,9 +4669,17 @@ msgstr "File drop zone"
 msgid "File duplicated"
 msgstr "File duplicated"
 
+#: src/editor/live/media-widgets.tsx
+msgid "File name"
+msgstr "File name"
+
 #: src/components/TrashFailureModal.tsx
 msgid "File not found"
 msgstr "File not found"
+
+#: src/editor/live/media-widgets.tsx
+msgid "File path or URL"
+msgstr "File path or URL"
 
 #: src/components/InstallInClaudeDesktopDialog.tsx
 msgid "File saved & Claude Desktop App opened"
@@ -5358,6 +5378,10 @@ msgstr "Ignore patterns"
 #: src/components/settings/OkignoreSection.tsx
 msgid "Ignore patterns (raw text)"
 msgstr "Ignore patterns (raw text)"
+
+#: src/editor/live/media-widgets.tsx
+msgid "Image alt text"
+msgstr "Image alt text"
 
 #: src/components/SkillsSidebarSection.tsx
 msgid "Import"

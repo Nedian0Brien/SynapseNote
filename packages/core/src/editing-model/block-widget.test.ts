@@ -3,6 +3,7 @@ import {
   codeWidgetSource,
   containerWidgetSource,
   diagramWidgetSource,
+  mediaWidgetSource,
   tableWidgetSource,
   updateBlockWidget,
 } from './block-widget.ts';
@@ -13,7 +14,8 @@ describe('block widget source edits', () => {
   for (const fixture of widgetFixtures) {
     test(fixture.id, () => {
       const block = computeLayout(fixture.before).widgets.find(
-        (widget) => widget.kind === 'block' && widget.from === fixture.from,
+        (widget) =>
+          widget.from === fixture.from && (widget.kind === 'block' || widget.kind === 'inline'),
       );
       expect(block).toBeDefined();
       if (!block) throw new Error(`Missing widget for ${fixture.id}`);
@@ -60,5 +62,14 @@ describe('block widget source edits', () => {
     expect(model?.bodyBoundaries).toHaveLength((model?.body.length ?? 0) + 1);
     expect(model?.title).toBe('Title');
     expect(model?.calloutType).toBe('note');
+  });
+
+  test('media source distinguishes inline images, wiki files, and MDX embeds', () => {
+    const image = '![Alt](./image.png)';
+    const file = '![[report.pdf|Report]]';
+    const embed = '<Embed src="https://example.com" />';
+    expect(mediaWidgetSource(image, 0, image.length)?.kind).toBe('image');
+    expect(mediaWidgetSource(file, 0, file.length)?.kind).toBe('file');
+    expect(mediaWidgetSource(embed, 0, embed.length)?.kind).toBe('embed');
   });
 });

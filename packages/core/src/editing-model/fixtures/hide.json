@@ -132,6 +132,30 @@
     "marked": "⦃![대체](a.png)⦄"
   },
   {
+    "id": "wiki-file",
+    "group": "hide.file",
+    "rule": "3",
+    "marked": "⦃![[report.pdf]]⦄"
+  },
+  {
+    "id": "block-mdx-image",
+    "group": "hide.block-media",
+    "rule": "3",
+    "marked": "⦃<img src=\"a.png\" alt=\"A\" />⦄"
+  },
+  {
+    "id": "block-mdx-file",
+    "group": "hide.block-media",
+    "rule": "3",
+    "marked": "⦃<File src=\"report.pdf\" />⦄"
+  },
+  {
+    "id": "block-mdx-embed",
+    "group": "hide.block-media",
+    "rule": "3",
+    "marked": "⦃<Embed src=\"https://example.com\" />⦄"
+  },
+  {
     "id": "block-table",
     "group": "hide.block-table",
     "rule": "3",

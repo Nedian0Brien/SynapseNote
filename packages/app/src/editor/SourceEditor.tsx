@@ -14,6 +14,7 @@ import { yCollab } from 'y-codemirror.next';
 import type * as Y from 'yjs';
 import { emitOpenChatPanel } from '@/components/chat-panel-events';
 import { OUTLINE_NAV_EVENT, type OutlineNavDetail } from '@/components/OutlinePanel';
+import { usePageList } from '@/components/PageListContext';
 import {
   createNestedCMExtensions,
   darkTheme,
@@ -62,8 +63,11 @@ interface SourceEditorProps {
   variant?: 'source' | 'live';
 }
 
-function variantExtension(variant: 'source' | 'live') {
-  return variant === 'live' ? createLiveExtension() : createSourcePolishExtension();
+function variantExtension(
+  variant: 'source' | 'live',
+  context: { docName: string; assetPaths: ReadonlySet<string>; filePaths: ReadonlySet<string> },
+) {
+  return variant === 'live' ? createLiveExtension(context) : createSourcePolishExtension();
 }
 
 function applyOutlineNavigation(view: EditorView, detail: OutlineNavDetail): void {
@@ -143,6 +147,7 @@ export function SourceEditor({
   const [mountError, setMountError] = useState<Error | null>(null);
   if (mountError) throw mountError;
   const { resolvedTheme } = useTheme();
+  const { assetPaths, filePaths } = usePageList();
   const { merged } = useConfigContext();
   const sourceModeActiveRef = useRef(isSourceModeActive);
   const wordWrap = merged?.editor?.wordWrap ?? true;
@@ -277,7 +282,9 @@ export function SourceEditor({
                 wordWrap,
                 currentDocName: resolvedDocName,
               }),
-              variantCompartment.of(variantExtension(variant)),
+              variantCompartment.of(
+                variantExtension(variant, { docName: resolvedDocName, assetPaths, filePaths }),
+              ),
               sourceClipboard,
               EditorView.updateListener.of((update) => {
                 if (!update.selectionSet && !update.docChanged) return;
@@ -463,9 +470,11 @@ export function SourceEditor({
     const entry = cmEntryRef.current;
     if (!entry?.variantCompartment) return;
     entry.view.dispatch({
-      effects: entry.variantCompartment.reconfigure(variantExtension(variant)),
+      effects: entry.variantCompartment.reconfigure(
+        variantExtension(variant, { docName, assetPaths, filePaths }),
+      ),
     });
-  }, [variant]);
+  }, [variant, docName, assetPaths, filePaths]);
 
   // Outline panel click → jump to the Nth heading line in the CodeMirror doc.
   useEffect(() => {

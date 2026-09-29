@@ -62,10 +62,15 @@ describe('editing-model fixtures', () => {
 
   test('widget fixtures point to parsed blocks', () => {
     for (const f of widgetFixtures) {
-      const block = md
-        .parseToMdast(f.before)
-        .children.find((node) => node.position?.start.offset === f.from);
-      expect(block).toBeDefined();
+      const matches = (
+        nodes: readonly { position?: { start: { offset?: number } }; children?: unknown[] }[],
+      ): boolean =>
+        nodes.some(
+          (node) =>
+            node.position?.start.offset === f.from ||
+            (Array.isArray(node.children) && matches(node.children)),
+        );
+      expect(matches(md.parseToMdast(f.before).children)).toBe(true);
     }
   });
 

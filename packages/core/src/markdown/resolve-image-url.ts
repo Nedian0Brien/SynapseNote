@@ -34,6 +34,9 @@ export function normalizeDocRelativeAssetUrl(rawUrl: string, sourcePath?: string
   if (typeof rawUrl !== 'string' || rawUrl === '') return rawUrl;
   if (!sourcePath) return rawUrl;
   if (rawUrl.startsWith('/')) return rawUrl;
+  // Fragment/query-only values (including the sanitizer's inert '#') are not
+  // asset paths and must never be joined onto a document directory.
+  if (rawUrl.startsWith('#') || rawUrl.startsWith('?')) return rawUrl;
   if (!isRelativeUrl(rawUrl)) return rawUrl;
   const rel = posixNormalizeJoin(posixDirname(sourcePath), rawUrl);
   if (rel === '' || rel === '..' || rel.startsWith('../')) {
