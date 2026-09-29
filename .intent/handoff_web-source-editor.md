@@ -5,7 +5,7 @@
 웹 앱에 Markdown 원문(`Y.Text('source')`)을 CodeMirror 6로 직접 편집하면서 기호를 숨기는 `live` 편집 모드가
 생겼다. 편집 규칙은 core의 순수 함수이고, 네이티브 앱도 같은 명세와 fixture를 쓴다. P0~P2(뼈대), P2c(기존
 편집기 동작 옮기기), P3a(코드 울타리·표 위젯), P3b(수식·Mermaid 위젯), P3c(frontmatter 속성 화면),
-P3d(콜아웃·아코디언 위젯), P3e(이미지·파일 임베드 위젯), P3f(문서 문맥 MDX 위젯), P3g(들여쓴 코드 위젯), P3h(HTML details 아코디언), P3i(Tabs/Tab), P3j(참조 이미지), P3k(MDX 속성·Mirror)가 끝났다.
+P3d(콜아웃·아코디언 위젯), P3e(이미지·파일 임베드 위젯), P3f(문서 문맥 MDX 위젯), P3g(들여쓴 코드 위젯), P3h(HTML details 아코디언), P3i(Tabs/Tab), P3j(참조 이미지), P3k(MDX 속성·Mirror), P3l(PDFium 로딩)가 끝났다.
 P3의 나머지 블록과 P4~P6는 진행 전이다.
 
 ## 1. 사용자가 정한 것
@@ -147,6 +147,15 @@ P3의 나머지 블록과 P4~P6는 진행 전이다.
 - core 위젯·fixture 66개, 앱 live DOM 125개와 MDX DOM 3개, core·app 타입 검사가 통과했다.
 - 뒤에 남은 P3: PDF 내용 렌더링 확인 및 발견되는 블록 충실도 결함. 그 뒤 P4 기능 이전으로 넘어간다.
 
+### P3l 추가 (2026-09-30)
+
+- `.intent/plan_web-source-editor-p3l.md`에 범위와 결과를 적었다.
+- PDFium Blob 워커가 상대 WASM URL을 파싱하지 못해 `wasmError`를 보냈다. `pdfium-engine.ts`가 절대 URL을 전달하도록 고쳐 워커의 `ready`·`result` 응답을 확인했다.
+- P3f의 `real-draft.pdf` QA 자산은 xref·트레일러가 없는 잘못된 파일이었다. `pdfinfo`를 통과한 유효한 1페이지 PDF로 다시 시험했다.
+- 브라우저 확인 문서: `http://localhost:5183/#/notes/p3l-valid-pdf-review-1790696300000` (임시 콘텐츠 폴더가 살아 있는 동안). `live`와 기존 시각 편집기 모두 1페이지를 렌더링했고, `live` 페이지 이미지에서 `SynapseNote PDF QA` 문구를 확인했다.
+- PDF DOM 11개, app 타입 검사와 변경 파일 Biome 검사가 통과했다. P3에서 알려진 PDF 로딩 미확인 항목은 해소됐다.
+- 다음은 P3 명세의 블록 목록과 실제 위젯을 대조해 남은 항목을 채운 뒤 P4 기능 이전, P5 검증, P6 교체·제거다.
+
 ## 3. 끝난 단계
 
 | 단계 | 커밋 | 내용 |
@@ -167,7 +176,8 @@ P3의 나머지 블록과 P4~P6는 진행 전이다.
 | P3h | `b471aa42` | HTML details 아코디언 위젯 |
 | P3i | `7fe9ed4d` | Tabs/Tab 전환·편집 위젯 |
 | P3j | `e1328035` | 참조 이미지와 정의 위젯 |
-| P3k | 구현 커밋은 `git log -1` | MDX 리터럴 속성 편집과 Mirror 소스 이동 |
+| P3k | `957ef47a` | MDX 리터럴 속성 편집과 Mirror 소스 이동 |
+| P3l | 구현 커밋은 `git log -1` | PDFium 워커 절대 URL과 실제 페이지 렌더링 |
 
 P2c에서 옮긴 동작은 다음과 같다. 각 동작의 근거 파일은 `plan_web-source-editor-p2c.md`에 있다.
 

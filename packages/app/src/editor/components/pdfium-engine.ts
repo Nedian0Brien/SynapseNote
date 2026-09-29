@@ -33,7 +33,9 @@ function ensureSharedEngine(): Promise<SharedPdfiumEngine> {
   publish({ engine: null, loading: true, error: null });
   enginePromise = import('@embedpdf/engines/pdfium-worker-engine')
     .then(({ createPdfiumEngine }) => {
-      const engine = createPdfiumEngine(pdfiumWasmUrl, {
+      // The engine runs in a Blob worker, where fetch cannot resolve Vite's
+      // root-relative asset URL against a document base.
+      const engine = createPdfiumEngine(new URL(pdfiumWasmUrl, import.meta.url).href, {
         encoderPoolSize: 2,
         // SynapseNote is local-first. Embedded PDF fonts are sufficient for
         // normal documents; disabling fallback prevents silent CDN requests.
