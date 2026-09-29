@@ -5,7 +5,7 @@
 웹 앱에 Markdown 원문(`Y.Text('source')`)을 CodeMirror 6로 직접 편집하면서 기호를 숨기는 `live` 편집 모드가
 생겼다. 편집 규칙은 core의 순수 함수이고, 네이티브 앱도 같은 명세와 fixture를 쓴다. P0~P2(뼈대), P2c(기존
 편집기 동작 옮기기), P3a(코드 울타리·표 위젯), P3b(수식·Mermaid 위젯), P3c(frontmatter 속성 화면),
-P3d(콜아웃·아코디언 위젯), P3e(이미지·파일 임베드 위젯), P3f(문서 문맥 MDX 위젯), P3g(들여쓴 코드 위젯), P3h(HTML details 아코디언), P3i(Tabs/Tab), P3j(참조 이미지)가 끝났다.
+P3d(콜아웃·아코디언 위젯), P3e(이미지·파일 임베드 위젯), P3f(문서 문맥 MDX 위젯), P3g(들여쓴 코드 위젯), P3h(HTML details 아코디언), P3i(Tabs/Tab), P3j(참조 이미지), P3k(MDX 속성·Mirror)가 끝났다.
 P3의 나머지 블록과 P4~P6는 진행 전이다.
 
 ## 1. 사용자가 정한 것
@@ -139,6 +139,14 @@ P3의 나머지 블록과 P4~P6는 진행 전이다.
 - core 관련 65개, 앱 live DOM 125개 테스트와 core·app 타입 검사가 통과했다.
 - 뒤에 남은 P3: Mirror의 소스 열기·속성 제어, 복합 MDX 속성 편집. PDF 내용 렌더링도 다시 확인해야 한다.
 
+### P3k 추가 (2026-09-30)
+
+- `.intent/plan_web-source-editor-p3k.md`에 범위와 결과를 적었다.
+- 일반 MDX에서 문자열·숫자·불리언·JSON 리터럴 속성을 원문 범위별로 수정하고 등록된 속성을 추가한다. 실행 가능한 표현식은 평가하지 않는다. 잘못된 JSON은 원문을 보존하고 오류를 표시한다.
+- Mirror에 소스 열기 링크를 달았다. 브라우저 확인 문서: `http://localhost:5183/#/notes/p3k-mirror-review-1790696200000` (임시 콘텐츠 폴더가 살아 있는 동안). MirrorSource를 별도 문서에서 편집하면 열린 Mirror가 갱신됐고 링크 이동·속성 저장도 확인했다.
+- core 위젯·fixture 66개, 앱 live DOM 125개와 MDX DOM 3개, core·app 타입 검사가 통과했다.
+- 뒤에 남은 P3: PDF 내용 렌더링 확인 및 발견되는 블록 충실도 결함. 그 뒤 P4 기능 이전으로 넘어간다.
+
 ## 3. 끝난 단계
 
 | 단계 | 커밋 | 내용 |
@@ -158,7 +166,8 @@ P3의 나머지 블록과 P4~P6는 진행 전이다.
 | P3g | `4839148b` | 네 칸·탭 들여쓰기 코드 위젯 |
 | P3h | `b471aa42` | HTML details 아코디언 위젯 |
 | P3i | `7fe9ed4d` | Tabs/Tab 전환·편집 위젯 |
-| P3j | 구현 커밋은 `git log -1` | 참조 이미지와 정의 위젯 |
+| P3j | `e1328035` | 참조 이미지와 정의 위젯 |
+| P3k | 구현 커밋은 `git log -1` | MDX 리터럴 속성 편집과 Mirror 소스 이동 |
 
 P2c에서 옮긴 동작은 다음과 같다. 각 동작의 근거 파일은 `plan_web-source-editor-p2c.md`에 있다.
 

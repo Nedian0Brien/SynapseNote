@@ -591,6 +591,9 @@ export function updateBlockWidget(
   ) {
     return updateTabsWidget(source, from, to, edit);
   }
+  if (edit.type === 'mdx-prop' || edit.type === 'mdx-prop-literal' || edit.type === 'mdx-body') {
+    return updateMdxWidget(source, from, to, edit);
+  }
   if (edit.type.startsWith('container-')) {
     const container = containerWidgetSource(source, from, to);
     if (!container) return null;
@@ -706,9 +709,6 @@ export function updateBlockWidget(
       );
     }
     return null;
-  }
-  if (edit.type === 'mdx-prop' || edit.type === 'mdx-body') {
-    return updateMdxWidget(source, from, to, edit);
   }
   if (edit.type === 'code-body') {
     const indented = indentedCodeWidgetSource(source, from, to);

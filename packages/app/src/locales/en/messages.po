@@ -940,6 +940,7 @@ msgstr "Add properties"
 #: src/components/DatabaseRecordPeekPropertyPopover.tsx
 #: src/components/PropertyPanel.tsx
 #: src/components/TemplateForm.tsx
+#: src/editor/live/mdx-widgets.tsx
 msgid "Add property"
 msgstr "Add property"
 
@@ -5749,6 +5750,10 @@ msgstr "Interval unit"
 msgid "Invalid input — pick a different folder."
 msgstr "Invalid input — pick a different folder."
 
+#: src/editor/live/mdx-widgets.tsx
+msgid "Invalid JSON"
+msgstr "Invalid JSON"
+
 #: src/components/PropertyPanel.tsx
 msgid "Invalid patch payload"
 msgstr "Invalid patch payload"
@@ -7661,9 +7666,17 @@ msgstr "Open shared {targetNoun}"
 msgid "Open sidebar documents in"
 msgstr "Open sidebar documents in"
 
+#: src/editor/live/mdx-widgets.tsx
+msgid "Open source"
+msgstr "Open source"
+
 #: src/editor/extensions/JsxComponentView.tsx
 msgid "Open source doc: {mirrorSrc}"
 msgstr "Open source doc: {mirrorSrc}"
+
+#: src/editor/live/mdx-widgets.tsx
+msgid "Open source doc: {sourceDoc}"
+msgstr "Open source doc: {sourceDoc}"
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Open source lint panel"
@@ -8410,6 +8423,7 @@ msgstr "Property defaults (JSON by property ID)"
 
 #: src/components/FrontmatterRow.tsx
 #: src/components/TemplateForm.tsx
+#: src/editor/live/mdx-widgets.tsx
 msgid "Property name"
 msgstr "Property name"
 
@@ -8678,6 +8692,7 @@ msgstr "Redactions"
 msgid "Redo last change"
 msgstr "Redo last change"
 
+#: src/editor/live/media-widgets.tsx
 #: src/editor/live/reference-widgets.ts
 msgid "Reference target"
 msgstr "Reference target"
@@ -9782,6 +9797,10 @@ msgstr "Select PDF text to add a highlight or memo."
 #: src/lib/keyboard-shortcuts.ts
 msgid "Select the full source document."
 msgstr "Select the full source document."
+
+#: src/editor/live/mdx-widgets.tsx
+msgid "Select value"
+msgstr "Select value"
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Select, enter, or leave block components and fallback source blocks from keyboard boundaries."

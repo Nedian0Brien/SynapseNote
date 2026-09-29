@@ -935,6 +935,7 @@ msgstr ""
 #: src/components/DatabaseRecordPeekPropertyPopover.tsx
 #: src/components/PropertyPanel.tsx
 #: src/components/TemplateForm.tsx
+#: src/editor/live/mdx-widgets.tsx
 msgid "Add property"
 msgstr ""
 
@@ -5744,6 +5745,10 @@ msgstr ""
 msgid "Invalid input — pick a different folder."
 msgstr ""
 
+#: src/editor/live/mdx-widgets.tsx
+msgid "Invalid JSON"
+msgstr ""
+
 #: src/components/PropertyPanel.tsx
 msgid "Invalid patch payload"
 msgstr ""
@@ -7656,8 +7661,16 @@ msgstr ""
 msgid "Open sidebar documents in"
 msgstr ""
 
+#: src/editor/live/mdx-widgets.tsx
+msgid "Open source"
+msgstr ""
+
 #: src/editor/extensions/JsxComponentView.tsx
 msgid "Open source doc: {mirrorSrc}"
+msgstr ""
+
+#: src/editor/live/mdx-widgets.tsx
+msgid "Open source doc: {sourceDoc}"
 msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts
@@ -8405,6 +8418,7 @@ msgstr ""
 
 #: src/components/FrontmatterRow.tsx
 #: src/components/TemplateForm.tsx
+#: src/editor/live/mdx-widgets.tsx
 msgid "Property name"
 msgstr ""
 
@@ -8673,6 +8687,7 @@ msgstr ""
 msgid "Redo last change"
 msgstr ""
 
+#: src/editor/live/media-widgets.tsx
 #: src/editor/live/reference-widgets.ts
 msgid "Reference target"
 msgstr ""
@@ -9776,6 +9791,10 @@ msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Select the full source document."
+msgstr ""
+
+#: src/editor/live/mdx-widgets.tsx
+msgid "Select value"
 msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts

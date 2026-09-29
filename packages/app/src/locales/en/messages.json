@@ -178,6 +178,7 @@
     "2Ljq-h": ["Could not load agent context"],
     "2QM24L": ["All tags"],
     "2RBzMG": ["Network error — check your connection and try again"],
+    "2S-oTr": ["Open source doc: ", ["sourceDoc"]],
     "2U8yfK": ["Load more records"],
     "2Uogne": ["Definitions"],
     "2XQ8Ww": ["Open preview when agent edits"],
@@ -853,6 +854,7 @@
     "Dbgmun": ["Search pages, databases, or commands"],
     "DdGN4m": ["Cover image"],
     "DeDYLr": ["Unrecognized wiki link"],
+    "Deej3j": ["Invalid JSON"],
     "DgcGrb": [["fileCount", "plural", { "one": ["file"], "other": ["files"] }]],
     "DhK_hZ": [
       "Moved \"",
@@ -2622,6 +2624,7 @@
       ["ahead", "plural", { "one": ["#", " commit ahead"], "other": ["#", " commits ahead"] }]
     ],
     "iTylMl": ["Templates"],
+    "iWf0Zj": ["Select value"],
     "iXTp5j": ["Scope: "],
     "iaM74K": ["Mention"],
     "idD8Ev": ["Saved"],
@@ -3359,6 +3362,7 @@
     "uuoHOU": ["Command failed."],
     "uyBDJ_": ["This Board view has no valid primary group."],
     "uynXup": [["tokens", "plural", { "one": ["token"], "other": ["tokens"] }]],
+    "v-Wp--": ["Open source"],
     "v-h2hx": ["Delete ", ["targetGitPath"]],
     "v0JnMJ": ["Exact Context Pack"],
     "v2ZW0K": ["Enable terminal"],

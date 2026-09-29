@@ -387,6 +387,42 @@
     "after": "<Pdf src=\"new.pdf\" />"
   },
   {
+    "id": "mdx-boolean-literal",
+    "group": "widget.mdx-prop",
+    "rule": "3",
+    "before": "<Custom enabled data-id=\"keep\" />",
+    "from": 0,
+    "edit": { "type": "mdx-prop-literal", "key": "enabled", "value": false },
+    "after": "<Custom enabled={false} data-id=\"keep\" />"
+  },
+  {
+    "id": "mdx-number-literal",
+    "group": "widget.mdx-prop",
+    "rule": "3",
+    "before": "<Custom count={1} title=\"keep\" />",
+    "from": 0,
+    "edit": { "type": "mdx-prop-literal", "key": "count", "value": 2 },
+    "after": "<Custom count={2} title=\"keep\" />"
+  },
+  {
+    "id": "mdx-json-literal",
+    "group": "widget.mdx-prop",
+    "rule": "3",
+    "before": "<DatabaseView viewOverrides={{\"limit\":10}} viewId=\"keep\" />",
+    "from": 0,
+    "edit": { "type": "mdx-prop-literal", "key": "viewOverrides", "value": { "limit": 20 } },
+    "after": "<DatabaseView viewOverrides={{\"limit\":20}} viewId=\"keep\" />"
+  },
+  {
+    "id": "mdx-add-literal",
+    "group": "widget.mdx-prop",
+    "rule": "3",
+    "before": "<Custom title=\"keep\" />",
+    "from": 0,
+    "edit": { "type": "mdx-prop-literal", "key": "enabled", "value": true },
+    "after": "<Custom title=\"keep\" enabled={true} />"
+  },
+  {
     "id": "mdx-custom-body",
     "group": "widget.mdx-body",
     "rule": "3",

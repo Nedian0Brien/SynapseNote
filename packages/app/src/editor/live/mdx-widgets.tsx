@@ -2,13 +2,20 @@ import { EditorState, type Extension } from '@codemirror/state';
 import { EditorView, WidgetType } from '@codemirror/view';
 import { t } from '@lingui/core/macro';
 import {
+  builtInComponents,
   type MdxWidgetSource,
   mdxWidgetSource,
+  type PropDef,
   sourceChanges,
 } from '@nedian0brien/synapsenote-core';
+import { ExternalLink } from 'lucide-react';
 import type { ComponentType, ReactNode } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { hashFromDocName } from '@/lib/doc-hash';
 import { normalizeDocRelativeMediaRenderProps } from '../extensions/media-render-props';
 import { sanitizeComponentProps } from '../utils/sanitize-url';
 import { writeWidget } from './block-widgets';
@@ -27,8 +34,93 @@ interface MdxDOM {
   disposed: boolean;
   cancelLoad: (() => void) | null;
   loadError: boolean;
+  context: MediaContext;
+  nestedExtension: () => Extension;
+  newPropertyKey: string;
+  invalidJsonKey: string | null;
 }
 const mdxDOM = new WeakMap<HTMLElement, MdxDOM>();
+
+const propDefsByName = new Map(builtInComponents.map((meta) => [meta.name, meta.props]));
+
+function propertyControl(
+  state: MdxDOM,
+  outer: EditorView,
+  name: string,
+  value: unknown,
+  definition?: PropDef,
+): ReactNode {
+  const label = `${state.model.name} ${name}`;
+  const writeText = (text: string) =>
+    writeWidget(outer, state.position, { type: 'mdx-prop', key: name, text });
+  const writeLiteral = (literal: unknown) =>
+    writeWidget(outer, state.position, { type: 'mdx-prop-literal', key: name, value: literal });
+  if (definition?.type === 'boolean' || typeof value === 'boolean') {
+    return <Switch checked={value === true} aria-label={label} onCheckedChange={writeLiteral} />;
+  }
+  if (definition?.type === 'number' || typeof value === 'number') {
+    return (
+      <Input
+        type="number"
+        value={typeof value === 'number' ? value : ''}
+        aria-label={label}
+        onChange={(event) => {
+          if (!event.target.value) return;
+          const number = Number(event.target.value);
+          if (Number.isFinite(number)) writeLiteral(number);
+        }}
+      />
+    );
+  }
+  if (definition?.type === 'enum') {
+    return (
+      <select
+        value={typeof value === 'string' ? value : ''}
+        aria-label={label}
+        onChange={(event) => writeText(event.target.value)}
+      >
+        {!value ? <option value="">{t`Select value`}</option> : null}
+        {definition.enumValues.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+    );
+  }
+  if (value === null || typeof value === 'object') {
+    return (
+      <div className="cm-live-mdx-json">
+        <Textarea
+          key={`${name}:${JSON.stringify(value)}`}
+          defaultValue={JSON.stringify(value, null, 2)}
+          aria-label={label}
+          onBlur={(event) => {
+            try {
+              const next = JSON.parse(event.target.value);
+              state.invalidJsonKey = null;
+              writeLiteral(next);
+            } catch {
+              state.invalidJsonKey = name;
+              state.registry.update(
+                state.portalId,
+                surface(state, outer, state.context, state.nestedExtension),
+              );
+            }
+          }}
+        />
+        {state.invalidJsonKey === name ? <span role="alert">{t`Invalid JSON`}</span> : null}
+      </div>
+    );
+  }
+  return (
+    <Input
+      value={typeof value === 'string' ? value : ''}
+      aria-label={label}
+      onChange={(event) => writeText(event.target.value)}
+    />
+  );
+}
 
 function surface(
   state: MdxDOM,
@@ -65,28 +157,131 @@ function surface(
   );
   const Component = state.component;
   const body = model.bodyRange ? <div className="cm-live-mdx-body" ref={bodyRef} /> : null;
+  const definitions = propDefsByName.get(model.name) ?? [];
+  const byName = new Map(definitions.map((definition) => [definition.name, definition]));
+  const existing = new Set(model.attributes.map((attribute) => attribute.name));
+  const visible = model.attributes
+    .filter((attribute) => {
+      const definition = byName.get(attribute.name);
+      return (
+        attribute.name !== 'key' &&
+        attribute.value !== undefined &&
+        definition?.type !== 'reactnode' &&
+        !definition?.hidden &&
+        !definition?.hideWhen?.({ ...model.props })
+      );
+    })
+    .map((attribute) => ({
+      name: attribute.name,
+      value: attribute.value,
+      definition: byName.get(attribute.name),
+    }));
+  for (const definition of definitions) {
+    if (
+      definition.required &&
+      !existing.has(definition.name) &&
+      !definition.hidden &&
+      definition.type !== 'reactnode' &&
+      !definition.hideWhen?.({ ...model.props })
+    ) {
+      visible.push({ name: definition.name, value: definition.defaultValue, definition });
+    }
+  }
+  const addable = definitions.filter(
+    (definition) =>
+      !existing.has(definition.name) &&
+      !definition.required &&
+      !definition.hidden &&
+      definition.type !== 'reactnode' &&
+      !definition.hideWhen?.({ ...model.props }),
+  );
+  const sourceDoc = model.name === 'Mirror' && typeof props.src === 'string' ? props.src : '';
   return (
     <div className="cm-live-mdx-widget" data-mdx-name={model.name}>
       <div className="cm-live-mdx-toolbar" contentEditable={false}>
         <span className="cm-live-mdx-name">{model.name}</span>
-        {model.attributes
-          .filter((attribute) => typeof attribute.value === 'string' && attribute.name !== 'key')
-          .map((attribute) => (
-            <div className="cm-live-mdx-property" key={attribute.name}>
-              <span>{attribute.name}</span>
-              <Input
-                value={String(attribute.value)}
-                aria-label={`${model.name} ${attribute.name}`}
-                onChange={(event) =>
-                  writeWidget(outer, state.position, {
-                    type: 'mdx-prop',
-                    key: attribute.name,
-                    text: event.target.value,
-                  })
-                }
-              />
-            </div>
-          ))}
+        {sourceDoc ? (
+          <a
+            className="cm-live-mdx-source-link"
+            href={hashFromDocName(
+              sourceDoc,
+              typeof props.anchor === 'string' && props.anchor ? props.anchor : null,
+            )}
+            aria-label={t`Open source doc: ${sourceDoc}`}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <ExternalLink size={14} aria-hidden="true" />
+            {t`Open source`}
+          </a>
+        ) : null}
+        {visible.map(({ name, value, definition }) => (
+          <div className="cm-live-mdx-property" key={name}>
+            <span>{name}</span>
+            {propertyControl(state, outer, name, value, definition)}
+          </div>
+        ))}
+        {addable.length ? (
+          <select
+            className="cm-live-mdx-add-property"
+            aria-label={t`Add property`}
+            value=""
+            onChange={(event) => {
+              const definition = addable.find((item) => item.name === event.target.value);
+              if (!definition) return;
+              if (definition.type === 'boolean' || definition.type === 'number') {
+                writeWidget(outer, state.position, {
+                  type: 'mdx-prop-literal',
+                  key: definition.name,
+                  value: definition.defaultValue ?? (definition.type === 'boolean' ? false : 0),
+                });
+              } else if (definition.type === 'string' || definition.type === 'enum') {
+                writeWidget(outer, state.position, {
+                  type: 'mdx-prop',
+                  key: definition.name,
+                  text: definition.defaultValue ?? '',
+                });
+              }
+            }}
+          >
+            <option value="">{t`Add property`}</option>
+            {addable.map((definition) => (
+              <option key={definition.name} value={definition.name}>
+                {definition.name}
+              </option>
+            ))}
+          </select>
+        ) : null}
+        {!definitions.length ? (
+          <div className="cm-live-mdx-property cm-live-mdx-new-property">
+            <Input
+              value={state.newPropertyKey}
+              aria-label={t`Property name`}
+              onChange={(event) => {
+                state.newPropertyKey = event.target.value;
+                state.registry.update(
+                  state.portalId,
+                  surface(state, outer, context, nestedExtension),
+                );
+              }}
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={!/^[A-Za-z][A-Za-z0-9_-]*$/.test(state.newPropertyKey)}
+              onClick={() => {
+                writeWidget(outer, state.position, {
+                  type: 'mdx-prop',
+                  key: state.newPropertyKey,
+                  text: '',
+                });
+                state.newPropertyKey = '';
+              }}
+            >
+              {t`Add property`}
+            </Button>
+          </div>
+        ) : null}
       </div>
       <div className="cm-live-mdx-preview">
         {Component ? (
@@ -152,6 +347,10 @@ export class MdxBlockWidget extends WidgetType {
       disposed: false,
       cancelLoad: null,
       loadError: false,
+      context: this.context,
+      nestedExtension: this.nestedExtension,
+      newPropertyKey: '',
+      invalidJsonKey: null,
     };
     state.portalId = registry.register(
       target,
@@ -181,6 +380,8 @@ export class MdxBlockWidget extends WidgetType {
     if (!state || !model || state.model.name !== model.name) return false;
     state.position = { from: this.from, to: this.to };
     state.model = model;
+    state.context = this.context;
+    state.nestedExtension = this.nestedExtension;
     const inner = state.bodyView;
     if (inner && inner.state.doc.toString() !== model.body) {
       state.syncing = true;

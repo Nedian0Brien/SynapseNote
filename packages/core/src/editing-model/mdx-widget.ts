@@ -8,6 +8,7 @@ export interface MdxWidgetAttribute {
   value: unknown;
   sourceRange: Range;
   valueRange: Range | null;
+  expressionRange: Range | null;
   quote: '"' | "'" | null;
 }
 
@@ -22,6 +23,7 @@ export interface MdxWidgetSource {
 
 export type MdxWidgetEdit =
   | { type: 'mdx-prop'; key: string; text: string }
+  | { type: 'mdx-prop-literal'; key: string; value: unknown }
   | { type: 'mdx-body'; text: string };
 
 let parser: MarkdownManager | undefined;
@@ -66,6 +68,11 @@ export function mdxWidgetSource(source: string, from: number, to: number): MdxWi
     const valueRange: Range | null = match
       ? [from + a + match.index + match[0].length, from + b - 1]
       : null;
+    const expression = /=[ \t]*\{/.exec(spelling);
+    const expressionRange: Range | null =
+      !match && expression
+        ? [from + a + expression.index + expression[0].length, from + b - 1]
+        : null;
     let value: unknown;
     if (typeof item.value === 'string') value = item.value;
     else if (item.value === null) value = true;
@@ -83,6 +90,7 @@ export function mdxWidgetSource(source: string, from: number, to: number): MdxWi
       value,
       sourceRange: [from + a, from + b],
       valueRange,
+      expressionRange,
       quote,
     });
   }
@@ -134,6 +142,19 @@ export function updateMdxWidget(
   }
   const key = edit.key.trim();
   if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(key)) return null;
+  if (edit.type === 'mdx-prop-literal') {
+    const encoded = JSON.stringify(edit.value);
+    if (encoded === undefined) return null;
+    const attr = model.attributes.find((item) => item.name === key);
+    if (attr?.expressionRange) return replace(attr.expressionRange, encoded);
+    if (attr) return replace(attr.sourceRange, `${key}={${encoded}}`);
+    const before = /\s/.test(source[model.attributeInsert - 1] ?? '') ? '' : ' ';
+    const after = source[model.attributeInsert] === '/' ? ' ' : '';
+    return replace(
+      [model.attributeInsert, model.attributeInsert],
+      `${before}${key}={${encoded}}${after}`,
+    );
+  }
   const value = edit.text.replace(/[\r\n]/g, ' ');
   const attr = model.attributes.find((item) => item.name === key);
   if (attr?.valueRange && attr.quote) {
