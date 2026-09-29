@@ -58,6 +58,9 @@ GFM 콜아웃(`> [!TYPE]`)과 MDX `<Callout>`·`<Accordion>`은 기존 컴포넌
 규칙으로 편집한다. GFM의 `>` 접두어는 감춘 채 삽입·삭제·줄바꿈을 원문 위치에 적용한다. 제목·종류 변경은
 헤더나 해당 MDX 속성 값만 바꾼다. (widget.callout-body, widget.callout-attribute,
 widget.accordion-body, widget.accordion-attribute)
+HTML `<details><summary>…</summary>…</details>`도 아코디언으로 보여 준다. 제목은 `<summary>` 내용만, 본문은
+`</summary>`와 `</details>` 사이만 고치며 `open`·`name`·`id` 속성을 보존한다. (widget.accordion-body,
+widget.accordion-attribute)
 Markdown 이미지와 위키 이미지·파일 임베드, MDX `img`·`File`·`Embed`는 미디어 위젯으로 그린다. `src`와 대체
 텍스트·표시 이름의 변경은 해당 원문 범위만 바꾼다. 렌더링 전에 앱의 URL 안전 검사와 문서 상대 경로 해석을
 적용한다. (widget.media-src, widget.media-label, hide.block-media)

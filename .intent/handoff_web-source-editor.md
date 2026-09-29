@@ -5,7 +5,7 @@
 웹 앱에 Markdown 원문(`Y.Text('source')`)을 CodeMirror 6로 직접 편집하면서 기호를 숨기는 `live` 편집 모드가
 생겼다. 편집 규칙은 core의 순수 함수이고, 네이티브 앱도 같은 명세와 fixture를 쓴다. P0~P2(뼈대), P2c(기존
 편집기 동작 옮기기), P3a(코드 울타리·표 위젯), P3b(수식·Mermaid 위젯), P3c(frontmatter 속성 화면),
-P3d(콜아웃·아코디언 위젯), P3e(이미지·파일 임베드 위젯), P3f(문서 문맥 MDX 위젯), P3g(들여쓴 코드 위젯)가 끝났다.
+P3d(콜아웃·아코디언 위젯), P3e(이미지·파일 임베드 위젯), P3f(문서 문맥 MDX 위젯), P3g(들여쓴 코드 위젯), P3h(HTML details 아코디언)가 끝났다.
 P3의 나머지 블록과 P4~P6는 진행 전이다.
 
 ## 1. 사용자가 정한 것
@@ -116,6 +116,13 @@ P3의 나머지 블록과 P4~P6는 진행 전이다.
 - core 위젯·fixture와 앱 live DOM 테스트에서 들여쓴 코드 편집 및 기존 울타리 코드 동작을 확인했다.
 - 뒤에 남은 P3: Tabs/Tab과 Mirror의 복합 자식, 복합 속성 편집, 레거시 HTML details, 참조 이미지. PDF 내용 렌더링도 다시 확인해야 한다.
 
+### P3h 추가 (2026-09-30)
+
+- `.intent/plan_web-source-editor-p3h.md`에 범위와 결과를 적었다.
+- core 파서가 `HtmlDetailsAccordion`으로 판별한 `<details>`를 기존 아코디언 위젯으로 연결했다. 제목과 본문만 원문 범위별로 고치고 `open`·`name`·`id`를 보존한다.
+- core 위젯·fixture 51개와 앱 live DOM 124개 테스트가 통과했다.
+- 뒤에 남은 P3: Tabs/Tab과 Mirror의 복합 자식, 복합 속성 편집, 참조 이미지. PDF 내용 렌더링도 다시 확인해야 한다.
+
 ## 3. 끝난 단계
 
 | 단계 | 커밋 | 내용 |
@@ -132,7 +139,8 @@ P3의 나머지 블록과 P4~P6는 진행 전이다.
 | P3d | `ea1f2f51` | GFM·MDX 콜아웃과 아코디언의 편집 가능한 블록 위젯 |
 | P3e | `5d99661f` | Markdown·위키·MDX 이미지·파일 임베드 위젯 |
 | P3f | `2948fd42` | React 문맥을 가진 일반 MDX·인라인 데이터베이스 위젯 |
-| P3g | 구현 커밋은 `git log -1` | 네 칸·탭 들여쓰기 코드 위젯 |
+| P3g | `4839148b` | 네 칸·탭 들여쓰기 코드 위젯 |
+| P3h | 구현 커밋은 `git log -1` | HTML details 아코디언 위젯 |
 
 P2c에서 옮긴 동작은 다음과 같다. 각 동작의 근거 파일은 `plan_web-source-editor-p2c.md`에 있다.
 

@@ -7,6 +7,7 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import { EditorSelection, EditorState } from '@codemirror/state';
 import { EditorView, runScopeHandlers } from '@codemirror/view';
 import { computeLayout, editFixtures, parseCursor } from '@nedian0brien/synapsenote-core';
+import { act } from 'react';
 import { createLiveExtension } from './live-extension';
 import { livePortalRegistryFor } from './live-portals';
 
@@ -299,6 +300,35 @@ describe('live editor block widgets', () => {
     type(cell, '!');
     expect(view.state.doc.toString()).toBe(
       '<Accordion title="Details" defaultOpen>\nold!\n</Accordion>',
+    );
+  });
+
+  test('HTML details renders as an editable accordion and preserves its attributes', async () => {
+    const view = mount('<details open name="group"><summary>Details</summary>old</details>', 0, 0);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    const widget = view.dom.querySelector('.cm-live-container-widget');
+    expect(widget?.querySelector('details.accordion[open][name="group"]')).not.toBeNull();
+    const title = widget?.querySelector<HTMLInputElement>('.cm-live-container-title');
+    expect(title?.value).toBe('Details');
+    if (!title) throw new Error('Details title missing');
+    act(() => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(
+        title,
+        'More',
+      );
+      title.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    expect(view.state.doc.toString()).toBe(
+      '<details open name="group"><summary>More</summary>old</details>',
+    );
+    const element = widget?.querySelector<HTMLElement>('.cm-live-container-body .cm-editor');
+    if (!element) throw new Error('Details body editor missing');
+    const cell = EditorView.findFromDOM(element);
+    if (!cell) throw new Error('Details body view missing');
+    cell.dispatch({ selection: { anchor: cell.state.doc.length } });
+    type(cell, '!');
+    expect(view.state.doc.toString()).toBe(
+      '<details open name="group"><summary>More</summary>old!</details>',
     );
   });
 

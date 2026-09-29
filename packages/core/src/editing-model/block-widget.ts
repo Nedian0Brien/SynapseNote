@@ -37,7 +37,7 @@ export interface DiagramWidgetSource {
 
 export interface ContainerWidgetSource {
   kind: 'callout' | 'accordion';
-  syntax: 'gfm' | 'mdx';
+  syntax: 'gfm' | 'mdx' | 'html-details';
   title: string;
   calloutType?: string;
   props: Readonly<Record<string, string | boolean>>;
@@ -209,9 +209,42 @@ export function containerWidgetSource(
   to: number,
 ): ContainerWidgetSource | null {
   const raw = source.slice(from, to);
-  if (!/^(?: {0,3}>|<Callout\b|<Accordion\b)/.test(raw)) return null;
+  if (!/^(?: {0,3}>|<Callout\b|<Accordion\b|<details\b)/.test(raw)) return null;
   const node = md().parseToMdast(raw).children[0];
   if (node?.type !== 'mdxJsxFlowElement') return null;
+  if (node.name === 'HtmlDetailsAccordion') {
+    const opener = /^<details\b[^>]*>/.exec(raw);
+    if (!opener) return null;
+    const summary = /<summary>([\s\S]*?)<\/summary>/.exec(raw.slice(opener[0].length));
+    const closeAt = raw.lastIndexOf('</details>');
+    if (closeAt < opener[0].length) return null;
+    const summaryFrom = summary ? opener[0].length + summary.index : -1;
+    const summaryEnd = summary ? summaryFrom + summary[0].length : opener[0].length;
+    if (summaryEnd > closeAt) return null;
+    const rawBodyStart = summaryEnd;
+    const bodyStart = from + rawBodyStart + (raw[rawBodyStart] === '\n' ? 1 : 0);
+    const bodyEnd = from + closeAt - (raw[closeAt - 1] === '\n' ? 1 : 0);
+    if (bodyStart > bodyEnd) return null;
+    const props: Record<string, string | boolean> = {};
+    for (const item of node.attributes) {
+      if (item.type !== 'mdxJsxAttribute') continue;
+      if (typeof item.value === 'string') props[item.name] = item.value;
+      else if (item.value === null) props[item.name] = true;
+    }
+    const body = source.slice(bodyStart, bodyEnd);
+    return {
+      kind: 'accordion',
+      syntax: 'html-details',
+      title: summary?.[1] ?? '',
+      props,
+      body,
+      bodyRange: [bodyStart, bodyEnd],
+      bodyBoundaries: Array.from({ length: body.length + 1 }, (_, i) => bodyStart + i),
+      titleRange: summary ? [from + summaryFrom + 9, from + summaryEnd - 10] : null,
+      typeRange: null,
+      attributeInsert: from + opener[0].length,
+    };
+  }
   const kind =
     node.name === 'GFMCallout' || node.name === 'Callout'
       ? 'callout'
@@ -510,7 +543,7 @@ export function updateBlockWidget(
     const container = containerWidgetSource(source, from, to);
     if (!container) return null;
     if (edit.type === 'container-body') {
-      if (container.syntax === 'mdx') {
+      if (container.syntax === 'mdx' || container.syntax === 'html-details') {
         if (container.bodyRange[0] === container.bodyRange[1] && edit.text) {
           const at = container.bodyRange[0];
           const before = source[at - 1] === '\n' ? '' : '\n';
@@ -538,6 +571,10 @@ export function updateBlockWidget(
     if (range) {
       if (container.syntax === 'gfm')
         return replace(range, edit.type === 'container-type' ? text.toUpperCase() : text);
+      if (container.syntax === 'html-details') {
+        if (edit.type !== 'container-title') return null;
+        return replace(range, text.replace(/&/g, '&amp;').replace(/</g, '&lt;'));
+      }
       const quote = source[range[0] - 1];
       const escaped = text
         .replace(/&/g, '&amp;')
@@ -545,6 +582,13 @@ export function updateBlockWidget(
       return replace(range, escaped);
     }
     if (!text) return source;
+    if (container.syntax === 'html-details') {
+      if (edit.type !== 'container-title') return null;
+      return replace(
+        [container.attributeInsert, container.attributeInsert],
+        `<summary>${text.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</summary>`,
+      );
+    }
     const label = edit.type === 'container-title' ? 'title' : 'type';
     const insertion =
       container.syntax === 'gfm'

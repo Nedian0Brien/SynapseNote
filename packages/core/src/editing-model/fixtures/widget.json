@@ -198,6 +198,24 @@
     "after": "<Accordion title=\"More\">\nbody\n</Accordion>"
   },
   {
+    "id": "html-details-title",
+    "group": "widget.accordion-attribute",
+    "rule": "3",
+    "before": "<details open name=\"group\"><summary>Old</summary>body</details>",
+    "from": 0,
+    "edit": { "type": "container-title", "text": "New" },
+    "after": "<details open name=\"group\"><summary>New</summary>body</details>"
+  },
+  {
+    "id": "html-details-body",
+    "group": "widget.accordion-body",
+    "rule": "3",
+    "before": "before\n\n<details open><summary>Details</summary>\n\nold\n\n</details>\n\nafter",
+    "from": 8,
+    "edit": { "type": "container-body", "text": "\nnew\n" },
+    "after": "before\n\n<details open><summary>Details</summary>\n\nnew\n\n</details>\n\nafter"
+  },
+  {
     "id": "markdown-image-src",
     "group": "widget.media-src",
     "rule": "3",
