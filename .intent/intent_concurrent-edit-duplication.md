@@ -2,7 +2,8 @@
 title: 세 작성자가 동시에 편집해도 편집이 중복·삭제되지 않는다
 slug: concurrent-edit-duplication
 stage: intent
-status: accepted
+status: superseded
+superseded_by: .intent/intent_web-source-editor.md
 author: Dennis Park
 date: 2026-09-29
 ---
