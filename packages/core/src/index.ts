@@ -1711,6 +1711,7 @@ export {
   DEFAULT_SIGTERM_POLL_MS,
   SPAWN_ERROR_LOG,
 } from './constants/lifecycle.ts';
+export * from './editing-model/index.ts';
 export {
   type FrontmatterIssue,
   FrontmatterIssueSchema,

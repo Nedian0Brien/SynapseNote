@@ -733,5 +733,31 @@
       }
     ],
     "after": "*b*│"
+  },
+  {
+    "id": "escape-space-entity",
+    "group": "edit.escape-entity",
+    "rule": "5",
+    "before": "x **bold│**, y",
+    "actions": [
+      {
+        "type": "text",
+        "text": " "
+      }
+    ],
+    "after": "x **bold&#x20;│**, y"
+  },
+  {
+    "id": "code-backtick",
+    "group": "edit.code-backtick",
+    "rule": "5",
+    "before": "x `a│b` y",
+    "actions": [
+      {
+        "type": "text",
+        "text": "`"
+      }
+    ],
+    "after": "x ``a`│b`` y"
   }
 ]
