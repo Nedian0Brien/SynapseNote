@@ -60,6 +60,9 @@ widget.accordion-body, widget.accordion-attribute)
 Markdown 이미지와 위키 이미지·파일 임베드, MDX `img`·`File`·`Embed`는 미디어 위젯으로 그린다. `src`와 대체
 텍스트·표시 이름의 변경은 해당 원문 범위만 바꾼다. 렌더링 전에 앱의 URL 안전 검사와 문서 상대 경로 해석을
 적용한다. (widget.media-src, widget.media-label, hide.block-media)
+일반 MDX 블록은 등록된 제품 컴포넌트를 앱의 React 문맥에서 그린다. 문자열 속성을 고치면 해당 속성 값 범위만,
+본문을 고치면 여닫는 태그 안의 본문 범위만 바꾼다. JSON으로 해석 가능한 리터럴 표현식만 컴포넌트에 전달한다.
+(widget.mdx-prop, widget.mdx-body, hide.block-mdx)
 
 - 문단 안의 한 줄 바꿈(soft break)은 줄바꿈으로 보인다. 원문의 줄 구조를 그대로 보이기 위해서다. (hide.soft-break)
 - 블록 사이의 빈 줄은 빈 줄로 보이고, 커서가 놓일 수 있다. (hide.blank-lines)
@@ -189,7 +192,7 @@ id가 `*`로 끝나면 그 접두어로 시작하는 group을 모두 가리킨�
 
 `fixtures/widget.json`: `{ id, group, rule, before, from, edit, after }`. `from`은 블록 시작 오프셋이고,
 `edit`는 `code-body`·`code-language`·`table-cell`·`diagram-body`·`container-body`·`container-title`·
-`container-type`·`media-src`·`media-label` 중 하나다. 결과는 바뀐 원문 전체로 비교한다.
+`container-type`·`media-src`·`media-label`·`mdx-prop`·`mdx-body` 중 하나다. 결과는 바뀐 원문 전체로 비교한다.
 
 - `{ "type": "text", "text": "…" }`: 글자를 하나씩 친다.
 - `{ "type": "key", "key": "Backspace" | "Delete" | "Enter" | "Shift-Enter" | "Tab" | "Shift-Tab" | "ArrowRight" |

@@ -156,6 +156,18 @@
     "marked": "⦃<Embed src=\"https://example.com\" />⦄"
   },
   {
+    "id": "block-mdx-database",
+    "group": "hide.block-mdx",
+    "rule": "3",
+    "marked": "⦃<DatabaseView databaseId=\"db_1\" sourceId=\"ds_1\" viewId=\"view_1\" />⦄"
+  },
+  {
+    "id": "block-mdx-custom",
+    "group": "hide.block-mdx",
+    "rule": "3",
+    "marked": "⦃<Custom title=\"X\">\nbody\n</Custom>⦄"
+  },
+  {
     "id": "block-table",
     "group": "hide.block-table",
     "rule": "3",

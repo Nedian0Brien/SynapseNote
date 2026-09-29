@@ -5,6 +5,7 @@ import { sharedExtensions } from '../extensions/shared.ts';
 import { MarkdownManager } from '../markdown/index.ts';
 import { sourceChanges } from './changes.ts';
 import type { Range } from './layout.ts';
+import { type MdxWidgetEdit, updateMdxWidget } from './mdx-widget.ts';
 
 export interface CodeWidgetSource {
   body: Range;
@@ -67,6 +68,7 @@ export type BlockWidgetEdit =
   | { type: 'container-type'; text: string }
   | { type: 'media-src'; text: string }
   | { type: 'media-label'; text: string }
+  | MdxWidgetEdit
   | { type: 'table-cell'; row: number; column: number; text: string };
 
 let parser: MarkdownManager | undefined;
@@ -568,6 +570,9 @@ export function updateBlockWidget(
       );
     }
     return null;
+  }
+  if (edit.type === 'mdx-prop' || edit.type === 'mdx-body') {
+    return updateMdxWidget(source, from, to, edit);
   }
   const code = codeWidgetSource(source, from, to);
   if (!code) return null;

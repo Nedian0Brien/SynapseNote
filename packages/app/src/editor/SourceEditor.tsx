@@ -27,6 +27,12 @@ import { createSourceClipboardExtension } from './clipboard/index.ts';
 import { sourceChangeTouchesDatabaseFrontmatter } from './database-source-guard';
 import { type CmCacheEntry, mountCmEditor, parkCmEditor } from './editor-cache';
 import { createLiveExtension } from './live/live-extension';
+import {
+  LivePortalHost,
+  LivePortalRegistry,
+  livePortalRegistryFor,
+  setLivePortalRegistry,
+} from './live/live-portals';
 import { getMountId } from './mount-id-registry';
 import { markUserTyping } from './observers';
 import { publishSelectionContext, selectionSnapshotFromSource } from './selection-context';
@@ -65,7 +71,12 @@ interface SourceEditorProps {
 
 function variantExtension(
   variant: 'source' | 'live',
-  context: { docName: string; assetPaths: ReadonlySet<string>; filePaths: ReadonlySet<string> },
+  context: {
+    docName: string;
+    assetPaths: ReadonlySet<string>;
+    filePaths: ReadonlySet<string>;
+    portalRegistry: LivePortalRegistry;
+  },
 ) {
   return variant === 'live' ? createLiveExtension(context) : createSourcePolishExtension();
 }
@@ -131,6 +142,7 @@ export function SourceEditor({
 }: SourceEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
+  const [portalRegistry, setPortalRegistry] = useState<LivePortalRegistry | null>(null);
   // Compartments (theme, word-wrap, placeholder) are created in the factory
   // and stored on the cache entry, NOT held per React component. The view
   // outlives this component (cached + reparented), so a
@@ -208,6 +220,7 @@ export function SourceEditor({
         container,
         sizeStats,
         factory: (el) => {
+          const registry = new LivePortalRegistry();
           // Source clipboard: copy writes both text/plain markdown AND
           // text/html source-shaped HTML; paste preserves raw text/plain for
           // source-editor payloads and only converts generic rich HTML.
@@ -283,7 +296,12 @@ export function SourceEditor({
                 currentDocName: resolvedDocName,
               }),
               variantCompartment.of(
-                variantExtension(variant, { docName: resolvedDocName, assetPaths, filePaths }),
+                variantExtension(variant, {
+                  docName: resolvedDocName,
+                  assetPaths,
+                  filePaths,
+                  portalRegistry: registry,
+                }),
               ),
               sourceClipboard,
               EditorView.updateListener.of((update) => {
@@ -325,6 +343,7 @@ export function SourceEditor({
             ],
           });
           const view = new EditorView({ state, parent: el });
+          setLivePortalRegistry(view, registry);
           // Seed the initial selection-stats entry (usually null) — also clears
           // a stale entry left by a prior evicted editor for this docName.
           publishSelectionStats(resolvedDocName, 'source', selectionStatsFromSource(view));
@@ -355,6 +374,7 @@ export function SourceEditor({
       });
       cmEntryRef.current = entry;
       viewRef.current = entry.view;
+      setPortalRegistry(livePortalRegistryFor(entry.view));
     } catch (err) {
       // Surface mount failures through DocumentErrorBoundary.
       console.error('[SourceEditor] mountCmEditor failed', err);
@@ -471,7 +491,12 @@ export function SourceEditor({
     if (!entry?.variantCompartment) return;
     entry.view.dispatch({
       effects: entry.variantCompartment.reconfigure(
-        variantExtension(variant, { docName, assetPaths, filePaths }),
+        variantExtension(variant, {
+          docName,
+          assetPaths,
+          filePaths,
+          portalRegistry: livePortalRegistryFor(entry.view),
+        }),
       ),
     });
   }, [variant, docName, assetPaths, filePaths]);
@@ -509,5 +534,10 @@ export function SourceEditor({
     applyRawMdxNavigation(view, pendingNavigation.detail);
   }, [docName, isSourceModeActive]);
 
-  return <div ref={containerRef} className="source-editor h-full pb-3" />;
+  return (
+    <>
+      <div ref={containerRef} className="source-editor h-full pb-3" />
+      <LivePortalHost registry={portalRegistry} />
+    </>
+  );
 }

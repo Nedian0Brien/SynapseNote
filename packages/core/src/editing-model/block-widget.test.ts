@@ -9,6 +9,7 @@ import {
 } from './block-widget.ts';
 import { widgetFixtures } from './fixtures.ts';
 import { computeLayout } from './layout.ts';
+import { mdxWidgetSource } from './mdx-widget.ts';
 
 describe('block widget source edits', () => {
   for (const fixture of widgetFixtures) {
@@ -71,5 +72,12 @@ describe('block widget source edits', () => {
     expect(mediaWidgetSource(image, 0, image.length)?.kind).toBe('image');
     expect(mediaWidgetSource(file, 0, file.length)?.kind).toBe('file');
     expect(mediaWidgetSource(embed, 0, embed.length)?.kind).toBe('embed');
+  });
+
+  test('generic MDX passes JSON literals and leaves executable expressions inert', () => {
+    const literal = '<DatabaseView viewOverrides={{"limit":10}} />';
+    const expression = '<Custom onClick={() => alert(1)} title="Safe" />';
+    expect(mdxWidgetSource(literal, 0, literal.length)?.props.viewOverrides).toEqual({ limit: 10 });
+    expect(mdxWidgetSource(expression, 0, expression.length)?.props).toEqual({ title: 'Safe' });
   });
 });

@@ -6026,6 +6026,10 @@ msgstr "Loading chat history"
 msgid "Loading chats"
 msgstr "Loading chats"
 
+#: src/editor/live/mdx-widgets.tsx
+msgid "Loading component"
+msgstr "Loading component"
+
 #: src/components/DiffViewBoundary.tsx
 msgid "Loading conflict for {filePath}"
 msgstr "Loading conflict for {filePath}"
@@ -8256,6 +8260,10 @@ msgstr "Preview restore option"
 #: src/components/DatabaseAgentRunsDialog.tsx
 msgid "Preview the current revision before reversing this run."
 msgstr "Preview the current revision before reversing this run."
+
+#: src/editor/live/mdx-widgets.tsx
+msgid "Preview unavailable"
+msgstr "Preview unavailable"
 
 #: src/components/ConsentDialogBody.tsx
 msgid "Preview unavailable: {errorDetail}"

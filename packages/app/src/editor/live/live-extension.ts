@@ -38,6 +38,7 @@ import {
   type EditState,
   IncrementalLayout,
   type MarkType,
+  mdxWidgetSource,
   mediaWidgetSource,
   sourceChanges,
   type ToggleMark,
@@ -47,6 +48,7 @@ import { pasteShiftHeld } from '../clipboard/shift-tracker';
 import { CodeBlockWidget, TableBlockWidget } from './block-widgets';
 import { ContainerBlockWidget } from './container-widgets';
 import { DiagramBlockWidget } from './diagram-widgets';
+import { MdxBlockWidget } from './mdx-widgets';
 import { MediaBlockWidget, type MediaContext, MediaInlineWidget } from './media-widgets';
 
 const mediaContext = Facet.define<MediaContext, MediaContext>({
@@ -120,6 +122,7 @@ function blockDecorations(
   context: MediaContext,
 ): DecorationSet {
   const ranges: { from: number; to: number; deco: Decoration }[] = [];
+  const nestedExtension = () => createLiveExtension(context);
   if (layout.frontmatter) {
     ranges.push({
       from: layout.frontmatter[0],
@@ -133,18 +136,21 @@ function blockDecorations(
       const raw = source.slice(widget.from, widget.to);
       const inner =
         widget.node === 'table'
-          ? new TableBlockWidget(raw, widget.from, widget.to, createLiveExtension)
+          ? new TableBlockWidget(raw, widget.from, widget.to, nestedExtension)
           : widget.node === 'mdxJsxFlowElement' && mediaWidgetSource(source, widget.from, widget.to)
             ? new MediaBlockWidget(raw, widget.from, widget.to, context)
             : widget.node === 'mdxJsxFlowElement' &&
                 containerWidgetSource(source, widget.from, widget.to)
-              ? new ContainerBlockWidget(raw, widget.from, widget.to, createLiveExtension)
+              ? new ContainerBlockWidget(raw, widget.from, widget.to, nestedExtension)
               : widget.node === 'mdxJsxFlowElement' &&
                   diagramWidgetSource(source, widget.from, widget.to)
                 ? new DiagramBlockWidget(raw, widget.from, widget.to)
                 : widget.node === 'code' && /^ {0,3}(?:`{3,}|~{3,})/.test(raw)
                   ? new CodeBlockWidget(raw, widget.from, widget.to)
-                  : null;
+                  : widget.node === 'mdxJsxFlowElement' &&
+                      mdxWidgetSource(source, widget.from, widget.to)
+                    ? new MdxBlockWidget(raw, widget.from, widget.to, context, nestedExtension)
+                    : null;
       if (inner) {
         ranges.push({
           from: widget.from,

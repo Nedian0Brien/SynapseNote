@@ -49,4 +49,11 @@ export {
   type WidgetKind,
   type WidgetRange,
 } from './layout.ts';
+export {
+  type MdxWidgetAttribute,
+  type MdxWidgetEdit,
+  type MdxWidgetSource,
+  mdxWidgetSource,
+  updateMdxWidget,
+} from './mdx-widget.ts';
 export { applyActionsInWindow, editWindow, type WindowRange } from './window.ts';

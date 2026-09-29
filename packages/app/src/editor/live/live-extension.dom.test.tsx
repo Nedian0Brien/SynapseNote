@@ -8,6 +8,7 @@ import { EditorSelection, EditorState } from '@codemirror/state';
 import { EditorView, runScopeHandlers } from '@codemirror/view';
 import { computeLayout, editFixtures, parseCursor } from '@nedian0brien/synapsenote-core';
 import { createLiveExtension } from './live-extension';
+import { livePortalRegistryFor } from './live-portals';
 
 // The jsdom preload exposes `window` but not its Window constructor globally;
 // CodeMirror checks `instanceof Window` when a nested editor is measured.
@@ -322,5 +323,15 @@ describe('live editor block widgets', () => {
     source.value = 'new.png';
     source.dispatchEvent(new Event('input', { bubbles: true }));
     expect(view.state.doc.toString()).toBe('before ![Alt](new.png) after');
+  });
+
+  test('a generic MDX block registers and releases its React portal', () => {
+    const source = '<DatabaseView databaseId="db_1" sourceId="ds_1" viewId="view_1" />';
+    const view = mount(source, 0, 0);
+    const registry = livePortalRegistryFor(view);
+    expect(view.contentDOM.textContent).not.toContain('<DatabaseView');
+    expect(registry.getSnapshot()).toHaveLength(1);
+    view.dispatch({ changes: { from: 0, to: source.length, insert: '' }, userEvent: 'delete' });
+    expect(registry.getSnapshot()).toHaveLength(0);
   });
 });

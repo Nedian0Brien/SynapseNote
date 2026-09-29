@@ -9,11 +9,13 @@ import { normalizeDocRelativeMediaRenderProps } from '../extensions/media-render
 import { resolveWikiLinkAssetTarget } from '../extensions/wiki-link-helpers';
 import { sanitizeComponentProps } from '../utils/sanitize-url';
 import { syncInput, writeWidget } from './block-widgets';
+import type { LivePortalRegistry } from './live-portals';
 
 export interface MediaContext {
   docName?: string;
   assetPaths?: ReadonlySet<string>;
   filePaths?: ReadonlySet<string>;
+  portalRegistry?: LivePortalRegistry;
 }
 
 interface MediaDOM {

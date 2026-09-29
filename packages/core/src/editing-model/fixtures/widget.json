@@ -250,5 +250,41 @@
     "from": 0,
     "edit": { "type": "media-label", "text": "Example" },
     "after": "<Embed src=\"https://example.com\" title=\"Example\" />"
+  },
+  {
+    "id": "mdx-database-reference",
+    "group": "widget.mdx-prop",
+    "rule": "3",
+    "before": "<DatabaseView databaseId=\"db_old\" sourceId=\"ds_1\" viewId=\"view_1\" />",
+    "from": 0,
+    "edit": { "type": "mdx-prop", "key": "databaseId", "text": "db_new" },
+    "after": "<DatabaseView databaseId=\"db_new\" sourceId=\"ds_1\" viewId=\"view_1\" />"
+  },
+  {
+    "id": "mdx-pdf-source",
+    "group": "widget.mdx-prop",
+    "rule": "3",
+    "before": "<Pdf src=\"old.pdf\" />",
+    "from": 0,
+    "edit": { "type": "mdx-prop", "key": "src", "text": "new.pdf" },
+    "after": "<Pdf src=\"new.pdf\" />"
+  },
+  {
+    "id": "mdx-custom-body",
+    "group": "widget.mdx-body",
+    "rule": "3",
+    "before": "<Custom title=\"X\">\nold **bold**\n</Custom>",
+    "from": 0,
+    "edit": { "type": "mdx-body", "text": "new **bold**" },
+    "after": "<Custom title=\"X\">\nnew **bold**\n</Custom>"
+  },
+  {
+    "id": "mdx-empty-body",
+    "group": "widget.mdx-body",
+    "rule": "3",
+    "before": "<Custom />",
+    "from": 0,
+    "edit": { "type": "mdx-body", "text": "new" },
+    "after": "<Custom >\nnew\n</Custom>"
   }
 ]

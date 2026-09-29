@@ -1,12 +1,12 @@
 # 인계: 웹 편집기가 원문을 직접 편집한다 (web-source-editor)
 
-작성 2026-09-29. 다음 세션의 에이전트가 이 문서만 읽고 작업을 이어받을 수 있게 쓴다.
+갱신 2026-09-30. 다음 세션의 에이전트가 이 문서만 읽고 작업을 이어받을 수 있게 쓴다.
 
 웹 앱에 Markdown 원문(`Y.Text('source')`)을 CodeMirror 6로 직접 편집하면서 기호를 숨기는 `live` 편집 모드가
 생겼다. 편집 규칙은 core의 순수 함수이고, 네이티브 앱도 같은 명세와 fixture를 쓴다. P0~P2(뼈대), P2c(기존
 편집기 동작 옮기기), P3a(코드 울타리·표 위젯), P3b(수식·Mermaid 위젯), P3c(frontmatter 속성 화면),
-P3d(콜아웃·아코디언 위젯), P3e(이미지·파일 임베드 위젯)가 끝났다.
-P3의 나머지 블록은 진행 전이다.
+P3d(콜아웃·아코디언 위젯), P3e(이미지·파일 임베드 위젯), P3f(문서 문맥 MDX 위젯)가 끝났다.
+P3의 나머지 블록과 P4~P6는 진행 전이다.
 
 ## 1. 사용자가 정한 것
 
@@ -35,7 +35,7 @@ P3의 나머지 블록은 진행 전이다.
 ## 2. 작업 위치와 상태
 
 - **브랜치·워크트리:** `codex/web-source-editor`, `.worktree/web-source-editor`
-  - P3e 구현 커밋은 이후 `git log -1`로 확인한다. PR은 아직 없다.
+  - P3e 구현 커밋은 `5d99661f`다. P3f 구현 커밋은 이후 `git log -1`로 확인한다. PR은 아직 없다.
   - main에는 사용자가 끝났다고 명시적으로 확인한 뒤에만 병합한다.
 - **아티팩트:** `.intent/intent_web-source-editor.md`(수락됨), `spec_web-source-editor.md`(R1~R10, 단계 P0~P6),
   `plan_web-source-editor-p0.md` `-p1.md` `-p2.md` `-p2c.md`. 계획 파일 끝에 단계별 결과가 있다.
@@ -99,6 +99,16 @@ P3의 나머지 블록은 진행 전이다.
   네 이미지가 같은 테스트 자산으로 표시됐고 Markdown·위키·MDX 속성을 편집·새로고침했다.
 - 뒤에 남은 P3: 일반 MDX, 인라인 데이터베이스, 들여쓴 코드, 레거시 HTML details, 참조 이미지, 명시적 PDF 뷰어.
 
+### P3f 추가 (2026-09-30)
+
+- `.intent/plan_web-source-editor-p3f.md`에 범위와 결과를 적었다.
+- `live-portals.tsx`가 CodeMirror 뷰별 위젯 포털을 `SourceEditor`의 React 문맥에서 그린다. 캐시된 뷰를 다시 붙여도 문맥이 유지된다.
+- core `mdx-widget.ts`가 일반 MDX의 리터럴 속성과 본문 원문 범위를 계산한다. 실행 가능한 MDX 표현식은 평가하지 않는다.
+- `mdx-widgets.tsx`가 기존 컴포넌트 맵으로 `DatabaseView`, `Math`, 알 수 없는 MDX를 그린다. 인라인 데이터베이스 그리드에서 레코드를 추가하고 저장·새로고침을 확인했다.
+- 브라우저 확인 문서: `http://localhost:5183/#/notes/p3f-mdx-review-1790694262228` (임시 콘텐츠 폴더가 살아 있는 동안). 중첩 컴포넌트 확인 문서는 `http://localhost:5183/#/notes/p3f-nested-mdx-1790694898070`다.
+- PDF 외형은 표시됐지만 내용은 `live`·기존 `wysiwyg` 양쪽에서 `Loading PDF`에 머물렀다. PDF 내용 렌더링은 확인되지 않았다.
+- 뒤에 남은 P3: Tabs/Tab과 Mirror의 복합 자식, 복합 속성 편집, 들여쓴 코드, 레거시 HTML details, 참조 이미지.
+
 ## 3. 끝난 단계
 
 | 단계 | 커밋 | 내용 |
@@ -113,7 +123,8 @@ P3의 나머지 블록은 진행 전이다.
 | P3b | `124a9b53` | 수식·Mermaid의 편집 가능한 미리보기와 범위별 원문 변경 |
 | P3c | `02c7dd76` | `live` 문서 속성 패널과 숨긴 YAML 보호 |
 | P3d | `ea1f2f51` | GFM·MDX 콜아웃과 아코디언의 편집 가능한 블록 위젯 |
-| P3e | 구현 커밋은 `git log -1` | Markdown·위키·MDX 이미지·파일 임베드 위젯 |
+| P3e | `5d99661f` | Markdown·위키·MDX 이미지·파일 임베드 위젯 |
+| P3f | 구현 커밋은 `git log -1` | React 문맥을 가진 일반 MDX·인라인 데이터베이스 위젯 |
 
 P2c에서 옮긴 동작은 다음과 같다. 각 동작의 근거 파일은 `plan_web-source-editor-p2c.md`에 있다.
 
