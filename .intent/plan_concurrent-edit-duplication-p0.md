@@ -37,3 +37,22 @@ date: 2026-09-29
 bun packages/server/scripts/concurrent-writers-fuzz.ts --seeds 0-199 --writers app,web,agent
 bun packages/server/scripts/concurrent-writers-fuzz.ts --seeds 0-49 --writers app
 ```
+
+## 결과 (2026-09-29)
+
+- 작성자 하나만 켠 실행(앱·웹·에이전트 각 20 seed): 중복·삭제 0.
+- 세 작성자 200 seed(각 400단계, 38줄 문서 3개 절): 68 seed에서 중복 90건, 삭제 1건. 모두 수렴.
+- 작성자 쌍(각 100 seed): 앱+에이전트 0, 앱+웹 8 seed(중복 8), 웹+에이전트 8 seed(중복 19). 중복은 fragment 작성자(웹)와
+  `Y.Text` 작성자(앱·에이전트)가 함께일 때만 난다.
+- 추적(서버 `Y.Text`에서 삽입한 글자를 걷어 낸 뒤 원문 링크 URL이 한 번씩, 제 문단 줄에 있는지): 깨지는 단계는 매번
+  웹 클라이언트의 update가 서버에 도착한 때다. 서버 fragment에서 링크 표시(link mark)의 범위가 어긋난다. 링크가 다음
+  문장까지 늘어나거나, 두 조각으로 갈리거나, 다른 글자에 붙는다. Observer A는 그 문단을 직렬화해 `Y.Text`에 쓰고, 두
+  조각이 된 링크는 같은 URL을 두 번 쓴다. URL 안에 들어간 마커가 그래서 두 번 나온다.
+- 최소 재현: 서버가 링크 `href`만 바뀐 텍스트를 파싱해 fragment를 갱신하는 동안(앱·에이전트가 URL 안에 글자를 넣은
+  경우의 Observer B, 또는 paired write), 웹이 같은 문단의 링크 바로 앞에 글자 하나를 넣는다. 병합 결과 웹이 넣은
+  글자에 새 `href` 링크가 붙고 원래 링크 텍스트는 옛 `href`로 남는다(49개 위치 중 1곳). y-tiptap `updateYText`는
+  문단 전체에 서식을 `retain`+속성으로 다시 적용하고, Yjs 서식은 경계 위치의 서식 항목으로 저장된다. 두 쪽이 같은
+  경계에 동시에 쓰면 병합 순서에 따라 서식이 다른 글자에 붙는다.
+- 판정: H2(뒤처진 기준본 병합)와 H1(paired write 재구성)은 이번 재현의 원인이 아니다. 원인은 H3의 변형이다. 서버가
+  `Y.Text`에서 파생한 서식 변경과 클라이언트의 fragment 편집이 같은 서식 경계에서 겹치면, Yjs 병합이 서식을 잘못
+  배정하고, Observer A가 그 fragment를 원문으로 직렬화한다.
