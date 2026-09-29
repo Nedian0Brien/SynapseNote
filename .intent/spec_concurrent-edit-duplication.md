@@ -40,7 +40,7 @@ soak에서 본 모양과 코드 경로로 세운 후보다. P0의 재현으로 �
 
 ## 설계
 
-- **P0 재현.** `packages/server/src/concurrent-writers.sim.ts`(테스트 도우미)와 퍼징 테스트. 서버 `Y.Doc`에
+- **P0 재현.** `packages/server/src/concurrent-writers.test-helper.ts`(테스트 도우미)와 퍼징 스크립트. 서버 `Y.Doc`에
   `setupServerObservers`와 서로게이트 정규화를 붙이고(persistence 없음), 클라이언트 `Y.Doc` 둘(앱, 웹)을 둔다.
   update는 방향별 큐에 쌓고 seed로 정한 시점에 묶어서 전달한다. 서버가 받은 update는 연결별 origin으로
   적용한다(Hocuspocus와 같음). 에이전트는 서버 문서에 per-session origin으로 `applyAgentMarkdownWrite` patch를
