@@ -5,9 +5,11 @@ export {
   type EditResult,
   type EditState,
   initialState,
+  type SourceUndo,
   type ToggleMark,
 } from './edit.ts';
 export {
+  type BlockKind,
   type EditAction,
   type EditFixture,
   editFixtures,

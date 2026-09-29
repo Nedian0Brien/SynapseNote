@@ -22,6 +22,7 @@ import {
 } from '@codemirror/view';
 import {
   applyActionsInWindow,
+  type BlockKind,
   type EditAction,
   type EditState,
   IncrementalLayout,
@@ -29,6 +30,8 @@ import {
   sourceChanges,
   type ToggleMark,
 } from '@nedian0brien/synapsenote-core';
+import { isMarkdown } from '../clipboard/is-markdown';
+import { pasteShiftHeld } from '../clipboard/shift-tracker';
 
 // ── state ───────────────────────────────────────────────────────────────────
 
@@ -44,6 +47,8 @@ const layoutField = StateField.define<IncrementalLayout>({
 interface CursorIntent {
   side: EditState['side'];
   pending: ToggleMark[];
+  /** Backspace right after an input rule puts back the typed text (SPEC.md §5). */
+  undo?: EditState['undo'];
 }
 
 const setCursorIntent = StateEffect.define<CursorIntent>();
@@ -79,13 +84,14 @@ function run(
       head: selection.head,
       side: intent.side,
       pending: intent.pending,
+      undo: intent.undo,
     },
     actions,
   );
   view.dispatch({
     changes: sourceChanges(source, result.source),
     selection: { anchor: result.anchor, head: result.head },
-    effects: setCursorIntent.of({ side: result.side, pending: result.pending }),
+    effects: setCursorIntent.of({ side: result.side, pending: result.pending, undo: result.undo }),
     userEvent,
     scrollIntoView: true,
   });
@@ -101,6 +107,10 @@ const key = (k: Extract<EditAction, { type: 'key' }>['key']) => (view: EditorVie
   );
 const toggle = (mark: ToggleMark) => (view: EditorView) =>
   run(view, [{ type: 'toggle', mark }], undefined, 'input.format');
+const block = (kind: BlockKind) => (view: EditorView) =>
+  run(view, [{ type: 'block', block: kind }], undefined, 'input.format');
+const move = (direction: 'up' | 'down') => (view: EditorView) =>
+  run(view, [{ type: 'move', direction }], undefined, 'move');
 
 const liveKeymap = keymap.of([
   { key: 'Backspace', run: key('Backspace') },
@@ -115,7 +125,23 @@ const liveKeymap = keymap.of([
   { key: 'Mod-i', run: toggle('italic') },
   { key: 'Mod-e', run: toggle('code') },
   { key: 'Mod-Shift-x', run: toggle('strike') },
+  { key: 'Mod-Shift-s', run: toggle('strike') },
   { key: 'Mod-Shift-h', run: toggle('highlight') },
+  // Block shortcuts, the same keys as the visual editor (SPEC.md §7).
+  { key: 'Mod-Alt-0', run: block('paragraph') },
+  { key: 'Mod-Alt-1', run: block('h1') },
+  { key: 'Mod-Alt-2', run: block('h2') },
+  { key: 'Mod-Alt-3', run: block('h3') },
+  { key: 'Mod-Alt-4', run: block('h4') },
+  { key: 'Mod-Alt-5', run: block('h5') },
+  { key: 'Mod-Alt-6', run: block('h6') },
+  { key: 'Mod-Shift-7', run: block('ordered') },
+  { key: 'Mod-Shift-8', run: block('bullet') },
+  { key: 'Mod-Shift-9', run: block('task') },
+  { key: 'Mod-Shift-b', run: block('quote') },
+  { key: 'Mod-Alt-c', run: block('code') },
+  { key: 'Mod-Shift-ArrowUp', run: move('up') },
+  { key: 'Mod-Shift-ArrowDown', run: move('down') },
 ]);
 
 const liveInput = EditorView.inputHandler.of((view, from, to, text) => {
@@ -132,8 +158,16 @@ const liveClipboard = EditorView.domEventHandlers({
     const html = data.getData('text/html');
     const text = data.getData('text/plain');
     event.preventDefault();
-    if (html) return run(view, [{ type: 'paste', html }], undefined, 'input.paste');
-    return run(view, [{ type: 'paste', text }], undefined, 'input.paste');
+    // The visual editor's order (clipboard/handle-paste.ts): Cmd-Shift-V is
+    // plain text, Markdown-shaped text is Markdown, then HTML, then plain text.
+    const action: EditAction = pasteShiftHeld(event)
+      ? { type: 'paste', text }
+      : text && isMarkdown(text)
+        ? { type: 'paste', text, as: 'markdown' }
+        : html
+          ? { type: 'paste', html }
+          : { type: 'paste', text };
+    return run(view, [action], undefined, 'input.paste');
   },
   copy(event, view) {
     const { from, to } = view.state.selection.main;
@@ -163,12 +197,14 @@ class ListMarkerWidget extends WidgetType {
   constructor(
     readonly marker: string,
     readonly from: number,
+    /** An ordered item's number as Markdown reads it. */
+    readonly label: string | undefined,
   ) {
     super();
   }
 
   eq(other: ListMarkerWidget): boolean {
-    return other.marker === this.marker && other.from === this.from;
+    return other.marker === this.marker && other.from === this.from && other.label === this.label;
   }
 
   toDOM(view: EditorView): HTMLElement {
@@ -191,8 +227,7 @@ class ListMarkerWidget extends WidgetType {
     }
     const span = document.createElement('span');
     span.className = 'cm-live-list-marker';
-    const ordered = /(\d+[.)])/.exec(this.marker);
-    span.textContent = ordered ? ordered[1] : '•';
+    span.textContent = this.label ?? '•';
     return span;
   }
 
@@ -259,7 +294,7 @@ function draw(view: EditorView): Drawn {
           from: w.from,
           to: w.to,
           deco: Decoration.replace({
-            widget: new ListMarkerWidget(doc.sliceString(w.from, w.to), w.from),
+            widget: new ListMarkerWidget(doc.sliceString(w.from, w.to), w.from, w.label),
           }),
         });
         lines.set(doc.lineAt(w.from).from, 'cm-live-list-item');

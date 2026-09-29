@@ -39,6 +39,7 @@ function type(view: EditorView, text: string): void {
 }
 
 const isMac = /Mac/.test(navigator.platform);
+type Mods = { shift?: boolean; mod?: boolean; alt?: boolean };
 const SHORTCUT: Record<string, { key: string; shift?: boolean }> = {
   bold: { key: 'b' },
   italic: { key: 'i' },
@@ -46,18 +47,34 @@ const SHORTCUT: Record<string, { key: string; shift?: boolean }> = {
   strike: { key: 'x', shift: true },
   highlight: { key: 'h', shift: true },
 };
+const BLOCK_SHORTCUT: Record<string, { key: string } & Mods> = {
+  paragraph: { key: '0', alt: true },
+  h1: { key: '1', alt: true },
+  h2: { key: '2', alt: true },
+  h3: { key: '3', alt: true },
+  h4: { key: '4', alt: true },
+  h5: { key: '5', alt: true },
+  h6: { key: '6', alt: true },
+  ordered: { key: '7', shift: true },
+  bullet: { key: '8', shift: true },
+  task: { key: '9', shift: true },
+  quote: { key: 'b', shift: true },
+  code: { key: 'c', alt: true },
+};
 
-function press(
-  view: EditorView,
-  key: string,
-  mods: { shift?: boolean; mod?: boolean } = {},
-): boolean {
+/** A keydown as a browser sends it: Shift upper-cases a letter, and `keyCode` names the physical key. */
+function press(view: EditorView, key: string, mods: Mods = {}): boolean {
+  const letter = /^[a-z]$/.test(key);
   const event = new KeyboardEvent('keydown', {
-    key,
+    key: letter && mods.shift ? key.toUpperCase() : key,
     shiftKey: mods.shift ?? false,
+    altKey: mods.alt ?? false,
     metaKey: mods.mod === true && isMac,
     ctrlKey: mods.mod === true && !isMac,
   });
+  if (key.length === 1) {
+    Object.defineProperty(event, 'keyCode', { value: key.toUpperCase().charCodeAt(0) });
+  }
   return runScopeHandlers(view, event, 'editor');
 }
 
@@ -90,6 +107,12 @@ describe('live editor — edit.json through CodeMirror', () => {
         } else if (action.type === 'toggle') {
           const shortcut = SHORTCUT[action.mark];
           expect(press(view, shortcut.key, { mod: true, shift: shortcut.shift })).toBe(true);
+        } else if (action.type === 'block') {
+          const { key, ...mods } = BLOCK_SHORTCUT[action.block];
+          expect(press(view, key, { ...mods, mod: true })).toBe(true);
+        } else if (action.type === 'move') {
+          const key = action.direction === 'up' ? 'ArrowUp' : 'ArrowDown';
+          expect(press(view, key, { mod: true, shift: true })).toBe(true);
         }
       }
       const after = parseCursor(fixture.after as string);
@@ -103,6 +126,14 @@ describe('live editor — edit.json through CodeMirror', () => {
       }
     });
   }
+
+  test('ordered list numbers follow Markdown, not each item source number', () => {
+    const view = mount('1. a\n1. b\n1. c', 0, 0);
+    const numbers = [...view.contentDOM.querySelectorAll('.cm-live-list-marker')].map(
+      (el) => el.textContent,
+    );
+    expect(numbers).toEqual(['1.', '2.', '3.']);
+  });
 
   test('hidden syntax is not drawn and cursor movement skips it', () => {
     const view = mount('a **bold** b', 0, 0);

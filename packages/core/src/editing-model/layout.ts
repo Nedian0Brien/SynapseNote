@@ -27,6 +27,8 @@ export interface WidgetRange {
   kind: WidgetKind;
   /** mdast node type the widget stands for (`table`, `code`, `listItem`, …). */
   node: string;
+  /** An ordered list item's number as Markdown reads it (the list's start plus the item's index). */
+  label?: string;
 }
 
 export type MarkType =
@@ -189,8 +191,8 @@ class Walker {
     if (to > from) this.layout.hidden.push({ from, to, kind });
   }
 
-  private widget(from: number, to: number, kind: WidgetKind, node: string): void {
-    if (to > from) this.layout.widgets.push({ from, to, kind, node });
+  private widget(from: number, to: number, kind: WidgetKind, node: string, label?: string): void {
+    if (to > from) this.layout.widgets.push({ from, to, kind, node, ...(label ? { label } : {}) });
   }
 
   block(node: RootContent): void {
@@ -226,17 +228,25 @@ class Walker {
         for (const child of node.children) this.block(child);
         return;
       }
-      case 'list':
+      case 'list': {
+        // Markdown numbers an ordered list from its first item; later items'
+        // own numbers do not count.
+        let ordinal = node.start ?? 1;
         for (const item of node.children) {
           const itemFrom = this.s(item);
           const itemTo = this.e(item);
           if (itemFrom === undefined || itemTo === undefined) continue;
           const first = item.children[0];
           const contentFrom = (first && this.s(first)) ?? itemTo;
-          this.widget(itemFrom, contentFrom, 'list-marker', 'listItem');
+          const delimiter = node.ordered
+            ? (/^ *\d+([.)])/.exec(this.source.slice(itemFrom, contentFrom))?.[1] ?? '.')
+            : '';
+          const label = node.ordered ? `${ordinal++}${delimiter}` : undefined;
+          this.widget(itemFrom, contentFrom, 'list-marker', 'listItem', label);
           for (const child of item.children) this.block(child);
         }
         return;
+      }
       default:
         this.widget(from, to, 'block', node.type);
     }

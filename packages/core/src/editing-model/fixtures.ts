@@ -16,6 +16,21 @@ export interface HideFixture {
   marked: string;
 }
 
+/** Block types the block shortcuts set or toggle (SPEC.md §7). */
+export type BlockKind =
+  | 'paragraph'
+  | 'h1'
+  | 'h2'
+  | 'h3'
+  | 'h4'
+  | 'h5'
+  | 'h6'
+  | 'bullet'
+  | 'ordered'
+  | 'task'
+  | 'quote'
+  | 'code';
+
 export type EditAction =
   | { type: 'text'; text: string }
   | {
@@ -31,6 +46,8 @@ export type EditAction =
         | 'ArrowLeft';
     }
   | { type: 'toggle'; mark: 'bold' | 'italic' | 'code' | 'strike' | 'highlight' }
+  | { type: 'block'; block: BlockKind }
+  | { type: 'move'; direction: 'up' | 'down' }
   | { type: 'paste'; text?: string; html?: string; as?: 'markdown' }
   | { type: 'copy' };
 

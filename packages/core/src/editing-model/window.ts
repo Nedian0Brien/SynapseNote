@@ -9,7 +9,7 @@
  * definitions, which change how `[label]` parses anywhere; a document with
  * any definition is edited whole.
  */
-import { applyActions, type EditResult, type EditState } from './edit.ts';
+import { applyActions, type EditResult, type EditState, type SourceUndo } from './edit.ts';
 import type { EditAction } from './fixtures.ts';
 import type { IncrementalLayout } from './incremental-layout.ts';
 
@@ -57,6 +57,7 @@ export function applyActionsInWindow(
       source: source.slice(window.from, window.to),
       anchor: state.anchor - window.from,
       head: state.head - window.from,
+      undo: shiftUndo(state.undo, -window.from, window.to - window.from),
     },
     actions,
   );
@@ -65,5 +66,17 @@ export function applyActionsInWindow(
     source: source.slice(0, window.from) + inner.source + source.slice(window.to),
     anchor: inner.anchor + window.from,
     head: inner.head + window.from,
+    undo: shiftUndo(inner.undo, window.from, Number.POSITIVE_INFINITY),
   };
+}
+
+/** Move an undo into another range's offsets; drop it when it falls outside `[0, length]`. */
+function shiftUndo(
+  undo: SourceUndo | undefined,
+  by: number,
+  length: number,
+): SourceUndo | undefined {
+  if (!undo) return undefined;
+  const moved = { ...undo, from: undo.from + by, to: undo.to + by, cursor: undo.cursor + by };
+  return moved.from < 0 || moved.to > length ? undefined : moved;
 }

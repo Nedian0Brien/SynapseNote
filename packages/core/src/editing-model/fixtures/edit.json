@@ -329,10 +329,6 @@
       {
         "type": "text",
         "text": "---"
-      },
-      {
-        "type": "key",
-        "key": "Enter"
       }
     ],
     "after": "a\n\n---\n\n│"
@@ -919,5 +915,588 @@
       }
     ],
     "after": "$$\n│\n$$"
+  },
+  {
+    "id": "rule-convert-ordered",
+    "group": "edit.rule-convert",
+    "rule": "6",
+    "before": "- a\n- │b",
+    "actions": [
+      {
+        "type": "text",
+        "text": "1. "
+      }
+    ],
+    "after": "- a\n1. │b"
+  },
+  {
+    "id": "rule-convert-bullet",
+    "group": "edit.rule-convert",
+    "rule": "6",
+    "before": "1. a\n2. │b",
+    "actions": [
+      {
+        "type": "text",
+        "text": "- "
+      }
+    ],
+    "after": "1. a\n- │b"
+  },
+  {
+    "id": "rule-convert-number",
+    "group": "edit.rule-convert",
+    "rule": "6",
+    "before": "- │a",
+    "actions": [
+      {
+        "type": "text",
+        "text": "3. "
+      }
+    ],
+    "after": "3. │a"
+  },
+  {
+    "id": "rule-convert-task",
+    "group": "edit.rule-convert",
+    "rule": "6",
+    "before": "- │a",
+    "actions": [
+      {
+        "type": "text",
+        "text": "[ ] "
+      }
+    ],
+    "after": "- [ ] │a"
+  },
+  {
+    "id": "rule-convert-task-to-bullet",
+    "group": "edit.rule-convert",
+    "rule": "6",
+    "before": "- [ ] │a",
+    "actions": [
+      {
+        "type": "text",
+        "text": "- "
+      }
+    ],
+    "after": "- │a"
+  },
+  {
+    "id": "rule-undo-list",
+    "group": "edit.rule-undo",
+    "rule": "6",
+    "before": "│",
+    "actions": [
+      {
+        "type": "text",
+        "text": "- "
+      },
+      {
+        "type": "key",
+        "key": "Backspace"
+      }
+    ],
+    "after": "\\- │"
+  },
+  {
+    "id": "rule-undo-heading",
+    "group": "edit.rule-undo",
+    "rule": "6",
+    "before": "│",
+    "actions": [
+      {
+        "type": "text",
+        "text": "# "
+      },
+      {
+        "type": "key",
+        "key": "Backspace"
+      }
+    ],
+    "after": "\\# │"
+  },
+  {
+    "id": "rule-undo-convert",
+    "group": "edit.rule-undo",
+    "rule": "6",
+    "before": "- │a",
+    "actions": [
+      {
+        "type": "text",
+        "text": "1. "
+      },
+      {
+        "type": "key",
+        "key": "Backspace"
+      }
+    ],
+    "after": "- 1\\. │a"
+  },
+  {
+    "id": "rule-undo-emphasis",
+    "group": "edit.rule-undo",
+    "rule": "6",
+    "before": "x │",
+    "actions": [
+      {
+        "type": "text",
+        "text": "**a**"
+      },
+      {
+        "type": "key",
+        "key": "Backspace"
+      }
+    ],
+    "after": "x \\*\\*a\\*\\*│"
+  },
+  {
+    "id": "rule-undo-thematic",
+    "group": "edit.rule-undo",
+    "rule": "6",
+    "before": "a\n\n│",
+    "actions": [
+      {
+        "type": "text",
+        "text": "---"
+      },
+      {
+        "type": "key",
+        "key": "Backspace"
+      }
+    ],
+    "after": "a\n\n--\\-│"
+  },
+  {
+    "id": "rule-undo-only-next",
+    "group": "edit.rule-undo",
+    "rule": "6",
+    "before": "│",
+    "actions": [
+      {
+        "type": "text",
+        "text": "- a"
+      },
+      {
+        "type": "key",
+        "key": "Backspace"
+      }
+    ],
+    "after": "- │"
+  },
+  {
+    "id": "rule-thematic-star",
+    "group": "edit.rule-fence",
+    "rule": "5",
+    "before": "a\n\n│",
+    "actions": [
+      {
+        "type": "text",
+        "text": "*** "
+      }
+    ],
+    "after": "a\n\n***\n\n│"
+  },
+  {
+    "id": "rule-fence-tilde",
+    "group": "edit.rule-fence",
+    "rule": "5",
+    "before": "│",
+    "actions": [
+      {
+        "type": "text",
+        "text": "~~~py "
+      }
+    ],
+    "after": "~~~py\n│\n~~~"
+  },
+  {
+    "id": "enter-quote",
+    "group": "edit.enter-quote",
+    "rule": "7",
+    "before": "> a│",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Enter"
+      }
+    ],
+    "after": "> a\n>\n> │"
+  },
+  {
+    "id": "enter-quote-exit",
+    "group": "edit.enter-quote",
+    "rule": "7",
+    "before": "> a\n>\n> │",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Enter"
+      }
+    ],
+    "after": "> a\n\n│"
+  },
+  {
+    "id": "enter-heading-split",
+    "group": "edit.enter-heading",
+    "rule": "7",
+    "before": "## ab│cd",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Enter"
+      }
+    ],
+    "after": "## ab\n\n## │cd"
+  },
+  {
+    "id": "enter-code",
+    "group": "edit.enter-code",
+    "rule": "7",
+    "before": "```\na│\n```",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Enter"
+      }
+    ],
+    "after": "```\na\n│\n```"
+  },
+  {
+    "id": "enter-code-exit",
+    "group": "edit.enter-code",
+    "rule": "7",
+    "before": "```\na│\n```",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Shift-Enter"
+      }
+    ],
+    "after": "```\na\n```\n\n│"
+  },
+  {
+    "id": "enter-list-nested-empty",
+    "group": "edit.enter-list-empty",
+    "rule": "7",
+    "before": "- a\n  - │",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Enter"
+      }
+    ],
+    "after": "- a\n- │"
+  },
+  {
+    "id": "tab-ordered",
+    "group": "edit.tab-list",
+    "rule": "7",
+    "before": "1. a\n2. │b",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Tab"
+      }
+    ],
+    "after": "1. a\n   1. │b"
+  },
+  {
+    "id": "tab-first-item",
+    "group": "edit.tab-list",
+    "rule": "7",
+    "before": "- │a",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Tab"
+      }
+    ],
+    "after": "- │a"
+  },
+  {
+    "id": "tab-children",
+    "group": "edit.tab-list",
+    "rule": "7",
+    "before": "- a\n- │b\n  - c",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Tab"
+      }
+    ],
+    "after": "- a\n  - │b\n    - c"
+  },
+  {
+    "id": "shift-tab-top",
+    "group": "edit.tab-list",
+    "rule": "7",
+    "before": "- a\n- │b\n- c",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Shift-Tab"
+      }
+    ],
+    "after": "- a\n\n│b\n\n- c"
+  },
+  {
+    "id": "shift-tab-ordered",
+    "group": "edit.tab-list",
+    "rule": "7",
+    "before": "1. a\n   1. │b",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Shift-Tab"
+      }
+    ],
+    "after": "1. a\n2. │b"
+  },
+  {
+    "id": "tab-code",
+    "group": "edit.enter-code",
+    "rule": "7",
+    "before": "```\n│a\n```",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Tab"
+      }
+    ],
+    "after": "```\n  │a\n```"
+  },
+  {
+    "id": "backspace-nested",
+    "group": "edit.backspace-list",
+    "rule": "6",
+    "before": "- a\n  - │b",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Backspace"
+      }
+    ],
+    "after": "- a\n\n│b"
+  },
+  {
+    "id": "backspace-quote-join",
+    "group": "edit.backspace-quote",
+    "rule": "6",
+    "before": "> a\n> │b",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Backspace"
+      }
+    ],
+    "after": "> a│b"
+  },
+  {
+    "id": "delete-join",
+    "group": "edit.delete-join",
+    "rule": "6",
+    "before": "a│\n\nb",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Delete"
+      }
+    ],
+    "after": "a│b"
+  },
+  {
+    "id": "delete-join-heading",
+    "group": "edit.delete-join",
+    "rule": "6",
+    "before": "a│\n\n## b",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Delete"
+      }
+    ],
+    "after": "a│b"
+  },
+  {
+    "id": "block-heading",
+    "group": "edit.block-heading",
+    "rule": "7",
+    "before": "a│b",
+    "actions": [
+      {
+        "type": "block",
+        "block": "h2"
+      }
+    ],
+    "after": "## a│b"
+  },
+  {
+    "id": "block-heading-off",
+    "group": "edit.block-heading",
+    "rule": "7",
+    "before": "## a│b",
+    "actions": [
+      {
+        "type": "block",
+        "block": "h2"
+      }
+    ],
+    "after": "a│b"
+  },
+  {
+    "id": "block-paragraph",
+    "group": "edit.block-heading",
+    "rule": "7",
+    "before": "### a│",
+    "actions": [
+      {
+        "type": "block",
+        "block": "paragraph"
+      }
+    ],
+    "after": "a│"
+  },
+  {
+    "id": "block-bullet",
+    "group": "edit.block-list",
+    "rule": "7",
+    "before": "a│",
+    "actions": [
+      {
+        "type": "block",
+        "block": "bullet"
+      }
+    ],
+    "after": "- a│"
+  },
+  {
+    "id": "block-bullet-off",
+    "group": "edit.block-list",
+    "rule": "7",
+    "before": "- a│",
+    "actions": [
+      {
+        "type": "block",
+        "block": "bullet"
+      }
+    ],
+    "after": "a│"
+  },
+  {
+    "id": "block-ordered-convert",
+    "group": "edit.block-list",
+    "rule": "7",
+    "before": "- a\n- b│",
+    "actions": [
+      {
+        "type": "block",
+        "block": "ordered"
+      }
+    ],
+    "after": "1. a\n2. b│"
+  },
+  {
+    "id": "block-task",
+    "group": "edit.block-list",
+    "rule": "7",
+    "before": "- a│",
+    "actions": [
+      {
+        "type": "block",
+        "block": "task"
+      }
+    ],
+    "after": "- [ ] a│"
+  },
+  {
+    "id": "block-quote",
+    "group": "edit.block-quote",
+    "rule": "7",
+    "before": "a│",
+    "actions": [
+      {
+        "type": "block",
+        "block": "quote"
+      }
+    ],
+    "after": "> a│"
+  },
+  {
+    "id": "block-quote-off",
+    "group": "edit.block-quote",
+    "rule": "7",
+    "before": "> a│",
+    "actions": [
+      {
+        "type": "block",
+        "block": "quote"
+      }
+    ],
+    "after": "a│"
+  },
+  {
+    "id": "block-code-wrap",
+    "group": "edit.block-code",
+    "rule": "7",
+    "before": "a│",
+    "actions": [
+      {
+        "type": "block",
+        "block": "code"
+      }
+    ],
+    "after": "```\na│\n```"
+  },
+  {
+    "id": "block-code-off",
+    "group": "edit.block-code",
+    "rule": "7",
+    "before": "```\na│\n```",
+    "actions": [
+      {
+        "type": "block",
+        "block": "code"
+      }
+    ],
+    "after": "a│"
+  },
+  {
+    "id": "move-up",
+    "group": "edit.move-block",
+    "rule": "7",
+    "before": "a\n\nb│",
+    "actions": [
+      {
+        "type": "move",
+        "direction": "up"
+      }
+    ],
+    "after": "b│\n\na"
+  },
+  {
+    "id": "move-down",
+    "group": "edit.move-block",
+    "rule": "7",
+    "before": "│a\n\nb",
+    "actions": [
+      {
+        "type": "move",
+        "direction": "down"
+      }
+    ],
+    "after": "b\n\n│a"
+  },
+  {
+    "id": "paste-code",
+    "group": "edit.paste-plain",
+    "rule": "8",
+    "before": "```\n│\n```",
+    "actions": [
+      {
+        "type": "paste",
+        "text": "*a*"
+      }
+    ],
+    "after": "```\n*a*│\n```"
   }
 ]

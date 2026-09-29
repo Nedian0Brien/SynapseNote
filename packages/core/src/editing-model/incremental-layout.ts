@@ -200,7 +200,7 @@ function sameBlock(parsed: BlockLayout, cached: BlockLayout, delta: number): boo
 function layoutKey(layout: Layout): string {
   return JSON.stringify([
     layout.hidden.map((h) => [h.from, h.to, h.kind]),
-    layout.widgets.map((w) => [w.from, w.to, w.kind, w.node]),
+    layout.widgets.map((w) => [w.from, w.to, w.kind, w.node, w.label ?? null]),
     layout.marks.map((m) => [m.type, m.open, m.close, m.inclusive]),
     layout.spans.map((s) => [s.from, s.to, s.node]),
   ]);
