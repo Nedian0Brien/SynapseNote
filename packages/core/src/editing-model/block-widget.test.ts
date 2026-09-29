@@ -3,6 +3,7 @@ import {
   codeWidgetSource,
   containerWidgetSource,
   diagramWidgetSource,
+  indentedCodeWidgetSource,
   mediaWidgetSource,
   tableWidgetSource,
   updateBlockWidget,
@@ -41,6 +42,15 @@ describe('block widget source edits', () => {
     const code = codeWidgetSource(source, 0, source.length);
     expect(source.slice(...(code?.language ?? [0, 0]))).toBe('ts');
     expect(source.slice(...(code?.body ?? [0, 0]))).toBe('a');
+  });
+
+  test('indented code separates Markdown indentation from editable text', () => {
+    const source = '    a\n      b';
+    expect(indentedCodeWidgetSource(source, 0, source.length)).toEqual({
+      text: 'a\n  b',
+      indent: '    ',
+    });
+    expect(indentedCodeWidgetSource('```\na\n```', 0, 9)).toBeNull();
   });
 
   test('diagram ranges use parsed formula and chart text', () => {

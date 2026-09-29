@@ -5,6 +5,7 @@ import { t } from '@lingui/core/macro';
 import {
   type BlockWidgetEdit,
   codeWidgetSource,
+  indentedCodeWidgetSource,
   sourceChanges,
   type TableWidgetSource,
   tableWidgetSource,
@@ -71,11 +72,14 @@ export class CodeBlockWidget extends WidgetType {
     const position = { from: this.from, to: this.to };
     const state = { position, language, body };
     codeDOM.set(wrapper, state);
-    const data = codeWidgetSource(view.state.doc.toString(), this.from, this.to);
-    if (data) {
-      language.value = view.state.sliceDoc(...data.language);
-      body.value = view.state.sliceDoc(...data.body);
-    }
+    const source = view.state.doc.toString();
+    const fenced = codeWidgetSource(source, this.from, this.to);
+    const indented = indentedCodeWidgetSource(source, this.from, this.to);
+    language.hidden = Boolean(indented);
+    if (fenced) {
+      language.value = view.state.sliceDoc(...fenced.language);
+      body.value = view.state.sliceDoc(...fenced.body);
+    } else if (indented) body.value = indented.text;
     language.addEventListener('input', () =>
       writeWidget(view, state.position, { type: 'code-language', text: language.value }),
     );
@@ -87,11 +91,14 @@ export class CodeBlockWidget extends WidgetType {
 
   updateDOM(dom: HTMLElement, view: EditorView): boolean {
     const state = codeDOM.get(dom);
-    const data = codeWidgetSource(view.state.doc.toString(), this.from, this.to);
-    if (!state || !data) return false;
+    const source = view.state.doc.toString();
+    const fenced = codeWidgetSource(source, this.from, this.to);
+    const indented = indentedCodeWidgetSource(source, this.from, this.to);
+    if (!state || (!fenced && !indented)) return false;
     state.position = { from: this.from, to: this.to };
-    syncInput(state.language, view.state.sliceDoc(...data.language));
-    syncInput(state.body, view.state.sliceDoc(...data.body));
+    state.language.hidden = Boolean(indented);
+    syncInput(state.language, fenced ? view.state.sliceDoc(...fenced.language) : '');
+    syncInput(state.body, fenced ? view.state.sliceDoc(...fenced.body) : (indented?.text ?? ''));
     return true;
   }
 }

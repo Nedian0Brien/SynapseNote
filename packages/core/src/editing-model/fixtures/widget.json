@@ -18,6 +18,24 @@
     "after": "```ts title=x\nold\n```"
   },
   {
+    "id": "indented-code-body",
+    "group": "widget.code-body",
+    "rule": "3",
+    "before": "before\n\n    old\n    next\n\nafter",
+    "from": 8,
+    "edit": { "type": "code-body", "text": "new\nnext" },
+    "after": "before\n\n    new\n    next\n\nafter"
+  },
+  {
+    "id": "tab-indented-code-body",
+    "group": "widget.code-body",
+    "rule": "3",
+    "before": "\told\n\tnext",
+    "from": 0,
+    "edit": { "type": "code-body", "text": "new\nnext" },
+    "after": "\tnew\n\tnext"
+  },
+  {
     "id": "code-body-fence-content",
     "group": "widget.code-body",
     "rule": "3",

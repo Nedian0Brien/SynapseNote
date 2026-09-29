@@ -12,6 +12,11 @@ export interface CodeWidgetSource {
   language: Range;
 }
 
+export interface IndentedCodeWidgetSource {
+  text: string;
+  indent: string;
+}
+
 export interface TableCellSource {
   from: number;
   to: number;
@@ -88,7 +93,7 @@ export function codeWidgetSource(
   if (firstNewline < 0) return null;
   const opening = raw.slice(0, firstNewline).replace(/\r$/, '');
   const fence = /^ {0,3}(`{3,}|~{3,})([^\s`~]*)/.exec(opening);
-  if (!fence) return null; // Indented code is handled in a later P3 slice.
+  if (!fence) return null;
   const languageFrom = from + fence[0].length - fence[2].length;
   let bodyEnd = to;
   const lastNewline = raw.lastIndexOf('\n');
@@ -101,6 +106,24 @@ export function codeWidgetSource(
     language: [languageFrom, languageFrom + fence[2].length],
     body: [from + firstNewline + 1, bodyEnd],
   };
+}
+
+/** Code indentation belongs to Markdown syntax, not the editable body. */
+export function indentedCodeWidgetSource(
+  source: string,
+  from: number,
+  to: number,
+): IndentedCodeWidgetSource | null {
+  const raw = source.slice(from, to);
+  const indent = raw.startsWith('\t') ? '\t' : raw.startsWith('    ') ? '    ' : null;
+  if (!indent) return null;
+  const node = md().parseToMdast(raw).children[0];
+  if (node?.type !== 'code' || node.lang) return null;
+  const text = raw
+    .split('\n')
+    .map((line) => (line.startsWith(indent) ? line.slice(indent.length) : line))
+    .join('\n');
+  return { text, indent };
 }
 
 /** Parse table cell ranges with the same mdast parser used by the editing model. */
@@ -573,6 +596,16 @@ export function updateBlockWidget(
   }
   if (edit.type === 'mdx-prop' || edit.type === 'mdx-body') {
     return updateMdxWidget(source, from, to, edit);
+  }
+  if (edit.type === 'code-body') {
+    const indented = indentedCodeWidgetSource(source, from, to);
+    if (indented) {
+      const body = edit.text
+        .split('\n')
+        .map((line) => (line ? indented.indent + line : ''))
+        .join('\n');
+      return replace([from, to], body);
+    }
   }
   const code = codeWidgetSource(source, from, to);
   if (!code) return null;

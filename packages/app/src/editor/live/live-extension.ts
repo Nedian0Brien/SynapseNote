@@ -145,7 +145,7 @@ function blockDecorations(
               : widget.node === 'mdxJsxFlowElement' &&
                   diagramWidgetSource(source, widget.from, widget.to)
                 ? new DiagramBlockWidget(raw, widget.from, widget.to)
-                : widget.node === 'code' && /^ {0,3}(?:`{3,}|~{3,})/.test(raw)
+                : widget.node === 'code'
                   ? new CodeBlockWidget(raw, widget.from, widget.to)
                   : widget.node === 'mdxJsxFlowElement' &&
                       mdxWidgetSource(source, widget.from, widget.to)

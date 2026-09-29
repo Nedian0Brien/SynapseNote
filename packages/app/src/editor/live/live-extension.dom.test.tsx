@@ -183,6 +183,19 @@ describe('live editor block widgets', () => {
     expect(view.state.doc.toString()).toBe('before\n\n```ts title=x\nnew\n```\n\nafter');
   });
 
+  test('indented code hides its indentation and writes edited body back to source', () => {
+    const view = mount('before\n\n    old\n    next\n\nafter', 0, 0);
+    const widget = view.dom.querySelector('.cm-live-code-block');
+    const language = widget?.querySelector<HTMLInputElement>('.cm-live-code-language');
+    const body = widget?.querySelector<HTMLTextAreaElement>('.cm-live-code-body');
+    expect(language?.hidden).toBe(true);
+    expect(body?.value).toBe('old\nnext');
+    if (!body) throw new Error('Indented code body missing');
+    body.value = 'new\nnext';
+    body.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(view.state.doc.toString()).toBe('before\n\n    new\n    next\n\nafter');
+  });
+
   test('table cells use live syntax hiding and write only the edited cell', () => {
     const view = mount('| **a** | b |\n| --- | --- |\n| x | y |', 0, 0);
     const editors = view.dom.querySelectorAll<HTMLElement>('.cm-live-table-cell .cm-editor');

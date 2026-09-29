@@ -6,6 +6,8 @@ export {
   containerWidgetSource,
   type DiagramWidgetSource,
   diagramWidgetSource,
+  type IndentedCodeWidgetSource,
+  indentedCodeWidgetSource,
   type MediaWidgetSource,
   mediaWidgetSource,
   type TableCellSource,
