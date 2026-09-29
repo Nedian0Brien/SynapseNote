@@ -1,0 +1,137 @@
+# 편집 모델 명세
+
+SynapseNote의 편집기는 Markdown 원문(`Y.Text('source')`)을 직접 편집한다. 화면에는 원문의 Markdown 기호를 숨기고
+서식을 그려 보이며, 사용자의 조작을 원문 편집으로 바꾼다. 이 문서는 웹 편집기(CodeMirror 6)와 네이티브 편집기
+(TextKit 2)가 함께 따르는 규칙이다. 규칙마다 적합성 사례(`fixtures/*.json`의 id)를 적는다. 두 편집기는 같은 사례로
+검사한다.
+
+원문 해석의 기준은 core 파서(`packages/core/src/markdown`)다. 이 문서의 구문 이름은 그 파서의 mdast 노드를 가리킨다.
+
+## 1. 용어
+
+- **원문**: 파일에 저장되는 Markdown 텍스트. 편집의 유일한 대상이다.
+- **표시 텍스트**: 원문에서 숨긴 범위를 빼고 위젯을 대신 넣은 것. 사용자가 보는 글자다.
+- **숨긴 범위**: 화면에 그리지 않는 원문 범위(서식 기호, 링크 주소 등). 커서는 숨긴 범위 안에 놓이지 않는다.
+- **위젯**: 원문 범위 하나를 대신해 그리는 화면 요소. 인라인 위젯(체크박스, 목록 기호, 이미지)과 블록
+  위젯(표, 코드 블록, 수식, MDX 컴포넌트 등)이 있다. 위젯의 편집은 그 원문 범위의 바이트만 바꾼다.
+- **경계 위치**: 표시 텍스트에서는 한 자리지만 원문에서는 숨긴 범위 양쪽 두 자리인 위치(예: `**굵게**│` 뒤).
+  경계 위치의 입력이 어느 쪽으로 들어갈지는 4절이 정한다.
+
+## 2. 원문 보기
+
+원문은 사용자가 원문 보기로 바꿨을 때만 보인다. 편집 화면에서는 커서가 들어간 문단·표에서도 기호를 드러내지 않는다.
+
+## 3. 숨김 규칙
+
+| 구문 | 원문 예 | 숨기는 것 | 그리는 것 | fixture |
+|---|---|---|---|---|
+| 제목 | `## 제목` | `## ` | 제목 크기·굵기 | hide.heading |
+| 굵게·기울임·취소선·강조 | `**a**` `*a*` `_a_` `~~a~~` `==a==` | 여는·닫는 기호 | 서식 | hide.emphasis, hide.nested |
+| 인라인 코드 | `` `a` `` | 백틱 | 코드 글꼴 | hide.code |
+| 링크 | `[글](주소 "제목")` | `[`와 `](주소 "제목")` | 링크 색. 주소는 링크 패널에서 본다 | hide.link |
+| 참조 링크 | `[글][ref]` | `[`와 `][ref]` | 링크 색 | hide.ref-link |
+| 자동 링크 | `<https://a.b>` | `<` `>` | 링크 | hide.autolink |
+| 위키 링크 | `[[문서|별칭]]` | `[[문서|`와 `]]`(별칭이 없으면 `[[` `]]`) | 링크 색 | hide.wiki-link |
+| 태그 | `#태그` | 없음 | 태그 칩 스타일 | hide.tag |
+| 이스케이프 | `\*` | `\` | 뒤 글자 | hide.escape |
+| 문자 참조 | `&#x20;` `&amp;` | 참조 전체 | 해당 문자(인라인 위젯) | hide.entity |
+| 강제 줄바꿈 | `끝\`+줄바꿈 | `\` | 줄바꿈 | hide.hard-break |
+| 목록 항목 | `- a` `1. a` | 기호와 공백 | 불릿·번호(인라인 위젯) | hide.list |
+| 작업 항목 | `- [ ] a` | `- [ ] ` | 체크박스(인라인 위젯) | hide.task |
+| 인용 | `> a` | `> ` | 인용 막대 | hide.quote |
+| 이미지 | `![대체](src)` `![[a.png]]` | 전체 | 이미지(위젯) | hide.image |
+| 블록 | 표, 코드 블록, 수식, Mermaid, 콜아웃, 아코디언, MDX 컴포넌트, 인라인 데이터베이스, 수평선, HTML 블록, 링크 참조 정의, 각주 정의, frontmatter | 전체 | 블록 위젯 | hide.block-* |
+
+- 문단 안의 한 줄 바꿈(soft break)은 줄바꿈으로 보인다. 원문의 줄 구조를 그대로 보이기 위해서다. (hide.soft-break)
+- 블록 사이의 빈 줄은 빈 줄로 보이고, 커서가 놓일 수 있다. (hide.blank-lines)
+- 구문이 완성되지 않은 기호(닫히지 않은 `**`, 짝이 없는 `[`)는 글자로 보인다. 원문 그대로다. (hide.unclosed)
+
+## 4. 커서와 선택
+
+- 커서는 표시 텍스트의 글자 사이에만 놓인다. 방향키는 표시 글자 하나씩 움직이고, 숨긴 범위는 건너뛴다.
+  (edit.cursor-skip)
+- 인라인 위젯(체크박스, 문자 참조, 이미지)은 글자 하나로 센다. 블록 위젯은 줄 하나로 세며, 위젯 안으로 들어가면
+  위젯이 자기 커서를 가진다(표의 칸, 코드 블록). (edit.cursor-widget)
+- **경계 위치의 입력 방향**(현재 편집기와 같음, 링크만 다름):
+  - 굵게·기울임·취소선·강조·인라인 코드의 끝에서 친 글자는 서식 안으로 들어간다. (edit.boundary-end-inside)
+  - 같은 서식의 시작에서 친 글자는 서식 밖으로 들어간다. (edit.boundary-start-outside)
+  - 인라인 코드 끝에서 오른쪽 방향키를 한 번 더 누르면 커서가 코드 밖으로 나간다. 표시 위치는 같고 입력 방향만
+    바뀐다. (edit.code-exit)
+  - 링크의 끝에서 친 글자는 링크 밖으로 들어간다. **현재와 다름**: 지금 편집기는 링크를 이어 붙인다
+    (`LinkFidelity`의 `autolink: true` → `inclusive`). 링크 뒤에 이어 쓴 글이 링크가 되는 일을 막기 위해 바꾼다.
+    (edit.boundary-link)
+- 선택을 복사하면 원문 조각(서식 기호 포함)을 `text/plain`과 `text/markdown`으로, 그린 HTML을 `text/html`로 넣는다.
+  (edit.copy)
+
+## 5. 입력
+
+- 친 글자는 커서 위치(4절의 방향)에 그대로 들어간다. (edit.type-plain)
+- **이스케이프**: 친 글자 때문에 편집한 곳 밖의 해석이 바뀌면(예: 문단의 다른 `*`와 짝이 되어 강조가 생김), 친
+  글자 앞에 `\`를 넣는다. 편집은 편집한 곳 밖의 표시를 바꾸지 않는다. (edit.escape-pairing, edit.escape-line-start)
+- **입력 규칙**은 이스케이프보다 먼저 적용된다. 입력 규칙은 발동 글자를 친 순간에만 적용된다. 블록 구문은 기호
+  뒤의 공백(또는 Enter)이, 인라인 구문은 닫는 기호가 발동 글자다. 발동 글자가 아닌 글자로 구문이 완성되면(예: 이미
+  있던 공백 앞에 `1.`을 쳐서 목록이 되는 경우, 여는 기호를 쳐서 뒤에 있던 닫는 기호와 짝이 되는 경우) 친 글자를
+  이스케이프한다. (edit.escape-opener, edit.escape-no-trigger)
+  - 줄 첫머리 `# `~`###### `: 제목. (edit.rule-heading)
+  - `- ` `* ` `1. `: 목록. `[ ] ` `[x] `: 작업 항목. `> `: 인용. (edit.rule-list, edit.rule-task, edit.rule-quote)
+  - 닫는 기호 입력(`**a**`의 마지막 `*`, `` `a` ``의 닫는 백틱): 강조·코드. (edit.rule-emphasis, edit.rule-code)
+  - ` ``` `+Enter: 코드 블록. `---`+Enter: 수평선. `$$`+Enter: 수식 블록. (edit.rule-fence)
+  - `[[`: 위키 링크 제안. `/`: 슬래시 메뉴. `#`+글자: 태그 제안. (edit.rule-suggest)
+- 서식 단축키(Cmd+B/I/E, Shift+Cmd+X 등)와 도구 막대는 선택 범위에 기호를 넣거나 뺀다. 선택이 없으면 다음 입력에
+  서식을 건다. (edit.toggle-bold, edit.toggle-off, edit.toggle-empty)
+
+## 6. 삭제
+
+- Backspace·Delete는 표시 글자 하나를 지운다. 숨긴 범위는 표시 글자와 함께 지워질 때만 지운다. (edit.delete-char)
+- 서식 안의 글자를 모두 지우면 그 서식의 기호도 지운다. (edit.delete-empties-mark)
+- 여러 서식에 걸친 선택을 지우면, 선택에 완전히 든 서식은 기호째 지우고 걸친 서식은 기호를 남긴다.
+  (edit.delete-across)
+- 줄 첫머리의 Backspace:
+  - 목록·작업 항목·인용: 기호를 지워 문단으로 바꾼다. (edit.backspace-list, edit.backspace-quote)
+  - 제목: `#`을 지워 문단으로 바꾼다. (edit.backspace-heading)
+  - 문단: 앞 블록과 합친다(사이의 빈 줄을 지운다). (edit.backspace-join)
+- 블록 위젯 바로 뒤의 Backspace는 위젯을 선택하고, 한 번 더 누르면 위젯의 원문 범위를 지운다.
+  (edit.backspace-widget)
+
+## 7. Enter
+
+- 문단 안: 새 문단(`\n\n`)을 만든다. (edit.enter-paragraph)
+- Shift+Enter: 강제 줄바꿈(`\`+줄바꿈)을 넣는다. (edit.enter-hard-break)
+- 목록 항목 안: 같은 기호의 새 항목을 만든다. 번호 목록은 다음 번호를 넣는다. 빈 항목에서 Enter는 목록을 끝낸다.
+  (edit.enter-list, edit.enter-list-empty)
+- 제목 끝: 다음 줄에 문단을 만든다. (edit.enter-heading)
+- Tab·Shift+Tab은 목록 항목을 들이고 내어 쓴다. (edit.tab-list)
+
+## 8. 붙여넣기
+
+- 일반 텍스트는 글자 그대로 보이게 넣는다. 입력 규칙은 발동하지 않는다. 인라인 서식 기호 문자(`\ * _ ` [ ] < > ~ =
+  |`)는 모두, 줄 첫머리 기호(`#`, `>`, `-`, `+`, `숫자.`)는 줄 첫머리에 올 때 이스케이프한다. (edit.paste-plain)
+- HTML은 Markdown으로 바꿔 넣는다(지금의 붙여넣기 형식 선택을 따른다). (edit.paste-html)
+- Markdown 원문으로 붙여넣기를 고르면 원문 그대로 넣는다. (edit.paste-markdown)
+
+## 9. 한글 입력(IME)
+
+- 조합 중인 글자는 원문에 들어가 있어도 숨김·장식을 다시 계산하지 않는다. 조합이 끝나면 한 번 계산한다.
+- 조합 중에 다른 사람의 편집이 오면 조합 중인 범위를 옮겨 유지한다.
+
+## 10. fixture 형식
+
+모든 fixture는 `id`(고유), `group`(이 문서가 가리키는 id, 예: `edit.enter-list`), `rule`(절 번호)을 가진다. 이 문서의
+id가 `*`로 끝나면 그 접두어로 시작하는 group을 모두 가리킨다.
+
+`fixtures/hide.json`: `{ id, group, rule, marked }`. `marked`는 원문에 숨긴 범위를 `⟨…⟩`, 위젯 범위를 `⦃…⦄`로 표시한
+것이다. 표시를 지우면 원문이고, `⟨…⟩`를 빼고 `⦃…⦄`를 `￼` 한 글자로 바꾸면 표시 텍스트다.
+
+`fixtures/edit.json`: `{ id, group, rule, before, actions, after | clipboard | ui }`. `before`·`after`는 원문이고, 커서는
+`│`, 선택은 `⟪` `⟫`로 표시한다. 커서가 경계 위치에 있으면 어느 쪽 원문 오프셋으로 적든 같은 위치다(4절이 정한 쪽으로
+정규화한다). `actions`는 차례로 적용하는 동작의 목록이다.
+
+- `{ "type": "text", "text": "…" }`: 글자를 하나씩 친다.
+- `{ "type": "key", "key": "Backspace" | "Delete" | "Enter" | "Shift-Enter" | "Tab" | "Shift-Tab" | "ArrowRight" |
+  "ArrowLeft" }`
+- `{ "type": "toggle", "mark": "bold" | "italic" | "code" | "strike" | "highlight" }`
+- `{ "type": "paste", "text": "…" }`, `{ "type": "paste", "html": "…" }`, `{ "type": "paste", "text": "…", "as":
+  "markdown" }`
+- `{ "type": "copy" }`: 기대값은 `clipboard: { "markdown": "…" }`다.
+
+원문이 바뀌지 않고 화면 요소가 열리는 동작은 `ui`(예: `"wiki-link-suggest"`, `"slash-menu"`)로 기대값을 적는다.

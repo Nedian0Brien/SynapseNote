@@ -1,0 +1,182 @@
+[
+  {
+    "id": "heading",
+    "group": "hide.heading",
+    "rule": "3",
+    "marked": "⟨## ⟩제목"
+  },
+  {
+    "id": "bold",
+    "group": "hide.emphasis",
+    "rule": "3",
+    "marked": "a ⟨**⟩b⟨**⟩ c"
+  },
+  {
+    "id": "italic-star",
+    "group": "hide.emphasis",
+    "rule": "3",
+    "marked": "a ⟨*⟩b⟨*⟩ c"
+  },
+  {
+    "id": "italic-underscore",
+    "group": "hide.emphasis",
+    "rule": "3",
+    "marked": "a ⟨_⟩b⟨_⟩ c"
+  },
+  {
+    "id": "strike",
+    "group": "hide.emphasis",
+    "rule": "3",
+    "marked": "a ⟨~~⟩b⟨~~⟩ c"
+  },
+  {
+    "id": "highlight",
+    "group": "hide.emphasis",
+    "rule": "3",
+    "marked": "a ⟨==⟩b⟨==⟩ c"
+  },
+  {
+    "id": "nested",
+    "group": "hide.nested",
+    "rule": "3",
+    "marked": "⟨**⟩a ⟨*⟩b⟨*⟩⟨**⟩"
+  },
+  {
+    "id": "code",
+    "group": "hide.code",
+    "rule": "3",
+    "marked": "a ⟨`⟩b⟨`⟩"
+  },
+  {
+    "id": "link",
+    "group": "hide.link",
+    "rule": "3",
+    "marked": "⟨[⟩글⟨](https://a.b \"제목\")⟩"
+  },
+  {
+    "id": "ref-link",
+    "group": "hide.ref-link",
+    "rule": "3",
+    "marked": "⟨[⟩글⟨][r]⟩\n\n⦃[r]: https://a.b⦄"
+  },
+  {
+    "id": "autolink",
+    "group": "hide.autolink",
+    "rule": "3",
+    "marked": "⟨<⟩https://a.b⟨>⟩"
+  },
+  {
+    "id": "wiki-link",
+    "group": "hide.wiki-link",
+    "rule": "3",
+    "marked": "⟨[[⟩문서⟨]]⟩"
+  },
+  {
+    "id": "wiki-link-alias",
+    "group": "hide.wiki-link",
+    "rule": "3",
+    "marked": "⟨[[문서|⟩별칭⟨]]⟩"
+  },
+  {
+    "id": "tag",
+    "group": "hide.tag",
+    "rule": "3",
+    "marked": "글 #태그"
+  },
+  {
+    "id": "escape",
+    "group": "hide.escape",
+    "rule": "3",
+    "marked": "⟨\\⟩*글자"
+  },
+  {
+    "id": "entity",
+    "group": "hide.entity",
+    "rule": "3",
+    "marked": "a⦃&#x20;⦄b"
+  },
+  {
+    "id": "hard-break",
+    "group": "hide.hard-break",
+    "rule": "3",
+    "marked": "끝⟨\\⟩\n다음"
+  },
+  {
+    "id": "bullet-list",
+    "group": "hide.list",
+    "rule": "3",
+    "marked": "⦃- ⦄a\n⦃- ⦄b"
+  },
+  {
+    "id": "ordered-list",
+    "group": "hide.list",
+    "rule": "3",
+    "marked": "⦃1. ⦄a\n⦃2. ⦄b"
+  },
+  {
+    "id": "task",
+    "group": "hide.task",
+    "rule": "3",
+    "marked": "⦃- [ ] ⦄할 일\n⦃- [x] ⦄한 일"
+  },
+  {
+    "id": "quote",
+    "group": "hide.quote",
+    "rule": "3",
+    "marked": "⟨> ⟩인용"
+  },
+  {
+    "id": "image",
+    "group": "hide.image",
+    "rule": "3",
+    "marked": "⦃![대체](a.png)⦄"
+  },
+  {
+    "id": "block-table",
+    "group": "hide.block-table",
+    "rule": "3",
+    "marked": "⦃| a | b |\n| --- | --- |\n| 1 | 2 |⦄"
+  },
+  {
+    "id": "block-code",
+    "group": "hide.block-code",
+    "rule": "3",
+    "marked": "⦃```js\nx\n```⦄"
+  },
+  {
+    "id": "block-math",
+    "group": "hide.block-math",
+    "rule": "3",
+    "marked": "⦃$$\nx^2\n$$⦄"
+  },
+  {
+    "id": "block-thematic",
+    "group": "hide.block-thematic",
+    "rule": "3",
+    "marked": "a\n\n⦃---⦄\n\nb"
+  },
+  {
+    "id": "block-frontmatter",
+    "group": "hide.block-frontmatter",
+    "rule": "3",
+    "marked": "⦃---\ntitle: a\n---⦄\n\n본문"
+  },
+  {
+    "id": "soft-break",
+    "group": "hide.soft-break",
+    "rule": "3",
+    "marked": "첫 줄\n둘째 줄"
+  },
+  {
+    "id": "blank-lines",
+    "group": "hide.blank-lines",
+    "rule": "3",
+    "marked": "a\n\n\nb"
+  },
+  {
+    "id": "unclosed",
+    "group": "hide.unclosed",
+    "rule": "3",
+    "marked": "**열림 [짝없음"
+  }
+]

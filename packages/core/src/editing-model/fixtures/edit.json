@@ -1,0 +1,737 @@
+[
+  {
+    "id": "cursor-skip-into",
+    "group": "edit.cursor-skip",
+    "rule": "4",
+    "before": "│**a**b",
+    "actions": [
+      {
+        "type": "key",
+        "key": "ArrowRight"
+      }
+    ],
+    "after": "**a│**b"
+  },
+  {
+    "id": "cursor-skip-out",
+    "group": "edit.cursor-skip",
+    "rule": "4",
+    "before": "**a│**b",
+    "actions": [
+      {
+        "type": "key",
+        "key": "ArrowRight"
+      }
+    ],
+    "after": "**a**b│"
+  },
+  {
+    "id": "cursor-widget-task",
+    "group": "edit.cursor-widget",
+    "rule": "4",
+    "before": "│- [ ] a",
+    "actions": [
+      {
+        "type": "key",
+        "key": "ArrowRight"
+      }
+    ],
+    "after": "- [ ] │a"
+  },
+  {
+    "id": "end-inside-bold",
+    "group": "edit.boundary-end-inside",
+    "rule": "4",
+    "before": "x **a│** y",
+    "actions": [
+      {
+        "type": "text",
+        "text": "b"
+      }
+    ],
+    "after": "x **ab│** y"
+  },
+  {
+    "id": "end-inside-normalized",
+    "group": "edit.boundary-end-inside",
+    "rule": "4",
+    "before": "x **a**│ y",
+    "actions": [
+      {
+        "type": "text",
+        "text": "b"
+      }
+    ],
+    "after": "x **ab│** y"
+  },
+  {
+    "id": "start-outside-bold",
+    "group": "edit.boundary-start-outside",
+    "rule": "4",
+    "before": "x │**a**",
+    "actions": [
+      {
+        "type": "text",
+        "text": "b"
+      }
+    ],
+    "after": "x b│**a**"
+  },
+  {
+    "id": "start-outside-normalized",
+    "group": "edit.boundary-start-outside",
+    "rule": "4",
+    "before": "x **│a**",
+    "actions": [
+      {
+        "type": "text",
+        "text": "b"
+      }
+    ],
+    "after": "x b│**a**"
+  },
+  {
+    "id": "code-exit",
+    "group": "edit.code-exit",
+    "rule": "4",
+    "before": "`a│`",
+    "actions": [
+      {
+        "type": "key",
+        "key": "ArrowRight"
+      },
+      {
+        "type": "text",
+        "text": "b"
+      }
+    ],
+    "after": "`a`b│"
+  },
+  {
+    "id": "link-end-outside",
+    "group": "edit.boundary-link",
+    "rule": "4",
+    "before": "[글│](u) 다음",
+    "actions": [
+      {
+        "type": "text",
+        "text": "x"
+      }
+    ],
+    "after": "[글](u)x│ 다음"
+  },
+  {
+    "id": "copy-markdown",
+    "group": "edit.copy",
+    "rule": "4",
+    "before": "a ⟪**b** c⟫",
+    "actions": [
+      {
+        "type": "copy"
+      }
+    ],
+    "clipboard": {
+      "markdown": "**b** c"
+    }
+  },
+  {
+    "id": "type-plain",
+    "group": "edit.type-plain",
+    "rule": "5",
+    "before": "a│b",
+    "actions": [
+      {
+        "type": "text",
+        "text": "가"
+      }
+    ],
+    "after": "a가│b"
+  },
+  {
+    "id": "escape-breaks-bold",
+    "group": "edit.escape-pairing",
+    "rule": "5",
+    "before": "**a│**",
+    "actions": [
+      {
+        "type": "text",
+        "text": "*"
+      }
+    ],
+    "after": "**a\\*│**"
+  },
+  {
+    "id": "escape-opener",
+    "group": "edit.escape-opener",
+    "rule": "5",
+    "before": "│b c* d",
+    "actions": [
+      {
+        "type": "text",
+        "text": "*"
+      }
+    ],
+    "after": "\\*│b c* d"
+  },
+  {
+    "id": "escape-no-trigger-list",
+    "group": "edit.escape-no-trigger",
+    "rule": "5",
+    "before": "│ 문장",
+    "actions": [
+      {
+        "type": "text",
+        "text": "1."
+      }
+    ],
+    "after": "1\\.│ 문장"
+  },
+  {
+    "id": "escape-line-start-quote",
+    "group": "edit.escape-line-start",
+    "rule": "5",
+    "before": "│ a",
+    "actions": [
+      {
+        "type": "text",
+        "text": ">"
+      }
+    ],
+    "after": "\\>│ a"
+  },
+  {
+    "id": "rule-heading",
+    "group": "edit.rule-heading",
+    "rule": "5",
+    "before": "│",
+    "actions": [
+      {
+        "type": "text",
+        "text": "# 제목"
+      }
+    ],
+    "after": "# 제목│"
+  },
+  {
+    "id": "rule-heading-existing-text",
+    "group": "edit.rule-heading",
+    "rule": "5",
+    "before": "#│제목",
+    "actions": [
+      {
+        "type": "text",
+        "text": " "
+      }
+    ],
+    "after": "# │제목"
+  },
+  {
+    "id": "rule-list",
+    "group": "edit.rule-list",
+    "rule": "5",
+    "before": "│",
+    "actions": [
+      {
+        "type": "text",
+        "text": "- a"
+      }
+    ],
+    "after": "- a│"
+  },
+  {
+    "id": "rule-ordered",
+    "group": "edit.rule-list",
+    "rule": "5",
+    "before": "│",
+    "actions": [
+      {
+        "type": "text",
+        "text": "1. a"
+      }
+    ],
+    "after": "1. a│"
+  },
+  {
+    "id": "rule-task",
+    "group": "edit.rule-task",
+    "rule": "5",
+    "before": "- │",
+    "actions": [
+      {
+        "type": "text",
+        "text": "[ ] a"
+      }
+    ],
+    "after": "- [ ] a│"
+  },
+  {
+    "id": "rule-quote",
+    "group": "edit.rule-quote",
+    "rule": "5",
+    "before": "│",
+    "actions": [
+      {
+        "type": "text",
+        "text": "> a"
+      }
+    ],
+    "after": "> a│"
+  },
+  {
+    "id": "rule-emphasis",
+    "group": "edit.rule-emphasis",
+    "rule": "5",
+    "before": "x │",
+    "actions": [
+      {
+        "type": "text",
+        "text": "**a**b"
+      }
+    ],
+    "after": "x **a**b│"
+  },
+  {
+    "id": "rule-code",
+    "group": "edit.rule-code",
+    "rule": "5",
+    "before": "x │",
+    "actions": [
+      {
+        "type": "text",
+        "text": "`a`b"
+      }
+    ],
+    "after": "x `a`b│"
+  },
+  {
+    "id": "rule-fence",
+    "group": "edit.rule-fence",
+    "rule": "5",
+    "before": "│",
+    "actions": [
+      {
+        "type": "text",
+        "text": "```"
+      },
+      {
+        "type": "key",
+        "key": "Enter"
+      }
+    ],
+    "after": "```\n│\n```"
+  },
+  {
+    "id": "rule-thematic",
+    "group": "edit.rule-fence",
+    "rule": "5",
+    "before": "a\n\n│",
+    "actions": [
+      {
+        "type": "text",
+        "text": "---"
+      },
+      {
+        "type": "key",
+        "key": "Enter"
+      }
+    ],
+    "after": "a\n\n---\n\n│"
+  },
+  {
+    "id": "rule-wiki-suggest",
+    "group": "edit.rule-suggest",
+    "rule": "5",
+    "before": "x │",
+    "actions": [
+      {
+        "type": "text",
+        "text": "[["
+      }
+    ],
+    "after": "x [[│",
+    "ui": "wiki-link-suggest"
+  },
+  {
+    "id": "rule-slash",
+    "group": "edit.rule-suggest",
+    "rule": "5",
+    "before": "│",
+    "actions": [
+      {
+        "type": "text",
+        "text": "/"
+      }
+    ],
+    "after": "/│",
+    "ui": "slash-menu"
+  },
+  {
+    "id": "toggle-bold",
+    "group": "edit.toggle-bold",
+    "rule": "5",
+    "before": "a ⟪b⟫ c",
+    "actions": [
+      {
+        "type": "toggle",
+        "mark": "bold"
+      }
+    ],
+    "after": "a **⟪b⟫** c"
+  },
+  {
+    "id": "toggle-italic",
+    "group": "edit.toggle-bold",
+    "rule": "5",
+    "before": "a ⟪b⟫ c",
+    "actions": [
+      {
+        "type": "toggle",
+        "mark": "italic"
+      }
+    ],
+    "after": "a *⟪b⟫* c"
+  },
+  {
+    "id": "toggle-off",
+    "group": "edit.toggle-off",
+    "rule": "5",
+    "before": "a **⟪b⟫** c",
+    "actions": [
+      {
+        "type": "toggle",
+        "mark": "bold"
+      }
+    ],
+    "after": "a ⟪b⟫ c"
+  },
+  {
+    "id": "toggle-empty",
+    "group": "edit.toggle-empty",
+    "rule": "5",
+    "before": "a │ c",
+    "actions": [
+      {
+        "type": "toggle",
+        "mark": "bold"
+      },
+      {
+        "type": "text",
+        "text": "x"
+      }
+    ],
+    "after": "a **x│** c"
+  },
+  {
+    "id": "delete-char",
+    "group": "edit.delete-char",
+    "rule": "6",
+    "before": "**ab│**",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Backspace"
+      }
+    ],
+    "after": "**a│**"
+  },
+  {
+    "id": "delete-forward",
+    "group": "edit.delete-char",
+    "rule": "6",
+    "before": "a│**b**c",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Delete"
+      }
+    ],
+    "after": "a│c"
+  },
+  {
+    "id": "delete-empties-mark",
+    "group": "edit.delete-empties-mark",
+    "rule": "6",
+    "before": "x **a│** y",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Backspace"
+      }
+    ],
+    "after": "x │ y"
+  },
+  {
+    "id": "delete-across-partial",
+    "group": "edit.delete-across",
+    "rule": "6",
+    "before": "⟪a **b⟫c** d",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Backspace"
+      }
+    ],
+    "after": "│**c** d"
+  },
+  {
+    "id": "delete-across-whole",
+    "group": "edit.delete-across",
+    "rule": "6",
+    "before": "⟪a **b** c⟫ d",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Backspace"
+      }
+    ],
+    "after": "│ d"
+  },
+  {
+    "id": "backspace-list",
+    "group": "edit.backspace-list",
+    "rule": "6",
+    "before": "- │a",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Backspace"
+      }
+    ],
+    "after": "│a"
+  },
+  {
+    "id": "backspace-task",
+    "group": "edit.backspace-list",
+    "rule": "6",
+    "before": "- [ ] │a",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Backspace"
+      }
+    ],
+    "after": "│a"
+  },
+  {
+    "id": "backspace-quote",
+    "group": "edit.backspace-quote",
+    "rule": "6",
+    "before": "> │a",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Backspace"
+      }
+    ],
+    "after": "│a"
+  },
+  {
+    "id": "backspace-heading",
+    "group": "edit.backspace-heading",
+    "rule": "6",
+    "before": "## │제목",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Backspace"
+      }
+    ],
+    "after": "│제목"
+  },
+  {
+    "id": "backspace-join",
+    "group": "edit.backspace-join",
+    "rule": "6",
+    "before": "a\n\n│b",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Backspace"
+      }
+    ],
+    "after": "a│b"
+  },
+  {
+    "id": "backspace-widget-select",
+    "group": "edit.backspace-widget",
+    "rule": "6",
+    "before": "a\n\n```js\nx\n```\n\n│b",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Backspace"
+      }
+    ],
+    "after": "a\n\n⟪```js\nx\n```⟫\n\nb"
+  },
+  {
+    "id": "backspace-widget-delete",
+    "group": "edit.backspace-widget",
+    "rule": "6",
+    "before": "a\n\n⟪```js\nx\n```⟫\n\nb",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Backspace"
+      }
+    ],
+    "after": "a\n\n│b"
+  },
+  {
+    "id": "enter-paragraph",
+    "group": "edit.enter-paragraph",
+    "rule": "7",
+    "before": "ab│cd",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Enter"
+      }
+    ],
+    "after": "ab\n\n│cd"
+  },
+  {
+    "id": "enter-hard-break",
+    "group": "edit.enter-hard-break",
+    "rule": "7",
+    "before": "ab│cd",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Shift-Enter"
+      }
+    ],
+    "after": "ab\\\n│cd"
+  },
+  {
+    "id": "enter-list",
+    "group": "edit.enter-list",
+    "rule": "7",
+    "before": "- a│",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Enter"
+      }
+    ],
+    "after": "- a\n- │"
+  },
+  {
+    "id": "enter-ordered",
+    "group": "edit.enter-list",
+    "rule": "7",
+    "before": "1. a│",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Enter"
+      }
+    ],
+    "after": "1. a\n2. │"
+  },
+  {
+    "id": "enter-list-empty",
+    "group": "edit.enter-list-empty",
+    "rule": "7",
+    "before": "- a\n- │",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Enter"
+      }
+    ],
+    "after": "- a\n\n│"
+  },
+  {
+    "id": "enter-heading",
+    "group": "edit.enter-heading",
+    "rule": "7",
+    "before": "# 제목│",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Enter"
+      }
+    ],
+    "after": "# 제목\n\n│"
+  },
+  {
+    "id": "tab-list",
+    "group": "edit.tab-list",
+    "rule": "7",
+    "before": "- a\n- │b",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Tab"
+      }
+    ],
+    "after": "- a\n  - │b"
+  },
+  {
+    "id": "shift-tab-list",
+    "group": "edit.tab-list",
+    "rule": "7",
+    "before": "- a\n  - │b",
+    "actions": [
+      {
+        "type": "key",
+        "key": "Shift-Tab"
+      }
+    ],
+    "after": "- a\n- │b"
+  },
+  {
+    "id": "paste-plain",
+    "group": "edit.paste-plain",
+    "rule": "8",
+    "before": "a│",
+    "actions": [
+      {
+        "type": "paste",
+        "text": "*b* [c]"
+      }
+    ],
+    "after": "a\\*b\\* \\[c\\]│"
+  },
+  {
+    "id": "paste-plain-line-start",
+    "group": "edit.paste-plain",
+    "rule": "8",
+    "before": "│",
+    "actions": [
+      {
+        "type": "paste",
+        "text": "# 제목"
+      }
+    ],
+    "after": "\\# 제목│"
+  },
+  {
+    "id": "paste-html",
+    "group": "edit.paste-html",
+    "rule": "8",
+    "before": "│",
+    "actions": [
+      {
+        "type": "paste",
+        "html": "<b>a</b>"
+      }
+    ],
+    "after": "**a**│"
+  },
+  {
+    "id": "paste-markdown",
+    "group": "edit.paste-markdown",
+    "rule": "8",
+    "before": "│",
+    "actions": [
+      {
+        "type": "paste",
+        "text": "*b*",
+        "as": "markdown"
+      }
+    ],
+    "after": "*b*│"
+  }
+]
