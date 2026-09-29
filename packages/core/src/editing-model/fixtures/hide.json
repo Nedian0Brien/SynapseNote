@@ -138,6 +138,24 @@
     "marked": "⦃![[report.pdf]]⦄"
   },
   {
+    "id": "footnote-reference",
+    "group": "hide.footnote",
+    "rule": "3",
+    "marked": "문장⦃[^n]⦄\n\n⦃[^n]: 본문⦄"
+  },
+  {
+    "id": "inline-comment",
+    "group": "hide.comment",
+    "rule": "3",
+    "marked": "앞 ⦃%%메모%%⦄ 뒤"
+  },
+  {
+    "id": "block-comment",
+    "group": "hide.block-comment",
+    "rule": "3",
+    "marked": "⦃<!--\n메모\n-->⦄"
+  },
+  {
     "id": "block-mdx-image",
     "group": "hide.block-media",
     "rule": "3",

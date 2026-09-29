@@ -214,6 +214,54 @@
   @apply h-7 min-w-0 flex-1 border-0 bg-transparent font-mono text-xs outline-none;
 }
 
+[data-editor-variant="live"] .cm-live-thematic-break {
+  @apply my-3 border-0 border-t border-border;
+}
+[data-editor-variant="live"] .cm-live-footnote-reference button {
+  @apply cursor-pointer border-0 bg-transparent p-0 text-primary;
+}
+[data-editor-variant="live"] .cm-live-footnote-definition {
+  @apply my-2 flex items-start gap-2 border-t border-border pt-2 text-sm;
+}
+[data-editor-variant="live"] .cm-live-footnote-label,
+[data-editor-variant="live"] .cm-live-footnote-back {
+  @apply shrink-0 font-mono text-xs text-muted-foreground;
+}
+[data-editor-variant="live"] .cm-live-footnote-body {
+  @apply min-w-0 flex-1;
+}
+[data-editor-variant="live"] .cm-live-footnote-body .cm-editor,
+[data-editor-variant="live"] .cm-live-block-comment-body .cm-editor {
+  min-height: 0;
+  background: transparent;
+}
+[data-editor-variant="live"] .cm-live-footnote-body .cm-content,
+[data-editor-variant="live"] .cm-live-block-comment-body .cm-content {
+  @apply min-h-6 p-0;
+}
+[data-editor-variant="live"] .cm-live-footnote-body .cm-gutters,
+[data-editor-variant="live"] .cm-live-block-comment-body .cm-gutters {
+  display: none;
+}
+[data-editor-variant="live"] .cm-live-inline-comment {
+  @apply inline-flex items-center gap-1;
+}
+[data-editor-variant="live"] .cm-live-inline-comment button {
+  @apply rounded-sm bg-muted px-1 text-xs text-muted-foreground;
+}
+[data-editor-variant="live"] .cm-live-inline-comment input {
+  @apply h-6 w-32 rounded-sm border border-border bg-background px-1 text-xs;
+}
+[data-editor-variant="live"] .cm-live-inline-comment input[hidden] {
+  display: none;
+}
+[data-editor-variant="live"] .cm-live-block-comment {
+  @apply my-2 rounded-md border border-dashed border-border bg-muted/30 px-2 py-1;
+}
+[data-editor-variant="live"] .cm-live-block-comment-label {
+  @apply text-xs text-muted-foreground;
+}
+
 [data-editor-variant="live"] .cm-live-mdx-widget {
   @apply overflow-hidden rounded-md border border-border bg-background;
 }

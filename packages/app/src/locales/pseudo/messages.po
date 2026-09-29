@@ -1480,6 +1480,10 @@ msgstr ""
 msgid "Back to document view"
 msgstr ""
 
+#: src/editor/live/auxiliary-widgets.ts
+msgid "Back to footnote reference"
+msgstr ""
+
 #: src/components/DatabaseRecordPeek.tsx
 #: src/components/LinksPanel.tsx
 #: src/editor/components/PdfEmbed.tsx
@@ -2296,6 +2300,14 @@ msgstr ""
 
 #: src/components/settings/TerminalSection.tsx
 msgid "Commands run with the full access of your macOS user account on this machine. Turn this off to disable the shell."
+msgstr ""
+
+#: src/editor/live/auxiliary-widgets.ts
+msgid "Comment"
+msgstr ""
+
+#: src/editor/live/auxiliary-widgets.ts
+msgid "Comment text"
 msgstr ""
 
 #: src/components/DatabaseRecordPeekComments.tsx
@@ -3987,6 +3999,10 @@ msgstr ""
 msgid "Edit cell"
 msgstr ""
 
+#: src/editor/live/auxiliary-widgets.ts
+msgid "Edit comment"
+msgstr ""
+
 #: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Edit condition"
 msgstr ""
@@ -4880,6 +4896,10 @@ msgstr ""
 msgid "Footnote"
 msgstr ""
 
+#: src/editor/live/auxiliary-widgets.ts
+msgid "Footnote {identifier}"
+msgstr ""
+
 #: src/components/GraphSettingsPopover.tsx
 msgid "Forces"
 msgstr ""
@@ -5298,6 +5318,10 @@ msgstr ""
 
 #: src/editor/slash-command/component-items.tsx
 msgid "Horizontal pill strip + active panel below; click a pill to switch panels."
+msgstr ""
+
+#: src/editor/live/auxiliary-widgets.ts
+msgid "Horizontal rule"
 msgstr ""
 
 #: src/editor/slash-command/items.tsx

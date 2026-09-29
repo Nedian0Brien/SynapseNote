@@ -47,6 +47,13 @@ import {
 } from '@nedian0brien/synapsenote-core';
 import { isMarkdown } from '../clipboard/is-markdown';
 import { pasteShiftHeld } from '../clipboard/shift-tracker';
+import {
+  BlockCommentWidget,
+  FootnoteDefinitionWidget,
+  FootnoteReferenceWidget,
+  InlineCommentWidget,
+  ThematicBreakWidget,
+} from './auxiliary-widgets';
 import { CodeBlockWidget, TableBlockWidget } from './block-widgets';
 import { ContainerBlockWidget } from './container-widgets';
 import { DiagramBlockWidget } from './diagram-widgets';
@@ -139,28 +146,47 @@ function blockDecorations(
       if (widget.kind !== 'block') continue;
       const raw = source.slice(widget.from, widget.to);
       const inner =
-        widget.node === 'table'
-          ? new TableBlockWidget(raw, widget.from, widget.to, nestedExtension)
-          : widget.node === 'mdxJsxFlowElement' && mediaWidgetSource(source, widget.from, widget.to)
-            ? new MediaBlockWidget(raw, widget.from, widget.to, context)
-            : widget.node === 'mdxJsxFlowElement' &&
-                containerWidgetSource(source, widget.from, widget.to)
-              ? new ContainerBlockWidget(raw, widget.from, widget.to, nestedExtension)
-              : widget.node === 'mdxJsxFlowElement' &&
-                  diagramWidgetSource(source, widget.from, widget.to)
-                ? new DiagramBlockWidget(raw, widget.from, widget.to)
-                : widget.node === 'definition' &&
-                    referenceDefinitionSource(source, widget.from, widget.to)
-                  ? new ReferenceDefinitionWidget(raw, widget.from, widget.to)
-                  : widget.node === 'code'
-                    ? new CodeBlockWidget(raw, widget.from, widget.to)
+        widget.node === 'thematicBreak'
+          ? new ThematicBreakWidget()
+          : widget.node === 'footnoteDefinition'
+            ? new FootnoteDefinitionWidget(raw, widget.from, widget.to, nestedExtension)
+            : widget.node === 'commentBlock'
+              ? new BlockCommentWidget(raw, widget.from, widget.to, nestedExtension)
+              : widget.node === 'table'
+                ? new TableBlockWidget(raw, widget.from, widget.to, nestedExtension)
+                : widget.node === 'mdxJsxFlowElement' &&
+                    mediaWidgetSource(source, widget.from, widget.to)
+                  ? new MediaBlockWidget(raw, widget.from, widget.to, context)
+                  : widget.node === 'mdxJsxFlowElement' &&
+                      containerWidgetSource(source, widget.from, widget.to)
+                    ? new ContainerBlockWidget(raw, widget.from, widget.to, nestedExtension)
                     : widget.node === 'mdxJsxFlowElement' &&
-                        tabsWidgetSource(source, widget.from, widget.to)
-                      ? new TabsBlockWidget(raw, widget.from, widget.to, context, nestedExtension)
-                      : widget.node === 'mdxJsxFlowElement' &&
-                          mdxWidgetSource(source, widget.from, widget.to)
-                        ? new MdxBlockWidget(raw, widget.from, widget.to, context, nestedExtension)
-                        : null;
+                        diagramWidgetSource(source, widget.from, widget.to)
+                      ? new DiagramBlockWidget(raw, widget.from, widget.to)
+                      : widget.node === 'definition' &&
+                          referenceDefinitionSource(source, widget.from, widget.to)
+                        ? new ReferenceDefinitionWidget(raw, widget.from, widget.to)
+                        : widget.node === 'code'
+                          ? new CodeBlockWidget(raw, widget.from, widget.to)
+                          : widget.node === 'mdxJsxFlowElement' &&
+                              tabsWidgetSource(source, widget.from, widget.to)
+                            ? new TabsBlockWidget(
+                                raw,
+                                widget.from,
+                                widget.to,
+                                context,
+                                nestedExtension,
+                              )
+                            : widget.node === 'mdxJsxFlowElement' &&
+                                mdxWidgetSource(source, widget.from, widget.to)
+                              ? new MdxBlockWidget(
+                                  raw,
+                                  widget.from,
+                                  widget.to,
+                                  context,
+                                  nestedExtension,
+                                )
+                              : null;
       if (inner) {
         ranges.push({
           from: widget.from,
@@ -418,6 +444,22 @@ function draw(view: EditorView): Drawn {
           to: w.to,
           deco: Decoration.replace({
             widget: new CharacterWidget(decodeReference(doc.sliceString(w.from, w.to))),
+          }),
+        });
+      } else if (w.kind === 'inline' && w.node === 'footnoteReference') {
+        replaced.push({
+          from: w.from,
+          to: w.to,
+          deco: Decoration.replace({
+            widget: new FootnoteReferenceWidget(doc.sliceString(w.from, w.to)),
+          }),
+        });
+      } else if (w.kind === 'inline' && w.node === 'comment') {
+        replaced.push({
+          from: w.from,
+          to: w.to,
+          deco: Decoration.replace({
+            widget: new InlineCommentWidget(doc.sliceString(w.from, w.to), w.from, w.to),
           }),
         });
       } else if (

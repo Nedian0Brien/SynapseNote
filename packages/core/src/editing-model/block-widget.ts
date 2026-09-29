@@ -3,6 +3,7 @@ import type { Table } from 'mdast';
 import { IMAGE_EXTENSIONS } from '../constants/upload.ts';
 import { sharedExtensions } from '../extensions/shared.ts';
 import { MarkdownManager } from '../markdown/index.ts';
+import { updateCommentWidget, updateFootnoteWidget } from './auxiliary-widget.ts';
 import { sourceChanges } from './changes.ts';
 import type { Range } from './layout.ts';
 import { type MdxWidgetEdit, updateMdxWidget } from './mdx-widget.ts';
@@ -83,6 +84,8 @@ export type BlockWidgetEdit =
   | { type: 'media-src'; text: string }
   | { type: 'media-label'; text: string }
   | { type: 'reference-target'; text: string }
+  | { type: 'footnote-body'; text: string }
+  | { type: 'comment-body'; text: string }
   | MdxWidgetEdit
   | TabsWidgetEdit
   | { type: 'table-cell'; row: number; column: number; text: string };
@@ -575,6 +578,8 @@ export function updateBlockWidget(
   if (edit.type === 'reference-target') {
     return updateReferenceDefinition(source, from, to, edit.text);
   }
+  if (edit.type === 'footnote-body') return updateFootnoteWidget(source, from, to, edit.text);
+  if (edit.type === 'comment-body') return updateCommentWidget(source, from, to, edit.text);
   if (edit.type === 'diagram-body') {
     const diagram = diagramWidgetSource(source, from, to);
     if (!diagram) return null;

@@ -1,4 +1,12 @@
 export {
+  type CommentWidgetSource,
+  commentWidgetSource,
+  type FootnoteWidgetSource,
+  footnoteWidgetSource,
+  updateCommentWidget,
+  updateFootnoteWidget,
+} from './auxiliary-widget.ts';
+export {
   type BlockWidgetEdit,
   type CodeWidgetSource,
   type ContainerWidgetSource,

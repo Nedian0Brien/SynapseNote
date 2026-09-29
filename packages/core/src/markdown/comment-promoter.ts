@@ -124,6 +124,7 @@ function handleBlockCommentsAtRoot(tree: Root): void {
               } as Paragraph,
             ],
             data: { sourceForm: 'percent', sourceLayout: 'block' },
+            position: child.position,
           };
           children.splice(i, 1, block as unknown as RootContent);
           i += 1;
@@ -141,6 +142,7 @@ function handleBlockCommentsAtRoot(tree: Root): void {
               } as Paragraph,
             ],
             data: { sourceForm: 'html', sourceLayout: 'inline' },
+            position: child.position,
           };
           children.splice(i, 1, block as unknown as RootContent);
           i += 1;
@@ -154,6 +156,7 @@ function handleBlockCommentsAtRoot(tree: Root): void {
           type: 'commentBlock',
           children: [strippedHtml],
           data: { sourceForm: 'html', sourceLayout: 'inline' },
+          position: child.position,
         };
         children.splice(i, 1, block as unknown as RootContent);
         i += 1;
@@ -166,6 +169,7 @@ function handleBlockCommentsAtRoot(tree: Root): void {
           type: 'commentBlock',
           children: [strippedPercent],
           data: { sourceForm: 'percent', sourceLayout: 'inline' },
+          position: child.position,
         };
         children.splice(i, 1, block as unknown as RootContent);
         i += 1;
@@ -182,10 +186,15 @@ function handleBlockCommentsAtRoot(tree: Root): void {
       }
       if (j < children.length && j > i + 1) {
         const inner = children.slice(i + 1, j);
+        const closerPosition = children[j]?.position;
         const block: CommentBlockMdast = {
           type: 'commentBlock',
           children: inner as Nodes[],
           data: { sourceForm: 'percent', sourceLayout: 'block' },
+          position:
+            child.position && closerPosition
+              ? { start: child.position.start, end: closerPosition.end }
+              : undefined,
         };
         children.splice(i, j - i + 1, block as unknown as RootContent);
         i += 1;

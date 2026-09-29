@@ -252,6 +252,33 @@
     "after": "<Tabs>\n<Tab label=\"Two\">\nbeta\n</Tab>\n</Tabs>"
   },
   {
+    "id": "footnote-body",
+    "group": "widget.footnote-body",
+    "rule": "3",
+    "before": "before[^n]\n\n[^n]: old **bold**\n    second\n\nafter",
+    "from": 12,
+    "edit": { "type": "footnote-body", "text": "new **bold**\nsecond" },
+    "after": "before[^n]\n\n[^n]: new **bold**\n    second\n\nafter"
+  },
+  {
+    "id": "inline-comment-body",
+    "group": "widget.comment-body",
+    "rule": "3",
+    "before": "before %%old%% after",
+    "from": 7,
+    "edit": { "type": "comment-body", "text": "new" },
+    "after": "before %%new%% after"
+  },
+  {
+    "id": "block-comment-body",
+    "group": "widget.comment-body",
+    "rule": "3",
+    "before": "<!--\nold **bold**\n-->",
+    "from": 0,
+    "edit": { "type": "comment-body", "text": "new **bold**" },
+    "after": "<!--\nnew **bold**\n-->"
+  },
+  {
     "id": "markdown-image-src",
     "group": "widget.media-src",
     "rule": "3",

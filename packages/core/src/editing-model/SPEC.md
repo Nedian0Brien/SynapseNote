@@ -41,6 +41,8 @@ SynapseNote의 편집기는 Markdown 원문(`Y.Text('source')`)을 직접 편집
 | 인용 | `> a` | `> ` | 인용 막대 | hide.quote |
 | 이미지 | `![대체](src)` `![[a.png]]` | 전체 | 이미지(위젯) | hide.image |
 | 파일 임베드 | `![[report.pdf]]` | 전체 | 파일(위젯) | hide.file |
+| 각주 참조 | `[^n]` | 전체 | 위첨자 링크 | hide.footnote |
+| 인라인 주석 | `%%메모%%` `<!-- 메모 -->` | 전체 | 주석 칩 | hide.comment |
 | 블록 | 표, 코드 블록, 수식, Mermaid, 콜아웃, 아코디언, MDX 컴포넌트, 인라인 데이터베이스, 수평선, HTML 블록, 링크 참조 정의, 각주 정의, frontmatter | 전체 | 블록 위젯 | hide.block-* |
 
 frontmatter는 `live` 편집기에서 YAML 원문 범위를 숨기고, 같은 문서 화면의 기존 속성 패널로 표시·편집한다.
@@ -73,6 +75,9 @@ widget.reference-target)
 본문을 고치면 여닫는 태그 안의 본문 범위만 바꾼다. JSON으로 해석 가능한 리터럴 표현식만 컴포넌트에 전달한다.
 숫자·불리언·JSON 리터럴 속성은 같은 형식으로 편집하며, 실행 가능한 표현식은 평가하거나 자동으로 바꾸지 않는다.
 (widget.mdx-prop, widget.mdx-body, hide.block-mdx)
+각주 정의 위젯은 `[^id]:`와 이어지는 줄의 들여쓰기를 숨기고 본문만 같은 live 규칙으로 편집한다. 각주 참조는
+해당 정의로 이동하는 위첨자 링크다. 인라인·블록 주석 위젯은 원문 구분자를 숨기고 본문 변경만 원문에 기록한다.
+(widget.footnote-body, widget.comment-body, hide.block-comment)
 `<Tabs>`의 직접 자식 `<Tab>`은 탭 목록과 선택한 패널로 보여 준다. 라벨·본문 변경은 해당 자식의 원문 범위만
 바꾸고, 탭 추가·삭제는 해당 자식의 원문만 삽입·삭제한다. 중첩된 `<Tabs>`는 부모 탭의 본문 안에서 독립된 탭 목록으로 다룬다. (widget.tabs-label,
 widget.tabs-body)

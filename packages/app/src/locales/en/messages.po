@@ -1485,6 +1485,10 @@ msgstr "Back to databases"
 msgid "Back to document view"
 msgstr "Back to document view"
 
+#: src/editor/live/auxiliary-widgets.ts
+msgid "Back to footnote reference"
+msgstr "Back to footnote reference"
+
 #: src/components/DatabaseRecordPeek.tsx
 #: src/components/LinksPanel.tsx
 #: src/editor/components/PdfEmbed.tsx
@@ -2302,6 +2306,14 @@ msgstr "Commands"
 #: src/components/settings/TerminalSection.tsx
 msgid "Commands run with the full access of your macOS user account on this machine. Turn this off to disable the shell."
 msgstr "Commands run with the full access of your macOS user account on this machine. Turn this off to disable the shell."
+
+#: src/editor/live/auxiliary-widgets.ts
+msgid "Comment"
+msgstr "Comment"
+
+#: src/editor/live/auxiliary-widgets.ts
+msgid "Comment text"
+msgstr "Comment text"
 
 #: src/components/DatabaseRecordPeekComments.tsx
 msgid "Comments"
@@ -3992,6 +4004,10 @@ msgstr "Edit a read-only computed property with stable references and snapshot p
 msgid "Edit cell"
 msgstr "Edit cell"
 
+#: src/editor/live/auxiliary-widgets.ts
+msgid "Edit comment"
+msgstr "Edit comment"
+
 #: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Edit condition"
 msgstr "Edit condition"
@@ -4885,6 +4901,10 @@ msgstr "Follow us on X"
 msgid "Footnote"
 msgstr "Footnote"
 
+#: src/editor/live/auxiliary-widgets.ts
+msgid "Footnote {identifier}"
+msgstr "Footnote {identifier}"
+
 #: src/components/GraphSettingsPopover.tsx
 msgid "Forces"
 msgstr "Forces"
@@ -5304,6 +5324,10 @@ msgstr "Home page and navigation hub."
 #: src/editor/slash-command/component-items.tsx
 msgid "Horizontal pill strip + active panel below; click a pill to switch panels."
 msgstr "Horizontal pill strip + active panel below; click a pill to switch panels."
+
+#: src/editor/live/auxiliary-widgets.ts
+msgid "Horizontal rule"
+msgstr "Horizontal rule"
 
 #: src/editor/slash-command/items.tsx
 msgid "Horizontal rule that divides sections."

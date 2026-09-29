@@ -322,6 +322,7 @@
       ["speedLabel"]
     ],
     "4jDd0j": ["Anyone can see"],
+    "4jvvK_": ["Comment text"],
     "4lwmSM": ["Show title"],
     "4mLBx9": ["Subscriptions aren't available right now."],
     "4mcbKE": ["Search pages, databases, folders, and commands for the current workspace."],
@@ -894,6 +895,7 @@
     "E4XYYH": ["Enable terminal for this project"],
     "E5WeIy": ["Reopen the most recently closed editor tab."],
     "E77phs": ["Open a document to see its annotations."],
+    "E8zjCy": ["Footnote ", ["identifier"]],
     "E9bKSA": ["Creating"],
     "EBVbtP": ["Could not duplicate item"],
     "EDl9kS": ["Subscribe"],
@@ -1391,6 +1393,7 @@
     "N2eHWq": ["Code Block"],
     "N3_ozB": ["Hubs"],
     "N40H-G": ["All"],
+    "NBdIgR": ["Comment"],
     "NBpHVb": [
       "Helps your coding agent recognize SynapseNote projects and route reads and writes through it."
     ],
@@ -2634,6 +2637,7 @@
     "iilQXA": ["Folder duplicated"],
     "ijLc3m": ["Bullet list"],
     "ipFI6G": ["Show number"],
+    "ipm1Dq": ["Horizontal rule"],
     "iqHNq8": ["Review the starting views, property types, and example pages."],
     "iqIDv4": ["Sync status unavailable"],
     "iqugog": ["Initialize failed: ", ["errorDetail"]],
@@ -3145,6 +3149,7 @@
     "rBc32v": ["Couldn't reach the embeddings provider — press ↵ to retry"],
     "rC-jHJ": ["Customize record layout"],
     "rDuUQy": ["Selected tag"],
+    "rF8SEQ": ["Edit comment"],
     "rFw02Q": ["Uploading ", ["keyName"]],
     "rJVoVX": ["Source find results"],
     "rN1vpk": ["Suggested name"],
@@ -3659,6 +3664,7 @@
       ["date"],
       "}</1> fills in on create."
     ],
+    "zsgJmP": ["Back to footnote reference"],
     "zsoQjn": ["Proposed archive"],
     "ztKII6": ["Failed to add item"],
     "zu19Zf": ["Loading agent context"],

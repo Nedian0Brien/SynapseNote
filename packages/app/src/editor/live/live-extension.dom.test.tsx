@@ -184,6 +184,48 @@ describe('live editor block widgets', () => {
     expect(view.state.doc.toString()).toBe('before\n\n```ts title=x\nnew\n```\n\nafter');
   });
 
+  test('thematic break renders as a rule without exposing its marker', () => {
+    const view = mount('before\n\n---\n\nafter', 0, 0);
+    expect(view.dom.querySelector('hr.cm-live-thematic-break')).not.toBeNull();
+    expect(view.contentDOM.textContent).not.toContain('---');
+  });
+
+  test('footnote reference and definition hide syntax and edit the indented body', () => {
+    const view = mount('text[^n]\n\n[^n]: old\n    next', 0, 0);
+    expect(view.dom.querySelector('.cm-live-footnote-reference button')?.textContent).toBe('[n]');
+    const definition = view.dom.querySelector('.cm-live-footnote-definition');
+    expect(definition).not.toBeNull();
+    expect(definition?.textContent).not.toContain('[^n]:');
+    const element = definition?.querySelector<HTMLElement>('.cm-live-footnote-body .cm-editor');
+    if (!element) throw new Error('Footnote body missing');
+    const cell = EditorView.findFromDOM(element);
+    if (!cell) throw new Error('Footnote body editor missing');
+    expect(cell.state.doc.toString()).toBe('old\nnext');
+    cell.dispatch({ changes: { from: cell.state.doc.length, insert: '!' } });
+    expect(view.state.doc.toString()).toBe('text[^n]\n\n[^n]: old\n    next!');
+  });
+
+  test('inline and block comments edit only their body', () => {
+    const view = mount('before %%old%% after\n\n<!--\nbody **bold**\n-->', 0, 0);
+    const inline = view.dom.querySelector('.cm-live-inline-comment');
+    expect(inline?.textContent).not.toContain('%%');
+    const button = inline?.querySelector<HTMLButtonElement>('button');
+    button?.click();
+    const input = inline?.querySelector<HTMLInputElement>('input');
+    if (!input) throw new Error('Inline comment input missing');
+    input.value = 'new';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(view.state.doc.toString()).toContain('before %%new%% after');
+    const block = view.dom.querySelector('.cm-live-block-comment');
+    expect(block?.textContent).not.toContain('<!--');
+    const element = block?.querySelector<HTMLElement>('.cm-live-block-comment-body .cm-editor');
+    if (!element) throw new Error('Block comment body missing');
+    const cell = EditorView.findFromDOM(element);
+    if (!cell) throw new Error('Block comment editor missing');
+    cell.dispatch({ changes: { from: 0, to: cell.state.doc.length, insert: 'new **bold**' } });
+    expect(view.state.doc.toString()).toContain('<!--\nnew **bold**\n-->');
+  });
+
   test('indented code hides its indentation and writes edited body back to source', () => {
     const view = mount('before\n\n    old\n    next\n\nafter', 0, 0);
     const widget = view.dom.querySelector('.cm-live-code-block');
