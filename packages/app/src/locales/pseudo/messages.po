@@ -767,6 +767,10 @@ msgstr ""
 msgid "Accept their deletion"
 msgstr ""
 
+#: src/editor/live/container-widgets.tsx
+msgid "Accordion title"
+msgstr ""
+
 #: src/components/settings/AccountSection.tsx
 #: src/components/settings/SettingsDialogShell.tsx
 msgid "Account"
@@ -1701,6 +1705,14 @@ msgstr ""
 
 #: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Calendar dates and display"
+msgstr ""
+
+#: src/editor/live/container-widgets.tsx
+msgid "Callout title"
+msgstr ""
+
+#: src/editor/live/container-widgets.tsx
+msgid "Callout type"
 msgstr ""
 
 #: src/components/CreateProjectDialog.tsx

@@ -150,6 +150,24 @@
     "marked": "⦃$$\nx^2\n$$⦄"
   },
   {
+    "id": "block-gfm-callout",
+    "group": "hide.block-callout",
+    "rule": "3",
+    "marked": "⦃> [!NOTE] Title\n> body⦄"
+  },
+  {
+    "id": "block-mdx-callout",
+    "group": "hide.block-callout",
+    "rule": "3",
+    "marked": "⦃<Callout type=\"note\">\nbody\n</Callout>⦄"
+  },
+  {
+    "id": "block-mdx-accordion",
+    "group": "hide.block-accordion",
+    "rule": "3",
+    "marked": "⦃<Accordion title=\"Details\">\nbody\n</Accordion>⦄"
+  },
+  {
     "id": "block-thematic",
     "group": "hide.block-thematic",
     "rule": "3",

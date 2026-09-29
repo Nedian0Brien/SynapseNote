@@ -108,6 +108,8 @@ type CalloutType =
 interface CalloutProps {
   type?: CalloutType | string;
   title?: string;
+  /** Editor-only control displayed where the rendered title normally sits. */
+  titleSlot?: React.ReactNode;
   /** Namespaced lucide identifier (e.g. `lucide:Lightbulb`). */
   icon?: string;
   /** Hex accent override (e.g. `#F05032`). Sanitized at JsxComponentView boundary. */
@@ -177,10 +179,12 @@ export function Callout(props: CalloutProps) {
     : {};
 
   const header =
-    props.title || Icon ? (
+    props.title || props.titleSlot || Icon ? (
       <span className="callout-header" contentEditable={false}>
         <Icon size={16} className="callout-icon" aria-hidden="true" />
-        {props.title ? <span className="callout-title">{props.title}</span> : null}
+        {props.title || props.titleSlot ? (
+          <span className="callout-title">{props.titleSlot ?? props.title}</span>
+        ) : null}
       </span>
     ) : null;
 

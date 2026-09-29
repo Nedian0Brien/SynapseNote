@@ -772,6 +772,10 @@ msgstr "Accept form submissions"
 msgid "Accept their deletion"
 msgstr "Accept their deletion"
 
+#: src/editor/live/container-widgets.tsx
+msgid "Accordion title"
+msgstr "Accordion title"
+
 #: src/components/settings/AccountSection.tsx
 #: src/components/settings/SettingsDialogShell.tsx
 msgid "Account"
@@ -1707,6 +1711,14 @@ msgstr "Calculating the unsaved Rollup against the permission snapshot."
 #: src/components/database-saved-view-settings/DatabaseSavedViewSettingsDialogRuntime.tsx
 msgid "Calendar dates and display"
 msgstr "Calendar dates and display"
+
+#: src/editor/live/container-widgets.tsx
+msgid "Callout title"
+msgstr "Callout title"
+
+#: src/editor/live/container-widgets.tsx
+msgid "Callout type"
+msgstr "Callout type"
 
 #: src/components/CreateProjectDialog.tsx
 msgid "Can't nest projects. An SynapseNote project already exists at <0>{rootPath}</0>. Choose a location outside it, or open that project instead."

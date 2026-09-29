@@ -17,6 +17,7 @@
     "-K0AvT": ["Disconnect"],
     "-KmfTn": ["Freshness and truncation"],
     "-LHLx7": ["edited template"],
+    "-M7J13": ["Callout title"],
     "-QCLWk": ["Templates available"],
     "-Qw-1t": ["GitHub authentication failed. Try signing in again."],
     "-WFFG2": ["Default properties"],
@@ -3015,6 +3016,7 @@
     "pK37Ff": ["Show panel (", ["shortcut"], ")"],
     "pK5QMm": ["This page doesn't exist yet. Open it to create the page in the editor."],
     "pKKQV0": ["Manage properties"],
+    "pNrlIF": ["Accordion title"],
     "pOrdK6": [
       "Couldn't restart the server — another process owns it. Quit other SynapseNote windows for this project, then try again."
     ],
@@ -3106,6 +3108,7 @@
     "qrXszS": ["Remove group"],
     "qurSX8": ["Model settings"],
     "qvWGzP": ["Collapse all"],
+    "qvWwvO": ["Callout type"],
     "qy-JHB": ["List hierarchy and display"],
     "qyJlSM": ["Include optional sample pages in the proposal"],
     "qyLmWw": ["Source editor search panel"],

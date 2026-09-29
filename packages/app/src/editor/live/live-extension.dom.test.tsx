@@ -9,6 +9,12 @@ import { EditorView, runScopeHandlers } from '@codemirror/view';
 import { computeLayout, editFixtures, parseCursor } from '@nedian0brien/synapsenote-core';
 import { createLiveExtension } from './live-extension';
 
+// The jsdom preload exposes `window` but not its Window constructor globally;
+// CodeMirror checks `instanceof Window` when a nested editor is measured.
+if (typeof Window === 'undefined') {
+  Object.defineProperty(globalThis, 'Window', { value: window.Window, configurable: true });
+}
+
 const views: EditorView[] = [];
 afterEach(() => {
   for (const view of views.splice(0)) view.destroy();
@@ -244,5 +250,36 @@ describe('live editor block widgets', () => {
     body.dispatchEvent(new Event('input', { bubbles: true }));
     expect(view.state.doc.toString()).toBe('```mermaid\ngraph TD; B-->C\n```');
     expect(view.dom.querySelector('.cm-live-diagram-body')).toBe(body);
+  });
+
+  test('GFM callout renders without markers and edits its nested body', async () => {
+    const view = mount('> [!NOTE] Title\n> body **bold**', 0, 0);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    const widget = view.dom.querySelector('.cm-live-container-widget');
+    expect(widget?.querySelector('.callout')).not.toBeNull();
+    expect(widget?.textContent).not.toContain('[!NOTE]');
+    const element = widget?.querySelector<HTMLElement>('.cm-live-container-body .cm-editor');
+    if (!element) throw new Error('Callout body editor missing');
+    const cell = EditorView.findFromDOM(element);
+    if (!cell) throw new Error('Callout body view missing');
+    cell.dispatch({ selection: { anchor: cell.state.doc.length } });
+    type(cell, '!');
+    expect(view.state.doc.toString()).toBe('> [!NOTE] Title\n> body **bold!**');
+  });
+
+  test('MDX accordion keeps its wrapper while editing the nested body', async () => {
+    const view = mount('<Accordion title="Details" defaultOpen>\nold\n</Accordion>', 0, 0);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    const widget = view.dom.querySelector('.cm-live-container-widget');
+    expect(widget?.querySelector('details.accordion')).not.toBeNull();
+    const element = widget?.querySelector<HTMLElement>('.cm-live-container-body .cm-editor');
+    if (!element) throw new Error('Accordion body editor missing');
+    const cell = EditorView.findFromDOM(element);
+    if (!cell) throw new Error('Accordion body view missing');
+    cell.dispatch({ selection: { anchor: cell.state.doc.length } });
+    type(cell, '!');
+    expect(view.state.doc.toString()).toBe(
+      '<Accordion title="Details" defaultOpen>\nold!\n</Accordion>',
+    );
   });
 });

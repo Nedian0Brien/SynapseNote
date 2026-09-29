@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   codeWidgetSource,
+  containerWidgetSource,
   diagramWidgetSource,
   tableWidgetSource,
   updateBlockWidget,
@@ -50,5 +51,14 @@ describe('block widget source edits', () => {
     });
     expect(diagramWidgetSource(bracket, 0, bracket.length)?.preview).toBe('x^2');
     expect(diagramWidgetSource(mermaid, 0, mermaid.length)?.preview).toBe('graph TD; A-->B');
+  });
+
+  test('container source maps only visible GFM body characters', () => {
+    const source = '> [!NOTE] Title\n> body **bold**\n> next';
+    const model = containerWidgetSource(source, 0, source.length);
+    expect(model?.body).toBe('body **bold**\nnext');
+    expect(model?.bodyBoundaries).toHaveLength((model?.body.length ?? 0) + 1);
+    expect(model?.title).toBe('Title');
+    expect(model?.calloutType).toBe('note');
   });
 });

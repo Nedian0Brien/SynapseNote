@@ -52,6 +52,10 @@ frontmatter는 `live` 편집기에서 YAML 원문 범위를 숨기고, 같은 �
 파이프는 이스케이프하고 줄바꿈은 공백으로 바꾼다. (widget.table-cell)
 수식(`$$`, `\\[`, ` ```math `)과 Mermaid(` ```mermaid `) 위젯은 원문 구분자를 숨기고 기존 렌더러로 미리 보인다.
 본문 편집은 구분자 사이의 원문 범위만 바꾼다. (widget.math-body, widget.mermaid-body)
+GFM 콜아웃(`> [!TYPE]`)과 MDX `<Callout>`·`<Accordion>`은 기존 컴포넌트로 그리고, 내부 본문은 같은 live 편집
+규칙으로 편집한다. GFM의 `>` 접두어는 감춘 채 삽입·삭제·줄바꿈을 원문 위치에 적용한다. 제목·종류 변경은
+헤더나 해당 MDX 속성 값만 바꾼다. (widget.callout-body, widget.callout-attribute,
+widget.accordion-body, widget.accordion-attribute)
 
 - 문단 안의 한 줄 바꿈(soft break)은 줄바꿈으로 보인다. 원문의 줄 구조를 그대로 보이기 위해서다. (hide.soft-break)
 - 블록 사이의 빈 줄은 빈 줄로 보이고, 커서가 놓일 수 있다. (hide.blank-lines)
@@ -180,7 +184,8 @@ id가 `*`로 끝나면 그 접두어로 시작하는 group을 모두 가리킨�
 정규화한다). `actions`는 차례로 적용하는 동작의 목록이다.
 
 `fixtures/widget.json`: `{ id, group, rule, before, from, edit, after }`. `from`은 블록 시작 오프셋이고,
-`edit`는 `code-body`·`code-language`·`table-cell`·`diagram-body` 중 하나다. 결과는 바뀐 원문 전체로 비교한다.
+`edit`는 `code-body`·`code-language`·`table-cell`·`diagram-body`·`container-body`·`container-title`·
+`container-type` 중 하나다. 결과는 바뀐 원문 전체로 비교한다.
 
 - `{ "type": "text", "text": "…" }`: 글자를 하나씩 친다.
 - `{ "type": "key", "key": "Backspace" | "Delete" | "Enter" | "Shift-Enter" | "Tab" | "Shift-Tab" | "ArrowRight" |

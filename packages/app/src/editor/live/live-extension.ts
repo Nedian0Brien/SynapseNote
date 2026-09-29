@@ -31,6 +31,7 @@ import {
 import {
   applyActionsInWindow,
   type BlockKind,
+  containerWidgetSource,
   diagramWidgetSource,
   type EditAction,
   type EditState,
@@ -42,6 +43,7 @@ import {
 import { isMarkdown } from '../clipboard/is-markdown';
 import { pasteShiftHeld } from '../clipboard/shift-tracker';
 import { CodeBlockWidget, TableBlockWidget } from './block-widgets';
+import { ContainerBlockWidget } from './container-widgets';
 import { DiagramBlockWidget } from './diagram-widgets';
 
 // ── state ───────────────────────────────────────────────────────────────────
@@ -117,11 +119,14 @@ function blockDecorations(layout: IncrementalLayout, source: string): Decoration
         widget.node === 'table'
           ? new TableBlockWidget(raw, widget.from, widget.to, createLiveExtension)
           : widget.node === 'mdxJsxFlowElement' &&
-              diagramWidgetSource(source, widget.from, widget.to)
-            ? new DiagramBlockWidget(raw, widget.from, widget.to)
-            : widget.node === 'code' && /^ {0,3}(?:`{3,}|~{3,})/.test(raw)
-              ? new CodeBlockWidget(raw, widget.from, widget.to)
-              : null;
+              containerWidgetSource(source, widget.from, widget.to)
+            ? new ContainerBlockWidget(raw, widget.from, widget.to, createLiveExtension)
+            : widget.node === 'mdxJsxFlowElement' &&
+                diagramWidgetSource(source, widget.from, widget.to)
+              ? new DiagramBlockWidget(raw, widget.from, widget.to)
+              : widget.node === 'code' && /^ {0,3}(?:`{3,}|~{3,})/.test(raw)
+                ? new CodeBlockWidget(raw, widget.from, widget.to)
+                : null;
       if (inner) {
         ranges.push({
           from: widget.from,

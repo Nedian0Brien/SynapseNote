@@ -2,6 +2,7 @@
 import type { Table } from 'mdast';
 import { sharedExtensions } from '../extensions/shared.ts';
 import { MarkdownManager } from '../markdown/index.ts';
+import { sourceChanges } from './changes.ts';
 import type { Range } from './layout.ts';
 
 export interface CodeWidgetSource {
@@ -27,10 +28,30 @@ export interface DiagramWidgetSource {
   preview: string;
 }
 
+export interface ContainerWidgetSource {
+  kind: 'callout' | 'accordion';
+  syntax: 'gfm' | 'mdx';
+  title: string;
+  calloutType?: string;
+  props: Readonly<Record<string, string | boolean>>;
+  body: string;
+  /** Raw source range containing the body, without opening and closing syntax. */
+  bodyRange: Range;
+  /** One source offset for each UTF-16 boundary in the displayed body. */
+  bodyBoundaries: number[];
+  titleRange: Range | null;
+  typeRange: Range | null;
+  /** Position for inserting a missing MDX attribute or GFM title. */
+  attributeInsert: number;
+}
+
 export type BlockWidgetEdit =
   | { type: 'code-body'; text: string }
   | { type: 'code-language'; text: string }
   | { type: 'diagram-body'; text: string }
+  | { type: 'container-body'; text: string }
+  | { type: 'container-title'; text: string }
+  | { type: 'container-type'; text: string }
   | { type: 'table-cell'; row: number; column: number; text: string };
 
 let parser: MarkdownManager | undefined;
@@ -141,6 +162,148 @@ export function diagramWidgetSource(
   return { kind, body: [from + firstNewline + 1, from + lastNewline], preview };
 }
 
+/** Source-positioned Callout and Accordion body/attribute model. */
+export function containerWidgetSource(
+  source: string,
+  from: number,
+  to: number,
+): ContainerWidgetSource | null {
+  const raw = source.slice(from, to);
+  if (!/^(?: {0,3}>|<Callout\b|<Accordion\b)/.test(raw)) return null;
+  const node = md().parseToMdast(raw).children[0];
+  if (node?.type !== 'mdxJsxFlowElement') return null;
+  const kind =
+    node.name === 'GFMCallout' || node.name === 'Callout'
+      ? 'callout'
+      : node.name === 'Accordion'
+        ? 'accordion'
+        : null;
+  if (!kind) return null;
+  if (node.name === 'GFMCallout') {
+    const headerEnd = raw.indexOf('\n');
+    const header = raw.slice(0, headerEnd < 0 ? raw.length : headerEnd);
+    const marker = /\[!([A-Za-z]+)\]/.exec(header);
+    if (!marker) return null;
+    const titleStart = marker.index + marker[0].length;
+    const titleMatch = /\s+(.*)$/.exec(header.slice(titleStart));
+    const title = titleMatch?.[1] ?? '';
+    const titleOffset = titleMatch
+      ? titleStart + titleMatch.index + titleMatch[0].length - title.length
+      : header.length;
+    const bodyStart = from + (headerEnd < 0 ? raw.length : headerEnd + 1);
+    const { body, boundaries } = quotedBody(source, bodyStart, to);
+    return {
+      kind,
+      syntax: 'gfm',
+      title,
+      calloutType: marker[1].toLowerCase(),
+      props: { type: marker[1].toLowerCase(), title },
+      body,
+      bodyRange: [bodyStart, to],
+      bodyBoundaries: boundaries,
+      titleRange: title ? [from + titleOffset, from + header.length] : null,
+      typeRange: [from + marker.index + 2, from + marker.index + 2 + marker[1].length],
+      attributeInsert: from + header.length,
+    };
+  }
+
+  const name = node.name;
+  if (!name) return null;
+  const openerEnd = mdxOpenerEnd(raw);
+  if (openerEnd < 0) return null;
+  const closeAt = raw.lastIndexOf(`</${name}>`);
+  if (closeAt < openerEnd) return null;
+  const bodyStart = from + openerEnd + 1 + (raw[openerEnd + 1] === '\n' ? 1 : 0);
+  const bodyEnd = from + closeAt - (closeAt > openerEnd + 2 && raw[closeAt - 1] === '\n' ? 1 : 0);
+  if (bodyStart > bodyEnd) return null;
+  const attribute = (key: string) => {
+    const attr = node.attributes.find(
+      (item) => item.type === 'mdxJsxAttribute' && item.name === key,
+    );
+    if (attr?.type !== 'mdxJsxAttribute' || typeof attr.value !== 'string') return null;
+    const a = attr.position?.start.offset;
+    const b = attr.position?.end.offset;
+    if (a === undefined || b === undefined) return null;
+    const spelling = raw.slice(a, b);
+    const quote = /=[ \t]*(["'])/.exec(spelling);
+    if (!quote) return null;
+    const valueStart = a + quote.index + quote[0].length;
+    const valueEnd = b - 1;
+    return { value: attr.value, range: [from + valueStart, from + valueEnd] as Range };
+  };
+  const title = attribute('title');
+  const type = attribute('type');
+  const props: Record<string, string | boolean> = {};
+  for (const item of node.attributes) {
+    if (item.type !== 'mdxJsxAttribute') continue;
+    if (typeof item.value === 'string') props[item.name] = item.value;
+    else if (item.value === null) props[item.name] = true;
+    else if (item.value && (item.value.value === 'true' || item.value.value === 'false')) {
+      props[item.name] = item.value.value === 'true';
+    }
+  }
+  const body = source.slice(bodyStart, bodyEnd);
+  return {
+    kind,
+    syntax: 'mdx',
+    title: title?.value ?? '',
+    calloutType: kind === 'callout' ? (type?.value ?? 'note') : undefined,
+    props,
+    body,
+    bodyRange: [bodyStart, bodyEnd],
+    bodyBoundaries: Array.from({ length: body.length + 1 }, (_, i) => bodyStart + i),
+    titleRange: title?.range ?? null,
+    typeRange: type?.range ?? null,
+    attributeInsert: from + openerEnd,
+  };
+}
+
+function mdxOpenerEnd(raw: string): number {
+  let quote: '"' | "'" | null = null;
+  let braces = 0;
+  for (let i = 0; i < raw.length; i++) {
+    const ch = raw[i];
+    if (quote) {
+      if (ch === quote && raw[i - 1] !== '\\') quote = null;
+    } else if (ch === '"' || ch === "'") quote = ch;
+    else if (ch === '{') braces++;
+    else if (ch === '}') braces = Math.max(0, braces - 1);
+    else if (ch === '>' && braces === 0) return i;
+  }
+  return -1;
+}
+
+function quotedBody(
+  source: string,
+  from: number,
+  to: number,
+): { body: string; boundaries: number[] } {
+  if (from >= to) return { body: '', boundaries: [to] };
+  let body = '';
+  const boundaries: number[] = [];
+  let at = from;
+  while (at < to) {
+    const end = source.indexOf('\n', at);
+    const stop = end < 0 || end > to ? to : end;
+    const prefix = /^ {0,3}> ?/.exec(source.slice(at, stop))?.[0].length ?? 0;
+    const contentFrom = at + prefix;
+    if (boundaries.length === 0) boundaries.push(contentFrom);
+    for (let i = contentFrom; i < stop; i++) {
+      body += source[i];
+      boundaries.push(i + 1);
+    }
+    if (stop >= to) break;
+    body += '\n';
+    const nextAt = stop + 1;
+    const nextStop = source.indexOf('\n', nextAt);
+    const nextLine = source.slice(nextAt, nextStop < 0 || nextStop > to ? to : nextStop);
+    const nextPrefix = /^ {0,3}> ?/.exec(nextLine)?.[0].length ?? 0;
+    boundaries.push(nextAt + nextPrefix);
+    at = nextAt;
+  }
+  return { body, boundaries };
+}
+
 /** Replace only the source range owned by an editable widget part. */
 export function updateBlockWidget(
   source: string,
@@ -168,6 +331,52 @@ export function updateBlockWidget(
       return updateBlockWidget(source, from, to, { type: 'code-body', text: edit.text });
     }
     return replace(diagram.body, edit.text);
+  }
+  if (edit.type.startsWith('container-')) {
+    const container = containerWidgetSource(source, from, to);
+    if (!container) return null;
+    if (edit.type === 'container-body') {
+      if (container.syntax === 'mdx') {
+        if (container.bodyRange[0] === container.bodyRange[1] && edit.text) {
+          const at = container.bodyRange[0];
+          const before = source[at - 1] === '\n' ? '' : '\n';
+          return replace(container.bodyRange, `${before}${edit.text}\n`);
+        }
+        return replace(container.bodyRange, edit.text);
+      }
+      if (container.bodyRange[0] === container.bodyRange[1] && edit.text) {
+        const before = source[container.bodyRange[0] - 1] === '\n' ? '' : '\n';
+        return replace(container.bodyRange, `${before}> ${edit.text.replace(/\n/g, '\n> ')}`);
+      }
+      const changes = sourceChanges(container.body, edit.text);
+      let next = source;
+      for (const change of changes.reverse()) {
+        const rawFrom = container.bodyBoundaries[change.from];
+        const rawTo = container.bodyBoundaries[change.to];
+        if (rawFrom === undefined || rawTo === undefined) return null;
+        const insert = change.insert.replace(/\n/g, '\n> ');
+        next = next.slice(0, rawFrom) + insert + next.slice(rawTo);
+      }
+      return next;
+    }
+    const text = edit.text.replace(/[\r\n]/g, ' ');
+    const range = edit.type === 'container-title' ? container.titleRange : container.typeRange;
+    if (range) {
+      if (container.syntax === 'gfm')
+        return replace(range, edit.type === 'container-type' ? text.toUpperCase() : text);
+      const quote = source[range[0] - 1];
+      const escaped = text
+        .replace(/&/g, '&amp;')
+        .replace(quote === "'" ? /'/g : /"/g, quote === "'" ? '&#39;' : '&quot;');
+      return replace(range, escaped);
+    }
+    if (!text) return source;
+    const label = edit.type === 'container-title' ? 'title' : 'type';
+    const insertion =
+      container.syntax === 'gfm'
+        ? ` ${text}`
+        : ` ${label}="${text.replace(/&/g, '&amp;').replace(/"/g, '&quot;')}"`;
+    return replace([container.attributeInsert, container.attributeInsert], insertion);
   }
   const code = codeWidgetSource(source, from, to);
   if (!code) return null;

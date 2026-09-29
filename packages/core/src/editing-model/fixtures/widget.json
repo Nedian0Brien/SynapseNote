@@ -79,5 +79,104 @@
     "from": 0,
     "edit": { "type": "diagram-body", "text": "graph TD; B-->C" },
     "after": "```mermaid\ngraph TD; B-->C\n```"
+  },
+  {
+    "id": "gfm-callout-body",
+    "group": "widget.callout-body",
+    "rule": "3",
+    "before": "before\n\n> [!NOTE] Title\n> first **bold**\n> second\n\nafter",
+    "from": 8,
+    "edit": { "type": "container-body", "text": "first **strong**\nsecond" },
+    "after": "before\n\n> [!NOTE] Title\n> first **strong**\n> second\n\nafter"
+  },
+  {
+    "id": "gfm-callout-line-break",
+    "group": "widget.callout-body",
+    "rule": "3",
+    "before": "> [!TIP]\n> alpha beta",
+    "from": 0,
+    "edit": { "type": "container-body", "text": "alpha\nbeta" },
+    "after": "> [!TIP]\n> alpha\n> beta"
+  },
+  {
+    "id": "gfm-callout-join-lines",
+    "group": "widget.callout-body",
+    "rule": "3",
+    "before": "> [!TIP]\n> alpha\n> beta",
+    "from": 0,
+    "edit": { "type": "container-body", "text": "alphabeta" },
+    "after": "> [!TIP]\n> alphabeta"
+  },
+  {
+    "id": "gfm-callout-title",
+    "group": "widget.callout-attribute",
+    "rule": "3",
+    "before": "> [!NOTE] Old title\n> body",
+    "from": 0,
+    "edit": { "type": "container-title", "text": "New title" },
+    "after": "> [!NOTE] New title\n> body"
+  },
+  {
+    "id": "gfm-callout-type",
+    "group": "widget.callout-attribute",
+    "rule": "3",
+    "before": "> [!NOTE] Title\n> body",
+    "from": 0,
+    "edit": { "type": "container-type", "text": "warning" },
+    "after": "> [!WARNING] Title\n> body"
+  },
+  {
+    "id": "gfm-callout-empty-body",
+    "group": "widget.callout-body",
+    "rule": "3",
+    "before": "> [!NOTE]",
+    "from": 0,
+    "edit": { "type": "container-body", "text": "new" },
+    "after": "> [!NOTE]\n> new"
+  },
+  {
+    "id": "mdx-callout-body",
+    "group": "widget.callout-body",
+    "rule": "3",
+    "before": "<Callout type=\"warning\" title=\"Heads up\">\nold **bold**\n</Callout>",
+    "from": 0,
+    "edit": { "type": "container-body", "text": "new **bold**" },
+    "after": "<Callout type=\"warning\" title=\"Heads up\">\nnew **bold**\n</Callout>"
+  },
+  {
+    "id": "mdx-callout-title",
+    "group": "widget.callout-attribute",
+    "rule": "3",
+    "before": "<Callout type=\"note\" title=\"Old\">\nbody\n</Callout>",
+    "from": 0,
+    "edit": { "type": "container-title", "text": "New" },
+    "after": "<Callout type=\"note\" title=\"New\">\nbody\n</Callout>"
+  },
+  {
+    "id": "mdx-callout-add-title",
+    "group": "widget.callout-attribute",
+    "rule": "3",
+    "before": "<Callout type=\"note\">\nbody\n</Callout>",
+    "from": 0,
+    "edit": { "type": "container-title", "text": "Added" },
+    "after": "<Callout type=\"note\" title=\"Added\">\nbody\n</Callout>"
+  },
+  {
+    "id": "mdx-accordion-body",
+    "group": "widget.accordion-body",
+    "rule": "3",
+    "before": "<Accordion title=\"Details\">\nold\n</Accordion>",
+    "from": 0,
+    "edit": { "type": "container-body", "text": "new" },
+    "after": "<Accordion title=\"Details\">\nnew\n</Accordion>"
+  },
+  {
+    "id": "mdx-accordion-title",
+    "group": "widget.accordion-attribute",
+    "rule": "3",
+    "before": "<Accordion title=\"Details\">\nbody\n</Accordion>",
+    "from": 0,
+    "edit": { "type": "container-title", "text": "More" },
+    "after": "<Accordion title=\"More\">\nbody\n</Accordion>"
   }
 ]
