@@ -3,8 +3,8 @@
 작성 2026-09-29. 다음 세션의 에이전트가 이 문서만 읽고 작업을 이어받을 수 있게 쓴다.
 
 웹 앱에 Markdown 원문(`Y.Text('source')`)을 CodeMirror 6로 직접 편집하면서 기호를 숨기는 `live` 편집 모드가
-생겼다. 편집 규칙은 core의 순수 함수이고, 네이티브 앱도 같은 명세와 fixture를 쓴다. P0~P2(뼈대)와 P2c(기존
-편집기 동작 옮기기)가 끝났고, 브랜치는 푸시했지만 main에 병합하지 않았다. 사용자가 P2c를 확인하는 중이다.
+생겼다. 편집 규칙은 core의 순수 함수이고, 네이티브 앱도 같은 명세와 fixture를 쓴다. P0~P2(뼈대), P2c(기존
+편집기 동작 옮기기), P3a(코드 울타리·표 위젯)가 끝났다. P3의 나머지 블록은 진행 전이다.
 
 ## 1. 사용자가 정한 것
 
@@ -33,13 +33,26 @@
 ## 2. 작업 위치와 상태
 
 - **브랜치·워크트리:** `codex/web-source-editor`, `.worktree/web-source-editor`
-  - 최신 커밋 `c3a7a142`, origin에 푸시됨. PR은 아직 없다.
+  - P3a 구현 커밋은 이후 `git log -1`로 확인한다. PR은 아직 없다.
   - main에는 사용자가 끝났다고 명시적으로 확인한 뒤에만 병합한다.
 - **아티팩트:** `.intent/intent_web-source-editor.md`(수락됨), `spec_web-source-editor.md`(R1~R10, 단계 P0~P6),
   `plan_web-source-editor-p0.md` `-p1.md` `-p2.md` `-p2c.md`. 계획 파일 끝에 단계별 결과가 있다.
 - **변경 기록:** `.changeset/live-editor-mode.md`가 이미 있다. P3 이후 사용자에게 보이는 동작이 크게 바뀌면 문구를 고친다.
 - **확인 대기:** 사용자는 P2c 결과(블록 기호 전환, Backspace 되돌리기, Tab, 단축키)를 아직 확인하지 않았다. 새 세션은
   사용자의 확인 결과나 다음 지시부터 받는다.
+
+### P3a 추가 (2026-09-29)
+
+- `.intent/plan_web-source-editor-p3a.md`에 범위와 검증 결과를 적었다.
+- `packages/core/src/editing-model/block-widget.ts`가 코드 언어·본문과 표 칸의 원문 범위를 계산하고 해당 범위만 고친다.
+  `fixtures/widget.json`으로 원문 충실도 사례를 공유한다.
+- `packages/app/src/editor/live/block-widgets.ts`가 코드·표를 CodeMirror 블록 위젯으로 그린다. 표 칸은 같은 `live`
+  확장을 쓰는 작은 CodeMirror 편집기다. 원격 변경이 와도 활성 칸의 DOM을 유지한다.
+- 코드 울타리와 표 정렬선은 화면에서 숨고, 칸의 Markdown 서식도 숨긴다. `|` 입력은 `\|`로 저장한다.
+- P3a 브라우저 확인 문서: `http://localhost:5183/#/p3a-widget-review-1790688703232` (기존 임시 콘텐츠 폴더가
+  살아 있는 동안만 접근 가능). 코드 본문과 표 칸 편집 후 새로고침해 저장을 확인했다.
+- 뒤에 남은 P3: 들여쓴 코드, 수식, Mermaid, 콜아웃·아코디언, 이미지·파일 임베드, MDX, 인라인 데이터베이스,
+  frontmatter. P2c 사용자 확인도 아직 별도로 받지 않았다.
 
 ## 3. 끝난 단계
 
@@ -51,6 +64,7 @@
 | P2b | `20b63281` | 앱 `live` 모드: `packages/app/src/editor/live/live-extension.ts`, `styles/editor/live-mode.css`, 모드 전환 |
 | — | `68040e03` | 줄 첫머리 블록 기호는 스페이스·Enter에서 블록이 된다 |
 | P2c | `ce0ef92f` | 기존 편집기 동작 이식(아래), 번호 목록 표시 번호, 블록 안 원문 편집, 레이아웃 캐시 |
+| P3a | 구현 커밋은 `git log -1` | 코드 울타리·표의 편집 가능한 블록 위젯과 범위별 원문 변경 |
 
 P2c에서 옮긴 동작은 다음과 같다. 각 동작의 근거 파일은 `plan_web-source-editor-p2c.md`에 있다.
 
@@ -83,8 +97,8 @@ P2c에서 옮긴 동작은 다음과 같다. 각 동작의 근거 파일은 `pla
    - 다음 할 일: `use-document-stats` 문제(5절)를 비켜서 브라우저에서 다시 재고, 장식 반영과 React 처리를 나눠 잰다.
 4. **P3 블록 위젯.** 대상: 코드 블록, 표(칸 단위), 수식, Mermaid, 콜아웃·아코디언, 이미지·파일 임베드, MDX 컴포넌트,
    인라인 데이터베이스, frontmatter.
-   - 지금은 블록이 원문 그대로 보인다. 블록 안에서는 `edit.ts`의 `editBlockSource`가 원문을 그대로 편집한다.
-   - 위젯을 그리면 이 경로를 위젯 편집으로 바꾼다. 위젯의 속성 변경은 원문의 해당 바이트만 바꾼다.
+   - 코드 울타리와 표는 P3a에서 위젯으로 옮겼다. 들여쓴 코드와 나머지 블록은 아직 원문 그대로 보인다.
+   - 남은 위젯을 그리면 `editBlockSource`의 원문 편집 경로를 해당 위젯 편집으로 바꾼다. 속성 변경은 해당 원문 범위만 바꾼다.
 5. **P4 기능 이전.**
    - 슬래시 메뉴, 도구 막대, 찾기.
    - 메모: 원문 앵커로 바꾸고, 기존 `wysiwyg` 앵커를 변환한다.
@@ -142,9 +156,11 @@ main에도 있는 문제다. 작업 칩 두 개를 사용자에게 제안해 두
   - `incremental-layout.ts`, `window.ts`: 블록 단위 증분 레이아웃과 커서 주변 창 편집. `undo`는 창 좌표와 문서 좌표
     사이에서 옮긴다.
   - `changes.ts`: `sourceChanges`는 편집 결과를 코드 포인트 경계의 최소 변경으로 바꾼다.
+  - `block-widget.ts`: 코드 언어·본문과 표 칸의 원문 범위, 해당 범위만 바꾸는 위젯 편집 규칙.
 - **app**
   - `packages/app/src/editor/live/live-extension.ts`: 레이아웃 StateField, 커서 의도 필드(`side`·`pending`·`undo`),
     keymap, inputHandler(IME 조합 중에는 건너뜀), 붙여넣기·복사, 장식과 위젯.
+  - `packages/app/src/editor/live/block-widgets.ts`: 코드·표 블록 위젯, 표 칸 안의 작은 live 편집기.
   - `SourceEditor.tsx`: `variant` Compartment로 source와 live를 바꾼다.
   - `use-editor-mode.ts`: 모드는 `'wysiwyg' | 'source' | 'live'`이고 localStorage 키는 `ok-editor-mode-v1`다.
 
@@ -155,7 +171,9 @@ bun run test:file -- $(ls packages/core/src/editing-model/*.test.ts)
 bun run test:file -- packages/app/src/editor/live/live-extension.dom.test.tsx
 ```
 
-- 지금 결과: core 158개 통과(무작위 편집 2,840건 실패 0, 5,008줄 창 편집 p50 3.4ms / p95 5.0ms). live DOM 108개 통과.
+- P2c 결과: core 158개 통과(무작위 편집 2,840건 실패 0, 5,008줄 창 편집 p50 3.4ms / p95 5.0ms). live DOM 108개 통과.
+- P3a 추가 검증: core 블록 범위·fixture 테스트 16개와 live DOM 113개 통과. core·app 타입 검사 통과. 브라우저에서
+  코드 본문·표 칸 수정 후 새로고침해 저장을 확인했다.
 - **DOM 테스트:** edit fixture를 실제 EditorView의 inputHandler와 keymap으로 재생한다. 키 이벤트는 브라우저처럼
   보낸다(Shift는 글자를 대문자로 바꾸고 `keyCode`를 넣는다). 이렇게 하지 않으면 Cmd+Shift+B가 Cmd+B로 잡힌다.
 - **새 동작을 넣는 순서:** SPEC.md 문구 → `edit.json` fixture → `edit.ts` → 앱 keymap → DOM 테스트 대응표.

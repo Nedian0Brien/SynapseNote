@@ -2,4 +2,4 @@
 '@nedian0brien/synapsenote': patch
 ---
 
-Add a Live editor mode that edits the Markdown source directly while hiding its syntax: headings, emphasis, links, lists, checkboxes, and quotes render in place, and typing, deleting, Enter, Tab, and formatting shortcuts follow the same editing rules as the visual editor.
+Add a Live editor mode that edits the Markdown source directly while hiding its syntax: headings, emphasis, links, lists, checkboxes, and quotes render in place, and typing, deleting, Enter, Tab, and formatting shortcuts follow the same editing rules as the visual editor. Fenced code blocks and tables render as editable widgets; code language, code body, and table cells update their own source spans.

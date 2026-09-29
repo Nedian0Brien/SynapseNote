@@ -6,8 +6,8 @@
  * comes from the core parser through `IncrementalLayout`; typing, keys,
  * formatting shortcuts, paste and copy go through the core editing model
  * (`applyActionsInWindow`), whose result is sent back as minimal changes.
- * Blocks (tables, code, math, components) still show their source until
- * their widgets land.
+ * Code fences and tables use editable block widgets. Remaining block types
+ * keep their source until their P3 widgets land.
  */
 
 import { type Extension, Prec, RangeSet, StateEffect, StateField } from '@codemirror/state';
@@ -32,6 +32,7 @@ import {
 } from '@nedian0brien/synapsenote-core';
 import { isMarkdown } from '../clipboard/is-markdown';
 import { pasteShiftHeld } from '../clipboard/shift-tracker';
+import { CodeBlockWidget, TableBlockWidget } from './block-widgets';
 
 // ── state ───────────────────────────────────────────────────────────────────
 
@@ -62,6 +63,47 @@ const cursorIntentField = StateField.define<CursorIntent>({
     return value;
   },
 });
+
+/** Block replacements must be a direct decoration source so they can span lines. */
+const blockWidgetField = StateField.define<DecorationSet>({
+  create: (state) => blockDecorations(state.field(layoutField), state.doc.toString()),
+  update(value, tr) {
+    return tr.docChanged
+      ? blockDecorations(tr.state.field(layoutField), tr.newDoc.toString())
+      : value;
+  },
+  provide: (field) => [
+    EditorView.decorations.from(field),
+    EditorView.atomicRanges.of((view) => view.state.field(field)),
+  ],
+});
+
+function blockDecorations(layout: IncrementalLayout, source: string): DecorationSet {
+  const ranges: { from: number; to: number; deco: Decoration }[] = [];
+  for (const block of layout.blocks) {
+    for (const widget of block.layout.widgets) {
+      if (widget.kind !== 'block') continue;
+      const raw = source.slice(widget.from, widget.to);
+      const inner =
+        widget.node === 'table'
+          ? new TableBlockWidget(raw, widget.from, widget.to, createLiveExtension)
+          : widget.node === 'code' && /^ {0,3}(?:`{3,}|~{3,})/.test(raw)
+            ? new CodeBlockWidget(raw, widget.from, widget.to)
+            : null;
+      if (inner) {
+        ranges.push({
+          from: widget.from,
+          to: widget.to,
+          deco: Decoration.replace({ block: true, widget: inner }),
+        });
+      }
+    }
+  }
+  return Decoration.set(
+    ranges.map((range) => range.deco.range(range.from, range.to)),
+    true,
+  );
+}
 
 // ── running the editing model ───────────────────────────────────────────────
 
@@ -371,6 +413,7 @@ const livePlugin = ViewPlugin.fromClass(
 export function createLiveExtension(): Extension {
   return [
     layoutField,
+    blockWidgetField,
     cursorIntentField,
     livePlugin,
     Prec.highest([liveKeymap, liveInput, liveClipboard]),

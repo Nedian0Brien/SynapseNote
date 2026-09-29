@@ -3,15 +3,23 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { sharedExtensions } from '../extensions/shared.ts';
 import { MarkdownManager } from '../markdown/index.ts';
-import { editFixtures, hideFixtures, parseCursor, parseMarked } from './fixtures.ts';
+import {
+  editFixtures,
+  hideFixtures,
+  parseCursor,
+  parseMarked,
+  widgetFixtures,
+} from './fixtures.ts';
 
 const md = new MarkdownManager({ extensions: sharedExtensions });
 const spec = readFileSync(join(import.meta.dir, 'SPEC.md'), 'utf8');
 /** Fixture ids the spec cites, e.g. `(edit.enter-list, edit.enter-list-empty)`; `x.y-*` is a prefix. */
 const specIds = [
-  ...new Set([...spec.matchAll(/\b((?:hide|edit)\.(?!json\b)[a-z0-9-]+\*?)/g)].map((m) => m[1])),
+  ...new Set(
+    [...spec.matchAll(/\b((?:hide|edit|widget)\.(?!json\b)[a-z0-9-]+\*?)/g)].map((m) => m[1]),
+  ),
 ];
-const all = [...hideFixtures, ...editFixtures];
+const all = [...hideFixtures, ...editFixtures, ...widgetFixtures];
 
 describe('editing-model fixtures', () => {
   test('ids are unique', () => {
@@ -49,6 +57,15 @@ describe('editing-model fixtures', () => {
       const before = parseCursor(f.before);
       expect(() => md.parse(before.source)).not.toThrow();
       if (f.after !== undefined) expect(() => md.parse(parseCursor(f.after).source)).not.toThrow();
+    }
+  });
+
+  test('widget fixtures point to parsed blocks', () => {
+    for (const f of widgetFixtures) {
+      const block = md
+        .parseToMdast(f.before)
+        .children.find((node) => node.position?.start.offset === f.from);
+      expect(block).toBeDefined();
     }
   });
 

@@ -140,3 +140,73 @@ describe('live editor — edit.json through CodeMirror', () => {
     expect(view.contentDOM.textContent).toBe('a bold b');
   });
 });
+
+describe('live editor block widgets', () => {
+  test('code fence is hidden and body and language edit only their source spans', () => {
+    const view = mount('before\n\n```js title=x\nold\n```\n\nafter', 0, 0);
+    const widget = view.dom.querySelector('.cm-live-code-block');
+    expect(widget).not.toBeNull();
+    const language = widget?.querySelector<HTMLInputElement>('.cm-live-code-language');
+    const body = widget?.querySelector<HTMLTextAreaElement>('.cm-live-code-body');
+    expect(language?.value).toBe('js');
+    expect(body?.value).toBe('old');
+    expect(widget?.textContent).not.toContain('```');
+    if (!language || !body) throw new Error('Code widget inputs missing');
+    language.value = 'ts';
+    language.dispatchEvent(new Event('input', { bubbles: true }));
+    body.value = 'new';
+    body.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(view.state.doc.toString()).toBe('before\n\n```ts title=x\nnew\n```\n\nafter');
+  });
+
+  test('table cells use live syntax hiding and write only the edited cell', () => {
+    const view = mount('| **a** | b |\n| --- | --- |\n| x | y |', 0, 0);
+    const editors = view.dom.querySelectorAll<HTMLElement>('.cm-live-table-cell .cm-editor');
+    expect(editors.length).toBe(4);
+    expect(editors[0]?.textContent).toBe('a');
+    expect(view.dom.querySelector('.cm-live-table')?.textContent).not.toContain('---');
+    if (!editors[2]) throw new Error('Table body cell missing');
+    const cell = EditorView.findFromDOM(editors[2]);
+    expect(cell).not.toBeNull();
+    if (!cell) throw new Error('Table body editor missing');
+    cell.dispatch({ selection: { anchor: cell.state.doc.length } });
+    type(cell, 'z');
+    expect(view.state.doc.toString()).toBe('| **a** | b |\n| --- | --- |\n| xz | y |');
+    expect(view.dom.querySelectorAll('.cm-live-table-cell .cm-editor').length).toBe(4);
+  });
+
+  test('remote cell changes update the active cell without replacing its editor DOM', () => {
+    const view = mount('| a | b |\n| --- | --- |\n| x | y |', 0, 0);
+    const element = view.dom.querySelectorAll<HTMLElement>('.cm-live-table-cell .cm-editor')[2];
+    if (!element) throw new Error('Table body cell missing');
+    const cell = EditorView.findFromDOM(element);
+    if (!cell) throw new Error('Table body editor missing');
+    cell.focus();
+    const from = view.state.doc.toString().indexOf('x');
+    view.dispatch({ changes: { from, to: from + 1, insert: 'remote' } });
+    expect(view.dom.querySelectorAll('.cm-live-table-cell .cm-editor')[2]).toBe(element);
+    expect(cell.state.doc.toString()).toBe('remote');
+  });
+
+  test('an empty table cell escapes a typed pipe without exposing the escape', () => {
+    const view = mount('| a | b |\n| --- | --- |\n|  | y |', 0, 0);
+    const element = view.dom.querySelectorAll<HTMLElement>('.cm-live-table-cell .cm-editor')[2];
+    if (!element) throw new Error('Empty table cell missing');
+    const cell = EditorView.findFromDOM(element);
+    if (!cell) throw new Error('Empty table editor missing');
+    type(cell, 'a|b');
+    expect(view.state.doc.toString()).toBe('| a | b |\n| --- | --- |\n|  a\\|b| y |');
+    expect(cell.contentDOM.textContent).toBe('a|b');
+  });
+
+  test('remote code changes keep the active body input', () => {
+    const view = mount('```js\nold\n```', 0, 0);
+    const body = view.dom.querySelector<HTMLTextAreaElement>('.cm-live-code-body');
+    if (!body) throw new Error('Code body missing');
+    body.focus();
+    view.dispatch({ changes: { from: 6, to: 9, insert: 'remote' } });
+    expect(view.dom.querySelector('.cm-live-code-body')).toBe(body);
+    expect(body.value).toBe('remote');
+    expect(document.activeElement).toBe(body);
+  });
+});

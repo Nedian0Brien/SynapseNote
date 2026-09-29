@@ -1,0 +1,56 @@
+[
+  {
+    "id": "code-body-byte-range",
+    "group": "widget.code-body",
+    "rule": "3",
+    "before": "before\n\n```js title=x\nold\n```\n\nafter",
+    "from": 8,
+    "edit": { "type": "code-body", "text": "new" },
+    "after": "before\n\n```js title=x\nnew\n```\n\nafter"
+  },
+  {
+    "id": "code-language-byte-range",
+    "group": "widget.code-language",
+    "rule": "3",
+    "before": "```js title=x\nold\n```",
+    "from": 0,
+    "edit": { "type": "code-language", "text": "ts" },
+    "after": "```ts title=x\nold\n```"
+  },
+  {
+    "id": "code-body-fence-content",
+    "group": "widget.code-body",
+    "rule": "3",
+    "before": "```js\nold\n```",
+    "from": 0,
+    "edit": { "type": "code-body", "text": "new\n```\nend" },
+    "after": "````js\nnew\n```\nend\n````"
+  },
+  {
+    "id": "table-cell-byte-range",
+    "group": "widget.table-cell",
+    "rule": "3",
+    "before": "| a | b |\n| --- | :--- |\n| **x** | y |",
+    "from": 0,
+    "edit": { "type": "table-cell", "row": 1, "column": 0, "text": "**z**" },
+    "after": "| a | b |\n| --- | :--- |\n| **z** | y |"
+  },
+  {
+    "id": "code-body-indented-closing-fence",
+    "group": "widget.code-body",
+    "rule": "3",
+    "before": "```js\nold\n  ```",
+    "from": 0,
+    "edit": { "type": "code-body", "text": "new\n```\nend" },
+    "after": "````js\nnew\n```\nend\n  ````"
+  },
+  {
+    "id": "table-cell-escape-pipe",
+    "group": "widget.table-cell",
+    "rule": "3",
+    "before": "| a | b |\n| --- | --- |\n|  | y |",
+    "from": 0,
+    "edit": { "type": "table-cell", "row": 1, "column": 0, "text": "a|b" },
+    "after": "| a | b |\n| --- | --- |\n|  a\\|b| y |"
+  }
+]

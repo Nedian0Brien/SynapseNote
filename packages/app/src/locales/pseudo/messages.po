@@ -2160,6 +2160,10 @@ msgstr ""
 msgid "Close terminal"
 msgstr ""
 
+#: src/editor/live/block-widgets.ts
+msgid "Code"
+msgstr ""
+
 #: src/lib/keyboard-shortcuts.ts
 msgid "Code block"
 msgstr ""
@@ -2189,6 +2193,10 @@ msgstr ""
 
 #: src/components/AuthModal.tsx
 msgid "Code expired — please try again"
+msgstr ""
+
+#: src/editor/live/block-widgets.ts
+msgid "Code language"
 msgstr ""
 
 #: src/components/chat/CliChatPanel.tsx

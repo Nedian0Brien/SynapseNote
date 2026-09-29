@@ -42,6 +42,11 @@ SynapseNote의 편집기는 Markdown 원문(`Y.Text('source')`)을 직접 편집
 | 이미지 | `![대체](src)` `![[a.png]]` | 전체 | 이미지(위젯) | hide.image |
 | 블록 | 표, 코드 블록, 수식, Mermaid, 콜아웃, 아코디언, MDX 컴포넌트, 인라인 데이터베이스, 수평선, HTML 블록, 링크 참조 정의, 각주 정의, frontmatter | 전체 | 블록 위젯 | hide.block-* |
 
+코드 블록 위젯은 울타리와 언어·메타데이터를 본문과 분리해 보여 준다. 본문과 언어를 고치면 각각 해당 원문 범위만
+바꾼다. 본문에 닫는 울타리와 같은 줄이 생기면 두 울타리를 함께 늘린다. (widget.code-body, widget.code-language)
+표 위젯은 각 칸을 따로 편집한다. 칸을 고쳐도 주변 공백·파이프·정렬선·다른 칸의 원문은 그대로 둔다. 칸 안의
+파이프는 이스케이프하고 줄바꿈은 공백으로 바꾼다. (widget.table-cell)
+
 - 문단 안의 한 줄 바꿈(soft break)은 줄바꿈으로 보인다. 원문의 줄 구조를 그대로 보이기 위해서다. (hide.soft-break)
 - 블록 사이의 빈 줄은 빈 줄로 보이고, 커서가 놓일 수 있다. (hide.blank-lines)
 - 구문이 완성되지 않은 기호(닫히지 않은 `**`, 짝이 없는 `[`)는 글자로 보인다. 원문 그대로다. (hide.unclosed)
@@ -167,6 +172,9 @@ id가 `*`로 끝나면 그 접두어로 시작하는 group을 모두 가리킨�
 `fixtures/edit.json`: `{ id, group, rule, before, actions, after | clipboard | ui }`. `before`·`after`는 원문이고, 커서는
 `│`, 선택은 `⟪` `⟫`로 표시한다. 커서가 경계 위치에 있으면 어느 쪽 원문 오프셋으로 적든 같은 위치다(4절이 정한 쪽으로
 정규화한다). `actions`는 차례로 적용하는 동작의 목록이다.
+
+`fixtures/widget.json`: `{ id, group, rule, before, from, edit, after }`. `from`은 블록 시작 오프셋이고,
+`edit`는 `code-body`·`code-language`·`table-cell` 중 하나다. 결과는 바뀐 원문 전체로 비교한다.
 
 - `{ "type": "text", "text": "…" }`: 글자를 하나씩 친다.
 - `{ "type": "key", "key": "Backspace" | "Delete" | "Enter" | "Shift-Enter" | "Tab" | "Shift-Tab" | "ArrowRight" |

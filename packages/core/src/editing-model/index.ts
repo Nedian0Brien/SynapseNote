@@ -1,3 +1,12 @@
+export {
+  type BlockWidgetEdit,
+  type CodeWidgetSource,
+  codeWidgetSource,
+  type TableCellSource,
+  type TableWidgetSource,
+  tableWidgetSource,
+  updateBlockWidget,
+} from './block-widget.ts';
 export { type SourceChange, sourceChanges } from './changes.ts';
 export {
   applyAction,
@@ -17,6 +26,8 @@ export {
   hideFixtures,
   parseCursor,
   parseMarked,
+  type WidgetFixture,
+  widgetFixtures,
 } from './fixtures.ts';
 export { IncrementalLayout, type IncrementalLayoutStats } from './incremental-layout.ts';
 export {

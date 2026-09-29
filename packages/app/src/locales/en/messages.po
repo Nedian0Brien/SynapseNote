@@ -2165,6 +2165,10 @@ msgstr "Close tabs to the right"
 msgid "Close terminal"
 msgstr "Close terminal"
 
+#: src/editor/live/block-widgets.ts
+msgid "Code"
+msgstr "Code"
+
 #: src/lib/keyboard-shortcuts.ts
 msgid "Code block"
 msgstr "Code block"
@@ -2195,6 +2199,10 @@ msgstr "Code copied to clipboard"
 #: src/components/AuthModal.tsx
 msgid "Code expired — please try again"
 msgstr "Code expired — please try again"
+
+#: src/editor/live/block-widgets.ts
+msgid "Code language"
+msgstr "Code language"
 
 #: src/components/chat/CliChatPanel.tsx
 #: src/components/TerminalSessionsHost.tsx

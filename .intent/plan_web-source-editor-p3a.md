@@ -2,7 +2,7 @@
 title: P3a 코드 블록과 표 위젯
 slug: web-source-editor
 stage: plan
-status: active
+status: implemented
 intent: .intent/intent_web-source-editor.md
 spec: .intent/spec_web-source-editor.md
 date: 2026-09-29
@@ -24,3 +24,10 @@ P3를 코드 블록과 표부터 옮긴다. 두 블록은 원문 기호를 숨�
 - core의 새 범위 테스트와 `live-extension.dom.test.tsx`만 실행한다.
 - 코드 본문·언어, 표의 한 칸을 수정한 뒤 다른 원문 바이트가 그대로인지 검사한다.
 - P3의 나머지 블록은 다음 세부 단계에서 구현한다.
+
+## 결과 (2026-09-29)
+
+- 코드 울타리를 숨기고 언어·본문 입력을 분리했다. 본문에 닫는 울타리 줄을 넣으면 양쪽 울타리를 늘린다.
+- 표는 칸마다 같은 `live` 편집 규칙을 쓰며, 고친 칸의 원문 범위만 바꾼다. 이스케이프된 파이프를 칸 경계로 잘못 읽는 문제를 DOM 테스트에서 발견해 수정했다.
+- core 범위·fixture 테스트 16개, app live DOM 테스트 113개 통과. core와 app 타입 검사 통과. 브라우저에서 코드·표를 편집하고 새로고침 뒤 원문 유지까지 확인했다.
+- 다음 P3 세부 단계는 수식·Mermaid·콜아웃·아코디언·임베드·MDX·데이터베이스·frontmatter다. 들여쓴 코드 블록도 아직 원문으로 보인다.

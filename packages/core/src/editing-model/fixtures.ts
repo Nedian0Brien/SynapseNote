@@ -5,8 +5,11 @@
  * `hide.json` pins what the screen shows for a source; `edit.json` pins the
  * source a user action produces.
  */
+
+import type { BlockWidgetEdit } from './block-widget.ts';
 import editCases from './fixtures/edit.json';
 import hideCases from './fixtures/hide.json';
+import widgetCases from './fixtures/widget.json';
 
 export interface HideFixture {
   id: string;
@@ -63,8 +66,20 @@ export interface EditFixture {
   ui?: string;
 }
 
+export interface WidgetFixture {
+  id: string;
+  group: string;
+  rule: string;
+  before: string;
+  /** Start of the block widget in `before`. */
+  from: number;
+  edit: BlockWidgetEdit;
+  after: string;
+}
+
 export const hideFixtures = hideCases as HideFixture[];
 export const editFixtures = editCases as EditFixture[];
+export const widgetFixtures = widgetCases as WidgetFixture[];
 
 export interface MarkedSource {
   source: string;
