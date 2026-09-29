@@ -6,6 +6,7 @@ import {
   type BlockWidgetEdit,
   codeWidgetSource,
   indentedCodeWidgetSource,
+  type MediaWidgetSource,
   sourceChanges,
   type TableWidgetSource,
   tableWidgetSource,
@@ -21,9 +22,10 @@ export function writeWidget(
   view: EditorView,
   position: WidgetPosition,
   edit: BlockWidgetEdit,
+  mediaModel?: MediaWidgetSource,
 ): void {
   const source = view.state.doc.toString();
-  const updated = updateBlockWidget(source, position.from, position.to, edit);
+  const updated = updateBlockWidget(source, position.from, position.to, edit, mediaModel);
   if (updated === null || updated === source) return;
   view.dispatch({ changes: sourceChanges(source, updated), userEvent: 'input.widget' });
 }

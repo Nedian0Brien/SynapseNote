@@ -2,7 +2,7 @@
 title: P3j 참조 이미지와 정의 위젯
 slug: web-source-editor
 stage: plan
-status: active
+status: implemented
 intent: .intent/intent_web-source-editor.md
 spec: .intent/spec_web-source-editor.md
 date: 2026-09-30
@@ -19,3 +19,10 @@ date: 2026-09-30
 - 세 참조 형태, 중복 정의의 첫 항목 우선, 주변 원문 보존, 정의 변경 후 이미지 갱신 fixture를 확인한다.
 - 앱 DOM에서 이미지·정의 위젯과 범위별 편집을 확인한다.
 - core·app 타입 검사, 변경 파일 Biome 검사, 실제 브라우저 이미지 표시·저장을 확인한다.
+
+## 결과
+
+- 세 참조 형태와 정의의 첫 항목을 해석하고, 이미지·정의 위젯에서 공유 URL을 원문 범위별로 고친다. 축약·단축 참조의 대체 텍스트를 고치면 원래 정의 ID를 명시형으로 남긴다.
+- 정의 색인은 `IncrementalLayout`의 정의 블록에서 지연 생성한다. 일반 본문 편집은 증분 경로를 유지하고 정의 변경은 기존 전체 재파싱 규칙을 따른다. 이미지 입력은 현재 모델을 전달해 매 글자마다 문서 전체를 다시 파싱하지 않는다.
+- 브라우저 확인 문서 `http://localhost:5183/#/notes/p3j-reference-review-1790696100000`에서 세 이미지가 2736px 자산을 표시했다. 정의 URL·축약 참조 대체 텍스트 편집 후 저장·새로고침을 확인했고 페이지 오류는 없었다. 이미지 속성 입력 중 포커스 이탈을 발견해 복구했다.
+- core 위젯·fixture·증분 레이아웃 65개, 앱 live DOM 125개 테스트와 core·app 타입 검사가 통과했다.

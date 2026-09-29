@@ -23,6 +23,10 @@ import {
   mergeLayouts,
   type Range,
 } from './layout.ts';
+import {
+  type ReferenceDefinitionSource,
+  referenceDefinitionsFromBlocks,
+} from './reference-definition.ts';
 
 const DEFINITION_LINE = /^ {0,3}\[\^?[^\]\n]+\]:/m;
 const MAX_WIDENINGS = 4;
@@ -37,6 +41,7 @@ export class IncrementalLayout {
   #frontmatter: Range | null = null;
   #blocks: BlockLayout[] = [];
   #merged: Layout | null = null;
+  #references: ReadonlyMap<string, ReferenceDefinitionSource> | null = null;
   readonly stats: IncrementalLayoutStats = { incremental: 0, full: 0 };
 
   constructor(
@@ -57,6 +62,11 @@ export class IncrementalLayout {
 
   get frontmatter(): Range | null {
     return this.#frontmatter;
+  }
+
+  get references(): ReadonlyMap<string, ReferenceDefinitionSource> {
+    this.#references ??= referenceDefinitionsFromBlocks(this.#source, this.#blocks);
+    return this.#references;
   }
 
   /** The whole document's layout (built lazily; prefer `blocks` for ranges). */
@@ -91,6 +101,7 @@ export class IncrementalLayout {
         this.markdown,
       ) ?? [];
     this.#merged = null;
+    this.#references = null;
   }
 
   #incremental(next: string): boolean {
@@ -161,6 +172,7 @@ export class IncrementalLayout {
         this.#source = next;
         this.#frontmatter = fm;
         this.#merged = null;
+        this.#references = null;
         return true;
       }
       if (!leadingOk) {

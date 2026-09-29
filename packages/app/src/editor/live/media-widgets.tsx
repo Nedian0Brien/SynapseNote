@@ -70,6 +70,7 @@ abstract class MediaWidget extends WidgetType {
     readonly to: number,
     readonly context: MediaContext,
     readonly inline: boolean,
+    readonly resolved?: MediaWidgetSource,
   ) {
     super();
   }
@@ -79,7 +80,11 @@ abstract class MediaWidget extends WidgetType {
       this.source === other.source &&
       this.from === other.from &&
       this.to === other.to &&
-      this.context === other.context
+      this.context === other.context &&
+      this.resolved?.src === other.resolved?.src &&
+      this.resolved?.srcRange?.[0] === other.resolved?.srcRange?.[0] &&
+      this.resolved?.srcRange?.[1] === other.resolved?.srcRange?.[1] &&
+      JSON.stringify(this.resolved?.props) === JSON.stringify(other.resolved?.props)
     );
   }
 
@@ -113,9 +118,14 @@ abstract class MediaWidget extends WidgetType {
       wrapper.append(editButton);
     }
     wrapper.append(controls);
-    const model = mediaWidgetSource(view.state.doc.toString(), this.from, this.to);
+    const model = this.resolved ?? mediaWidgetSource(view.state.doc.toString(), this.from, this.to);
     if (!model) return wrapper;
-    const sourceLabel = model.kind === 'embed' ? t`Embed URL` : t`File path or URL`;
+    const sourceLabel =
+      model.syntax === 'reference'
+        ? t`Reference target`
+        : model.kind === 'embed'
+          ? t`Embed URL`
+          : t`File path or URL`;
     const labelLabel =
       model.kind === 'image'
         ? t`Image alt text`
@@ -136,19 +146,27 @@ abstract class MediaWidget extends WidgetType {
       disposed: false,
     };
     mediaDOM.set(wrapper, state);
-    sourceInput.addEventListener('input', () =>
-      writeWidget(view, state.position, { type: 'media-src', text: sourceInput.value }),
-    );
-    labelInput.addEventListener('input', () =>
-      writeWidget(view, state.position, { type: 'media-label', text: labelInput.value }),
-    );
+    const commitInput = (input: HTMLInputElement, type: 'media-src' | 'media-label') => {
+      const focused = document.activeElement === input;
+      writeWidget(view, state.position, { type, text: input.value }, state.model);
+      // A distant reference-definition edit can make CodeMirror refocus its content.
+      if (focused) {
+        queueMicrotask(() => {
+          if (!state.disposed && input.isConnected && !controls.hidden) {
+            input.focus({ preventScroll: true });
+          }
+        });
+      }
+    };
+    sourceInput.addEventListener('input', () => commitInput(sourceInput, 'media-src'));
+    labelInput.addEventListener('input', () => commitInput(labelInput, 'media-label'));
     void renderPreview(state);
     return wrapper;
   }
 
   updateDOM(dom: HTMLElement, view: EditorView): boolean {
     const state = mediaDOM.get(dom);
-    const model = mediaWidgetSource(view.state.doc.toString(), this.from, this.to);
+    const model = this.resolved ?? mediaWidgetSource(view.state.doc.toString(), this.from, this.to);
     if (!state || !model || state.model.kind !== model.kind) return false;
     state.position = { from: this.from, to: this.to };
     const changed =
@@ -180,7 +198,13 @@ export class MediaBlockWidget extends MediaWidget {
 }
 
 export class MediaInlineWidget extends MediaWidget {
-  constructor(source: string, from: number, to: number, context: MediaContext) {
-    super(source, from, to, context, true);
+  constructor(
+    source: string,
+    from: number,
+    to: number,
+    context: MediaContext,
+    resolved?: MediaWidgetSource,
+  ) {
+    super(source, from, to, context, true, resolved);
   }
 }

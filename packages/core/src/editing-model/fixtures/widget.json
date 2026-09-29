@@ -261,6 +261,51 @@
     "after": "a ![Alt](new.png) z"
   },
   {
+    "id": "reference-image-src",
+    "group": "widget.media-src",
+    "rule": "3",
+    "before": "a ![Alt][pic] z\n\n[pic]: old.png \"Caption\"",
+    "from": 2,
+    "edit": { "type": "media-src", "text": "new.png" },
+    "after": "a ![Alt][pic] z\n\n[pic]: new.png \"Caption\""
+  },
+  {
+    "id": "reference-image-alt",
+    "group": "widget.media-label",
+    "rule": "3",
+    "before": "![Old][]\n\n[old]: image.png",
+    "from": 0,
+    "edit": { "type": "media-label", "text": "New" },
+    "after": "![New][Old]\n\n[old]: image.png"
+  },
+  {
+    "id": "reference-shortcut-alt",
+    "group": "widget.media-label",
+    "rule": "3",
+    "before": "![pic]\n\n[pic]: image.png",
+    "from": 0,
+    "edit": { "type": "media-label", "text": "Other" },
+    "after": "![Other][pic]\n\n[pic]: image.png"
+  },
+  {
+    "id": "reference-shortcut-src",
+    "group": "widget.media-src",
+    "rule": "3",
+    "before": "![pic]\n\n[pic]: old.png\n[pic]: later.png",
+    "from": 0,
+    "edit": { "type": "media-src", "text": "new.png" },
+    "after": "![pic]\n\n[pic]: new.png\n[pic]: later.png"
+  },
+  {
+    "id": "reference-definition-target",
+    "group": "widget.reference-target",
+    "rule": "3",
+    "before": "![Alt][pic]\n\n[pic]: <old%20image.png> \"Caption\"",
+    "from": 13,
+    "edit": { "type": "reference-target", "text": "new image.png" },
+    "after": "![Alt][pic]\n\n[pic]: <new%20image.png> \"Caption\""
+  },
+  {
     "id": "markdown-image-alt",
     "group": "widget.media-label",
     "rule": "3",

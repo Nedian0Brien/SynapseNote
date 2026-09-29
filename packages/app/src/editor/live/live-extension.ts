@@ -40,6 +40,7 @@ import {
   type MarkType,
   mdxWidgetSource,
   mediaWidgetSource,
+  referenceDefinitionSource,
   sourceChanges,
   type ToggleMark,
   tabsWidgetSource,
@@ -51,6 +52,7 @@ import { ContainerBlockWidget } from './container-widgets';
 import { DiagramBlockWidget } from './diagram-widgets';
 import { MdxBlockWidget } from './mdx-widgets';
 import { MediaBlockWidget, type MediaContext, MediaInlineWidget } from './media-widgets';
+import { ReferenceDefinitionWidget } from './reference-widgets';
 import { TabsBlockWidget } from './tabs-widgets';
 
 const mediaContext = Facet.define<MediaContext, MediaContext>({
@@ -147,15 +149,18 @@ function blockDecorations(
               : widget.node === 'mdxJsxFlowElement' &&
                   diagramWidgetSource(source, widget.from, widget.to)
                 ? new DiagramBlockWidget(raw, widget.from, widget.to)
-                : widget.node === 'code'
-                  ? new CodeBlockWidget(raw, widget.from, widget.to)
-                  : widget.node === 'mdxJsxFlowElement' &&
-                      tabsWidgetSource(source, widget.from, widget.to)
-                    ? new TabsBlockWidget(raw, widget.from, widget.to, context, nestedExtension)
+                : widget.node === 'definition' &&
+                    referenceDefinitionSource(source, widget.from, widget.to)
+                  ? new ReferenceDefinitionWidget(raw, widget.from, widget.to)
+                  : widget.node === 'code'
+                    ? new CodeBlockWidget(raw, widget.from, widget.to)
                     : widget.node === 'mdxJsxFlowElement' &&
-                        mdxWidgetSource(source, widget.from, widget.to)
-                      ? new MdxBlockWidget(raw, widget.from, widget.to, context, nestedExtension)
-                      : null;
+                        tabsWidgetSource(source, widget.from, widget.to)
+                      ? new TabsBlockWidget(raw, widget.from, widget.to, context, nestedExtension)
+                      : widget.node === 'mdxJsxFlowElement' &&
+                          mdxWidgetSource(source, widget.from, widget.to)
+                        ? new MdxBlockWidget(raw, widget.from, widget.to, context, nestedExtension)
+                        : null;
       if (inner) {
         ranges.push({
           from: widget.from,
@@ -415,13 +420,28 @@ function draw(view: EditorView): Drawn {
             widget: new CharacterWidget(decodeReference(doc.sliceString(w.from, w.to))),
           }),
         });
-      } else if (w.kind === 'inline' && (w.node === 'image' || w.node === 'wikiLinkEmbed')) {
+      } else if (
+        w.kind === 'inline' &&
+        (w.node === 'image' || w.node === 'wikiLinkEmbed' || w.node === 'imageReference')
+      ) {
         const raw = doc.sliceString(w.from, w.to);
-        if (mediaWidgetSource(raw, 0, raw.length)) {
+        const model =
+          w.node === 'imageReference'
+            ? mediaWidgetSource(doc.toString(), w.from, w.to, layout.references)
+            : mediaWidgetSource(raw, 0, raw.length);
+        if (model) {
           replaced.push({
             from: w.from,
             to: w.to,
-            deco: Decoration.replace({ widget: new MediaInlineWidget(raw, w.from, w.to, context) }),
+            deco: Decoration.replace({
+              widget: new MediaInlineWidget(
+                raw,
+                w.from,
+                w.to,
+                context,
+                w.node === 'imageReference' ? model : undefined,
+              ),
+            }),
           });
         }
       }

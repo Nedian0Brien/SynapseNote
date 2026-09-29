@@ -204,6 +204,16 @@
   @apply rounded-sm px-1 text-xs text-muted-foreground hover:bg-muted;
 }
 
+[data-editor-variant="live"] .cm-live-reference-definition {
+  @apply my-1 flex items-center gap-2 rounded-md border border-border bg-muted/40 px-2 py-1;
+}
+[data-editor-variant="live"] .cm-live-reference-label {
+  @apply shrink-0 font-mono text-xs text-muted-foreground;
+}
+[data-editor-variant="live"] .cm-live-reference-target {
+  @apply h-7 min-w-0 flex-1 border-0 bg-transparent font-mono text-xs outline-none;
+}
+
 [data-editor-variant="live"] .cm-live-mdx-widget {
   @apply overflow-hidden rounded-md border border-border bg-background;
 }

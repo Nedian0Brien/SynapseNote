@@ -88,4 +88,15 @@ describe('IncrementalLayout', () => {
     const at = source.indexOf('Paragraph 300') + 5;
     expect(cache.update(`${source.slice(0, at)}x${source.slice(at)}`)).toBe('incremental');
   });
+
+  test('reference definitions shift after nearby edits and refresh when their target changes', () => {
+    const source = 'intro\n\n![Alt][pic]\n\n[pic]: old.png';
+    const cache = new IncrementalLayout(source);
+    expect(cache.references.get('pic')?.url).toBe('old.png');
+    const shifted = `new ${source}`;
+    expect(cache.update(shifted)).toBe('incremental');
+    expect(shifted.slice(...(cache.references.get('pic')?.urlRange ?? [0, 0]))).toBe('old.png');
+    expect(cache.update(shifted.replace('old.png', 'new.png'))).toBe('full');
+    expect(cache.references.get('pic')?.url).toBe('new.png');
+  });
 });

@@ -368,6 +368,35 @@ describe('live editor block widgets', () => {
     expect(view.state.doc.toString()).toBe('before ![Alt](new.png) after');
   });
 
+  test('reference image and definition edit the shared target without showing syntax', async () => {
+    const view = mount('before ![Alt][pic] after\n\n[pic]: old.png "Caption"', 0, 0);
+    const image = view.dom.querySelector('.cm-live-media-inline');
+    const definition = view.dom.querySelector('.cm-live-reference-definition');
+    expect(image).not.toBeNull();
+    expect(definition).not.toBeNull();
+    expect(image?.textContent).not.toContain('![Alt][pic]');
+    expect(definition?.textContent).not.toContain('[pic]:');
+    const target = definition?.querySelector<HTMLInputElement>('.cm-live-reference-target');
+    expect(target?.value).toBe('old.png');
+    if (!target) throw new Error('Reference target missing');
+    target.value = 'new.png';
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(view.state.doc.toString()).toBe('before ![Alt][pic] after\n\n[pic]: new.png "Caption"');
+    expect(view.dom.querySelector<HTMLInputElement>('.cm-live-media-source')?.value).toBe(
+      'new.png',
+    );
+    const edit = view.dom.querySelector<HTMLButtonElement>('.cm-live-media-edit');
+    edit?.click();
+    const imageTarget = view.dom.querySelector<HTMLInputElement>('.cm-live-media-source');
+    if (!imageTarget) throw new Error('Reference image target missing');
+    imageTarget.focus();
+    imageTarget.value = 'last.png';
+    imageTarget.dispatchEvent(new Event('input', { bubbles: true }));
+    await Promise.resolve();
+    expect(document.activeElement).toBe(imageTarget);
+    expect(view.state.doc.toString()).toContain('[pic]: last.png');
+  });
+
   test('a generic MDX block registers and releases its React portal', () => {
     const source = '<DatabaseView databaseId="db_1" sourceId="ds_1" viewId="view_1" />';
     const view = mount(source, 0, 0);

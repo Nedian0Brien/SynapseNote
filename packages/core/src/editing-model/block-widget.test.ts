@@ -11,6 +11,7 @@ import {
 import { widgetFixtures } from './fixtures.ts';
 import { computeLayout } from './layout.ts';
 import { mdxWidgetSource } from './mdx-widget.ts';
+import { referenceDefinitionsFromSource } from './reference-definition.ts';
 import { tabsWidgetSource } from './tabs-widget.ts';
 
 describe('block widget source edits', () => {
@@ -98,5 +99,14 @@ describe('block widget source edits', () => {
     const expression = '<Custom onClick={() => alert(1)} title="Safe" />';
     expect(mdxWidgetSource(literal, 0, literal.length)?.props.viewOverrides).toEqual({ limit: 10 });
     expect(mdxWidgetSource(expression, 0, expression.length)?.props).toEqual({ title: 'Safe' });
+  });
+
+  test('reference images resolve the first definition and its exact URL span', () => {
+    const source = '![Alt][PIC]\n\n[pic]: <one%20image.png> "Title"\n[pic]: two.png';
+    const refs = referenceDefinitionsFromSource(source);
+    const first = refs.get('pic');
+    expect(first?.url).toBe('one%20image.png');
+    expect(source.slice(...(first?.urlRange ?? [0, 0]))).toBe('one%20image.png');
+    expect(mediaWidgetSource(source, 0, 11, refs)?.src).toBe('one%20image.png');
   });
 });

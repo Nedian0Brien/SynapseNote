@@ -6,6 +6,11 @@ import { MarkdownManager } from '../markdown/index.ts';
 import { sourceChanges } from './changes.ts';
 import type { Range } from './layout.ts';
 import { type MdxWidgetEdit, updateMdxWidget } from './mdx-widget.ts';
+import {
+  type ReferenceDefinitionSource,
+  referenceDefinitionsFromSource,
+  updateReferenceDefinition,
+} from './reference-definition.ts';
 import { type TabsWidgetEdit, updateTabsWidget } from './tabs-widget.ts';
 
 export interface CodeWidgetSource {
@@ -55,7 +60,7 @@ export interface ContainerWidgetSource {
 
 export interface MediaWidgetSource {
   kind: 'image' | 'file' | 'embed';
-  syntax: 'markdown' | 'wiki' | 'mdx';
+  syntax: 'markdown' | 'wiki' | 'mdx' | 'reference';
   nodeName: string;
   src: string;
   label: string;
@@ -63,6 +68,9 @@ export interface MediaWidgetSource {
   srcRange: Range | null;
   labelRange: Range | null;
   attributeInsert: number;
+  urlAngle?: boolean;
+  referenceForm?: 'full' | 'collapsed' | 'shortcut';
+  referenceLabel?: string;
 }
 
 export type BlockWidgetEdit =
@@ -74,6 +82,7 @@ export type BlockWidgetEdit =
   | { type: 'container-type'; text: string }
   | { type: 'media-src'; text: string }
   | { type: 'media-label'; text: string }
+  | { type: 'reference-target'; text: string }
   | MdxWidgetEdit
   | TabsWidgetEdit
   | { type: 'table-cell'; row: number; column: number; text: string };
@@ -384,6 +393,7 @@ export function mediaWidgetSource(
   source: string,
   from: number,
   to: number,
+  references?: ReadonlyMap<string, ReferenceDefinitionSource>,
 ): MediaWidgetSource | null {
   const raw = source.slice(from, to);
   if (!raw.startsWith('![') && !/^<(?:img|File|Embed)\b/.test(raw)) return null;
@@ -406,16 +416,6 @@ export function mediaWidgetSource(
     };
   }
   if (raw.startsWith('![')) {
-    const node = md().parseToMdast(raw).children[0];
-    const image =
-      node?.type === 'mdxJsxFlowElement' && node.name === 'CommonMarkImage'
-        ? node
-        : node?.type === 'paragraph' &&
-            node.children.length === 1 &&
-            node.children[0]?.type === 'image'
-          ? node.children[0]
-          : null;
-    if (!image) return null;
     let depth = 1;
     let bracket = -1;
     for (let i = 2; i < raw.length; i++) {
@@ -429,7 +429,45 @@ export function mediaWidgetSource(
         break;
       }
     }
-    if (bracket < 0 || raw[bracket + 1] !== '(') return null;
+    if (bracket < 0) return null;
+    if (raw[bracket + 1] !== '(') {
+      const suffix = raw.slice(bracket + 1);
+      const explicit = /^\[([^\]]*)\]$/.exec(suffix);
+      if (suffix && !explicit) return null;
+      const alt = raw.slice(2, bracket);
+      const identifier = (explicit?.[1] || alt)
+        .replace(/\\([[\]\\])/g, '$1')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+      const definition = (references ?? referenceDefinitionsFromSource(source)).get(identifier);
+      if (!definition) return null;
+      return {
+        kind: 'image',
+        syntax: 'reference',
+        nodeName: 'imageReference',
+        src: definition.url,
+        label: alt,
+        props: { title: definition.title ?? '' },
+        srcRange: definition.urlRange,
+        labelRange: [from + 2, from + bracket],
+        attributeInsert: to,
+        urlAngle: definition.angle,
+        referenceForm: suffix ? (explicit?.[1] ? 'full' : 'collapsed') : 'shortcut',
+        referenceLabel: explicit?.[1] || alt,
+      };
+    }
+    const node = md().parseToMdast(raw).children[0];
+    const image =
+      node?.type === 'mdxJsxFlowElement' && node.name === 'CommonMarkImage'
+        ? node
+        : node?.type === 'paragraph' &&
+            node.children.length === 1 &&
+            node.children[0]?.type === 'image'
+          ? node.children[0]
+          : null;
+    if (!image) return null;
+    if (raw[bracket + 1] !== '(') return null;
     let start = bracket + 2;
     while (raw[start] === ' ') start++;
     const angle = raw[start] === '<';
@@ -519,6 +557,7 @@ export function updateBlockWidget(
   from: number,
   to: number,
   edit: BlockWidgetEdit,
+  mediaModel?: MediaWidgetSource,
 ): string | null {
   const replace = (range: Range, text: string) =>
     source.slice(0, range[0]) + text + source.slice(range[1]);
@@ -532,6 +571,9 @@ export function updateBlockWidget(
         slashes.length % 2 ? `${slashes}|` : `${slashes}\\|`,
       );
     return replace([cell.from, cell.to], text);
+  }
+  if (edit.type === 'reference-target') {
+    return updateReferenceDefinition(source, from, to, edit.text);
   }
   if (edit.type === 'diagram-body') {
     const diagram = diagramWidgetSource(source, from, to);
@@ -607,11 +649,19 @@ export function updateBlockWidget(
     return replace([container.attributeInsert, container.attributeInsert], insertion);
   }
   if (edit.type === 'media-src' || edit.type === 'media-label') {
-    const media = mediaWidgetSource(source, from, to);
+    const media = mediaModel ?? mediaWidgetSource(source, from, to);
     if (!media) return null;
     const range = edit.type === 'media-src' ? media.srcRange : media.labelRange;
     const labelKey = media.kind === 'image' ? 'alt' : media.kind === 'file' ? 'name' : 'title';
     const text = edit.text.replace(/[\r\n]/g, ' ');
+    if (
+      edit.type === 'media-label' &&
+      media.syntax === 'reference' &&
+      media.referenceForm !== 'full'
+    ) {
+      const escaped = text.replace(/([[\]])/g, '\\$1');
+      return replace([from, to], `![${escaped}][${media.referenceLabel ?? media.label}]`);
+    }
     if (range) {
       if (media.syntax === 'mdx') {
         const quote = source[range[0] - 1];
@@ -625,6 +675,15 @@ export function updateBlockWidget(
           edit.type === 'media-label'
             ? text.replace(/([\\[\]])/g, '\\$1')
             : text.replace(/ /g, '%20').replace(/\)/g, '\\)');
+        return replace(range, escaped);
+      }
+      if (media.syntax === 'reference') {
+        const escaped =
+          edit.type === 'media-label'
+            ? text.replace(/([[\]])/g, '\\$1')
+            : media.urlAngle
+              ? text.replace(/ /g, '%20').replace(/>/g, '%3E')
+              : text.replace(/ /g, '%20').replace(/\)/g, '\\)');
         return replace(range, escaped);
       }
       return replace(range, text.replace(/\]/g, '\\]'));

@@ -8673,6 +8673,10 @@ msgstr ""
 msgid "Redo last change"
 msgstr ""
 
+#: src/editor/live/reference-widgets.ts
+msgid "Reference target"
+msgstr ""
+
 #: src/components/DatabaseComputedPropertyDialog.tsx
 msgid "References and functions"
 msgstr ""

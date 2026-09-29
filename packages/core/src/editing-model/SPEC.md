@@ -64,6 +64,11 @@ widget.accordion-attribute)
 Markdown 이미지와 위키 이미지·파일 임베드, MDX `img`·`File`·`Embed`는 미디어 위젯으로 그린다. `src`와 대체
 텍스트·표시 이름의 변경은 해당 원문 범위만 바꾼다. 렌더링 전에 앱의 URL 안전 검사와 문서 상대 경로 해석을
 적용한다. (widget.media-src, widget.media-label, hide.block-media)
+참조 이미지 `![alt][id]`·`![alt][]`·`![id]`는 같은 문서의 첫 번째 정의에서 URL을 읽는다. 이미지 위젯에서
+URL을 고치면 공유 정의의 대상 원문 범위만 바뀌고, 대체 텍스트를 고치면 이미지 위치만 바뀐다. 정의 줄은
+압축 위젯으로 보여 주고 대상 URL을 고친다. 축약·단축 참조의 대체 텍스트를 바꾸면 원래 정의 ID를 명시형으로
+남겨 이미지 연결을 보존한다. (widget.media-src, widget.media-label,
+widget.reference-target)
 일반 MDX 블록은 등록된 제품 컴포넌트를 앱의 React 문맥에서 그린다. 문자열 속성을 고치면 해당 속성 값 범위만,
 본문을 고치면 여닫는 태그 안의 본문 범위만 바꾼다. JSON으로 해석 가능한 리터럴 표현식만 컴포넌트에 전달한다.
 (widget.mdx-prop, widget.mdx-body, hide.block-mdx)

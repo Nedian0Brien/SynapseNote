@@ -8678,6 +8678,10 @@ msgstr "Redactions"
 msgid "Redo last change"
 msgstr "Redo last change"
 
+#: src/editor/live/reference-widgets.ts
+msgid "Reference target"
+msgstr "Reference target"
+
 #: src/components/DatabaseComputedPropertyDialog.tsx
 msgid "References and functions"
 msgstr "References and functions"

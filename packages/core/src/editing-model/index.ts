@@ -59,6 +59,13 @@ export {
   updateMdxWidget,
 } from './mdx-widget.ts';
 export {
+  type ReferenceDefinitionSource,
+  referenceDefinitionSource,
+  referenceDefinitionsFromBlocks,
+  referenceDefinitionsFromSource,
+  updateReferenceDefinition,
+} from './reference-definition.ts';
+export {
   type TabsWidgetEdit,
   type TabsWidgetPanel,
   type TabsWidgetSource,
