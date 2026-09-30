@@ -7,7 +7,7 @@
  * proved flaky on Linux Bun. DI tests are platform-stable.
  */
 import { describe, expect, test } from 'bun:test';
-import { uploadFile } from './upload-file.ts';
+import { uploadAsset, uploadFile } from './upload-file.ts';
 
 interface FetchCall {
   url: string;
@@ -215,5 +215,25 @@ describe('uploadFile', () => {
     await expect(
       uploadFile(file, ['image/png'], { fetch, docName: TEST_DOC_NAME }),
     ).rejects.toThrow(/UploadAssetSuccess/i);
+  });
+});
+
+test('uploadAsset exposes server metadata for source insertion and deduplication', async () => {
+  const { fetch } = captureFetch(() =>
+    jsonResponse(200, {
+      src: 'photo-1.png',
+      path: 'attachments/photo-1.png',
+      deduped: true,
+    }),
+  );
+  const result = await uploadAsset(new File(['png'], 'photo.png'), [], {
+    fetch,
+    docName: TEST_DOC_NAME,
+  });
+  expect(result).toEqual({
+    src: 'photo-1.png',
+    path: 'attachments/photo-1.png',
+    deduped: true,
+    url: '/attachments/photo-1.png',
   });
 });

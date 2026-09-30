@@ -1125,6 +1125,11 @@ msgstr "All records"
 msgid "All tags"
 msgstr "All tags"
 
+#. placeholder {0}: asset.path ?? asset.src
+#: src/editor/live/uploads.ts
+msgid "Already at {0} — reusing."
+msgstr "Already at {0} — reusing."
+
 #: src/editor/image-upload/index.ts
 msgid "Already at {assetContentPath} — reusing."
 msgstr "Already at {assetContentPath} — reusing."
@@ -1806,6 +1811,7 @@ msgid "Cannot delete last view"
 msgstr "Cannot delete last view"
 
 #: src/editor/image-upload/index.ts
+#: src/editor/live/uploads.ts
 msgid "Cannot upload: no document is open"
 msgstr "Cannot upload: no document is open"
 
@@ -4670,6 +4676,7 @@ msgstr "Fields in preview"
 #: src/components/settings/AiToolsSection.tsx
 #: src/components/settings/ProjectAiToolsSection.tsx
 #: src/components/share-metadata-rows.tsx
+#: src/editor/live/slash-suggestions.ts
 #: src/editor/slash-command/component-items.tsx
 msgid "File"
 msgstr "File"
@@ -11877,6 +11884,7 @@ msgid "Upload {keyName}"
 msgstr "Upload {keyName}"
 
 #: src/editor/image-upload/index.ts
+#: src/editor/live/uploads.ts
 msgid "Upload failed"
 msgstr "Upload failed"
 
@@ -11904,6 +11912,11 @@ msgstr "Upload may have succeeded but the sidebar is out of date — refresh to 
 #: src/editor/components/PropPanel.tsx
 msgid "Uploading"
 msgstr "Uploading"
+
+#. placeholder {0}: this.filename
+#: src/editor/live/uploads.ts
+msgid "Uploading {0}"
+msgstr "Uploading {0}"
 
 #: src/editor/image-upload/index.ts
 msgid "Uploading {fileName}"

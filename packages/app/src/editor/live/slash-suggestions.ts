@@ -9,6 +9,7 @@ import { createDatabaseCreationId } from '@/lib/database-creation';
 import { dispatchDatabaseSlashCommand } from '@/lib/database-events';
 import { openLiveLinkEditor } from './link-editor';
 import { liveComponentSource, liveSlashComponents } from './slash-components';
+import { pickLiveUpload } from './uploads';
 
 interface SlashItem {
   label: string;
@@ -41,6 +42,11 @@ function items(): SlashItem[] {
     { label: t`Math`, aliases: ['math', 'equation', 'latex'], source: '$$\n\n$$\n\n' },
     { label: t`Mermaid`, aliases: ['mermaid', 'diagram'], source: '```mermaid\ngraph TD\n```\n\n' },
     { label: t`Comment`, aliases: ['comment', 'note'], source: '<!--\n\n-->\n\n' },
+    {
+      label: t`File`,
+      aliases: ['file', 'attachment', 'download', 'upload', 'document', 'zip'],
+      run: pickLiveUpload,
+    },
     ...liveSlashComponents.map((descriptor) => ({
       label: descriptor.displayName ?? descriptor.name,
       aliases: [descriptor.name, ...(descriptor.searchTerms ?? [])],

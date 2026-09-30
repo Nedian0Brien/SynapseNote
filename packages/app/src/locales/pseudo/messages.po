@@ -1120,6 +1120,11 @@ msgstr ""
 msgid "All tags"
 msgstr ""
 
+#. placeholder {0}: asset.path ?? asset.src
+#: src/editor/live/uploads.ts
+msgid "Already at {0} — reusing."
+msgstr ""
+
 #: src/editor/image-upload/index.ts
 msgid "Already at {assetContentPath} — reusing."
 msgstr ""
@@ -1801,6 +1806,7 @@ msgid "Cannot delete last view"
 msgstr ""
 
 #: src/editor/image-upload/index.ts
+#: src/editor/live/uploads.ts
 msgid "Cannot upload: no document is open"
 msgstr ""
 
@@ -4665,6 +4671,7 @@ msgstr ""
 #: src/components/settings/AiToolsSection.tsx
 #: src/components/settings/ProjectAiToolsSection.tsx
 #: src/components/share-metadata-rows.tsx
+#: src/editor/live/slash-suggestions.ts
 #: src/editor/slash-command/component-items.tsx
 msgid "File"
 msgstr ""
@@ -11872,6 +11879,7 @@ msgid "Upload {keyName}"
 msgstr ""
 
 #: src/editor/image-upload/index.ts
+#: src/editor/live/uploads.ts
 msgid "Upload failed"
 msgstr ""
 
@@ -11898,6 +11906,11 @@ msgstr ""
 #: src/components/DatabaseFilesCellEditor.tsx
 #: src/editor/components/PropPanel.tsx
 msgid "Uploading"
+msgstr ""
+
+#. placeholder {0}: this.filename
+#: src/editor/live/uploads.ts
+msgid "Uploading {0}"
 msgstr ""
 
 #: src/editor/image-upload/index.ts

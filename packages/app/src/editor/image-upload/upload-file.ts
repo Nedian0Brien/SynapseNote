@@ -8,7 +8,11 @@
  * admission via `ASSET_EXTENSIONS`), with magic-byte sniffing + path-escape
  * + symlink-realpath as the security boundary.
  */
-import { ProblemDetailsSchema, UploadAssetSuccessSchema } from '@nedian0brien/synapsenote-core';
+import {
+  ProblemDetailsSchema,
+  type UploadAssetSuccess,
+  UploadAssetSuccessSchema,
+} from '@nedian0brien/synapsenote-core';
 import { HttpResponseParseError } from '../http-client.ts';
 import { getCurrentDocName } from './current-doc-name.ts';
 
@@ -36,12 +40,12 @@ interface UploadFileDeps {
   endpoint?: string;
 }
 
-export async function uploadFile(
+export async function uploadAsset(
   file: File,
   // biome-ignore lint/correctness/noUnusedFunctionParameters: kept on the public signature so PropPanel + PropUploadButton compile unchanged after the per-MIME → unified endpoint flip; the picker's <input accept> already filters at the OS dialog
   accept: readonly string[],
   deps: UploadFileDeps = {},
-): Promise<UploadFileResult> {
+): Promise<UploadFileResult & UploadAssetSuccess> {
   const fetchImpl = deps.fetch ?? globalThis.fetch;
 
   const docName = deps.docName !== undefined ? deps.docName : getCurrentDocName();
@@ -114,5 +118,15 @@ export async function uploadFile(
   }
   const resolved = success.data.path ?? success.data.src;
   const url = resolved.startsWith('/') ? resolved : `/${resolved}`;
+  return { ...success.data, url };
+}
+
+/** Property upload callers keep their existing URL-only contract. */
+export async function uploadFile(
+  file: File,
+  accept: readonly string[],
+  deps: UploadFileDeps = {},
+): Promise<UploadFileResult> {
+  const { url } = await uploadAsset(file, accept, deps);
   return { url };
 }

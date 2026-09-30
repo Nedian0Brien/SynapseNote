@@ -74,6 +74,7 @@ import { ReferenceDefinitionWidget } from './reference-widgets';
 import { createLiveSlashSuggestions } from './slash-suggestions';
 import { TabsBlockWidget } from './tabs-widgets';
 import { createLiveTagSuggestions } from './tag-suggestions';
+import { createLiveUploads } from './uploads';
 
 const mediaContext = Facet.define<MediaContext, MediaContext>({
   combine: (values) => values.at(-1) ?? {},
@@ -598,6 +599,7 @@ export function createLiveExtension(context: MediaContext = {}): Extension {
     ...(context.nested
       ? [autocompletion(), EditorState.languageData.of(() => [{ autocomplete: guardedWikiSource }])]
       : []),
+    createLiveUploads(context),
     createLiveTagSuggestions(allowed),
     createLiveLinkEditor(
       context,

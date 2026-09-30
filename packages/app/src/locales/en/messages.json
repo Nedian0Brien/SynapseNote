@@ -18,6 +18,7 @@
     "-KmfTn": ["Freshness and truncation"],
     "-LHLx7": ["edited template"],
     "-M7J13": ["Callout title"],
+    "-MDG3t": ["Already at ", ["0"], " — reusing."],
     "-QCLWk": ["Templates available"],
     "-Qw-1t": ["GitHub authentication failed. Try signing in again."],
     "-WFFG2": ["Default properties"],
@@ -3540,6 +3541,7 @@
     "xlD-bU": ["Select PDF text to add a highlight or memo."],
     "xloBjn": ["Relative Path"],
     "xnP32l": ["No description yet — add one so agents know when to use this skill."],
+    "xonzEV": ["Uploading ", ["0"]],
     "xrVr_k": ["Couldn't create skill: ", ["0"]],
     "xsZhu-": ["Page number"],
     "xuS5ci": [
