@@ -8922,6 +8922,7 @@ msgid "Remove item {0}"
 msgstr ""
 
 #: src/editor/bubble-menu/LinkEditPopover.tsx
+#: src/editor/extensions/InternalLinkPropPanel.tsx
 msgid "Remove link"
 msgstr ""
 
@@ -11040,6 +11041,10 @@ msgstr ""
 
 #: src/components/DatabaseRecordPeekEditor.tsx
 msgid "The inline editor could not connect. Reopen the page to retry."
+msgstr ""
+
+#: src/editor/live/link-editor.tsx
+msgid "The link was removed while you were editing it."
 msgstr ""
 
 #: src/components/TemplateProperties.tsx

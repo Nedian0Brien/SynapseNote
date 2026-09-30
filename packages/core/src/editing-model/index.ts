@@ -59,6 +59,7 @@ export {
   type WidgetKind,
   type WidgetRange,
 } from './layout.ts';
+export { type SourceLink, sourceLinkAt, updateSourceLink } from './link.ts';
 export {
   type MdxWidgetAttribute,
   type MdxWidgetEdit,

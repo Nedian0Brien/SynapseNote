@@ -67,6 +67,7 @@ import {
 import { CodeBlockWidget, TableBlockWidget } from './block-widgets';
 import { ContainerBlockWidget } from './container-widgets';
 import { DiagramBlockWidget } from './diagram-widgets';
+import { createLiveLinkEditor } from './link-editor';
 import { MdxBlockWidget } from './mdx-widgets';
 import { MediaBlockWidget, type MediaContext, MediaInlineWidget } from './media-widgets';
 import { ReferenceDefinitionWidget } from './reference-widgets';
@@ -598,6 +599,18 @@ export function createLiveExtension(context: MediaContext = {}): Extension {
       ? [autocompletion(), EditorState.languageData.of(() => [{ autocomplete: guardedWikiSource }])]
       : []),
     createLiveTagSuggestions(allowed),
+    createLiveLinkEditor(
+      context,
+      (view, from, to, href, label) => {
+        run(
+          view,
+          [{ type: 'link', href, ...(label === undefined ? {} : { label }) }],
+          EditorSelection.range(from, to),
+          'input.link',
+        );
+      },
+      allowed,
+    ),
     createLiveSlashSuggestions((view, from, to, block) => {
       run(
         view,

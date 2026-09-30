@@ -8927,6 +8927,7 @@ msgid "Remove item {0}"
 msgstr "Remove item {0}"
 
 #: src/editor/bubble-menu/LinkEditPopover.tsx
+#: src/editor/extensions/InternalLinkPropPanel.tsx
 msgid "Remove link"
 msgstr "Remove link"
 
@@ -11046,6 +11047,10 @@ msgstr "The formula <0>c = √(a² + b²)</0> renders inline."
 #: src/components/DatabaseRecordPeekEditor.tsx
 msgid "The inline editor could not connect. Reopen the page to retry."
 msgstr "The inline editor could not connect. Reopen the page to retry."
+
+#: src/editor/live/link-editor.tsx
+msgid "The link was removed while you were editing it."
+msgstr "The link was removed while you were editing it."
 
 #: src/components/TemplateProperties.tsx
 msgid "The menu label agents pick this template by (required)."

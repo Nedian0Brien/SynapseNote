@@ -100,8 +100,11 @@ function screenPosition(source: string, offset: number): number {
 }
 
 describe('live editor — edit.json through CodeMirror', () => {
+  // Dialog actions are exercised by link-editor.dom.test.tsx.
   const supported = editFixtures.filter(
-    (f) => f.after !== undefined && f.actions.every((a) => a.type !== 'paste' && a.type !== 'copy'),
+    (f) =>
+      f.after !== undefined &&
+      f.actions.every((a) => a.type !== 'paste' && a.type !== 'copy' && a.type !== 'link'),
   );
   for (const fixture of supported) {
     test(`${fixture.id}`, () => {

@@ -35,6 +35,7 @@ export type BlockKind =
   | 'code';
 
 export type EditAction =
+  | { type: 'link'; href: string; label?: string }
   | { type: 'text'; text: string }
   | {
       type: 'key';

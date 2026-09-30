@@ -18,6 +18,7 @@ import {
   type MarkType,
   type WidgetRange,
 } from './layout.ts';
+import { updateSourceLink } from './link.ts';
 
 export type ToggleMark = 'bold' | 'italic' | 'code' | 'strike' | 'highlight';
 
@@ -107,6 +108,16 @@ export function applyAction(state: EditState, action: EditAction): EditResult {
   const raw = block ? editBlockSource(base, block, action) : null;
   if (raw) return raw;
   switch (action.type) {
+    case 'link': {
+      const result = updateSourceLink(
+        base.source,
+        base.anchor,
+        base.head,
+        action.href,
+        action.label,
+      );
+      return { ...collapsed(result.source, result.head), anchor: result.anchor };
+    }
     case 'text':
       return typeText(base, action.text);
     case 'key':

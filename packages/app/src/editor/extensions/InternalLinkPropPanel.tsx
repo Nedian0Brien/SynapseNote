@@ -106,9 +106,10 @@ interface EditMarkdownLinkDialogProps {
    * state, which can drift mid-dialog via remote CRDT writes.
    */
   onSave: (href: string, text: string, labelChanged: boolean) => void;
+  onRemove?: () => void;
 }
 
-function EditMarkdownLinkDialog({
+export function EditMarkdownLinkDialog({
   open,
   href,
   text,
@@ -117,6 +118,7 @@ function EditMarkdownLinkDialog({
   loading,
   onOpenChange,
   onSave,
+  onRemove,
 }: EditMarkdownLinkDialogProps) {
   const [editTarget, setEditTarget] = useState('');
   const [editAnchor, setEditAnchor] = useState('');
@@ -307,6 +309,11 @@ function EditMarkdownLinkDialog({
         </DialogBody>
 
         <DialogFooter>
+          {onRemove ? (
+            <Button variant="ghost" onClick={onRemove}>
+              <Trans>Remove link</Trans>
+            </Button>
+          ) : null}
           <DialogClose asChild>
             <Button variant="outline">
               <Trans>Cancel</Trans>

@@ -1,5 +1,53 @@
 [
   {
+    "id": "link-label-preserves-url-spelling",
+    "group": "edit.link",
+    "rule": "7",
+    "before": "[ol│d](https://example.com/a\\(b\\))",
+    "actions": [{ "type": "link", "href": "https://example.com/a(b)", "label": "new" }],
+    "after": "[new](https://example.com/a\\(b\\))│"
+  },
+  {
+    "id": "link-reference-target",
+    "group": "edit.link",
+    "rule": "7",
+    "before": "a [la│bel][r]\n\n[r]: old.md \"Title\"",
+    "actions": [{ "type": "link", "href": "new.md" }],
+    "after": "a [label][r]│\n\n[r]: new.md \"Title\""
+  },
+  {
+    "id": "link-label-change",
+    "group": "edit.link",
+    "rule": "7",
+    "before": "[ol│d](page.md \"Title\")",
+    "actions": [{ "type": "link", "href": "page.md", "label": "new" }],
+    "after": "[new](page.md \"Title\")│"
+  },
+  {
+    "id": "link-add-selection",
+    "group": "edit.link",
+    "rule": "7",
+    "before": "a ⟪label⟫ z",
+    "actions": [{ "type": "link", "href": "https://example.com" }],
+    "after": "a [label](https://example.com)│ z"
+  },
+  {
+    "id": "link-target-preserves-title-and-format",
+    "group": "edit.link",
+    "rule": "7",
+    "before": "a [**la│bel**](old.md \"Title\") z",
+    "actions": [{ "type": "link", "href": "new.md" }],
+    "after": "a [**label**](new.md \"Title\")│ z"
+  },
+  {
+    "id": "link-remove-preserves-format",
+    "group": "edit.link",
+    "rule": "7",
+    "before": "a [**la│bel**](old.md) z",
+    "actions": [{ "type": "link", "href": "" }],
+    "after": "a **label**│ z"
+  },
+  {
     "id": "cursor-skip-into",
     "group": "edit.cursor-skip",
     "rule": "4",
