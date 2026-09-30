@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { writeWidget } from './block-widgets';
 import { type LivePortalRegistry, livePortalRegistryFor } from './live-portals';
 import type { MediaContext } from './media-widgets';
+import { bindSourceScope, registerSourceReveal } from './source-scope';
 
 interface TabsDOM {
   position: { from: number; to: number };
@@ -25,6 +26,7 @@ interface TabsDOM {
   bodyView: EditorView | null;
   syncing: boolean;
   disposed: boolean;
+  stopReveal?: () => void;
 }
 
 let nextAriaId = 1;
@@ -65,6 +67,10 @@ function surface(state: TabsDOM, outer: EditorView, nestedExtension: () => Exten
           }),
         ],
       }),
+    });
+    bindSourceScope(state.bodyView, outer, (position) => {
+      const from = state.model.panels[state.bodyIndex]?.bodyRange?.[0];
+      return from === undefined ? null : from + position;
     });
   };
   return (
@@ -208,6 +214,16 @@ export class TabsBlockWidget extends WidgetType {
     };
     state.portalId = registry.register(target, surface(state, view, this.nestedExtension));
     tabsDOM.set(wrapper, state);
+    state.stopReveal = registerSourceReveal(view, (range) => {
+      const index = state.model.panels.findIndex(
+        (panel) => range.from <= panel.to && range.to >= panel.from,
+      );
+      if (index < 0) return false;
+      if (state.activeIndex === index && state.bodyIndex === index && state.bodyView) return false;
+      state.activeIndex = index;
+      state.registry.update(state.portalId, surface(state, view, this.nestedExtension));
+      return true;
+    });
     return wrapper;
   }
 
@@ -236,6 +252,7 @@ export class TabsBlockWidget extends WidgetType {
     const state = tabsDOM.get(dom);
     if (!state) return;
     state.disposed = true;
+    state.stopReveal?.();
     state.bodyView?.destroy();
     state.registry.unregister(state.portalId);
     tabsDOM.delete(dom);

@@ -15,6 +15,13 @@ import {
 } from '@/lib/document-memo-store';
 import { requestMemoReveal, subscribeMemoNavigation } from '../memo-navigation';
 import { migrateMemoAnchors } from './memo-anchor-migration';
+import {
+  focusSourceRange,
+  hasSourceBinding,
+  sourceRangeInView,
+  sourceRoot,
+  sourceScopeChanged,
+} from './source-scope';
 
 export function resolveSourceMemoAnchor(
   source: string,
@@ -48,8 +55,9 @@ export function resolveSourceMemoAnchor(
   }
   return best < 0 ? null : { from: best, to: best + anchor.exact.length };
 }
+const rootRanges = new WeakMap<EditorView, Map<string, { from: number; to: number }>>();
 const refreshMemos = StateEffect.define<null>();
-export function createSourceMemos(docName: string): Extension {
+export function createSourceMemos(docName: string, nested = false): Extension {
   return ViewPlugin.fromClass(
     class {
       disposed = false;
@@ -59,24 +67,33 @@ export function createSourceMemos(docName: string): Extension {
       stopStore: () => void;
       stopNavigation: () => void;
       constructor(readonly view: EditorView) {
+        if (!nested) rootRanges.set(view, this.ranges);
         this.rebuild();
         this.stopStore = subscribeDocumentMemoState(docName, (state) => {
           this.state = state;
           this.view.dispatch({ effects: refreshMemos.of(null) });
         });
-        this.stopNavigation = subscribeMemoNavigation((request) => {
-          if (request.docName !== docName || !view.dom.isConnected) return;
-          const range = this.ranges.get(request.memoId);
-          if (!range) return;
-          view.dispatch({
-            selection: { anchor: range.from, head: range.to },
-            scrollIntoView: true,
-          });
-          view.focus();
-        });
+        this.stopNavigation = nested
+          ? () => {}
+          : subscribeMemoNavigation((request) => {
+              if (request.docName !== docName || !view.dom.isConnected) return;
+              const range = this.ranges.get(request.memoId);
+              if (!range || range.from >= range.to) return;
+              focusSourceRange(view, () => this.ranges.get(request.memoId));
+            });
       }
       rebuild() {
         this.ranges.clear();
+        if (nested) {
+          if (hasSourceBinding(this.view)) {
+            for (const [id, range] of rootRanges.get(sourceRoot(this.view)) ?? []) {
+              const local = sourceRangeInView(this.view, range, true);
+              if (local && local.from < local.to) this.ranges.set(id, local);
+            }
+          }
+          this.draw();
+          return;
+        }
         const source = this.view.state.doc.toString();
         const migration = migrateMemoAnchors(source, this.state);
         if (migration.changed) {
@@ -109,7 +126,11 @@ export function createSourceMemos(docName: string): Extension {
         );
       }
       update(update: ViewUpdate) {
-        if (update.transactions.some((tr) => tr.effects.some((effect) => effect.is(refreshMemos))))
+        if (
+          update.transactions.some((tr) =>
+            tr.effects.some((effect) => effect.is(refreshMemos) || effect.is(sourceScopeChanged)),
+          )
+        )
           this.rebuild();
         else if (update.docChanged) {
           for (const range of this.ranges.values()) {
@@ -121,6 +142,7 @@ export function createSourceMemos(docName: string): Extension {
       }
       destroy() {
         this.disposed = true;
+        if (!nested) rootRanges.delete(this.view);
         this.stopStore();
         this.stopNavigation();
       }

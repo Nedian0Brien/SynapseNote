@@ -13,6 +13,7 @@ import { i18n } from '@/lib/i18n';
 import { Accordion } from '../components/Accordion';
 import { Callout } from '../components/Callout';
 import { writeWidget } from './block-widgets';
+import { bindSourceScope, registerSourceReveal } from './source-scope';
 
 const CALLOUT_TYPES = [
   'note',
@@ -40,6 +41,7 @@ interface ContainerDOM {
   bodyView: EditorView | null;
   syncing: boolean;
   disposed: boolean;
+  stopReveal?: () => void;
 }
 const containerDOM = new WeakMap<HTMLElement, ContainerDOM>();
 
@@ -68,6 +70,11 @@ function renderContainer(
         ],
       }),
     });
+    bindSourceScope(
+      state.bodyView,
+      outer,
+      (position) => state.model.bodyBoundaries[position] ?? null,
+    );
   };
   const model = state.model;
   const isCallout = model.kind === 'callout';
@@ -174,6 +181,18 @@ export class ContainerBlockWidget extends WidgetType {
       disposed: false,
     };
     containerDOM.set(wrapper, state);
+    state.stopReveal = registerSourceReveal(view, (range) => {
+      const first = state.model.bodyBoundaries[0];
+      const last = state.model.bodyBoundaries.at(-1);
+      if (first === undefined || last === undefined || range.to < first || range.from > last)
+        return false;
+      if (state.model.kind !== 'accordion' && state.model.props.collapsible !== true) return false;
+      const details = wrapper.querySelector<HTMLDetailsElement>('details');
+      if (!details || details.open) return false;
+      details.open = true;
+      view.requestMeasure();
+      return true;
+    });
     renderContainer(state, view, this.cellExtension);
     return wrapper;
   }
@@ -205,6 +224,7 @@ export class ContainerBlockWidget extends WidgetType {
     const state = containerDOM.get(dom);
     if (!state) return;
     state.disposed = true;
+    state.stopReveal?.();
     state.bodyView?.destroy();
     state.root.unmount();
     containerDOM.delete(dom);

@@ -57,6 +57,8 @@ import {
 import { isMarkdown } from '../clipboard/is-markdown';
 import { pasteShiftHeld } from '../clipboard/shift-tracker';
 import { createWikiLinkCompletionSource } from '../plugins/wiki-link-source';
+import { publishSelectionContext, selectionSnapshotFromSource } from '../selection-context';
+import { publishSelectionStats, selectionStatsFromSource } from '../selection-stats';
 import {
   BlockCommentWidget,
   FootnoteDefinitionWidget,
@@ -71,8 +73,10 @@ import { createLiveFormatToolbar } from './format-toolbar';
 import { createLiveLinkEditor } from './link-editor';
 import { MdxBlockWidget } from './mdx-widgets';
 import { MediaBlockWidget, type MediaContext, MediaInlineWidget } from './media-widgets';
+import { createSourceMemos } from './memo-source';
 import { ReferenceDefinitionWidget } from './reference-widgets';
 import { createLiveSlashSuggestions } from './slash-suggestions';
+import { createSourceScopeLifecycle } from './source-scope';
 import { TabsBlockWidget } from './tabs-widgets';
 import { createLiveTagSuggestions } from './tag-suggestions';
 import { createLiveUploads } from './uploads';
@@ -591,6 +595,17 @@ export function createLiveExtension(context: MediaContext = {}): Extension {
   };
   return [
     mediaContext.of(context),
+    createSourceScopeLifecycle((view) => {
+      if (context.docName)
+        publishSelectionStats(context.docName, 'source', selectionStatsFromSource(view));
+      if (context.docName)
+        publishSelectionContext(
+          context.docName,
+          'source',
+          selectionSnapshotFromSource(view, context.docName),
+        );
+    }),
+    ...(context.nested && context.docName ? [createSourceMemos(context.docName, true)] : []),
     layoutField,
     blockWidgetField,
     protectFrontmatter,

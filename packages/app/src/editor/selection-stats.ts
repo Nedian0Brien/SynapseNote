@@ -1,3 +1,4 @@
+import { activeSourceSelection } from './live/source-scope';
 /**
  * Module-level store for selection-scoped document stats (words / chars /
  * tokens), keyed by (docName, surface). Mirrors `active-editor.ts`: each
@@ -110,8 +111,10 @@ export function selectionStatsFromWysiwyg(editor: Editor): DocumentStats | null 
  * document counter uses.
  */
 export function selectionStatsFromSource(view: EditorView): DocumentStats | null {
+  const scoped = activeSourceSelection(view);
+  view = scoped.view;
   const parts: string[] = [];
-  for (const range of view.state.selection.ranges) {
+  for (const range of scoped.selection.ranges) {
     if (!range.empty) parts.push(view.state.sliceDoc(range.from, range.to));
   }
   if (parts.length === 0) return null;

@@ -21,6 +21,7 @@ import { sanitizeComponentProps } from '../utils/sanitize-url';
 import { writeWidget } from './block-widgets';
 import { type LivePortalRegistry, livePortalRegistryFor } from './live-portals';
 import type { MediaContext } from './media-widgets';
+import { bindSourceScope } from './source-scope';
 
 interface MdxDOM {
   position: { from: number; to: number };
@@ -148,6 +149,10 @@ function surface(
           }),
         ],
       }),
+    });
+    bindSourceScope(state.bodyView, outer, (position) => {
+      const from = state.model.bodyRange?.[0];
+      return from === undefined ? null : from + position;
     });
   };
   const props = normalizeDocRelativeMediaRenderProps(

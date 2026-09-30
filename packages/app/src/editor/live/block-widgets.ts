@@ -17,6 +17,7 @@ import { normalizeCodeLanguage } from '../extensions/code-block-languages';
 import { PREVIEWABLE_LANGUAGES, shouldShowPreview } from '../extensions/code-block-meta';
 import { LiveCodePreview } from './code-preview';
 import { type LivePortalRegistry, livePortalRegistryFor } from './live-portals';
+import { bindSourceScope } from './source-scope';
 
 interface WidgetPosition {
   from: number;
@@ -241,6 +242,10 @@ export class TableBlockWidget extends WidgetType {
               }),
             ],
           }),
+        });
+        bindSourceScope(cellView, view, (position) => {
+          const current = state.model.rows[rowIndex]?.[columnIndex];
+          return current ? current.from + position : null;
         });
         views.push(cellView);
       });

@@ -2,7 +2,7 @@
 title: P4k 중첩 편집기의 원문 좌표·메모 연결
 slug: web-source-editor
 stage: plan
-status: active
+status: implemented
 intent: .intent/intent_web-source-editor.md
 spec: .intent/spec_web-source-editor.md
 date: 2026-09-30
@@ -19,3 +19,13 @@ date: 2026-09-30
 - 브라우저 메모 작성·저장·비활성 탭 이동 및 관련 타입 검사.
 
 중첩 각주 삽입은 문서 전체 정의를 본문에서도 해석하도록 연결하는 후속 구간에 포함한다. 일반 HTML·native highlight·기타 P4·P5~P6는 남아 있다.
+
+## 결과
+
+- source-scope가 중첩 위치를 부모·문서 전체로 합성하고 문서 범위를 중첩 본문으로 되돌린다. 현재 core 범위·경계 배열을 읽으므로 원격 앞쪽 편집 후에도 현재 위치를 사용한다.
+- 표·컨테이너·Tab·MDX·각주·주석 본문을 연결했다. Tab 모델에 bodyRange를 추가했다. 중첩 선택 문맥과 통계도 문서 전체 원문 기준으로 전달한다.
+- 중첩 메모 생성·표시·이동을 연결했다. 기존 메모 범위를 공유하며 root만 앵커 변환·저장을 수행한다. 비활성 탭·접힌 details 본문은 이동 때 열고, 여러 깊이도 단계별 렌더링 후 이동한다. 편집기 폐기 시 등록을 해제한다.
+- 포커스가 다른 편집기로 이동하면 이전 선택 막대를 숨긴다. 포커스 처리 중 트랜잭션을 즉시 보내 선택이 사라지는 문제를 피하도록 이후 microtask에서 적용한다. 명시적으로 받은 중첩 view의 메모 선택은 다른 포커스 view로 바꾸지 않는다.
+- scope DOM 7개, 기존 Tabs DOM 3개·메모 DOM 4개·서식 막대 DOM 4개·live DOM 129개, 선택 문맥 27개·통계 12개·core 위젯 63개 통과. core·app 타입 검사·변경 파일 검사 통과.
+- 브라우저 표 칸·탭 안 GFM 콜아웃·아코디언 메모 생성과 문서 전체 앵커를 확인했다. 비활성 탭·닫힌 아코디언을 열어 이동하고 새로고침 후 표 칸 표시를 확인했다. pageerror 없음.
+- 중첩 각주·참조 링크/이미지는 본문 밖 정의를 함께 해석하는 후속 구간이 필요하다. 일반 HTML·native highlight·밑줄·기타 P4·P5~P6도 남아 있다.

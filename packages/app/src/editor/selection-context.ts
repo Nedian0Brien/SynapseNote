@@ -19,6 +19,7 @@ import type { Editor } from '@tiptap/core';
 import type { DocumentMemoAnchor } from '@/lib/document-memo-store';
 import { serializeWysiwygSelection } from './edit-with-ai-selection';
 import { getMetaTitle } from './extensions/code-block-meta';
+import { activeSourceSelection } from './live/source-scope';
 import type { EditorSurface } from './selection-stats';
 
 /**
@@ -322,10 +323,12 @@ export function selectionSnapshotFromSource(
   view: EditorView,
   docName: string,
 ): SelectionSnapshot | null {
+  const scoped = activeSourceSelection(view);
+  view = scoped.view;
   const parts: string[] = [];
   let minFrom = Number.POSITIVE_INFINITY;
   let maxTo = -1;
-  for (const range of view.state.selection.ranges) {
+  for (const range of scoped.selection.ranges) {
     if (range.empty) continue;
     parts.push(view.state.sliceDoc(range.from, range.to));
     minFrom = Math.min(minFrom, range.from);

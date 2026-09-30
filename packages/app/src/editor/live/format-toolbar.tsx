@@ -30,6 +30,7 @@ import { selectionSnapshotFromSource } from '../selection-context';
 import { openLiveLinkEditor } from './link-editor';
 import { livePortalRegistryFor } from './live-portals';
 import type { MediaContext } from './media-widgets';
+import { hasSourceBinding, sourceActorChanged } from './source-scope';
 
 type Toggle = Extract<EditAction, { type: 'toggle' }>['mark'];
 const formats: { mark: Toggle; type: MarkType; icon: typeof Bold; label: () => string }[] = [
@@ -157,7 +158,7 @@ function FormatToolbar({
           <Superscript size={16} />
         </Button>
       ) : null}
-      {context.docName && !context.nested ? (
+      {context.docName && (!context.nested || hasSourceBinding(view)) ? (
         <Button
           variant="ghost"
           size="icon-sm"
@@ -203,11 +204,25 @@ export function createLiveFormatToolbar(
       return null;
     return { pos: selection.head, above: true, strictSide: false, create };
   };
-  return StateField.define<Tooltip | null>({
-    create: tooltip,
+  const active = StateField.define<boolean>({
+    create: () => true,
     update(value, transaction) {
-      return transaction.docChanged || transaction.selection ? tooltip(transaction.state) : value;
+      for (const effect of transaction.effects)
+        if (effect.is(sourceActorChanged)) return effect.value;
+      return value;
+    },
+  });
+  const field = StateField.define<Tooltip | null>({
+    create: (state) => (state.field(active) ? tooltip(state) : null),
+    update(value, transaction) {
+      if (!transaction.state.field(active)) return null;
+      return transaction.docChanged ||
+        transaction.selection ||
+        transaction.effects.some((effect) => effect.is(sourceActorChanged))
+        ? tooltip(transaction.state)
+        : value;
     },
     provide: (field) => showTooltip.from(field),
   });
+  return [active, field];
 }

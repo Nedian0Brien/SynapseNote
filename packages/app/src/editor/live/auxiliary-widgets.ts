@@ -7,6 +7,7 @@ import {
   sourceChanges,
 } from '@nedian0brien/synapsenote-core';
 import { syncInput, writeWidget } from './block-widgets';
+import { bindSourceScope } from './source-scope';
 
 export class ThematicBreakWidget extends WidgetType {
   eq(): boolean {
@@ -115,6 +116,14 @@ export class FootnoteDefinitionWidget extends WidgetType {
           }),
         ],
       }),
+    });
+    bindSourceScope(state.bodyView, view, (position) => {
+      const current = footnoteWidgetSource(
+        view.state.doc.toString(),
+        state.position.from,
+        state.position.to,
+      );
+      return current?.bodyBoundaries[position] ?? null;
     });
     footnoteDOM.set(wrapper, state);
     return wrapper;
@@ -253,6 +262,14 @@ export class BlockCommentWidget extends WidgetType {
           }),
         ],
       }),
+    });
+    bindSourceScope(state.bodyView, view, (position) => {
+      const current = commentWidgetSource(
+        view.state.doc.toString(),
+        state.position.from,
+        state.position.to,
+      );
+      return current ? current.bodyRange[0] + position : null;
     });
     blockCommentDOM.set(wrapper, state);
     return wrapper;

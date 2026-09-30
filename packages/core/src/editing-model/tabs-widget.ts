@@ -1,5 +1,6 @@
 import { sharedExtensions } from '../extensions/shared.ts';
 import { MarkdownManager } from '../markdown/index.ts';
+import type { Range } from './layout.ts';
 import { mdxWidgetSource, updateMdxWidget } from './mdx-widget.ts';
 
 export interface TabsWidgetPanel {
@@ -9,6 +10,7 @@ export interface TabsWidgetPanel {
   label: string;
   id: string | null;
   body: string;
+  bodyRange?: Range | null;
 }
 
 export interface TabsWidgetSource {
@@ -55,6 +57,7 @@ export function tabsWidgetSource(
         label: typeof tab.props.label === 'string' ? tab.props.label : 'Tab',
         id: typeof tab.props.id === 'string' ? tab.props.id : null,
         body: tab.body,
+        bodyRange: tab.bodyRange,
       });
     } else {
       panels.push({
@@ -64,6 +67,7 @@ export function tabsWidgetSource(
         label: `Panel ${panels.length + 1}`,
         id: null,
         body: source.slice(panelFrom, panelTo),
+        bodyRange: [panelFrom, panelTo],
       });
     }
   }
