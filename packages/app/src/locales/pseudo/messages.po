@@ -3181,6 +3181,10 @@ msgstr ""
 msgid "Create something great."
 msgstr ""
 
+#: src/editor/live/tag-suggestions.ts
+msgid "Create tag"
+msgstr ""
+
 #: src/components/NewTemplateDialog.tsx
 msgid "Create template"
 msgstr ""

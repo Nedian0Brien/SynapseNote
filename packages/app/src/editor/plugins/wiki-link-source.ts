@@ -277,6 +277,12 @@ async function wikiLinkCompletionSource(
   context: CompletionContext,
   currentDocName: string | null,
 ): Promise<CompletionResult | null> {
+  if (
+    context.state
+      .languageDataAt('liveSuggestionAllowed', context.pos)
+      .some((gate) => typeof gate === 'function' && !gate(context.state, context.pos))
+  )
+    return null;
   const textBefore = context.state.doc.sliceString(0, context.pos);
 
   // Only activate when cursor is inside an open [[...  (no closing ]])
@@ -310,6 +316,7 @@ async function wikiLinkCompletionSource(
           view.dispatch({
             changes: { from, to, insert: h.slug + suffix },
             selection: { anchor: from + h.slug.length + suffix.length },
+            userEvent: 'input.complete',
           });
         },
       })),
@@ -338,6 +345,7 @@ async function wikiLinkCompletionSource(
         view.dispatch({
           changes: { from, to, insert },
           selection: { anchor: from + insert.length },
+          userEvent: 'input.complete',
         });
       },
     })),
@@ -376,8 +384,11 @@ export function createWikiLinkSourceExtension(currentDocName: string | null = nu
     // Additive: contributes our source to markdown's language data,
     // which basicSetup's autocompletion() already consults.
     markdownLanguage.data.of({
-      autocomplete: (context: CompletionContext) =>
-        wikiLinkCompletionSource(context, currentDocName),
+      autocomplete: createWikiLinkCompletionSource(currentDocName),
     }),
   ];
+}
+
+export function createWikiLinkCompletionSource(currentDocName: string | null = null) {
+  return (context: CompletionContext) => wikiLinkCompletionSource(context, currentDocName);
 }

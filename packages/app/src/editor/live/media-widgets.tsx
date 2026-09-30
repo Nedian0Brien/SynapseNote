@@ -12,6 +12,8 @@ import { syncInput, writeWidget } from './block-widgets';
 import type { LivePortalRegistry } from './live-portals';
 
 export interface MediaContext {
+  /** Nested live views own their autocomplete state; the page uses basicSetup. */
+  nested?: boolean;
   docName?: string;
   assetPaths?: ReadonlySet<string>;
   filePaths?: ReadonlySet<string>;

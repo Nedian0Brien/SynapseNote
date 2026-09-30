@@ -6,7 +6,7 @@
 생겼다. 편집 규칙은 core의 순수 함수이고, 네이티브 앱도 같은 명세와 fixture를 쓴다. P0~P2(뼈대), P2c(기존
 편집기 동작 옮기기), P3a(코드 울타리·표 위젯), P3b(수식·Mermaid 위젯), P3c(frontmatter 속성 화면),
 P3d(콜아웃·아코디언 위젯), P3e(이미지·파일 임베드 위젯), P3f(문서 문맥 MDX 위젯), P3g(들여쓴 코드 위젯), P3h(HTML details 아코디언), P3i(Tabs/Tab), P3j(참조 이미지), P3k(MDX 속성·Mirror), P3l(PDFium 로딩), P3m(수평선·각주·주석)가 끝났다.
-P3 일반 HTML 해석 점검이 남아 있고 P4a 슬래시 명령을 구현했다. P4의 나머지 기능과 P5~P6는 진행 전이다.
+P3 일반 HTML 해석 점검이 남아 있고 P4a 슬래시 명령과 P4b 태그·중첩 선택기를 구현했다. P4의 나머지 기능과 P5~P6는 진행 전이다.
 
 ## 1. 사용자가 정한 것
 
@@ -174,6 +174,14 @@ P3 일반 HTML 해석 점검이 남아 있고 P4a 슬래시 명령을 구현했�
 - 위키 링크 자동완성은 기존 `createNestedCMExtensions`에서 이미 top-level live에 등록되어 있었다. 실제 동작 검증과 태그·링크 편집·중첩 선택기는 후속 P4에서 처리한다.
 - 데이터베이스 생성·미디어 업로드·전체 컴포넌트 카탈로그는 아직 슬래시 메뉴에 옮기지 않았다.
 
+### P4b 추가 (2026-09-30)
+
+- `.intent/plan_web-source-editor-p4b.md`에 범위와 결과를 적었다. `tag-suggestion-data.ts`의 공통 API·순위·새 태그 판별을 기존 편집기와 live가 공유한다.
+- live 태그 선택은 `#태그 `를 원문에 쓰고, 중첩 live 편집기에 위키·태그·슬래시 자동완성을 연결했다. 코드 영역에서는 선택기를 막는다.
+- 브라우저 확인 문서: `http://localhost:5183/#/notes/p4b-suggestions-review-1790696600000`. top-level 태그·위키 링크와 콜아웃 내부 태그·위키 선택·디스크 저장을 확인했다.
+- 기존 태그 24개, live 태그·중첩 DOM 4개, slash DOM 4개, live DOM 129개와 app 타입 검사가 통과했다.
+- 다음 P4는 링크 편집 창, 전체 슬래시 작업 흐름, 도구 막대·메모·협업 표시·내보내기다. P3 HTML 해석 차이와 P5~P6도 남아 있다.
+
 | 단계 | 커밋 | 내용 |
 |---|---|---|
 | P0 | `86b2d405` | 편집 모델 명세 `packages/core/src/editing-model/SPEC.md`, fixture 형식과 `hide.json`·`edit.json` |
@@ -195,7 +203,8 @@ P3 일반 HTML 해석 점검이 남아 있고 P4a 슬래시 명령을 구현했�
 | P3k | `957ef47a` | MDX 리터럴 속성 편집과 Mirror 소스 이동 |
 | P3l | `98ab051f` | PDFium 워커 절대 URL과 실제 페이지 렌더링 |
 | P3m | `09adf41d` | 수평선·각주·주석 위젯 |
-| P4a | 구현 커밋은 `git log -1` | 기본 live 슬래시 명령 |
+| P4a | `63b969aa` | 기본 live 슬래시 명령 |
+| P4b | 구현 커밋은 `git log -1` | 태그·중첩 위키/슬래시 선택기 |
 
 P2c에서 옮긴 동작은 다음과 같다. 각 동작의 근거 파일은 `plan_web-source-editor-p2c.md`에 있다.
 

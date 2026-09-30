@@ -35,10 +35,15 @@ function mount(source: string): EditorView {
   return view;
 }
 
-function complete(view: EditorView, name: string): void {
+async function complete(view: EditorView, name: string): Promise<void> {
   const context = new CompletionContext(view.state, view.state.selection.main.head, true);
-  const source = view.state.languageDataAt('autocomplete', context.pos)[0];
-  const result = source(context) as CompletionResult;
+  const results = await Promise.all(
+    view.state.languageDataAt('autocomplete', context.pos).map((source) => source(context)),
+  );
+  const result = results.find((item: CompletionResult | null) =>
+    item?.options.some((option) => option.label === name),
+  ) as CompletionResult | undefined;
+  if (!result) throw new Error(`Missing result ${name}`);
   const option = result.options.find((item) => item.label === name);
   if (!option || typeof option.apply !== 'function') throw new Error(`Missing command ${name}`);
   option.apply(view, option, result.from, context.pos);
@@ -57,26 +62,28 @@ describe('live slash commands', () => {
     );
     expect(view.state.doc.toString()).toBe('## ');
   });
-  test('heading selection removes the trigger and is undone in one step', () => {
+  test('heading selection removes the trigger and is undone in one step', async () => {
     const view = mount('/h2');
-    complete(view, 'Heading 2');
+    await complete(view, 'Heading 2');
     expect(view.state.doc.toString()).toBe('## ');
     expect(undo(view)).toBe(true);
     expect(view.state.doc.toString()).toBe('/h2');
   });
 
-  test('table selection inserts a rendered table block', () => {
+  test('table selection inserts a rendered table block', async () => {
     const view = mount('/table');
-    complete(view, 'Table');
+    await complete(view, 'Table');
     expect(view.state.doc.toString()).toContain('| --- | --- |');
     expect(view.dom.querySelector('.cm-live-table')).not.toBeNull();
   });
 
-  test('a code block does not offer slash commands', () => {
+  test('a code block does not offer slash commands', async () => {
     const view = mount('```\n/table\n```');
     const position = view.state.doc.toString().indexOf('/table') + 6;
     const context = new CompletionContext(view.state, position, true);
-    const source = view.state.languageDataAt('autocomplete', position)[0];
-    expect(source(context)).toBeNull();
+    const results = await Promise.all(
+      view.state.languageDataAt('autocomplete', position).map((source) => source(context)),
+    );
+    expect(results.every((result) => result === null)).toBe(true);
   });
 });

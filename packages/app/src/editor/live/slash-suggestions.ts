@@ -85,6 +85,6 @@ export function createLiveSlashSource(
           view.focus();
         },
       }));
-    return { from, options, filter: false, validFor: /\/[\p{L}\p{N}_-]*$/u };
+    return { from, options, filter: false };
   };
 }

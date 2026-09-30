@@ -12,6 +12,8 @@
 
 import {
   acceptCompletion,
+  autocompletion,
+  type CompletionContext,
   closeCompletion,
   completionStatus,
   moveCompletionSelection,
@@ -54,6 +56,7 @@ import {
 } from '@nedian0brien/synapsenote-core';
 import { isMarkdown } from '../clipboard/is-markdown';
 import { pasteShiftHeld } from '../clipboard/shift-tracker';
+import { createWikiLinkCompletionSource } from '../plugins/wiki-link-source';
 import {
   BlockCommentWidget,
   FootnoteDefinitionWidget,
@@ -69,6 +72,7 @@ import { MediaBlockWidget, type MediaContext, MediaInlineWidget } from './media-
 import { ReferenceDefinitionWidget } from './reference-widgets';
 import { createLiveSlashSuggestions } from './slash-suggestions';
 import { TabsBlockWidget } from './tabs-widgets';
+import { createLiveTagSuggestions } from './tag-suggestions';
 
 const mediaContext = Facet.define<MediaContext, MediaContext>({
   combine: (values) => values.at(-1) ?? {},
@@ -141,7 +145,7 @@ function blockDecorations(
   context: MediaContext,
 ): DecorationSet {
   const ranges: { from: number; to: number; deco: Decoration }[] = [];
-  const nestedExtension = () => createLiveExtension(context);
+  const nestedExtension = () => createLiveExtension({ ...context, nested: true });
   if (layout.frontmatter) {
     ranges.push({
       from: layout.frontmatter[0],
@@ -562,6 +566,21 @@ const livePlugin = ViewPlugin.fromClass(
 );
 
 export function createLiveExtension(context: MediaContext = {}): Extension {
+  const allowed = (state: EditorState, position: number) => {
+    const block = state
+      .field(layoutField)
+      .blocks.find((item) => item.from <= position && item.to >= position);
+    return (
+      block?.type !== 'code' &&
+      !block?.layout.marks.some(
+        (mark) =>
+          mark.type === 'inlineCode' && mark.open[0] < position && mark.close[1] >= position,
+      )
+    );
+  };
+  const wikiSource = createWikiLinkCompletionSource(context.docName ?? null);
+  const guardedWikiSource = (completion: CompletionContext) =>
+    allowed(completion.state, completion.pos) ? wikiSource(completion) : null;
   const acceptMenu = (view: EditorView) => {
     if (completionStatus(view.state) !== 'active') return false;
     acceptCompletion(view);
@@ -574,25 +593,22 @@ export function createLiveExtension(context: MediaContext = {}): Extension {
     protectFrontmatter,
     cursorIntentField,
     livePlugin,
-    createLiveSlashSuggestions(
-      (view, from, to, block) => {
-        run(
-          view,
-          [
-            { type: 'key', key: 'Backspace' },
-            { type: 'block', block },
-          ],
-          EditorSelection.range(from, to),
-          'input.complete',
-        );
-      },
-      (state, position) =>
-        !state
-          .field(layoutField)
-          .blocks.some(
-            (block) => block.type === 'code' && block.from <= position && block.to >= position,
-          ),
-    ),
+    EditorState.languageData.of(() => [{ liveSuggestionAllowed: allowed }]),
+    ...(context.nested
+      ? [autocompletion(), EditorState.languageData.of(() => [{ autocomplete: guardedWikiSource }])]
+      : []),
+    createLiveTagSuggestions(allowed),
+    createLiveSlashSuggestions((view, from, to, block) => {
+      run(
+        view,
+        [
+          { type: 'key', key: 'Backspace' },
+          { type: 'block', block },
+        ],
+        EditorSelection.range(from, to),
+        'input.complete',
+      );
+    }, allowed),
     Prec.highest(
       keymap.of([
         {
