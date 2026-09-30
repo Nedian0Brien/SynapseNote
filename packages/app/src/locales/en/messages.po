@@ -6409,6 +6409,7 @@ msgstr "Medium section heading."
 #: src/editor/bubble-menu/MemoBubbleButton.tsx
 #: src/editor/components/PdfEmbed.tsx
 #: src/editor/components/PdfSelectionMenu.tsx
+#: src/editor/live/format-toolbar.tsx
 msgid "Memo"
 msgstr "Memo"
 

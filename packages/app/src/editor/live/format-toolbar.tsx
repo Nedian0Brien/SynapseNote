@@ -7,7 +7,8 @@ import {
   type EditAction,
   type MarkType,
 } from '@nedian0brien/synapsenote-core';
-import { Bold, Code, Highlighter, Italic, Link, Strikethrough } from 'lucide-react';
+import { Bold, Code, Highlighter, Italic, Link, StickyNote, Strikethrough } from 'lucide-react';
+import { memoQuoteFromSelection, requestMemoComposer } from '@/components/memo-composer-events';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -15,6 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { selectionSnapshotFromSource } from '../selection-context';
 import { openLiveLinkEditor } from './link-editor';
 import { livePortalRegistryFor } from './live-portals';
 import type { MediaContext } from './media-widgets';
@@ -46,9 +48,11 @@ function blockOptions(): [BlockKind, string][] {
 function FormatToolbar({
   view,
   apply,
+  context,
 }: {
   view: EditorView;
   apply: (view: EditorView, action: EditAction) => void;
+  context: MediaContext;
 }) {
   const selection = view.state.selection.main;
   // Inspect only the selected paragraph lines when the toolbar updates.
@@ -121,6 +125,25 @@ function FormatToolbar({
       >
         <Link size={16} />
       </Button>
+      {context.docName && !context.nested ? (
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={t`Memo`}
+          title={t`Memo`}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => {
+            const selection = selectionSnapshotFromSource(view, context.docName ?? '');
+            if (selection)
+              requestMemoComposer({
+                docName: selection.docName,
+                quote: memoQuoteFromSelection(selection),
+              });
+          }}
+        >
+          <StickyNote size={16} />
+        </Button>
+      ) : null}
     </div>
   );
 }
@@ -134,7 +157,7 @@ export function createLiveFormatToolbar(
     const dom = document.createElement('div');
     dom.className = 'cm-live-format-toolbar';
     const registry = context.portalRegistry ?? livePortalRegistryFor(view);
-    const content = () => <FormatToolbar view={view} apply={apply} />;
+    const content = () => <FormatToolbar view={view} apply={apply} context={context} />;
     const id = registry.register(dom, content());
     return {
       dom,

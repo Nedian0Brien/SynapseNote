@@ -43,10 +43,10 @@ mock.module('@/hooks/use-selection-context', () => ({
 
 const { MemoPanel } = await import('./MemoPanel');
 
-function renderMemo(docName: string) {
+function renderMemo(docName: string, isSourceMode = false) {
   return render(
     <TooltipProvider>
-      <MemoPanel docName={docName} isSourceMode={false} />
+      <MemoPanel docName={docName} isSourceMode={isSourceMode} />
     </TooltipProvider>,
   );
 }
@@ -213,6 +213,38 @@ describe('MemoPanel', () => {
       expect(requests).toHaveLength(1);
       expect(requests[0]?.docName).toBe('notes/today');
       expect(requests[0]?.memoId).toBeTruthy();
+    } finally {
+      unsubscribe();
+    }
+  });
+
+  test('source quote cards request navigation in the source editor', () => {
+    selectionValue = {
+      surface: 'source',
+      docName: 'notes/today',
+      markdown: 'source passage',
+      charLen: 14,
+      lineCount: 1,
+      sourceLineStart: 2,
+      sourceLineEnd: 2,
+      memoAnchor: {
+        surface: 'source',
+        exact: 'source passage',
+        prefix: 'before ',
+        suffix: ' after',
+        from: 7,
+        to: 21,
+      },
+    };
+    const requests: Array<{ docName: string; memoId: string }> = [];
+    const unsubscribe = subscribeMemoNavigation((request) => requests.push(request));
+    try {
+      renderMemo('notes/today', true);
+      fireEvent.click(screen.getByRole('button', { name: 'Attach selection' }));
+      addMemo('Source note');
+      fireEvent.click(screen.getByRole('button', { name: 'Go to annotation in document' }));
+      expect(requests).toHaveLength(1);
+      expect(requests[0]?.docName).toBe('notes/today');
     } finally {
       unsubscribe();
     }

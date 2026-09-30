@@ -33,6 +33,7 @@ import {
   livePortalRegistryFor,
   setLivePortalRegistry,
 } from './live/live-portals';
+import { createSourceMemos } from './live/memo-source';
 import { getMountId } from './mount-id-registry';
 import { markUserTyping } from './observers';
 import { publishSelectionContext, selectionSnapshotFromSource } from './selection-context';
@@ -240,6 +241,7 @@ export function SourceEditor({
           const state = EditorState.create({
             doc: ytext.toString(),
             extensions: [
+              createSourceMemos(resolvedDocName),
               basicSetup,
               // Search-result scroll. CM's default search `scrollToMatch` is
               // `EditorView.scrollIntoView(range)` (y:'nearest'), which no-ops in

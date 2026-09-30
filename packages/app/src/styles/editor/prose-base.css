@@ -225,14 +225,14 @@
 /* Saved memo anchors stay clickable across wrapped lines and use the requested
    lower-half blue stroke. Native document highlights are rendered by `<mark>`
    above and do not receive an annotation decoration. */
-.ProseMirror .ok-memo-highlight {
+:is(.ProseMirror, .source-editor) .ok-memo-highlight {
   color: inherit;
   cursor: pointer;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
 
-.ProseMirror .ok-memo-highlight-memo {
+:is(.ProseMirror, .source-editor) .ok-memo-highlight-memo {
   background-image: linear-gradient(
     to bottom,
     transparent 50%,
@@ -262,7 +262,7 @@
   display: none;
 }
 
-.ProseMirror .ok-memo-highlight-active {
+:is(.ProseMirror, .source-editor) .ok-memo-highlight-active {
   animation: memo-highlight-pulse 1.6s var(--ease-out-strong);
 }
 
@@ -277,7 +277,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ProseMirror .ok-memo-highlight-active {
+  :is(.ProseMirror, .source-editor) .ok-memo-highlight-active {
     animation: none;
     box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 55%, transparent);
   }

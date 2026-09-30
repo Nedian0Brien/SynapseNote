@@ -524,10 +524,11 @@ export function MemoPanel({ docName, isSourceMode }: MemoPanelProps) {
               const editing = editingId === entry.id;
               const highlight = nativeHighlightIds.has(entry.id);
               const navigable =
-                !isSourceMode &&
                 entry.quote !== null &&
-                (entry.quote.anchor?.surface !== 'source' ||
-                  entry.quote.sourceLineStart === undefined);
+                (isSourceMode
+                  ? entry.quote.anchor?.surface === 'source'
+                  : entry.quote.anchor?.surface !== 'source' ||
+                    entry.quote.sourceLineStart === undefined);
               const date = formatMemoDate(entry.updatedAt);
               return (
                 <li

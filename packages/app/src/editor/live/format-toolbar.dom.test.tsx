@@ -4,6 +4,11 @@ import { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
+import {
+  consumePendingMemoComposerRequest,
+  type MemoComposerRequest,
+  subscribeToMemoComposerRequests,
+} from '@/components/memo-composer-events';
 import { createLiveExtension } from './live-extension';
 import { LivePortalHost, LivePortalRegistry } from './live-portals';
 
@@ -22,7 +27,7 @@ afterEach(() => {
   });
   document.body.replaceChildren();
 });
-async function mount(source: string, anchor: number, head: number) {
+async function mount(source: string, anchor: number, head: number, docName?: string) {
   const registry = new LivePortalRegistry();
   const parent = document.createElement('div');
   const host = document.createElement('div');
@@ -32,7 +37,7 @@ async function mount(source: string, anchor: number, head: number) {
     state: EditorState.create({
       doc: source,
       selection: { anchor, head },
-      extensions: [history(), createLiveExtension({ portalRegistry: registry })],
+      extensions: [history(), createLiveExtension({ portalRegistry: registry, docName })],
     }),
   });
   views.push(view);
@@ -53,6 +58,27 @@ function button(label: string) {
 }
 
 describe('live format toolbar', () => {
+  test('Memo sends the selected source anchor to the existing composer', async () => {
+    const requests: MemoComposerRequest[] = [];
+    const stop = subscribeToMemoComposerRequests((request) => requests.push(request));
+    try {
+      await mount('before word after', 7, 11, 'memo-toolbar-review');
+      act(() => button('Memo').click());
+      expect(requests[0]?.quote.anchor).toEqual({
+        surface: 'source',
+        exact: 'word',
+        prefix: 'before ',
+        suffix: ' after',
+        from: 7,
+        to: 11,
+      });
+      expect(requests[0]?.docName).toBe('memo-toolbar-review');
+    } finally {
+      stop();
+      consumePendingMemoComposerRequest('memo-toolbar-review');
+    }
+  });
+
   test('formatting uses the mapped selection, updates pressed state, and supports undo', async () => {
     const view = await mount('word after', 0, 4);
     expect(document.querySelector('[role=toolbar]')).not.toBeNull();
