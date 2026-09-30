@@ -3,11 +3,21 @@ import { type EditorView, showTooltip, type Tooltip } from '@codemirror/view';
 import { t } from '@lingui/core/macro';
 import {
   type BlockKind,
+  canInsertSourceFootnote,
   computeLayout,
   type EditAction,
   type MarkType,
 } from '@nedian0brien/synapsenote-core';
-import { Bold, Code, Highlighter, Italic, Link, StickyNote, Strikethrough } from 'lucide-react';
+import {
+  Bold,
+  Code,
+  Highlighter,
+  Italic,
+  Link,
+  StickyNote,
+  Strikethrough,
+  Superscript,
+} from 'lucide-react';
 import { memoQuoteFromSelection, requestMemoComposer } from '@/components/memo-composer-events';
 import { Button } from '@/components/ui/button';
 import {
@@ -125,6 +135,28 @@ function FormatToolbar({
       >
         <Link size={16} />
       </Button>
+      {!context.nested ? (
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={t`Footnote`}
+          title={t`Footnote`}
+          disabled={
+            !canInsertSourceFootnote(
+              view.state.doc.sliceString(first, last),
+              selection.from - first,
+              selection.to - first,
+            )
+          }
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => {
+            apply(view, { type: 'footnote' });
+            view.focus();
+          }}
+        >
+          <Superscript size={16} />
+        </Button>
+      ) : null}
       {context.docName && !context.nested ? (
         <Button
           variant="ghost"

@@ -67,6 +67,15 @@ async function complete(view: EditorView, name: string): Promise<void> {
 }
 
 describe('live slash commands', () => {
+  test('Footnote inserts its reference and stub in one undo step', async () => {
+    const view = mount('a /footnote');
+    await complete(view, 'Footnote');
+    expect(view.state.doc.toString()).toBe('a [^1]\n\n[^1]: \n');
+    expect(view.dom.querySelector('.cm-live-footnote-reference')).not.toBeNull();
+    expect(undo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe('a /footnote');
+  });
+
   test('HTML and all shared preview starters insert their exact source bodies', async () => {
     const blank = mount('/html');
     await complete(blank, 'HTML');

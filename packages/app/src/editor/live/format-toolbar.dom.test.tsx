@@ -58,6 +58,16 @@ function button(label: string) {
 }
 
 describe('live format toolbar', () => {
+  test('Footnote moves selected source to its definition and undoes both in one step', async () => {
+    const view = await mount('a word after', 2, 6);
+    act(() => button('Footnote').click());
+    expect(view.state.doc.toString()).toBe('a [^1] after\n\n[^1]: word\n');
+    act(() => {
+      expect(undo(view)).toBe(true);
+    });
+    expect(view.state.doc.toString()).toBe('a word after');
+  });
+
   test('Memo sends the selected source anchor to the existing composer', async () => {
     const requests: MemoComposerRequest[] = [];
     const stop = subscribeToMemoComposerRequests((request) => requests.push(request));

@@ -53,6 +53,7 @@ export type EditAction =
   | { type: 'block'; block: BlockKind }
   | { type: 'move'; direction: 'up' | 'down' }
   | { type: 'paste'; text?: string; html?: string; as?: 'markdown' }
+  | { type: 'footnote' }
   | { type: 'copy' };
 
 export interface EditFixture {

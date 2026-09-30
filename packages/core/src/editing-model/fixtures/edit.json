@@ -1554,5 +1554,53 @@
       }
     ],
     "after": "```\n*a*│\n```"
+  },
+  {
+    "id": "footnote-selection",
+    "group": "edit.footnote",
+    "rule": "7",
+    "before": "a ⟪word⟫ z",
+    "actions": [{ "type": "footnote" }],
+    "after": "a [^1]│ z\n\n[^1]: word\n"
+  },
+  {
+    "id": "footnote-empty-caret",
+    "group": "edit.footnote",
+    "rule": "7",
+    "before": "a │z",
+    "actions": [{ "type": "footnote" }],
+    "after": "a [^1]│z\n\n[^1]: \n"
+  },
+  {
+    "id": "footnote-existing-definition-cluster",
+    "group": "edit.footnote",
+    "rule": "7",
+    "before": "a ⟪word⟫ z\n\n[^2]: old\n\nafter",
+    "actions": [{ "type": "footnote" }],
+    "after": "a [^3]│ z\n\n[^2]: old\n[^3]: word\n\nafter"
+  },
+  {
+    "id": "footnote-no-nested-reference",
+    "group": "edit.footnote",
+    "rule": "7",
+    "before": "a ⟪[^1]⟫ z\n\n[^1]: old",
+    "actions": [{ "type": "footnote" }],
+    "after": "a ⟪[^1]⟫ z\n\n[^1]: old"
+  },
+  {
+    "id": "footnote-soft-break",
+    "group": "edit.footnote",
+    "rule": "7",
+    "before": "a ⟪word\nnext⟫ z",
+    "actions": [{ "type": "footnote" }],
+    "after": "a [^1]│ z\n\n[^1]: word\n    next\n"
+  },
+  {
+    "id": "footnote-reject-multiple-paragraphs",
+    "group": "edit.footnote",
+    "rule": "7",
+    "before": "a ⟪word\n\nnext⟫ z",
+    "actions": [{ "type": "footnote" }],
+    "after": "a ⟪word\n\nnext⟫ z"
   }
 ]

@@ -40,14 +40,7 @@ declare module '@tiptap/core' {
  * (e.g. switch to letter suffixes when integers run out), both surfaces
  * pick up the new behavior from one place.
  */
-export function nextFootnoteIdentifier(existingIdentifiers: readonly string[]): string {
-  let maxId = 0;
-  for (const id of existingIdentifiers) {
-    const n = Number.parseInt(id, 10);
-    if (!Number.isNaN(n) && n > maxId) maxId = n;
-  }
-  return String(maxId + 1);
-}
+export { nextFootnoteIdentifier } from './footnote-identifiers.ts';
 
 /**
  * Top-level PM nodes carry both a position offset and a nodeSize — the

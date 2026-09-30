@@ -46,6 +46,7 @@ export function applyActionsInWindow(
   state: EditState,
   actions: readonly EditAction[],
 ): EditResult {
+  if (actions.some((action) => action.type === 'footnote')) return applyActions(state, actions);
   const source = layout.source;
   const window = editWindow(layout, state);
   if (state.anchor < window.from || state.head < window.from) {

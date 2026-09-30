@@ -104,7 +104,10 @@ describe('live editor — edit.json through CodeMirror', () => {
   const supported = editFixtures.filter(
     (f) =>
       f.after !== undefined &&
-      f.actions.every((a) => a.type !== 'paste' && a.type !== 'copy' && a.type !== 'link'),
+      f.actions.every(
+        (a) =>
+          a.type !== 'paste' && a.type !== 'copy' && a.type !== 'link' && a.type !== 'footnote',
+      ),
   );
   for (const fixture of supported) {
     test(`${fixture.id}`, () => {

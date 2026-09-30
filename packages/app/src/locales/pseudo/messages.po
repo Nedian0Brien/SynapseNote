@@ -4922,6 +4922,8 @@ msgstr ""
 msgid "Follow us on X"
 msgstr ""
 
+#: src/editor/live/format-toolbar.tsx
+#: src/editor/live/slash-suggestions.ts
 #: src/editor/slash-command/items.tsx
 msgid "Footnote"
 msgstr ""

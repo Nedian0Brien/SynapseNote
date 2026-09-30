@@ -621,17 +621,30 @@ export function createLiveExtension(context: MediaContext = {}): Extension {
       },
       allowed,
     ),
-    createLiveSlashSuggestions((view, from, to, block) => {
-      run(
-        view,
-        [
-          { type: 'key', key: 'Backspace' },
-          { type: 'block', block },
-        ],
-        EditorSelection.range(from, to),
-        'input.complete',
-      );
-    }, allowed),
+    createLiveSlashSuggestions(
+      (view, from, to, block) => {
+        run(
+          view,
+          [
+            { type: 'key', key: 'Backspace' },
+            { type: 'block', block },
+          ],
+          EditorSelection.range(from, to),
+          'input.complete',
+        );
+      },
+      allowed,
+      context.nested
+        ? undefined
+        : (view, from, to) => {
+            run(
+              view,
+              [{ type: 'key', key: 'Backspace' }, { type: 'footnote' }],
+              EditorSelection.range(from, to),
+              'input.complete',
+            );
+          },
+    ),
     Prec.highest(
       keymap.of([
         {

@@ -113,14 +113,16 @@ export type ApplySlashBlock = (
 export function createLiveSlashSuggestions(
   applyBlock: ApplySlashBlock,
   allowed: (state: EditorState, position: number) => boolean,
+  applyFootnote?: (view: EditorView, from: number, to: number) => void,
 ): Extension {
-  const source = createLiveSlashSource(applyBlock, allowed);
+  const source = createLiveSlashSource(applyBlock, allowed, applyFootnote);
   return EditorState.languageData.of(() => [{ autocomplete: source }]);
 }
 
 export function createLiveSlashSource(
   applyBlock: ApplySlashBlock,
   allowed: (state: EditorState, position: number) => boolean,
+  applyFootnote?: (view: EditorView, from: number, to: number) => void,
 ): (context: CompletionContext) => CompletionResult | null {
   return (context) => {
     if (!allowed(context.state, context.pos)) return null;
@@ -130,7 +132,15 @@ export function createLiveSlashSource(
     if (!match) return null;
     const query = match[1].toLocaleLowerCase();
     const from = context.pos - match[1].length - 1;
-    const options: Completion[] = items()
+    const choices: SlashItem[] = items();
+    if (applyFootnote)
+      choices.push({
+        label: t`Footnote`,
+        aliases: ['footnote', 'aside', 'reference'],
+        run: (view) =>
+          applyFootnote(view, view.state.selection.main.from, view.state.selection.main.to),
+      });
+    const options: Completion[] = choices
       .filter((item) =>
         [item.label, ...item.aliases].some((value) => value.toLocaleLowerCase().includes(query)),
       )
@@ -139,6 +149,11 @@ export function createLiveSlashSource(
         type: 'keyword',
         info: item.description,
         apply(view, _completion, start, end) {
+          if (item.label === t`Footnote` && applyFootnote) {
+            applyFootnote(view, start, end);
+            view.focus();
+            return;
+          }
           if (item.block) applyBlock(view, start, end, item.block);
           else if (item.source || item.buildSource) {
             const line = view.state.doc.lineAt(start);

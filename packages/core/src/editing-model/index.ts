@@ -45,6 +45,7 @@ export {
   type WidgetFixture,
   widgetFixtures,
 } from './fixtures.ts';
+export { canInsertSourceFootnote, insertSourceFootnote } from './footnote.ts';
 export { IncrementalLayout, type IncrementalLayoutStats } from './incremental-layout.ts';
 export {
   type BlockLayout,

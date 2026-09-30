@@ -8,6 +8,7 @@
  */
 import { htmlToMdast, mdastToMarkdown } from '../markdown/html-to-mdast.ts';
 import type { BlockKind, EditAction } from './fixtures.ts';
+import { insertSourceFootnote } from './footnote.ts';
 import {
   computeBlockLayouts,
   computeLayout,
@@ -108,6 +109,10 @@ export function applyAction(state: EditState, action: EditAction): EditResult {
   const raw = block ? editBlockSource(base, block, action) : null;
   if (raw) return raw;
   switch (action.type) {
+    case 'footnote': {
+      const result = insertSourceFootnote(base.source, base.anchor, base.head);
+      return { ...collapsed(result.source, result.head), anchor: result.anchor };
+    }
     case 'link': {
       const result = updateSourceLink(
         base.source,
