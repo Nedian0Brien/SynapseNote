@@ -1547,6 +1547,10 @@ msgstr ""
 msgid "Block math equation rendered with KaTeX from a LaTeX source string."
 msgstr ""
 
+#: src/editor/live/format-toolbar.tsx
+msgid "Block type"
+msgstr ""
+
 #: src/components/DatabaseDiagnosticsDialog.tsx
 msgid "Blocked"
 msgstr ""
@@ -1568,6 +1572,7 @@ msgid "Board cards and limits"
 msgstr ""
 
 #: src/components/MarkdownFormatToolbar.tsx
+#: src/editor/live/format-toolbar.tsx
 #: src/lib/keyboard-shortcuts.ts
 msgid "Bold"
 msgstr ""
@@ -1678,6 +1683,7 @@ msgstr ""
 msgid "Building <0>synapsenote.skill</0> and opening the Claude Desktop App"
 msgstr ""
 
+#: src/editor/live/format-toolbar.tsx
 #: src/editor/live/slash-suggestions.ts
 #: src/lib/keyboard-shortcuts.ts
 msgid "Bullet list"
@@ -2189,6 +2195,7 @@ msgstr ""
 msgid "Code"
 msgstr ""
 
+#: src/editor/live/format-toolbar.tsx
 #: src/editor/live/slash-suggestions.ts
 #: src/lib/keyboard-shortcuts.ts
 msgid "Code block"
@@ -5175,31 +5182,37 @@ msgid "Headers"
 msgstr ""
 
 #: src/components/MarkdownFormatToolbar.tsx
+#: src/editor/live/format-toolbar.tsx
 #: src/editor/live/slash-suggestions.ts
 #: src/editor/slash-command/items.tsx
 msgid "Heading 1"
 msgstr ""
 
 #: src/components/MarkdownFormatToolbar.tsx
+#: src/editor/live/format-toolbar.tsx
 #: src/editor/live/slash-suggestions.ts
 #: src/editor/slash-command/items.tsx
 msgid "Heading 2"
 msgstr ""
 
 #: src/components/MarkdownFormatToolbar.tsx
+#: src/editor/live/format-toolbar.tsx
 #: src/editor/live/slash-suggestions.ts
 #: src/editor/slash-command/items.tsx
 msgid "Heading 3"
 msgstr ""
 
+#: src/editor/live/format-toolbar.tsx
 #: src/editor/live/slash-suggestions.ts
 msgid "Heading 4"
 msgstr ""
 
+#: src/editor/live/format-toolbar.tsx
 #: src/editor/live/slash-suggestions.ts
 msgid "Heading 5"
 msgstr ""
 
+#: src/editor/live/format-toolbar.tsx
 #: src/editor/live/slash-suggestions.ts
 msgid "Heading 6"
 msgstr ""
@@ -5322,6 +5335,7 @@ msgstr ""
 #: src/components/MemoPanel.tsx
 #: src/editor/components/PdfEmbed.tsx
 #: src/editor/components/PdfSelectionMenu.tsx
+#: src/editor/live/format-toolbar.tsx
 #: src/lib/keyboard-shortcuts.ts
 msgid "Highlight"
 msgstr ""
@@ -5610,6 +5624,7 @@ msgstr ""
 msgid "Initializing project"
 msgstr ""
 
+#: src/editor/live/format-toolbar.tsx
 #: src/lib/keyboard-shortcuts.ts
 msgid "Inline code"
 msgstr ""
@@ -5844,6 +5859,7 @@ msgid "It may be invalid, expired, or revoked."
 msgstr ""
 
 #: src/components/MarkdownFormatToolbar.tsx
+#: src/editor/live/format-toolbar.tsx
 #: src/lib/keyboard-shortcuts.ts
 msgid "Italic"
 msgstr ""
@@ -5963,6 +5979,7 @@ msgid "Lines {0}–{1}"
 msgstr ""
 
 #: src/editor/bubble-menu/LinkEditPopover.tsx
+#: src/editor/live/format-toolbar.tsx
 #: src/editor/live/slash-suggestions.ts
 #: src/editor/slash-command/component-items.tsx
 msgid "Link"
@@ -7376,6 +7393,7 @@ msgstr ""
 msgid "Number display"
 msgstr ""
 
+#: src/editor/live/format-toolbar.tsx
 #: src/editor/live/slash-suggestions.ts
 msgid "Numbered list"
 msgstr ""
@@ -8638,6 +8656,7 @@ msgid "Query"
 msgstr ""
 
 #: src/components/MarkdownFormatToolbar.tsx
+#: src/editor/live/format-toolbar.tsx
 #: src/editor/live/slash-suggestions.ts
 #: src/editor/slash-command/items.tsx
 msgid "Quote"
@@ -10597,6 +10616,7 @@ msgstr ""
 msgid "Stored on this machine."
 msgstr ""
 
+#: src/editor/live/format-toolbar.tsx
 #: src/lib/keyboard-shortcuts.ts
 msgid "Strikethrough"
 msgstr ""
@@ -10876,6 +10896,7 @@ msgstr ""
 msgid "Target view"
 msgstr ""
 
+#: src/editor/live/format-toolbar.tsx
 #: src/editor/live/slash-suggestions.ts
 #: src/lib/keyboard-shortcuts.ts
 msgid "Task list"
@@ -10983,8 +11004,13 @@ msgid "Terminal settings not yet loaded — try again in a moment"
 msgstr ""
 
 #: src/components/PropertyWidgets.tsx
+#: src/editor/live/format-toolbar.tsx
 #: src/editor/live/slash-suggestions.ts
 msgid "Text"
+msgstr ""
+
+#: src/editor/live/format-toolbar.tsx
+msgid "Text formatting"
 msgstr ""
 
 #: src/components/DatabaseContextInspectorDialog.tsx
