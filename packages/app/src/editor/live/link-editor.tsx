@@ -6,6 +6,12 @@ import { toast } from 'sonner';
 import { livePortalRegistryFor } from './live-portals';
 import type { MediaContext } from './media-widgets';
 
+const editors = new WeakMap<EditorView, { open: (placeholder?: boolean) => boolean }>();
+
+export function openLiveLinkEditor(view: EditorView, placeholder = false): boolean {
+  return editors.get(view)?.open(placeholder) ?? false;
+}
+
 export function createLiveLinkEditor(
   context: MediaContext,
   apply: (view: EditorView, from: number, to: number, href: string, label?: string) => void,
@@ -20,11 +26,13 @@ export function createLiveLinkEditor(
       disposed = false;
       generation = 0;
       active = false;
-      constructor(readonly view: EditorView) {}
+      constructor(readonly view: EditorView) {
+        editors.set(view, this);
+      }
       update(update: ViewUpdate) {
         if (this.active && update.docChanged) {
-          this.from = update.changes.mapPos(this.from, -1);
-          this.to = update.changes.mapPos(this.to, 1);
+          this.from = update.changes.mapPos(this.from, 1);
+          this.to = update.changes.mapPos(this.to, -1);
         }
       }
       close(focus = true) {
@@ -37,7 +45,7 @@ export function createLiveLinkEditor(
         this.target = null;
         if (focus && !this.disposed) this.view.focus();
       }
-      open(): boolean {
+      open(placeholder = false): boolean {
         const selection = this.view.state.selection.main;
         if (!allowed(this.view.state, selection.head)) return false;
         const source = this.view.state.doc.toString();
@@ -59,7 +67,15 @@ export function createLiveLinkEditor(
             <LiveLinkDialog
               href={model?.href ?? ''}
               label={label}
-              onClose={() => this.close()}
+              onClose={() => {
+                if (placeholder && this.view.state.doc.sliceString(this.from, this.to) === label) {
+                  this.view.dispatch({
+                    changes: { from: this.from, to: this.to },
+                    userEvent: 'input.link',
+                  });
+                }
+                this.close();
+              }}
               onSave={(href, text) => {
                 if (
                   model &&
@@ -87,6 +103,7 @@ export function createLiveLinkEditor(
         return true;
       }
       destroy() {
+        editors.delete(this.view);
         this.disposed = true;
         this.close(false);
       }

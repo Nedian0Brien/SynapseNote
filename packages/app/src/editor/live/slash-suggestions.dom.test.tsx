@@ -9,15 +9,28 @@ import {
 import { history, undo } from '@codemirror/commands';
 import { EditorState } from '@codemirror/state';
 import { EditorView, runScopeHandlers } from '@codemirror/view';
+import { act } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
+import { DATABASE_SLASH_COMMAND_EVENT } from '@/lib/database-events';
 import { createLiveExtension } from './live-extension';
+import { LivePortalHost, livePortalRegistryFor } from './live-portals';
 
 if (typeof Window === 'undefined') {
   Object.defineProperty(globalThis, 'Window', { value: window.Window, configurable: true });
 }
 
+if (!window.Range.prototype.getClientRects)
+  window.Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
+if (!window.Range.prototype.getBoundingClientRect)
+  window.Range.prototype.getBoundingClientRect = () => new window.DOMRect();
 const views: EditorView[] = [];
+const roots: Root[] = [];
 afterEach(() => {
-  for (const view of views.splice(0)) view.destroy();
+  act(() => {
+    for (const view of views.splice(0)) view.destroy();
+    for (const root of roots.splice(0)) root.unmount();
+  });
+  document.body.replaceChildren();
 });
 
 function mount(source: string): EditorView {
@@ -46,10 +59,67 @@ async function complete(view: EditorView, name: string): Promise<void> {
   if (!result) throw new Error(`Missing result ${name}`);
   const option = result.options.find((item) => item.label === name);
   if (!option || typeof option.apply !== 'function') throw new Error(`Missing command ${name}`);
-  option.apply(view, option, result.from, context.pos);
+  await act(async () => {
+    if (typeof option.apply === 'function') option.apply(view, option, result.from, context.pos);
+  });
 }
 
 describe('live slash commands', () => {
+  test('Callout uses explicit defaults, renders a widget, and is undone in one step', async () => {
+    const view = mount('/callout');
+    await complete(view, 'Callout');
+    expect(view.state.doc.toString()).toContain('<Callout type="note"');
+    expect(view.state.doc.toString()).not.toContain('title=');
+    expect(view.dom.querySelector('.cm-live-container-widget .callout')).not.toBeNull();
+    expect(undo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe('/callout');
+  });
+
+  test('Tabs seeds two labeled panels and image attributes do not invent dimensions', async () => {
+    const tabs = mount('/tabs');
+    await complete(tabs, 'Tabs');
+    expect(tabs.state.doc.toString()).toContain('<Tab label="Tab 1">');
+    expect(tabs.state.doc.toString()).toContain('<Tab label="Tab 2">');
+    const host = document.createElement('div');
+    document.body.append(host);
+    const root = createRoot(host);
+    roots.push(root);
+    act(() => root.render(<LivePortalHost registry={livePortalRegistryFor(tabs)} />));
+    expect(tabs.dom.querySelector('.cm-live-tabs-widget')).not.toBeNull();
+    const image = mount('/image');
+    await complete(image, 'Image');
+    expect(image.state.doc.toString()).toContain('<img src=""');
+    expect(image.state.doc.toString()).not.toMatch(/width=|height=/);
+  });
+
+  test('new database opens the existing app flow and removes only the slash trigger', async () => {
+    const commands: string[] = [];
+    const listener = (event: Event) => commands.push((event as CustomEvent<string>).detail);
+    window.addEventListener(DATABASE_SLASH_COMMAND_EVENT, listener);
+    try {
+      const view = mount('before /database');
+      await complete(view, 'New database');
+      expect(view.state.doc.toString()).toBe('before ');
+      expect(commands).toEqual(['new']);
+    } finally {
+      window.removeEventListener(DATABASE_SLASH_COMMAND_EVENT, listener);
+    }
+  });
+
+  test('linked database inserts its picker and inline creation receives a fresh ID', async () => {
+    const linked = mount('/linked');
+    await complete(linked, 'Linked database');
+    expect(linked.state.doc.toString()).toContain('<DatabaseView mode="inline" />');
+    const first = mount('/inline');
+    const second = mount('/inline');
+    await complete(first, 'Inline database');
+    await complete(second, 'Inline database');
+    expect(first.state.doc.toString()).toContain('create="blank"');
+    const creationId = /creationId="([^"]+)"/.exec(first.state.doc.toString())?.[1];
+    expect(creationId).toBeTruthy();
+    expect(second.state.doc.toString()).not.toContain(`creationId="${creationId}"`);
+  });
+
   test('the completion menu settles and Enter selects before the live Enter command', async () => {
     const view = mount('/h2');
     view.focus();

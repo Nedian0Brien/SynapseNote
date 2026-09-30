@@ -1,14 +1,25 @@
 import type { Completion, CompletionContext, CompletionResult } from '@codemirror/autocomplete';
+import { startCompletion } from '@codemirror/autocomplete';
 import { EditorState, type Extension } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
 import { t } from '@lingui/core/macro';
 import type { BlockKind } from '@nedian0brien/synapsenote-core';
+
+import { createDatabaseCreationId } from '@/lib/database-creation';
+import { dispatchDatabaseSlashCommand } from '@/lib/database-events';
+import { openLiveLinkEditor } from './link-editor';
+import { liveComponentSource, liveSlashComponents } from './slash-components';
 
 interface SlashItem {
   label: string;
   aliases: string[];
   block?: BlockKind;
   source?: string;
+  buildSource?: () => string;
+  run?: (view: EditorView) => void;
+  description?: string;
+  inline?: boolean;
+  selectInserted?: boolean;
 }
 
 function items(): SlashItem[] {
@@ -30,6 +41,47 @@ function items(): SlashItem[] {
     { label: t`Math`, aliases: ['math', 'equation', 'latex'], source: '$$\n\n$$\n\n' },
     { label: t`Mermaid`, aliases: ['mermaid', 'diagram'], source: '```mermaid\ngraph TD\n```\n\n' },
     { label: t`Comment`, aliases: ['comment', 'note'], source: '<!--\n\n-->\n\n' },
+    ...liveSlashComponents.map((descriptor) => ({
+      label: descriptor.displayName ?? descriptor.name,
+      aliases: [descriptor.name, ...(descriptor.searchTerms ?? [])],
+      description: descriptor.description,
+      buildSource: () => liveComponentSource(descriptor.name),
+    })),
+    {
+      label: t`New database`,
+      aliases: ['database', 'collection', 'create database', 'database page'],
+      run: () => dispatchDatabaseSlashCommand('new'),
+    },
+    {
+      label: t`Linked database`,
+      aliases: ['linked database', 'linked view', 'existing database', 'database view'],
+      buildSource: () => liveComponentSource('DatabaseView'),
+    },
+    {
+      label: t`Inline database`,
+      aliases: ['inline table', 'inline view', 'embedded database', 'database in page'],
+      buildSource: () =>
+        liveComponentSource('DatabaseView', {
+          create: 'blank',
+          creationId: createDatabaseCreationId(),
+          creationName: 'Untitled database',
+        }),
+    },
+    {
+      label: t`Link`,
+      aliases: ['url', 'href', 'hyperlink', 'wiki', 'wikilink', 'internal'],
+      source: 'link',
+      inline: true,
+      selectInserted: true,
+      run: (view) => openLiveLinkEditor(view, true),
+    },
+    {
+      label: t`Tag`,
+      aliases: ['tag', 'hashtag', 'label'],
+      source: '#',
+      inline: true,
+      run: startCompletion,
+    },
   ];
 }
 
@@ -68,21 +120,29 @@ export function createLiveSlashSource(
       .map((item) => ({
         label: item.label,
         type: 'keyword',
+        info: item.description,
         apply(view, _completion, start, end) {
           if (item.block) applyBlock(view, start, end, item.block);
-          else if (item.source) {
+          else if (item.source || item.buildSource) {
             const line = view.state.doc.lineAt(start);
-            const lead = view.state.doc.sliceString(line.from, start).trim() ? '\n\n' : '';
-            const tail = view.state.doc.sliceString(end, line.to).trim() ? '\n\n' : '';
-            const insert = lead + item.source + tail;
+            const inline = item.inline;
+            const lead =
+              !inline && view.state.doc.sliceString(line.from, start).trim() ? '\n\n' : '';
+            const tail = !inline && view.state.doc.sliceString(end, line.to).trim() ? '\n\n' : '';
+            const insert = lead + (item.buildSource?.() ?? item.source ?? '') + tail;
             view.dispatch({
               changes: { from: start, to: end, insert },
-              selection: { anchor: start + insert.length },
+              selection: {
+                anchor: item.selectInserted ? start : start + insert.length,
+                head: start + insert.length,
+              },
               userEvent: 'input.complete',
               scrollIntoView: true,
             });
-          }
+          } else if (item.run)
+            view.dispatch({ changes: { from: start, to: end }, userEvent: 'input.complete' });
           view.focus();
+          item.run?.(view);
         },
       }));
     return { from, options, filter: false };

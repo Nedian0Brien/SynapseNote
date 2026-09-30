@@ -101,6 +101,9 @@ describe('live MDX properties', () => {
     const view = mount('<DatabaseView databaseId="db" sourceId="ds" viewId="view" />');
     const widget = view.dom.querySelector('.cm-live-mdx-widget[data-mdx-name="DatabaseView"]');
     if (!widget) throw new Error('Database view widget missing');
+    expect(widget.querySelector('[aria-label="DatabaseView databaseId"]')).toBeNull();
+    expect(widget.querySelector('[aria-label="DatabaseView sourceId"]')).toBeNull();
+    expect(widget.querySelector('[aria-label="DatabaseView viewId"]')).toBeNull();
     const add = widget.querySelector<HTMLSelectElement>('.cm-live-mdx-add-property');
     if (!add) throw new Error('Add property selector missing');
     expect([...add.options].map((option) => option.value)).toContain('mode');

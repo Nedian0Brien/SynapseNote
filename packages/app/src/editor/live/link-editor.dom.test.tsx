@@ -31,6 +31,7 @@ mock.module('./link-dialog', () => ({
   ),
 }));
 const { createLiveExtension } = await import('./live-extension');
+const { openLiveLinkEditor } = await import('./link-editor');
 if (typeof Window === 'undefined')
   Object.defineProperty(globalThis, 'Window', { value: window.Window, configurable: true });
 if (!window.Range.prototype.getClientRects)
@@ -81,6 +82,22 @@ async function open(view: EditorView) {
 }
 
 describe('live link editor', () => {
+  test('canceling a slash placeholder removes only its mapped unchanged text', async () => {
+    const view = mount('link', 0, 4);
+    await act(async () => {
+      expect(openLiveLinkEditor(view, true)).toBe(true);
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+    act(() => view.dispatch({ changes: { from: 0, insert: 'remote ' } }));
+    const cancel = [...document.querySelectorAll<HTMLButtonElement>('button')].find(
+      (button) => button.textContent === 'Cancel',
+    );
+    if (!cancel) throw new Error('Link dialog missing');
+    act(() => cancel.click());
+    // A concurrent insertion at the boundary remains outside the placeholder.
+    expect(view.state.doc.toString()).toBe('remote ');
+  });
+
   test('saving after a remote deletion does not recreate the removed link', async () => {
     const view = mount('[label](https://old.example)', 3);
     expect(await open(view)).toBe(true);

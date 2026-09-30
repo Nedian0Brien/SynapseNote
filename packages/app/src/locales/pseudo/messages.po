@@ -5592,6 +5592,7 @@ msgstr ""
 msgid "Inline code"
 msgstr ""
 
+#: src/editor/live/slash-suggestions.ts
 #: src/editor/slash-command/component-items.tsx
 msgid "Inline database"
 msgstr ""
@@ -5940,6 +5941,7 @@ msgid "Lines {0}–{1}"
 msgstr ""
 
 #: src/editor/bubble-menu/LinkEditPopover.tsx
+#: src/editor/live/slash-suggestions.ts
 #: src/editor/slash-command/component-items.tsx
 msgid "Link"
 msgstr ""
@@ -5982,6 +5984,10 @@ msgstr ""
 
 #: src/components/GraphView.tsx
 msgid "Link-graph response did not match expected shape."
+msgstr ""
+
+#: src/editor/live/slash-suggestions.ts
+msgid "Linked database"
 msgstr ""
 
 #: src/editor/components/use-inline-database-read-state.ts
@@ -6725,6 +6731,7 @@ msgstr ""
 #: src/components/FileSidebar.tsx
 #: src/components/PackCardGrid.tsx
 #: src/components/use-database-workspace-controller-runtime.ts
+#: src/editor/live/slash-suggestions.ts
 #: src/editor/slash-command/component-items.tsx
 msgid "New database"
 msgstr ""
@@ -10790,6 +10797,7 @@ msgid "Table layout and calculations"
 msgstr ""
 
 #: src/components/GraphCardDeck.tsx
+#: src/editor/live/slash-suggestions.ts
 #: src/editor/slash-command/component-items.tsx
 msgid "Tag"
 msgstr ""

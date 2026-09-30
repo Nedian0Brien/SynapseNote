@@ -158,6 +158,9 @@ function surface(
   const Component = state.component;
   const body = model.bodyRange ? <div className="cm-live-mdx-body" ref={bodyRef} /> : null;
   const definitions = propDefsByName.get(model.name) ?? [];
+  // The database component owns these through its source/view picker.
+  const pickerOwned = (name: string) =>
+    model.name === 'DatabaseView' && ['databaseId', 'sourceId', 'viewId'].includes(name);
   const byName = new Map(definitions.map((definition) => [definition.name, definition]));
   const existing = new Set(model.attributes.map((attribute) => attribute.name));
   const visible = model.attributes
@@ -165,6 +168,7 @@ function surface(
       const definition = byName.get(attribute.name);
       return (
         attribute.name !== 'key' &&
+        !pickerOwned(attribute.name) &&
         attribute.value !== undefined &&
         definition?.type !== 'reactnode' &&
         !definition?.hidden &&
@@ -180,6 +184,7 @@ function surface(
     if (
       definition.required &&
       !existing.has(definition.name) &&
+      !pickerOwned(definition.name) &&
       !definition.hidden &&
       definition.type !== 'reactnode' &&
       !definition.hideWhen?.({ ...model.props })
@@ -190,6 +195,7 @@ function surface(
   const addable = definitions.filter(
     (definition) =>
       !existing.has(definition.name) &&
+      !pickerOwned(definition.name) &&
       !definition.required &&
       !definition.hidden &&
       definition.type !== 'reactnode' &&
