@@ -17,6 +17,8 @@ import { type TabsWidgetEdit, updateTabsWidget } from './tabs-widget.ts';
 export interface CodeWidgetSource {
   body: Range;
   language: Range;
+  /** Opening-fence metadata, including its separating whitespace. */
+  meta: Range;
 }
 
 export interface IndentedCodeWidgetSource {
@@ -77,6 +79,7 @@ export interface MediaWidgetSource {
 export type BlockWidgetEdit =
   | { type: 'code-body'; text: string }
   | { type: 'code-language'; text: string }
+  | { type: 'code-meta'; text: string }
   | { type: 'diagram-body'; text: string }
   | { type: 'container-body'; text: string }
   | { type: 'container-title'; text: string }
@@ -118,6 +121,7 @@ export function codeWidgetSource(
   }
   return {
     language: [languageFrom, languageFrom + fence[2].length],
+    meta: [languageFrom + fence[2].length, from + opening.length],
     body: [from + firstNewline + 1, bodyEnd],
   };
 }
@@ -727,6 +731,10 @@ export function updateBlockWidget(
   }
   const code = codeWidgetSource(source, from, to);
   if (!code) return null;
+  if (edit.type === 'code-meta') {
+    const meta = edit.text.replace(/[\r\n]/g, ' ').trim();
+    return replace(code.meta, meta ? ` ${meta}` : '');
+  }
   if (edit.type === 'code-language') {
     return replace(code.language, edit.text.replace(/[\s`~]/g, ''));
   }

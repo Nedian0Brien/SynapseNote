@@ -466,5 +466,29 @@
     "from": 0,
     "edit": { "type": "mdx-body", "text": "new" },
     "after": "<Custom >\nnew\n</Custom>"
+  },
+  {
+    "id": "code-preview-meta-byte-range",
+    "group": "widget.code-meta",
+    "rule": "3",
+    "before": "before\n\n~~~html title=\"Keep\"\n<div>stay</div>\n~~~\n\nafter",
+    "from": 8,
+    "edit": {
+      "type": "code-meta",
+      "text": "preview title=\"Keep\" h=240px"
+    },
+    "after": "before\n\n~~~html preview title=\"Keep\" h=240px\n<div>stay</div>\n~~~\n\nafter"
+  },
+  {
+    "id": "code-preview-meta-remove",
+    "group": "widget.code-meta",
+    "rule": "3",
+    "before": "```html preview\n<div>stay</div>\n```",
+    "from": 0,
+    "edit": {
+      "type": "code-meta",
+      "text": ""
+    },
+    "after": "```html\n<div>stay</div>\n```"
   }
 ]

@@ -3,10 +3,10 @@ import { startCompletion } from '@codemirror/autocomplete';
 import { EditorState, type Extension } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
 import { t } from '@lingui/core/macro';
-import type { BlockKind } from '@nedian0brien/synapsenote-core';
-
+import { type BlockKind, PREVIEW_EMBED_STARTERS } from '@nedian0brien/synapsenote-core';
 import { createDatabaseCreationId } from '@/lib/database-creation';
 import { dispatchDatabaseSlashCommand } from '@/lib/database-events';
+import { BLANK_HTML_BODY, EMBED_STARTER_ALIASES } from '../slash-command/embed-source';
 import { openLiveLinkEditor } from './link-editor';
 import { liveComponentSource, liveSlashComponents } from './slash-components';
 import { pickLiveUpload } from './uploads';
@@ -47,6 +47,17 @@ function items(): SlashItem[] {
       aliases: ['file', 'attachment', 'download', 'upload', 'document', 'zip'],
       run: pickLiveUpload,
     },
+    {
+      label: t`HTML`,
+      aliases: ['html', 'embed', 'preview', 'iframe', 'sandbox', 'web', 'snippet'],
+      source: `\`\`\`html preview\n${BLANK_HTML_BODY}\n\`\`\`\n\n`,
+    },
+    ...PREVIEW_EMBED_STARTERS.map((starter) => ({
+      label: starter.title,
+      aliases: [starter.id, 'html', ...(EMBED_STARTER_ALIASES[starter.id] ?? [])],
+      description: starter.description,
+      source: `\`\`\`html preview\n${starter.html}\n\`\`\`\n\n`,
+    })),
     ...liveSlashComponents.map((descriptor) => ({
       label: descriptor.displayName ?? descriptor.name,
       aliases: [descriptor.name, ...(descriptor.searchTerms ?? [])],

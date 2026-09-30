@@ -181,7 +181,7 @@ function blockDecorations(
                           referenceDefinitionSource(source, widget.from, widget.to)
                         ? new ReferenceDefinitionWidget(raw, widget.from, widget.to)
                         : widget.node === 'code'
-                          ? new CodeBlockWidget(raw, widget.from, widget.to)
+                          ? new CodeBlockWidget(raw, widget.from, widget.to, context.portalRegistry)
                           : widget.node === 'mdxJsxFlowElement' &&
                               tabsWidgetSource(source, widget.from, widget.to)
                             ? new TabsBlockWidget(

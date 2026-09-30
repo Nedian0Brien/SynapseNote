@@ -12,6 +12,11 @@ import {
   tableWidgetSource,
   updateBlockWidget,
 } from '@nedian0brien/synapsenote-core';
+import { createElement } from 'react';
+import { normalizeCodeLanguage } from '../extensions/code-block-languages';
+import { PREVIEWABLE_LANGUAGES, shouldShowPreview } from '../extensions/code-block-meta';
+import { LiveCodePreview } from './code-preview';
+import { type LivePortalRegistry, livePortalRegistryFor } from './live-portals';
 
 interface WidgetPosition {
   from: number;
@@ -43,20 +48,56 @@ interface CodeDOM {
   position: WidgetPosition;
   language: HTMLInputElement;
   body: HTMLTextAreaElement;
+  registry: LivePortalRegistry;
+  target: HTMLElement;
+  portalId: number | null;
 }
 const codeDOM = new WeakMap<HTMLElement, CodeDOM>();
+
+function renderCodePreview(state: CodeDOM, view: EditorView) {
+  const source = view.state.doc.toString();
+  const model = codeWidgetSource(source, state.position.from, state.position.to);
+  const language = model ? source.slice(...model.language) : '';
+  const meta = model ? source.slice(...model.meta).trim() : '';
+  const normalized = normalizeCodeLanguage(language);
+  const available = normalized && PREVIEWABLE_LANGUAGES.has(normalized);
+  state.body.hidden = shouldShowPreview(normalized, meta);
+  if (!available) {
+    if (state.portalId !== null) state.registry.unregister(state.portalId);
+    state.portalId = null;
+    return;
+  }
+  const content = available
+    ? createElement(LiveCodePreview, {
+        language,
+        meta,
+        body: model ? source.slice(...model.body) : '',
+        onBody: (text: string) => writeWidget(view, state.position, { type: 'code-body', text }),
+        onMeta: (text: string) => writeWidget(view, state.position, { type: 'code-meta', text }),
+        onMeasure: () => view.requestMeasure(),
+      })
+    : null;
+  if (state.portalId === null) state.portalId = state.registry.register(state.target, content);
+  else state.registry.update(state.portalId, content);
+}
 
 export class CodeBlockWidget extends WidgetType {
   constructor(
     readonly source: string,
     readonly from: number,
     readonly to: number,
+    readonly portalRegistry?: LivePortalRegistry,
   ) {
     super();
   }
 
   eq(other: CodeBlockWidget): boolean {
-    return this.source === other.source && this.from === other.from && this.to === other.to;
+    return (
+      this.source === other.source &&
+      this.from === other.from &&
+      this.to === other.to &&
+      this.portalRegistry === other.portalRegistry
+    );
   }
 
   toDOM(view: EditorView): HTMLElement {
@@ -70,9 +111,17 @@ export class CodeBlockWidget extends WidgetType {
     body.className = 'cm-live-code-body';
     body.spellcheck = false;
     body.setAttribute('aria-label', t`Code`);
-    wrapper.append(language, body);
+    const target = document.createElement('div');
+    wrapper.append(language, target, body);
     const position = { from: this.from, to: this.to };
-    const state = { position, language, body };
+    const state: CodeDOM = {
+      position,
+      language,
+      body,
+      target,
+      registry: this.portalRegistry ?? livePortalRegistryFor(view),
+      portalId: null,
+    };
     codeDOM.set(wrapper, state);
     const source = view.state.doc.toString();
     const fenced = codeWidgetSource(source, this.from, this.to);
@@ -88,6 +137,7 @@ export class CodeBlockWidget extends WidgetType {
     body.addEventListener('input', () =>
       writeWidget(view, state.position, { type: 'code-body', text: body.value }),
     );
+    renderCodePreview(state, view);
     return wrapper;
   }
 
@@ -101,7 +151,13 @@ export class CodeBlockWidget extends WidgetType {
     state.language.hidden = Boolean(indented);
     syncInput(state.language, fenced ? view.state.sliceDoc(...fenced.language) : '');
     syncInput(state.body, fenced ? view.state.sliceDoc(...fenced.body) : (indented?.text ?? ''));
+    renderCodePreview(state, view);
     return true;
+  }
+  destroy(dom: HTMLElement) {
+    const state = codeDOM.get(dom);
+    if (state?.portalId !== null && state?.portalId !== undefined)
+      state.registry.unregister(state.portalId);
   }
 }
 

@@ -441,10 +441,12 @@
   border-bottom-right-radius: 4px;
 }
 
-/* Hover-on-host reveal. Host is the resizable component's wrapper
+/* Live code previews keep their resize handles visible.
+   Hover-on-host reveal. Host is the resizable component's wrapper
    (`.ok-embed`, `.ok-codeblock-preview`, etc.). The handle pointer-events
    only enable while visible so the wrapper's normal interactions
    (iframe clicks, text selection) work in resting state. */
+.cm-live-code-preview .ok-resize-handle,
 .ProseMirror .ok-embed:hover .ok-resize-handle,
 .ProseMirror .ok-embed:focus-within .ok-resize-handle,
 .ProseMirror .ok-codeblock-preview:hover .ok-resize-handle,

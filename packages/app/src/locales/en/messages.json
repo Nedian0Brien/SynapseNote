@@ -295,6 +295,7 @@
     "4CfgPM": ["Project folder created, but git init failed. Try again."],
     "4E9jPa": ["Create your first project"],
     "4Gz2wC": ["Failed to upload file"],
+    "4J5mhx": ["Edit HTML source"],
     "4KmEoC": ["Hotkeys"],
     "4LSUJ-": ["Text search"],
     "4NC2Ym": ["Move to the next or previous table cell."],
@@ -1563,6 +1564,7 @@
     "PmTCkl": ["Couldn't export the PDF."],
     "PmmvzS": ["Calculate"],
     "Pn5YvM": ["Dashboard layout"],
+    "Po0vX_": ["Hide preview"],
     "PqYWiC": [
       "Couldn't restart the server automatically. Try running `ok stop all` in a terminal, then reopen this project — or restart your computer if it persists."
     ],
@@ -2241,6 +2243,7 @@
     ],
     "bcDHUM": [["descriptorLabel"], " — render error, source editable below"],
     "bcjYUA": ["Fold or unfold source"],
+    "bdzL4m": ["Expand preview"],
     "bizpNe": [
       "Permission changes always require review before they take effect. Permanent deletion, external actions, broad schema migrations, and bulk edits over the review threshold use the same review boundary."
     ],
@@ -2463,6 +2466,7 @@
     "fos4db": ["New page"],
     "fqSfXY": ["Replace"],
     "fr8aN_": ["Loading Agent Runs"],
+    "fsyAH8": ["Show preview"],
     "ft8Bbk": ["Agent view"],
     "fuJZKk": ["Search branches"],
     "fvImQM": [["0"], " selected"],
@@ -3132,6 +3136,7 @@
     "qqeAJM": ["Never"],
     "qrXszS": ["Remove group"],
     "qurSX8": ["Model settings"],
+    "qvAueP": ["Preview title"],
     "qvWGzP": ["Collapse all"],
     "qvWwvO": ["Callout type"],
     "qy-JHB": ["List hierarchy and display"],

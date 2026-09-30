@@ -4029,6 +4029,10 @@ msgstr "Edit condition"
 msgid "Edit grant"
 msgstr "Edit grant"
 
+#: src/editor/live/code-preview.tsx
+msgid "Edit HTML source"
+msgstr "Edit HTML source"
+
 #: src/editor/extensions/InternalLinkPropPanel.tsx
 msgid "Edit markdown link"
 msgstr "Edit markdown link"
@@ -4054,6 +4058,7 @@ msgid "Edit properties"
 msgstr "Edit properties"
 
 #: src/editor/extensions/CodeBlockView.tsx
+#: src/editor/live/code-preview.tsx
 msgid "Edit source"
 msgstr "Edit source"
 
@@ -4334,6 +4339,10 @@ msgstr "Expand HTML preview"
 #: src/components/MemoPanel.tsx
 msgid "Expand original text"
 msgstr "Expand original text"
+
+#: src/editor/live/code-preview.tsx
+msgid "Expand preview"
+msgstr "Expand preview"
 
 #: src/components/AuthModal.tsx
 msgid "Expires in {timeLabel}"
@@ -5299,6 +5308,10 @@ msgstr "Hide panel"
 msgid "Hide panel ({shortcut})"
 msgstr "Hide panel ({shortcut})"
 
+#: src/editor/live/code-preview.tsx
+msgid "Hide preview"
+msgstr "Hide preview"
+
 #: src/editor/find-replace/FindReplaceBar.tsx
 msgid "Hide replace"
 msgstr "Hide replace"
@@ -5388,11 +5401,13 @@ msgstr "How to set up"
 msgid "How to set up {0} (opens in browser)"
 msgstr "How to set up {0} (opens in browser)"
 
+#: src/editor/live/slash-suggestions.ts
 #: src/editor/slash-command/embed-starter-items.tsx
 msgid "HTML"
 msgstr "HTML"
 
 #: src/editor/extensions/CodeBlockView.tsx
+#: src/editor/live/code-preview.tsx
 msgid "HTML preview"
 msgstr "HTML preview"
 
@@ -8347,6 +8362,10 @@ msgstr "Preview restore option"
 msgid "Preview the current revision before reversing this run."
 msgstr "Preview the current revision before reversing this run."
 
+#: src/editor/live/code-preview.tsx
+msgid "Preview title"
+msgstr "Preview title"
+
 #: src/editor/live/mdx-widgets.tsx
 msgid "Preview unavailable"
 msgstr "Preview unavailable"
@@ -10232,6 +10251,10 @@ msgstr "Show panel ({shortcut})"
 #: src/components/DatabaseAgentRunsDialog.tsx
 msgid "Show plan details"
 msgstr "Show plan details"
+
+#: src/editor/live/code-preview.tsx
+msgid "Show preview"
+msgstr "Show preview"
 
 #: src/components/DatabaseAgentRunsDialog.tsx
 msgid "Show proposed diff"

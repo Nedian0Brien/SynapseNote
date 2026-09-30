@@ -4024,6 +4024,10 @@ msgstr ""
 msgid "Edit grant"
 msgstr ""
 
+#: src/editor/live/code-preview.tsx
+msgid "Edit HTML source"
+msgstr ""
+
 #: src/editor/extensions/InternalLinkPropPanel.tsx
 msgid "Edit markdown link"
 msgstr ""
@@ -4049,6 +4053,7 @@ msgid "Edit properties"
 msgstr ""
 
 #: src/editor/extensions/CodeBlockView.tsx
+#: src/editor/live/code-preview.tsx
 msgid "Edit source"
 msgstr ""
 
@@ -4328,6 +4333,10 @@ msgstr ""
 
 #: src/components/MemoPanel.tsx
 msgid "Expand original text"
+msgstr ""
+
+#: src/editor/live/code-preview.tsx
+msgid "Expand preview"
 msgstr ""
 
 #: src/components/AuthModal.tsx
@@ -5294,6 +5303,10 @@ msgstr ""
 msgid "Hide panel ({shortcut})"
 msgstr ""
 
+#: src/editor/live/code-preview.tsx
+msgid "Hide preview"
+msgstr ""
+
 #: src/editor/find-replace/FindReplaceBar.tsx
 msgid "Hide replace"
 msgstr ""
@@ -5383,11 +5396,13 @@ msgstr ""
 msgid "How to set up {0} (opens in browser)"
 msgstr ""
 
+#: src/editor/live/slash-suggestions.ts
 #: src/editor/slash-command/embed-starter-items.tsx
 msgid "HTML"
 msgstr ""
 
 #: src/editor/extensions/CodeBlockView.tsx
+#: src/editor/live/code-preview.tsx
 msgid "HTML preview"
 msgstr ""
 
@@ -8342,6 +8357,10 @@ msgstr ""
 msgid "Preview the current revision before reversing this run."
 msgstr ""
 
+#: src/editor/live/code-preview.tsx
+msgid "Preview title"
+msgstr ""
+
 #: src/editor/live/mdx-widgets.tsx
 msgid "Preview unavailable"
 msgstr ""
@@ -10226,6 +10245,10 @@ msgstr ""
 
 #: src/components/DatabaseAgentRunsDialog.tsx
 msgid "Show plan details"
+msgstr ""
+
+#: src/editor/live/code-preview.tsx
+msgid "Show preview"
 msgstr ""
 
 #: src/components/DatabaseAgentRunsDialog.tsx

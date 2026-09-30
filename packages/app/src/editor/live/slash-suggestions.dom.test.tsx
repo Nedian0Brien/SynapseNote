@@ -9,9 +9,11 @@ import {
 import { history, undo } from '@codemirror/commands';
 import { EditorState } from '@codemirror/state';
 import { EditorView, runScopeHandlers } from '@codemirror/view';
+import { PREVIEW_EMBED_STARTERS } from '@nedian0brien/synapsenote-core';
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { DATABASE_SLASH_COMMAND_EVENT } from '@/lib/database-events';
+import { BLANK_HTML_BODY } from '../slash-command/embed-source';
 import { createLiveExtension } from './live-extension';
 import { LivePortalHost, livePortalRegistryFor } from './live-portals';
 
@@ -65,6 +67,17 @@ async function complete(view: EditorView, name: string): Promise<void> {
 }
 
 describe('live slash commands', () => {
+  test('HTML and all shared preview starters insert their exact source bodies', async () => {
+    const blank = mount('/html');
+    await complete(blank, 'HTML');
+    expect(blank.state.doc.toString()).toBe(`\`\`\`html preview\n${BLANK_HTML_BODY}\n\`\`\`\n\n`);
+    for (const starter of PREVIEW_EMBED_STARTERS) {
+      const view = mount(`/${starter.id}`);
+      await complete(view, starter.title);
+      expect(view.state.doc.toString()).toBe(`\`\`\`html preview\n${starter.html}\n\`\`\`\n\n`);
+    }
+  });
+
   test('Callout uses explicit defaults, renders a widget, and is undone in one step', async () => {
     const view = mount('/callout');
     await complete(view, 'Callout');

@@ -29,6 +29,7 @@ import { PREVIEW_EMBED_STARTERS, type PreviewEmbedStarter } from '@nedian0brien/
 import type { Editor } from '@tiptap/react';
 import { BarChart3, Code, LayoutGrid, Shapes, SlidersHorizontal } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { BLANK_HTML_BODY, EMBED_STARTER_ALIASES } from './embed-source';
 import type { SlashCommandItem } from './items';
 
 /**
@@ -56,10 +57,6 @@ function insertHtmlPreview(editor: Editor, html: string): void {
  * a seed the iframe renders empty and the author may think the preview
  * didn't activate.
  */
-const BLANK_HTML_BODY = `<div style="padding:20px;font-family:system-ui,sans-serif;color:var(--foreground)">
-  <h1 style="margin:0 0 8px;font-size:20px;font-weight:600">Hello, world!</h1>
-  <p style="margin:0;color:var(--muted-foreground)">Edit this HTML — the preview updates live.</p>
-</div>`;
 
 /** Per-starter menu chrome — icon, search aliases, and the hover preview. */
 interface StarterUi {
@@ -71,7 +68,7 @@ interface StarterUi {
 const STARTER_UI: Record<PreviewEmbedStarter['id'], StarterUi> = {
   chart: {
     icon: BarChart3,
-    aliases: ['chart', 'bar', 'graph', 'plot', 'viz', 'data', 'embed', 'preview'],
+    aliases: EMBED_STARTER_ALIASES.chart,
     render: () => (
       <div className="flex h-20 w-full items-end gap-1.5">
         <div className="h-[45%] flex-1 rounded-t-sm bg-chart-1" />
@@ -84,7 +81,7 @@ const STARTER_UI: Record<PreviewEmbedStarter['id'], StarterUi> = {
   },
   'stat-cards': {
     icon: LayoutGrid,
-    aliases: ['stat', 'stats', 'metric', 'metrics', 'cards', 'kpi', 'embed', 'preview'],
+    aliases: EMBED_STARTER_ALIASES['stat-cards'],
     render: () => (
       <div className="flex gap-2">
         <div className="flex-1 rounded-md border border-border bg-card p-2">
@@ -102,7 +99,7 @@ const STARTER_UI: Record<PreviewEmbedStarter['id'], StarterUi> = {
   },
   'custom-svg': {
     icon: Shapes,
-    aliases: ['svg', 'vector', 'graphic', 'illustration', 'ring', 'embed', 'preview'],
+    aliases: EMBED_STARTER_ALIASES['custom-svg'],
     render: () => (
       <div className="flex items-center justify-center text-chart-1">
         <svg width="72" height="72" viewBox="0 0 72 72" aria-hidden="true">
@@ -133,7 +130,7 @@ const STARTER_UI: Record<PreviewEmbedStarter['id'], StarterUi> = {
   },
   'interactive-control': {
     icon: SlidersHorizontal,
-    aliases: ['interactive', 'slider', 'control', 'widget', 'input', 'embed', 'preview'],
+    aliases: EMBED_STARTER_ALIASES['interactive-control'],
     render: () => (
       <div className="space-y-2">
         <div className="text-lg font-bold text-chart-1">$2,500</div>
