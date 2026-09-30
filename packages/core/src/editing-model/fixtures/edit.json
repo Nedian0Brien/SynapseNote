@@ -1344,6 +1344,14 @@
     "after": "a│b"
   },
   {
+    "id": "block-heading-empty",
+    "group": "edit.block-heading",
+    "rule": "7",
+    "before": "│",
+    "actions": [{ "type": "block", "block": "h2" }],
+    "after": "## │"
+  },
+  {
     "id": "block-paragraph",
     "group": "edit.block-heading",
     "rule": "7",

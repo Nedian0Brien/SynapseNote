@@ -688,6 +688,7 @@
     "Aif3E7": ["Enable semantic search"],
     "AifstN": ["Earlier annotation"],
     "AioEnC": ["Retry loading chats"],
+    "Aj9Lj_": ["Mermaid"],
     "Al82EK": ["Search pages in ", ["inlineDatabaseContext"]],
     "Am78jY": ["Drag ", ["keyName"], " to reorder"],
     "Amv6me": ["1 line selected"],
@@ -1323,6 +1324,7 @@
     "M26Y1g": [
       "Package logs and system info into a report you can review, then send it privately to the SynapseNote team."
     ],
+    "M3G9ZD": ["Numbered list"],
     "M3ytY_": [
       "This looks like a drive root (e.g., C:\\). Scaffolding here will scan an entire drive."
     ],
@@ -2030,6 +2032,7 @@
     "YlDuro": ["Fit height"],
     "YoGdcv": ["Discard queued writes"],
     "YocCJW": ["Scroll to latest message"],
+    "YpCHKo": ["Heading 6"],
     "YqbZSs": ["Database pages share their content with every linked view."],
     "Yr74Ht": ["Neighbors"],
     "Yr8Yhw": ["Save appearance"],
@@ -2146,6 +2149,7 @@
     "_tjopj": ["Paste duplicate"],
     "_wUERt": ["Redactions"],
     "_zMH_i": ["No annotation text"],
+    "_zXDjr": ["Heading 5"],
     "a-cKXz": ["Select all source"],
     "a0kX_2": ["Copy TSV"],
     "a0vHKr": ["Could not load chats"],
@@ -2774,6 +2778,7 @@
     ],
     "l75CjT": ["Yes"],
     "l8G3S9": ["Auto-sync is off — you don't have permission to push to this repo"],
+    "l8rp1O": ["Math"],
     "l98zVs": ["Open the project graph"],
     "l9wI00": ["Speed"],
     "lAiyU_": ["Only the current document uses <0>#", ["tag"], "</0>."],
@@ -2909,6 +2914,7 @@
     "nDT8qt": ["Initialized ", ["0"], " but could not open it."],
     "nG_uo_": ["External links"],
     "nIzxfE": ["Search related records"],
+    "nJeKmw": ["Heading 4"],
     "nJq7et": ["Couldn't uninstall skill: ", ["0"]],
     "nLe-JZ": ["Include end"],
     "nNYV3Y": ["and ", ["remaining"], " more"],

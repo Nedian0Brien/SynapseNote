@@ -1678,6 +1678,7 @@ msgstr "Build versioned, owned workflows. Internal writes use exact database pla
 msgid "Building <0>synapsenote.skill</0> and opening the Claude Desktop App"
 msgstr "Building <0>synapsenote.skill</0> and opening the Claude Desktop App"
 
+#: src/editor/live/slash-suggestions.ts
 #: src/lib/keyboard-shortcuts.ts
 msgid "Bullet list"
 msgstr "Bullet list"
@@ -2187,6 +2188,7 @@ msgstr "Close terminal"
 msgid "Code"
 msgstr "Code"
 
+#: src/editor/live/slash-suggestions.ts
 #: src/lib/keyboard-shortcuts.ts
 msgid "Code block"
 msgstr "Code block"
@@ -2308,6 +2310,7 @@ msgid "Commands run with the full access of your macOS user account on this mach
 msgstr "Commands run with the full access of your macOS user account on this machine. Turn this off to disable the shell."
 
 #: src/editor/live/auxiliary-widgets.ts
+#: src/editor/live/slash-suggestions.ts
 msgid "Comment"
 msgstr "Comment"
 
@@ -5157,19 +5160,34 @@ msgid "Headers"
 msgstr "Headers"
 
 #: src/components/MarkdownFormatToolbar.tsx
+#: src/editor/live/slash-suggestions.ts
 #: src/editor/slash-command/items.tsx
 msgid "Heading 1"
 msgstr "Heading 1"
 
 #: src/components/MarkdownFormatToolbar.tsx
+#: src/editor/live/slash-suggestions.ts
 #: src/editor/slash-command/items.tsx
 msgid "Heading 2"
 msgstr "Heading 2"
 
 #: src/components/MarkdownFormatToolbar.tsx
+#: src/editor/live/slash-suggestions.ts
 #: src/editor/slash-command/items.tsx
 msgid "Heading 3"
 msgstr "Heading 3"
+
+#: src/editor/live/slash-suggestions.ts
+msgid "Heading 4"
+msgstr "Heading 4"
+
+#: src/editor/live/slash-suggestions.ts
+msgid "Heading 5"
+msgstr "Heading 5"
+
+#: src/editor/live/slash-suggestions.ts
+msgid "Heading 6"
+msgstr "Heading 6"
 
 #: src/editor/wiki-link-suggestion/WikiLinkSuggestionMenu.tsx
 msgid "Heading H{level}: {text}"
@@ -6322,6 +6340,10 @@ msgstr "Markdown starter body"
 msgid "Match case"
 msgstr "Match case"
 
+#: src/editor/live/slash-suggestions.ts
+msgid "Math"
+msgstr "Math"
+
 #. Group label above the per-editor MCP list in Settings → AI tools & CLI — each row wires SynapseNote's MCP server into that tool
 #. Group label above the per-editor project MCP list in Settings → This project → AI tools
 #. Section label above the editor checkbox list in the first-launch dialog — each row wires SynapseNote's MCP server into that tool
@@ -6348,6 +6370,10 @@ msgstr "Memos"
 #: src/editor/paste-format/PasteFormatMenu.tsx
 msgid "Mention"
 msgstr "Mention"
+
+#: src/editor/live/slash-suggestions.ts
+msgid "Mermaid"
+msgstr "Mermaid"
 
 #: src/editor/live/diagram-widgets.ts
 msgid "Mermaid chart"
@@ -7321,6 +7347,10 @@ msgstr "Number"
 #: src/components/DatabasePropertyMenu.tsx
 msgid "Number display"
 msgstr "Number display"
+
+#: src/editor/live/slash-suggestions.ts
+msgid "Numbered list"
+msgstr "Numbered list"
 
 #: src/editor/slash-command/items.tsx
 msgid "Numbered list of items."
@@ -8576,6 +8606,7 @@ msgid "Query"
 msgstr "Query"
 
 #: src/components/MarkdownFormatToolbar.tsx
+#: src/editor/live/slash-suggestions.ts
 #: src/editor/slash-command/items.tsx
 msgid "Quote"
 msgstr "Quote"
@@ -9929,6 +9960,7 @@ msgstr "Sensitive changes always require review: permission changes, permanent d
 msgid "Sent privately to the SynapseNote team, along with your note and app version. Never posted publicly."
 msgstr "Sent privately to the SynapseNote team, along with your note and app version. Never posted publicly."
 
+#: src/editor/live/slash-suggestions.ts
 #: src/editor/slash-command/items.tsx
 msgid "Separator"
 msgstr "Separator"
@@ -10748,6 +10780,7 @@ msgid "Tab label"
 msgstr "Tab label"
 
 #: src/components/MarkdownFormatToolbar.tsx
+#: src/editor/live/slash-suggestions.ts
 #: src/editor/slash-command/items.tsx
 msgid "Table"
 msgstr "Table"
@@ -10805,6 +10838,7 @@ msgstr "Target type"
 msgid "Target view"
 msgstr "Target view"
 
+#: src/editor/live/slash-suggestions.ts
 #: src/lib/keyboard-shortcuts.ts
 msgid "Task list"
 msgstr "Task list"
@@ -10911,6 +10945,7 @@ msgid "Terminal settings not yet loaded — try again in a moment"
 msgstr "Terminal settings not yet loaded — try again in a moment"
 
 #: src/components/PropertyWidgets.tsx
+#: src/editor/live/slash-suggestions.ts
 msgid "Text"
 msgstr "Text"
 

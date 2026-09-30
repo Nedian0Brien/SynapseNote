@@ -11,6 +11,13 @@
  */
 
 import {
+  acceptCompletion,
+  closeCompletion,
+  completionStatus,
+  moveCompletionSelection,
+} from '@codemirror/autocomplete';
+import {
+  EditorSelection,
   EditorState,
   type Extension,
   Facet,
@@ -60,6 +67,7 @@ import { DiagramBlockWidget } from './diagram-widgets';
 import { MdxBlockWidget } from './mdx-widgets';
 import { MediaBlockWidget, type MediaContext, MediaInlineWidget } from './media-widgets';
 import { ReferenceDefinitionWidget } from './reference-widgets';
+import { createLiveSlashSuggestions } from './slash-suggestions';
 import { TabsBlockWidget } from './tabs-widgets';
 
 const mediaContext = Facet.define<MediaContext, MediaContext>({
@@ -554,6 +562,11 @@ const livePlugin = ViewPlugin.fromClass(
 );
 
 export function createLiveExtension(context: MediaContext = {}): Extension {
+  const acceptMenu = (view: EditorView) => {
+    if (completionStatus(view.state) !== 'active') return false;
+    acceptCompletion(view);
+    return true;
+  };
   return [
     mediaContext.of(context),
     layoutField,
@@ -561,6 +574,40 @@ export function createLiveExtension(context: MediaContext = {}): Extension {
     protectFrontmatter,
     cursorIntentField,
     livePlugin,
+    createLiveSlashSuggestions(
+      (view, from, to, block) => {
+        run(
+          view,
+          [
+            { type: 'key', key: 'Backspace' },
+            { type: 'block', block },
+          ],
+          EditorSelection.range(from, to),
+          'input.complete',
+        );
+      },
+      (state, position) =>
+        !state
+          .field(layoutField)
+          .blocks.some(
+            (block) => block.type === 'code' && block.from <= position && block.to >= position,
+          ),
+    ),
+    Prec.highest(
+      keymap.of([
+        {
+          key: 'Enter',
+          run: acceptMenu,
+        },
+        {
+          key: 'Tab',
+          run: acceptMenu,
+        },
+        { key: 'ArrowDown', run: moveCompletionSelection(true) },
+        { key: 'ArrowUp', run: moveCompletionSelection(false) },
+        { key: 'Escape', run: closeCompletion },
+      ]),
+    ),
     Prec.highest([liveKeymap, liveInput, liveClipboard]),
     EditorView.editorAttributes.of({ 'data-editor-variant': 'live' }),
   ];

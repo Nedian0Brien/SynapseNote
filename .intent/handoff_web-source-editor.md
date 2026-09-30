@@ -6,7 +6,7 @@
 생겼다. 편집 규칙은 core의 순수 함수이고, 네이티브 앱도 같은 명세와 fixture를 쓴다. P0~P2(뼈대), P2c(기존
 편집기 동작 옮기기), P3a(코드 울타리·표 위젯), P3b(수식·Mermaid 위젯), P3c(frontmatter 속성 화면),
 P3d(콜아웃·아코디언 위젯), P3e(이미지·파일 임베드 위젯), P3f(문서 문맥 MDX 위젯), P3g(들여쓴 코드 위젯), P3h(HTML details 아코디언), P3i(Tabs/Tab), P3j(참조 이미지), P3k(MDX 속성·Mirror), P3l(PDFium 로딩), P3m(수평선·각주·주석)가 끝났다.
-P3의 나머지 블록과 P4~P6는 진행 전이다.
+P3 일반 HTML 해석 점검이 남아 있고 P4a 슬래시 명령을 구현했다. P4의 나머지 기능과 P5~P6는 진행 전이다.
 
 ## 1. 사용자가 정한 것
 
@@ -166,6 +166,14 @@ P3의 나머지 블록과 P4~P6는 진행 전이다.
 
 ## 3. 끝난 단계
 
+### P4a 추가 (2026-09-30)
+
+- `.intent/plan_web-source-editor-p4a.md`에 범위와 결과를 적었다. `live/slash-suggestions.ts`가 기본 블록 명령과 표·수평선·수식·Mermaid·주석을 기존 CodeMirror 자동완성에 등록한다.
+- 메뉴의 Enter·Tab·화살표·Escape가 live 편집 키맵보다 먼저 처리된다. 빈 문단 제목 변환도 core에서 고쳤다.
+- 브라우저 확인 문서: `http://localhost:5183/#/notes/p4a-slash-review-1790696500000`. `/h2` 메뉴·Enter 선택·제목 입력·디스크 저장을 확인했다.
+- 위키 링크 자동완성은 기존 `createNestedCMExtensions`에서 이미 top-level live에 등록되어 있었다. 실제 동작 검증과 태그·링크 편집·중첩 선택기는 후속 P4에서 처리한다.
+- 데이터베이스 생성·미디어 업로드·전체 컴포넌트 카탈로그는 아직 슬래시 메뉴에 옮기지 않았다.
+
 | 단계 | 커밋 | 내용 |
 |---|---|---|
 | P0 | `86b2d405` | 편집 모델 명세 `packages/core/src/editing-model/SPEC.md`, fixture 형식과 `hide.json`·`edit.json` |
@@ -186,7 +194,8 @@ P3의 나머지 블록과 P4~P6는 진행 전이다.
 | P3j | `e1328035` | 참조 이미지와 정의 위젯 |
 | P3k | `957ef47a` | MDX 리터럴 속성 편집과 Mirror 소스 이동 |
 | P3l | `98ab051f` | PDFium 워커 절대 URL과 실제 페이지 렌더링 |
-| P3m | 구현 커밋은 `git log -1` | 수평선·각주·주석 위젯 |
+| P3m | `09adf41d` | 수평선·각주·주석 위젯 |
+| P4a | 구현 커밋은 `git log -1` | 기본 live 슬래시 명령 |
 
 P2c에서 옮긴 동작은 다음과 같다. 각 동작의 근거 파일은 `plan_web-source-editor-p2c.md`에 있다.
 

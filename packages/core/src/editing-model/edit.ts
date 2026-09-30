@@ -1286,7 +1286,11 @@ function setBlock(state: EditState, kind: BlockKind): EditResult {
       const first = lineAround(state.source, from).start;
       const last = lineAround(state.source, to).end;
       return editLines(state, first, last, (text) => {
-        if (!text.trim()) return text;
+        if (!text.trim()) {
+          return first === last && state.anchor === state.head && level > 0
+            ? `${'#'.repeat(level)} `
+            : text;
+        }
         const quote = QUOTE_PREFIX.exec(text)?.[0] ?? '';
         const rest = text.slice(quote.length);
         if (parseItem(rest)) return text;
