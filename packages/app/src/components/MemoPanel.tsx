@@ -527,7 +527,8 @@ export function MemoPanel({ docName, isSourceMode }: MemoPanelProps) {
                 entry.quote !== null &&
                 (isSourceMode
                   ? entry.quote.anchor?.surface === 'source'
-                  : entry.quote.anchor?.surface !== 'source' ||
+                  : entry.quote.legacyAnchor?.surface === 'wysiwyg' ||
+                    entry.quote.anchor?.surface !== 'source' ||
                     entry.quote.sourceLineStart === undefined);
               const date = formatMemoDate(entry.updatedAt);
               return (

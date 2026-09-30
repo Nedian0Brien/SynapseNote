@@ -17,6 +17,7 @@ import {
   publishNativeDocumentHighlights,
   subscribeNativeHighlightMutations,
 } from '../native-document-highlights';
+import { legacyMemoQuoteText } from './memo-quote-text';
 
 export interface MemoRange {
   readonly from: number;
@@ -65,24 +66,7 @@ interface FlatDocument {
  * deliberately conservative: a candidate is only used when it exactly occurs
  * in the current document, so unsupported syntax simply produces no mark.
  */
-export function legacyMemoQuoteText(markdown: string): string {
-  return markdown
-    .replace(/\r\n?/g, '\n')
-    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
-    .replace(/`+([^`]+?)`+/g, '$1')
-    .replace(/\*\*\*(?=\S)([\s\S]*?\S)\*\*\*/g, '$1')
-    .replace(/___(?=\S)([\s\S]*?\S)___/g, '$1')
-    .replace(/\*\*(?=\S)([\s\S]*?\S)\*\*/g, '$1')
-    .replace(/__(?=\S)([\s\S]*?\S)__/g, '$1')
-    .replace(/~~(?=\S)([\s\S]*?\S)~~/g, '$1')
-    .replace(/\*(?=\S)([\s\S]*?\S)\*/g, '$1')
-    .replace(/_(?=\S)([\s\S]*?\S)_/g, '$1')
-    .replace(/^\s{0,3}(?:#{1,6}\s+|>\s?|[-+*]\s+|\d+[.)]\s+)/gm, '')
-    .replace(/\\([\\`*{}[\]()#+\-.!_>])/g, '$1')
-    .replace(/\n{2,}/g, '\n')
-    .trim();
-}
+export { legacyMemoQuoteText } from './memo-quote-text';
 
 /** Flatten rendered textblocks while retaining a PM position for every glyph. */
 function flattenDocument(doc: ProseMirrorNode): FlatDocument {
@@ -272,6 +256,7 @@ function resolveMemoRange(doc: ProseMirrorNode, memo: DocumentMemoEntry): MemoRa
   // exactly; formatted legacy quotes simply remain unmarked rather than
   // risking a highlight on unrelated rendered text.
   const anchor =
+    memo.quote.legacyAnchor ??
     memo.quote.anchor ??
     (memo.quote.sourceLineStart === undefined
       ? {

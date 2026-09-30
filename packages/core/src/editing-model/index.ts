@@ -51,6 +51,7 @@ export {
   type BlockLayout,
   computeBlockLayouts,
   computeLayout,
+  frontmatterRange,
   type HiddenKind,
   type HiddenRange,
   type Layout,

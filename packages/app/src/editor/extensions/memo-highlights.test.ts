@@ -106,6 +106,36 @@ describe('memo highlight anchoring', () => {
     expect(decorations?.[0]?.type.attrs.class).toBe('ok-memo-highlight ok-memo-highlight-memo');
   });
 
+  test('preserved renderer anchors still decorate migrated source quotes', () => {
+    const doc = documentWith('Repeated evidence remains useful.');
+    const state = EditorState.create({ doc, plugins: [memoHighlightPlugin('notes/converted')] });
+    const next = state.apply(
+      state.tr.setMeta(memoHighlightPluginKey, {
+        memoState: {
+          draft: '',
+          draftQuote: null,
+          items: [
+            {
+              id: 'converted',
+              body: 'Keep note',
+              createdAt: 1,
+              updatedAt: 1,
+              quote: {
+                markdown: 'Repeated evidence',
+                anchor: { ...anchor(), surface: 'source' },
+                legacyAnchor: anchor(),
+              },
+            },
+          ],
+        },
+      }),
+    );
+    const decorations = memoHighlightPluginKey.getState(next)?.decorations.find();
+    expect(decorations).toHaveLength(1);
+    expect(decorations?.[0]?.from).toBe(1);
+    expect(decorations?.[0]?.to).toBe(18);
+  });
+
   test('derives sidebar annotations directly from native highlight marks', () => {
     const highlightMark = schema.marks.highlight.create();
     const doc = schema.node('doc', null, [

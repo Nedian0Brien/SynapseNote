@@ -6,7 +6,7 @@
 생겼다. 편집 규칙은 core의 순수 함수이고, 네이티브 앱도 같은 명세와 fixture를 쓴다. P0~P2(뼈대), P2c(기존
 편집기 동작 옮기기), P3a(코드 울타리·표 위젯), P3b(수식·Mermaid 위젯), P3c(frontmatter 속성 화면),
 P3d(콜아웃·아코디언 위젯), P3e(이미지·파일 임베드 위젯), P3f(문서 문맥 MDX 위젯), P3g(들여쓴 코드 위젯), P3h(HTML details 아코디언), P3i(Tabs/Tab), P3j(참조 이미지), P3k(MDX 속성·Mirror), P3l(PDFium 로딩), P3m(수평선·각주·주석)가 끝났다.
-P3 일반 HTML 해석 점검이 남아 있고 P4a 슬래시 명령과 P4b 태그·중첩 선택기와 P4c 링크 편집과 P4d 슬래시 컴포넌트·데이터베이스와 P4e 파일 업로드와 P4f HTML 코드 미리보기와 P4g 기본 선택 서식 막대와 P4h 원문 메모와 P4i 각주 삽입을 구현했다. P4의 나머지 기능과 P5~P6는 진행 전이다.
+P3 일반 HTML 해석 점검이 남아 있고 P4a 슬래시 명령과 P4b 태그·중첩 선택기와 P4c 링크 편집과 P4d 슬래시 컴포넌트·데이터베이스와 P4e 파일 업로드와 P4f HTML 코드 미리보기와 P4g 기본 선택 서식 막대와 P4h 원문 메모와 P4i 각주 삽입과 P4j 기존 메모 앵커 변환을 구현했다. P4의 나머지 기능과 P5~P6는 진행 전이다.
 
 ### P4c 추가 (2026-09-30)
 
@@ -65,6 +65,15 @@ P3 일반 HTML 해석 점검이 남아 있고 P4a 슬래시 명령과 P4b 태그
 - core edit 125개·window 3개·fixture 8개, 막대 DOM 4개·슬래시 DOM 10개, core·app 타입 검사 통과. 브라우저 선택·슬래시 삽입·빈 정의 편집·새로고침 후 두 정의 유지·pageerror 없음을 확인했다.
 - 확인 문서: `http://localhost:5183/#/notes/p4i-footnote-review`.
 - 다음: 기존 메모 앵커 변환, 중첩 위젯 좌표·메모·각주 연결, native highlight. 일반 HTML·밑줄·AI 편집·미디어 도구·메뉴 미리보기·협업 표시·PDF·P5~P6도 남아 있다.
+
+### P4j 추가 (2026-09-30)
+
+- 기존 메모의 렌더링 문구를 core 파서 위치로 원문에 대응시킨다. source 앵커를 저장하고 기존 앵커는 legacyAnchor에 보존해 기존 편집기도 계속 표시·이동한다. 본문·ID·시각·quote Markdown은 보존한다.
+- 문구가 없는 레코드는 그대로 보존하고 unmatched 목록에 남긴다. 변환은 초기 로딩·저장소 갱신에서 하고 원문 입력마다 파싱·저장하지 않는다. 새 저장소 상태가 들어오면 이전 지연 저장을 취소한다.
+- unit 변환 4개·source DOM 4개·기존 해석 7개·저장소 5개·MemoPanel DOM 12개, core·app 타입 검사 통과.
+- 브라우저 기존 편집기에서 메모 생성→live 변환·원문 표시·이동→새로고침→기존 편집기 표시 복귀를 확인했다. legacyAnchor 보존 및 pageerror 없음을 확인했다.
+- 확인 문서: `http://localhost:5183/#/notes/p4j-legacy-memo-review`. 별도 브라우저에서는 Visual 모드에서 메모를 만들고 Live로 전환해 검증한다.
+- 다음: 중첩 위젯 좌표·메모·각주 연결, native highlight. 일반 HTML·밑줄·AI 편집·미디어 도구·메뉴 미리보기·협업 표시·PDF·P5~P6도 남아 있다.
 
 ## 1. 사용자가 정한 것
 

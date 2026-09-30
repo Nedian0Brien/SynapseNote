@@ -24,6 +24,8 @@ export interface DocumentMemoQuote {
    * disambiguate repeated sentences after the document has moved.
    */
   readonly anchor?: DocumentMemoAnchor;
+  /** Preserved renderer anchor while both editor surfaces are available. */
+  readonly legacyAnchor?: DocumentMemoAnchor;
 }
 
 export interface DocumentMemoAnchor {
@@ -94,7 +96,8 @@ function isQuote(value: unknown): value is DocumentMemoQuote {
     typeof candidate.markdown === 'string' &&
     (candidate.sourceLineStart === undefined || typeof candidate.sourceLineStart === 'number') &&
     (candidate.sourceLineEnd === undefined || typeof candidate.sourceLineEnd === 'number') &&
-    (candidate.anchor === undefined || isAnchor(candidate.anchor))
+    (candidate.anchor === undefined || isAnchor(candidate.anchor)) &&
+    (candidate.legacyAnchor === undefined || isAnchor(candidate.legacyAnchor))
   );
 }
 

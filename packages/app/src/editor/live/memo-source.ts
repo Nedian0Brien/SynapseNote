@@ -11,8 +11,10 @@ import {
   type DocumentMemoState,
   readDocumentMemoState,
   subscribeDocumentMemoState,
+  writeDocumentMemoState,
 } from '@/lib/document-memo-store';
 import { requestMemoReveal, subscribeMemoNavigation } from '../memo-navigation';
+import { migrateMemoAnchors } from './memo-anchor-migration';
 
 export function resolveSourceMemoAnchor(
   source: string,
@@ -50,6 +52,7 @@ const refreshMemos = StateEffect.define<null>();
 export function createSourceMemos(docName: string): Extension {
   return ViewPlugin.fromClass(
     class {
+      disposed = false;
       state: DocumentMemoState = readDocumentMemoState(docName);
       ranges = new Map<string, { from: number; to: number }>();
       decorations: DecorationSet = Decoration.none;
@@ -75,6 +78,16 @@ export function createSourceMemos(docName: string): Extension {
       rebuild() {
         this.ranges.clear();
         const source = this.view.state.doc.toString();
+        const migration = migrateMemoAnchors(source, this.state);
+        if (migration.changed) {
+          this.state = migration.state;
+          const snapshot = this.state;
+          // Store listeners may dispatch; defer beyond the view's construction/update.
+          queueMicrotask(() => {
+            if (!this.disposed && this.state === snapshot)
+              writeDocumentMemoState(docName, snapshot);
+          });
+        }
         for (const memo of this.state.items) {
           const anchor = memo.quote?.anchor;
           const range = anchor ? resolveSourceMemoAnchor(source, anchor) : null;
@@ -107,6 +120,7 @@ export function createSourceMemos(docName: string): Extension {
         }
       }
       destroy() {
+        this.disposed = true;
         this.stopStore();
         this.stopNavigation();
       }
