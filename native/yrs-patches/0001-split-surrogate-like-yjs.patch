@@ -1,0 +1,35 @@
+--- a/src/block.rs
++++ b/src/block.rs
+@@ -2013,6 +2013,32 @@
+                 Some(ItemContent::Any(right))
+             }
+             ItemContent::String(string) => {
++                // A UTF-16 offset can fall between the two halves of a surrogate
++                // pair, which a Rust string cannot hold. Yjs (ContentString.splice)
++                // replaces each half with U+FFFD so both sides keep one UTF-16
++                // unit; do the same so yrs and Yjs peers converge.
++                if let OffsetKind::Utf16 = encoding {
++                    let mut units = 0usize;
++                    let mut byte = 0usize;
++                    for c in string.chars() {
++                        let w = c.len_utf16();
++                        if units + w > offset {
++                            if units < offset {
++                                let (head, rest) = string.split_at(byte);
++                                let tail = &rest[c.len_utf8()..];
++                                let mut left = String::from(head);
++                                left.push('\u{FFFD}');
++                                let mut right = String::from("\u{FFFD}");
++                                right.push_str(tail);
++                                *self = ItemContent::String(left.as_str().into());
++                                return Some(ItemContent::String(right.as_str().into()));
++                            }
++                            break;
++                        }
++                        units += w;
++                        byte += c.len_utf8();
++                    }
++                }
+                 // compute offset given in unicode code points into byte position
+                 let (left, right) = split_str(&string, offset, encoding);
+                 let left: SplittableString = left.into();

@@ -8,6 +8,8 @@ let package = Package(
     platforms: [.macOS(.v26), .iOS(.v26)],
     products: [
         .library(name: "EditingCore", targets: ["EditingCore"]),
+        .library(name: "SyncCore", targets: ["SyncCore"]),
+        .library(name: "ServerAPI", targets: ["ServerAPI"]),
     ],
     targets: [
         // Runs the core editing model (packages/core/src/editing-model) in
@@ -17,9 +19,18 @@ let package = Package(
             name: "EditingCore",
             resources: [.copy("Resources/synapsenote-editing.js")]
         ),
-        .testTarget(
-            name: "EditingCoreTests",
-            dependencies: ["EditingCore"]
+        // yrs (Rust) built by native/scripts/build-yrs.sh.
+        .binaryTarget(name: "yrs_ffiFFI", path: "Binaries/YrsFFI.xcframework"),
+        // Y.Text('source') sync over Hocuspocus. Generated/yrs_ffi.swift is
+        // the UniFFI binding written by build-yrs.sh.
+        .target(
+            name: "SyncCore",
+            dependencies: ["yrs_ffiFFI"],
+            swiftSettings: [.swiftLanguageMode(.v5)]
         ),
+        .target(name: "ServerAPI"),
+        .testTarget(name: "EditingCoreTests", dependencies: ["EditingCore"]),
+        .testTarget(name: "SyncCoreTests", dependencies: ["SyncCore"]),
+        .testTarget(name: "ServerAPITests", dependencies: ["ServerAPI"]),
     ]
 )

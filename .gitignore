@@ -45,3 +45,6 @@ native/**/Resources/synapsenote-editing.js
 native/**/*.xcodeproj
 native/build/
 native/**/.build/
+native/SynapseKit/Binaries/
+native/SynapseKit/Sources/SyncCore/Generated/
+native/yrs-ffi/target/
