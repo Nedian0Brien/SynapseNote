@@ -1,11 +1,9 @@
 import AppKit
-import EditingCore
 import SwiftUI
 
-/// Hosts `SourceTextView` in SwiftUI.
+/// Hosts a document's `SourceTextView` in SwiftUI.
 struct EditorView: NSViewRepresentable {
-    let source: String
-    let runtime: EditingRuntime
+    let controller: DocumentController
     var onReady: (SourceTextView) -> Void = { _ in }
 
     func makeNSView(context: Context) -> NSScrollView {
@@ -23,12 +21,11 @@ struct EditorView: NSViewRepresentable {
         scrollView.drawsBackground = false
         scrollView.documentView = textView
 
-        do {
-            try textView.load(source: source, runtime: runtime)
-        } catch {
-            NSLog("SynapseNote could not open the document: %@", String(describing: error))
+        controller.attach(textView)
+        DispatchQueue.main.async {
+            textView.window?.makeFirstResponder(textView)
+            onReady(textView)
         }
-        DispatchQueue.main.async { onReady(textView) }
         return scrollView
     }
 

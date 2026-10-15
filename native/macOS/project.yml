@@ -22,6 +22,10 @@ targets:
     dependencies:
       - package: SynapseKit
         product: EditingCore
+      - package: SynapseKit
+        product: SyncCore
+      - package: SynapseKit
+        product: ServerAPI
     settings:
       base:
         PRODUCT_NAME: SynapseNote
@@ -48,6 +52,8 @@ schemes:
           script: |
             export PATH="$HOME/.bun/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
             cd "$SRCROOT/../.." && bun run --filter @nedian0brien/synapsenote-core build:native-bundle
+            # yrs is slow to build; run native/scripts/build-yrs.sh when yrs-ffi changes.
+            [ -d "$SRCROOT/../SynapseKit/Binaries/YrsFFI.xcframework" ] || "$SRCROOT/../scripts/build-yrs.sh"
     run:
       config: Debug
     archive:

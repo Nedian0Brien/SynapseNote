@@ -9,6 +9,8 @@ import EditingCore
 final class LiveStyler {
     let bodyFont = NSFont.systemFont(ofSize: 15)
     let monoFont = NSFont.monospacedSystemFont(ofSize: 13.5, weight: .regular)
+    /// The source view: the whole Markdown source in a fixed-width font.
+    var sourceMode = false
 
     private let headingSizes: [CGFloat] = [28, 23, 19, 17, 15, 15]
 
@@ -20,7 +22,7 @@ final class LiveStyler {
     }()
 
     var baseAttributes: [NSAttributedString.Key: Any] {
-        [.font: bodyFont, .foregroundColor: NSColor.labelColor, .paragraphStyle: paragraph]
+        [.font: sourceMode ? monoFont : bodyFont, .foregroundColor: NSColor.labelColor, .paragraphStyle: paragraph]
     }
 
     private let hiddenAttributes: [NSAttributedString.Key: Any] = [
@@ -32,6 +34,7 @@ final class LiveStyler {
         let text = storage.string as NSString
         guard let range = clamp(dirty.nsRange, storage.length) else { return }
         storage.setAttributes(baseAttributes, range: range)
+        if sourceMode { return }
 
         for block in blocks {
             guard let r = clamp(block.nsRange, storage.length) else { continue }

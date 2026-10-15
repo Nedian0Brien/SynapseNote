@@ -23,11 +23,11 @@ P1을 둘로 나눈다. P1a는 서버에 붙어 문서를 고르고 편집하는
 | `native/SynapseKit/Sources/SyncCore/` (새) | `Lib0`, `HocuspocusFrame`, `HocuspocusConnection`(문서 하나, 재연결, keepalive, stateless·awareness), `DocumentSync`(`SourceDoc` + 연결, 로컬 변경 → update, 원격 delta → `SourceChange` 순서열), `SystemChannel`(`__system__`: CC1 `files` 알림, `currentView` awareness) |
 | `native/SynapseKit/Sources/ServerAPI/` (새) | `ServerClient`: `GET /api/config`, `GET /api/documents?showAll=true&dir=&depth=1`, `POST /api/create-page`, `POST /api/create-folder`. 응답 타입은 `core/src/schemas/api/document-read.ts`를 따른다 |
 | `native/SynapseKit/Tests/SyncCoreTests/`, `ServerAPITests/` (새) | delta → 변경 변환, awareness 인코딩, 두 `SourceDoc` 사이 동기화·undo, documents 응답 디코딩 |
-| `packages/core/src/editing-model/native-session.ts` | `replaceLocal(changes)`: 위젯·실행 취소가 만든 변경을 로컬 편집으로 적용하고 레이아웃을 돌려준다 |
 | `native/macOS/project.yml` | `SyncCore`·`ServerAPI` 의존, 빌드 전 단계에 `build-yrs.sh` 확인 |
 | `native/macOS/App/AppModel.swift` (새) | 서버 주소(UserDefaults), 연결 상태, 폴더 트리, 선택 문서, `SystemChannel` |
-| `native/macOS/App/Views/` (새) | `MainView`(NavigationSplitView), `SidebarView`(폴더별 지연 로드, 새 문서·새 폴더), `DocumentPane`(편집기 + 동기화 상태 줄), `ServerSettingsView`(Settings 장면, 주소 확인) |
-| `native/macOS/App/Editor/SourceTextView.swift` | `DocumentSync` 연결: 로컬 편집 → `Y.Text`, 원격 delta → `applyRemote` → 저장소. 실행 취소·다시 실행은 yrs `UndoManager`. 찾기는 `NSTextFinder`(찾기 막대). 원문 보기 토글 |
+| `native/macOS/App/Views/` (새) | `MainView`(NavigationSplitView, 새 문서·새 폴더 이름 창), `SidebarView`(폴더별 지연 로드), `DocumentPane`(편집기 + 동기화 상태), `ServerConnectView`(창과 Settings 장면의 주소 입력·확인) |
+| `native/macOS/App/Editor/DocumentController.swift` (새) | 문서 하나의 `DocumentSync`와 텍스트 뷰를 잇는다. 첫 동기화 후 원문을 싣고, 원격 변경·실행 취소를 뷰에 넘기고, 뷰와 `Y.Text` 길이가 어긋나면 다시 싣는다 |
+| `native/macOS/App/Editor/SourceTextView.swift` | 로컬 편집 → `Y.Text`, 원격 delta·실행 취소 → `EditorSession.applyRemote` → 저장소. 원문 보기·찾아 바꾸기처럼 텍스트 시스템이 직접 바꾼 저장소 편집도 `applyRemote`와 `Y.Text`로 보낸다(core에 새 API가 필요 없다). 실행 취소·다시 실행은 yrs `UndoManager`. 찾기는 `NSTextFinder` 찾기 막대 |
 | `native/macOS/App/Editor/LiveStyler.swift` | 원문 보기에서는 숨김·위젯 없이 고정폭 원문만 그린다 |
 | `native/macOS/App/Commands.swift` (새) | 새 문서 ⌘N, 새 폴더 ⇧⌘N, 원문 보기 ⇧⌘E, 찾기 ⌘F·바꾸기 ⌥⌘F, 서식·블록 단축키(웹 live `live-extension.ts:273-302`와 같게) |
 | `native/macOS/App/SynapseNoteApp.swift`, `EditorView.swift` | 시험 문서 대신 서버 문서를 연다. `KeystrokeProbe`는 `-perfSeconds`일 때만 로컬 문서로 돈다 |
