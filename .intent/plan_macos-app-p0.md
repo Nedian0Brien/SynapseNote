@@ -29,11 +29,12 @@ date: 2026-10-16
 | `native/SynapseKit/Tests/EditingCoreTests/FixtureTests.swift` (새) | core `fixtures/hide.json`·`edit.json`을 읽어 `parseMarked`·`parseCursor`와 같은 규칙으로 비교 |
 | `native/macOS/project.yml` (새) | 앱 타깃 `SynapseNote`(macOS 26, App Sandbox, SynapseKit 의존), 빌드 전 단계에서 번들 생성 |
 | `native/macOS/App/SynapseNoteApp.swift` (새) | SwiftUI `App`, 창 하나에 편집기. P0은 앱 번들 안 시험 문서를 연다 |
-| `native/macOS/App/Editor/SourceTextView.swift` (새) | `NSTextView`(TextKit 2) 하위 클래스. 키 입력을 `EditAction`으로 바꿔 `EditSession`에 넘기고 결과로 저장소를 바꾼다 |
+| `native/macOS/App/Editor/SourceTextView.swift` (새) | `NSTextView`(TextKit 2) 하위 클래스. 키 입력·IME 확정·붙여넣기를 `EditAction`으로 바꿔 `EditorSession`에 넘기고, 결과를 `NSTextContentStorage.performEditingTransaction` 안에서 저장소에 쓴다 |
 | `native/macOS/App/Editor/LiveStyler.swift` (새) | `Layout`의 숨김 범위를 0.01pt 글꼴·투명색으로, marks를 굵게·기울임·코드 속성으로. 바뀐 블록만 다시 칠한다 |
 | `native/macOS/App/Editor/EditorView.swift` (새) | `NSViewRepresentable` |
 | `native/macOS/App/Perf/KeystrokeProbe.swift` (새) | `-perfSeconds N -caretLine L` 인자로 초당 10회 입력, 단계별 시간(편집 규칙·레이아웃·화면 반영)을 앱 컨테이너 파일에 쓴다 |
-| `native/macOS/App/Resources/large.md` (새, 생성) | 5,000줄 시험 문서. 스파이크 `gen-fixture.ts`와 같은 규칙으로 빌드 때 만든다 |
+| `native/macOS/App/Resources/sample.md` (새) | 앱이 여는 시험 문서(스파이크 fixture). 5,000줄 측정 문서는 `KeystrokeProbe.swift`의 `LargeDocument`가 실행 때 같은 규칙(스파이크 `gen-fixture.ts`)으로 만든다 |
+| `native/macOS/App/SynapseNote.entitlements` (새) | App Sandbox, 네트워크 클라이언트 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
 

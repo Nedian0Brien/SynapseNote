@@ -27,6 +27,7 @@ describe('NativeEditorSession', () => {
     const full = computeLayout(session.source);
     const inDirty = (r: { from: number; to: number }) => r.to >= result.dirty.from && r.from <= result.dirty.to;
     expect(result.layout.hidden).toEqual(full.hidden.filter(inDirty));
+    expect(result.blocks.map((b) => b.type)).toEqual(['paragraph', 'paragraph', 'paragraph']);
   });
 
   test('changes are in the original offsets and rebuild the new source', () => {
@@ -51,6 +52,8 @@ describe('NativeEditorSession', () => {
   test('a snapshot equals computeLayout', () => {
     const source = '---\ntitle: a\n---\n# Head\n\n- [ ] task\n';
     const session = new NativeEditorSession(source);
-    expect(JSON.parse(session.snapshot())).toEqual(computeLayout(source));
+    const snapshot = JSON.parse(session.snapshot());
+    expect(snapshot.layout).toEqual(computeLayout(source));
+    expect(snapshot.blocks.map((b: { type: string }) => b.type)).toEqual(['heading', 'list']);
   });
 });

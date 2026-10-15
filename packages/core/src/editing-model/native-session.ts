@@ -19,11 +19,25 @@ export interface NativeRange {
   to: number;
 }
 
+/** A top-level block: its source range and mdast type (`heading`, `code`, `list`, …). */
+export interface NativeBlock {
+  from: number;
+  to: number;
+  type: string;
+}
+
+export interface NativeSnapshot {
+  layout: Layout;
+  blocks: NativeBlock[];
+}
+
 export interface NativeLayoutUpdate {
   /** The source range whose layout must be redrawn, in the new source. */
   dirty: NativeRange;
   /** Layout entries that intersect `dirty`. */
   layout: Layout;
+  /** Blocks that intersect `dirty`. */
+  blocks: NativeBlock[];
 }
 
 export interface NativeEditResult extends NativeLayoutUpdate {
@@ -56,9 +70,13 @@ export class NativeEditorSession {
     return this.#layout.source;
   }
 
-  /** The whole document's layout, for the first paint. */
+  /** The whole document's layout and blocks, for the first paint. */
   snapshot(): string {
-    return JSON.stringify(this.#layout.layout);
+    const out: NativeSnapshot = {
+      layout: this.#layout.layout,
+      blocks: this.#layout.blocks.map(({ from, to, type }) => ({ from, to, type })),
+    };
+    return JSON.stringify(out);
   }
 
   /** A caret move or selection the editor made itself (click, arrow keys, drag). */
@@ -112,18 +130,23 @@ export class NativeEditorSession {
 
   #relayout(span: NativeRange | null, next: string): NativeLayoutUpdate {
     if (span === null) {
-      return { dirty: { from: 0, to: 0 }, layout: { hidden: [], widgets: [], marks: [], spans: [] } };
+      return {
+        dirty: { from: 0, to: 0 },
+        layout: { hidden: [], widgets: [], marks: [], spans: [] },
+        blocks: [],
+      };
     }
     const mode = this.#layout.update(next);
     this.#state = { ...this.#state, source: next };
     if (mode === 'full') {
-      return { dirty: { from: 0, to: next.length }, layout: this.#layout.layout };
+      const dirty = { from: 0, to: next.length };
+      return { dirty, layout: this.#layout.layout, blocks: blocksIn(this.#layout.blocks, dirty) };
     }
     const dirty = this.#blockSpan(span.from, span.to);
     const layout = layoutIn(this.#layout.blocks, dirty);
     const fm = this.#layout.frontmatter;
     if (fm && dirty.from < fm[1]) prependLayout(layout, frontmatterLayout(fm));
-    return { dirty, layout };
+    return { dirty, layout, blocks: blocksIn(this.#layout.blocks, dirty) };
   }
 
   /** Grow `[from, to)` to whole top-level blocks plus one block on each side. */
@@ -193,6 +216,15 @@ function layoutIn(
     out.spans.push(...block.layout.spans);
   }
   return out;
+}
+
+function blocksIn(
+  blocks: readonly { from: number; to: number; type: string }[],
+  range: NativeRange,
+): NativeBlock[] {
+  return blocks
+    .filter((b) => b.to >= range.from && b.from <= range.to)
+    .map(({ from, to, type }) => ({ from, to, type }));
 }
 
 function prependLayout(target: Layout, first: Layout): void {

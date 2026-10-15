@@ -1,0 +1,54 @@
+# XcodeGen spec for the SynapseNote macOS app. The generated
+# SynapseNote.xcodeproj is gitignored; see native/README.md for the build steps.
+name: SynapseNote
+options:
+  bundleIdPrefix: dev.synapsenote
+  deploymentTarget:
+    macOS: "26.0"
+packages:
+  SynapseKit:
+    path: ../SynapseKit
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  SynapseNote:
+    type: application
+    platform: macOS
+    sources:
+      - path: App
+    dependencies:
+      - package: SynapseKit
+        product: EditingCore
+    settings:
+      base:
+        PRODUCT_NAME: SynapseNote
+        PRODUCT_BUNDLE_IDENTIFIER: dev.synapsenote.mac
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: SynapseNote
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
+        INFOPLIST_KEY_NSHumanReadableCopyright: ""
+        # Ad-hoc signing ("Sign to Run Locally"); no developer account needed.
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "-"
+        DEVELOPMENT_TEAM: ""
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_ENTITLEMENTS: App/SynapseNote.entitlements
+schemes:
+  SynapseNote:
+    build:
+      targets:
+        SynapseNote: all
+      # The editing bundle is a SynapseKit resource generated from packages/core.
+      preActions:
+        - name: Build editing bundle
+          settingsTarget: SynapseNote
+          script: |
+            export PATH="$HOME/.bun/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+            cd "$SRCROOT/../.." && bun run --filter @nedian0brien/synapsenote-core build:native-bundle
+    run:
+      config: Debug
+    archive:
+      config: Release

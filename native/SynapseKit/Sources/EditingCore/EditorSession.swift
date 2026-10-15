@@ -58,6 +58,20 @@ public struct Layout: Codable, Equatable, Sendable {
     public var spans: [StyledSpan]
 }
 
+/// A top-level block: its source range and mdast type (`heading`, `code`, `list`, …).
+public struct Block: Codable, Equatable, Sendable {
+    public var from: Int
+    public var to: Int
+    public var type: String
+
+    public var nsRange: NSRange { NSRange(location: from, length: to - from) }
+}
+
+public struct Snapshot: Codable, Equatable, Sendable {
+    public var layout: Layout
+    public var blocks: [Block]
+}
+
 public struct SourceChange: Codable, Equatable, Sendable {
     public var from: Int
     public var to: Int
@@ -84,6 +98,8 @@ public struct EditResult: Codable, Equatable, Sendable {
     public var dirty: SourceRange
     /// Layout entries that intersect `dirty`.
     public var layout: Layout
+    /// Blocks that intersect `dirty`.
+    public var blocks: [Block]
     public var clipboard: Clipboard?
     /// A UI request from the model, such as opening the link dialog.
     public var ui: String?
@@ -94,6 +110,7 @@ public struct RemoteResult: Codable, Equatable, Sendable {
     public var head: Int
     public var dirty: SourceRange
     public var layout: Layout
+    public var blocks: [Block]
 }
 
 /// The actions the editing model understands (`EditAction` in `fixtures.ts`).
@@ -170,9 +187,9 @@ public final class EditorSession {
 
     public var source: String { value.forProperty("source").toString() }
 
-    /// The whole document's layout, for the first paint.
-    public func snapshot() throws -> Layout {
-        try runtime.decode(Layout.self, from: runtime.call(value, "snapshot", []))
+    /// The whole document's layout and blocks, for the first paint.
+    public func snapshot() throws -> Snapshot {
+        try runtime.decode(Snapshot.self, from: runtime.call(value, "snapshot", []))
     }
 
     /// A selection the text view made itself (click, drag, arrow keys).
