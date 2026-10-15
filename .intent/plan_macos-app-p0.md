@@ -34,7 +34,7 @@ date: 2026-10-16
 | `native/macOS/App/Editor/EditorView.swift` (새) | `NSViewRepresentable` |
 | `native/macOS/App/Perf/KeystrokeProbe.swift` (새) | `-perfSeconds N -caretLine L` 인자로 초당 10회 입력, 단계별 시간(편집 규칙·레이아웃·화면 반영)을 앱 컨테이너 파일에 쓴다 |
 | `native/macOS/App/Resources/sample.md` (새) | 앱이 여는 시험 문서(스파이크 fixture). 5,000줄 측정 문서는 `KeystrokeProbe.swift`의 `LargeDocument`가 실행 때 같은 규칙(스파이크 `gen-fixture.ts`)으로 만든다 |
-| `native/macOS/App/SynapseNote.entitlements` (새) | App Sandbox, 네트워크 클라이언트 |
+| `native/macOS/App/SynapseNote.entitlements` (새) | App Sandbox, 네트워크 클라이언트, `com.apple.security.cs.allow-jit`(없으면 `JSContext`가 JIT 없이 돌아 키 입력이 약 50ms 걸린다) |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
 
@@ -62,3 +62,19 @@ swift test --package-path native/SynapseKit
 ```
 
 화면: 앱에서 시험 문서를 열어 굵게·링크·목록·체크박스 기호가 숨는지, 입력·삭제·Enter가 SPEC대로 원문을 바꾸는지 본다.
+
+## 결과 (2026-10-16)
+
+- 테스트: core `fixtures.test.ts`·`native-session.test.ts` 13개 통과, SynapseKit `swift test` 5개 통과(hide 42·edit 125건을 세션 경로로 실행).
+- 입력 성능(R3): Release 빌드, App Sandbox·hardened runtime, 5,000줄 문서 2,500번째 줄, 초당 10회 60초 600회.
+
+| 단계 | p50 | p95 | 최대 |
+|---|---|---|---|
+| 전체(키 → 화면 반영) | 13.91 | **15.84** | 27.59 |
+| 편집 규칙(JavaScriptCore) | 8.83 | 10.27 | 18.72 |
+| 저장소 반영·다시 칠하기 | 3.59 | 4.76 | 7.62 |
+| 레이아웃·그리기 | 1.30 | 1.92 | 3.88 |
+
+- `allow-jit` 없이 잰 값은 전체 p95 56.93ms였다. hardened runtime을 끄거나 App Sandbox를 꺼도 같았고(p95 55·54ms), `JSContext` 안에서만 200회 편집을 돌려도
+  1회 45ms였다. 같은 번들이 `jsc` 셸(`allow-jit` 보유)에서는 p95 4ms다. JIT 허용이 원인이다.
+- 16ms 기준은 통과했지만 여유가 0.16ms다. 편집 규칙 단계가 jsc 셸(4ms)보다 6ms 느린 이유는 아직 나누어 재지 않았다. 위젯이 늘면 다시 잰다.
