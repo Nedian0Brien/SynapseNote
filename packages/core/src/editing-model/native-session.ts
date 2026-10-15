@@ -27,7 +27,10 @@ export interface NativeLayoutUpdate {
 }
 
 export interface NativeEditResult extends NativeLayoutUpdate {
-  /** Changes to apply in order, each in the offsets left by the previous one. */
+  /**
+   * Changes in the offsets of the source before the edit, ascending and
+   * non-overlapping (`sourceChanges`). Apply them from last to first.
+   */
   changes: SourceChange[];
   anchor: number;
   head: number;
@@ -75,7 +78,7 @@ export class NativeEditorSession {
     const changes = sourceChanges(before, result.source);
     const { clipboard, ui, ...state } = result;
     this.#state = state;
-    const update = this.#relayout(changes, result.source);
+    const update = this.#relayout(spanOfChanges(changes), result.source);
     const out: NativeEditResult = {
       ...update,
       changes,
@@ -87,7 +90,11 @@ export class NativeEditorSession {
     return JSON.stringify(out);
   }
 
-  /** Apply changes made elsewhere (another device, an agent), mapping the selection. */
+  /**
+   * Apply changes made elsewhere (another device, an agent), mapping the
+   * selection. Each change is in the offsets the previous one left, the order
+   * a Y.Text delta arrives in.
+   */
   applyRemote(changesJson: string): string {
     const changes = JSON.parse(changesJson) as SourceChange[];
     let source = this.source;
@@ -98,13 +105,13 @@ export class NativeEditorSession {
       head = mapPosition(head, change);
     }
     this.#state = { ...this.#state, source, anchor, head, undo: undefined };
-    const update = this.#relayout(changes, source);
+    const update = this.#relayout(spanOfSequence(changes), source);
     const out: NativeRemoteResult = { ...update, anchor, head };
     return JSON.stringify(out);
   }
 
-  #relayout(changes: readonly SourceChange[], next: string): NativeLayoutUpdate {
-    if (changes.length === 0) {
+  #relayout(span: NativeRange | null, next: string): NativeLayoutUpdate {
+    if (span === null) {
       return { dirty: { from: 0, to: 0 }, layout: { hidden: [], widgets: [], marks: [], spans: [] } };
     }
     const mode = this.#layout.update(next);
@@ -112,7 +119,6 @@ export class NativeEditorSession {
     if (mode === 'full') {
       return { dirty: { from: 0, to: next.length }, layout: this.#layout.layout };
     }
-    const span = changedSpan(changes);
     const dirty = this.#blockSpan(span.from, span.to);
     const layout = layoutIn(this.#layout.blocks, dirty);
     const fm = this.#layout.frontmatter;
@@ -148,8 +154,19 @@ function mapPosition(position: number, change: SourceChange): number {
   return change.from + change.insert.length;
 }
 
-/** The range the changes touched, in the source after all of them. */
-function changedSpan(changes: readonly SourceChange[]): NativeRange {
+/** The range ascending changes in original offsets touched, in the source after them. */
+function spanOfChanges(changes: readonly SourceChange[]): NativeRange | null {
+  if (changes.length === 0) return null;
+  let shift = 0;
+  for (let i = 0; i < changes.length - 1; i++) {
+    shift += changes[i].insert.length - (changes[i].to - changes[i].from);
+  }
+  const last = changes[changes.length - 1];
+  return { from: changes[0].from, to: last.from + shift + last.insert.length };
+}
+
+/** The range sequential changes touched, in the source after all of them. */
+function spanOfSequence(changes: readonly SourceChange[]): NativeRange | null {
   let span: NativeRange | null = null;
   for (const change of changes) {
     const end = change.from + change.insert.length;
@@ -160,7 +177,7 @@ function changedSpan(changes: readonly SourceChange[]): NativeRange {
       span = { from: change.from, to: end };
     }
   }
-  return span ?? { from: 0, to: 0 };
+  return span;
 }
 
 function layoutIn(

@@ -4,7 +4,7 @@ import { NativeEditorSession, type NativeEditResult, type NativeRemoteResult } f
 
 function apply(source: string, result: NativeEditResult): string {
   let next = source;
-  for (const c of result.changes) next = next.slice(0, c.from) + c.insert + next.slice(c.to);
+  for (const c of [...result.changes].reverse()) next = next.slice(0, c.from) + c.insert + next.slice(c.to);
   return next;
 }
 
@@ -27,6 +27,15 @@ describe('NativeEditorSession', () => {
     const full = computeLayout(session.source);
     const inDirty = (r: { from: number; to: number }) => r.to >= result.dirty.from && r.from <= result.dirty.to;
     expect(result.layout.hidden).toEqual(full.hidden.filter(inDirty));
+  });
+
+  test('changes are in the original offsets and rebuild the new source', () => {
+    const source = '**a** b **c**\n';
+    const session = new NativeEditorSession(source);
+    session.select(0, source.length - 1);
+    const result = JSON.parse(session.edit(JSON.stringify([{ type: 'toggle', mark: 'bold' }]))) as NativeEditResult;
+    expect(result.changes.length).toBeGreaterThan(1);
+    expect(apply(source, result)).toBe(session.source);
   });
 
   test('remote changes map the selection', () => {
