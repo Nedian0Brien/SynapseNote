@@ -39,3 +39,9 @@ blob-report/
 .env
 .env.local
 .env.*.local
+
+# Native apps: generated bundle, Xcode projects and build output
+native/**/Resources/synapsenote-editing.js
+native/**/*.xcodeproj
+native/build/
+native/**/.build/

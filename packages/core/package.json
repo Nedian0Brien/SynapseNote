@@ -88,6 +88,7 @@
   },
   "scripts": {
     "build": "tsdown",
+    "build:native-bundle": "bun run scripts/build-native-bundle.ts",
     "typecheck": "tsc --noEmit",
     "test": "bun test --timeout 30000 src/ tests/contract/",
     "test:perf:bench": "RUN_BENCH=1 bun test tests/perf/markdown-bench.test.ts",

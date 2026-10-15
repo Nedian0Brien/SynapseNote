@@ -16,15 +16,16 @@ date: 2026-10-16
 
 | 파일 | 무엇을 |
 |---|---|
-| `packages/core/src/editing-model/native-entry.ts` (새) | `globalThis.SynapseEditing`에 `IncrementalLayout`, `computeLayout`, `initialState`, `applyActions`, `applyActionsInWindow`, `editWindow`를 붙인다 |
+| `packages/core/src/editing-model/native-session.ts` (새) | `NativeEditorSession`: 원문·커서 상태·`IncrementalLayout`을 JS 쪽에 두고, `select`·`edit(actions)`·`applyRemote(changes)`가 원문 변경과 다시 그릴 범위의 레이아웃만 JSON으로 돌려준다(키마다 원문 전체를 넘기지 않는다) |
+| `packages/core/src/editing-model/native-session.test.ts` (새) | 입력·dirty 범위 레이아웃·원격 변경 선택 이동·snapshot |
+| `packages/core/src/editing-model/native-entry.ts` (새) | `globalThis.SynapseEditing`에 `createSession`·`computeLayout`을 붙인다 |
 | `packages/core/scripts/build-native-bundle.ts` (새) | `Bun.build`(browser, iife, minify). `decode-named-character-reference`를 `index.js`로 바꾸는 plugin. 결과를 `native/SynapseKit/Sources/EditingCore/Resources/synapsenote-editing.js`에 쓴다 |
 | `packages/core/package.json` | `build:native-bundle` 스크립트 |
 | `.gitignore` | `native/**/Resources/synapsenote-editing.js`, `native/**/*.xcodeproj`, `native/build/`, `native/**/.build/` |
 | `native/README.md` (새) | 준비물(Xcode 27, xcodegen, bun)과 빌드 순서 |
 | `native/SynapseKit/Package.swift` (새) | Swift 6, macOS 26·iOS 26, 타깃 `EditingCore`, `EditingCoreTests` |
 | `native/SynapseKit/Sources/EditingCore/EditingRuntime.swift` (새) | `JSContext` 생성, `console` 주입, 번들 로드, 예외를 Swift 오류로 |
-| `native/SynapseKit/Sources/EditingCore/LayoutSession.swift` (새) | `IncrementalLayout` 감싸기: `update(source) → Layout`(hidden·widgets·marks를 `NSRange`로) |
-| `native/SynapseKit/Sources/EditingCore/EditSession.swift` (새) | `EditState`·`EditAction` Swift 타입, `applyActions` 호출 |
+| `native/SynapseKit/Sources/EditingCore/EditorSession.swift` (새) | `NativeEditorSession` 감싸기와 `Layout`·`EditAction`·결과의 Swift 타입(`NSRange`) |
 | `native/SynapseKit/Tests/EditingCoreTests/FixtureTests.swift` (새) | core `fixtures/hide.json`·`edit.json`을 읽어 `parseMarked`·`parseCursor`와 같은 규칙으로 비교 |
 | `native/macOS/project.yml` (새) | 앱 타깃 `SynapseNote`(macOS 26, App Sandbox, SynapseKit 의존), 빌드 전 단계에서 번들 생성 |
 | `native/macOS/App/SynapseNoteApp.swift` (새) | SwiftUI `App`, 창 하나에 편집기. P0은 앱 번들 안 시험 문서를 연다 |
