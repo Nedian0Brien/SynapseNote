@@ -44,8 +44,10 @@ struct MainView: View {
         } else if model.connection != .connected {
             ServerConnectView(model: model)
         } else if let docName = model.selectedDocument, let client = model.client, let runtime = model.runtime {
-            DocumentPane(documentName: docName, collabURL: client.collabURL, runtime: runtime)
-                .id(docName)
+            DocumentPane(documentName: docName, collabURL: client.collabURL, runtime: runtime) { name in
+                Task { await model.openDocument(named: name) }
+            }
+            .id(docName)
         } else {
             ContentUnavailableView("문서를 고르세요", systemImage: "doc.text", description: Text("왼쪽 목록에서 문서를 열거나 ⌘N으로 새 문서를 만듭니다."))
         }

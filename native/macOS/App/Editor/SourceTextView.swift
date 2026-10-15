@@ -35,6 +35,8 @@ final class SourceTextView: NSTextView, NSTextStorageDelegate {
     private var deferredRemote: [[SequentialChange]] = []
 
     var sourceLength: Int { textStorage?.length ?? 0 }
+    /// `NSTextLayoutManager.delegate` is weak; the view keeps it alive.
+    private let fragmentDelegate = DecoratedLayoutManagerDelegate()
 
     func configure() {
         isRichText = true
@@ -50,6 +52,7 @@ final class SourceTextView: NSTextView, NSTextStorageDelegate {
         textContainerInset = NSSize(width: 48, height: 32)
         typingAttributes = styler.baseAttributes
         textStorage?.delegate = self
+        textLayoutManager?.delegate = fragmentDelegate
     }
 
     func load(source: String, runtime: EditingRuntime) throws {
@@ -225,13 +228,84 @@ final class SourceTextView: NSTextView, NSTextStorageDelegate {
         }
     }
 
+    // MARK: Mouse
+
+    override func mouseDown(with event: NSEvent) {
+        guard !sourceMode, let storage = textStorage else { return super.mouseDown(with: event) }
+        let point = convert(event.locationInWindow, from: nil)
+        if event.modifierFlags.contains(.command) {
+            let index = characterIndexForInsertion(at: point)
+            for i in [index, index - 1] where i >= 0 && i < storage.length {
+                if let target = storage.attribute(.synapseLinkTarget, at: i, effectiveRange: nil) as? String {
+                    controller?.openLink(target)
+                    return
+                }
+            }
+        }
+        if toggleCheckbox(at: point) { return }
+        super.mouseDown(with: event)
+    }
+
+    /// A click on a task checkbox flips `[ ]` ↔ `[x]` in the source, the one
+    /// character the web live editor changes too.
+    private func toggleCheckbox(at point: CGPoint) -> Bool {
+        guard let manager = textLayoutManager, let contentManager = manager.textContentManager,
+              let storage = textStorage else { return false }
+        let containerPoint = CGPoint(x: point.x - textContainerOrigin.x, y: point.y - textContainerOrigin.y)
+        guard let fragment = manager.textLayoutFragment(for: containerPoint) as? DecoratedLayoutFragment,
+              let box = fragment.checkboxFrame, box.insetBy(dx: -4, dy: -4).contains(containerPoint) else { return false }
+        let start = contentManager.offset(from: contentManager.documentRange.location, to: fragment.rangeInElement.location)
+        let text = storage.string as NSString
+        let line = text.lineRange(for: NSRange(location: start, length: 0))
+        let bracket = text.range(of: #"\[[ xX]\]"#, options: .regularExpression, range: line)
+        guard bracket.location != NSNotFound else { return false }
+        let mark = NSRange(location: bracket.location + 1, length: 1)
+        let checked = text.substring(with: mark) != " "
+        replaceSourceLocally([SequentialChange(from: mark.location, to: NSMaxRange(mark), insert: checked ? " " : "x")])
+        return true
+    }
+
+    /// Change the source directly (a widget edit) and send it like any local edit.
+    func replaceSourceLocally(_ changes: [SequentialChange]) {
+        guard let session, let storage = textStorage else { return }
+        let mapped = changes.map { SourceChange(from: $0.from, to: $0.to, insert: $0.insert) }
+        guard let result = try? session.applyRemote(mapped) else { return }
+        let selection = selectedRange()
+        applying = true
+        editStorage {
+            for change in changes {
+                storage.replaceCharacters(in: NSRange(location: change.from, length: change.to - change.from), with: change.insert)
+            }
+            styler.restyle(storage, dirty: result.dirty, layout: result.layout, blocks: result.blocks)
+        }
+        setSelectedRange(selection)
+        applying = false
+        syncSelectionToModel()
+        controller?.didEditLocally(changes)
+    }
+
     // MARK: Selection
 
     override func setSelectedRanges(_ ranges: [NSValue], affinity: NSSelectionAffinity, stillSelecting: Bool) {
         super.setSelectedRanges(ranges, affinity: affinity, stillSelecting: stillSelecting)
         guard !applying, !stillSelecting, !hasMarkedText() else { return }
+        snapCaretOutOfSkippedText()
         syncSelectionToModel()
         controller?.userMovedSelection()
+    }
+
+    /// A caret inside a list item's indentation and marker, or in a thematic
+    /// break, has no place on screen; put it where the item's text starts.
+    private func snapCaretOutOfSkippedText() {
+        guard !sourceMode, let storage = textStorage else { return }
+        let range = selectedRange()
+        guard range.length == 0, range.location < storage.length else { return }
+        var run = NSRange()
+        guard storage.attribute(.synapseCaretSkip, at: range.location, longestEffectiveRange: &run,
+                                in: NSRange(location: 0, length: storage.length)) != nil else { return }
+        applying = true
+        setSelectedRange(NSRange(location: NSMaxRange(run), length: 0))
+        applying = false
     }
 
     private func setSelectionForModel(_ range: NSRange) {

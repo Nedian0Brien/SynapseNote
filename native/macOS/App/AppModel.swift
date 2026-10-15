@@ -130,6 +130,42 @@ final class AppModel {
         return trimmed.isEmpty ? nil : trimmed
     }
 
+    /// Open a document a link names: an exact document name, or else the one
+    /// document whose last path segment matches (how wiki links resolve).
+    func openDocument(named name: String) async {
+        guard let client else { return }
+        do {
+            let names = try await client.documentNames()
+            if let exact = names.first(where: { $0 == name }) {
+                reveal(exact)
+                return
+            }
+            let base = name.split(separator: "/").last.map(String.init)?.lowercased() ?? name.lowercased()
+            let matches = names.filter { ($0.split(separator: "/").last.map(String.init)?.lowercased() ?? "") == base }
+            if matches.count == 1 {
+                reveal(matches[0])
+            } else if matches.isEmpty {
+                lastError = "‘\(name)’ 문서를 찾지 못했습니다."
+            } else {
+                lastError = "‘\(name)’ 이름의 문서가 여러 개입니다: \(matches.joined(separator: ", "))"
+            }
+        } catch {
+            lastError = String(describing: error)
+        }
+    }
+
+    /// Select a document and open the folders above it in the sidebar.
+    private func reveal(_ docName: String) {
+        var parts = docName.split(separator: "/").map(String.init)
+        parts.removeLast()
+        var path = ""
+        for part in parts {
+            path = path.isEmpty ? part : "\(path)/\(part)"
+            setExpanded(path, true)
+        }
+        selectedDocument = docName
+    }
+
     // MARK: System channel
 
     private func startSystemChannel(_ client: ServerClient) {

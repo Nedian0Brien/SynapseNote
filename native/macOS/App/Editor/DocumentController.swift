@@ -1,3 +1,4 @@
+import AppKit
 import EditingCore
 import Foundation
 import Observation
@@ -78,6 +79,42 @@ final class DocumentController {
             NSLog("SynapseNote local edit failed: %@", String(describing: error))
         }
         verify()
+    }
+
+    /// Opens another document by name (set by the window).
+    @ObservationIgnored var onOpenDocument: ((String) -> Void)?
+
+    /// Follow a link the user ⌘-clicked: web addresses open in the browser,
+    /// wiki links and relative Markdown links open the document here.
+    func openLink(_ target: String) {
+        if let url = URL(string: target), let scheme = url.scheme?.lowercased(),
+           ["http", "https", "mailto"].contains(scheme) {
+            NSWorkspace.shared.open(url)
+            return
+        }
+        var name = target.removingPercentEncoding ?? target
+        if let hash = name.firstIndex(of: "#") { name = String(name[..<hash]) }
+        guard !name.isEmpty else { return }
+        for ext in [".md", ".mdx"] where name.lowercased().hasSuffix(ext) {
+            name = String(name.dropLast(ext.count))
+            name = Self.resolve(relative: name, from: documentName)
+        }
+        onOpenDocument?(name)
+    }
+
+    /// `../b` from `notes/a` → `b`; `c` from `notes/a` → `notes/c`; `/c` → `c`.
+    static func resolve(relative path: String, from document: String?) -> String {
+        if path.hasPrefix("/") { return String(path.drop(while: { $0 == "/" })) }
+        var parts = (document ?? "").split(separator: "/").map(String.init)
+        if !parts.isEmpty { parts.removeLast() }
+        for piece in path.split(separator: "/").map(String.init) {
+            switch piece {
+            case ".": continue
+            case "..": if !parts.isEmpty { parts.removeLast() }
+            default: parts.append(piece)
+            }
+        }
+        return parts.joined(separator: "/")
     }
 
     func userMovedSelection() {

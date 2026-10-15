@@ -105,6 +105,13 @@ public struct ServerClient: Sendable {
         return try await post("/api/create-page", body: ["path": path], as: Response.self).docName
     }
 
+    /// Every document's name (`GET /api/pages`), for resolving wiki links.
+    public func documentNames() async throws -> [String] {
+        struct Page: Decodable { var docName: String }
+        struct Response: Decodable { var pages: [Page] }
+        return try await get("/api/pages", as: Response.self).pages.map(\.docName)
+    }
+
     public func createFolder(path: String) async throws {
         struct Response: Decodable { var path: String }
         _ = try await post("/api/create-folder", body: ["path": path], as: Response.self)

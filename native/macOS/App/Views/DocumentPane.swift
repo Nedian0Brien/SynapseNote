@@ -7,9 +7,11 @@ struct DocumentPane: View {
     let documentName: String
     @State private var controller: DocumentController
 
-    init(documentName: String, collabURL: URL, runtime: EditingRuntime) {
+    init(documentName: String, collabURL: URL, runtime: EditingRuntime, openDocument: @escaping (String) -> Void) {
         self.documentName = documentName
-        _controller = State(initialValue: DocumentController(documentName: documentName, collabURL: collabURL, runtime: runtime))
+        let controller = DocumentController(documentName: documentName, collabURL: collabURL, runtime: runtime)
+        controller.onOpenDocument = openDocument
+        _controller = State(initialValue: controller)
     }
 
     var body: some View {
