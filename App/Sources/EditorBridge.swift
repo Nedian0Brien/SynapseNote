@@ -17,6 +17,8 @@ nonisolated enum EditorEvent: Equatable, Sendable {
     case log(level: String, message: String)
     /// A key the page did not use that belongs to the app.
     case shortcut(String)
+    /// One of the app's own views, such as the pages with a tag.
+    case openView(Destination)
 
     private struct Raw: Decodable {
         let type: String
@@ -33,6 +35,8 @@ nonisolated enum EditorEvent: Equatable, Sendable {
         let newTab: Bool?
         let find: String?
         let shortcut: String?
+        let view: String?
+        let tag: String?
     }
 
     /// Reads a posted message body. Anything that is not exactly one of the known messages gives nil.
@@ -69,6 +73,15 @@ nonisolated enum EditorEvent: Equatable, Sendable {
         case "shortcut":
             guard let name = raw.shortcut else { return nil }
             self = .shortcut(name)
+        case "openView":
+            switch raw.view {
+            case "tasks": self = .openView(.tasks)
+            case "tags": self = .openView(.tags)
+            case "tag":
+                guard let tag = raw.tag, !tag.isEmpty else { return nil }
+                self = .openView(.tag(tag))
+            default: return nil
+            }
         default:
             return nil
         }
@@ -90,6 +103,13 @@ nonisolated enum EditorCommand: Sendable {
     case scrollToHeading(index: Int)
     /// Opens the find bar of the page on screen.
     case find
+    /// Today's daily note, or the one for a yyyy-mm-dd day, made when missing.
+    case openToday(date: String?)
+    case createFromTemplate(templateId: String, parentId: String?)
+    /// A page in the Templates page, or the Templates page when there is none.
+    case newTemplate
+    case openTemplates
+    case saveAsTemplate(pageId: String)
 
     struct RPCFailure: Error, Equatable, Sendable {
         let message: String
@@ -119,6 +139,16 @@ nonisolated enum EditorCommand: Sendable {
             .object(["type": .string("scrollToHeading"), "index": .number(Double(index))])
         case .find:
             .object(["type": .string("find")])
+        case .openToday(let date):
+            .object(["type": .string("openToday"), "date": date.map(JSONValue.string) ?? .null])
+        case .createFromTemplate(let templateId, let parentId):
+            .object(["type": .string("createFromTemplate"), "templateId": .string(templateId), "parentId": parentId.map(JSONValue.string) ?? .null])
+        case .newTemplate:
+            .object(["type": .string("newTemplate")])
+        case .openTemplates:
+            .object(["type": .string("openTemplates")])
+        case .saveAsTemplate(let pageId):
+            .object(["type": .string("saveAsTemplate"), "pageId": .string(pageId)])
         }
     }
 }

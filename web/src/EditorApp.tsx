@@ -17,7 +17,7 @@ import { BlockMenu, FormattingMenu, LinkMenu, openHref, TableMenu } from '../ven
 import { FindBar } from '../vendor/morrow/src/app/editor/FindBar';
 import { createExtensions } from '../vendor/morrow/src/app/editor/extensions';
 import { createPage, openToday } from '../vendor/morrow/src/app/operations';
-import { PageTags } from '../vendor/morrow/src/app/components/TagsView';
+import { PageTags } from './PageTags';
 import { toast } from '../vendor/morrow/src/app/ui';
 import { getSession, getState, run } from '../vendor/morrow/src/app/workspace';
 import { Smile } from 'lucide-react';

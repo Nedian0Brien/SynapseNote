@@ -14,6 +14,8 @@ nonisolated struct PageInfo: Hashable, Sendable, Identifiable {
     let trashedAt: Double?
     let favorite: Bool
     let encrypted: Bool
+    /// The day a daily note is for, yyyy-mm-dd.
+    let dailyDate: String?
 
     init?(_ value: JSONValue) {
         guard let id = value["id"]?.stringValue else { return nil }
@@ -29,6 +31,7 @@ nonisolated struct PageInfo: Hashable, Sendable, Identifiable {
         trashedAt = value["trashedAt"]?.doubleValue
         favorite = value["favorite"] == .bool(true)
         encrypted = value["encrypted"] == .bool(true)
+        dailyDate = value["dailyDate"]?.stringValue
     }
 
     /// The title as shown, Untitled when empty, as Morrow's `displayTitle`.

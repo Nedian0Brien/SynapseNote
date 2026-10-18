@@ -20,7 +20,11 @@ struct HomeView: View {
                     section("Your writing") { Heatmap(weeks: facts.weeks) }
                     memories(facts)
                     if facts.openTasks > 0 {
-                        section("Open tasks", count: facts.openTasks) { TaskRows(controller: controller, tasks: facts.tasks) }
+                        section("Open tasks", count: facts.openTasks) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                ForEach(facts.tasks) { TaskRow(controller: controller, task: $0, showsPage: true) }
+                            }
+                        }
                     }
                 }
             }
@@ -61,7 +65,11 @@ struct HomeView: View {
             Stat(symbol: "flame.fill", tint: .orange, value: facts.streak, label: "day streak")
             Stat(symbol: "doc.text", tint: .blue, value: facts.pages, label: facts.pages == 1 ? "page" : "pages")
             Stat(symbol: "pencil.line", tint: .green, value: facts.words, label: facts.words == 1 ? "word" : "words")
-            Stat(symbol: "checkmark.circle", tint: .purple, value: facts.openTasks, label: facts.openTasks == 1 ? "open task" : "open tasks")
+            Button { controller.go(to: .tasks) } label: {
+                Stat(symbol: "checkmark.circle", tint: .purple, value: facts.openTasks, label: facts.openTasks == 1 ? "open task" : "open tasks")
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Shows every task")
         }
     }
 
@@ -182,7 +190,7 @@ private struct RecentCards: View {
                         if let icon = page.icon {
                             EmojiImage(emoji: icon, size: 26)
                         } else {
-                            Image(systemName: page.kind == "canvas" ? "scribble" : page.kind == "database" ? "tablecells" : "doc.text")
+                            Image(systemName: PageIcon.symbol(for: page))
                                 .font(.title3)
                                 .foregroundStyle(.white)
                         }
@@ -342,43 +350,6 @@ private struct Square: View {
         case 2: AnyShapeStyle(Color.accentColor.opacity(0.55))
         case 3: AnyShapeStyle(Color.accentColor.opacity(0.78))
         default: AnyShapeStyle(Color.accentColor)
-        }
-    }
-}
-
-/// Open tasks with a checkbox, as Morrow's `TaskList`: checking one changes the page, the words open it.
-private struct TaskRows: View {
-    let controller: EditorController
-    let tasks: [TaskRef]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ForEach(tasks) { task in
-                HStack(spacing: 10) {
-                    Button {
-                        controller.perform(.setTaskChecked(pageId: task.pageId, index: task.index, checked: !task.checked))
-                    } label: {
-                        Image(systemName: task.checked ? "checkmark.circle.fill" : "circle")
-                            .foregroundStyle(task.checked ? Color.accentColor : .secondary)
-                            .font(.title3)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(task.text.isEmpty ? "Untitled task" : task.text)
-                    .accessibilityValue(task.checked ? "Done" : "Not done")
-                    Button {
-                        controller.go(to: .page(task.pageId), find: task.text.isEmpty ? nil : task.text)
-                    } label: {
-                        Text(task.text.isEmpty ? "Untitled task" : task.text)
-                            .foregroundStyle(task.text.isEmpty ? .secondary : .primary)
-                            .multilineTextAlignment(.leading)
-                    }
-                    .buttonStyle(.plain)
-                    Spacer(minLength: 8)
-                    if let page = controller.workspace.infos[task.pageId] {
-                        Text(page.displayTitle).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                    }
-                }
-            }
         }
     }
 }

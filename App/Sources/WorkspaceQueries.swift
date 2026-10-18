@@ -73,6 +73,27 @@ nonisolated struct Heading: Decodable, Hashable, Sendable, Identifiable {
     var id: Int { index }
 }
 
+nonisolated struct TagEntry: Decodable, Hashable, Sendable, Identifiable {
+    let tag: String
+    let pages: Int
+    /// One of Morrow's colour names, the same for a tag everywhere.
+    let color: String
+
+    var id: String { tag.lowercased() }
+}
+
+nonisolated struct TemplateList: Decodable, Hashable, Sendable {
+    /// The Templates page, nil when the vault has none.
+    let container: String?
+    let templates: [String]
+}
+
+/// The numbers beside the sidebar's Tasks and Tags.
+nonisolated struct SidebarCounts: Decodable, Hashable, Sendable {
+    let openTasks: Int
+    let tags: Int
+}
+
 /// The queries the editor page answers, by the name `window.synapse.query` takes.
 nonisolated enum WorkspaceQuery: Sendable {
     case search(String, limit: Int)
@@ -81,6 +102,11 @@ nonisolated enum WorkspaceQuery: Sendable {
     case backlinks(String)
     case mentions(String)
     case outline(String)
+    case tags
+    case tagPages(String)
+    case tasks
+    case templates
+    case counts
 
     var name: String {
         switch self {
@@ -90,6 +116,11 @@ nonisolated enum WorkspaceQuery: Sendable {
         case .backlinks: "backlinks"
         case .mentions: "mentions"
         case .outline: "outline"
+        case .tags: "tags"
+        case .tagPages: "tagPages"
+        case .tasks: "tasks"
+        case .templates: "templates"
+        case .counts: "counts"
         }
     }
 
@@ -97,8 +128,9 @@ nonisolated enum WorkspaceQuery: Sendable {
         switch self {
         case .search(let query, let limit): ["query": query, "limit": limit]
         case .recent(let limit): ["limit": limit]
-        case .home: [:]
+        case .home, .tags, .tasks, .templates, .counts: [:]
         case .backlinks(let id), .mentions(let id), .outline(let id): ["id": id]
+        case .tagPages(let tag): ["tag": tag]
         }
     }
 

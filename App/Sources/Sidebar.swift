@@ -4,12 +4,24 @@ import UniformTypeIdentifiers
 /// Favourites, the page tree and the trash, with Morrow's sidebar actions.
 struct Sidebar: View {
     @Bindable var controller: EditorController
+    @State private var counts: SidebarCounts?
 
     var body: some View {
         let workspace = controller.workspace
         List(selection: $controller.sidebarItem) {
             Label("Home", systemImage: "house")
                 .tag(Destination.home)
+            // today's note is made when it does not exist yet, so this row opens it rather than being a place
+            Button { controller.openToday() } label: {
+                Label("Today", systemImage: "calendar")
+                    .fontWeight(isOnToday ? .semibold : .regular)
+            }
+            .buttonStyle(.plain)
+            CountedRow(title: "Tasks", symbol: "checklist", count: counts?.openTasks)
+                .tag(Destination.tasks)
+            CountedRow(title: "Tags", symbol: "number", count: counts?.tags)
+                .tag(Destination.tags)
+
             let favorites = workspace.favorites
             if !favorites.isEmpty {
                 Section("Favorites") {
@@ -31,14 +43,15 @@ struct Sidebar: View {
                 }
             }
             Section {
-                HStack {
-                    Label("Trash", systemImage: "trash")
-                    Spacer()
-                    let count = workspace.trashed.count
-                    if count > 0 { Text("\(count)").foregroundStyle(.secondary).monospacedDigit() }
-                }
-                .tag(Destination.trash)
+                CountedRow(title: "Trash", symbol: "trash", count: workspace.trashed.count)
+                    .tag(Destination.trash)
             }
+        }
+        // the counts beside Tasks and Tags, asked again after a short pause whenever the workspace changes
+        .task(id: controller.revision) {
+            if counts != nil { try? await Task.sleep(for: .milliseconds(400)) }
+            guard !Task.isCancelled, let next = await controller.sidebarCounts() else { return }
+            counts = next
         }
         .overlay {
             if controller.phase == .ready && workspace.rows(expanded: []).isEmpty && workspace.trashed.isEmpty {
@@ -50,6 +63,33 @@ struct Sidebar: View {
             }
         }
     }
+
+    private var isOnToday: Bool {
+        controller.selection.flatMap { controller.workspace.infos[$0]?.dailyDate } == DailyNote.key(for: .now)
+    }
+}
+
+/// A sidebar row with a number beside it, left out when there is nothing to count.
+private struct CountedRow: View {
+    let title: String
+    let symbol: String
+    let count: Int?
+
+    var body: some View {
+        HStack {
+            Label(title, systemImage: symbol)
+            Spacer()
+            if let count, count > 0 { Text("\(count)").foregroundStyle(.secondary).monospacedDigit() }
+        }
+    }
+}
+
+enum DailyNote {
+    /// Morrow's `dateKey`: the local calendar day as yyyy-mm-dd.
+    static func key(for date: Date, calendar: Calendar = .current) -> String {
+        let parts = calendar.dateComponents([.year, .month, .day], from: date)
+        return String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
+    }
 }
 
 /// A page's icon and title.
@@ -60,11 +100,32 @@ struct PageLabel: View {
         Label {
             Text(page.displayTitle).lineLimit(1)
         } icon: {
-            if let icon = page.icon {
-                EmojiImage(emoji: icon, size: 16)
-            } else {
-                Image(systemName: page.kind == "canvas" ? "scribble" : page.kind == "database" ? "tablecells" : "doc.text")
-            }
+            PageIcon(page: page, size: 16)
+        }
+    }
+}
+
+/// The page's emoji, or a symbol for its kind as Morrow's `pageIcon` picks one.
+struct PageIcon: View {
+    let page: PageInfo
+    let size: CGFloat
+
+    var body: some View {
+        if let icon = page.icon {
+            EmojiImage(emoji: icon, size: size)
+        } else {
+            Image(systemName: Self.symbol(for: page))
+        }
+    }
+
+    static func symbol(for page: PageInfo) -> String {
+        if page.dailyDate != nil { return "calendar" }
+        switch page.kind {
+        case "journal": return "book"
+        case "templates": return "square.on.square.dashed"
+        case "canvas": return "scribble"
+        case "database": return "tablecells"
+        default: return "doc.text"
         }
     }
 }
@@ -168,6 +229,9 @@ struct PageMenu: View {
         }
         Button("Duplicate", systemImage: "doc.on.doc") { controller.duplicate(page.id) }
         Button("Move To…", systemImage: "arrow.right.arrow.left") { controller.movingPage = page.id }
+        if page.kind == "page" {
+            Button("Save as Template", systemImage: "square.on.square.dashed") { controller.saveAsTemplate(page.id) }
+        }
         #if os(macOS)
         Button("Show in Finder", systemImage: "folder") { controller.reveal(page.id) }
         #endif

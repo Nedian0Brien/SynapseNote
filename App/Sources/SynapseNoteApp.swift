@@ -37,6 +37,7 @@ private struct PageCommands: Commands {
         CommandGroup(replacing: .newItem) {
             item("page.new")
             item("page.newSubpage")
+            item("page.fromTemplate")
             item("tab.new")
             Divider()
             item("vault.open")
@@ -68,6 +69,7 @@ private struct PageCommands: Commands {
             item("page.favorite")
             item("page.duplicate")
             item("page.move")
+            item("page.saveTemplate")
             item("tab.duplicate")
             Divider()
             item("page.trash")
@@ -81,6 +83,10 @@ private struct PageCommands: Commands {
         CommandMenu("Go") {
             item("search")
             item("go.home")
+            item("daily.today")
+            item("go.tasks")
+            item("go.tags")
+            item("go.templates")
             item("go.trash")
             Divider()
             item("tab.next")

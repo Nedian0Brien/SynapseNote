@@ -139,3 +139,45 @@ struct CoverGradientTests {
         #expect(CoverGradient.number(for: "3f2a9c1e-7b4d-4e8a-9f00-1c2d3e4f5a6b") == 3)
     }
 }
+
+struct DailyViewsTests {
+    @Test func tabsSavedBeforeTheNewPlacesStillRestore() throws {
+        // the shape phase 2 saved: home, a page and the trash
+        let saved = #"{"tabs":[{"id":"a","destination":{"home":{}}},{"id":"b","destination":{"page":{"_0":"p"}}},{"id":"c","destination":{"trash":{}}}],"activeId":"b"}"#
+        let list = try #require(TabList.restore(Data(saved.utf8)))
+        #expect(list.tabs.map(\.destination) == [.home, .page("p"), .trash])
+        var next = list
+        next.open(.tag("project/garden"))
+        next.open(.tasks)
+        #expect(TabList.restore(try JSONEncoder().encode(next)) == next)
+    }
+
+    @Test func readsTagsTemplatesAndCounts() throws {
+        let tags = try #require(try WorkspaceQuery.decode(#"[{"tag":"Project","pages":2,"color":"blue"}]"#, as: [TagEntry].self))
+        #expect(tags == [TagEntry(tag: "Project", pages: 2, color: "blue")])
+        #expect(tags[0].id == "project")
+        let list = try #require(try WorkspaceQuery.decode(#"{"container":null,"templates":[]}"#, as: TemplateList.self))
+        #expect(list == TemplateList(container: nil, templates: []))
+        let counts = try #require(try WorkspaceQuery.decode(#"{"openTasks":3,"tags":1}"#, as: SidebarCounts.self))
+        #expect(counts == SidebarCounts(openTasks: 3, tags: 1))
+        #expect(WorkspaceQuery.tagPages("a/b").params["tag"] as? String == "a/b")
+    }
+
+    @Test func dailyKeysAreTheLocalDay() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Asia/Seoul")!
+        // 2026-10-18 20:30 UTC is already the 19th in Seoul
+        let date = Date(timeIntervalSince1970: 1_792_355_400)
+        #expect(DailyNote.key(for: date, calendar: calendar) == "2026-10-19")
+    }
+
+    @Test func iconsFollowMorrowsPageIcon() throws {
+        let daily = try #require(PageInfo(.object(["id": .string("d"), "dailyDate": .string("2026-10-19")])))
+        let journal = try #require(PageInfo(.object(["id": .string("j"), "kind": .string("journal")])))
+        let templates = try #require(PageInfo(.object(["id": .string("t"), "kind": .string("templates")])))
+        #expect(PageIcon.symbol(for: daily) == "calendar")
+        #expect(PageIcon.symbol(for: journal) == "book")
+        #expect(PageIcon.symbol(for: templates) == "square.on.square.dashed")
+        #expect(daily.dailyDate == "2026-10-19")
+    }
+}

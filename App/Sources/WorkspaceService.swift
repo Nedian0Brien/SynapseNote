@@ -57,4 +57,10 @@ protocol WorkspaceService: AnyObject {
     /// Pages that name this page in their text without linking to it.
     func mentions(of pageId: String) async -> [Mention]
     func outline(of pageId: String) async -> [Heading]
+    func tags() async -> [TagEntry]
+    /// Pages with the tag or a tag below it, the latest edited first.
+    func pages(tagged tag: String) async -> [String]
+    func tasks() async -> [TaskRef]
+    func templates() async -> TemplateList?
+    func sidebarCounts() async -> SidebarCounts?
 }

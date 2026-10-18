@@ -66,6 +66,8 @@ final class EditorController: WorkspaceService {
     var showingShortcuts = false
     /// The open page's outline and links beside it.
     var showingInspector = false
+    /// The template list for New Page from Template.
+    var choosingTemplate = false
     /// The person hid the sidebar.
     var sidebarHidden = false
     /// The page alone, without sidebar, tabs or inspector, as Morrow's focus mode.
@@ -375,6 +377,50 @@ final class EditorController: WorkspaceService {
         await answer(.outline(pageId)) ?? []
     }
 
+    func tags() async -> [TagEntry] {
+        await answer(.tags) ?? []
+    }
+
+    func pages(tagged tag: String) async -> [String] {
+        await answer(.tagPages(tag)) ?? []
+    }
+
+    func tasks() async -> [TaskRef] {
+        await answer(.tasks) ?? []
+    }
+
+    func templates() async -> TemplateList? {
+        await answer(.templates)
+    }
+
+    func sidebarCounts() async -> SidebarCounts? {
+        await answer(.counts)
+    }
+
+    // MARK: daily notes and templates, made by morrow's operations in the page, which then opens them
+
+    /// Today's daily note, or the one for a yyyy-mm-dd day.
+    func openToday(_ date: String? = nil) {
+        send(.openToday(date: date))
+    }
+
+    func createPage(fromTemplate templateId: String, parent: String? = nil) {
+        if let parent { expanded.insert(parent) }
+        send(.createFromTemplate(templateId: templateId, parentId: parent))
+    }
+
+    func newTemplate() {
+        send(.newTemplate)
+    }
+
+    func openTemplates() {
+        send(.openTemplates)
+    }
+
+    func saveAsTemplate(_ pageId: String) {
+        send(.saveAsTemplate(pageId: pageId))
+    }
+
     /// Asks the editor page, which works it out from the workspace session it holds.
     private func answer<T: Decodable>(_ query: WorkspaceQuery) async -> T? {
         guard isPageReady, phase == .ready else { return nil }
@@ -490,6 +536,8 @@ final class EditorController: WorkspaceService {
             else { logger.warning("editor: \(message, privacy: .public)") }
         case .shortcut(let name):
             if name == "escape", focusMode { focusMode = false }
+        case .openView(let place):
+            go(to: place)
         }
     }
 

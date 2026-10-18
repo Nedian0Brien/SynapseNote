@@ -140,6 +140,7 @@ struct ContentView: View {
             if controller.showingPalette { CommandPalette(controller: controller) }
         }
         .sheet(isPresented: $controller.showingShortcuts) { ShortcutsView(controller: controller) }
+        .sheet(isPresented: $controller.choosingTemplate) { TemplatePicker(controller: controller, parent: nil) }
         .onChange(of: controller.destination) { compactColumn = .detail }
         .onChange(of: controller.detailRequests) { compactColumn = .detail }
         // the split view's own button and gestures set the visibility; focus mode and the sidebar command set
@@ -172,6 +173,15 @@ struct ContentView: View {
                             .background(.background)
                     case .trash:
                         TrashView(controller: controller)
+                            .background(.background)
+                    case .tasks:
+                        TasksView(controller: controller)
+                            .background(.background)
+                    case .tags:
+                        TagsView(controller: controller)
+                            .background(.background)
+                    case .tag(let tag):
+                        TagView(controller: controller, tag: tag)
                             .background(.background)
                     case .page:
                         EmptyView()

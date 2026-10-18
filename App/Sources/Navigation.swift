@@ -5,6 +5,10 @@ nonisolated enum Destination: Hashable, Codable, Sendable {
     case home
     case page(String)
     case trash
+    case tasks
+    case tags
+    /// The pages with one tag.
+    case tag(String)
 
     var pageId: String? {
         if case .page(let id) = self { id } else { nil }

@@ -77,6 +77,13 @@ struct AppAction: Identifiable {
             $0.go(to: .home)
         },
         AppAction("go.trash", .general, "Go to Trash", symbol: "trash", keywords: "deleted restore") { $0.go(to: .trash) },
+        AppAction("daily.today", .general, "Open Today’s Note", symbol: "calendar", keywords: "daily journal date",
+                  shortcut: KeyboardShortcut("d", modifiers: [.command, .shift])) { $0.openToday() },
+        AppAction("page.fromTemplate", .general, "New Page from Template…", symbol: "square.on.square.dashed", keywords: "template",
+                  shortcut: KeyboardShortcut("t", modifiers: [.command, .option])) { $0.choosingTemplate = true },
+        AppAction("go.templates", .general, "Go to Templates", symbol: "square.on.square.dashed", keywords: "template") { $0.openTemplates() },
+        AppAction("go.tasks", .general, "Go to Tasks", symbol: "checklist", keywords: "todo checklist") { $0.go(to: .tasks) },
+        AppAction("go.tags", .general, "Go to Tags", symbol: "number", keywords: "hashtag label") { $0.go(to: .tags) },
         AppAction("tab.new", .view, "New Tab", symbol: "plus.square.on.square", shortcut: KeyboardShortcut("t")) { $0.newTab() },
         // the last tab stays, as in morrow
         AppAction("tab.close", .view, "Close Tab", symbol: "xmark.square", shortcut: KeyboardShortcut("w"),
@@ -102,6 +109,12 @@ struct AppAction: Identifiable {
                   shortcut: KeyboardShortcut("f"), enabled: onLivePage) { $0.findInPage() },
         AppAction("page.move", .page, "Move Page To…", symbol: "arrow.right.arrow.left", enabled: onLivePage) { controller in
             controller.movingPage = controller.selection
+        },
+        AppAction("page.saveTemplate", .page, "Save Page as Template", symbol: "square.on.square.dashed", keywords: "template",
+                  enabled: { controller in
+                      onLivePage(controller) && controller.selection.flatMap { controller.workspace.infos[$0] }?.kind == "page"
+                  }) { controller in
+            if let id = controller.selection { controller.saveAsTemplate(id) }
         },
         AppAction("page.duplicate", .page, "Duplicate Page", symbol: "doc.on.doc", keywords: "copy", enabled: onLivePage) { controller in
             if let id = controller.selection { controller.duplicate(id) }

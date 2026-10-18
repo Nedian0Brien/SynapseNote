@@ -83,6 +83,9 @@ private struct TabItem: View {
         switch tab.destination {
         case .home: "Home"
         case .trash: "Trash"
+        case .tasks: "Tasks"
+        case .tags: "Tags"
+        case .tag(let tag): "#\(tag)"
         case .page: page?.displayTitle ?? "Missing Page"
         }
     }
@@ -92,8 +95,10 @@ private struct TabItem: View {
         switch tab.destination {
         case .home: Image(systemName: "house")
         case .trash: Image(systemName: "trash")
+        case .tasks: Image(systemName: "checklist")
+        case .tags, .tag: Image(systemName: "number")
         case .page:
-            if let icon = page?.icon { EmojiImage(emoji: icon, size: 14) } else { Image(systemName: "doc.text") }
+            if let page { PageIcon(page: page, size: 14) } else { Image(systemName: "doc.text") }
         }
     }
 }
