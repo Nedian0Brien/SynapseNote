@@ -16,19 +16,18 @@ import { registerCommit, setFocusedEditor } from '../vendor/morrow/src/app/edito
 import { BlockMenu, FormattingMenu, LinkMenu, openHref, TableMenu } from '../vendor/morrow/src/app/editor/EditorMenus';
 import { FindBar } from '../vendor/morrow/src/app/editor/FindBar';
 import { createExtensions } from '../vendor/morrow/src/app/editor/extensions';
-import { createPage } from '../vendor/morrow/src/app/operations';
+import { createPage, openToday } from '../vendor/morrow/src/app/operations';
+import { PageTags } from '../vendor/morrow/src/app/components/TagsView';
 import { toast } from '../vendor/morrow/src/app/ui';
 import { getSession, getState, run } from '../vendor/morrow/src/app/workspace';
 import { Smile } from 'lucide-react';
 import { post } from './bridge';
-import { openPage } from './host/router';
+import { navigate, openPage } from './host/router';
 
 // the same pause morrow waits before writing an edit back
 export const COMMIT_DELAY_MS = 250;
 
 const NOT_YET = {
-  tag: 'Tag pages are not available yet.',
-  date: 'Daily notes are not available yet.',
   child: 'Databases and canvases are not available yet.',
 };
 
@@ -187,13 +186,13 @@ export function EditorApp({ page, doc, editable, find }: Props) {
           resolveTarget: (target) => resolveLinkTarget(getState(), target),
           // obsidian makes a missing linked page at the top of the vault, so does morrow
           createFromTarget: (target) => createPage({ title: target.split('/').pop() || target, open: false }),
-          openTag: () => toast(NOT_YET.tag),
+          openTag: (tag) => navigate({ name: 'tag', tag }),
           renderEmbed: (id) => embedHtml(id, pageId),
           createChild: () => {
             toast(NOT_YET.child);
             return null;
           },
-          openDate: () => toast(NOT_YET.date),
+          openDate: (date) => openToday(date),
           onBlockMenu: setBlockMenu,
           resolvePage: (title) => pageIdByTitle(getState(), title),
         }),
@@ -315,6 +314,7 @@ export function EditorApp({ page, doc, editable, find }: Props) {
         <h1 className="page-title-heading">
           <TitleField page={page} onEnter={() => editor?.chain().focus('start').run()} />
         </h1>
+        {page.kind !== 'database' && <PageTags page={page} editable={editable} />}
         {editor ? (
           <div className="editor-host">
             {finding && <FindBar editor={editor} onClose={() => setFinding(false)} />}

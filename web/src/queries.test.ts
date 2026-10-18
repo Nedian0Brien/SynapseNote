@@ -3,7 +3,8 @@ import { applyCommand } from '../vendor/morrow/src/core/commands';
 import type { Command } from '../vendor/morrow/src/core/commands';
 import { emptyWorkspace } from '../vendor/morrow/src/core/model';
 import type { DocNode, WorkspaceState } from '../vendor/morrow/src/core/model';
-import { backlinks, home, mentions, outline, recent, search } from './queries';
+import { backlinks, counts, home, mentions, outline, recent, search, tagPages, tags, tasks, templates } from './queries';
+import { tagColor } from '../vendor/morrow/src/core/tags';
 
 const DAY = 24 * 60 * 60 * 1000;
 const NOW = new Date(2026, 9, 19, 10);
@@ -151,5 +152,48 @@ describe('outline', () => {
       { index: 2, level: 2, text: 'Watering' },
     ]);
     expect(outline(undefined)).toEqual([]);
+  });
+});
+
+describe('tags', () => {
+  const tagged = () =>
+    run(
+      workspace(),
+      { type: 'page.setTags', id: 'tomatoes', tags: ['project/garden'], now: NOW.getTime() - 3 * DAY },
+      { type: 'page.setTags', id: 'garden', tags: ['project'], now: NOW.getTime() - DAY },
+    );
+
+  it('lists every tag with its pages and colour', () => {
+    expect(tags(tagged())).toEqual([
+      { tag: 'project', pages: 1, color: tagColor('project') },
+      { tag: 'project/garden', pages: 1, color: tagColor('project/garden') },
+    ]);
+  });
+
+  it('counts a nested tag for its parent, newest edit first', () => {
+    expect(tagPages(tagged(), 'project')).toEqual(['garden', 'tomatoes']);
+    expect(tagPages(tagged(), 'project/garden')).toEqual(['tomatoes']);
+  });
+});
+
+describe('tasks and counts', () => {
+  it('lists every checklist item and counts the open ones', () => {
+    expect(tasks(workspace())).toEqual([
+      { pageId: 'garden', index: 0, text: 'Buy stakes', checked: false },
+      { pageId: 'garden', index: 1, text: 'Plant seeds', checked: true },
+    ]);
+    expect(counts(workspace())).toEqual({ openTasks: 1, tags: 0 });
+  });
+});
+
+describe('templates', () => {
+  it('names the templates page and the templates in it', () => {
+    expect(templates(workspace())).toEqual({ container: null, templates: [] });
+    const withTemplates = run(
+      workspace(),
+      { type: 'page.create', id: 'tpl', parentId: null, now: 1, title: 'Templates', kind: 'templates' },
+      { type: 'page.create', id: 'daily', parentId: 'tpl', now: 2, title: 'Daily note' },
+    );
+    expect(templates(withTemplates)).toEqual({ container: 'tpl', templates: ['daily'] });
   });
 });

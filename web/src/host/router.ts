@@ -16,6 +16,8 @@ export function showRoute(pageId: PageId | null): void {
 export function navigate(route: Route): void {
   if (route.name === 'page') post({ type: 'openPage', pageId: route.id, find: route.find });
   else if (route.name === 'home') post({ type: 'openPage', pageId: null });
+  else if (route.name === 'tasks' || route.name === 'tags') post({ type: 'openView', view: route.name });
+  else if (route.name === 'tag') post({ type: 'openView', view: 'tag', tag: route.tag });
   else toast('That view is not available yet.');
 }
 

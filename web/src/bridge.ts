@@ -23,7 +23,14 @@ export type InboundMessage =
   // the open page's top level heading at this position is scrolled into view
   | { type: 'scrollToHeading'; index: number }
   // opens the open page's find bar
-  | { type: 'find' };
+  | { type: 'find' }
+  // today's daily note, or the one for a yyyy-mm-dd date, made when it does not exist yet
+  | { type: 'openToday'; date: string | null }
+  | { type: 'createFromTemplate'; templateId: PageId; parentId: PageId | null }
+  // a new page in the templates page, or the templates page itself when there is none
+  | { type: 'newTemplate' }
+  | { type: 'openTemplates' }
+  | { type: 'saveAsTemplate'; pageId: PageId };
 
 // posted to the native app through window.webkit.messageHandlers.editor
 export type OutboundMessage =
@@ -37,7 +44,9 @@ export type OutboundMessage =
   | { type: 'openExternal'; url: string }
   | { type: 'log'; level: 'error' | 'warning'; message: string }
   // a key the page received that belongs to the app, such as escape leaving focus mode
-  | { type: 'shortcut'; shortcut: 'escape' };
+  | { type: 'shortcut'; shortcut: 'escape' }
+  // one of the app's own views, such as the pages with a tag
+  | { type: 'openView'; view: 'tasks' | 'tags' | 'tag'; tag?: string };
 
 interface WebkitHandler {
   postMessage(message: unknown): void;
@@ -109,6 +118,21 @@ export function parseInbound(value: unknown): InboundMessage | null {
         : null;
     case 'find':
       return { type: 'find' };
+    case 'openToday':
+      if (value.date === null || value.date === undefined) return { type: 'openToday', date: null };
+      return typeof value.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.date)
+        ? { type: 'openToday', date: value.date }
+        : null;
+    case 'createFromTemplate':
+      return isId(value.templateId) && (value.parentId === null || isId(value.parentId))
+        ? { type: 'createFromTemplate', templateId: value.templateId, parentId: value.parentId }
+        : null;
+    case 'newTemplate':
+      return { type: 'newTemplate' };
+    case 'openTemplates':
+      return { type: 'openTemplates' };
+    case 'saveAsTemplate':
+      return isId(value.pageId) ? { type: 'saveAsTemplate', pageId: value.pageId } : null;
     default:
       return null;
   }

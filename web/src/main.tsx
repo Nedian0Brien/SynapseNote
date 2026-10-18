@@ -21,7 +21,16 @@ import { VaultRepository } from '../vendor/morrow/src/storage/vaultRepository';
 import { SourceDialog } from '../vendor/morrow/src/app/components/SourceDialog';
 import { Toasts } from '../vendor/morrow/src/app/components/primitives';
 import { commitEditors } from '../vendor/morrow/src/app/editor/commits';
-import { createPage, trashPage } from '../vendor/morrow/src/app/operations';
+import {
+  createFromTemplate,
+  createPage,
+  createTemplatesPage,
+  openToday,
+  saveAsTemplate,
+  trashPage,
+} from '../vendor/morrow/src/app/operations';
+import { parseDateKey } from '../vendor/morrow/src/core/daily';
+import { findTemplatesPage } from '../vendor/morrow/src/core/templates';
 import { newId } from '../vendor/morrow/src/app/platform/files';
 import { useUi } from '../vendor/morrow/src/app/ui';
 import { getSession, run, setSession, useWorkspace } from '../vendor/morrow/src/app/workspace';
@@ -119,6 +128,16 @@ function query(name: string, params: Record<string, unknown>): string | null {
       return JSON.stringify(queries.mentions(state, id));
     case 'outline':
       return JSON.stringify(queries.outline(state.docs[id]));
+    case 'tags':
+      return JSON.stringify(queries.tags(state));
+    case 'tagPages':
+      return JSON.stringify(queries.tagPages(state, typeof params.tag === 'string' ? params.tag : ''));
+    case 'tasks':
+      return JSON.stringify(queries.tasks(state));
+    case 'templates':
+      return JSON.stringify(queries.templates(state));
+    case 'counts':
+      return JSON.stringify(queries.counts(state));
     default:
       return null;
   }
@@ -263,6 +282,27 @@ listen((message) => {
       break;
     case 'find':
       window.dispatchEvent(new Event('morrow:find'));
+      break;
+    // the rest are morrow's operations, which open what they make through the app
+    case 'openToday':
+      if (phase.kind === 'ready') openToday((message.date && parseDateKey(message.date)) || new Date());
+      break;
+    case 'createFromTemplate':
+      if (phase.kind === 'ready') createFromTemplate(message.templateId, message.parentId);
+      break;
+    case 'newTemplate': {
+      if (phase.kind !== 'ready') break;
+      // as morrow's template dialog does when there are no templates
+      const container = findTemplatesPage(getSession().getState());
+      if (container) createPage({ parentId: container.id, title: 'New template' });
+      else createTemplatesPage();
+      break;
+    }
+    case 'openTemplates':
+      if (phase.kind === 'ready') createTemplatesPage();
+      break;
+    case 'saveAsTemplate':
+      if (phase.kind === 'ready') saveAsTemplate(message.pageId);
       break;
   }
 }, {

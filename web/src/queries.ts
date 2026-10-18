@@ -7,7 +7,9 @@ import type { Day } from '../vendor/morrow/src/core/insights';
 import { backlinksTo, unlinkedMentions } from '../vendor/morrow/src/core/links';
 import { searchWorkspace } from '../vendor/morrow/src/core/search';
 import type { SearchSnippet } from '../vendor/morrow/src/core/search';
+import { collectTags, pagesWithTag, tagColor } from '../vendor/morrow/src/core/tags';
 import { collectTasks } from '../vendor/morrow/src/core/tasks';
+import { findTemplatesPage, listTemplates } from '../vendor/morrow/src/core/templates';
 import type { TaskRef } from '../vendor/morrow/src/core/tasks';
 import { livePages } from '../vendor/morrow/src/core/tree';
 
@@ -96,4 +98,33 @@ export function outline(doc: DocNode | undefined): Heading[] {
     .filter((node) => node.type === 'heading')
     .map((node, index) => ({ index, level: Number(node.attrs?.level ?? 1), text: inlineText(node).trim() }))
     .filter((heading) => heading.text);
+}
+
+export interface TagEntry {
+  tag: string;
+  pages: number;
+  // one of morrow's colour names, the same for a tag everywhere
+  color: string;
+}
+
+// every tag with how many pages carry it, as morrow's tags view
+export function tags(state: WorkspaceState): TagEntry[] {
+  return collectTags(state).map((entry) => ({ tag: entry.tag, pages: entry.pages.length, color: tagColor(entry.tag) }));
+}
+
+export function tagPages(state: WorkspaceState, tag: string): PageId[] {
+  return pagesWithTag(state, tag).map((page) => page.id);
+}
+
+export function tasks(state: WorkspaceState): TaskRef[] {
+  return collectTasks(state);
+}
+
+export function templates(state: WorkspaceState): { container: PageId | null; templates: PageId[] } {
+  return { container: findTemplatesPage(state)?.id ?? null, templates: listTemplates(state).map((page) => page.id) };
+}
+
+// the numbers beside the sidebar's tasks and tags
+export function counts(state: WorkspaceState): { openTasks: number; tags: number } {
+  return { openTasks: collectTasks(state).filter((task) => !task.checked).length, tags: collectTags(state).length };
 }

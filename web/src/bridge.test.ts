@@ -55,6 +55,22 @@ describe('parseInbound', () => {
     expect(parseInbound({ type: 'find' })).toEqual({ type: 'find' });
   });
 
+  it('accepts daily note and template requests', () => {
+    expect(parseInbound({ type: 'openToday' })).toEqual({ type: 'openToday', date: null });
+    expect(parseInbound({ type: 'openToday', date: '2026-10-19' })).toEqual({ type: 'openToday', date: '2026-10-19' });
+    expect(parseInbound({ type: 'openToday', date: 'tomorrow' })).toBeNull();
+    expect(parseInbound({ type: 'createFromTemplate', templateId: 't', parentId: null })).toEqual({
+      type: 'createFromTemplate',
+      templateId: 't',
+      parentId: null,
+    });
+    expect(parseInbound({ type: 'createFromTemplate', parentId: null })).toBeNull();
+    expect(parseInbound({ type: 'newTemplate' })).toEqual({ type: 'newTemplate' });
+    expect(parseInbound({ type: 'openTemplates' })).toEqual({ type: 'openTemplates' });
+    expect(parseInbound({ type: 'saveAsTemplate', pageId: 'p' })).toEqual({ type: 'saveAsTemplate', pageId: 'p' });
+    expect(parseInbound({ type: 'saveAsTemplate' })).toBeNull();
+  });
+
   it('drops pages without an id, unknown messages and non objects', () => {
     expect(parseInbound({ type: 'show', pageId: '' })).toBeNull();
     expect(parseInbound({ type: 'show', pageId: 'a', find: 3 })).toBeNull();
