@@ -8,15 +8,38 @@ struct SynapseNoteApp: App {
     #endif
 
     var body: some Scene {
+        // one window: the vault's single editor page cannot be shown in two places at once
+        #if os(macOS)
+        Window("SynapseNote", id: "main") {
+            ContentView(controller: controller)
+                .onAppear { appDelegate.controller = controller }
+        }
+        .defaultSize(width: 1180, height: 780)
+        .commands { PageCommands(controller: controller) }
+        #else
         WindowGroup {
             ContentView(controller: controller)
-                #if os(macOS)
-                .onAppear { appDelegate.controller = controller }
-                #endif
         }
-        #if os(macOS)
-        .defaultSize(width: 1180, height: 780)
+        .commands { PageCommands(controller: controller) }
         #endif
+    }
+}
+
+/// New Page and Move Page to Trash in the File menu, also reachable from a hardware keyboard.
+private struct PageCommands: Commands {
+    let controller: EditorController
+
+    var body: some Commands {
+        CommandGroup(replacing: .newItem) {
+            Button("New Page") { controller.createPage() }
+                .keyboardShortcut("n")
+                .disabled(controller.phase != .ready)
+            Button("Move Page to Trash") {
+                if let selection = controller.selection { controller.trash(selection) }
+            }
+            .keyboardShortcut(.delete)
+            .disabled(controller.phase != .ready || controller.selection == nil)
+        }
     }
 }
 

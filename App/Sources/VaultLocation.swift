@@ -24,8 +24,10 @@ struct VaultLocation {
     struct Opened {
         let url: URL
         let scoped: Bool
+        /// The app's own documents folder is named after the app rather than "Documents".
+        var appFolder = false
 
-        var name: String { url.lastPathComponent }
+        var name: String { appFolder ? "SynapseNote" : url.lastPathComponent }
 
         func close() {
             if scoped { url.stopAccessingSecurityScopedResource() }
@@ -53,7 +55,7 @@ struct VaultLocation {
         #endif
         switch defaults.string(forKey: Self.kindKey) {
         case "appDocuments":
-            return Opened(url: try Self.appDocuments(), scoped: false)
+            return Opened(url: try Self.appDocuments(), scoped: false, appFolder: true)
         case "bookmark":
             guard let data = defaults.data(forKey: Self.bookmarkKey) else { return nil }
             var stale = false

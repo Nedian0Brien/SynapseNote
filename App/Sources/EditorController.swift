@@ -158,9 +158,10 @@ final class EditorController {
         send(.theme(dark: dark))
     }
 
+    /// The page decides what it can show: a page made a moment ago may not be in this side's list yet.
     func showSelection() {
         guard phase == .ready else { return }
-        send(.show(pageId: selection.flatMap { workspace.isShowable($0) ? $0 : nil }))
+        send(.show(pageId: selection))
     }
 
     func createPage(parent: String? = nil) {

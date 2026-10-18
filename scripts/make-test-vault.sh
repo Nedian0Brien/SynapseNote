@@ -61,4 +61,6 @@ printf '{"nodes":[{"id":"a","type":"text","text":"Idea","x":0,"y":0,"width":200,
 printf '{"theme":"obsidian"}\n' > "$DIR/.obsidian/app.json"
 # a 2x2 png
 printf '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x02\x00\x00\x00\x02\x08\x02\x00\x00\x00\xfd\xd4\x9as\x00\x00\x00\x16IDATx\x9cc\xf8\xcf\xc0\xf0\x1f\x08\x18\xfe\x03\x00\x1f\xf6\x03\xfd\xb0\xb5\x9a\x8f\x00\x00\x00\x00IEND\xaeB`\x82' > "$DIR/attachments/diagram.png"
+# large enough to see in the editor
+sips -z 120 240 "$DIR/attachments/diagram.png" >/dev/null 2>&1 || true
 echo "test vault written to $DIR"

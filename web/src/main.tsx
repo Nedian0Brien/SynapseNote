@@ -12,7 +12,9 @@ import 'katex/dist/katex.min.css';
 import './editor.css';
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import type { PageId } from '../vendor/morrow/src/core/model';
+import { displayTitle } from '../vendor/morrow/src/core/model';
+import type { PageId, PageMeta } from '../vendor/morrow/src/core/model';
+import { docToPlainText, findUnknownTypes } from '../vendor/morrow/src/core/doc';
 import { isEffectivelyTrashed } from '../vendor/morrow/src/core/tree';
 import { WorkspaceSession } from '../vendor/morrow/src/storage/session';
 import { VaultRepository } from '../vendor/morrow/src/storage/vaultRepository';
@@ -51,17 +53,18 @@ let phase: Phase = { kind: 'waiting' };
 let shown: PageId | null = null;
 let rerender: () => void = () => {};
 
-// sends the page list and save state, at most once per frame
+// sends the page list and save state, gathered over a few milliseconds; a timer rather than an animation
+// frame, which webkit holds back while the window is hidden
 let reportQueued = false;
 function report(): void {
   if (reportQueued) return;
   reportQueued = true;
-  requestAnimationFrame(() => {
+  setTimeout(() => {
     reportQueued = false;
     const session = getSession();
     const status = session.saveStatus;
     post({ type: 'workspace', pages: session.getState().pages, saveState: status.state, saveError: status.error });
-  });
+  }, 16);
 }
 
 async function openVault(name: string): Promise<void> {
@@ -98,13 +101,54 @@ async function flush(): Promise<boolean> {
   return getSession().flush();
 }
 
+// which pages open in the text editor follows morrow's PageView: canvases and databases have views of their
+// own, unreadable pages and pages with content this version does not know are never handed to the editor,
+// because the editor would rewrite them in a form it understands
 function Page({ pageId }: { pageId: PageId }) {
   const state = useWorkspace();
   const page = state.pages[pageId];
   const doc = state.docs[pageId];
   if (!page || !doc || isEffectivelyTrashed(state.pages, pageId)) return <Empty />;
-  const readable = !getSession().unreadable.has(pageId) && !page.encrypted;
-  return <EditorApp key={pageId} page={page} doc={doc} editable={readable} />;
+  if (page.kind === 'canvas') return <Notice page={page} text="Canvases cannot be opened yet. The file is left as it is." />;
+  if (page.kind === 'database')
+    return <Notice page={page} text="Databases cannot be opened yet. The pages in it are listed in the sidebar." />;
+  if (getSession().unreadable.has(pageId))
+    return (
+      <Notice
+        page={page}
+        text={
+          page.encrypted
+            ? 'This page is locked with a password. Opening locked pages is not available yet.'
+            : 'The content of this page could not be read. It has been left untouched and is protected from changes.'
+        }
+      />
+    );
+  const unknown = findUnknownTypes(doc);
+  if (unknown.length > 0)
+    return (
+      <Notice
+        page={page}
+        text={`This page contains content SynapseNote does not know yet (${unknown.join(', ')}). It is shown as plain text and protected from changes so nothing is lost.`}
+        plain={docToPlainText(doc)}
+      />
+    );
+  return <EditorApp key={pageId} page={page} doc={doc} editable />;
+}
+
+function Notice({ page, text, plain }: { page: PageMeta; text: string; plain?: string }) {
+  return (
+    <div className="page-scroll">
+      <article className="page font-sans width-comfortable">
+        <h1 className="page-title-heading">
+          <span className="page-title">{displayTitle(page)}</span>
+        </h1>
+        <div className="banner" role="note">
+          {text}
+        </div>
+        {plain !== undefined && <pre className="readonly-text">{plain}</pre>}
+      </article>
+    </div>
+  );
 }
 
 function Empty() {
