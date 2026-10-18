@@ -32,11 +32,12 @@ date: 2026-10-18
 - 가이드 문서는 빌드 스크립트가 Morrow `sampleCommands`를 `applyCommand`로 실행해 `App/Resources/Editor/sample-guide.json`으로 만든다. 이때 "Morrow" 이름을 "SynapseNote"로 바꾸고, 가이드에 없는 노드(`blockMath`, `image`, `fileAttachment`, `hardBreak`, `rawBlock`, `link` 마크)와 한글 IME 확인용 블록을 담은 "에디터 검증" 페이지를 더한다.
 
 **네이티브 앱(`App/`).** XcodeGen `project.yml`, 단일 멀티플랫폼 타깃(`supportedDestinations: [iOS, macOS]`).
-- `EditorWebView`: `NSViewRepresentable`/`UIViewRepresentable`로 `WKWebView`를 감싼다.
-- `EditorSchemeHandler`: `WKURLSchemeHandler`로 `synapse-editor://app/` 요청을 번들 파일로 응답한다. 번들 밖 경로와 `..`는 거부한다.
-- `EditorBridge`: JS→Swift는 `WKScriptMessageHandler`, Swift→JS는 `callAsyncJavaScript`. 메시지는 `Codable` enum(`ready`, `docChanged`, `openPage`, `createPage`, `openExternal`, `log`).
-- `DocNode`: 임의 JSON을 담는 `Codable` 값 타입. 키 순서를 바꾸지 않고 왕복한다.
-- 문서 목록 상태는 `@Observable` 모델 하나가 가진다.
+- 웹 화면은 iOS·macOS 26의 SwiftUI `WebView`와 `WebPage`로 띄운다. `WebPage.Configuration`이 `urlSchemeHandlers`, `userContentController`를 제공하고 `WebPage.callJavaScript`가 있어 `WKWebView`를 직접 감쌀 필요가 없다(MacOSX27.0 SDK의 WebKit swiftinterface에서 확인).
+- `EditorSchemeHandler`: WebKit `URLSchemeHandler`로 `synapse-editor://app/` 요청을 번들 파일로 응답한다. 번들 밖 경로, `..`, 숨김 파일은 거부한다.
+- `EditorBridge`: JS→Swift는 `WKScriptMessageHandler`(메인 프레임, `synapse-editor` 출처만), Swift→JS는 `WebPage.callJavaScript`. 메시지는 `EditorEvent`(`ready`, `docChanged`, `openPage`, `pageCreated`, `openExternal`, `log`)와 `EditorCommand`(`load`, `theme`, `flush`).
+- `JSONValue`: 임의 JSON을 담는 `Codable` 값 타입. 값은 그대로 왕복하고, 정수는 소수점 없이 쓴다. 객체 키 순서는 보장하지 않는다.
+- `EditorController`(`@Observable`)가 `WebPage`와 메모리의 워크스페이스, 선택한 페이지를 가진다.
+- macOS App Sandbox에서 WebKit 콘텐츠 프로세스는 network client 권한 없이 시작되지 않으므로 `ENABLE_OUTGOING_NETWORK_CONNECTIONS`를 켠다. 원격 요청 차단은 CSP와 navigation decider가 맡는다.
 
 **버린 대안.**
 - Morrow 소스를 복사해 직접 수정: 원본 변경을 따라가기 어렵고 수정 범위가 흐려진다.

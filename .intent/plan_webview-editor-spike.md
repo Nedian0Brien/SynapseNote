@@ -26,8 +26,8 @@ date: 2026-10-18
 - `web/scripts/sample-guide.mjs` — 가이드와 검증 페이지 JSON 생성
 - `scripts/build-editor.sh` — Xcode 빌드 단계에서 웹 번들 생성
 - `project.yml`
-- `App/Sources/{SynapseNoteApp,ContentView,PageStore,DocNode,EditorWebView,EditorBridge,EditorSchemeHandler}.swift`
-- `App/Tests/{DocNodeTests,EditorBridgeTests,EditorSchemeHandlerTests}.swift`
+- `App/Sources/{SynapseNoteApp,ContentView,EditorController,Workspace,JSONValue,EditorBridge,EditorSchemeHandler}.swift`
+- `App/Tests/{JSONValueTests,WorkspaceTests,EditorBridgeTests,EditorSchemeHandlerTests}.swift`
 - `docs/verification/webview-editor-spike.md`
 
 ## 순서

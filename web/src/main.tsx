@@ -10,7 +10,7 @@ import '../vendor/morrow/src/app/styles/color.css';
 import '../vendor/morrow/src/app/styles/blocks.css';
 import 'katex/dist/katex.min.css';
 import './editor.css';
-import { StrictMode, useState } from 'react';
+import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { DocNode, PageId } from '../vendor/morrow/src/core/model';
 import { listen, post } from './bridge';
@@ -40,13 +40,25 @@ window.addEventListener('unhandledrejection', (event) =>
   post({ type: 'log', level: 'error', message: String(event.reason) }),
 );
 
-let setLoaded: (loaded: Loaded) => void = () => {};
+// the latest page to show, kept outside react so a load that arrives before the first render is not lost
+let latest: Loaded | null = null;
+let show: (loaded: Loaded) => void = (loaded) => {
+  latest = loaded;
+};
 let flush: () => void = () => {};
 let serial = 0;
 
 function Host() {
-  const [loaded, set] = useState<Loaded | null>(null);
-  setLoaded = set;
+  const [loaded, setLoaded] = useState<Loaded | null>(latest);
+  useEffect(() => {
+    show = (next) => {
+      latest = next;
+      setLoaded(next);
+    };
+    if (latest) setLoaded(latest);
+    // the app sends the first page only after this, once the host can show it
+    post({ type: 'ready' });
+  }, []);
   if (!loaded) return null;
   return (
     <EditorApp
@@ -66,7 +78,7 @@ listen((message) => {
     case 'load': {
       flush();
       setState(message.state);
-      setLoaded({
+      show({
         pageId: message.pageId,
         doc: message.state.docs[message.pageId]!,
         editable: message.editable,
@@ -88,4 +100,3 @@ createRoot(document.getElementById('root')!).render(
     <Host />
   </StrictMode>,
 );
-post({ type: 'ready' });
