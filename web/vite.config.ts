@@ -17,22 +17,27 @@ const HOST_MODULES: Record<string, string> = {
   'actions.ts': 'actions.ts',
   'router.ts': 'router.ts',
   'platform/desktop.ts': 'desktop.ts',
-  'platform/attachments.ts': 'attachments.ts',
-  'platform/files.ts': 'files.ts',
 };
 
-// modules that must never reach the editor bundle, they would pull in storage or electron code
-const FORBIDDEN = [
-  path.join(here, 'vendor/morrow/src/storage') + path.sep,
-  path.join(here, 'vendor/morrow/electron') + path.sep,
-  path.join(morrowApp, 'workspace.ts'),
-  path.join(morrowApp, 'operations.ts'),
-];
+// modules that must never reach the editor bundle: electron code, and the copy of pages kept in
+// the browser by earlier morrow builds
+const FORBIDDEN = [path.join(here, 'vendor/morrow/electron') + path.sep, path.join(morrowApp, 'legacy.ts')];
 
 // visible morrow strings in modules the editor uses, renamed at build time so the morrow files stay unmodified
+const morrowSrc = path.join(here, 'vendor/morrow/src');
 const RENAMED: Record<string, Array<[string, string]>> = {
   [path.join(morrowApp, 'editor/EditorMenus.tsx')]: [["'Morrow page'", "'SynapseNote page'"]],
+  [path.join(morrowSrc, 'core/migrations.ts')]: [
+    ['newer version of Morrow (format ${version}). Please update Morrow.', 'newer version of SynapseNote (format ${version}). Please update SynapseNote.'],
+  ],
+  [path.join(morrowSrc, 'core/vault/load.ts')]: [['is too large to edit in Morrow,', 'is too large to edit in SynapseNote,']],
+  [path.join(morrowSrc, 'storage/vaultRepository.ts')]: [
+    ['while Morrow tried to save it.', 'while SynapseNote tried to save it.'],
+  ],
 };
+
+// text morrow writes into files rather than shows, kept as it is so files stay readable by morrow
+const FILE_FORMAT_TEXT = ['This page is encrypted with a password in Morrow.'];
 
 function hostModules(): Plugin {
   return {
@@ -51,9 +56,15 @@ function hostModules(): Plugin {
     },
     generateBundle(_options, bundle) {
       // the app shows the SynapseNote name only, internal names such as morrow:edit-link are lower case
-      for (const file of Object.values(bundle))
-        if (file.type === 'chunk' && file.code.includes('Morrow'))
-          this.error(`${file.fileName} still contains the name Morrow`);
+      const found: string[] = [];
+      for (const file of Object.values(bundle)) {
+        if (file.type !== 'chunk') continue;
+        let code = file.code;
+        for (const text of FILE_FORMAT_TEXT) code = code.replaceAll(text, '');
+        for (const match of code.matchAll(/Morrow/g))
+          found.push(`${file.fileName}: …${code.slice(Math.max(0, match.index - 50), match.index + 40)}…`);
+      }
+      if (found.length) this.error(`the bundle still contains the name Morrow:\n${found.join('\n')}`);
     },
     async resolveId(source, importer, options) {
       if (!importer || importer.startsWith(hostDir) || !source.startsWith('.')) return null;

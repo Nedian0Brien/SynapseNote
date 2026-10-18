@@ -1,10 +1,8 @@
 import Foundation
 
-/// The pages and documents the editor works on, in the shape of Morrow's `WorkspaceState`:
-/// page records keyed by id, and one ProseMirror document per page.
-nonisolated struct Workspace: Codable, Hashable, Sendable {
-    var pages: [String: JSONValue]
-    var docs: [String: JSONValue]
+/// The page records of the open vault, in the shape of Morrow's `PageMeta`, as the editor page reports them.
+nonisolated struct Workspace: Hashable, Sendable {
+    var pages: [String: JSONValue] = [:]
 
     /// A page as the sidebar shows it, in tree order.
     struct Row: Identifiable, Hashable, Sendable {
@@ -32,12 +30,7 @@ nonisolated struct Workspace: Codable, Hashable, Sendable {
             for id in children[parent] ?? [] {
                 let page = pages[id]
                 let title = page?["title"]?.stringValue?.trimmingCharacters(in: .whitespaces) ?? ""
-                rows.append(Row(
-                    id: id,
-                    title: title.isEmpty ? "Untitled" : title,
-                    icon: page?["icon"]?.stringValue,
-                    depth: depth
-                ))
+                rows.append(Row(id: id, title: title.isEmpty ? "Untitled" : title, icon: page?["icon"]?.stringValue, depth: depth))
                 visit(id, depth: depth + 1)
             }
         }
@@ -45,7 +38,14 @@ nonisolated struct Workspace: Codable, Hashable, Sendable {
         return rows
     }
 
-    static func load(from url: URL) throws -> Workspace {
-        try JSONDecoder().decode(Workspace.self, from: Data(contentsOf: url))
+    /// Whether the page exists and is not in the trash, itself or through a parent.
+    func isShowable(_ id: String) -> Bool {
+        var current: String? = id
+        var seen = Set<String>()
+        while let page = current.flatMap({ pages[$0] }), let pageId = current, seen.insert(pageId).inserted {
+            if let trashed = page["trashedAt"], trashed != .null { return false }
+            current = page["parentId"]?.stringValue
+        }
+        return pages[id] != nil
     }
 }

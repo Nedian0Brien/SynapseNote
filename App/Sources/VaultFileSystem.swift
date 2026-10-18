@@ -120,6 +120,19 @@ nonisolated final class VaultFileSystem: @unchecked Sendable {
         let birthtime: Double
         var dir: Bool? = nil
         var other: Bool? = nil
+
+        private enum Keys: String, CodingKey { case path, text, mtime, birthtime, dir, other }
+
+        // text is always present, null for a path that no longer exists, as Morrow's VaultChange expects
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: Keys.self)
+            try container.encode(path, forKey: .path)
+            if let text { try container.encode(text, forKey: .text) } else { try container.encodeNil(forKey: .text) }
+            try container.encode(mtime, forKey: .mtime)
+            try container.encode(birthtime, forKey: .birthtime)
+            try container.encodeIfPresent(dir, forKey: .dir)
+            try container.encodeIfPresent(other, forKey: .other)
+        }
     }
 
     enum Failure: Error, LocalizedError {

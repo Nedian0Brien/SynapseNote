@@ -1,44 +1,52 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { listen, parseInbound, post } from './bridge';
 
-const page = { id: 'a', title: 'A' };
-const doc = { type: 'doc', content: [{ type: 'paragraph' }] };
-
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
 describe('parseInbound', () => {
-  it('accepts a load with the page and its doc in the workspace', () => {
-    const message = parseInbound({ type: 'load', pageId: 'a', state: { pages: { a: page }, docs: { a: doc } } });
-    expect(message).toEqual({ type: 'load', pageId: 'a', state: { pages: { a: page }, docs: { a: doc } }, editable: true });
+  it('accepts the vault, page and command messages', () => {
+    expect(parseInbound({ type: 'openVault', name: 'Notes' })).toEqual({ type: 'openVault', name: 'Notes' });
+    expect(parseInbound({ type: 'show', pageId: 'a' })).toEqual({ type: 'show', pageId: 'a' });
+    expect(parseInbound({ type: 'show', pageId: null })).toEqual({ type: 'show', pageId: null });
+    expect(parseInbound({ type: 'createPage', parentId: null })).toEqual({ type: 'createPage', parentId: null });
+    expect(parseInbound({ type: 'trashPage', pageId: 'a' })).toEqual({ type: 'trashPage', pageId: 'a' });
   });
 
-  it('keeps editable false only when it is false', () => {
-    const message = parseInbound({ type: 'load', pageId: 'a', state: { pages: { a: page }, docs: { a: doc } }, editable: false });
-    expect(message).toMatchObject({ editable: false });
+  it('reads rpc results as success or failure', () => {
+    expect(parseInbound({ type: 'rpcResult', id: 3, ok: true, value: [1] })).toEqual({
+      type: 'rpcResult',
+      id: 3,
+      ok: true,
+      value: [1],
+    });
+    expect(parseInbound({ type: 'rpcResult', id: 3, ok: false, error: 'no' })).toEqual({
+      type: 'rpcResult',
+      id: 3,
+      ok: false,
+      error: 'no',
+    });
+    expect(parseInbound({ type: 'rpcResult', id: '3', ok: true })).toBeNull();
   });
 
-  it('drops a load whose page or doc is missing', () => {
-    expect(parseInbound({ type: 'load', pageId: 'b', state: { pages: { a: page }, docs: { a: doc } } })).toBeNull();
-    expect(parseInbound({ type: 'load', pageId: 'a', state: { pages: { a: page }, docs: {} } })).toBeNull();
+  it('accepts vault changes only in morrow form', () => {
+    const change = { path: 'a.md', text: 'x', mtime: 1, birthtime: 1 };
+    const removed = { path: 'b.md', text: null, mtime: 1, birthtime: 0, dir: false, other: false };
+    expect(parseInbound({ type: 'vaultChanges', changes: [change, removed] })).toEqual({
+      type: 'vaultChanges',
+      changes: [change, removed],
+    });
+    expect(parseInbound({ type: 'vaultChanges', changes: [{ path: 'a.md' }] })).toBeNull();
   });
 
-  it('drops pages keyed under another id and docs that are not documents', () => {
-    expect(parseInbound({ type: 'load', pageId: 'a', state: { pages: { a: { id: 'x' } }, docs: { a: doc } } })).toBeNull();
-    expect(parseInbound({ type: 'load', pageId: 'a', state: { pages: { a: page }, docs: { a: { type: 'p' } } } })).toBeNull();
-  });
-
-  it('accepts only the two themes', () => {
-    expect(parseInbound({ type: 'theme', theme: 'dark' })).toEqual({ type: 'theme', theme: 'dark' });
+  it('drops pages without an id, unknown messages and non objects', () => {
+    expect(parseInbound({ type: 'show', pageId: '' })).toBeNull();
+    expect(parseInbound({ type: 'trashPage' })).toBeNull();
     expect(parseInbound({ type: 'theme', theme: 'sepia' })).toBeNull();
-  });
-
-  it('drops unknown messages and non objects', () => {
     expect(parseInbound({ type: 'eval', code: '1' })).toBeNull();
-    expect(parseInbound('load')).toBeNull();
+    expect(parseInbound('openVault')).toBeNull();
     expect(parseInbound(null)).toBeNull();
-    expect(parseInbound([])).toBeNull();
   });
 });
 
@@ -55,14 +63,15 @@ describe('post and listen', () => {
     expect(() => post({ type: 'ready' })).not.toThrow();
   });
 
-  it('hands parsed messages to the listener and reports whether one was accepted', () => {
+  it('hands parsed messages to the listener and exposes flush', async () => {
     vi.stubGlobal('window', {});
     const handler = vi.fn();
-    listen(handler);
-    const receive = (globalThis.window as Window).synapse!.receive;
-    expect(receive({ type: 'flush' })).toBe(true);
-    expect(receive({ type: 'nope' })).toBe(false);
+    const flush = vi.fn(async () => true);
+    listen(handler, flush);
+    const synapse = (globalThis.window as Window).synapse!;
+    expect(synapse.receive({ type: 'show', pageId: 'a' })).toBe(true);
+    expect(synapse.receive({ type: 'nope' })).toBe(false);
     expect(handler).toHaveBeenCalledTimes(1);
-    expect(handler).toHaveBeenCalledWith({ type: 'flush' });
+    expect(await synapse.flush()).toBe(true);
   });
 });

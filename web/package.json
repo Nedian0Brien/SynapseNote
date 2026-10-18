@@ -11,7 +11,7 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "build": "vite build && node scripts/sample-guide.mjs"
+    "build": "vite build"
   },
   "devDependencies": {
     "@floating-ui/dom": "^1.8.0",

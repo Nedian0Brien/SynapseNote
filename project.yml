@@ -24,6 +24,10 @@ targets:
         buildPhase: resources
         # missing in a fresh clone until the first build creates it
         optional: true
+    info:
+      path: App/Info.plist
+      properties:
+        UIFileSharingEnabled: true
     preBuildScripts:
       - name: Build editor bundle
         script: '"$SRCROOT/scripts/build-editor.sh"'
@@ -43,10 +47,11 @@ targets:
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
         TARGETED_DEVICE_FAMILY: "1,2"
-        ENABLE_APP_SANDBOX: YES
-        # the sandboxed WebKit content process does not launch without the network client entitlement;
-        # the editor page itself still reaches nothing outside the app (CSP and EditorNavigationDecider)
-        ENABLE_OUTGOING_NETWORK_CONNECTIONS: YES
+        # sandbox, network client for WebKit, the picked vault folder and its bookmark, see the file
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": App/SynapseNote-macOS.entitlements
+        # the app's own documents folder is a vault the Files app shows (UIFileSharingEnabled is in App/Info.plist,
+        # it has no INFOPLIST_KEY_ build setting)
+        INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace: YES
         ENABLE_HARDENED_RUNTIME: YES
         # the pre-build script writes the bundle into the source tree
         ENABLE_USER_SCRIPT_SANDBOXING: NO

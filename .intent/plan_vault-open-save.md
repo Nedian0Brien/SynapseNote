@@ -19,6 +19,9 @@ date: 2026-10-19
 - `App/Sources/VaultSchemeHandler.swift` — `synapse-vault://` 제공
 - `App/Sources/VaultChooserView.swift` — 첫 화면
 - `App/Sources/FileInputPresenter.swift` — `DialogPresenting` 파일 선택
+- `App/Sources/VaultRPC.swift` — 웹의 VaultBridge 호출을 받은 순서대로 처리
+- `App/Info.plist` — `UIFileSharingEnabled`(빌드 설정 키가 없음), `App/SynapseNote-macOS.entitlements` — 샌드박스 권한
+- `scripts/make-test-vault.sh` — 수동 검증용 Obsidian 형식 vault 생성
 - `App/Tests/VaultPathsTests.swift`, `App/Tests/VaultFileSystemTests.swift`
 - `web/src/host/vaultBridge.ts`, `web/src/host/rpc.ts`, `web/src/host/rpc.test.ts`
 - `docs/verification/vault-open-save.md`
@@ -32,7 +35,7 @@ date: 2026-10-19
 - `README.md`
 
 지우는 파일
-- `web/src/host/{attachments,files,pages}.ts`, `web/scripts/sample-guide.mjs`
+- `web/src/host/{attachments,files,pages,host.test}.ts`, `web/scripts/sample-guide.mjs`
 
 ## 순서
 
@@ -42,6 +45,8 @@ date: 2026-10-19
 4. `VaultWatcher`, `VaultSchemeHandler`, 파일 선택. 확인: 시험 vault에서 외부 편집 반영, 이미지 표시.
 5. macOS·iPad 시뮬레이터 검증. 시험 vault(Obsidian 형식: 하위 폴더, 위키 링크, 콜아웃, frontmatter, 이미지)를 임시 폴더에 만들어 연다. 편집 전후 모든 파일의 SHA-256을 비교해 편집한 파일만 바뀌었는지 본다.
 6. 검증 문서, README, 커밋·푸시.
+
+디버그 빌드에만 `-SynapseNoteDebugVault <폴더>` 실행 인자를 둔다. macOS 검증을 파일 대화상자 없이 앱 컨테이너 안의 시험 vault로 하기 위해서다.
 
 ## 가장 위험한 단계
 

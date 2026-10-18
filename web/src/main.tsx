@@ -12,19 +12,23 @@ import 'katex/dist/katex.min.css';
 import './editor.css';
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import type { DocNode, PageId } from '../vendor/morrow/src/core/model';
+import type { PageId } from '../vendor/morrow/src/core/model';
+import { isEffectivelyTrashed } from '../vendor/morrow/src/core/tree';
+import { WorkspaceSession } from '../vendor/morrow/src/storage/session';
+import { VaultRepository } from '../vendor/morrow/src/storage/vaultRepository';
+import { SourceDialog } from '../vendor/morrow/src/app/components/SourceDialog';
+import { Toasts } from '../vendor/morrow/src/app/components/primitives';
+import { commitEditors } from '../vendor/morrow/src/app/editor/commits';
+import { createPage, trashPage } from '../vendor/morrow/src/app/operations';
+import { newId } from '../vendor/morrow/src/app/platform/files';
+import { useUi } from '../vendor/morrow/src/app/ui';
+import { getSession, setSession, useWorkspace } from '../vendor/morrow/src/app/workspace';
 import { listen, post } from './bridge';
 import type { Theme } from './bridge';
 import { EditorApp } from './EditorApp';
-import { setState } from './host/pages';
-
-interface Loaded {
-  pageId: PageId;
-  doc: DocNode;
-  editable: boolean;
-  // counts loads so reopening the same page builds a fresh editor
-  serial: number;
-}
+import { showRoute } from './host/router';
+import { settle } from './host/rpc';
+import { deliverChanges, nativeVaultBridge } from './host/vaultBridge';
 
 const root = document.documentElement;
 const applyTheme = (theme: Theme) => {
@@ -40,60 +44,129 @@ window.addEventListener('unhandledrejection', (event) =>
   post({ type: 'log', level: 'error', message: String(event.reason) }),
 );
 
-// the latest page to show, kept outside react so a load that arrives before the first render is not lost
-let latest: Loaded | null = null;
-let show: (loaded: Loaded) => void = (loaded) => {
-  latest = loaded;
-};
-let flush: () => void = () => {};
-let serial = 0;
+type Phase = { kind: 'waiting' } | { kind: 'ready' };
+
+// state outside react, so messages that arrive before the first render are not lost
+let phase: Phase = { kind: 'waiting' };
+let shown: PageId | null = null;
+let rerender: () => void = () => {};
+
+// sends the page list and save state, at most once per frame
+let reportQueued = false;
+function report(): void {
+  if (reportQueued) return;
+  reportQueued = true;
+  requestAnimationFrame(() => {
+    reportQueued = false;
+    const session = getSession();
+    const status = session.saveStatus;
+    post({ type: 'workspace', pages: session.getState().pages, saveState: status.state, saveError: status.error });
+  });
+}
+
+async function openVault(name: string): Promise<void> {
+  if (phase.kind !== 'waiting') return;
+  const repository = new VaultRepository(nativeVaultBridge(name), newId);
+  const opened = await WorkspaceSession.open(repository);
+  if (!opened.ok) {
+    post({ type: 'vaultFailed', message: opened.error });
+    return;
+  }
+  const session = opened.value;
+  // keystrokes still waiting in an editor are saved before an outside edit is read
+  session.beforeExternal = commitEditors;
+  // new vaults start empty, morrow's guide describes features this app does not have yet
+  await session.markInitialized();
+  setSession(session);
+  session.subscribe(report);
+  session.queue.subscribe(report);
+  phase = { kind: 'ready' };
+  report();
+  rerender();
+}
+
+function show(pageId: PageId | null): void {
+  commitEditors();
+  shown = pageId;
+  showRoute(pageId);
+  rerender();
+}
+
+async function flush(): Promise<boolean> {
+  if (phase.kind !== 'ready') return true;
+  commitEditors();
+  return getSession().flush();
+}
+
+function Page({ pageId }: { pageId: PageId }) {
+  const state = useWorkspace();
+  const page = state.pages[pageId];
+  const doc = state.docs[pageId];
+  if (!page || !doc || isEffectivelyTrashed(state.pages, pageId)) return <Empty />;
+  const readable = !getSession().unreadable.has(pageId) && !page.encrypted;
+  return <EditorApp key={pageId} page={page} doc={doc} editable={readable} />;
+}
+
+function Empty() {
+  return <div className="page-scroll" aria-hidden="true" />;
+}
 
 function Host() {
-  const [loaded, setLoaded] = useState<Loaded | null>(latest);
+  const [, setTick] = useState(0);
+  const ui = useUi();
   useEffect(() => {
-    show = (next) => {
-      latest = next;
-      setLoaded(next);
-    };
-    if (latest) setLoaded(latest);
-    // the app sends the first page only after this, once the host can show it
+    rerender = () => setTick((tick) => tick + 1);
+    // the app opens the vault only after this, once the host can show it
     post({ type: 'ready' });
   }, []);
-  if (!loaded) return null;
+  const dialog = ui.dialog?.kind === 'source' ? ui.dialog : null;
   return (
-    <EditorApp
-      key={`${loaded.pageId}:${loaded.serial}`}
-      pageId={loaded.pageId}
-      doc={loaded.doc}
-      editable={loaded.editable}
-      onFlushReady={(next) => {
-        flush = next;
-      }}
-    />
+    <div className="view">
+      {phase.kind === 'ready' && shown ? <Page pageId={shown} /> : <Empty />}
+      {dialog && (
+        <SourceDialog
+          title={dialog.title}
+          value={dialog.value}
+          language={dialog.language}
+          displayMode={dialog.displayMode ?? false}
+          onSave={dialog.onSave}
+        />
+      )}
+      <Toasts />
+    </div>
   );
 }
 
 listen((message) => {
   switch (message.type) {
-    case 'load': {
-      flush();
-      setState(message.state);
-      show({
-        pageId: message.pageId,
-        doc: message.state.docs[message.pageId]!,
-        editable: message.editable,
-        serial: ++serial,
-      });
+    case 'openVault':
+      void openVault(message.name).catch((error: unknown) =>
+        post({ type: 'vaultFailed', message: error instanceof Error ? error.message : String(error) }),
+      );
+      break;
+    case 'show':
+      show(message.pageId);
+      break;
+    case 'rpcResult':
+      settle(message.id, message);
+      break;
+    case 'vaultChanges':
+      deliverChanges(message.changes);
+      break;
+    case 'createPage': {
+      if (phase.kind !== 'ready') break;
+      const id = createPage({ parentId: message.parentId, open: false });
+      if (id) post({ type: 'openPage', pageId: id });
       break;
     }
+    case 'trashPage':
+      if (phase.kind === 'ready') trashPage(message.pageId);
+      break;
     case 'theme':
       applyTheme(message.theme);
       break;
-    case 'flush':
-      flush();
-      break;
   }
-});
+}, flush);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
