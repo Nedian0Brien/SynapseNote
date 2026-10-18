@@ -43,8 +43,13 @@ final class EditorController: WorkspaceService {
     /// What the sidebar has selected. Choosing nothing keeps the place, a list can clear its selection.
     var sidebarItem: Destination? {
         get { destination }
-        set { if let newValue, newValue != destination { go(to: newValue) } }
+        set {
+            guard let newValue else { return }
+            if newValue != destination { go(to: newValue) } else { detailRequests += 1 }
+        }
     }
+    /// Counts choices of the place already shown, so a one column layout still moves to it.
+    private(set) var detailRequests = 0
     /// Pages whose subpages the sidebar shows, kept per vault.
     var expanded: Set<String> = [] {
         didSet { saveExpanded() }
@@ -318,6 +323,8 @@ final class EditorController: WorkspaceService {
     /// may not be in this side's list yet.
     func showDestination() {
         guard phase == .ready else { return }
+        // the sidebar opens the folders down to the page on screen
+        if let id = selection { for ancestor in workspace.ancestors(of: id) { expanded.insert(ancestor.id) } }
         send(.show(pageId: selection, find: pendingFind))
         pendingFind = nil
     }
@@ -467,7 +474,6 @@ final class EditorController: WorkspaceService {
                 go(to: .home)
             }
         case .openPage(let pageId, let newTab, let find):
-            if let pageId { for ancestor in workspace.ancestors(of: pageId) { expanded.insert(ancestor.id) } }
             let place = pageId.map(Destination.page) ?? .home
             if newTab { openInNewTab(place, find: find) } else { go(to: place, find: find) }
         case .chooseIcon(let pageId):

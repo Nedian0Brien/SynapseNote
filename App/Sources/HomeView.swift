@@ -57,7 +57,7 @@ struct HomeView: View {
     }
 
     private func stats(_ facts: HomeFacts) -> some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 170), spacing: 12)], spacing: 12) {
             Stat(symbol: "flame.fill", tint: .orange, value: facts.streak, label: "day streak")
             Stat(symbol: "doc.text", tint: .blue, value: facts.pages, label: facts.pages == 1 ? "page" : "pages")
             Stat(symbol: "pencil.line", tint: .green, value: facts.words, label: facts.words == 1 ? "word" : "words")
@@ -147,7 +147,7 @@ private struct Stat: View {
         HStack(spacing: 10) {
             Image(systemName: symbol).foregroundStyle(tint)
             Text(value, format: .number).font(.title3.weight(.semibold)).monospacedDigit()
-            Text(label).foregroundStyle(.secondary)
+            Text(label).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
             Spacer(minLength: 0)
         }
         .padding(14)

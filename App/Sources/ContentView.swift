@@ -64,11 +64,6 @@ struct ContentView: View {
         }
     }
 
-    /// Hidden in focus mode or when the person hid it; otherwise as the system lays it out.
-    private var wantedVisibility: NavigationSplitViewVisibility {
-        controller.focusMode || controller.sidebarHidden ? .detailOnly : .automatic
-    }
-
     private var inspectorShown: Binding<Bool> {
         Binding {
             controller.showingInspector && !controller.focusMode && controller.selection != nil
@@ -95,10 +90,6 @@ struct ContentView: View {
                 .toolbar {
                     ToolbarItem {
                         Button("New Page", systemImage: "square.and.pencil") { controller.createPage() }
-                            .disabled(controller.phase != .ready)
-                    }
-                    ToolbarItem {
-                        Button("Search", systemImage: "magnifyingglass") { controller.showingPalette = true }
                             .disabled(controller.phase != .ready)
                     }
                     #if os(iOS)
@@ -128,7 +119,12 @@ struct ContentView: View {
                 #else
                 ToolbarItem(placement: .status) { SaveStatusView(state: controller.saveState) }
                 #endif
-                // the same items every time: items coming and going rebuild the column, and with it the web view
+                // the same items every time: items coming and going rebuild the column, and with it the web view;
+                // search sits with the main column so it is there when the sidebar is hidden
+                ToolbarItem {
+                    Button("Search", systemImage: "magnifyingglass") { controller.showingPalette = true }
+                        .disabled(controller.phase != .ready)
+                }
                 ToolbarItem {
                     FocusButton(controller: controller)
                 }
@@ -145,7 +141,16 @@ struct ContentView: View {
         }
         .sheet(isPresented: $controller.showingShortcuts) { ShortcutsView(controller: controller) }
         .onChange(of: controller.destination) { compactColumn = .detail }
-        .onChange(of: wantedVisibility) { columnVisibility = wantedVisibility }
+        .onChange(of: controller.detailRequests) { compactColumn = .detail }
+        // the split view's own button and gestures set the visibility; focus mode and the sidebar command set
+        // it only when they change, so the two never undo each other
+        .onChange(of: controller.focusMode) {
+            columnVisibility = controller.focusMode || controller.sidebarHidden ? .detailOnly : .automatic
+        }
+        .onChange(of: controller.sidebarHidden) {
+            guard !controller.focusMode, (columnVisibility == .detailOnly) != controller.sidebarHidden else { return }
+            columnVisibility = controller.sidebarHidden ? .detailOnly : .all
+        }
         .onChange(of: columnVisibility) {
             if !controller.focusMode { controller.sidebarHidden = columnVisibility == .detailOnly }
         }

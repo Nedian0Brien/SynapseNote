@@ -112,9 +112,9 @@ struct AppAction: Identifiable {
         },
         AppAction("vault.open", .data, "Open Folder…", symbol: "folder", keywords: "vault switch another",
                   shortcut: KeyboardShortcut("o", modifiers: [.command, .shift]), enabled: { _ in true }) { $0.choosingFolder = true },
-        AppAction("view.sidebar", .view, symbol: "sidebar.left",
-                  shortcut: KeyboardShortcut("s", modifiers: [.command, .control]),
-                  name: { $0.sidebarHidden ? "Show Sidebar" : "Hide Sidebar" }, enabled: { !$0.focusMode }) { controller in
+        // one name for both: on an iPad held upright the system shows and hides the sidebar by itself
+        AppAction("view.sidebar", .view, "Show or Hide Sidebar", symbol: "sidebar.left",
+                  shortcut: KeyboardShortcut("s", modifiers: [.command, .control]), enabled: { !$0.focusMode }) { controller in
             controller.sidebarHidden.toggle()
         },
         AppAction("view.inspector", .view, symbol: "sidebar.right", keywords: "outline backlinks links headings",
