@@ -18,7 +18,7 @@
 | 1 | 페이지 관리: Swift → Morrow 명령 경로, 즐겨찾기, 아이콘, 복제, 이동(드래그·Move to), 휴지통 화면, Finder에서 보기, vault 전환, 편집기 프로세스 복구 | 구현 (PR #2, `docs/verification/phase1-page-management.md`) |
 | 2 | 탐색: 조회 경로(TS 코어 계산 결과를 Swift로), 전체 검색, 명령 팔레트, 탭, 홈, 백링크·연결 안 된 언급, 아웃라인, 집중 모드, 단축키 안내 | 구현 (PR #3, `docs/verification/phase2-navigation.md`) |
 | 3 | 일상 기록: 데일리 노트, `@날짜` 연결, 템플릿, 태그 화면, 작업 화면 | 구현 (PR #4, `docs/verification/phase3-daily.md`) |
-| 4 | 데이터베이스: 다섯 가지 뷰, 속성 9종, 필터·정렬·그룹, 페이지 안 데이터베이스 | |
+| 4 | 데이터베이스: 다섯 가지 뷰, 속성 9종, 필터·정렬·그룹, 페이지 안 데이터베이스 | 구현 (PR #5, `docs/verification/phase4-database.md`) |
 | 5 | 캔버스·그래프 | |
 | 6 | 페이지 히스토리, 암호화 페이지, 플래시카드 | |
 | 7 | 가져오기·내보내기·백업·정적 사이트 게시·Markdown 소스 편집 | |
@@ -29,4 +29,5 @@
 
 ## 전환 단계(11)에서 볼 것
 
+- 데이터베이스 화면(전체 페이지와 인라인)은 4단계에서 Morrow `DatabaseView`를 편집기 WebView에서 그리도록 했다. 편집기를 Swift로 옮길 때 함께 옮긴다.
 - 홈, 명령 팔레트, 인스펙터는 1단계 화면처럼 `EditorController`를 직접 받는다. 조회와 명령은 `WorkspaceService`에 있지만 화면 이동(`go(to:)`, `openInNewTab`)은 아직 프로토콜 밖에 있다. Swift 코어로 바꿀 때 이 경계를 먼저 정리한다.
