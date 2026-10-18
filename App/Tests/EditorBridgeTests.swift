@@ -17,7 +17,9 @@ struct EditorBridgeTests {
         #expect(EditorEvent(body: ["type": "rpc", "id": 4, "method": "readText", "params": ["a.md"]])
             == .rpc(id: 4, method: "readText", params: [.string("a.md")]))
         #expect(EditorEvent(body: ["type": "workspace", "pages": ["p": ["id": "p"]], "saveState": "saving", "saveError": NSNull()])
-            == .workspace(pages: ["p": .object(["id": .string("p")])], saveState: "saving", saveError: nil))
+            == .workspace(pages: ["p": .object(["id": .string("p")])], locked: [], saveState: "saving", saveError: nil))
+        #expect(EditorEvent(body: ["type": "workspace", "pages": [:] as [String: Any], "locked": ["p"], "saveState": "saved", "saveError": NSNull()])
+            == .workspace(pages: [:], locked: ["p"], saveState: "saved", saveError: nil))
         #expect(EditorEvent(body: ["type": "vaultFailed", "message": "gone"]) == .vaultFailed(message: "gone"))
         #expect(EditorEvent(body: ["type": "openExternal", "url": "https://example.com"]) == .openExternal(URL(string: "https://example.com")!))
     }
@@ -48,6 +50,11 @@ struct EditorBridgeTests {
         #expect(EditorCommand.saveAsTemplate(pageId: "p").json == .object(["type": .string("saveAsTemplate"), "pageId": .string("p")]))
         #expect(EditorCommand.newTemplate.json == .object(["type": .string("newTemplate")]))
         #expect(EditorCommand.openTemplates.json == .object(["type": .string("openTemplates")]))
+        #expect(EditorCommand.openHistory(pageId: "p").json == .object(["type": .string("openHistory"), "pageId": .string("p")]))
+        #expect(EditorCommand.lockPage(pageId: "p").json["type"] == .string("lockPage"))
+        #expect(EditorCommand.unprotectPage(pageId: "p").json["type"] == .string("unprotectPage"))
+        #expect(EditorCommand.gradeCard(cardId: "c", grade: "good").json
+            == .object(["type": .string("gradeCard"), "cardId": .string("c"), "grade": .string("good")]))
         #expect(EditorCommand.rpcResult(id: 2, result: .success(.bool(true))).json
             == .object(["type": .string("rpcResult"), "id": .number(2), "ok": .bool(true), "value": .bool(true)]))
         #expect(EditorCommand.rpcResult(id: 2, result: .failure(.init(message: "no"))).json["error"] == .string("no"))

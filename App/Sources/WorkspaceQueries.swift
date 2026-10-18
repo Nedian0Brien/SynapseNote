@@ -88,10 +88,25 @@ nonisolated struct TemplateList: Decodable, Hashable, Sendable {
     let templates: [String]
 }
 
-/// The numbers beside the sidebar's Tasks and Tags.
+/// The numbers beside the sidebar's Tasks, Tags and Review.
 nonisolated struct SidebarCounts: Decodable, Hashable, Sendable {
     let openTasks: Int
     let tags: Int
+    let dueCards: Int
+}
+
+/// A flashcard, a `question :: answer` line, as Morrow's `Card`.
+nonisolated struct Flashcard: Decodable, Hashable, Sendable, Identifiable {
+    let id: String
+    let pageId: String
+    let front: String
+    let back: String
+}
+
+nonisolated struct ReviewData: Decodable, Hashable, Sendable {
+    let cards: [Flashcard]
+    /// The cards due now, cards seen before first.
+    let due: [String]
 }
 
 /// Pages joined by links, Morrow's `buildGraph`.
@@ -140,6 +155,7 @@ nonisolated enum WorkspaceQuery: Sendable {
     case templates
     case counts
     case graph(GraphOptions, focus: String?)
+    case review
 
     var name: String {
         switch self {
@@ -155,6 +171,7 @@ nonisolated enum WorkspaceQuery: Sendable {
         case .templates: "templates"
         case .counts: "counts"
         case .graph: "graph"
+        case .review: "review"
         }
     }
 
@@ -162,7 +179,7 @@ nonisolated enum WorkspaceQuery: Sendable {
         switch self {
         case .search(let query, let limit): ["query": query, "limit": limit]
         case .recent(let limit): ["limit": limit]
-        case .home, .tags, .tasks, .templates, .counts: [:]
+        case .home, .tags, .tasks, .templates, .counts, .review: [:]
         case .backlinks(let id), .mentions(let id), .outline(let id): ["id": id]
         case .tagPages(let tag): ["tag": tag]
         case .graph(let options, let focus):

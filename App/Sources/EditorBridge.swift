@@ -6,7 +6,8 @@ nonisolated enum EditorEvent: Equatable, Sendable {
     case ready
     /// A call into Morrow's `VaultBridge`, answered with `EditorCommand.rpcResult`.
     case rpc(id: Int, method: String, params: [JSONValue])
-    case workspace(pages: [String: JSONValue], saveState: String, saveError: String?)
+    /// The page records, the encrypted pages still locked, and the save state.
+    case workspace(pages: [String: JSONValue], locked: [String], saveState: String, saveError: String?)
     /// A page to open, nil for Home. `newTab` when it was opened with a command or control click; `find` is
     /// text to select in it.
     case openPage(pageId: String?, newTab: Bool, find: String?)
@@ -35,6 +36,7 @@ nonisolated enum EditorEvent: Equatable, Sendable {
         let newTab: Bool?
         let find: String?
         let shortcut: String?
+        let locked: [String]?
         let view: String?
         let tag: String?
     }
@@ -53,7 +55,7 @@ nonisolated enum EditorEvent: Equatable, Sendable {
             self = .rpc(id: id, method: method, params: raw.params ?? [])
         case "workspace":
             guard let pages = raw.pages, let state = raw.saveState else { return nil }
-            self = .workspace(pages: pages, saveState: state, saveError: raw.saveError)
+            self = .workspace(pages: pages, locked: raw.locked ?? [], saveState: state, saveError: raw.saveError)
         case "openPage":
             self = .openPage(pageId: raw.pageId, newTab: raw.newTab ?? false, find: raw.find)
         case "chooseIcon":
@@ -115,6 +117,12 @@ nonisolated enum EditorCommand: Sendable {
     case newTemplate
     case openTemplates
     case saveAsTemplate(pageId: String)
+    case openHistory(pageId: String)
+    /// Saves an unlocked encrypted page and forgets its key until the password is given again.
+    case lockPage(pageId: String)
+    /// Writes an encrypted page back as plain text.
+    case unprotectPage(pageId: String)
+    case gradeCard(cardId: String, grade: String)
 
     struct RPCFailure: Error, Equatable, Sendable {
         let message: String
@@ -154,6 +162,14 @@ nonisolated enum EditorCommand: Sendable {
             .object(["type": .string("openTemplates")])
         case .saveAsTemplate(let pageId):
             .object(["type": .string("saveAsTemplate"), "pageId": .string(pageId)])
+        case .openHistory(let pageId):
+            .object(["type": .string("openHistory"), "pageId": .string(pageId)])
+        case .lockPage(let pageId):
+            .object(["type": .string("lockPage"), "pageId": .string(pageId)])
+        case .unprotectPage(let pageId):
+            .object(["type": .string("unprotectPage"), "pageId": .string(pageId)])
+        case .gradeCard(let cardId, let grade):
+            .object(["type": .string("gradeCard"), "cardId": .string(cardId), "grade": .string(grade)])
         }
     }
 }

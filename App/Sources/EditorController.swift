@@ -68,6 +68,8 @@ final class EditorController: WorkspaceService {
     var showingInspector = false
     /// The template list for New Page from Template.
     var choosingTemplate = false
+    /// The page whose password is being set.
+    var encryptingPage: String?
     /// The person hid the sidebar.
     var sidebarHidden = false
     /// The page alone, without sidebar, tabs or inspector, as Morrow's focus mode.
@@ -413,6 +415,61 @@ final class EditorController: WorkspaceService {
         await answer(.graph(options, focus: focus))
     }
 
+    func review() async -> ReviewData? {
+        await answer(.review)
+    }
+
+    /// Morrow's SM-2 grade for a card: again, hard, good or easy.
+    func grade(_ cardId: String, _ grade: String) {
+        send(.gradeCard(cardId: cardId, grade: grade))
+    }
+
+    // MARK: history and encryption
+
+    /// Morrow's page history, shown over the page.
+    func openHistory(_ pageId: String) {
+        if selection != pageId { go(to: .page(pageId)) }
+        send(.openHistory(pageId: pageId))
+    }
+
+    /// Encrypts a page with a password. Returns the reason when it did not work.
+    func encrypt(_ pageId: String, password: String) async -> String? {
+        await encryption("protect", pageId: pageId, password: password)
+    }
+
+    /// Opens a locked page with its password. Returns the reason when it did not work.
+    func unlock(_ pageId: String, password: String) async -> String? {
+        await encryption("unlock", pageId: pageId, password: password)
+    }
+
+    func lock(_ pageId: String) {
+        send(.lockPage(pageId: pageId))
+    }
+
+    func removeEncryption(_ pageId: String) {
+        send(.unprotectPage(pageId: pageId))
+    }
+
+    private struct EncryptionAnswer: Decodable {
+        let ok: Bool
+        let error: String?
+    }
+
+    private func encryption(_ action: String, pageId: String, password: String) async -> String? {
+        guard isPageReady, phase == .ready else { return "No vault is open." }
+        do {
+            let answer = try await page.callJavaScript(
+                "return await window.synapse.encryption(action, params)",
+                arguments: ["action": action, "params": ["id": pageId, "password": password]]
+            )
+            guard let result = try WorkspaceQuery.decode(answer, as: EncryptionAnswer.self) else { return "No answer came back." }
+            return result.ok ? nil : (result.error ?? "It did not work.")
+        } catch {
+            logger.error("\(action, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
+            return error.localizedDescription
+        }
+    }
+
     // MARK: daily notes and templates, made by morrow's operations in the page, which then opens them
 
     /// Today's daily note, or the one for a yyyy-mm-dd day.
@@ -517,9 +574,9 @@ final class EditorController: WorkspaceService {
             rpc.handle(method: method, params: params) { [weak self] result in
                 Task { @MainActor in self?.send(.rpcResult(id: id, result: result)) }
             }
-        case .workspace(let pages, let state, let error):
+        case .workspace(let pages, let locked, let state, let error):
             let before = workspace
-            workspace = Workspace(pages: pages)
+            workspace = Workspace(pages: pages, locked: Set(locked))
             revision += 1
             saveState = switch state {
             case "pending": .pending

@@ -49,8 +49,12 @@ nonisolated struct Workspace: Hashable, Sendable {
     /// Live pages by effective parent, sorted as siblings, built once per change.
     private var liveChildren: [String: [PageInfo]] = [:]
 
-    init(pages: [String: JSONValue] = [:]) {
+    /// Encrypted pages whose password has not been given yet.
+    private(set) var locked: Set<String> = []
+
+    init(pages: [String: JSONValue] = [:], locked: Set<String> = []) {
         self.pages = pages
+        self.locked = locked
         infos = pages.compactMapValues(PageInfo.init)
         var grouped: [String: [PageInfo]] = [:]
         for info in infos.values where info.trashedAt == nil {

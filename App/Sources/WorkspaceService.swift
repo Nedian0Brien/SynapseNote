@@ -65,4 +65,5 @@ protocol WorkspaceService: AnyObject {
     func sidebarCounts() async -> SidebarCounts?
     /// The whole graph, or the pages near `focus`.
     func graph(_ options: GraphOptions, focus: String?) async -> GraphData?
+    func review() async -> ReviewData?
 }

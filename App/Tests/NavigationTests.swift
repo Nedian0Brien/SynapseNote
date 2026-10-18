@@ -158,8 +158,11 @@ struct DailyViewsTests {
         #expect(tags[0].id == "project")
         let list = try #require(try WorkspaceQuery.decode(#"{"container":null,"templates":[]}"#, as: TemplateList.self))
         #expect(list == TemplateList(container: nil, templates: []))
-        let counts = try #require(try WorkspaceQuery.decode(#"{"openTasks":3,"tags":1}"#, as: SidebarCounts.self))
-        #expect(counts == SidebarCounts(openTasks: 3, tags: 1))
+        let counts = try #require(try WorkspaceQuery.decode(#"{"openTasks":3,"tags":1,"dueCards":2}"#, as: SidebarCounts.self))
+        #expect(counts == SidebarCounts(openTasks: 3, tags: 1, dueCards: 2))
+        let review = try #require(try WorkspaceQuery.decode(#"{"cards":[{"id":"c","pageId":"p","front":"Q","back":"A"}],"due":["c"]}"#, as: ReviewData.self))
+        #expect(review.cards.first == Flashcard(id: "c", pageId: "p", front: "Q", back: "A"))
+        #expect(review.due == ["c"])
         #expect(WorkspaceQuery.tagPages("a/b").params["tag"] as? String == "a/b")
     }
 

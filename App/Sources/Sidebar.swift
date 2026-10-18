@@ -21,6 +21,8 @@ struct Sidebar: View {
                 .tag(Destination.tasks)
             CountedRow(title: "Tags", symbol: "number", count: counts?.tags)
                 .tag(Destination.tags)
+            CountedRow(title: "Review", symbol: "graduationcap", count: counts?.dueCards)
+                .tag(Destination.review)
             Label("Graph", systemImage: "point.3.connected.trianglepath.dotted")
                 .tag(Destination.graph(nil))
 
@@ -239,9 +241,19 @@ struct PageMenu: View {
         if page.kind == "page" {
             Button("Save as Template", systemImage: "square.on.square.dashed") { controller.saveAsTemplate(page.id) }
         }
+        Button("Page History", systemImage: "clock.arrow.circlepath") { controller.openHistory(page.id) }
         #if os(macOS)
         Button("Show in Finder", systemImage: "folder") { controller.reveal(page.id) }
         #endif
+        // as morrow's page menu: encryption for ordinary pages, lock and remove once it is unlocked
+        if page.kind == "page" {
+            if !page.encrypted {
+                Button("Encrypt with a Password…", systemImage: "lock") { controller.encryptingPage = page.id }
+            } else if !controller.workspace.locked.contains(page.id) {
+                Button("Lock Now", systemImage: "lock") { controller.lock(page.id) }
+                Button("Remove Encryption", systemImage: "lock.open") { controller.removeEncryption(page.id) }
+            }
+        }
         Divider()
         Button("Move to Trash", systemImage: "trash", role: .destructive) { controller.trash(page.id) }
     }

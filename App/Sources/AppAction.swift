@@ -128,6 +128,23 @@ struct AppAction: Identifiable {
                   }) { controller in
             if let id = controller.selection { controller.saveAsTemplate(id) }
         },
+        AppAction("page.history", .page, "Page History", symbol: "clock.arrow.circlepath", keywords: "versions restore undo",
+                  enabled: { $0.phase == .ready && $0.selection != nil }) { controller in
+            if let id = controller.selection { controller.openHistory(id) }
+        },
+        AppAction("page.encrypt", .page, "Encrypt with a Password…", symbol: "lock", keywords: "password protect secure",
+                  enabled: { controller in
+                      onLivePage(controller) && controller.selection.flatMap { controller.workspace.infos[$0] }.map { $0.kind == "page" && !$0.encrypted } == true
+                  }) { $0.encryptingPage = $0.selection },
+        AppAction("page.lock", .page, "Lock Page Now", symbol: "lock", keywords: "password encrypt",
+                  enabled: { controller in
+                      guard let id = controller.selection, let page = controller.workspace.infos[id] else { return false }
+                      return page.encrypted && !controller.workspace.locked.contains(id)
+                  }) { controller in
+            if let id = controller.selection { controller.lock(id) }
+        },
+        AppAction("go.review", .general, "Review Flashcards", symbol: "graduationcap", keywords: "flashcards study cards spaced",
+                  shortcut: KeyboardShortcut("r", modifiers: [.command, .shift])) { $0.go(to: .review) },
         AppAction("page.duplicate", .page, "Duplicate Page", symbol: "doc.on.doc", keywords: "copy", enabled: onLivePage) { controller in
             if let id = controller.selection { controller.duplicate(id) }
         },

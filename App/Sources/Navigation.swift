@@ -11,6 +11,8 @@ nonisolated enum Destination: Hashable, Codable, Sendable {
     case tag(String)
     /// The graph of pages, or of the pages near one.
     case graph(String?)
+    /// Flashcards due for review.
+    case review
 
     var pageId: String? {
         if case .page(let id) = self { id } else { nil }

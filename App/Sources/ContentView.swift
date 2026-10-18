@@ -141,6 +141,9 @@ struct ContentView: View {
         }
         .sheet(isPresented: $controller.showingShortcuts) { ShortcutsView(controller: controller) }
         .sheet(isPresented: $controller.choosingTemplate) { TemplatePicker(controller: controller, parent: nil) }
+        .sheet(isPresented: Binding(get: { controller.encryptingPage != nil }, set: { if !$0 { controller.encryptingPage = nil } })) {
+            if let pageId = controller.encryptingPage { EncryptSheet(controller: controller, pageId: pageId) }
+        }
         .onChange(of: controller.destination) { compactColumn = .detail }
         .onChange(of: controller.detailRequests) { compactColumn = .detail }
         // the split view's own button and gestures set the visibility; focus mode and the sidebar command set
@@ -185,8 +188,13 @@ struct ContentView: View {
                             .background(.background)
                     case .graph(let focus):
                         GraphView(controller: controller, focus: focus)
-                    case .page:
-                        EmptyView()
+                    case .review:
+                        ReviewView(controller: controller)
+                            .background(.background)
+                    case .page(let id):
+                        if controller.workspace.locked.contains(id) {
+                            UnlockView(controller: controller, pageId: id)
+                        }
                     }
                 }
             }
