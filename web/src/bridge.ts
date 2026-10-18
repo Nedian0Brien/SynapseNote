@@ -31,13 +31,25 @@ export type InboundMessage =
   // a new page in the templates page, or the templates page itself when there is none
   | { type: 'newTemplate' }
   | { type: 'openTemplates' }
-  | { type: 'saveAsTemplate'; pageId: PageId };
+  | { type: 'saveAsTemplate'; pageId: PageId }
+  // morrow's page history dialog for a page
+  | { type: 'openHistory'; pageId: PageId }
+  | { type: 'lockPage'; pageId: PageId }
+  | { type: 'unprotectPage'; pageId: PageId }
+  | { type: 'gradeCard'; cardId: string; grade: 'again' | 'hard' | 'good' | 'easy' };
 
 // posted to the native app through window.webkit.messageHandlers.editor
 export type OutboundMessage =
   | { type: 'ready' }
   | { type: 'rpc'; id: number; method: string; params: unknown[] }
-  | { type: 'workspace'; pages: Record<PageId, PageMeta>; saveState: SaveState; saveError: string | null }
+  // locked lists the encrypted pages whose password has not been given yet
+  | {
+      type: 'workspace';
+      pages: Record<PageId, PageMeta>;
+      locked: PageId[];
+      saveState: SaveState;
+      saveError: string | null;
+    }
   // newTab when the page was opened with a ctrl or cmd click
   | { type: 'openPage'; pageId: PageId | null; newTab?: boolean; find?: string | null }
   | { type: 'chooseIcon'; pageId: PageId }
@@ -68,6 +80,8 @@ export interface HostApi {
   query(name: string, params: Record<string, unknown>): string | null;
   // opens the link editor when text is selected in the editor, as cmd k does there; false when nothing is selected
   linkSelection(): boolean;
+  // encrypts a page with a password or unlocks one, the answer is JSON {ok} or {ok: false, error}
+  encryption(action: string, params: Record<string, unknown>): Promise<string>;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -137,6 +151,15 @@ export function parseInbound(value: unknown): InboundMessage | null {
       return { type: 'openTemplates' };
     case 'saveAsTemplate':
       return isId(value.pageId) ? { type: 'saveAsTemplate', pageId: value.pageId } : null;
+    case 'openHistory':
+    case 'lockPage':
+    case 'unprotectPage':
+      return isId(value.pageId) ? { type: value.type, pageId: value.pageId } : null;
+    case 'gradeCard':
+      return isId(value.cardId) &&
+        (value.grade === 'again' || value.grade === 'hard' || value.grade === 'good' || value.grade === 'easy')
+        ? { type: 'gradeCard', cardId: value.cardId, grade: value.grade }
+        : null;
     default:
       return null;
   }

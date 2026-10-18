@@ -3,7 +3,7 @@ import { applyCommand } from '../vendor/morrow/src/core/commands';
 import type { Command } from '../vendor/morrow/src/core/commands';
 import { emptyWorkspace } from '../vendor/morrow/src/core/model';
 import type { DocNode, WorkspaceState } from '../vendor/morrow/src/core/model';
-import { backlinks, counts, graph, home, mentions, outline, recent, search, tagPages, tags, tasks, templates } from './queries';
+import { backlinks, counts, graph, home, review, mentions, outline, recent, search, tagPages, tags, tasks, templates } from './queries';
 import { tagColor } from '../vendor/morrow/src/core/tags';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -182,7 +182,7 @@ describe('tasks and counts', () => {
       { pageId: 'garden', index: 0, text: 'Buy stakes', checked: false },
       { pageId: 'garden', index: 1, text: 'Plant seeds', checked: true },
     ]);
-    expect(counts(workspace())).toEqual({ openTasks: 1, tags: 0 });
+    expect(counts(workspace(), {}, NOW)).toEqual({ openTasks: 1, tags: 0, dueCards: 0 });
   });
 });
 
@@ -214,5 +214,29 @@ describe('graph', () => {
       { source: 'garden', target: 'tomatoes', kind: 'link' },
     ]);
     expect(graph(workspace(), { ...all, focus: 'journal' }).nodes.map((node) => node.id)).toEqual(['journal']);
+  });
+});
+
+describe('review', () => {
+  it('finds question :: answer lines and lists the due ones, seen cards first', () => {
+    const state = run(workspace(), {
+      type: 'page.setDoc',
+      id: 'tomatoes',
+      now: 1,
+      doc: doc(paragraph(text('Best soil :: loam')), paragraph(text('Water :: daily'))),
+    });
+    const all = review(state, {}, NOW);
+    expect(all.cards.map((card) => [card.front, card.back])).toEqual([
+      ['Best soil', 'loam'],
+      ['Water', 'daily'],
+    ]);
+    expect(all.due).toEqual(all.cards.map((card) => card.id));
+    const water = all.cards[1]!.id;
+    const soil = all.cards[0]!.id;
+    const later = review(state, { [soil]: { due: '2026-10-25', interval: 6, ease: 2.5, reps: 2, lapses: 0 } }, NOW);
+    expect(later.due).toEqual([water]);
+    const seen = review(state, { [water]: { due: '2026-10-18', interval: 1, ease: 2.5, reps: 1, lapses: 0 } }, NOW);
+    expect(seen.due).toEqual([water, soil]);
+    expect(counts(state, {}, NOW).dueCards).toBe(2);
   });
 });

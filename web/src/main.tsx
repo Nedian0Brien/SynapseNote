@@ -41,6 +41,11 @@ import { DatabasePage } from './DatabasePage';
 import { EditorApp, linkSelection } from './EditorApp';
 import type { FindRequest } from './EditorApp';
 import * as queries from './queries';
+import { createReviews } from './review';
+import type { Reviews } from './review';
+import { collectCards } from '../vendor/morrow/src/core/flashcards';
+import { HistoryDialog } from '../vendor/morrow/src/app/components/HistoryDialog';
+import { openDialog } from '../vendor/morrow/src/app/ui';
 import { showRoute } from './host/router';
 import { settle } from './host/rpc';
 import { deliverChanges, nativeVaultBridge } from './host/vaultBridge';
@@ -67,6 +72,8 @@ let shown: PageId | null = null;
 let find: FindRequest | null = null;
 let findCount = 0;
 let rerender: () => void = () => {};
+// flashcard progress for the open vault
+let reviews: Reviews | null = null;
 
 // sends the page list and save state, gathered over a few milliseconds; a timer rather than an animation
 // frame, which webkit holds back while the window is hidden
@@ -78,7 +85,14 @@ function report(): void {
     reportQueued = false;
     const session = getSession();
     const status = session.saveStatus;
-    post({ type: 'workspace', pages: session.getState().pages, saveState: status.state, saveError: status.error });
+    const pages = session.getState().pages;
+    post({
+      type: 'workspace',
+      pages,
+      locked: [...session.unreadable].filter((id) => pages[id]?.encrypted),
+      saveState: status.state,
+      saveError: status.error,
+    });
   }, 16);
 }
 
@@ -96,6 +110,8 @@ async function openVault(name: string): Promise<void> {
   // new vaults start empty, morrow's guide describes features this app does not have yet
   await session.markInitialized();
   setSession(session);
+  reviews = createReviews({ read: () => session.readMeta('review.json'), write: (text) => session.writeMeta('review.json', text) });
+  await reviews.load();
   session.subscribe(report);
   session.queue.subscribe(report);
   phase = { kind: 'ready' };
@@ -139,7 +155,9 @@ function query(name: string, params: Record<string, unknown>): string | null {
     case 'templates':
       return JSON.stringify(queries.templates(state));
     case 'counts':
-      return JSON.stringify(queries.counts(state));
+      return JSON.stringify(queries.counts(state, reviews?.log() ?? {}, new Date()));
+    case 'review':
+      return JSON.stringify(queries.review(state, reviews?.log() ?? {}, new Date()));
     case 'graph':
       return JSON.stringify(
         queries.graph(state, {
@@ -166,7 +184,23 @@ function scrollToHeading(index: number): void {
 async function flush(): Promise<boolean> {
   if (phase.kind !== 'ready') return true;
   commitEditors();
+  await reviews?.flush();
   return getSession().flush();
+}
+
+// encrypting and unlocking take a password typed in the native app; the answer says whether it worked
+async function encryption(action: string, params: Record<string, unknown>): Promise<string> {
+  if (phase.kind !== 'ready') return JSON.stringify({ ok: false, error: 'No vault is open.' });
+  const id = typeof params.id === 'string' ? params.id : '';
+  const password = typeof params.password === 'string' ? params.password : '';
+  const result =
+    action === 'protect'
+      ? await getSession().protectPage(id, password)
+      : action === 'unlock'
+        ? await getSession().unlockPage(id, password)
+        : null;
+  if (!result) return JSON.stringify({ ok: false, error: 'Unknown request.' });
+  return JSON.stringify(result.ok ? { ok: true } : { ok: false, error: result.error });
 }
 
 // which pages open in the text editor follows morrow's PageView: canvases and databases have views of their
@@ -190,15 +224,13 @@ function Page({ pageId, find }: { pageId: PageId; find: FindRequest | null }) {
     return <CanvasPage page={page} doc={doc} unreadable={getSession().unreadable.has(pageId)} />;
   // as morrow's PageView, a database is editable unless its folder note could not be read
   if (page.kind === 'database') return <DatabasePage page={page} editable={!getSession().unreadable.has(pageId)} />;
+  // a locked page asks for its password in the native app, over the page
+  if (getSession().unreadable.has(pageId) && page.encrypted) return <Empty />;
   if (getSession().unreadable.has(pageId))
     return (
       <Notice
         page={page}
-        text={
-          page.encrypted
-            ? 'This page is locked with a password. Opening locked pages is not available yet.'
-            : 'The content of this page could not be read. It has been left untouched and is protected from changes.'
-        }
+        text="The content of this page could not be read. It has been left untouched and is protected from changes."
       />
     );
   const unknown = findUnknownTypes(doc);
@@ -242,6 +274,7 @@ function Host() {
     post({ type: 'ready' });
   }, []);
   const dialog = ui.dialog?.kind === 'source' ? ui.dialog : null;
+  const history = ui.dialog?.kind === 'history' ? ui.dialog : null;
   return (
     <div className="view">
       {phase.kind === 'ready' && shown ? <Page key={shown} pageId={shown} find={find} /> : <Empty />}
@@ -254,6 +287,7 @@ function Host() {
           onSave={dialog.onSave}
         />
       )}
+      {history && <HistoryDialog pageId={history.pageId} />}
       <Toasts />
     </div>
   );
@@ -317,12 +351,31 @@ listen((message) => {
     case 'saveAsTemplate':
       if (phase.kind === 'ready') saveAsTemplate(message.pageId);
       break;
+    case 'openHistory':
+      if (phase.kind === 'ready') openDialog({ kind: 'history', pageId: message.pageId });
+      break;
+    case 'lockPage':
+      if (phase.kind === 'ready') void getSession().lockPage(message.pageId);
+      break;
+    case 'unprotectPage':
+      if (phase.kind === 'ready') void getSession().unprotectPage(message.pageId);
+      break;
+    case 'gradeCard': {
+      if (phase.kind !== 'ready' || !reviews) break;
+      const card = collectCards(getSession().getState()).find((item) => item.id === message.cardId);
+      if (card) {
+        reviews.grade(card, message.grade);
+        report();
+      }
+      break;
+    }
   }
 }, {
   flush,
   pathOf: (id) => (phase.kind === 'ready' ? getSession().pathOf(id) : null),
   query,
   linkSelection,
+  encryption,
 });
 
 // ctrl or cmd click on anything that points at a page opens it in a new tab, as morrow's tabs do

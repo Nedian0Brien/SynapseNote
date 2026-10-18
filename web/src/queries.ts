@@ -2,6 +2,8 @@
 // sent by id, the app already has every page's title, icon and place from the workspace message
 import { docToPlainText, inlineText } from '../vendor/morrow/src/core/doc';
 import { buildGraph } from '../vendor/morrow/src/core/graph';
+import { collectCards, dueCards } from '../vendor/morrow/src/core/flashcards';
+import type { Card, ReviewLog } from '../vendor/morrow/src/core/flashcards';
 import type { DocNode, PageId, WorkspaceState } from '../vendor/morrow/src/core/model';
 import { activityWeeks, onThisDay, rediscover, streak, totalWords } from '../vendor/morrow/src/core/insights';
 import type { Day } from '../vendor/morrow/src/core/insights';
@@ -125,9 +127,23 @@ export function templates(state: WorkspaceState): { container: PageId | null; te
   return { container: findTemplatesPage(state)?.id ?? null, templates: listTemplates(state).map((page) => page.id) };
 }
 
-// the numbers beside the sidebar's tasks and tags
-export function counts(state: WorkspaceState): { openTasks: number; tags: number } {
-  return { openTasks: collectTasks(state).filter((task) => !task.checked).length, tags: collectTags(state).length };
+// the numbers beside the sidebar's tasks, tags and review
+export function counts(
+  state: WorkspaceState,
+  log: ReviewLog,
+  now: Date,
+): { openTasks: number; tags: number; dueCards: number } {
+  return {
+    openTasks: collectTasks(state).filter((task) => !task.checked).length,
+    tags: collectTags(state).length,
+    dueCards: dueCards(collectCards(state), log, now).length,
+  };
+}
+
+// every flashcard and the ones due now, the order morrow's review shows them in
+export function review(state: WorkspaceState, log: ReviewLog, now: Date): { cards: Card[]; due: string[] } {
+  const cards = collectCards(state);
+  return { cards, due: dueCards(cards, log, now).map((card) => card.id) };
 }
 
 // pages joined by links for the graph view, morrow's buildGraph; the app lays it out

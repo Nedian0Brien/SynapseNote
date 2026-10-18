@@ -82,6 +82,19 @@ describe('parseInbound', () => {
     expect(parseInbound({ type: 'saveAsTemplate' })).toBeNull();
   });
 
+  it('accepts history, encryption and review requests', () => {
+    expect(parseInbound({ type: 'openHistory', pageId: 'p' })).toEqual({ type: 'openHistory', pageId: 'p' });
+    expect(parseInbound({ type: 'lockPage', pageId: 'p' })).toEqual({ type: 'lockPage', pageId: 'p' });
+    expect(parseInbound({ type: 'unprotectPage', pageId: 'p' })).toEqual({ type: 'unprotectPage', pageId: 'p' });
+    expect(parseInbound({ type: 'lockPage' })).toBeNull();
+    expect(parseInbound({ type: 'gradeCard', cardId: 'c', grade: 'easy' })).toEqual({
+      type: 'gradeCard',
+      cardId: 'c',
+      grade: 'easy',
+    });
+    expect(parseInbound({ type: 'gradeCard', cardId: 'c', grade: 'perfect' })).toBeNull();
+  });
+
   it('drops pages without an id, unknown messages and non objects', () => {
     expect(parseInbound({ type: 'show', pageId: '' })).toBeNull();
     expect(parseInbound({ type: 'show', pageId: 'a', find: 3 })).toBeNull();
@@ -115,6 +128,7 @@ describe('post and listen', () => {
       pathOf: (id) => (id === 'a' ? 'A.md' : null),
       query: (name) => (name === 'recent' ? '[]' : null),
       linkSelection: () => false,
+      encryption: async () => '{"ok":true}',
     });
     const synapse = (globalThis.window as Window).synapse!;
     expect(synapse.receive({ type: 'show', pageId: 'a' })).toBe(true);
