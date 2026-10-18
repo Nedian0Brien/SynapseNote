@@ -3,7 +3,7 @@ import { applyCommand } from '../vendor/morrow/src/core/commands';
 import type { Command } from '../vendor/morrow/src/core/commands';
 import { emptyWorkspace } from '../vendor/morrow/src/core/model';
 import type { DocNode, WorkspaceState } from '../vendor/morrow/src/core/model';
-import { backlinks, counts, home, mentions, outline, recent, search, tagPages, tags, tasks, templates } from './queries';
+import { backlinks, counts, graph, home, mentions, outline, recent, search, tagPages, tags, tasks, templates } from './queries';
 import { tagColor } from '../vendor/morrow/src/core/tags';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -195,5 +195,24 @@ describe('templates', () => {
       { type: 'page.create', id: 'daily', parentId: 'tpl', now: 2, title: 'Daily note' },
     );
     expect(templates(withTemplates)).toEqual({ container: 'tpl', templates: ['daily'] });
+  });
+});
+
+describe('graph', () => {
+  const all = { tags: false, hierarchy: false, orphans: true, focus: null, depth: 1 };
+
+  it('joins pages by their links, grouped under their top page', () => {
+    const result = graph(workspace(), all);
+    expect(result.nodes.map((node) => node.id).sort()).toEqual(['garden', 'journal', 'tomatoes']);
+    expect(result.links).toEqual([{ source: 'garden', target: 'tomatoes', kind: 'link' }]);
+    expect(result.nodes.find((node) => node.id === 'tomatoes')).toMatchObject({ degree: 1, group: 'garden' });
+  });
+
+  it('leaves out unlinked pages, adds subpages, or keeps only the pages near one', () => {
+    expect(graph(workspace(), { ...all, orphans: false }).nodes.map((node) => node.id).sort()).toEqual(['garden', 'tomatoes']);
+    expect(graph(workspace(), { ...all, hierarchy: true }).links).toEqual([
+      { source: 'garden', target: 'tomatoes', kind: 'link' },
+    ]);
+    expect(graph(workspace(), { ...all, focus: 'journal' }).nodes.map((node) => node.id)).toEqual(['journal']);
   });
 });

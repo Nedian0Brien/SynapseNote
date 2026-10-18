@@ -17,7 +17,12 @@ describe('parseInbound', () => {
       parentId: 'p',
       kind: 'database',
     });
-    expect(parseInbound({ type: 'createPage', parentId: null, kind: 'canvas' })).toBeNull();
+    expect(parseInbound({ type: 'createPage', parentId: null, kind: 'canvas' })).toEqual({
+      type: 'createPage',
+      parentId: null,
+      kind: 'canvas',
+    });
+    expect(parseInbound({ type: 'createPage', parentId: null, kind: 'journal' })).toBeNull();
     expect(parseInbound({ type: 'trashPage', pageId: 'a' })).toEqual({ type: 'trashPage', pageId: 'a' });
   });
 

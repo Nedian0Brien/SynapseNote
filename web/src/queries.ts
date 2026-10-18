@@ -1,6 +1,7 @@
 // answers the native screens read from the workspace, worked out by morrow's own core functions; pages are
 // sent by id, the app already has every page's title, icon and place from the workspace message
 import { docToPlainText, inlineText } from '../vendor/morrow/src/core/doc';
+import { buildGraph } from '../vendor/morrow/src/core/graph';
 import type { DocNode, PageId, WorkspaceState } from '../vendor/morrow/src/core/model';
 import { activityWeeks, onThisDay, rediscover, streak, totalWords } from '../vendor/morrow/src/core/insights';
 import type { Day } from '../vendor/morrow/src/core/insights';
@@ -127,4 +128,12 @@ export function templates(state: WorkspaceState): { container: PageId | null; te
 // the numbers beside the sidebar's tasks and tags
 export function counts(state: WorkspaceState): { openTasks: number; tags: number } {
   return { openTasks: collectTasks(state).filter((task) => !task.checked).length, tags: collectTags(state).length };
+}
+
+// pages joined by links for the graph view, morrow's buildGraph; the app lays it out
+export function graph(
+  state: WorkspaceState,
+  options: { tags: boolean; hierarchy: boolean; orphans: boolean; focus: PageId | null; depth: number },
+): ReturnType<typeof buildGraph> {
+  return buildGraph(state, options);
 }

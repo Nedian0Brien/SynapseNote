@@ -36,6 +36,7 @@ import { useUi } from '../vendor/morrow/src/app/ui';
 import { getSession, run, setSession, useWorkspace } from '../vendor/morrow/src/app/workspace';
 import { listen, post } from './bridge';
 import type { Theme } from './bridge';
+import { CanvasPage } from './CanvasPage';
 import { DatabasePage } from './DatabasePage';
 import { EditorApp, linkSelection } from './EditorApp';
 import type { FindRequest } from './EditorApp';
@@ -139,6 +140,16 @@ function query(name: string, params: Record<string, unknown>): string | null {
       return JSON.stringify(queries.templates(state));
     case 'counts':
       return JSON.stringify(queries.counts(state));
+    case 'graph':
+      return JSON.stringify(
+        queries.graph(state, {
+          tags: params.tags === true,
+          hierarchy: params.hierarchy === true,
+          orphans: params.orphans !== false,
+          focus: typeof params.focus === 'string' ? params.focus : null,
+          depth: typeof params.depth === 'number' ? params.depth : 1,
+        }),
+      );
     default:
       return null;
   }
@@ -175,7 +186,8 @@ function Page({ pageId, find }: { pageId: PageId; find: FindRequest | null }) {
     run({ type: 'page.markOpened', id: pageId, now: Date.now() });
   }, [pageId]);
   if (!page || !doc || isEffectivelyTrashed(state.pages, pageId)) return <Empty />;
-  if (page.kind === 'canvas') return <Notice page={page} text="Canvases cannot be opened yet. The file is left as it is." />;
+  if (page.kind === 'canvas')
+    return <CanvasPage page={page} doc={doc} unreadable={getSession().unreadable.has(pageId)} />;
   // as morrow's PageView, a database is editable unless its folder note could not be read
   if (page.kind === 'database') return <DatabasePage page={page} editable={!getSession().unreadable.has(pageId)} />;
   if (getSession().unreadable.has(pageId))

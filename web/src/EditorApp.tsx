@@ -12,6 +12,7 @@ import { docToMarkdown } from '../vendor/morrow/src/core/markdown/serialize';
 import { docToHtml } from '../vendor/morrow/src/core/site';
 import { ancestorsOf, isEffectivelyTrashed } from '../vendor/morrow/src/core/tree';
 import { EmbeddedDatabase } from '../vendor/morrow/src/app/components/database/EmbeddedDatabase';
+import { EmbeddedCanvas } from '../vendor/morrow/src/app/components/EmbeddedCanvas';
 import type { BlockMenuRequest } from '../vendor/morrow/src/app/editor/BlockHandle';
 import { registerCommit, setFocusedEditor } from '../vendor/morrow/src/app/editor/commits';
 import { BlockMenu, FormattingMenu, LinkMenu, openHref, TableMenu } from '../vendor/morrow/src/app/editor/EditorMenus';
@@ -20,24 +21,24 @@ import { createExtensions } from '../vendor/morrow/src/app/editor/extensions';
 import { createPage, openToday } from '../vendor/morrow/src/app/operations';
 import { PageHeader } from './PageHeader';
 import { Subpages } from './Subpages';
-import { toast } from '../vendor/morrow/src/app/ui';
 import { getSession, getState, run } from '../vendor/morrow/src/app/workspace';
 import { navigate, openPage } from './host/router';
 
 // the same pause morrow waits before writing an edit back
 export const COMMIT_DELAY_MS = 250;
 
-const NOT_YET = {
-  canvas: 'Canvases are not available yet.',
-};
-
-// a database linked into the page shows as the database itself, as in morrow's PageEditor; canvases still
-// show as a preview until the canvas view exists
+// databases and canvases linked into the page show as the real thing, a database with its views, a canvas you
+// can draw on, as in morrow's PageEditor
 function mountEmbed(id: PageId, hostId: PageId, element: HTMLElement, editable: boolean): (() => void) | null {
-  const page = getState().pages[id];
-  if (!page || id === hostId || !page.database) return null;
+  const state = getState();
+  const page = state.pages[id];
+  if (!page || id === hostId) return null;
+  const canvas = page.kind === 'canvas' && !page.encrypted && !isEffectivelyTrashed(state.pages, id);
+  if (!page.database && !canvas) return null;
   const root = createRoot(element);
-  root.render(<EmbeddedDatabase pageId={id} editable={editable} />);
+  root.render(
+    page.database ? <EmbeddedDatabase pageId={id} editable={editable} /> : <EmbeddedCanvas pageId={id} editable={editable} />,
+  );
   // react cannot unmount a root in the middle of rendering another one
   return () => setTimeout(() => root.unmount());
 }
@@ -166,14 +167,8 @@ export function EditorApp({ page, doc, editable, find }: Props) {
           createFromTarget: (target) => createPage({ title: target.split('/').pop() || target, open: false }),
           openTag: (tag) => navigate({ name: 'tag', tag }),
           renderEmbed: (id) => embedHtml(id, pageId),
-          // a database is made inside this page, as morrow does; canvases come with the canvas view
-          createChild: (kind) => {
-            if (kind === 'canvas') {
-              toast(NOT_YET.canvas);
-              return null;
-            }
-            return createPage({ parentId: pageId, kind, open: false });
-          },
+          // a database or a canvas made inside this page, as morrow does
+          createChild: (kind) => createPage({ parentId: pageId, kind, open: false }),
           mountEmbed: (id, element, canEdit) => mountEmbed(id, pageId, element, canEdit),
           openDate: (date) => openToday(date),
           onBlockMenu: setBlockMenu,
