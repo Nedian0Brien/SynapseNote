@@ -26,10 +26,10 @@ date: 2026-10-18
 
 **웹 에디터(`web/`).** Vite + React 프로젝트. 의존성 버전은 Morrow의 `package-lock.json`을 기준으로 같은 버전을 쓴다. Morrow 파일이 `react`를 import하면 상위 폴더를 따라 `web/node_modules`에서 찾으므로, React 사본이 하나만 생긴다.
 - 진입점 `web/src/main.tsx`가 Morrow의 `createExtensions`, `EditorMenus`, `FindBar`, `SourceDialog`를 써서 에디터를 띄운다. 구성은 Morrow `PageEditor.tsx`와 같게 하고, 앱 상태 접근 부분만 브리지 호출로 바꾼다.
-- 에디터가 import하는 Morrow 앱 모듈 중 Electron이나 Morrow 앱 상태에 묶인 것은 Vite `resolveId` 플러그인으로 `web/src/host/` 아래 구현으로 바꿔 끼운다. 대상은 `app/workspace`, `app/operations`, `app/router`, `app/actions`, `app/platform/attachments`, `app/platform/desktop`, `app/platform/files`. `app/ui.ts`와 `components/*`는 그대로 쓴다.
-- TipTap 확장의 콜백(`getTitle`, `findPages`, `resolveTarget` 등)은 동기 함수다. 그래서 Swift가 페이지 목록(id, 제목, 아이콘, 경로)을 미리 JS로 보내고, JS 쪽 host 모듈이 그 사본에서 바로 답한다. 새 페이지 생성은 JS가 id를 만들고 Swift에 알린다.
+- 에디터가 import하는 Morrow 앱 모듈 중 Electron이나 Morrow 앱 상태에 묶인 것은 Vite `resolveId` 플러그인으로 `web/src/host/` 아래 구현으로 바꿔 끼운다. 대상은 `app/router`, `app/actions`, `app/platform/attachments`, `app/platform/desktop`, `app/platform/files`. `app/ui.ts`와 `components/*`는 그대로 쓴다. `app/workspace`, `app/operations`, `storage/`, `electron/`은 에디터가 직접 import하지 않으므로 바꿔 끼우지 않고, 번들에 들어오면 빌드가 실패하게 막는다. host 모듈이 원본과 같은 시그니처인지는 `host/contract.ts`가 컴파일 단계에서 확인한다.
+- TipTap 확장의 콜백(`getTitle`, `findPages`, `resolveTarget` 등)은 동기 함수다. 그래서 Swift가 페이지를 열 때 워크스페이스 전체(`pages`, `docs`)를 JS로 보내고, JS 쪽 host 모듈이 그 사본에서 바로 답한다. 새 페이지 생성은 JS가 id를 만들고 Swift에 알린다.
 - 빌드 결과는 `App/Resources/Editor/`에 나온다. 이모지 이미지와 폰트, KaTeX, Mermaid 모두 이 안에 들어간다.
-- 가이드 문서는 빌드 스크립트가 Morrow `sampleCommands`를 `applyCommand`로 실행해 `App/Resources/Editor/sample-guide.json`으로 만든다.
+- 가이드 문서는 빌드 스크립트가 Morrow `sampleCommands`를 `applyCommand`로 실행해 `App/Resources/Editor/sample-guide.json`으로 만든다. 이때 "Morrow" 이름을 "SynapseNote"로 바꾸고, 가이드에 없는 노드(`blockMath`, `image`, `fileAttachment`, `hardBreak`, `rawBlock`, `link` 마크)와 한글 IME 확인용 블록을 담은 "에디터 검증" 페이지를 더한다.
 
 **네이티브 앱(`App/`).** XcodeGen `project.yml`, 단일 멀티플랫폼 타깃(`supportedDestinations: [iOS, macOS]`).
 - `EditorWebView`: `NSViewRepresentable`/`UIViewRepresentable`로 `WKWebView`를 감싼다.
@@ -45,7 +45,7 @@ date: 2026-10-18
 
 ## 범위 밖
 
-intent의 범위 밖과 같다. 추가로, 이미지·파일 첨부 삽입은 저장소가 없어서 이번에는 동작하지 않고, 슬래시 메뉴에서 고르면 "vault 연결 후 지원" 안내가 뜬다. 데이터베이스·캔버스 임베드는 표시하지 않는다. 둘 다 검증 문서에 적는다.
+intent의 범위 밖과 같다. 추가로, 이미지·파일 첨부 삽입은 저장소가 없어서 이번에는 동작하지 않고, 슬래시 메뉴에서 고르면 vault 폴더가 열려야 추가할 수 있다는 안내가 뜬다(Morrow UI와 같이 영어 문구). 데이터베이스·캔버스 임베드는 표시하지 않는다. 둘 다 검증 문서에 적는다.
 
 ## 열린 질문
 

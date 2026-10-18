@@ -1,0 +1,15 @@
+SynapseNote-Native
+
+This product includes software from Morrow (https://github.com/Aarav2709/Morrow),
+Copyright 2026 Aarav Gupta and Morrow contributors, licensed under the Apache License 2.0.
+A copy of that licence is in LICENSES/Morrow-Apache-2.0.txt.
+
+Morrow is included unmodified as a git submodule at web/vendor/morrow, pinned to commit
+a2daae153279042b662b16a88f592cdabd5f1d32. The following SynapseNote files are adapted from
+Morrow and say so at their top:
+
+- web/vite.config.ts (emoji image and third party licence plugins)
+- web/src/EditorApp.tsx (editor setup, from src/app/editor/PageEditor.tsx)
+- web/src/host/actions.ts, web/src/host/attachments.ts (functions copied with the same output)
+
+The editor bundle lists the licences of every package it includes in THIRD_PARTY_LICENSES.txt.
