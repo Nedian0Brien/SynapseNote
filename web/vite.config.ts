@@ -17,6 +17,7 @@ const HOST_MODULES: Record<string, string> = {
   'actions.ts': 'actions.ts',
   'router.ts': 'router.ts',
   'platform/desktop.ts': 'desktop.ts',
+  'components/Sidebar.tsx': 'sidebar.tsx',
 };
 
 // modules that must never reach the editor bundle: electron code, and the copy of pages kept in

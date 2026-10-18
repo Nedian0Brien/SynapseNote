@@ -343,6 +343,12 @@ final class EditorController: WorkspaceService {
         send(.createPage(parentId: parent))
     }
 
+    /// A database with Morrow's default properties and table view, opened once it is made.
+    func createDatabase(parent: String? = nil) {
+        if let parent { expanded.insert(parent) }
+        send(.createPage(parentId: parent, database: true))
+    }
+
     func trash(_ pageId: String) {
         send(.trashPage(pageId: pageId))
     }

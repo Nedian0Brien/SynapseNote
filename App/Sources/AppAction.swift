@@ -65,6 +65,9 @@ struct AppAction: Identifiable {
     static let all: [AppAction] = [
         AppAction("page.new", .general, "New Page", symbol: "square.and.pencil", keywords: "create add note",
                   shortcut: KeyboardShortcut("n")) { $0.createPage() },
+        AppAction("page.newDatabase", .general, "New Database", symbol: "tablecells", keywords: "table board calendar gallery") {
+            $0.createDatabase()
+        },
         AppAction("page.newSubpage", .page, "New Subpage", symbol: "plus", keywords: "child create",
                   shortcut: KeyboardShortcut("n", modifiers: [.command, .option]), enabled: onLivePage) { controller in
             if let id = controller.selection { controller.createPage(parent: id) }

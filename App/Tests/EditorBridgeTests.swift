@@ -55,6 +55,8 @@ struct EditorBridgeTests {
         #expect(EditorCommand.vaultChanges([change]).json["changes"]
             == .array([.object(["path": .string("a.md"), "text": .null, "mtime": .number(1), "birthtime": .number(0), "dir": .bool(false), "other": .bool(false)])]))
         #expect(EditorCommand.createPage(parentId: "p").json["parentId"] == .string("p"))
+        #expect(EditorCommand.createPage(parentId: "p").json["kind"] == .string("page"))
+        #expect(EditorCommand.createPage(parentId: nil, database: true).json["kind"] == .string("database"))
         #expect(EditorCommand.theme(dark: true).json["theme"] == .string("dark"))
     }
 

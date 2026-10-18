@@ -36,6 +36,7 @@ private struct PageCommands: Commands {
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
             item("page.new")
+            item("page.newDatabase")
             item("page.newSubpage")
             item("page.fromTemplate")
             item("tab.new")

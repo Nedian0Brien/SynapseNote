@@ -11,7 +11,13 @@ describe('parseInbound', () => {
     expect(parseInbound({ type: 'show', pageId: 'a' })).toEqual({ type: 'show', pageId: 'a', find: null });
     expect(parseInbound({ type: 'show', pageId: null })).toEqual({ type: 'show', pageId: null, find: null });
     expect(parseInbound({ type: 'show', pageId: 'a', find: 'milk' })).toEqual({ type: 'show', pageId: 'a', find: 'milk' });
-    expect(parseInbound({ type: 'createPage', parentId: null })).toEqual({ type: 'createPage', parentId: null });
+    expect(parseInbound({ type: 'createPage', parentId: null })).toEqual({ type: 'createPage', parentId: null, kind: 'page' });
+    expect(parseInbound({ type: 'createPage', parentId: 'p', kind: 'database' })).toEqual({
+      type: 'createPage',
+      parentId: 'p',
+      kind: 'database',
+    });
+    expect(parseInbound({ type: 'createPage', parentId: null, kind: 'canvas' })).toBeNull();
     expect(parseInbound({ type: 'trashPage', pageId: 'a' })).toEqual({ type: 'trashPage', pageId: 'a' });
   });
 

@@ -179,5 +179,7 @@ struct DailyViewsTests {
         #expect(PageIcon.symbol(for: journal) == "book")
         #expect(PageIcon.symbol(for: templates) == "square.on.square.dashed")
         #expect(daily.dailyDate == "2026-10-19")
+        let locked = try #require(PageInfo(.object(["id": .string("l"), "encrypted": .bool(true), "icon": .string("😀")])))
+        #expect(PageIcon.symbol(for: locked) == "lock")
     }
 }

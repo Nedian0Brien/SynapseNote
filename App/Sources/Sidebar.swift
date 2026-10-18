@@ -111,7 +111,8 @@ struct PageIcon: View {
     let size: CGFloat
 
     var body: some View {
-        if let icon = page.icon {
+        // a locked page shows the lock even when it has an emoji, as morrow's PageIcon
+        if let icon = page.icon, !page.encrypted {
             EmojiImage(emoji: icon, size: size)
         } else {
             Image(systemName: Self.symbol(for: page))
@@ -119,6 +120,7 @@ struct PageIcon: View {
     }
 
     static func symbol(for page: PageInfo) -> String {
+        if page.encrypted { return "lock" }
         if page.dailyDate != nil { return "calendar" }
         switch page.kind {
         case "journal": return "book"
@@ -221,6 +223,7 @@ struct PageMenu: View {
         Button("Open in New Tab", systemImage: "plus.square.on.square") { controller.openInNewTab(.page(page.id)) }
         Divider()
         Button("Add Subpage", systemImage: "plus") { controller.createPage(parent: page.id) }
+        Button("Add Database Inside", systemImage: "tablecells") { controller.createDatabase(parent: page.id) }
         Button(page.icon == nil ? "Add Icon" : "Change Icon", systemImage: "face.smiling") { controller.iconPage = page.id }
         if page.favorite {
             Button("Remove from Favorites", systemImage: "star.slash") { controller.perform(.setFavorite(id: page.id, favorite: false)) }

@@ -36,6 +36,7 @@ import { useUi } from '../vendor/morrow/src/app/ui';
 import { getSession, run, setSession, useWorkspace } from '../vendor/morrow/src/app/workspace';
 import { listen, post } from './bridge';
 import type { Theme } from './bridge';
+import { DatabasePage } from './DatabasePage';
 import { EditorApp, linkSelection } from './EditorApp';
 import type { FindRequest } from './EditorApp';
 import * as queries from './queries';
@@ -175,8 +176,8 @@ function Page({ pageId, find }: { pageId: PageId; find: FindRequest | null }) {
   }, [pageId]);
   if (!page || !doc || isEffectivelyTrashed(state.pages, pageId)) return <Empty />;
   if (page.kind === 'canvas') return <Notice page={page} text="Canvases cannot be opened yet. The file is left as it is." />;
-  if (page.kind === 'database')
-    return <Notice page={page} text="Databases cannot be opened yet. The pages in it are listed in the sidebar." />;
+  // as morrow's PageView, a database is editable unless its folder note could not be read
+  if (page.kind === 'database') return <DatabasePage page={page} editable={!getSession().unreadable.has(pageId)} />;
   if (getSession().unreadable.has(pageId))
     return (
       <Notice
@@ -264,7 +265,7 @@ listen((message) => {
       break;
     case 'createPage': {
       if (phase.kind !== 'ready') break;
-      const id = createPage({ parentId: message.parentId, open: false });
+      const id = createPage({ parentId: message.parentId, kind: message.kind, open: false });
       if (id) post({ type: 'openPage', pageId: id });
       break;
     }

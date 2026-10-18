@@ -3,33 +3,44 @@ import { Editor, Extension } from '@tiptap/core';
 import type { JSONContent } from '@tiptap/core';
 import { EditorContent } from '@tiptap/react';
 import katex from 'katex';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createRoot } from 'react-dom/client';
 import { displayTitle } from '../vendor/morrow/src/core/model';
 import type { DocNode, PageId, PageMeta } from '../vendor/morrow/src/core/model';
 import { findPagesByTitle, pageIdByTitle, resolveLinkTarget } from '../vendor/morrow/src/core/search';
 import { docToMarkdown } from '../vendor/morrow/src/core/markdown/serialize';
 import { docToHtml } from '../vendor/morrow/src/core/site';
 import { ancestorsOf, isEffectivelyTrashed } from '../vendor/morrow/src/core/tree';
-import { Emoji } from '../vendor/morrow/src/app/components/Emoji';
+import { EmbeddedDatabase } from '../vendor/morrow/src/app/components/database/EmbeddedDatabase';
 import type { BlockMenuRequest } from '../vendor/morrow/src/app/editor/BlockHandle';
 import { registerCommit, setFocusedEditor } from '../vendor/morrow/src/app/editor/commits';
 import { BlockMenu, FormattingMenu, LinkMenu, openHref, TableMenu } from '../vendor/morrow/src/app/editor/EditorMenus';
 import { FindBar } from '../vendor/morrow/src/app/editor/FindBar';
 import { createExtensions } from '../vendor/morrow/src/app/editor/extensions';
 import { createPage, openToday } from '../vendor/morrow/src/app/operations';
-import { PageTags } from './PageTags';
+import { PageHeader } from './PageHeader';
+import { Subpages } from './Subpages';
 import { toast } from '../vendor/morrow/src/app/ui';
 import { getSession, getState, run } from '../vendor/morrow/src/app/workspace';
-import { Smile } from 'lucide-react';
-import { post } from './bridge';
 import { navigate, openPage } from './host/router';
 
 // the same pause morrow waits before writing an edit back
 export const COMMIT_DELAY_MS = 250;
 
 const NOT_YET = {
-  child: 'Databases and canvases are not available yet.',
+  canvas: 'Canvases are not available yet.',
 };
+
+// a database linked into the page shows as the database itself, as in morrow's PageEditor; canvases still
+// show as a preview until the canvas view exists
+function mountEmbed(id: PageId, hostId: PageId, element: HTMLElement, editable: boolean): (() => void) | null {
+  const page = getState().pages[id];
+  if (!page || id === hostId || !page.database) return null;
+  const root = createRoot(element);
+  root.render(<EmbeddedDatabase pageId={id} editable={editable} />);
+  // react cannot unmount a root in the middle of rendering another one
+  return () => setTimeout(() => root.unmount());
+}
 
 // the html of a page shown inside another, never the page itself so embeds cannot loop
 const embedCache = new WeakMap<object, string>();
@@ -48,39 +59,6 @@ function embedHtml(id: PageId, hostId: PageId): string | null {
   });
   embedCache.set(doc, html);
   return html;
-}
-
-// the page title, renamed as it is typed like morrow's TitleField in src/app/components/PageView.tsx
-function TitleField({ page, onEnter }: { page: PageMeta; onEnter: () => void }) {
-  const ref = useRef<HTMLTextAreaElement>(null);
-  useLayoutEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-    element.style.height = '0px';
-    element.style.height = `${element.scrollHeight}px`;
-  });
-  return (
-    <textarea
-      ref={ref}
-      className="page-title"
-      rows={1}
-      placeholder="Untitled"
-      aria-label="Page title"
-      value={page.title}
-      spellCheck
-      onChange={(event) => run({ type: 'page.rename', id: page.id, title: event.target.value, now: Date.now() })}
-      onKeyDown={(event) => {
-        const target = event.currentTarget;
-        const atEnd = target.selectionStart === target.value.length && target.selectionEnd === target.value.length;
-        // enter while composing a korean syllable finishes the syllable, it does not leave the title
-        if (event.nativeEvent.isComposing) return;
-        if (event.key === 'Enter' || (event.key === 'ArrowDown' && atEnd)) {
-          event.preventDefault();
-          onEnter();
-        }
-      }}
-    />
-  );
 }
 
 // text to select when the page opens, a new id for each request
@@ -188,10 +166,15 @@ export function EditorApp({ page, doc, editable, find }: Props) {
           createFromTarget: (target) => createPage({ title: target.split('/').pop() || target, open: false }),
           openTag: (tag) => navigate({ name: 'tag', tag }),
           renderEmbed: (id) => embedHtml(id, pageId),
-          createChild: () => {
-            toast(NOT_YET.child);
-            return null;
+          // a database is made inside this page, as morrow does; canvases come with the canvas view
+          createChild: (kind) => {
+            if (kind === 'canvas') {
+              toast(NOT_YET.canvas);
+              return null;
+            }
+            return createPage({ parentId: pageId, kind, open: false });
           },
+          mountEmbed: (id, element, canEdit) => mountEmbed(id, pageId, element, canEdit),
           openDate: (date) => openToday(date),
           onBlockMenu: setBlockMenu,
           resolvePage: (title) => pageIdByTitle(getState(), title),
@@ -293,28 +276,7 @@ export function EditorApp({ page, doc, editable, find }: Props) {
   return (
     <div className="page-scroll">
       <article className="page font-sans width-comfortable">
-        {page.icon ? (
-          <div className="page-icon-row">
-            <button
-              type="button"
-              className="page-icon"
-              aria-label="Change icon"
-              onClick={() => post({ type: 'chooseIcon', pageId: page.id })}
-            >
-              <Emoji emoji={page.icon} />
-            </button>
-          </div>
-        ) : (
-          <div className="page-header-actions">
-            <button type="button" className="add-icon" onClick={() => post({ type: 'chooseIcon', pageId: page.id })}>
-              <Smile size={14} /> Add icon
-            </button>
-          </div>
-        )}
-        <h1 className="page-title-heading">
-          <TitleField page={page} onEnter={() => editor?.chain().focus('start').run()} />
-        </h1>
-        {page.kind !== 'database' && <PageTags page={page} editable={editable} />}
+        <PageHeader page={page} editable={editable} onEnter={() => editor?.chain().focus('start').run()} />
         {editor ? (
           <div className="editor-host">
             {finding && <FindBar editor={editor} onClose={() => setFinding(false)} />}
@@ -331,6 +293,7 @@ export function EditorApp({ page, doc, editable, find }: Props) {
         ) : (
           <div className="editor-loading" aria-hidden="true" />
         )}
+        <Subpages parentId={page.id} />
       </article>
     </div>
   );

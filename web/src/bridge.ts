@@ -15,7 +15,8 @@ export type InboundMessage =
   | { type: 'rpcResult'; id: number; ok: true; value: unknown }
   | { type: 'rpcResult'; id: number; ok: false; error: string }
   | { type: 'vaultChanges'; changes: VaultChange[] }
-  | { type: 'createPage'; parentId: PageId | null }
+  // a page, or a database when kind says so
+  | { type: 'createPage'; parentId: PageId | null; kind: 'page' | 'database' }
   | { type: 'trashPage'; pageId: PageId }
   // a morrow Command from a native screen, checked by morrow's applyCommand like any other
   | { type: 'command'; command: Command }
@@ -99,10 +100,11 @@ export function parseInbound(value: unknown): InboundMessage | null {
       return Array.isArray(value.changes) && value.changes.every(isChange)
         ? { type: 'vaultChanges', changes: value.changes }
         : null;
-    case 'createPage':
-      return value.parentId === null || isId(value.parentId)
-        ? { type: 'createPage', parentId: value.parentId }
-        : null;
+    case 'createPage': {
+      if (value.parentId !== null && !isId(value.parentId)) return null;
+      const kind = value.kind ?? 'page';
+      return kind === 'page' || kind === 'database' ? { type: 'createPage', parentId: value.parentId, kind } : null;
+    }
     case 'trashPage':
       return isId(value.pageId) ? { type: 'trashPage', pageId: value.pageId } : null;
     case 'command':
