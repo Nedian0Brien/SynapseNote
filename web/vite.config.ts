@@ -99,6 +99,28 @@ function emojiImages(): Plugin {
   };
 }
 
+// the emoji list the native icon picker shows, the same data morrow's EmojiPicker reads, without skin tones
+function emojiIndex(): Plugin {
+  return {
+    name: 'synapsenote-emoji-index',
+    apply: 'build',
+    generateBundle() {
+      const data = JSON.parse(readFileSync(require.resolve('emojibase-data/en/compact.json'), 'utf8')) as Array<{
+        unicode: string;
+        label: string;
+        group?: number;
+        order?: number;
+        tags?: string[];
+      }>;
+      const list = data
+        .filter((emoji) => emoji.group !== undefined && emoji.group !== 2)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+        .map((emoji) => ({ e: emoji.unicode, l: emoji.label, g: emoji.group, t: emoji.tags ?? [] }));
+      this.emitFile({ type: 'asset', fileName: 'emoji-index.json', source: JSON.stringify(list) });
+    },
+  };
+}
+
 // the licence of every bundled package, as their licences require, adapted from morrow's vite.config.ts
 function thirdPartyLicenses(): Plugin {
   return {
@@ -134,7 +156,7 @@ function thirdPartyLicenses(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [hostModules(), react(), emojiImages(), thirdPartyLicenses()],
+  plugins: [hostModules(), react(), emojiImages(), emojiIndex(), thirdPartyLicenses()],
   define: { __APP_VERSION__: JSON.stringify('0.1.0') },
   // relative paths, the app serves the bundle from its own url scheme
   base: './',

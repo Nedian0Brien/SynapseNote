@@ -82,11 +82,59 @@ struct VaultLocation {
         let data = try url.bookmarkData(options: Self.bookmarkOptions, includingResourceValuesForKeys: nil, relativeTo: nil)
         defaults.set(data, forKey: Self.bookmarkKey)
         defaults.set("bookmark", forKey: Self.kindKey)
+        addRecent(RecentVault(name: url.lastPathComponent, path: url.standardizedFileURL.path(percentEncoded: false), bookmark: data))
     }
 
     func rememberAppDocuments() {
         defaults.removeObject(forKey: Self.bookmarkKey)
         defaults.set("appDocuments", forKey: Self.kindKey)
+        addRecent(RecentVault(name: "SynapseNote", path: Self.appDocumentsMarker, bookmark: nil))
+    }
+
+    // MARK: recent vaults
+
+    private static let recentsKey = "vault.recents"
+    private static let appDocumentsMarker = "app-documents"
+    static let recentLimit = 5
+
+    /// A vault opened before, newest first in `recents`.
+    struct RecentVault: Codable, Hashable, Identifiable {
+        let name: String
+        /// The folder's path when it was opened, used to tell vaults apart; the bookmark is what reopens it.
+        let path: String
+        let bookmark: Data?
+
+        var id: String { path }
+        var isAppDocuments: Bool { path == VaultLocation.appDocumentsMarker }
+    }
+
+    var recents: [RecentVault] {
+        guard let data = defaults.data(forKey: Self.recentsKey) else { return [] }
+        return (try? PropertyListDecoder().decode([RecentVault].self, from: data)) ?? []
+    }
+
+    private func addRecent(_ vault: RecentVault) {
+        var list = recents.filter { $0.path != vault.path }
+        list.insert(vault, at: 0)
+        if let data = try? PropertyListEncoder().encode(Array(list.prefix(Self.recentLimit))) {
+            defaults.set(data, forKey: Self.recentsKey)
+        }
+    }
+
+    /// Makes a recent vault the one to open next.
+    func select(_ vault: RecentVault) {
+        if vault.isAppDocuments {
+            rememberAppDocuments()
+        } else if let bookmark = vault.bookmark {
+            defaults.set(bookmark, forKey: Self.bookmarkKey)
+            defaults.set("bookmark", forKey: Self.kindKey)
+            addRecent(vault)
+        }
+    }
+
+    func removeRecent(_ vault: RecentVault) {
+        let list = recents.filter { $0.path != vault.path }
+        if let data = try? PropertyListEncoder().encode(list) { defaults.set(data, forKey: Self.recentsKey) }
     }
 
     func forget() {

@@ -19,6 +19,8 @@ import { createExtensions } from '../vendor/morrow/src/app/editor/extensions';
 import { createPage } from '../vendor/morrow/src/app/operations';
 import { toast } from '../vendor/morrow/src/app/ui';
 import { getSession, getState, run } from '../vendor/morrow/src/app/workspace';
+import { Smile } from 'lucide-react';
+import { post } from './bridge';
 import { openPage } from './host/router';
 
 // the same pause morrow waits before writing an edit back
@@ -245,11 +247,22 @@ export function EditorApp({ page, doc, editable }: Props) {
   return (
     <div className="page-scroll">
       <article className="page font-sans width-comfortable">
-        {page.icon && (
+        {page.icon ? (
           <div className="page-icon-row">
-            <span className="page-icon">
+            <button
+              type="button"
+              className="page-icon"
+              aria-label="Change icon"
+              onClick={() => post({ type: 'chooseIcon', pageId: page.id })}
+            >
               <Emoji emoji={page.icon} />
-            </span>
+            </button>
+          </div>
+        ) : (
+          <div className="page-header-actions">
+            <button type="button" className="add-icon" onClick={() => post({ type: 'chooseIcon', pageId: page.id })}>
+              <Smile size={14} /> Add icon
+            </button>
           </div>
         )}
         <h1 className="page-title-heading">

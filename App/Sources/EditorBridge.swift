@@ -8,6 +8,8 @@ nonisolated enum EditorEvent: Equatable, Sendable {
     case rpc(id: Int, method: String, params: [JSONValue])
     case workspace(pages: [String: JSONValue], saveState: String, saveError: String?)
     case openPage(pageId: String?)
+    /// The page header asked to pick an icon for this page.
+    case chooseIcon(pageId: String)
     case vaultFailed(message: String)
     case openExternal(URL)
     case log(level: String, message: String)
@@ -43,6 +45,9 @@ nonisolated enum EditorEvent: Equatable, Sendable {
             self = .workspace(pages: pages, saveState: state, saveError: raw.saveError)
         case "openPage":
             self = .openPage(pageId: raw.pageId)
+        case "chooseIcon":
+            guard let pageId = raw.pageId else { return nil }
+            self = .chooseIcon(pageId: pageId)
         case "vaultFailed":
             self = .vaultFailed(message: raw.message ?? "The folder could not be opened.")
         case "openExternal":
@@ -68,6 +73,8 @@ nonisolated enum EditorCommand: Sendable {
     case vaultChanges([VaultFileSystem.Change])
     case createPage(parentId: String?)
     case trashPage(pageId: String)
+    /// A Morrow `Command`, see `WorkspaceCommand`.
+    case command(JSONValue)
     case theme(dark: Bool)
 
     struct RPCFailure: Error, Equatable, Sendable {
@@ -90,6 +97,8 @@ nonisolated enum EditorCommand: Sendable {
             .object(["type": .string("createPage"), "parentId": parentId.map(JSONValue.string) ?? .null])
         case .trashPage(let pageId):
             .object(["type": .string("trashPage"), "pageId": .string(pageId)])
+        case .command(let command):
+            .object(["type": .string("command"), "command": command])
         case .theme(let dark):
             .object(["type": .string("theme"), "theme": .string(dark ? "dark" : "light")])
         }

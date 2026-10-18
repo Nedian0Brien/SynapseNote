@@ -3,8 +3,10 @@ import SwiftUI
 /// The first screen: open an existing notes folder or make a new one.
 struct VaultChooserView: View {
     let reason: String?
+    var recents: [VaultLocation.RecentVault] = []
     let onOpen: () -> Void
     let onCreate: () -> Void
+    var onRecent: (VaultLocation.RecentVault) -> Void = { _ in }
 
     var body: some View {
         VStack(spacing: 20) {
@@ -35,6 +37,20 @@ struct VaultChooserView: View {
                     .buttonStyle(.bordered)
             }
             .controlSize(.large)
+            if !recents.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Recent").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                    ForEach(recents) { vault in
+                        Button {
+                            onRecent(vault)
+                        } label: {
+                            Label(vault.name, systemImage: "folder")
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .frame(maxWidth: 320, alignment: .leading)
+            }
         }
         .padding(32)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

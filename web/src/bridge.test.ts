@@ -40,6 +40,13 @@ describe('parseInbound', () => {
     expect(parseInbound({ type: 'vaultChanges', changes: [{ path: 'a.md' }] })).toBeNull();
   });
 
+  it('passes commands on for morrow to check, only when they have a type', () => {
+    const command = { type: 'page.setFavorite', id: 'a', favorite: true };
+    expect(parseInbound({ type: 'command', command })).toEqual({ type: 'command', command });
+    expect(parseInbound({ type: 'command', command: { id: 'a' } })).toBeNull();
+    expect(parseInbound({ type: 'command' })).toBeNull();
+  });
+
   it('drops pages without an id, unknown messages and non objects', () => {
     expect(parseInbound({ type: 'show', pageId: '' })).toBeNull();
     expect(parseInbound({ type: 'trashPage' })).toBeNull();
@@ -67,11 +74,12 @@ describe('post and listen', () => {
     vi.stubGlobal('window', {});
     const handler = vi.fn();
     const flush = vi.fn(async () => true);
-    listen(handler, flush);
+    listen(handler, flush, (id) => (id === 'a' ? 'A.md' : null));
     const synapse = (globalThis.window as Window).synapse!;
     expect(synapse.receive({ type: 'show', pageId: 'a' })).toBe(true);
     expect(synapse.receive({ type: 'nope' })).toBe(false);
     expect(handler).toHaveBeenCalledTimes(1);
     expect(await synapse.flush()).toBe(true);
+    expect(synapse.pathOf('a')).toBe('A.md');
   });
 });

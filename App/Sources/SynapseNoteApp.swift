@@ -34,6 +34,19 @@ private struct PageCommands: Commands {
             Button("New Page") { controller.createPage() }
                 .keyboardShortcut("n")
                 .disabled(controller.phase != .ready)
+            Divider()
+            Button("Open Folder…") { controller.choosingFolder = true }
+                .keyboardShortcut("o", modifiers: [.command, .shift])
+            Menu("Open Recent") {
+                ForEach(controller.recents) { vault in
+                    Button(vault.name) { controller.open(recent: vault) }
+                }
+            }
+            .disabled(controller.recents.isEmpty)
+            #if os(macOS)
+            Button("New Folder…") { Task { await controller.createVault() } }
+            #endif
+            Divider()
             Button("Move Page to Trash") {
                 if let selection = controller.selection { controller.trash(selection) }
             }

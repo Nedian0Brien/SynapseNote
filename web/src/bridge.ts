@@ -1,4 +1,5 @@
 // messages between the editor page and the native app, the only way either side reaches the other
+import type { Command } from '../vendor/morrow/src/core/commands';
 import type { PageId, PageMeta } from '../vendor/morrow/src/core/model';
 import type { SaveState } from '../vendor/morrow/src/storage/saveQueue';
 import type { VaultChange } from '../vendor/morrow/src/storage/vaultBridge';
@@ -15,6 +16,8 @@ export type InboundMessage =
   | { type: 'vaultChanges'; changes: VaultChange[] }
   | { type: 'createPage'; parentId: PageId | null }
   | { type: 'trashPage'; pageId: PageId }
+  // a morrow Command from a native screen, checked by morrow's applyCommand like any other
+  | { type: 'command'; command: Command }
   | { type: 'theme'; theme: Theme };
 
 // posted to the native app through window.webkit.messageHandlers.editor
@@ -23,6 +26,7 @@ export type OutboundMessage =
   | { type: 'rpc'; id: number; method: string; params: unknown[] }
   | { type: 'workspace'; pages: Record<PageId, PageMeta>; saveState: SaveState; saveError: string | null }
   | { type: 'openPage'; pageId: PageId | null }
+  | { type: 'chooseIcon'; pageId: PageId }
   | { type: 'vaultFailed'; message: string }
   | { type: 'openExternal'; url: string }
   | { type: 'log'; level: 'error' | 'warning'; message: string };
@@ -34,7 +38,7 @@ interface WebkitHandler {
 declare global {
   interface Window {
     webkit?: { messageHandlers?: { editor?: WebkitHandler } };
-    synapse?: { receive(message: unknown): boolean; flush(): Promise<boolean> };
+    synapse?: { receive(message: unknown): boolean; flush(): Promise<boolean>; pathOf(id: string): string | null };
   }
 }
 
@@ -72,6 +76,11 @@ export function parseInbound(value: unknown): InboundMessage | null {
         : null;
     case 'trashPage':
       return isId(value.pageId) ? { type: 'trashPage', pageId: value.pageId } : null;
+    case 'command':
+      // the shape is checked by morrow's applyCommand, this only makes sure there is a command to check
+      return isRecord(value.command) && typeof value.command.type === 'string'
+        ? { type: 'command', command: value.command as unknown as Command }
+        : null;
     case 'theme':
       return value.theme === 'light' || value.theme === 'dark' ? { type: 'theme', theme: value.theme } : null;
     default:
@@ -83,7 +92,11 @@ export function post(message: OutboundMessage): void {
   globalThis.window?.webkit?.messageHandlers?.editor?.postMessage(message);
 }
 
-export function listen(handler: (message: InboundMessage) => void, flush: () => Promise<boolean>): void {
+export function listen(
+  handler: (message: InboundMessage) => void,
+  flush: () => Promise<boolean>,
+  pathOf: (id: string) => string | null,
+): void {
   window.synapse = {
     receive(raw: unknown) {
       const message = parseInbound(raw);
@@ -91,5 +104,6 @@ export function listen(handler: (message: InboundMessage) => void, flush: () => 
       return message !== null;
     },
     flush,
+    pathOf,
   };
 }

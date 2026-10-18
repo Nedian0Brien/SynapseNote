@@ -2,11 +2,14 @@ import Foundation
 import Observation
 import os
 import WebKit
+#if os(macOS)
+import AppKit
+#endif
 
 /// Owns the editor web page and the open vault. The page runs Morrow's workspace session; this side does
-/// the file work it asks for and draws the page list it reports.
+/// the file work it asks for, draws the page list it reports and sends it the changes native screens make.
 @Observable
-final class EditorController {
+final class EditorController: WorkspaceService {
     enum Phase: Equatable {
         /// No vault chosen yet, or the chosen one could not be opened.
         case choosing(reason: String?)
@@ -24,8 +27,21 @@ final class EditorController {
     private(set) var saveState: SaveState = .saved
     private(set) var vaultName: String?
     private(set) var isPageReady = false
+    private(set) var recents: [VaultLocation.RecentVault] = []
     var selection: String?
+    /// The trash screen is showing instead of a page.
+    var showingTrash = false
+    /// Pages whose subpages the sidebar shows, kept per vault.
+    var expanded: Set<String> = [] {
+        didSet { saveExpanded() }
+    }
     var fileRequest: FileInputPresenter.Request?
+    /// The page whose icon is being chosen.
+    var iconPage: String?
+    /// The page being moved with Move to….
+    var movingPage: String?
+    /// The folder picker for Open Folder… is showing.
+    var choosingFolder = false
 
     @ObservationIgnored let page: WebPage
     @ObservationIgnored var openURL: (URL) -> Void = { _ in }
@@ -36,6 +52,7 @@ final class EditorController {
     @ObservationIgnored private var rpc: VaultRPC?
     @ObservationIgnored private var watcher: VaultWatcher?
     @ObservationIgnored private var darkMode = false
+    @ObservationIgnored private var navigationWatch: Task<Void, Never>?
     @ObservationIgnored private let logger = Logger(subsystem: "com.synapsenote.native", category: "editor")
 
     init(location: VaultLocation = VaultLocation()) {
@@ -54,6 +71,7 @@ final class EditorController {
         #endif
         box.receive = { [weak self] event in self?.handle(event) }
         fileInput.onRequest = { [weak self] request in self?.fileRequest = request }
+        recents = location.recents
         restoreVault()
     }
 
@@ -69,18 +87,20 @@ final class EditorController {
         } catch {
             phase = .choosing(reason: error.localizedDescription)
         }
+        recents = location.recents
     }
 
-    /// A folder picked in the file importer.
+    /// A folder picked in the file importer, opened in place of the current vault.
     func choose(folder url: URL) {
         let scoped = url.startAccessingSecurityScopedResource()
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
         do {
             try location.remember(folder: url)
-            restoreVault()
         } catch {
             phase = .choosing(reason: "The folder could not be opened: \(error.localizedDescription)")
+            return
         }
+        Task { await switchVault() }
     }
 
     /// Makes a new vault: a folder the person confirms on macOS, the app's documents folder on iOS.
@@ -93,20 +113,39 @@ final class EditorController {
         do {
             try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
             try location.remember(folder: url)
-            restoreVault()
         } catch {
             phase = .choosing(reason: "The folder could not be created: \(error.localizedDescription)")
+            return
         }
         #else
         location.rememberAppDocuments()
-        restoreVault()
         #endif
+        await switchVault()
+    }
+
+    /// Opens a vault from the recent list.
+    func open(recent vault: VaultLocation.RecentVault) {
+        location.select(vault)
+        Task { await switchVault() }
+    }
+
+    /// Saves what is waiting in the current vault, then opens the remembered one in a fresh editor page.
+    private func switchVault() async {
+        if phase == .ready { await flush() }
+        close()
+        selection = nil
+        showingTrash = false
+        workspace = Workspace()
+        isPageReady = false
+        restoreVault()
+        if case .opening = phase { reloadPage() }
     }
 
     private func use(_ opened: VaultLocation.Opened) {
         close()
         self.opened = opened
         vaultName = opened.name
+        expanded = Set(location.defaults.stringArray(forKey: expandedKey) ?? [])
         let watcher = VaultWatcher(root: opened.url) { [weak self] paths in
             Task { @MainActor in self?.report(paths) }
         }
@@ -133,6 +172,15 @@ final class EditorController {
         opened = nil
     }
 
+    private var expandedKey: String {
+        "expanded:\(opened?.url.standardizedFileURL.path(percentEncoded: false) ?? "")"
+    }
+
+    private func saveExpanded() {
+        guard opened != nil else { return }
+        location.defaults.set(Array(expanded), forKey: expandedKey)
+    }
+
     private func report(_ paths: Set<String>) {
         guard let files = access.files else { return }
         let changes = files.describe(paths)
@@ -153,7 +201,31 @@ final class EditorController {
 
     func start() {
         guard page.url == nil else { return }
+        reloadPage()
+    }
+
+    /// Loads the editor page afresh and watches for its web content process ending.
+    private func reloadPage() {
+        isPageReady = false
         page.load(URLRequest(url: EditorSchemeHandler.entry))
+        navigationWatch?.cancel()
+        navigationWatch = Task { [weak self, page] in
+            do {
+                for try await _ in page.navigations {}
+            } catch WebPage.NavigationError.webContentProcessTerminated {
+                self?.recoverFromTermination()
+            } catch {}
+        }
+    }
+
+    /// The system ended the page's process, which also held the vault session; the page and the vault are
+    /// opened again and the same page is shown.
+    private func recoverFromTermination() {
+        logger.error("editor web content process ended, reopening the vault")
+        guard opened != nil else { return }
+        phase = .opening
+        workspace = Workspace()
+        reloadPage()
     }
 
     func setDarkMode(_ dark: Bool) {
@@ -164,16 +236,50 @@ final class EditorController {
     /// The page decides what it can show: a page made a moment ago may not be in this side's list yet.
     func showSelection() {
         guard phase == .ready else { return }
-        send(.show(pageId: selection))
+        if selection != nil { showingTrash = false }
+        send(.show(pageId: showingTrash ? nil : selection))
+    }
+
+    func showTrash() {
+        selection = nil
+        showingTrash = true
+        send(.show(pageId: nil))
+    }
+
+    // MARK: WorkspaceService
+
+    func perform(_ command: WorkspaceCommand) {
+        send(.command(command.morrow()))
+        if case .move(_, let parent?, _) = command { expanded.insert(parent) }
     }
 
     func createPage(parent: String? = nil) {
+        if let parent { expanded.insert(parent) }
         send(.createPage(parentId: parent))
     }
 
     func trash(_ pageId: String) {
         send(.trashPage(pageId: pageId))
     }
+
+    func duplicate(_ pageId: String) {
+        let copy = UUID().uuidString.lowercased()
+        perform(.duplicate(id: pageId, newId: copy))
+        selection = copy
+        showSelection()
+    }
+
+    #if os(macOS)
+    /// Shows the page's file in Finder.
+    func reveal(_ pageId: String) {
+        guard let root = opened?.url else { return }
+        Task {
+            guard let path = try? await page.callJavaScript("return window.synapse.pathOf(id)", arguments: ["id": pageId]) as? String
+            else { return }
+            NSWorkspace.shared.activateFileViewerSelecting([root.appending(path: path)])
+        }
+    }
+    #endif
 
     /// Writes every edit still waiting, such as before the app quits. Returns false when something stayed unsaved.
     @discardableResult
@@ -204,7 +310,7 @@ final class EditorController {
                 Task { @MainActor in self?.send(.rpcResult(id: id, result: result)) }
             }
         case .workspace(let pages, let state, let error):
-            workspace.pages = pages
+            workspace = Workspace(pages: pages)
             saveState = switch state {
             case "pending": .pending
             case "saving": .saving
@@ -214,14 +320,19 @@ final class EditorController {
             if phase == .opening {
                 phase = .ready
                 logger.info("vault opened with \(pages.count) pages")
-                if selection == nil || !workspace.isShowable(selection!) { selection = workspace.rows.first?.id }
+                if selection == nil || !workspace.isShowable(selection!) {
+                    selection = showingTrash ? nil : workspace.rows(expanded: expanded).first?.id
+                }
                 showSelection()
-            } else if let selection, !workspace.isShowable(selection) {
+            } else if let selection, workspace.infos[selection] != nil, !workspace.isShowable(selection) {
                 self.selection = nil
             }
         case .openPage(let pageId):
+            if let pageId { for ancestor in workspace.ancestors(of: pageId) { expanded.insert(ancestor.id) } }
             selection = pageId
             showSelection()
+        case .chooseIcon(let pageId):
+            iconPage = pageId
         case .vaultFailed(let message):
             logger.error("vault failed: \(message, privacy: .public)")
             close()

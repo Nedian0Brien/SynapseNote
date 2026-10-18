@@ -24,7 +24,7 @@ import { commitEditors } from '../vendor/morrow/src/app/editor/commits';
 import { createPage, trashPage } from '../vendor/morrow/src/app/operations';
 import { newId } from '../vendor/morrow/src/app/platform/files';
 import { useUi } from '../vendor/morrow/src/app/ui';
-import { getSession, setSession, useWorkspace } from '../vendor/morrow/src/app/workspace';
+import { getSession, run, setSession, useWorkspace } from '../vendor/morrow/src/app/workspace';
 import { listen, post } from './bridge';
 import type { Theme } from './bridge';
 import { EditorApp } from './EditorApp';
@@ -206,11 +206,14 @@ listen((message) => {
     case 'trashPage':
       if (phase.kind === 'ready') trashPage(message.pageId);
       break;
+    case 'command':
+      if (phase.kind === 'ready') run(message.command);
+      break;
     case 'theme':
       applyTheme(message.theme);
       break;
   }
-}, flush);
+}, flush, (id) => (phase.kind === 'ready' ? getSession().pathOf(id) : null));
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

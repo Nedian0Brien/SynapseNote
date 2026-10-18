@@ -7,18 +7,23 @@ struct ContentView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
-    @State private var pickingFolder = false
 
     var body: some View {
         Group {
             switch controller.phase {
             case .choosing(let reason):
-                VaultChooserView(reason: reason, onOpen: { pickingFolder = true }, onCreate: { Task { await controller.createVault() } })
+                VaultChooserView(
+                    reason: reason,
+                    recents: controller.recents,
+                    onOpen: { controller.choosingFolder = true },
+                    onCreate: { Task { await controller.createVault() } },
+                    onRecent: { controller.open(recent: $0) }
+                )
             case .opening, .ready:
                 workspace
             }
         }
-        .fileImporter(isPresented: $pickingFolder, allowedContentTypes: [.folder]) { result in
+        .fileImporter(isPresented: $controller.choosingFolder, allowedContentTypes: [.folder]) { result in
             if case .success(let url) = result { controller.choose(folder: url) }
         }
         .fileImporter(
@@ -27,6 +32,20 @@ struct ContentView: View {
             allowsMultipleSelection: controller.fileRequest?.allowsMultiple ?? false
         ) { result in
             finishFileRequest(try? result.get())
+        }
+        .sheet(isPresented: Binding(get: { controller.iconPage != nil }, set: { if !$0 { controller.iconPage = nil } })) {
+            if let pageId = controller.iconPage {
+                EmojiPickerView(current: controller.workspace.infos[pageId]?.icon) { icon in
+                    controller.perform(.setIcon(id: pageId, icon: icon))
+                }
+            }
+        }
+        .sheet(isPresented: Binding(get: { controller.movingPage != nil }, set: { if !$0 { controller.movingPage = nil } })) {
+            if let pageId = controller.movingPage {
+                MoveSheet(workspace: controller.workspace, pageId: pageId) { parent in
+                    controller.perform(.move(id: pageId, parent: parent, index: nil))
+                }
+            }
         }
         .onAppear {
             controller.openURL = { url in openURL(url) }
@@ -41,13 +60,16 @@ struct ContentView: View {
 
     private var workspace: some View {
         NavigationSplitView {
-            PageList(controller: controller)
+            Sidebar(controller: controller)
                 .navigationTitle(controller.vaultName ?? "SynapseNote")
                 .toolbar {
                     ToolbarItem {
                         Button("New Page", systemImage: "square.and.pencil") { controller.createPage() }
                             .disabled(controller.phase != .ready)
                     }
+                    #if os(iOS)
+                    ToolbarItem(placement: .topBarLeading) { VaultMenu(controller: controller) }
+                    #endif
                 }
         } detail: {
             // the web view stays fully visible: WebKit stops painting a page it starts out hidden
@@ -57,6 +79,9 @@ struct ContentView: View {
                     if controller.phase != .ready {
                         ProgressView()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .background(.background)
+                    } else if controller.showingTrash {
+                        NavigationStack { TrashView(controller: controller) }
                             .background(.background)
                     } else if controller.selection == nil {
                         ContentUnavailableView("No page selected", systemImage: "doc.text", description: Text("Choose a page or make a new one."))
@@ -77,35 +102,21 @@ struct ContentView: View {
     }
 }
 
-private struct PageList: View {
-    @Bindable var controller: EditorController
+/// Switches vaults on iOS and iPadOS, where there is no File menu.
+private struct VaultMenu: View {
+    let controller: EditorController
 
     var body: some View {
-        List(controller.workspace.rows, selection: $controller.selection) { row in
-            Label {
-                Text(row.title).lineLimit(1)
-            } icon: {
-                if let icon = row.icon {
-                    Text(icon)
-                } else {
-                    Image(systemName: "doc.text")
+        Menu {
+            Section("Recent") {
+                ForEach(controller.recents) { vault in
+                    Button(vault.name) { controller.open(recent: vault) }
                 }
             }
-            .padding(.leading, CGFloat(row.depth) * 14)
-            .tag(row.id)
-            .contextMenu {
-                Button("New Subpage", systemImage: "plus") { controller.createPage(parent: row.id) }
-                Button("Move to Trash", systemImage: "trash", role: .destructive) { controller.trash(row.id) }
-            }
-        }
-        .overlay {
-            if controller.phase == .ready && controller.workspace.rows.isEmpty {
-                ContentUnavailableView {
-                    Label("No pages yet", systemImage: "doc.text")
-                } actions: {
-                    Button("New Page") { controller.createPage() }
-                }
-            }
+            Button("Open Folder…", systemImage: "folder") { controller.choosingFolder = true }
+            Button("New Folder on This Device", systemImage: "folder.badge.plus") { Task { await controller.createVault() } }
+        } label: {
+            Label("Vaults", systemImage: "books.vertical")
         }
     }
 }
