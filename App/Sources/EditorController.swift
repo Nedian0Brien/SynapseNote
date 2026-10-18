@@ -87,6 +87,9 @@ final class EditorController {
     func createVault() async {
         #if os(macOS)
         guard let url = await VaultLocation.chooseNewFolder() else { return }
+        // the panel's url carries the access the person granted; it is held while the folder is made and remembered
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
         do {
             try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
             try location.remember(folder: url)

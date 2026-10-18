@@ -5,6 +5,8 @@ set -euo pipefail
 DIR="${1:?usage: make-test-vault.sh <folder>}"
 mkdir -p "$DIR/Projects/Launch" "$DIR/attachments" "$DIR/.obsidian"
 
+# Home embeds diagram.png by name although it sits in attachments/: Obsidian and Morrow find embeds by file
+# name, so this is a valid vault and the case is worth keeping
 cat > "$DIR/Home.md" <<'MD'
 # Home
 

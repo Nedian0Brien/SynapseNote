@@ -43,14 +43,14 @@ date: 2026-10-19
 2. 웹 RPC와 `vaultBridge.ts`, 세션 부팅, 모듈 교체 목록 변경. 확인: `npm --prefix web run typecheck`, `npm --prefix web test`, `npm --prefix web run build`.
 3. Swift 메시지 확장, `EditorController` 교체, `VaultLocation`, 첫 화면, 사이드바 동작, 저장 상태, 종료 시 flush. 확인: macOS 빌드, 단위 테스트.
 4. `VaultWatcher`, `VaultSchemeHandler`, 파일 선택. 확인: 시험 vault에서 외부 편집 반영, 이미지 표시.
-5. macOS·iPad 시뮬레이터 검증. 시험 vault(Obsidian 형식: 하위 폴더, 위키 링크, 콜아웃, frontmatter, 이미지)를 임시 폴더에 만들어 연다. 편집 전후 모든 파일의 SHA-256을 비교해 편집한 파일만 바뀌었는지 본다.
+5. macOS·iPad 시뮬레이터 검증. 시험 vault(Obsidian 형식: 하위 폴더, 위키 링크, 콜아웃, frontmatter, 이미지)를 앱 컨테이너 안에 만들어 연다(macOS는 샌드박스가 허용하는 위치여야 해서 `~/Library/Containers/com.synapsenote.native/Data/`, iPad는 앱 문서 폴더). 편집 전후 모든 파일의 SHA-256을 비교해 편집한 파일만 바뀌었는지 본다.
 6. 검증 문서, README, 커밋·푸시.
 
 디버그 빌드에만 `-SynapseNoteDebugVault <폴더>` 실행 인자를 둔다. macOS 검증을 파일 대화상자 없이 앱 컨테이너 안의 시험 vault로 하기 위해서다.
 
 ## 가장 위험한 단계
 
-3·4단계의 파일 쓰기. 경로 검사나 rename 순서가 틀리면 사용자 폴더의 파일을 덮어쓰거나 잃을 수 있다. 1단계 테스트를 먼저 통과시키고, 5단계는 사용자 폴더가 아닌 임시 폴더의 시험 vault로만 한다.
+3·4단계의 파일 쓰기. 경로 검사나 rename 순서가 틀리면 사용자 폴더의 파일을 덮어쓰거나 잃을 수 있다. 1단계 테스트를 먼저 통과시키고, 5단계는 사용자 폴더가 아닌 앱 컨테이너 안의 시험 vault로만 한다.
 
 되돌리기: 이 브랜치 커밋만 되돌리면 된다. 사용자 vault에 남는 것은 Morrow와 같은 `.morrow/` 폴더뿐이다.
 

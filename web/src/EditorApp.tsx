@@ -7,6 +7,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { displayTitle } from '../vendor/morrow/src/core/model';
 import type { DocNode, PageId, PageMeta } from '../vendor/morrow/src/core/model';
 import { findPagesByTitle, pageIdByTitle, resolveLinkTarget } from '../vendor/morrow/src/core/search';
+import { docToMarkdown } from '../vendor/morrow/src/core/markdown/serialize';
 import { docToHtml } from '../vendor/morrow/src/core/site';
 import { ancestorsOf, isEffectivelyTrashed } from '../vendor/morrow/src/core/tree';
 import { Emoji } from '../vendor/morrow/src/app/components/Emoji';
@@ -99,11 +100,11 @@ export function EditorApp({ page, doc, editable }: Props) {
   useEffect(() => {
     let dirty = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
-    // the editor adjusts a document as it loads it, such as embeds and blank lines; those changes are not the
-    // person's, so nothing is written until they type, paste, drop or click, and never when the content ends
-    // up the same as it was when it loaded
+    // the editor adjusts a document as it loads it and as it is clicked, such as embeds and blank lines;
+    // those changes are not the person's, so nothing is written until they type, paste, drop or click, and
+    // never when the markdown morrow would write is the same as for the document as it was loaded
     let touched = false;
-    let baseline = '';
+    let baseline = docToMarkdown(doc);
 
     const commit = () => {
       if (timer) clearTimeout(timer);
@@ -111,8 +112,9 @@ export function EditorApp({ page, doc, editable }: Props) {
       if (!dirty || instance.isDestroyed) return;
       dirty = false;
       const next = instance.getJSON() as DocNode;
-      if (JSON.stringify(next) === baseline) return;
-      baseline = JSON.stringify(next);
+      const markdown = docToMarkdown(next);
+      if (markdown === baseline) return;
+      baseline = markdown;
       committed.current = next;
       run({ type: 'page.setDoc', id: pageId, doc: next, now: Date.now() });
     };
@@ -193,16 +195,12 @@ export function EditorApp({ page, doc, editable }: Props) {
         },
       },
       onUpdate: () => {
-        if (!touched) {
-          baseline = JSON.stringify(instance.getJSON());
-          return;
-        }
+        if (!touched) return;
         dirty = true;
         if (timer) clearTimeout(timer);
         timer = setTimeout(commit, COMMIT_DELAY_MS);
       },
     });
-    baseline = JSON.stringify(instance.getJSON());
     baselineRef.current = (value) => {
       baseline = value;
     };
@@ -237,7 +235,7 @@ export function EditorApp({ page, doc, editable }: Props) {
     if (!editor || editor.isDestroyed || doc === committed.current) return;
     committed.current = doc;
     editor.commands.setContent(doc as JSONContent, { emitUpdate: false });
-    baselineRef.current?.(JSON.stringify(editor.getJSON()));
+    baselineRef.current?.(docToMarkdown(doc));
   }, [doc, editor]);
 
   useEffect(() => {
