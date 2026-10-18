@@ -183,6 +183,8 @@ struct ContentView: View {
                     case .tag(let tag):
                         TagView(controller: controller, tag: tag)
                             .background(.background)
+                    case .graph(let focus):
+                        GraphView(controller: controller, focus: focus)
                     case .page:
                         EmptyView()
                     }

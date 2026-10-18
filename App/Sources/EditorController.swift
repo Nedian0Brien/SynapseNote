@@ -346,7 +346,13 @@ final class EditorController: WorkspaceService {
     /// A database with Morrow's default properties and table view, opened once it is made.
     func createDatabase(parent: String? = nil) {
         if let parent { expanded.insert(parent) }
-        send(.createPage(parentId: parent, database: true))
+        send(.createPage(parentId: parent, kind: .database))
+    }
+
+    /// An empty canvas, opened once it is made.
+    func createCanvas(parent: String? = nil) {
+        if let parent { expanded.insert(parent) }
+        send(.createPage(parentId: parent, kind: .canvas))
     }
 
     func trash(_ pageId: String) {
@@ -401,6 +407,10 @@ final class EditorController: WorkspaceService {
 
     func sidebarCounts() async -> SidebarCounts? {
         await answer(.counts)
+    }
+
+    func graph(_ options: GraphOptions, focus: String?) async -> GraphData? {
+        await answer(.graph(options, focus: focus))
     }
 
     // MARK: daily notes and templates, made by morrow's operations in the page, which then opens them

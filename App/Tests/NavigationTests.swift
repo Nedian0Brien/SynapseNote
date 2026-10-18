@@ -183,3 +183,84 @@ struct DailyViewsTests {
         #expect(PageIcon.symbol(for: locked) == "lock")
     }
 }
+
+/// The layout matches d3-force 3.0.0 with Morrow's settings: the expected positions come from running d3 on
+/// the same four nodes and three links (see the phase 5 verification notes).
+struct GraphSimulationTests {
+    private func simulation() -> GraphSimulation {
+        GraphSimulation(radii: [5, 4.6, 3, 4.6], links: [(0, 1), (0, 3), (1, 3)])
+    }
+
+    private func expect(_ simulation: GraphSimulation, _ expected: [(Double, Double)], within tolerance: Double) {
+        for (node, position) in zip(simulation.nodes, expected) {
+            #expect(abs(node.x - position.0) < tolerance)
+            #expect(abs(node.y - position.1) < tolerance)
+        }
+    }
+
+    @Test func oneStepIsD3s() {
+        var simulation = simulation()
+        simulation.tick()
+        expect(simulation, [
+            (13.068002955808453, -11.254390687149881), (-26.42189184604546, 9.564136935732417),
+            (-1.8697020352837934, -23.115718694030875), (14.587016321849514, 24.932361831397195),
+        ], within: 1e-9)
+    }
+
+    @Test func fiftyStepsAreD3s() {
+        var simulation = simulation()
+        for _ in 0..<50 { simulation.tick() }
+        expect(simulation, [
+            (24.265155808751807, -5.212513948793907), (-22.97793970746638, 22.059512880082583),
+            (-25.811502609420838, -64.03962334840003), (24.61741494902629, 47.01122871660772),
+        ], within: 1e-6)
+        #expect(abs(simulation.alpha - 0.3162277660168378) < 1e-12)
+    }
+
+    @Test func aLargerTreeIsD3s() {
+        // 40 nodes, i linked to i / 3, and 5 to 30, after 120 steps in d3
+        var links = (1..<40).map { ($0, $0 / 3) }
+        links.append((5, 30))
+        var simulation = GraphSimulation(radii: (0..<40).map { 3 + Double($0 % 5).squareRoot() * 1.6 }, links: links)
+        for _ in 0..<120 { simulation.tick() }
+        let expected = [(0, 30.63854871283068, -16.327100621896488), (13, -99.95460198885772, -120.26238071924104),
+                        (39, -73.50960097705621, -178.48871200630956)]
+        for (index, x, y) in expected {
+            #expect(abs(simulation.nodes[index].x - x) < 1e-6)
+            #expect(abs(simulation.nodes[index].y - y) < 1e-6)
+        }
+    }
+
+    @Test func settlesAndHeldNodesStay() {
+        var simulation = simulation()
+        simulation.hold(2, at: (100, 100))
+        var steps = 0
+        while simulation.isActive, steps < 1000 {
+            simulation.tick()
+            steps += 1
+        }
+        #expect(!simulation.isActive)
+        #expect(steps < 400)
+        #expect(simulation.nodes[2].x == 100 && simulation.nodes[2].y == 100)
+    }
+
+    @Test func readsTheGraphAndKeepsGraphTabs() throws {
+        let text = ##"{"nodes":[{"id":"g","label":"Garden","kind":"page","pageId":"g","degree":1,"group":"g"},{"id":"#plants","label":"#plants","kind":"tag","pageId":null,"degree":1,"group":"#plants"}],"links":[{"source":"g","target":"#plants","kind":"tag"}]}"##
+        let graph = try #require(try WorkspaceQuery.decode(text, as: GraphData.self))
+        #expect(graph.nodes.map(\.id) == ["g", "#plants"])
+        #expect(graph.links.first?.kind == "tag")
+        #expect(GraphLayout.radius(graph.nodes[1], focus: nil) == 3)
+        #expect(GraphLayout.radius(graph.nodes[0], focus: "g") == 3 + 1.6 + 2)
+        var list = TabList(.graph(nil))
+        list.open(.graph("g"))
+        #expect(TabList.restore(try JSONEncoder().encode(list)) == list)
+        #expect(WorkspaceQuery.graph(GraphOptions(), focus: nil).params["focus"] == nil)
+        #expect(WorkspaceQuery.graph(GraphOptions(), focus: "g").params["focus"] as? String == "g")
+    }
+
+    @Test func groupColoursFollowMorrow() {
+        // morrow: (hash * 31 + code) >>> 0, then hash % 8
+        #expect(GraphView.groupIndex("abc", count: 8) == 96354 % 8)
+        #expect(GraphView.label(String(repeating: "a", count: 41)) == String(repeating: "a", count: 39) + "…")
+    }
+}

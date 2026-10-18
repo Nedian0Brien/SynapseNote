@@ -94,6 +94,38 @@ nonisolated struct SidebarCounts: Decodable, Hashable, Sendable {
     let tags: Int
 }
 
+/// Pages joined by links, Morrow's `buildGraph`.
+nonisolated struct GraphData: Decodable, Hashable, Sendable {
+    struct Node: Decodable, Hashable, Sendable, Identifiable {
+        let id: String
+        let label: String
+        /// "page" or "tag".
+        let kind: String
+        let pageId: String?
+        let degree: Int
+        /// The top level page the node sits under, which picks its colour.
+        let group: String
+    }
+
+    struct Link: Decodable, Hashable, Sendable {
+        let source: String
+        let target: String
+        /// "link", "child" or "tag".
+        let kind: String
+    }
+
+    let nodes: [Node]
+    let links: [Link]
+}
+
+/// What the graph shows, Morrow's `GraphOptions`.
+nonisolated struct GraphOptions: Codable, Hashable, Sendable {
+    var tags = false
+    var hierarchy = false
+    var orphans = true
+    var depth = 1
+}
+
 /// The queries the editor page answers, by the name `window.synapse.query` takes.
 nonisolated enum WorkspaceQuery: Sendable {
     case search(String, limit: Int)
@@ -107,6 +139,7 @@ nonisolated enum WorkspaceQuery: Sendable {
     case tasks
     case templates
     case counts
+    case graph(GraphOptions, focus: String?)
 
     var name: String {
         switch self {
@@ -121,6 +154,7 @@ nonisolated enum WorkspaceQuery: Sendable {
         case .tasks: "tasks"
         case .templates: "templates"
         case .counts: "counts"
+        case .graph: "graph"
         }
     }
 
@@ -131,6 +165,10 @@ nonisolated enum WorkspaceQuery: Sendable {
         case .home, .tags, .tasks, .templates, .counts: [:]
         case .backlinks(let id), .mentions(let id), .outline(let id): ["id": id]
         case .tagPages(let tag): ["tag": tag]
+        case .graph(let options, let focus):
+            // no focus is left out, the page reads that as the whole graph
+            focus.map { ["tags": options.tags, "hierarchy": options.hierarchy, "orphans": options.orphans, "depth": options.depth, "focus": $0] }
+                ?? ["tags": options.tags, "hierarchy": options.hierarchy, "orphans": options.orphans, "depth": options.depth]
         }
     }
 

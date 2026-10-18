@@ -86,6 +86,7 @@ private struct TabItem: View {
         case .tasks: "Tasks"
         case .tags: "Tags"
         case .tag(let tag): "#\(tag)"
+        case .graph(let focus): focus.flatMap { controller.workspace.infos[$0]?.displayTitle }.map { "Graph of \($0)" } ?? "Graph"
         case .page: page?.displayTitle ?? "Missing Page"
         }
     }
@@ -97,6 +98,7 @@ private struct TabItem: View {
         case .trash: Image(systemName: "trash")
         case .tasks: Image(systemName: "checklist")
         case .tags, .tag: Image(systemName: "number")
+        case .graph: Image(systemName: "point.3.connected.trianglepath.dotted")
         case .page:
             if let page { PageIcon(page: page, size: 14) } else { Image(systemName: "doc.text") }
         }

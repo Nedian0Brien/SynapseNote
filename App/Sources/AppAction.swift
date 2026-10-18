@@ -68,6 +68,15 @@ struct AppAction: Identifiable {
         AppAction("page.newDatabase", .general, "New Database", symbol: "tablecells", keywords: "table board calendar gallery") {
             $0.createDatabase()
         },
+        AppAction("page.newCanvas", .general, "New Canvas", symbol: "scribble", keywords: "whiteboard draw board") {
+            $0.createCanvas()
+        },
+        AppAction("go.graph", .general, "Open Graph", symbol: "point.3.connected.trianglepath.dotted", keywords: "network links map",
+                  shortcut: KeyboardShortcut("g", modifiers: [.command, .shift])) { $0.go(to: .graph(nil)) },
+        AppAction("page.localGraph", .page, "Open Local Graph of This Page", symbol: "point.3.connected.trianglepath.dotted",
+                  keywords: "network links", enabled: onLivePage) { controller in
+            if let id = controller.selection { controller.go(to: .graph(id)) }
+        },
         AppAction("page.newSubpage", .page, "New Subpage", symbol: "plus", keywords: "child create",
                   shortcut: KeyboardShortcut("n", modifiers: [.command, .option]), enabled: onLivePage) { controller in
             if let id = controller.selection { controller.createPage(parent: id) }

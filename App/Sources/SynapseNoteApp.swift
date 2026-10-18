@@ -37,6 +37,7 @@ private struct PageCommands: Commands {
         CommandGroup(replacing: .newItem) {
             item("page.new")
             item("page.newDatabase")
+            item("page.newCanvas")
             item("page.newSubpage")
             item("page.fromTemplate")
             item("tab.new")
@@ -71,6 +72,7 @@ private struct PageCommands: Commands {
             item("page.duplicate")
             item("page.move")
             item("page.saveTemplate")
+            item("page.localGraph")
             item("tab.duplicate")
             Divider()
             item("page.trash")
@@ -87,6 +89,7 @@ private struct PageCommands: Commands {
             item("daily.today")
             item("go.tasks")
             item("go.tags")
+            item("go.graph")
             item("go.templates")
             item("go.trash")
             Divider()

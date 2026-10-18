@@ -63,4 +63,6 @@ protocol WorkspaceService: AnyObject {
     func tasks() async -> [TaskRef]
     func templates() async -> TemplateList?
     func sidebarCounts() async -> SidebarCounts?
+    /// The whole graph, or the pages near `focus`.
+    func graph(_ options: GraphOptions, focus: String?) async -> GraphData?
 }

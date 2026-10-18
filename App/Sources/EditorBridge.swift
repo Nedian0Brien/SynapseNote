@@ -88,6 +88,11 @@ nonisolated enum EditorEvent: Equatable, Sendable {
     }
 }
 
+/// The kinds of page the app makes, as Morrow's `createPage` takes them.
+nonisolated enum NewPageKind: String, Sendable {
+    case page, database, canvas
+}
+
 /// A message the app sends to the editor page through `window.synapse.receive`.
 nonisolated enum EditorCommand: Sendable {
     case openVault(name: String)
@@ -95,8 +100,7 @@ nonisolated enum EditorCommand: Sendable {
     case show(pageId: String?, find: String?)
     case rpcResult(id: Int, result: Result<JSONValue, RPCFailure>)
     case vaultChanges([VaultFileSystem.Change])
-    /// A page, or a database when `database` is true.
-    case createPage(parentId: String?, database: Bool = false)
+    case createPage(parentId: String?, kind: NewPageKind = .page)
     case trashPage(pageId: String)
     /// A Morrow `Command`, see `WorkspaceCommand`.
     case command(JSONValue)
@@ -128,8 +132,8 @@ nonisolated enum EditorCommand: Sendable {
             .object(["type": .string("rpcResult"), "id": .number(Double(id)), "ok": .bool(false), "error": .string(failure.message)])
         case .vaultChanges(let changes):
             .object(["type": .string("vaultChanges"), "changes": (try? JSONValue(encoding: changes)) ?? .array([])])
-        case .createPage(let parentId, let database):
-            .object(["type": .string("createPage"), "parentId": parentId.map(JSONValue.string) ?? .null, "kind": .string(database ? "database" : "page")])
+        case .createPage(let parentId, let kind):
+            .object(["type": .string("createPage"), "parentId": parentId.map(JSONValue.string) ?? .null, "kind": .string(kind.rawValue)])
         case .trashPage(let pageId):
             .object(["type": .string("trashPage"), "pageId": .string(pageId)])
         case .command(let command):

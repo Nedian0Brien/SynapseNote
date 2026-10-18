@@ -9,6 +9,8 @@ nonisolated enum Destination: Hashable, Codable, Sendable {
     case tags
     /// The pages with one tag.
     case tag(String)
+    /// The graph of pages, or of the pages near one.
+    case graph(String?)
 
     var pageId: String? {
         if case .page(let id) = self { id } else { nil }

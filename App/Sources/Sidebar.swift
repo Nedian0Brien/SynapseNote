@@ -21,6 +21,8 @@ struct Sidebar: View {
                 .tag(Destination.tasks)
             CountedRow(title: "Tags", symbol: "number", count: counts?.tags)
                 .tag(Destination.tags)
+            Label("Graph", systemImage: "point.3.connected.trianglepath.dotted")
+                .tag(Destination.graph(nil))
 
             let favorites = workspace.favorites
             if !favorites.isEmpty {
@@ -224,6 +226,7 @@ struct PageMenu: View {
         Divider()
         Button("Add Subpage", systemImage: "plus") { controller.createPage(parent: page.id) }
         Button("Add Database Inside", systemImage: "tablecells") { controller.createDatabase(parent: page.id) }
+        Button("Add Canvas Inside", systemImage: "scribble") { controller.createCanvas(parent: page.id) }
         Button(page.icon == nil ? "Add Icon" : "Change Icon", systemImage: "face.smiling") { controller.iconPage = page.id }
         if page.favorite {
             Button("Remove from Favorites", systemImage: "star.slash") { controller.perform(.setFavorite(id: page.id, favorite: false)) }
@@ -232,6 +235,7 @@ struct PageMenu: View {
         }
         Button("Duplicate", systemImage: "doc.on.doc") { controller.duplicate(page.id) }
         Button("Move To…", systemImage: "arrow.right.arrow.left") { controller.movingPage = page.id }
+        Button("Open Local Graph", systemImage: "point.3.connected.trianglepath.dotted") { controller.go(to: .graph(page.id)) }
         if page.kind == "page" {
             Button("Save as Template", systemImage: "square.on.square.dashed") { controller.saveAsTemplate(page.id) }
         }
