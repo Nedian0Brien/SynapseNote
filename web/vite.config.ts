@@ -29,10 +29,32 @@ const FORBIDDEN = [
   path.join(morrowApp, 'operations.ts'),
 ];
 
+// visible morrow strings in modules the editor uses, renamed at build time so the morrow files stay unmodified
+const RENAMED: Record<string, Array<[string, string]>> = {
+  [path.join(morrowApp, 'editor/EditorMenus.tsx')]: [["'Morrow page'", "'SynapseNote page'"]],
+};
+
 function hostModules(): Plugin {
   return {
     name: 'synapsenote-host-modules',
     enforce: 'pre',
+    transform(code, id) {
+      const renames = RENAMED[id.split('?')[0]!];
+      if (!renames) return null;
+      let next = code;
+      for (const [from, to] of renames) {
+        // a rename that no longer matches means morrow changed the string, so the build stops
+        if (!next.includes(from)) this.error(`${path.relative(here, id)} no longer contains ${from}`);
+        next = next.replaceAll(from, to);
+      }
+      return { code: next, map: null };
+    },
+    generateBundle(_options, bundle) {
+      // the app shows the SynapseNote name only, internal names such as morrow:edit-link are lower case
+      for (const file of Object.values(bundle))
+        if (file.type === 'chunk' && file.code.includes('Morrow'))
+          this.error(`${file.fileName} still contains the name Morrow`);
+    },
     async resolveId(source, importer, options) {
       if (!importer || importer.startsWith(hostDir) || !source.startsWith('.')) return null;
       const resolved = await this.resolve(source, importer, { ...options, skipSelf: true });
