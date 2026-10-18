@@ -22,6 +22,8 @@ targets:
       - path: App/Resources/Editor
         type: folder
         buildPhase: resources
+        # missing in a fresh clone until the first build creates it
+        optional: true
     preBuildScripts:
       - name: Build editor bundle
         script: '"$SRCROOT/scripts/build-editor.sh"'
