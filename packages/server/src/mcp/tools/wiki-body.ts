@@ -17,6 +17,12 @@
  * (`write`/`edit`/`links`/`search`/`exec`) that author and audit the markdown.
  */
 
+import {
+  buildSessionInterruptRecoverySection,
+  buildWikiCheckpointTasksSection,
+  buildWikiPersistAsYouGoSection,
+} from './workflow-persistence.ts';
+
 export function buildWikiBody(contentDir: string): string {
   return `# Codebase Wiki — Generate + Refresh
 
@@ -29,6 +35,12 @@ Content directory: \`${contentDir}\` (from \`.ok/config.yml\`). The wiki lives a
 **Server requirement.** Phases that author or audit the wiki (\`write\`/\`edit\`/\`links\`/\`search\`) need the OK Hocuspocus server. Source reading (native tools) and git (\`exec\`/native \`Bash\`) do not. If a \`write\` returns "Hocuspocus server is not running", tell the user to run \`ok start\` and retry — do NOT fall back to native file writes for the wiki markdown.
 
 **Prerequisite.** This guide assumes the \`codebase-wiki\` pack is seeded (\`ok seed --pack codebase-wiki\` → \`wiki/\` with \`architecture/ modules/ flows/ concepts/ guides/\`, each carrying folder frontmatter + a page template, plus \`wiki/OVERVIEW.md\` + \`wiki/log.md\`). If \`exec("ls -A ${contentDir}/wiki")\` shows the layout is missing, tell the user to seed first, then re-invoke.
+
+${buildWikiPersistAsYouGoSection(contentDir)}
+
+${buildSessionInterruptRecoverySection(
+  're-invoke `workflow({ kind: "wiki" })`, inventory partial pages under `wiki/`, read them back, skip finished pages, and continue from the first incomplete phase.',
+)}
 
 ---
 
@@ -66,7 +78,9 @@ Never invent paths — every source reference must point at a file you actually 
 
 ## GENERATE — phased, STOP-gated (⛔ = wait for user confirmation)
 
-Work the phases in order. Do not skip or batch ahead of a ⛔ gate. Each page is authored with OK \`write\`/\`edit\`; create from the seeded templates (\`write({ document: { path, template: "<name>" } })\`) so pages start with the right skeleton, then fill the sections.
+${buildWikiCheckpointTasksSection()}
+
+Work the phases in order. Do not skip or batch ahead of a ⛔ gate. Each page is authored with OK \`write\`/\`edit\`; create from the seeded templates (\`write({ document: { path, template: "<name>" } })\`) so pages start with the right skeleton, then fill the sections. **Write each page before moving to the next** — see *Persist as you go* above.
 
 ### Phase 0 — Resolve profile + scope (⛔ STOP gate 0)
 
@@ -168,6 +182,7 @@ Incremental by default — don't re-read the whole repo.
 - **Don't scaffold folders by hand** — the \`codebase-wiki\` pack already created \`wiki/\` with templates; if it's missing, seed first.
 - **Scale to \`depth\`** — don't write \`guides/\` or per-flow failure modes at \`tour\`; don't fold modules into architecture at \`exhaustive\`.
 - **Refresh is incremental** — diff \`source_commit..HEAD\` and touch only affected pages; full-regen only on large/structural diffs or when git is unavailable.
+- **Don't batch writes at the end** — rate limits and session interrupts are expected on large wikis; persist each page as you finish it.
 
 ---
 
@@ -175,6 +190,7 @@ Incremental by default — don't re-read the whole repo.
 
 - **Pack not seeded** — \`wiki/\` layout missing → tell the user to run \`ok seed --pack codebase-wiki\`, then re-invoke. Exit.
 - **Server down** — a \`write\`/\`links\` call reports the server is not running → tell the user to run \`ok start\` and retry. Exit cleanly; re-invoking resumes (already-written pages persist).
+- **Host rate limit / session interrupt** — exit cleanly per *Host rate limits + session interrupts* above. List completed pages; leave the current phase task open if using the host task system. Re-invoking resumes from partial progress — do NOT restart from Phase 0 unless the user asks.
 - **User aborts at a ⛔ gate** → exit cleanly, leaving any already-written pages in place.
 - **Empty / unreadable repo** (no source detected in Phase 1) → tell the user there's nothing to document yet. Exit.
 `;
