@@ -250,7 +250,6 @@ struct GraphView: View {
         VStack(alignment: .leading, spacing: 8) {
             TextField("Find in graph", text: $query)
                 .textFieldStyle(.roundedBorder)
-                .frame(width: 200)
             Toggle("Tags", isOn: binding(\.tags))
             Toggle("Subpages", isOn: binding(\.hierarchy))
             if focus != nil {
@@ -271,6 +270,7 @@ struct GraphView: View {
         #if os(macOS)
         .toggleStyle(.checkbox)
         #endif
+        .frame(width: 220, alignment: .leading)
         .padding(12)
         .background(.regularMaterial, in: .rect(cornerRadius: 12))
     }
