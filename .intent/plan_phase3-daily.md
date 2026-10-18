@@ -37,3 +37,9 @@ spec: `spec_phase3-daily.md`. 브랜치 `feat/daily`(기준 `feat/navigation`), 
 - `npm --prefix web test && npm --prefix web run typecheck`
 - `xcodegen generate` 후 `xcodebuild test -scheme SynapseNote -destination 'platform=macOS'`
 - iOS 시뮬레이터 빌드·설치. 앱 컨테이너 안의 테스트 vault만 쓴다.
+
+## 구현하며 바뀐 것
+
+- `PageTags`는 Morrow `TagsView.tsx`를 불러오지 않고 같은 마크업으로 `web/src/PageTags.tsx`에 옮겼다. 그 모듈이 사이드바를 거쳐 번들에서 금지한 `legacy.ts`를 불러오기 때문이다. 태그 추가는 입력 칸의 실제 값을 읽는다.
+- `web/src/editor.css`에 터치 기기 규칙을 추가했다. 아이콘·태그 버튼을 항상 보이고, 입력 칸 글자를 16px 이상으로 둔다.
+- 편집기에서 만든 페이지는 Swift가 알게 된 시점에 상위 페이지를 펼친다.
