@@ -28,6 +28,9 @@ const FORBIDDEN = [path.join(here, 'vendor/morrow/electron') + path.sep, path.jo
 const morrowSrc = path.join(here, 'vendor/morrow/src');
 const RENAMED: Record<string, Array<[string, string]>> = {
   [path.join(morrowApp, 'editor/EditorMenus.tsx')]: [["'Morrow page'", "'SynapseNote page'"]],
+  [path.join(morrowApp, 'components/HistoryDialog.tsx')]: [
+    ['No versions yet. Morrow keeps a version', 'No versions yet. SynapseNote keeps a version'],
+  ],
   [path.join(morrowSrc, 'core/migrations.ts')]: [
     ['newer version of Morrow (format ${version}). Please update Morrow.', 'newer version of SynapseNote (format ${version}). Please update SynapseNote.'],
   ],
