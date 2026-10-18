@@ -25,18 +25,21 @@ struct SynapseNoteApp: App {
     }
 }
 
-/// New Page and Move Page to Trash in the File menu, also reachable from a hardware keyboard.
+/// The app's menus, built from `AppAction`, also reachable from a hardware keyboard.
 private struct PageCommands: Commands {
     let controller: EditorController
 
+    private func item(_ id: String) -> ActionButton {
+        ActionButton(action: .named(id), controller: controller)
+    }
+
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
-            Button("New Page") { controller.createPage() }
-                .keyboardShortcut("n")
-                .disabled(controller.phase != .ready)
+            item("page.new")
+            item("page.newSubpage")
+            item("tab.new")
             Divider()
-            Button("Open Folder…") { controller.choosingFolder = true }
-                .keyboardShortcut("o", modifiers: [.command, .shift])
+            item("vault.open")
             Menu("Open Recent") {
                 ForEach(controller.recents) { vault in
                     Button(vault.name) { controller.open(recent: vault) }
@@ -45,13 +48,46 @@ private struct PageCommands: Commands {
             .disabled(controller.recents.isEmpty)
             #if os(macOS)
             Button("New Folder…") { Task { await controller.createVault() } }
+            item("vault.reveal")
             #endif
-            Divider()
-            Button("Move Page to Trash") {
-                if let selection = controller.selection { controller.trash(selection) }
+        }
+        // macOS puts Close here; with more than one tab the key closes a tab, with one it closes the window
+        CommandGroup(replacing: .saveItem) {
+            #if os(macOS)
+            // decided when pressed: the menu bar does not always rebuild when the number of tabs changes
+            Button(controller.tabs.tabs.count > 1 ? "Close Tab" : "Close Window") {
+                if !controller.closeTab() { NSApp.keyWindow?.performClose(nil) }
             }
-            .keyboardShortcut(.delete)
-            .disabled(controller.phase != .ready || controller.selection == nil)
+            .keyboardShortcut("w")
+            #else
+            item("tab.close")
+            #endif
+        }
+        CommandMenu("Page") {
+            item("page.find")
+            item("page.favorite")
+            item("page.duplicate")
+            item("page.move")
+            item("tab.duplicate")
+            Divider()
+            item("page.trash")
+        }
+        CommandGroup(before: .toolbar) {
+            item("view.sidebar")
+            item("view.inspector")
+            item("view.focus")
+            Divider()
+        }
+        CommandMenu("Go") {
+            item("search")
+            item("go.home")
+            item("go.trash")
+            Divider()
+            item("tab.next")
+            item("tab.previous")
+        }
+        CommandGroup(replacing: .help) {
+            item("view.shortcuts")
         }
     }
 }

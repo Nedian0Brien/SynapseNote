@@ -7,6 +7,33 @@ struct TrashView: View {
 
     var body: some View {
         let trashed = controller.workspace.trashed
+        VStack(spacing: 0) {
+            HStack {
+                Text("Trash").font(.title2.weight(.semibold))
+                Spacer()
+                Button("Empty Trash", role: .destructive) { emptying = true }
+                    .disabled(trashed.isEmpty)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            Divider()
+            content(trashed)
+                .frame(maxHeight: .infinity)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .confirmationDialog("Empty the trash?", isPresented: $emptying, titleVisibility: .visible) {
+            Button("Empty Trash", role: .destructive) { controller.perform(.emptyTrash) }
+        } message: {
+            let count = trashed.count
+            Text("\(count) page\(count == 1 ? "" : "s") and everything inside \(count == 1 ? "it" : "them") will be deleted forever.")
+        }
+    }
+
+    // a plain view, not a navigation stack: it lies over the editor in the same column, and a stack there
+    // brought its own title and toolbar into the column, which rebuilt the editor's web view, and WebKit
+    // stopped the app when the new view took the page
+    @ViewBuilder
+    private func content(_ trashed: [PageInfo]) -> some View {
         Group {
             if trashed.isEmpty {
                 ContentUnavailableView("The trash is empty", systemImage: "trash", description: Text("Pages you move to the trash appear here."))
@@ -34,19 +61,6 @@ struct TrashView: View {
                     }
                 }
             }
-        }
-        .navigationTitle("Trash")
-        .toolbar {
-            ToolbarItem {
-                Button("Empty Trash", role: .destructive) { emptying = true }
-                    .disabled(trashed.isEmpty)
-            }
-        }
-        .confirmationDialog("Empty the trash?", isPresented: $emptying, titleVisibility: .visible) {
-            Button("Empty Trash", role: .destructive) { controller.perform(.emptyTrash) }
-        } message: {
-            let count = trashed.count
-            Text("\(count) page\(count == 1 ? "" : "s") and everything inside \(count == 1 ? "it" : "them") will be deleted forever.")
         }
     }
 

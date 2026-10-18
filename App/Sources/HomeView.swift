@@ -29,10 +29,6 @@ struct HomeView: View {
             .frame(maxWidth: 880, alignment: .leading)
             .frame(maxWidth: .infinity)
         }
-        .navigationTitle("Home")
-        #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        #endif
         // every change to the workspace, saves included, asks again after a short pause
         .task(id: controller.revision) {
             if facts != nil { try? await Task.sleep(for: .milliseconds(300)) }

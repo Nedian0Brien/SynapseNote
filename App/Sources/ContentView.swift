@@ -7,8 +7,12 @@ struct ContentView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    #endif
     /// On iPhone the split view shows one column; choosing a page or the trash moves to the detail column.
     @State private var compactColumn = NavigationSplitViewColumn.detail
+    @State private var columnVisibility = NavigationSplitViewVisibility.automatic
 
     var body: some View {
         Group {
@@ -60,13 +64,41 @@ struct ContentView: View {
         }
     }
 
+    /// Hidden in focus mode or when the person hid it; otherwise as the system lays it out.
+    private var wantedVisibility: NavigationSplitViewVisibility {
+        controller.focusMode || controller.sidebarHidden ? .detailOnly : .automatic
+    }
+
+    private var inspectorShown: Binding<Bool> {
+        Binding {
+            controller.showingInspector && !controller.focusMode && controller.selection != nil
+        } set: { shown in
+            if !controller.focusMode { controller.showingInspector = shown }
+        }
+    }
+
+    /// Tabs show once a second one is open, on screens wide enough for them.
+    private var showsTabStrip: Bool {
+        guard controller.tabs.tabs.count > 1, !controller.focusMode else { return false }
+        #if os(iOS)
+        return horizontalSizeClass == .regular
+        #else
+        return true
+        #endif
+    }
+
     private var workspace: some View {
-        NavigationSplitView(preferredCompactColumn: $compactColumn) {
+        NavigationSplitView(columnVisibility: $columnVisibility, preferredCompactColumn: $compactColumn) {
             Sidebar(controller: controller)
                 .navigationTitle(controller.vaultName ?? "SynapseNote")
+                .navigationSplitViewColumnWidth(min: 200, ideal: 250, max: 400)
                 .toolbar {
                     ToolbarItem {
                         Button("New Page", systemImage: "square.and.pencil") { controller.createPage() }
+                            .disabled(controller.phase != .ready)
+                    }
+                    ToolbarItem {
+                        Button("Search", systemImage: "magnifyingglass") { controller.showingPalette = true }
                             .disabled(controller.phase != .ready)
                     }
                     #if os(iOS)
@@ -74,37 +106,73 @@ struct ContentView: View {
                     #endif
                 }
         } detail: {
-            // the web view stays fully visible: WebKit stops painting a page it starts out hidden
-            WebView(controller.page)
-                .ignoresSafeArea(.container, edges: .bottom)
-                .overlay {
-                    if controller.phase != .ready {
-                        ProgressView()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .background(.background)
-                    } else {
-                        switch controller.destination {
-                        case .home:
-                            NavigationStack { HomeView(controller: controller) }
-                                .background(.background)
-                        case .trash:
-                            NavigationStack { TrashView(controller: controller) }
-                                .background(.background)
-                        case .page:
-                            EmptyView()
+            page
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    if showsTabStrip {
+                        VStack(spacing: 0) {
+                            TabStrip(controller: controller)
+                            Divider()
                         }
                     }
                 }
-                .toolbar {
-                    // at the top on iOS: the bottom of the page is where the editor's notices appear
-                    #if os(iOS)
-                    ToolbarItem(placement: .topBarTrailing) { SaveStatusView(state: controller.saveState) }
-                    #else
-                    ToolbarItem(placement: .status) { SaveStatusView(state: controller.saveState) }
-                    #endif
+            .inspector(isPresented: inspectorShown) {
+                if let pageId = controller.selection {
+                    PageInspector(controller: controller, pageId: pageId)
+                        .inspectorColumnWidth(min: 220, ideal: 280, max: 420)
                 }
+            }
+            .toolbar {
+                // at the top on iOS: the bottom of the page is where the editor's notices appear
+                #if os(iOS)
+                ToolbarItem(placement: .topBarTrailing) { SaveStatusView(state: controller.saveState) }
+                #else
+                ToolbarItem(placement: .status) { SaveStatusView(state: controller.saveState) }
+                #endif
+                // the same items every time: items coming and going rebuild the column, and with it the web view
+                ToolbarItem {
+                    FocusButton(controller: controller)
+                }
+                ToolbarItem {
+                    Button(controller.showingInspector ? "Hide Inspector" : "Show Inspector", systemImage: "sidebar.right") {
+                        controller.showingInspector.toggle()
+                    }
+                    .disabled(controller.selection == nil || controller.focusMode)
+                }
+            }
         }
+        .overlay {
+            if controller.showingPalette { CommandPalette(controller: controller) }
+        }
+        .sheet(isPresented: $controller.showingShortcuts) { ShortcutsView(controller: controller) }
         .onChange(of: controller.destination) { compactColumn = .detail }
+        .onChange(of: wantedVisibility) { columnVisibility = wantedVisibility }
+        .onChange(of: columnVisibility) {
+            if !controller.focusMode { controller.sidebarHidden = columnVisibility == .detailOnly }
+        }
+    }
+
+    private var page: some View {
+        // the web view stays fully visible: WebKit stops painting a page it starts out hidden
+        WebView(controller.page)
+            .ignoresSafeArea(.container, edges: .bottom)
+            .overlay {
+                if controller.phase != .ready {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(.background)
+                } else {
+                    switch controller.destination {
+                    case .home:
+                        HomeView(controller: controller)
+                            .background(.background)
+                    case .trash:
+                        TrashView(controller: controller)
+                            .background(.background)
+                    case .page:
+                        EmptyView()
+                    }
+                }
+            }
     }
 
     private func finishFileRequest(_ urls: [URL]?) {
@@ -129,6 +197,20 @@ private struct VaultMenu: View {
             Button("New Folder on This Device", systemImage: "folder.badge.plus") { Task { await controller.createVault() } }
         } label: {
             Label("Vaults", systemImage: "books.vertical")
+        }
+    }
+}
+
+/// Enters focus mode, or leaves it with the button or escape.
+private struct FocusButton: View {
+    let controller: EditorController
+
+    var body: some View {
+        if controller.focusMode {
+            Button("Leave Focus Mode", systemImage: "arrow.down.right.and.arrow.up.left") { controller.focusMode = false }
+                .keyboardShortcut(.cancelAction)
+        } else {
+            Button("Focus Mode", systemImage: "arrow.up.left.and.arrow.down.right") { controller.focusMode = true }
         }
     }
 }
