@@ -288,7 +288,7 @@ window.addEventListener(
 
 // escape that nothing on the page used is the app's, it leaves focus mode
 window.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && !event.defaultPrevented && !event.isComposing) post({ type: 'shortcut', id: 'escape' });
+  if (event.key === 'Escape' && !event.defaultPrevented && !event.isComposing) post({ type: 'shortcut', shortcut: 'escape' });
 });
 
 createRoot(document.getElementById('root')!).render(

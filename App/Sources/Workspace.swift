@@ -9,6 +9,8 @@ nonisolated struct PageInfo: Hashable, Sendable, Identifiable {
     let kind: String
     let order: Double
     let createdAt: Double
+    let updatedAt: Double
+    let lastOpenedAt: Double?
     let trashedAt: Double?
     let favorite: Bool
     let encrypted: Bool
@@ -22,6 +24,8 @@ nonisolated struct PageInfo: Hashable, Sendable, Identifiable {
         kind = value["kind"]?.stringValue ?? "page"
         order = value["order"]?.doubleValue ?? 0
         createdAt = value["createdAt"]?.doubleValue ?? 0
+        updatedAt = value["updatedAt"]?.doubleValue ?? createdAt
+        lastOpenedAt = value["lastOpenedAt"]?.doubleValue
         trashedAt = value["trashedAt"]?.doubleValue
         favorite = value["favorite"] == .bool(true)
         encrypted = value["encrypted"] == .bool(true)

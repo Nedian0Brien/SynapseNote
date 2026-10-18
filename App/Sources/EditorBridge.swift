@@ -7,12 +7,16 @@ nonisolated enum EditorEvent: Equatable, Sendable {
     /// A call into Morrow's `VaultBridge`, answered with `EditorCommand.rpcResult`.
     case rpc(id: Int, method: String, params: [JSONValue])
     case workspace(pages: [String: JSONValue], saveState: String, saveError: String?)
-    case openPage(pageId: String?)
+    /// A page to open, nil for Home. `newTab` when it was opened with a command or control click; `find` is
+    /// text to select in it.
+    case openPage(pageId: String?, newTab: Bool, find: String?)
     /// The page header asked to pick an icon for this page.
     case chooseIcon(pageId: String)
     case vaultFailed(message: String)
     case openExternal(URL)
     case log(level: String, message: String)
+    /// A key the page did not use that belongs to the app.
+    case shortcut(String)
 
     private struct Raw: Decodable {
         let type: String
@@ -26,6 +30,9 @@ nonisolated enum EditorEvent: Equatable, Sendable {
         let url: String?
         let level: String?
         let message: String?
+        let newTab: Bool?
+        let find: String?
+        let shortcut: String?
     }
 
     /// Reads a posted message body. Anything that is not exactly one of the known messages gives nil.
@@ -44,7 +51,7 @@ nonisolated enum EditorEvent: Equatable, Sendable {
             guard let pages = raw.pages, let state = raw.saveState else { return nil }
             self = .workspace(pages: pages, saveState: state, saveError: raw.saveError)
         case "openPage":
-            self = .openPage(pageId: raw.pageId)
+            self = .openPage(pageId: raw.pageId, newTab: raw.newTab ?? false, find: raw.find)
         case "chooseIcon":
             guard let pageId = raw.pageId else { return nil }
             self = .chooseIcon(pageId: pageId)
@@ -59,6 +66,9 @@ nonisolated enum EditorEvent: Equatable, Sendable {
         case "log":
             guard let message = raw.message else { return nil }
             self = .log(level: raw.level ?? "error", message: message)
+        case "shortcut":
+            guard let name = raw.shortcut else { return nil }
+            self = .shortcut(name)
         default:
             return nil
         }
@@ -68,7 +78,8 @@ nonisolated enum EditorEvent: Equatable, Sendable {
 /// A message the app sends to the editor page through `window.synapse.receive`.
 nonisolated enum EditorCommand: Sendable {
     case openVault(name: String)
-    case show(pageId: String?)
+    /// Shows a page, or nothing; `find` is text to select once it is open.
+    case show(pageId: String?, find: String?)
     case rpcResult(id: Int, result: Result<JSONValue, RPCFailure>)
     case vaultChanges([VaultFileSystem.Change])
     case createPage(parentId: String?)
@@ -76,6 +87,9 @@ nonisolated enum EditorCommand: Sendable {
     /// A Morrow `Command`, see `WorkspaceCommand`.
     case command(JSONValue)
     case theme(dark: Bool)
+    case scrollToHeading(index: Int)
+    /// Opens the find bar of the page on screen.
+    case find
 
     struct RPCFailure: Error, Equatable, Sendable {
         let message: String
@@ -85,8 +99,8 @@ nonisolated enum EditorCommand: Sendable {
         switch self {
         case .openVault(let name):
             .object(["type": .string("openVault"), "name": .string(name)])
-        case .show(let pageId):
-            .object(["type": .string("show"), "pageId": pageId.map(JSONValue.string) ?? .null])
+        case .show(let pageId, let find):
+            .object(["type": .string("show"), "pageId": pageId.map(JSONValue.string) ?? .null, "find": find.map(JSONValue.string) ?? .null])
         case .rpcResult(let id, .success(let value)):
             .object(["type": .string("rpcResult"), "id": .number(Double(id)), "ok": .bool(true), "value": value])
         case .rpcResult(let id, .failure(let failure)):
@@ -101,6 +115,10 @@ nonisolated enum EditorCommand: Sendable {
             .object(["type": .string("command"), "command": command])
         case .theme(let dark):
             .object(["type": .string("theme"), "theme": .string(dark ? "dark" : "light")])
+        case .scrollToHeading(let index):
+            .object(["type": .string("scrollToHeading"), "index": .number(Double(index))])
+        case .find:
+            .object(["type": .string("find")])
         }
     }
 }

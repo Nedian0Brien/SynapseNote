@@ -37,7 +37,7 @@ export type OutboundMessage =
   | { type: 'openExternal'; url: string }
   | { type: 'log'; level: 'error' | 'warning'; message: string }
   // a key the page received that belongs to the app, such as escape leaving focus mode
-  | { type: 'shortcut'; id: 'escape' };
+  | { type: 'shortcut'; shortcut: 'escape' };
 
 interface WebkitHandler {
   postMessage(message: unknown): void;

@@ -8,12 +8,14 @@ struct Sidebar: View {
     var body: some View {
         let workspace = controller.workspace
         List(selection: $controller.sidebarItem) {
+            Label("Home", systemImage: "house")
+                .tag(Destination.home)
             let favorites = workspace.favorites
             if !favorites.isEmpty {
                 Section("Favorites") {
                     ForEach(favorites) { page in
                         Button {
-                            controller.selection = page.id
+                            controller.go(to: .page(page.id))
                         } label: {
                             PageLabel(page: page)
                         }
@@ -25,7 +27,7 @@ struct Sidebar: View {
             Section("Pages") {
                 ForEach(workspace.rows(expanded: controller.expanded)) { row in
                     TreeRow(controller: controller, row: row)
-                        .tag(EditorController.SidebarItem.page(row.id))
+                        .tag(Destination.page(row.id))
                 }
             }
             Section {
@@ -35,7 +37,7 @@ struct Sidebar: View {
                     let count = workspace.trashed.count
                     if count > 0 { Text("\(count)").foregroundStyle(.secondary).monospacedDigit() }
                 }
-                .tag(EditorController.SidebarItem.trash)
+                .tag(Destination.trash)
             }
         }
         .overlay {
@@ -155,6 +157,8 @@ struct PageMenu: View {
     let page: PageInfo
 
     var body: some View {
+        Button("Open in New Tab", systemImage: "plus.square.on.square") { controller.openInNewTab(.page(page.id)) }
+        Divider()
         Button("Add Subpage", systemImage: "plus") { controller.createPage(parent: page.id) }
         Button(page.icon == nil ? "Add Icon" : "Change Icon", systemImage: "face.smiling") { controller.iconPage = page.id }
         if page.favorite {
@@ -162,7 +166,7 @@ struct PageMenu: View {
         } else {
             Button("Add to Favorites", systemImage: "star") { controller.perform(.setFavorite(id: page.id, favorite: true)) }
         }
-        Button("Duplicate", systemImage: "plus.square.on.square") { controller.duplicate(page.id) }
+        Button("Duplicate", systemImage: "doc.on.doc") { controller.duplicate(page.id) }
         Button("Move To…", systemImage: "arrow.right.arrow.left") { controller.movingPage = page.id }
         #if os(macOS)
         Button("Show in Finder", systemImage: "folder") { controller.reveal(page.id) }

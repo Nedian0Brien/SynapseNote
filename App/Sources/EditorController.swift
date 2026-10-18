@@ -24,31 +24,26 @@ final class EditorController: WorkspaceService {
 
     private(set) var phase: Phase = .opening
     private(set) var workspace = Workspace()
+    /// Counts the page's workspace reports, saves included, for screens that ask again when anything changes.
+    private(set) var revision = 0
     private(set) var saveState: SaveState = .saved
     private(set) var vaultName: String?
     private(set) var isPageReady = false
     private(set) var recents: [VaultLocation.RecentVault] = []
-    var selection: String?
-    /// The trash screen is showing instead of a page.
-    var showingTrash = false
-
-    /// What the sidebar has selected: a page or the trash.
-    enum SidebarItem: Hashable {
-        case page(String)
-        case trash
+    /// The open tabs, kept per vault. The open tab's place is what the main column shows.
+    private(set) var tabs = TabList() {
+        didSet { saveTabs() }
     }
 
-    var sidebarItem: SidebarItem? {
-        get { showingTrash ? .trash : selection.map(SidebarItem.page) }
-        set {
-            switch newValue {
-            case .trash: showTrash()
-            case .page(let id): selection = id
-            case nil:
-                selection = nil
-                showingTrash = false
-            }
-        }
+    var destination: Destination { tabs.active.destination }
+    /// The page on screen.
+    var selection: String? { destination.pageId }
+    var showingTrash: Bool { destination == .trash }
+
+    /// What the sidebar has selected. Choosing nothing keeps the place, a list can clear its selection.
+    var sidebarItem: Destination? {
+        get { destination }
+        set { if let newValue, newValue != destination { go(to: newValue) } }
     }
     /// Pages whose subpages the sidebar shows, kept per vault.
     var expanded: Set<String> = [] {
@@ -61,6 +56,15 @@ final class EditorController: WorkspaceService {
     var movingPage: String?
     /// The folder picker for Open Folder… is showing.
     var choosingFolder = false
+    /// Search and commands, over the main column.
+    var showingPalette = false
+    var showingShortcuts = false
+    /// The open page's outline and links beside it.
+    var showingInspector = false
+    /// The person hid the sidebar.
+    var sidebarHidden = false
+    /// The page alone, without sidebar, tabs or inspector, as Morrow's focus mode.
+    var focusMode = false
 
     @ObservationIgnored let page: WebPage
     @ObservationIgnored var openURL: (URL) -> Void = { _ in }
@@ -72,6 +76,8 @@ final class EditorController: WorkspaceService {
     @ObservationIgnored private var watcher: VaultWatcher?
     @ObservationIgnored private var darkMode = false
     @ObservationIgnored private var navigationWatch: Task<Void, Never>?
+    /// Text to select in the page shown next.
+    @ObservationIgnored private var pendingFind: String?
     @ObservationIgnored private let logger = Logger(subsystem: "com.synapsenote.native", category: "editor")
 
     init(location: VaultLocation = VaultLocation()) {
@@ -152,8 +158,6 @@ final class EditorController: WorkspaceService {
     private func switchVault() async {
         if phase == .ready { await flush() }
         close()
-        selection = nil
-        showingTrash = false
         workspace = Workspace()
         isPageReady = false
         restoreVault()
@@ -165,6 +169,7 @@ final class EditorController: WorkspaceService {
         self.opened = opened
         vaultName = opened.name
         expanded = Set(location.defaults.stringArray(forKey: expandedKey) ?? [])
+        tabs = TabList.restore(location.defaults.data(forKey: tabsKey)) ?? TabList()
         let watcher = VaultWatcher(root: opened.url) { [weak self] paths in
             Task { @MainActor in self?.report(paths) }
         }
@@ -198,6 +203,15 @@ final class EditorController: WorkspaceService {
     private func saveExpanded() {
         guard opened != nil else { return }
         location.defaults.set(Array(expanded), forKey: expandedKey)
+    }
+
+    private var tabsKey: String {
+        "tabs:\(opened?.url.standardizedFileURL.path(percentEncoded: false) ?? "")"
+    }
+
+    private func saveTabs() {
+        guard opened != nil, let data = try? JSONEncoder().encode(tabs) else { return }
+        location.defaults.set(data, forKey: tabsKey)
     }
 
     private func report(_ paths: Set<String>) {
@@ -252,17 +266,60 @@ final class EditorController: WorkspaceService {
         send(.theme(dark: dark))
     }
 
-    /// The page decides what it can show: a page made a moment ago may not be in this side's list yet.
-    func showSelection() {
-        guard phase == .ready else { return }
-        if selection != nil { showingTrash = false }
-        send(.show(pageId: showingTrash ? nil : selection))
+    // MARK: places and tabs
+
+    /// The open tab goes to a place; `find` is text to select in the page.
+    func go(to destination: Destination, find: String? = nil) {
+        tabs.navigate(to: destination)
+        pendingFind = find
+        showDestination()
     }
 
-    func showTrash() {
-        selection = nil
-        showingTrash = true
-        send(.show(pageId: nil))
+    func openInNewTab(_ destination: Destination, find: String? = nil) {
+        tabs.open(destination)
+        pendingFind = find
+        showDestination()
+    }
+
+    func newTab() { openInNewTab(.home) }
+
+    /// Closes a tab, the open one when none is named. Returns false for the last tab, which stays.
+    @discardableResult
+    func closeTab(_ id: String? = nil) -> Bool {
+        let wasActive = id == nil || id == tabs.activeId
+        guard tabs.close(id) else { return false }
+        if wasActive { settleActiveTab() }
+        return true
+    }
+
+    func activateTab(_ id: String) {
+        guard id != tabs.activeId else { return }
+        tabs.activate(id)
+        settleActiveTab()
+    }
+
+    func stepTab(_ direction: Int) {
+        guard tabs.tabs.count > 1 else { return }
+        tabs.step(direction)
+        settleActiveTab()
+    }
+
+    func moveTab(_ id: String, to position: Int) {
+        tabs.move(id, to: position)
+    }
+
+    /// A tab kept on a page that has since gone to the trash or been deleted opens Home instead.
+    private func settleActiveTab() {
+        if case .page(let id) = destination, !workspace.isShowable(id) { tabs.navigate(to: .home) }
+        showDestination()
+    }
+
+    /// Sends the open tab's place to the page. The page decides what it can show: a page made a moment ago
+    /// may not be in this side's list yet.
+    func showDestination() {
+        guard phase == .ready else { return }
+        send(.show(pageId: selection, find: pendingFind))
+        pendingFind = nil
     }
 
     // MARK: WorkspaceService
@@ -284,8 +341,65 @@ final class EditorController: WorkspaceService {
     func duplicate(_ pageId: String) {
         let copy = UUID().uuidString.lowercased()
         perform(.duplicate(id: pageId, newId: copy))
-        selection = copy
-        showSelection()
+        go(to: .page(copy))
+    }
+
+    func search(_ query: String, limit: Int) async -> [SearchHit] {
+        await answer(.search(query, limit: limit)) ?? []
+    }
+
+    func recentlyOpened(limit: Int) async -> [String] {
+        await answer(.recent(limit: limit)) ?? []
+    }
+
+    func homeFacts() async -> HomeFacts? {
+        await answer(.home)
+    }
+
+    func backlinks(of pageId: String) async -> [Backlink] {
+        await answer(.backlinks(pageId)) ?? []
+    }
+
+    func mentions(of pageId: String) async -> [Mention] {
+        await answer(.mentions(pageId)) ?? []
+    }
+
+    func outline(of pageId: String) async -> [Heading] {
+        await answer(.outline(pageId)) ?? []
+    }
+
+    /// Asks the editor page, which works it out from the workspace session it holds.
+    private func answer<T: Decodable>(_ query: WorkspaceQuery) async -> T? {
+        guard isPageReady, phase == .ready else { return nil }
+        do {
+            let answer = try await page.callJavaScript(
+                "return window.synapse.query(name, params)",
+                arguments: ["name": query.name, "params": query.params]
+            )
+            return try WorkspaceQuery.decode(answer)
+        } catch {
+            logger.error("\(query.name, privacy: .public) query failed: \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
+    }
+
+    // MARK: the page on screen
+
+    func scrollToHeading(_ index: Int) {
+        send(.scrollToHeading(index: index))
+    }
+
+    func findInPage() {
+        send(.find)
+    }
+
+    /// Cmd K: the link editor when text is selected in the editor, as there, otherwise search.
+    func searchOrLink() async {
+        if isPageReady, selection != nil,
+           (try? await page.callJavaScript("return window.synapse.linkSelection()")) as? Bool == true {
+            return
+        }
+        showingPalette = true
     }
 
     #if os(macOS)
@@ -297,6 +411,12 @@ final class EditorController: WorkspaceService {
             else { return }
             NSWorkspace.shared.activateFileViewerSelecting([root.appending(path: path)])
         }
+    }
+
+    /// Shows the vault folder in Finder.
+    func revealVault() {
+        guard let root = opened?.url else { return }
+        NSWorkspace.shared.activateFileViewerSelecting([root])
     }
     #endif
 
@@ -329,7 +449,9 @@ final class EditorController: WorkspaceService {
                 Task { @MainActor in self?.send(.rpcResult(id: id, result: result)) }
             }
         case .workspace(let pages, let state, let error):
+            let before = workspace
             workspace = Workspace(pages: pages)
+            revision += 1
             saveState = switch state {
             case "pending": .pending
             case "saving": .saving
@@ -339,17 +461,15 @@ final class EditorController: WorkspaceService {
             if phase == .opening {
                 phase = .ready
                 logger.info("vault opened with \(pages.count) pages")
-                if selection == nil || !workspace.isShowable(selection!) {
-                    selection = showingTrash ? nil : workspace.rows(expanded: expanded).first?.id
-                }
-                showSelection()
-            } else if let selection, workspace.infos[selection] != nil, !workspace.isShowable(selection) {
-                self.selection = nil
+                settleActiveTab()
+            } else if let selection, before.infos[selection] != nil, !workspace.isShowable(selection) {
+                // the page on screen went to the trash or was deleted
+                go(to: .home)
             }
-        case .openPage(let pageId):
+        case .openPage(let pageId, let newTab, let find):
             if let pageId { for ancestor in workspace.ancestors(of: pageId) { expanded.insert(ancestor.id) } }
-            selection = pageId
-            showSelection()
+            let place = pageId.map(Destination.page) ?? .home
+            if newTab { openInNewTab(place, find: find) } else { go(to: place, find: find) }
         case .chooseIcon(let pageId):
             iconPage = pageId
         case .vaultFailed(let message):
@@ -362,6 +482,8 @@ final class EditorController: WorkspaceService {
         case .log(let level, let message):
             if level == "error" { logger.error("editor: \(message, privacy: .public)") }
             else { logger.warning("editor: \(message, privacy: .public)") }
+        case .shortcut(let name):
+            if name == "escape", focusMode { focusMode = false }
         }
     }
 

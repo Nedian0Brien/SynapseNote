@@ -75,6 +75,8 @@ struct WorkspaceTests {
     }
 
     @Test func commandsHaveMorrowsShape() {
+        #expect(WorkspaceCommand.setTaskChecked(pageId: "p", index: 2, checked: true).morrow(now: Date(timeIntervalSince1970: 1))
+            == .object(["type": .string("task.setChecked"), "pageId": .string("p"), "index": .number(2), "checked": .bool(true), "now": .number(1000)]))
         let now = Date(timeIntervalSince1970: 1)
         #expect(WorkspaceCommand.move(id: "a", parent: nil, index: 2).morrow(now: now)
             == .object(["type": .string("page.move"), "id": .string("a"), "parentId": .null, "index": .number(2)]))

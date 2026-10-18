@@ -5,8 +5,11 @@ import Testing
 struct EditorBridgeTests {
     @Test func readsKnownMessages() {
         #expect(EditorEvent(body: ["type": "ready"]) == .ready)
-        #expect(EditorEvent(body: ["type": "openPage", "pageId": "p"]) == .openPage(pageId: "p"))
-        #expect(EditorEvent(body: ["type": "openPage", "pageId": NSNull()]) == .openPage(pageId: nil))
+        #expect(EditorEvent(body: ["type": "openPage", "pageId": "p"]) == .openPage(pageId: "p", newTab: false, find: nil))
+        #expect(EditorEvent(body: ["type": "openPage", "pageId": NSNull()]) == .openPage(pageId: nil, newTab: false, find: nil))
+        #expect(EditorEvent(body: ["type": "openPage", "pageId": "p", "newTab": true, "find": "milk"])
+            == .openPage(pageId: "p", newTab: true, find: "milk"))
+        #expect(EditorEvent(body: ["type": "shortcut", "shortcut": "escape"]) == .shortcut("escape"))
         #expect(EditorEvent(body: ["type": "rpc", "id": 4, "method": "readText", "params": ["a.md"]])
             == .rpc(id: 4, method: "readText", params: [.string("a.md")]))
         #expect(EditorEvent(body: ["type": "workspace", "pages": ["p": ["id": "p"]], "saveState": "saving", "saveError": NSNull()])
@@ -30,7 +33,10 @@ struct EditorBridgeTests {
 
     @Test func commandsHaveTheShapeThePageReads() {
         #expect(EditorCommand.openVault(name: "Notes").json == .object(["type": .string("openVault"), "name": .string("Notes")]))
-        #expect(EditorCommand.show(pageId: nil).json["pageId"] == .null)
+        #expect(EditorCommand.show(pageId: nil, find: nil).json["pageId"] == .null)
+        #expect(EditorCommand.show(pageId: "p", find: "milk").json["find"] == .string("milk"))
+        #expect(EditorCommand.scrollToHeading(index: 2).json == .object(["type": .string("scrollToHeading"), "index": .number(2)]))
+        #expect(EditorCommand.find.json == .object(["type": .string("find")]))
         #expect(EditorCommand.rpcResult(id: 2, result: .success(.bool(true))).json
             == .object(["type": .string("rpcResult"), "id": .number(2), "ok": .bool(true), "value": .bool(true)]))
         #expect(EditorCommand.rpcResult(id: 2, result: .failure(.init(message: "no"))).json["error"] == .string("no"))

@@ -9,6 +9,7 @@ nonisolated enum WorkspaceCommand: Equatable, Sendable {
     case restore(id: String)
     case deleteForever(id: String)
     case emptyTrash
+    case setTaskChecked(pageId: String, index: Int, checked: Bool)
 
     /// The command as Morrow's `applyCommand` reads it.
     func morrow(now: Date = Date()) -> JSONValue {
@@ -30,6 +31,11 @@ nonisolated enum WorkspaceCommand: Equatable, Sendable {
             return .object(["type": .string("page.deleteForever"), "id": .string(id)])
         case .emptyTrash:
             return .object(["type": .string("trash.empty")])
+        case .setTaskChecked(let pageId, let index, let checked):
+            return .object([
+                "type": .string("task.setChecked"), "pageId": .string(pageId), "index": .number(Double(index)),
+                "checked": .bool(checked), "now": time,
+            ])
         }
     }
 }
@@ -42,4 +48,13 @@ protocol WorkspaceService: AnyObject {
     func perform(_ command: WorkspaceCommand)
     func createPage(parent: String?)
     func trash(_ pageId: String)
+
+    func search(_ query: String, limit: Int) async -> [SearchHit]
+    /// Pages opened most recently, the latest first.
+    func recentlyOpened(limit: Int) async -> [String]
+    func homeFacts() async -> HomeFacts?
+    func backlinks(of pageId: String) async -> [Backlink]
+    /// Pages that name this page in their text without linking to it.
+    func mentions(of pageId: String) async -> [Mention]
+    func outline(of pageId: String) async -> [Heading]
 }

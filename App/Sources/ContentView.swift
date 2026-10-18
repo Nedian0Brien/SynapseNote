@@ -82,12 +82,17 @@ struct ContentView: View {
                         ProgressView()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .background(.background)
-                    } else if controller.showingTrash {
-                        NavigationStack { TrashView(controller: controller) }
-                            .background(.background)
-                    } else if controller.selection == nil {
-                        ContentUnavailableView("No page selected", systemImage: "doc.text", description: Text("Choose a page or make a new one."))
-                            .background(.background)
+                    } else {
+                        switch controller.destination {
+                        case .home:
+                            NavigationStack { HomeView(controller: controller) }
+                                .background(.background)
+                        case .trash:
+                            NavigationStack { TrashView(controller: controller) }
+                                .background(.background)
+                        case .page:
+                            EmptyView()
+                        }
                     }
                 }
                 .toolbar {
@@ -99,11 +104,7 @@ struct ContentView: View {
                     #endif
                 }
         }
-        .onChange(of: controller.selection) {
-            controller.showSelection()
-            if controller.selection != nil { compactColumn = .detail }
-        }
-        .onChange(of: controller.showingTrash) { if controller.showingTrash { compactColumn = .detail } }
+        .onChange(of: controller.destination) { compactColumn = .detail }
     }
 
     private func finishFileRequest(_ urls: [URL]?) {
