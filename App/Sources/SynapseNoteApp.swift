@@ -66,6 +66,19 @@ private struct PageCommands: Commands {
             item("tab.close")
             #endif
         }
+        CommandGroup(replacing: .importExport) {
+            item("data.importMarkdown")
+            item("data.restore")
+            Divider()
+            item("data.exportAll")
+            item("data.publish")
+            item("data.backup")
+            Divider()
+            item("data.deleteUnused")
+            #if os(macOS)
+            item("data.showBackups")
+            #endif
+        }
         CommandMenu("Page") {
             item("page.find")
             item("page.favorite")
@@ -76,7 +89,12 @@ private struct PageCommands: Commands {
             item("page.encrypt")
             item("page.lock")
             item("page.unprotect")
+            item("page.source")
             item("page.localGraph")
+            Divider()
+            item("page.exportMarkdown")
+            item("page.exportPdf")
+            item("page.publish")
             item("tab.duplicate")
             Divider()
             item("page.trash")

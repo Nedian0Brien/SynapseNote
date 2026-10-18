@@ -17,9 +17,14 @@ struct EditorBridgeTests {
         #expect(EditorEvent(body: ["type": "rpc", "id": 4, "method": "readText", "params": ["a.md"]])
             == .rpc(id: 4, method: "readText", params: [.string("a.md")]))
         #expect(EditorEvent(body: ["type": "workspace", "pages": ["p": ["id": "p"]], "saveState": "saving", "saveError": NSNull()])
-            == .workspace(pages: ["p": .object(["id": .string("p")])], locked: [], saveState: "saving", saveError: nil))
-        #expect(EditorEvent(body: ["type": "workspace", "pages": [:] as [String: Any], "locked": ["p"], "saveState": "saved", "saveError": NSNull()])
-            == .workspace(pages: [:], locked: ["p"], saveState: "saved", saveError: nil))
+            == .workspace(pages: ["p": .object(["id": .string("p")])], locked: [], sourceMode: nil, saveState: "saving", saveError: nil))
+        #expect(EditorEvent(body: ["type": "workspace", "pages": [:] as [String: Any], "locked": ["p"], "sourceMode": "q", "saveState": "saved", "saveError": NSNull()])
+            == .workspace(pages: [:], locked: ["p"], sourceMode: "q", saveState: "saved", saveError: nil))
+        #expect(EditorEvent(body: ["type": "saveFile", "name": "a.md", "mime": "text/markdown", "data": "aGk="])
+            == .saveFile(name: "a.md", mime: "text/markdown", data: Data("hi".utf8)))
+        #expect(EditorEvent(body: ["type": "toasts", "toasts": [["id": 2, "message": "Saved", "tone": "info", "action": "Undo"], ["id": 3, "message": "No", "tone": "error", "action": NSNull()]]])
+            == .toasts([EditorToast(id: 2, message: "Saved", tone: "info", action: "Undo"), EditorToast(id: 3, message: "No", tone: "error", action: nil)]))
+        #expect(EditorEvent(body: ["type": "autoBackup", "json": "{}"]) == .autoBackup(json: "{}"))
         #expect(EditorEvent(body: ["type": "vaultFailed", "message": "gone"]) == .vaultFailed(message: "gone"))
         #expect(EditorEvent(body: ["type": "openExternal", "url": "https://example.com"]) == .openExternal(URL(string: "https://example.com")!))
     }
@@ -29,6 +34,8 @@ struct EditorBridgeTests {
         #expect(EditorEvent(body: "ready") == nil)
         #expect(EditorEvent(body: ["type": "rpc", "method": "scan"]) == nil)
         #expect(EditorEvent(body: ["type": "workspace", "pages": [:] as [String: Any]]) == nil)
+        #expect(EditorEvent(body: ["type": "saveFile", "name": "a.md", "mime": "text/markdown", "data": "not base64!"]) == nil)
+        #expect(EditorEvent(body: ["type": "toasts"]) == nil)
     }
 
     @Test func opensOnlyWebAndMailLinks() {
@@ -55,6 +62,17 @@ struct EditorBridgeTests {
         #expect(EditorCommand.unprotectPage(pageId: "p").json["type"] == .string("unprotectPage"))
         #expect(EditorCommand.gradeCard(cardId: "c", grade: "good").json
             == .object(["type": .string("gradeCard"), "cardId": .string("c"), "grade": .string("good")]))
+        #expect(EditorCommand.exportMarkdown(pageId: "p").json == .object(["type": .string("exportMarkdown"), "pageId": .string("p")]))
+        #expect(EditorCommand.publish(pageId: nil).json == .object(["type": .string("publish"), "pageId": .null]))
+        #expect(EditorCommand.publish(pageId: "p").json["pageId"] == .string("p"))
+        #expect(EditorCommand.exportAll.json == .object(["type": .string("exportAll")]))
+        #expect(EditorCommand.backup.json == .object(["type": .string("backup")]))
+        #expect(EditorCommand.restore.json == .object(["type": .string("restore")]))
+        #expect(EditorCommand.importMarkdown(parentId: nil).json == .object(["type": .string("importMarkdown"), "parentId": .null]))
+        #expect(EditorCommand.deleteUnusedFiles.json == .object(["type": .string("deleteUnusedFiles")]))
+        #expect(EditorCommand.setSourceMode(pageId: "p").json == .object(["type": .string("setSourceMode"), "pageId": .string("p")]))
+        #expect(EditorCommand.toastAction(id: 4).json == .object(["type": .string("toastAction"), "id": .number(4)]))
+        #expect(EditorCommand.dismissToast(id: 4).json == .object(["type": .string("dismissToast"), "id": .number(4)]))
         #expect(EditorCommand.rpcResult(id: 2, result: .success(.bool(true))).json
             == .object(["type": .string("rpcResult"), "id": .number(2), "ok": .bool(true), "value": .bool(true)]))
         #expect(EditorCommand.rpcResult(id: 2, result: .failure(.init(message: "no"))).json["error"] == .string("no"))

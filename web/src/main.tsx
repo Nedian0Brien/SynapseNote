@@ -13,29 +13,38 @@ import './editor.css';
 import { StrictMode, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { displayTitle } from '../vendor/morrow/src/core/model';
-import type { PageId, PageMeta } from '../vendor/morrow/src/core/model';
+import type { DocNode, PageId, PageMeta } from '../vendor/morrow/src/core/model';
 import { docToPlainText, findUnknownTypes } from '../vendor/morrow/src/core/doc';
 import { isEffectivelyTrashed } from '../vendor/morrow/src/core/tree';
 import { WorkspaceSession } from '../vendor/morrow/src/storage/session';
 import { VaultRepository } from '../vendor/morrow/src/storage/vaultRepository';
 import { SourceDialog } from '../vendor/morrow/src/app/components/SourceDialog';
-import { Toasts } from '../vendor/morrow/src/app/components/primitives';
+import { SourceEditor } from '../vendor/morrow/src/app/components/SourceEditor';
 import { commitEditors } from '../vendor/morrow/src/app/editor/commits';
 import {
   createFromTemplate,
   createPage,
   createTemplatesPage,
+  deleteUnusedFiles,
+  exportAllMarkdown,
+  exportBackup,
+  exportPageMarkdown,
+  importMarkdown,
   openToday,
+  publishSite,
+  restoreBackup,
   saveAsTemplate,
   trashPage,
 } from '../vendor/morrow/src/app/operations';
+import { createBackup } from '../vendor/morrow/src/core/portability';
 import { parseDateKey } from '../vendor/morrow/src/core/daily';
 import { findTemplatesPage } from '../vendor/morrow/src/core/templates';
 import { newId } from '../vendor/morrow/src/app/platform/files';
 import { useUi } from '../vendor/morrow/src/app/ui';
 import { getSession, run, setSession, useWorkspace } from '../vendor/morrow/src/app/workspace';
 import { listen, post } from './bridge';
-import type { Theme } from './bridge';
+import type { Theme, ToastMessage } from './bridge';
+import { PageHeader } from './PageHeader';
 import { CanvasPage } from './CanvasPage';
 import { DatabasePage } from './DatabasePage';
 import { EditorApp, linkSelection } from './EditorApp';
@@ -45,7 +54,8 @@ import { createReviews } from './review';
 import type { Reviews } from './review';
 import { collectCards } from '../vendor/morrow/src/core/flashcards';
 import { HistoryDialog } from '../vendor/morrow/src/app/components/HistoryDialog';
-import { closeDialog, openDialog } from '../vendor/morrow/src/app/ui';
+import { closeDialog, dismissToast, getUi, openDialog, setUi } from '../vendor/morrow/src/app/ui';
+import type { Toast } from '../vendor/morrow/src/app/ui';
 import { showRoute } from './host/router';
 import { settle } from './host/rpc';
 import { deliverChanges, nativeVaultBridge } from './host/vaultBridge';
@@ -90,6 +100,7 @@ function report(): void {
       type: 'workspace',
       pages,
       locked: [...session.unreadable].filter((id) => pages[id]?.encrypted),
+      sourceMode: getUi().sourceMode,
       saveState: status.state,
       saveError: status.error,
     });
@@ -117,6 +128,27 @@ async function openVault(name: string): Promise<void> {
   phase = { kind: 'ready' };
   report();
   rerender();
+  startAutoBackup();
+}
+
+// morrow's automatic backup on the desktop: once half a minute after opening, then every ten minutes, and
+// before the app closes, only when a page changed since the last one. the files of a vault are on disk as
+// they are, so it holds the pages without attachments, as morrow's does for a vault
+const AUTO_BACKUP_MS = 10 * 60 * 1000;
+let lastAutoBackup = 0;
+function autoBackup(): void {
+  if (phase.kind !== 'ready') return;
+  commitEditors();
+  const state = getSession().getState();
+  const latest = Math.max(0, ...Object.values(state.pages).map((page) => page.updatedAt));
+  if (latest <= lastAutoBackup) return;
+  lastAutoBackup = latest;
+  post({ type: 'autoBackup', json: JSON.stringify(createBackup(state, new Date(), [])) });
+}
+
+function startAutoBackup(): void {
+  setTimeout(autoBackup, 30_000);
+  setInterval(autoBackup, AUTO_BACKUP_MS);
 }
 
 function show(pageId: PageId | null, text: string | null): void {
@@ -192,7 +224,67 @@ async function flush(): Promise<boolean> {
   if (phase.kind !== 'ready') return true;
   commitEditors();
   await reviews?.flush();
-  return getSession().flush();
+  const saved = await getSession().flush();
+  autoBackup();
+  return saved;
+}
+
+// the open page as it looks, for the app to print into a pdf as morrow's desktop app does; its stylesheets
+// come along so the print styles apply. the clone keeps what the editor drew, pictures included
+function pdfSnapshot(id: string): string | null {
+  if (phase.kind !== 'ready' || shown !== id) return null;
+  const page = getSession().getState().pages[id];
+  const article = document.querySelector('.view .page');
+  if (!page || !article) return null;
+  commitEditors();
+  const head = [...document.querySelectorAll('link[rel="stylesheet"], style')].map((node) => node.outerHTML).join('\n');
+  return JSON.stringify({
+    title: displayTitle(page),
+    head,
+    body: `<div id="root"><div class="view"><div class="page-scroll">${withFormState(article).outerHTML}</div></div></div>`,
+    accent: root.dataset.accent ?? 'ocean',
+    colorful: root.dataset.colorful ?? 'true',
+  });
+}
+
+// a copy of the element to print: form fields show what is typed and ticked now, where markup alone keeps
+// only what they started with, so a ticked task would print unticked
+function withFormState(element: Element): Element {
+  const copy = element.cloneNode(true) as Element;
+  // pictures that wait until they are scrolled to would never load in the page the app prints
+  copy.querySelectorAll('img[loading="lazy"]').forEach((image) => image.removeAttribute('loading'));
+  const live = element.querySelectorAll('input, textarea, select');
+  const copied = copy.querySelectorAll('input, textarea, select');
+  live.forEach((field, index) => {
+    const target = copied[index];
+    if (!target) return;
+    if (field instanceof HTMLInputElement) {
+      if (field.checked) target.setAttribute('checked', '');
+      else target.removeAttribute('checked');
+      target.setAttribute('value', field.value);
+    } else if (field instanceof HTMLTextAreaElement) {
+      target.textContent = field.value;
+    } else if (field instanceof HTMLSelectElement) {
+      target.querySelectorAll('option').forEach((option, at) => option.toggleAttribute('selected', at === field.selectedIndex));
+    }
+  });
+  return copy;
+}
+
+// morrow's toasts as the app shows them; the app draws them above its own screens, which cover this page
+function toastMessages(toasts: Toast[]): ToastMessage[] {
+  return toasts.map((entry) => ({
+    id: entry.id,
+    message: entry.message,
+    tone: entry.tone,
+    action: entry.action?.label ?? null,
+  }));
+}
+
+function runToastAction(id: number): void {
+  const entry = getUi().toasts.find((item) => item.id === id);
+  entry?.action?.run();
+  dismissToast(id);
 }
 
 // encrypting and unlocking take a password typed in the native app; the answer says whether it worked
@@ -215,6 +307,7 @@ async function encryption(action: string, params: Record<string, unknown>): Prom
 // because the editor would rewrite them in a form it understands
 function Page({ pageId, find }: { pageId: PageId; find: FindRequest | null }) {
   const state = useWorkspace();
+  const { sourceMode } = useUi();
   const page = state.pages[pageId];
   const doc = state.docs[pageId];
   // when the page was last opened, for recent pages, as morrow's PageView records it; not for canvases yet,
@@ -249,7 +342,31 @@ function Page({ pageId, find }: { pageId: PageId; find: FindRequest | null }) {
         plain={docToPlainText(doc)}
       />
     );
+  // morrow's page menu offers the markdown source for text pages, which the editor can read back
+  if (sourceMode === pageId && page.kind === 'page') return <SourcePage page={page} doc={doc} />;
   return <EditorApp key={pageId} page={page} doc={doc} editable find={find} onFound={clearFind} />;
+}
+
+// as morrow's PageView in source mode: the header, a note saying so with the way back, and the source
+function SourcePage({ page, doc }: { page: PageMeta; doc: DocNode }) {
+  return (
+    <div className="page-scroll">
+      <article className="page font-sans width-comfortable">
+        <PageHeader
+          page={page}
+          editable
+          onEnter={() => document.querySelector<HTMLTextAreaElement>('.source-text')?.focus()}
+        />
+        <div className="banner source-banner" role="note">
+          <span>You are editing this page as Markdown.</span>
+          <button type="button" className="button small" onClick={() => setUi({ sourceMode: null })}>
+            Back to the editor
+          </button>
+        </div>
+        <SourceEditor pageId={page.id} doc={doc} editable />
+      </article>
+    </div>
+  );
 }
 
 function Notice({ page, text, plain }: { page: PageMeta; text: string; plain?: string }) {
@@ -280,6 +397,12 @@ function Host() {
     // the app opens the vault only after this, once the host can show it
     post({ type: 'ready' });
   }, []);
+  useEffect(() => {
+    post({ type: 'toasts', toasts: toastMessages(ui.toasts) });
+  }, [ui.toasts]);
+  useEffect(() => {
+    if (phase.kind === 'ready') report();
+  }, [ui.sourceMode]);
   const dialog = ui.dialog?.kind === 'source' ? ui.dialog : null;
   const history = ui.dialog?.kind === 'history' ? ui.dialog : null;
   return (
@@ -295,7 +418,6 @@ function Host() {
         />
       )}
       {history && <HistoryDialog pageId={history.pageId} />}
-      <Toasts />
     </div>
   );
 }
@@ -367,6 +489,37 @@ listen((message) => {
     case 'unprotectPage':
       if (phase.kind === 'ready') void getSession().unprotectPage(message.pageId);
       break;
+    case 'exportMarkdown':
+      if (phase.kind === 'ready') void exportPageMarkdown(message.pageId);
+      break;
+    case 'publish':
+      if (phase.kind === 'ready') void publishSite(message.pageId);
+      break;
+    case 'exportAll':
+      if (phase.kind === 'ready') void exportAllMarkdown();
+      break;
+    case 'backup':
+      if (phase.kind === 'ready') void exportBackup();
+      break;
+    case 'restore':
+      if (phase.kind === 'ready') void restoreBackup();
+      break;
+    case 'importMarkdown':
+      if (phase.kind === 'ready') void importMarkdown(message.parentId);
+      break;
+    case 'deleteUnusedFiles':
+      if (phase.kind === 'ready') void deleteUnusedFiles();
+      break;
+    case 'setSourceMode':
+      commitEditors();
+      setUi({ sourceMode: message.pageId });
+      break;
+    case 'toastAction':
+      runToastAction(message.id);
+      break;
+    case 'dismissToast':
+      dismissToast(message.id);
+      break;
     case 'gradeCard': {
       if (phase.kind !== 'ready' || !reviews) break;
       const card = collectCards(getSession().getState()).find((item) => item.id === message.cardId);
@@ -383,6 +536,7 @@ listen((message) => {
   query,
   linkSelection,
   encryption,
+  pdfSnapshot,
 });
 
 // ctrl or cmd click on anything that points at a page opens it in a new tab, as morrow's tabs do

@@ -18,6 +18,7 @@ const HOST_MODULES: Record<string, string> = {
   'router.ts': 'router.ts',
   'platform/desktop.ts': 'desktop.ts',
   'components/Sidebar.tsx': 'sidebar.tsx',
+  'platform/files.ts': 'files.ts',
 };
 
 // modules that must never reach the editor bundle: electron code, and the copy of pages kept in
@@ -31,6 +32,16 @@ const RENAMED: Record<string, Array<[string, string]>> = {
   [path.join(morrowApp, 'components/HistoryDialog.tsx')]: [
     ['No versions yet. Morrow keeps a version', 'No versions yet. SynapseNote keeps a version'],
   ],
+  [path.join(morrowApp, 'operations.ts')]: [
+    ['`morrow-backup-${stamp()}.json`', '`synapsenote-backup-${stamp()}.json`'],
+    ['entries[`Morrow/${file.path}`]', 'entries[`SynapseNote/${file.path}`]'],
+    ["await zipAttachments(attachments, entries, 'Morrow/');", "await zipAttachments(attachments, entries, 'SynapseNote/');"],
+    ['`morrow-markdown-${stamp()}.zip`', '`synapsenote-markdown-${stamp()}.zip`'],
+    [".pop() ?? 'Morrow')", ".pop() ?? 'SynapseNote')"],
+    [": 'Morrow';", ": 'SynapseNote';"],
+  ],
+  [path.join(morrowSrc, 'core/site.ts')]: [['<meta name="generator" content="Morrow">', '<meta name="generator" content="SynapseNote">']],
+  [path.join(morrowSrc, 'core/portability.ts')]: [["'This file is not a Morrow backup.'", "'This file is not a SynapseNote backup.'"]],
   [path.join(morrowSrc, 'core/migrations.ts')]: [
     ['newer version of Morrow (format ${version}). Please update Morrow.', 'newer version of SynapseNote (format ${version}). Please update SynapseNote.'],
   ],

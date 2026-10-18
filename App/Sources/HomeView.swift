@@ -76,10 +76,14 @@ struct HomeView: View {
     private var empty: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Your vault is empty").font(.title3.weight(.semibold))
-            Text("Start with a blank page.").foregroundStyle(.secondary)
-            Button("Create a Page", systemImage: "plus") { controller.createPage() }
-                .buttonStyle(.borderedProminent)
-                .padding(.top, 4)
+            Text("Start with a blank page, or bring in notes you already have.").foregroundStyle(.secondary)
+            HStack {
+                Button("Create a Page", systemImage: "plus") { controller.createPage() }
+                    .buttonStyle(.borderedProminent)
+                Button("Import", systemImage: "arrow.up.doc") { controller.importMarkdown() }
+                    .buttonStyle(.bordered)
+            }
+            .padding(.top, 4)
         }
     }
 

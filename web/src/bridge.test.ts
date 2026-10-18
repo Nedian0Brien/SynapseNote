@@ -95,6 +95,23 @@ describe('parseInbound', () => {
     expect(parseInbound({ type: 'gradeCard', cardId: 'c', grade: 'perfect' })).toBeNull();
   });
 
+  it('accepts data, source and toast requests', () => {
+    expect(parseInbound({ type: 'exportMarkdown', pageId: 'a' })).toEqual({ type: 'exportMarkdown', pageId: 'a' });
+    expect(parseInbound({ type: 'exportMarkdown', pageId: null })).toBeNull();
+    expect(parseInbound({ type: 'publish', pageId: null })).toEqual({ type: 'publish', pageId: null });
+    expect(parseInbound({ type: 'publish', pageId: 'a' })).toEqual({ type: 'publish', pageId: 'a' });
+    expect(parseInbound({ type: 'publish' })).toBeNull();
+    for (const type of ['exportAll', 'backup', 'restore', 'deleteUnusedFiles']) expect(parseInbound({ type })).toEqual({ type });
+    expect(parseInbound({ type: 'importMarkdown', parentId: null })).toEqual({ type: 'importMarkdown', parentId: null });
+    expect(parseInbound({ type: 'importMarkdown', parentId: 'p' })).toEqual({ type: 'importMarkdown', parentId: 'p' });
+    expect(parseInbound({ type: 'importMarkdown', parentId: 3 })).toBeNull();
+    expect(parseInbound({ type: 'setSourceMode', pageId: 'a' })).toEqual({ type: 'setSourceMode', pageId: 'a' });
+    expect(parseInbound({ type: 'setSourceMode', pageId: null })).toEqual({ type: 'setSourceMode', pageId: null });
+    expect(parseInbound({ type: 'toastAction', id: 4 })).toEqual({ type: 'toastAction', id: 4 });
+    expect(parseInbound({ type: 'dismissToast', id: 4 })).toEqual({ type: 'dismissToast', id: 4 });
+    expect(parseInbound({ type: 'dismissToast', id: '4' })).toBeNull();
+  });
+
   it('drops pages without an id, unknown messages and non objects', () => {
     expect(parseInbound({ type: 'show', pageId: '' })).toBeNull();
     expect(parseInbound({ type: 'show', pageId: 'a', find: 3 })).toBeNull();
@@ -129,6 +146,7 @@ describe('post and listen', () => {
       query: (name) => (name === 'recent' ? '[]' : null),
       linkSelection: () => false,
       encryption: async () => '{"ok":true}',
+      pdfSnapshot: (id) => (id === 'a' ? '{}' : null),
     });
     const synapse = (globalThis.window as Window).synapse!;
     expect(synapse.receive({ type: 'show', pageId: 'a' })).toBe(true);
@@ -138,5 +156,6 @@ describe('post and listen', () => {
     expect(synapse.pathOf('a')).toBe('A.md');
     expect(synapse.query('recent', {})).toBe('[]');
     expect(synapse.linkSelection()).toBe(false);
+    expect(synapse.pdfSnapshot('b')).toBeNull();
   });
 });

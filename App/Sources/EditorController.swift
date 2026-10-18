@@ -74,6 +74,17 @@ final class EditorController: WorkspaceService {
     var sidebarHidden = false
     /// The page alone, without sidebar, tabs or inspector, as Morrow's focus mode.
     var focusMode = false
+    /// The page shown as its Markdown source instead of in the editor.
+    private(set) var sourceMode: String?
+    /// Morrow's toasts as the editor page reports them.
+    private(set) var toasts: [EditorToast] = []
+    /// Toasts from this side, such as a PDF that could not be made; negative ids keep them apart.
+    private(set) var ownToasts: [EditorToast] = []
+    var allToasts: [EditorToast] { toasts + ownToasts }
+    /// A file waiting for the person to say where it goes.
+    var exportFile: ExportFile?
+    /// A PDF is being made.
+    private(set) var exportingPDF = false
 
     @ObservationIgnored let page: WebPage
     @ObservationIgnored var openURL: (URL) -> Void = { _ in }
@@ -87,6 +98,8 @@ final class EditorController: WorkspaceService {
     @ObservationIgnored private var navigationWatch: Task<Void, Never>?
     /// Text to select in the page shown next.
     @ObservationIgnored private var pendingFind: String?
+    @ObservationIgnored private var ownToastCount = 0
+    @ObservationIgnored private let editorRoot = Bundle.main.resourceURL!.appending(path: "Editor")
     @ObservationIgnored private let logger = Logger(subsystem: "com.synapsenote.native", category: "editor")
 
     init(location: VaultLocation = VaultLocation()) {
@@ -450,6 +463,109 @@ final class EditorController: WorkspaceService {
         send(.unprotectPage(pageId: pageId))
     }
 
+    // MARK: data
+
+    /// The page as Markdown, a zip with its attachments when it has any.
+    func exportMarkdown(_ pageId: String) {
+        send(.exportMarkdown(pageId: pageId))
+    }
+
+    /// The whole vault as a website when `pageId` is nil, otherwise the page and the pages inside it.
+    func publish(_ pageId: String?) {
+        send(.publish(pageId: pageId))
+    }
+
+    func exportAll() {
+        send(.exportAll)
+    }
+
+    func backup() {
+        send(.backup)
+    }
+
+    func restoreBackup() {
+        send(.restore)
+    }
+
+    /// Markdown and zip files made into pages inside `parentId`, at the top level when it is nil.
+    func importMarkdown(into parentId: String? = nil) {
+        send(.importMarkdown(parentId: parentId))
+    }
+
+    func deleteUnusedFiles() {
+        send(.deleteUnusedFiles)
+    }
+
+    /// Shows a page as its Markdown source, or every page in the editor again with nil.
+    func setSourceMode(_ pageId: String?) {
+        if let pageId, selection != pageId { go(to: .page(pageId)) }
+        send(.setSourceMode(pageId: pageId))
+    }
+
+    /// The page printed to a PDF on A4 paper, as Morrow's desktop app does. Canvases are not printed.
+    func exportPDF(_ pageId: String) {
+        guard !exportingPDF, let info = workspace.infos[pageId], info.kind != "canvas" else { return }
+        if selection != pageId { go(to: .page(pageId)) }
+        exportingPDF = true
+        Task {
+            defer { exportingPDF = false }
+            // pictures and diagrams get a moment to finish drawing, as in morrow
+            try? await Task.sleep(for: .milliseconds(400))
+            do {
+                let answer = try await page.callJavaScript("return window.synapse.pdfSnapshot(id)", arguments: ["id": pageId])
+                guard let snapshot = try WorkspaceQuery.decode(answer, as: PDFExporter.Snapshot.self) else {
+                    throw PDFExporter.Failure.notLoaded
+                }
+                let data = try await PDFExporter(editorRoot: editorRoot, access: access).pdf(of: snapshot)
+                exportFile = ExportFile(name: "\(ExportFile.safeName(snapshot.title)).pdf", data: data) { name in "Saved \(name)." }
+            } catch {
+                logger.error("pdf failed: \(error.localizedDescription, privacy: .public)")
+                showToast("Could not export the PDF: \(error.localizedDescription)", error: true)
+            }
+        }
+    }
+
+    /// The person chose where the waiting file goes, or cancelled.
+    func finishExport(_ file: ExportFile?, savedAs name: String?, error: (any Error)? = nil) {
+        if exportFile?.id == file?.id { exportFile = nil }
+        if let error {
+            showToast("The file could not be saved: \(error.localizedDescription)", error: true)
+        } else if let name, let message = file?.savedMessage {
+            showToast(message(name))
+        }
+    }
+
+    #if os(macOS)
+    /// Asks where to keep the waiting file with the save panel.
+    func saveExportFile() async {
+        guard let file = exportFile else { return }
+        do {
+            finishExport(file, savedAs: try await SavePanel.save(file))
+        } catch {
+            finishExport(file, savedAs: nil, error: error)
+        }
+    }
+    #endif
+
+    func runToastAction(_ id: Int) {
+        if id < 0 { dismissToast(id) } else { send(.toastAction(id: id)) }
+    }
+
+    func dismissToast(_ id: Int) {
+        if id < 0 { ownToasts.removeAll { $0.id == id } } else { send(.dismissToast(id: id)) }
+    }
+
+    /// A toast from this side, gone after five seconds, eight for errors, as Morrow's.
+    func showToast(_ message: String, error: Bool = false) {
+        ownToastCount += 1
+        let toast = EditorToast(id: -ownToastCount, message: message, tone: error ? "error" : "info", action: nil)
+        ownToasts = Array((ownToasts + [toast]).suffix(4))
+        Task {
+            try? await Task.sleep(for: .seconds(error ? 8 : 5))
+            ownToasts.removeAll { $0.id == toast.id }
+        }
+    }
+
     private struct EncryptionAnswer: Decodable {
         let ok: Bool
         let error: String?
@@ -574,9 +690,10 @@ final class EditorController: WorkspaceService {
             rpc.handle(method: method, params: params) { [weak self] result in
                 Task { @MainActor in self?.send(.rpcResult(id: id, result: result)) }
             }
-        case .workspace(let pages, let locked, let state, let error):
+        case .workspace(let pages, let locked, let source, let state, let error):
             let before = workspace
             workspace = Workspace(pages: pages, locked: Set(locked))
+            sourceMode = source
             revision += 1
             saveState = switch state {
             case "pending": .pending
@@ -614,6 +731,25 @@ final class EditorController: WorkspaceService {
             if name == "escape", focusMode { focusMode = false }
         case .openView(let place):
             go(to: place)
+        case .saveFile(let name, _, let data):
+            exportFile = ExportFile(name: name, data: data)
+            #if os(macOS)
+            Task { await saveExportFile() }
+            #endif
+        case .toasts(let list):
+            toasts = list
+        case .autoBackup(let json):
+            #if os(macOS)
+            // morrow keeps automatic backups on the desktop only
+            Task {
+                let failure = await Task.detached { () -> String? in
+                    do { try AutoBackup.write(json); return nil } catch { return error.localizedDescription }
+                }.value
+                if let failure { showToast("Automatic backup failed: \(failure)", error: true) }
+            }
+            #else
+            _ = json
+            #endif
         }
     }
 

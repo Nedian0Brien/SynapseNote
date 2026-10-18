@@ -254,6 +254,22 @@ struct PageMenu: View {
                 Button("Remove Encryption", systemImage: "lock.open") { controller.removeEncryption(page.id) }
             }
         }
+        // the markdown source, for text pages that can be read
+        if page.kind == "page" && !controller.workspace.locked.contains(page.id) {
+            if controller.sourceMode == page.id {
+                Button("Back to the Editor", systemImage: "doc.text") { controller.setSourceMode(nil) }
+            } else {
+                Button("Edit as Markdown", systemImage: "chevron.left.forwardslash.chevron.right") { controller.setSourceMode(page.id) }
+            }
+        }
+        Divider()
+        Button("Export as Markdown…", systemImage: "arrow.down.doc") { controller.exportMarkdown(page.id) }
+        if page.kind != "canvas" {
+            Button("Export as PDF…", systemImage: "doc.richtext") { controller.exportPDF(page.id) }
+                .disabled(controller.exportingPDF)
+        }
+        Button("Publish as a Website…", systemImage: "globe") { controller.publish(page.id) }
+        Button("Import Markdown Here…", systemImage: "arrow.up.doc") { controller.importMarkdown(into: page.id) }
         Divider()
         Button("Move to Trash", systemImage: "trash", role: .destructive) { controller.trash(page.id) }
     }

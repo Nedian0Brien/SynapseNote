@@ -36,7 +36,30 @@ export type InboundMessage =
   | { type: 'openHistory'; pageId: PageId }
   | { type: 'lockPage'; pageId: PageId }
   | { type: 'unprotectPage'; pageId: PageId }
-  | { type: 'gradeCard'; cardId: string; grade: 'again' | 'hard' | 'good' | 'easy' };
+  | { type: 'gradeCard'; cardId: string; grade: 'again' | 'hard' | 'good' | 'easy' }
+  // morrow's data operations; each saves or picks its files through the app and reports in a toast
+  | { type: 'exportMarkdown'; pageId: PageId }
+  // the whole vault when pageId is null, otherwise the page and the pages inside it
+  | { type: 'publish'; pageId: PageId | null }
+  | { type: 'exportAll' }
+  | { type: 'backup' }
+  | { type: 'restore' }
+  // imported pages go inside parentId, at the top level when it is null
+  | { type: 'importMarkdown'; parentId: PageId | null }
+  | { type: 'deleteUnusedFiles' }
+  // the page shown as its markdown source, null for the editor
+  | { type: 'setSourceMode'; pageId: PageId | null }
+  // a toast's button was pressed, or the toast was closed, in the app
+  | { type: 'toastAction'; id: number }
+  | { type: 'dismissToast'; id: number };
+
+// a morrow toast as the app shows it, action is the label of its button
+export interface ToastMessage {
+  id: number;
+  message: string;
+  tone: 'info' | 'error';
+  action: string | null;
+}
 
 // posted to the native app through window.webkit.messageHandlers.editor
 export type OutboundMessage =
@@ -47,6 +70,8 @@ export type OutboundMessage =
       type: 'workspace';
       pages: Record<PageId, PageMeta>;
       locked: PageId[];
+      // the page shown as markdown source, null when every page is in the editor
+      sourceMode: PageId | null;
       saveState: SaveState;
       saveError: string | null;
     }
@@ -59,7 +84,13 @@ export type OutboundMessage =
   // a key the page received that belongs to the app, such as escape leaving focus mode
   | { type: 'shortcut'; shortcut: 'escape' }
   // one of the app's own views, such as the pages with a tag
-  | { type: 'openView'; view: 'tasks' | 'tags' | 'tag'; tag?: string };
+  | { type: 'openView'; view: 'tasks' | 'tags' | 'tag'; tag?: string }
+  // a file morrow saves, such as an export, data is base64; the app asks where to keep it
+  | { type: 'saveFile'; name: string; mime: string; data: string }
+  // every toast showing now, the app draws them over all of its screens
+  | { type: 'toasts'; toasts: ToastMessage[] }
+  // morrow's automatic backup, written by the app next to its own data
+  | { type: 'autoBackup'; json: string };
 
 interface WebkitHandler {
   postMessage(message: unknown): void;
@@ -82,6 +113,8 @@ export interface HostApi {
   linkSelection(): boolean;
   // encrypts a page with a password or unlocks one, the answer is JSON {ok} or {ok: false, error}
   encryption(action: string, params: Record<string, unknown>): Promise<string>;
+  // the open page as html to print, JSON {title, html}; null when that page is not the one on screen
+  pdfSnapshot(id: string): string | null;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -160,6 +193,24 @@ export function parseInbound(value: unknown): InboundMessage | null {
         (value.grade === 'again' || value.grade === 'hard' || value.grade === 'good' || value.grade === 'easy')
         ? { type: 'gradeCard', cardId: value.cardId, grade: value.grade }
         : null;
+    case 'exportMarkdown':
+      return isId(value.pageId) ? { type: 'exportMarkdown', pageId: value.pageId } : null;
+    case 'publish':
+      return value.pageId === null || isId(value.pageId) ? { type: 'publish', pageId: value.pageId } : null;
+    case 'exportAll':
+    case 'backup':
+    case 'restore':
+    case 'deleteUnusedFiles':
+      return { type: value.type };
+    case 'importMarkdown':
+      return value.parentId === null || isId(value.parentId)
+        ? { type: 'importMarkdown', parentId: value.parentId }
+        : null;
+    case 'setSourceMode':
+      return value.pageId === null || isId(value.pageId) ? { type: 'setSourceMode', pageId: value.pageId } : null;
+    case 'toastAction':
+    case 'dismissToast':
+      return Number.isInteger(value.id) ? { type: value.type, id: value.id as number } : null;
     default:
       return null;
   }

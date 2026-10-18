@@ -6,8 +6,8 @@ nonisolated enum EditorEvent: Equatable, Sendable {
     case ready
     /// A call into Morrow's `VaultBridge`, answered with `EditorCommand.rpcResult`.
     case rpc(id: Int, method: String, params: [JSONValue])
-    /// The page records, the encrypted pages still locked, and the save state.
-    case workspace(pages: [String: JSONValue], locked: [String], saveState: String, saveError: String?)
+    /// The page records, the encrypted pages still locked, the page shown as Markdown source, and the save state.
+    case workspace(pages: [String: JSONValue], locked: [String], sourceMode: String?, saveState: String, saveError: String?)
     /// A page to open, nil for Home. `newTab` when it was opened with a command or control click; `find` is
     /// text to select in it.
     case openPage(pageId: String?, newTab: Bool, find: String?)
@@ -20,6 +20,12 @@ nonisolated enum EditorEvent: Equatable, Sendable {
     case shortcut(String)
     /// One of the app's own views, such as the pages with a tag.
     case openView(Destination)
+    /// A file Morrow saves, such as an export; the app asks where to keep it.
+    case saveFile(name: String, mime: String, data: Data)
+    /// Every toast showing now, newest last.
+    case toasts([EditorToast])
+    /// Morrow's automatic backup, a JSON document.
+    case autoBackup(json: String)
 
     private struct Raw: Decodable {
         let type: String
@@ -39,6 +45,12 @@ nonisolated enum EditorEvent: Equatable, Sendable {
         let locked: [String]?
         let view: String?
         let tag: String?
+        let sourceMode: String?
+        let name: String?
+        let mime: String?
+        let data: String?
+        let toasts: [EditorToast]?
+        let json: String?
     }
 
     /// Reads a posted message body. Anything that is not exactly one of the known messages gives nil.
@@ -55,7 +67,7 @@ nonisolated enum EditorEvent: Equatable, Sendable {
             self = .rpc(id: id, method: method, params: raw.params ?? [])
         case "workspace":
             guard let pages = raw.pages, let state = raw.saveState else { return nil }
-            self = .workspace(pages: pages, locked: raw.locked ?? [], saveState: state, saveError: raw.saveError)
+            self = .workspace(pages: pages, locked: raw.locked ?? [], sourceMode: raw.sourceMode, saveState: state, saveError: raw.saveError)
         case "openPage":
             self = .openPage(pageId: raw.pageId, newTab: raw.newTab ?? false, find: raw.find)
         case "chooseIcon":
@@ -84,10 +96,29 @@ nonisolated enum EditorEvent: Equatable, Sendable {
                 self = .openView(.tag(tag))
             default: return nil
             }
+        case "saveFile":
+            guard let name = raw.name, let mime = raw.mime, let text = raw.data, let data = Data(base64Encoded: text) else { return nil }
+            self = .saveFile(name: name, mime: mime, data: data)
+        case "toasts":
+            guard let toasts = raw.toasts else { return nil }
+            self = .toasts(toasts)
+        case "autoBackup":
+            guard let json = raw.json else { return nil }
+            self = .autoBackup(json: json)
         default:
             return nil
         }
     }
+}
+
+/// A Morrow toast as the app shows it; `action` is the label of its button.
+nonisolated struct EditorToast: Decodable, Equatable, Hashable, Sendable, Identifiable {
+    let id: Int
+    let message: String
+    let tone: String
+    let action: String?
+
+    var isError: Bool { tone == "error" }
 }
 
 /// The kinds of page the app makes, as Morrow's `createPage` takes them.
@@ -123,6 +154,19 @@ nonisolated enum EditorCommand: Sendable {
     /// Writes an encrypted page back as plain text.
     case unprotectPage(pageId: String)
     case gradeCard(cardId: String, grade: String)
+    case exportMarkdown(pageId: String)
+    /// The whole vault as a website when `pageId` is nil, otherwise the page and the pages inside it.
+    case publish(pageId: String?)
+    case exportAll
+    case backup
+    case restore
+    /// Imported pages go inside `parentId`, at the top level when it is nil.
+    case importMarkdown(parentId: String?)
+    case deleteUnusedFiles
+    /// The page shown as its Markdown source, nil for the editor.
+    case setSourceMode(pageId: String?)
+    case toastAction(id: Int)
+    case dismissToast(id: Int)
 
     struct RPCFailure: Error, Equatable, Sendable {
         let message: String
@@ -170,6 +214,26 @@ nonisolated enum EditorCommand: Sendable {
             .object(["type": .string("unprotectPage"), "pageId": .string(pageId)])
         case .gradeCard(let cardId, let grade):
             .object(["type": .string("gradeCard"), "cardId": .string(cardId), "grade": .string(grade)])
+        case .exportMarkdown(let pageId):
+            .object(["type": .string("exportMarkdown"), "pageId": .string(pageId)])
+        case .publish(let pageId):
+            .object(["type": .string("publish"), "pageId": pageId.map(JSONValue.string) ?? .null])
+        case .exportAll:
+            .object(["type": .string("exportAll")])
+        case .backup:
+            .object(["type": .string("backup")])
+        case .restore:
+            .object(["type": .string("restore")])
+        case .importMarkdown(let parentId):
+            .object(["type": .string("importMarkdown"), "parentId": parentId.map(JSONValue.string) ?? .null])
+        case .deleteUnusedFiles:
+            .object(["type": .string("deleteUnusedFiles")])
+        case .setSourceMode(let pageId):
+            .object(["type": .string("setSourceMode"), "pageId": pageId.map(JSONValue.string) ?? .null])
+        case .toastAction(let id):
+            .object(["type": .string("toastAction"), "id": .number(Double(id))])
+        case .dismissToast(let id):
+            .object(["type": .string("dismissToast"), "id": .number(Double(id))])
         }
     }
 }

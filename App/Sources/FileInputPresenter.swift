@@ -1,4 +1,5 @@
 import Foundation
+import os
 import UniformTypeIdentifiers
 import WebKit
 #if os(macOS)
@@ -18,10 +19,14 @@ final class FileInputPresenter: WebPage.DialogPresenting {
     }
 
     var onRequest: (Request?) -> Void = { _ in }
+    private let logger = Logger(subsystem: "com.synapsenote.native", category: "files")
 
     func handleFileInputPrompt(parameters: WKOpenPanelParameters, initiatedBy frame: WebPage.FrameInfo) async -> WebPage.FileInputPromptResult {
-        guard let picked = await pick(allowsMultiple: parameters.allowsMultipleSelection), !picked.isEmpty else { return .cancel }
+        let picked = await pick(allowsMultiple: parameters.allowsMultipleSelection)
+        logger.notice("file input: \(picked?.count ?? 0, privacy: .public) picked")
+        guard let picked, !picked.isEmpty else { return .cancel }
         let copies = picked.compactMap(Self.temporaryCopy)
+        if copies.count < picked.count { logger.error("file input: \(picked.count - copies.count, privacy: .public) could not be copied") }
         return copies.isEmpty ? .cancel : .selected(copies)
     }
 

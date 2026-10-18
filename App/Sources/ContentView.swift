@@ -32,13 +32,20 @@ struct ContentView: View {
         .fileImporter(isPresented: $controller.choosingFolder, allowedContentTypes: [.folder]) { result in
             if case .success(let url) = result { controller.choose(folder: url) }
         }
+        // the picker is answered from its completion and cancellation alone: the binding is set to false before
+        // the completion runs, and answering there would hand the page a cancel in place of the picked files
         .fileImporter(
-            isPresented: Binding(get: { controller.fileRequest != nil }, set: { if !$0 { finishFileRequest(nil) } }),
+            isPresented: Binding(get: { controller.fileRequest != nil }, set: { _ in }),
             allowedContentTypes: [.item],
-            allowsMultipleSelection: controller.fileRequest?.allowsMultiple ?? false
-        ) { result in
-            finishFileRequest(try? result.get())
-        }
+            allowsMultipleSelection: controller.fileRequest?.allowsMultiple ?? false,
+            onCompletion: { result in finishFileRequest(try? result.get()) },
+            onCancellation: { finishFileRequest(nil) }
+        )
+        #if os(iOS)
+        // its own view: file dialogs on the same view as the two importers above stop the window taking touches
+        .background { ExportSheet(controller: controller) }
+        #endif
+        .overlay(alignment: .bottom) { ToastOverlay(controller: controller) }
         .sheet(isPresented: Binding(get: { controller.iconPage != nil }, set: { if !$0 { controller.iconPage = nil } })) {
             if let pageId = controller.iconPage {
                 EmojiPickerView(current: controller.workspace.infos[pageId]?.icon) { icon in
@@ -264,3 +271,25 @@ private struct SaveStatusView: View {
         }
     }
 }
+
+#if os(iOS)
+/// The system's save sheet for a file Morrow saves, such as an export.
+private struct ExportSheet: View {
+    let controller: EditorController
+
+    var body: some View {
+        Color.clear
+            .fileExporter(
+                isPresented: Binding(get: { controller.exportFile != nil }, set: { if !$0 { controller.exportFile = nil } }),
+                document: controller.exportFile.map { ExportDocument(data: $0.data) },
+                contentType: controller.exportFile?.contentType ?? .data,
+                defaultFilename: controller.exportFile?.name
+            ) { [file = controller.exportFile] result in
+                switch result {
+                case .success(let url): controller.finishExport(file, savedAs: url.lastPathComponent)
+                case .failure(let error): controller.finishExport(file, savedAs: nil, error: error)
+                }
+            }
+    }
+}
+#endif

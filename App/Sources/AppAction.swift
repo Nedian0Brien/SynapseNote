@@ -150,6 +150,30 @@ struct AppAction: Identifiable {
                   }) { controller in
             if let id = controller.selection { controller.removeEncryption(id) }
         },
+        AppAction("page.source", .page, symbol: "chevron.left.forwardslash.chevron.right", keywords: "markdown source code raw text",
+                  name: { $0.sourceMode != nil && $0.sourceMode == $0.selection ? "Back to the Editor" : "Edit as Markdown" },
+                  enabled: { controller in
+                      guard onLivePage(controller), let id = controller.selection, let page = controller.workspace.infos[id] else { return false }
+                      return page.kind == "page" && !controller.workspace.locked.contains(id)
+                  }) { controller in
+            guard let id = controller.selection else { return }
+            controller.setSourceMode(controller.sourceMode == id ? nil : id)
+        },
+        AppAction("page.exportMarkdown", .page, "Export Page as Markdown…", symbol: "arrow.down.doc", keywords: "download md",
+                  enabled: { $0.phase == .ready && $0.selection != nil }) { controller in
+            if let id = controller.selection { controller.exportMarkdown(id) }
+        },
+        AppAction("page.exportPdf", .page, "Export Page as PDF…", symbol: "doc.richtext", keywords: "print pdf save document",
+                  enabled: { controller in
+                      guard controller.phase == .ready, !controller.exportingPDF, let id = controller.selection else { return false }
+                      return controller.workspace.infos[id].map { $0.kind != "canvas" } == true
+                  }) { controller in
+            if let id = controller.selection { controller.exportPDF(id) }
+        },
+        AppAction("page.publish", .page, "Publish Page as a Website…", symbol: "globe", keywords: "site html export publish share static",
+                  enabled: onLivePage) { controller in
+            if let id = controller.selection { controller.publish(id) }
+        },
         AppAction("go.review", .general, "Review Flashcards", symbol: "graduationcap", keywords: "flashcards study cards spaced",
                   shortcut: KeyboardShortcut("r", modifiers: [.command, .shift])) { $0.go(to: .review) },
         AppAction("page.duplicate", .page, "Duplicate Page", symbol: "doc.on.doc", keywords: "copy", enabled: onLivePage) { controller in
@@ -158,6 +182,19 @@ struct AppAction: Identifiable {
         AppAction("page.trash", .page, "Move Page to Trash", symbol: "trash", keywords: "delete remove",
                   shortcut: KeyboardShortcut(.delete), enabled: onLivePage) { controller in
             if let id = controller.selection { controller.trash(id) }
+        },
+        AppAction("data.importMarkdown", .data, "Import Markdown Files…", symbol: "arrow.up.doc", keywords: "md markdown notion zip") {
+            $0.importMarkdown()
+        },
+        AppAction("data.exportAll", .data, "Export Everything as Markdown…", symbol: "archivebox", keywords: "zip download") { $0.exportAll() },
+        AppAction("data.publish", .data, "Publish Everything as a Website…", symbol: "globe",
+                  keywords: "site html export publish share static") { $0.publish(nil) },
+        AppAction("data.backup", .data, "Save a Backup…", symbol: "externaldrive", keywords: "export json") { $0.backup() },
+        AppAction("data.restore", .data, "Restore from a Backup…", symbol: "externaldrive.badge.plus", keywords: "import json") {
+            $0.restoreBackup()
+        },
+        AppAction("data.deleteUnused", .data, "Delete Unused Files", symbol: "trash.slash", keywords: "attachments clean storage") {
+            $0.deleteUnusedFiles()
         },
         AppAction("vault.open", .data, "Open Folder…", symbol: "folder", keywords: "vault switch another",
                   shortcut: KeyboardShortcut("o", modifiers: [.command, .shift]), enabled: { _ in true }) { $0.choosingFolder = true },
@@ -184,6 +221,8 @@ struct AppAction: Identifiable {
     #if os(macOS)
     private static let platformActions = [
         AppAction("vault.reveal", .data, "Show Vault Folder in Finder", symbol: "folder") { $0.revealVault() },
+        AppAction("data.showBackups", .data, "Show Automatic Backups in Finder", symbol: "clock.arrow.circlepath",
+                  keywords: "backup folder", enabled: { _ in true }) { _ in AutoBackup.reveal() },
     ]
     #else
     private static let platformActions: [AppAction] = []
