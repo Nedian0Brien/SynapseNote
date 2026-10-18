@@ -31,6 +31,25 @@ final class EditorController: WorkspaceService {
     var selection: String?
     /// The trash screen is showing instead of a page.
     var showingTrash = false
+
+    /// What the sidebar has selected: a page or the trash.
+    enum SidebarItem: Hashable {
+        case page(String)
+        case trash
+    }
+
+    var sidebarItem: SidebarItem? {
+        get { showingTrash ? .trash : selection.map(SidebarItem.page) }
+        set {
+            switch newValue {
+            case .trash: showTrash()
+            case .page(let id): selection = id
+            case nil:
+                selection = nil
+                showingTrash = false
+            }
+        }
+    }
     /// Pages whose subpages the sidebar shows, kept per vault.
     var expanded: Set<String> = [] {
         didSet { saveExpanded() }

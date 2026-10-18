@@ -7,7 +7,7 @@ struct Sidebar: View {
 
     var body: some View {
         let workspace = controller.workspace
-        List(selection: $controller.selection) {
+        List(selection: $controller.sidebarItem) {
             let favorites = workspace.favorites
             if !favorites.isEmpty {
                 Section("Favorites") {
@@ -25,22 +25,17 @@ struct Sidebar: View {
             Section("Pages") {
                 ForEach(workspace.rows(expanded: controller.expanded)) { row in
                     TreeRow(controller: controller, row: row)
-                        .tag(row.id)
+                        .tag(EditorController.SidebarItem.page(row.id))
                 }
             }
             Section {
-                Button {
-                    controller.showTrash()
-                } label: {
-                    HStack {
-                        Label("Trash", systemImage: "trash")
-                        Spacer()
-                        let count = workspace.trashed.count
-                        if count > 0 { Text("\(count)").foregroundStyle(.secondary).monospacedDigit() }
-                    }
+                HStack {
+                    Label("Trash", systemImage: "trash")
+                    Spacer()
+                    let count = workspace.trashed.count
+                    if count > 0 { Text("\(count)").foregroundStyle(.secondary).monospacedDigit() }
                 }
-                .buttonStyle(.plain)
-                .listRowBackground(controller.showingTrash ? Color.accentColor.opacity(0.18) : nil)
+                .tag(EditorController.SidebarItem.trash)
             }
         }
         .overlay {

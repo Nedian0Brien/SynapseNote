@@ -7,6 +7,8 @@ struct ContentView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
+    /// On iPhone the split view shows one column; choosing a page or the trash moves to the detail column.
+    @State private var compactColumn = NavigationSplitViewColumn.detail
 
     var body: some View {
         Group {
@@ -59,7 +61,7 @@ struct ContentView: View {
     }
 
     private var workspace: some View {
-        NavigationSplitView {
+        NavigationSplitView(preferredCompactColumn: $compactColumn) {
             Sidebar(controller: controller)
                 .navigationTitle(controller.vaultName ?? "SynapseNote")
                 .toolbar {
@@ -97,7 +99,11 @@ struct ContentView: View {
                     #endif
                 }
         }
-        .onChange(of: controller.selection) { controller.showSelection() }
+        .onChange(of: controller.selection) {
+            controller.showSelection()
+            if controller.selection != nil { compactColumn = .detail }
+        }
+        .onChange(of: controller.showingTrash) { if controller.showingTrash { compactColumn = .detail } }
     }
 
     private func finishFileRequest(_ urls: [URL]?) {
