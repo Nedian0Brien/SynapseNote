@@ -93,10 +93,17 @@ export function EditorApp({ page, doc, editable }: Props) {
   const [blockMenu, setBlockMenu] = useState<BlockMenuRequest | null>(null);
   const [finding, setFinding] = useState(false);
   const committed = useRef<DocNode>(doc);
+  // lets an outside change of the document reset what counts as unchanged
+  const baselineRef = useRef<((value: string) => void) | null>(null);
 
   useEffect(() => {
     let dirty = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
+    // the editor adjusts a document as it loads it, such as embeds and blank lines; those changes are not the
+    // person's, so nothing is written until they type, paste, drop or click, and never when the content ends
+    // up the same as it was when it loaded
+    let touched = false;
+    let baseline = '';
 
     const commit = () => {
       if (timer) clearTimeout(timer);
@@ -104,6 +111,8 @@ export function EditorApp({ page, doc, editable }: Props) {
       if (!dirty || instance.isDestroyed) return;
       dirty = false;
       const next = instance.getJSON() as DocNode;
+      if (JSON.stringify(next) === baseline) return;
+      baseline = JSON.stringify(next);
       committed.current = next;
       run({ type: 'page.setDoc', id: pageId, doc: next, now: Date.now() });
     };
@@ -184,17 +193,33 @@ export function EditorApp({ page, doc, editable }: Props) {
         },
       },
       onUpdate: () => {
+        if (!touched) {
+          baseline = JSON.stringify(instance.getJSON());
+          return;
+        }
         dirty = true;
         if (timer) clearTimeout(timer);
         timer = setTimeout(commit, COMMIT_DELAY_MS);
       },
     });
+    baseline = JSON.stringify(instance.getJSON());
+    baselineRef.current = (value) => {
+      baseline = value;
+    };
+
+    // anything the person does on the page counts, including the editor's menus, which live outside its element
+    const touch = () => {
+      touched = true;
+    };
+    const events = ['keydown', 'beforeinput', 'compositionstart', 'paste', 'drop', 'pointerdown'] as const;
+    for (const type of events) document.addEventListener(type, touch, true);
 
     instance.on('focus', () => setFocusedEditor(instance));
     const unregister = registerCommit(commit);
     setEditor(instance);
 
     return () => {
+      for (const type of events) document.removeEventListener(type, touch, true);
       commit();
       unregister();
       setFocusedEditor(null);
@@ -212,6 +237,7 @@ export function EditorApp({ page, doc, editable }: Props) {
     if (!editor || editor.isDestroyed || doc === committed.current) return;
     committed.current = doc;
     editor.commands.setContent(doc as JSONContent, { emitUpdate: false });
+    baselineRef.current?.(JSON.stringify(editor.getJSON()));
   }, [doc, editor]);
 
   useEffect(() => {
