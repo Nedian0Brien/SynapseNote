@@ -8,8 +8,9 @@ afterEach(() => {
 describe('parseInbound', () => {
   it('accepts the vault, page and command messages', () => {
     expect(parseInbound({ type: 'openVault', name: 'Notes' })).toEqual({ type: 'openVault', name: 'Notes' });
-    expect(parseInbound({ type: 'show', pageId: 'a' })).toEqual({ type: 'show', pageId: 'a' });
-    expect(parseInbound({ type: 'show', pageId: null })).toEqual({ type: 'show', pageId: null });
+    expect(parseInbound({ type: 'show', pageId: 'a' })).toEqual({ type: 'show', pageId: 'a', find: null });
+    expect(parseInbound({ type: 'show', pageId: null })).toEqual({ type: 'show', pageId: null, find: null });
+    expect(parseInbound({ type: 'show', pageId: 'a', find: 'milk' })).toEqual({ type: 'show', pageId: 'a', find: 'milk' });
     expect(parseInbound({ type: 'createPage', parentId: null })).toEqual({ type: 'createPage', parentId: null });
     expect(parseInbound({ type: 'trashPage', pageId: 'a' })).toEqual({ type: 'trashPage', pageId: 'a' });
   });
@@ -47,8 +48,16 @@ describe('parseInbound', () => {
     expect(parseInbound({ type: 'command' })).toBeNull();
   });
 
+  it('accepts heading and find requests for the open page', () => {
+    expect(parseInbound({ type: 'scrollToHeading', index: 2 })).toEqual({ type: 'scrollToHeading', index: 2 });
+    expect(parseInbound({ type: 'scrollToHeading', index: -1 })).toBeNull();
+    expect(parseInbound({ type: 'scrollToHeading', index: 1.5 })).toBeNull();
+    expect(parseInbound({ type: 'find' })).toEqual({ type: 'find' });
+  });
+
   it('drops pages without an id, unknown messages and non objects', () => {
     expect(parseInbound({ type: 'show', pageId: '' })).toBeNull();
+    expect(parseInbound({ type: 'show', pageId: 'a', find: 3 })).toBeNull();
     expect(parseInbound({ type: 'trashPage' })).toBeNull();
     expect(parseInbound({ type: 'theme', theme: 'sepia' })).toBeNull();
     expect(parseInbound({ type: 'eval', code: '1' })).toBeNull();
@@ -70,16 +79,23 @@ describe('post and listen', () => {
     expect(() => post({ type: 'ready' })).not.toThrow();
   });
 
-  it('hands parsed messages to the listener and exposes flush', async () => {
+  it('hands parsed messages to the listener and exposes the host calls', async () => {
     vi.stubGlobal('window', {});
     const handler = vi.fn();
     const flush = vi.fn(async () => true);
-    listen(handler, flush, (id) => (id === 'a' ? 'A.md' : null));
+    listen(handler, {
+      flush,
+      pathOf: (id) => (id === 'a' ? 'A.md' : null),
+      query: (name) => (name === 'recent' ? '[]' : null),
+      linkSelection: () => false,
+    });
     const synapse = (globalThis.window as Window).synapse!;
     expect(synapse.receive({ type: 'show', pageId: 'a' })).toBe(true);
     expect(synapse.receive({ type: 'nope' })).toBe(false);
     expect(handler).toHaveBeenCalledTimes(1);
     expect(await synapse.flush()).toBe(true);
     expect(synapse.pathOf('a')).toBe('A.md');
+    expect(synapse.query('recent', {})).toBe('[]');
+    expect(synapse.linkSelection()).toBe(false);
   });
 });

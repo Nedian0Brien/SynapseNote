@@ -10,7 +10,8 @@ export type Theme = 'light' | 'dark';
 export type InboundMessage =
   // opens the vault the app has access to, name is shown wherever the vault is named
   | { type: 'openVault'; name: string }
-  | { type: 'show'; pageId: PageId | null }
+  // find is text to select once the page is open, such as the words a search matched
+  | { type: 'show'; pageId: PageId | null; find: string | null }
   | { type: 'rpcResult'; id: number; ok: true; value: unknown }
   | { type: 'rpcResult'; id: number; ok: false; error: string }
   | { type: 'vaultChanges'; changes: VaultChange[] }
@@ -18,18 +19,25 @@ export type InboundMessage =
   | { type: 'trashPage'; pageId: PageId }
   // a morrow Command from a native screen, checked by morrow's applyCommand like any other
   | { type: 'command'; command: Command }
-  | { type: 'theme'; theme: Theme };
+  | { type: 'theme'; theme: Theme }
+  // the open page's top level heading at this position is scrolled into view
+  | { type: 'scrollToHeading'; index: number }
+  // opens the open page's find bar
+  | { type: 'find' };
 
 // posted to the native app through window.webkit.messageHandlers.editor
 export type OutboundMessage =
   | { type: 'ready' }
   | { type: 'rpc'; id: number; method: string; params: unknown[] }
   | { type: 'workspace'; pages: Record<PageId, PageMeta>; saveState: SaveState; saveError: string | null }
-  | { type: 'openPage'; pageId: PageId | null }
+  // newTab when the page was opened with a ctrl or cmd click
+  | { type: 'openPage'; pageId: PageId | null; newTab?: boolean; find?: string | null }
   | { type: 'chooseIcon'; pageId: PageId }
   | { type: 'vaultFailed'; message: string }
   | { type: 'openExternal'; url: string }
-  | { type: 'log'; level: 'error' | 'warning'; message: string };
+  | { type: 'log'; level: 'error' | 'warning'; message: string }
+  // a key the page received that belongs to the app, such as escape leaving focus mode
+  | { type: 'shortcut'; id: 'escape' };
 
 interface WebkitHandler {
   postMessage(message: unknown): void;
@@ -38,8 +46,18 @@ interface WebkitHandler {
 declare global {
   interface Window {
     webkit?: { messageHandlers?: { editor?: WebkitHandler } };
-    synapse?: { receive(message: unknown): boolean; flush(): Promise<boolean>; pathOf(id: string): string | null };
+    synapse?: { receive(message: unknown): boolean } & HostApi;
   }
+}
+
+// what the app calls directly, for answers it waits for
+export interface HostApi {
+  flush(): Promise<boolean>;
+  pathOf(id: string): string | null;
+  // a workspace answer as JSON text, null while no vault is open or for a query that is not known
+  query(name: string, params: Record<string, unknown>): string | null;
+  // opens the link editor when text is selected in the editor, as cmd k does there; false when nothing is selected
+  linkSelection(): boolean;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -61,7 +79,9 @@ export function parseInbound(value: unknown): InboundMessage | null {
     case 'openVault':
       return typeof value.name === 'string' ? { type: 'openVault', name: value.name } : null;
     case 'show':
-      return value.pageId === null || isId(value.pageId) ? { type: 'show', pageId: value.pageId } : null;
+      if (value.pageId !== null && !isId(value.pageId)) return null;
+      if (value.find !== undefined && value.find !== null && typeof value.find !== 'string') return null;
+      return { type: 'show', pageId: value.pageId, find: value.find || null };
     case 'rpcResult':
       if (typeof value.id !== 'number') return null;
       if (value.ok === true) return { type: 'rpcResult', id: value.id, ok: true, value: value.value };
@@ -83,6 +103,12 @@ export function parseInbound(value: unknown): InboundMessage | null {
         : null;
     case 'theme':
       return value.theme === 'light' || value.theme === 'dark' ? { type: 'theme', theme: value.theme } : null;
+    case 'scrollToHeading':
+      return Number.isInteger(value.index) && (value.index as number) >= 0
+        ? { type: 'scrollToHeading', index: value.index as number }
+        : null;
+    case 'find':
+      return { type: 'find' };
     default:
       return null;
   }
@@ -92,18 +118,13 @@ export function post(message: OutboundMessage): void {
   globalThis.window?.webkit?.messageHandlers?.editor?.postMessage(message);
 }
 
-export function listen(
-  handler: (message: InboundMessage) => void,
-  flush: () => Promise<boolean>,
-  pathOf: (id: string) => string | null,
-): void {
+export function listen(handler: (message: InboundMessage) => void, api: HostApi): void {
   window.synapse = {
     receive(raw: unknown) {
       const message = parseInbound(raw);
       if (message) handler(message);
       return message !== null;
     },
-    flush,
-    pathOf,
+    ...api,
   };
 }

@@ -84,13 +84,30 @@ function TitleField({ page, onEnter }: { page: PageMeta; onEnter: () => void }) 
   );
 }
 
+// text to select when the page opens, a new id for each request
+export interface FindRequest {
+  text: string;
+  id: number;
+}
+
 interface Props {
   page: PageMeta;
   doc: DocNode;
   editable: boolean;
+  find: FindRequest | null;
 }
 
-export function EditorApp({ page, doc, editable }: Props) {
+// the editor on screen, for the app's cmd k
+let mounted: Editor | null = null;
+
+// opens the link editor for selected text, as cmd k in the editor does; the app asks first, then opens search
+export function linkSelection(): boolean {
+  if (!mounted || mounted.isDestroyed || mounted.state.selection.empty || !mounted.view.hasFocus()) return false;
+  mounted.view.dom.dispatchEvent(new Event('morrow:edit-link'));
+  return true;
+}
+
+export function EditorApp({ page, doc, editable, find }: Props) {
   const pageId = page.id;
   const [editor, setEditor] = useState<Editor | null>(null);
   const [blockMenu, setBlockMenu] = useState<BlockMenuRequest | null>(null);
@@ -217,8 +234,10 @@ export function EditorApp({ page, doc, editable }: Props) {
     instance.on('focus', () => setFocusedEditor(instance));
     const unregister = registerCommit(commit);
     setEditor(instance);
+    mounted = instance;
 
     return () => {
+      if (mounted === instance) mounted = null;
       for (const type of events) document.removeEventListener(type, touch, true);
       commit();
       unregister();
@@ -243,6 +262,34 @@ export function EditorApp({ page, doc, editable }: Props) {
   useEffect(() => {
     if (editor && !editor.isDestroyed) editor.setEditable(editable);
   }, [editor, editable]);
+
+  // opens with the match selected and in view, as morrow's PageEditor; the app keeps the page's address, so
+  // the request is not cleared through it
+  const found = useRef(0);
+  useEffect(() => {
+    if (!editor || editor.isDestroyed || !find || found.current === find.id) return;
+    found.current = find.id;
+    const term = find.text.toLowerCase();
+    let match: { from: number; to: number } | null = null;
+    editor.state.doc.descendants((node, pos) => {
+      if (match) return false;
+      if (!node.isTextblock) return true;
+      const text = node.textBetween(0, node.content.size, undefined, '\ufffc').toLowerCase();
+      const index = text.indexOf(term);
+      if (index !== -1) match = { from: pos + 1 + index, to: pos + 1 + index + term.length };
+      return false;
+    });
+    // typescript does not follow the assignment inside the callback
+    const hit = match as { from: number; to: number } | null;
+    if (hit) editor.chain().focus().setTextSelection(hit).scrollIntoView().run();
+  }, [editor, find]);
+
+  // the app's find command
+  useEffect(() => {
+    const open = () => setFinding(true);
+    window.addEventListener('morrow:find', open);
+    return () => window.removeEventListener('morrow:find', open);
+  }, []);
 
   return (
     <div className="page-scroll">

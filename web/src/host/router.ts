@@ -14,11 +14,11 @@ export function showRoute(pageId: PageId | null): void {
 }
 
 export function navigate(route: Route): void {
-  if (route.name === 'page') post({ type: 'openPage', pageId: route.id });
+  if (route.name === 'page') post({ type: 'openPage', pageId: route.id, find: route.find });
   else if (route.name === 'home') post({ type: 'openPage', pageId: null });
   else toast('That view is not available yet.');
 }
 
-export function openPage(id: PageId): void {
-  post({ type: 'openPage', pageId: id });
+export function openPage(id: PageId, find: string | null = null): void {
+  post({ type: 'openPage', pageId: id, find });
 }
