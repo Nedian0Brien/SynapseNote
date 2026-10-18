@@ -18,8 +18,10 @@ export function PageTags({ page, editable }: { page: PageMeta; editable: boolean
   const inputRef = useRef<HTMLInputElement>(null);
   if (page.tags.length === 0 && !editable) return null;
   const save = (tags: string[]) => setTags(page, tags);
-  const add = () => {
-    const tags = draft
+  // reads the field itself: while a korean word is being composed ios may not have reported it as a change
+  // yet when the field loses focus
+  const add = (value: string) => {
+    const tags = value
       .split(/[,\s]+/)
       .map((tag) => normalizeTag(tag))
       .filter((tag): tag is string => tag !== null);
@@ -55,8 +57,8 @@ export function PageTags({ page, editable }: { page: PageMeta; editable: boolean
             placeholder="tag"
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
-            onBlur={() => {
-              add();
+            onBlur={(event) => {
+              add(event.currentTarget.value);
               setAdding(false);
             }}
             onKeyDown={(event) => {
@@ -64,11 +66,12 @@ export function PageTags({ page, editable }: { page: PageMeta; editable: boolean
               if (event.nativeEvent.isComposing) return;
               if (event.key === 'Enter' || event.key === ',') {
                 event.preventDefault();
-                add();
+                add(event.currentTarget.value);
               } else if (event.key === 'Escape') {
                 setDraft('');
                 setAdding(false);
-              } else if (event.key === 'Backspace' && !draft && page.tags.length) save(page.tags.slice(0, -1));
+              } else if (event.key === 'Backspace' && !event.currentTarget.value && page.tags.length)
+                save(page.tags.slice(0, -1));
             }}
           />
         ) : (

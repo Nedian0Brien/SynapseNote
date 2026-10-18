@@ -13,3 +13,19 @@ body {
 #root > .view {
   height: 100%;
 }
+
+/* morrow shows the icon and tag buttons while the pointer is over the page; a touch screen has no pointer
+   to hover, so they stay visible there */
+@media (hover: none) {
+  .page-header-actions,
+  .add-tag {
+    opacity: 1;
+  }
+
+  /* ios zooms the page into any form field whose text is smaller than 16px and leaves it zoomed; :root
+     outranks morrow's single class rules such as .tag-input, which set the font. the page title is a
+     textarea already larger than that, and keeps its own size */
+  :root :is(input, select) {
+    font-size: max(16px, 1em);
+  }
+}
