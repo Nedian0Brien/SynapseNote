@@ -212,8 +212,10 @@ private struct FocusButton: View {
 
     var body: some View {
         if controller.focusMode {
+            // escape closes the palette first, as in morrow
             Button("Leave Focus Mode", systemImage: "arrow.down.right.and.arrow.up.left") { controller.focusMode = false }
                 .keyboardShortcut(.cancelAction)
+                .disabled(controller.showingPalette)
         } else {
             Button("Focus Mode", systemImage: "arrow.up.left.and.arrow.down.right") { controller.focusMode = true }
         }

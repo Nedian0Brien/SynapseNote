@@ -87,7 +87,7 @@ struct CommandPalette: View {
                         #endif
                         .onSubmit { choose(entries.indices.contains(active) ? entries[active] : nil) }
                         .onKeyPress(.downArrow) {
-                            active = min(entries.count - 1, active + 1)
+                            active = max(0, min(entries.count - 1, active + 1))
                             return .handled
                         }
                         .onKeyPress(.upArrow) {
