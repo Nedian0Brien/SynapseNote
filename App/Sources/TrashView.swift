@@ -3,7 +3,6 @@ import SwiftUI
 /// Pages sent to the trash, to restore or delete forever, as Morrow's trash view.
 struct TrashView: View {
     let controller: EditorController
-    @State private var deleting: PageInfo?
     @State private var emptying = false
 
     var body: some View {
@@ -26,12 +25,12 @@ struct TrashView: View {
                                 }
                                 Spacer()
                                 Button("Restore") { controller.perform(.restore(id: page.id)) }
-                                Button("Delete Forever", role: .destructive) { deleting = page }
+                                DeleteForeverButton(controller: controller, page: page)
                             }
                             .buttonStyle(.bordered)
                         }
                     } footer: {
-                        Text("Pages in the trash stay in the vault's .trash folder until they are deleted forever. Deleted files go to the system trash.")
+                        Text(Self.footer)
                     }
                 }
             }
@@ -43,17 +42,6 @@ struct TrashView: View {
                     .disabled(trashed.isEmpty)
             }
         }
-        .confirmationDialog(
-            deleting.map { "Delete “\($0.displayTitle)” forever?" } ?? "",
-            isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
-            titleVisibility: .visible,
-            presenting: deleting
-        ) { page in
-            Button("Delete Forever", role: .destructive) { controller.perform(.deleteForever(id: page.id)) }
-        } message: { page in
-            let count = controller.workspace.descendants(of: page.id).count
-            Text(count > 0 ? "This also deletes \(count) subpage\(count == 1 ? "" : "s"). This cannot be undone." : "This cannot be undone.")
-        }
         .confirmationDialog("Empty the trash?", isPresented: $emptying, titleVisibility: .visible) {
             Button("Empty Trash", role: .destructive) { controller.perform(.emptyTrash) }
         } message: {
@@ -62,9 +50,37 @@ struct TrashView: View {
         }
     }
 
-    private static func relative(_ milliseconds: Double) -> String {
+    private static var footer: String {
+        #if os(macOS)
+        "Pages in the trash stay in the vault's .trash folder until they are deleted forever. Deleted files go to the Trash in Finder."
+        #else
+        "Pages in the trash stay in the vault's .trash folder until they are deleted forever. Deleted files are kept in the vault's .morrow/deleted folder."
+        #endif
+    }
+
+    static func relative(_ milliseconds: Double, now: Date = Date()) -> String {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .full
-        return formatter.localizedString(for: Date(timeIntervalSince1970: milliseconds / 1000), relativeTo: Date())
+        formatter.dateTimeStyle = .named
+        // a page trashed a moment ago can carry a time a little ahead of this clock
+        let date = min(Date(timeIntervalSince1970: milliseconds / 1000), now)
+        return formatter.localizedString(for: date, relativeTo: now)
+    }
+}
+
+/// Delete Forever with its confirmation shown at the button.
+private struct DeleteForeverButton: View {
+    let controller: EditorController
+    let page: PageInfo
+    @State private var confirming = false
+
+    var body: some View {
+        Button("Delete Forever", role: .destructive) { confirming = true }
+            .confirmationDialog("Delete “\(page.displayTitle)” forever?", isPresented: $confirming, titleVisibility: .visible) {
+                Button("Delete Forever", role: .destructive) { controller.perform(.deleteForever(id: page.id)) }
+            } message: {
+                let count = controller.workspace.descendants(of: page.id).count
+                Text(count > 0 ? "This also deletes \(count) subpage\(count == 1 ? "" : "s"). This cannot be undone." : "This cannot be undone.")
+            }
     }
 }

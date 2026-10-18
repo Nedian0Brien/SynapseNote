@@ -89,7 +89,12 @@ struct ContentView: View {
                     }
                 }
                 .toolbar {
+                    // at the top on iOS: the bottom of the page is where the editor's notices appear
+                    #if os(iOS)
+                    ToolbarItem(placement: .topBarTrailing) { SaveStatusView(state: controller.saveState) }
+                    #else
                     ToolbarItem(placement: .status) { SaveStatusView(state: controller.saveState) }
+                    #endif
                 }
         }
         .onChange(of: controller.selection) { controller.showSelection() }

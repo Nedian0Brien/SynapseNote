@@ -10,14 +10,21 @@ nonisolated final class VaultFileSystem: @unchecked Sendable {
     /// Moves a file to the system trash; replaced in tests so they never fill the real trash.
     private let trash: @Sendable (URL) throws -> Void
 
-    init(
-        root: URL,
-        presenter: (any NSFilePresenter)? = nil,
-        trash: @escaping @Sendable (URL) throws -> Void = { try FileManager.default.trashItem(at: $0, resultingItemURL: nil) }
-    ) {
+    init(root: URL, presenter: (any NSFilePresenter)? = nil, trash: @escaping @Sendable (URL) throws -> Void = VaultFileSystem.systemTrash) {
         self.root = root.standardizedFileURL
         self.presenter = presenter
         self.trash = trash
+    }
+
+    /// macOS moves deleted pages to the Finder trash. On iOS and iPadOS, trashItem left no file anywhere the
+    /// person could get back to (checked on iOS 27 with the app's documents folder), so there is no system trash
+    /// and pages go to the vault's own `.morrow/deleted` folder, as Morrow does without a system trash.
+    static let systemTrash: @Sendable (URL) throws -> Void = { url in
+        #if os(macOS)
+        try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+        #else
+        throw CocoaError(.featureUnsupported)
+        #endif
     }
 
     // MARK: shapes shared with the editor, see VaultScan, VaultOp and VaultChange in Morrow
@@ -286,14 +293,16 @@ nonisolated final class VaultFileSystem: @unchecked Sendable {
             let fileManager = FileManager.default
             guard fileManager.fileExists(atPath: url.path(percentEncoded: false)) else { return .ok }
             try VaultPaths.checkReal(url, in: root)
-            try coordinateWriting(url, options: .forDeleting) { url in
-                do {
-                    try trash(url)
-                } catch {
-                    // without a system trash the file is kept in the vault's own deleted folder instead
-                    let keep = root.appending(path: ".morrow/deleted/\(Int(Date().timeIntervalSince1970 * 1000))-\(url.lastPathComponent)")
-                    try fileManager.createDirectory(at: keep.deletingLastPathComponent(), withIntermediateDirectories: true)
-                    try fileManager.moveItem(at: url, to: keep)
+            // called outside file coordination: inside a coordinated write, trashItem never returned on iOS 27
+            // (seen with the app's documents folder); only the fallback move is coordinated
+            do {
+                try trash(url)
+            } catch {
+                // without a system trash the file is kept in the vault's own deleted folder instead
+                let keep = root.appending(path: ".morrow/deleted/\(Int(Date().timeIntervalSince1970 * 1000))-\(url.lastPathComponent)")
+                try coordinateMove(from: url, to: keep) { from, to in
+                    try fileManager.createDirectory(at: to.deletingLastPathComponent(), withIntermediateDirectories: true)
+                    try fileManager.moveItem(at: from, to: to)
                 }
             }
             return .ok

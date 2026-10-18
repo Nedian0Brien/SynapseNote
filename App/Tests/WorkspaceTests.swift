@@ -86,3 +86,11 @@ struct WorkspaceTests {
         #expect(WorkspaceCommand.deleteForever(id: "a").morrow(now: now)["type"] == .string("page.deleteForever"))
     }
 }
+
+struct TrashTimeTests {
+    @Test func aMomentAgoNeverReadsAsFuture() {
+        let now = Date(timeIntervalSince1970: 1000)
+        let ahead = TrashView.relative(1_000_500, now: now)
+        #expect(!ahead.contains("in "))
+    }
+}
