@@ -518,6 +518,9 @@ final class EditorController: WorkspaceService {
             } else if let selection, before.infos[selection] != nil, !workspace.isShowable(selection) {
                 // the page on screen went to the trash or was deleted
                 go(to: .home)
+            } else if let selection, before.infos[selection] == nil, workspace.infos[selection] != nil {
+                // a page made in the editor page opens before this side hears of it; its folders open now
+                for ancestor in workspace.ancestors(of: selection) { expanded.insert(ancestor.id) }
             }
         case .openPage(let pageId, let newTab, let find):
             let place = pageId.map(Destination.page) ?? .home
