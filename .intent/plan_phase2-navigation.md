@@ -41,3 +41,10 @@ spec: `spec_phase2-navigation.md`. 브랜치 `feat/navigation`(기준 `feat/page
 - `npm --prefix web test && npm --prefix web run typecheck`
 - `xcodegen generate` 후 `xcodebuild test -scheme SynapseNote -destination 'platform=macOS'`
 - 시뮬레이터: iPad, iPhone. 테스트 vault는 앱 컨테이너 안의 것만 쓴다.
+
+## 구현하며 바뀐 것
+
+- 홈·휴지통은 편집기 위에 겹치는 일반 뷰로 둔다. `NavigationStack`으로 감싸면 열의 제목·툴바가 바뀌며 `WebView`가 다시 만들어져 WebKit이 앱을 멈췄다. 휴지통의 Empty Trash는 화면 머리글로 옮겼다.
+- 본문 툴바 항목은 늘 같은 구조로 둔다(검색, 집중 모드, 인스펙터, 저장 상태). 검색은 사이드바가 숨겨진 iPad 세로 화면에서도 쓸 수 있게 본문 툴바에 둔다.
+- `columnVisibility`는 `@State`로 두고, 집중 모드·사이드바 명령이 바뀔 때만 값을 정한다.
+- 캔버스 페이지는 열람 기록을 남기지 않는다(5단계에서 다시 정한다).
