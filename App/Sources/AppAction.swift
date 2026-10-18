@@ -143,6 +143,13 @@ struct AppAction: Identifiable {
                   }) { controller in
             if let id = controller.selection { controller.lock(id) }
         },
+        AppAction("page.unprotect", .page, "Remove Encryption", symbol: "lock.open", keywords: "password decrypt",
+                  enabled: { controller in
+                      guard let id = controller.selection, let page = controller.workspace.infos[id] else { return false }
+                      return page.encrypted && !controller.workspace.locked.contains(id)
+                  }) { controller in
+            if let id = controller.selection { controller.removeEncryption(id) }
+        },
         AppAction("go.review", .general, "Review Flashcards", symbol: "graduationcap", keywords: "flashcards study cards spaced",
                   shortcut: KeyboardShortcut("r", modifiers: [.command, .shift])) { $0.go(to: .review) },
         AppAction("page.duplicate", .page, "Duplicate Page", symbol: "doc.on.doc", keywords: "copy", enabled: onLivePage) { controller in

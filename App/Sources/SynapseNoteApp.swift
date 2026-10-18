@@ -75,6 +75,7 @@ private struct PageCommands: Commands {
             item("page.history")
             item("page.encrypt")
             item("page.lock")
+            item("page.unprotect")
             item("page.localGraph")
             item("tab.duplicate")
             Divider()

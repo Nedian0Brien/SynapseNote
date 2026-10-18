@@ -45,7 +45,7 @@ import { createReviews } from './review';
 import type { Reviews } from './review';
 import { collectCards } from '../vendor/morrow/src/core/flashcards';
 import { HistoryDialog } from '../vendor/morrow/src/app/components/HistoryDialog';
-import { openDialog } from '../vendor/morrow/src/app/ui';
+import { closeDialog, openDialog } from '../vendor/morrow/src/app/ui';
 import { showRoute } from './host/router';
 import { settle } from './host/rpc';
 import { deliverChanges, nativeVaultBridge } from './host/vaultBridge';
@@ -121,6 +121,8 @@ async function openVault(name: string): Promise<void> {
 
 function show(pageId: PageId | null, text: string | null): void {
   commitEditors();
+  // morrow's dialogs cover the whole window; here the sidebar and search stay usable, so a page's dialog closes when another page opens
+  if (pageId !== shown) closeDialog();
   shown = pageId;
   // a new request each time, the same words asked for again select them again
   find = pageId && text ? { text, id: ++findCount } : null;
@@ -179,6 +181,11 @@ function scrollToHeading(index: number): void {
     '.editor-surface .prose > h1, .editor-surface .prose > h2, .editor-surface .prose > h3',
   );
   headings[index]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// a find request is used once; an editor made again for the same page, such as after unlocking it, starts plain
+function clearFind(): void {
+  find = null;
 }
 
 async function flush(): Promise<boolean> {
@@ -242,7 +249,7 @@ function Page({ pageId, find }: { pageId: PageId; find: FindRequest | null }) {
         plain={docToPlainText(doc)}
       />
     );
-  return <EditorApp key={pageId} page={page} doc={doc} editable find={find} />;
+  return <EditorApp key={pageId} page={page} doc={doc} editable find={find} onFound={clearFind} />;
 }
 
 function Notice({ page, text, plain }: { page: PageMeta; text: string; plain?: string }) {

@@ -73,6 +73,7 @@ interface Props {
   doc: DocNode;
   editable: boolean;
   find: FindRequest | null;
+  onFound?: () => void;
 }
 
 // the editor on screen, for the app's cmd k
@@ -85,7 +86,7 @@ export function linkSelection(): boolean {
   return true;
 }
 
-export function EditorApp({ page, doc, editable, find }: Props) {
+export function EditorApp({ page, doc, editable, find, onFound }: Props) {
   const pageId = page.id;
   const [editor, setEditor] = useState<Editor | null>(null);
   const [blockMenu, setBlockMenu] = useState<BlockMenuRequest | null>(null);
@@ -259,7 +260,8 @@ export function EditorApp({ page, doc, editable, find }: Props) {
     // typescript does not follow the assignment inside the callback
     const hit = match as { from: number; to: number } | null;
     if (hit) editor.chain().focus().setTextSelection(hit).scrollIntoView().run();
-  }, [editor, find]);
+    onFound?.();
+  }, [editor, find, onFound]);
 
   // the app's find command
   useEffect(() => {
