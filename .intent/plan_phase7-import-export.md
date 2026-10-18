@@ -17,7 +17,7 @@ spec: `spec_phase7-import-export.md`. 브랜치 `feat/export`(기준 `feat/histo
    - `exportMarkdown {pageId}`, `publish {pageId|null}`, `exportAll`, `backup`, `restore`, `importMarkdown {parentId|null}`, `deleteUnusedFiles`, `setSourceMode {pageId|null}`
 4. **소스 모드** (`main.tsx` `Page`): `ui.sourceMode === pageId`이면 머리글 + `source-banner` + `SourceEditor`. workspace 메시지에 `sourceMode`.
 5. **PDF**
-   - 웹: `pdfSnapshot(pageId)` 조회 → `{title, html, root: {theme, accent, colorful}}`. 본문은 화면의 `.page`를 복제한 것이고, 스타일시트는 문서의 `<link>`·`<style>`이다.
+   - 웹: `pdfSnapshot(pageId)` 호출 → `{title, head, body, accent, colorful}`. 본문은 화면의 `.page`를 복제한 것이고, 스타일시트는 문서의 `<link>`·`<style>`이다.
    - Swift `PDFExporter.swift` 신규: 스킴 처리기 어댑터(`WKURLSchemeHandler`), 화면 밖 `WKWebView`, macOS `printOperation`, iOS `UIPrintPageRenderer`. A4, 여백 0.6인치.
      - 배경 인쇄(`shouldPrintBackgrounds`, Electron `printBackground`와 같음), 글꼴과 그림을 기다린 뒤 인쇄
      - 복제한 본문에는 입력 칸의 현재 값(체크 상태, 콜아웃 제목)을 옮기고, 늦게 불러오는 그림을 바로 불러오게 한다
