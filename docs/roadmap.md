@@ -22,7 +22,7 @@
 | 5 | 캔버스·그래프 | 구현 (PR #6, `docs/verification/phase5-canvas-graph.md`) |
 | 6 | 페이지 히스토리, 암호화 페이지, 플래시카드 | 구현 (PR #7, `docs/verification/phase6-history-encryption-review.md`) |
 | 7 | 가져오기·내보내기·백업·정적 사이트 게시·Markdown 소스 편집 | 구현 (PR #8, `docs/verification/phase7-import-export.md`) |
-| 8 | 기기 간 동기화 | |
+| 8 | 기기 간 동기화 | 구현 (PR #9, `docs/verification/phase8-sync.md`) |
 | 9 | 빠른 캡처, 테마·글꼴·커버·사용자 CSS, 첫 실행 가이드 | |
 | 10 | 배포 준비: 서명, 실기기 검증, TestFlight | |
 | 11 | 전환: 편집기와 데이터 코어를 Swift로 | |
@@ -30,6 +30,7 @@
 ## 전환 단계(11)에서 볼 것
 
 - 캔버스 화면(전체 페이지와 인라인)도 5단계에서 Morrow `CanvasView`를 편집기 WebView에서 그리도록 했다. 그래프 화면은 이미 SwiftUI이고, 그래프 계산(`buildGraph`)만 TS 코어에 있다.
+- 8단계 동기화는 이미 Swift다(Morrow `planPull`을 옮기고 TS 결과와 비교하는 테스트가 있다). 편집기를 옮긴 뒤에는 pull 전 저장(`window.synapse.flush`)과 바뀐 파일 알림만 새 편집기에 맞추면 된다.
 - 7단계의 PDF 내보내기는 편집기 페이지의 DOM을 화면 밖 `WKWebView`에서 인쇄한다. 편집기를 Swift로 옮기면 인쇄할 HTML을 Swift 쪽에서 만들어야 한다. 알림은 이미 앱이 그린다.
 - 페이지 히스토리 대화상자는 6단계에서 Morrow `HistoryDialog`를 편집기 WebView에서 열도록 했다. 암호 입력과 플래시카드 복습은 SwiftUI이고, 암호화·SM-2 일정·카드 수집은 TS 코어에 있다.
 - 데이터베이스 화면(전체 페이지와 인라인)은 4단계에서 Morrow `DatabaseView`를 편집기 WebView에서 그리도록 했다. 편집기를 Swift로 옮길 때 함께 옮긴다.
