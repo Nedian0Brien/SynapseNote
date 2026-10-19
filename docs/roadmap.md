@@ -28,8 +28,10 @@
 | 11 | 전환: 편집기와 데이터 코어를 Swift로 | 11a~11e로 나눔(`.intent/spec_phase11a-swift-data-core.md`) |
 | 11a | Swift 데이터 코어: Markdown(markdown-it 이식)·머리말 YAML·vault 읽기·페이지 명령·저장 계획, Morrow 결과와 비교, DEBUG 동시 실행 | 구현 (PR #12, `docs/verification/phase11a-swift-data-core.md`) |
 | 11b | 조회(검색·백링크·태그·작업·그래프·홈)를 Swift로, 웹 세션의 거울 상태 | 구현 (PR #13, `docs/verification/phase11b-swift-queries.md`) |
-| 11c | 쓰기 권한을 Swift 세션으로, 데이터베이스 수식·캔버스·히스토리·암호화·플래시카드 코어 | |
-| 11d | 네이티브 편집기 | |
+| 11c | 쓰기 권한을 Swift 세션으로: 기록·암호화·외부 편집·저장 예약·첨부 파일 | 11c-1·11c-2로 나눔(`.intent/spec_phase11c-swift-session.md`). 데이터베이스 수식과 캔버스 표시는 웹 화면에서만 쓰여 11d로 옮김 |
+| 11c-1 | 저장소 나머지 이식(기록·암호화·외부 편집·저장 예약·첨부 파일·메타), Morrow 결과와 비교. 앱 동작은 그대로 | 구현 (PR #14, `docs/verification/phase11c1-storage-port.md`) |
+| 11c-2 | 전환: 명령을 양쪽에서 적용하고 파일은 Swift만 씀, 외부 편집은 Swift가 먼저 읽음 | |
+| 11d | 네이티브 편집기와 데이터베이스·캔버스 화면(수식 포함) | |
 | 11e | 웹 편집기·번들·node 빌드 제거 | |
 
 ## 전환 단계(11)에서 볼 것
