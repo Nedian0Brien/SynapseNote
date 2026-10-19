@@ -15,7 +15,8 @@
     "core-fixtures": "rolldown scripts/core-fixtures.ts --format esm --platform node -o node_modules/.cache/core-fixtures.mjs && TZ=UTC node node_modules/.cache/core-fixtures.mjs ../App/Tests/Fixtures/core",
     "html-entities": "rolldown scripts/html-entities.ts --format esm --platform node -o node_modules/.cache/html-entities.mjs && node node_modules/.cache/html-entities.mjs ../App/Sources/Core/Markdown/HTMLEntities.swift",
     "markdown-unicode": "rolldown scripts/markdown-unicode.ts --format esm --platform node -o node_modules/.cache/markdown-unicode.mjs && node node_modules/.cache/markdown-unicode.mjs ../App/Sources/Core/Markdown/MarkdownPunctuation.swift",
-    "sync-fixtures": "rolldown scripts/sync-fixtures.ts --format esm --platform node -o node_modules/.cache/sync-fixtures.mjs && node node_modules/.cache/sync-fixtures.mjs ../App/Tests/Fixtures/sync-fixtures.json"
+    "sync-fixtures": "rolldown scripts/sync-fixtures.ts --format esm --platform node -o node_modules/.cache/sync-fixtures.mjs && node node_modules/.cache/sync-fixtures.mjs ../App/Tests/Fixtures/sync-fixtures.json",
+    "storage-fixtures": "rolldown scripts/storage-fixtures.ts --format esm --platform node -o node_modules/.cache/storage-fixtures.mjs && TZ=UTC node node_modules/.cache/storage-fixtures.mjs ../App/Tests/Fixtures/core"
   },
   "devDependencies": {
     "@floating-ui/dom": "^1.8.0",
