@@ -9,9 +9,26 @@ nonisolated enum VaultOpResult: Equatable, Sendable {
     case error(message: String)
 }
 
-/// Carries out vault operations in order and stops at the first that fails, as Morrow's VaultBridge.apply.
+/// A file in a folder of the vault, as Morrow's VaultFileInfo.
+nonisolated struct VaultFileInfo: Equatable, Sendable {
+    var path: String
+    var size: Double
+    /// milliseconds since 1970
+    var mtime: Double
+}
+
+/// Everything the vault storage needs from the file system (Morrow's VaultBridge).
 nonisolated protocol VaultBridge: AnyObject {
+    /// carries out operations in order and stops at the first that fails, one result per attempt
     func apply(_ ops: [VaultOp]) -> [VaultOpResult]
+    /// nil when the file is not there or cannot be read
+    func readText(_ path: String) -> String?
+    func readBytes(_ path: String) -> Data?
+    /// makes a new file, never replaces one
+    func createFile(_ path: String, _ data: Data) throws
+    func exists(_ path: String) -> Bool
+    /// the files under a folder, empty when it is not there
+    func listFiles(_ dir: String) -> [VaultFileInfo]
 }
 
 /// One save: the records a command touched and the whole workspace at that moment (Morrow's WriteBatch).
@@ -28,41 +45,58 @@ nonisolated struct VaultWriteError: Error, Equatable, Sendable {
     let message: String
 }
 
-/// The file side of Morrow's storage/vaultRepository.ts: what a vault holds on disk as far as Morrow knows, and
-/// how a save turns into file operations. Page history, encryption keys and external edits are left to 11c;
-/// a page that is encrypted is never written here, as in Morrow without its key.
+/// Morrow's storage/vaultRepository.ts: what a vault holds on disk as far as Morrow knows, how a save turns into
+/// file operations, page history, the keys of unlocked encrypted pages, edits made by other apps, attachments and
+/// Morrow's own small files. The parts live in VaultWriter+History, +External and +Files.
 nonisolated final class VaultWriter {
     static let registryPath = "\(Paths.morrowDir)/workspace.json"
     static let recentPath = "\(Paths.morrowDir)/recent.json"
+    static let historyDir = "\(Paths.morrowDir)/history"
     private static let maxRecent = 300
     private static let maxActivityDays = 400
     private static let dayPattern = JSRegex(#"^\d{4}-\d{2}-\d{2}$"#)
 
-    private(set) var layout = VaultLayout.Map()
-    private(set) var folderOnly = JSSet()
-    private(set) var sources = JSMap<PageFile.Source>()
+    var layout = VaultLayout.Map()
+    var folderOnly = JSSet()
+    var sources = JSMap<PageFile.Source>()
     /// what each page file holds on disk, as far as morrow knows
-    private(set) var texts = JSMap<String>()
-    private(set) var reserved = JSSet()
+    var texts = JSMap<String>()
+    var reserved = JSSet()
     /// pages that could not be read, their files are never rewritten
-    private(set) var locked = JSSet()
-    private(set) var others = JSSet()
-    private(set) var registryText: String?
-    private(set) var recentText: String?
+    var locked = JSSet()
+    var others = JSSet()
+    var registryText: String?
+    var recentText: String?
+    /// keys of unlocked encrypted pages, kept in memory only
+    var keys = JSMap<PageCrypto.PageKey>()
+    /// the plain text last encrypted for each page, to tell whether anything changed
+    var plainTexts = JSMap<String>()
+    var pendingPlain = JSMap<String>()
+    var historyCleared = JSSet()
     /// saves per day, for the activity chart on the home page
-    private(set) var days = JSMap<Double>()
-    private(set) var registryDirty = false
-    private(set) var lastState: WorkspaceState?
+    var days = JSMap<Double>()
+    var registryDirty = false
+    var history = JSMap<[Snapshot]>()
+    var lastState: WorkspaceState?
 
-    private let bridge: VaultBridge
-    private let newId: () -> String
+    let bridge: VaultBridge
+    let newId: () -> String
     /// milliseconds since 1970, `Date.now()`
-    private let now: () -> Double
+    let now: () -> Double
+    /// `crypto.getRandomValues`: salts and nonces of encrypted pages
+    let random: (Int) -> [UInt8]
 
-    init(bridge: VaultBridge, newId: @escaping () -> String, now: @escaping () -> Double = { Date().timeIntervalSince1970 * 1000 }) {
+    init(bridge: VaultBridge, newId: @escaping () -> String, now: @escaping () -> Double = { Date().timeIntervalSince1970 * 1000 },
+         random: @escaping (Int) -> [UInt8] = VaultWriter.systemRandom) {
         self.bridge = bridge
         self.newId = newId
         self.now = now
+        self.random = random
+    }
+
+    static func systemRandom(_ count: Int) -> [UInt8] {
+        var generator = SystemRandomNumberGenerator()
+        return (0..<count).map { _ in UInt8.random(in: 0...255, using: &generator) }
     }
 
     func pathOf(_ id: String) -> String? {
@@ -109,9 +143,9 @@ nonisolated final class VaultWriter {
         try write(WriteBatch(state: lastState))
     }
 
-    private static func lower(_ text: String) -> String { JSText.string(JSText.lowercased(text.units)) }
+    static func lower(_ text: String) -> String { JSText.string(JSText.lowercased(text.units)) }
 
-    private static func same(_ a: String?, _ b: String?) -> Bool {
+    static func same(_ a: String?, _ b: String?) -> Bool {
         switch (a, b) {
         case (nil, nil): true
         case (let a?, let b?): a.jsEquals(b)
@@ -165,10 +199,26 @@ nonisolated final class VaultWriter {
         for id in candidates {
             guard let page = state.pages[id], let placement = next[id], let file = placement.file, !locked.has(id) else { continue }
             guard let text = render(state, next, newTargets, id, docChanged.has(id), previous[id], resolveOld, retargeted) else { continue }
-            // encrypted pages need their key, which 11c brings
-            if page.encrypted { continue }
-            if let known = texts[id], known.jsEquals(text) { continue }
-            ops.append(.write(path: file, text: text, expect: .some(texts[id]), id: id))
+            var written = text
+            if page.encrypted {
+                // encrypted pages are compared before encryption, a fresh nonce makes every encrypted copy differ
+                guard let pageKey = keys[id] else { continue }
+                if let plain = plainTexts[id], plain.jsEquals(text), let known = texts[id], PageCrypto.isEncryptedText(known) { continue }
+                do {
+                    written = try PageCrypto.encryptPage(text, pageKey, random: random)
+                } catch {
+                    throw VaultWriteError(message: "The page could not be encrypted: \(error.localizedDescription)")
+                }
+                pendingPlain[id] = text
+            } else if let known = texts[id], known.jsEquals(text) {
+                continue
+            }
+            ops.append(.write(path: file, text: written, expect: .some(texts[id]), id: id))
+        }
+        // turning encryption on removes the plain versions kept in page history
+        for id in metaChanged where state.pages[id]?.encrypted == true && layout.has(id) && (history[id]?.isEmpty ?? true) && !historyCleared.has(id) {
+            ops.append(.delete(path: historyPath(id)))
+            historyCleared.insert(id)
         }
 
         // folders emptied by removals and moves are tidied away, folders with other files stay
@@ -178,6 +228,8 @@ nonisolated final class VaultWriter {
             let parentFolder = Paths.dirname(previous[id]!.folder)
             if !parentFolder.isEmpty, !parentFolder.jsEquals(Paths.trashDir) { emptied.insert(parentFolder) }
         }
+
+        for snapshot in batch.snapshots { ops.append(historyOp(snapshot)) }
 
         if !batch.docs.isEmpty {
             let day = Daily.dateKey(Date(timeIntervalSince1970: now() / 1000))
@@ -202,7 +254,7 @@ nonisolated final class VaultWriter {
         registryDirty = false
     }
 
-    private func wantsFile(_ state: WorkspaceState, _ id: String) -> Bool {
+    func wantsFile(_ state: WorkspaceState, _ id: String) -> Bool {
         guard let page = state.pages[id] else { return false }
         if let doc = state.docs[id], !Doc.isDocEmpty(doc) { return true }
         let parent = page.parentId.flatMap { state.pages[$0] }
@@ -211,7 +263,7 @@ nonisolated final class VaultWriter {
         return !managed.isEmpty
     }
 
-    private func render(_ state: WorkspaceState, _ layout: VaultLayout.Map, _ targets: JSMap<String>, _ id: String, _ edited: Bool,
+    func render(_ state: WorkspaceState, _ layout: VaultLayout.Map, _ targets: JSMap<String>, _ id: String, _ edited: Bool,
                         _ before: Placement?, _ resolveOld: VaultLoad.Resolver?, _ retargeted: JSSet) -> String? {
         let page = state.pages[id]!
         let placement = layout[id]!
@@ -278,8 +330,8 @@ nonisolated final class VaultWriter {
             if failedAt == -1 { throw VaultWriteError(message: "The desktop shell stopped before finishing the save.") }
             let op = pending[failedAt]
             if case .conflict(_, let current) = results[failedAt], case .write(let path, let text, _, let id?) = op {
-                // the file changed on disk in the meantime; Morrow keeps that version in page history (11c) and
-                // writes again over what is there now
+                // the file changed on disk in the meantime, that version is kept in page history before it is replaced
+                if let current { keepDiskVersion(id, current) }
                 pending = [.write(path: path, text: text, expect: .some(current), id: id)] + pending[(failedAt + 1)...]
                 continue
             }
@@ -300,6 +352,10 @@ nonisolated final class VaultWriter {
         switch op {
         case .write(_, let text, _, let id?):
             texts[id] = text
+            if let plain = pendingPlain[id] {
+                plainTexts[id] = plain
+                pendingPlain[id] = nil
+            }
             if let target = next[id] { tracked[id] = target }
         case .rename(let from, let to, _):
             VaultPlan.replayRename(&tracked, from, to)
@@ -316,7 +372,7 @@ nonisolated final class VaultWriter {
         }
     }
 
-    private func registryFor(_ state: WorkspaceState, _ layout: VaultLayout.Map) -> (workspace: String, recent: String) {
+    func registryFor(_ state: WorkspaceState, _ layout: VaultLayout.Map) -> (workspace: String, recent: String) {
         var pages = JSObject()
         var opened: [(String, Double)] = []
         let sorted = layout.map { ($0.key, $0.value) }.jsSorted { a, b in
@@ -347,7 +403,7 @@ nonisolated final class VaultWriter {
 
     // MARK: helpers
 
-    private static func walk(_ doc: DocNode, _ visit: (DocNode) -> Bool) {
+    static func walk(_ doc: DocNode, _ visit: (DocNode) -> Bool) {
         var stack = [doc]
         while let node = stack.popLast() {
             if !visit(node) { continue }

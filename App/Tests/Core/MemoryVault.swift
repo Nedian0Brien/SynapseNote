@@ -7,6 +7,9 @@ final class MemoryVault: VaultBridge {
     private(set) var dirs = JSSet()
     private(set) var trashed: [String] = []
     private(set) var log: [VaultOp] = []
+    /// every operation, page history included, and every file made with `createFile`, as storage-fixtures.ts records them
+    private(set) var fullLog: [JSValue] = []
+    private(set) var bytes = JSMap<Data>()
     let clock = 1_000_000.0
 
     init(_ initial: JSObject = JSObject()) {
@@ -48,6 +51,7 @@ final class MemoryVault: VaultBridge {
     }
 
     func apply(_ ops: [VaultOp]) -> [VaultOpResult] {
+        fullLog += ops.map(\.json)
         // what core-fixtures.ts records: every operation handed over, page history left out
         log += ops.filter { op in
             if case .write(let path, _, _, _) = op { return !path.utf16.starts(with: ".morrow/history/".utf16) }
@@ -104,8 +108,9 @@ final class MemoryVault: VaultBridge {
             }
             return .ok
         case .remove(let path):
-            if files.has(path) {
+            if files.has(path) || bytes.has(path) {
                 files[path] = nil
+                bytes[path] = nil
                 trashed.append(path)
             }
             return .ok
@@ -123,5 +128,40 @@ final class MemoryVault: VaultBridge {
     func takeLog() -> [VaultOp] {
         defer { log = [] }
         return log
+    }
+
+    func takeFullLog() -> [JSValue] {
+        defer { fullLog = [] }
+        return fullLog
+    }
+
+    func readText(_ path: String) -> String? { files[path] }
+
+    func readBytes(_ path: String) -> Data? { bytes[path] ?? files[path].map { Data($0.utf8) } }
+
+    func createFile(_ path: String, _ data: Data) throws {
+        fullLog.append(["op": "create", "path": .string(path), "size": .number(Double(data.count))])
+        if files.has(path) || bytes.has(path) { throw VaultWriteError(message: "\(path) exists") }
+        bytes[path] = data
+        var dir = Paths.dirname(path)
+        while !dir.isEmpty {
+            dirs.insert(dir)
+            dir = Paths.dirname(dir)
+        }
+    }
+
+    func exists(_ path: String) -> Bool { files.has(path) || bytes.has(path) || dirs.has(path) }
+
+    func listFiles(_ dir: String) -> [VaultFileInfo] {
+        let prefix = (dir + "/").utf16
+        return files.keys.filter { $0.utf16.starts(with: prefix) }.map { VaultFileInfo(path: $0, size: Double(files[$0]!.utf16.count), mtime: clock) }
+            + bytes.keys.filter { $0.utf16.starts(with: prefix) }.map { VaultFileInfo(path: $0, size: Double(bytes[$0]!.count), mtime: clock) }
+    }
+
+    /// an edit made by another app: the files change, the watcher's report is handed back
+    func external(_ changes: [VaultChange]) {
+        for change in changes where !change.dir {
+            if let text = change.text { put(change.path, text) } else { files[change.path] = nil }
+        }
     }
 }
