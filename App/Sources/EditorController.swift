@@ -85,6 +85,12 @@ final class EditorController: WorkspaceService {
     var exportFile: ExportFile?
     /// A PDF is being made.
     private(set) var exportingPDF = false
+    /// Sync between the person's own devices on the same network.
+    let sync = SyncService()
+    /// The sync settings, shown as a sheet where there is no Settings window.
+    var showingSyncSettings = false
+    /// A paired device whose vault is copied into the folder picked next.
+    private(set) var copyingVaultFrom: String?
 
     @ObservationIgnored let page: WebPage
     @ObservationIgnored var openURL: (URL) -> Void = { _ in }
@@ -99,6 +105,8 @@ final class EditorController: WorkspaceService {
     /// Text to select in the page shown next.
     @ObservationIgnored private var pendingFind: String?
     @ObservationIgnored private var ownToastCount = 0
+    /// A device to pull from once the vault just copied from it is open.
+    @ObservationIgnored private var syncWhenOpen: String?
     @ObservationIgnored private let editorRoot = Bundle.main.resourceURL!.appending(path: "Editor")
     @ObservationIgnored private let logger = Logger(subsystem: "com.synapsenote.native", category: "editor")
 
@@ -120,6 +128,53 @@ final class EditorController: WorkspaceService {
         fileInput.onRequest = { [weak self] request in self?.fileRequest = request }
         recents = location.recents
         restoreVault()
+        connectSync()
+    }
+
+    // MARK: sync
+
+    private func connectSync() {
+        sync.prepareForSync = { [weak self] in _ = await self?.flush() }
+        sync.filesChanged = { [weak self] paths in self?.report(paths) }
+        sync.notify = { [weak self] message, error in self?.showToast(message, error: error) }
+        Task { await sync.refreshServices() }
+    }
+
+    /// Makes the vault open on a paired device a new vault here: the person picks an empty folder, which
+    /// becomes a copy of it and fills on the first pull, as Morrow's Copy its vault here.
+    func copyVault(from peerId: String) {
+        copyingVaultFrom = peerId
+        #if os(iOS)
+        // the folder picker opens once the sync sheet is gone, a sheet cannot show another from below it
+        showingSyncSettings = false
+        #else
+        choosingFolder = true
+        #endif
+    }
+
+    /// The sync sheet closed; a vault copy waiting for its folder asks for it now.
+    func syncSettingsClosed() {
+        if copyingVaultFrom != nil { choosingFolder = true }
+    }
+
+    func cancelVaultCopy() {
+        copyingVaultFrom = nil
+    }
+
+    private func copyVault(from peerId: String, into url: URL) async {
+        copyingVaultFrom = nil
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        do {
+            let vaultId = try await sync.vaultId(of: peerId)
+            try SyncVault.prepareCopy(in: url, vaultId: vaultId)
+            try location.remember(folder: url)
+        } catch {
+            showToast(error.localizedDescription, error: true)
+            return
+        }
+        syncWhenOpen = peerId
+        await switchVault()
     }
 
     // MARK: vault
@@ -139,6 +194,10 @@ final class EditorController: WorkspaceService {
 
     /// A folder picked in the file importer, opened in place of the current vault.
     func choose(folder url: URL) {
+        if let peerId = copyingVaultFrom {
+            Task { await copyVault(from: peerId, into: url) }
+            return
+        }
         let scoped = url.startAccessingSecurityScopedResource()
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
         do {
@@ -201,6 +260,7 @@ final class EditorController: WorkspaceService {
         let files = VaultFileSystem(root: opened.url, presenter: watcher)
         #endif
         access.set(files)
+        sync.vault = SyncVault(files: files, name: opened.name)
         rpc = VaultRPC(files: files)
         self.watcher = watcher
         watcher.start()
@@ -214,6 +274,7 @@ final class EditorController: WorkspaceService {
         watcher = nil
         rpc = nil
         access.set(nil)
+        sync.vault = nil
         opened?.close()
         opened = nil
     }
@@ -236,7 +297,8 @@ final class EditorController: WorkspaceService {
         location.defaults.set(data, forKey: tabsKey)
     }
 
-    private func report(_ paths: Set<String>) {
+    /// Tells the editor page what changed at these vault paths, as the watcher does for other apps' edits.
+    func report(_ paths: Set<String>) {
         guard let files = access.files else { return }
         let changes = files.describe(paths)
         if !changes.isEmpty { send(.vaultChanges(changes)) }
@@ -695,16 +757,23 @@ final class EditorController: WorkspaceService {
             workspace = Workspace(pages: pages, locked: Set(locked))
             sourceMode = source
             revision += 1
+            let wasSaved = saveState == .saved
             saveState = switch state {
             case "pending": .pending
             case "saving": .saving
             case "error": .failed(error ?? "Changes could not be saved.")
             default: .saved
             }
+            // edits were saved: other devices hear of them a little later, as in morrow
+            if !wasSaved, saveState == .saved { sync.savesSettled() }
             if phase == .opening {
                 phase = .ready
                 logger.info("vault opened with \(pages.count) pages")
                 settleActiveTab()
+                if let peerId = syncWhenOpen {
+                    syncWhenOpen = nil
+                    Task { await sync.syncNow(peerId) }
+                }
             } else if let selection, before.infos[selection] != nil, !workspace.isShowable(selection) {
                 // the page on screen went to the trash or was deleted
                 go(to: .home)

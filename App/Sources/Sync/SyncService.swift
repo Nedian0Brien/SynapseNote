@@ -39,7 +39,7 @@ final class SyncService {
     }
 
     /// A device on the network waiting to be paired.
-    struct Waiting: Identifiable, Equatable {
+    struct Waiting: Identifiable, Hashable {
         let id: String
         let name: String
         let address: String

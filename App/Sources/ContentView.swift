@@ -7,6 +7,9 @@ struct ContentView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
+    #if os(macOS)
+    @Environment(\.openSettings) private var openSettings
+    #endif
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     #endif
@@ -29,9 +32,15 @@ struct ContentView: View {
                 workspace
             }
         }
-        .fileImporter(isPresented: $controller.choosingFolder, allowedContentTypes: [.folder]) { result in
-            if case .success(let url) = result { controller.choose(folder: url) }
-        }
+        .fileImporter(
+            isPresented: $controller.choosingFolder,
+            allowedContentTypes: [.folder],
+            allowsMultipleSelection: false,
+            onCompletion: { result in
+                if case .success(let urls) = result, let url = urls.first { controller.choose(folder: url) } else { controller.cancelVaultCopy() }
+            },
+            onCancellation: { controller.cancelVaultCopy() }
+        )
         // the picker is answered from its completion and cancellation alone: the binding is set to false before
         // the completion runs, and answering there would hand the page a cancel in place of the picked files
         .fileImporter(
@@ -46,6 +55,24 @@ struct ContentView: View {
         .background { ExportSheet(controller: controller) }
         #endif
         .overlay(alignment: .bottom) { ToastOverlay(controller: controller) }
+        #if os(iOS)
+        .sheet(isPresented: $controller.showingSyncSettings, onDismiss: { controller.syncSettingsClosed() }) {
+            NavigationStack {
+                SyncSettingsView(controller: controller)
+                    .navigationTitle("Sync")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) { Button("Done") { controller.showingSyncSettings = false } }
+                    }
+            }
+        }
+        #else
+        .onChange(of: controller.showingSyncSettings) { _, shown in
+            guard shown else { return }
+            controller.showingSyncSettings = false
+            openSettings()
+        }
+        #endif
         .sheet(isPresented: Binding(get: { controller.iconPage != nil }, set: { if !$0 { controller.iconPage = nil } })) {
             if let pageId = controller.iconPage {
                 EmojiPickerView(current: controller.workspace.infos[pageId]?.icon) { icon in
@@ -227,6 +254,8 @@ private struct VaultMenu: View {
             }
             Button("Open Folder…", systemImage: "folder") { controller.choosingFolder = true }
             Button("New Folder on This Device", systemImage: "folder.badge.plus") { Task { await controller.createVault() } }
+            Divider()
+            Button("Sync…", systemImage: "arrow.triangle.2.circlepath") { controller.showingSyncSettings = true }
         } label: {
             Label("Vaults", systemImage: "books.vertical")
         }

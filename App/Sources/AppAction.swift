@@ -196,6 +196,12 @@ struct AppAction: Identifiable {
         AppAction("data.deleteUnused", .data, "Delete Unused Files", symbol: "trash.slash", keywords: "attachments clean storage") {
             $0.deleteUnusedFiles()
         },
+        AppAction("sync.settings", .data, "Sync Settings…", symbol: "arrow.triangle.2.circlepath", keywords: "pair devices network computers",
+                  enabled: { _ in true }) { $0.showingSyncSettings = true },
+        AppAction("sync.now", .data, "Sync Now", symbol: "arrow.triangle.2.circlepath", keywords: "pull devices",
+                  enabled: { $0.phase == .ready && $0.sync.config.enabled && !$0.sync.peers.isEmpty && $0.sync.busyPeer == nil }) { controller in
+            Task { await controller.sync.syncAll(quiet: false) }
+        },
         AppAction("vault.open", .data, "Open Folder…", symbol: "folder", keywords: "vault switch another",
                   shortcut: KeyboardShortcut("o", modifiers: [.command, .shift]), enabled: { _ in true }) { $0.choosingFolder = true },
         // one name for both: on an iPad held upright the system shows and hides the sidebar by itself

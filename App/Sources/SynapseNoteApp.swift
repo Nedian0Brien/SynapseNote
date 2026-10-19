@@ -16,6 +16,10 @@ struct SynapseNoteApp: App {
         }
         .defaultSize(width: 1180, height: 780)
         .commands { PageCommands(controller: controller) }
+
+        Settings {
+            SettingsView(controller: controller)
+        }
         #else
         WindowGroup {
             ContentView(controller: controller)
@@ -75,6 +79,8 @@ private struct PageCommands: Commands {
             item("data.backup")
             Divider()
             item("data.deleteUnused")
+            Divider()
+            item("sync.now")
             #if os(macOS)
             item("data.showBackups")
             #endif
@@ -151,6 +157,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         true
+    }
+}
+#endif
+
+#if os(macOS)
+/// The app's settings window. Sync is its first part; theme, fonts and the rest follow Morrow's settings.
+struct SettingsView: View {
+    let controller: EditorController
+
+    var body: some View {
+        TabView {
+            Tab("Sync", systemImage: "arrow.triangle.2.circlepath") {
+                SyncSettingsView(controller: controller)
+            }
+        }
+        .frame(width: 560, height: 520)
     }
 }
 #endif
