@@ -65,6 +65,7 @@ writeFileSync(
   target,
   `${JSON.stringify(
     {
+      note: 'Test vectors made by web/scripts/sync-fixtures.ts from fixed public inputs. They are not credentials.',
       day: '2026-10-16',
       plans,
       conflictNames: [

@@ -1,0 +1,7 @@
+# ggshield settings, https://docs.gitguardian.com/ggshield-docs/configuration
+version: 2
+secret:
+  ignored_paths:
+    # test vectors for the sync crypto, derived from fixed public inputs (bytes 0x00 to 0x1f, the code
+    # abcd-efgh-2345-6777) by web/scripts/sync-fixtures.ts; no key in it is used anywhere but the tests
+    - 'App/Tests/Fixtures/sync-fixtures.json'
