@@ -15,7 +15,10 @@ Morrow의 순서를 지킨다. Swift가 파일 감시 결과를 읽어(`readChan
 
 ## Swift로 옮기는 저장소 기능 (`vaultRepository.ts`, `session.ts`, `saveQueue.ts`의 나머지)
 
-- 저장 예약: 300ms 묶음, 실패하면 1초부터 두 배씩 최대 30초 재시도, `flush`. vault를 닫을 때, 앱이 백그라운드로 갈 때, 종료할 때 `flush`. 저장 상태(saved, pending, saving, error)는 Swift가 계산해 화면과 동기화에 쓴다.
+- 저장 예약: 300ms 묶음, 실패하면 1초부터 두 배씩 최대 30초 재시도, `flush`(11c-1에서 `SaveQueue`로 이식).
+  - 11c-2(수정, 2026-10-20): 언제 쓸지는 웹 저장 큐가 정한다. 웹 `ReplicaRepository.write`가 Swift `flush`를 부르고, Swift의 저장 결과가 그 답이다. 외부 편집을 받아들일지 정하는 웹의 `isDirty`와 Swift의 디스크 상태가 같은 순간에 바뀌고, 화면의 저장 상태가 실제 쓰기 결과를 보여 준다.
+  - 웹이 부를 수 없을 때는 Swift가 직접 `flush`한다: vault 전환·닫기, 앱이 백그라운드로 갈 때, 종료, 웹 프로세스가 끝났을 때. 웹 프로세스가 끝나도 Swift 세션이 남아 있으므로, 다시 연 웹은 디스크를 다시 읽지 않고 Swift 세션 상태를 받는다.
+  - Swift `SaveTimer`로 스스로 시점을 정하는 것은 웹이 없어지는 11d에서 한다.
 - 페이지 기록: 10분 간격(`snapshotDue`), 페이지당 50개(`snapshotsToPrune`), `.morrow/history/<id>.json` 읽기·쓰기, 충돌 때 디스크 판 보관(`keepDiskVersion`), 복원 전 현재 판 보관.
 - 암호화(`crypto.ts`): PBKDF2-SHA256 600,000회, AES-256-GCM, 파일 형식 그대로. 열기·잠그기·보호·해제. 열쇠와 평문은 Swift 메모리에만 둔다.
 - 첨부 파일(이름 정하기, 목록, 삭제), `.morrow/*.json` 메타(복습 기록), 저장 횟수(활동 기록), 처음 실행 표시.
