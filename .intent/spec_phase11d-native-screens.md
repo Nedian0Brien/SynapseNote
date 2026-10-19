@@ -9,10 +9,10 @@
 | 단계 | 내용 | 받아들이는 기준 |
 |---|---|---|
 | 11d-1 | 화면이 쓰는 core 이식: `database.ts`(값·필터·정렬·묶기·형식·변환·표에서 만들기), `formula.ts`, `diff.ts`, `site.ts`(문서 → HTML, 게시와 PDF), `portability.ts`(백업 쓰기·읽기·복원 계획, Markdown 내보내기), `importer.ts`(가져오기 계획, CSV), `migrations.ts`의 `readWorkspace`. 앱 동작은 그대로 | node에서 Morrow로 만든 비교 자료와 JSON·바이트 단위로 같음 |
-| 11d-2 | 페이지 머리, Markdown 원문 편집, 기록 창을 SwiftUI로 | iPad·macOS 화면, DEBUG 세션 비교 차이 0 |
+| 11d-2 | 페이지 머리(커버·아이콘·제목·태그), Markdown 원문 편집, 읽지 못한 페이지 알림을 SwiftUI로. 기록 창은 판을 서식대로 그려야 해서 네이티브 읽기 전용 렌더링이 생기는 11d-5로 옮김(수정 2026-10-20) | iPad 화면, DEBUG 세션 비교 차이 0 |
 | 11d-3 | 데이터베이스 보기(표·보드·달력·목록·갤러리)와 속성 편집 | 비교 자료 상태에서 보기 계산(행·묶음·수식 값)이 Morrow와 같음, iPad 확인 |
 | 11d-4 | 캔버스(노드·연결·그리기) | `CanvasFile` 왕복이 Morrow와 같음, iPad 확인 |
-| 11d-5 | 블록 편집기: 모든 `KNOWN_NODE_TYPES`·`KNOWN_MARK_TYPES` 표시와 편집, 슬래시 명령, 블록 손잡이, 붙여넣기, 찾기 | `markdown.json`·`markdown-fuzz.json`의 문서를 편집기 모델로 읽고 다시 꺼내면 입력과 같음, iPad·macOS 편집 |
+| 11d-5 | 블록 편집기: 모든 `KNOWN_NODE_TYPES`·`KNOWN_MARK_TYPES` 표시와 편집, 슬래시 명령, 블록 손잡이, 붙여넣기, 찾기, 기록 창 | `markdown.json`·`markdown-fuzz.json`의 문서를 편집기 모델로 읽고 다시 꺼내면 입력과 같음, iPad·macOS 편집 |
 
 11e에서 웹 편집기·번들·node 빌드를 없애고, 저장 시점을 Swift `SaveQueue` 타이머로 옮기고, 내보내기·게시·가져오기·백업을 11d-1 이식으로 돌린다.
 
