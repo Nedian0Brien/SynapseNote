@@ -16,7 +16,8 @@
     "html-entities": "rolldown scripts/html-entities.ts --format esm --platform node -o node_modules/.cache/html-entities.mjs && node node_modules/.cache/html-entities.mjs ../App/Sources/Core/Markdown/HTMLEntities.swift",
     "markdown-unicode": "rolldown scripts/markdown-unicode.ts --format esm --platform node -o node_modules/.cache/markdown-unicode.mjs && node node_modules/.cache/markdown-unicode.mjs ../App/Sources/Core/Markdown/MarkdownPunctuation.swift",
     "sync-fixtures": "rolldown scripts/sync-fixtures.ts --format esm --platform node -o node_modules/.cache/sync-fixtures.mjs && node node_modules/.cache/sync-fixtures.mjs ../App/Tests/Fixtures/sync-fixtures.json",
-    "storage-fixtures": "rolldown scripts/storage-fixtures.ts --format esm --platform node -o node_modules/.cache/storage-fixtures.mjs && TZ=UTC node node_modules/.cache/storage-fixtures.mjs ../App/Tests/Fixtures/core"
+    "storage-fixtures": "rolldown scripts/storage-fixtures.ts --format esm --platform node -o node_modules/.cache/storage-fixtures.mjs && TZ=UTC node node_modules/.cache/storage-fixtures.mjs ../App/Tests/Fixtures/core",
+    "screen-fixtures": "rolldown scripts/screen-fixtures.ts --format esm --platform node -o node_modules/.cache/screen-fixtures.mjs && TZ=UTC node node_modules/.cache/screen-fixtures.mjs ../App/Tests/Fixtures/core"
   },
   "devDependencies": {
     "@floating-ui/dom": "^1.8.0",
