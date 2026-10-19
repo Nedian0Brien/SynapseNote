@@ -27,7 +27,7 @@
 | 10 | 배포 준비: 서명, 실기기 검증, TestFlight | 팀 없이 할 수 있는 준비 완료, 서명·실기기·TestFlight 보류 (PR #11, `docs/verification/phase10-release-prep.md`, `docs/release/`) |
 | 11 | 전환: 편집기와 데이터 코어를 Swift로 | 11a~11e로 나눔(`.intent/spec_phase11a-swift-data-core.md`) |
 | 11a | Swift 데이터 코어: Markdown(markdown-it 이식)·머리말 YAML·vault 읽기·페이지 명령·저장 계획, Morrow 결과와 비교, DEBUG 동시 실행 | 구현 (PR #12, `docs/verification/phase11a-swift-data-core.md`) |
-| 11b | 조회(검색·백링크·태그·작업·그래프·홈)를 Swift로 | |
+| 11b | 조회(검색·백링크·태그·작업·그래프·홈)를 Swift로, 웹 세션의 거울 상태 | 구현 (PR #13, `docs/verification/phase11b-swift-queries.md`) |
 | 11c | 쓰기 권한을 Swift 세션으로, 데이터베이스 수식·캔버스·히스토리·암호화·플래시카드 코어 | |
 | 11d | 네이티브 편집기 | |
 | 11e | 웹 편집기·번들·node 빌드 제거 | |
