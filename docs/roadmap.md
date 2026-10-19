@@ -24,7 +24,7 @@
 | 7 | 가져오기·내보내기·백업·정적 사이트 게시·Markdown 소스 편집 | 구현 (PR #8, `docs/verification/phase7-import-export.md`) |
 | 8 | 기기 간 동기화 | 구현 (PR #9, `docs/verification/phase8-sync.md`) |
 | 9 | 빠른 캡처, 테마·글꼴·커버·사용자 CSS, 첫 실행 가이드 | 구현 (PR #10, `docs/verification/phase9-settings.md`) |
-| 10 | 배포 준비: 서명, 실기기 검증, TestFlight | |
+| 10 | 배포 준비: 서명, 실기기 검증, TestFlight | 팀 없이 할 수 있는 준비 완료, 서명·실기기·TestFlight 보류 (PR #11, `docs/verification/phase10-release-prep.md`, `docs/release/`) |
 | 11 | 전환: 편집기와 데이터 코어를 Swift로 | |
 
 ## 전환 단계(11)에서 볼 것
