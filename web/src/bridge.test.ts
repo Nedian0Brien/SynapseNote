@@ -82,9 +82,14 @@ describe('parseInbound', () => {
 
   it('passes commands on for morrow to check, only when they have a type', () => {
     const command = { type: 'page.setFavorite', id: 'a', favorite: true };
-    expect(parseInbound({ type: 'command', command })).toEqual({ type: 'command', command });
-    expect(parseInbound({ type: 'command', command: { id: 'a' } })).toBeNull();
+    expect(parseInbound({ type: 'command', json: JSON.stringify(command) })).toEqual({ type: 'command', command });
+    expect(parseInbound({ type: 'command', json: '{"id":"a"}' })).toBeNull();
+    expect(parseInbound({ type: 'command', json: '{"type":' })).toBeNull();
+    expect(parseInbound({ type: 'command', command })).toBeNull();
     expect(parseInbound({ type: 'command' })).toBeNull();
+    // a document's keys come through in the order they were sent
+    const parsed = parseInbound({ type: 'command', json: '{"type":"page.setDoc","id":"a","doc":{"type":"doc","content":[]},"now":1}' });
+    expect(parsed && parsed.type === 'command' && Object.keys(parsed.command)).toEqual(['type', 'id', 'doc', 'now']);
   });
 
   it('accepts heading and find requests for the open page', () => {

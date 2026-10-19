@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import os
+import UniformTypeIdentifiers
 import WebKit
 #if os(macOS)
 import AppKit
@@ -76,6 +77,8 @@ final class EditorController: WorkspaceService {
     var focusMode = false
     /// The page shown as its Markdown source instead of in the editor.
     private(set) var sourceMode: String?
+    /// What is typed in the page shown as its source, saved before anything leaves it.
+    @ObservationIgnored private var sourceDraft: SourceDraft?
     /// Morrow's toasts as the editor page reports them.
     private(set) var toasts: [EditorToast] = []
     /// Toasts from this side, such as a PDF that could not be made; negative ids keep them apart.
@@ -323,6 +326,7 @@ final class EditorController: WorkspaceService {
             Task { await host.close() }
         }
         host = nil
+        sourceDraft = nil
         rpc = nil
         mirror.reset()
         access.set(nil)
@@ -521,7 +525,7 @@ final class EditorController: WorkspaceService {
     // MARK: WorkspaceService
 
     func perform(_ command: WorkspaceCommand) {
-        send(.command(command.morrow()))
+        send(.command(json: JSJSON.stringify(command.morrow())))
         if case .move(_, let parent?, _) = command { expanded.insert(parent) }
     }
 
@@ -668,10 +672,77 @@ final class EditorController: WorkspaceService {
         send(.deleteUnusedFiles)
     }
 
-    /// Shows a page as its Markdown source, or every page in the editor again with nil.
+    /// Shows a page as its Markdown source, or every page in the editor again with nil. What is typed in the
+    /// source is saved first, so the editor opens on it.
     func setSourceMode(_ pageId: String?) {
         if let pageId, selection != pageId { go(to: .page(pageId)) }
-        send(.setSourceMode(pageId: pageId))
+        let draft = sourceDraft
+        if draft?.pageId != pageId { sourceDraft = nil }
+        Task {
+            await draft?.flush()
+            send(.setSourceMode(pageId: pageId))
+        }
+    }
+
+    // MARK: native page screens
+
+    /// Which screen shows the page, the editor page's or one of the app's (App/Sources/Pages).
+    func pageScreen(_ pageId: String) async -> PageScreen {
+        guard phase == .ready, let host else { return .web }
+        return await host.screen(of: pageId, sourceMode: sourceMode == pageId)
+    }
+
+    /// The page's Markdown source as typed so far, opened from the session's copy of the page when it is new.
+    func sourceDraft(for pageId: String) async -> SourceDraft? {
+        if let draft = sourceDraft, draft.pageId == pageId { return draft }
+        await sourceDraft?.flush()
+        guard let host, let text = await host.markdown(of: pageId) else { return nil }
+        if let draft = sourceDraft, draft.pageId == pageId { return draft }
+        let draft = SourceDraft(pageId: pageId, text: text) { [weak self] text in
+            await self?.saveSource(text, of: pageId) ?? false
+        }
+        sourceDraft = draft
+        return draft
+    }
+
+    /// Morrow's SourceEditor save: the text read back by the session, then the page set to it through the page.
+    private func saveSource(_ text: String, of pageId: String) async -> Bool {
+        guard let host, let doc = await host.readMarkdown(text) else { return false }
+        perform(.setDoc(id: pageId, doc: doc))
+        return true
+    }
+
+    /// A picture picked on this device, stored in the vault as Morrow's storeFiles stores one; its vault path,
+    /// nil when it could not be stored, which a toast says.
+    func storeImage(_ url: URL) async -> String? {
+        guard let host else { return nil }
+        let read = await Task.detached { () -> Result<Data, CommandFailure> in
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            // morrow's MAX_FILE_BYTES, src/app/platform/attachments.ts
+            if let size = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize, size > 100 * 1024 * 1024 {
+                return .failure(CommandFailure(message: "Files larger than 100 MB were not added."))
+            }
+            guard let data = try? Data(contentsOf: url) else { return .failure(CommandFailure(message: "The picture could not be read.")) }
+            return data.count > 100 * 1024 * 1024 ? .failure(CommandFailure(message: "Files larger than 100 MB were not added.")) : .success(data)
+        }.value
+        let data: Data
+        switch read {
+        case .success(let value): data = value
+        case .failure(let failure):
+            showToast(failure.message, error: true)
+            return nil
+        }
+        let name = url.lastPathComponent
+        let meta = FileMeta(id: UUID().uuidString.lowercased(), name: name.isEmpty ? "file" : name,
+                            type: UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "application/octet-stream",
+                            size: Double(data.count), createdAt: JSEnvironment.now())
+        switch await host.addFiles([(meta: meta, data: data)]) {
+        case .success(let metas): return metas.first?.id
+        case .failure(let failure):
+            showToast(failure.message, error: true)
+            return nil
+        }
     }
 
     /// The page printed to a PDF on A4 paper, as Morrow's desktop app does. Canvases are not printed.
@@ -873,6 +944,7 @@ final class EditorController: WorkspaceService {
     /// in case the page could not ask.
     @discardableResult
     func flush() async -> Bool {
+        await sourceDraft?.flush()
         var saved = true
         if isPageReady, phase == .ready {
             do {
@@ -906,6 +978,11 @@ final class EditorController: WorkspaceService {
             let before = workspace
             workspace = Workspace(pages: pages, locked: Set(locked))
             sourceMode = source
+            // the page left its source, such as when it went to the trash: what was typed is saved
+            if let draft = sourceDraft, draft.pageId != source {
+                sourceDraft = nil
+                Task { await draft.flush() }
+            }
             revision += 1
             let wasSaved = saveState == .saved
             saveState = switch state {

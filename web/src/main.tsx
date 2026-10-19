@@ -12,14 +12,13 @@ import 'katex/dist/katex.min.css';
 import './editor.css';
 import { StrictMode, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { displayTitle } from '../vendor/morrow/src/core/model';
-import type { DocNode, PageId, PageMeta } from '../vendor/morrow/src/core/model';
-import { docToPlainText, findUnknownTypes } from '../vendor/morrow/src/core/doc';
+import { displayTitle, emptyDoc } from '../vendor/morrow/src/core/model';
+import type { PageId } from '../vendor/morrow/src/core/model';
+import { findUnknownTypes } from '../vendor/morrow/src/core/doc';
 import { isEffectivelyTrashed } from '../vendor/morrow/src/core/tree';
 import { WorkspaceSession } from '../vendor/morrow/src/storage/session';
 import type { ExternalPatch } from '../vendor/morrow/src/storage/repository';
 import { SourceDialog } from '../vendor/morrow/src/app/components/SourceDialog';
-import { SourceEditor } from '../vendor/morrow/src/app/components/SourceEditor';
 import { commitEditors } from '../vendor/morrow/src/app/editor/commits';
 import {
   createFromTemplate,
@@ -49,8 +48,6 @@ import { useUi } from '../vendor/morrow/src/app/ui';
 import { getSession, run, setSession, useWorkspace } from '../vendor/morrow/src/app/workspace';
 import { listen, post } from './bridge';
 import type { Theme, ToastMessage, ViewPreferences } from './bridge';
-import { PageFrame } from './PageFrame';
-import { PageHeader } from './PageHeader';
 import { CanvasPage } from './CanvasPage';
 import { DatabasePage } from './DatabasePage';
 import { EditorApp, linkSelection } from './EditorApp';
@@ -375,7 +372,10 @@ async function encryption(action: string, params: Record<string, unknown>): Prom
 
 // which pages open in the text editor follows morrow's PageView: canvases and databases have views of their
 // own, unreadable pages and pages with content this version does not know are never handed to the editor,
-// because the editor would rewrite them in a form it understands
+// because the editor would rewrite them in a form it understands. the app draws those pages, a locked one
+// and a page shown as its markdown source itself (PageScreen in App/Sources/Pages), over an empty page here
+const EMPTY_DOC = emptyDoc();
+
 function Page({ pageId, find }: { pageId: PageId; find: FindRequest | null }) {
   const state = useWorkspace();
   const { sourceMode } = useUi();
@@ -390,66 +390,19 @@ function Page({ pageId, find }: { pageId: PageId; find: FindRequest | null }) {
     opened.current = pageId;
     run({ type: 'page.markOpened', id: pageId, now: Date.now() });
   }, [pageId]);
-  if (!page || !doc || isEffectivelyTrashed(state.pages, pageId)) return <Empty />;
+  if (!page || isEffectivelyTrashed(state.pages, pageId)) return <Empty />;
   if (page.kind === 'canvas')
-    return <CanvasPage page={page} doc={doc} unreadable={getSession().unreadable.has(pageId)} />;
+    return doc ? <CanvasPage page={page} doc={doc} unreadable={getSession().unreadable.has(pageId)} /> : <Empty />;
   // as morrow's PageView, a database is editable unless its folder note could not be read
-  if (page.kind === 'database') return <DatabasePage page={page} editable={!getSession().unreadable.has(pageId)} />;
-  // a locked page asks for its password in the native app, over the page
-  if (getSession().unreadable.has(pageId) && page.encrypted) return <Empty />;
-  if (getSession().unreadable.has(pageId))
-    return (
-      <Notice
-        page={page}
-        text="The content of this page could not be read. It has been left untouched and is protected from changes."
-      />
-    );
-  const unknown = findUnknownTypes(doc);
-  if (unknown.length > 0)
-    return (
-      <Notice
-        page={page}
-        text={`This page contains content SynapseNote does not know yet (${unknown.join(', ')}). It is shown as plain text and protected from changes so nothing is lost.`}
-        plain={docToPlainText(doc)}
-      />
-    );
-  // morrow's page menu offers the markdown source for text pages, which the editor can read back
-  if (sourceMode === pageId && page.kind === 'page') return <SourcePage page={page} doc={doc} />;
-  return <EditorApp key={pageId} page={page} doc={doc} editable find={find} onFound={clearFind} />;
-}
-
-// as morrow's PageView in source mode: the header, a note saying so with the way back, and the source
-function SourcePage({ page, doc }: { page: PageMeta; doc: DocNode }) {
-  return (
-    <PageFrame page={page} editable>
-      <PageHeader
-        page={page}
-        editable
-        onEnter={() => document.querySelector<HTMLTextAreaElement>('.source-text')?.focus()}
-      />
-      <div className="banner source-banner" role="note">
-        <span>You are editing this page as Markdown.</span>
-        <button type="button" className="button small" onClick={() => setUi({ sourceMode: null })}>
-          Back to the editor
-        </button>
-      </div>
-      <SourceEditor pageId={page.id} doc={doc} editable />
-    </PageFrame>
-  );
-}
-
-function Notice({ page, text, plain }: { page: PageMeta; text: string; plain?: string }) {
-  return (
-    <PageFrame page={page} editable={false}>
-      <h1 className="page-title-heading">
-        <span className="page-title">{displayTitle(page)}</span>
-      </h1>
-      <div className="banner" role="note">
-        {text}
-      </div>
-      {plain !== undefined && <pre className="readonly-text">{plain}</pre>}
-    </PageFrame>
-  );
+  if (page.kind === 'database')
+    return doc ? <DatabasePage page={page} editable={!getSession().unreadable.has(pageId)} /> : <Empty />;
+  // in morrow's order: a page that could not be read, the markdown source of a text page, then content this
+  // version does not know; a page without a document yet, such as a folder without a note, starts empty
+  if (getSession().unreadable.has(pageId)) return <Empty />;
+  if (sourceMode === pageId && page.kind === 'page') return <Empty />;
+  const text = doc ?? EMPTY_DOC;
+  if (findUnknownTypes(text).length > 0) return <Empty />;
+  return <EditorApp key={pageId} page={page} doc={text} editable find={find} onFound={clearFind} />;
 }
 
 function Empty() {

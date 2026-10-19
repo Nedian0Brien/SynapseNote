@@ -391,6 +391,74 @@ nonisolated final class SessionHost: @unchecked Sendable {
         await run(writes: false) { [self] in session?.pathOf(id) }
     }
 
+    // MARK: native page screens
+
+    /// What the app draws over the editor page for a page, by the rules of web/src/main.tsx's `Page`, which
+    /// draws an empty page in the same cases. A locked page is `.web` here, the app asks for its password.
+    func screen(of id: String, sourceMode: Bool) async -> PageScreen {
+        await run(writes: false) { [self] in
+            guard let session, let page = session.state.pages[id], !Tree.isEffectivelyTrashed(session.state.pages, id),
+                  page.kind == .page
+            else { return .web }
+            // Morrow's PageView, in its order
+            if session.unreadable.has(id) { return page.encrypted ? .web : .unreadable }
+            if sourceMode { return .source }
+            let doc = session.state.docs[id] ?? Model.emptyDoc()
+            let unknown = Doc.findUnknownTypes(doc)
+            return unknown.isEmpty ? .web : .unknown(types: unknown, plain: Doc.docToPlainText(doc))
+        }
+    }
+
+    /// The text Morrow's SourceEditor opens with: the page's Markdown, links under their pages' titles and files
+    /// under their vault paths.
+    func markdown(of id: String) async -> String? {
+        await run(writes: false) { [self] in
+            guard let session, session.state.pages[id] != nil else { return nil }
+            let doc = session.state.docs[id] ?? Model.emptyDoc()
+            let pages = session.state.pages
+            return MarkdownSerialize.docToMarkdown(doc, .init(titleOf: { pages[$0].map { Model.displayTitle($0) } }, filePath: { $0 }))
+        }
+    }
+
+    /// SourceEditor's reading back of the text: links to pages by Morrow's link rules, files by vault path or
+    /// by name. Nil when the text gives no document Morrow takes, or names a file in a broken escape, where
+    /// Morrow's `decodeURIComponent` throws and nothing is saved.
+    func readMarkdown(_ text: String) async -> DocNode? {
+        await run(writes: false) { [self] in
+            guard let session else { return nil }
+            let state = session.state
+            var byId: [String: FileMeta] = [:]
+            var byName: [String: FileMeta] = [:]
+            for file in session.listFiles() {
+                byId[file.id] = file
+                byName[file.name.lowercased()] = file
+            }
+            var broken = false
+            let options = MarkdownParse.Options(
+                resolvePage: { Search.resolveLinkTarget(state, $0) },
+                resolveFile: { href in
+                    var path = Substring(href)
+                    if path.hasPrefix("./") { path = path.dropFirst(2) } else if path.hasPrefix("/") { path = path.dropFirst() }
+                    guard let clean = JSURI.decodeURIComponent(String(path)) else {
+                        broken = true
+                        return nil
+                    }
+                    let last = clean.split(separator: "/", omittingEmptySubsequences: false).last.map(String.init) ?? clean
+                    guard let file = byId[clean] ?? byName[last.lowercased()] else { return nil }
+                    return MarkdownParse.FileRef(fileId: file.id, name: file.name, image: file.type.hasPrefix("image/"))
+                })
+            let doc = MarkdownParse.markdownToDoc(text, options)
+            return broken || Doc.validateDoc(.object(doc)) != nil ? nil : doc
+        }
+    }
+
+    /// Files a native screen adds, such as a cover picture, stored before a page refers to them.
+    func addFiles(_ files: [(meta: FileMeta, data: Data)]) async -> Result<[FileMeta], CommandFailure> {
+        await run { [self] in
+            session?.addFiles(files) ?? .failure(CommandFailure(message: "The vault is not open."))
+        }
+    }
+
     // MARK: shapes
 
     private static func snapshot(_ value: JSValue) -> Snapshot? {

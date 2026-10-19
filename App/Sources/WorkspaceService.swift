@@ -10,32 +10,44 @@ nonisolated enum WorkspaceCommand: Equatable, Sendable {
     case deleteForever(id: String)
     case emptyTrash
     case setTaskChecked(pageId: String, index: Int, checked: Bool)
+    case rename(id: String, title: String)
+    case setTags(id: String, tags: [String])
+    /// `gradient-1` to `gradient-12`, the vault path of a picture, or nil for none.
+    case setCover(id: String, cover: String?)
+    case setDoc(id: String, doc: DocNode)
 
-    /// The command as Morrow's `applyCommand` reads it.
-    func morrow(now: Date = Date()) -> JSONValue {
-        let time = JSONValue.number((now.timeIntervalSince1970 * 1000).rounded())
+    /// The command as Morrow's `applyCommand` reads it, keys in the order Morrow's screens write them. `now` is
+    /// in whole milliseconds, as `Date.now()`.
+    func morrow(now: Double = JSEnvironment.now()) -> JSValue {
+        let time = JSValue.number(now)
+        func text(_ value: String?) -> JSValue { value.map(JSValue.string) ?? .null }
         switch self {
         case .move(let id, let parent, let index):
-            var fields: [String: JSONValue] = ["type": .string("page.move"), "id": .string(id), "parentId": parent.map(JSONValue.string) ?? .null]
+            var fields = JSObject([("type", "page.move"), ("id", .string(id)), ("parentId", text(parent))])
             if let index { fields["index"] = .number(Double(index)) }
             return .object(fields)
         case .setFavorite(let id, let favorite):
-            return .object(["type": .string("page.setFavorite"), "id": .string(id), "favorite": .bool(favorite)])
+            return ["type": "page.setFavorite", "id": .string(id), "favorite": .bool(favorite)]
         case .setIcon(let id, let icon):
-            return .object(["type": .string("page.setIcon"), "id": .string(id), "icon": icon.map(JSONValue.string) ?? .null, "now": time])
+            return ["type": "page.setIcon", "id": .string(id), "icon": text(icon), "now": time]
         case .duplicate(let id, let newId):
-            return .object(["type": .string("page.duplicate"), "id": .string(id), "newId": .string(newId), "now": time])
+            return ["type": "page.duplicate", "id": .string(id), "newId": .string(newId), "now": time]
         case .restore(let id):
-            return .object(["type": .string("page.restore"), "id": .string(id)])
+            return ["type": "page.restore", "id": .string(id)]
         case .deleteForever(let id):
-            return .object(["type": .string("page.deleteForever"), "id": .string(id)])
+            return ["type": "page.deleteForever", "id": .string(id)]
         case .emptyTrash:
-            return .object(["type": .string("trash.empty")])
+            return ["type": "trash.empty"]
         case .setTaskChecked(let pageId, let index, let checked):
-            return .object([
-                "type": .string("task.setChecked"), "pageId": .string(pageId), "index": .number(Double(index)),
-                "checked": .bool(checked), "now": time,
-            ])
+            return ["type": "task.setChecked", "pageId": .string(pageId), "index": .number(Double(index)), "checked": .bool(checked), "now": time]
+        case .rename(let id, let title):
+            return ["type": "page.rename", "id": .string(id), "title": .string(title), "now": time]
+        case .setTags(let id, let tags):
+            return ["type": "page.setTags", "id": .string(id), "tags": .array(tags.map(JSValue.string)), "now": time]
+        case .setCover(let id, let cover):
+            return ["type": "page.setCover", "id": .string(id), "cover": text(cover), "now": time]
+        case .setDoc(let id, let doc):
+            return ["type": "page.setDoc", "id": .string(id), "doc": .object(doc), "now": time]
         }
     }
 }

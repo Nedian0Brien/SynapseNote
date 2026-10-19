@@ -75,17 +75,24 @@ struct WorkspaceTests {
     }
 
     @Test func commandsHaveMorrowsShape() {
-        #expect(WorkspaceCommand.setTaskChecked(pageId: "p", index: 2, checked: true).morrow(now: Date(timeIntervalSince1970: 1))
-            == .object(["type": .string("task.setChecked"), "pageId": .string("p"), "index": .number(2), "checked": .bool(true), "now": .number(1000)]))
-        let now = Date(timeIntervalSince1970: 1)
-        #expect(WorkspaceCommand.move(id: "a", parent: nil, index: 2).morrow(now: now)
-            == .object(["type": .string("page.move"), "id": .string("a"), "parentId": .null, "index": .number(2)]))
-        #expect(WorkspaceCommand.move(id: "a", parent: "b", index: nil).morrow(now: now)["index"] == nil)
-        #expect(WorkspaceCommand.setIcon(id: "a", icon: nil).morrow(now: now)
-            == .object(["type": .string("page.setIcon"), "id": .string("a"), "icon": .null, "now": .number(1000)]))
-        #expect(WorkspaceCommand.duplicate(id: "a", newId: "n").morrow(now: now)["newId"] == .string("n"))
-        #expect(WorkspaceCommand.emptyTrash.morrow(now: now) == .object(["type": .string("trash.empty")]))
-        #expect(WorkspaceCommand.deleteForever(id: "a").morrow(now: now)["type"] == .string("page.deleteForever"))
+        let now = 1000.0
+        func json(_ command: WorkspaceCommand) -> String { JSJSON.stringify(command.morrow(now: now)) }
+        #expect(json(.setTaskChecked(pageId: "p", index: 2, checked: true)) == #"{"type":"task.setChecked","pageId":"p","index":2,"checked":true,"now":1000}"#)
+        #expect(json(.move(id: "a", parent: nil, index: 2)) == #"{"type":"page.move","id":"a","parentId":null,"index":2}"#)
+        #expect(json(.move(id: "a", parent: "b", index: nil)) == #"{"type":"page.move","id":"a","parentId":"b"}"#)
+        #expect(json(.setIcon(id: "a", icon: nil)) == #"{"type":"page.setIcon","id":"a","icon":null,"now":1000}"#)
+        #expect(WorkspaceCommand.duplicate(id: "a", newId: "n").morrow(now: now)["newId"] == "n")
+        #expect(json(.emptyTrash) == #"{"type":"trash.empty"}"#)
+        #expect(WorkspaceCommand.deleteForever(id: "a").morrow(now: now)["type"] == "page.deleteForever")
+        #expect(json(.rename(id: "a", title: "제목")) == #"{"type":"page.rename","id":"a","title":"제목","now":1000}"#)
+        #expect(json(.setTags(id: "a", tags: ["x", "y/z"])) == #"{"type":"page.setTags","id":"a","tags":["x","y/z"],"now":1000}"#)
+        #expect(json(.setCover(id: "a", cover: nil)) == #"{"type":"page.setCover","id":"a","cover":null,"now":1000}"#)
+        // a document's keys keep their order on the way to the page
+        let doc = (["type": "doc", "content": [["type": "paragraph", "content": [["text": "b", "type": "text"]]]]] as JSValue).object!
+        #expect(json(.setDoc(id: "a", doc: doc)) == #"{"type":"page.setDoc","id":"a","doc":{"type":"doc","content":[{"type":"paragraph","content":[{"text":"b","type":"text"}]}]},"now":1000}"#)
+        // and reach the page as text
+        let message = EditorCommand.command(json: json(.rename(id: "a", title: "t"))).json
+        #expect(message == .object(["type": .string("command"), "json": .string(#"{"type":"page.rename","id":"a","title":"t","now":1000}"#)]))
     }
 }
 

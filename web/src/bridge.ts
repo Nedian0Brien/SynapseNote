@@ -34,7 +34,8 @@ export type InboundMessage =
   // a page, a database or a canvas
   | { type: 'createPage'; parentId: PageId | null; kind: 'page' | 'database' | 'canvas' }
   | { type: 'trashPage'; pageId: PageId }
-  // a morrow Command from a native screen, checked by morrow's applyCommand like any other
+  // a morrow Command from a native screen, checked by morrow's applyCommand like any other; it arrives as JSON
+  // text so a document's keys keep the order the app's session gave them
   | { type: 'command'; command: Command }
   | { type: 'theme'; theme: Theme }
   // the open page's top level heading at this position is scrolled into view
@@ -210,11 +211,19 @@ export function parseInbound(value: unknown): InboundMessage | null {
     }
     case 'trashPage':
       return isId(value.pageId) ? { type: 'trashPage', pageId: value.pageId } : null;
-    case 'command':
+    case 'command': {
       // the shape is checked by morrow's applyCommand, this only makes sure there is a command to check
-      return isRecord(value.command) && typeof value.command.type === 'string'
-        ? { type: 'command', command: value.command as unknown as Command }
+      if (typeof value.json !== 'string') return null;
+      let command: unknown;
+      try {
+        command = JSON.parse(value.json);
+      } catch {
+        return null;
+      }
+      return isRecord(command) && typeof command.type === 'string'
+        ? { type: 'command', command: command as unknown as Command }
         : null;
+    }
     case 'theme':
       return value.theme === 'light' || value.theme === 'dark' ? { type: 'theme', theme: value.theme } : null;
     case 'scrollToHeading':

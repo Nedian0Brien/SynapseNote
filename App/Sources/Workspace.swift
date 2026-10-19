@@ -18,6 +18,7 @@ nonisolated struct PageInfo: Hashable, Sendable, Identifiable {
     let dailyDate: String?
     /// Morrow's cover: `gradient-1` to `gradient-12`, or the vault path of a picture.
     let cover: String?
+    let tags: [String]
 
     init?(_ value: JSONValue) {
         guard let id = value["id"]?.stringValue else { return nil }
@@ -35,6 +36,7 @@ nonisolated struct PageInfo: Hashable, Sendable, Identifiable {
         encrypted = value["encrypted"] == .bool(true)
         dailyDate = value["dailyDate"]?.stringValue
         cover = value["cover"]?.stringValue
+        if case .array(let items) = value["tags"] { tags = items.compactMap(\.stringValue) } else { tags = [] }
     }
 
     /// The title as shown, Untitled when empty, as Morrow's `displayTitle`.

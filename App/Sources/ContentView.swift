@@ -258,6 +258,9 @@ struct ContentView: View {
                     case .page(let id):
                         if controller.workspace.locked.contains(id) {
                             UnlockView(controller: controller, pageId: id)
+                        } else {
+                            PageScreenView(controller: controller, pageId: id)
+                                .id(id)
                         }
                     }
                 }

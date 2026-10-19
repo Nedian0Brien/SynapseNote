@@ -75,6 +75,50 @@ struct SessionHostTests {
         await host.close()
     }
 
+    /// the app's own page screens (11d-2): which pages it draws, and the Markdown source read and read back
+    @Test func choosesPageScreensAndReadsSourceAsMorrowDoes() async throws {
+        let root = try folder([
+            "Note.md": "Hello [[Other]]\n\n![pic](attachments/Pic.png)\n",
+            "Other.md": "Other\n",
+            "Broken.md": "---\n- a\n- b\n---\nBody\n",
+            "attachments/Pic.png": "png",
+        ])
+        let host = host(root, Page())
+        let opened = try json(await call(host, "open"))
+        let ids = JSObject((opened["pages"]?.array ?? []).map { ($0["title"]!.string!, $0["id"]!) })
+        let note = try #require(ids["Note"]?.string)
+        let other = try #require(ids["Other"]?.string)
+        let broken = try #require(ids["Broken"]?.string)
+
+        #expect(await host.screen(of: note, sourceMode: false) == .web)
+        #expect(await host.screen(of: note, sourceMode: true) == .source)
+        // a page that could not be read has no document; Morrow's PageView takes an empty one
+        #expect(await host.screen(of: broken, sourceMode: true) == .unreadable)
+        #expect(await host.markdown(of: broken) == "")
+        #expect(await host.screen(of: "missing", sourceMode: true) == .web)
+
+        // the text opens with links under the pages' titles and files under their vault paths
+        let source = try #require(await host.markdown(of: note))
+        #expect(source == "Hello [[Other]]\n\n![pic](attachments/Pic.png)\n")
+        // and reads back with the link to the page and the picture by path or by name
+        let doc = try #require(await host.readMarkdown("Hello [[Other]] and ![p](./pic.PNG) ![q](attachments/Pic.png)\n"))
+        let blocks = doc["content"]?.array ?? []
+        #expect(blocks.first?["content"]?.array?.first { $0["type"] == "pageLink" }?["attrs"]?["id"] == .string(other))
+        let images = blocks.filter { $0["type"] == "image" }
+        #expect(images.count == 2)
+        #expect(images.allSatisfy { $0["attrs"]?["fileId"] == "attachments/Pic.png" })
+        // a broken escape in a file path saves nothing, as Morrow's decodeURIComponent throws
+        #expect(await host.readMarkdown("![p](%E0%A4%A.png)\n") == nil)
+
+        // content this version does not know is shown as plain text
+        let unknown: JSValue = ["type": "doc", "content": [["type": "mystery", "content": [["type": "paragraph", "content": [["type": "text", "text": "kept"]]]]]]]
+        host.apply(commandsJSON: JSJSON.stringify(["commands": [["type": "page.setDoc", "id": .string(other), "doc": unknown, "now": 9]], "all": false]))
+        #expect(await host.screen(of: other, sourceMode: false) == .unknown(types: ["mystery"], plain: "kept"))
+        // the source wins over it, as in Morrow's PageView
+        #expect(await host.screen(of: other, sourceMode: true) == .source)
+        await host.close()
+    }
+
     @Test func aNewVaultGetsTheGuideOnce() async throws {
         let root = try folder([:])
         let host = host(root, Page())
