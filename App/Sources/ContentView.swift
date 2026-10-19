@@ -184,6 +184,15 @@ struct ContentView: View {
                     FocusButton(controller: controller)
                 }
                 ToolbarItem {
+                    Menu {
+                        PageActionItems(controller: controller, takesShortcuts: false)
+                    } label: {
+                        Label("Page Menu", systemImage: "ellipsis.circle")
+                    }
+                    .menuIndicator(.hidden)
+                    .disabled(controller.selection == nil)
+                }
+                ToolbarItem {
                     Button(controller.showingInspector ? "Hide Inspector" : "Show Inspector", systemImage: "sidebar.right") {
                         controller.showingInspector.toggle()
                     }

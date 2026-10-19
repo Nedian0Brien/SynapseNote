@@ -3,7 +3,11 @@ import SwiftUI
 /// Morrow's settings dialog (`Dialogs.tsx`) as the app's settings: tabs in the macOS settings window, one
 /// sheet on iOS and iPadOS. Each part is its own form so both use the same ones.
 struct SettingsView: View {
-    let controller: EditorController
+    @Bindable var controller: EditorController
+
+    /// The custom CSS sheet is shown from here: a sheet attached inside a form section closes the settings
+    /// sheet on iOS instead of opening.
+    private var editingCss: Binding<Bool> { $controller.editingCustomCss }
 
     var body: some View {
         #if os(macOS)
@@ -15,6 +19,7 @@ struct SettingsView: View {
             Tab("About", systemImage: "info.circle") { AboutSettings() }
         }
         .frame(width: 560, height: 560)
+        .sheet(isPresented: editingCss) { CustomCSSSheet(controller: controller) }
         #else
         NavigationStack {
             Form {
@@ -46,6 +51,8 @@ struct SettingsView: View {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { controller.showingSettings = false } }
             }
         }
+        .presentationSizing(.page)
+        .sheet(isPresented: editingCss) { CustomCSSSheet(controller: controller) }
         #endif
     }
 }
@@ -84,6 +91,10 @@ struct GeneralSettings: View {
             Section {
                 #if os(macOS)
                 Toggle("Quick note from any app", isOn: Binding(get: { preferences.quickNoteFromAnyApp }, set: { preferences.quickNoteFromAnyApp = $0 }))
+                #else
+                Button("New Quick Note", systemImage: "square.and.pencil") {
+                    controller.closeSettings { controller.requestQuickNote() }
+                }
                 #endif
             } header: {
                 Text("Quick note")
@@ -117,7 +128,6 @@ struct AppearanceSettings: View {
     struct Sections: View {
         @Bindable var preferences: AppPreferences
         let controller: EditorController
-        @State private var editingCss = false
 
         init(controller: EditorController) {
             self.controller = controller
@@ -143,7 +153,7 @@ struct AppearanceSettings: View {
                     Text("Coloured headings, lists, icons and tags")
                 }
                 Button {
-                    editingCss = true
+                    controller.editingCustomCss = true
                 } label: {
                     LabeledContent {
                         Text(controller.customCss?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? "On" : "None")
@@ -156,7 +166,6 @@ struct AppearanceSettings: View {
                 .buttonStyle(.plain)
                 .disabled(controller.customCss == nil)
             }
-            .sheet(isPresented: $editingCss) { CustomCSSSheet(controller: controller) }
         }
     }
 }
@@ -277,10 +286,15 @@ struct DataSettings: View {
             Section {
                 if let url = controller.vaultURL {
                     LabeledContent("Vault") {
+                        #if os(macOS)
                         Text(url.path(percentEncoded: false))
                             .lineLimit(2)
                             .truncationMode(.middle)
                             .textSelection(.enabled)
+                        #else
+                        // the sandbox path means nothing on iOS; the Files app shows the folder by its name
+                        Text(controller.vaultName ?? url.lastPathComponent)
+                        #endif
                     }
                 }
                 #if os(macOS)

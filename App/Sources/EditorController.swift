@@ -95,6 +95,8 @@ final class EditorController: WorkspaceService {
     let preferences = AppPreferences()
     /// The settings sheet, on iOS; macOS opens its settings window.
     var showingSettings = false
+    /// The custom CSS editor, over the settings.
+    var editingCustomCss = false
     /// The open vault's custom CSS as saved, nil until the editor page has read it.
     private(set) var customCss: String?
     /// The quick note sheet; asked for before the vault is open, it opens once it is.

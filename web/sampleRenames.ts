@@ -19,6 +19,7 @@ export const SAMPLE_RENAMES: Array<[string, string]> = [
   ["t('highlighted', 'highlight'),\n          ' (',\n          k('Ctrl Shift H'),\n          ').',", "t('highlighted', 'highlight'),\n          '.',"],
   ["k('Ctrl F')", "k('⌘ F')"],
   ["k('Ctrl Shift F')", "k('⇧ ⌘ F')"],
+  ["['The same menu shows the word count and when the page was made.'],", "['The inspector, ', k('⌥ ⌘ I'), ', lists the page’s headings and the pages that link to it.'],"],
   ["['Hold ', k('Ctrl'), ' (', k('⌘'), ') while clicking a link to open it in a new tab.'],", "['Hold ', k('⌘'), ' while clicking a link to open it in a new tab.'],"],
   ["k('Alt G')", "k('⇧ ⌘ G')"],
   ["Drag dots around, zoom with the wheel, and click one to open it.", "Drag dots around, pinch or use the zoom buttons to zoom, and click one to open it."],

@@ -93,24 +93,7 @@ private struct PageCommands: Commands {
             #endif
         }
         CommandMenu("Page") {
-            item("page.find")
-            item("page.favorite")
-            item("page.duplicate")
-            item("page.move")
-            item("page.saveTemplate")
-            item("page.history")
-            item("page.encrypt")
-            item("page.lock")
-            item("page.unprotect")
-            item("page.source")
-            item("page.localGraph")
-            Divider()
-            item("page.exportMarkdown")
-            item("page.exportPdf")
-            item("page.publish")
-            item("tab.duplicate")
-            Divider()
-            item("page.trash")
+            PageActionItems(controller: controller)
         }
         CommandGroup(before: .toolbar) {
             item("view.sidebar")

@@ -270,10 +270,44 @@ extension KeyboardShortcut {
 struct ActionButton: View {
     let action: AppAction
     let controller: EditorController
+    /// False for a copy of a menu bar item, such as in the page menu over the page: the key belongs to the menu bar.
+    var takesShortcut = true
 
     var body: some View {
         Button(action.label(controller), systemImage: action.symbol) { action.perform(controller) }
-            .keyboardShortcut(action.shortcut)
+            .keyboardShortcut(takesShortcut ? action.shortcut : nil)
             .disabled(!action.isEnabled(controller))
+    }
+}
+
+/// The open page's actions, Morrow's page menu: the Page menu of the menu bar, and the page menu button over the
+/// page, which is the way to them on a touch screen.
+struct PageActionItems: View {
+    let controller: EditorController
+    var takesShortcuts = true
+
+    private func item(_ id: String) -> ActionButton {
+        ActionButton(action: .named(id), controller: controller, takesShortcut: takesShortcuts)
+    }
+
+    var body: some View {
+        item("page.find")
+        item("page.favorite")
+        item("page.duplicate")
+        item("page.move")
+        item("page.saveTemplate")
+        item("page.history")
+        item("page.encrypt")
+        item("page.lock")
+        item("page.unprotect")
+        item("page.source")
+        item("page.localGraph")
+        Divider()
+        item("page.exportMarkdown")
+        item("page.exportPdf")
+        item("page.publish")
+        item("tab.duplicate")
+        Divider()
+        item("page.trash")
     }
 }

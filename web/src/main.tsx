@@ -426,11 +426,13 @@ function Host() {
   useEffect(() => {
     if (phase.kind === 'ready') report();
   }, [ui.sourceMode]);
-  // the vault's custom css, for the app's settings, whenever it is read or saved
+  // the vault's custom css, for the app's settings, once the vault is open and whenever it is read or saved;
+  // an empty file reads as the same empty text, so the vault opening is told too
   const customCss = useCustomCss();
+  const ready = phase.kind === 'ready';
   useEffect(() => {
-    if (phase.kind === 'ready') post({ type: 'customCss', css: customCss });
-  }, [customCss]);
+    if (ready) post({ type: 'customCss', css: customCss });
+  }, [customCss, ready]);
   const dialog = ui.dialog?.kind === 'source' ? ui.dialog : null;
   const history = ui.dialog?.kind === 'history' ? ui.dialog : null;
   return (
