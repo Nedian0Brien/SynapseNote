@@ -36,6 +36,7 @@ import { basename, dirname, isHiddenPath, isPageFile, relativePath } from '../ve
 import { canvasFromDoc, writeCanvas } from '../vendor/morrow/src/core/canvas';
 import { displayTitle } from '../vendor/morrow/src/core/model';
 import { sampleCommands } from '../vendor/morrow/src/core/sample';
+import { applyTemplate, fillTemplate, formatDate } from '../vendor/morrow/src/core/templates';
 import { MemoryVault } from '../vendor/morrow/src/storage/memoryVault';
 import { WorkspaceSession } from '../vendor/morrow/src/storage/session';
 import { VaultRepository } from '../vendor/morrow/src/storage/vaultRepository';
@@ -578,6 +579,16 @@ async function main(): Promise<void> {
   write('collation.json', collation, 0);
 
   write('session.json', await sessionSteps(), 0);
+
+  // template placeholders and the moment.js style dates they take, in node's en-US
+  const templateDate = new Date(2026, 9, 9, 7, 5, 3);
+  const formats = ['YYYY-MM-DD', 'dddd, D MMMM YYYY', 'ddd D MMM YY', 'HH:mm:ss', 'H [h] mm', '[YYYY] YYYY', 'M/D', 'MMMM [the] D', '[]', '[unclosed'];
+  const texts = ['{{title}} on {{date}}', '{{ date:dddd }} at {{time}}', '{{TIME:HH}} {{Date: YYYY }}', '{{date:}} {{unknown}} {{title', 'no placeholders'];
+  write('templates.json', {
+    formats: formats.map((format) => ({ format, text: formatDate(templateDate, format) })),
+    fills: texts.map((text) => ({ text, filled: fillTemplate(text, { title: 'My page', date: templateDate }) })),
+    doc: { input: markdownToDoc('# {{title}}\n\nWritten {{date:D MMMM}}.\n\n$$\n{{title}}\n$$'), output: applyTemplate(markdownToDoc('# {{title}}\n\nWritten {{date:D MMMM}}.\n\n$$\n{{title}}\n$$'), { title: 'My page', date: templateDate }) },
+  });
 
   const guide = await guideVault();
   const vaults: Record<string, Record<string, string>> = { guide, obsidian: OBSIDIAN, normalization: NORMALIZATION };

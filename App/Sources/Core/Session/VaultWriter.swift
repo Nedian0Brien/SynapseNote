@@ -446,7 +446,7 @@ nonisolated final class VaultWriter {
     }
 }
 
-extension Doc {
+nonisolated extension Doc {
     /// `isDocEmpty`
     nonisolated static func isDocEmpty(_ doc: DocNode) -> Bool {
         let blocks = doc.content ?? []
