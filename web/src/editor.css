@@ -18,6 +18,7 @@ body {
    to hover, so they stay visible there */
 @media (hover: none) {
   .page-header-actions,
+  .page-cover-actions,
   .add-tag {
     opacity: 1;
   }

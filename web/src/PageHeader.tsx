@@ -1,8 +1,10 @@
-// the top of a page as morrow's PageView draws it: icon, title, tags, and a database row's properties
-import { Smile } from 'lucide-react';
-import { useLayoutEffect, useRef } from 'react';
+// the top of a page as morrow's PageView draws it: icon, the add icon and add cover buttons, title, tags, and a
+// database row's properties
+import { ImageIcon, Smile } from 'lucide-react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { findDatabaseOf } from '../vendor/morrow/src/core/database';
 import type { PageMeta } from '../vendor/morrow/src/core/model';
+import { CoverPicker } from '../vendor/morrow/src/app/components/Cover';
 import { Emoji } from '../vendor/morrow/src/app/components/Emoji';
 import { RowProperties } from '../vendor/morrow/src/app/components/database/RowProperties';
 import { run, useWorkspace } from '../vendor/morrow/src/app/workspace';
@@ -56,23 +58,31 @@ export function PageHeader({
   const state = useWorkspace();
   const database = findDatabaseOf(state, page);
   const chooseIcon = () => post({ type: 'chooseIcon', pageId: page.id });
+  const [coverPicker, setCoverPicker] = useState<HTMLElement | null>(null);
   return (
     <>
-      {page.icon ? (
+      {page.icon && (
         <div className="page-icon-row">
           <button type="button" className="page-icon" aria-label="Change icon" disabled={!editable} onClick={chooseIcon}>
             <Emoji emoji={page.icon} />
           </button>
         </div>
-      ) : (
-        editable && (
-          <div className="page-header-actions">
+      )}
+      {editable && (!page.icon || !page.cover) && (
+        <div className="page-header-actions">
+          {!page.icon && (
             <button type="button" className="add-icon" onClick={chooseIcon}>
               <Smile size={14} /> Add icon
             </button>
-          </div>
-        )
+          )}
+          {!page.cover && (
+            <button type="button" className="add-icon" onClick={(event) => setCoverPicker(event.currentTarget)}>
+              <ImageIcon size={14} /> Add cover
+            </button>
+          )}
+        </div>
       )}
+      {coverPicker && <CoverPicker page={page} anchor={coverPicker} onClose={() => setCoverPicker(null)} />}
       <h1 className="page-title-heading">
         <TitleField page={page} readOnly={!editable} onEnter={onEnter} />
       </h1>

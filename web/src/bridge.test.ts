@@ -7,7 +7,12 @@ afterEach(() => {
 
 describe('parseInbound', () => {
   it('accepts the vault, page and command messages', () => {
-    expect(parseInbound({ type: 'openVault', name: 'Notes' })).toEqual({ type: 'openVault', name: 'Notes' });
+    expect(parseInbound({ type: 'openVault', name: 'Notes' })).toEqual({ type: 'openVault', name: 'Notes', guide: false });
+    expect(parseInbound({ type: 'openVault', name: 'Notes', guide: true })).toEqual({
+      type: 'openVault',
+      name: 'Notes',
+      guide: true,
+    });
     expect(parseInbound({ type: 'show', pageId: 'a' })).toEqual({ type: 'show', pageId: 'a', find: null });
     expect(parseInbound({ type: 'show', pageId: null })).toEqual({ type: 'show', pageId: null, find: null });
     expect(parseInbound({ type: 'show', pageId: 'a', find: 'milk' })).toEqual({ type: 'show', pageId: 'a', find: 'milk' });
@@ -24,6 +29,28 @@ describe('parseInbound', () => {
     });
     expect(parseInbound({ type: 'createPage', parentId: null, kind: 'journal' })).toBeNull();
     expect(parseInbound({ type: 'trashPage', pageId: 'a' })).toEqual({ type: 'trashPage', pageId: 'a' });
+  });
+
+  it('accepts the settings morrow keeps, as morrow reads them', () => {
+    const preferences = { font: 'serif', width: 'wide', accent: 'rose', colorful: false, name: '  Dennis  ' };
+    expect(parseInbound({ type: 'preferences', preferences })).toEqual({
+      type: 'preferences',
+      preferences: { ...preferences, name: 'Dennis' },
+    });
+    expect(parseInbound({ type: 'preferences', preferences: { ...preferences, font: 'comic' } })).toBeNull();
+    expect(parseInbound({ type: 'preferences', preferences: { ...preferences, width: 'narrow' } })).toBeNull();
+    expect(parseInbound({ type: 'preferences', preferences: { ...preferences, accent: 'pink' } })).toBeNull();
+    expect(parseInbound({ type: 'preferences', preferences: { ...preferences, colorful: 'yes' } })).toBeNull();
+    const long = parseInbound({ type: 'preferences', preferences: { ...preferences, name: 'x'.repeat(80) } });
+    expect(long?.type === 'preferences' && long.preferences.name.length).toBe(60);
+  });
+
+  it('accepts custom css and quick notes', () => {
+    expect(parseInbound({ type: 'previewCss', css: 'a{}' })).toEqual({ type: 'previewCss', css: 'a{}' });
+    expect(parseInbound({ type: 'saveCss', css: '' })).toEqual({ type: 'saveCss', css: '' });
+    expect(parseInbound({ type: 'saveCss' })).toBeNull();
+    expect(parseInbound({ type: 'capture', text: 'milk' })).toEqual({ type: 'capture', text: 'milk' });
+    expect(parseInbound({ type: 'capture', text: 3 })).toBeNull();
   });
 
   it('reads rpc results as success or failure', () => {
@@ -147,6 +174,7 @@ describe('post and listen', () => {
       linkSelection: () => false,
       encryption: async () => '{"ok":true}',
       pdfSnapshot: (id) => (id === 'a' ? '{}' : null),
+      files: async () => null,
     });
     const synapse = (globalThis.window as Window).synapse!;
     expect(synapse.receive({ type: 'show', pageId: 'a' })).toBe(true);

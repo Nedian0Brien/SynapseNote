@@ -19,6 +19,7 @@ import { BlockMenu, FormattingMenu, LinkMenu, openHref, TableMenu } from '../ven
 import { FindBar } from '../vendor/morrow/src/app/editor/FindBar';
 import { createExtensions } from '../vendor/morrow/src/app/editor/extensions';
 import { createPage, openToday } from '../vendor/morrow/src/app/operations';
+import { PageFrame } from './PageFrame';
 import { PageHeader } from './PageHeader';
 import { Subpages } from './Subpages';
 import { getSession, getState, run } from '../vendor/morrow/src/app/workspace';
@@ -271,27 +272,25 @@ export function EditorApp({ page, doc, editable, find, onFound }: Props) {
   }, []);
 
   return (
-    <div className="page-scroll">
-      <article className="page font-sans width-comfortable">
-        <PageHeader page={page} editable={editable} onEnter={() => editor?.chain().focus('start').run()} />
-        {editor ? (
-          <div className="editor-host">
-            {finding && <FindBar editor={editor} onClose={() => setFinding(false)} />}
-            <EditorContent editor={editor} className="editor-surface" />
-            {editable && (
-              <>
-                <FormattingMenu editor={editor} />
-                <LinkMenu editor={editor} />
-                <TableMenu editor={editor} />
-              </>
-            )}
-            {blockMenu && <BlockMenu editor={editor} request={blockMenu} onClose={() => setBlockMenu(null)} />}
-          </div>
-        ) : (
-          <div className="editor-loading" aria-hidden="true" />
-        )}
-        <Subpages parentId={page.id} />
-      </article>
-    </div>
+    <PageFrame page={page} editable={editable}>
+      <PageHeader page={page} editable={editable} onEnter={() => editor?.chain().focus('start').run()} />
+      {editor ? (
+        <div className="editor-host">
+          {finding && <FindBar editor={editor} onClose={() => setFinding(false)} />}
+          <EditorContent editor={editor} className="editor-surface" />
+          {editable && (
+            <>
+              <FormattingMenu editor={editor} />
+              <LinkMenu editor={editor} />
+              <TableMenu editor={editor} />
+            </>
+          )}
+          {blockMenu && <BlockMenu editor={editor} request={blockMenu} onClose={() => setBlockMenu(null)} />}
+        </div>
+      ) : (
+        <div className="editor-loading" aria-hidden="true" />
+      )}
+      <Subpages parentId={page.id} />
+    </PageFrame>
   );
 }

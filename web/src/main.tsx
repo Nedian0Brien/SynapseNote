@@ -24,6 +24,7 @@ import { commitEditors } from '../vendor/morrow/src/app/editor/commits';
 import {
   createFromTemplate,
   createPage,
+  captureToToday,
   createTemplatesPage,
   deleteUnusedFiles,
   exportAllMarkdown,
@@ -35,7 +36,11 @@ import {
   restoreBackup,
   saveAsTemplate,
   trashPage,
+  unusedFiles,
 } from '../vendor/morrow/src/app/operations';
+import { loadCustomCss, previewCustomCss, saveCustomCss, useCustomCss } from '../vendor/morrow/src/app/customCss';
+import { setPreferences } from '../vendor/morrow/src/app/platform/preferences';
+import { sampleCommands } from '../vendor/morrow/src/core/sample';
 import { createBackup } from '../vendor/morrow/src/core/portability';
 import { parseDateKey } from '../vendor/morrow/src/core/daily';
 import { findTemplatesPage } from '../vendor/morrow/src/core/templates';
@@ -43,7 +48,8 @@ import { newId } from '../vendor/morrow/src/app/platform/files';
 import { useUi } from '../vendor/morrow/src/app/ui';
 import { getSession, run, setSession, useWorkspace } from '../vendor/morrow/src/app/workspace';
 import { listen, post } from './bridge';
-import type { Theme, ToastMessage } from './bridge';
+import type { Theme, ToastMessage, ViewPreferences } from './bridge';
+import { PageFrame } from './PageFrame';
 import { PageHeader } from './PageHeader';
 import { CanvasPage } from './CanvasPage';
 import { DatabasePage } from './DatabasePage';
@@ -54,7 +60,7 @@ import { createReviews } from './review';
 import type { Reviews } from './review';
 import { collectCards } from '../vendor/morrow/src/core/flashcards';
 import { HistoryDialog } from '../vendor/morrow/src/app/components/HistoryDialog';
-import { closeDialog, dismissToast, getUi, openDialog, setUi } from '../vendor/morrow/src/app/ui';
+import { closeDialog, dismissToast, getUi, openDialog, setUi, toast } from '../vendor/morrow/src/app/ui';
 import type { Toast } from '../vendor/morrow/src/app/ui';
 import { showRoute } from './host/router';
 import { settle } from './host/rpc';
@@ -67,6 +73,13 @@ const applyTheme = (theme: Theme) => {
 applyTheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 root.dataset.accent = 'ocean';
 root.dataset.colorful = 'true';
+
+// the app's settings, kept in morrow's preferences so morrow's components read them as they do there
+function applyPreferences(preferences: ViewPreferences): void {
+  setPreferences(preferences);
+  root.dataset.accent = preferences.accent;
+  root.dataset.colorful = preferences.colorful ? 'true' : 'false';
+}
 
 // errors in the page are reported to the native app, which logs them
 window.addEventListener('error', (event) => post({ type: 'log', level: 'error', message: String(event.message) }));
@@ -107,7 +120,7 @@ function report(): void {
   }, 16);
 }
 
-async function openVault(name: string): Promise<void> {
+async function openVault(name: string, guide: boolean): Promise<void> {
   if (phase.kind !== 'waiting') return;
   const repository = new VaultRepository(nativeVaultBridge(name), newId);
   const opened = await WorkspaceSession.open(repository);
@@ -118,7 +131,12 @@ async function openVault(name: string): Promise<void> {
   const session = opened.value;
   // keystrokes still waiting in an editor are saved before an outside edit is read
   session.beforeExternal = commitEditors;
-  // new vaults start empty, morrow's guide describes features this app does not have yet
+  // morrow's welcome guide in a vault opened for the first time; never in a folder about to be filled from
+  // another device, as morrow's main.tsx
+  if (session.firstRun && guide) {
+    const seeded = session.executeAll(sampleCommands(newId, Date.now()));
+    if (seeded.ok) await session.flush();
+  }
   await session.markInitialized();
   setSession(session);
   reviews = createReviews({ read: () => session.readMeta('review.json'), write: (text) => session.writeMeta('review.json', text) });
@@ -129,6 +147,7 @@ async function openVault(name: string): Promise<void> {
   report();
   rerender();
   startAutoBackup();
+  await loadCustomCss();
 }
 
 // morrow's automatic backup on the desktop: once half a minute after opening, then every ten minutes, and
@@ -249,6 +268,14 @@ function pdfSnapshot(id: string): string | null {
 
 // a copy of the element to print: form fields show what is typed and ticked now, where markup alone keeps
 // only what they started with, so a ticked task would print unticked
+// morrow's images and files section of the settings: how many files the vault holds, their size, and how many
+// no page, trashed page or page version uses
+async function files(): Promise<string | null> {
+  if (phase.kind !== 'ready') return null;
+  const [all, unused] = await Promise.all([getSession().listFiles(), unusedFiles()]);
+  return JSON.stringify({ count: all.length, bytes: all.reduce((sum, file) => sum + file.size, 0), unused: unused.length });
+}
+
 function withFormState(element: Element): Element {
   const copy = element.cloneNode(true) as Element;
   // pictures that wait until they are scrolled to would never load in the page the app prints
@@ -350,38 +377,34 @@ function Page({ pageId, find }: { pageId: PageId; find: FindRequest | null }) {
 // as morrow's PageView in source mode: the header, a note saying so with the way back, and the source
 function SourcePage({ page, doc }: { page: PageMeta; doc: DocNode }) {
   return (
-    <div className="page-scroll">
-      <article className="page font-sans width-comfortable">
-        <PageHeader
-          page={page}
-          editable
-          onEnter={() => document.querySelector<HTMLTextAreaElement>('.source-text')?.focus()}
-        />
-        <div className="banner source-banner" role="note">
-          <span>You are editing this page as Markdown.</span>
-          <button type="button" className="button small" onClick={() => setUi({ sourceMode: null })}>
-            Back to the editor
-          </button>
-        </div>
-        <SourceEditor pageId={page.id} doc={doc} editable />
-      </article>
-    </div>
+    <PageFrame page={page} editable>
+      <PageHeader
+        page={page}
+        editable
+        onEnter={() => document.querySelector<HTMLTextAreaElement>('.source-text')?.focus()}
+      />
+      <div className="banner source-banner" role="note">
+        <span>You are editing this page as Markdown.</span>
+        <button type="button" className="button small" onClick={() => setUi({ sourceMode: null })}>
+          Back to the editor
+        </button>
+      </div>
+      <SourceEditor pageId={page.id} doc={doc} editable />
+    </PageFrame>
   );
 }
 
 function Notice({ page, text, plain }: { page: PageMeta; text: string; plain?: string }) {
   return (
-    <div className="page-scroll">
-      <article className="page font-sans width-comfortable">
-        <h1 className="page-title-heading">
-          <span className="page-title">{displayTitle(page)}</span>
-        </h1>
-        <div className="banner" role="note">
-          {text}
-        </div>
-        {plain !== undefined && <pre className="readonly-text">{plain}</pre>}
-      </article>
-    </div>
+    <PageFrame page={page} editable={false}>
+      <h1 className="page-title-heading">
+        <span className="page-title">{displayTitle(page)}</span>
+      </h1>
+      <div className="banner" role="note">
+        {text}
+      </div>
+      {plain !== undefined && <pre className="readonly-text">{plain}</pre>}
+    </PageFrame>
   );
 }
 
@@ -403,6 +426,11 @@ function Host() {
   useEffect(() => {
     if (phase.kind === 'ready') report();
   }, [ui.sourceMode]);
+  // the vault's custom css, for the app's settings, whenever it is read or saved
+  const customCss = useCustomCss();
+  useEffect(() => {
+    if (phase.kind === 'ready') post({ type: 'customCss', css: customCss });
+  }, [customCss]);
   const dialog = ui.dialog?.kind === 'source' ? ui.dialog : null;
   const history = ui.dialog?.kind === 'history' ? ui.dialog : null;
   return (
@@ -425,7 +453,7 @@ function Host() {
 listen((message) => {
   switch (message.type) {
     case 'openVault':
-      void openVault(message.name).catch((error: unknown) =>
+      void openVault(message.name, message.guide).catch((error: unknown) =>
         post({ type: 'vaultFailed', message: error instanceof Error ? error.message : String(error) }),
       );
       break;
@@ -452,6 +480,23 @@ listen((message) => {
       break;
     case 'theme':
       applyTheme(message.theme);
+      break;
+    case 'preferences':
+      applyPreferences(message.preferences);
+      break;
+    case 'previewCss':
+      previewCustomCss(message.css);
+      break;
+    case 'saveCss':
+      // morrow's custom css setting: saved and shown at once, a toast either way
+      if (phase.kind === 'ready')
+        void saveCustomCss(message.css)
+          .then(() => toast('Custom CSS saved.'))
+          .catch(() => toast('Could not save the CSS.', { tone: 'error' }));
+      break;
+    case 'capture':
+      // morrow's CaptureDialog
+      if (phase.kind === 'ready' && captureToToday(message.text)) toast("Added to today's note.");
       break;
     case 'scrollToHeading':
       scrollToHeading(message.index);
@@ -537,6 +582,7 @@ listen((message) => {
   linkSelection,
   encryption,
   pdfSnapshot,
+  files,
 });
 
 // ctrl or cmd click on anything that points at a page opens it in a new tab, as morrow's tabs do

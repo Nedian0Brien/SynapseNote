@@ -6,6 +6,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { SAMPLE_RENAMES } from './sampleRenames.ts';
 
 const require = createRequire(import.meta.url);
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -46,6 +47,7 @@ const RENAMED: Record<string, Array<[string, string]>> = {
     ['newer version of Morrow (format ${version}). Please update Morrow.', 'newer version of SynapseNote (format ${version}). Please update SynapseNote.'],
   ],
   [path.join(morrowSrc, 'core/vault/load.ts')]: [['is too large to edit in Morrow,', 'is too large to edit in SynapseNote,']],
+  [path.join(morrowSrc, 'core/sample.ts')]: SAMPLE_RENAMES,
   [path.join(morrowSrc, 'storage/vaultRepository.ts')]: [
     ['while Morrow tried to save it.', 'while SynapseNote tried to save it.'],
   ],

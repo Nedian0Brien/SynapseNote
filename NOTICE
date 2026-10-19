@@ -12,5 +12,7 @@ Morrow and say so at their top:
   "Morrow page" label in src/app/editor/EditorMenus.tsx at build time)
 - web/src/EditorApp.tsx (editor setup, from src/app/editor/PageEditor.tsx)
 - web/src/host/actions.ts, web/src/host/attachments.ts (functions copied with the same output)
+- web/sampleRenames.ts (rewrites the welcome guide of src/core/sample.ts at build time for this
+  app's name, keys and screens)
 
 The editor bundle lists the licences of every package it includes in THIRD_PARTY_LICENSES.txt.

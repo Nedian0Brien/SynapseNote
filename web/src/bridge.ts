@@ -1,6 +1,8 @@
 // messages between the editor page and the native app, the only way either side reaches the other
 import type { Command } from '../vendor/morrow/src/core/commands';
 import type { PageId, PageMeta } from '../vendor/morrow/src/core/model';
+import { ACCENTS } from '../vendor/morrow/src/app/platform/preferences';
+import type { Accent, PageWidth, WritingFont } from '../vendor/morrow/src/app/platform/preferences';
 import type { SaveState } from '../vendor/morrow/src/storage/saveQueue';
 import type { VaultChange } from '../vendor/morrow/src/storage/vaultBridge';
 
@@ -8,8 +10,16 @@ export type Theme = 'light' | 'dark';
 
 // sent by the native app through window.synapse.receive
 export type InboundMessage =
-  // opens the vault the app has access to, name is shown wherever the vault is named
-  | { type: 'openVault'; name: string }
+  // opens the vault the app has access to, name is shown wherever the vault is named; guide puts morrow's
+  // welcome guide into a vault opened for the first time, false for a folder about to be filled by sync
+  | { type: 'openVault'; name: string; guide: boolean }
+  // the appearance chosen in the app's settings, the theme comes on its own with the window's
+  | { type: 'preferences'; preferences: ViewPreferences }
+  // custom css shown as it is typed in the settings, and saved to the vault
+  | { type: 'previewCss'; css: string }
+  | { type: 'saveCss'; css: string }
+  // a quick note, added to the end of today's note
+  | { type: 'capture'; text: string }
   // find is text to select once the page is open, such as the words a search matched
   | { type: 'show'; pageId: PageId | null; find: string | null }
   | { type: 'rpcResult'; id: number; ok: true; value: unknown }
@@ -53,6 +63,15 @@ export type InboundMessage =
   | { type: 'toastAction'; id: number }
   | { type: 'dismissToast'; id: number };
 
+// the settings morrow keeps in its preferences that the app's settings choose
+export interface ViewPreferences {
+  font: WritingFont;
+  width: PageWidth;
+  accent: Accent;
+  colorful: boolean;
+  name: string;
+}
+
 // a morrow toast as the app shows it, action is the label of its button
 export interface ToastMessage {
   id: number;
@@ -90,7 +109,9 @@ export type OutboundMessage =
   // every toast showing now, the app draws them over all of its screens
   | { type: 'toasts'; toasts: ToastMessage[] }
   // morrow's automatic backup, written by the app next to its own data
-  | { type: 'autoBackup'; json: string };
+  | { type: 'autoBackup'; json: string }
+  // the vault's custom css, when the vault opens and when it is saved
+  | { type: 'customCss'; css: string };
 
 interface WebkitHandler {
   postMessage(message: unknown): void;
@@ -115,6 +136,8 @@ export interface HostApi {
   encryption(action: string, params: Record<string, unknown>): Promise<string>;
   // the open page as html to print, JSON {title, html}; null when that page is not the one on screen
   pdfSnapshot(id: string): string | null;
+  // the vault's images and files as JSON {count, bytes, unused}, null while no vault is open
+  files(): Promise<string | null>;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -129,12 +152,31 @@ const isChange = (value: unknown): value is VaultChange =>
   typeof value.mtime === 'number' &&
   typeof value.birthtime === 'number';
 
+// the values morrow's preferences.ts accepts, the name trimmed to its 60 characters
+function parsePreferences(value: unknown): ViewPreferences | null {
+  if (!isRecord(value)) return null;
+  const { font, width, accent, colorful, name } = value;
+  if (font !== 'serif' && font !== 'sans' && font !== 'mono') return null;
+  if (width !== 'comfortable' && width !== 'wide') return null;
+  if (!ACCENTS.includes(accent as Accent) || typeof colorful !== 'boolean' || typeof name !== 'string') return null;
+  return { font, width, accent: accent as Accent, colorful, name: name.trim().slice(0, 60) };
+}
+
 // anything that does not match a known message exactly is dropped
 export function parseInbound(value: unknown): InboundMessage | null {
   if (!isRecord(value)) return null;
   switch (value.type) {
     case 'openVault':
-      return typeof value.name === 'string' ? { type: 'openVault', name: value.name } : null;
+      return typeof value.name === 'string' ? { type: 'openVault', name: value.name, guide: value.guide === true } : null;
+    case 'preferences': {
+      const preferences = parsePreferences(value.preferences);
+      return preferences ? { type: 'preferences', preferences } : null;
+    }
+    case 'previewCss':
+    case 'saveCss':
+      return typeof value.css === 'string' ? { type: value.type, css: value.css } : null;
+    case 'capture':
+      return typeof value.text === 'string' ? { type: 'capture', text: value.text } : null;
     case 'show':
       if (value.pageId !== null && !isId(value.pageId)) return null;
       if (value.find !== undefined && value.find !== null && typeof value.find !== 'string') return null;
