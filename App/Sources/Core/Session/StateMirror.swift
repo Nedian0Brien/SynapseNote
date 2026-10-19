@@ -1,8 +1,8 @@
 import Foundation
 
-/// A copy of the editor page's Morrow session, kept from the state deltas the page sends (web/src/stateDelta.ts):
-/// what native screens are answered from while the page still writes the vault. In 11c this becomes the
-/// workspace the Swift session owns.
+/// A copy of the editor page's Morrow session, kept from the state deltas the page sends (web/src/stateDelta.ts).
+/// Since 11c-2 the Swift session owns the workspace and answers the native screens; debug builds keep this copy
+/// to check that the page's session holds the same workspace.
 nonisolated final class StateMirror {
     private(set) var revision = 0
     /// false until the whole workspace has arrived once
@@ -47,9 +47,5 @@ nonisolated final class StateMirror {
         self.revision = Int(revision)
         ready = true
         return true
-    }
-
-    func context(now: Date = Date()) -> CoreQueries.Context {
-        CoreQueries.Context(state: state, activity: activity, reviewLog: reviewLog, now: now)
     }
 }

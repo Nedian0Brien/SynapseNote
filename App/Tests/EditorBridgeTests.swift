@@ -28,6 +28,10 @@ struct EditorBridgeTests {
         #expect(EditorEvent(body: ["type": "customCss", "css": "a {}"]) == .customCss("a {}"))
         #expect(EditorEvent(body: ["type": "state", "json": "{\"revision\":1}"]) == .state(json: "{\"revision\":1}"))
         #expect(EditorEvent(body: ["type": "state"]) == nil)
+        #expect(EditorEvent(body: ["type": "commands", "json": "{\"commands\":[],\"all\":false}"]) == .commands(json: "{\"commands\":[],\"all\":false}"))
+        #expect(EditorEvent(body: ["type": "commands"]) == nil)
+        #expect(EditorEvent(body: ["type": "externalAccepted", "id": 3, "accepted": ["a", "b"]]) == .externalAccepted(id: 3, accepted: ["a", "b"]))
+        #expect(EditorEvent(body: ["type": "externalAccepted", "id": 3]) == nil)
         #expect(EditorEvent(body: ["type": "vaultFailed", "message": "gone"]) == .vaultFailed(message: "gone"))
         #expect(EditorEvent(body: ["type": "openExternal", "url": "https://example.com"]) == .openExternal(URL(string: "https://example.com")!))
     }
@@ -48,7 +52,8 @@ struct EditorBridgeTests {
     }
 
     @Test func commandsHaveTheShapeThePageReads() {
-        #expect(EditorCommand.openVault(name: "Notes", guide: true).json == .object(["type": .string("openVault"), "name": .string("Notes"), "guide": .bool(true)]))
+        #expect(EditorCommand.openVault(name: "Notes", guide: true, compare: false).json
+            == .object(["type": .string("openVault"), "name": .string("Notes"), "guide": .bool(true), "compare": .bool(false)]))
         #expect(EditorCommand.capture("milk").json == .object(["type": .string("capture"), "text": .string("milk")]))
         #expect(EditorCommand.saveCss("a {}").json == .object(["type": .string("saveCss"), "css": .string("a {}")]))
         #expect(EditorCommand.show(pageId: nil, find: nil).json["pageId"] == .null)
@@ -81,30 +86,13 @@ struct EditorBridgeTests {
         #expect(EditorCommand.rpcResult(id: 2, result: .success(.bool(true))).json
             == .object(["type": .string("rpcResult"), "id": .number(2), "ok": .bool(true), "value": .bool(true)]))
         #expect(EditorCommand.rpcResult(id: 2, result: .failure(.init(message: "no"))).json["error"] == .string("no"))
-        let change = VaultFileSystem.Change(path: "a.md", text: nil, mtime: 1, birthtime: 0, dir: false, other: false)
-        #expect(EditorCommand.vaultChanges([change]).json["changes"]
-            == .array([.object(["path": .string("a.md"), "text": .null, "mtime": .number(1), "birthtime": .number(0), "dir": .bool(false), "other": .bool(false)])]))
+        #expect(EditorCommand.external(id: 5, json: "{}").json == .object(["type": .string("external"), "id": .number(5), "json": .string("{}")]))
+        #expect(EditorCommand.vaultInfo(json: "{}").json == .object(["type": .string("vaultInfo"), "json": .string("{}")]))
+        #expect(EditorCommand.resync(json: "{}").json == .object(["type": .string("resync"), "json": .string("{}")]))
         #expect(EditorCommand.createPage(parentId: "p").json["parentId"] == .string("p"))
         #expect(EditorCommand.createPage(parentId: "p").json["kind"] == .string("page"))
         #expect(EditorCommand.createPage(parentId: nil, kind: .database).json["kind"] == .string("database"))
         #expect(EditorCommand.createPage(parentId: nil, kind: .canvas).json["kind"] == .string("canvas"))
         #expect(EditorCommand.theme(dark: true).json["theme"] == .string("dark"))
-    }
-
-    @Test func rpcRunsVaultCalls() throws {
-        let root = FileManager.default.temporaryDirectory.appending(path: "rpc-\(UUID().uuidString)")
-        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        let files = VaultFileSystem(root: root, trash: { _ in throw CocoaError(.featureUnsupported) })
-        let written = try VaultRPC.run("apply", [.array([.object(["op": .string("write"), "path": .string("a.md"), "text": .string("hello")])])], on: files)
-        #expect(written == .array([.object(["ok": .bool(true)])]))
-        #expect(try VaultRPC.run("readText", [.string("a.md")], on: files) == .string("hello"))
-        #expect(try VaultRPC.run("exists", [.string("b.md")], on: files) == .bool(false))
-        #expect(try VaultRPC.run("createFile", [.string("x.bin"), .string("AQI=")], on: files) == .null)
-        #expect(try VaultRPC.run("readBytes", [.string("x.bin")], on: files) == .string("AQI="))
-        let scan = try VaultRPC.run("scan", [], on: files)
-        #expect(scan["files"]?.objectValue == nil)
-        if case .array(let scanned)? = scan["files"] { #expect(scanned.count == 1) } else { Issue.record("scan has no files") }
-        #expect(throws: (any Error).self) { try VaultRPC.run("readText", [.string("../outside.md")], on: files) }
-        #expect(throws: (any Error).self) { try VaultRPC.run("eval", [], on: files) }
     }
 }

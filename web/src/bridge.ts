@@ -4,15 +4,15 @@ import type { PageId, PageMeta } from '../vendor/morrow/src/core/model';
 import { ACCENTS } from '../vendor/morrow/src/app/platform/preferences';
 import type { Accent, PageWidth, WritingFont } from '../vendor/morrow/src/app/platform/preferences';
 import type { SaveState } from '../vendor/morrow/src/storage/saveQueue';
-import type { VaultChange } from '../vendor/morrow/src/storage/vaultBridge';
 
 export type Theme = 'light' | 'dark';
 
 // sent by the native app through window.synapse.receive
 export type InboundMessage =
   // opens the vault the app has access to, name is shown wherever the vault is named; guide puts morrow's
-  // welcome guide into a vault opened for the first time, false for a folder about to be filled by sync
-  | { type: 'openVault'; name: string; guide: boolean }
+  // welcome guide into a vault opened for the first time, false for a folder about to be filled by sync;
+  // compare has the page send its state deltas, for the app's debug comparison with its own session
+  | { type: 'openVault'; name: string; guide: boolean; compare: boolean }
   // the appearance chosen in the app's settings, the theme comes on its own with the window's
   | { type: 'preferences'; preferences: ViewPreferences }
   // custom css shown as it is typed in the settings, and saved to the vault
@@ -24,7 +24,13 @@ export type InboundMessage =
   | { type: 'show'; pageId: PageId | null; find: string | null }
   | { type: 'rpcResult'; id: number; ok: true; value: unknown }
   | { type: 'rpcResult'; id: number; ok: false; error: string }
-  | { type: 'vaultChanges'; changes: VaultChange[] }
+  // an edit another app made, read by the app's session (an ExternalPatch as JSON text); the page answers with
+  // the pages it took in
+  | { type: 'external'; id: number; json: string }
+  // where each page lies and the saves per day, JSON text { paths, activity }
+  | { type: 'vaultInfo'; json: string }
+  // the app session's version of pages this page got out of step with, an ExternalPatch as JSON text
+  | { type: 'resync'; json: string }
   // a page, a database or a canvas
   | { type: 'createPage'; parentId: PageId | null; kind: 'page' | 'database' | 'canvas' }
   | { type: 'trashPage'; pageId: PageId }
@@ -112,8 +118,13 @@ export type OutboundMessage =
   | { type: 'autoBackup'; json: string }
   // the vault's custom css, when the vault opens and when it is saved
   | { type: 'customCss'; css: string }
-  // the workspace records that changed, a StateDelta as JSON text so the app keeps every key in its order
-  | { type: 'state'; json: string };
+  // the workspace records that changed, a StateDelta as JSON text so the app keeps every key in its order;
+  // sent only for the app's debug comparison
+  | { type: 'state'; json: string }
+  // commands this page applied, JSON text { commands, all }, which the app's session applies the same way
+  | { type: 'commands'; json: string }
+  // the pages of an outside edit this page took in
+  | { type: 'externalAccepted'; id: number; accepted: PageId[] };
 
 interface WebkitHandler {
   postMessage(message: unknown): void;
@@ -129,7 +140,6 @@ declare global {
 // what the app calls directly, for answers it waits for
 export interface HostApi {
   flush(): Promise<boolean>;
-  pathOf(id: string): string | null;
   // a workspace answer as JSON text, null while no vault is open or for a query that is not known
   query(name: string, params: Record<string, unknown>): string | null;
   // opens the link editor when text is selected in the editor, as cmd k does there; false when nothing is selected
@@ -147,13 +157,6 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const isId = (value: unknown): value is string => typeof value === 'string' && value.length > 0;
 
-const isChange = (value: unknown): value is VaultChange =>
-  isRecord(value) &&
-  typeof value.path === 'string' &&
-  (typeof value.text === 'string' || value.text === null) &&
-  typeof value.mtime === 'number' &&
-  typeof value.birthtime === 'number';
-
 // the values morrow's preferences.ts accepts, the name trimmed to its 60 characters
 function parsePreferences(value: unknown): ViewPreferences | null {
   if (!isRecord(value)) return null;
@@ -169,7 +172,9 @@ export function parseInbound(value: unknown): InboundMessage | null {
   if (!isRecord(value)) return null;
   switch (value.type) {
     case 'openVault':
-      return typeof value.name === 'string' ? { type: 'openVault', name: value.name, guide: value.guide === true } : null;
+      return typeof value.name === 'string'
+        ? { type: 'openVault', name: value.name, guide: value.guide === true, compare: value.compare === true }
+        : null;
     case 'preferences': {
       const preferences = parsePreferences(value.preferences);
       return preferences ? { type: 'preferences', preferences } : null;
@@ -187,10 +192,13 @@ export function parseInbound(value: unknown): InboundMessage | null {
       if (typeof value.id !== 'number') return null;
       if (value.ok === true) return { type: 'rpcResult', id: value.id, ok: true, value: value.value };
       return { type: 'rpcResult', id: value.id, ok: false, error: String(value.error ?? 'The app could not finish.') };
-    case 'vaultChanges':
-      return Array.isArray(value.changes) && value.changes.every(isChange)
-        ? { type: 'vaultChanges', changes: value.changes }
+    case 'external':
+      return Number.isInteger(value.id) && typeof value.json === 'string'
+        ? { type: 'external', id: value.id as number, json: value.json }
         : null;
+    case 'vaultInfo':
+    case 'resync':
+      return typeof value.json === 'string' ? { type: value.type, json: value.json } : null;
     case 'createPage': {
       if (value.parentId !== null && !isId(value.parentId)) return null;
       const kind = value.kind ?? 'page';

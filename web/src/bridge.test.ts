@@ -7,11 +7,12 @@ afterEach(() => {
 
 describe('parseInbound', () => {
   it('accepts the vault, page and command messages', () => {
-    expect(parseInbound({ type: 'openVault', name: 'Notes' })).toEqual({ type: 'openVault', name: 'Notes', guide: false });
-    expect(parseInbound({ type: 'openVault', name: 'Notes', guide: true })).toEqual({
+    expect(parseInbound({ type: 'openVault', name: 'Notes' })).toEqual({ type: 'openVault', name: 'Notes', guide: false, compare: false });
+    expect(parseInbound({ type: 'openVault', name: 'Notes', guide: true, compare: true })).toEqual({
       type: 'openVault',
       name: 'Notes',
       guide: true,
+      compare: true,
     });
     expect(parseInbound({ type: 'show', pageId: 'a' })).toEqual({ type: 'show', pageId: 'a', find: null });
     expect(parseInbound({ type: 'show', pageId: null })).toEqual({ type: 'show', pageId: null, find: null });
@@ -69,14 +70,14 @@ describe('parseInbound', () => {
     expect(parseInbound({ type: 'rpcResult', id: '3', ok: true })).toBeNull();
   });
 
-  it('accepts vault changes only in morrow form', () => {
-    const change = { path: 'a.md', text: 'x', mtime: 1, birthtime: 1 };
-    const removed = { path: 'b.md', text: null, mtime: 1, birthtime: 0, dir: false, other: false };
-    expect(parseInbound({ type: 'vaultChanges', changes: [change, removed] })).toEqual({
-      type: 'vaultChanges',
-      changes: [change, removed],
-    });
-    expect(parseInbound({ type: 'vaultChanges', changes: [{ path: 'a.md' }] })).toBeNull();
+  it('accepts what the app session sends: outside edits, vault info and resyncs as JSON text', () => {
+    expect(parseInbound({ type: 'external', id: 4, json: '{}' })).toEqual({ type: 'external', id: 4, json: '{}' });
+    expect(parseInbound({ type: 'external', id: 1.5, json: '{}' })).toBeNull();
+    expect(parseInbound({ type: 'external', id: 4, json: {} })).toBeNull();
+    expect(parseInbound({ type: 'vaultInfo', json: '{"paths":{},"activity":{}}' })).toEqual({ type: 'vaultInfo', json: '{"paths":{},"activity":{}}' });
+    expect(parseInbound({ type: 'resync', json: '{}' })).toEqual({ type: 'resync', json: '{}' });
+    expect(parseInbound({ type: 'resync' })).toBeNull();
+    expect(parseInbound({ type: 'vaultChanges', changes: [] })).toBeNull();
   });
 
   it('passes commands on for morrow to check, only when they have a type', () => {
@@ -169,7 +170,6 @@ describe('post and listen', () => {
     const flush = vi.fn(async () => true);
     listen(handler, {
       flush,
-      pathOf: (id) => (id === 'a' ? 'A.md' : null),
       query: (name) => (name === 'recent' ? '[]' : null),
       linkSelection: () => false,
       encryption: async () => '{"ok":true}',
@@ -181,7 +181,6 @@ describe('post and listen', () => {
     expect(synapse.receive({ type: 'nope' })).toBe(false);
     expect(handler).toHaveBeenCalledTimes(1);
     expect(await synapse.flush()).toBe(true);
-    expect(synapse.pathOf('a')).toBe('A.md');
     expect(synapse.query('recent', {})).toBe('[]');
     expect(synapse.linkSelection()).toBe(false);
     expect(synapse.pdfSnapshot('b')).toBeNull();

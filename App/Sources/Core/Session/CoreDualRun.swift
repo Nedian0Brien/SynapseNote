@@ -1,69 +1,35 @@
 import Foundation
 
-/// 11a's check in debug builds: the Swift data core reads the vault the editor page opened, and what it makes
-/// of it is compared with the page's Morrow session, page by page and document by document.
+/// The debug check of 11c-2: the editor page applies every command itself and sends it to the Swift session, which
+/// owns the vault. Both must hold the same workspace; the page's copy (StateMirror, from its state deltas) is
+/// compared with the session page by page and document by document.
 nonisolated enum CoreDualRun {
     struct Report: Sendable {
         var pages = 0
         var docs = 0
         var differences: [String] = []
-        /// pages the editor page opened after reading the vault (its markOpened), not a difference in reading
-        var openedSince: [String] = []
     }
 
-    /// The scan the editor page received, with the registry and recent list read from their text so their keys
-    /// keep the file's order.
-    static func scan(_ scan: VaultFileSystem.Scan, registry: String?, recent: String?) -> VaultLoad.Scan {
-        VaultLoad.Scan(
-            files: scan.files.map { .init(path: $0.path, text: $0.text, mtime: $0.mtime, birthtime: $0.birthtime) },
-            folders: scan.folders.map { .init(path: $0.path, mtime: $0.mtime, empty: $0.empty) },
-            others: scan.others,
-            registry: registry.flatMap { try? JSJSON.parse($0) },
-            recent: recent.flatMap { try? JSJSON.parse($0) },
-        )
-    }
-
-    /// `web` is the page's answer to the `state` query: `{ pages, docs, unreadable, problems }`.
-    static func compare(_ loaded: VaultLoad.Loaded, web: JSValue) -> Report {
-        var report = Report(pages: loaded.pages.count, docs: loaded.docs.count)
+    static func compare(session: WorkspaceState, unreadable: JSSet, web: WorkspaceState, webUnreadable: JSSet) -> Report {
+        var report = Report(pages: session.pages.count, docs: session.docs.count)
         func note(_ text: String) { report.differences.append(text) }
 
-        var webPages = JSObject()
-        for page in web["pages"]?.array ?? [] { if let id = page["id"]?.string { webPages[id] = page } }
-        var swiftPages = JSObject()
-        for page in loaded.pages { swiftPages[page.id] = page.json }
-        for id in swiftPages.keys where !webPages.has(id) { note("page \(id) only in Swift") }
-        for id in webPages.keys where !swiftPages.has(id) { note("page \(id) only in the web") }
-        for (id, page) in swiftPages {
-            guard let other = webPages[id] else { continue }
-            if case .number(let read) = page["lastOpenedAt"] ?? .null, case .number(let now) = other["lastOpenedAt"] ?? .null, now > read {
-                report.openedSince.append(id)
-            } else if page["lastOpenedAt"] == .null, other["lastOpenedAt"]?.number != nil {
-                report.openedSince.append(id)
-            }
-            let opened = report.openedSince.last == id
-            for key in Set(page.object!.keys + (other.object?.keys ?? [])).sorted() where !same(page[key], other[key]) {
-                if opened, key == "lastOpenedAt" { continue }
-                note("page \(id) \(key): Swift \(describe(page[key])), web \(describe(other[key]))")
+        for id in session.pages.keys where !web.pages.has(id) { note("page \(id) only in Swift") }
+        for id in web.pages.keys where !session.pages.has(id) { note("page \(id) only in the web") }
+        for (id, page) in session.pages {
+            guard let other = web.pages[id], let mine = page.json.object, let theirs = other.json.object else { continue }
+            for key in mine.keys where !same(mine[key], theirs[key]) {
+                note("page \(id) \(key): Swift \(describe(mine[key])), web \(describe(theirs[key]))")
             }
         }
-
-        let webDocs = web["docs"]?.object ?? JSObject()
-        for (id, _) in loaded.docs where !webDocs.has(id) { note("doc \(id) only in Swift") }
-        for (id, _) in webDocs where !loaded.docs.has(id) { note("doc \(id) only in the web") }
-        for (id, doc) in loaded.docs {
-            guard let other = webDocs[id] else { continue }
-            if let path = firstDifference(.object(doc), other, at: "") { note("doc \(id) differs at \(path)") }
+        for id in session.docs.keys where !web.docs.has(id) { note("doc \(id) only in Swift") }
+        for id in web.docs.keys where !session.docs.has(id) { note("doc \(id) only in the web") }
+        for (id, doc) in session.docs {
+            guard let other = web.docs[id] else { continue }
+            if let path = firstDifference(.object(doc), .object(other), at: "") { note("doc \(id) differs at \(path)") }
         }
-
-        let webUnreadable = JSSet((web["unreadable"]?.array ?? []).compactMap(\.string))
-        let swiftUnreadable = JSSet(loaded.unreadable)
-        for id in swiftUnreadable where !webUnreadable.has(id) { note("page \(id) unreadable only in Swift") }
-        for id in webUnreadable where !swiftUnreadable.has(id) { note("page \(id) unreadable only in the web") }
-        let webProblems = (web["problems"]?.array ?? []).compactMap(\.string)
-        if webProblems.count != loaded.problems.count || !zip(webProblems, loaded.problems).allSatisfy({ $0.jsEquals($1) }) {
-            note("problems: Swift \(loaded.problems), web \(webProblems)")
-        }
+        for id in unreadable where !webUnreadable.has(id) { note("page \(id) unreadable only in Swift") }
+        for id in webUnreadable where !unreadable.has(id) { note("page \(id) unreadable only in the web") }
         return report
     }
 

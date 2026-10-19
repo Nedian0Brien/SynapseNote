@@ -158,6 +158,23 @@ nonisolated enum Flashcards {
         return cards
     }
 
+    /// `readReviewLog`: the cards of .morrow/review.json (`{ version, cards }`), entries without a valid due day left out
+    static func readReviewLog(_ raw: JSValue?) -> JSObject {
+        var log = JSObject()
+        guard case .object(let cards) = raw?.object?["cards"] else { return log }
+        for (id, value) in cards {
+            guard case .object(let entry) = value, case .string(let due) = entry["due"], Daily.parseDateKey(due) != nil else { continue }
+            func number(_ key: String, _ fallback: Double) -> Double {
+                if case .number(let value) = entry[key] { value } else { fallback }
+            }
+            log[id] = .object(JSObject([
+                ("due", .string(due)), ("interval", .number(number("interval", 1))), ("ease", .number(max(1.3, number("ease", 2.5)))),
+                ("reps", .number(number("reps", 0))), ("lapses", .number(number("lapses", 0))),
+            ]))
+        }
+        return log
+    }
+
     /// A review log, `{ [cardId]: { due, interval, ease, reps, lapses } }`.
     static func isDue(_ card: Card, _ log: JSObject, _ today: Date) -> Bool {
         guard let entry = log[card.id], let due = entry["due"]?.string else { return log[card.id] == nil }

@@ -106,8 +106,11 @@ final class EditorController: WorkspaceService {
     @ObservationIgnored var openURL: (URL) -> Void = { _ in }
     @ObservationIgnored private let location: VaultLocation
     @ObservationIgnored private let access = VaultAccess()
-    /// the editor page's workspace, kept from its state deltas; native screens are answered from it
+    /// the editor page's copy of the workspace, kept from its state deltas in debug builds and compared with the
+    /// Swift session, which is the one that writes the vault
     @ObservationIgnored let mirror = StateMirror()
+    /// the open vault's Swift session
+    @ObservationIgnored private var host: SessionHost?
     @ObservationIgnored private let fileInput = FileInputPresenter()
     @ObservationIgnored private var opened: VaultLocation.Opened?
     @ObservationIgnored private var rpc: VaultRPC?
@@ -272,6 +275,7 @@ final class EditorController: WorkspaceService {
     /// Saves what is waiting in the current vault, then opens the remembered one in a fresh editor page.
     private func switchVault() async {
         if phase == .ready { await flush() }
+        await host?.close()
         close()
         workspace = Workspace()
         isPageReady = false
@@ -295,7 +299,15 @@ final class EditorController: WorkspaceService {
         #endif
         access.set(files)
         sync.vault = SyncVault(files: files, name: opened.name)
-        rpc = VaultRPC(files: files)
+        let host = SessionHost(
+            files: files,
+            sendExternal: { [weak self] id, json in self?.send(.external(id: id, json: json)) },
+            sendInfo: { [weak self] json in self?.send(.vaultInfo(json: json)) },
+            sendResync: { [weak self] json in self?.send(.resync(json: json)) },
+        )
+        host.begin { [weak self] reason in self?.handle(.vaultFailed(message: reason)) }
+        self.host = host
+        rpc = VaultRPC(host: host)
         self.watcher = watcher
         watcher.start()
         phase = .opening
@@ -306,6 +318,11 @@ final class EditorController: WorkspaceService {
     private func close() {
         watcher?.stop()
         watcher = nil
+        if let host {
+            // the session saves what is waiting before it lets go
+            Task { await host.close() }
+        }
+        host = nil
         rpc = nil
         mirror.reset()
         access.set(nil)
@@ -333,11 +350,9 @@ final class EditorController: WorkspaceService {
         location.defaults.set(data, forKey: tabsKey)
     }
 
-    /// Tells the editor page what changed at these vault paths, as the watcher does for other apps' edits.
+    /// Paths another app or a sync changed: the Swift session reads them, and the editor page decides what it takes.
     func report(_ paths: Set<String>) {
-        guard let files = access.files else { return }
-        let changes = files.describe(paths)
-        if !changes.isEmpty { send(.vaultChanges(changes)) }
+        host?.changed(paths)
     }
 
     /// Looks for edits made while the app was away, for writers that do not use file coordination.
@@ -348,7 +363,12 @@ final class EditorController: WorkspaceService {
     private func openInPage() {
         guard isPageReady, let vaultName, phase == .opening else { return }
         // a folder about to be filled from another device never gets the welcome guide, as in morrow
-        send(.openVault(name: vaultName, guide: syncWhenOpen == nil))
+        #if DEBUG
+        let compare = true
+        #else
+        let compare = false
+        #endif
+        send(.openVault(name: vaultName, guide: syncWhenOpen == nil, compare: compare))
     }
 
     // MARK: page
@@ -377,6 +397,10 @@ final class EditorController: WorkspaceService {
     private func recoverFromTermination() {
         logger.error("editor web content process ended, reopening the vault")
         guard opened != nil else { return }
+        // the Swift session kept every edit the page sent; it saves them, and the page opened again gets it as it is
+        host?.webGone()
+        if let host { Task { await host.flushAlone() } }
+        mirror.reset()
         phase = .opening
         workspace = Workspace()
         reloadPage()
@@ -758,41 +782,18 @@ final class EditorController: WorkspaceService {
         send(.saveAsTemplate(pageId: pageId))
     }
 
-    #if DEBUG
-    /// 11a: the Swift data core reads the vault just opened, and where it differs from the editor page's session
-    /// is logged (subsystem com.synapsenote.native, category core).
-    private func compareCores() async {
-        guard let files = access.files, isPageReady else { return }
-        let log = Logger(subsystem: "com.synapsenote.native", category: "core")
-        do {
-            let loaded = try await Task.detached {
-                let scan = CoreDualRun.scan(try files.scan(), registry: try files.readText(".morrow/workspace.json"),
-                                           recent: try files.readText(".morrow/recent.json"))
-                return VaultLoad.loadVault(scan, newId: { UUID().uuidString.lowercased() }, now: Date().timeIntervalSince1970 * 1000)
-            }.value
-            let answer = try await page.callJavaScript("return window.synapse.query('state', {})")
-            guard let text = answer as? String else { return }
-            let web = try JSJSON.parse(text)
-            let report = CoreDualRun.compare(loaded, web: web)
-            log.notice("core dual run: \(report.pages, privacy: .public) pages, \(report.docs, privacy: .public) docs, \(report.differences.count, privacy: .public) differences, \(report.openedSince.count, privacy: .public) opened since")
-            for difference in report.differences.prefix(40) { log.error("core dual run: \(difference, privacy: .public)") }
-        } catch {
-            log.error("core dual run failed: \(error.localizedDescription, privacy: .public)")
-        }
-    }
-    #endif
-
-    /// Works the answer out with the Swift core from the copy of the page's workspace. Until the copy has arrived
-    /// the editor page answers, from the session it holds. Debug builds ask the page as well and log where the
-    /// two answers differ.
+    /// Works the answer out with the Swift core from the session's workspace. Debug builds ask the editor page as
+    /// well, from its copy, and log where the two answers differ.
     private func answer<T: Decodable>(_ query: WorkspaceQuery) async -> T? {
-        guard isPageReady, phase == .ready else { return nil }
-        guard mirror.ready, let value = CoreQueries.answer(query.name, query.jsParams, mirror.context()) else {
-            return await pageAnswer(query)
+        guard isPageReady, phase == .ready, let host else { return nil }
+        let name = query.name
+        let params = query.jsParams
+        guard let context = await host.context(), let value = await Task.detached(operation: { CoreQueries.answer(name, params, context) }).value else {
+            return nil
         }
         let text = JSJSON.stringify(value)
         #if DEBUG
-        let revision = mirror.revision
+        let revision = revision
         Task { await compareAnswer(query, text, revision: revision) }
         #endif
         do {
@@ -803,21 +804,20 @@ final class EditorController: WorkspaceService {
         }
     }
 
-    /// Asks the editor page, which works it out from the workspace session it holds.
-    private func pageAnswer<T: Decodable>(_ query: WorkspaceQuery) async -> T? {
-        do {
-            let answer = try await page.callJavaScript(
-                "return window.synapse.query(name, params)",
-                arguments: ["name": query.name, "params": query.params]
-            )
-            return try WorkspaceQuery.decode(answer)
-        } catch {
-            logger.error("\(query.name, privacy: .public) query failed: \(error.localizedDescription, privacy: .public)")
-            return nil
+    #if DEBUG
+    /// 11c-2: the page's copy of the workspace (its state deltas) against the Swift session, logged
+    private func compareSession(revision: Int) async {
+        guard mirror.ready, let host, let session = await host.workspace() else { return }
+        let log = Logger(subsystem: "com.synapsenote.native", category: "core")
+        let report = CoreDualRun.compare(session: session.state, unreadable: session.unreadable, web: mirror.state, webUnreadable: mirror.unreadable)
+        if report.differences.isEmpty {
+            log.notice("core session: same as the page, \(report.pages, privacy: .public) pages, \(report.docs, privacy: .public) docs (revision \(revision, privacy: .public))")
+        } else {
+            log.error("core session: \(report.differences.count, privacy: .public) differences from the page (revision \(revision, privacy: .public))")
+            for difference in report.differences.prefix(20) { log.error("core session: \(difference, privacy: .public)") }
         }
     }
 
-    #if DEBUG
     /// 11b: the editor page's answer to the same query, logged where it differs from the Swift core's
     private func compareAnswer(_ query: WorkspaceQuery, _ swift: String, revision: Int) async {
         let log = Logger(subsystem: "com.synapsenote.native", category: "core")
@@ -856,8 +856,7 @@ final class EditorController: WorkspaceService {
     func reveal(_ pageId: String) {
         guard let root = opened?.url else { return }
         Task {
-            guard let path = try? await page.callJavaScript("return window.synapse.pathOf(id)", arguments: ["id": pageId]) as? String
-            else { return }
+            guard let path = await host?.pathOf(pageId) else { return }
             NSWorkspace.shared.activateFileViewerSelecting([root.appending(path: path)])
         }
     }
@@ -870,16 +869,21 @@ final class EditorController: WorkspaceService {
     #endif
 
     /// Writes every edit still waiting, such as before the app quits. Returns false when something stayed unsaved.
+    /// The page saves its open editors and asks the session to save; the session then saves on its own as well,
+    /// in case the page could not ask.
     @discardableResult
     func flush() async -> Bool {
-        guard isPageReady, phase == .ready else { return true }
-        do {
-            let result = try await page.callJavaScript("return await window.synapse.flush()")
-            return (result as? Bool) ?? false
-        } catch {
-            logger.error("saving before leaving failed: \(error.localizedDescription, privacy: .public)")
-            return false
+        var saved = true
+        if isPageReady, phase == .ready {
+            do {
+                saved = (try await page.callJavaScript("return await window.synapse.flush()") as? Bool) ?? false
+            } catch {
+                logger.error("the page could not save before leaving: \(error.localizedDescription, privacy: .public)")
+                saved = false
+            }
         }
+        guard let host else { return saved }
+        return await host.flushAlone() && saved
     }
 
     func handle(_ event: EditorEvent) {
@@ -912,12 +916,13 @@ final class EditorController: WorkspaceService {
             }
             // edits were saved: other devices hear of them a little later, as in morrow
             if !wasSaved, saveState == .saved { sync.savesSettled() }
+            #if DEBUG
+            Task { await compareSession(revision: revision) }
+            #endif
             if phase == .opening {
                 phase = .ready
                 logger.info("vault opened with \(pages.count) pages")
-                #if DEBUG
-                Task { await compareCores() }
-                #endif
+                host?.webIsReady()
                 settleActiveTab()
                 if let peerId = syncWhenOpen {
                     syncWhenOpen = nil
@@ -968,6 +973,10 @@ final class EditorController: WorkspaceService {
             } catch {
                 logger.error("a workspace delta could not be read: \(error.localizedDescription, privacy: .public)")
             }
+        case .commands(let json):
+            host?.apply(commandsJSON: json)
+        case .externalAccepted(let id, let accepted):
+            host?.externalAccepted(id: id, accepted: accepted)
         case .autoBackup(let json):
             #if os(macOS)
             // morrow keeps automatic backups on the desktop only

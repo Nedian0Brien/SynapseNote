@@ -17,7 +17,7 @@ import type { DocNode, PageId, PageMeta } from '../vendor/morrow/src/core/model'
 import { docToPlainText, findUnknownTypes } from '../vendor/morrow/src/core/doc';
 import { isEffectivelyTrashed } from '../vendor/morrow/src/core/tree';
 import { WorkspaceSession } from '../vendor/morrow/src/storage/session';
-import { VaultRepository } from '../vendor/morrow/src/storage/vaultRepository';
+import type { ExternalPatch } from '../vendor/morrow/src/storage/repository';
 import { SourceDialog } from '../vendor/morrow/src/app/components/SourceDialog';
 import { SourceEditor } from '../vendor/morrow/src/app/components/SourceEditor';
 import { commitEditors } from '../vendor/morrow/src/app/editor/commits';
@@ -65,7 +65,8 @@ import { closeDialog, dismissToast, getUi, openDialog, setUi, toast } from '../v
 import type { Toast } from '../vendor/morrow/src/app/ui';
 import { showRoute } from './host/router';
 import { settle } from './host/rpc';
-import { deliverChanges, nativeVaultBridge } from './host/vaultBridge';
+import { ReplicaRepository, sendCommands } from './host/replica';
+import type { VaultInfo } from './host/replica';
 
 const root = document.documentElement;
 const applyTheme = (theme: Theme) => {
@@ -98,6 +99,10 @@ let findCount = 0;
 let rerender: () => void = () => {};
 // flashcard progress for the open vault
 let reviews: Reviews | null = null;
+// the open vault's storage, the app's session behind it
+let replica: ReplicaRepository | null = null;
+// the app compares this page's workspace with its own session (debug builds), from the state deltas sent for it
+let compareWithApp = false;
 
 // sends the page list and save state, gathered over a few milliseconds; a timer rather than an animation
 // frame, which webkit holds back while the window is hidden
@@ -110,15 +115,17 @@ function report(): void {
     const session = getSession();
     const status = session.saveStatus;
     const pages = session.getState().pages;
-    // the app keeps a copy of the workspace to answer its screens from; it goes first, since the
-    // workspace message makes those screens ask again and the copy has to be current by then
-    const delta = deltas.next({
-      state: session.getState(),
-      unreadable: session.unreadable,
-      activity: session.activity(),
-      reviewLog: reviews?.log() ?? {},
-    });
-    if (delta) post({ type: 'state', json: JSON.stringify(delta) });
+    // the app compares this copy of the workspace with its own session; it goes first, since the comparison
+    // runs when the workspace message arrives
+    if (compareWithApp) {
+      const delta = deltas.next({
+        state: session.getState(),
+        unreadable: session.unreadable,
+        activity: session.activity(),
+        reviewLog: reviews?.log() ?? {},
+      });
+      if (delta) post({ type: 'state', json: JSON.stringify(delta) });
+    }
     post({
       type: 'workspace',
       pages,
@@ -132,15 +139,19 @@ function report(): void {
 
 const deltas = createDeltas();
 
-async function openVault(name: string, guide: boolean): Promise<void> {
+async function openVault(name: string, guide: boolean, compare: boolean): Promise<void> {
   if (phase.kind !== 'waiting') return;
-  const repository = new VaultRepository(nativeVaultBridge(name), newId);
+  const repository = new ReplicaRepository(name);
   const opened = await WorkspaceSession.open(repository);
   if (!opened.ok) {
     post({ type: 'vaultFailed', message: opened.error });
     return;
   }
   const session = opened.value;
+  replica = repository;
+  compareWithApp = compare;
+  // every command applied here is applied by the app's session too, which writes the vault
+  sendCommands(session);
   // keystrokes still waiting in an editor are saved before an outside edit is read
   session.beforeExternal = commitEditors;
   // morrow's welcome guide in a vault opened for the first time; never in a folder about to be filled from
@@ -161,6 +172,26 @@ async function openVault(name: string, guide: boolean): Promise<void> {
   rerender();
   startAutoBackup();
   await loadCustomCss();
+}
+
+// an edit another app made, read by the app's session: morrow's session saves the open editors, keeps pages
+// with unsaved changes, and the app commits only what was taken in here
+function takeExternal(id: number, json: string): void {
+  if (phase.kind !== 'ready') {
+    post({ type: 'log', level: 'warning', message: 'An outside edit arrived before the vault was open.' });
+    post({ type: 'externalAccepted', id, accepted: [] });
+    return;
+  }
+  const accepted = getSession().applyExternal(JSON.parse(json) as ExternalPatch);
+  post({ type: 'externalAccepted', id, accepted });
+}
+
+// the app's session refused a command applied here, its version of those pages replaces this one
+async function takeResync(json: string): Promise<void> {
+  if (phase.kind !== 'ready') return;
+  await getSession().flush();
+  getSession().applyExternal(JSON.parse(json) as ExternalPatch);
+  post({ type: 'log', level: 'error', message: 'Pages were set back to what the app saved.' });
 }
 
 // morrow's automatic backup on the desktop: once half a minute after opening, then every ten minutes, and
@@ -224,14 +255,6 @@ function query(name: string, params: Record<string, unknown>): string | null {
       return JSON.stringify(queries.counts(state, reviews?.log() ?? {}, new Date()));
     case 'review':
       return JSON.stringify(queries.review(state, reviews?.log() ?? {}, new Date()));
-    // the session's workspace as it holds it, for the app's own data core to compare itself with (debug builds)
-    case 'state':
-      return JSON.stringify({
-        pages: Object.values(state.pages),
-        docs: state.docs,
-        unreadable: [...getSession().unreadable],
-        problems: getSession().problems,
-      });
     case 'graph':
       return JSON.stringify(
         queries.graph(state, {
@@ -476,7 +499,7 @@ function Host() {
 listen((message) => {
   switch (message.type) {
     case 'openVault':
-      void openVault(message.name, message.guide).catch((error: unknown) =>
+      void openVault(message.name, message.guide, message.compare).catch((error: unknown) =>
         post({ type: 'vaultFailed', message: error instanceof Error ? error.message : String(error) }),
       );
       break;
@@ -486,8 +509,14 @@ listen((message) => {
     case 'rpcResult':
       settle(message.id, message);
       break;
-    case 'vaultChanges':
-      deliverChanges(message.changes);
+    case 'external':
+      takeExternal(message.id, message.json);
+      break;
+    case 'vaultInfo':
+      replica?.absorb(JSON.parse(message.json) as VaultInfo);
+      break;
+    case 'resync':
+      void takeResync(message.json);
       break;
     case 'createPage': {
       if (phase.kind !== 'ready') break;
@@ -600,7 +629,6 @@ listen((message) => {
   }
 }, {
   flush,
-  pathOf: (id) => (phase.kind === 'ready' ? getSession().pathOf(id) : null),
   query,
   linkSelection,
   encryption,

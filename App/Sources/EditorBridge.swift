@@ -28,8 +28,13 @@ nonisolated enum EditorEvent: Equatable, Sendable {
     case autoBackup(json: String)
     /// The vault's custom CSS, when the vault opens and when it is saved.
     case customCss(String)
-    /// What changed in the page's workspace session, a state delta as JSON text (web/src/stateDelta.ts).
+    /// What changed in the page's workspace session, a state delta as JSON text (web/src/stateDelta.ts); sent
+    /// only when the app compares the page's copy with its own session (debug builds).
     case state(json: String)
+    /// Commands the page applied, JSON text `{ commands, all }`, for the Swift session to apply the same way.
+    case commands(json: String)
+    /// The page's answer to an outside edit: the pages it took in.
+    case externalAccepted(id: Int, accepted: [String])
 
     private struct Raw: Decodable {
         let type: String
@@ -56,6 +61,7 @@ nonisolated enum EditorEvent: Equatable, Sendable {
         let toasts: [EditorToast]?
         let json: String?
         let css: String?
+        let accepted: [String]?
     }
 
     /// Reads a posted message body. Anything that is not exactly one of the known messages gives nil.
@@ -110,6 +116,12 @@ nonisolated enum EditorEvent: Equatable, Sendable {
         case "state":
             guard let json = raw.json else { return nil }
             self = .state(json: json)
+        case "commands":
+            guard let json = raw.json else { return nil }
+            self = .commands(json: json)
+        case "externalAccepted":
+            guard let id = raw.id, let accepted = raw.accepted else { return nil }
+            self = .externalAccepted(id: id, accepted: accepted)
         case "autoBackup":
             guard let json = raw.json else { return nil }
             self = .autoBackup(json: json)
@@ -139,12 +151,19 @@ nonisolated enum NewPageKind: String, Sendable {
 
 /// A message the app sends to the editor page through `window.synapse.receive`.
 nonisolated enum EditorCommand: Sendable {
-    /// `guide` puts Morrow's welcome guide into a vault opened for the first time.
-    case openVault(name: String, guide: Bool)
+    /// `guide` puts Morrow's welcome guide into a vault opened for the first time; `compare` has the page send its
+    /// state deltas, for the debug comparison with the Swift session.
+    case openVault(name: String, guide: Bool, compare: Bool)
     /// Shows a page, or nothing; `find` is text to select once it is open.
     case show(pageId: String?, find: String?)
     case rpcResult(id: Int, result: Result<JSONValue, RPCFailure>)
-    case vaultChanges([VaultFileSystem.Change])
+    /// An outside edit the Swift session read, JSON text of Morrow's ExternalPatch; the page answers with the
+    /// pages it took in.
+    case external(id: Int, json: String)
+    /// Where each page lies and the saves per day, JSON text `{ paths, activity }`.
+    case vaultInfo(json: String)
+    /// The Swift session's version of pages the page got out of step with, JSON text of an ExternalPatch.
+    case resync(json: String)
     case createPage(parentId: String?, kind: NewPageKind = .page)
     case trashPage(pageId: String)
     /// A Morrow `Command`, see `WorkspaceCommand`.
@@ -193,16 +212,20 @@ nonisolated enum EditorCommand: Sendable {
 
     var json: JSONValue {
         switch self {
-        case .openVault(let name, let guide):
-            .object(["type": .string("openVault"), "name": .string(name), "guide": .bool(guide)])
+        case .openVault(let name, let guide, let compare):
+            .object(["type": .string("openVault"), "name": .string(name), "guide": .bool(guide), "compare": .bool(compare)])
         case .show(let pageId, let find):
             .object(["type": .string("show"), "pageId": pageId.map(JSONValue.string) ?? .null, "find": find.map(JSONValue.string) ?? .null])
         case .rpcResult(let id, .success(let value)):
             .object(["type": .string("rpcResult"), "id": .number(Double(id)), "ok": .bool(true), "value": value])
         case .rpcResult(let id, .failure(let failure)):
             .object(["type": .string("rpcResult"), "id": .number(Double(id)), "ok": .bool(false), "error": .string(failure.message)])
-        case .vaultChanges(let changes):
-            .object(["type": .string("vaultChanges"), "changes": (try? JSONValue(encoding: changes)) ?? .array([])])
+        case .external(let id, let json):
+            .object(["type": .string("external"), "id": .number(Double(id)), "json": .string(json)])
+        case .vaultInfo(let json):
+            .object(["type": .string("vaultInfo"), "json": .string(json)])
+        case .resync(let json):
+            .object(["type": .string("resync"), "json": .string(json)])
         case .createPage(let parentId, let kind):
             .object(["type": .string("createPage"), "parentId": parentId.map(JSONValue.string) ?? .null, "kind": .string(kind.rawValue)])
         case .trashPage(let pageId):

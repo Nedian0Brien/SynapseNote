@@ -185,8 +185,9 @@ nonisolated final class CoreSession {
         try writer.write(WriteBatch(snapshots: snapshots, state: state))
     }
 
-    /// the current content is kept as a version first, so restoring can always be undone
-    func restoreSnapshot(_ snapshot: Snapshot) -> Result<WorkspaceState, CommandFailure> {
+    /// the current content is kept as a version first, so restoring can always be undone. `at` is the time the
+    /// restored document is set at, given when someone else applies the same edit.
+    func restoreSnapshot(_ snapshot: Snapshot, at: Double? = nil) -> Result<WorkspaceState, CommandFailure> {
         guard state.pages.has(snapshot.pageId) else { return .failure(CommandFailure(message: "That page no longer exists.")) }
         flush()
         let current = snapshotOf(snapshot.pageId, state, now())
@@ -196,7 +197,7 @@ nonisolated final class CoreSession {
             return .failure(CommandFailure(message: "The current version could not be kept, so nothing was restored: Error: \(error.message)"))
         }
         lastSnapshot[snapshot.pageId] = current.createdAt
-        return execute(.setDoc(id: snapshot.pageId, doc: .object(snapshot.doc), now: now()))
+        return execute(.setDoc(id: snapshot.pageId, doc: .object(snapshot.doc), now: at ?? now()))
     }
 
     private func snapshotOf(_ pageId: String, _ state: WorkspaceState, _ time: Double) -> Snapshot {
