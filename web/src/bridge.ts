@@ -124,7 +124,9 @@ export type OutboundMessage =
   // commands this page applied, JSON text { commands, all }, which the app's session applies the same way
   | { type: 'commands'; json: string }
   // the pages of an outside edit this page took in
-  | { type: 'externalAccepted'; id: number; accepted: PageId[] };
+  | { type: 'externalAccepted'; id: number; accepted: PageId[] }
+  // flashcard progress after a grade, JSON text of morrow's ReviewLog, before it is written to the vault
+  | { type: 'reviewLog'; json: string };
 
 interface WebkitHandler {
   postMessage(message: unknown): void;

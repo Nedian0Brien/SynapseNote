@@ -622,6 +622,8 @@ listen((message) => {
       const card = collectCards(getSession().getState()).find((item) => item.id === message.cardId);
       if (card) {
         reviews.grade(card, message.grade);
+        // the app answers its screens from its own copy of the progress; the file follows after the delay
+        post({ type: 'reviewLog', json: JSON.stringify(reviews.log()) });
         report();
       }
       break;

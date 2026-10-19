@@ -977,6 +977,8 @@ final class EditorController: WorkspaceService {
             host?.apply(commandsJSON: json)
         case .externalAccepted(let id, let accepted):
             host?.externalAccepted(id: id, accepted: accepted)
+        case .reviewLog(let json):
+            host?.setReviewLog(json: json)
         case .autoBackup(let json):
             #if os(macOS)
             // morrow keeps automatic backups on the desktop only

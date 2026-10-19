@@ -35,6 +35,8 @@ nonisolated enum EditorEvent: Equatable, Sendable {
     case commands(json: String)
     /// The page's answer to an outside edit: the pages it took in.
     case externalAccepted(id: Int, accepted: [String])
+    /// Flashcard progress after a grade (Morrow's ReviewLog as JSON text), ahead of the file the page writes later.
+    case reviewLog(json: String)
 
     private struct Raw: Decodable {
         let type: String
@@ -119,6 +121,9 @@ nonisolated enum EditorEvent: Equatable, Sendable {
         case "commands":
             guard let json = raw.json else { return nil }
             self = .commands(json: json)
+        case "reviewLog":
+            guard let json = raw.json else { return nil }
+            self = .reviewLog(json: json)
         case "externalAccepted":
             guard let id = raw.id, let accepted = raw.accepted else { return nil }
             self = .externalAccepted(id: id, accepted: accepted)

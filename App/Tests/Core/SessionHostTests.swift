@@ -184,6 +184,11 @@ struct SessionHostTests {
         let context = try #require(await host.context())
         #expect(context.reviewLog["c"]?["due"] == "2026-10-20")
         #expect(context.reviewLog["c"]?["ease"] == 2.5)
+        // a grade reaches the session at once, before the page writes the file
+        host.setReviewLog(json: "{\"d\":{\"due\":\"2026-10-22\",\"interval\":2,\"ease\":2.6,\"reps\":2,\"lapses\":0}}")
+        let graded = try #require(await host.context())
+        #expect(graded.reviewLog.keys == ["d"])
+        #expect(graded.reviewLog["d"]?["interval"] == 2)
         await host.close()
     }
 }

@@ -366,6 +366,13 @@ nonisolated final class SessionHost: @unchecked Sendable {
         }
     }
 
+    /// Flashcard progress the page graded, ahead of the file it writes after a short delay.
+    func setReviewLog(json: String) {
+        queue.async { [self] in
+            reviewLog = Flashcards.readReviewLog(["cards": (try? JSJSON.parse(json)) ?? .null])
+        }
+    }
+
     // MARK: reading
 
     /// The workspace for the native screens' questions, with the activity count and flashcard progress.

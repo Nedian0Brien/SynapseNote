@@ -32,6 +32,7 @@ struct EditorBridgeTests {
         #expect(EditorEvent(body: ["type": "commands"]) == nil)
         #expect(EditorEvent(body: ["type": "externalAccepted", "id": 3, "accepted": ["a", "b"]]) == .externalAccepted(id: 3, accepted: ["a", "b"]))
         #expect(EditorEvent(body: ["type": "externalAccepted", "id": 3]) == nil)
+        #expect(EditorEvent(body: ["type": "reviewLog", "json": "{}"]) == .reviewLog(json: "{}"))
         #expect(EditorEvent(body: ["type": "vaultFailed", "message": "gone"]) == .vaultFailed(message: "gone"))
         #expect(EditorEvent(body: ["type": "openExternal", "url": "https://example.com"]) == .openExternal(URL(string: "https://example.com")!))
     }
