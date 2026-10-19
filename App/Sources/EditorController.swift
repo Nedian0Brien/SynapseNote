@@ -771,7 +771,7 @@ final class EditorController: WorkspaceService {
             guard let text = answer as? String else { return }
             let web = try JSJSON.parse(text)
             let report = CoreDualRun.compare(loaded, web: web)
-            log.info("core dual run: \(report.pages) pages, \(report.docs) docs, \(report.differences.count, privacy: .public) differences")
+            log.notice("core dual run: \(report.pages, privacy: .public) pages, \(report.docs, privacy: .public) docs, \(report.differences.count, privacy: .public) differences, \(report.openedSince.count, privacy: .public) opened since")
             for difference in report.differences.prefix(40) { log.error("core dual run: \(difference, privacy: .public)") }
         } catch {
             log.error("core dual run failed: \(error.localizedDescription, privacy: .public)")

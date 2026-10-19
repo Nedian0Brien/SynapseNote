@@ -382,13 +382,14 @@ struct AboutSettings: View {
     }
 }
 
-/// The notice, Morrow's licence and the licences of the packages the editor bundles, as the app carries them.
+/// The notice, Morrow's licence, the licences of what the Swift data core ports and links, and of the packages the
+/// editor bundles, as the app carries them.
 private struct LicencesSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     private var text: String {
         let resources = Bundle.main.resourceURL
-        let files = ["NOTICE", "Morrow-Apache-2.0.txt", "Editor/THIRD_PARTY_LICENSES.txt"]
+        let files = ["NOTICE", "Morrow-Apache-2.0.txt", "swift-core-third-party.txt", "Editor/THIRD_PARTY_LICENSES.txt"]
         return files.compactMap { name in
             resources.flatMap { try? String(contentsOf: $0.appending(path: name), encoding: .utf8) }
         }

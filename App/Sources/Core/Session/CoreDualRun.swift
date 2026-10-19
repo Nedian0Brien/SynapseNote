@@ -7,6 +7,8 @@ nonisolated enum CoreDualRun {
         var pages = 0
         var docs = 0
         var differences: [String] = []
+        /// pages the editor page opened after reading the vault (its markOpened), not a difference in reading
+        var openedSince: [String] = []
     }
 
     /// The scan the editor page received, with the registry and recent list read from their text so their keys
@@ -34,7 +36,14 @@ nonisolated enum CoreDualRun {
         for id in webPages.keys where !swiftPages.has(id) { note("page \(id) only in the web") }
         for (id, page) in swiftPages {
             guard let other = webPages[id] else { continue }
+            if case .number(let read) = page["lastOpenedAt"] ?? .null, case .number(let now) = other["lastOpenedAt"] ?? .null, now > read {
+                report.openedSince.append(id)
+            } else if page["lastOpenedAt"] == .null, other["lastOpenedAt"]?.number != nil {
+                report.openedSince.append(id)
+            }
+            let opened = report.openedSince.last == id
             for key in Set(page.object!.keys + (other.object?.keys ?? [])).sorted() where !same(page[key], other[key]) {
+                if opened, key == "lastOpenedAt" { continue }
                 note("page \(id) \(key): Swift \(describe(page[key])), web \(describe(other[key]))")
             }
         }

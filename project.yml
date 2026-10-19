@@ -45,6 +45,8 @@ targets:
         buildPhase: resources
       - path: LICENSES/Morrow-Apache-2.0.txt
         buildPhase: resources
+      - path: LICENSES/swift-core-third-party.txt
+        buildPhase: resources
     info:
       path: App/Info.plist
       properties:

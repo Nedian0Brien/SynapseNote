@@ -15,4 +15,20 @@ Morrow and say so at their top:
 - web/sampleRenames.ts (rewrites the welcome guide of src/core/sample.ts at build time for this
   app's name, keys and screens)
 
+The Swift data core in App/Sources/Core is a port of Morrow's src/core (markdown, vault, model, commands,
+canvas, templates, tasks, tree, daily, migrations) and of the planning parts of src/storage (session,
+saveQueue, vaultRepository), written to give the same results; each file names the Morrow file it follows.
+It also ports, to give the same results:
+
+- markdown-it 15.0.2, Copyright (c) 2014 Vitaly Puzrin, Alex Kocharin, MIT licence
+- entities 8.1.0 (its table of HTML character references), Copyright (c) Felix Böhm, BSD 2-Clause licence
+- mdurl 2.1.0, Copyright (c) 2015 Vitaly Puzrin, Alex Kocharin, MIT licence
+- punycode.js 2.3.1, Copyright Mathias Bynens, MIT licence
+- uc.micro 3.0.0 (its punctuation and symbol tables), Copyright Mathias Bynens, MIT licence
+- yaml 2.9.1 (its YAML 1.2 core schema and its stringify), Copyright Eemeli Aro, ISC licence
+
+and links Yams 6.2.2, Copyright (c) 2016 JP Simard, MIT licence, with the libyaml it bundles,
+Copyright (c) 2017-2020 Ingy döt Net, Copyright (c) 2006-2016 Kirill Simonov, MIT licence.
+Their licence texts are in LICENSES/swift-core-third-party.txt.
+
 The editor bundle lists the licences of every package it includes in THIRD_PARTY_LICENSES.txt.
