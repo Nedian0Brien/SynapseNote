@@ -23,7 +23,7 @@
 | 6 | 페이지 히스토리, 암호화 페이지, 플래시카드 | 구현 (PR #7, `docs/verification/phase6-history-encryption-review.md`) |
 | 7 | 가져오기·내보내기·백업·정적 사이트 게시·Markdown 소스 편집 | 구현 (PR #8, `docs/verification/phase7-import-export.md`) |
 | 8 | 기기 간 동기화 | 구현 (PR #9, `docs/verification/phase8-sync.md`) |
-| 9 | 빠른 캡처, 테마·글꼴·커버·사용자 CSS, 첫 실행 가이드 | |
+| 9 | 빠른 캡처, 테마·글꼴·커버·사용자 CSS, 첫 실행 가이드 | 구현 (PR #10, `docs/verification/phase9-settings.md`) |
 | 10 | 배포 준비: 서명, 실기기 검증, TestFlight | |
 | 11 | 전환: 편집기와 데이터 코어를 Swift로 | |
 
@@ -35,3 +35,4 @@
 - 페이지 히스토리 대화상자는 6단계에서 Morrow `HistoryDialog`를 편집기 WebView에서 열도록 했다. 암호 입력과 플래시카드 복습은 SwiftUI이고, 암호화·SM-2 일정·카드 수집은 TS 코어에 있다.
 - 데이터베이스 화면(전체 페이지와 인라인)은 4단계에서 Morrow `DatabaseView`를 편집기 WebView에서 그리도록 했다. 편집기를 Swift로 옮길 때 함께 옮긴다.
 - 홈, 명령 팔레트, 인스펙터는 1단계 화면처럼 `EditorController`를 직접 받는다. 조회와 명령은 `WorkspaceService`에 있지만 화면 이동(`go(to:)`, `openInNewTab`)은 아직 프로토콜 밖에 있다. Swift 코어로 바꿀 때 이 경계를 먼저 정리한다.
+- 9단계 사용자 CSS는 편집기 페이지에만 적용된다. 편집기를 Swift로 옮기면 Morrow CSS 변수(`--accent` 등)로 하던 사용자 꾸미기를 어떻게 이어 갈지 정해야 한다. 첫 실행 가이드는 Morrow `sampleCommands`를 빌드 때 고쳐 쓰므로, TS 코어를 걷어낼 때 가이드 내용을 Swift 쪽으로 옮긴다.
