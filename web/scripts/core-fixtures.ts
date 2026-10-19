@@ -165,6 +165,21 @@ function yamlValues(count: number): Record<string, unknown>[] {
   return Array.from({ length: count }, () => object(0));
 }
 
+// names people give notes and folders, with the differences collation weighs: case, accents, digits, spacing,
+// punctuation, hangul, other scripts and unicode normalization
+function collationWords(): string[] {
+  return [
+    'a', 'A', 'b', 'B', 'ab', 'Ab', 'aB', 'a b', 'a-b', 'a_b', 'a.b', 'a,b', 'a(b', '_a', '-a', '.a', '(a', '#a', '@a', ' a',
+    'à', 'á', 'â', 'ä', 'å', 'æ', 'ç', 'é', 'è', 'ê', 'ë', 'ñ', 'ö', 'ø', 'ß', 'ss', 'œ', 'oe', 'Å', 'É', 'Ö', 'ǅ', 'ﬁ', 'fi',
+    'é', 'é', 'Cafe', 'café', 'Café', 'CAFE', 'cafe 2', 'cafe 10', 'cafe 1', 'Cafe 02', 'cafe2', 'cafe10',
+    'Note', 'note', 'Notes', 'notes', 'Note 1', 'Note 2', 'Note 10', 'Note 9', 'Note 01', 'Note 1a', 'Note1', 'note-1',
+    '1', '2', '10', '01', '001', '1.5', '1,5', '½', '①', '١', '२', '１', '2026-10-19', '2026-10-09', '2026-9-19', 'Ⅳ', 'iv',
+    '가', '나', '다', '각', '간', '갈', '감', '가나', '가 나', '한글', '한국어', 'ㄱ', 'ㄴ', 'ㅏ', '가', '꽃', '홍길동',
+    'あ', 'ア', 'か', '漢字', '中文', 'Ω', 'ω', 'α', 'Б', 'б', 'ж', 'א', 'ب', 'ก', '😀', '😀a', '🧪', '★', '©', '%', '&', '~',
+    '', ' ', '  ', 'z', 'Z', 'zz', 'Zebra', 'zebra', 'Ångström', 'Angstrom', 'Résumé', 'resume', 'Resume', 'naïve', 'naive',
+  ];
+}
+
 function fuzzInputs(count: number): string[] {
   const next = random(20261019);
   const pick = <T>(items: readonly T[]): T => items[Math.floor(next() * items.length)]!;
@@ -384,6 +399,20 @@ async function main(): Promise<void> {
     yamlValues(1500).map((value) => ({ value, yaml: stringify(value, { lineWidth: 0, defaultStringType: 'PLAIN', defaultKeyType: 'PLAIN' }) })),
     0,
   );
+
+  // morrow orders files with localeCompare (default options) and titles with { numeric, sensitivity: 'base' },
+  // in the locale of the javascript engine: en-US for node, the system language in the app's web view
+  const words = collationWords();
+  const collation: Record<string, unknown> = { words };
+  for (const locale of ['en-US', 'ko-KR']) {
+    const plain = new Intl.Collator(locale);
+    const titles = new Intl.Collator(locale, { numeric: true, sensitivity: 'base' });
+    collation[locale] = {
+      plain: words.map((a) => words.map((b) => Math.sign(plain.compare(a, b)))),
+      titles: words.map((a) => words.map((b) => Math.sign(titles.compare(a, b)))),
+    };
+  }
+  write('collation.json', collation, 0);
 
   const guide = await guideVault();
   const vaults: Record<string, Record<string, string>> = { guide, obsidian: OBSIDIAN, normalization: NORMALIZATION };
