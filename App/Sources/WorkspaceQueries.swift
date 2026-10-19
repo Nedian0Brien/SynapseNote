@@ -189,6 +189,21 @@ nonisolated enum WorkspaceQuery: Sendable {
         }
     }
 
+    /// The parameters as the Swift core reads them, the same values `params` sends the page.
+    var jsParams: JSObject {
+        var object = JSObject()
+        for (key, value) in params {
+            switch value {
+            case let text as String: object[key] = .string(text)
+            case let flag as Bool: object[key] = .bool(flag)
+            case let number as Int: object[key] = .number(Double(number))
+            case let number as Double: object[key] = .number(number)
+            default: break
+            }
+        }
+        return object
+    }
+
     /// Reads the page's answer, JSON text, or nil when there was none.
     static func decode<T: Decodable>(_ answer: Any?, as type: T.Type = T.self) throws -> T? {
         guard let text = answer as? String else { return nil }

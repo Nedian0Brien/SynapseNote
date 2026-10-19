@@ -106,6 +106,8 @@ final class EditorController: WorkspaceService {
     @ObservationIgnored var openURL: (URL) -> Void = { _ in }
     @ObservationIgnored private let location: VaultLocation
     @ObservationIgnored private let access = VaultAccess()
+    /// the editor page's workspace, kept from its state deltas; native screens are answered from it
+    @ObservationIgnored let mirror = StateMirror()
     @ObservationIgnored private let fileInput = FileInputPresenter()
     @ObservationIgnored private var opened: VaultLocation.Opened?
     @ObservationIgnored private var rpc: VaultRPC?
@@ -305,6 +307,7 @@ final class EditorController: WorkspaceService {
         watcher?.stop()
         watcher = nil
         rpc = nil
+        mirror.reset()
         access.set(nil)
         sync.vault = nil
         opened?.close()
@@ -779,9 +782,29 @@ final class EditorController: WorkspaceService {
     }
     #endif
 
-    /// Asks the editor page, which works it out from the workspace session it holds.
+    /// Works the answer out with the Swift core from the copy of the page's workspace. Until the copy has arrived
+    /// the editor page answers, from the session it holds. Debug builds ask the page as well and log where the
+    /// two answers differ.
     private func answer<T: Decodable>(_ query: WorkspaceQuery) async -> T? {
         guard isPageReady, phase == .ready else { return nil }
+        guard mirror.ready, let value = CoreQueries.answer(query.name, query.jsParams, mirror.context()) else {
+            return await pageAnswer(query)
+        }
+        let text = JSJSON.stringify(value)
+        #if DEBUG
+        let revision = mirror.revision
+        Task { await compareAnswer(query, text, revision: revision) }
+        #endif
+        do {
+            return try WorkspaceQuery.decode(text)
+        } catch {
+            logger.error("\(query.name, privacy: .public) answer could not be read: \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
+    }
+
+    /// Asks the editor page, which works it out from the workspace session it holds.
+    private func pageAnswer<T: Decodable>(_ query: WorkspaceQuery) async -> T? {
         do {
             let answer = try await page.callJavaScript(
                 "return window.synapse.query(name, params)",
@@ -793,6 +816,21 @@ final class EditorController: WorkspaceService {
             return nil
         }
     }
+
+    #if DEBUG
+    /// 11b: the editor page's answer to the same query, logged where it differs from the Swift core's
+    private func compareAnswer(_ query: WorkspaceQuery, _ swift: String, revision: Int) async {
+        let log = Logger(subsystem: "com.synapsenote.native", category: "core")
+        guard let answer = try? await page.callJavaScript(
+            "return window.synapse.query(name, params)", arguments: ["name": query.name, "params": query.params]
+        ) as? String, let web = try? JSJSON.parse(answer), let mine = try? JSJSON.parse(swift) else { return }
+        if web == mine {
+            log.notice("core query \(query.name, privacy: .public): same as the page (revision \(revision, privacy: .public))")
+        } else {
+            log.error("core query \(query.name, privacy: .public) differs (revision \(revision, privacy: .public)): Swift \(String(swift.prefix(400)), privacy: .public) page \(String(answer.prefix(400)), privacy: .public)")
+        }
+    }
+    #endif
 
     // MARK: the page on screen
 
@@ -924,6 +962,12 @@ final class EditorController: WorkspaceService {
             toasts = list
         case .customCss(let css):
             customCss = css
+        case .state(let json):
+            do {
+                if !mirror.apply(try JSJSON.parse(json)) { logger.warning("a workspace delta arrived out of order") }
+            } catch {
+                logger.error("a workspace delta could not be read: \(error.localizedDescription, privacy: .public)")
+            }
         case .autoBackup(let json):
             #if os(macOS)
             // morrow keeps automatic backups on the desktop only

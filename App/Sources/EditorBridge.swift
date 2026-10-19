@@ -28,6 +28,8 @@ nonisolated enum EditorEvent: Equatable, Sendable {
     case autoBackup(json: String)
     /// The vault's custom CSS, when the vault opens and when it is saved.
     case customCss(String)
+    /// What changed in the page's workspace session, a state delta as JSON text (web/src/stateDelta.ts).
+    case state(json: String)
 
     private struct Raw: Decodable {
         let type: String
@@ -105,6 +107,9 @@ nonisolated enum EditorEvent: Equatable, Sendable {
         case "toasts":
             guard let toasts = raw.toasts else { return nil }
             self = .toasts(toasts)
+        case "state":
+            guard let json = raw.json else { return nil }
+            self = .state(json: json)
         case "autoBackup":
             guard let json = raw.json else { return nil }
             self = .autoBackup(json: json)

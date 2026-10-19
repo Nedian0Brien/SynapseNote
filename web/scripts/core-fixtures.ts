@@ -38,6 +38,7 @@ import { displayTitle } from '../vendor/morrow/src/core/model';
 import { sampleCommands } from '../vendor/morrow/src/core/sample';
 import { applyTemplate, fillTemplate, formatDate } from '../vendor/morrow/src/core/templates';
 import * as queries from '../src/queries';
+import { createDeltas } from '../src/stateDelta';
 import { applyCommand } from '../vendor/morrow/src/core/commands';
 import { emptyWorkspace } from '../vendor/morrow/src/core/model';
 import type { WorkspaceState } from '../vendor/morrow/src/core/model';
@@ -456,6 +457,14 @@ async function sessionSteps(): Promise<unknown> {
   if (!seeded.ok) throw new Error(seeded.error);
   await session.flush();
   const steps: unknown[] = [{ name: 'guide', commands, all: true, results: [{ ok: true }], ops: takeOps() }];
+  // the deltas the editor page sends the app after each step, and the workspace they must add up to
+  const deltas = createDeltas();
+  const mirror: Array<{ delta: unknown; state: WorkspaceState }> = [];
+  const record = () => {
+    const delta = deltas.next({ state: session.getState(), unreadable: session.unreadable, activity: session.activity(), reviewLog: {} });
+    mirror.push({ delta: delta && (JSON.parse(JSON.stringify(delta)) as unknown), state: session.getState() });
+  };
+  record();
 
   const state = () => session.getState();
   const byTitle = (title: string) => {
@@ -568,12 +577,13 @@ async function sessionSteps(): Promise<unknown> {
     });
     await session.flush();
     steps.push({ name: step.name, commands: list, results, ops: takeOps() });
+    record();
   }
   await session.close();
   const files: Record<string, string> = {};
   for (const [file, data] of vault.files)
     if (typeof data === 'string' && !file.startsWith('.morrow/history/')) files[file] = data;
-  return { steps, files };
+  return { steps, files, mirror };
 }
 
 async function guideVault(): Promise<Record<string, string>> {
@@ -685,7 +695,9 @@ async function main(): Promise<void> {
   }
   write('collation.json', collation, 0);
 
-  write('session.json', await sessionSteps(), 0);
+  const session = (await sessionSteps()) as { steps: unknown; files: unknown; mirror: unknown };
+  write('session.json', { steps: session.steps, files: session.files }, 0);
+  write('mirror.json', session.mirror, 0);
   write('queries.json', await queryAnswers(), 0);
 
   // template placeholders and the moment.js style dates they take, in node's en-US

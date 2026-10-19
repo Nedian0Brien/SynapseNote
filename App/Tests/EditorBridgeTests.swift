@@ -26,6 +26,8 @@ struct EditorBridgeTests {
             == .toasts([EditorToast(id: 2, message: "Saved", tone: "info", action: "Undo"), EditorToast(id: 3, message: "No", tone: "error", action: nil)]))
         #expect(EditorEvent(body: ["type": "autoBackup", "json": "{}"]) == .autoBackup(json: "{}"))
         #expect(EditorEvent(body: ["type": "customCss", "css": "a {}"]) == .customCss("a {}"))
+        #expect(EditorEvent(body: ["type": "state", "json": "{\"revision\":1}"]) == .state(json: "{\"revision\":1}"))
+        #expect(EditorEvent(body: ["type": "state"]) == nil)
         #expect(EditorEvent(body: ["type": "vaultFailed", "message": "gone"]) == .vaultFailed(message: "gone"))
         #expect(EditorEvent(body: ["type": "openExternal", "url": "https://example.com"]) == .openExternal(URL(string: "https://example.com")!))
     }

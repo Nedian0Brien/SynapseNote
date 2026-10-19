@@ -57,6 +57,7 @@ import { EditorApp, linkSelection } from './EditorApp';
 import type { FindRequest } from './EditorApp';
 import * as queries from './queries';
 import { createReviews } from './review';
+import { createDeltas } from './stateDelta';
 import type { Reviews } from './review';
 import { collectCards } from '../vendor/morrow/src/core/flashcards';
 import { HistoryDialog } from '../vendor/morrow/src/app/components/HistoryDialog';
@@ -117,8 +118,18 @@ function report(): void {
       saveState: status.state,
       saveError: status.error,
     });
+    // the app keeps a copy of the workspace to answer its screens from
+    const delta = deltas.next({
+      state: session.getState(),
+      unreadable: session.unreadable,
+      activity: session.activity(),
+      reviewLog: reviews?.log() ?? {},
+    });
+    if (delta) post({ type: 'state', json: JSON.stringify(delta) });
   }, 16);
 }
+
+const deltas = createDeltas();
 
 async function openVault(name: string, guide: boolean): Promise<void> {
   if (phase.kind !== 'waiting') return;
@@ -139,6 +150,7 @@ async function openVault(name: string, guide: boolean): Promise<void> {
   }
   await session.markInitialized();
   setSession(session);
+  deltas.reset();
   reviews = createReviews({ read: () => session.readMeta('review.json'), write: (text) => session.writeMeta('review.json', text) });
   await reviews.load();
   session.subscribe(report);

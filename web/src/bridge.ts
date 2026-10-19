@@ -111,7 +111,9 @@ export type OutboundMessage =
   // morrow's automatic backup, written by the app next to its own data
   | { type: 'autoBackup'; json: string }
   // the vault's custom css, when the vault opens and when it is saved
-  | { type: 'customCss'; css: string };
+  | { type: 'customCss'; css: string }
+  // the workspace records that changed, a StateDelta as JSON text so the app keeps every key in its order
+  | { type: 'state'; json: string };
 
 interface WebkitHandler {
   postMessage(message: unknown): void;
