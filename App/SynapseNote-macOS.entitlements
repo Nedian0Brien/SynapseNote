@@ -7,6 +7,9 @@
 	<!-- the sandboxed WebKit content process does not launch without it; the editor page reaches nothing outside the app -->
 	<key>com.apple.security.network.client</key>
 	<true/>
+	<!-- sync: other paired devices on the network send their requests to this one -->
+	<key>com.apple.security.network.server</key>
+	<true/>
 	<!-- the vault folder the person picks in an open or save panel -->
 	<key>com.apple.security.files.user-selected.read-write</key>
 	<true/>

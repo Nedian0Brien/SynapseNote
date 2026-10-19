@@ -11,7 +11,8 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "build": "vite build"
+    "build": "vite build",
+    "sync-fixtures": "rolldown scripts/sync-fixtures.ts --format esm --platform node -o node_modules/.cache/sync-fixtures.mjs && node node_modules/.cache/sync-fixtures.mjs ../App/Tests/Fixtures/sync-fixtures.json"
   },
   "devDependencies": {
     "@floating-ui/dom": "^1.8.0",

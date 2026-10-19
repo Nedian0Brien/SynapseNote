@@ -28,6 +28,12 @@ targets:
       path: App/Info.plist
       properties:
         UIFileSharingEnabled: true
+        # sync between the person's own devices on the same network, see App/Sources/Sync
+        NSLocalNetworkUsageDescription: SynapseNote finds your other devices on this network to keep your vault the same on them.
+        NSBonjourServices: [_synapsenote-sync._tcp]
+        # requests to paired devices go to their local address over http, each one encrypted by the app
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
     preBuildScripts:
       - name: Build editor bundle
         script: '"$SRCROOT/scripts/build-editor.sh"'

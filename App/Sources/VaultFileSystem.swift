@@ -248,6 +248,11 @@ nonisolated final class VaultFileSystem: @unchecked Sendable {
         return results
     }
 
+    /// Writes bytes in place of whatever is there, beside the target first and then renamed into place.
+    func writeBytes(_ relative: String, data: Data) throws {
+        try writeAtomic(data, to: try VaultPaths.resolve(relative, in: root))
+    }
+
     /// Creates a new file and never replaces one.
     func createFile(_ relative: String, data: Data) throws {
         let url = try VaultPaths.resolve(relative, in: root)
