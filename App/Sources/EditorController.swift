@@ -755,6 +755,30 @@ final class EditorController: WorkspaceService {
         send(.saveAsTemplate(pageId: pageId))
     }
 
+    #if DEBUG
+    /// 11a: the Swift data core reads the vault just opened, and where it differs from the editor page's session
+    /// is logged (subsystem com.synapsenote.native, category core).
+    private func compareCores() async {
+        guard let files = access.files, isPageReady else { return }
+        let log = Logger(subsystem: "com.synapsenote.native", category: "core")
+        do {
+            let loaded = try await Task.detached {
+                let scan = CoreDualRun.scan(try files.scan(), registry: try files.readText(".morrow/workspace.json"),
+                                           recent: try files.readText(".morrow/recent.json"))
+                return VaultLoad.loadVault(scan, newId: { UUID().uuidString.lowercased() }, now: Date().timeIntervalSince1970 * 1000)
+            }.value
+            let answer = try await page.callJavaScript("return window.synapse.query('state', {})")
+            guard let text = answer as? String else { return }
+            let web = try JSJSON.parse(text)
+            let report = CoreDualRun.compare(loaded, web: web)
+            log.info("core dual run: \(report.pages) pages, \(report.docs) docs, \(report.differences.count, privacy: .public) differences")
+            for difference in report.differences.prefix(40) { log.error("core dual run: \(difference, privacy: .public)") }
+        } catch {
+            log.error("core dual run failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+    #endif
+
     /// Asks the editor page, which works it out from the workspace session it holds.
     private func answer<T: Decodable>(_ query: WorkspaceQuery) async -> T? {
         guard isPageReady, phase == .ready else { return nil }
@@ -853,6 +877,9 @@ final class EditorController: WorkspaceService {
             if phase == .opening {
                 phase = .ready
                 logger.info("vault opened with \(pages.count) pages")
+                #if DEBUG
+                Task { await compareCores() }
+                #endif
                 settleActiveTab()
                 if let peerId = syncWhenOpen {
                     syncWhenOpen = nil

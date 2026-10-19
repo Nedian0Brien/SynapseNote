@@ -211,6 +211,14 @@ function query(name: string, params: Record<string, unknown>): string | null {
       return JSON.stringify(queries.counts(state, reviews?.log() ?? {}, new Date()));
     case 'review':
       return JSON.stringify(queries.review(state, reviews?.log() ?? {}, new Date()));
+    // the session's workspace as it holds it, for the app's own data core to compare itself with (debug builds)
+    case 'state':
+      return JSON.stringify({
+        pages: Object.values(state.pages),
+        docs: state.docs,
+        unreadable: [...getSession().unreadable],
+        problems: getSession().problems,
+      });
     case 'graph':
       return JSON.stringify(
         queries.graph(state, {
