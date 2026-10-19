@@ -311,23 +311,47 @@ private struct FocusButton: View {
 
 private struct SaveStatusView: View {
     let state: EditorController.SaveState
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    #endif
+
+    /// On an iPhone the toolbar has room for the symbol only; the words stay for VoiceOver.
+    private var style: some LabelStyle {
+        #if os(iOS)
+        return horizontalSizeClass == .compact ? AnyLabelStyle.iconOnly : AnyLabelStyle.titleAndIcon
+        #else
+        return AnyLabelStyle.titleAndIcon
+        #endif
+    }
 
     var body: some View {
         switch state {
         case .saved:
             Label("Saved", systemImage: "checkmark.circle")
-                .labelStyle(.titleAndIcon)
+                .labelStyle(style)
                 .foregroundStyle(.secondary)
         case .pending, .saving:
             Label("Saving…", systemImage: "arrow.triangle.2.circlepath")
-                .labelStyle(.titleAndIcon)
+                .labelStyle(style)
                 .foregroundStyle(.secondary)
         case .failed(let message):
             Label("Not saved", systemImage: "exclamationmark.triangle")
-                .labelStyle(.titleAndIcon)
+                .labelStyle(style)
                 .foregroundStyle(.red)
                 .help(message)
                 .accessibilityHint(message)
+        }
+    }
+}
+
+/// Either of the two label styles the save status uses.
+private enum AnyLabelStyle: LabelStyle {
+    case iconOnly, titleAndIcon
+
+    func makeBody(configuration: Configuration) -> some View {
+        switch self {
+        case .iconOnly: Label(configuration).labelStyle(.iconOnly)
+        case .titleAndIcon: Label(configuration).labelStyle(.titleAndIcon)
         }
     }
 }

@@ -31,8 +31,10 @@ struct QuickNoteSheet: View {
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("Add to Today", action: save)
+                        // short on iOS, where the title shares a narrow bar with both buttons
+                        Button(Self.addLabel, action: save)
                             .keyboardShortcut(.return, modifiers: .command)
+                            .accessibilityLabel("Add to Today")
                     }
                 }
         }
@@ -43,6 +45,12 @@ struct QuickNoteSheet: View {
         #endif
         .onAppear { focused = true }
     }
+
+    #if os(iOS)
+    private static let addLabel = "Add"
+    #else
+    private static let addLabel = "Add to Today"
+    #endif
 
     /// As Morrow's: nothing written closes the sheet, otherwise the note goes to today's page.
     private func save() {
