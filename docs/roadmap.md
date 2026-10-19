@@ -32,7 +32,7 @@
 | 11c-1 | 저장소 나머지 이식(기록·암호화·외부 편집·저장 예약·첨부 파일·메타), Morrow 결과와 비교. 앱 동작은 그대로 | 구현 (PR #15, `docs/verification/phase11c1-storage-port.md`) |
 | 11c-2 | 전환: 명령을 양쪽에서 적용하고 파일은 Swift만 씀, 외부 편집은 Swift가 먼저 읽음 | 구현 (PR #16, `docs/verification/phase11c2-authority-flip.md`) |
 | 11d | 네이티브 화면 | 11d-1~11d-5로 나눔(`.intent/spec_phase11d-native-screens.md`). 편집기가 데이터베이스·캔버스를 블록으로 품으므로 편집기를 마지막에 |
-| 11d-1 | 화면이 쓰는 core 이식(데이터베이스·수식·diff·게시 HTML·백업·가져오기), Morrow 결과와 비교. 앱 동작은 그대로 | |
+| 11d-1 | 화면이 쓰는 core 이식(데이터베이스·수식·diff·게시 HTML·백업·가져오기), Morrow 결과와 비교. 앱 동작은 그대로 | 구현 (PR #17, `docs/verification/phase11d1-core-ports.md`) |
 | 11d-2 | 페이지 머리, Markdown 원문 편집, 기록 창 | |
 | 11d-3 | 데이터베이스 보기 | |
 | 11d-4 | 캔버스 | |
