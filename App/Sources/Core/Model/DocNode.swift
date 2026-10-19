@@ -151,8 +151,13 @@ nonisolated enum Doc {
         components.year = year
         components.month = month
         components.day = day
-        guard let date = Calendar.current.date(from: components) else { return key }
-        return date.formatted(.dateTime.year().month(.abbreviated).day())
+        guard let date = JSEnvironment.calendar.date(from: components) else { return key }
+        let formatter = DateFormatter()
+        formatter.locale = JSEnvironment.locale
+        formatter.timeZone = JSEnvironment.timeZone
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.setLocalizedDateFormatFromTemplate("yMMMd")
+        return formatter.string(from: date)
     }
 
     /// `validateDoc`: checks structure and size only, unknown node types are allowed and preserved. The error

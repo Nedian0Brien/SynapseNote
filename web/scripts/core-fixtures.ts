@@ -37,6 +37,12 @@ import { canvasFromDoc, writeCanvas } from '../vendor/morrow/src/core/canvas';
 import { displayTitle } from '../vendor/morrow/src/core/model';
 import { sampleCommands } from '../vendor/morrow/src/core/sample';
 import { applyTemplate, fillTemplate, formatDate } from '../vendor/morrow/src/core/templates';
+import * as queries from '../src/queries';
+import { applyCommand } from '../vendor/morrow/src/core/commands';
+import { emptyWorkspace } from '../vendor/morrow/src/core/model';
+import type { WorkspaceState } from '../vendor/morrow/src/core/model';
+import { schedule } from '../vendor/morrow/src/core/flashcards';
+import type { ReviewLog } from '../vendor/morrow/src/core/flashcards';
 import { MemoryVault } from '../vendor/morrow/src/storage/memoryVault';
 import { WorkspaceSession } from '../vendor/morrow/src/storage/session';
 import { VaultRepository } from '../vendor/morrow/src/storage/vaultRepository';
@@ -339,6 +345,105 @@ function recordOps(vault: MemoryVault): () => VaultOp[] {
   };
 }
 
+function loadedState(files: Record<string, string>): WorkspaceState {
+  const loaded = loadVault(scanOf(files), counter('v'), FIXED_NOW);
+  return { pages: Object.fromEntries(loaded.pages.map((page) => [page.id, page])), docs: loaded.docs };
+}
+
+// a workspace written over weeks: a journal with daily notes in earlier years, tasks, flashcards, #tags
+// nested and inline, links between pages, hangul and accents in titles and text
+function dailyState(): WorkspaceState {
+  let state = emptyWorkspace();
+  const day = 86_400_000;
+  const run = (command: Command) => {
+    const result = applyCommand(state, command);
+    if (!result.ok) throw new Error(result.error);
+    state = result.value.state;
+  };
+  const doc = (markdown: string) => markdownToDoc(markdown);
+  run({ type: 'page.create', id: 'journal', parentId: null, now: FIXED_NOW - 400 * day, title: 'Journal', kind: 'journal' });
+  const days: Array<[string, string, number]> = [
+    ['2025-10-19', 'Last year today. - [ ] old task\n\nCapital of France :: Paris', 365],
+    ['2024-10-19', 'Two years ago, met [[Café Lumière]].', 730],
+    ['2026-09-19', 'A month ago #reading/novels', 30],
+    ['2026-10-18', '- [x] done yesterday\n- [ ] carried over #work', 1],
+    ['2026-10-19', 'Today with **bold** and #work/meetings.\n\n- [ ] 오늘 할 일', 0],
+  ];
+  for (const [date, text, ago] of days)
+    run({ type: 'page.create', id: `d${date.replaceAll('-', '')}`, parentId: 'journal', now: FIXED_NOW - ago * day, title: date, dailyDate: date, doc: doc(text) });
+  run({ type: 'page.create', id: 'cafe', parentId: null, now: FIXED_NOW - 90 * day, title: 'Café Lumière', icon: '☕', tags: ['places', 'reading'], doc: doc('A small café by the river. Mentioned with friends, and the café lumière is quiet in the morning. It serves good coffee and has many books on the shelves for long afternoons of reading.') });
+  run({ type: 'page.create', id: 'korean', parentId: null, now: FIXED_NOW - 60 * day, title: '한글 노트', tags: ['언어'], doc: doc('# 소개\n\n한글 노트는 [[Café Lumière]]를 언급하지 않고 café lumière라고만 쓴다.\n\n## 단어\n\n사과 :: apple\n\n배 :: pear\n\n- [ ] 단어 외우기 #언어/어휘') });
+  run({ type: 'page.create', id: 'projects', parentId: null, now: FIXED_NOW - 200 * day, title: 'Projects', tags: ['project'], doc: doc('Index of projects. See [[Garden]].') });
+  run({ type: 'page.create', id: 'garden', parentId: 'projects', now: FIXED_NOW - 150 * day, title: 'Garden', tags: ['project/garden'], doc: doc('Plant tomatoes #project/garden\n\n```\n#not-a-tag in code\n```\n\nWhat grows in shade :: ferns\n\n- [ ] water the beds\n- [x] buy seeds') });
+  run({ type: 'page.create', id: 'empty', parentId: null, now: FIXED_NOW - 10 * day, title: '', doc: doc('') });
+  run({ type: 'page.create', id: 'old', parentId: null, now: FIXED_NOW - 120 * day, title: 'Rediscover me', doc: doc('This is an older note with enough words in it to be worth seeing again some day when you open the home page and look around.') });
+  run({ type: 'page.create', id: 'trashed', parentId: null, now: FIXED_NOW - 5 * day, title: 'Trashed café', doc: doc('Links [[Garden]] and #trash-tag') });
+  run({ type: 'page.trash', id: 'trashed', now: FIXED_NOW - 4 * day });
+  run({ type: 'page.create', id: 'templates', parentId: null, now: FIXED_NOW - 300 * day, title: 'Templates', kind: 'templates' });
+  run({ type: 'page.create', id: 'dailytpl', parentId: 'templates', now: FIXED_NOW - 300 * day, title: 'Daily note', doc: doc('# {{date}}') });
+  run({ type: 'page.markOpened', id: 'garden', now: FIXED_NOW - 2 * day });
+  run({ type: 'page.markOpened', id: 'cafe', now: FIXED_NOW - day });
+  run({ type: 'page.setFavorite', id: 'cafe', favorite: true });
+  return state;
+}
+
+// the answers web/src/queries.ts gives on four workspaces, with every argument the native screens pass
+async function queryAnswers(): Promise<unknown> {
+  const sessionFiles = ((await sessionSteps()) as { files: Record<string, string> }).files;
+  const now = new RealDate(FIXED_NOW);
+  const activity = { '2026-10-19': 3, '2026-10-18': 1, '2026-10-17': 2, '2026-10-15': 4, '2026-09-01': 5 };
+  const states: Array<{ name: string; state: WorkspaceState }> = [
+    { name: 'guide', state: loadedState(await guideVault()) },
+    { name: 'edited', state: loadedState(sessionFiles) },
+    { name: 'obsidian', state: loadedState(OBSIDIAN) },
+    { name: 'daily', state: dailyState() },
+  ];
+  return states.map(({ name, state }) => {
+    // a review log with cards seen before, some due and some not
+    const cards = queries.review(state, {}, now).cards;
+    const log: ReviewLog = {};
+    cards.forEach((card, index) => {
+      const past = new RealDate(FIXED_NOW - (index + 1) * 3 * 86_400_000);
+      if (index % 3 !== 2) log[card.id] = schedule(undefined, index % 2 ? 'good' : 'again', past);
+    });
+    const answers: Array<{ query: string; params: Record<string, unknown>; answer: unknown }> = [];
+    const ask = (query: string, params: Record<string, unknown>, answer: unknown) =>
+      answers.push({ query, params, answer: JSON.parse(JSON.stringify(answer)) as unknown });
+    for (const text of ['', 'welcome', 'Welcome to', 'markdown', '#getting-started', '#project', '#project garden', 'cafe', 'Café', '한글', '언어', 'tasks templates', 'a', 'e', 'zzz', '#none word', 'link', '  spaced   words  '])
+      for (const limit of [30, 3]) ask('search', { query: text, limit }, queries.search(state, text, limit));
+    ask('recent', { limit: 30 }, queries.recent(state, 30));
+    ask('recent', { limit: 2 }, queries.recent(state, 2));
+    ask('home', {}, queries.home(state, activity, now));
+    ask('home', { activity: 'none' }, queries.home(state, {}, now));
+    for (const id of Object.keys(state.pages)) {
+      ask('backlinks', { id }, queries.backlinks(state, id));
+      ask('mentions', { id }, queries.mentions(state, id));
+      ask('outline', { id }, queries.outline(state.docs[id]));
+    }
+    ask('tags', {}, queries.tags(state));
+    for (const entry of queries.tags(state)) ask('tagPages', { tag: entry.tag }, queries.tagPages(state, entry.tag));
+    for (const tag of ['project', 'PROJECT', 'work', 'missing']) ask('tagPages', { tag }, queries.tagPages(state, tag));
+    ask('tasks', {}, queries.tasks(state));
+    ask('templates', {}, queries.templates(state));
+    ask('counts', {}, queries.counts(state, log, now));
+    ask('review', {}, queries.review(state, log, now));
+    ask('review', { log: 'none' }, queries.review(state, {}, now));
+    const ids = Object.keys(state.pages);
+    for (const tags of [false, true])
+      for (const hierarchy of [false, true])
+        for (const orphans of [true, false]) {
+          const options = { tags, hierarchy, orphans, focus: null, depth: 1 };
+          ask('graph', options, queries.graph(state, options));
+        }
+    for (const focus of [ids[0], ids[3], ids[ids.length - 1], 'missing'])
+      for (const depth of [1, 2]) {
+        const options = { tags: true, hierarchy: true, orphans: true, focus: focus ?? null, depth };
+        ask('graph', options, queries.graph(state, options));
+      }
+    return { name, state, activity, log, answers };
+  });
+}
+
 // the guide vault made the way the app makes it, then edited step by step, each step saved
 async function sessionSteps(): Promise<unknown> {
   const vault = new MemoryVault();
@@ -571,14 +676,17 @@ async function main(): Promise<void> {
   for (const locale of ['en-US', 'ko-KR']) {
     const plain = new Intl.Collator(locale);
     const titles = new Intl.Collator(locale, { numeric: true, sensitivity: 'base' });
+    const base = new Intl.Collator(locale, { sensitivity: 'base' });
     collation[locale] = {
       plain: words.map((a) => words.map((b) => Math.sign(plain.compare(a, b)))),
       titles: words.map((a) => words.map((b) => Math.sign(titles.compare(a, b)))),
+      base: words.map((a) => words.map((b) => Math.sign(base.compare(a, b)))),
     };
   }
   write('collation.json', collation, 0);
 
   write('session.json', await sessionSteps(), 0);
+  write('queries.json', await queryAnswers(), 0);
 
   // template placeholders and the moment.js style dates they take, in node's en-US
   const templateDate = new Date(2026, 9, 9, 7, 5, 3);

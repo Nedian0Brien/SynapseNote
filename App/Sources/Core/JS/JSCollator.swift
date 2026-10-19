@@ -10,8 +10,10 @@ nonisolated enum JSCollator {
     /// on text in one normalization form (ICU treats canonically equivalent text as equal). The `base` comparison
     /// wants those folds, and gets ICU's Hangul order once the syllables are decomposed. Checked against
     /// Intl.Collator in en-US and ko-KR on Fixtures/core/expected/collation.json.
-    static func compare(_ a: String, _ b: String, locale: Locale = .current, titles: Bool = false) -> Int {
-        let options: String.CompareOptions = titles ? [.numeric, .caseInsensitive, .diacriticInsensitive, .widthInsensitive] : [.literal]
+    /// `base` alone is `{ sensitivity: 'base' }` without `numeric`, as Morrow sorts tags.
+    static func compare(_ a: String, _ b: String, locale: Locale = .current, titles: Bool = false, base: Bool = false) -> Int {
+        let folds: String.CompareOptions = [.caseInsensitive, .diacriticInsensitive, .widthInsensitive]
+        let options: String.CompareOptions = titles ? folds.union(.numeric) : base ? folds : [.literal]
         let left = a.decomposedStringWithCanonicalMapping
         let right = b.decomposedStringWithCanonicalMapping
         switch left.compare(right, options: options, range: nil, locale: locale) {

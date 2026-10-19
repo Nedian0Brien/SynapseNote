@@ -169,15 +169,7 @@ nonisolated extension Model {
     }
 }
 
-// MARK: core/search.ts, core/crypto.ts
-
-nonisolated enum Search {
-    /// `foldText`: canonical decomposition without combining diacritics, lower case
-    static func foldText(_ text: String) -> String {
-        let units = text.decomposedStringWithCanonicalMapping.utf16.filter { !(0x0300...0x036F).contains($0) }
-        return JSText.string(JSText.lowercased(Array(units)))
-    }
-}
+// MARK: core/crypto.ts
 
 nonisolated enum PageCrypto {
     static let cipher = "aes-256-gcm"

@@ -8,14 +8,14 @@ struct CollationTests {
         let fixture = try CoreFixtures.load("collation")
         let words = try #require(fixture["words"]?.array).map { $0.string ?? "" }
         let locale = Locale(identifier: identifier)
-        for mode in ["plain", "titles"] {
+        for mode in ["plain", "titles", "base"] {
             let table = try #require(fixture[identifier]?[mode]?.array)
             var mismatches: [String] = []
             for (i, a) in words.enumerated() {
                 let row = try #require(table[i].array)
                 for (j, b) in words.enumerated() {
                     let expected = Int(row[j].number ?? 9)
-                    let actual = JSCollator.compare(a, b, locale: locale, titles: mode == "titles")
+                    let actual = JSCollator.compare(a, b, locale: locale, titles: mode == "titles", base: mode == "base")
                     if actual != expected { mismatches.append("\(CoreFixtures.describe(.string(a))) \(CoreFixtures.describe(.string(b))) js \(expected) swift \(actual)") }
                 }
             }
