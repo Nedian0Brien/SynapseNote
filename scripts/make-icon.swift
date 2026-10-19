@@ -1,119 +1,82 @@
 #!/usr/bin/env swift
-// Draws the app icon into App/Assets.xcassets/AppIcon.appiconset: one 1024 px square for iOS and iPadOS, which
-// the system rounds, and the macOS sizes, which carry their own rounded shape and shadow on the macOS icon grid
-// (an 824 px shape centred on a 1024 px canvas). Run from the repository root: swift scripts/make-icon.swift
+// Writes the layers of the app icon as SVG into design/app-icon/, for Icon Composer, which builds
+// App/AppIcon.icon from them: the background gradient and the dark appearance are set there, and the system
+// adds the shape, the glass and the shadow. Run from the repository root: swift scripts/make-icon.swift
 //
-// The mark is a page with three linked points: notes that connect, in the Ocean to Violet accents of the app.
-import AppKit
-import CoreGraphics
+// The mark is a page with two lines of writing and three linked points: notes that connect, in the Ocean and
+// Violet accents of the app. Sizes are fractions of the 1024 px canvas.
 import Foundation
 
-let output = URL(fileURLWithPath: "App/Assets.xcassets/AppIcon.appiconset", isDirectory: true)
+let canvas = 1024.0
+let output = URL(fileURLWithPath: "design/app-icon", isDirectory: true)
 
-func color(_ hex: UInt32, _ alpha: CGFloat = 1) -> CGColor {
-    CGColor(srgbRed: CGFloat((hex >> 16) & 0xff) / 255, green: CGFloat((hex >> 8) & 0xff) / 255, blue: CGFloat(hex & 0xff) / 255, alpha: alpha)
+func n(_ value: Double) -> String { String(format: "%.2f", value) }
+
+func svg(_ body: String) -> String {
+    """
+    <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+    \(body)
+    </svg>
+
+    """
 }
 
-let ocean = color(0x1e88d8)
-let violet = color(0x7353e0)
+// the page: a rounded sheet in the middle of the canvas
+let page = (x: 0.27 * canvas, y: 0.21 * canvas, width: 0.46 * canvas, height: 0.60 * canvas)
+let pageLayer = svg("""
+  <rect x="\(n(page.x))" y="\(n(page.y))" width="\(n(page.width))" height="\(n(page.height))" rx="\(n(0.05 * canvas))" fill="#FFFFFF"/>
+""")
 
-/// The background gradient and the page with its linked points, drawn into `rect`.
-func drawMark(in context: CGContext, rect: CGRect) {
-    let space = CGColorSpace(name: CGColorSpace.sRGB)!
-    let gradient = CGGradient(colorsSpace: space, colors: [ocean, violet] as CFArray, locations: [0, 1])!
-    context.saveGState()
-    context.clip(to: rect)
-    // top left to bottom right; core graphics has its origin at the bottom left
-    context.drawLinearGradient(gradient, start: CGPoint(x: rect.minX, y: rect.maxY), end: CGPoint(x: rect.maxX, y: rect.minY), options: [])
-    context.restoreGState()
-
-    let unit = rect.width
-    // the page
-    let page = CGRect(x: rect.minX + unit * 0.27, y: rect.minY + unit * 0.19, width: unit * 0.46, height: unit * 0.60)
-    context.saveGState()
-    context.setShadow(offset: CGSize(width: 0, height: -unit * 0.012), blur: unit * 0.04, color: color(0x000000, 0.22))
-    context.addPath(CGPath(roundedRect: page, cornerWidth: unit * 0.05, cornerHeight: unit * 0.05, transform: nil))
-    context.setFillColor(color(0xffffff, 0.96))
-    context.fillPath()
-    context.restoreGState()
-
-    // two lines of writing at the top of the page
-    context.setFillColor(color(0x1e88d8, 0.28))
-    for (index, width) in [0.30, 0.21].enumerated() {
-        let line = CGRect(x: page.minX + unit * 0.065, y: page.maxY - unit * (0.105 + Double(index) * 0.06), width: unit * width, height: unit * 0.028)
-        context.addPath(CGPath(roundedRect: line, cornerWidth: unit * 0.014, cornerHeight: unit * 0.014, transform: nil))
-        context.fillPath()
-    }
-
-    // three linked points below them
-    let points = [
-        CGPoint(x: page.minX + unit * 0.12, y: page.minY + unit * 0.30),
-        CGPoint(x: page.maxX - unit * 0.11, y: page.minY + unit * 0.22),
-        CGPoint(x: page.minX + unit * 0.17, y: page.minY + unit * 0.10),
-    ]
-    context.setStrokeColor(color(0x5a6fdc, 0.85))
-    context.setLineWidth(unit * 0.022)
-    context.setLineCap(.round)
-    for (from, to) in [(0, 1), (1, 2), (0, 2)] {
-        context.move(to: points[from])
-        context.addLine(to: points[to])
-    }
-    context.strokePath()
-    for (index, point) in points.enumerated() {
-        let radius = unit * (index == 1 ? 0.052 : 0.042)
-        context.setFillColor(index == 1 ? violet : ocean)
-        context.fillEllipse(in: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2))
-        context.setFillColor(color(0xffffff))
-        let inner = radius * 0.42
-        context.fillEllipse(in: CGRect(x: point.x - inner, y: point.y - inner, width: inner * 2, height: inner * 2))
-    }
+// two lines of writing at the top of the page
+let lines = [0.30, 0.21].enumerated().map { index, width in
+    let y = page.y + canvas * (0.077 + Double(index) * 0.06)
+    return """
+      <rect x="\(n(page.x + 0.065 * canvas))" y="\(n(y))" width="\(n(width * canvas))" height="\(n(0.028 * canvas))" rx="\(n(0.014 * canvas))" fill="#1E88D8"/>
+    """
 }
+let linesLayer = svg(lines.joined(separator: "\n"))
 
-func image(pixels: Int, draw: (CGContext, CGFloat) -> Void) -> Data {
-    let context = CGContext(data: nil, width: pixels, height: pixels, bitsPerComponent: 8, bytesPerRow: 0,
-                            space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
-    context.interpolationQuality = .high
-    draw(context, CGFloat(pixels))
-    let rep = NSBitmapImageRep(cgImage: context.makeImage()!)
-    return rep.representation(using: .png, properties: [:])!
+// three linked points below them, the middle one larger and violet
+let points = [
+    (x: page.x + 0.12 * canvas, y: page.y + page.height - 0.30 * canvas, radius: 0.042 * canvas, color: "#1E88D8"),
+    (x: page.x + page.width - 0.11 * canvas, y: page.y + page.height - 0.22 * canvas, radius: 0.052 * canvas, color: "#7353E0"),
+    (x: page.x + 0.17 * canvas, y: page.y + page.height - 0.10 * canvas, radius: 0.042 * canvas, color: "#1E88D8"),
+]
+let links = [(0, 1), (1, 2), (0, 2)].map { from, to in
+    """
+      <line x1="\(n(points[from].x))" y1="\(n(points[from].y))" x2="\(n(points[to].x))" y2="\(n(points[to].y))" stroke="#5A6FDC" stroke-width="\(n(0.022 * canvas))" stroke-linecap="round"/>
+    """
 }
+let dots = points.map { point in
+    """
+      <circle cx="\(n(point.x))" cy="\(n(point.y))" r="\(n(point.radius))" fill="\(point.color)"/>
+      <circle cx="\(n(point.x))" cy="\(n(point.y))" r="\(n(point.radius * 0.42))" fill="#FFFFFF"/>
+    """
+}
+let graphLayer = svg((links + dots).joined(separator: "\n"))
 
-/// iOS: a full square without transparency, the system applies the shape.
-let ios = image(pixels: 1024) { context, size in
-    drawMark(in: context, rect: CGRect(x: 0, y: 0, width: size, height: size))
+// the dark appearance, as the system apps do theirs: the background goes to the system's dark and the page takes
+// the brand colours, so the graph is drawn in white, each point a ring the page shows through
+// the rings are open in the middle, so a link stops at each ring's edge instead of reaching its centre
+let darkLinks = [(0, 1), (1, 2), (0, 2)].map { from, to in
+    let (a, b) = (points[from], points[to])
+    let length = ((b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y)).squareRoot()
+    let (dx, dy) = ((b.x - a.x) / length, (b.y - a.y) / length)
+    return """
+      <line x1="\(n(a.x + dx * a.radius))" y1="\(n(a.y + dy * a.radius))" x2="\(n(b.x - dx * b.radius))" y2="\(n(b.y - dy * b.radius))" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="\(n(0.022 * canvas))"/>
+    """
 }
-
-/// macOS: the rounded shape on the icon grid with a soft shadow, transparent around it.
-func mac(_ pixels: Int) -> Data {
-    image(pixels: pixels) { context, size in
-        let scale = size / 1024
-        let shape = CGRect(x: 100 * scale, y: 100 * scale, width: 824 * scale, height: 824 * scale)
-        let path = CGPath(roundedRect: shape, cornerWidth: 185 * scale, cornerHeight: 185 * scale, transform: nil)
-        context.saveGState()
-        context.setShadow(offset: CGSize(width: 0, height: -10 * scale), blur: 20 * scale, color: color(0x000000, 0.3))
-        context.addPath(path)
-        context.setFillColor(ocean)
-        context.fillPath()
-        context.restoreGState()
-        context.saveGState()
-        context.addPath(path)
-        context.clip()
-        drawMark(in: context, rect: shape)
-        context.restoreGState()
-    }
+let darkDots = points.map { point in
+    // a ring as wide as the coloured part of the light point
+    let width = point.radius * 0.58
+    return """
+      <circle cx="\(n(point.x))" cy="\(n(point.y))" r="\(n(point.radius - width / 2))" fill="none" stroke="#FFFFFF" stroke-width="\(n(width))"/>
+    """
 }
+let graphDarkLayer = svg((darkLinks + darkDots).joined(separator: "\n"))
 
 try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
-try ios.write(to: output.appending(path: "icon-ios-1024.png"))
-var images: [[String: String]] = [["filename": "icon-ios-1024.png", "idiom": "universal", "platform": "ios", "size": "1024x1024"]]
-for points in [16, 32, 128, 256, 512] {
-    for scale in [1, 2] {
-        let name = "icon-mac-\(points)@\(scale)x.png"
-        try mac(points * scale).write(to: output.appending(path: name))
-        images.append(["filename": name, "idiom": "mac", "scale": "\(scale)x", "size": "\(points)x\(points)"])
-    }
+for (name, text) in [("page", pageLayer), ("lines", linesLayer), ("graph", graphLayer), ("graph-dark", graphDarkLayer)] {
+    try text.write(to: output.appending(path: "\(name).svg"), atomically: true, encoding: .utf8)
 }
-let contents: [String: Any] = ["images": images, "info": ["author": "xcode", "version": 1]]
-let json = try JSONSerialization.data(withJSONObject: contents, options: [.prettyPrinted, .sortedKeys])
-try json.write(to: output.appending(path: "Contents.json"))
-print("wrote \(images.count) icons to \(output.path)")
+print("wrote page.svg, lines.svg, graph.svg and graph-dark.svg to \(output.path)")

@@ -20,7 +20,7 @@
 | 항목 | macOS | iOS |
 |---|---|---|
 | `CFBundleShortVersionString` / `CFBundleVersion` | 0.1.0 / 1 | 0.1.0 / 1 |
-| 아이콘 | `AppIcon.icns`, `Assets.car`, `CFBundleIconName = AppIcon` | `AppIcon60x60@2x.png`, `AppIcon76x76@2x~ipad.png`, `Assets.car`, `CFBundleIcons` |
+| 아이콘 | `AppIcon.icns`, `Assets.car`, `CFBundleIconName = AppIcon` | `Assets.car`의 `IconImageStack` 라이트·다크·틴트, 다크용 `graph-dark` 벡터, `CFBundleIcons` |
 | `PrivacyInfo.xcprivacy` | 있음 | 있음 |
 | `NOTICE`, `Morrow-Apache-2.0.txt`, `Editor/THIRD_PARTY_LICENSES.txt` | 있음 | 있음 |
 | App Intents 메타데이터 | `Metadata.appintents` | `Metadata.appintents`, 문구 "Add a quick note in ${applicationName}" |
@@ -45,8 +45,15 @@
 | Quick Note | 통과 | `synapsenote://capture` → 시트(키보드와 함께 큰 크기) → 한글 "우유 사기" → `Journal/2026-10-19.md`에 `**오후 08:31** 우유 사기` |
 | 설정 시트 | 통과 | 강조색은 다음 줄로 내려감. New Quick Note가 설정을 닫고 Quick Note를 연다 |
 
+## 앱 아이콘 (Icon Composer)
+
+- 레이어 SVG(`design/app-icon/`)를 `scripts/make-icon.swift`가 그리고, Icon Composer에서 `App/AppIcon.icon`으로 묶었다. 그룹은 앞에서부터 Writing(그래프, 글줄)과 Page(페이지)다. Icon Composer는 사이드바 위쪽 그룹을 앞에 그린다.
+- "Add Layer"와 색 선택은 펼침 메뉴라 백그라운드 조작이 되지 않아, 레이어와 색 값은 `icon.json`에 쓰고 Icon Composer로 열어 미리보기로 확인한 뒤 Icon Composer로 다시 저장했다. `icon.json` 키 이름은 Apple 명세가 없어 커뮤니티 분석([icon-composer-template](https://github.com/peterpoliwoda/icon-composer-template))을 참고했고, 기본 `fill`이 있으면 다크 `fill-specializations`가 무시되는 것을 확인해 기본값도 specialization 배열에 넣었다.
+- 다크 모양: iPhone 17 Pro Max 시뮬레이터 홈 화면을 Customize > Dark로 바꿔 시스템 앱과 비교했다. 시스템 앱은 무채색 검정 배경에 주 도형이 브랜드 색을 유지한다(Messages는 라이트의 초록 배경이 다크에서 초록 말풍선이 된다). 처음 만든 남색 배경·회색 페이지는 이와 달라, 배경을 `system-dark`로, 페이지를 브랜드 그러데이션으로, 글줄과 그래프를 흰색으로 바꿨다.
+- archive: `Assets.car`에 `IconImageStack` 라이트·다크·틴트(`ISAppearanceTintable`)와 그룹·벡터 레이어가 들어 있다. macOS는 `AppIcon.icns`도 만들어진다.
+
 ## 사용자 확인 요청
 
-1. 앱 아이콘(임시안)을 쓸지 정한다. `App/Assets.xcassets/AppIcon.appiconset/icon-mac-512@1x.png`에서 볼 수 있다.
+1. 앱 아이콘을 쓸지 정한다. Icon Composer로 `App/AppIcon.icon`을 열면 기본·다크·모노 모양을 볼 수 있다.
 2. 수출 규정 값(`ITSAppUsesNonExemptEncryption`)을 정한다. 판단 자료는 `docs/release/checklist.md`.
 3. 개발자 팀이 생기면 체크리스트의 "팀이 생긴 뒤"와 "실기기에서 확인할 것"을 진행한다.

@@ -6,7 +6,7 @@ spec: `spec_phase10-release-prep.md`. 브랜치 `feat/release`(기준 `feat/sett
 
 1. **버전과 번들 빌드**: `project.yml` info properties에 `CFBundleShortVersionString: $(MARKETING_VERSION)`, `CFBundleVersion: $(CURRENT_PROJECT_VERSION)`. `vite.config.ts`의 `__APP_VERSION__`은 `project.yml`의 `MARKETING_VERSION`을 읽는다. `build-editor.sh` 감시 목록에 `web/sampleRenames.ts`.
 2. **개인정보 매니페스트**: `App/PrivacyInfo.xcprivacy`, `project.yml` resources.
-3. **아이콘**: `scripts/make-icon.swift`(CoreGraphics, iOS 1024 정사각형·macOS 크기별 둥근 사각형), `App/Assets.xcassets`(AppIcon, AccentColor), `ASSETCATALOG_COMPILER_APPICON_NAME`.
+3. **아이콘**: 처음에는 `scripts/make-icon.swift`가 PNG를 그렸다. 사용자 요청(2026-10-19)으로 Icon Composer 형식 `App/AppIcon.icon`으로 바꿨다. 스크립트는 레이어 SVG(`design/app-icon/`)를 그리고, 다크 모양은 시스템 앱 방식(무채색 배경, 브랜드 색의 주 도형)을 따른다. `App/Assets.xcassets`에는 AccentColor만 남긴다.
 4. **경고**: `PDFExporter.swift`의 `UIWindow(frame:)`를 `UIWindow(windowScene:)`로.
 5. **Release 검증**: macOS·iOS Release archive(서명 끔), archive 안의 Info.plist·아이콘·매니페스트·리소스·`Metadata.appintents` 확인.
 6. **iPhone 점검**: iPhone 17 Pro Max 시뮬레이터에서 도구 막대, 설정, Quick Note, 커버, 가이드. 고칠 것이 있으면 고친다.

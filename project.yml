@@ -24,7 +24,11 @@ targets:
         buildPhase: resources
         # missing in a fresh clone until the first build creates it
         optional: true
-      # app icon (drawn by scripts/make-icon.swift) and accent colour
+      # app icon made in Icon Composer from the layers scripts/make-icon.swift draws (design/app-icon/),
+      # with its dark and tinted appearances; Xcode builds every platform's icon from it
+      - path: App/AppIcon.icon
+        buildPhase: resources
+      # accent colour
       - path: App/Assets.xcassets
       # what the app reads and why, for the App Store; see docs/release/checklist.md
       - path: App/PrivacyInfo.xcprivacy

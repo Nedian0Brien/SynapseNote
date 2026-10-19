@@ -8,7 +8,7 @@
 |---|---|
 | 버전 한 곳: `MARKETING_VERSION`(0.1.0), `CURRENT_PROJECT_VERSION`(1) | `project.yml` → Info.plist, 편집기 번들 `__APP_VERSION__` |
 | 개인정보 매니페스트: 추적·수집 없음, 파일 시각 C617.1·3B52.1·DDA9.1, UserDefaults CA92.1 | `App/PrivacyInfo.xcprivacy` |
-| 앱 아이콘(임시안), AccentColor | `App/Assets.xcassets`, 다시 그리기: `swift scripts/make-icon.swift` |
+| 앱 아이콘(Icon Composer, 기본·다크·틴트 모양), AccentColor | `App/AppIcon.icon`, `App/Assets.xcassets`. 레이어 SVG: `swift scripts/make-icon.swift` → `design/app-icon/` |
 | 로컬 네트워크 권한 문구, Bonjour 서비스, `NSAllowsLocalNetworking` | `project.yml` info |
 | macOS 샌드박스 entitlements(네트워크 client·server, 사용자가 고른 파일, 북마크), Hardened Runtime | `App/SynapseNote-macOS.entitlements`, `project.yml` |
 | URL scheme `synapsenote`, App Intent "Quick Note" | `project.yml`, `App/Sources/QuickNote/` |
@@ -19,7 +19,11 @@
 
 ## 사용자가 정할 것
 
-1. **앱 아이콘**: 지금 아이콘은 임시안이다(Ocean→Violet 그러데이션, 세 점이 이어진 페이지). 바꾸려면 `scripts/make-icon.swift`를 고치거나 `App/Assets.xcassets/AppIcon.appiconset`의 PNG를 바꾼다.
+1. **앱 아이콘**: Icon Composer 형식(`App/AppIcon.icon`)으로, 레이어는 페이지·글줄·이어진 점 세 개다. 출시 전에 쓸지 정한다.
+   - 기본: Ocean→Violet 그러데이션 배경, 흰 페이지, 색 있는 글줄과 그래프.
+   - 다크: 시스템 앱(Files, Messages, Safari)과 같은 방식으로 배경은 시스템 다크(`system-dark`), 브랜드 색은 주 도형인 페이지로 옮기고, 글줄과 그래프는 흰색(그래프는 `graph-dark.svg`)이다. Apple HIG [App icons > Appearances](https://developer.apple.com/design/human-interface-guidelines/app-icons#Appearances)의 "기본 아이콘을 바탕으로 같은 요소를 유지"에 맞췄다.
+   - 틴트·Clear: 시스템이 만든다.
+   - 고치는 법: 도형은 `scripts/make-icon.swift`를 고쳐 SVG를 다시 만들고 `App/AppIcon.icon/Assets/`에 복사한다. 색과 모양별 설정은 Icon Composer로 `App/AppIcon.icon`을 열어 바꾼다.
 2. **수출 규정(`ITSAppUsesNonExemptEncryption`)**: Info.plist에 넣지 않았다. 넣지 않으면 App Store Connect가 업로드마다 묻는다.
    - Apple 기준([Complying with Encryption Export Regulations](https://developer.apple.com/documentation/security/complying-with-encryption-export-regulations)): 앱(링크한 라이브러리 포함)이 암호를 쓰지 않거나 문서 제출이 면제되는 암호만 쓰면 `NO`, 아니면 `YES`. OS에 들어 있는 암호를 쓰는 것은 보통 문서 제출이 면제되고, 독자 암호는 면제되지 않는다. 면제되는 암호만 써도 미국 정부에 연말 자기 분류 보고서를 내야 할 수 있다.
    - 이 앱의 암호: 페이지 암호화는 WebKit의 WebCrypto(AES-256-GCM, PBKDF2-SHA256), 기기 간 동기화는 CryptoKit(AES-256-GCM, HKDF-SHA256)과 CommonCrypto(PBKDF2-SHA256). 모두 OS가 제공하는 표준 알고리즘이고, 목적은 사용자 데이터의 기밀성이다(인증만을 위한 것이 아니다).
