@@ -680,7 +680,7 @@ final class EditorController: WorkspaceService {
         if draft?.pageId != pageId { sourceDraft = nil }
         Task {
             await draft?.flush()
-            send(.setSourceMode(pageId: pageId))
+            await deliver(.setSourceMode(pageId: pageId))
         }
     }
 
@@ -706,9 +706,11 @@ final class EditorController: WorkspaceService {
     }
 
     /// Morrow's SourceEditor save: the text read back by the session, then the page set to it through the page.
+    /// It returns once the page has applied it, so a save of the vault that follows, such as when the app goes to
+    /// the background, includes it.
     private func saveSource(_ text: String, of pageId: String) async -> Bool {
         guard let host, let doc = await host.readMarkdown(text) else { return false }
-        perform(.setDoc(id: pageId, doc: doc))
+        await deliver(.command(json: JSJSON.stringify(WorkspaceCommand.setDoc(id: pageId, doc: doc).morrow())))
         return true
     }
 
@@ -1072,16 +1074,20 @@ final class EditorController: WorkspaceService {
     }
 
     private func send(_ command: EditorCommand) {
+        Task { await deliver(command) }
+    }
+
+    /// Sends a message and returns once the page has handled it: a command it applied has then been passed on
+    /// to the session, ahead of anything sent after.
+    private func deliver(_ command: EditorCommand) async {
         guard isPageReady,
               let data = try? JSONEncoder().encode(command.json),
               let json = String(data: data, encoding: .utf8)
         else { return }
-        Task { [page, logger] in
-            do {
-                _ = try await page.callJavaScript("window.synapse.receive(JSON.parse(json))", arguments: ["json": json])
-            } catch {
-                logger.error("sending to the editor failed: \(error.localizedDescription, privacy: .public)")
-            }
+        do {
+            _ = try await page.callJavaScript("window.synapse.receive(JSON.parse(json))", arguments: ["json": json])
+        } catch {
+            logger.error("sending to the editor failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 }
