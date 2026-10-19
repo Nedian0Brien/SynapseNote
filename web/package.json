@@ -12,6 +12,7 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "build": "vite build",
+    "core-fixtures": "rolldown scripts/core-fixtures.ts --format esm --platform node -o node_modules/.cache/core-fixtures.mjs && TZ=UTC node node_modules/.cache/core-fixtures.mjs ../App/Tests/Fixtures/core",
     "sync-fixtures": "rolldown scripts/sync-fixtures.ts --format esm --platform node -o node_modules/.cache/sync-fixtures.mjs && node node_modules/.cache/sync-fixtures.mjs ../App/Tests/Fixtures/sync-fixtures.json"
   },
   "devDependencies": {
