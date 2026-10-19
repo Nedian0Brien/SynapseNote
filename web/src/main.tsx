@@ -110,6 +110,15 @@ function report(): void {
     const session = getSession();
     const status = session.saveStatus;
     const pages = session.getState().pages;
+    // the app keeps a copy of the workspace to answer its screens from; it goes first, since the
+    // workspace message makes those screens ask again and the copy has to be current by then
+    const delta = deltas.next({
+      state: session.getState(),
+      unreadable: session.unreadable,
+      activity: session.activity(),
+      reviewLog: reviews?.log() ?? {},
+    });
+    if (delta) post({ type: 'state', json: JSON.stringify(delta) });
     post({
       type: 'workspace',
       pages,
@@ -118,14 +127,6 @@ function report(): void {
       saveState: status.state,
       saveError: status.error,
     });
-    // the app keeps a copy of the workspace to answer its screens from
-    const delta = deltas.next({
-      state: session.getState(),
-      unreadable: session.unreadable,
-      activity: session.activity(),
-      reviewLog: reviews?.log() ?? {},
-    });
-    if (delta) post({ type: 'state', json: JSON.stringify(delta) });
   }, 16);
 }
 
