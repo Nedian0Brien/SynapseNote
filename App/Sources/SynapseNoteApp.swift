@@ -12,7 +12,13 @@ struct SynapseNoteApp: App {
         #if os(macOS)
         Window("SynapseNote", id: "main") {
             ContentView(controller: controller)
-                .onAppear { appDelegate.controller = controller }
+                .onAppear {
+                    appDelegate.controller = controller
+                    controller.preferences.applyTheme()
+                }
+                .onChange(of: controller.preferences.quickNoteFromAnyApp, initial: true) { _, on in
+                    appDelegate.quickNoteFromAnyApp(on)
+                }
         }
         .defaultSize(width: 1180, height: 780)
         .commands { PageCommands(controller: controller) }
@@ -44,6 +50,7 @@ private struct PageCommands: Commands {
             item("page.newCanvas")
             item("page.newSubpage")
             item("page.fromTemplate")
+            item("capture")
             item("tab.new")
             Divider()
             item("vault.open")
@@ -109,6 +116,7 @@ private struct PageCommands: Commands {
             item("view.sidebar")
             item("view.inspector")
             item("view.focus")
+            item("view.theme")
             Divider()
         }
         CommandMenu("Go") {
@@ -125,6 +133,12 @@ private struct PageCommands: Commands {
             item("tab.next")
             item("tab.previous")
         }
+        #if os(iOS)
+        // macOS has the settings window's own item
+        CommandGroup(replacing: .appSettings) {
+            item("settings")
+        }
+        #endif
         CommandGroup(replacing: .help) {
             item("view.shortcuts")
         }
@@ -135,6 +149,20 @@ private struct PageCommands: Commands {
 /// Saves edits still waiting before the app quits, giving up after three seconds.
 final class AppDelegate: NSObject, NSApplicationDelegate {
     weak var controller: EditorController?
+    private lazy var hotKey = GlobalHotKey {
+        QuickNoteRequests.shared.request()
+        NSApp.activate()
+        for window in NSApp.windows where window.isMiniaturized { window.deminiaturize(nil) }
+    }
+
+    /// Takes or gives back ⌥⌘M for every app.
+    func quickNoteFromAnyApp(_ on: Bool) {
+        if on {
+            if !hotKey.register() { NSLog("another app already uses ⌥⌘M, the quick note shortcut works inside SynapseNote only") }
+        } else {
+            hotKey.unregister()
+        }
+    }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard let controller else { return .terminateNow }
@@ -161,18 +189,3 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 #endif
 
-#if os(macOS)
-/// The app's settings window. Sync is its first part; theme, fonts and the rest follow Morrow's settings.
-struct SettingsView: View {
-    let controller: EditorController
-
-    var body: some View {
-        TabView {
-            Tab("Sync", systemImage: "arrow.triangle.2.circlepath") {
-                SyncSettingsView(controller: controller)
-            }
-        }
-        .frame(width: 560, height: 520)
-    }
-}
-#endif

@@ -24,6 +24,11 @@ targets:
         buildPhase: resources
         # missing in a fresh clone until the first build creates it
         optional: true
+      # shown in Settings > About > Licences
+      - path: NOTICE
+        buildPhase: resources
+      - path: LICENSES/Morrow-Apache-2.0.txt
+        buildPhase: resources
     info:
       path: App/Info.plist
       properties:
@@ -34,6 +39,10 @@ targets:
         # requests to paired devices go to their local address over http, each one encrypted by the app
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
+        # synapsenote://capture opens a quick note
+        CFBundleURLTypes:
+          - CFBundleURLName: com.synapsenote.native
+            CFBundleURLSchemes: [synapsenote]
     preBuildScripts:
       - name: Build editor bundle
         script: '"$SRCROOT/scripts/build-editor.sh"'

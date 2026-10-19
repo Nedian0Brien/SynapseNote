@@ -16,6 +16,8 @@ nonisolated struct PageInfo: Hashable, Sendable, Identifiable {
     let encrypted: Bool
     /// The day a daily note is for, yyyy-mm-dd.
     let dailyDate: String?
+    /// Morrow's cover: `gradient-1` to `gradient-12`, or the vault path of a picture.
+    let cover: String?
 
     init?(_ value: JSONValue) {
         guard let id = value["id"]?.stringValue else { return nil }
@@ -32,6 +34,7 @@ nonisolated struct PageInfo: Hashable, Sendable, Identifiable {
         favorite = value["favorite"] == .bool(true)
         encrypted = value["encrypted"] == .bool(true)
         dailyDate = value["dailyDate"]?.stringValue
+        cover = value["cover"]?.stringValue
     }
 
     /// The title as shown, Untitled when empty, as Morrow's `displayTitle`.

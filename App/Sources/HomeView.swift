@@ -1,3 +1,4 @@
+import ImageIO
 import SwiftUI
 
 /// The vault's first screen, as Morrow's `Home.tsx`: today, a few figures, recent pages, a year of writing,
@@ -46,7 +47,8 @@ struct HomeView: View {
             Text(Date.now, format: .dateTime.weekday(.wide).day().month(.wide).year())
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-            Text("\(Self.greeting(Date.now)).")
+            // morrow's home greeting, with the name from the settings
+            Text(controller.preferences.name.isEmpty ? "\(Self.greeting(Date.now))." : "\(Self.greeting(Date.now)), \(controller.preferences.name).")
                 .font(.largeTitle.weight(.semibold))
         }
     }
@@ -187,7 +189,7 @@ private struct RecentCards: View {
 
     private func card(_ page: PageInfo) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            CoverGradient.of(page.id)
+            CardCover(controller: controller, page: page)
                 .frame(height: 64)
                 .overlay(alignment: .bottomLeading) {
                     Group {
@@ -220,6 +222,47 @@ private struct RecentCards: View {
     }
 }
 
+/// A card's cover as Morrow's `PageCard` draws it: the page's own cover, a gradient or a picture, otherwise the
+/// gradient the page id picks.
+private struct CardCover: View {
+    let controller: EditorController
+    let page: PageInfo
+    @State private var image: Image?
+
+    var body: some View {
+        Group {
+            if let number = CoverGradient.number(ofCover: page.cover) {
+                Rectangle().fill(CoverGradient.gradient(number))
+            } else if page.cover != nil, let image {
+                Color.clear.overlay { image.resizable().scaledToFill() }.clipped()
+            } else {
+                Rectangle().fill(CoverGradient.of(page.id))
+            }
+        }
+        .task(id: page.cover) {
+            image = nil
+            guard let cover = page.cover, CoverGradient.number(ofCover: cover) == nil,
+                  let data = await controller.vaultFile(cover)
+            else { return }
+            image = await Task.detached { CoverPicture.decode(data) }.value
+        }
+    }
+}
+
+/// A cover picture made small enough for a card.
+nonisolated enum CoverPicture {
+    static func decode(_ data: Data, maxPixels: Int = 800) -> Image? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixels,
+        ]
+        guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
+        return Image(decorative: cgImage, scale: 1)
+    }
+}
+
 /// Morrow's twelve cover gradients, `color.css`.
 enum CoverGradient {
     static let colors: [(UInt32, UInt32)] = [
@@ -237,6 +280,12 @@ enum CoverGradient {
     /// The gradient Morrow's `cardGradient` picks for a page without a cover.
     static func of(_ pageId: String) -> LinearGradient {
         gradient(number(for: pageId))
+    }
+
+    /// The gradient a `gradient-N` cover names, nil for a picture or none.
+    static func number(ofCover cover: String?) -> Int? {
+        guard let cover, cover.hasPrefix("gradient-"), let number = Int(cover.dropFirst(9)), (1...colors.count).contains(number) else { return nil }
+        return number
     }
 
     /// `(hash * 31 + code) >>> 0` over the id, then one of twelve.

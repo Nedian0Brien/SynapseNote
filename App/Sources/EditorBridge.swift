@@ -26,6 +26,8 @@ nonisolated enum EditorEvent: Equatable, Sendable {
     case toasts([EditorToast])
     /// Morrow's automatic backup, a JSON document.
     case autoBackup(json: String)
+    /// The vault's custom CSS, when the vault opens and when it is saved.
+    case customCss(String)
 
     private struct Raw: Decodable {
         let type: String
@@ -51,6 +53,7 @@ nonisolated enum EditorEvent: Equatable, Sendable {
         let data: String?
         let toasts: [EditorToast]?
         let json: String?
+        let css: String?
     }
 
     /// Reads a posted message body. Anything that is not exactly one of the known messages gives nil.
@@ -105,6 +108,9 @@ nonisolated enum EditorEvent: Equatable, Sendable {
         case "autoBackup":
             guard let json = raw.json else { return nil }
             self = .autoBackup(json: json)
+        case "customCss":
+            guard let css = raw.css else { return nil }
+            self = .customCss(css)
         default:
             return nil
         }
@@ -128,7 +134,8 @@ nonisolated enum NewPageKind: String, Sendable {
 
 /// A message the app sends to the editor page through `window.synapse.receive`.
 nonisolated enum EditorCommand: Sendable {
-    case openVault(name: String)
+    /// `guide` puts Morrow's welcome guide into a vault opened for the first time.
+    case openVault(name: String, guide: Bool)
     /// Shows a page, or nothing; `find` is text to select once it is open.
     case show(pageId: String?, find: String?)
     case rpcResult(id: Int, result: Result<JSONValue, RPCFailure>)
@@ -138,6 +145,13 @@ nonisolated enum EditorCommand: Sendable {
     /// A Morrow `Command`, see `WorkspaceCommand`.
     case command(JSONValue)
     case theme(dark: Bool)
+    /// The appearance chosen in the settings, `AppPreferences.json`.
+    case preferences(JSONValue)
+    /// Custom CSS shown as it is typed in the settings, and saved to the vault.
+    case previewCss(String)
+    case saveCss(String)
+    /// A quick note, added to the end of today's note.
+    case capture(String)
     case scrollToHeading(index: Int)
     /// Opens the find bar of the page on screen.
     case find
@@ -174,8 +188,8 @@ nonisolated enum EditorCommand: Sendable {
 
     var json: JSONValue {
         switch self {
-        case .openVault(let name):
-            .object(["type": .string("openVault"), "name": .string(name)])
+        case .openVault(let name, let guide):
+            .object(["type": .string("openVault"), "name": .string(name), "guide": .bool(guide)])
         case .show(let pageId, let find):
             .object(["type": .string("show"), "pageId": pageId.map(JSONValue.string) ?? .null, "find": find.map(JSONValue.string) ?? .null])
         case .rpcResult(let id, .success(let value)):
@@ -192,6 +206,14 @@ nonisolated enum EditorCommand: Sendable {
             .object(["type": .string("command"), "command": command])
         case .theme(let dark):
             .object(["type": .string("theme"), "theme": .string(dark ? "dark" : "light")])
+        case .preferences(let preferences):
+            .object(["type": .string("preferences"), "preferences": preferences])
+        case .previewCss(let css):
+            .object(["type": .string("previewCss"), "css": .string(css)])
+        case .saveCss(let css):
+            .object(["type": .string("saveCss"), "css": .string(css)])
+        case .capture(let text):
+            .object(["type": .string("capture"), "text": .string(text)])
         case .scrollToHeading(let index):
             .object(["type": .string("scrollToHeading"), "index": .number(Double(index))])
         case .find:

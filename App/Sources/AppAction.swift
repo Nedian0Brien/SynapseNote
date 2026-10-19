@@ -222,16 +222,28 @@ struct AppAction: Identifiable {
         },
         AppAction("view.shortcuts", .view, "Keyboard Shortcuts", symbol: "keyboard", keywords: "keys help",
                   shortcut: KeyboardShortcut("/"), enabled: { _ in true }) { $0.showingShortcuts = true },
+        // morrow's capture; before the vault is open the sheet waits for it
+        AppAction("capture", .general, "Quick Note to Today", symbol: "square.and.pencil", keywords: "capture jot inbox quick note",
+                  shortcut: KeyboardShortcut("m", modifiers: [.command, .option]),
+                  enabled: { if case .choosing = $0.phase { false } else { true } }) { $0.requestQuickNote() },
+        AppAction("view.theme", .view, "Switch Light or Dark Theme", symbol: "circle.lefthalf.filled", keywords: "dark mode appearance",
+                  shortcut: KeyboardShortcut("l", modifiers: [.command, .shift]), enabled: { _ in true }) { $0.switchTheme() },
     ] + platformActions
 
     #if os(macOS)
     private static let platformActions = [
+        // the settings window's own menu item has ⌘,; this one is for search
+        AppAction("settings", .general, "Settings…", symbol: "gearshape", keywords: "preferences appearance theme font name",
+                  enabled: { _ in true }) { $0.showingSettings = true },
         AppAction("vault.reveal", .data, "Show Vault Folder in Finder", symbol: "folder") { $0.revealVault() },
         AppAction("data.showBackups", .data, "Show Automatic Backups in Finder", symbol: "clock.arrow.circlepath",
                   keywords: "backup folder", enabled: { _ in true }) { _ in AutoBackup.reveal() },
     ]
     #else
-    private static let platformActions: [AppAction] = []
+    private static let platformActions = [
+        AppAction("settings", .general, "Settings…", symbol: "gearshape", keywords: "preferences appearance theme font name",
+                  shortcut: KeyboardShortcut(","), enabled: { _ in true }) { $0.showingSettings = true },
+    ]
     #endif
 }
 

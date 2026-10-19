@@ -56,7 +56,10 @@ struct ContentView: View {
         #endif
         .overlay(alignment: .bottom) { ToastOverlay(controller: controller) }
         #if os(iOS)
-        .sheet(isPresented: $controller.showingSyncSettings, onDismiss: { controller.syncSettingsClosed() }) {
+        .sheet(isPresented: $controller.showingSettings, onDismiss: { controller.settingsClosed() }) {
+            SettingsView(controller: controller)
+        }
+        .sheet(isPresented: $controller.showingSyncSettings, onDismiss: { controller.settingsClosed() }) {
             NavigationStack {
                 SyncSettingsView(controller: controller)
                     .navigationTitle("Sync")
@@ -72,7 +75,13 @@ struct ContentView: View {
             controller.showingSyncSettings = false
             openSettings()
         }
+        .onChange(of: controller.showingSettings) { _, shown in
+            guard shown else { return }
+            controller.showingSettings = false
+            openSettings()
+        }
         #endif
+        .sheet(isPresented: $controller.showingQuickNote) { QuickNoteSheet(controller: controller) }
         .sheet(isPresented: Binding(get: { controller.iconPage != nil }, set: { if !$0 { controller.iconPage = nil } })) {
             if let pageId = controller.iconPage {
                 EmojiPickerView(current: controller.workspace.infos[pageId]?.icon) { icon in
@@ -92,6 +101,18 @@ struct ContentView: View {
             controller.setDarkMode(colorScheme == .dark)
         }
         .onChange(of: colorScheme) { _, scheme in controller.setDarkMode(scheme == .dark) }
+        #if os(iOS)
+        // the theme chosen in the settings; macOS sets it for the whole app in AppPreferences
+        .preferredColorScheme(controller.preferences.colorScheme)
+        #endif
+        // synapsenote://capture, from a shortcut or another app
+        .onOpenURL { url in
+            if AppLink(url) == .capture { controller.requestQuickNote() }
+        }
+        // the quick note intent and the macOS shortcut from any app
+        .onChange(of: QuickNoteRequests.shared.pending, initial: true) { _, pending in
+            if pending, QuickNoteRequests.shared.take() { controller.requestQuickNote() }
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { controller.checkForOutsideChanges() }
             else { Task { await controller.flush() } }
@@ -256,6 +277,7 @@ private struct VaultMenu: View {
             Button("New Folder on This Device", systemImage: "folder.badge.plus") { Task { await controller.createVault() } }
             Divider()
             Button("Sync…", systemImage: "arrow.triangle.2.circlepath") { controller.showingSyncSettings = true }
+            Button("Settings…", systemImage: "gearshape") { controller.showingSettings = true }
         } label: {
             Label("Vaults", systemImage: "books.vertical")
         }

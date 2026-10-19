@@ -25,6 +25,7 @@ struct EditorBridgeTests {
         #expect(EditorEvent(body: ["type": "toasts", "toasts": [["id": 2, "message": "Saved", "tone": "info", "action": "Undo"], ["id": 3, "message": "No", "tone": "error", "action": NSNull()]]])
             == .toasts([EditorToast(id: 2, message: "Saved", tone: "info", action: "Undo"), EditorToast(id: 3, message: "No", tone: "error", action: nil)]))
         #expect(EditorEvent(body: ["type": "autoBackup", "json": "{}"]) == .autoBackup(json: "{}"))
+        #expect(EditorEvent(body: ["type": "customCss", "css": "a {}"]) == .customCss("a {}"))
         #expect(EditorEvent(body: ["type": "vaultFailed", "message": "gone"]) == .vaultFailed(message: "gone"))
         #expect(EditorEvent(body: ["type": "openExternal", "url": "https://example.com"]) == .openExternal(URL(string: "https://example.com")!))
     }
@@ -45,7 +46,9 @@ struct EditorBridgeTests {
     }
 
     @Test func commandsHaveTheShapeThePageReads() {
-        #expect(EditorCommand.openVault(name: "Notes").json == .object(["type": .string("openVault"), "name": .string("Notes")]))
+        #expect(EditorCommand.openVault(name: "Notes", guide: true).json == .object(["type": .string("openVault"), "name": .string("Notes"), "guide": .bool(true)]))
+        #expect(EditorCommand.capture("milk").json == .object(["type": .string("capture"), "text": .string("milk")]))
+        #expect(EditorCommand.saveCss("a {}").json == .object(["type": .string("saveCss"), "css": .string("a {}")]))
         #expect(EditorCommand.show(pageId: nil, find: nil).json["pageId"] == .null)
         #expect(EditorCommand.show(pageId: "p", find: "milk").json["find"] == .string("milk"))
         #expect(EditorCommand.scrollToHeading(index: 2).json == .object(["type": .string("scrollToHeading"), "index": .number(2)]))

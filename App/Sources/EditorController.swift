@@ -91,6 +91,14 @@ final class EditorController: WorkspaceService {
     var showingSyncSettings = false
     /// A paired device whose vault is copied into the folder picked next.
     private(set) var copyingVaultFrom: String?
+    /// The appearance and the name chosen in the settings.
+    let preferences = AppPreferences()
+    /// The settings sheet, on iOS; macOS opens its settings window.
+    var showingSettings = false
+    /// The open vault's custom CSS as saved, nil until the editor page has read it.
+    private(set) var customCss: String?
+    /// The quick note sheet; asked for before the vault is open, it opens once it is.
+    var showingQuickNote = false
 
     @ObservationIgnored let page: WebPage
     @ObservationIgnored var openURL: (URL) -> Void = { _ in }
@@ -107,6 +115,8 @@ final class EditorController: WorkspaceService {
     @ObservationIgnored private var ownToastCount = 0
     /// A device to pull from once the vault just copied from it is open.
     @ObservationIgnored private var syncWhenOpen: String?
+    @ObservationIgnored private var quickNoteWhenOpen = false
+    @ObservationIgnored private var afterSettings: (() -> Void)?
     @ObservationIgnored private let editorRoot = Bundle.main.resourceURL!.appending(path: "Editor")
     @ObservationIgnored private let logger = Logger(subsystem: "com.synapsenote.native", category: "editor")
 
@@ -129,6 +139,10 @@ final class EditorController: WorkspaceService {
         recents = location.recents
         restoreVault()
         connectSync()
+        preferences.changed = { [weak self] in
+            guard let self else { return }
+            send(.preferences(preferences.json))
+        }
     }
 
     // MARK: sync
@@ -147,14 +161,30 @@ final class EditorController: WorkspaceService {
         #if os(iOS)
         // the folder picker opens once the sync sheet is gone, a sheet cannot show another from below it
         showingSyncSettings = false
+        showingSettings = false
         #else
         choosingFolder = true
         #endif
     }
 
-    /// The sync sheet closed; a vault copy waiting for its folder asks for it now.
-    func syncSettingsClosed() {
+    /// The settings or sync sheet closed; what was waiting for it, such as a vault copy asking for its folder,
+    /// runs now.
+    func settingsClosed() {
+        let work = afterSettings
+        afterSettings = nil
+        work?()
         if copyingVaultFrom != nil { choosingFolder = true }
+    }
+
+    /// Runs something that shows a file dialog from the settings. On iOS the settings sheet closes first: the
+    /// view below a sheet cannot show a dialog of its own.
+    func closeSettings(then work: @escaping () -> Void) {
+        #if os(iOS)
+        afterSettings = work
+        showingSettings = false
+        #else
+        work()
+        #endif
     }
 
     func cancelVaultCopy() {
@@ -277,6 +307,7 @@ final class EditorController: WorkspaceService {
         sync.vault = nil
         opened?.close()
         opened = nil
+        customCss = nil
     }
 
     private var expandedKey: String {
@@ -311,7 +342,8 @@ final class EditorController: WorkspaceService {
 
     private func openInPage() {
         guard isPageReady, let vaultName, phase == .opening else { return }
-        send(.openVault(name: vaultName))
+        // a folder about to be filled from another device never gets the welcome guide, as in morrow
+        send(.openVault(name: vaultName, guide: syncWhenOpen == nil))
     }
 
     // MARK: page
@@ -348,6 +380,55 @@ final class EditorController: WorkspaceService {
     func setDarkMode(_ dark: Bool) {
         darkMode = dark
         send(.theme(dark: dark))
+    }
+
+    /// Morrow's switch light or dark theme, from the one the window shows now.
+    func switchTheme() {
+        preferences.switchTheme(showingDark: darkMode)
+    }
+
+    // MARK: settings
+
+    func previewCss(_ css: String) {
+        send(.previewCss(css))
+    }
+
+    func saveCss(_ css: String) {
+        send(.saveCss(css))
+    }
+
+    /// Morrow's images and files summary: how many files the vault holds, their size, and how many nothing uses.
+    func filesSummary() async -> FilesSummary? {
+        guard isPageReady, phase == .ready else { return nil }
+        do {
+            let answer = try await page.callJavaScript("return await window.synapse.files()")
+            guard let text = answer as? String else { return nil }
+            return try JSONDecoder().decode(FilesSummary.self, from: Data(text.utf8))
+        } catch {
+            logger.error("files summary failed: \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
+    }
+
+    /// The open vault's folder, for the settings.
+    var vaultURL: URL? { opened?.url }
+
+    /// A file in the vault, such as a cover picture, read away from the main thread.
+    func vaultFile(_ path: String) async -> Data? {
+        guard let files = access.files else { return nil }
+        return await Task.detached { files.readBytes(path) }.value
+    }
+
+    // MARK: quick note
+
+    /// Opens the quick note sheet, at once when the vault is open and otherwise once it is.
+    func requestQuickNote() {
+        if phase == .ready { showingQuickNote = true } else { quickNoteWhenOpen = true }
+    }
+
+    /// Morrow's capture: the text goes to the end of today's note.
+    func capture(_ text: String) {
+        send(.capture(text))
     }
 
     // MARK: places and tabs
@@ -743,6 +824,7 @@ final class EditorController: WorkspaceService {
             logger.info("editor page is ready")
             isPageReady = true
             send(.theme(dark: darkMode))
+            send(.preferences(preferences.json))
             openInPage()
         case .rpc(let id, let method, let params):
             guard let rpc else {
@@ -773,6 +855,10 @@ final class EditorController: WorkspaceService {
                 if let peerId = syncWhenOpen {
                     syncWhenOpen = nil
                     Task { await sync.syncNow(peerId) }
+                }
+                if quickNoteWhenOpen {
+                    quickNoteWhenOpen = false
+                    showingQuickNote = true
                 }
             } else if let selection, before.infos[selection] != nil, !workspace.isShowable(selection) {
                 // the page on screen went to the trash or was deleted
@@ -807,6 +893,8 @@ final class EditorController: WorkspaceService {
             #endif
         case .toasts(let list):
             toasts = list
+        case .customCss(let css):
+            customCss = css
         case .autoBackup(let json):
             #if os(macOS)
             // morrow keeps automatic backups on the desktop only
