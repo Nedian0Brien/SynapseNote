@@ -30,7 +30,7 @@
 | 11b | 조회(검색·백링크·태그·작업·그래프·홈)를 Swift로, 웹 세션의 거울 상태 | 구현 (PR #13, `docs/verification/phase11b-swift-queries.md`) |
 | 11c | 쓰기 권한을 Swift 세션으로: 기록·암호화·외부 편집·저장 예약·첨부 파일 | 11c-1·11c-2로 나눔(`.intent/spec_phase11c-swift-session.md`). 데이터베이스 수식과 캔버스 표시는 웹 화면에서만 쓰여 11d로 옮김 |
 | 11c-1 | 저장소 나머지 이식(기록·암호화·외부 편집·저장 예약·첨부 파일·메타), Morrow 결과와 비교. 앱 동작은 그대로 | 구현 (PR #15, `docs/verification/phase11c1-storage-port.md`) |
-| 11c-2 | 전환: 명령을 양쪽에서 적용하고 파일은 Swift만 씀, 외부 편집은 Swift가 먼저 읽음 | |
+| 11c-2 | 전환: 명령을 양쪽에서 적용하고 파일은 Swift만 씀, 외부 편집은 Swift가 먼저 읽음 | 구현 (PR #16, `docs/verification/phase11c2-authority-flip.md`) |
 | 11d | 네이티브 편집기와 데이터베이스·캔버스 화면(수식 포함) | |
 | 11e | 웹 편집기·번들·node 빌드 제거 | |
 
