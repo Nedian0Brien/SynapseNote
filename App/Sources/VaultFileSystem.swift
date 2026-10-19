@@ -355,7 +355,7 @@ nonisolated final class VaultFileSystem: @unchecked Sendable {
             let entry = Entry(url: url)
             if !entry.exists {
                 let page = VaultPaths.isPage(relative)
-                changes.append(Change(path: relative, text: nil, mtime: Date().timeIntervalSince1970 * 1000, birthtime: 0,
+                changes.append(Change(path: relative, text: nil, mtime: JSEnvironment.now(), birthtime: 0,
                                       dir: !page, other: !page))
             } else if entry.isDirectory {
                 changes.append(contentsOf: describeFolder(url, depth: 0))

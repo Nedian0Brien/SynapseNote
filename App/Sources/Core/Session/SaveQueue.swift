@@ -36,7 +36,7 @@ nonisolated final class SaveQueue {
     struct Options {
         var delay = 300.0
         var maxRetry = 30_000.0
-        var now: () -> Double = { Date().timeIntervalSince1970 * 1000 }
+        var now: () -> Double = JSEnvironment.now
         /// versions to store alongside the documents being written
         var snapshotsFor: ([String], WorkspaceState) -> [Snapshot] = { _, _ in [] }
         var onSnapshotsWritten: ([Snapshot]) -> Void = { _ in }

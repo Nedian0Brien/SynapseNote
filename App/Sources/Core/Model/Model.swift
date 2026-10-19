@@ -4,6 +4,9 @@ import Foundation
 /// and date titles follow these. The app uses the system's, as its web view does; tests fix them to the
 /// fixtures' (en-US, UTC).
 nonisolated enum JSEnvironment {
+    /// `Date.now()`: whole milliseconds since 1970, as JavaScript gives them
+    static func now() -> Double { (Date().timeIntervalSince1970 * 1000).rounded(.down) }
+
     nonisolated(unsafe) static var locale = Locale.current
     nonisolated(unsafe) static var timeZone = TimeZone.current
 

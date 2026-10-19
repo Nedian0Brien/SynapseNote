@@ -45,7 +45,7 @@ nonisolated final class CoreSession {
     /// `WorkspaceSession.open` on a scanned vault. The timer runs the queue's delayed saves; without one, nothing
     /// is saved until `flush`.
     static func open(_ scan: VaultLoad.Scan, writer: VaultWriter, timer: SaveTimer = ManualTimer(),
-                     now: @escaping () -> Double = { Date().timeIntervalSince1970 * 1000 },
+                     now: @escaping () -> Double = JSEnvironment.now,
                      newSnapshotId: @escaping () -> String = { UUID().uuidString.lowercased() }) -> CoreSession {
         CoreSession(writer: writer, opened: writer.load(scan), timer: timer, now: now, newSnapshotId: newSnapshotId)
     }

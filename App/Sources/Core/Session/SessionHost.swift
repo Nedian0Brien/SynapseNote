@@ -214,7 +214,7 @@ nonisolated final class SessionHost: @unchecked Sendable {
         guard let value = try? JSJSON.parse(json), let snapshot = Self.snapshot(value) else {
             return JSJSON.stringify(["ok": false, "error": "That version could not be read."])
         }
-        let at = Date().timeIntervalSince1970 * 1000
+        let at = JSEnvironment.now()
         switch session.restoreSnapshot(snapshot, at: at) {
         case .success: return JSJSON.stringify(["ok": true, "now": .number(at)])
         case .failure(let error): return JSJSON.stringify(["ok": false, "error": .string(error.message)])

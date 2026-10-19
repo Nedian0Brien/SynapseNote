@@ -86,7 +86,7 @@ nonisolated final class VaultWriter {
     /// `crypto.getRandomValues`: salts and nonces of encrypted pages
     let random: (Int) -> [UInt8]
 
-    init(bridge: VaultBridge, newId: @escaping () -> String, now: @escaping () -> Double = { Date().timeIntervalSince1970 * 1000 },
+    init(bridge: VaultBridge, newId: @escaping () -> String, now: @escaping () -> Double = JSEnvironment.now,
          random: @escaping (Int) -> [UInt8] = VaultWriter.systemRandom) {
         self.bridge = bridge
         self.newId = newId
