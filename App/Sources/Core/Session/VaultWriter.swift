@@ -19,6 +19,8 @@ nonisolated struct WriteBatch: Sendable {
     var pages: [PageMeta] = []
     var docs: [(id: String, doc: DocNode)] = []
     var removed: [String] = []
+    /// versions of pages to keep in page history with this save
+    var snapshots: [Snapshot] = []
     var state: WorkspaceState?
 }
 
