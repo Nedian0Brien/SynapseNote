@@ -258,11 +258,16 @@ nonisolated final class SyncDiscovery: @unchecked Sendable {
         let port = message["port"]?.doubleValue.map { UInt16(clamping: Int($0)) } ?? 47610
         record(SyncSighting(
             id: id,
-            address: String(cString: text),
+            address: Self.text(text),
             port: port,
             at: Date(),
             pairingName: message["pairing"]?.stringValue.map { String($0.prefix(60)) }
         ))
+    }
+
+    /// The text inet_ntop wrote, up to its null terminator.
+    static func text(_ characters: [CChar]) -> String {
+        String(decoding: characters.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self)
     }
 
     /// 255.255.255.255 and the broadcast address of every IPv4 network this Mac is on, as Morrow's.
@@ -281,7 +286,7 @@ nonisolated final class SyncDiscovery: @unchecked Sendable {
             var broadcast = in_addr(s_addr: ip | ~netmask)
             var text = [CChar](repeating: 0, count: Int(INET_ADDRSTRLEN))
             inet_ntop(AF_INET, &broadcast, &text, socklen_t(INET_ADDRSTRLEN))
-            result.insert(String(cString: text))
+            result.insert(Self.text(text))
         }
         return Array(result)
     }

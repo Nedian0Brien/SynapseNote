@@ -172,9 +172,16 @@ function thirdPartyLicenses(): Plugin {
   };
 }
 
+// the app's version, kept once in project.yml as MARKETING_VERSION
+function marketingVersion(): string {
+  const match = /MARKETING_VERSION:\s*"([^"]+)"/.exec(readFileSync(path.join(here, '../project.yml'), 'utf8'));
+  if (!match) throw new Error('project.yml has no MARKETING_VERSION');
+  return match[1]!;
+}
+
 export default defineConfig({
   plugins: [hostModules(), react(), emojiImages(), emojiIndex(), thirdPartyLicenses()],
-  define: { __APP_VERSION__: JSON.stringify('0.1.0') },
+  define: { __APP_VERSION__: JSON.stringify(marketingVersion()) },
   // relative paths, the app serves the bundle from its own url scheme
   base: './',
   build: {

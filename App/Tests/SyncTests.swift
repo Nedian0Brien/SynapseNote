@@ -318,3 +318,13 @@ struct SyncLoopbackTests {
         #expect(closed.error == "This computer is not waiting to pair.")
     }
 }
+
+#if os(macOS)
+struct SyncDiscoveryTextTests {
+    @Test func readsAddressesUpToTheTerminator() {
+        let written: [CChar] = Array("192.168.1.255".utf8CString) + [0, 0, 0]
+        #expect(SyncDiscovery.text(written) == "192.168.1.255")
+        #expect(SyncDiscovery.text([0, 65]) == "")
+    }
+}
+#endif

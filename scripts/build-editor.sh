@@ -24,7 +24,7 @@ if [ ! -d "$WEB/node_modules" ]; then
 fi
 
 # rebuild only when a source file is newer than the last build
-if [ -f "$STAMP" ] && [ -z "$(find "$WEB/src" "$WEB/scripts" "$WEB/index.html" "$WEB/vite.config.ts" "$WEB/package-lock.json" "$WEB/vendor/morrow/src" -newer "$STAMP" -print -quit)" ]; then
+if [ -f "$STAMP" ] && [ -z "$(find "$WEB/src" "$WEB/scripts" "$WEB/index.html" "$WEB/vite.config.ts" "$WEB/sampleRenames.ts" "$ROOT/project.yml" "$WEB/package-lock.json" "$WEB/vendor/morrow/src" -newer "$STAMP" -print -quit)" ]; then
   echo "editor bundle is up to date"
   exit 0
 fi

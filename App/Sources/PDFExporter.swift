@@ -138,8 +138,13 @@ final class PDFExporter: NSObject, WKNavigationDelegate {
     }
     #else
     private func print(_ webView: WKWebView) async throws -> Data {
-        // the formatter lays the page out only while the view is in a window; this one is never shown
-        let window = UIWindow(frame: webView.frame)
+        // the formatter lays the page out only while the view is in a window; this one, in the app's scene,
+        // is never shown
+        guard let scene = UIApplication.shared.connectedScenes.lazy.compactMap({ $0 as? UIWindowScene }).first else {
+            throw Failure.notLoaded
+        }
+        let window = UIWindow(windowScene: scene)
+        window.frame = webView.frame
         window.addSubview(webView)
         defer { webView.removeFromSuperview() }
         let renderer = UIPrintPageRenderer()

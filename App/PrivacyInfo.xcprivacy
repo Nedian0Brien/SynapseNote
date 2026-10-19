@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  What SynapseNote reads and why, for the App Store. Reason codes from
+  https://developer.apple.com/documentation/bundleresources/app-privacy-configuration/nsprivacyaccessedapitypes/nsprivacyaccessedapitypereasons
+  The app has no account, no analytics and no tracking; nothing it reads leaves the device except the
+  files sync sends, encrypted, to the person's own paired devices.
+-->
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<!-- creation and modification dates of vault files (VaultFileSystem, VaultWatcher, SyncVault) -->
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<!-- the vault in the app's own documents folder -->
+				<string>C617.1</string>
+				<!-- a vault folder the person picked -->
+				<string>3B52.1</string>
+				<!-- a page's last change is its file's date, shown as "edited 5 minutes ago"; sync sends hashes, not dates -->
+				<string>DDA9.1</string>
+			</array>
+		</dict>
+		<dict>
+			<!-- the app's own settings, recent vaults, open tabs and recent emoji -->
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>
