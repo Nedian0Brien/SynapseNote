@@ -9,7 +9,21 @@ import { stringify } from 'yaml';
 import path from 'node:path';
 
 const FIXED_NOW = Date.UTC(2026, 9, 19, 9, 30, 0);
-Date.now = () => FIXED_NOW;
+// new Date() as well as Date.now(), the vault repository dates its activity count with new Date()
+const RealDate = Date;
+class FixedDate extends RealDate {
+  constructor(...args: unknown[]) {
+    if (args.length === 0) super(FIXED_NOW);
+    else super(...(args as [string | number]));
+  }
+  static override now(): number {
+    return FIXED_NOW;
+  }
+}
+globalThis.Date = FixedDate as DateConstructor;
+// page history snapshots take random ids
+let snapshotIds = 0;
+globalThis.crypto.randomUUID = () => `00000000-0000-4000-8000-${String(++snapshotIds).padStart(12, '0')}` as ReturnType<Crypto['randomUUID']>;
 
 import { markdownToDoc } from '../vendor/morrow/src/core/markdown/parse';
 import { docToMarkdown } from '../vendor/morrow/src/core/markdown/serialize';
@@ -25,6 +39,8 @@ import { sampleCommands } from '../vendor/morrow/src/core/sample';
 import { MemoryVault } from '../vendor/morrow/src/storage/memoryVault';
 import { WorkspaceSession } from '../vendor/morrow/src/storage/session';
 import { VaultRepository } from '../vendor/morrow/src/storage/vaultRepository';
+import type { Command } from '../vendor/morrow/src/core/commands';
+import type { VaultOp } from '../vendor/morrow/src/core/vault/plan';
 
 // the fixtures folder is given on the command line, the script runs from a bundle elsewhere
 const fixtures = process.argv[2] ?? '';
@@ -307,6 +323,153 @@ function rendered(files: Record<string, string>): Record<string, string | null> 
   return result;
 }
 
+// the file operations morrow's session sends to the vault when it saves, page history left out (11c)
+function recordOps(vault: MemoryVault): () => VaultOp[] {
+  let log: VaultOp[] = [];
+  const apply = vault.apply.bind(vault);
+  vault.apply = async (ops: VaultOp[]) => {
+    log.push(...ops.filter((op) => !('path' in op && op.path.startsWith('.morrow/history/'))));
+    return apply(ops);
+  };
+  return () => {
+    const ops = log;
+    log = [];
+    return ops;
+  };
+}
+
+// the guide vault made the way the app makes it, then edited step by step, each step saved
+async function sessionSteps(): Promise<unknown> {
+  const vault = new MemoryVault();
+  const takeOps = recordOps(vault);
+  const opened = await WorkspaceSession.open(new VaultRepository(vault, counter('g')), { delayMs: 0 });
+  if (!opened.ok) throw new Error(opened.error);
+  const session = opened.value;
+  const commands = sampleCommands(counter('s'), FIXED_NOW);
+  const seeded = session.executeAll(commands);
+  if (!seeded.ok) throw new Error(seeded.error);
+  await session.flush();
+  const steps: unknown[] = [{ name: 'guide', commands, all: true, results: [{ ok: true }], ops: takeOps() }];
+
+  const state = () => session.getState();
+  const byTitle = (title: string) => {
+    const page = Object.values(state().pages).find((candidate) => candidate.title === title);
+    if (!page) throw new Error(`No page ${title}`);
+    return page.id;
+  };
+  let clock = FIXED_NOW;
+  const now = () => (clock += 60_000);
+  const welcome = byTitle('Welcome to Morrow');
+  const writing = byTitle('Writing and formatting');
+  const reading = byTitle('Reading list');
+  const props = state().pages[reading]!.database!.properties;
+  const plan: Array<{ name: string; commands: () => Command[] }> = [
+    { name: 'rename', commands: () => [{ type: 'page.rename', id: welcome, title: 'Welcome, renamed', now: now() }] },
+    {
+      name: 'create',
+      commands: () => [
+        {
+          type: 'page.create',
+          id: 'n1',
+          parentId: welcome,
+          now: now(),
+          title: 'A new page',
+          doc: markdownToDoc('Links to [[Middlemarch]] and [[Ideas board]].\n\n- [ ] first\n- [x] second\n\n![[pic.png]]'),
+        },
+        { type: 'page.setTags', id: 'n1', tags: ['alpha', '#beta', 'alpha', '12'], now: now() },
+        { type: 'page.setCover', id: 'n1', cover: 'gradient-3', now: now() },
+        { type: 'page.setIcon', id: 'n1', icon: '🧪', now: now() },
+      ],
+    },
+    {
+      name: 'move and duplicate',
+      commands: () => [
+        { type: 'page.move', id: 'n1', parentId: null, index: 0 },
+        { type: 'page.duplicate', id: byTitle('Canvas and drawing'), newId: 'n2', now: now() },
+      ],
+    },
+    {
+      name: 'edit',
+      commands: () => [
+        {
+          type: 'page.setDoc',
+          id: writing,
+          doc: markdownToDoc(`${docToMarkdown(state().docs[writing]!)}\nAn appended line with **bold** text.\n`),
+          now: now(),
+        },
+        { type: 'task.setChecked', pageId: 'n1', index: 0, checked: true, now: now() },
+      ],
+    },
+    {
+      name: 'database',
+      commands: () => [
+        {
+          type: 'page.setProperties',
+          id: byTitle('Middlemarch'),
+          values: Object.fromEntries(props.filter((prop) => prop.type === 'text' || prop.type === 'number').map((prop) => [prop.id, prop.type === 'number' ? 3 : 'Edited'])),
+          now: now(),
+        },
+        {
+          type: 'database.set',
+          id: reading,
+          database: { ...state().pages[reading]!.database!, properties: [...props, { id: 'p-notes', name: 'Notes', type: 'text', options: [] }] },
+          now: now(),
+        },
+        { type: 'page.setProperties', id: byTitle('Piranesi'), values: { 'p-notes': 'A house of tides' }, now: now() },
+        { type: 'page.setFavorite', id: byTitle('Piranesi'), favorite: true },
+        { type: 'page.markOpened', id: byTitle('Piranesi'), now: now() },
+      ],
+    },
+    {
+      name: 'trash',
+      commands: () => [
+        { type: 'page.trash', id: byTitle('Piranesi'), now: now() },
+        { type: 'page.trash', id: byTitle('Flashcards and review'), now: now() },
+        { type: 'page.restore', id: byTitle('Piranesi') },
+      ],
+    },
+    {
+      name: 'delete',
+      commands: () => [
+        { type: 'page.deleteForever', id: byTitle('Flashcards and review') },
+        { type: 'page.trash', id: byTitle('Make it yours'), now: now() },
+        { type: 'trash.empty' },
+      ],
+    },
+    {
+      name: 'names',
+      commands: () => [
+        { type: 'page.rename', id: byTitle('Links, tags and the graph'), title: 'Links: 2/3 "quoted" ?', now: now() },
+        { type: 'page.setKind', id: byTitle('Privacy, history and encryption'), kind: 'templates', now: now() },
+        { type: 'page.rename', id: 'n2', title: 'Canvas and drawing', now: now() },
+      ],
+    },
+    {
+      name: 'failures',
+      commands: () => [
+        { type: 'page.rename', id: 'missing', title: 'x', now: now() },
+        { type: 'page.move', id: welcome, parentId: 'n1', index: 0 },
+        { type: 'page.setCover', id: 'n1', cover: 'https://example.org/a.png', now: now() },
+        { type: 'page.setIcon', id: 'n1', icon: 'far too long for an icon', now: now() },
+      ],
+    },
+  ];
+  for (const step of plan) {
+    const list = step.commands();
+    const results = list.map((command) => {
+      const result = session.execute(command);
+      return result.ok ? { ok: true } : { ok: false, error: result.error };
+    });
+    await session.flush();
+    steps.push({ name: step.name, commands: list, results, ops: takeOps() });
+  }
+  await session.close();
+  const files: Record<string, string> = {};
+  for (const [file, data] of vault.files)
+    if (typeof data === 'string' && !file.startsWith('.morrow/history/')) files[file] = data;
+  return { steps, files };
+}
+
 async function guideVault(): Promise<Record<string, string>> {
   const vault = new MemoryVault();
   const opened = await WorkspaceSession.open(new VaultRepository(vault, counter('g')), { delayMs: 0 });
@@ -413,6 +576,8 @@ async function main(): Promise<void> {
     };
   }
   write('collation.json', collation, 0);
+
+  write('session.json', await sessionSteps(), 0);
 
   const guide = await guideVault();
   const vaults: Record<string, Record<string, string>> = { guide, obsidian: OBSIDIAN, normalization: NORMALIZATION };
