@@ -11,8 +11,13 @@ nonisolated enum JSJSON {
 
     /// `JSON.stringify(value, null, indent)`; `indent` 0 writes everything on one line.
     static func stringify(_ value: JSValue, indent: Int = 0) -> String {
+        stringify(value, gap: String(repeating: " ", count: min(indent, 10)))
+    }
+
+    /// `JSON.stringify(value, null, gap)` with a string gap such as `'\t'` (the first ten characters are used).
+    static func stringify(_ value: JSValue, gap: String) -> String {
         var out = ""
-        write(value, indent: String(repeating: " ", count: min(indent, 10)), level: "", into: &out)
+        write(value, indent: String(gap.prefix(10)), level: "", into: &out)
         return out
     }
 
@@ -264,7 +269,7 @@ nonisolated enum JSNumber {
     /// JavaScript's `Number(text)` for the strings Morrow converts: decimal, empty or blank text is 0, anything
     /// else that is not a number is NaN.
     static func parse(_ text: String) -> Double {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = JSText.trim(text)
         if trimmed.isEmpty { return 0 }
         if trimmed == "Infinity" || trimmed == "+Infinity" { return .infinity }
         if trimmed == "-Infinity" { return -.infinity }

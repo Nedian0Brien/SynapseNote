@@ -155,6 +155,33 @@ nonisolated enum Doc {
         return date.formatted(.dateTime.year().month(.abbreviated).day())
     }
 
+    /// `validateDoc`: checks structure and size only, unknown node types are allowed and preserved. The error
+    /// message, nil when the document is valid.
+    static func validateDoc(_ value: JSValue) -> String? {
+        guard case .object(let root) = value, root["type"] == .string("doc") else { return "Document must be an object of type \"doc\"." }
+        var count = 0
+        var stack: [(node: JSValue, depth: Int)] = [(value, 0)]
+        while let (node, depth) = stack.popLast() {
+            if depth > Model.maxDocDepth { return "Document is nested too deeply." }
+            count += 1
+            if count > Model.maxDocNodes { return "Document is too large." }
+            guard case .object(let object) = node, case .string(let type) = object["type"], !type.isEmpty else {
+                return "Document contains an invalid node."
+            }
+            if let text = object["text"], text.string == nil { return "Text node has invalid text." }
+            if let attrs = object["attrs"], attrs.object == nil { return "Node has invalid attributes." }
+            if let marks = object["marks"] {
+                guard case .array(let list) = marks else { return "Node has invalid marks." }
+                for mark in list where mark.object?["type"]?.string == nil { return "Node has an invalid mark." }
+            }
+            if let content = object["content"] {
+                guard case .array(let children) = content else { return "Node has invalid content." }
+                for child in children { stack.append((child, depth + 1)) }
+            }
+        }
+        return nil
+    }
+
     /// `inlineText`
     static func inlineText(_ node: DocNode) -> String {
         switch node.type {
