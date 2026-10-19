@@ -19,6 +19,23 @@ struct MarkdownParseTests {
         }
     }
 
+    @Test func fuzzedDocumentsMatchMorrows() throws {
+        let cases = try #require(CoreFixtures.load("markdown-fuzz").array)
+        #expect(cases.count == 1500)
+        var failures = 0
+        for (index, item) in cases.enumerated() {
+            let body = try #require(item["body"]?.string)
+            let doc = JSValue.object(MarkdownParse.markdownToDoc(body))
+            if doc != item["doc"] {
+                failures += 1
+                if failures <= 5 {
+                    Issue.record("case \(index): \(CoreFixtures.describe(.string(body)))\nswift:\n\(CoreFixtures.describe(doc))\nmorrow:\n\(CoreFixtures.describe(item["doc"] ?? .null))")
+                }
+            }
+        }
+        #expect(failures == 0)
+    }
+
     @Test func linksAreNormalizedAsMarkdownItDoes() {
         // markdown-it 15.0.2 normalizeLink and normalizeLinkText, values from node
         #expect(JSText.string(MarkdownURL.normalizeLink("https://example.org/a b?q=1#x y".units)) == "https://example.org/a%20b?q=1#x%20y")

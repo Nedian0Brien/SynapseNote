@@ -43,8 +43,58 @@ function plain(value: unknown): unknown {
   return value;
 }
 
-function write(name: string, value: unknown): void {
-  writeFileSync(path.join(out, name), `${JSON.stringify(plain(value), null, 1)}\n`);
+function write(name: string, value: unknown, indent = 1): void {
+  writeFileSync(path.join(out, name), `${JSON.stringify(plain(value), null, indent)}\n`);
+}
+
+// mulberry32, a small seeded generator so the fuzz inputs are the same on every run
+function random(seed: number): () => number {
+  let state = seed >>> 0;
+  return () => {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const LINE_STARTS = [
+  '', '', '', '', '# ', '## ', '###### ', '####### ', '> ', '>> ', '> [!note] ', '> [!WARNING]- Title ', '> [!tip]+',
+  '- ', '* ', '+ ', '1. ', '2) ', '10. ', '- [ ] ', '- [x] ', '* [X] ', '  - ', '    ', '\t', '```', '```ts', '~~~',
+  '$$', '| ', '---', '***', '___', '===', '<div>', '<details><summary>Sum &amp; <b>mary</b></summary>', '</details>',
+  '<aside>', '</aside>', '<!-- toc -->', '<div data-columns>', '<div data-column>', '</div>', '[ref]: /url "title"',
+  '[Ref Two]: <https://example.org/a b> \'t\'', '<script>', '<!--', '-->', '<pre>', '</pre>', '<?php ', '<![CDATA[',
+  '<!DOCTYPE html>', '<custom-tag attr="1">',
+];
+const PIECES = [
+  'word', 'word', 'two words', 'text', 'Ünïcödé', '다람쥐 헌 쳇바퀴', '😀', '🧪x', ' ', ' ', '  ', '   ', '\t',
+  '\n', '\n', '\n\n', '\r\n', '*', '**', '***', '_', '__', '~', '~~', '=', '==', '`', '``', '```', '$', '$$', '$5', '\\',
+  '\\*', '\\|', '\\[', '\\\n', '[', ']', '(', ')', '](', '](/path)', '](https://example.org "t")', '][ref]', '[ref]',
+  '[[', ']]', '[[Page]]', '[[Folder/Page#Head|Alias]]', '[[2026-10-17]]', '![[pic.png]]', '![', '![alt](img.png)',
+  '<', '>', '<u>', '</u>', '<span style="color: #d44c47">', '<span style="background-color:#fbecdd;">', '</span>',
+  '<mark>', '<mark style="background: #e7f3f8">', '</mark>', '<br>', '<br/>', '<b>', '</b>', '<a href="x">', '</a>',
+  '&amp;', '&#x41;', '&#65;', '&#0;', '&#x110000;', '&nbsp;', '&bogus;', '&copy', '&Agrave;', 'https://example.org/a b',
+  '<https://x.y/z?q=1>', '<a@b.co>', '<javascript:alert(1)>', 'http://例え.jp', '|', '!', '#', '[x]', '[ ]', '|alias',
+  '#anchor', '-', '+', '1.', ':', '"', "'", '{', '}', '^', '@', '%', '&',
+];
+
+function fuzzInputs(count: number): string[] {
+  const next = random(20261019);
+  const pick = <T>(items: readonly T[]): T => items[Math.floor(next() * items.length)]!;
+  const inputs: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const lines: string[] = [];
+    const lineCount = 1 + Math.floor(next() * 8);
+    for (let l = 0; l < lineCount; l++) {
+      let line = pick(LINE_STARTS);
+      const pieces = Math.floor(next() * 12);
+      for (let p = 0; p < pieces; p++) line += pick(PIECES);
+      lines.push(line);
+    }
+    inputs.push(lines.join('\n'));
+  }
+  return inputs;
 }
 
 function counter(prefix: string): () => string {
@@ -217,6 +267,16 @@ async function main(): Promise<void> {
         page: { title: page.title, icon: page.icon, cover: page.cover, kind: page.kind, tags: page.tags, database: page.database, error: page.error, keyOrder: page.source.keyOrder, aliases: page.source.aliases },
       };
     }),
+  );
+
+  // many short documents made of the pieces markdown rules disagree about, from a fixed seed
+  write(
+    'markdown-fuzz.json',
+    fuzzInputs(1500).map((body) => {
+      const doc = markdownToDoc(body);
+      return { body, doc, markdown: docToMarkdown(doc) };
+    }),
+    0,
   );
 
   const guide = await guideVault();
