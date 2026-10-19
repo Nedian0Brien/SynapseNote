@@ -93,6 +93,24 @@ nonisolated enum JSText {
         return from < to ? Array(units[from..<to]) : []
     }
 
+    /// `text.split(char)` on one code unit.
+    static func split(_ text: String, on unit: UInt16) -> [String] {
+        text.utf16.split(separator: unit, omittingEmptySubsequences: false).map { string($0) }
+    }
+
+    /// `text.replace(/[...]/g, '')` for a set of code units.
+    static func removing(_ text: String, _ removed: Set<UInt16>) -> String {
+        string(text.utf16.filter { !removed.contains($0) })
+    }
+
+    /// `text.replace(/c/g, replacement)` for one code unit.
+    static func replacing(_ text: String, _ unit: UInt16, with replacement: String) -> String {
+        let insert = replacement.units
+        var out: [UInt16] = []
+        for each in text.utf16 { if each == unit { out += insert } else { out.append(each) } }
+        return string(out)
+    }
+
     /// ASCII letters in lower case, every other unit as it is: what a pattern written in lower case with the
     /// `i` flag (and no `u` flag) matches against, for patterns whose letters are all ASCII.
     static func asciiLower(_ units: [UInt16]) -> [UInt16] {
