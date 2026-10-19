@@ -36,7 +36,8 @@ import {
 import { computeFormula } from '../vendor/morrow/src/core/formula';
 import type { FormulaValue } from '../vendor/morrow/src/core/formula';
 import { newPageMeta } from '../vendor/morrow/src/core/model';
-import type { DatabaseDef, FilterOp, PageMeta, PropDef, PropValue } from '../vendor/morrow/src/core/model';
+import type { DatabaseDef, FilterOp, PageMeta, PropDef, PropValue, WorkspaceState } from '../vendor/morrow/src/core/model';
+import { diffCases, importerCases, portabilityCases, richState, siteCases } from './screen-fixtures-export';
 
 const fixtures = process.argv[2] ?? '';
 if (!fixtures) throw new Error('Give the fixtures folder.');
@@ -294,7 +295,13 @@ async function main(): Promise<void> {
   mkdirSync(out, { recursive: true });
   write('formula.json', formulaCases(), 1);
   write('database.json', databaseCases());
-  console.log(`wrote formula.json and database.json to ${path.relative(process.cwd(), out)}`);
+  write('diff.json', diffCases(), 1);
+  const state = richState(FIXED_NOW);
+  const saved = (value: WorkspaceState) => ({ pages: Object.values(value.pages), docs: value.docs });
+  write('site.json', { state: saved(state), ...(siteCases(state) as object) });
+  write('portability.json', { state: saved(state), ...(portabilityCases(state, FIXED_NOW) as object) });
+  write('importer.json', { state: saved(state), ...(importerCases(state, FIXED_NOW) as object) });
+  console.log(`wrote the 11d-1 fixtures to ${path.relative(process.cwd(), out)}`);
 }
 
 await main();

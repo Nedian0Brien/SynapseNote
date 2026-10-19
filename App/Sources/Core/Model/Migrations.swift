@@ -115,4 +115,51 @@ nonisolated enum Migrations {
         page.encrypted = raw["encrypted"] == .bool(true)
         return page
     }
+
+    struct Loaded {
+        var pages: [PageMeta]
+        var docs: JSRecord<DocNode>
+        /// records that could not be read, reported to the user and left untouched in storage
+        var problems: [String]
+        /// pages whose stored content failed validation, opened read only so nothing overwrites it
+        var unreadable: [String]
+    }
+
+    /// `migrate`: versions 1 and 2 only added fields, which normalizePage fills
+    static func migrate(_ version: Double, pages: [JSValue], docs: JSObject) -> Result<(pages: [JSValue], docs: JSObject), CommandFailure> {
+        guard version.isFinite, version == version.rounded(.towardZero), version >= 1 else {
+            return .failure(CommandFailure(message: "The data has an unknown format version."))
+        }
+        if version > Double(Model.schemaVersion) {
+            let text = JSNumber.string(version)
+            return .failure(CommandFailure(message: "This data was written by a newer version of SynapseNote (format \(text)). Please update SynapseNote."))
+        }
+        return .success((pages, docs))
+    }
+
+    /// `readWorkspace`: every record is checked on its own so one bad record never blocks the rest
+    static func readWorkspace(_ version: Double, pages raw: [JSValue], docs rawDocs: JSObject) -> Result<Loaded, CommandFailure> {
+        switch migrate(version, pages: raw, docs: rawDocs) {
+        case .failure(let error): return .failure(error)
+        case .success(let migrated):
+            var loaded = Loaded(pages: [], docs: JSRecord(), problems: [], unreadable: [])
+            var seen = JSSet()
+            for record in migrated.pages {
+                guard let page = normalizePage(record) else {
+                    loaded.problems.append("A page record could not be read and was skipped.")
+                    continue
+                }
+                if !seen.insert(page.id) { continue }
+                loaded.pages.append(page)
+                guard let doc = migrated.docs[page.id] else { continue }
+                if let error = Doc.validateDoc(doc) {
+                    loaded.unreadable.append(page.id)
+                    loaded.problems.append("The content of \"\(page.title.isEmpty ? "Untitled" : page.title)\" could not be read: \(error)")
+                } else if case .object(let node) = doc {
+                    loaded.docs[page.id] = node
+                }
+            }
+            return .success(loaded)
+        }
+    }
 }

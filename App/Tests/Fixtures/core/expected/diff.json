@@ -1,0 +1,350 @@
+[
+ {
+  "before": "",
+  "after": "",
+  "lines": [
+   {
+    "kind": "same",
+    "text": ""
+   }
+  ]
+ },
+ {
+  "before": "same\ntext",
+  "after": "same\ntext",
+  "lines": [
+   {
+    "kind": "same",
+    "text": "same"
+   },
+   {
+    "kind": "same",
+    "text": "text"
+   }
+  ]
+ },
+ {
+  "before": "a\nb\nc",
+  "after": "a\nB\nc",
+  "lines": [
+   {
+    "kind": "same",
+    "text": "a"
+   },
+   {
+    "kind": "removed",
+    "text": "b"
+   },
+   {
+    "kind": "added",
+    "text": "B"
+   },
+   {
+    "kind": "same",
+    "text": "c"
+   }
+  ]
+ },
+ {
+  "before": "a\nb\nc",
+  "after": "a\nc",
+  "lines": [
+   {
+    "kind": "same",
+    "text": "a"
+   },
+   {
+    "kind": "removed",
+    "text": "b"
+   },
+   {
+    "kind": "same",
+    "text": "c"
+   }
+  ]
+ },
+ {
+  "before": "a\nc",
+  "after": "a\nb\nc",
+  "lines": [
+   {
+    "kind": "same",
+    "text": "a"
+   },
+   {
+    "kind": "added",
+    "text": "b"
+   },
+   {
+    "kind": "same",
+    "text": "c"
+   }
+  ]
+ },
+ {
+  "before": "one\ntwo\nthree",
+  "after": "zero\none\nthree\nfour",
+  "lines": [
+   {
+    "kind": "added",
+    "text": "zero"
+   },
+   {
+    "kind": "same",
+    "text": "one"
+   },
+   {
+    "kind": "removed",
+    "text": "two"
+   },
+   {
+    "kind": "same",
+    "text": "three"
+   },
+   {
+    "kind": "added",
+    "text": "four"
+   }
+  ]
+ },
+ {
+  "before": "x\ny\nx\ny",
+  "after": "y\nx\ny\nx",
+  "lines": [
+   {
+    "kind": "removed",
+    "text": "x"
+   },
+   {
+    "kind": "same",
+    "text": "y"
+   },
+   {
+    "kind": "same",
+    "text": "x"
+   },
+   {
+    "kind": "same",
+    "text": "y"
+   },
+   {
+    "kind": "added",
+    "text": "x"
+   }
+  ]
+ },
+ {
+  "before": "line 0\nline 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8\nline 9\nline 10\nline 11\nline 12\nline 13\nline 14\nline 15\nline 16\nline 17\nline 18\nline 19\nline 20\nline 21\nline 22\nline 23\nline 24\nline 25\nline 26\nline 27\nline 28\nline 29\nline 30\nline 31\nline 32\nline 33\nline 34\nline 35\nline 36\nline 37\nline 38\nline 39",
+  "after": "line 0\nline 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline seven\nline 8\nline 9\nline 10\nline 11\nline 12\nline 13\nline 14\nline 15\nline 16\nline 17\nline 18\nline 19\nline 20\nline 21\nline 22\nline 23\nline 24\nline 25\nline 26\nline 27\nline 28\nline 29\n\nline 31\nline 32\nline 33\nline 34\nline 35\nline 36\nline 37\nline 38\nline 39\nend",
+  "lines": [
+   {
+    "kind": "same",
+    "text": "line 0"
+   },
+   {
+    "kind": "same",
+    "text": "line 1"
+   },
+   {
+    "kind": "same",
+    "text": "line 2"
+   },
+   {
+    "kind": "same",
+    "text": "line 3"
+   },
+   {
+    "kind": "same",
+    "text": "line 4"
+   },
+   {
+    "kind": "same",
+    "text": "line 5"
+   },
+   {
+    "kind": "same",
+    "text": "line 6"
+   },
+   {
+    "kind": "removed",
+    "text": "line 7"
+   },
+   {
+    "kind": "added",
+    "text": "line seven"
+   },
+   {
+    "kind": "same",
+    "text": "line 8"
+   },
+   {
+    "kind": "same",
+    "text": "line 9"
+   },
+   {
+    "kind": "same",
+    "text": "line 10"
+   },
+   {
+    "kind": "same",
+    "text": "line 11"
+   },
+   {
+    "kind": "same",
+    "text": "line 12"
+   },
+   {
+    "kind": "same",
+    "text": "line 13"
+   },
+   {
+    "kind": "same",
+    "text": "line 14"
+   },
+   {
+    "kind": "same",
+    "text": "line 15"
+   },
+   {
+    "kind": "same",
+    "text": "line 16"
+   },
+   {
+    "kind": "same",
+    "text": "line 17"
+   },
+   {
+    "kind": "same",
+    "text": "line 18"
+   },
+   {
+    "kind": "same",
+    "text": "line 19"
+   },
+   {
+    "kind": "same",
+    "text": "line 20"
+   },
+   {
+    "kind": "same",
+    "text": "line 21"
+   },
+   {
+    "kind": "same",
+    "text": "line 22"
+   },
+   {
+    "kind": "same",
+    "text": "line 23"
+   },
+   {
+    "kind": "same",
+    "text": "line 24"
+   },
+   {
+    "kind": "same",
+    "text": "line 25"
+   },
+   {
+    "kind": "same",
+    "text": "line 26"
+   },
+   {
+    "kind": "same",
+    "text": "line 27"
+   },
+   {
+    "kind": "same",
+    "text": "line 28"
+   },
+   {
+    "kind": "same",
+    "text": "line 29"
+   },
+   {
+    "kind": "removed",
+    "text": "line 30"
+   },
+   {
+    "kind": "added",
+    "text": ""
+   },
+   {
+    "kind": "same",
+    "text": "line 31"
+   },
+   {
+    "kind": "same",
+    "text": "line 32"
+   },
+   {
+    "kind": "same",
+    "text": "line 33"
+   },
+   {
+    "kind": "same",
+    "text": "line 34"
+   },
+   {
+    "kind": "same",
+    "text": "line 35"
+   },
+   {
+    "kind": "same",
+    "text": "line 36"
+   },
+   {
+    "kind": "same",
+    "text": "line 37"
+   },
+   {
+    "kind": "same",
+    "text": "line 38"
+   },
+   {
+    "kind": "same",
+    "text": "line 39"
+   },
+   {
+    "kind": "added",
+    "text": "end"
+   }
+  ]
+ },
+ {
+  "before": "한글\n줄",
+  "after": "한글\n바뀐 줄\n😀",
+  "lines": [
+   {
+    "kind": "same",
+    "text": "한글"
+   },
+   {
+    "kind": "removed",
+    "text": "줄"
+   },
+   {
+    "kind": "added",
+    "text": "바뀐 줄"
+   },
+   {
+    "kind": "added",
+    "text": "😀"
+   }
+  ]
+ },
+ {
+  "before": "trailing\n",
+  "after": "trailing",
+  "lines": [
+   {
+    "kind": "same",
+    "text": "trailing"
+   },
+   {
+    "kind": "removed",
+    "text": ""
+   }
+  ]
+ }
+]
