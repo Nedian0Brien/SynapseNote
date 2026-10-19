@@ -36,7 +36,7 @@ Morrow a2daae1의 다음을 Swift로 옮긴다(`App/Sources/Core/`).
 
 - **markdown-it 15.0.2**(`parse.ts`가 쓴다. CommonMark 모드, `html: true`, `table`·`strikethrough`, Morrow 규칙 4개 추가): Morrow가 쓰는 규칙만 Swift로 옮긴다. cmark-gfm(swift-markdown)은 CommonMark 판과 GFM 확장이 달라 경계 사례에서 결과가 갈리므로 쓰지 않는다. MIT 라이선스, NOTICE에 적는다.
 - **yaml 2.9.1**(`frontmatter.ts`의 `parse`·`stringify`):
-  - 읽기: [Yams](https://github.com/jpsim/yams)(libyaml)의 노드 트리. `Resolver`를 YAML 1.2 core 규칙에 맞추고(yaml 2.x 기본), 키 순서를 유지한다.
+  - 읽기: [Yams](https://github.com/jpsim/yams)에 들어 있는 libyaml(CYaml)의 이벤트로 트리를 직접 만든다(Yams의 `compose`는 겹치는 키를 오류로 본다). 값은 yaml 2.x의 YAML 1.2 core 규칙으로 해석하고, 키 순서와 겹치는 키의 JS 동작(첫 자리, 마지막 값)을 지킨다.
   - 쓰기: Morrow의 옵션(`lineWidth: 0`, `defaultStringType: PLAIN`, `defaultKeyType: PLAIN`)으로 yaml이 내는 글자를 그대로 내도록 옮긴다. 읽기 오류 문구는 libyaml의 것이라 Morrow와 다를 수 있다(파일은 그대로 두는 동작은 같다).
 
 ## 지켜야 할 규칙(JS와 Swift의 차이)

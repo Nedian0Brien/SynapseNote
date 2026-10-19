@@ -5,6 +5,7 @@
 // tests, and the first-run guide vault that morrow's sampleCommands make. the clock, the ids and the time zone
 // (TZ=UTC in the npm script) are fixed so the output is the same on every run.
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { stringify } from 'yaml';
 import path from 'node:path';
 
 const FIXED_NOW = Date.UTC(2026, 9, 19, 9, 30, 0);
@@ -78,6 +79,91 @@ const PIECES = [
   '<https://x.y/z?q=1>', '<a@b.co>', '<javascript:alert(1)>', 'http://例え.jp', '|', '!', '#', '[x]', '[ ]', '|alias',
   '#anchor', '-', '+', '1.', ':', '"', "'", '{', '}', '^', '@', '%', '&',
 ];
+
+const YAML_KEYS = [
+  'title', 'title', 'tags', 'tags', 'tag', 'aliases', 'icon', 'cover', 'kind', 'cssclasses', 'date', 'created', 'rating',
+  'done', 'status', '"quoted key"', "'single key'", '한글 키', '1', '01', 'true', '~', 'null', '<<', 'a b', 'x:y', '"a: b"',
+  // a collection as a key ('? a: b', '[a, b]: c') is written back by yaml from its source text and comments,
+  // which the swift reader does not keep; frontmatter never has one
+  'key with trailing space ', 'émoji 😀',
+];
+const YAML_SCALARS = [
+  'word', 'two words', 'Hello, world', '한글 값', 'café', '😀', '1', '-0', '017', '0o17', '0x1F', '0xG', '1.0', '1.50', '1e3',
+  '.5', '+.5', '1_000', '12345678901234567890', '.inf', '-.Inf', '.nan', 'NaN', 'true', 'True', 'TRUE', 'tRue', 'yes', 'no',
+  'on', 'off', 'y', '~', 'null', 'Null', 'NULL', "''", '""', '2026-10-19', '2026-10-19T09:30:00Z', '09:30', '"a \\"b\\""',
+  '"\\u00e9\\t\\n"', '"\\x41\\N\\_\\L"', "'it''s'", "'a\"b'", '"[[Link]]"', '[[Link]]', '#tag', 'a #comment', 'a# not', 'a: b',
+  'a:b', '-', '- x', '? x', '&anchor value', '*anchor', '!!str 12', '!!int "12"', '!!float 1', '!!bool yes', '!!null ""',
+  '!custom x', '! 12', '%percent', '@at', '`tick`', 'gradient-3', 'images/cover.png', 'https://example.org/a?b=c#d', '{a: 1}',
+  '{a: 1, b: [x, y]}', '[a, b]', '[]', '{}', '[1, "2", true]', '[a, [b, c]]', '| broken', '"unclosed', "'unclosed", ':',
+  'trailing  ', 'a b', 'a\u0085b', 'tab\tinside', '\u0007bell',
+];
+const YAML_BLOCKS = [
+  '|\n  line one\n  line two', '|-\n  kept\n\n  gap', '>\n  folded\n  text\n', '>+\n  keep\n\n', '|2\n    indented', '|\n',
+  '\n  - a\n  - b', '\n  - a\n  -\n  - c', '\n- a\n- b', '\n  - [x, y]\n  - {k: v}', '\n  sub: 1\n  other: two',
+  '\n  nested:\n    deep: true', '\n\t- tab', '\n  - a\n - b', '\n  multi\n  line plain',
+];
+
+function frontmatterInputs(count: number): string[] {
+  const next = random(20261020);
+  const pick = <T>(items: readonly T[]): T => items[Math.floor(next() * items.length)]!;
+  const inputs: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const lines: string[] = [];
+    const lineCount = Math.floor(next() * 6);
+    for (let l = 0; l < lineCount; l++) {
+      const roll = next();
+      if (roll < 0.06) lines.push(`# comment ${l}`);
+      else if (roll < 0.08) lines.push('');
+      else if (roll < 0.1) lines.push(`  ${pick(YAML_KEYS)}: ${pick(YAML_SCALARS)}`);
+      else if (roll < 0.12) lines.push(`- ${pick(YAML_SCALARS)}`);
+      else if (roll < 0.3) lines.push(`${pick(YAML_KEYS)}:${pick(YAML_BLOCKS)}`);
+      else lines.push(`${pick(YAML_KEYS)}: ${pick(YAML_SCALARS)}`);
+    }
+    const yaml = lines.join('\n');
+    const shape = next();
+    const close = next() < 0.1 ? '...' : '---';
+    let text = shape < 0.05 ? `${yaml}\nBody` : `---\n${yaml}${yaml ? '\n' : ''}${close}\nBody line\n\n## Heading\n`;
+    if (next() < 0.08) text = text.replace(/\n/g, '\r\n');
+    if (next() < 0.04) text = `﻿${text}`;
+    if (next() < 0.03) text = text.replace('---\n', '---  \n');
+    inputs.push(text);
+  }
+  return inputs;
+}
+
+const STRING_PIECES = [
+  'a', 'word', ' ', '  ', '\n', '\n\n', '\t', ':', ': ', '#', ' #', '-', '- ', '?', '? ', ',', '[', ']', '{', '}', '&', '*', '!',
+  '|', '>', "'", '"', '%', '@', '`', '\\', '---', '...', '1', '0x1', '1.5', 'true', 'null', '~', '한글', '😀', '\u0007', '\u0000',
+  '\u001b', '\u0085', ' ', ' ', '\x7f', '\x9f', 'é',
+];
+
+function yamlValues(count: number): Record<string, unknown>[] {
+  const next = random(20261021);
+  const pick = <T>(items: readonly T[]): T => items[Math.floor(next() * items.length)]!;
+  const text = (): string => {
+    let out = '';
+    const pieces = Math.floor(next() * 6);
+    for (let p = 0; p < pieces; p++) out += pick(STRING_PIECES);
+    return out;
+  };
+  const value = (depth: number): unknown => {
+    const roll = next();
+    if (roll < 0.45 || depth > 2) return text();
+    // -0, NaN and the infinities do not survive the JSON this file is, the frontmatter fixture covers them
+    if (roll < 0.55) return pick([0, 1, -1, 1.5, 1e21, 1e-7, 123456789012, 0.1]);
+    if (roll < 0.6) return next() < 0.5;
+    if (roll < 0.65) return null;
+    if (roll < 0.82) return Array.from({ length: Math.floor(next() * 4) }, () => value(depth + 1));
+    return object(depth + 1);
+  };
+  const object = (depth: number): Record<string, unknown> => {
+    const out: Record<string, unknown> = {};
+    const keys = Math.floor(next() * 4);
+    for (let k = 0; k < keys; k++) out[next() < 0.6 ? pick(['title', 'tags', 'a', 'b', '2', '10', '']) : text()] = value(depth);
+    return out;
+  };
+  return Array.from({ length: count }, () => object(0));
+}
 
 function fuzzInputs(count: number): string[] {
   const next = random(20261019);
@@ -276,6 +362,26 @@ async function main(): Promise<void> {
       const doc = markdownToDoc(body);
       return { body, doc, markdown: docToMarkdown(doc) };
     }),
+    0,
+  );
+
+  // frontmatter of every kind people write, and broken yaml, from a fixed seed. error messages come from the
+  // yaml parser and differ in swift (libyaml), so only whether there was one is recorded
+  write(
+    'frontmatter-fuzz.json',
+    frontmatterInputs(1500).map((text) => {
+      const split = splitFrontmatter(text);
+      return {
+        text,
+        split: { data: split.data, head: split.head, body: split.body, error: split.error !== null },
+        joined: split.data ? joinFrontmatter(split.data, split.body) : null,
+      };
+    }),
+    0,
+  );
+  write(
+    'yaml-stringify.json',
+    yamlValues(1500).map((value) => ({ value, yaml: stringify(value, { lineWidth: 0, defaultStringType: 'PLAIN', defaultKeyType: 'PLAIN' }) })),
     0,
   );
 

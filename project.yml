@@ -12,10 +12,17 @@ settings:
     SWIFT_APPROACHABLE_CONCURRENCY: YES
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
+packages:
+  # YAML reading for page frontmatter (libyaml); the values are resolved as YAML 1.2 core, as Morrow's yaml 2.x does
+  Yams:
+    url: https://github.com/jpsim/Yams.git
+    from: "6.2.2"
 targets:
   SynapseNote:
     type: application
     supportedDestinations: [iOS, macOS]
+    dependencies:
+      - package: Yams
     sources:
       - path: App/Sources
       # built by scripts/build-editor.sh in the pre-build script below
