@@ -62,13 +62,16 @@ struct PageHeaderView: View {
 
 /// The page title, renamed as it is typed like Morrow's TitleField. The field keeps its own text while it has
 /// focus: the new title comes back from the page a moment later, and setting the field to it then would break
-/// a Korean syllable being composed.
+/// a Korean syllable being composed. Every change typed here is sent, and the text is sent once more when the
+/// field loses focus if the page has not caught up with it, so the last letter is never lost.
 struct PageTitleField: View {
     let controller: EditorController
     let page: PageInfo
     let editable: Bool
     let onEnter: () -> Void
     @State private var draft = ""
+    /// set while the field takes the page's title, so that change is not sent back
+    @State private var syncing = false
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -91,24 +94,36 @@ struct PageTitleField: View {
             .accessibilityLabel("Page title")
             .padding(.top, 24)
             .padding(.bottom, 18)
-            .onAppear { draft = page.title }
+            .onAppear { take(page.title) }
             .onChange(of: page.title) { _, title in
-                if !focused { draft = title }
+                if !focused { take(title) }
             }
             .onChange(of: focused) { _, isFocused in
-                if !isFocused { draft = page.title }
+                if !isFocused, !draft.utf16.elementsEqual(page.title.utf16) { rename(draft) }
             }
             .onChange(of: draft) { _, value in
+                if syncing {
+                    syncing = false
+                    return
+                }
                 // a title is one line: return moves into the page, as in Morrow
                 if value.contains(where: \.isNewline) {
                     draft = value.filter { !$0.isNewline }
                     onEnter()
                     return
                 }
-                if focused, !value.utf16.elementsEqual(page.title.utf16) {
-                    controller.perform(.rename(id: page.id, title: value))
-                }
+                if !value.utf16.elementsEqual(page.title.utf16) { rename(value) }
             }
+    }
+
+    private func take(_ title: String) {
+        guard !draft.utf16.elementsEqual(title.utf16) else { return }
+        syncing = true
+        draft = title
+    }
+
+    private func rename(_ title: String) {
+        controller.perform(.rename(id: page.id, title: title))
     }
 }
 

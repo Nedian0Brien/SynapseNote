@@ -122,7 +122,8 @@ struct DraftField: View {
             .lineLimit(1)
             .accessibilityLabel(label)
             #if os(iOS)
-            .keyboardType(keyboard == .number ? .decimalPad : keyboard == .url ? .URL : .default)
+            // the number pad has no return key on iPad, so a number could not be saved with it
+            .keyboardType(keyboard == .number ? .numbersAndPunctuation : keyboard == .url ? .URL : .default)
             .textInputAutocapitalization(keyboard == .text ? .sentences : .never)
             #endif
             .autocorrectionDisabled(keyboard != .text)
@@ -260,14 +261,22 @@ struct DateCell: View {
                 ), displayedComponents: .date)
                 .datePickerStyle(.graphical)
                 .labelsHidden()
-                if key != nil {
-                    Button("Clear", systemImage: "xmark") {
-                        store.setValue(row.id, prop.id, .null)
-                        picking = false
+                HStack {
+                    // an empty date shows today in the calendar, where tapping today would change nothing
+                    if key == nil {
+                        Button("Today") {
+                            store.setValue(row.id, prop.id, .string(Daily.dateKey(Date())))
+                            picking = false
+                        }
+                    } else {
+                        Button("Clear", systemImage: "xmark") {
+                            store.setValue(row.id, prop.id, .null)
+                            picking = false
+                        }
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
                 }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
             }
             .padding(12)
             .frame(minWidth: 320)

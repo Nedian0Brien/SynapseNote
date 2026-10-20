@@ -256,7 +256,8 @@ struct DatabaseCalendarView: View {
                 .buttonStyle(.bordered)
                 .controlSize(.small)
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(minimum: 60), spacing: 2), count: 7), spacing: 2) {
-                    ForEach(days.prefix(7), id: \.self) { day in
+                    // the headings have ids of their own: the days below use the dates, and a grid drops repeated ids
+                    ForEach(Array(days.prefix(7).enumerated()), id: \.offset) { _, day in
                         Text(day.formatted(.dateTime.weekday(.abbreviated)))
                             .font(.caption.weight(.medium))
                             .foregroundStyle(.secondary)
@@ -358,7 +359,7 @@ struct DatabaseGalleryView: View {
     let input: DatabaseViewInput
 
     var body: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 200), spacing: 12)], spacing: 12) {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 200), spacing: 12, alignment: .top)], spacing: 12) {
             ForEach(input.rows, id: \.id) { row in
                 DatabaseCard(store: input.store, row: row, props: input.props, cover: true)
             }

@@ -72,6 +72,8 @@ private struct FilterRow: View {
         }
         .labelsHidden()
         .pickerStyle(.menu)
+        // a menu picker is squeezed to wrap its label otherwise
+        .fixedSize(horizontal: true, vertical: false)
     }
 
     @ViewBuilder private func value(_ prop: PropDef?) -> some View {
@@ -133,6 +135,7 @@ struct SortPanel: View {
                     }
                     .labelsHidden()
                     .pickerStyle(.menu)
+                    .fixedSize(horizontal: true, vertical: false)
                 }
                 Button("Add a sort", systemImage: "plus") {
                     store.updateView(viewId) { DatabaseEdits.addSort($0) }
@@ -153,14 +156,17 @@ struct LayoutPanel: View {
         let database = store.database
         if let view = database.views.first(where: { $0.id.jsEquals(viewId) }) {
             PanelBox(width: 300) {
-                Picker(view.type == "board" ? "Group cards by" : "Place rows by", selection: Binding(
-                    get: { (view.type == "board" ? view.groupBy : view.dateProp) ?? "" },
-                    set: { propId in store.updateView(viewId) { DatabaseEdits.setLayoutProp($0, propId) } }
-                )) {
-                    Text("None").tag("")
-                    ForEach(DatabaseEdits.layoutChoices(database, viewType: view.type), id: \.id) { Text($0.name).tag($0.id) }
+                LabeledContent(view.type == "board" ? "Group cards by" : "Place rows by") {
+                    Picker("", selection: Binding(
+                        get: { (view.type == "board" ? view.groupBy : view.dateProp) ?? "" },
+                        set: { propId in store.updateView(viewId) { DatabaseEdits.setLayoutProp($0, propId) } }
+                    )) {
+                        Text("None").tag("")
+                        ForEach(DatabaseEdits.layoutChoices(database, viewType: view.type), id: \.id) { Text($0.name).tag($0.id) }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
                 }
-                .pickerStyle(.menu)
             }
         }
     }
@@ -250,10 +256,14 @@ struct PropertySettings: View {
                     .padding(6)
                     .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 6))
                 }
-                Picker("Type", selection: Binding(get: { prop.type }, set: { store.changeType(prop.id, to: $0) })) {
-                    ForEach(Model.propTypes, id: \.self) { Text(Database.propLabels[$0] ?? $0).tag($0) }
+                LabeledContent("Type") {
+                    // the title comes from the row, a picker title would be read twice
+                    Picker("", selection: Binding(get: { prop.type }, set: { store.changeType(prop.id, to: $0) })) {
+                        ForEach(Model.propTypes, id: \.self) { Text(Database.propLabels[$0] ?? $0).tag($0) }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
                 }
-                .pickerStyle(.menu)
                 if prop.type == "formula" { FormulaField(store: store, prop: prop) }
                 if prop.type == "select" || prop.type == "multiSelect" { OptionsEditor(store: store, prop: prop) }
                 Divider()
@@ -376,7 +386,7 @@ struct FormulaField: View {
                 Text(error).font(.footnote).foregroundStyle(.red)
             } else if !JSText.trim(text).isEmpty {
                 let shown = Database.formatValue(prop, result.value)
-                (Text("First row: ") + Text(shown.isEmpty ? "empty" : shown).bold())
+                Text("First row: \(Text(shown.isEmpty ? "empty" : shown).bold())")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -409,12 +419,15 @@ struct ViewSettings: View {
                     .padding(6)
                     .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 6))
                 }
-                Picker("Layout", selection: Binding(get: { view.type }, set: { type in
-                    store.save(DatabaseEdits.setLayout(store.database, viewId, type))
-                })) {
-                    ForEach(Model.viewTypes, id: \.self) { Text(Database.viewLabels[$0] ?? $0).tag($0) }
+                LabeledContent("Layout") {
+                    Picker("", selection: Binding(get: { view.type }, set: { type in
+                        store.save(DatabaseEdits.setLayout(store.database, viewId, type))
+                    })) {
+                        ForEach(Model.viewTypes, id: \.self) { Text(Database.viewLabels[$0] ?? $0).tag($0) }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
                 }
-                .pickerStyle(.menu)
                 HStack {
                     Button("Duplicate") {
                         store.save(DatabaseEdits.duplicateView(store.database, view, newId: DatabaseStore.newId))
