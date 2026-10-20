@@ -107,3 +107,103 @@ nonisolated final class EditorAtom: NSObject, @unchecked Sendable {
     override func isEqual(_ object: Any?) -> Bool { (object as AnyObject?) === self }
     override var hash: Int { ObjectIdentifier(self).hashValue }
 }
+
+// MARK: marks
+
+nonisolated extension InlineText {
+    /// ProseMirror's `Mark.addToSet`: a mark that excludes another replaces it, one that another excludes is not
+    /// added, and the set stays in rank order
+    static func addToSet(_ set: [DocMark], _ mark: DocMark) -> [DocMark] {
+        var copy: [DocMark]?
+        var placed = false
+        for (index, other) in set.enumerated() {
+            if EditorSchema.sameMark(mark, other) { return set }
+            if excludes(mark.type, other.type) {
+                if copy == nil { copy = Array(set[..<index]) }
+            } else if excludes(other.type, mark.type) {
+                return set
+            } else {
+                if !placed, (EditorSchema.markRank[other.type] ?? .max) > (EditorSchema.markRank[mark.type] ?? .max) {
+                    if copy == nil { copy = Array(set[..<index]) }
+                    copy?.append(mark)
+                    placed = true
+                }
+                copy?.append(other)
+            }
+        }
+        var out = copy ?? set
+        if !placed { out.append(mark) }
+        return out
+    }
+
+    /// `MarkType.excludes`: a mark excludes its own type unless its spec says otherwise, "_" excludes all
+    static func excludes(_ type: String, _ other: String) -> Bool {
+        guard let spec = EditorSchema.marks[type] else { return false }
+        return spec.excludes == "_" || type == other
+    }
+
+    /// the marks on the text of a range changed; atoms and line breaks keep theirs
+    static func changingMarks(_ text: NSAttributedString, _ range: NSRange, _ change: ([DocMark]) -> [DocMark]) -> NSAttributedString {
+        let out = NSMutableAttributedString(attributedString: text)
+        text.enumerateAttributes(in: range) { attributes, run, _ in
+            guard attributes[.editorAtom] == nil else { return }
+            let marks = change((attributes[.editorMarks] as? EditorMarkSet)?.marks ?? [])
+            if marks.isEmpty { out.removeAttribute(.editorMarks, range: run) } else { out.addAttribute(.editorMarks, value: EditorMarkSet(marks), range: run) }
+        }
+        return out
+    }
+
+    static func addMark(_ text: NSAttributedString, _ range: NSRange, _ mark: DocMark) -> NSAttributedString {
+        changingMarks(text, range) { addToSet($0, mark) }
+    }
+
+    static func removeMark(_ text: NSAttributedString, _ range: NSRange, type: String) -> NSAttributedString {
+        changingMarks(text, range) { $0.filter { $0.type != type } }
+    }
+
+    /// TipTap's isMarkActive over a range: all of its text has the mark
+    static func hasMark(_ text: NSAttributedString, _ range: NSRange, type: String) -> Bool {
+        var any = false, all = true
+        text.enumerateAttributes(in: range) { attributes, _, stop in
+            guard attributes[.editorAtom] == nil else { return }
+            any = true
+            if (attributes[.editorMarks] as? EditorMarkSet)?.has(type) != true {
+                all = false
+                stop.pointee = true
+            }
+        }
+        return any && all
+    }
+
+    /// TipTap's toggleMark: off when the whole range has it, on for the whole range otherwise
+    static func toggleMark(_ text: NSAttributedString, _ range: NSRange, _ mark: DocMark) -> NSAttributedString {
+        hasMark(text, range, type: mark.type) ? removeMark(text, range, type: mark.type) : addMark(text, range, mark)
+    }
+
+    /// TipTap's extendMarkRange: the run of text around an index that has a mark of this type with the same
+    /// attributes
+    static func markRange(_ text: NSAttributedString, at index: Int, type: String) -> NSRange? {
+        guard text.length > 0 else { return nil }
+        let probe = min(max(index, 0), text.length - 1)
+        func mark(at position: Int) -> DocMark? {
+            (text.attribute(.editorMarks, at: position, effectiveRange: nil) as? EditorMarkSet)?.mark(type)
+        }
+        // the caret right after a link still belongs to it
+        let anchor: Int
+        if let _ = mark(at: probe) { anchor = probe } else if probe > 0, mark(at: probe - 1) != nil { anchor = probe - 1 } else { return nil }
+        guard let found = mark(at: anchor) else { return nil }
+        var start = anchor, end = anchor + 1
+        while start > 0, let other = mark(at: start - 1), EditorSchema.sameMark(other, found) { start -= 1 }
+        while end < text.length, let other = mark(at: end), EditorSchema.sameMark(other, found) { end += 1 }
+        return NSRange(location: start, length: end - start)
+    }
+
+    static func mark(_ type: String, _ attrs: [(String, JSValue)] = []) -> DocMark {
+        var mark = JSObject()
+        mark["type"] = .string(type)
+        if let spec = EditorSchema.marks[type], !spec.attrs.isEmpty {
+            mark["attrs"] = .object(EditorSchema.computeAttrs(spec.attrs, .object(JSObject(attrs))))
+        }
+        return mark
+    }
+}
