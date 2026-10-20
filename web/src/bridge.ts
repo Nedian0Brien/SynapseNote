@@ -53,6 +53,8 @@ export type InboundMessage =
   | { type: 'saveAsTemplate'; pageId: PageId }
   // morrow's page history dialog for a page
   | { type: 'openHistory'; pageId: PageId }
+  // a version the app's history dialog chose, restored by the page with morrow's restoreVersion
+  | { type: 'restoreVersion'; pageId: PageId; snapshotId: string }
   | { type: 'lockPage'; pageId: PageId }
   | { type: 'unprotectPage'; pageId: PageId }
   | { type: 'gradeCard'; cardId: string; grade: 'again' | 'hard' | 'good' | 'easy' }
@@ -269,6 +271,10 @@ export function parseInbound(value: unknown): InboundMessage | null {
     case 'lockPage':
     case 'unprotectPage':
       return isId(value.pageId) ? { type: value.type, pageId: value.pageId } : null;
+    case 'restoreVersion':
+      return isId(value.pageId) && isId(value.snapshotId)
+        ? { type: 'restoreVersion', pageId: value.pageId, snapshotId: value.snapshotId }
+        : null;
     case 'gradeCard':
       return isId(value.cardId) &&
         (value.grade === 'again' || value.grade === 'hard' || value.grade === 'good' || value.grade === 'easy')

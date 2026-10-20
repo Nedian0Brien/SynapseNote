@@ -87,6 +87,8 @@ final class EditorController: WorkspaceService {
     var allToasts: [EditorToast] { toasts + ownToasts }
     /// A file waiting for the person to say where it goes.
     var exportFile: ExportFile?
+    /// the page whose history dialog is open
+    var historyPage: String?
     /// A PDF is being made.
     private(set) var exportingPDF = false
     /// Sync between the person's own devices on the same network.
@@ -141,9 +143,9 @@ final class EditorController: WorkspaceService {
     @ObservationIgnored private var editorRequests = 0
     /// asks the title field of a page to take the caret, as the editor's arrow up at its top does
     private(set) var titleFocus: (id: Int, pageId: String)?
-    /// the native editor takes text pages whose blocks it draws: launched with `-nativeEditor YES` until it
-    /// draws them all (11d-5c)
-    var nativeEditorEnabled: Bool { UserDefaults.standard.bool(forKey: "nativeEditor") }
+    /// the native editor takes every text page whose document opens as TipTap opens it; launched with
+    /// `-nativeEditor NO` the web editor does, until it goes in 11e
+    var nativeEditorEnabled: Bool { UserDefaults.standard.object(forKey: "nativeEditor") as? Bool ?? true }
     @ObservationIgnored private var ownToastCount = 0
     /// A device to pull from once the vault just copied from it is open.
     @ObservationIgnored private var syncWhenOpen: String?
@@ -649,7 +651,17 @@ final class EditorController: WorkspaceService {
     /// Morrow's page history, shown over the page.
     func openHistory(_ pageId: String) {
         if selection != pageId { go(to: .page(pageId)) }
-        send(.openHistory(pageId: pageId))
+        historyPage = pageId
+    }
+
+    /// The page's versions, for the history dialog.
+    func versions(_ pageId: String) async -> [Snapshot] {
+        await host?.snapshots(pageId) ?? []
+    }
+
+    /// Morrow's restoreVersion, done by the page, which holds the workspace until 11e; its toast says how it went.
+    func restoreVersion(_ snapshot: Snapshot) {
+        send(.restoreVersion(pageId: snapshot.pageId, snapshotId: snapshot.id))
     }
 
     /// Encrypts a page with a password. Returns the reason when it did not work.
@@ -858,8 +870,22 @@ final class EditorController: WorkspaceService {
         guard !exportingPDF, let info = workspace.infos[pageId], info.kind != "canvas" else { return }
         if selection != pageId { go(to: .page(pageId)) }
         exportingPDF = true
+        // the page prints as Morrow prints it, from the web editor; a page the native editor shows is drawn there
+        // for the print and given back after (until 11e makes the printed page in Swift)
+        let native = nativeEditorPage == pageId
+        if native { send(.nativeEditor(pageId: nil)) }
         Task {
-            defer { exportingPDF = false }
+            defer {
+                exportingPDF = false
+                if native, nativeEditorPage == pageId { send(.nativeEditor(pageId: pageId)) }
+            }
+            if native {
+                for _ in 0..<50 {
+                    let drawn = try? await page.callJavaScript("return document.querySelector('.view .page .ProseMirror') !== null")
+                    if drawn as? Bool == true { break }
+                    try? await Task.sleep(for: .milliseconds(100))
+                }
+            }
             // pictures and diagrams get a moment to finish drawing, as in morrow
             try? await Task.sleep(for: .milliseconds(400))
             do {

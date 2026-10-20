@@ -56,6 +56,11 @@ struct PageHeaderView: View {
             }
             PageTitleField(controller: controller, page: page, editable: editable, onEnter: onEnter)
             if showsTags { PageTagsView(controller: controller, page: page, editable: editable) }
+            // a database row's values (Morrow's findDatabaseOf: a page whose parent is a database)
+            if let parent = page.parentId, controller.workspace.infos[parent]?.kind == "database" {
+                RowPropertiesView(controller: controller, rowId: page.id, dbId: parent, editable: editable)
+                    .padding(.bottom, 8)
+            }
         }
     }
 }

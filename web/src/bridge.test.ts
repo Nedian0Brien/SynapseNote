@@ -149,6 +149,8 @@ describe('parseInbound', () => {
     expect(parseInbound({ type: 'nativeEditor', pageId: 'a' })).toEqual({ type: 'nativeEditor', pageId: 'a' });
     expect(parseInbound({ type: 'nativeEditor', pageId: null })).toEqual({ type: 'nativeEditor', pageId: null });
     expect(parseInbound({ type: 'nativeEditor', pageId: 3 })).toBeNull();
+    expect(parseInbound({ type: 'restoreVersion', pageId: 'a', snapshotId: 's' })).toEqual({ type: 'restoreVersion', pageId: 'a', snapshotId: 's' });
+    expect(parseInbound({ type: 'restoreVersion', pageId: 'a' })).toBeNull();
     expect(parseInbound({ type: 'toastAction', id: 4 })).toEqual({ type: 'toastAction', id: 4 });
     expect(parseInbound({ type: 'dismissToast', id: 4 })).toEqual({ type: 'dismissToast', id: 4 });
     expect(parseInbound({ type: 'dismissToast', id: '4' })).toBeNull();

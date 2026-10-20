@@ -412,6 +412,11 @@ nonisolated final class SessionHost: @unchecked Sendable {
     }
 
     /// The page's document as the session holds it, for the native editor.
+    /// the page's versions in its history, newest first as the session lists them
+    func snapshots(_ pageId: String) async -> [Snapshot] {
+        await run(writes: false) { [self] in session?.listSnapshots(pageId) ?? [] }
+    }
+
     func editorDoc(_ id: String) async -> DocNode? {
         await run(writes: false) { [self] in
             guard let session, session.state.pages[id] != nil else { return nil }

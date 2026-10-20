@@ -194,6 +194,8 @@ nonisolated enum EditorCommand: Sendable {
     case openTemplates
     case saveAsTemplate(pageId: String)
     case openHistory(pageId: String)
+    /// A version chosen in the app's history dialog, restored by the page, which holds the workspace.
+    case restoreVersion(pageId: String, snapshotId: String)
     /// Saves an unlocked encrypted page and forgets its key until the password is given again.
     case lockPage(pageId: String)
     /// Writes an encrypted page back as plain text.
@@ -269,6 +271,8 @@ nonisolated enum EditorCommand: Sendable {
             .object(["type": .string("saveAsTemplate"), "pageId": .string(pageId)])
         case .openHistory(let pageId):
             .object(["type": .string("openHistory"), "pageId": .string(pageId)])
+        case .restoreVersion(let pageId, let snapshotId):
+            .object(["type": .string("restoreVersion"), "pageId": .string(pageId), "snapshotId": .string(snapshotId)])
         case .lockPage(let pageId):
             .object(["type": .string("lockPage"), "pageId": .string(pageId)])
         case .unprotectPage(let pageId):

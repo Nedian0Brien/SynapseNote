@@ -89,6 +89,11 @@ struct ContentView: View {
                 }
             }
         }
+        .sheet(isPresented: Binding(get: { controller.historyPage != nil }, set: { if !$0 { controller.historyPage = nil } })) {
+            if let pageId = controller.historyPage, let page = controller.workspace.infos[pageId] {
+                HistorySheet(controller: controller, page: page)
+            }
+        }
         .sheet(isPresented: Binding(get: { controller.movingPage != nil }, set: { if !$0 { controller.movingPage = nil } })) {
             if let pageId = controller.movingPage {
                 MoveSheet(workspace: controller.workspace, pageId: pageId) { parent in

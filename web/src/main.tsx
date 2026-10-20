@@ -33,6 +33,7 @@ import {
   openToday,
   publishSite,
   restoreBackup,
+  restoreVersion,
   saveAsTemplate,
   trashPage,
   unusedFiles,
@@ -536,6 +537,17 @@ listen((message) => {
       break;
     case 'openHistory':
       if (phase.kind === 'ready') openDialog({ kind: 'history', pageId: message.pageId });
+      break;
+    // the app's history dialog chose a version; the page restores it, as it holds the workspace
+    case 'restoreVersion':
+      if (phase.kind === 'ready') {
+        void getSession()
+          .listSnapshots(message.pageId)
+          .then((versions) => {
+            const version = versions.find((candidate) => candidate.id === message.snapshotId);
+            if (version) void restoreVersion(version);
+          });
+      }
       break;
     case 'lockPage':
       if (phase.kind === 'ready') void getSession().lockPage(message.pageId);
