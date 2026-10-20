@@ -62,7 +62,9 @@ private struct EditorPage: View {
         .overlay(alignment: .topLeading) { EditorMenus(store: store, font: controller.preferences.font) }
         .overlay(alignment: .top) {
             if store.find != nil { FindBar(store: store).padding(.top, 8) }
+            else if store.cellPlace != nil { TableBar(store: store).padding(.top, 8) }
         }
+        .task(id: controller.revision) { await store.refreshTargets() }
         .task(id: controller.revision) { await store.load() }
         .task(id: controller.editorRequest) { handle(controller.editorRequest) }
         .onAppear { controller.nativeEditorShows(page.id) }
@@ -116,6 +118,9 @@ struct BlockList: View {
             // path takes whatever block is there now
             ForEach(Array(nodes.enumerated()), id: \.offset) { index, node in
                 BlockView(store: store, node: node, path: path + [index], context: context, depth: depth)
+                    .overlay(alignment: .topLeading) {
+                        if depth == 0, store.menuBlock?.first == index { BlockHandle(store: store, path: path + [index]) }
+                    }
                     .padding(.top, index == 0 ? 0 : spacing(before: node))
             }
         }
@@ -133,7 +138,7 @@ struct BlockList: View {
     }
 }
 
-private struct BlockView: View {
+struct BlockView: View {
     let store: EditorStore
     let node: DocNode
     let path: EditorEdits.Path
@@ -167,6 +172,18 @@ private struct BlockView: View {
             Divider()
                 .padding(.vertical, EditorStyle.bodySize(font) * 1.6)
                 .accessibilityLabel("Divider")
+        case "detailsSummary":
+            TextBlock(store: store, node: node, path: path, style: .summary, context: context)
+        case "table":
+            TableBlockView(store: store, node: node, path: path, context: context, depth: depth)
+        case "callout":
+            CalloutBlockView(store: store, node: node, path: path, depth: depth)
+        case "details":
+            DetailsBlockView(store: store, node: node, path: path, context: context, depth: depth)
+        case "columns":
+            ColumnsBlockView(store: store, node: node, path: path, context: context, depth: depth)
+        case "tableOfContents":
+            ContentsBlockView(store: store)
         default:
             // the screen is only chosen for pages whose blocks this editor draws
             EmptyView()
@@ -176,17 +193,19 @@ private struct BlockView: View {
 
 /// a text block with Morrow's placeholder when it is empty: on the block with the caret, or on the first
 /// when the page is empty
-private struct TextBlock: View {
+struct TextBlock: View {
     let store: EditorStore
     let node: DocNode
     let path: EditorEdits.Path
     let style: EditorStyle.Block
     let context: EditorStyle.Context
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         let font = store.controller.preferences.font
         let ranges = matches
-        EditorTextBlock(store: store, path: path, block: node, style: style, context: context, font: font, editable: true, matches: ranges)
+        EditorTextBlock(store: store, path: path, block: node, style: style, context: context, font: font, editable: true, matches: ranges,
+                        dark: colorScheme == .dark)
             .overlay(alignment: .topLeading) {
                 if let placeholder {
                     Text(placeholder)

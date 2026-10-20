@@ -9,6 +9,15 @@ struct SlashItem: Identifiable, Equatable {
     let symbol: String
     var hint: String?
     let keywords: String
+    /// what choosing it does: a block from the slash menu, or a page or date from the "[[" and "@" menus
+    var action: Action = .block
+
+    enum Action: Equatable {
+        case block
+        case page(id: String, title: String)
+        case newPage(title: String)
+        case date(key: String)
+    }
 
     static func == (lhs: SlashItem, rhs: SlashItem) -> Bool { lhs.id == rhs.id }
 
@@ -23,9 +32,22 @@ struct SlashItem: Identifiable, Equatable {
         SlashItem(id: "quote", title: "Quote", description: "Quotation or callout", symbol: "text.quote", hint: ">", keywords: "blockquote citation"),
         SlashItem(id: "code", title: "Code block", description: "Monospaced code", symbol: "chevron.left.forwardslash.chevron.right", hint: "```", keywords: "snippet pre"),
         SlashItem(id: "divider", title: "Divider", description: "Horizontal line", symbol: "minus", hint: "---", keywords: "hr rule separator line"),
+        SlashItem(id: "callout", title: "Callout", description: "Highlighted note", symbol: "info.circle", keywords: "note tip warning aside alert"),
+        SlashItem(id: "toggle", title: "Toggle", description: "Content that folds away", symbol: "chevron.right", keywords: "details collapse fold accordion"),
+        SlashItem(id: "table", title: "Table", description: "Rows and columns", symbol: "tablecells", keywords: "grid spreadsheet"),
         SlashItem(id: "highlight", title: "Highlight", description: "Mark text to find it again", symbol: "highlighter", hint: "==", keywords: "mark marker yellow"),
+        SlashItem(id: "database", title: "Database", description: "Table, board and calendar of pages", symbol: "tablecells.badge.ellipsis",
+                  keywords: "collection kanban board calendar gallery table"),
+        SlashItem(id: "canvas", title: "Canvas", description: "Cards and arrows on a whiteboard", symbol: "rectangle.on.rectangle", keywords: "whiteboard board diagram mind map"),
+        SlashItem(id: "columns2", title: "2 columns", description: "Put blocks side by side", symbol: "rectangle.split.2x1", keywords: "columns layout side by side split"),
+        SlashItem(id: "columns3", title: "3 columns", description: "Three blocks side by side", symbol: "rectangle.split.3x1", keywords: "columns layout side by side split"),
+        SlashItem(id: "toc", title: "Table of contents", description: "Every heading on this page", symbol: "list.bullet.indent", keywords: "toc outline contents headings index"),
         SlashItem(id: "diagram", title: "Diagram", description: "Flowcharts and more with Mermaid", symbol: "point.3.connected.trianglepath.dotted",
                   keywords: "mermaid flowchart sequence gantt chart graph uml"),
+        SlashItem(id: "date", title: "Date", description: "Mention a day, like @tomorrow", symbol: "calendar", hint: "@", keywords: "date day today tomorrow reminder mention due"),
+        SlashItem(id: "embed", title: "Embed a page", description: "Show another page inside this one", symbol: "link", hint: "![[",
+                  keywords: "transclude include synced block mirror"),
+        SlashItem(id: "link", title: "Link to page", description: "Mention another page", symbol: "link", hint: "[[", keywords: "mention reference wiki"),
     ]
 
     static let sampleDiagram = "flowchart LR\n  Idea --> Draft --> Review\n  Review -->|changes| Draft\n  Review --> Done"
@@ -62,6 +84,18 @@ struct SlashItem: Identifiable, Equatable {
         case "divider": store.rule()
         case "highlight": store.toggleMark("highlight")
         case "diagram": store.insertCode(language: "mermaid", text: Self.sampleDiagram)
+        case "callout": store.wrapCallout()
+        case "toggle": store.wrapDetails()
+        case "table": store.insertBlock(EditorEdits.table(rows: 3, columns: 3))
+        case "columns2": store.insertBlock(EditorEdits.columns(2))
+        case "columns3": store.insertBlock(EditorEdits.columns(3))
+        case "toc": store.insertBlock(.node("tableOfContents"))
+        case "database": store.linkChild(kind: "database")
+        case "canvas": store.linkChild(kind: "canvas")
+        // these type the menu's own trigger, which opens its menu
+        case "date": store.typeTrigger("@")
+        case "embed": store.typeTrigger("![[")
+        case "link": store.typeTrigger("[[")
         default: break
         }
     }

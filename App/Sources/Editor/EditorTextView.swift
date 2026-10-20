@@ -15,6 +15,8 @@ struct EditorTextBlock {
     let editable: Bool
     /// find matches in this block, drawn over the text
     let matches: [NSRange]
+    /// page links and dates are drawn as pictures, in the light or dark look
+    var dark = false
 
     var model: NSAttributedString { InlineText.attributed(block.content ?? []) }
     var plain: Bool { block.type == "codeBlock" }
@@ -26,9 +28,58 @@ struct EditorTextBlock {
     }
 
     func decorate(_ text: NSMutableAttributedString) {
+        let whole = NSRange(location: 0, length: text.length)
+        if !plain {
+            // page links and dates as chips (PageLink, DateMention)
+            let lookup = store.atomLookup
+            text.enumerateAttribute(.editorAtom, in: whole) { value, range, _ in
+                guard let atom = value as? EditorAtom, atom.node.type != "hardBreak",
+                      let chip = EditorAtoms.chip(atom.node, lookup) else { return }
+                let font = (text.attribute(.font, at: range.location, effectiveRange: nil) as? PlatformFont) ?? EditorStyle.font(style, self.font)
+                for index in range.location..<NSMaxRange(range) {
+                    if let attachment = EditorAtoms.attachment(chip, font: font, dark: dark) {
+                        text.addAttribute(.attachment, value: attachment, range: NSRange(location: index, length: 1))
+                    }
+                }
+            }
+            // #tags (Extras.ts Tags): the accent on a soft accent, or the tag's solid colour in colourful mode
+            let colorful = store.controller.preferences.colorful
+            for tag in EditorAtoms.tags(in: text) {
+                if colorful {
+                    let name = Tags.tagColor(tag.name)
+                    text.addAttribute(.backgroundColor, value: PlatformColor(TagColor.solid(name, dark: dark)), range: tag.range)
+                    text.addAttribute(.foregroundColor, value: name == "yellow" ? EditorStyle.rgb(0x2b2100) : PlatformColor.white, range: tag.range)
+                } else {
+                    text.addAttribute(.backgroundColor, value: EditorStyle.accent.withAlphaComponent(0.14), range: tag.range)
+                    text.addAttribute(.foregroundColor, value: EditorStyle.accent, range: tag.range)
+                }
+            }
+        }
         for match in matches where NSMaxRange(match) <= text.length {
             text.addAttribute(.backgroundColor, value: EditorStyle.mark, range: match)
         }
+    }
+
+    /// a page link or date pressed opens it; a #tag opens with the command key held, as Morrow's ctrl or cmd click
+    /// (the caret goes there otherwise). True when the press was taken.
+    @MainActor func press(_ text: NSAttributedString, at index: Int, inside: (NSRange) -> Bool, command: Bool) -> Bool {
+        guard !plain else { return false }
+        for candidate in [index, index - 1] where candidate >= 0 && candidate < text.length {
+            let range = NSRange(location: candidate, length: 1)
+            if let atom = text.attribute(.editorAtom, at: candidate, effectiveRange: nil) as? EditorAtom, inside(range) {
+                switch atom.node.type {
+                case "pageLink": store.openLink(atom.node)
+                case "dateMention": store.openDate(atom.node.attr("date")?.string ?? "")
+                default: return false
+                }
+                return true
+            }
+        }
+        if command, let tag = EditorAtoms.tags(in: text).first(where: { NSLocationInRange(index, $0.range) }) {
+            store.openTag(tag.name)
+            return true
+        }
+        return false
     }
 
     /// the text view's text as content, compared with the block's
@@ -72,6 +123,10 @@ extension EditorTextBlock: UIViewRepresentable {
         view.attributedText = styled()
         context.coordinator.block = self
         view.owner = context.coordinator
+        view.pasteDelegate = context.coordinator
+        let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.tapped(_:)))
+        tap.delegate = context.coordinator
+        view.addGestureRecognizer(tap)
         return view
     }
 
@@ -84,6 +139,13 @@ extension EditorTextBlock: UIViewRepresentable {
         coordinator.block = self
         view.isEditable = editable
         view.undo.store = store
+        // while a menu is open here, the keyboard offers no inline prediction: Return would take the prediction
+        // into the text after the menu has put its choice in
+        let prediction: UITextInlinePredictionType = store.slash?.path == path ? .no : .default
+        if view.inlinePredictionType != prediction {
+            view.inlinePredictionType = prediction
+            if view.isFirstResponder { view.reloadInputViews() }
+        }
         guard view.markedTextRange == nil else { return }
         if !same(view.attributedText) {
             let selection = view.selectedRange
@@ -111,7 +173,44 @@ extension EditorTextBlock: UIViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     @MainActor
-    final class Coordinator: NSObject, UITextViewDelegate {
+    final class Coordinator: NSObject, UITextViewDelegate, UIGestureRecognizerDelegate, UITextPasteDelegate {
+        /// MarkdownPaste: pasted plain text that looks like Markdown becomes blocks; HTML and anything else paste
+        /// as the system pastes them. The text comes through the paste item, as the system hands it over.
+        func textPasteConfigurationSupporting(_ supporting: any UITextPasteConfigurationSupporting, transform item: UITextPasteItem) {
+            let provider = item.itemProvider
+            guard !provider.hasItemConformingToTypeIdentifier("public.html"), provider.canLoadObject(ofClass: NSString.self) else {
+                item.setDefaultResult()
+                return
+            }
+            _ = provider.loadObject(ofClass: NSString.self) { [weak self] object, _ in
+                let text = object as? String
+                DispatchQueue.main.async {
+                    guard let self, let store = self.store, let text, let view = supporting as? UITextView,
+                          store.paste(text, at: self.path, view.selectedRange) else {
+                        item.setDefaultResult()
+                        return
+                    }
+                    item.setNoResult()
+                }
+            }
+        }
+
+        /// a chip or tag under a tap opens; any other tap places the caret as usual
+        @objc func tapped(_ recognizer: UITapGestureRecognizer) {
+            guard let view = recognizer.view as? UITextView, let block else { return }
+            let point = recognizer.location(in: view)
+            guard let position = view.closestPosition(to: point) else { return }
+            let index = view.offset(from: view.beginningOfDocument, to: position)
+            _ = block.press(view.attributedText, at: index, inside: { range in
+                guard let start = view.position(from: view.beginningOfDocument, offset: range.location),
+                      let end = view.position(from: start, offset: range.length),
+                      let textRange = view.textRange(from: start, to: end) else { return false }
+                return view.firstRect(for: textRange).insetBy(dx: -4, dy: -4).contains(point)
+            }, command: recognizer.modifierFlags.contains(.command))
+        }
+
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool { true }
+
         var block: EditorTextBlock?
         var applying = false
         /// the text a key is about to insert, to run the input rules once it is in
@@ -133,6 +232,10 @@ extension EditorTextBlock: UIViewRepresentable {
                 pushUnsent(textView.attributedText)
                 store.enter(path, range.location)
                 sync(textView)
+                return false
+            }
+            // pasted plain text that looks like Markdown becomes blocks
+            if (textView as? BlockTextView)?.pastingPlain == true, text.utf16.count > 1, store.paste(text, at: path, range) {
                 return false
             }
             if !block.plain, text.contains("\n"), textView.markedTextRange == nil {
@@ -180,7 +283,7 @@ extension EditorTextBlock: UIViewRepresentable {
         func sync(_ textView: UITextView) {
             guard let block, let store, let current = store.block(path), EditorSchema.textBlocks.contains(current.type) else { return }
             let updated = EditorTextBlock(store: store, path: path, block: current, style: block.style, context: block.context, font: block.font,
-                                          editable: block.editable, matches: block.matches)
+                                          editable: block.editable, matches: block.matches, dark: block.dark)
             if !updated.same(textView.attributedText) {
                 applying = true
                 textView.attributedText = updated.styled()
@@ -219,7 +322,7 @@ extension EditorTextBlock: UIViewRepresentable {
                   let model = store.block(path), EditorSchema.textBlocks.contains(model.type) else { return }
             // this can run while SwiftUI updates its views: the view changes now, the store a moment later
             let updated = EditorTextBlock(store: store, path: path, block: model, style: block.style, context: block.context, font: block.font,
-                                          editable: block.editable, matches: block.matches)
+                                          editable: block.editable, matches: block.matches, dark: block.dark)
             applying = true
             if !updated.same(view.attributedText) { view.attributedText = updated.styled() }
             let became = view.isFirstResponder || view.becomeFirstResponder()
@@ -311,6 +414,9 @@ final class BlockTextView: UITextView {
 
     private var store: EditorStore? { owner?.store }
     private var path: EditorEdits.Path { owner?.path ?? [] }
+
+    /// iOS reads pasted text through the paste delegate (Coordinator), never here
+    var pastingPlain: Bool { false }
 
     override func deleteBackward() {
         if let store, store.caretLeaving(path), markedTextRange == nil { return }
@@ -514,6 +620,9 @@ extension EditorTextBlock: NSViewRepresentable {
                 store.typeAhead(text)
                 return false
             }
+            if let store, let text, (textView as? BlockTextView)?.pastingPlain == true, text.utf16.count > 1, store.paste(text, at: path, range) {
+                return false
+            }
             if let store, let text, block?.plain == false, text.contains("\n"), !textView.hasMarkedText(), let storage = textView.textStorage {
                 store.insertLines(path, range, text, in: storage)
                 sync(textView)
@@ -557,7 +666,7 @@ extension EditorTextBlock: NSViewRepresentable {
             guard let block, let store, let storage = view.textStorage, let current = store.block(path),
                   EditorSchema.textBlocks.contains(current.type) else { return }
             let updated = EditorTextBlock(store: store, path: path, block: current, style: block.style, context: block.context, font: block.font,
-                                          editable: block.editable, matches: block.matches)
+                                          editable: block.editable, matches: block.matches, dark: block.dark)
             if !updated.same(storage) {
                 applying = true
                 storage.setAttributedString(updated.styled())
@@ -590,7 +699,7 @@ extension EditorTextBlock: NSViewRepresentable {
             guard let store, let current = store.focusRequest, current.path == path, current.id != taken, let window = view.window, let block,
                   let storage = view.textStorage, let model = store.block(path), EditorSchema.textBlocks.contains(model.type) else { return }
             let updated = EditorTextBlock(store: store, path: path, block: model, style: block.style, context: block.context, font: block.font,
-                                          editable: block.editable, matches: block.matches)
+                                          editable: block.editable, matches: block.matches, dark: block.dark)
             applying = true
             if !updated.same(storage) { storage.setAttributedString(updated.styled()) }
             let became = window.firstResponder === view || window.makeFirstResponder(view)
@@ -746,6 +855,30 @@ final class BlockTextView: NSTextView {
         guard let layout = textLayoutManager else { return super.intrinsicContentSize }
         layout.ensureLayout(for: layout.documentRange)
         return NSSize(width: NSView.noIntrinsicMetric, height: ceil(layout.usageBoundsForTextContainer.height))
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        let index = characterIndexForInsertion(at: point)
+        if let block = owner?.block, let storage = textStorage,
+           block.press(storage, at: index, inside: { range in
+               guard let window else { return false }
+               let screen = firstRect(forCharacterRange: range, actualRange: nil)
+               let inView = convert(window.convertFromScreen(screen), from: nil)
+               return inView.insetBy(dx: -4, dy: -4).contains(point)
+           }, command: event.modifierFlags.contains(.command)) {
+            return
+        }
+        super.mouseDown(with: event)
+    }
+
+    /// set while the system pastes, so pasted plain text that looks like Markdown can become blocks
+    private(set) var pastingPlain = false
+
+    override func paste(_ sender: Any?) {
+        pastingPlain = !(NSPasteboard.general.types?.contains(.html) ?? false)
+        defer { pastingPlain = false }
+        super.paste(sender)
     }
 
     override func performKeyEquivalent(with event: NSEvent) -> Bool {

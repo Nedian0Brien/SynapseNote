@@ -462,6 +462,25 @@ nonisolated final class SessionHost: @unchecked Sendable {
         }
     }
 
+    /// MarkdownPaste: pasted text as blocks, [[links]] to the page with that title (pageIdByTitle).
+    func pasteDoc(_ text: String) async -> DocNode? {
+        await run(writes: false) { [self] in
+            guard let session else { return nil }
+            let state = session.state
+            return MarkdownParse.markdownToDoc(text, .init(resolvePage: { Search.pageIdByTitle(state, $0) }))
+        }
+    }
+
+    /// The pages written link targets mean, by Morrow's resolveLinkTarget; a target with none is left out.
+    func resolveTargets(_ targets: [String]) async -> [String: String] {
+        await run(writes: false) { [self] in
+            guard let session else { return [:] }
+            var out: [String: String] = [:]
+            for target in targets { if let id = Search.resolveLinkTarget(session.state, target) { out[target] = id } }
+            return out
+        }
+    }
+
     /// The database screen's data: the database, its rows, what only the rows' documents tell, and the pages its
     /// relation values name. Nil when the page is not a database.
     func database(_ id: String) async -> DatabaseSnapshot? {

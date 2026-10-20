@@ -11,12 +11,19 @@ struct EditorMenus: View {
             let frame = proxy.frame(in: .global)
             if let rect = store.selectionRect, let focus = store.focus {
                 let local = rect.offsetBy(dx: -frame.minX, dy: -frame.minY)
+                if store.slash != nil {
+                    // its top just under the caret, or its bottom just over it when the page has no room left under it
+                    let below = local.maxY + 8 + 340 <= frame.height
+                    ZStack(alignment: .topLeading) {
+                        Color.clear
+                        SlashMenu(store: store)
+                            .alignmentGuide(.top) { below ? $0[.top] : $0[.bottom] }
+                            .offset(x: min(max(8, local.minX), max(8, frame.width - 308)), y: below ? local.maxY + 6 : local.minY - 6)
+                    }
+                }
                 Group {
                     if store.slash != nil {
-                        // below the caret, or above it when the page has no room left under it
-                        let below = local.maxY + 8 + 340 <= frame.height
-                        SlashMenu(store: store)
-                            .position(x: clamp(local.minX + 150, frame.width, 150), y: below ? local.maxY + 8 + 170 : local.minY - 8 - 170)
+                        EmptyView()
                     } else if focus.range.length > 0, store.focusedBlockType != "codeBlock" {
                         FormattingBar(store: store)
                             .fixedSize()
@@ -244,20 +251,29 @@ enum LinkHref {
     }
 }
 
-/// Morrow's SuggestionMenu for blocks: "Insert block", or "No matching blocks"
+/// Morrow's SuggestionMenu: "Insert block" for "/", "Link to page" for "[[", "Mention a date or page" for "@",
+/// each with what it says when nothing matches
 private struct SlashMenu: View {
     let store: EditorStore
+
+    private var titles: (String, String) {
+        switch store.slash?.kind {
+        case .link: ("Link to page", "No pages found")
+        case .mention: ("Mention a date or page", "Nothing matches")
+        default: ("Insert block", "No matching blocks")
+        }
+    }
 
     var body: some View {
         let items = store.slashItems
         VStack(alignment: .leading, spacing: 0) {
-            Text("Insert block")
+            Text(titles.0)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
             if items.isEmpty {
-                Text("No matching blocks")
+                Text(titles.1)
                     .foregroundStyle(.secondary)
                     .padding(10)
             } else {
@@ -294,8 +310,10 @@ private struct SlashMenu: View {
                 .frame(width: 32, height: 32)
                 .background(.quaternary, in: .rect(cornerRadius: 6))
             VStack(alignment: .leading, spacing: 1) {
-                Text(item.title).font(.callout.weight(.medium))
-                Text(item.description).font(.caption).foregroundStyle(.secondary)
+                Text(item.title).font(.callout.weight(.medium)).lineLimit(1)
+                if !item.description.isEmpty {
+                    Text(item.description).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                }
             }
             Spacer()
             if let hint = item.hint {

@@ -729,6 +729,11 @@ final class EditorController: WorkspaceService {
         return await host.editorDoc(pageId)
     }
 
+    /// Pasted Markdown as blocks, for the native editor.
+    func pasteDoc(_ text: String) async -> DocNode? { await host?.pasteDoc(text) }
+
+    func resolveTargets(_ targets: [String]) async -> [String: String] { await host?.resolveTargets(targets) ?? [:] }
+
     /// The native editor shows a page: the page's own editor stays closed for it.
     func nativeEditorShows(_ pageId: String) {
         guard nativeEditorPage != pageId else { return }

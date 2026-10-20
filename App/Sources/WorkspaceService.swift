@@ -20,6 +20,8 @@ nonisolated enum WorkspaceCommand: Equatable, Sendable {
     case setProperties(id: String, values: JSObject)
     /// a new page; data.ts' createRow makes a database row with it
     case createPage(id: String, parentId: String?, title: String, properties: JSObject)
+    /// operations.ts' createPage: a page, database or canvas under a page, with the database or canvas it starts with
+    case newPage(id: String, parentId: String?, title: String, kind: String, database: DatabaseDef?, doc: DocNode?)
 
     /// The command as Morrow's `applyCommand` reads it, keys in the order Morrow's screens write them. `now` is
     /// in whole milliseconds, as `Date.now()`.
@@ -60,6 +62,12 @@ nonisolated enum WorkspaceCommand: Equatable, Sendable {
         case .createPage(let id, let parentId, let title, let properties):
             return ["type": "page.create", "id": .string(id), "parentId": text(parentId), "now": time, "title": .string(title),
                     "properties": .object(properties)]
+        case .newPage(let id, let parentId, let title, let kind, let database, let doc):
+            var fields = JSObject([("type", "page.create"), ("id", .string(id)), ("parentId", text(parentId)), ("now", time),
+                                   ("title", .string(title)), ("kind", .string(kind))])
+            if let database { fields["database"] = database.json }
+            if let doc { fields["doc"] = .object(doc) }
+            return .object(fields)
         }
     }
 }

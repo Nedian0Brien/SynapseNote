@@ -218,12 +218,21 @@ private extension JSObject {
 /// them. The others stay with the web editor until their blocks are drawn here too (11d-5b, 11d-5c).
 nonisolated enum EditorScreen {
     static let nodes: Set<String> = ["doc", "paragraph", "text", "heading", "bulletList", "orderedList", "listItem", "taskList", "taskItem",
-                                     "blockquote", "codeBlock", "horizontalRule", "hardBreak"]
+                                     "blockquote", "codeBlock", "horizontalRule", "hardBreak",
+                                     // 11d-5b
+                                     "pageLink", "dateMention", "table", "tableRow", "tableHeader", "tableCell", "callout", "details",
+                                     "detailsSummary", "detailsContent", "columns", "column", "tableOfContents"]
     static let marks: Set<String> = Set(EditorSchema.markSpecs.map(\.name))
 
     static func draws(_ doc: DocNode) -> Bool {
         let types = EditorSchema.types(doc)
-        guard types.nodes.isSubset(of: nodes), types.marks.isSubset(of: marks) else { return false }
+        guard types.nodes.isSubset(of: nodes), types.marks.isSubset(of: marks), !hasEmbed(doc) else { return false }
         return (try? EditorSchema.normalize(doc)) != nil
+    }
+
+    /// a page shown inside the page (![[embed]]), drawn from 11d-5c
+    static func hasEmbed(_ node: DocNode) -> Bool {
+        if node.type == "pageLink", node.attr("embed")?.truthy == true { return true }
+        return (node.content ?? []).contains(where: hasEmbed)
     }
 }

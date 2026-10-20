@@ -27,6 +27,8 @@ enum EditorStyle {
     struct Context: Equatable {
         var quoted = false
         var checked = false
+        /// a table's header cell, in bold
+        var header = false
     }
 
     static func bodySize(_ font: AppPreferences.Font) -> CGFloat {
@@ -108,7 +110,7 @@ enum EditorStyle {
     static func attributes(_ marks: EditorMarkSet?, _ block: Block, _ context: Context, _ font: AppPreferences.Font) -> [NSAttributedString.Key: Any] {
         let code = marks?.has("code") == true
         var attributes: [NSAttributedString.Key: Any] = [
-            .font: Self.font(block, font, bold: marks?.has("bold") == true, italic: marks?.has("italic") == true || context.quoted, code: code),
+            .font: Self.font(block, font, bold: marks?.has("bold") == true || context.header, italic: marks?.has("italic") == true || context.quoted, code: code),
             .paragraphStyle: paragraphStyle(block, font),
             .foregroundColor: context.checked ? faint : context.quoted ? muted : text,
         ]

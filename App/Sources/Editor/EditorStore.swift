@@ -33,13 +33,28 @@ final class EditorStore {
     private(set) var focusRequest: FocusRequest?
     private var requests = 0
 
-    /// the slash menu: where its "/" is, and the text typed after it
+    /// the menu typed into the text: "/" for blocks, "[[" for a page link, "@" for a date or page; where its
+    /// trigger starts, and the text typed after it
     struct Slash: Equatable {
+        enum Kind: Equatable {
+            case block
+            case link
+            case mention
+        }
+
         var path: Path
         var start: Int
         var query: String
         var selected = 0
+        var kind: Kind = .block
+        /// how long the trigger is: 1 for "/" and "@", 2 for "[["
+        var trigger = 1
     }
+    /// what written link targets find, for links made before their page existed
+    var resolvedTargets: [String: String] = [:]
+    /// the pages the "[[" and "@" menus offer for their query, looked up as it is typed
+    var pageResults: [DatabaseSnapshot.RelatedPage] = []
+    @ObservationIgnored private var pageLookup: Task<Void, Never>?
     var slash: Slash?
 
     /// the find bar
@@ -191,6 +206,9 @@ final class EditorStore {
     // MARK: focus
 
 
+    /// the caret placed for an action that follows at once, without moving the view's
+    func focusAt(_ path: Path) { focus = Focus(path: path, range: NSRange(location: 0, length: 0)) }
+
     func requestFocus(_ path: Path, _ range: NSRange) {
         requests += 1
         focusRequest = FocusRequest(id: requests, path: path, range: range)
@@ -230,7 +248,14 @@ final class EditorStore {
         let marks = range.location > 0 && range.location <= updated.length ? updated.attribute(.editorMarks, at: range.location - 1, effectiveRange: nil) : nil
         updated.replaceCharacters(in: range, with: NSAttributedString(string: parts[0], attributes: marks.map { [.editorMarks: $0] } ?? [:]))
         apply(EditorEdits.replacing(doc, path, with: EditorEdits.withInline(block, InlineText.content(updated))), typing: true)
-        enter(path, range.location + parts[0].utf16.count)
+        let caret = range.location + parts[0].utf16.count
+        // a menu open here reads its query again: an accepted prediction or correction changed it
+        if var open = slash, open.path == path {
+            let from = open.start + open.trigger
+            open.query = caret > from ? (updated.string as NSString).substring(with: NSRange(location: from, length: caret - from)) : ""
+            slash = open
+        }
+        enter(path, caret)
         for part in parts.dropFirst().dropLast() {
             if !part.isEmpty { typeAhead(part) }
             typeAhead("\n")
@@ -251,6 +276,19 @@ final class EditorStore {
             focus = next
         }
         if let slash, slash.path != path || range.location <= slash.start { self.slash = nil }
+        // the query runs to the caret, however the text before it changed (an accepted prediction, a correction)
+        if var open = slash, let block = block(path) {
+            let text = InlineText.string(block.content ?? []) as NSString
+            let from = open.start + open.trigger
+            let caret = min(range.location, text.length)
+            let query = caret > from ? text.substring(with: NSRange(location: from, length: caret - from)) : ""
+            if query != open.query {
+                open.query = query
+                open.selected = 0
+                slash = open
+                if open.kind != .block { lookUpPages(query) }
+            }
+        }
     }
 
     func blurred(_ path: Path) {
@@ -291,25 +329,46 @@ final class EditorStore {
             storedMarks = (storedMarks ?? []).filter { $0.type != rule.mark }
             return true
         }
-        if character == "/" {
-            // the slash opens the menu at the start of a line or after a space (Suggestion's allowedPrefixes)
-            let start = caret - 1
-            let previous = start > 0 ? string.substring(with: NSRange(location: start - 1, length: 1)) : " "
-            if previous == " " || previous == "\n" || previous == "\u{2028}" || start == 0 {
-                slash = Slash(path: path, start: start, query: "")
-            }
+        let start = caret - 1
+        let previous = start > 0 ? string.substring(with: NSRange(location: start - 1, length: 1)) : " "
+        // "/" and "@" open their menus at the start of a line or after a space (Suggestion's allowedPrefixes),
+        // "[[" anywhere (PageLink's allowedPrefixes: null)
+        let atWordStart = start == 0 || previous == " " || previous == "\n" || previous == "\u{2028}"
+        if character == "/", atWordStart {
+            slash = Slash(path: path, start: start, query: "")
+        } else if character == "@", atWordStart {
+            slash = Slash(path: path, start: start, query: "", kind: .mention)
+            lookUpPages("")
+        } else if character == "[", previous == "[", start > 0 {
+            slash = Slash(path: path, start: start - 1, query: "", kind: .link, trigger: 2)
+            lookUpPages("")
         } else if var open = slash, open.path == path {
-            // allowSpaces: the query runs to the caret; a long one or two spaces in a row closes it
-            let query = caret > open.start ? string.substring(with: NSRange(location: open.start + 1, length: max(0, caret - open.start - 1))) : ""
-            if caret <= open.start || query.utf16.count > 40 || query.contains("  ") {
+            // allowSpaces: the query runs to the caret; two spaces in a row close it, and a slash query past 40
+            let from = open.start + open.trigger
+            let query = caret > from ? string.substring(with: NSRange(location: from, length: caret - from)) : ""
+            if caret < from || query.contains("  ") || (open.kind == .block && query.utf16.count > 40) {
                 slash = nil
             } else {
                 open.query = query
                 open.selected = 0
                 slash = open
+                if open.kind != .block { lookUpPages(query) }
             }
         }
         return false
+    }
+
+    /// the pages for a "[[" or "@" query: findPagesByTitle's eight, this page left out; a link query drops the
+    /// "]]" typed after it
+    private func lookUpPages(_ query: String) {
+        pageLookup?.cancel()
+        let title = query.replacingOccurrences(of: "\\]+$", with: "", options: .regularExpression).trimmingCharacters(in: .whitespaces)
+        pageLookup = Task { [weak self] in
+            guard let self else { return }
+            let found = await controller.findPages(title, excluding: pageId, limit: 8)
+            guard !Task.isCancelled else { return }
+            pageResults = found
+        }
     }
 
     // MARK: keys
@@ -348,6 +407,9 @@ final class EditorStore {
 
     /// Tab and Shift-Tab: a list item in or out. False when the block is not in a list, so the key does its own thing.
     func indent(_ path: Path, out: Bool) -> Bool {
+        // a list item that can move takes Tab first, then a table cell (TipTap runs StarterKit's keys before Table's)
+        let movable = itemPath(path).flatMap { out ? EditorEdits.outdent(doc, $0) : EditorEdits.indent(doc, $0) }
+        if movable == nil, tabInTable(path, back: out) { return true }
         guard let itemPath = itemPath(path) else { return false }
         let result = out ? EditorEdits.outdent(doc, itemPath) : EditorEdits.indent(doc, itemPath)
         if let (next, caret) = result {
@@ -503,7 +565,37 @@ final class EditorStore {
 
     // MARK: the slash menu
 
-    var slashItems: [SlashItem] { SlashItem.filter(slash?.query ?? "") }
+    var slashItems: [SlashItem] {
+        guard let slash else { return [] }
+        switch slash.kind {
+        case .block:
+            return SlashItem.filter(slash.query)
+        case .link:
+            let title = slash.query.replacingOccurrences(of: "\\]+$", with: "", options: .regularExpression).trimmingCharacters(in: .whitespaces)
+            var items = pageResults.map { pageItem($0) }
+            if !title.isEmpty, !pageResults.contains(where: { $0.title.lowercased() == title.lowercased() }) {
+                items.append(SlashItem(id: "create:\(title)", title: "New subpage “\(title)”", description: "", symbol: "doc.badge.plus",
+                                       keywords: "", action: .newPage(title: title)))
+            }
+            return items
+        case .mention:
+            // a query past 30 finds nothing, as Morrow's date menu
+            guard slash.query.utf16.count <= 30 else { return [] }
+            let dates = DateMentions.suggestions(slash.query).map { date -> SlashItem in
+                let key = Daily.dateKey(date)
+                return SlashItem(id: "date:\(key)", title: DateMentions.describe(key), description: DateMentions.long(date), symbol: "calendar",
+                                 keywords: "", action: .date(key: key))
+            }
+            return dates + pageResults.prefix(5).map { pageItem($0) }
+        }
+    }
+
+    /// a page in the "[[" and "@" menus, with the pages it sits under
+    private func pageItem(_ page: DatabaseSnapshot.RelatedPage) -> SlashItem {
+        let path = controller.workspace.ancestors(of: page.id).reversed().map(\.displayTitle).joined(separator: " / ")
+        return SlashItem(id: "page:\(page.id)", title: page.title, description: path, symbol: "doc.text", keywords: "",
+                         action: .page(id: page.id, title: page.title))
+    }
 
     func moveSlash(by step: Int) {
         guard var open = slash else { return }
@@ -522,6 +614,10 @@ final class EditorStore {
             return
         }
         slash = nil
+        if item.action != .block {
+            choose(item.action, open, block)
+            return
+        }
         let text = NSMutableAttributedString(attributedString: InlineText.attributed(block.content ?? []))
         let end = min(open.start + 1 + open.query.utf16.count, text.length)
         text.deleteCharacters(in: NSRange(location: open.start, length: max(0, end - open.start)))
