@@ -213,9 +213,29 @@ final class EditorStore {
         let marks = range.location > 0 ? current.attribute(.editorMarks, at: range.location - 1, effectiveRange: nil) : nil
         current.replaceCharacters(in: range, with: NSAttributedString(string: text, attributes: marks.map { [.editorMarks: $0] } ?? [:]))
         let caret = range.location + text.utf16.count
+        // the input rules and the slash menu run as they would in the block's own view
+        if text.utf16.count == 1, range.length == 0, typed(request.path, text: current, caret: caret, character: text) { return }
         let plain = block.type == "codeBlock"
         apply(EditorEdits.replacing(doc, request.path, with: EditorEdits.withInline(block, InlineText.content(current, plain: plain))), typing: true)
         requestFocus(request.path, NSRange(location: caret, length: 0))
+    }
+
+    /// text with line breaks in it, such as Return pressed while an autocorrection is pending, which comes as the
+    /// corrected word and the newline together: each newline splits the block as Enter does
+    func insertLines(_ path: Path, _ range: NSRange, _ text: String, in current: NSAttributedString) {
+        guard let block = block(path) else { return }
+        let parts = text.components(separatedBy: "\n")
+        let updated = NSMutableAttributedString(attributedString: InlineText.attributed(block.content ?? []))
+        _ = current
+        let marks = range.location > 0 && range.location <= updated.length ? updated.attribute(.editorMarks, at: range.location - 1, effectiveRange: nil) : nil
+        updated.replaceCharacters(in: range, with: NSAttributedString(string: parts[0], attributes: marks.map { [.editorMarks: $0] } ?? [:]))
+        apply(EditorEdits.replacing(doc, path, with: EditorEdits.withInline(block, InlineText.content(updated))), typing: true)
+        enter(path, range.location + parts[0].utf16.count)
+        for part in parts.dropFirst().dropLast() {
+            if !part.isEmpty { typeAhead(part) }
+            typeAhead("\n")
+        }
+        if let last = parts.dropFirst().last, !last.isEmpty { typeAhead(last) }
     }
 
     /// a focus move is on its way to a block other than this one
@@ -305,7 +325,9 @@ final class EditorStore {
 
     func hardBreak(_ path: Path, _ range: NSRange, _ text: NSAttributedString) {
         guard let block = block(path) else { return }
-        let updated = NSMutableAttributedString(attributedString: text)
+        // the store's text, which the view's copy can lag behind
+        let updated = NSMutableAttributedString(attributedString: InlineText.attributed(block.content ?? []))
+        _ = text
         if block.type == "codeBlock" {
             updated.replaceCharacters(in: range, with: "\n")
         } else {

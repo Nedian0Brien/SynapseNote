@@ -13,8 +13,10 @@ struct EditorMenus: View {
                 let local = rect.offsetBy(dx: -frame.minX, dy: -frame.minY)
                 Group {
                     if store.slash != nil {
+                        // below the caret, or above it when the page has no room left under it
+                        let below = local.maxY + 8 + 340 <= frame.height
                         SlashMenu(store: store)
-                            .position(x: clamp(local.minX + 150, frame.width, 150), y: local.maxY + 8 + 170)
+                            .position(x: clamp(local.minX + 150, frame.width, 150), y: below ? local.maxY + 8 + 170 : local.minY - 8 - 170)
                     } else if focus.range.length > 0, store.focusedBlockType != "codeBlock" {
                         FormattingBar(store: store)
                             .fixedSize()
@@ -323,6 +325,10 @@ struct FindBar: View {
                     .frame(width: 200)
                     .focused($focused)
                     .onSubmit { store.findNext(1) }
+                    .autocorrectionDisabled()
+                    #if os(iOS)
+                    .textInputAutocapitalization(.never)
+                    #endif
                     .accessibilityLabel("Find in page")
                 Text(query.isEmpty ? "" : count > 0 ? "\(min((store.find?.current ?? 0) + 1, count)) of \(count)" : "No results")
                     .font(.caption.monospacedDigit())
