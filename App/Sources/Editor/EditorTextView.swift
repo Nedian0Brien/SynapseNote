@@ -148,9 +148,11 @@ extension EditorTextBlock: UIViewRepresentable {
         context.coordinator.block = self
         view.owner = context.coordinator
         view.pasteDelegate = context.coordinator
-        // pictures and files paste too, as files (Media.ts FileDrop)
-        if !plain, let configuration = view.pasteConfiguration {
+        // pictures and files paste too, as files (Media.ts FileDrop), as well as text
+        if !plain {
+            let configuration = view.pasteConfiguration ?? UIPasteConfiguration(acceptableTypeIdentifiers: [UTType.text.identifier, UTType.url.identifier])
             configuration.addAcceptableTypeIdentifiers([UTType.image.identifier, UTType.fileURL.identifier])
+            view.pasteConfiguration = configuration
         }
         let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.tapped(_:)))
         tap.delegate = context.coordinator
@@ -461,6 +463,16 @@ final class BlockTextView: UITextView {
     lazy var undo = EditorUndoManager()
 
     override var undoManager: UndoManager? { undo }
+
+    /// a picture or a file on the pasteboard pastes too (Media.ts FileDrop); these checks read no content, so
+    /// the system asks nothing until the paste itself
+    override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+        if action == #selector(paste(_:)), isEditable, owner?.block?.plain == false,
+           UIPasteboard.general.hasImages || UIPasteboard.general.hasURLs {
+            return true
+        }
+        return super.canPerformAction(action, withSender: sender)
+    }
 
     override func didMoveToWindow() {
         super.didMoveToWindow()
