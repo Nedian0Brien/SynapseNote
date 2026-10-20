@@ -179,6 +179,19 @@ enum EditorStyle {
     static let mark = dynamic(light: rgba((214, 160, 40, 0.28)), dark: rgba((230, 180, 60, 0.3)))
     /// `--code-bg`
     static let codeBackground = dynamic(light: rgb(0xf6f6f5), dark: rgb(0x222222))
+    /// features.css `--hl-*` and tokens.css `--danger`, light and dark
+    static func highlight(_ tone: CodeHighlight.Tone) -> PlatformColor {
+        let (light, dark): (UInt32, UInt32) = switch tone {
+        case .keyword: (0x9b3fa6, 0xd49ae0)
+        case .string: (0x3a7a3f, 0x9bcf8f)
+        case .number: (0xa3521c, 0xf0a971)
+        case .comment: (0x8a857b, 0x8a857b)
+        case .title: (0x2f62a0, 0x8fb8ea)
+        case .attr: (0x8a6214, 0xe9cb6d)
+        case .deletion: (0xb3261e, 0xf07a6e)
+        }
+        return dynamic(light: rgb(light), dark: rgb(dark))
+    }
     #if os(iOS)
     static var accent: PlatformColor { .tintColor }
     static let text = PlatformColor.label

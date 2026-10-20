@@ -31,6 +31,10 @@ targets:
         buildPhase: resources
         # missing in a fresh clone until the first build creates it
         optional: true
+      # katex, mermaid and highlight.js for the native editor, written by web/scripts/vendor-renderers.ts
+      - path: App/Renderers
+        type: folder
+        buildPhase: resources
       # app icon made in Icon Composer from the layers scripts/make-icon.swift draws (design/app-icon/),
       # with its dark and tinted appearances; Xcode builds every platform's icon from it
       - path: App/AppIcon.icon

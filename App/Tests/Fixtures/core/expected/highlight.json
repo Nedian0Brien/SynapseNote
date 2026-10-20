@@ -1,0 +1,14427 @@
+{
+ "languages": [
+  "arduino",
+  "bash",
+  "c",
+  "cpp",
+  "csharp",
+  "css",
+  "diff",
+  "go",
+  "graphql",
+  "ini",
+  "java",
+  "javascript",
+  "json",
+  "kotlin",
+  "less",
+  "lua",
+  "makefile",
+  "markdown",
+  "mermaid",
+  "objectivec",
+  "perl",
+  "php",
+  "php-template",
+  "plaintext",
+  "python",
+  "python-repl",
+  "r",
+  "ruby",
+  "rust",
+  "scss",
+  "shell",
+  "sql",
+  "swift",
+  "typescript",
+  "vbnet",
+  "wasm",
+  "xml",
+  "yaml"
+ ],
+ "blocks": [
+  {
+   "language": null,
+   "code": "plain fence",
+   "runs": []
+  },
+  {
+   "language": "ts",
+   "code": "const a = 1;",
+   "runs": [
+    [
+     0,
+     5,
+     "hljs-keyword"
+    ],
+    [
+     10,
+     11,
+     "hljs-number"
+    ]
+   ]
+  },
+  {
+   "language": "python",
+   "code": "print(\"tilde\")",
+   "runs": [
+    [
+     0,
+     5,
+     "hljs-built_in"
+    ],
+    [
+     6,
+     13,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "indented code\nsecond line",
+   "runs": [
+    [
+     9,
+     13,
+     "hljs-selector-tag"
+    ],
+    [
+     21,
+     25,
+     "hljs-selector-tag"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "``` inside",
+   "runs": [
+    [
+     0,
+     2,
+     "hljs-string"
+    ],
+    [
+     2,
+     10,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "mermaid",
+   "code": "graph LR\n  A --> B",
+   "runs": [
+    [
+     11,
+     12,
+     "hljs-selector-tag"
+    ],
+    [
+     17,
+     18,
+     "hljs-selector-tag"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "unclosed fence",
+   "runs": []
+  },
+  {
+   "language": null,
+   "code": "tab indented",
+   "runs": []
+  },
+  {
+   "language": "ts",
+   "code": "const answer = 42;",
+   "runs": [
+    [
+     0,
+     5,
+     "hljs-keyword"
+    ],
+    [
+     15,
+     17,
+     "hljs-number"
+    ]
+   ]
+  },
+  {
+   "language": "ts",
+   "code": "\t{\\[^\\|[[Page]]\n===]][[2026-10-17]]```=</a>}<javascript:alert(1)>$<br>:``\n####### &#65;](https://example.org \"t\")\n  - \n2) ",
+   "runs": [
+    [
+     9,
+     13,
+     "hljs-title class_"
+    ],
+    [
+     23,
+     27,
+     "hljs-number"
+    ],
+    [
+     28,
+     30,
+     "hljs-number"
+    ],
+    [
+     31,
+     33,
+     "hljs-number"
+    ],
+    [
+     35,
+     37,
+     "hljs-string"
+    ],
+    [
+     37,
+     72,
+     "hljs-string"
+    ],
+    [
+     72,
+     122,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "ts<br><br/>\\[%<a@b.co>[ref]~~",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "ts][ref]<span",
+   "code": "$$(text\\|&copy$==**\n> [!tip]+   <https://x.y/z?q=1>two words-%<mark style=\"background: #e7f3f8\">$$\n</span>two words<mark>",
+   "runs": [
+    [
+     3,
+     7,
+     "hljs-selector-tag"
+    ],
+    [
+     9,
+     10,
+     "hljs-selector-tag"
+    ],
+    [
+     10,
+     14,
+     "hljs-selector-tag"
+    ],
+    [
+     22,
+     28,
+     "hljs-selector-attr"
+    ],
+    [
+     33,
+     38,
+     "hljs-selector-tag"
+    ],
+    [
+     39,
+     98,
+     "hljs-comment"
+    ],
+    [
+     101,
+     105,
+     "hljs-selector-tag"
+    ],
+    [
+     106,
+     109,
+     "hljs-selector-tag"
+    ],
+    [
+     110,
+     115,
+     "hljs-selector-tag"
+    ],
+    [
+     116,
+     120,
+     "hljs-selector-tag"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "(}]]",
+   "runs": []
+  },
+  {
+   "language": null,
+   "code": "\\[[[Folder/Page#Head|Alias]]***<span style=\"color: #d44c47\">``][ref]%&#x110000;[[Folder/Page#Head|Alias]]",
+   "runs": [
+    [
+     1,
+     28,
+     "hljs-string"
+    ],
+    [
+     43,
+     59,
+     "hljs-string"
+    ],
+    [
+     79,
+     105,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "![&#65;_",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "__[[Page]]\\",
+   "code": "Ünïcödé[__ &#65;{",
+   "runs": [
+    [
+     3,
+     4,
+     "hljs-built_in"
+    ],
+    [
+     7,
+     8,
+     "hljs-punctuation"
+    ],
+    [
+     11,
+     12,
+     "hljs-operator"
+    ],
+    [
+     12,
+     17,
+     "hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": "&#65;",
+   "code": "- [ ] <javascript:alert(1)>$***http://例え.jp<mark style=\"background: #e7f3f8\">\n___```$$다람쥐 헌 쳇바퀴\n<aside>]([[Folder/Page#Head|Alias]]![alt](img.png)=",
+   "runs": [
+    [
+     2,
+     5,
+     "hljs-section"
+    ],
+    [
+     49,
+     54,
+     "hljs-attr"
+    ],
+    [
+     55,
+     76,
+     "hljs-string"
+    ],
+    [
+     105,
+     131,
+     "hljs-section"
+    ],
+    [
+     132,
+     137,
+     "hljs-section"
+    ]
+   ]
+  },
+  {
+   "language": "ts@</a>>![[pic.png]]__",
+   "code": "<?php \n<!--%!(&copy<br/><a@b.co>>'<mark style=\"background: #e7f3f8\">\n===다람쥐 헌 쳇바퀴\n&copy**<u>**<mark>+$5\n[Ref Two]: <https://example.org/a b> 't'\t\n*** <🧪x](https://example.org \"t\")](<mark>[[~~](/path)&copy&#65;\n    <mark>[[Folder/Page#Head|Alias]]</a>\n***$5\n]",
+   "runs": [
+    [
+     2,
+     5,
+     "hljs-selector-tag"
+    ],
+    [
+     9,
+     11,
+     "hljs-selector-tag"
+    ],
+    [
+     26,
+     28,
+     "hljs-variable"
+    ],
+    [
+     46,
+     67,
+     "hljs-string"
+    ],
+    [
+     102,
+     103,
+     "hljs-number"
+    ],
+    [
+     116,
+     121,
+     "hljs-attribute"
+    ],
+    [
+     122,
+     145,
+     "hljs-comment"
+    ],
+    [
+     156,
+     161,
+     "hljs-attribute"
+    ],
+    [
+     162,
+     210,
+     "hljs-comment"
+    ],
+    [
+     256,
+     257,
+     "hljs-number"
+    ]
+   ]
+  },
+  {
+   "language": "$5[[Folder/Page#Head|Alias]]'",
+   "code": "\n#anchorÜnïcödé**~<javascript:alert(1)>\n{\n---http://例え.jp   \n<script> </b>![[pic.png]]](https://example.org \"t\")__\n__[x]&#65;*&copy\n$$1.<br/>>![\\*</mark>&copy<a@b.co>1.#@\n<custom-tag attr=\"1\">\\*\"<b><span style=\"background-color:#fbecdd;\">**",
+   "runs": [
+    [
+     0,
+     61,
+     "xml"
+    ],
+    [
+     61,
+     62,
+     "xml hljs-tag"
+    ],
+    [
+     62,
+     68,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     68,
+     69,
+     "xml hljs-tag"
+    ],
+    [
+     69,
+     70,
+     "xml xml"
+    ],
+    [
+     70,
+     72,
+     "xml xml hljs-tag"
+    ],
+    [
+     72,
+     73,
+     "xml xml hljs-tag hljs-name"
+    ],
+    [
+     73,
+     74,
+     "xml xml hljs-tag"
+    ],
+    [
+     74,
+     120,
+     "xml xml"
+    ],
+    [
+     120,
+     125,
+     "xml xml hljs-symbol"
+    ],
+    [
+     125,
+     136,
+     "xml xml"
+    ],
+    [
+     136,
+     137,
+     "xml xml hljs-tag"
+    ],
+    [
+     137,
+     139,
+     "xml xml hljs-tag hljs-name"
+    ],
+    [
+     139,
+     141,
+     "xml xml hljs-tag"
+    ],
+    [
+     141,
+     146,
+     "xml xml"
+    ],
+    [
+     146,
+     148,
+     "xml xml hljs-tag"
+    ],
+    [
+     148,
+     152,
+     "xml xml hljs-tag hljs-name"
+    ],
+    [
+     152,
+     153,
+     "xml xml hljs-tag"
+    ],
+    [
+     153,
+     171,
+     "xml xml"
+    ],
+    [
+     171,
+     172,
+     "xml xml hljs-tag"
+    ],
+    [
+     172,
+     182,
+     "xml xml hljs-tag hljs-name"
+    ],
+    [
+     182,
+     183,
+     "xml xml hljs-tag"
+    ],
+    [
+     183,
+     187,
+     "xml xml hljs-tag hljs-attr"
+    ],
+    [
+     187,
+     188,
+     "xml xml hljs-tag"
+    ],
+    [
+     188,
+     191,
+     "xml xml hljs-tag hljs-string"
+    ],
+    [
+     191,
+     192,
+     "xml xml hljs-tag"
+    ],
+    [
+     192,
+     195,
+     "xml xml"
+    ],
+    [
+     195,
+     196,
+     "xml xml hljs-tag"
+    ],
+    [
+     196,
+     197,
+     "xml xml hljs-tag hljs-name"
+    ],
+    [
+     197,
+     198,
+     "xml xml hljs-tag"
+    ],
+    [
+     198,
+     199,
+     "xml xml hljs-tag"
+    ],
+    [
+     199,
+     203,
+     "xml xml hljs-tag hljs-name"
+    ],
+    [
+     203,
+     204,
+     "xml xml hljs-tag"
+    ],
+    [
+     204,
+     209,
+     "xml xml hljs-tag hljs-attr"
+    ],
+    [
+     209,
+     210,
+     "xml xml hljs-tag"
+    ],
+    [
+     210,
+     237,
+     "xml xml hljs-tag hljs-string"
+    ],
+    [
+     237,
+     238,
+     "xml xml hljs-tag"
+    ],
+    [
+     238,
+     240,
+     "xml xml"
+    ]
+   ]
+  },
+  {
+   "language": "ts):__[[\\\\[&#x110000;",
+   "code": "> ![alt](img.png)[[]({\n<custom-tag attr=\"1\">[x]][ref]#anchor](https://example.org \"t\")$5 \n$5\t\n[ ]<br/>$",
+   "runs": [
+    [
+     3,
+     8,
+     "hljs-section"
+    ],
+    [
+     17,
+     20,
+     "hljs-section"
+    ],
+    [
+     35,
+     39,
+     "hljs-attr"
+    ],
+    [
+     40,
+     43,
+     "hljs-string"
+    ],
+    [
+     53,
+     89,
+     "hljs-comment"
+    ],
+    [
+     94,
+     97,
+     "hljs-section"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "http://例え.jp&#0;&http://例え.jp다람쥐 헌 쳇바퀴&Agrave;<b><javascript:alert(1)>",
+   "runs": [
+    [
+     14,
+     15,
+     "hljs-number"
+    ],
+    [
+     47,
+     48,
+     "hljs-selector-tag"
+    ],
+    [
+     61,
+     66,
+     "hljs-built_in"
+    ],
+    [
+     67,
+     68,
+     "hljs-number"
+    ]
+   ]
+  },
+  {
+   "language": "ts![alt](img.png)word😀[[<</u>!~<span",
+   "code": "[Ref Two]: <https://example.org/a b> 't''|</span>\\*<javascript:alert(1)>$]==>\n\t<a href=\"x\">@<mark style=\"background: #e7f3f8\">[x]#😀==</a>\n  - )&",
+   "runs": [
+    [
+     0,
+     9,
+     "hljs-selector-attr"
+    ],
+    [
+     12,
+     17,
+     "hljs-selector-tag"
+    ],
+    [
+     18,
+     77,
+     "hljs-comment"
+    ],
+    [
+     80,
+     81,
+     "hljs-selector-tag"
+    ],
+    [
+     82,
+     86,
+     "hljs-selector-tag"
+    ],
+    [
+     88,
+     89,
+     "hljs-selector-tag"
+    ],
+    [
+     93,
+     97,
+     "hljs-selector-tag"
+    ],
+    [
+     98,
+     103,
+     "hljs-selector-tag"
+    ],
+    [
+     105,
+     115,
+     "hljs-selector-tag"
+    ],
+    [
+     117,
+     124,
+     "hljs-selector-id"
+    ],
+    [
+     126,
+     129,
+     "hljs-selector-attr"
+    ],
+    [
+     136,
+     137,
+     "hljs-selector-tag"
+    ],
+    [
+     141,
+     142,
+     "hljs-selector-tag"
+    ],
+    [
+     144,
+     145,
+     "hljs-selector-tag"
+    ]
+   ]
+  },
+  {
+   "language": "ts=~](/path)](https://example.org",
+   "code": "<aside>]]~~[[\\*<b>@1.[[Page]]<span style=\"color: #d44c47\">&#x110000;**\n1. \\*]]<u>}&#65;[[2026-10-17]]&amp;~~\\[\n```</b>\n- &#0;&bogus;``<javascript:alert(1)>\n2) #` \\*</b>\\two words\n\\[\n```-<javascript:alert(1)>&#0;<](*%:_```",
+   "runs": [
+    [
+     0,
+     1,
+     "xml hljs-tag"
+    ],
+    [
+     1,
+     6,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     6,
+     7,
+     "xml hljs-tag"
+    ],
+    [
+     7,
+     15,
+     "xml"
+    ],
+    [
+     15,
+     16,
+     "xml hljs-tag"
+    ],
+    [
+     16,
+     17,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     17,
+     18,
+     "xml hljs-tag"
+    ],
+    [
+     18,
+     29,
+     "xml"
+    ],
+    [
+     29,
+     30,
+     "xml hljs-tag"
+    ],
+    [
+     30,
+     34,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     34,
+     35,
+     "xml hljs-tag"
+    ],
+    [
+     35,
+     40,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     40,
+     41,
+     "xml hljs-tag"
+    ],
+    [
+     41,
+     57,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     57,
+     58,
+     "xml hljs-tag"
+    ],
+    [
+     58,
+     68,
+     "xml hljs-symbol"
+    ],
+    [
+     68,
+     78,
+     "xml"
+    ],
+    [
+     78,
+     79,
+     "xml hljs-tag"
+    ],
+    [
+     79,
+     80,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     80,
+     81,
+     "xml hljs-tag"
+    ],
+    [
+     81,
+     82,
+     "xml"
+    ],
+    [
+     82,
+     87,
+     "xml hljs-symbol"
+    ],
+    [
+     87,
+     101,
+     "xml"
+    ],
+    [
+     101,
+     106,
+     "xml hljs-symbol"
+    ],
+    [
+     106,
+     114,
+     "xml"
+    ],
+    [
+     114,
+     116,
+     "xml hljs-tag"
+    ],
+    [
+     116,
+     117,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     117,
+     118,
+     "xml hljs-tag"
+    ],
+    [
+     118,
+     121,
+     "xml"
+    ],
+    [
+     121,
+     125,
+     "xml hljs-symbol"
+    ],
+    [
+     125,
+     132,
+     "xml hljs-symbol"
+    ],
+    [
+     132,
+     164,
+     "xml"
+    ],
+    [
+     164,
+     166,
+     "xml hljs-tag"
+    ],
+    [
+     166,
+     167,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     167,
+     168,
+     "xml hljs-tag"
+    ],
+    [
+     168,
+     207,
+     "xml"
+    ],
+    [
+     207,
+     211,
+     "xml hljs-symbol"
+    ],
+    [
+     211,
+     221,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": "[[%<u>#anchor+word![alt](img.png)<https://x.y/z?q=1>🧪xtwo",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": null,
+   "code": "<a href=\"x\"><span style=\"background-color:#fbecdd;\">```</a>'![[pic.png]]&#65;다람쥐 헌 쳇바퀴\n&#0;\n| \n[x]\\\n==$5two words\n<pre>\\\n\n</span>\n<br>[[[ ]🧪xhttps://example.org/a b&nbsp;</mark>word",
+   "runs": [
+    [
+     1,
+     2,
+     "hljs-selector-tag"
+    ],
+    [
+     9,
+     10,
+     "hljs-attribute"
+    ],
+    [
+     13,
+     17,
+     "hljs-selector-tag"
+    ],
+    [
+     25,
+     41,
+     "hljs-attribute"
+    ],
+    [
+     42,
+     49,
+     "hljs-number"
+    ],
+    [
+     57,
+     58,
+     "hljs-selector-tag"
+    ],
+    [
+     61,
+     71,
+     "hljs-selector-attr"
+    ],
+    [
+     73,
+     76,
+     "hljs-selector-id"
+    ],
+    [
+     88,
+     90,
+     "hljs-selector-id"
+    ],
+    [
+     95,
+     98,
+     "hljs-selector-attr"
+    ],
+    [
+     103,
+     104,
+     "hljs-number"
+    ],
+    [
+     124,
+     128,
+     "hljs-selector-tag"
+    ],
+    [
+     134,
+     139,
+     "hljs-selector-attr"
+    ],
+    [
+     173,
+     177,
+     "hljs-selector-tag"
+    ]
+   ]
+  },
+  {
+   "language": "\"][ref]]'<https://x.y/z?q=1>[",
+   "code": "</details>\n* [X] http://例え.jp-<mark style=\"background: #e7f3f8\">&#x41;$$[[Ünïcödé\n# [[2026-10-17]]<mark style=\"background: #e7f3f8\">[ref]\n> [!note] </u>][ref]**word\n](/path)<~",
+   "runs": [
+    [
+     2,
+     9,
+     "hljs-selector-tag"
+    ],
+    [
+     13,
+     16,
+     "hljs-selector-attr"
+    ],
+    [
+     17,
+     21,
+     "hljs-selector-tag"
+    ],
+    [
+     22,
+     81,
+     "hljs-comment"
+    ],
+    [
+     84,
+     97,
+     "hljs-selector-attr"
+    ],
+    [
+     99,
+     103,
+     "hljs-selector-tag"
+    ],
+    [
+     104,
+     109,
+     "hljs-selector-tag"
+    ],
+    [
+     111,
+     121,
+     "hljs-selector-tag"
+    ],
+    [
+     123,
+     130,
+     "hljs-selector-id"
+    ],
+    [
+     132,
+     137,
+     "hljs-selector-attr"
+    ],
+    [
+     140,
+     147,
+     "hljs-selector-attr"
+    ],
+    [
+     150,
+     151,
+     "hljs-selector-tag"
+    ],
+    [
+     153,
+     158,
+     "hljs-selector-attr"
+    ],
+    [
+     160,
+     164,
+     "hljs-selector-tag"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "\\*https://example.org/a b&#x110000;</span></mark><br>&#x110000;<br>",
+   "runs": [
+    [
+     0,
+     25,
+     "xml"
+    ],
+    [
+     25,
+     35,
+     "xml hljs-symbol"
+    ],
+    [
+     35,
+     37,
+     "xml hljs-tag"
+    ],
+    [
+     37,
+     41,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     41,
+     42,
+     "xml hljs-tag"
+    ],
+    [
+     42,
+     44,
+     "xml hljs-tag"
+    ],
+    [
+     44,
+     48,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     48,
+     49,
+     "xml hljs-tag"
+    ],
+    [
+     49,
+     50,
+     "xml hljs-tag"
+    ],
+    [
+     50,
+     52,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     52,
+     53,
+     "xml hljs-tag"
+    ],
+    [
+     53,
+     63,
+     "xml hljs-symbol"
+    ],
+    [
+     63,
+     64,
+     "xml hljs-tag"
+    ],
+    [
+     64,
+     66,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     66,
+     67,
+     "xml hljs-tag"
+    ]
+   ]
+  },
+  {
+   "language": "ts******",
+   "code": "<aside></span>\n\\[|alias~~다람쥐 헌 쳇바퀴>word&bogus;1.",
+   "runs": [
+    [
+     0,
+     1,
+     "xml hljs-tag"
+    ],
+    [
+     1,
+     6,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     6,
+     7,
+     "xml hljs-tag"
+    ],
+    [
+     7,
+     9,
+     "xml hljs-tag"
+    ],
+    [
+     9,
+     13,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     13,
+     14,
+     "xml hljs-tag"
+    ],
+    [
+     14,
+     39,
+     "xml"
+    ],
+    [
+     39,
+     46,
+     "xml hljs-symbol"
+    ],
+    [
+     46,
+     48,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": "</b><mark>![$text&amp;",
+   "code": "> [!tip]+\\\n&#0;\\| _==#anchor\n- [x] (</a>(🧪x\\\n<a href=\"x\"><b>[[2026-10-17]]@\n####### [[Folder/Page#Head|Alias]]]\\[\nword)][ref]&https://example.org/a b[[Page]]|alias  ",
+   "runs": [
+    [
+     13,
+     14,
+     "hljs-number"
+    ],
+    [
+     54,
+     57,
+     "hljs-string"
+    ],
+    [
+     61,
+     75,
+     "hljs-string"
+    ],
+    [
+     85,
+     111,
+     "hljs-string"
+    ],
+    [
+     150,
+     158,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "<mark>",
+   "runs": [
+    [
+     1,
+     5,
+     "hljs-selector-tag"
+    ]
+   ]
+  },
+  {
+   "language": "ts![</u>&",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": null,
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "[x][&#x41;Ünïcödé&#0;![",
+   "code": "<![CDATA[__[[2026-10-17]][[[ref])&\n```ts``\\|word[ ]\n\t:<a href=\"x\">$5]]%<https://x.y/z?q=1>**+~1.\\",
+   "runs": [
+    [
+     11,
+     25,
+     "hljs-string"
+    ],
+    [
+     25,
+     70,
+     "hljs-string"
+    ],
+    [
+     88,
+     89,
+     "hljs-number"
+    ],
+    [
+     94,
+     96,
+     "hljs-number"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "^{]( &#x110000;\\*\"",
+   "runs": [
+    [
+     6,
+     18,
+     "hljs-meta"
+    ]
+   ]
+  },
+  {
+   "language": "<span",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "\"[[2026-10-17]]__[ref]😀](https://example.org",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "ts",
+   "code": "~~~```](/path)\n- \\*]]`[<br/>\n<?php &copy \n</div>==+\n```ts<a@b.co>|     http://例え.jp][ref] &copy ==[ref]",
+   "runs": [
+    [
+     3,
+     5,
+     "hljs-string"
+    ],
+    [
+     5,
+     22,
+     "hljs-string"
+    ],
+    [
+     23,
+     24,
+     "xml hljs-tag"
+    ],
+    [
+     24,
+     26,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     26,
+     28,
+     "xml hljs-tag"
+    ],
+    [
+     52,
+     54,
+     "hljs-string"
+    ],
+    [
+     54,
+     103,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "text[[~%</b>\\|~~***",
+   "runs": [
+    [
+     0,
+     8,
+     "hljs-meta prompt_"
+    ],
+    [
+     8,
+     19,
+     "bash"
+    ]
+   ]
+  },
+  {
+   "language": "ts][ref]&word",
+   "code": "* [X] [[Folder/Page#Head|Alias]]\\\n|<a href=\"x\">\\\n- [x] ](</a>https://example.org/a b\"%$5][ref]:</b>\n@\t<u>$5word\\\n</a>[[</u>\n___<b>(**%&#65;```__   (:",
+   "runs": [
+    [
+     0,
+     35,
+     "xml"
+    ],
+    [
+     35,
+     36,
+     "xml hljs-tag"
+    ],
+    [
+     36,
+     37,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     37,
+     38,
+     "xml hljs-tag"
+    ],
+    [
+     38,
+     42,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     42,
+     43,
+     "xml hljs-tag"
+    ],
+    [
+     43,
+     46,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     46,
+     47,
+     "xml hljs-tag"
+    ],
+    [
+     47,
+     57,
+     "xml"
+    ],
+    [
+     57,
+     59,
+     "xml hljs-tag"
+    ],
+    [
+     59,
+     60,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     60,
+     61,
+     "xml hljs-tag"
+    ],
+    [
+     61,
+     95,
+     "xml"
+    ],
+    [
+     95,
+     97,
+     "xml hljs-tag"
+    ],
+    [
+     97,
+     98,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     98,
+     99,
+     "xml hljs-tag"
+    ],
+    [
+     99,
+     102,
+     "xml"
+    ],
+    [
+     102,
+     103,
+     "xml hljs-tag"
+    ],
+    [
+     103,
+     104,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     104,
+     105,
+     "xml hljs-tag"
+    ],
+    [
+     105,
+     113,
+     "xml"
+    ],
+    [
+     113,
+     115,
+     "xml hljs-tag"
+    ],
+    [
+     115,
+     116,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     116,
+     117,
+     "xml hljs-tag"
+    ],
+    [
+     117,
+     119,
+     "xml"
+    ],
+    [
+     119,
+     121,
+     "xml hljs-tag"
+    ],
+    [
+     121,
+     122,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     122,
+     123,
+     "xml hljs-tag"
+    ],
+    [
+     123,
+     127,
+     "xml"
+    ],
+    [
+     127,
+     128,
+     "xml hljs-tag"
+    ],
+    [
+     128,
+     129,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     129,
+     130,
+     "xml hljs-tag"
+    ],
+    [
+     130,
+     134,
+     "xml"
+    ],
+    [
+     134,
+     139,
+     "xml hljs-symbol"
+    ],
+    [
+     139,
+     149,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": "</b>",
+   "code": "==\n* [X] \n---[x]`&#65;\n<pre><br>[[Folder/Page#Head|Alias]]|aliasword</a>'<span style=\"background-color:#fbecdd;\">![[pic.png]]}[ ]\n<div data-columns>==#anchor)=1.다람쥐 헌 쳇바퀴\n2) }<javascript:alert(1)>[[Page]]+<a href=\"x\">word|alias()<javascript:alert(1)>\n---__<https://x.y/z?q=1>[[Folder/Page#Head|Alias]]  +&#x110000;<%@[ ]\n[[\t",
+   "runs": [
+    [
+     5,
+     8,
+     "hljs-selector-attr"
+    ],
+    [
+     13,
+     16,
+     "hljs-selector-attr"
+    ],
+    [
+     18,
+     21,
+     "hljs-selector-id"
+    ],
+    [
+     32,
+     57,
+     "hljs-selector-attr"
+    ],
+    [
+     70,
+     71,
+     "hljs-selector-tag"
+    ],
+    [
+     74,
+     78,
+     "hljs-selector-tag"
+    ],
+    [
+     86,
+     102,
+     "hljs-attribute"
+    ],
+    [
+     103,
+     110,
+     "hljs-number"
+    ],
+    [
+     114,
+     124,
+     "hljs-selector-attr"
+    ],
+    [
+     126,
+     129,
+     "hljs-selector-attr"
+    ],
+    [
+     131,
+     134,
+     "hljs-selector-tag"
+    ],
+    [
+     140,
+     147,
+     "hljs-attribute"
+    ],
+    [
+     150,
+     157,
+     "hljs-selector-id"
+    ],
+    [
+     159,
+     160,
+     "hljs-number"
+    ],
+    [
+     171,
+     172,
+     "hljs-number"
+    ],
+    [
+     187,
+     192,
+     "hljs-built_in"
+    ],
+    [
+     193,
+     194,
+     "hljs-number"
+    ],
+    [
+     213,
+     216,
+     "hljs-string"
+    ],
+    [
+     222,
+     227,
+     "hljs-built_in"
+    ],
+    [
+     241,
+     246,
+     "hljs-built_in"
+    ],
+    [
+     247,
+     248,
+     "hljs-number"
+    ],
+    [
+     273,
+     274,
+     "hljs-number"
+    ]
+   ]
+  },
+  {
+   "language": "{\\[|{)`__==\\[:",
+   "code": "[Ref Two]: <https://example.org/a b> 't'$5}__\"Ünïcödé}](",
+   "runs": [
+    [
+     37,
+     40,
+     "hljs-string"
+    ],
+    [
+     40,
+     42,
+     "hljs-variable"
+    ],
+    [
+     45,
+     56,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "ts[[ref]\\1.|alias](https://example.org",
+   "code": "---[x](&Agrave;|][ref]",
+   "runs": [
+    [
+     3,
+     6,
+     "hljs-selector-attr"
+    ],
+    [
+     17,
+     22,
+     "hljs-selector-attr"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "\\[",
+   "runs": []
+  },
+  {
+   "language": "![[pic.png]]<mark",
+   "code": "# <b>\n\n</mark>\t\nword]([[Page]]&#65;\n###### two words[ref]",
+   "runs": [
+    [
+     22,
+     30,
+     "hljs-string"
+    ],
+    [
+     32,
+     34,
+     "hljs-number"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "- <span style=\"background-color:#fbecdd;\"><a href=\"x\"><mark style=\"background: #e7f3f8\">'![[pic.png]]&nbsp;    \n###### [^<a href=\"x\">&bogus;<mark style=\"background: #e7f3f8\">text[[Page]]!",
+   "runs": [
+    [
+     3,
+     7,
+     "hljs-selector-tag"
+    ],
+    [
+     15,
+     31,
+     "hljs-attribute"
+    ],
+    [
+     32,
+     39,
+     "hljs-number"
+    ],
+    [
+     43,
+     44,
+     "hljs-selector-tag"
+    ],
+    [
+     51,
+     52,
+     "hljs-attribute"
+    ],
+    [
+     55,
+     59,
+     "hljs-selector-tag"
+    ],
+    [
+     67,
+     77,
+     "hljs-attribute"
+    ],
+    [
+     79,
+     86,
+     "hljs-number"
+    ],
+    [
+     86,
+     130,
+     "hljs-string"
+    ],
+    [
+     131,
+     153,
+     "hljs-string"
+    ],
+    [
+     165,
+     172,
+     "hljs-number"
+    ],
+    [
+     172,
+     187,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "&amp;#anchor(***",
+   "runs": [
+    [
+     5,
+     16,
+     "hljs-meta"
+    ]
+   ]
+  },
+  {
+   "language": "ts",
+   "code": ">  <&bogus;two words&[x]\n```ts\n===***$5다람쥐 헌 쳇바퀴]]<u>![alt](img.png)!**\n> [!note] |alias<a@b.co>'</a>![[pic.png]]\n---[\n\n_<u>   😀&Agrave;",
+   "runs": [
+    [
+     25,
+     27,
+     "hljs-string"
+    ],
+    [
+     27,
+     137,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "&#x41;<#-<br/><mark style=\"background: #e7f3f8\">",
+   "runs": [
+    [
+     0,
+     1,
+     "hljs-selector-tag"
+    ],
+    [
+     1,
+     5,
+     "hljs-selector-id"
+    ],
+    [
+     7,
+     9,
+     "hljs-selector-id"
+    ],
+    [
+     10,
+     12,
+     "hljs-selector-tag"
+    ],
+    [
+     15,
+     19,
+     "hljs-selector-tag"
+    ],
+    [
+     20,
+     25,
+     "hljs-selector-tag"
+    ],
+    [
+     27,
+     37,
+     "hljs-selector-tag"
+    ],
+    [
+     39,
+     46,
+     "hljs-selector-id"
+    ]
+   ]
+  },
+  {
+   "language": "ts|alias-*$$1.&nbsp;",
+   "code": "<![CDATA[[ ][[Page]]~\n$$  <mark style=\"background: #e7f3f8\">\\|<javascript:alert(1)></b></mark>](/path)***\\*word\n</pre><br></u></mark>```\n1. ^'-&\\[<a@b.co>",
+   "runs": [
+    [
+     38,
+     59,
+     "hljs-string"
+    ],
+    [
+     141,
+     154,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "ts",
+   "code": "<!-- toc -->textword</u>#anchor]🧪x\n  - \\*[[Folder/Page#Head|Alias]]<mark>\\[wordtext\n# \n\\*!wordtwo words(https://example.org/a b<u></span>'\n| ",
+   "runs": [
+    [
+     44,
+     50,
+     "hljs-title class_"
+    ],
+    [
+     51,
+     55,
+     "hljs-title class_"
+    ],
+    [
+     56,
+     60,
+     "hljs-title class_"
+    ],
+    [
+     61,
+     66,
+     "hljs-title class_"
+    ],
+    [
+     99,
+     104,
+     "hljs-title function_"
+    ],
+    [
+     105,
+     110,
+     "hljs-attr"
+    ],
+    [
+     111,
+     139,
+     "hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": "ts:[",
+   "code": "###### \n[Ref Two]: <https://example.org/a b> 't'\n</aside>|alias&#0;\n<custom-tag attr=\"1\">|#][ref]😀</u>\n## &Agrave;\n> [!tip]+]]\n<!--[[2026-10-17]]$\n<span style=\"background-color:#fbecdd;\">![alt](img.png)",
+   "runs": [
+    [
+     0,
+     7,
+     "hljs-comment"
+    ],
+    [
+     8,
+     17,
+     "hljs-section"
+    ],
+    [
+     64,
+     67,
+     "hljs-comment"
+    ],
+    [
+     80,
+     84,
+     "hljs-attr"
+    ],
+    [
+     85,
+     88,
+     "hljs-string"
+    ],
+    [
+     90,
+     103,
+     "hljs-comment"
+    ],
+    [
+     104,
+     115,
+     "hljs-comment"
+    ],
+    [
+     118,
+     124,
+     "hljs-section"
+    ],
+    [
+     132,
+     146,
+     "hljs-section"
+    ],
+    [
+     154,
+     159,
+     "hljs-attr"
+    ],
+    [
+     160,
+     187,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "ts",
+   "code": "===_&copy[[<javascript:alert(1)>text](\n\n{다람쥐 헌 쳇바퀴<br/><br/>\n```ts&#'Ünïcödé\\[Ünïcödé다람쥐 헌 쳇바퀴\n###### !  <br></b>==</mark>>다람쥐 헌 쳇바퀴\n<details><summary>Sum &amp; <b>mary</b></summary>***![[pic.png]]~<https://x.y/z?q=1>)",
+   "runs": [
+    [
+     11,
+     50,
+     "xml"
+    ],
+    [
+     50,
+     51,
+     "xml hljs-tag"
+    ],
+    [
+     51,
+     53,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     53,
+     55,
+     "xml hljs-tag"
+    ],
+    [
+     55,
+     56,
+     "xml hljs-tag"
+    ],
+    [
+     56,
+     58,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     58,
+     60,
+     "xml hljs-tag"
+    ],
+    [
+     60,
+     105,
+     "xml"
+    ],
+    [
+     105,
+     106,
+     "xml hljs-tag"
+    ],
+    [
+     106,
+     108,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     108,
+     109,
+     "xml hljs-tag"
+    ],
+    [
+     109,
+     111,
+     "xml hljs-tag"
+    ],
+    [
+     111,
+     112,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     112,
+     113,
+     "xml hljs-tag"
+    ],
+    [
+     113,
+     115,
+     "xml"
+    ],
+    [
+     115,
+     117,
+     "xml hljs-tag"
+    ],
+    [
+     117,
+     121,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     121,
+     122,
+     "xml hljs-tag"
+    ],
+    [
+     142,
+     143,
+     "xml hljs-tag"
+    ],
+    [
+     143,
+     150,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     150,
+     151,
+     "xml hljs-tag"
+    ],
+    [
+     151,
+     155,
+     "xml"
+    ],
+    [
+     155,
+     160,
+     "xml hljs-symbol"
+    ],
+    [
+     160,
+     161,
+     "xml"
+    ],
+    [
+     161,
+     162,
+     "xml hljs-tag"
+    ],
+    [
+     162,
+     163,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     163,
+     164,
+     "xml hljs-tag"
+    ],
+    [
+     164,
+     168,
+     "xml"
+    ],
+    [
+     168,
+     170,
+     "xml hljs-tag"
+    ],
+    [
+     170,
+     171,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     171,
+     172,
+     "xml hljs-tag"
+    ],
+    [
+     172,
+     174,
+     "xml hljs-tag"
+    ],
+    [
+     174,
+     181,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     181,
+     182,
+     "xml hljs-tag"
+    ],
+    [
+     192,
+     195,
+     "hljs-property"
+    ],
+    [
+     198,
+     218,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": " |alias]]${</u></u>](/path)",
+   "runs": [
+    [
+     0,
+     11,
+     "xml"
+    ],
+    [
+     11,
+     13,
+     "xml hljs-tag"
+    ],
+    [
+     13,
+     14,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     14,
+     15,
+     "xml hljs-tag"
+    ],
+    [
+     15,
+     17,
+     "xml hljs-tag"
+    ],
+    [
+     17,
+     18,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     18,
+     19,
+     "xml hljs-tag"
+    ],
+    [
+     19,
+     27,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "😀`</span>",
+   "runs": []
+  },
+  {
+   "language": "-```^\\\\-&nbsp;$^",
+   "code": "-->",
+   "runs": [
+    [
+     0,
+     3,
+     "hljs-deletion"
+    ]
+   ]
+  },
+  {
+   "language": "ts([[Folder/Page#Head|Alias]]](/path)__<mark>",
+   "code": "-->   &#x41;<mark style=\"background: #e7f3f8\">==}<javascript:alert(1)><mark>&amp;{  }",
+   "runs": [
+    [
+     0,
+     6,
+     "xml"
+    ],
+    [
+     6,
+     12,
+     "xml hljs-symbol"
+    ],
+    [
+     12,
+     13,
+     "xml hljs-tag"
+    ],
+    [
+     13,
+     17,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     17,
+     18,
+     "xml hljs-tag"
+    ],
+    [
+     18,
+     23,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     23,
+     24,
+     "xml hljs-tag"
+    ],
+    [
+     24,
+     45,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     45,
+     46,
+     "xml hljs-tag"
+    ],
+    [
+     46,
+     70,
+     "xml"
+    ],
+    [
+     70,
+     71,
+     "xml hljs-tag"
+    ],
+    [
+     71,
+     75,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     75,
+     76,
+     "xml hljs-tag"
+    ],
+    [
+     76,
+     81,
+     "xml hljs-symbol"
+    ],
+    [
+     81,
+     85,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "[ref]=",
+   "runs": [
+    [
+     1,
+     4,
+     "hljs-meta"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "\\",
+   "runs": []
+  },
+  {
+   "language": null,
+   "code": "\t*]]\n| \n# 😀**[x][x])",
+   "runs": [
+    [
+     14,
+     17,
+     "hljs-selector-attr"
+    ],
+    [
+     17,
+     20,
+     "hljs-selector-attr"
+    ]
+   ]
+  },
+  {
+   "language": "[[",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "<javascript:alert(1)><br/>$5😀1.https://example.org/a",
+   "code": "| (*>",
+   "runs": []
+  },
+  {
+   "language": "ts&#65;",
+   "code": "+ \n$$<span style=\"color: #d44c47\">![alt](img.png)\n<?php \n$5[[2026-10-17]]#anchor]]\n***\"[[",
+   "runs": [
+    [
+     17,
+     33,
+     "hljs-string"
+    ],
+    [
+     50,
+     55,
+     "hljs-meta"
+    ],
+    [
+     58,
+     59,
+     "hljs-number"
+    ],
+    [
+     61,
+     65,
+     "hljs-number"
+    ],
+    [
+     66,
+     68,
+     "hljs-number"
+    ],
+    [
+     69,
+     71,
+     "hljs-number"
+    ],
+    [
+     73,
+     82,
+     "hljs-comment"
+    ],
+    [
+     86,
+     89,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "ts^(~~{<a@b.co>\\",
+   "code": "   {&#x110000;{\n<script>[[Folder/Page#Head|Alias]]<span style=\"background-color:#fbecdd;\">]]<javascript:alert(1)>[[Page]]<mark>!\n<!DOCTYPE html></mark></a>1.{|alias==\n[[-|alias",
+   "runs": [
+    [
+     0,
+     4,
+     "xml"
+    ],
+    [
+     4,
+     14,
+     "xml hljs-symbol"
+    ],
+    [
+     14,
+     16,
+     "xml"
+    ],
+    [
+     16,
+     17,
+     "xml hljs-tag"
+    ],
+    [
+     17,
+     23,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     23,
+     24,
+     "xml hljs-tag"
+    ],
+    [
+     24,
+     50,
+     "xml xml"
+    ],
+    [
+     50,
+     51,
+     "xml xml hljs-tag"
+    ],
+    [
+     51,
+     55,
+     "xml xml hljs-tag hljs-name"
+    ],
+    [
+     55,
+     56,
+     "xml xml hljs-tag"
+    ],
+    [
+     56,
+     61,
+     "xml xml hljs-tag hljs-attr"
+    ],
+    [
+     61,
+     62,
+     "xml xml hljs-tag"
+    ],
+    [
+     62,
+     89,
+     "xml xml hljs-tag hljs-string"
+    ],
+    [
+     89,
+     90,
+     "xml xml hljs-tag"
+    ],
+    [
+     90,
+     121,
+     "xml xml"
+    ],
+    [
+     121,
+     122,
+     "xml xml hljs-tag"
+    ],
+    [
+     122,
+     126,
+     "xml xml hljs-tag hljs-name"
+    ],
+    [
+     126,
+     127,
+     "xml xml hljs-tag"
+    ],
+    [
+     127,
+     129,
+     "xml xml"
+    ],
+    [
+     129,
+     139,
+     "xml xml hljs-meta"
+    ],
+    [
+     139,
+     143,
+     "xml xml hljs-meta hljs-keyword"
+    ],
+    [
+     143,
+     144,
+     "xml xml hljs-meta"
+    ],
+    [
+     144,
+     146,
+     "xml xml hljs-tag"
+    ],
+    [
+     146,
+     150,
+     "xml xml hljs-tag hljs-name"
+    ],
+    [
+     150,
+     151,
+     "xml xml hljs-tag"
+    ],
+    [
+     151,
+     153,
+     "xml xml hljs-tag"
+    ],
+    [
+     153,
+     154,
+     "xml xml hljs-tag hljs-name"
+    ],
+    [
+     154,
+     155,
+     "xml xml hljs-tag"
+    ],
+    [
+     155,
+     176,
+     "xml xml"
+    ]
+   ]
+  },
+  {
+   "language": "&#65;1.<javascript:alert(1)>word",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "`=#anchor<a",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "*&bogus;",
+   "code": "    ~~]([x](~<mark> 1.><a@b.co>\n$$\n* [X] https://example.org/a b\n===]]</b><mark> <span style=\"color: #d44c47\">![[pic.png]]\n```ts\ntext[[[Folder/Page#Head|Alias]][x]][ref]<span style=\"background-color:#fbecdd;\">",
+   "runs": [
+    [
+     8,
+     11,
+     "hljs-selector-attr"
+    ],
+    [
+     20,
+     21,
+     "hljs-number"
+    ],
+    [
+     25,
+     27,
+     "hljs-variable"
+    ],
+    [
+     41,
+     46,
+     "hljs-attribute"
+    ],
+    [
+     47,
+     64,
+     "hljs-comment"
+    ],
+    [
+     93,
+     109,
+     "hljs-string"
+    ],
+    [
+     123,
+     125,
+     "hljs-built_in"
+    ],
+    [
+     181,
+     208,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "Ünïcödé</u>](/path)word&nbsp;다람쥐",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "ts<https://x.y/z?q=1>]]][ref]</mark>",
+   "code": "</pre>:\n<!---<javascript:alert(1)></mark>|'\\\n](<br/>![",
+   "runs": [
+    [
+     42,
+     54,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "===|</b>\n   word~wordword</a>![alt](img.png)==\n---]]&bogus;\\*&bogus;<span style=\"color: #d44c47\">\\*\n<pre>&Agrave;<span style=\"background-color:#fbecdd;\"></mark>>](https://example.org \"t\")~~[two words$5\n---&copy\t} ]</a>[[Page]]\n$$</span>[[&#65;``:[[2026-10-17]]<mark style=\"background: #e7f3f8\">",
+   "runs": [
+    [
+     6,
+     7,
+     "hljs-selector-tag"
+    ],
+    [
+     27,
+     28,
+     "hljs-selector-tag"
+    ],
+    [
+     30,
+     35,
+     "hljs-selector-attr"
+    ],
+    [
+     36,
+     39,
+     "hljs-selector-tag"
+    ],
+    [
+     39,
+     43,
+     "hljs-selector-class"
+    ],
+    [
+     69,
+     73,
+     "hljs-selector-tag"
+    ],
+    [
+     81,
+     86,
+     "hljs-attribute"
+    ],
+    [
+     88,
+     95,
+     "hljs-number"
+    ],
+    [
+     95,
+     126,
+     "hljs-string"
+    ],
+    [
+     143,
+     150,
+     "hljs-number"
+    ],
+    [
+     155,
+     159,
+     "hljs-selector-tag"
+    ],
+    [
+     183,
+     186,
+     "hljs-string"
+    ],
+    [
+     200,
+     201,
+     "hljs-number"
+    ],
+    [
+     216,
+     217,
+     "hljs-selector-tag"
+    ],
+    [
+     218,
+     225,
+     "hljs-selector-attr"
+    ],
+    [
+     231,
+     235,
+     "hljs-selector-tag"
+    ],
+    [
+     236,
+     259,
+     "hljs-selector-attr"
+    ],
+    [
+     261,
+     265,
+     "hljs-selector-tag"
+    ],
+    [
+     273,
+     283,
+     "hljs-attribute"
+    ],
+    [
+     285,
+     292,
+     "hljs-number"
+    ],
+    [
+     292,
+     294,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "&Agrave;",
+   "code": "~~~\n> [!WARNING]- Title \nword[[2026-10-17]]#\n<div data-columns>+[[word](https://example.org \"t\")\n* [X] two words<u>$$<span style=\"color: #d44c47\"><span style=\"background-color:#fbecdd;\"></b>(&amp;|![</u>\n</aside>(&#0;&copy",
+   "runs": [
+    [
+     6,
+     16,
+     "hljs-section"
+    ],
+    [
+     29,
+     43,
+     "hljs-section"
+    ],
+    [
+     43,
+     44,
+     "hljs-comment"
+    ],
+    [
+     64,
+     71,
+     "hljs-section"
+    ],
+    [
+     99,
+     102,
+     "hljs-section"
+    ],
+    [
+     123,
+     128,
+     "hljs-attr"
+    ],
+    [
+     129,
+     145,
+     "hljs-string"
+    ],
+    [
+     158,
+     185,
+     "hljs-string"
+    ],
+    [
+     195,
+     203,
+     "hljs-comment"
+    ],
+    [
+     214,
+     222,
+     "hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": "word:&Agrave;",
+   "code": "---</u><https://x.y/z?q=1>two words]\n# https://example.org/a b&😀:&#0;&#x41;https://example.org/a b```",
+   "runs": [
+    [
+     14,
+     36,
+     "hljs-comment"
+    ],
+    [
+     37,
+     45,
+     "hljs-meta"
+    ],
+    [
+     45,
+     102,
+     "hljs-meta hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": "`<a@b.co>[[2026-10-17]]Ünïcödé[http://例え.jp[[2026-10-17]]&Agrave;&#0;#anchor",
+   "code": "###### word\n2) <span style=\"background-color:#fbecdd;\">[ref]~~<+https://example.org/a b#<br/>https://example.org/a b",
+   "runs": [
+    [
+     12,
+     13,
+     "hljs-number"
+    ],
+    [
+     16,
+     20,
+     "hljs-selector-tag"
+    ],
+    [
+     28,
+     44,
+     "hljs-attribute"
+    ],
+    [
+     45,
+     52,
+     "hljs-number"
+    ],
+    [
+     55,
+     60,
+     "hljs-selector-attr"
+    ]
+   ]
+  },
+  {
+   "language": "|$$</span>$$&bogus;",
+   "code": "<div data-column> \n| *<br>&nbsp;\n<?php <a@b.co>[[2026-10-17]]\n<!DOCTYPE html>[x]",
+   "runs": [
+    [
+     0,
+     1,
+     "xml hljs-tag"
+    ],
+    [
+     1,
+     4,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     4,
+     5,
+     "xml hljs-tag"
+    ],
+    [
+     5,
+     16,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     16,
+     17,
+     "xml hljs-tag"
+    ],
+    [
+     17,
+     22,
+     "xml"
+    ],
+    [
+     22,
+     23,
+     "xml hljs-tag"
+    ],
+    [
+     23,
+     25,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     25,
+     26,
+     "xml hljs-tag"
+    ],
+    [
+     26,
+     32,
+     "xml hljs-symbol"
+    ],
+    [
+     32,
+     33,
+     "xml"
+    ],
+    [
+     33,
+     38,
+     "php hljs-meta"
+    ],
+    [
+     38,
+     49,
+     "php"
+    ],
+    [
+     49,
+     53,
+     "php hljs-number"
+    ],
+    [
+     53,
+     54,
+     "php"
+    ],
+    [
+     54,
+     56,
+     "php hljs-number"
+    ],
+    [
+     56,
+     57,
+     "php"
+    ],
+    [
+     57,
+     59,
+     "php hljs-number"
+    ],
+    [
+     59,
+     80,
+     "php"
+    ]
+   ]
+  },
+  {
+   "language": "two",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "ts>",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "=)$$<b>[",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": null,
+   "code": "&#0;)[ ]",
+   "runs": [
+    [
+     0,
+     1,
+     "hljs-selector-tag"
+    ],
+    [
+     1,
+     3,
+     "hljs-selector-id"
+    ],
+    [
+     5,
+     8,
+     "hljs-selector-attr"
+    ]
+   ]
+  },
+  {
+   "language": "](/path)~~&Agrave;1.",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "ts",
+   "code": "  - {&#x110000;<javascript:alert(1)>&amp;**😀word'\\*\n<details><summary>Sum &amp; <b>mary</b></summary>\\|_&copy</mark>다람쥐 헌 쳇바퀴🧪x<span style=\"background-color:#fbecdd;\"><javascript:alert(1)>|+\n~~~*)[ ][x]\n## <mark>text|==@   \t&bogus;</b>",
+   "runs": []
+  },
+  {
+   "language": "ts$$",
+   "code": "</b><https://x.y/z?q=1><a href=\"x\">\n```![[[Folder/Page#Head|Alias]]==\t</u>  \n</aside>``{<\n~~~#<br/><br/>word\n  - word![alt](img.png)@![&#65;<javascript:alert(1)>\\}\n- [x] ",
+   "runs": [
+    [
+     2,
+     3,
+     "hljs-selector-tag"
+    ],
+    [
+     21,
+     22,
+     "hljs-number"
+    ],
+    [
+     31,
+     34,
+     "hljs-string"
+    ],
+    [
+     118,
+     123,
+     "hljs-selector-attr"
+    ],
+    [
+     124,
+     127,
+     "hljs-selector-tag"
+    ],
+    [
+     127,
+     131,
+     "hljs-selector-class"
+    ],
+    [
+     152,
+     157,
+     "hljs-built_in"
+    ],
+    [
+     158,
+     159,
+     "hljs-number"
+    ],
+    [
+     166,
+     169,
+     "hljs-selector-attr"
+    ]
+   ]
+  },
+  {
+   "language": "<br>***",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "$5==<mark><br>다람쥐",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": null,
+   "code": "&amp;[[Page]](]^&bogus;#[[2026-10-17]]==two words\"",
+   "runs": [
+    [
+     5,
+     13,
+     "hljs-string"
+    ],
+    [
+     24,
+     38,
+     "hljs-string"
+    ],
+    [
+     49,
+     50,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "#anchor&Agrave;",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "ts",
+   "code": "  - <mark style=\"background: #e7f3f8\">\\*[[2026-10-17]][ ]\n$\\\nhttps://example.org/a b ",
+   "runs": [
+    [
+     4,
+     5,
+     "xml hljs-tag"
+    ],
+    [
+     5,
+     9,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     9,
+     10,
+     "xml hljs-tag"
+    ],
+    [
+     10,
+     15,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     15,
+     16,
+     "xml hljs-tag"
+    ],
+    [
+     16,
+     37,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     37,
+     38,
+     "xml hljs-tag"
+    ],
+    [
+     38,
+     85,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": "(😀](https://example.org",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "&#65;~$5<&copy![alt](img.png))```",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "ts<u>)",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": null,
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "<span",
+   "code": "<!DOCTYPE html></mark><javascript:alert(1)>\n## ](/path)</a>:&bogus;%\"   &copy\n1. $5~~(😀`[[Folder/Page#Head|Alias]]</mark>![~~``````",
+   "runs": [
+    [
+     0,
+     10,
+     "xml hljs-meta"
+    ],
+    [
+     10,
+     14,
+     "xml hljs-meta hljs-keyword"
+    ],
+    [
+     14,
+     15,
+     "xml hljs-meta"
+    ],
+    [
+     15,
+     17,
+     "xml hljs-tag"
+    ],
+    [
+     17,
+     21,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     21,
+     22,
+     "xml hljs-tag"
+    ],
+    [
+     22,
+     55,
+     "xml"
+    ],
+    [
+     55,
+     57,
+     "xml hljs-tag"
+    ],
+    [
+     57,
+     58,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     58,
+     59,
+     "xml hljs-tag"
+    ],
+    [
+     59,
+     60,
+     "xml"
+    ],
+    [
+     60,
+     67,
+     "xml hljs-symbol"
+    ],
+    [
+     67,
+     115,
+     "xml"
+    ],
+    [
+     115,
+     117,
+     "xml hljs-tag"
+    ],
+    [
+     117,
+     121,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     121,
+     122,
+     "xml hljs-tag"
+    ],
+    [
+     122,
+     132,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": "</u>)][ref]$5",
+   "code": "<aside></b><br/>>~\n| two words\\\n@[x]<a@b.co><a@b.co>\n\n```ts",
+   "runs": [
+    [
+     1,
+     6,
+     "hljs-selector-tag"
+    ],
+    [
+     9,
+     10,
+     "hljs-selector-tag"
+    ],
+    [
+     12,
+     14,
+     "hljs-selector-tag"
+    ],
+    [
+     21,
+     24,
+     "hljs-selector-tag"
+    ],
+    [
+     25,
+     30,
+     "hljs-selector-tag"
+    ],
+    [
+     33,
+     36,
+     "hljs-selector-attr"
+    ],
+    [
+     37,
+     38,
+     "hljs-selector-tag"
+    ],
+    [
+     39,
+     40,
+     "hljs-selector-tag"
+    ],
+    [
+     40,
+     43,
+     "hljs-selector-class"
+    ],
+    [
+     45,
+     46,
+     "hljs-selector-tag"
+    ],
+    [
+     47,
+     48,
+     "hljs-selector-tag"
+    ],
+    [
+     48,
+     51,
+     "hljs-selector-class"
+    ],
+    [
+     57,
+     59,
+     "hljs-selector-tag"
+    ]
+   ]
+  },
+  {
+   "language": "ts[",
+   "code": "===$$word   \n<pre>\n<custom-tag attr=\"1\"></mark><a@b.co>😀<Ünïcödé*Ünïcödé|alias[[Page]]",
+   "runs": [
+    [
+     36,
+     39,
+     "hljs-string"
+    ],
+    [
+     79,
+     87,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "$5]]",
+   "code": "## [ ]#\n[Ref Two]: <https://example.org/a b> 't'😀\n> [!tip]+*",
+   "runs": [
+    [
+     3,
+     6,
+     "hljs-selector-attr"
+    ],
+    [
+     8,
+     17,
+     "hljs-selector-attr"
+    ],
+    [
+     20,
+     25,
+     "hljs-selector-tag"
+    ],
+    [
+     26,
+     50,
+     "hljs-comment"
+    ],
+    [
+     53,
+     59,
+     "hljs-selector-attr"
+    ]
+   ]
+  },
+  {
+   "language": ":#&bogus;<a",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": null,
+   "code": "```\\",
+   "runs": [
+    [
+     0,
+     2,
+     "hljs-string"
+    ],
+    [
+     2,
+     4,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "<mark",
+   "code": "<div data-columns> =http://例え.jpword[[Page]]$$</a>https://example.org/a b\n- &Agrave;다람쥐 헌 쳇바퀴</u>][ref]\n<b>\n[ref]: /url \"title\"1.&amp;\t&#0;$\"",
+   "runs": [
+    [
+     1,
+     4,
+     "hljs-selector-tag"
+    ],
+    [
+     10,
+     17,
+     "hljs-attribute"
+    ],
+    [
+     98,
+     103,
+     "hljs-selector-attr"
+    ],
+    [
+     105,
+     106,
+     "hljs-selector-tag"
+    ],
+    [
+     108,
+     113,
+     "hljs-selector-attr"
+    ],
+    [
+     120,
+     127,
+     "hljs-string"
+    ],
+    [
+     127,
+     128,
+     "hljs-number"
+    ],
+    [
+     136,
+     138,
+     "hljs-selector-id"
+    ]
+   ]
+  },
+  {
+   "language": "&bogus;<a",
+   "code": "```ts```<javascript:alert(1)>@[ ]\n\ttexthttps://example.org/a b\n\n&nbsp;$$<br>(_\n---https://example.org/a b[ ]&amp;\t\\",
+   "runs": [
+    [
+     0,
+     2,
+     "hljs-string"
+    ],
+    [
+     2,
+     6,
+     "hljs-string"
+    ],
+    [
+     6,
+     8,
+     "hljs-string"
+    ],
+    [
+     9,
+     20,
+     "hljs-symbol"
+    ],
+    [
+     26,
+     27,
+     "hljs-number"
+    ],
+    [
+     35,
+     45,
+     "hljs-symbol"
+    ],
+    [
+     46,
+     60,
+     "hljs-regexp"
+    ],
+    [
+     70,
+     72,
+     "hljs-variable"
+    ],
+    [
+     82,
+     88,
+     "hljs-symbol"
+    ],
+    [
+     89,
+     103,
+     "hljs-regexp"
+    ]
+   ]
+  },
+  {
+   "language": "<u><br>ÜnïcödéÜnïcödé$(](/path))-",
+   "code": "* [X] [[Folder/Page#Head|Alias]]](https://example.org \"t\")<mark style=\"background: #e7f3f8\">\n[Ref Two]: <https://example.org/a b> 't'</a>```\n> [!tip]+![alt](img.png)🧪x[ref]\\\n다람쥐 헌 쳇바퀴   <mark><mark>![</span>)\n```'</b>1.\n<pre>](\\[&&nbsp;</mark>[ ]*]``$$![alt](img.png)\n<div data-column>```[ref]*!<mark style=\"background: #e7f3f8\">$5\\\n==</b>=",
+   "runs": [
+    [
+     2,
+     5,
+     "hljs-section"
+    ],
+    [
+     6,
+     33,
+     "hljs-section"
+    ],
+    [
+     64,
+     69,
+     "hljs-attr"
+    ],
+    [
+     70,
+     91,
+     "hljs-string"
+    ],
+    [
+     93,
+     102,
+     "hljs-section"
+    ],
+    [
+     143,
+     149,
+     "hljs-section"
+    ],
+    [
+     151,
+     156,
+     "hljs-section"
+    ],
+    [
+     168,
+     173,
+     "hljs-section"
+    ],
+    [
+     200,
+     227,
+     "hljs-section"
+    ],
+    [
+     229,
+     247,
+     "hljs-section"
+    ],
+    [
+     254,
+     259,
+     "hljs-section"
+    ],
+    [
+     289,
+     294,
+     "hljs-section"
+    ],
+    [
+     302,
+     307,
+     "hljs-attr"
+    ],
+    [
+     308,
+     329,
+     "hljs-string"
+    ],
+    [
+     330,
+     332,
+     "hljs-variable"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "\\|*[[Page]]]]",
+   "runs": [
+    [
+     3,
+     11,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "**</a>",
+   "runs": []
+  },
+  {
+   "language": "[x]",
+   "code": "<aside>)\n- [ ] {<span style=\"background-color:#fbecdd;\">(</mark>&<mark style=\"background: #e7f3f8\"><a href=\"x\">![alt](img.png)&copy&copy\n<!-- toc -->:&#65;&bogus;\\\n&amp;&#x110000;&copy",
+   "runs": [
+    [
+     0,
+     1,
+     "xml hljs-tag"
+    ],
+    [
+     1,
+     6,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     6,
+     7,
+     "xml hljs-tag"
+    ],
+    [
+     7,
+     16,
+     "xml"
+    ],
+    [
+     16,
+     17,
+     "xml hljs-tag"
+    ],
+    [
+     17,
+     21,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     21,
+     22,
+     "xml hljs-tag"
+    ],
+    [
+     22,
+     27,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     27,
+     28,
+     "xml hljs-tag"
+    ],
+    [
+     28,
+     55,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     55,
+     56,
+     "xml hljs-tag"
+    ],
+    [
+     56,
+     57,
+     "xml"
+    ],
+    [
+     57,
+     59,
+     "xml hljs-tag"
+    ],
+    [
+     59,
+     63,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     63,
+     64,
+     "xml hljs-tag"
+    ],
+    [
+     64,
+     65,
+     "xml"
+    ],
+    [
+     65,
+     66,
+     "xml hljs-tag"
+    ],
+    [
+     66,
+     70,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     70,
+     71,
+     "xml hljs-tag"
+    ],
+    [
+     71,
+     76,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     76,
+     77,
+     "xml hljs-tag"
+    ],
+    [
+     77,
+     98,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     98,
+     99,
+     "xml hljs-tag"
+    ],
+    [
+     99,
+     100,
+     "xml hljs-tag"
+    ],
+    [
+     100,
+     101,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     101,
+     102,
+     "xml hljs-tag"
+    ],
+    [
+     102,
+     106,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     106,
+     107,
+     "xml hljs-tag"
+    ],
+    [
+     107,
+     110,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     110,
+     111,
+     "xml hljs-tag"
+    ],
+    [
+     111,
+     137,
+     "xml"
+    ],
+    [
+     137,
+     149,
+     "xml hljs-comment"
+    ],
+    [
+     149,
+     150,
+     "xml"
+    ],
+    [
+     150,
+     155,
+     "xml hljs-symbol"
+    ],
+    [
+     155,
+     162,
+     "xml hljs-symbol"
+    ],
+    [
+     162,
+     164,
+     "xml"
+    ],
+    [
+     164,
+     169,
+     "xml hljs-symbol"
+    ],
+    [
+     169,
+     179,
+     "xml hljs-symbol"
+    ],
+    [
+     179,
+     184,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": "$```<mark>[[Page]]](https://example.org",
+   "code": "#    [ref]==](/path)<mark style=\"background: #e7f3f8\">two words&#65;<br/>][ref]|alias\n> [!WARNING]- Title ",
+   "runs": [
+    [
+     5,
+     10,
+     "hljs-selector-attr"
+    ],
+    [
+     21,
+     25,
+     "hljs-selector-tag"
+    ],
+    [
+     26,
+     31,
+     "hljs-selector-tag"
+    ],
+    [
+     33,
+     43,
+     "hljs-selector-tag"
+    ],
+    [
+     45,
+     52,
+     "hljs-selector-id"
+    ],
+    [
+     54,
+     57,
+     "hljs-selector-tag"
+    ],
+    [
+     58,
+     63,
+     "hljs-selector-tag"
+    ],
+    [
+     63,
+     64,
+     "hljs-selector-tag"
+    ],
+    [
+     64,
+     67,
+     "hljs-selector-id"
+    ],
+    [
+     69,
+     71,
+     "hljs-selector-tag"
+    ],
+    [
+     74,
+     79,
+     "hljs-selector-attr"
+    ],
+    [
+     80,
+     85,
+     "hljs-selector-tag"
+    ],
+    [
+     88,
+     98,
+     "hljs-selector-attr"
+    ],
+    [
+     98,
+     99,
+     "hljs-selector-tag"
+    ],
+    [
+     100,
+     105,
+     "hljs-selector-tag"
+    ]
+   ]
+  },
+  {
+   "language": "ts***\\\\_<u>1.",
+   "code": "_&bogus;<br/>\n> +\n| @</span>\n<aside>](https://example.org \"t\")</u>\n<aside>\n</details>**{[[<span style=\"background-color:#fbecdd;\">__🧪x$5[ ]&",
+   "runs": [
+    [
+     0,
+     1,
+     "xml"
+    ],
+    [
+     1,
+     8,
+     "xml hljs-symbol"
+    ],
+    [
+     8,
+     9,
+     "xml hljs-tag"
+    ],
+    [
+     9,
+     11,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     11,
+     13,
+     "xml hljs-tag"
+    ],
+    [
+     13,
+     21,
+     "xml"
+    ],
+    [
+     21,
+     23,
+     "xml hljs-tag"
+    ],
+    [
+     23,
+     27,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     27,
+     28,
+     "xml hljs-tag"
+    ],
+    [
+     28,
+     29,
+     "xml"
+    ],
+    [
+     29,
+     30,
+     "xml hljs-tag"
+    ],
+    [
+     30,
+     35,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     35,
+     36,
+     "xml hljs-tag"
+    ],
+    [
+     36,
+     62,
+     "xml"
+    ],
+    [
+     62,
+     64,
+     "xml hljs-tag"
+    ],
+    [
+     64,
+     65,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     65,
+     66,
+     "xml hljs-tag"
+    ],
+    [
+     66,
+     67,
+     "xml"
+    ],
+    [
+     67,
+     68,
+     "xml hljs-tag"
+    ],
+    [
+     68,
+     73,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     73,
+     74,
+     "xml hljs-tag"
+    ],
+    [
+     74,
+     75,
+     "xml"
+    ],
+    [
+     75,
+     77,
+     "xml hljs-tag"
+    ],
+    [
+     77,
+     84,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     84,
+     85,
+     "xml hljs-tag"
+    ],
+    [
+     85,
+     90,
+     "xml"
+    ],
+    [
+     90,
+     91,
+     "xml hljs-tag"
+    ],
+    [
+     91,
+     95,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     95,
+     96,
+     "xml hljs-tag"
+    ],
+    [
+     96,
+     101,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     101,
+     102,
+     "xml hljs-tag"
+    ],
+    [
+     102,
+     129,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     129,
+     130,
+     "xml hljs-tag"
+    ],
+    [
+     130,
+     141,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "-&\\\n\n===&bogus;^![[pic.png]]<mark>다람쥐 헌 쳇바퀴[x]:\n#anchor***\n\n}🧪x$5   ]</b>",
+   "runs": [
+    [
+     17,
+     27,
+     "hljs-selector-attr"
+    ],
+    [
+     29,
+     33,
+     "hljs-selector-tag"
+    ],
+    [
+     43,
+     46,
+     "hljs-selector-attr"
+    ],
+    [
+     63,
+     64,
+     "hljs-attribute"
+    ],
+    [
+     65,
+     66,
+     "hljs-number"
+    ],
+    [
+     72,
+     73,
+     "hljs-selector-tag"
+    ]
+   ]
+  },
+  {
+   "language": "ts%](/path)^",
+   "code": "***<span style=\"color: #d44c47\">#!&#65;[[Page]]}</u>$$`\n___\\\n\n<span style=\"color: #d44c47\">](/path)[\\|&copy|\n  - +__ [\n####### $&#65;😀![[pic.png]]<b>&copy[[Folder/Page#Head|Alias]]__<mark>",
+   "runs": [
+    [
+     15,
+     31,
+     "hljs-string"
+    ],
+    [
+     36,
+     38,
+     "hljs-number"
+    ],
+    [
+     39,
+     47,
+     "hljs-string"
+    ],
+    [
+     74,
+     90,
+     "hljs-string"
+    ],
+    [
+     94,
+     98,
+     "hljs-built_in"
+    ],
+    [
+     130,
+     132,
+     "hljs-number"
+    ],
+    [
+     136,
+     147,
+     "hljs-string"
+    ],
+    [
+     155,
+     181,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "🧪x[[Page]]",
+   "runs": [
+    [
+     3,
+     11,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "}\\*#anchor`&copy&#x41;&nbsp;|alias![alt](img.png)\\[",
+   "runs": [
+    [
+     3,
+     10,
+     "hljs-selector-id"
+    ],
+    [
+     11,
+     12,
+     "hljs-selector-tag"
+    ],
+    [
+     12,
+     16,
+     "hljs-selector-tag"
+    ],
+    [
+     16,
+     17,
+     "hljs-selector-tag"
+    ],
+    [
+     17,
+     21,
+     "hljs-selector-id"
+    ],
+    [
+     22,
+     23,
+     "hljs-selector-tag"
+    ],
+    [
+     23,
+     27,
+     "hljs-selector-tag"
+    ],
+    [
+     29,
+     34,
+     "hljs-selector-tag"
+    ],
+    [
+     35,
+     40,
+     "hljs-selector-attr"
+    ],
+    [
+     50,
+     51,
+     "hljs-selector-attr"
+    ]
+   ]
+  },
+  {
+   "language": "tshttp://例え.jp__=<javascript:alert(1)><br>",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "\\<a@b.co><u>]&#x110000;",
+   "code": "2) ",
+   "runs": []
+  },
+  {
+   "language": "&Agrave;",
+   "code": "_ ]]&#x41;  [x]</mark>\n- [ ] |\\\n[x]\n</div>\\\n](/path)\n<![CDATA[:```][ref]\\|",
+   "runs": [
+    [
+     5,
+     9,
+     "hljs-selector-id"
+    ],
+    [
+     12,
+     15,
+     "hljs-selector-attr"
+    ],
+    [
+     17,
+     21,
+     "hljs-selector-tag"
+    ],
+    [
+     25,
+     28,
+     "hljs-selector-attr"
+    ],
+    [
+     32,
+     35,
+     "hljs-selector-attr"
+    ],
+    [
+     38,
+     41,
+     "hljs-selector-tag"
+    ],
+    [
+     47,
+     51,
+     "hljs-selector-tag"
+    ],
+    [
+     55,
+     67,
+     "hljs-selector-attr"
+    ],
+    [
+     67,
+     72,
+     "hljs-selector-attr"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "<u>|alias![[pic.png]]` <javascript:alert(1)></mark><mark></u>",
+   "runs": [
+    [
+     10,
+     21,
+     "hljs-string"
+    ],
+    [
+     41,
+     42,
+     "hljs-number"
+    ]
+   ]
+  },
+  {
+   "language": "<u>Ünïcödé&",
+   "code": "*\n&#65;\\\n<https://x.y/z?q=1>\n<pre>word|alias&bogus;text:<mark style=\"background: #e7f3f8\">](https://example.org \"t\")\n<?php &#x110000;\\http://例え.jp<br><br>[[Page]]다람쥐 헌 쳇바퀴<https://x.y/z?q=1>$$",
+   "runs": [
+    [
+     0,
+     2,
+     "xml"
+    ],
+    [
+     2,
+     7,
+     "xml hljs-symbol"
+    ],
+    [
+     7,
+     29,
+     "xml"
+    ],
+    [
+     29,
+     30,
+     "xml hljs-tag"
+    ],
+    [
+     30,
+     33,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     33,
+     34,
+     "xml hljs-tag"
+    ],
+    [
+     34,
+     44,
+     "xml"
+    ],
+    [
+     44,
+     51,
+     "xml hljs-symbol"
+    ],
+    [
+     51,
+     56,
+     "xml"
+    ],
+    [
+     56,
+     57,
+     "xml hljs-tag"
+    ],
+    [
+     57,
+     61,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     61,
+     62,
+     "xml hljs-tag"
+    ],
+    [
+     62,
+     67,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     67,
+     68,
+     "xml hljs-tag"
+    ],
+    [
+     68,
+     89,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     89,
+     90,
+     "xml hljs-tag"
+    ],
+    [
+     90,
+     117,
+     "xml"
+    ],
+    [
+     117,
+     122,
+     "php hljs-meta"
+    ],
+    [
+     122,
+     124,
+     "php"
+    ],
+    [
+     124,
+     192,
+     "php hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": ":><br>\\",
+   "code": "```<[[Page]]\n<!-- toc -->``</span>![[pic.png]]~[[Folder/Page#Head|Alias]]</mark>'http://例え.jp=![]",
+   "runs": [
+    [
+     0,
+     13,
+     "xml"
+    ],
+    [
+     13,
+     25,
+     "xml hljs-comment"
+    ],
+    [
+     25,
+     27,
+     "xml"
+    ],
+    [
+     27,
+     29,
+     "xml hljs-tag"
+    ],
+    [
+     29,
+     33,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     33,
+     34,
+     "xml hljs-tag"
+    ],
+    [
+     34,
+     73,
+     "xml"
+    ],
+    [
+     73,
+     75,
+     "xml hljs-tag"
+    ],
+    [
+     75,
+     79,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     79,
+     80,
+     "xml hljs-tag"
+    ],
+    [
+     80,
+     97,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": "ts\\",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "tsword}",
+   "code": ">>  ](&#65;</u>\t\n&nbsp;</span>![&nbsp;```",
+   "runs": [
+    [
+     0,
+     6,
+     "xml"
+    ],
+    [
+     6,
+     11,
+     "xml hljs-symbol"
+    ],
+    [
+     11,
+     13,
+     "xml hljs-tag"
+    ],
+    [
+     13,
+     14,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     14,
+     15,
+     "xml hljs-tag"
+    ],
+    [
+     15,
+     17,
+     "xml"
+    ],
+    [
+     17,
+     23,
+     "xml hljs-symbol"
+    ],
+    [
+     23,
+     25,
+     "xml hljs-tag"
+    ],
+    [
+     25,
+     29,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     29,
+     30,
+     "xml hljs-tag"
+    ],
+    [
+     30,
+     32,
+     "xml"
+    ],
+    [
+     32,
+     38,
+     "xml hljs-symbol"
+    ],
+    [
+     38,
+     41,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "\\|]]***<br>~</a>",
+   "runs": [
+    [
+     0,
+     7,
+     "xml"
+    ],
+    [
+     7,
+     8,
+     "xml hljs-tag"
+    ],
+    [
+     8,
+     10,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     10,
+     11,
+     "xml hljs-tag"
+    ],
+    [
+     11,
+     12,
+     "xml"
+    ],
+    [
+     12,
+     14,
+     "xml hljs-tag"
+    ],
+    [
+     14,
+     15,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     15,
+     16,
+     "xml hljs-tag"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "&copy",
+   "runs": [
+    [
+     1,
+     5,
+     "hljs-built_in"
+    ]
+   ]
+  },
+  {
+   "language": "ts![alt](img.png)",
+   "code": "</div>[[Folder/Page#Head|Alias]]&copy\"\n- ](https://example.org \"t\")+<a href=\"x\">__$${",
+   "runs": [
+    [
+     6,
+     32,
+     "hljs-string"
+    ],
+    [
+     37,
+     64,
+     "hljs-string"
+    ],
+    [
+     65,
+     77,
+     "hljs-string"
+    ],
+    [
+     78,
+     85,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "\\|",
+   "code": "---🧪x\n\\[\n    ](/path)**https://example.org/a bword[[<br>|]\n```ts[[Page]]http://例え.jp<https://x.y/z?q=1>***</a>](https://example.org \"t\")[ ]~~&Agrave;</a>\n___~~$5&&다람쥐 헌 쳇바퀴+<mark style=\"background: #e7f3f8\"><b>***%\n####### \t🧪x[ref]\\|)\n- &amp;</u>][ref]&amp;$]<\n$$http://例え.jp",
+   "runs": [
+    [
+     133,
+     136,
+     "hljs-string"
+    ],
+    [
+     160,
+     162,
+     "hljs-variable"
+    ],
+    [
+     186,
+     207,
+     "hljs-string"
+    ],
+    [
+     216,
+     236,
+     "hljs-comment"
+    ],
+    [
+     264,
+     269,
+     "hljs-variable"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "&copy-\\[![alt](img.png)<mark><span style=\"color: #d44c47\">]([ ]",
+   "runs": [
+    [
+     7,
+     14,
+     "hljs-selector-attr"
+    ],
+    [
+     15,
+     18,
+     "hljs-selector-tag"
+    ],
+    [
+     18,
+     22,
+     "hljs-selector-class"
+    ],
+    [
+     24,
+     28,
+     "hljs-selector-tag"
+    ],
+    [
+     30,
+     34,
+     "hljs-selector-tag"
+    ],
+    [
+     42,
+     47,
+     "hljs-attribute"
+    ],
+    [
+     49,
+     56,
+     "hljs-number"
+    ],
+    [
+     56,
+     63,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": " ***",
+   "runs": []
+  },
+  {
+   "language": "](/path)</b>🧪x<javascript:alert(1)>==:&#0;<https://x.y/z?q=1>",
+   "code": "    https://example.org/a bhttps://example.org/a b<u>🧪x__\n[ref]: /url \"title\"<a@b.co>&copy<<u>[[Page]]~~  ][[",
+   "runs": [
+    [
+     71,
+     78,
+     "hljs-string"
+    ],
+    [
+     95,
+     103,
+     "hljs-string"
+    ],
+    [
+     108,
+     110,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "#![\\'&Agrave;</a>](/path)*",
+   "code": "> [!tip]+\\[</u>+   </b>&copy&Agrave;\n<!DOCTYPE html>word\\\n$$<b>\n## [ ]***\\|- Ünïcödé<b>\n```ts&bogus;``\\\n</a>]]@<br/>\n10. {</u>``|alias$5&Agrave;<'",
+   "runs": [
+    [
+     0,
+     11,
+     "xml"
+    ],
+    [
+     11,
+     13,
+     "xml hljs-tag"
+    ],
+    [
+     13,
+     14,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     14,
+     15,
+     "xml hljs-tag"
+    ],
+    [
+     15,
+     19,
+     "xml"
+    ],
+    [
+     19,
+     21,
+     "xml hljs-tag"
+    ],
+    [
+     21,
+     22,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     22,
+     23,
+     "xml hljs-tag"
+    ],
+    [
+     23,
+     28,
+     "xml"
+    ],
+    [
+     28,
+     36,
+     "xml hljs-symbol"
+    ],
+    [
+     36,
+     37,
+     "xml"
+    ],
+    [
+     37,
+     47,
+     "xml hljs-meta"
+    ],
+    [
+     47,
+     51,
+     "xml hljs-meta hljs-keyword"
+    ],
+    [
+     51,
+     52,
+     "xml hljs-meta"
+    ],
+    [
+     52,
+     60,
+     "xml"
+    ],
+    [
+     60,
+     61,
+     "xml hljs-tag"
+    ],
+    [
+     61,
+     62,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     62,
+     63,
+     "xml hljs-tag"
+    ],
+    [
+     63,
+     84,
+     "xml"
+    ],
+    [
+     84,
+     85,
+     "xml hljs-tag"
+    ],
+    [
+     85,
+     86,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     86,
+     87,
+     "xml hljs-tag"
+    ],
+    [
+     87,
+     93,
+     "xml"
+    ],
+    [
+     93,
+     100,
+     "xml hljs-symbol"
+    ],
+    [
+     100,
+     104,
+     "xml"
+    ],
+    [
+     104,
+     106,
+     "xml hljs-tag"
+    ],
+    [
+     106,
+     107,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     107,
+     108,
+     "xml hljs-tag"
+    ],
+    [
+     108,
+     111,
+     "xml"
+    ],
+    [
+     111,
+     112,
+     "xml hljs-tag"
+    ],
+    [
+     112,
+     114,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     114,
+     116,
+     "xml hljs-tag"
+    ],
+    [
+     116,
+     122,
+     "xml"
+    ],
+    [
+     122,
+     124,
+     "xml hljs-tag"
+    ],
+    [
+     124,
+     125,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     125,
+     126,
+     "xml hljs-tag"
+    ],
+    [
+     126,
+     136,
+     "xml"
+    ],
+    [
+     136,
+     144,
+     "xml hljs-symbol"
+    ],
+    [
+     144,
+     146,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "==#%@   ",
+   "runs": [
+    [
+     2,
+     8,
+     "hljs-meta"
+    ]
+   ]
+  },
+  {
+   "language": "ts](https://example.org",
+   "code": "- ]]^[][ref]\\",
+   "runs": [
+    [
+     5,
+     7,
+     "hljs-selector-attr"
+    ],
+    [
+     7,
+     12,
+     "hljs-selector-attr"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "```](word$$#anchor#anchor\n- [x] \\*][ref]\n=</span>&amp;~~\n[ref]: /url \"title\"\\*)></span>&#x110000;[[Folder/Page#Head|Alias]]![[pic.png]]@)</b>\n* ***![$5&**\\|](\"}```\n<aside>\\[\n| <a href=\"x\"><mark>  <b>}[ ]<https://x.y/z?q=1>**[[Folder/Page#Head|Alias]]",
+   "runs": [
+    [
+     5,
+     9,
+     "hljs-selector-tag"
+    ],
+    [
+     11,
+     18,
+     "hljs-selector-id"
+    ],
+    [
+     18,
+     25,
+     "hljs-selector-id"
+    ],
+    [
+     26,
+     27,
+     "hljs-selector-tag"
+    ],
+    [
+     28,
+     31,
+     "hljs-selector-attr"
+    ],
+    [
+     35,
+     40,
+     "hljs-selector-attr"
+    ],
+    [
+     44,
+     48,
+     "hljs-selector-tag"
+    ],
+    [
+     49,
+     50,
+     "hljs-selector-tag"
+    ],
+    [
+     50,
+     53,
+     "hljs-selector-tag"
+    ],
+    [
+     57,
+     62,
+     "hljs-selector-attr"
+    ],
+    [
+     65,
+     68,
+     "hljs-selector-tag"
+    ],
+    [
+     70,
+     75,
+     "hljs-selector-tag"
+    ],
+    [
+     82,
+     86,
+     "hljs-selector-tag"
+    ],
+    [
+     87,
+     88,
+     "hljs-selector-tag"
+    ],
+    [
+     88,
+     96,
+     "hljs-selector-id"
+    ],
+    [
+     97,
+     122,
+     "hljs-selector-attr"
+    ],
+    [
+     124,
+     134,
+     "hljs-selector-attr"
+    ],
+    [
+     139,
+     140,
+     "hljs-selector-tag"
+    ],
+    [
+     148,
+     157,
+     "hljs-selector-attr"
+    ],
+    [
+     160,
+     162,
+     "hljs-built_in"
+    ],
+    [
+     184,
+     187,
+     "hljs-string"
+    ],
+    [
+     204,
+     209,
+     "hljs-attribute"
+    ],
+    [
+     210,
+     250,
+     "hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": "[ref]<javascript:alert(1)>\\[",
+   "code": "+ Ünïcödé\n<![CDATA[\n    https://example.org/a b:<b>two words<a@b.co>",
+   "runs": [
+    [
+     30,
+     32,
+     "hljs-regexp"
+    ],
+    [
+     62,
+     64,
+     "hljs-variable"
+    ]
+   ]
+  },
+  {
+   "language": "ts~~:&",
+   "code": "]]<b>](<span style=\"color: #d44c47\">",
+   "runs": [
+    [
+     3,
+     4,
+     "hljs-selector-tag"
+    ],
+    [
+     8,
+     12,
+     "hljs-selector-tag"
+    ],
+    [
+     20,
+     25,
+     "hljs-attribute"
+    ],
+    [
+     27,
+     34,
+     "hljs-number"
+    ],
+    [
+     34,
+     36,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "ts**",
+   "code": "</div><https://x.y/z?q=1></u>[[Page]]https://example.org/a b]($&#x41;+\\[word{\n***🧪x&#x110000;   ][ref]<mark style=\"background: #e7f3f8\">*\n<?php <javascript:alert(1)><span style=\"background-color:#fbecdd;\">",
+   "runs": [
+    [
+     0,
+     2,
+     "xml hljs-tag"
+    ],
+    [
+     2,
+     5,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     5,
+     6,
+     "xml hljs-tag"
+    ],
+    [
+     6,
+     25,
+     "xml"
+    ],
+    [
+     25,
+     27,
+     "xml hljs-tag"
+    ],
+    [
+     27,
+     28,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     28,
+     29,
+     "xml hljs-tag"
+    ],
+    [
+     29,
+     63,
+     "xml"
+    ],
+    [
+     63,
+     69,
+     "xml hljs-symbol"
+    ],
+    [
+     69,
+     84,
+     "xml"
+    ],
+    [
+     84,
+     94,
+     "xml hljs-symbol"
+    ],
+    [
+     94,
+     103,
+     "xml"
+    ],
+    [
+     103,
+     104,
+     "xml hljs-tag"
+    ],
+    [
+     104,
+     108,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     108,
+     109,
+     "xml hljs-tag"
+    ],
+    [
+     109,
+     114,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     114,
+     115,
+     "xml hljs-tag"
+    ],
+    [
+     115,
+     136,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     136,
+     137,
+     "xml hljs-tag"
+    ],
+    [
+     137,
+     139,
+     "xml"
+    ],
+    [
+     139,
+     144,
+     "php hljs-meta"
+    ],
+    [
+     144,
+     157,
+     "php"
+    ],
+    [
+     157,
+     162,
+     "php hljs-title function_ invoke__"
+    ],
+    [
+     162,
+     163,
+     "php"
+    ],
+    [
+     163,
+     164,
+     "php hljs-number"
+    ],
+    [
+     164,
+     178,
+     "php"
+    ],
+    [
+     178,
+     205,
+     "php hljs-string"
+    ],
+    [
+     205,
+     206,
+     "php"
+    ]
+   ]
+  },
+  {
+   "language": "|](/path)",
+   "code": "<div data-columns>text\\*&amp;\n---</a>Ünïcödé   ~~@\n😀\\*</mark>)![[pic.png]]",
+   "runs": [
+    [
+     30,
+     50,
+     "hljs-comment"
+    ],
+    [
+     64,
+     75,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "[](/path):",
+   "code": ">\\*<mark style=\"background: #e7f3f8\">&\n===[[Folder/Page#Head|Alias]][<br/>](/path)   <mark>!",
+   "runs": [
+    [
+     15,
+     36,
+     "hljs-string"
+    ],
+    [
+     42,
+     68,
+     "hljs-string"
+    ],
+    [
+     77,
+     81,
+     "hljs-built_in"
+    ]
+   ]
+  },
+  {
+   "language": "&#x41;",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "ts&#x110000;{]]<javascript:alert(1)>&bogus;&bogus;&#65;+~~<span",
+   "code": "- [ ][x]&#x41;![alt](img.png)![</a>",
+   "runs": [
+    [
+     2,
+     5,
+     "hljs-selector-attr"
+    ],
+    [
+     5,
+     8,
+     "hljs-selector-attr"
+    ],
+    [
+     9,
+     13,
+     "hljs-selector-id"
+    ],
+    [
+     15,
+     20,
+     "hljs-selector-attr"
+    ],
+    [
+     21,
+     24,
+     "hljs-selector-tag"
+    ],
+    [
+     24,
+     28,
+     "hljs-selector-class"
+    ],
+    [
+     30,
+     35,
+     "hljs-selector-attr"
+    ]
+   ]
+  },
+  {
+   "language": "ts\\",
+   "code": "[[Page]]&#0;![alt](img.png)***\\*\n*    \"~\"1.https://example.org/a b\n###### :![[pic.png]]=#:}](/path)`\n<div data-column>$5[ref]<a href=\"x\">]([[Page]]\"\\|&nbsp;🧪x",
+   "runs": [
+    [
+     0,
+     8,
+     "hljs-string"
+    ],
+    [
+     10,
+     11,
+     "hljs-number"
+    ],
+    [
+     38,
+     41,
+     "hljs-string"
+    ],
+    [
+     41,
+     43,
+     "hljs-number"
+    ],
+    [
+     76,
+     87,
+     "hljs-string"
+    ],
+    [
+     94,
+     98,
+     "hljs-built_in"
+    ],
+    [
+     119,
+     120,
+     "hljs-number"
+    ],
+    [
+     133,
+     136,
+     "hljs-string"
+    ],
+    [
+     139,
+     147,
+     "hljs-string"
+    ],
+    [
+     147,
+     159,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "[&#x41;#",
+   "code": "\n](<mark>_&#x41;:\n-  word</a>two words<javascript:alert(1)>**http://例え.jp\n<script>``<mark style=\"background: #e7f3f8\">\n](<mark>\n###### \t<\n<pre>[ ]]&#x110000;[x]\"![",
+   "runs": [
+    [
+     0,
+     3,
+     "xml"
+    ],
+    [
+     3,
+     4,
+     "xml hljs-tag"
+    ],
+    [
+     4,
+     8,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     8,
+     9,
+     "xml hljs-tag"
+    ],
+    [
+     9,
+     10,
+     "xml"
+    ],
+    [
+     10,
+     16,
+     "xml hljs-symbol"
+    ],
+    [
+     16,
+     25,
+     "xml"
+    ],
+    [
+     25,
+     27,
+     "xml hljs-tag"
+    ],
+    [
+     27,
+     28,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     28,
+     29,
+     "xml hljs-tag"
+    ],
+    [
+     29,
+     74,
+     "xml"
+    ],
+    [
+     74,
+     75,
+     "xml hljs-tag"
+    ],
+    [
+     75,
+     81,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     81,
+     82,
+     "xml hljs-tag"
+    ],
+    [
+     82,
+     84,
+     "xml xml"
+    ],
+    [
+     84,
+     85,
+     "xml xml hljs-tag"
+    ],
+    [
+     85,
+     89,
+     "xml xml hljs-tag hljs-name"
+    ],
+    [
+     89,
+     90,
+     "xml xml hljs-tag"
+    ],
+    [
+     90,
+     95,
+     "xml xml hljs-tag hljs-attr"
+    ],
+    [
+     95,
+     96,
+     "xml xml hljs-tag"
+    ],
+    [
+     96,
+     117,
+     "xml xml hljs-tag hljs-string"
+    ],
+    [
+     117,
+     118,
+     "xml xml hljs-tag"
+    ],
+    [
+     118,
+     121,
+     "xml xml"
+    ],
+    [
+     121,
+     122,
+     "xml xml hljs-tag"
+    ],
+    [
+     122,
+     126,
+     "xml xml hljs-tag hljs-name"
+    ],
+    [
+     126,
+     127,
+     "xml xml hljs-tag"
+    ],
+    [
+     127,
+     138,
+     "xml xml"
+    ],
+    [
+     138,
+     139,
+     "xml xml hljs-tag"
+    ],
+    [
+     139,
+     142,
+     "xml xml hljs-tag hljs-name"
+    ],
+    [
+     142,
+     143,
+     "xml xml hljs-tag"
+    ],
+    [
+     143,
+     147,
+     "xml xml"
+    ],
+    [
+     147,
+     157,
+     "xml xml hljs-symbol"
+    ],
+    [
+     157,
+     163,
+     "xml xml"
+    ]
+   ]
+  },
+  {
+   "language": "ts\\[",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "http://例え.jp",
+   "code": "- &#x41;#]   *]<span style=\"color: #d44c47\">\n___[ref]</span><https://x.y/z?q=1>[[2026-10-17]]<1.[ ]~\n> [!WARNING]- Title '[ref]><br>|alias![alt](img.png) !]\n<aside>_ ```@>&#x41;<span style=\"background-color:#fbecdd;\">",
+   "runs": [
+    [
+     0,
+     1,
+     "hljs-selector-tag"
+    ],
+    [
+     2,
+     3,
+     "hljs-selector-tag"
+    ],
+    [
+     3,
+     7,
+     "hljs-selector-id"
+    ],
+    [
+     16,
+     20,
+     "hljs-selector-tag"
+    ],
+    [
+     21,
+     26,
+     "hljs-selector-tag"
+    ],
+    [
+     28,
+     33,
+     "hljs-selector-tag"
+    ],
+    [
+     35,
+     42,
+     "hljs-selector-id"
+    ],
+    [
+     45,
+     48,
+     "hljs-selector-tag"
+    ],
+    [
+     48,
+     53,
+     "hljs-selector-attr"
+    ],
+    [
+     55,
+     59,
+     "hljs-selector-tag"
+    ],
+    [
+     61,
+     66,
+     "hljs-selector-tag"
+    ],
+    [
+     67,
+     100,
+     "hljs-comment"
+    ],
+    [
+     103,
+     113,
+     "hljs-selector-attr"
+    ],
+    [
+     113,
+     114,
+     "hljs-selector-tag"
+    ],
+    [
+     115,
+     120,
+     "hljs-selector-tag"
+    ],
+    [
+     122,
+     127,
+     "hljs-selector-attr"
+    ],
+    [
+     129,
+     131,
+     "hljs-selector-tag"
+    ],
+    [
+     133,
+     138,
+     "hljs-selector-tag"
+    ],
+    [
+     139,
+     144,
+     "hljs-selector-attr"
+    ],
+    [
+     158,
+     163,
+     "hljs-selector-tag"
+    ],
+    [
+     164,
+     165,
+     "hljs-selector-tag"
+    ],
+    [
+     171,
+     172,
+     "hljs-selector-tag"
+    ],
+    [
+     172,
+     176,
+     "hljs-selector-id"
+    ],
+    [
+     178,
+     182,
+     "hljs-selector-tag"
+    ],
+    [
+     183,
+     188,
+     "hljs-selector-tag"
+    ],
+    [
+     190,
+     206,
+     "hljs-selector-tag"
+    ],
+    [
+     207,
+     214,
+     "hljs-selector-id"
+    ]
+   ]
+  },
+  {
+   "language": "`<mark",
+   "code": "===<https://x.y/z?q=1>([[Page]]\n\n**#text^   <",
+   "runs": [
+    [
+     20,
+     21,
+     "hljs-number"
+    ],
+    [
+     23,
+     31,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "ts",
+   "code": "\n</pre>https://example.org/a b</u>&copy#anchor\t]([ ]#&Agrave;\n* [X] \n- ](/path)🧪x~~<a@b.co>!:\n+ [[]#|)",
+   "runs": [
+    [
+     2,
+     14,
+     "hljs-regexp"
+    ],
+    [
+     14,
+     27,
+     "hljs-regexp"
+    ],
+    [
+     54,
+     60,
+     "hljs-title class_"
+    ],
+    [
+     84,
+     103,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": "ts&bogus;word](",
+   "code": "* <br>  <br>'word-",
+   "runs": [
+    [
+     0,
+     2,
+     "xml"
+    ],
+    [
+     2,
+     3,
+     "xml hljs-tag"
+    ],
+    [
+     3,
+     5,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     5,
+     6,
+     "xml hljs-tag"
+    ],
+    [
+     6,
+     8,
+     "xml"
+    ],
+    [
+     8,
+     9,
+     "xml hljs-tag"
+    ],
+    [
+     9,
+     11,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     11,
+     12,
+     "xml hljs-tag"
+    ],
+    [
+     12,
+     18,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "<@'%=$$[[2026-10-17]]<b> ",
+   "runs": [
+    [
+     7,
+     20,
+     "hljs-selector-attr"
+    ],
+    [
+     22,
+     23,
+     "hljs-selector-tag"
+    ]
+   ]
+  },
+  {
+   "language": "ts![[pic.png]]<https://x.y/z?q=1>",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "[[Folder/Page#Head|Alias]]<mark",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "<mark",
+   "code": "- [ ] `#<u><javascript:alert(1)>*&#x110000;]#![[pic.png]]\t🧪x\n\t#<<a href=\"x\"></mark>\\|[ ]#anchor<a@b.co>[ref]",
+   "runs": [
+    [
+     2,
+     5,
+     "hljs-selector-attr"
+    ],
+    [
+     23,
+     28,
+     "hljs-built_in"
+    ],
+    [
+     29,
+     30,
+     "hljs-number"
+    ],
+    [
+     46,
+     56,
+     "hljs-selector-attr"
+    ],
+    [
+     60,
+     61,
+     "hljs-attribute"
+    ],
+    [
+     66,
+     67,
+     "hljs-selector-tag"
+    ],
+    [
+     74,
+     75,
+     "hljs-attribute"
+    ],
+    [
+     79,
+     83,
+     "hljs-selector-tag"
+    ],
+    [
+     86,
+     89,
+     "hljs-selector-attr"
+    ],
+    [
+     89,
+     96,
+     "hljs-selector-id"
+    ],
+    [
+     97,
+     98,
+     "hljs-selector-tag"
+    ],
+    [
+     98,
+     100,
+     "hljs-keyword"
+    ]
+   ]
+  },
+  {
+   "language": "ts*</u><https://x.y/z?q=1>]*)#&#x110000;[[2026-10-17]]",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "&#65;word\\|~~\\</u><span",
+   "code": "## </mark> ",
+   "runs": [
+    [
+     0,
+     1,
+     "hljs-meta prompt_"
+    ],
+    [
+     1,
+     10,
+     "bash hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": "&#0;🧪x__}&nbsp;``^](/path)^&#65;</a>",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": null,
+   "code": "\\<br/>][ref]:{<br>][ref]*$",
+   "runs": [
+    [
+     7,
+     12,
+     "hljs-selector-attr"
+    ],
+    [
+     19,
+     24,
+     "hljs-selector-attr"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "-**<mark style=\"background: #e7f3f8\">\n> [!note] =[ ]<br/>",
+   "runs": [
+    [
+     9,
+     14,
+     "hljs-attr"
+    ],
+    [
+     15,
+     36,
+     "hljs-string"
+    ],
+    [
+     40,
+     47,
+     "hljs-section"
+    ],
+    [
+     49,
+     52,
+     "hljs-section"
+    ]
+   ]
+  },
+  {
+   "language": "_1.](https://example.org",
+   "code": "***\n<custom-tag attr=\"1\">^😀</b><   ](<a@b.co>+</u>'</b>\n</pre>\t```~~<mark style=\"background: #e7f3f8\">http://例え.jp\")|alias\n- &copy😀<mark>[[Page]] ",
+   "runs": [
+    [
+     5,
+     15,
+     "hljs-selector-tag"
+    ],
+    [
+     16,
+     20,
+     "hljs-selector-tag"
+    ],
+    [
+     22,
+     23,
+     "hljs-number"
+    ],
+    [
+     30,
+     31,
+     "hljs-selector-tag"
+    ],
+    [
+     40,
+     42,
+     "hljs-variable"
+    ],
+    [
+     64,
+     66,
+     "hljs-built_in"
+    ],
+    [
+     81,
+     102,
+     "hljs-string"
+    ],
+    [
+     103,
+     107,
+     "hljs-attribute"
+    ],
+    [
+     108,
+     123,
+     "hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "[[Folder/Page#Head|Alias]][[Page]]))",
+   "runs": [
+    [
+     0,
+     26,
+     "hljs-string"
+    ],
+    [
+     26,
+     34,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "[[2026-10-17]]](/path)~   \\[[x]$==`",
+   "runs": [
+    [
+     0,
+     14,
+     "hljs-string"
+    ],
+    [
+     17,
+     21,
+     "hljs-built_in"
+    ],
+    [
+     27,
+     35,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "[ref]![alt](img.png)\\</b>[[Folder/Page#Head|Alias]]-@[[2026-10-17]]+",
+   "code": "* %>&#65;[[https://example.org/a b][ref]&https://example.org/a b<br/>~~http://例え.jp\n<https://x.y/z?q=1>(@&bogus;<mark>\n<custom-tag attr=\"1\">\n\n\n> [!tip]+]<br/>#anchor\n</aside>&#x41;<mark style=\"background: #e7f3f8\">![&\n\"<javascript:alert(1)>@\nhttp://例え.jp~\n<details><summary>Sum &amp; <b>mary</b></summary>1.&#x110000;</a>-http://例え.jp",
+   "runs": [
+    [
+     0,
+     4,
+     "xml"
+    ],
+    [
+     4,
+     9,
+     "xml hljs-symbol"
+    ],
+    [
+     9,
+     64,
+     "xml"
+    ],
+    [
+     64,
+     65,
+     "xml hljs-tag"
+    ],
+    [
+     65,
+     67,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     67,
+     69,
+     "xml hljs-tag"
+    ],
+    [
+     69,
+     105,
+     "xml"
+    ],
+    [
+     105,
+     112,
+     "xml hljs-symbol"
+    ],
+    [
+     112,
+     113,
+     "xml hljs-tag"
+    ],
+    [
+     113,
+     117,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     117,
+     118,
+     "xml hljs-tag"
+    ],
+    [
+     118,
+     119,
+     "xml"
+    ],
+    [
+     119,
+     120,
+     "xml hljs-tag"
+    ],
+    [
+     120,
+     130,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     130,
+     131,
+     "xml hljs-tag"
+    ],
+    [
+     131,
+     135,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     135,
+     136,
+     "xml hljs-tag"
+    ],
+    [
+     136,
+     139,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     139,
+     140,
+     "xml hljs-tag"
+    ],
+    [
+     140,
+     153,
+     "xml"
+    ],
+    [
+     153,
+     154,
+     "xml hljs-tag"
+    ],
+    [
+     154,
+     156,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     156,
+     158,
+     "xml hljs-tag"
+    ],
+    [
+     158,
+     166,
+     "xml"
+    ],
+    [
+     166,
+     168,
+     "xml hljs-tag"
+    ],
+    [
+     168,
+     173,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     173,
+     174,
+     "xml hljs-tag"
+    ],
+    [
+     174,
+     180,
+     "xml hljs-symbol"
+    ],
+    [
+     180,
+     181,
+     "xml hljs-tag"
+    ],
+    [
+     181,
+     185,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     185,
+     186,
+     "xml hljs-tag"
+    ],
+    [
+     186,
+     191,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     191,
+     192,
+     "xml hljs-tag"
+    ],
+    [
+     192,
+     213,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     213,
+     214,
+     "xml hljs-tag"
+    ],
+    [
+     214,
+     256,
+     "xml"
+    ],
+    [
+     256,
+     257,
+     "xml hljs-tag"
+    ],
+    [
+     257,
+     264,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     264,
+     265,
+     "xml hljs-tag"
+    ],
+    [
+     265,
+     266,
+     "xml hljs-tag"
+    ],
+    [
+     266,
+     273,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     273,
+     274,
+     "xml hljs-tag"
+    ],
+    [
+     274,
+     278,
+     "xml"
+    ],
+    [
+     278,
+     283,
+     "xml hljs-symbol"
+    ],
+    [
+     283,
+     284,
+     "xml"
+    ],
+    [
+     284,
+     285,
+     "xml hljs-tag"
+    ],
+    [
+     285,
+     286,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     286,
+     287,
+     "xml hljs-tag"
+    ],
+    [
+     287,
+     291,
+     "xml"
+    ],
+    [
+     291,
+     293,
+     "xml hljs-tag"
+    ],
+    [
+     293,
+     294,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     294,
+     295,
+     "xml hljs-tag"
+    ],
+    [
+     295,
+     297,
+     "xml hljs-tag"
+    ],
+    [
+     297,
+     304,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     304,
+     305,
+     "xml hljs-tag"
+    ],
+    [
+     305,
+     307,
+     "xml"
+    ],
+    [
+     307,
+     317,
+     "xml hljs-symbol"
+    ],
+    [
+     317,
+     319,
+     "xml hljs-tag"
+    ],
+    [
+     319,
+     320,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     320,
+     321,
+     "xml hljs-tag"
+    ],
+    [
+     321,
+     334,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": "&bogus;😀",
+   "code": "</span><mark style=\"background: #e7f3f8\">",
+   "runs": [
+    [
+     2,
+     6,
+     "hljs-selector-tag"
+    ],
+    [
+     8,
+     12,
+     "hljs-selector-tag"
+    ],
+    [
+     20,
+     30,
+     "hljs-attribute"
+    ],
+    [
+     32,
+     39,
+     "hljs-number"
+    ],
+    [
+     39,
+     41,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "[Ref Two]: <https://example.org/a b> 't'\n\nhttp://例え.jp\\|\n\n<pre>&bogus;\n@![alt](img.png)*![]*!<span style=\"color: #d44c47\">\n<div>",
+   "runs": [
+    [
+     0,
+     9,
+     "hljs-selector-attr"
+    ],
+    [
+     12,
+     17,
+     "hljs-selector-tag"
+    ],
+    [
+     18,
+     40,
+     "hljs-comment"
+    ],
+    [
+     42,
+     46,
+     "hljs-selector-tag"
+    ],
+    [
+     47,
+     56,
+     "hljs-comment"
+    ],
+    [
+     59,
+     62,
+     "hljs-selector-tag"
+    ],
+    [
+     63,
+     64,
+     "hljs-selector-tag"
+    ],
+    [
+     64,
+     69,
+     "hljs-selector-tag"
+    ],
+    [
+     73,
+     78,
+     "hljs-selector-attr"
+    ],
+    [
+     89,
+     91,
+     "hljs-selector-attr"
+    ],
+    [
+     94,
+     98,
+     "hljs-selector-tag"
+    ],
+    [
+     99,
+     104,
+     "hljs-selector-tag"
+    ],
+    [
+     106,
+     111,
+     "hljs-selector-tag"
+    ],
+    [
+     113,
+     120,
+     "hljs-selector-id"
+    ],
+    [
+     124,
+     127,
+     "hljs-selector-tag"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "](https://example.org \"t\")&",
+   "runs": [
+    [
+     22,
+     25,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "1.==http://例え.jp",
+   "runs": [
+    [
+     0,
+     2,
+     "hljs-number"
+    ],
+    [
+     9,
+     16,
+     "hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": "ts]<$5\"",
+   "code": "</aside>[ref]<b><u></b>%__\n<div data-column>![alt](img.png)*\n<custom-tag attr=\"1\">]]===&#0;[[Page]]\n{",
+   "runs": [
+    [
+     2,
+     7,
+     "hljs-selector-tag"
+    ],
+    [
+     8,
+     13,
+     "hljs-selector-attr"
+    ],
+    [
+     14,
+     15,
+     "hljs-selector-tag"
+    ],
+    [
+     21,
+     22,
+     "hljs-selector-tag"
+    ],
+    [
+     28,
+     31,
+     "hljs-selector-tag"
+    ],
+    [
+     45,
+     50,
+     "hljs-selector-attr"
+    ],
+    [
+     51,
+     54,
+     "hljs-selector-tag"
+    ],
+    [
+     54,
+     58,
+     "hljs-selector-class"
+    ],
+    [
+     79,
+     80,
+     "hljs-number"
+    ],
+    [
+     88,
+     90,
+     "hljs-selector-id"
+    ],
+    [
+     91,
+     98,
+     "hljs-selector-attr"
+    ]
+   ]
+  },
+  {
+   "language": "&amp;$5&bogus;<br/>",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "%",
+   "code": "<details><summary>Sum &amp; <b>mary</b></summary><a@b.co>}&#0;:``\n<aside>Ünïcödé&copy[ ]==```word)\\\n<mark><br/>\n<?php @\n> [!tip]+word&#65;",
+   "runs": [
+    [
+     0,
+     1,
+     "xml hljs-tag"
+    ],
+    [
+     1,
+     8,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     8,
+     9,
+     "xml hljs-tag"
+    ],
+    [
+     9,
+     10,
+     "xml hljs-tag"
+    ],
+    [
+     10,
+     17,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     17,
+     18,
+     "xml hljs-tag"
+    ],
+    [
+     18,
+     22,
+     "xml"
+    ],
+    [
+     22,
+     27,
+     "xml hljs-symbol"
+    ],
+    [
+     27,
+     28,
+     "xml"
+    ],
+    [
+     28,
+     29,
+     "xml hljs-tag"
+    ],
+    [
+     29,
+     30,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     30,
+     31,
+     "xml hljs-tag"
+    ],
+    [
+     31,
+     35,
+     "xml"
+    ],
+    [
+     35,
+     37,
+     "xml hljs-tag"
+    ],
+    [
+     37,
+     38,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     38,
+     39,
+     "xml hljs-tag"
+    ],
+    [
+     39,
+     41,
+     "xml hljs-tag"
+    ],
+    [
+     41,
+     48,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     48,
+     49,
+     "xml hljs-tag"
+    ],
+    [
+     49,
+     58,
+     "xml"
+    ],
+    [
+     58,
+     62,
+     "xml hljs-symbol"
+    ],
+    [
+     62,
+     66,
+     "xml"
+    ],
+    [
+     66,
+     67,
+     "xml hljs-tag"
+    ],
+    [
+     67,
+     72,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     72,
+     73,
+     "xml hljs-tag"
+    ],
+    [
+     73,
+     100,
+     "xml"
+    ],
+    [
+     100,
+     101,
+     "xml hljs-tag"
+    ],
+    [
+     101,
+     105,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     105,
+     106,
+     "xml hljs-tag"
+    ],
+    [
+     106,
+     107,
+     "xml hljs-tag"
+    ],
+    [
+     107,
+     109,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     109,
+     111,
+     "xml hljs-tag"
+    ],
+    [
+     111,
+     112,
+     "xml"
+    ],
+    [
+     112,
+     117,
+     "php hljs-meta"
+    ],
+    [
+     117,
+     134,
+     "php"
+    ],
+    [
+     134,
+     138,
+     "php hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": "*[[Folder/Page#Head|Alias]]",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "<mark",
+   "code": "+ <b>'<mark style=\"background: #e7f3f8\">\n<!-- toc -->!***</span>\n[Ref Two]: <https://example.org/a b> 't'<|alias[```\n$$`<span style=\"color: #d44c47\"></mark>&#x110000; \t&copy\n</details>다람쥐 헌 쳇바퀴\n> [!tip]+](&copy==[[Folder/Page#Head|Alias]][ref]![1.\n  -  ```\\\nhttp://例え.jp<span style=\"color: #d44c47\"></u>_<u>",
+   "runs": [
+    [
+     0,
+     2,
+     "xml"
+    ],
+    [
+     2,
+     3,
+     "xml hljs-tag"
+    ],
+    [
+     3,
+     4,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     4,
+     5,
+     "xml hljs-tag"
+    ],
+    [
+     5,
+     6,
+     "xml"
+    ],
+    [
+     6,
+     7,
+     "xml hljs-tag"
+    ],
+    [
+     7,
+     11,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     11,
+     12,
+     "xml hljs-tag"
+    ],
+    [
+     12,
+     17,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     17,
+     18,
+     "xml hljs-tag"
+    ],
+    [
+     18,
+     39,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     39,
+     40,
+     "xml hljs-tag"
+    ],
+    [
+     40,
+     41,
+     "xml"
+    ],
+    [
+     41,
+     53,
+     "xml hljs-comment"
+    ],
+    [
+     53,
+     57,
+     "xml"
+    ],
+    [
+     57,
+     59,
+     "xml hljs-tag"
+    ],
+    [
+     59,
+     63,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     63,
+     64,
+     "xml hljs-tag"
+    ],
+    [
+     64,
+     120,
+     "xml"
+    ],
+    [
+     120,
+     121,
+     "xml hljs-tag"
+    ],
+    [
+     121,
+     125,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     125,
+     126,
+     "xml hljs-tag"
+    ],
+    [
+     126,
+     131,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     131,
+     132,
+     "xml hljs-tag"
+    ],
+    [
+     132,
+     148,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     148,
+     149,
+     "xml hljs-tag"
+    ],
+    [
+     149,
+     151,
+     "xml hljs-tag"
+    ],
+    [
+     151,
+     155,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     155,
+     156,
+     "xml hljs-tag"
+    ],
+    [
+     156,
+     166,
+     "xml hljs-symbol"
+    ],
+    [
+     166,
+     174,
+     "xml"
+    ],
+    [
+     174,
+     176,
+     "xml hljs-tag"
+    ],
+    [
+     176,
+     183,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     183,
+     184,
+     "xml hljs-tag"
+    ],
+    [
+     184,
+     270,
+     "xml"
+    ],
+    [
+     270,
+     271,
+     "xml hljs-tag"
+    ],
+    [
+     271,
+     275,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     275,
+     276,
+     "xml hljs-tag"
+    ],
+    [
+     276,
+     281,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     281,
+     282,
+     "xml hljs-tag"
+    ],
+    [
+     282,
+     298,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     298,
+     299,
+     "xml hljs-tag"
+    ],
+    [
+     299,
+     301,
+     "xml hljs-tag"
+    ],
+    [
+     301,
+     302,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     302,
+     303,
+     "xml hljs-tag"
+    ],
+    [
+     303,
+     304,
+     "xml"
+    ],
+    [
+     304,
+     305,
+     "xml hljs-tag"
+    ],
+    [
+     305,
+     306,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     306,
+     307,
+     "xml hljs-tag"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "}http://例え.jp***",
+   "runs": [
+    [
+     6,
+     16,
+     "hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": "}***",
+   "code": "<!-- toc -->}_<br/>\n<?php __&#x41; {'$$\n___\\*]<br/>text]&nbsp;__\\[\t[[Page]]\n<!--![",
+   "runs": [
+    [
+     20,
+     25,
+     "hljs-meta"
+    ],
+    [
+     29,
+     39,
+     "hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": "$5",
+   "code": "<!-- toc -->word'</b>]1.%\n##  ```&copy[[_&amp;](/path)&bogus;[[<a@b.co>\n<div>\n###### ]]http://例え.jp<https://x.y/z?q=1>***|\n>> [ref]\n1. [x]<a@b.co>\n<a href=\"x\">*<a href=\"x\">&amp;\\[x]\\|\n10. \\&Agrave;[[Page]]",
+   "runs": [
+    [
+     0,
+     12,
+     "xml hljs-comment"
+    ],
+    [
+     12,
+     17,
+     "xml"
+    ],
+    [
+     17,
+     19,
+     "xml hljs-tag"
+    ],
+    [
+     19,
+     20,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     20,
+     21,
+     "xml hljs-tag"
+    ],
+    [
+     21,
+     41,
+     "xml"
+    ],
+    [
+     41,
+     46,
+     "xml hljs-symbol"
+    ],
+    [
+     46,
+     54,
+     "xml"
+    ],
+    [
+     54,
+     61,
+     "xml hljs-symbol"
+    ],
+    [
+     61,
+     72,
+     "xml"
+    ],
+    [
+     72,
+     73,
+     "xml hljs-tag"
+    ],
+    [
+     73,
+     76,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     76,
+     77,
+     "xml hljs-tag"
+    ],
+    [
+     77,
+     147,
+     "xml"
+    ],
+    [
+     147,
+     148,
+     "xml hljs-tag"
+    ],
+    [
+     148,
+     149,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     149,
+     150,
+     "xml hljs-tag"
+    ],
+    [
+     150,
+     154,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     154,
+     155,
+     "xml hljs-tag"
+    ],
+    [
+     155,
+     158,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     158,
+     159,
+     "xml hljs-tag"
+    ],
+    [
+     159,
+     160,
+     "xml"
+    ],
+    [
+     160,
+     161,
+     "xml hljs-tag"
+    ],
+    [
+     161,
+     162,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     162,
+     163,
+     "xml hljs-tag"
+    ],
+    [
+     163,
+     167,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     167,
+     168,
+     "xml hljs-tag"
+    ],
+    [
+     168,
+     171,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     171,
+     172,
+     "xml hljs-tag"
+    ],
+    [
+     172,
+     177,
+     "xml hljs-symbol"
+    ],
+    [
+     177,
+     189,
+     "xml"
+    ],
+    [
+     189,
+     197,
+     "xml hljs-symbol"
+    ],
+    [
+     197,
+     205,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": "![(",
+   "code": "[[Page]]\n<details><summary>Sum &amp; <b>mary</b></summary><mark>\"\\[다람쥐 헌 쳇바퀴}]\n  - &<mark style=\"background: #e7f3f8\">(&Agrave;![[pic.png]]http://例え.jp{🧪x\n[[Folder/Page#Head|Alias]]](/path)\n<pre>\n```ts`\n2) ~~(&nbsp;\"&#x110000;</u>***<u>_:\n<custom-tag attr=\"1\">$$<span style=\"background-color:#fbecdd;\">__%",
+   "runs": [
+    [
+     0,
+     9,
+     "xml"
+    ],
+    [
+     9,
+     10,
+     "xml hljs-tag"
+    ],
+    [
+     10,
+     17,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     17,
+     18,
+     "xml hljs-tag"
+    ],
+    [
+     18,
+     19,
+     "xml hljs-tag"
+    ],
+    [
+     19,
+     26,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     26,
+     27,
+     "xml hljs-tag"
+    ],
+    [
+     27,
+     31,
+     "xml"
+    ],
+    [
+     31,
+     36,
+     "xml hljs-symbol"
+    ],
+    [
+     36,
+     37,
+     "xml"
+    ],
+    [
+     37,
+     38,
+     "xml hljs-tag"
+    ],
+    [
+     38,
+     39,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     39,
+     40,
+     "xml hljs-tag"
+    ],
+    [
+     40,
+     44,
+     "xml"
+    ],
+    [
+     44,
+     46,
+     "xml hljs-tag"
+    ],
+    [
+     46,
+     47,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     47,
+     48,
+     "xml hljs-tag"
+    ],
+    [
+     48,
+     50,
+     "xml hljs-tag"
+    ],
+    [
+     50,
+     57,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     57,
+     58,
+     "xml hljs-tag"
+    ],
+    [
+     58,
+     59,
+     "xml hljs-tag"
+    ],
+    [
+     59,
+     63,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     63,
+     64,
+     "xml hljs-tag"
+    ],
+    [
+     64,
+     84,
+     "xml"
+    ],
+    [
+     84,
+     85,
+     "xml hljs-tag"
+    ],
+    [
+     85,
+     89,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     89,
+     90,
+     "xml hljs-tag"
+    ],
+    [
+     90,
+     95,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     95,
+     96,
+     "xml hljs-tag"
+    ],
+    [
+     96,
+     117,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     117,
+     118,
+     "xml hljs-tag"
+    ],
+    [
+     118,
+     119,
+     "xml"
+    ],
+    [
+     119,
+     127,
+     "xml hljs-symbol"
+    ],
+    [
+     127,
+     191,
+     "xml"
+    ],
+    [
+     191,
+     192,
+     "xml hljs-tag"
+    ],
+    [
+     192,
+     195,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     195,
+     196,
+     "xml hljs-tag"
+    ],
+    [
+     196,
+     210,
+     "xml"
+    ],
+    [
+     210,
+     216,
+     "xml hljs-symbol"
+    ],
+    [
+     216,
+     217,
+     "xml"
+    ],
+    [
+     217,
+     227,
+     "xml hljs-symbol"
+    ],
+    [
+     227,
+     229,
+     "xml hljs-tag"
+    ],
+    [
+     229,
+     230,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     230,
+     231,
+     "xml hljs-tag"
+    ],
+    [
+     231,
+     234,
+     "xml"
+    ],
+    [
+     234,
+     235,
+     "xml hljs-tag"
+    ],
+    [
+     235,
+     236,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     236,
+     237,
+     "xml hljs-tag"
+    ],
+    [
+     237,
+     240,
+     "xml"
+    ],
+    [
+     240,
+     241,
+     "xml hljs-tag"
+    ],
+    [
+     241,
+     251,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     251,
+     252,
+     "xml hljs-tag"
+    ],
+    [
+     252,
+     256,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     256,
+     257,
+     "xml hljs-tag"
+    ],
+    [
+     257,
+     260,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     260,
+     261,
+     "xml hljs-tag"
+    ],
+    [
+     261,
+     263,
+     "xml"
+    ],
+    [
+     263,
+     264,
+     "xml hljs-tag"
+    ],
+    [
+     264,
+     268,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     268,
+     269,
+     "xml hljs-tag"
+    ],
+    [
+     269,
+     274,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     274,
+     275,
+     "xml hljs-tag"
+    ],
+    [
+     275,
+     302,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     302,
+     303,
+     "xml hljs-tag"
+    ],
+    [
+     303,
+     306,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "😀`[[Folder/Page#Head|Alias]]]",
+   "runs": [
+    [
+     3,
+     29,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "ts]",
+   "code": "!text<a href=\"x\">](/path)(***\n+ ~~](/path)![[pic.png]]1.\n<div data-column>",
+   "runs": [
+    [
+     13,
+     16,
+     "hljs-string"
+    ],
+    [
+     20,
+     24,
+     "hljs-built_in"
+    ],
+    [
+     37,
+     41,
+     "hljs-built_in"
+    ],
+    [
+     43,
+     54,
+     "hljs-string"
+    ],
+    [
+     54,
+     56,
+     "hljs-number"
+    ]
+   ]
+  },
+  {
+   "language": "***two",
+   "code": "}<$$\n    \\&amp;word\\\n\\[</mark>text1.http://例え.jp=",
+   "runs": [
+    [
+     15,
+     19,
+     "hljs-type"
+    ],
+    [
+     34,
+     36,
+     "hljs-number"
+    ],
+    [
+     41,
+     49,
+     "hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": "<<br/><u><mark>#$\\***[",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": ">(</a>![alt](img.png)<a",
+   "code": "<!-- toc -->{![alt](img.png)```==__&#x110000;",
+   "runs": [
+    [
+     0,
+     12,
+     "xml hljs-comment"
+    ],
+    [
+     12,
+     35,
+     "xml"
+    ],
+    [
+     35,
+     45,
+     "xml hljs-symbol"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "<https://x.y/z?q=1>&#65;  ![[pic.png]]) &#x41;``*",
+   "runs": [
+    [
+     17,
+     18,
+     "hljs-number"
+    ],
+    [
+     21,
+     23,
+     "hljs-number"
+    ],
+    [
+     27,
+     38,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "ts^^|",
+   "code": "- <javascript:alert(1)>@\n[ref]: /url \"title\"&[[Folder/Page#Head|Alias]]\"__\n```ts&amp;\n<javascript:alert(1)>http://例え.jp&Agrave;Ünïcödé\n\n](https://example.org \"t\")!http://例え.jp",
+   "runs": [
+    [
+     20,
+     21,
+     "hljs-number"
+    ],
+    [
+     37,
+     44,
+     "hljs-string"
+    ],
+    [
+     45,
+     71,
+     "hljs-string"
+    ],
+    [
+     71,
+     159,
+     "hljs-string"
+    ],
+    [
+     160,
+     175,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "&copy&#x110000;!$$}[",
+   "code": "-->&#x110000;<span style=\"background-color:#fbecdd;\">\\|%</span>[[]<https://x.y/z?q=1>text{\"\n## \n- [ ] \\*==",
+   "runs": [
+    [
+     4,
+     12,
+     "hljs-selector-id"
+    ],
+    [
+     14,
+     18,
+     "hljs-selector-tag"
+    ],
+    [
+     26,
+     42,
+     "hljs-attribute"
+    ],
+    [
+     43,
+     50,
+     "hljs-number"
+    ],
+    [
+     58,
+     62,
+     "hljs-selector-tag"
+    ],
+    [
+     63,
+     66,
+     "hljs-selector-attr"
+    ],
+    [
+     83,
+     84,
+     "hljs-number"
+    ],
+    [
+     98,
+     101,
+     "hljs-selector-attr"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "10. 😀~~``</a>$5\n* [X] ==$``<mark style=\"background: #e7f3f8\">]]:$5\n- ](</span><span style=\"color: #d44c47\">\n\n#:@&#0;$`\n</div>{![[pic.png]]|alias]]&#65;$[[2026-10-17]]<<javascript:alert(1)>&copy&bogus;\n10. wordhttp://例え.jp",
+   "runs": [
+    [
+     0,
+     3,
+     "hljs-number"
+    ],
+    [
+     15,
+     16,
+     "hljs-number"
+    ],
+    [
+     40,
+     61,
+     "hljs-string"
+    ],
+    [
+     66,
+     67,
+     "hljs-number"
+    ],
+    [
+     91,
+     107,
+     "hljs-string"
+    ],
+    [
+     115,
+     116,
+     "hljs-number"
+    ],
+    [
+     128,
+     139,
+     "hljs-string"
+    ],
+    [
+     149,
+     151,
+     "hljs-number"
+    ],
+    [
+     153,
+     167,
+     "hljs-string"
+    ],
+    [
+     186,
+     187,
+     "hljs-number"
+    ],
+    [
+     202,
+     205,
+     "hljs-number"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "<&#0;<https://x.y/z?q=1>\\*)&Agrave;``<u>|alias",
+   "runs": [
+    [
+     0,
+     1,
+     "xml"
+    ],
+    [
+     1,
+     5,
+     "xml hljs-symbol"
+    ],
+    [
+     5,
+     27,
+     "xml"
+    ],
+    [
+     27,
+     35,
+     "xml hljs-symbol"
+    ],
+    [
+     35,
+     37,
+     "xml"
+    ],
+    [
+     37,
+     38,
+     "xml hljs-tag"
+    ],
+    [
+     38,
+     39,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     39,
+     40,
+     "xml hljs-tag"
+    ],
+    [
+     40,
+     46,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": "\\",
+   "code": " #$&\n> )~~word](\n> [!WARNING]- Title -__</u><br/><https://x.y/z?q=1>](/path)[<a href=\"x\"><javascript:alert(1)><mark>",
+   "runs": [
+    [
+     0,
+     2,
+     "hljs-meta prompt_"
+    ],
+    [
+     2,
+     4,
+     "bash"
+    ],
+    [
+     5,
+     7,
+     "hljs-meta prompt_"
+    ],
+    [
+     7,
+     16,
+     "bash"
+    ],
+    [
+     17,
+     19,
+     "hljs-meta prompt_"
+    ],
+    [
+     19,
+     85,
+     "bash"
+    ],
+    [
+     85,
+     88,
+     "bash hljs-string"
+    ],
+    [
+     88,
+     116,
+     "bash"
+    ]
+   ]
+  },
+  {
+   "language": "1.](![[pic.png]]</u>",
+   "code": "# \\[Ünïcödé:``<&<br/>##!\n<div>two words[[2026-10-17]]&</span>😀! $<https://x.y/z?q=1>\n1. \\|",
+   "runs": [
+    [
+     39,
+     53,
+     "hljs-string"
+    ],
+    [
+     83,
+     84,
+     "hljs-number"
+    ],
+    [
+     86,
+     88,
+     "hljs-number"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "[[Page]]***\\[",
+   "runs": [
+    [
+     0,
+     8,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "ts",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": null,
+   "code": "__  $5](/path)<u>",
+   "runs": [
+    [
+     4,
+     6,
+     "hljs-variable"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": ">[ ]#",
+   "runs": [
+    [
+     1,
+     4,
+     "hljs-section"
+    ],
+    [
+     4,
+     5,
+     "hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": "ts{",
+   "code": "+ |alias\n<script>\n<custom-tag attr=\"1\">   [x]](https://example.org \"t\")```$$\n####### }😀![[\n</u>[ ]\\[_^:",
+   "runs": [
+    [
+     3,
+     8,
+     "hljs-built_in"
+    ],
+    [
+     35,
+     38,
+     "hljs-string"
+    ],
+    [
+     67,
+     70,
+     "hljs-string"
+    ],
+    [
+     77,
+     91,
+     "hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "&)<br/></span>",
+   "runs": [
+    [
+     0,
+     2,
+     "xml"
+    ],
+    [
+     2,
+     3,
+     "xml hljs-tag"
+    ],
+    [
+     3,
+     5,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     5,
+     7,
+     "xml hljs-tag"
+    ],
+    [
+     7,
+     9,
+     "xml hljs-tag"
+    ],
+    [
+     9,
+     13,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     13,
+     14,
+     "xml hljs-tag"
+    ]
+   ]
+  },
+  {
+   "language": "\\|@",
+   "code": "<pre><span style=\"background-color:#fbecdd;\">\n1. ![<mark>\\[](https://example.org \"t\")&#65;-<span style=\"background-color:#fbecdd;\">`\n  - http://例え.jp[[two words[[#=](/path)#\n</details>!\\|\n</details>&<a@b.co><br>",
+   "runs": [
+    [
+     1,
+     4,
+     "hljs-selector-tag"
+    ],
+    [
+     6,
+     10,
+     "hljs-selector-tag"
+    ],
+    [
+     11,
+     16,
+     "hljs-selector-tag"
+    ],
+    [
+     18,
+     34,
+     "hljs-selector-tag"
+    ],
+    [
+     35,
+     42,
+     "hljs-selector-id"
+    ],
+    [
+     46,
+     47,
+     "hljs-number"
+    ],
+    [
+     50,
+     60,
+     "hljs-selector-attr"
+    ],
+    [
+     61,
+     66,
+     "hljs-attribute"
+    ],
+    [
+     67,
+     132,
+     "hljs-comment"
+    ],
+    [
+     137,
+     141,
+     "hljs-attribute"
+    ],
+    [
+     142,
+     173,
+     "hljs-comment"
+    ],
+    [
+     201,
+     203,
+     "hljs-variable"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "&Agrave;\\*__```+](/path)<mark style=\"background: #e7f3f8\">>",
+   "runs": [
+    [
+     19,
+     23,
+     "hljs-selector-tag"
+    ],
+    [
+     25,
+     29,
+     "hljs-selector-tag"
+    ],
+    [
+     37,
+     47,
+     "hljs-attribute"
+    ],
+    [
+     49,
+     56,
+     "hljs-number"
+    ],
+    [
+     56,
+     59,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "[[Folder/Page#Head|Alias]]<br/>#anchor",
+   "code": "<![CDATA[\\|\n&nbsp;#anchor\n> [!WARNING]- Title <mark>",
+   "runs": [
+    [
+     2,
+     38,
+     "hljs-selector-attr"
+    ],
+    [
+     47,
+     51,
+     "hljs-selector-tag"
+    ]
+   ]
+  },
+  {
+   "language": "]]![alt](img.png)",
+   "code": "%&bogus;^https://example.org/a b\n> [!note] *-$$<u></u>&#65; \n<div data-columns>\n</div>🧪x<a href=\"x\">~\\",
+   "runs": [
+    [
+     0,
+     1,
+     "xml"
+    ],
+    [
+     1,
+     8,
+     "xml hljs-symbol"
+    ],
+    [
+     8,
+     47,
+     "xml"
+    ],
+    [
+     47,
+     48,
+     "xml hljs-tag"
+    ],
+    [
+     48,
+     49,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     49,
+     50,
+     "xml hljs-tag"
+    ],
+    [
+     50,
+     52,
+     "xml hljs-tag"
+    ],
+    [
+     52,
+     53,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     53,
+     54,
+     "xml hljs-tag"
+    ],
+    [
+     54,
+     59,
+     "xml hljs-symbol"
+    ],
+    [
+     59,
+     61,
+     "xml"
+    ],
+    [
+     61,
+     62,
+     "xml hljs-tag"
+    ],
+    [
+     62,
+     65,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     65,
+     66,
+     "xml hljs-tag"
+    ],
+    [
+     66,
+     78,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     78,
+     79,
+     "xml hljs-tag"
+    ],
+    [
+     79,
+     80,
+     "xml"
+    ],
+    [
+     80,
+     82,
+     "xml hljs-tag"
+    ],
+    [
+     82,
+     85,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     85,
+     86,
+     "xml hljs-tag"
+    ],
+    [
+     86,
+     89,
+     "xml"
+    ],
+    [
+     89,
+     90,
+     "xml hljs-tag"
+    ],
+    [
+     90,
+     91,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     91,
+     92,
+     "xml hljs-tag"
+    ],
+    [
+     92,
+     96,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     96,
+     97,
+     "xml hljs-tag"
+    ],
+    [
+     97,
+     100,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     100,
+     101,
+     "xml hljs-tag"
+    ],
+    [
+     101,
+     103,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": "](\"",
+   "code": "> '<br>\n~~~\\\n![alt](img.png)&#x41;<https://x.y/z?q=1>[ref]~",
+   "runs": [
+    [
+     14,
+     19,
+     "hljs-selector-attr"
+    ],
+    [
+     20,
+     23,
+     "hljs-selector-tag"
+    ],
+    [
+     23,
+     27,
+     "hljs-selector-class"
+    ],
+    [
+     29,
+     33,
+     "hljs-selector-id"
+    ],
+    [
+     51,
+     52,
+     "hljs-number"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "](https://example.org \"t\") ](https://example.org \"t\")<mark>@</u>&",
+   "runs": [
+    [
+     22,
+     25,
+     "hljs-string"
+    ],
+    [
+     49,
+     52,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "ts:</u>#*🧪x</span>[[Page]]+][ref]</b>",
+   "code": "1. {[</span>😀^**<a@b.co>&(\n> [!tip]+> two wordstwo words}$5#",
+   "runs": [
+    [
+     0,
+     1,
+     "hljs-number"
+    ],
+    [
+     19,
+     21,
+     "hljs-variable"
+    ],
+    [
+     58,
+     60,
+     "hljs-variable"
+    ],
+    [
+     60,
+     61,
+     "hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "}\\",
+   "runs": []
+  },
+  {
+   "language": "***",
+   "code": "<!-- toc -->_``%[[Folder/Page#Head|Alias]]word**$\n---\\*",
+   "runs": [
+    [
+     0,
+     12,
+     "xml hljs-comment"
+    ],
+    [
+     12,
+     55,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": "~~",
+   "code": "\n![alt](img.png)<br>~~word'**&#0;&#x41;</b>",
+   "runs": [
+    [
+     2,
+     7,
+     "hljs-selector-attr"
+    ],
+    [
+     17,
+     19,
+     "hljs-selector-tag"
+    ],
+    [
+     22,
+     26,
+     "hljs-selector-tag"
+    ],
+    [
+     29,
+     30,
+     "hljs-selector-tag"
+    ],
+    [
+     30,
+     32,
+     "hljs-selector-id"
+    ],
+    [
+     33,
+     34,
+     "hljs-selector-tag"
+    ],
+    [
+     34,
+     38,
+     "hljs-selector-id"
+    ],
+    [
+     41,
+     42,
+     "hljs-selector-tag"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "- &Agrave;![ ]text\n>> ([x]```_](/path)***</u>><$ ",
+   "runs": [
+    [
+     11,
+     14,
+     "hljs-selector-attr"
+    ],
+    [
+     14,
+     18,
+     "hljs-selector-tag"
+    ],
+    [
+     23,
+     26,
+     "hljs-selector-attr"
+    ],
+    [
+     33,
+     37,
+     "hljs-selector-tag"
+    ]
+   ]
+  },
+  {
+   "language": "ts",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": null,
+   "code": "}다람쥐 헌 쳇바퀴",
+   "runs": []
+  },
+  {
+   "language": "{<br/>",
+   "code": "</pre>@two words(Ünïcödé<span style=\"background-color:#fbecdd;\">&Agrave;&#0;$@\\\n\n==\n\n</span>][ref]![alt](img.png)<span style=\"background-color:#fbecdd;\">&#0;``   -<b>\n<aside>\\|<a href=\"x\">two words&]]😀$\n</aside>\t   🧪x\n1. \n1.   \\\n<a href=\"x\">##([[Folder/Page#Head|Alias]]](/path)&Agrave;&amp;\n[Ref Two]: <https://example.org/a b> 't'</b>다람쥐 헌 쳇바퀴   [ref]</b>",
+   "runs": [
+    [
+     0,
+     2,
+     "xml hljs-tag"
+    ],
+    [
+     2,
+     5,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     5,
+     6,
+     "xml hljs-tag"
+    ],
+    [
+     6,
+     24,
+     "xml"
+    ],
+    [
+     24,
+     25,
+     "xml hljs-tag"
+    ],
+    [
+     25,
+     29,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     29,
+     30,
+     "xml hljs-tag"
+    ],
+    [
+     30,
+     35,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     35,
+     36,
+     "xml hljs-tag"
+    ],
+    [
+     36,
+     63,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     63,
+     64,
+     "xml hljs-tag"
+    ],
+    [
+     64,
+     72,
+     "xml hljs-symbol"
+    ],
+    [
+     72,
+     76,
+     "xml hljs-symbol"
+    ],
+    [
+     76,
+     85,
+     "xml"
+    ],
+    [
+     85,
+     87,
+     "xml hljs-tag"
+    ],
+    [
+     87,
+     91,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     91,
+     92,
+     "xml hljs-tag"
+    ],
+    [
+     92,
+     113,
+     "xml"
+    ],
+    [
+     113,
+     114,
+     "xml hljs-tag"
+    ],
+    [
+     114,
+     118,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     118,
+     119,
+     "xml hljs-tag"
+    ],
+    [
+     119,
+     124,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     124,
+     125,
+     "xml hljs-tag"
+    ],
+    [
+     125,
+     152,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     152,
+     153,
+     "xml hljs-tag"
+    ],
+    [
+     153,
+     157,
+     "xml hljs-symbol"
+    ],
+    [
+     157,
+     163,
+     "xml"
+    ],
+    [
+     163,
+     164,
+     "xml hljs-tag"
+    ],
+    [
+     164,
+     165,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     165,
+     166,
+     "xml hljs-tag"
+    ],
+    [
+     166,
+     167,
+     "xml"
+    ],
+    [
+     167,
+     168,
+     "xml hljs-tag"
+    ],
+    [
+     168,
+     173,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     173,
+     174,
+     "xml hljs-tag"
+    ],
+    [
+     174,
+     176,
+     "xml"
+    ],
+    [
+     176,
+     177,
+     "xml hljs-tag"
+    ],
+    [
+     177,
+     178,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     178,
+     179,
+     "xml hljs-tag"
+    ],
+    [
+     179,
+     183,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     183,
+     184,
+     "xml hljs-tag"
+    ],
+    [
+     184,
+     187,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     187,
+     188,
+     "xml hljs-tag"
+    ],
+    [
+     188,
+     204,
+     "xml"
+    ],
+    [
+     204,
+     206,
+     "xml hljs-tag"
+    ],
+    [
+     206,
+     211,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     211,
+     212,
+     "xml hljs-tag"
+    ],
+    [
+     212,
+     231,
+     "xml"
+    ],
+    [
+     231,
+     232,
+     "xml hljs-tag"
+    ],
+    [
+     232,
+     233,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     233,
+     234,
+     "xml hljs-tag"
+    ],
+    [
+     234,
+     238,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     238,
+     239,
+     "xml hljs-tag"
+    ],
+    [
+     239,
+     242,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     242,
+     243,
+     "xml hljs-tag"
+    ],
+    [
+     243,
+     280,
+     "xml"
+    ],
+    [
+     280,
+     288,
+     "xml hljs-symbol"
+    ],
+    [
+     288,
+     293,
+     "xml hljs-symbol"
+    ],
+    [
+     293,
+     334,
+     "xml"
+    ],
+    [
+     334,
+     336,
+     "xml hljs-tag"
+    ],
+    [
+     336,
+     337,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     337,
+     338,
+     "xml hljs-tag"
+    ],
+    [
+     338,
+     355,
+     "xml"
+    ],
+    [
+     355,
+     357,
+     "xml hljs-tag"
+    ],
+    [
+     357,
+     358,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     358,
+     359,
+     "xml hljs-tag"
+    ]
+   ]
+  },
+  {
+   "language": "ts😀&amp;&nbsp;</a>",
+   "code": "<script>\\\\\\\n\n1. ",
+   "runs": [
+    [
+     0,
+     1,
+     "xml hljs-tag"
+    ],
+    [
+     1,
+     7,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     7,
+     8,
+     "xml hljs-tag"
+    ],
+    [
+     8,
+     16,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": "<https://x.y/z?q=1>|alias<br/><u>two",
+   "code": "</aside>\\\n&[[Folder/Page#Head|Alias]]</span>[ ]\\|<mark>\n😀\n-->\n<script>Ünïcödé🧪xÜnïcödé![[pic.png]]{\n\"~$5&Agrave;\\[]``~~Ünïcödé]]",
+   "runs": [
+    [
+     11,
+     37,
+     "hljs-string"
+    ],
+    [
+     59,
+     62,
+     "hljs-comment"
+    ],
+    [
+     89,
+     100,
+     "hljs-string"
+    ],
+    [
+     102,
+     130,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "[[]]",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": null,
+   "code": "[[Folder/Page#Head|Alias]]#anchor![alt](img.png)+[ref]\"",
+   "runs": [
+    [
+     0,
+     26,
+     "hljs-string"
+    ],
+    [
+     54,
+     55,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "1.&amp;",
+   "code": "\n=[ ]}</span>`\n<!DOCTYPE html>word\n</aside>^&copy<https://x.y/z?q=1>]\n<custom-tag attr=\"1\"><span style=\"background-color:#fbecdd;\">](![[pic.png]]~~*:<a href=\"x\">:https://example.org/a b\n[ref]\n%&#65;~~@<a href=\"x\">[[[2026-10-17]][[\\\n***</b>\n* ~~$5🧪x__![ref]<br>`<mark style=\"background: #e7f3f8\">word",
+   "runs": [
+    [
+     0,
+     6,
+     "xml"
+    ],
+    [
+     6,
+     8,
+     "xml hljs-tag"
+    ],
+    [
+     8,
+     12,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     12,
+     13,
+     "xml hljs-tag"
+    ],
+    [
+     13,
+     15,
+     "xml"
+    ],
+    [
+     15,
+     25,
+     "xml hljs-meta"
+    ],
+    [
+     25,
+     29,
+     "xml hljs-meta hljs-keyword"
+    ],
+    [
+     29,
+     30,
+     "xml hljs-meta"
+    ],
+    [
+     30,
+     35,
+     "xml"
+    ],
+    [
+     35,
+     37,
+     "xml hljs-tag"
+    ],
+    [
+     37,
+     42,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     42,
+     43,
+     "xml hljs-tag"
+    ],
+    [
+     43,
+     70,
+     "xml"
+    ],
+    [
+     70,
+     71,
+     "xml hljs-tag"
+    ],
+    [
+     71,
+     81,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     81,
+     82,
+     "xml hljs-tag"
+    ],
+    [
+     82,
+     86,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     86,
+     87,
+     "xml hljs-tag"
+    ],
+    [
+     87,
+     90,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     90,
+     91,
+     "xml hljs-tag"
+    ],
+    [
+     91,
+     92,
+     "xml hljs-tag"
+    ],
+    [
+     92,
+     96,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     96,
+     97,
+     "xml hljs-tag"
+    ],
+    [
+     97,
+     102,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     102,
+     103,
+     "xml hljs-tag"
+    ],
+    [
+     103,
+     130,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     130,
+     131,
+     "xml hljs-tag"
+    ],
+    [
+     131,
+     149,
+     "xml"
+    ],
+    [
+     149,
+     150,
+     "xml hljs-tag"
+    ],
+    [
+     150,
+     151,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     151,
+     152,
+     "xml hljs-tag"
+    ],
+    [
+     152,
+     156,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     156,
+     157,
+     "xml hljs-tag"
+    ],
+    [
+     157,
+     160,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     160,
+     161,
+     "xml hljs-tag"
+    ],
+    [
+     161,
+     193,
+     "xml"
+    ],
+    [
+     193,
+     198,
+     "xml hljs-symbol"
+    ],
+    [
+     198,
+     201,
+     "xml"
+    ],
+    [
+     201,
+     202,
+     "xml hljs-tag"
+    ],
+    [
+     202,
+     203,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     203,
+     204,
+     "xml hljs-tag"
+    ],
+    [
+     204,
+     208,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     208,
+     209,
+     "xml hljs-tag"
+    ],
+    [
+     209,
+     212,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     212,
+     213,
+     "xml hljs-tag"
+    ],
+    [
+     213,
+     235,
+     "xml"
+    ],
+    [
+     235,
+     237,
+     "xml hljs-tag"
+    ],
+    [
+     237,
+     238,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     238,
+     239,
+     "xml hljs-tag"
+    ],
+    [
+     239,
+     257,
+     "xml"
+    ],
+    [
+     257,
+     258,
+     "xml hljs-tag"
+    ],
+    [
+     258,
+     260,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     260,
+     261,
+     "xml hljs-tag"
+    ],
+    [
+     261,
+     262,
+     "xml"
+    ],
+    [
+     262,
+     263,
+     "xml hljs-tag"
+    ],
+    [
+     263,
+     267,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     267,
+     268,
+     "xml hljs-tag"
+    ],
+    [
+     268,
+     273,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     273,
+     274,
+     "xml hljs-tag"
+    ],
+    [
+     274,
+     295,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     295,
+     296,
+     "xml hljs-tag"
+    ],
+    [
+     296,
+     300,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": "ts(<span",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "다람쥐",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": null,
+   "code": "=&#65;",
+   "runs": [
+    [
+     2,
+     6,
+     "hljs-meta"
+    ]
+   ]
+  },
+  {
+   "language": "=<span",
+   "code": "> [!tip]+$$|alias<b> %<span style=\"background-color:#fbecdd;\">[[@![[pic.png]]😀\n<?php \\*$$-](다람쥐 헌 쳇바퀴http://例え.jp``&nbsp;&amp;&Agrave;\n> [!note] $5🧪x!<javascript:alert(1)>word  </a>&nbsp;",
+   "runs": [
+    [
+     0,
+     17,
+     "xml"
+    ],
+    [
+     17,
+     18,
+     "xml hljs-tag"
+    ],
+    [
+     18,
+     19,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     19,
+     20,
+     "xml hljs-tag"
+    ],
+    [
+     20,
+     22,
+     "xml"
+    ],
+    [
+     22,
+     23,
+     "xml hljs-tag"
+    ],
+    [
+     23,
+     27,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     27,
+     28,
+     "xml hljs-tag"
+    ],
+    [
+     28,
+     33,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     33,
+     34,
+     "xml hljs-tag"
+    ],
+    [
+     34,
+     61,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     61,
+     62,
+     "xml hljs-tag"
+    ],
+    [
+     62,
+     80,
+     "xml"
+    ],
+    [
+     80,
+     85,
+     "php hljs-meta"
+    ],
+    [
+     85,
+     107,
+     "php"
+    ],
+    [
+     107,
+     135,
+     "php hljs-comment"
+    ],
+    [
+     135,
+     147,
+     "php"
+    ],
+    [
+     147,
+     148,
+     "php hljs-number"
+    ],
+    [
+     148,
+     164,
+     "php"
+    ],
+    [
+     164,
+     169,
+     "php hljs-title function_ invoke__"
+    ],
+    [
+     169,
+     170,
+     "php"
+    ],
+    [
+     170,
+     171,
+     "php hljs-number"
+    ],
+    [
+     171,
+     189,
+     "php"
+    ]
+   ]
+  },
+  {
+   "language": "|\\",
+   "code": "🧪x_\n<?php )&[  Ünïcödé$<a@b.co></span>**$\n2) #\n<div data-column>$$<br/>text<span style=\"color: #d44c47\">🧪x[</b>http://例え.jp-",
+   "runs": [
+    [
+     5,
+     10,
+     "hljs-meta"
+    ],
+    [
+     43,
+     44,
+     "hljs-number"
+    ],
+    [
+     46,
+     47,
+     "hljs-comment"
+    ],
+    [
+     88,
+     104,
+     "hljs-string"
+    ],
+    [
+     118,
+     126,
+     "hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": "]({|&#65;[ref]</span>%<mark",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": null,
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "ts!$5",
+   "code": "\t\n####### text~~🧪x#",
+   "runs": [
+    [
+     10,
+     14,
+     "hljs-selector-tag"
+    ],
+    [
+     18,
+     19,
+     "hljs-attribute"
+    ]
+   ]
+  },
+  {
+   "language": "&bogus;<u>&#x41;",
+   "code": "* $5*`<a@b.co>=</mark><mark>&#x110000;__][ref]",
+   "runs": [
+    [
+     3,
+     4,
+     "hljs-number"
+    ],
+    [
+     7,
+     8,
+     "hljs-selector-tag"
+    ],
+    [
+     9,
+     10,
+     "hljs-selector-tag"
+    ],
+    [
+     10,
+     13,
+     "hljs-selector-class"
+    ],
+    [
+     17,
+     21,
+     "hljs-selector-tag"
+    ],
+    [
+     23,
+     27,
+     "hljs-selector-tag"
+    ],
+    [
+     28,
+     29,
+     "hljs-selector-tag"
+    ],
+    [
+     29,
+     37,
+     "hljs-selector-id"
+    ],
+    [
+     38,
+     40,
+     "hljs-selector-tag"
+    ],
+    [
+     41,
+     46,
+     "hljs-selector-attr"
+    ]
+   ]
+  },
+  {
+   "language": "ts**![[pic.png]]__https://example.org/a",
+   "code": "\"$5```\t](/path)&#x41;&",
+   "runs": [
+    [
+     0,
+     1,
+     "hljs-string"
+    ],
+    [
+     1,
+     3,
+     "hljs-string hljs-variable"
+    ],
+    [
+     3,
+     22,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "ts",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "ts<br>~</span>(\\|<https://x.y/z?q=1>\\|\\[|alias<b>==",
+   "code": "## ^=&bogus;|alias&&#65;😀[[Page]][[2026-10-17]]\n&nbsp;\n[Ref Two]: <https://example.org/a b> 't'</b>\n[ ]1.\\|![[pic.png]]    '\n|1.\\\n[[Folder/Page#Head|Alias]]<a@b.co>https://example.org/a bhttps://example.org/a b<a href=\"x\">\\\n&)",
+   "runs": [
+    [
+     21,
+     23,
+     "hljs-number"
+    ],
+    [
+     26,
+     34,
+     "hljs-string"
+    ],
+    [
+     34,
+     48,
+     "hljs-string"
+    ],
+    [
+     93,
+     96,
+     "hljs-string"
+    ],
+    [
+     104,
+     106,
+     "hljs-number"
+    ],
+    [
+     109,
+     120,
+     "hljs-string"
+    ],
+    [
+     124,
+     227,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "🧪x):&#x41;&#x110000;](/path)[[<br/>![[pic.png]]*",
+   "code": ">> \n[Ref Two]: <https://example.org/a b> 't'\\|__\n# &nbsp; #anchor~\t<javascript:alert(1)>![alt](img.png)_|$$[[Folder/Page#Head|Alias]]\n####### ![alt](img.png)</b>|alias%\"<b><u>1.|alias",
+   "runs": [
+    [
+     4,
+     13,
+     "hljs-selector-attr"
+    ],
+    [
+     16,
+     21,
+     "hljs-selector-tag"
+    ],
+    [
+     22,
+     48,
+     "hljs-comment"
+    ],
+    [
+     51,
+     52,
+     "hljs-selector-tag"
+    ],
+    [
+     52,
+     56,
+     "hljs-selector-tag"
+    ],
+    [
+     58,
+     65,
+     "hljs-selector-id"
+    ],
+    [
+     68,
+     78,
+     "hljs-selector-tag"
+    ],
+    [
+     79,
+     84,
+     "hljs-selector-tag"
+    ],
+    [
+     85,
+     86,
+     "hljs-number"
+    ],
+    [
+     89,
+     94,
+     "hljs-selector-attr"
+    ],
+    [
+     103,
+     104,
+     "hljs-selector-tag"
+    ],
+    [
+     107,
+     132,
+     "hljs-selector-attr"
+    ],
+    [
+     143,
+     148,
+     "hljs-selector-attr"
+    ],
+    [
+     159,
+     160,
+     "hljs-selector-tag"
+    ],
+    [
+     162,
+     167,
+     "hljs-selector-tag"
+    ],
+    [
+     170,
+     171,
+     "hljs-selector-tag"
+    ],
+    [
+     173,
+     174,
+     "hljs-selector-tag"
+    ],
+    [
+     175,
+     176,
+     "hljs-number"
+    ],
+    [
+     178,
+     183,
+     "hljs-selector-tag"
+    ]
+   ]
+  },
+  {
+   "language": "&Agrave;",
+   "code": "](https://example.org \"t\")\"*\"\t^-\n<!DOCTYPE html>\\\n<javascript:alert(1)><br>][ref]~~_<   </span>)",
+   "runs": [
+    [
+     0,
+     33,
+     "xml"
+    ],
+    [
+     33,
+     43,
+     "xml hljs-meta"
+    ],
+    [
+     43,
+     47,
+     "xml hljs-meta hljs-keyword"
+    ],
+    [
+     47,
+     48,
+     "xml hljs-meta"
+    ],
+    [
+     48,
+     71,
+     "xml"
+    ],
+    [
+     71,
+     72,
+     "xml hljs-tag"
+    ],
+    [
+     72,
+     74,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     74,
+     75,
+     "xml hljs-tag"
+    ],
+    [
+     75,
+     88,
+     "xml"
+    ],
+    [
+     88,
+     90,
+     "xml hljs-tag"
+    ],
+    [
+     90,
+     94,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     94,
+     95,
+     "xml hljs-tag"
+    ],
+    [
+     95,
+     96,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": "ts>\\*@",
+   "code": "<pre>\\\n&#x110000;+*{~\n> [!note] 다람쥐 헌 쳇바퀴\\[$$<javascript:alert(1)>",
+   "runs": [
+    [
+     8,
+     21,
+     "hljs-comment"
+    ],
+    [
+     24,
+     31,
+     "hljs-section"
+    ],
+    [
+     42,
+     66,
+     "hljs-section"
+    ]
+   ]
+  },
+  {
+   "language": "[[==[",
+   "code": "</aside>_{word \n][ref]&#x110000;&nbsp;' ]&bogus;<a href=\"x\">",
+   "runs": [
+    [
+     0,
+     2,
+     "xml hljs-tag"
+    ],
+    [
+     2,
+     7,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     7,
+     8,
+     "xml hljs-tag"
+    ],
+    [
+     8,
+     22,
+     "xml"
+    ],
+    [
+     22,
+     32,
+     "xml hljs-symbol"
+    ],
+    [
+     32,
+     38,
+     "xml hljs-symbol"
+    ],
+    [
+     38,
+     41,
+     "xml"
+    ],
+    [
+     41,
+     48,
+     "xml hljs-symbol"
+    ],
+    [
+     48,
+     49,
+     "xml hljs-tag"
+    ],
+    [
+     49,
+     50,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     50,
+     51,
+     "xml hljs-tag"
+    ],
+    [
+     51,
+     55,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     55,
+     56,
+     "xml hljs-tag"
+    ],
+    [
+     56,
+     59,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     59,
+     60,
+     "xml hljs-tag"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "](/path)])</mark><https://x.y/z?q=1>*]\n\n|alias&",
+   "runs": [
+    [
+     41,
+     46,
+     "hljs-built_in"
+    ]
+   ]
+  },
+  {
+   "language": "😀<span",
+   "code": "    )<span style=\"background-color:#fbecdd;\"><a@b.co>$$#https://example.org/a b~~\n-\n```ts<br></u>]]text]==![[pic.png]]{\t\n---#<a@b.co>__🧪x][ref][[Folder/Page#Head|Alias]]``  &amp;`\n---text*",
+   "runs": [
+    [
+     6,
+     10,
+     "hljs-selector-tag"
+    ],
+    [
+     11,
+     16,
+     "hljs-selector-tag"
+    ],
+    [
+     18,
+     34,
+     "hljs-selector-tag"
+    ],
+    [
+     35,
+     42,
+     "hljs-selector-id"
+    ],
+    [
+     46,
+     47,
+     "hljs-selector-tag"
+    ],
+    [
+     48,
+     49,
+     "hljs-selector-tag"
+    ],
+    [
+     49,
+     52,
+     "hljs-selector-class"
+    ],
+    [
+     55,
+     61,
+     "hljs-selector-id"
+    ],
+    [
+     62,
+     81,
+     "hljs-comment"
+    ],
+    [
+     82,
+     83,
+     "hljs-selector-tag"
+    ],
+    [
+     87,
+     89,
+     "hljs-selector-tag"
+    ],
+    [
+     90,
+     92,
+     "hljs-selector-tag"
+    ],
+    [
+     95,
+     96,
+     "hljs-selector-tag"
+    ],
+    [
+     99,
+     103,
+     "hljs-selector-tag"
+    ],
+    [
+     107,
+     117,
+     "hljs-selector-attr"
+    ],
+    [
+     121,
+     124,
+     "hljs-selector-tag"
+    ],
+    [
+     126,
+     127,
+     "hljs-selector-tag"
+    ],
+    [
+     128,
+     129,
+     "hljs-selector-tag"
+    ],
+    [
+     129,
+     132,
+     "hljs-selector-class"
+    ],
+    [
+     133,
+     135,
+     "hljs-selector-tag"
+    ],
+    [
+     137,
+     138,
+     "hljs-selector-tag"
+    ],
+    [
+     139,
+     144,
+     "hljs-selector-attr"
+    ],
+    [
+     144,
+     169,
+     "hljs-selector-attr"
+    ],
+    [
+     174,
+     175,
+     "hljs-selector-tag"
+    ],
+    [
+     175,
+     178,
+     "hljs-selector-tag"
+    ],
+    [
+     181,
+     188,
+     "hljs-selector-tag"
+    ]
+   ]
+  },
+  {
+   "language": "|alias]](/path)]",
+   "code": "> [!note] ```\n<details><summary>Sum &amp; <b>mary</b></summary><br/>](https://example.org \"t\")`\n\n|alias[ ]\t\n<div data-column>[[2026-10-17]]```$5<a@b.co><a@b.co>[x]&#0;\\[[x]``\n---word&bogus;\\|==\n\n[ref]'<br>\n\n<!--🧪xhttp://例え.jp</b>1.\n😀@🧪x[ref]]]\n>> <br>&Agrave;][ref](</span>&Agrave;<b></b>$5](https://example.org \"t\")",
+   "runs": [
+    [
+     2,
+     9,
+     "hljs-selector-attr"
+    ],
+    [
+     15,
+     22,
+     "hljs-selector-tag"
+    ],
+    [
+     24,
+     31,
+     "hljs-selector-tag"
+    ],
+    [
+     43,
+     44,
+     "hljs-selector-tag"
+    ],
+    [
+     51,
+     52,
+     "hljs-selector-tag"
+    ],
+    [
+     55,
+     62,
+     "hljs-selector-tag"
+    ],
+    [
+     90,
+     93,
+     "hljs-string"
+    ],
+    [
+     127,
+     131,
+     "hljs-number"
+    ],
+    [
+     132,
+     134,
+     "hljs-number"
+    ],
+    [
+     135,
+     137,
+     "hljs-number"
+    ],
+    [
+     143,
+     144,
+     "hljs-number"
+    ],
+    [
+     165,
+     166,
+     "hljs-number"
+    ],
+    [
+     168,
+     172,
+     "hljs-selector-attr"
+    ],
+    [
+     176,
+     182,
+     "hljs-attr"
+    ],
+    [
+     195,
+     200,
+     "hljs-selector-attr"
+    ],
+    [
+     230,
+     231,
+     "hljs-number"
+    ],
+    [
+     263,
+     268,
+     "hljs-selector-attr"
+    ],
+    [
+     271,
+     275,
+     "hljs-selector-tag"
+    ],
+    [
+     285,
+     286,
+     "hljs-selector-tag"
+    ],
+    [
+     289,
+     290,
+     "hljs-selector-tag"
+    ],
+    [
+     292,
+     293,
+     "hljs-number"
+    ],
+    [
+     315,
+     318,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "_🧪x",
+   "runs": [
+    [
+     3,
+     4,
+     "hljs-attribute"
+    ]
+   ]
+  },
+  {
+   "language": "<b>[[Page]]}",
+   "code": "\n\n```<a@b.co></span>&#65;<span style=\"color: #d44c47\">\n> ](https://example.org \"t\")|[[Page]]~\n$$&amp;#anchor\n\n    ``[ref]text\n\n<https://x.y/z?q=1></mark><u>``**\"~\n10. \\|🧪xhttp://例え.jp<br>~word</u><br>}<span style=\"color: #d44c47\">\n###### ^</span>[***=](/path)",
+   "runs": [
+    [
+     6,
+     7,
+     "hljs-selector-tag"
+    ],
+    [
+     8,
+     9,
+     "hljs-selector-tag"
+    ],
+    [
+     9,
+     12,
+     "hljs-selector-class"
+    ],
+    [
+     15,
+     19,
+     "hljs-selector-tag"
+    ],
+    [
+     20,
+     21,
+     "hljs-selector-tag"
+    ],
+    [
+     21,
+     24,
+     "hljs-selector-id"
+    ],
+    [
+     26,
+     30,
+     "hljs-selector-tag"
+    ],
+    [
+     31,
+     36,
+     "hljs-selector-tag"
+    ],
+    [
+     38,
+     43,
+     "hljs-selector-tag"
+    ],
+    [
+     45,
+     52,
+     "hljs-selector-id"
+    ],
+    [
+     59,
+     64,
+     "hljs-attribute"
+    ],
+    [
+     65,
+     93,
+     "hljs-comment"
+    ],
+    [
+     114,
+     116,
+     "hljs-built_in"
+    ],
+    [
+     128,
+     133,
+     "hljs-attribute"
+    ],
+    [
+     134,
+     162,
+     "hljs-comment"
+    ],
+    [
+     163,
+     165,
+     "hljs-number"
+    ],
+    [
+     171,
+     176,
+     "hljs-attribute"
+    ],
+    [
+     177,
+     231,
+     "hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": "![&Agrave;word&nbsp;<b><span",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": null,
+   "code": "[ref]<span style=\"color: #d44c47\">*<br/>~",
+   "runs": [
+    [
+     0,
+     5,
+     "hljs-selector-attr"
+    ],
+    [
+     6,
+     10,
+     "hljs-selector-tag"
+    ],
+    [
+     18,
+     23,
+     "hljs-attribute"
+    ],
+    [
+     25,
+     32,
+     "hljs-number"
+    ],
+    [
+     32,
+     41,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "~{😀]]\n\n &#x41;\"==](/path)][ref]word",
+   "runs": [
+    [
+     9,
+     10,
+     "hljs-selector-tag"
+    ],
+    [
+     10,
+     14,
+     "hljs-selector-id"
+    ],
+    [
+     21,
+     25,
+     "hljs-selector-tag"
+    ],
+    [
+     27,
+     32,
+     "hljs-selector-attr"
+    ],
+    [
+     32,
+     36,
+     "hljs-selector-tag"
+    ]
+   ]
+  },
+  {
+   "language": "(</mark>[[Folder/Page#Head|Alias]]![alt](img.png)**__</mark>](&amp;#🧪x",
+   "code": "- [x] ```&nbsp;\n[Ref Two]: <https://example.org/a b> 't'</mark>&nbsp;\\```![[pic.png]]*&#x41;",
+   "runs": [
+    [
+     53,
+     56,
+     "hljs-string"
+    ],
+    [
+     74,
+     85,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "wordhttp://例え.jp==#<b></u>",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "ts",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "tshttp://例え.jptext<span",
+   "code": "}]&#x41;\n<script>&#65;&#0;\n2) <mark style=\"background: #e7f3f8\">~~)\n<!--_><span style=\"background-color:#fbecdd;\">$$@&amp;'-다람쥐 헌 쳇바퀴",
+   "runs": [
+    [
+     3,
+     8,
+     "hljs-comment"
+    ],
+    [
+     18,
+     26,
+     "hljs-comment"
+    ],
+    [
+     36,
+     41,
+     "hljs-attr"
+    ],
+    [
+     42,
+     63,
+     "hljs-string"
+    ],
+    [
+     80,
+     85,
+     "hljs-attr"
+    ],
+    [
+     86,
+     113,
+     "hljs-string"
+    ],
+    [
+     121,
+     133,
+     "hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "<mark>😀>#![alt](img.png)~-</a>[[Folder/Page#Head|Alias]]%",
+   "runs": [
+    [
+     1,
+     5,
+     "hljs-selector-tag"
+    ],
+    [
+     11,
+     16,
+     "hljs-selector-attr"
+    ],
+    [
+     17,
+     20,
+     "hljs-selector-tag"
+    ],
+    [
+     20,
+     24,
+     "hljs-selector-class"
+    ],
+    [
+     29,
+     30,
+     "hljs-selector-tag"
+    ],
+    [
+     31,
+     56,
+     "hljs-selector-attr"
+    ]
+   ]
+  },
+  {
+   "language": "ts%<javascript:alert(1)><https://x.y/z?q=1>#",
+   "code": "<a@b.co>word\n> [!note] \t🧪x](https://example.org \"t\")=two words\"  </span>$$&^\n<aside>'>\n$$<br>-|<javascript:alert(1)>&\n<mark>@\n- [[Folder/Page#Head|Alias]]</b>\\|`!><br/>&#x110000;__</mark>\n## (",
+   "runs": [
+    [
+     0,
+     66,
+     "xml"
+    ],
+    [
+     66,
+     68,
+     "xml hljs-tag"
+    ],
+    [
+     68,
+     72,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     72,
+     73,
+     "xml hljs-tag"
+    ],
+    [
+     73,
+     78,
+     "xml"
+    ],
+    [
+     78,
+     79,
+     "xml hljs-tag"
+    ],
+    [
+     79,
+     84,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     84,
+     85,
+     "xml hljs-tag"
+    ],
+    [
+     85,
+     90,
+     "xml"
+    ],
+    [
+     90,
+     91,
+     "xml hljs-tag"
+    ],
+    [
+     91,
+     93,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     93,
+     94,
+     "xml hljs-tag"
+    ],
+    [
+     94,
+     119,
+     "xml"
+    ],
+    [
+     119,
+     120,
+     "xml hljs-tag"
+    ],
+    [
+     120,
+     124,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     124,
+     125,
+     "xml hljs-tag"
+    ],
+    [
+     125,
+     155,
+     "xml"
+    ],
+    [
+     155,
+     157,
+     "xml hljs-tag"
+    ],
+    [
+     157,
+     158,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     158,
+     159,
+     "xml hljs-tag"
+    ],
+    [
+     159,
+     164,
+     "xml"
+    ],
+    [
+     164,
+     165,
+     "xml hljs-tag"
+    ],
+    [
+     165,
+     167,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     167,
+     169,
+     "xml hljs-tag"
+    ],
+    [
+     169,
+     179,
+     "xml hljs-symbol"
+    ],
+    [
+     179,
+     181,
+     "xml"
+    ],
+    [
+     181,
+     183,
+     "xml hljs-tag"
+    ],
+    [
+     183,
+     187,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     187,
+     188,
+     "xml hljs-tag"
+    ],
+    [
+     188,
+     193,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "- [ ] :word](/path)\n|alias\n# :   <u>+%<mark>![[|\\[</b>\n&#65;wordhttp://例え.jp~]])__~\n2) ]]\"==",
+   "runs": [
+    [
+     14,
+     18,
+     "hljs-built_in"
+    ],
+    [
+     45,
+     79,
+     "hljs-string"
+    ],
+    [
+     84,
+     85,
+     "hljs-number"
+    ],
+    [
+     89,
+     92,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "@%==\\*$$<br/>![alt](img.png)<span",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "<https://x.y/z?q=1>](https://example.org",
+   "code": "</b>**\n- [x] :<span style=\"color: #d44c47\">>)[[다람쥐 헌 쳇바퀴|```<\n\n \n[Ref Two]: <https://example.org/a b> 't'&amp;[x]<a@b.co>다람쥐 헌 쳇바퀴]]+&#0;\n###### }<b> <a href=\"x\">}:",
+   "runs": [
+    [
+     2,
+     3,
+     "hljs-selector-tag"
+    ],
+    [
+     9,
+     12,
+     "hljs-selector-attr"
+    ],
+    [
+     26,
+     42,
+     "hljs-string"
+    ],
+    [
+     102,
+     105,
+     "hljs-string"
+    ],
+    [
+     110,
+     113,
+     "hljs-selector-attr"
+    ],
+    [
+     114,
+     115,
+     "hljs-selector-tag"
+    ],
+    [
+     115,
+     117,
+     "hljs-keyword"
+    ],
+    [
+     135,
+     136,
+     "hljs-number"
+    ],
+    [
+     147,
+     148,
+     "hljs-selector-tag"
+    ],
+    [
+     151,
+     152,
+     "hljs-selector-tag"
+    ],
+    [
+     159,
+     160,
+     "hljs-attribute"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "<br/>{{",
+   "runs": [
+    [
+     0,
+     1,
+     "xml hljs-tag"
+    ],
+    [
+     1,
+     3,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     3,
+     5,
+     "xml hljs-tag"
+    ],
+    [
+     5,
+     7,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "]text-[[2026-10-17]]**'|#<<span style=\"background-color:#fbecdd;\">",
+   "runs": [
+    [
+     1,
+     5,
+     "hljs-selector-tag"
+    ],
+    [
+     6,
+     19,
+     "hljs-selector-attr"
+    ],
+    [
+     27,
+     31,
+     "hljs-selector-tag"
+    ],
+    [
+     39,
+     55,
+     "hljs-attribute"
+    ],
+    [
+     56,
+     63,
+     "hljs-number"
+    ]
+   ]
+  },
+  {
+   "language": "\\](https://example.org",
+   "code": "+ &#65;<br/>\\*\n  - \\[](/path)'==</a><a href=\"x\">\\|text   \n***&``<mark style=\"background: #e7f3f8\">😀[}\\[\n</aside>***![[pic.png]]다람쥐 헌 쳇바퀴@$5 >",
+   "runs": [
+    [
+     3,
+     6,
+     "hljs-selector-id"
+    ],
+    [
+     20,
+     22,
+     "hljs-selector-attr"
+    ],
+    [
+     24,
+     28,
+     "hljs-selector-tag"
+    ],
+    [
+     34,
+     35,
+     "hljs-selector-tag"
+    ],
+    [
+     37,
+     38,
+     "hljs-selector-tag"
+    ],
+    [
+     45,
+     46,
+     "hljs-attribute"
+    ],
+    [
+     50,
+     54,
+     "hljs-selector-tag"
+    ],
+    [
+     65,
+     69,
+     "hljs-selector-tag"
+    ],
+    [
+     77,
+     87,
+     "hljs-attribute"
+    ],
+    [
+     89,
+     96,
+     "hljs-number"
+    ],
+    [
+     96,
+     142,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "</b>&<mark",
+   "code": "[ref]: /url \"title\"</u><a href=\"x\">***![alt](img.png)   #anchor다람쥐 헌 쳇바퀴\n# http://例え.jp<a href=\"x\"><https://x.y/z?q=1>&nbsp;***`!\n</div>_]]    {*<span style=\"background-color:#fbecdd;\">\n2) ```![alt](img.png))</b>&bogus;<javascript:alert(1)>](/path)[[Page]]</b>**다람쥐 헌 쳇바퀴\n- [ ] <mark>&#65;](~~{\n* two words다람쥐 헌 쳇바퀴Ünïcödé\\다람쥐 헌 쳇바퀴&bogus;{``<mark>(:\n[[Page]]](***:<https://example.org/a b-}",
+   "runs": [
+    [
+     0,
+     5,
+     "hljs-selector-attr"
+    ],
+    [
+     8,
+     11,
+     "hljs-selector-tag"
+    ],
+    [
+     13,
+     18,
+     "hljs-selector-tag"
+    ],
+    [
+     21,
+     22,
+     "hljs-selector-tag"
+    ],
+    [
+     24,
+     25,
+     "hljs-selector-tag"
+    ],
+    [
+     26,
+     30,
+     "hljs-selector-tag"
+    ],
+    [
+     32,
+     33,
+     "hljs-selector-tag"
+    ],
+    [
+     39,
+     44,
+     "hljs-selector-attr"
+    ],
+    [
+     56,
+     63,
+     "hljs-selector-id"
+    ],
+    [
+     75,
+     79,
+     "hljs-selector-tag"
+    ],
+    [
+     80,
+     129,
+     "hljs-comment"
+    ],
+    [
+     132,
+     135,
+     "hljs-selector-tag"
+    ],
+    [
+     136,
+     137,
+     "hljs-selector-tag"
+    ],
+    [
+     146,
+     150,
+     "hljs-selector-tag"
+    ],
+    [
+     151,
+     156,
+     "hljs-selector-tag"
+    ],
+    [
+     158,
+     174,
+     "hljs-selector-tag"
+    ],
+    [
+     175,
+     182,
+     "hljs-selector-id"
+    ],
+    [
+     186,
+     187,
+     "hljs-number"
+    ],
+    [
+     193,
+     198,
+     "hljs-selector-attr"
+    ],
+    [
+     210,
+     211,
+     "hljs-selector-tag"
+    ],
+    [
+     212,
+     213,
+     "hljs-selector-tag"
+    ],
+    [
+     213,
+     218,
+     "hljs-selector-tag"
+    ],
+    [
+     220,
+     230,
+     "hljs-selector-tag"
+    ],
+    [
+     231,
+     236,
+     "hljs-selector-tag"
+    ],
+    [
+     237,
+     238,
+     "hljs-number"
+    ],
+    [
+     248,
+     255,
+     "hljs-selector-attr"
+    ],
+    [
+     258,
+     259,
+     "hljs-selector-tag"
+    ],
+    [
+     272,
+     273,
+     "hljs-selector-tag"
+    ],
+    [
+     274,
+     277,
+     "hljs-selector-attr"
+    ],
+    [
+     279,
+     283,
+     "hljs-selector-tag"
+    ],
+    [
+     284,
+     285,
+     "hljs-selector-tag"
+    ],
+    [
+     285,
+     288,
+     "hljs-selector-id"
+    ],
+    [
+     297,
+     300,
+     "hljs-selector-tag"
+    ],
+    [
+     301,
+     306,
+     "hljs-selector-tag"
+    ],
+    [
+     316,
+     317,
+     "hljs-selector-tag"
+    ],
+    [
+     318,
+     319,
+     "hljs-selector-tag"
+    ],
+    [
+     320,
+     321,
+     "hljs-selector-tag"
+    ],
+    [
+     332,
+     333,
+     "hljs-selector-tag"
+    ],
+    [
+     333,
+     338,
+     "hljs-selector-tag"
+    ],
+    [
+     343,
+     347,
+     "hljs-selector-tag"
+    ],
+    [
+     366,
+     371,
+     "hljs-attribute"
+    ],
+    [
+     372,
+     391,
+     "hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "<https://x.y/z?q=1>[",
+   "runs": [
+    [
+     7,
+     20,
+     "hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "|<mark style=\"background: #e7f3f8\">&Agrave;https://example.org/a b</a>&Agrave;&amp;",
+   "runs": [
+    [
+     0,
+     1,
+     "xml"
+    ],
+    [
+     1,
+     2,
+     "xml hljs-tag"
+    ],
+    [
+     2,
+     6,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     6,
+     7,
+     "xml hljs-tag"
+    ],
+    [
+     7,
+     12,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     12,
+     13,
+     "xml hljs-tag"
+    ],
+    [
+     13,
+     34,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     34,
+     35,
+     "xml hljs-tag"
+    ],
+    [
+     35,
+     43,
+     "xml hljs-symbol"
+    ],
+    [
+     43,
+     66,
+     "xml"
+    ],
+    [
+     66,
+     68,
+     "xml hljs-tag"
+    ],
+    [
+     68,
+     69,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     69,
+     70,
+     "xml hljs-tag"
+    ],
+    [
+     70,
+     78,
+     "xml hljs-symbol"
+    ],
+    [
+     78,
+     83,
+     "xml hljs-symbol"
+    ]
+   ]
+  },
+  {
+   "language": "ts&#65;{",
+   "code": " \n<?php   ~~\n=\\%🧪x#[[Page]]\n- [x] [[Folder/Page#Head|Alias]]$5]]*$word</u>|``\\[\n# #~~\n<aside></b>  &Agrave;&nbsp;https://example.org/a b\n<span style=\"color: #d44c47\"></a>[](/path)</span>\n    @](https://example.org \"t\")",
+   "runs": [
+    [
+     2,
+     7,
+     "hljs-meta"
+    ],
+    [
+     19,
+     28,
+     "hljs-comment"
+    ],
+    [
+     48,
+     80,
+     "hljs-comment"
+    ],
+    [
+     81,
+     86,
+     "hljs-comment"
+    ],
+    [
+     120,
+     137,
+     "hljs-comment"
+    ],
+    [
+     150,
+     166,
+     "hljs-string"
+    ],
+    [
+     201,
+     219,
+     "hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": "<span",
+   "code": "#    '</a>\n$$[[&copy#anchortwo words\t1.\n===&</b>\n}|&Agrave;!#anchor\n<div data-column>_>[다람쥐 헌 쳇바퀴&nbsp;%![\t(\n\n<script>",
+   "runs": [
+    [
+     0,
+     6,
+     "xml"
+    ],
+    [
+     6,
+     8,
+     "xml hljs-tag"
+    ],
+    [
+     8,
+     9,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     9,
+     10,
+     "xml hljs-tag"
+    ],
+    [
+     10,
+     44,
+     "xml"
+    ],
+    [
+     44,
+     46,
+     "xml hljs-tag"
+    ],
+    [
+     46,
+     47,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     47,
+     48,
+     "xml hljs-tag"
+    ],
+    [
+     48,
+     51,
+     "xml"
+    ],
+    [
+     51,
+     59,
+     "xml hljs-symbol"
+    ],
+    [
+     59,
+     68,
+     "xml"
+    ],
+    [
+     68,
+     69,
+     "xml hljs-tag"
+    ],
+    [
+     69,
+     72,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     72,
+     73,
+     "xml hljs-tag"
+    ],
+    [
+     73,
+     84,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     84,
+     85,
+     "xml hljs-tag"
+    ],
+    [
+     85,
+     97,
+     "xml"
+    ],
+    [
+     97,
+     103,
+     "xml hljs-symbol"
+    ],
+    [
+     103,
+     110,
+     "xml"
+    ],
+    [
+     110,
+     111,
+     "xml hljs-tag"
+    ],
+    [
+     111,
+     117,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     117,
+     118,
+     "xml hljs-tag"
+    ]
+   ]
+  },
+  {
+   "language": "\\[[2026-10-17]]</mark>&Agrave;#anchor<br>*')",
+   "code": "* [X]  <u>[[Folder/Page#Head|Alias]]![\\|&#0;]\n> [!note] \\\n[x]](https://example.org \"t\")&#65;[[2026-10-17]]Ünïcödé",
+   "runs": [
+    [
+     10,
+     36,
+     "hljs-string"
+    ],
+    [
+     42,
+     43,
+     "hljs-number"
+    ],
+    [
+     83,
+     86,
+     "hljs-string"
+    ],
+    [
+     89,
+     91,
+     "hljs-number"
+    ],
+    [
+     92,
+     106,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "](https://example.org",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "][ref]\"<https://x.y/z?q=1>\\<https://x.y/z?q=1>![[pic.png]]][ref]text",
+   "code": "<div>",
+   "runs": [
+    [
+     1,
+     4,
+     "hljs-selector-tag"
+    ]
+   ]
+  },
+  {
+   "language": "$$](@",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "ts&#x41;&|(",
+   "code": "[ref]: /url \"title\"![[pic.png]]&copy}<mark>\nword_&nbsp;\n<?php <mark>&😀[[Folder/Page#Head|Alias]]\n<span style=\"color: #d44c47\">",
+   "runs": [
+    [
+     0,
+     37,
+     "xml"
+    ],
+    [
+     37,
+     38,
+     "xml hljs-tag"
+    ],
+    [
+     38,
+     42,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     42,
+     43,
+     "xml hljs-tag"
+    ],
+    [
+     43,
+     49,
+     "xml"
+    ],
+    [
+     49,
+     55,
+     "xml hljs-symbol"
+    ],
+    [
+     55,
+     56,
+     "xml"
+    ],
+    [
+     56,
+     61,
+     "php hljs-meta"
+    ],
+    [
+     61,
+     84,
+     "php"
+    ],
+    [
+     84,
+     97,
+     "php hljs-comment"
+    ],
+    [
+     97,
+     110,
+     "php"
+    ],
+    [
+     110,
+     126,
+     "php hljs-string"
+    ],
+    [
+     126,
+     127,
+     "php"
+    ]
+   ]
+  },
+  {
+   "language": "#anchor<br><[",
+   "code": "<details><summary>Sum &amp; <b>mary</b></summary><https://x.y/z?q=1>\n\\*</u>http://例え.jp\\*text\n<custom-tag attr=\"1\">#](  <span style=\"background-color:#fbecdd;\"><b>!   -\n<&#x41;](https://example.org \"t\")<mark>[ ]](https://example.org \"t\")\n(\\[\n</div>\\\n%[```&#x41;\n  - \\(",
+   "runs": [
+    [
+     0,
+     1,
+     "xml hljs-tag"
+    ],
+    [
+     1,
+     8,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     8,
+     9,
+     "xml hljs-tag"
+    ],
+    [
+     9,
+     10,
+     "xml hljs-tag"
+    ],
+    [
+     10,
+     17,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     17,
+     18,
+     "xml hljs-tag"
+    ],
+    [
+     18,
+     22,
+     "xml"
+    ],
+    [
+     22,
+     27,
+     "xml hljs-symbol"
+    ],
+    [
+     27,
+     28,
+     "xml"
+    ],
+    [
+     28,
+     29,
+     "xml hljs-tag"
+    ],
+    [
+     29,
+     30,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     30,
+     31,
+     "xml hljs-tag"
+    ],
+    [
+     31,
+     35,
+     "xml"
+    ],
+    [
+     35,
+     37,
+     "xml hljs-tag"
+    ],
+    [
+     37,
+     38,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     38,
+     39,
+     "xml hljs-tag"
+    ],
+    [
+     39,
+     41,
+     "xml hljs-tag"
+    ],
+    [
+     41,
+     48,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     48,
+     49,
+     "xml hljs-tag"
+    ],
+    [
+     49,
+     71,
+     "xml"
+    ],
+    [
+     71,
+     73,
+     "xml hljs-tag"
+    ],
+    [
+     73,
+     74,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     74,
+     75,
+     "xml hljs-tag"
+    ],
+    [
+     75,
+     94,
+     "xml"
+    ],
+    [
+     94,
+     95,
+     "xml hljs-tag"
+    ],
+    [
+     95,
+     105,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     105,
+     106,
+     "xml hljs-tag"
+    ],
+    [
+     106,
+     110,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     110,
+     111,
+     "xml hljs-tag"
+    ],
+    [
+     111,
+     114,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     114,
+     115,
+     "xml hljs-tag"
+    ],
+    [
+     115,
+     120,
+     "xml"
+    ],
+    [
+     120,
+     121,
+     "xml hljs-tag"
+    ],
+    [
+     121,
+     125,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     125,
+     126,
+     "xml hljs-tag"
+    ],
+    [
+     126,
+     131,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     131,
+     132,
+     "xml hljs-tag"
+    ],
+    [
+     132,
+     159,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     159,
+     160,
+     "xml hljs-tag"
+    ],
+    [
+     160,
+     161,
+     "xml hljs-tag"
+    ],
+    [
+     161,
+     162,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     162,
+     163,
+     "xml hljs-tag"
+    ],
+    [
+     163,
+     170,
+     "xml"
+    ],
+    [
+     170,
+     176,
+     "xml hljs-symbol"
+    ],
+    [
+     176,
+     202,
+     "xml"
+    ],
+    [
+     202,
+     203,
+     "xml hljs-tag"
+    ],
+    [
+     203,
+     207,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     207,
+     208,
+     "xml hljs-tag"
+    ],
+    [
+     208,
+     242,
+     "xml"
+    ],
+    [
+     242,
+     244,
+     "xml hljs-tag"
+    ],
+    [
+     244,
+     247,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     247,
+     248,
+     "xml hljs-tag"
+    ],
+    [
+     248,
+     255,
+     "xml"
+    ],
+    [
+     255,
+     261,
+     "xml hljs-symbol"
+    ],
+    [
+     261,
+     268,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "1. [<javascript:alert(1)>&#x110000;1.](/path)\\|\\[\\|</u>\n<div data-column></mark>[[2026-10-17]]\t__<a href=\"x\">``:[[\n10. \n<?php ][ref]![alt](img.png)')\t\n|alias🧪x\n\n!",
+   "runs": [
+    [
+     0,
+     1,
+     "hljs-number"
+    ],
+    [
+     16,
+     21,
+     "hljs-title function_ invoke__"
+    ],
+    [
+     22,
+     23,
+     "hljs-number"
+    ],
+    [
+     26,
+     55,
+     "hljs-comment"
+    ],
+    [
+     82,
+     86,
+     "hljs-number"
+    ],
+    [
+     87,
+     89,
+     "hljs-number"
+    ],
+    [
+     90,
+     92,
+     "hljs-number"
+    ],
+    [
+     105,
+     108,
+     "hljs-string"
+    ],
+    [
+     115,
+     117,
+     "hljs-number"
+    ],
+    [
+     120,
+     125,
+     "hljs-meta"
+    ],
+    [
+     147,
+     163,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "ts\\",
+   "code": "[ref]\t_</mark>\n</pre>[[Folder/Page#Head|Alias]]<a href=\"x\"><b>&#x41;__(```[[>[\n</span>",
+   "runs": [
+    [
+     0,
+     5,
+     "hljs-selector-attr"
+    ],
+    [
+     6,
+     7,
+     "hljs-selector-tag"
+    ],
+    [
+     9,
+     13,
+     "hljs-selector-tag"
+    ],
+    [
+     17,
+     20,
+     "hljs-selector-tag"
+    ],
+    [
+     21,
+     46,
+     "hljs-selector-attr"
+    ],
+    [
+     48,
+     49,
+     "hljs-selector-tag"
+    ],
+    [
+     50,
+     54,
+     "hljs-selector-tag"
+    ],
+    [
+     56,
+     57,
+     "hljs-selector-tag"
+    ],
+    [
+     60,
+     61,
+     "hljs-selector-tag"
+    ],
+    [
+     62,
+     63,
+     "hljs-selector-tag"
+    ],
+    [
+     63,
+     67,
+     "hljs-selector-id"
+    ],
+    [
+     68,
+     70,
+     "hljs-selector-tag"
+    ],
+    [
+     71,
+     73,
+     "hljs-built_in"
+    ]
+   ]
+  },
+  {
+   "language": "](&Agrave;](/path)",
+   "code": "> [!tip]+<<https://x.y/z?q=1> http://例え.jp</span>",
+   "runs": [
+    [
+     2,
+     8,
+     "hljs-section"
+    ],
+    [
+     25,
+     26,
+     "hljs-attr"
+    ],
+    [
+     27,
+     28,
+     "hljs-number"
+    ]
+   ]
+  },
+  {
+   "language": "ts^^**@",
+   "code": "1. ][ref]<b>&#x41;>  \n$$🧪x^-😀😀-<<br/>\n> text<javascript:alert(1)>%*!\n<custom-tag attr=\"1\">__&Agrave;\" ",
+   "runs": [
+    [
+     0,
+     1,
+     "hljs-number"
+    ],
+    [
+     4,
+     9,
+     "hljs-selector-attr"
+    ],
+    [
+     10,
+     11,
+     "hljs-selector-tag"
+    ],
+    [
+     13,
+     17,
+     "hljs-selector-id"
+    ],
+    [
+     26,
+     27,
+     "hljs-attribute"
+    ],
+    [
+     43,
+     47,
+     "hljs-selector-tag"
+    ],
+    [
+     59,
+     64,
+     "hljs-built_in"
+    ],
+    [
+     65,
+     66,
+     "hljs-number"
+    ],
+    [
+     89,
+     92,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": " <br>[[Folder/Page#Head|Alias]]}[{😀",
+   "runs": [
+    [
+     5,
+     31,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "](/path) <&Agrave;](/path)two words",
+   "runs": []
+  },
+  {
+   "language": null,
+   "code": ":+\\|\\*</a></u>&amp;",
+   "runs": [
+    [
+     0,
+     6,
+     "xml"
+    ],
+    [
+     6,
+     8,
+     "xml hljs-tag"
+    ],
+    [
+     8,
+     9,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     9,
+     10,
+     "xml hljs-tag"
+    ],
+    [
+     10,
+     12,
+     "xml hljs-tag"
+    ],
+    [
+     12,
+     13,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     13,
+     14,
+     "xml hljs-tag"
+    ],
+    [
+     14,
+     19,
+     "xml hljs-symbol"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "</span><u>text***&nbsp;[[2026-10-17]](",
+   "code": "<!DOCTYPE html> ~|&#65;http://例え.jp\n\n[ref]: /url \"title\"two words+}%](/path)$$``\\<[x]](/path)\n+ <a@b.co>***</b><br>_&amp;%#😀\n[Ref Two]: <https://example.org/a b> 't''text\n  ][ref]\n\n<![CDATA[&#0;](](https://example.org \"t\")1.%\n[ref]: /url \"title\"<a href=\"x\">! '",
+   "runs": [
+    [
+     2,
+     9,
+     "hljs-selector-tag"
+    ],
+    [
+     10,
+     14,
+     "hljs-selector-tag"
+    ],
+    [
+     18,
+     19,
+     "hljs-selector-tag"
+    ],
+    [
+     19,
+     22,
+     "hljs-selector-id"
+    ],
+    [
+     23,
+     27,
+     "hljs-selector-tag"
+    ],
+    [
+     28,
+     35,
+     "hljs-comment"
+    ],
+    [
+     37,
+     42,
+     "hljs-selector-attr"
+    ],
+    [
+     45,
+     48,
+     "hljs-selector-tag"
+    ],
+    [
+     50,
+     55,
+     "hljs-selector-tag"
+    ],
+    [
+     56,
+     59,
+     "hljs-selector-tag"
+    ],
+    [
+     60,
+     65,
+     "hljs-selector-tag"
+    ],
+    [
+     82,
+     85,
+     "hljs-selector-attr"
+    ],
+    [
+     97,
+     98,
+     "hljs-selector-tag"
+    ],
+    [
+     99,
+     100,
+     "hljs-selector-tag"
+    ],
+    [
+     100,
+     103,
+     "hljs-selector-class"
+    ],
+    [
+     109,
+     110,
+     "hljs-selector-tag"
+    ],
+    [
+     112,
+     114,
+     "hljs-selector-tag"
+    ],
+    [
+     115,
+     116,
+     "hljs-selector-tag"
+    ],
+    [
+     116,
+     117,
+     "hljs-selector-tag"
+    ],
+    [
+     117,
+     120,
+     "hljs-selector-tag"
+    ],
+    [
+     126,
+     135,
+     "hljs-selector-attr"
+    ],
+    [
+     138,
+     143,
+     "hljs-selector-tag"
+    ],
+    [
+     144,
+     171,
+     "hljs-comment"
+    ],
+    [
+     175,
+     180,
+     "hljs-selector-attr"
+    ],
+    [
+     184,
+     196,
+     "hljs-selector-attr"
+    ],
+    [
+     199,
+     204,
+     "hljs-attribute"
+    ],
+    [
+     205,
+     226,
+     "hljs-comment"
+    ],
+    [
+     239,
+     246,
+     "hljs-string"
+    ],
+    [
+     254,
+     257,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "&#x41;#``&#0;&bogus;<mark>\"+<br>&nbsp;",
+   "runs": [
+    [
+     0,
+     6,
+     "xml hljs-symbol"
+    ],
+    [
+     6,
+     9,
+     "xml"
+    ],
+    [
+     9,
+     13,
+     "xml hljs-symbol"
+    ],
+    [
+     13,
+     20,
+     "xml hljs-symbol"
+    ],
+    [
+     20,
+     21,
+     "xml hljs-tag"
+    ],
+    [
+     21,
+     25,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     25,
+     26,
+     "xml hljs-tag"
+    ],
+    [
+     26,
+     28,
+     "xml"
+    ],
+    [
+     28,
+     29,
+     "xml hljs-tag"
+    ],
+    [
+     29,
+     31,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     31,
+     32,
+     "xml hljs-tag"
+    ],
+    [
+     32,
+     38,
+     "xml hljs-symbol"
+    ]
+   ]
+  },
+  {
+   "language": "&copy'$[[Folder/Page#Head|Alias]]~",
+   "code": "1. \n@][ref]\n* [X] 1.<u>[ref][ ]`\n&\n~~](/path)]",
+   "runs": [
+    [
+     6,
+     11,
+     "hljs-section"
+    ],
+    [
+     14,
+     17,
+     "hljs-section"
+    ],
+    [
+     23,
+     28,
+     "hljs-section"
+    ],
+    [
+     28,
+     31,
+     "hljs-section"
+    ]
+   ]
+  },
+  {
+   "language": "ts",
+   "code": "+ </span>&nbsp;)text-\n</div>\n$$\\*[[`[ref]@[x]![alt](img.png)[[Page]]\n</pre> <span style=\"background-color:#fbecdd;\">`<span style=\"background-color:#fbecdd;\">&#0;",
+   "runs": [
+    [
+     35,
+     117,
+     "hljs-string"
+    ],
+    [
+     129,
+     156,
+     "hljs-string"
+    ],
+    [
+     159,
+     160,
+     "hljs-number"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "- [ ]  <mark>https://example.org/a b<u>%)",
+   "runs": [
+    [
+     0,
+     1,
+     "hljs-selector-tag"
+    ],
+    [
+     2,
+     5,
+     "hljs-selector-attr"
+    ],
+    [
+     8,
+     12,
+     "hljs-selector-tag"
+    ],
+    [
+     13,
+     18,
+     "hljs-selector-tag"
+    ],
+    [
+     19,
+     41,
+     "hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": "ts&amp;~~</mark>",
+   "code": "\n==\n<!DOCTYPE html>(<span style=\"color: #d44c47\">다람쥐 헌 쳇바퀴![[pic.png]]다람쥐 헌 쳇바퀴<br/>_\n<a@b.co>\n> [!tip]+=&copy%\\\n\\*&amp;</mark>\n- [ ] 다람쥐 헌 쳇바퀴!$text\\|<mark style=\"background: #e7f3f8\"><https://x.y/z?q=1>&Agrave;**@]]\n<div data-columns></span>![[pic.png]]</b>|<b>\\[ https://example.org/a b <a href=\"x\">$5\n<custom-tag attr=\"1\">\\*",
+   "runs": [
+    [
+     0,
+     4,
+     "xml"
+    ],
+    [
+     4,
+     14,
+     "xml hljs-meta"
+    ],
+    [
+     14,
+     18,
+     "xml hljs-meta hljs-keyword"
+    ],
+    [
+     18,
+     19,
+     "xml hljs-meta"
+    ],
+    [
+     19,
+     20,
+     "xml"
+    ],
+    [
+     20,
+     21,
+     "xml hljs-tag"
+    ],
+    [
+     21,
+     25,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     25,
+     26,
+     "xml hljs-tag"
+    ],
+    [
+     26,
+     31,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     31,
+     32,
+     "xml hljs-tag"
+    ],
+    [
+     32,
+     48,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     48,
+     49,
+     "xml hljs-tag"
+    ],
+    [
+     49,
+     79,
+     "xml"
+    ],
+    [
+     79,
+     80,
+     "xml hljs-tag"
+    ],
+    [
+     80,
+     82,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     82,
+     84,
+     "xml hljs-tag"
+    ],
+    [
+     84,
+     115,
+     "xml"
+    ],
+    [
+     115,
+     120,
+     "xml hljs-symbol"
+    ],
+    [
+     120,
+     122,
+     "xml hljs-tag"
+    ],
+    [
+     122,
+     126,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     126,
+     127,
+     "xml hljs-tag"
+    ],
+    [
+     127,
+     151,
+     "xml"
+    ],
+    [
+     151,
+     152,
+     "xml hljs-tag"
+    ],
+    [
+     152,
+     156,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     156,
+     157,
+     "xml hljs-tag"
+    ],
+    [
+     157,
+     162,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     162,
+     163,
+     "xml hljs-tag"
+    ],
+    [
+     163,
+     184,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     184,
+     185,
+     "xml hljs-tag"
+    ],
+    [
+     185,
+     204,
+     "xml"
+    ],
+    [
+     204,
+     212,
+     "xml hljs-symbol"
+    ],
+    [
+     212,
+     218,
+     "xml"
+    ],
+    [
+     218,
+     219,
+     "xml hljs-tag"
+    ],
+    [
+     219,
+     222,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     222,
+     223,
+     "xml hljs-tag"
+    ],
+    [
+     223,
+     235,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     235,
+     236,
+     "xml hljs-tag"
+    ],
+    [
+     236,
+     238,
+     "xml hljs-tag"
+    ],
+    [
+     238,
+     242,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     242,
+     243,
+     "xml hljs-tag"
+    ],
+    [
+     243,
+     255,
+     "xml"
+    ],
+    [
+     255,
+     257,
+     "xml hljs-tag"
+    ],
+    [
+     257,
+     258,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     258,
+     259,
+     "xml hljs-tag"
+    ],
+    [
+     259,
+     260,
+     "xml"
+    ],
+    [
+     260,
+     261,
+     "xml hljs-tag"
+    ],
+    [
+     261,
+     262,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     262,
+     263,
+     "xml hljs-tag"
+    ],
+    [
+     263,
+     290,
+     "xml"
+    ],
+    [
+     290,
+     291,
+     "xml hljs-tag"
+    ],
+    [
+     291,
+     292,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     292,
+     293,
+     "xml hljs-tag"
+    ],
+    [
+     293,
+     297,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     297,
+     298,
+     "xml hljs-tag"
+    ],
+    [
+     298,
+     301,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     301,
+     302,
+     "xml hljs-tag"
+    ],
+    [
+     302,
+     305,
+     "xml"
+    ],
+    [
+     305,
+     306,
+     "xml hljs-tag"
+    ],
+    [
+     306,
+     316,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     316,
+     317,
+     "xml hljs-tag"
+    ],
+    [
+     317,
+     321,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     321,
+     322,
+     "xml hljs-tag"
+    ],
+    [
+     322,
+     325,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     325,
+     326,
+     "xml hljs-tag"
+    ],
+    [
+     326,
+     328,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "](/path)</u>[ref][\t\"<",
+   "runs": [
+    [
+     19,
+     21,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "ts$5<mark><a@b.co>^<br/>two",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": null,
+   "code": "text=😀two words'</a>***|&",
+   "runs": [
+    [
+     0,
+     4,
+     "hljs-selector-tag"
+    ],
+    [
+     19,
+     20,
+     "hljs-selector-tag"
+    ]
+   ]
+  },
+  {
+   "language": "ts!",
+   "code": "<![CDATA[<a@b.co>&amp;two words\\|``\n1. ",
+   "runs": [
+    [
+     9,
+     17,
+     "xml"
+    ],
+    [
+     17,
+     22,
+     "hljs-literal"
+    ],
+    [
+     36,
+     38,
+     "hljs-bullet"
+    ]
+   ]
+  },
+  {
+   "language": "ts\\",
+   "code": "&Agrave;\n> [!WARNING]- Title [`word\\|</a>&nbsp;",
+   "runs": [
+    [
+     0,
+     8,
+     "xml hljs-symbol"
+    ],
+    [
+     8,
+     37,
+     "xml"
+    ],
+    [
+     37,
+     39,
+     "xml hljs-tag"
+    ],
+    [
+     39,
+     40,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     40,
+     41,
+     "xml hljs-tag"
+    ],
+    [
+     41,
+     47,
+     "xml hljs-symbol"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "[[](https://example.org \"t\")[[2026-10-17]](<br/>",
+   "runs": [
+    [
+     0,
+     3,
+     "hljs-selector-attr"
+    ],
+    [
+     4,
+     9,
+     "hljs-attribute"
+    ],
+    [
+     10,
+     48,
+     "hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": "1.&copy&#x110000;",
+   "code": "<details><summary>Sum &amp; <b>mary</b></summary><br></b><a href=\"x\"> <br/>#anchor🧪x<span style=\"background-color:#fbecdd;\">🧪x'\n<![CDATA[*%$5[ ] &Agrave;-#anchor\n10. _``\n~~<<https://x.y/z?q=1> ]((",
+   "runs": [
+    [
+     1,
+     8,
+     "hljs-selector-tag"
+    ],
+    [
+     10,
+     17,
+     "hljs-selector-tag"
+    ],
+    [
+     29,
+     30,
+     "hljs-selector-tag"
+    ],
+    [
+     37,
+     38,
+     "hljs-selector-tag"
+    ],
+    [
+     41,
+     48,
+     "hljs-selector-tag"
+    ],
+    [
+     55,
+     56,
+     "hljs-selector-tag"
+    ],
+    [
+     58,
+     59,
+     "hljs-selector-tag"
+    ],
+    [
+     66,
+     67,
+     "hljs-attribute"
+    ],
+    [
+     75,
+     82,
+     "hljs-selector-id"
+    ],
+    [
+     84,
+     85,
+     "hljs-attribute"
+    ],
+    [
+     86,
+     90,
+     "hljs-selector-tag"
+    ],
+    [
+     98,
+     114,
+     "hljs-attribute"
+    ],
+    [
+     115,
+     122,
+     "hljs-number"
+    ],
+    [
+     127,
+     128,
+     "hljs-attribute"
+    ],
+    [
+     132,
+     146,
+     "hljs-selector-attr"
+    ],
+    [
+     156,
+     163,
+     "hljs-selector-id"
+    ],
+    [
+     164,
+     166,
+     "hljs-number"
+    ],
+    [
+     192,
+     193,
+     "hljs-number"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "][ ]_https://example.org/a b<mark style=\"background: #e7f3f8\">&#x41;![alt](img.png)[ref]",
+   "runs": [
+    [
+     1,
+     4,
+     "hljs-selector-attr"
+    ],
+    [
+     40,
+     61,
+     "hljs-string"
+    ],
+    [
+     69,
+     74,
+     "hljs-selector-attr"
+    ],
+    [
+     75,
+     78,
+     "hljs-selector-tag"
+    ],
+    [
+     78,
+     82,
+     "hljs-selector-class"
+    ],
+    [
+     83,
+     88,
+     "hljs-selector-attr"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "=***{&Agrave;<b>__(</a><a href=\"x\"><a@b.co>",
+   "runs": [
+    [
+     5,
+     6,
+     "hljs-selector-tag"
+    ],
+    [
+     6,
+     12,
+     "hljs-selector-tag"
+    ],
+    [
+     14,
+     15,
+     "hljs-selector-tag"
+    ],
+    [
+     16,
+     18,
+     "hljs-selector-tag"
+    ],
+    [
+     31,
+     34,
+     "hljs-string"
+    ],
+    [
+     37,
+     39,
+     "hljs-variable"
+    ]
+   ]
+  },
+  {
+   "language": "&#0;",
+   "code": "<![CDATA[\ntext![[pic.png]]<b></u> \n===two words~~==&bogus;\n -#anchor\n####### ~[x][[Folder/Page#Head|Alias]]%!text<span style=\"color: #d44c47\"><mark style=\"background: #e7f3f8\">\n``]]\n10. <javascript:alert(1)>https://example.org/a b[[Folder/Page#Head|Alias]]\n[Ref Two]: <https://example.org/a b> 't'</span>",
+   "runs": [
+    [
+     15,
+     26,
+     "hljs-string"
+    ],
+    [
+     81,
+     107,
+     "hljs-string"
+    ],
+    [
+     125,
+     141,
+     "hljs-string"
+    ],
+    [
+     154,
+     175,
+     "hljs-string"
+    ],
+    [
+     182,
+     185,
+     "hljs-number"
+    ],
+    [
+     204,
+     205,
+     "hljs-number"
+    ],
+    [
+     230,
+     256,
+     "hljs-string"
+    ],
+    [
+     294,
+     297,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "ts</u>",
+   "code": "\\[&nbsp;[[Page]]</u>",
+   "runs": [
+    [
+     8,
+     16,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "$5](https://example.org",
+   "code": "<!-- toc -->   [ ]<javascript:alert(1)>*&#x110000;\n[\n</div>&#x41;\n![[pic.png]][[2026-10-17]]\n<!-- toc --><u>***<javascript:alert(1)>$$\n[[Folder/Page#Head|Alias]]\n<!--%$$\\|\n[x]\n-->",
+   "runs": [
+    [
+     0,
+     12,
+     "xml hljs-comment"
+    ],
+    [
+     12,
+     40,
+     "xml"
+    ],
+    [
+     40,
+     50,
+     "xml hljs-symbol"
+    ],
+    [
+     50,
+     53,
+     "xml"
+    ],
+    [
+     53,
+     55,
+     "xml hljs-tag"
+    ],
+    [
+     55,
+     58,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     58,
+     59,
+     "xml hljs-tag"
+    ],
+    [
+     59,
+     65,
+     "xml hljs-symbol"
+    ],
+    [
+     65,
+     93,
+     "xml"
+    ],
+    [
+     93,
+     105,
+     "xml hljs-comment"
+    ],
+    [
+     105,
+     106,
+     "xml hljs-tag"
+    ],
+    [
+     106,
+     107,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     107,
+     108,
+     "xml hljs-tag"
+    ],
+    [
+     108,
+     162,
+     "xml"
+    ],
+    [
+     162,
+     179,
+     "xml hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": "__<https://x.y/z?q=1>![alt](img.png)==",
+   "code": "|aliasword</span>^|\n1. #``&Agrave;다람쥐 헌 쳇바퀴^https://example.org/a b\n1. &#x41;|alias}'(\nword**\n[ ]$5[[&#x110000;<mark>\nhttps://example.org/a b\t&#x110000;\n>> http://例え.jp&amp;#``\n\n> [!tip]+\nword\\*~**\n~~~@|[[__<br>\n<!-- toc -->>Ünïcödé_](/path)][ref]*&#65;",
+   "runs": [
+    [
+     0,
+     10,
+     "xml"
+    ],
+    [
+     10,
+     12,
+     "xml hljs-tag"
+    ],
+    [
+     12,
+     16,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     16,
+     17,
+     "xml hljs-tag"
+    ],
+    [
+     17,
+     26,
+     "xml"
+    ],
+    [
+     26,
+     34,
+     "xml hljs-symbol"
+    ],
+    [
+     34,
+     71,
+     "xml"
+    ],
+    [
+     71,
+     77,
+     "xml hljs-symbol"
+    ],
+    [
+     77,
+     101,
+     "xml"
+    ],
+    [
+     101,
+     111,
+     "xml hljs-symbol"
+    ],
+    [
+     111,
+     112,
+     "xml hljs-tag"
+    ],
+    [
+     112,
+     116,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     116,
+     117,
+     "xml hljs-tag"
+    ],
+    [
+     117,
+     142,
+     "xml"
+    ],
+    [
+     142,
+     152,
+     "xml hljs-symbol"
+    ],
+    [
+     152,
+     168,
+     "xml"
+    ],
+    [
+     168,
+     173,
+     "xml hljs-symbol"
+    ],
+    [
+     173,
+     207,
+     "xml"
+    ],
+    [
+     207,
+     208,
+     "xml hljs-tag"
+    ],
+    [
+     208,
+     210,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     210,
+     211,
+     "xml hljs-tag"
+    ],
+    [
+     211,
+     212,
+     "xml"
+    ],
+    [
+     212,
+     224,
+     "xml hljs-comment"
+    ],
+    [
+     224,
+     248,
+     "xml"
+    ],
+    [
+     248,
+     253,
+     "xml hljs-symbol"
+    ]
+   ]
+  },
+  {
+   "language": "&#x41;<a",
+   "code": "1. ](/path)[[Page]]http://例え.jp^***\n> [!WARNING]- Title ![alt](img.png)[x]&nbsp;](]&#0;**\n10. [x]<mark>]]\n<script>](/path)==](/path)```'<https://x.y/z?q=1>\n<!DOCTYPE html>&#x41;]``_two words\\*[[2026-10-17]]",
+   "runs": [
+    [
+     0,
+     74,
+     "xml"
+    ],
+    [
+     74,
+     80,
+     "xml hljs-symbol"
+    ],
+    [
+     80,
+     83,
+     "xml"
+    ],
+    [
+     83,
+     87,
+     "xml hljs-symbol"
+    ],
+    [
+     87,
+     97,
+     "xml"
+    ],
+    [
+     97,
+     98,
+     "xml hljs-tag"
+    ],
+    [
+     98,
+     102,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     102,
+     103,
+     "xml hljs-tag"
+    ],
+    [
+     103,
+     106,
+     "xml"
+    ],
+    [
+     106,
+     107,
+     "xml hljs-tag"
+    ],
+    [
+     107,
+     113,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     113,
+     114,
+     "xml hljs-tag"
+    ],
+    [
+     114,
+     156,
+     "xml xml"
+    ],
+    [
+     156,
+     166,
+     "xml xml hljs-meta"
+    ],
+    [
+     166,
+     170,
+     "xml xml hljs-meta hljs-keyword"
+    ],
+    [
+     170,
+     171,
+     "xml xml hljs-meta"
+    ],
+    [
+     171,
+     177,
+     "xml xml hljs-symbol"
+    ],
+    [
+     177,
+     206,
+     "xml xml"
+    ]
+   ]
+  },
+  {
+   "language": "[[Page]]",
+   "code": "| &bogus;\n\n___:%</b>&#65;<a@b.co>\n~~<u>__\n* {%\t</u>=\\**<span style=\"background-color:#fbecdd;\">^<span style=\"background-color:#fbecdd;\">\n[Ref Two]: <https://example.org/a b> 't'</a>\n> [!tip]+__http://例え.jp&#0;$$&Agrave;|alias&copy<u>^",
+   "runs": [
+    [
+     22,
+     24,
+     "hljs-number"
+    ],
+    [
+     26,
+     27,
+     "hljs-selector-tag"
+    ],
+    [
+     27,
+     29,
+     "hljs-keyword"
+    ],
+    [
+     56,
+     60,
+     "hljs-selector-tag"
+    ],
+    [
+     68,
+     84,
+     "hljs-attribute"
+    ],
+    [
+     85,
+     92,
+     "hljs-number"
+    ],
+    [
+     97,
+     101,
+     "hljs-selector-tag"
+    ],
+    [
+     109,
+     125,
+     "hljs-attribute"
+    ],
+    [
+     126,
+     133,
+     "hljs-number"
+    ],
+    [
+     137,
+     146,
+     "hljs-selector-attr"
+    ],
+    [
+     174,
+     177,
+     "hljs-string"
+    ],
+    [
+     207,
+     208,
+     "hljs-number"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "###### <b>!<a@b.co>](",
+   "runs": [
+    [
+     8,
+     9,
+     "hljs-selector-tag"
+    ],
+    [
+     12,
+     13,
+     "hljs-selector-tag"
+    ],
+    [
+     13,
+     15,
+     "hljs-keyword"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "}[[2026-10-17]]",
+   "runs": [
+    [
+     1,
+     15,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "&bogus;",
+   "runs": [
+    [
+     6,
+     7,
+     "hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": "\\|다람쥐",
+   "code": "$$(  \n<javascript:alert(1)>text&\n#######   \\|<https://x.y/z?q=1>*`word[\n    ``\n\n==``'|!``</u>다람쥐 헌 쳇바퀴\n</pre>\"\t&nbsp;<span style=\"background-color:#fbecdd;\">word <u>-$$\n* [X] ](https://example.org \"t\")<span style=\"background-color:#fbecdd;\">![[pic.png]]#anchor\n==\\\\*&#x41;)",
+   "runs": [
+    [
+     0,
+     89,
+     "xml"
+    ],
+    [
+     89,
+     91,
+     "xml hljs-tag"
+    ],
+    [
+     91,
+     92,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     92,
+     93,
+     "xml hljs-tag"
+    ],
+    [
+     93,
+     103,
+     "xml"
+    ],
+    [
+     103,
+     105,
+     "xml hljs-tag"
+    ],
+    [
+     105,
+     108,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     108,
+     109,
+     "xml hljs-tag"
+    ],
+    [
+     109,
+     111,
+     "xml"
+    ],
+    [
+     111,
+     117,
+     "xml hljs-symbol"
+    ],
+    [
+     117,
+     118,
+     "xml hljs-tag"
+    ],
+    [
+     118,
+     122,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     122,
+     123,
+     "xml hljs-tag"
+    ],
+    [
+     123,
+     128,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     128,
+     129,
+     "xml hljs-tag"
+    ],
+    [
+     129,
+     156,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     156,
+     157,
+     "xml hljs-tag"
+    ],
+    [
+     157,
+     162,
+     "xml"
+    ],
+    [
+     162,
+     163,
+     "xml hljs-tag"
+    ],
+    [
+     163,
+     164,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     164,
+     165,
+     "xml hljs-tag"
+    ],
+    [
+     165,
+     201,
+     "xml"
+    ],
+    [
+     201,
+     202,
+     "xml hljs-tag"
+    ],
+    [
+     202,
+     206,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     206,
+     207,
+     "xml hljs-tag"
+    ],
+    [
+     207,
+     212,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     212,
+     213,
+     "xml hljs-tag"
+    ],
+    [
+     213,
+     240,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     240,
+     241,
+     "xml hljs-tag"
+    ],
+    [
+     241,
+     266,
+     "xml"
+    ],
+    [
+     266,
+     272,
+     "xml hljs-symbol"
+    ],
+    [
+     272,
+     273,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "<!--\n2) \\[\\|$5'+#anchor\n> [[Page]]}|*#anchor다람쥐 헌 쳇바퀴#anchor]]\n```ts](/path)<a@b.co>^1.<a href=\"x\"> \n<details><summary>Sum &amp; <b>mary</b></summary>$$",
+   "runs": [
+    [
+     9,
+     34,
+     "hljs-section"
+    ],
+    [
+     37,
+     62,
+     "hljs-comment"
+    ],
+    [
+     90,
+     94,
+     "hljs-attr"
+    ],
+    [
+     95,
+     98,
+     "hljs-string"
+    ],
+    [
+     127,
+     152,
+     "hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": "[x]-",
+   "code": "<div>&#65;>",
+   "runs": [
+    [
+     1,
+     4,
+     "hljs-selector-tag"
+    ],
+    [
+     5,
+     6,
+     "hljs-selector-tag"
+    ],
+    [
+     6,
+     9,
+     "hljs-selector-id"
+    ]
+   ]
+  },
+  {
+   "language": "ts|<a",
+   "code": "| <&Agrave;***](<a@b.co>\n</aside>$](https://example.org \"t\")\n* [X] &#65;<a href=\"x\"></b>](/path)]][ref]\n## ][[Folder/Page#Head|Alias]]\\@1.<https://x.y/z?q=1><a@b.co>&<a href=\"x\">two words\n<!DOCTYPE html>@<u>&amp;'<span style=\"color: #d44c47\">   <a href=\"x\">two words\\",
+   "runs": [
+    [
+     0,
+     3,
+     "xml"
+    ],
+    [
+     3,
+     11,
+     "xml hljs-symbol"
+    ],
+    [
+     11,
+     25,
+     "xml"
+    ],
+    [
+     25,
+     27,
+     "xml hljs-tag"
+    ],
+    [
+     27,
+     32,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     32,
+     33,
+     "xml hljs-tag"
+    ],
+    [
+     33,
+     67,
+     "xml"
+    ],
+    [
+     67,
+     72,
+     "xml hljs-symbol"
+    ],
+    [
+     72,
+     73,
+     "xml hljs-tag"
+    ],
+    [
+     73,
+     74,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     74,
+     75,
+     "xml hljs-tag"
+    ],
+    [
+     75,
+     79,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     79,
+     80,
+     "xml hljs-tag"
+    ],
+    [
+     80,
+     83,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     83,
+     84,
+     "xml hljs-tag"
+    ],
+    [
+     84,
+     86,
+     "xml hljs-tag"
+    ],
+    [
+     86,
+     87,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     87,
+     88,
+     "xml hljs-tag"
+    ],
+    [
+     88,
+     166,
+     "xml"
+    ],
+    [
+     166,
+     167,
+     "xml hljs-tag"
+    ],
+    [
+     167,
+     168,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     168,
+     169,
+     "xml hljs-tag"
+    ],
+    [
+     169,
+     173,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     173,
+     174,
+     "xml hljs-tag"
+    ],
+    [
+     174,
+     177,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     177,
+     178,
+     "xml hljs-tag"
+    ],
+    [
+     178,
+     188,
+     "xml"
+    ],
+    [
+     188,
+     198,
+     "xml hljs-meta"
+    ],
+    [
+     198,
+     202,
+     "xml hljs-meta hljs-keyword"
+    ],
+    [
+     202,
+     203,
+     "xml hljs-meta"
+    ],
+    [
+     203,
+     204,
+     "xml"
+    ],
+    [
+     204,
+     205,
+     "xml hljs-tag"
+    ],
+    [
+     205,
+     206,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     206,
+     207,
+     "xml hljs-tag"
+    ],
+    [
+     207,
+     212,
+     "xml hljs-symbol"
+    ],
+    [
+     212,
+     213,
+     "xml"
+    ],
+    [
+     213,
+     214,
+     "xml hljs-tag"
+    ],
+    [
+     214,
+     218,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     218,
+     219,
+     "xml hljs-tag"
+    ],
+    [
+     219,
+     224,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     224,
+     225,
+     "xml hljs-tag"
+    ],
+    [
+     225,
+     241,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     241,
+     242,
+     "xml hljs-tag"
+    ],
+    [
+     242,
+     245,
+     "xml"
+    ],
+    [
+     245,
+     246,
+     "xml hljs-tag"
+    ],
+    [
+     246,
+     247,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     247,
+     248,
+     "xml hljs-tag"
+    ],
+    [
+     248,
+     252,
+     "xml hljs-tag hljs-attr"
+    ],
+    [
+     252,
+     253,
+     "xml hljs-tag"
+    ],
+    [
+     253,
+     256,
+     "xml hljs-tag hljs-string"
+    ],
+    [
+     256,
+     257,
+     "xml hljs-tag"
+    ],
+    [
+     257,
+     267,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": "#\\<span",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "{https://example.org/a",
+   "code": "word(\\\n10. &Agrave;word<mark>&amp;&amp;&Agrave;\n}다람쥐 헌 쳇바퀴`[[```![alt](img.png)$\t!\n__\n</pre>==[x]::\n####### _)word\n<a@b.co>다람쥐 헌 쳇바퀴https://example.org/a b![alt](img.png)$$\n&amp;\t",
+   "runs": [
+    [
+     0,
+     11,
+     "xml"
+    ],
+    [
+     11,
+     19,
+     "xml hljs-symbol"
+    ],
+    [
+     19,
+     23,
+     "xml"
+    ],
+    [
+     23,
+     24,
+     "xml hljs-tag"
+    ],
+    [
+     24,
+     28,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     28,
+     29,
+     "xml hljs-tag"
+    ],
+    [
+     29,
+     34,
+     "xml hljs-symbol"
+    ],
+    [
+     34,
+     39,
+     "xml hljs-symbol"
+    ],
+    [
+     39,
+     47,
+     "xml hljs-symbol"
+    ],
+    [
+     47,
+     86,
+     "xml"
+    ],
+    [
+     86,
+     88,
+     "xml hljs-tag"
+    ],
+    [
+     88,
+     91,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     91,
+     92,
+     "xml hljs-tag"
+    ],
+    [
+     92,
+     173,
+     "xml"
+    ],
+    [
+     173,
+     178,
+     "xml hljs-symbol"
+    ],
+    [
+     178,
+     179,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "<u>&amp;![alt](img.png)<u>&nbsp;   <javascript:alert(1)>word",
+   "runs": [
+    [
+     0,
+     1,
+     "xml hljs-tag"
+    ],
+    [
+     1,
+     2,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     2,
+     3,
+     "xml hljs-tag"
+    ],
+    [
+     3,
+     8,
+     "xml hljs-symbol"
+    ],
+    [
+     8,
+     23,
+     "xml"
+    ],
+    [
+     23,
+     24,
+     "xml hljs-tag"
+    ],
+    [
+     24,
+     25,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     25,
+     26,
+     "xml hljs-tag"
+    ],
+    [
+     26,
+     32,
+     "xml hljs-symbol"
+    ],
+    [
+     32,
+     60,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "😀]<br></span>#</span></span><``",
+   "runs": [
+    [
+     0,
+     3,
+     "xml"
+    ],
+    [
+     3,
+     4,
+     "xml hljs-tag"
+    ],
+    [
+     4,
+     6,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     6,
+     7,
+     "xml hljs-tag"
+    ],
+    [
+     7,
+     9,
+     "xml hljs-tag"
+    ],
+    [
+     9,
+     13,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     13,
+     14,
+     "xml hljs-tag"
+    ],
+    [
+     14,
+     15,
+     "xml"
+    ],
+    [
+     15,
+     17,
+     "xml hljs-tag"
+    ],
+    [
+     17,
+     21,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     21,
+     22,
+     "xml hljs-tag"
+    ],
+    [
+     22,
+     24,
+     "xml hljs-tag"
+    ],
+    [
+     24,
+     28,
+     "xml hljs-tag hljs-name"
+    ],
+    [
+     28,
+     29,
+     "xml hljs-tag"
+    ],
+    [
+     29,
+     32,
+     "xml"
+    ]
+   ]
+  },
+  {
+   "language": "ts<a@b.co></b>@[",
+   "code": "<div data-columns>🧪x다람쥐 헌 쳇바퀴\n- [ ] 1.",
+   "runs": [
+    [
+     1,
+     4,
+     "hljs-selector-tag"
+    ],
+    [
+     10,
+     17,
+     "hljs-attribute"
+    ],
+    [
+     20,
+     21,
+     "hljs-attribute"
+    ],
+    [
+     33,
+     36,
+     "hljs-selector-attr"
+    ],
+    [
+     37,
+     38,
+     "hljs-number"
+    ]
+   ]
+  },
+  {
+   "language": "&#0;**",
+   "code": "\n===\n\n**\n-[ ]\n</div>==🧪x`](https://example.org \"t\"):<javascript:alert(1)>(\n***다람쥐 헌 쳇바퀴&#x41;}</a>http://例え.jp<u>:\n###### ==\\\n##anchor!<https://x.y/z?q=1>![[pic.png]][[2026-10-17]]\n</details>&amp;[ ]:<a@b.co>😀",
+   "runs": [
+    [
+     9,
+     10,
+     "hljs-selector-tag"
+    ],
+    [
+     10,
+     13,
+     "hljs-selector-attr"
+    ],
+    [
+     16,
+     19,
+     "hljs-selector-tag"
+    ],
+    [
+     24,
+     25,
+     "hljs-selector-tag"
+    ],
+    [
+     28,
+     33,
+     "hljs-attribute"
+    ],
+    [
+     34,
+     75,
+     "hljs-comment"
+    ],
+    [
+     99,
+     103,
+     "hljs-attribute"
+    ],
+    [
+     104,
+     115,
+     "hljs-comment"
+    ],
+    [
+     137,
+     142,
+     "hljs-attribute"
+    ],
+    [
+     143,
+     181,
+     "hljs-comment"
+    ],
+    [
+     203,
+     205,
+     "hljs-variable"
+    ]
+   ]
+  },
+  {
+   "language": ")[[Page]]**<",
+   "code": "",
+   "runs": []
+  },
+  {
+   "language": "1.\\",
+   "code": "<u>   \n\n&Agrave;=%[x][x]\n- [ ] <a href=\"x\">&#0;\n- [x] &#x41;$$",
+   "runs": [
+    [
+     15,
+     24,
+     "hljs-comment"
+    ],
+    [
+     27,
+     30,
+     "hljs-section"
+    ],
+    [
+     34,
+     38,
+     "hljs-attr"
+    ],
+    [
+     39,
+     42,
+     "hljs-string"
+    ],
+    [
+     44,
+     47,
+     "hljs-comment"
+    ],
+    [
+     50,
+     53,
+     "hljs-section"
+    ],
+    [
+     55,
+     62,
+     "hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": "ts\"word__[[Folder/Page#Head|Alias]]<u>Ünïcödé[<javascript:alert(1)></a>http://例え.jp",
+   "code": "\n<span style=\"color: #d44c47\"><mark>\\|](https://example.org \"t\")]]$5&😀<a href=\"x\">\n___<https://x.y/z?q=1>__&#x110000;",
+   "runs": [
+    [
+     7,
+     12,
+     "hljs-attr"
+    ],
+    [
+     13,
+     29,
+     "hljs-string"
+    ],
+    [
+     60,
+     63,
+     "hljs-string"
+    ],
+    [
+     66,
+     68,
+     "hljs-variable"
+    ],
+    [
+     79,
+     82,
+     "hljs-string"
+    ],
+    [
+     102,
+     103,
+     "hljs-attr"
+    ],
+    [
+     104,
+     105,
+     "hljs-number"
+    ],
+    [
+     109,
+     118,
+     "hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "__!\"   > ![alt](img.png)![alt](img.png)",
+   "runs": [
+    [
+     10,
+     15,
+     "hljs-selector-attr"
+    ],
+    [
+     16,
+     19,
+     "hljs-selector-tag"
+    ],
+    [
+     19,
+     23,
+     "hljs-selector-class"
+    ],
+    [
+     25,
+     30,
+     "hljs-selector-attr"
+    ],
+    [
+     31,
+     34,
+     "hljs-selector-tag"
+    ],
+    [
+     34,
+     38,
+     "hljs-selector-class"
+    ]
+   ]
+  },
+  {
+   "language": "<br/>:",
+   "code": "* [X] <b>|<b>|alias\\\ntwo words_^\n[Ref Two]: <https://example.org/a b> 't'\t+_==<a@b.co>!$$",
+   "runs": [
+    [
+     2,
+     5,
+     "hljs-selector-attr"
+    ],
+    [
+     7,
+     8,
+     "hljs-selector-tag"
+    ],
+    [
+     11,
+     12,
+     "hljs-selector-tag"
+    ],
+    [
+     33,
+     42,
+     "hljs-selector-attr"
+    ],
+    [
+     70,
+     73,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "tsword</mark><span",
+   "code": "<javascript:alert(1)>\n</details>\n```ts\n***-",
+   "runs": []
+  },
+  {
+   "language": "js",
+   "code": "const a = 1 // hi\nfunction f(x) { return \"s\" }",
+   "runs": [
+    [
+     0,
+     5,
+     "hljs-keyword"
+    ],
+    [
+     10,
+     11,
+     "hljs-number"
+    ],
+    [
+     12,
+     17,
+     "hljs-comment"
+    ],
+    [
+     18,
+     26,
+     "hljs-keyword"
+    ],
+    [
+     27,
+     28,
+     "hljs-title function_"
+    ],
+    [
+     29,
+     30,
+     "hljs-params"
+    ],
+    [
+     34,
+     40,
+     "hljs-keyword"
+    ],
+    [
+     41,
+     44,
+     "hljs-string"
+    ]
+   ]
+  },
+  {
+   "language": "ts",
+   "code": "interface A { b: number }\nlet c: A = { b: 2 }",
+   "runs": [
+    [
+     0,
+     9,
+     "hljs-keyword"
+    ],
+    [
+     14,
+     15,
+     "hljs-attr"
+    ],
+    [
+     17,
+     23,
+     "hljs-built_in"
+    ],
+    [
+     26,
+     29,
+     "hljs-keyword"
+    ],
+    [
+     30,
+     31,
+     "hljs-attr"
+    ],
+    [
+     39,
+     40,
+     "hljs-attr"
+    ],
+    [
+     42,
+     43,
+     "hljs-number"
+    ]
+   ]
+  },
+  {
+   "language": "python",
+   "code": "def f(x):\n    \"\"\"doc\"\"\"\n    return x * 2  # 한글 주석 🙂",
+   "runs": [
+    [
+     0,
+     3,
+     "hljs-keyword"
+    ],
+    [
+     4,
+     5,
+     "hljs-title function_"
+    ],
+    [
+     6,
+     7,
+     "hljs-params"
+    ],
+    [
+     14,
+     23,
+     "hljs-string"
+    ],
+    [
+     28,
+     34,
+     "hljs-keyword"
+    ],
+    [
+     39,
+     40,
+     "hljs-number"
+    ],
+    [
+     42,
+     52,
+     "hljs-comment"
+    ]
+   ]
+  },
+  {
+   "language": "swift",
+   "code": "struct S { let a = \"😀\"; func g() -> Int { 1 } }",
+   "runs": [
+    [
+     0,
+     6,
+     "hljs-keyword"
+    ],
+    [
+     7,
+     8,
+     "hljs-title class_"
+    ],
+    [
+     11,
+     14,
+     "hljs-keyword"
+    ],
+    [
+     17,
+     18,
+     "hljs-operator"
+    ],
+    [
+     19,
+     23,
+     "hljs-string"
+    ],
+    [
+     25,
+     29,
+     "hljs-keyword"
+    ],
+    [
+     30,
+     31,
+     "hljs-title function_"
+    ],
+    [
+     37,
+     40,
+     "hljs-type"
+    ],
+    [
+     43,
+     44,
+     "hljs-number"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "SELECT * FROM t WHERE id = 3",
+   "runs": [
+    [
+     0,
+     6,
+     "hljs-keyword"
+    ],
+    [
+     7,
+     8,
+     "hljs-operator"
+    ],
+    [
+     9,
+     13,
+     "hljs-keyword"
+    ],
+    [
+     16,
+     21,
+     "hljs-keyword"
+    ],
+    [
+     25,
+     26,
+     "hljs-operator"
+    ],
+    [
+     27,
+     28,
+     "hljs-number"
+    ]
+   ]
+  },
+  {
+   "language": "mermaid",
+   "code": "graph TD\n  A-->B",
+   "runs": [
+    [
+     6,
+     8,
+     "hljs-selector-tag"
+    ],
+    [
+     11,
+     12,
+     "hljs-selector-tag"
+    ],
+    [
+     15,
+     16,
+     "hljs-selector-tag"
+    ]
+   ]
+  },
+  {
+   "language": "nosuch",
+   "code": "<div class=\"x\">y</div>",
+   "runs": [
+    [
+     1,
+     4,
+     "hljs-selector-tag"
+    ],
+    [
+     12,
+     13,
+     "hljs-attribute"
+    ],
+    [
+     15,
+     16,
+     "hljs-attribute"
+    ],
+    [
+     18,
+     21,
+     "hljs-selector-tag"
+    ]
+   ]
+  },
+  {
+   "language": "css",
+   "code": ".a { color: red; }",
+   "runs": [
+    [
+     0,
+     2,
+     "hljs-selector-class"
+    ],
+    [
+     5,
+     10,
+     "hljs-attribute"
+    ]
+   ]
+  },
+  {
+   "language": null,
+   "code": "",
+   "runs": []
+  }
+ ]
+}

@@ -19,7 +19,8 @@
     "storage-fixtures": "rolldown scripts/storage-fixtures.ts --format esm --platform node -o node_modules/.cache/storage-fixtures.mjs && TZ=UTC node node_modules/.cache/storage-fixtures.mjs ../App/Tests/Fixtures/core",
     "screen-fixtures": "rolldown scripts/screen-fixtures.ts --format esm --platform node -o node_modules/.cache/screen-fixtures.mjs && TZ=UTC node node_modules/.cache/screen-fixtures.mjs ../App/Tests/Fixtures/core",
     "canvas-fixtures": "node scripts/canvas-fixtures.ts ../App/Tests/Fixtures/core",
-    "editor-fixtures": "rolldown -c scripts/editor-fixtures.config.mjs && node node_modules/.cache/editor-fixtures/editor-fixtures.js ../App/Tests/Fixtures/core"
+    "editor-fixtures": "rolldown -c scripts/editor-fixtures.config.mjs && node node_modules/.cache/editor-fixtures/editor-fixtures.js ../App/Tests/Fixtures/core",
+    "vendor-renderers": "node scripts/vendor-renderers.ts ../App/Renderers"
   },
   "devDependencies": {
     "@floating-ui/dom": "^1.8.0",

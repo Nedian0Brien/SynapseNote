@@ -55,6 +55,16 @@ struct EditorTextBlock {
                 }
             }
         }
+        // highlighted code (Extras.ts CodeBlock): each run's colour and style from features.css
+        if block.type == "codeBlock" {
+            for run in CodeHighlight.runs(text.string, language: block.attr("language")?.string) where NSMaxRange(run.range) <= text.length {
+                let look = CodeHighlight.style(run.classes)
+                if let tone = look.tone { text.addAttribute(.foregroundColor, value: EditorStyle.highlight(tone), range: run.range) }
+                if look.italic || look.bold {
+                    text.addAttribute(.font, value: EditorStyle.font(.code, font, bold: look.bold, italic: look.italic), range: run.range)
+                }
+            }
+        }
         for match in matches where NSMaxRange(match) <= text.length {
             text.addAttribute(.backgroundColor, value: EditorStyle.mark, range: match)
         }

@@ -32,3 +32,8 @@ Copyright (c) 2017-2020 Ingy döt Net, Copyright (c) 2006-2016 Kirill Simonov, M
 Their licence texts are in LICENSES/swift-core-third-party.txt.
 
 The editor bundle lists the licences of every package it includes in THIRD_PARTY_LICENSES.txt.
+
+The native editor draws formulas with KaTeX, diagrams with Mermaid and highlights code with lowlight and
+highlight.js, from the files in App/Renderers (written by web/scripts/vendor-renderers.ts from the same packages
+the editor bundle uses). App/Renderers/THIRD_PARTY_LICENSES.txt lists the licences of those packages and of every
+package they bundle.
