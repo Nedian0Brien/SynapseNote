@@ -43,6 +43,10 @@ struct SlashItem: Identifiable, Equatable {
         SlashItem(id: "database", title: "Database", description: "Table, board and calendar of pages", symbol: "tablecells.badge.ellipsis",
                   keywords: "collection kanban board calendar gallery table"),
         SlashItem(id: "canvas", title: "Canvas", description: "Cards and arrows on a whiteboard", symbol: "rectangle.on.rectangle", keywords: "whiteboard board diagram mind map"),
+        SlashItem(id: "inlineDatabase", title: "Inline database", description: "A database shown right on this page", symbol: "tablecells",
+                  keywords: "inline table board embedded view"),
+        SlashItem(id: "inlineCanvas", title: "Inline canvas", description: "A whiteboard shown right on this page", symbol: "rectangle.on.rectangle",
+                  keywords: "inline whiteboard drawing sketch embedded board"),
         SlashItem(id: "columns2", title: "2 columns", description: "Put blocks side by side", symbol: "rectangle.split.2x1", keywords: "columns layout side by side split"),
         SlashItem(id: "columns3", title: "3 columns", description: "Three blocks side by side", symbol: "rectangle.split.3x1", keywords: "columns layout side by side split"),
         SlashItem(id: "toc", title: "Table of contents", description: "Every heading on this page", symbol: "list.bullet.indent", keywords: "toc outline contents headings index"),
@@ -102,6 +106,8 @@ struct SlashItem: Identifiable, Equatable {
         case "toc": store.insertContent(.node("tableOfContents"))
         case "database": store.linkChild(kind: "database")
         case "canvas": store.linkChild(kind: "canvas")
+        case "inlineDatabase": store.linkChild(kind: "database", embed: true)
+        case "inlineCanvas": store.linkChild(kind: "canvas", embed: true)
         // these type the menu's own trigger, which opens its menu
         case "date": store.typeTrigger("@")
         case "embed": store.typeTrigger("![[")

@@ -40,7 +40,7 @@ struct DatabaseScreenView: View {
     }
 }
 
-private struct DatabaseBody: View {
+struct DatabaseBody: View {
     let store: DatabaseStore
     let view: ViewDef
     let editable: Bool

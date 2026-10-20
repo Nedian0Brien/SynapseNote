@@ -47,7 +47,12 @@ struct EditorTextBlock {
                     }
                     return
                 }
-                guard let chip = EditorAtoms.chip(atom.node, lookup) else { return }
+                let embed = store.embed(atom.node)
+                if embed?.live == true {
+                    text.addAttribute(.attachment, value: EditorAtoms.nothing, range: range)
+                    return
+                }
+                guard let chip = EditorAtoms.chip(atom.node, lookup, embed: embed != nil) else { return }
                 let font = (text.attribute(.font, at: range.location, effectiveRange: nil) as? PlatformFont) ?? EditorStyle.font(style, self.font)
                 for index in range.location..<NSMaxRange(range) {
                     if let attachment = EditorAtoms.attachment(chip, font: font, dark: dark) {

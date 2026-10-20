@@ -123,15 +123,18 @@ extension EditorStore {
     }
 
     func editFormula(_ path: Path) {
+        guard editable else { return }
         guard let node = block(path), node.type == "blockMath" else { return }
         sourceEdit = SourceEdit(target: .blockMath(path), value: node.attr("latex")?.string ?? "")
     }
 
     func editInlineFormula(_ path: Path, at offset: Int, _ node: DocNode) {
+        guard editable else { return }
         sourceEdit = SourceEdit(target: .inlineMath(path, offset), value: node.attr("latex")?.string ?? "")
     }
 
     func editRaw(_ path: Path) {
+        guard editable else { return }
         guard let node = block(path), node.type == "rawBlock" else { return }
         sourceEdit = SourceEdit(target: .raw(path), value: node.attr("text")?.string ?? "")
     }

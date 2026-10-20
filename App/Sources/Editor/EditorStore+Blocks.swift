@@ -95,7 +95,7 @@ extension EditorStore {
     }
 
     /// Database and Canvas in the slash menu: a subpage of that kind and a link to it (SlashCommand's linkChild)
-    func linkChild(kind: String) {
+    func linkChild(kind: String, embed: Bool = false) {
         guard let focus else { return }
         let id = Self.newId()
         let database = kind == "database" ? Database.defaultDatabase(Self.newId) : nil
@@ -103,7 +103,7 @@ extension EditorStore {
         controller.perform(.newPage(id: id, parentId: pageId, title: "", kind: kind, database: database, doc: canvas))
         let label = kind == "database" ? "Database" : "Canvas"
         let (next, caret) = EditorEdits.insertInline(doc, focus.path, focus.range,
-                                                     [Self.pageLink(id, label, embed: false), JSObject([("type", "text"), ("text", " ")])])
+                                                     [Self.pageLink(id, label, embed: embed), JSObject([("type", "text"), ("text", " ")])])
         apply(next, caret: caret)
     }
 

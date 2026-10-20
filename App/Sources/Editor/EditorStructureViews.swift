@@ -97,9 +97,12 @@ struct CalloutBlockView: View {
         return Self.tones.contains(value) ? value : "note"
     }
 
+    /// a folding callout in a page shown read only folds here only
+    @State private var shownFolded: Bool?
+
     var body: some View {
         let kind = node.attr("kind")?.string ?? tone
-        let folded = node.attr("fold")?.string == "-"
+        let folded = store.editable ? node.attr("fold")?.string == "-" : shownFolded ?? (node.attr("fold")?.string == "-")
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Button {
@@ -114,15 +117,19 @@ struct CalloutBlockView: View {
                     }
                 }
                 .buttonStyle(.plain)
+                .disabled(!store.editable)
                 .help("\(Self.toneLabels[tone] ?? "Note"), click to change")
                 TextField("Add a title", text: $title)
                     .textFieldStyle(.plain)
+                    .disabled(!store.editable)
                     .focused($editingTitle)
                     .onSubmit { saveTitle() }
                     .onChange(of: editingTitle) { _, editing in if !editing { saveTitle() } }
                     .accessibilityLabel("Callout title")
                 if node.attr("fold")?.string != nil {
-                    Button(folded ? "Show" : "Hide") { store.setAttrs(path, [("fold", .string(folded ? "+" : "-"))]) }
+                    Button(folded ? "Show" : "Hide") {
+                        if store.editable { store.setAttrs(path, [("fold", .string(folded ? "+" : "-"))]) } else { shownFolded = !folded }
+                    }
                         .buttonStyle(.borderless)
                         .font(.caption)
                 }
@@ -176,13 +183,16 @@ struct DetailsBlockView: View {
     let context: EditorStyle.Context
     let depth: Int
 
+    /// a toggle in a page shown read only opens and closes here only, as an HTML details element does
+    @State private var shownOpen: Bool?
+
     var body: some View {
-        let open = node.attr("open") == .bool(true)
+        let open = store.editable ? node.attr("open") == .bool(true) : shownOpen ?? (node.attr("open") == .bool(true))
         let children = node.content ?? []
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .top, spacing: 4) {
                 Button {
-                    store.setAttrs(path, [("open", .bool(!open))])
+                    if store.editable { store.setAttrs(path, [("open", .bool(!open))]) } else { shownOpen = !open }
                 } label: {
                     Image(systemName: "chevron.right")
                         .rotationEffect(.degrees(open ? 90 : 0))

@@ -34,7 +34,8 @@ enum EditorAtoms {
 
     /// PageLink's node view: the page's title, or the label, or the target, with the heading after "›" and an
     /// alias in place of all of it; Structure's date mention: "@" and describeDate
-    static func chip(_ node: DocNode, _ lookup: Lookup) -> Chip? {
+    /// `embed`: an embed link drawn with its page under it gets `↳ ` in front (`.page-link.is-embed::before`)
+    static func chip(_ node: DocNode, _ lookup: Lookup, embed: Bool = false) -> Chip? {
         switch node.type {
         case "pageLink":
             let id = resolved(node, lookup)
@@ -45,7 +46,7 @@ enum EditorAtoms {
             let anchor = node.attr("anchor")?.string
             let text = node.attr("alias")?.string ?? (anchor.map { "\(name) › \($0)" } ?? name)
             let look: Chip.Look = id != nil ? .page : !target.isEmpty ? .unresolved : .missing
-            return Chip(text: text, icon: page?.icon, look: look)
+            return Chip(text: embed ? "↳ \(text)" : text, icon: page?.icon, look: look)
         case "dateMention":
             let key = node.attr("date")?.string ?? ""
             let look: Chip.Look = key == lookup.today ? .today : key < lookup.today && Daily.parseDateKey(key) != nil ? .pastDate : .date
@@ -93,6 +94,18 @@ enum EditorAtoms {
         attachment.bounds = CGRect(x: 0, y: baseline, width: image.size.width, height: image.size.height)
         return attachment
     }
+
+    /// an attachment that takes no room, for a link whose live embed shows in its place (`.is-live > .page-link`)
+    @MainActor static let nothing: NSTextAttachment = {
+        let attachment = NSTextAttachment()
+        #if os(iOS)
+        attachment.image = UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1)).image { _ in }
+        #else
+        attachment.image = NSImage(size: NSSize(width: 1, height: 1))
+        #endif
+        attachment.bounds = .zero
+        return attachment
+    }()
 
     // MARK: formulas
 

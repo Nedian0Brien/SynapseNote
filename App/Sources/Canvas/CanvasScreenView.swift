@@ -70,7 +70,7 @@ struct CanvasScreenView: View {
     }
 }
 
-private struct CanvasBoard: View {
+struct CanvasBoard: View {
     let store: CanvasStore
     let editable: Bool
     @State private var pressed: CGPoint?

@@ -71,6 +71,21 @@ final class AppPreferences {
     var colorful: Bool { didSet { save("colorful", colorful) } }
     /// macOS: ⌥⌘M opens a quick note from any app.
     var quickNoteFromAnyApp: Bool { didSet { save("quickNoteFromAnyApp", quickNoteFromAnyApp) } }
+    /// Morrow's `canvasSizes`: the size each inline canvas was dragged to, its width nil for the page's width
+    struct CanvasSize: Equatable {
+        var width: Double?
+        var height: Double
+    }
+    var canvasSizes: [String: CanvasSize] {
+        didSet {
+            // a view preference only, the editor page does not need it
+            defaults.set(canvasSizes.mapValues { size -> [String: Double] in
+                var entry = ["height": size.height]
+                if let width = size.width { entry["width"] = width }
+                return entry
+            }, forKey: Self.key("canvasSizes"))
+        }
+    }
 
     /// Called after any setting changes, to tell the editor page.
     @ObservationIgnored var changed: () -> Void = {}
@@ -86,6 +101,17 @@ final class AppPreferences {
         accent = defaults.string(forKey: Self.key("accent")).flatMap(Accent.init) ?? .ocean
         colorful = defaults.object(forKey: Self.key("colorful")) as? Bool ?? true
         quickNoteFromAnyApp = defaults.object(forKey: Self.key("quickNoteFromAnyApp")) as? Bool ?? true
+        canvasSizes = Self.readCanvasSizes(defaults.dictionary(forKey: Self.key("canvasSizes")))
+    }
+
+    /// Morrow's readCanvasSizes: entries with a height, at most 500
+    static func readCanvasSizes(_ raw: [String: Any]?) -> [String: CanvasSize] {
+        var sizes: [String: CanvasSize] = [:]
+        for (id, value) in (raw ?? [:]).prefix(500) {
+            guard let entry = value as? [String: Any], let height = entry["height"] as? Double else { continue }
+            sizes[id] = CanvasSize(width: entry["width"] as? Double, height: height)
+        }
+        return sizes
     }
 
     /// The name as Morrow stores it: trimmed, at most 60 characters.

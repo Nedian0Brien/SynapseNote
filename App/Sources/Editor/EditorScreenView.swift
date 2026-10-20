@@ -131,7 +131,7 @@ struct BlockList: View {
             ForEach(Array(nodes.enumerated()), id: \.offset) { index, node in
                 BlockView(store: store, node: node, path: path + [index], context: context, depth: depth)
                     .overlay(alignment: .topLeading) {
-                        if depth == 0, store.menuBlock?.first == index { BlockHandle(store: store, path: path + [index]) }
+                        if depth == 0, store.editable, store.menuBlock?.first == index { BlockHandle(store: store, path: path + [index]) }
                     }
                     .padding(.top, index == 0 ? 0 : spacing(before: node))
             }
@@ -164,9 +164,13 @@ struct BlockView: View {
         case "paragraph", "heading":
             // one branch for both, so a paragraph that becomes a heading keeps its text view and the caret
             let heading = node.type == "heading"
-            TextBlock(store: store, node: node, path: path,
-                      style: heading ? .heading(Int(node.attr("level")?.number ?? 1)) : .paragraph, context: context)
-                .accessibilityAddTraits(heading ? .isHeader : [])
+            VStack(alignment: .leading, spacing: 0) {
+                TextBlock(store: store, node: node, path: path,
+                          style: heading ? .heading(Int(node.attr("level")?.number ?? 1)) : .paragraph, context: context)
+                    .accessibilityAddTraits(heading ? .isHeader : [])
+                // the pages its ![[embeds]] show, below it (PageLink's .page-embed)
+                EmbedBodies(store: store, node: node)
+            }
         case "codeBlock":
             CodeBlockView(store: store, node: node, path: path)
         case "bulletList", "orderedList", "taskList":
@@ -225,7 +229,7 @@ struct TextBlock: View {
     var body: some View {
         let font = store.controller.preferences.font
         let ranges = matches
-        EditorTextBlock(store: store, path: path, block: node, style: style, context: context, font: font, editable: true, matches: ranges,
+        EditorTextBlock(store: store, path: path, block: node, style: style, context: context, font: font, editable: store.editable, matches: ranges,
                         dark: colorScheme == .dark, rendered: hasFormula ? WebRenderer.shared.version : 0)
             .overlay(alignment: .topLeading) {
                 if let placeholder {
@@ -247,7 +251,7 @@ struct TextBlock: View {
     }
 
     private var placeholder: String? {
-        guard (node.content ?? []).isEmpty else { return nil }
+        guard store.editable, (node.content ?? []).isEmpty else { return nil }
         let content = store.doc.content ?? []
         let pageEmpty = content.count == 1 && (content.first?.content ?? []).isEmpty
         guard store.focus?.path == path || (pageEmpty && store.focus == nil) else { return nil }
@@ -297,6 +301,7 @@ private struct ListBlock: View {
                     .frame(height: lineHeight)
             }
             .buttonStyle(.plain)
+            .disabled(!store.editable)
             .accessibilityLabel(checked ? "Done" : "Not done")
             .accessibilityAddTraits(checked ? .isSelected : [])
         case "orderedList":
@@ -356,6 +361,7 @@ private struct CodeBlockView: View {
                     .fixedSize()
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .disabled(!store.editable)
                     .accessibilityLabel("Code language")
                 }
             }

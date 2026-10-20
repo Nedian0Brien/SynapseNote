@@ -98,16 +98,38 @@ final class EditorStore {
     static let saveDelay = Duration.milliseconds(250)
     static let maxHistory = 100
 
-    init(controller: EditorController, pageId: String) {
+    /// false for a page shown inside another page or a version in its history: drawn as the editor draws it,
+    /// never changed from here
+    let editable: Bool
+    /// how far inside other pages this document is shown; a page shown inside one draws its own embeds as links,
+    /// as Morrow's docToHtml does, so pages never show each other in a loop
+    let embedDepth: Int
+    /// a version from the history: the document given, never read again
+    @ObservationIgnored private var fixed = false
+
+    init(controller: EditorController, pageId: String, editable: Bool = true, embedDepth: Int = 0) {
         self.controller = controller
         self.pageId = pageId
+        self.editable = editable
+        self.embedDepth = embedDepth
+    }
+
+    /// a version of the page from its history, opened as TipTap opens it and drawn read only
+    init(controller: EditorController, pageId: String, version: DocNode) {
+        self.controller = controller
+        self.pageId = pageId
+        editable = false
+        embedDepth = 1
+        fixed = true
+        if let opened = try? EditorSchema.normalize(version) { doc = opened } else { failed = true }
+        loaded = true
     }
 
     // MARK: the document
 
     /// the page's document from the session; set here only when it changed elsewhere and nothing is waiting
     func load() async {
-        guard let source = await controller.editorDoc(pageId) else { return }
+        guard !fixed, let source = await controller.editorDoc(pageId) else { return }
         if loaded, let committed, JSJSON.stringify(.object(committed)) == JSJSON.stringify(.object(source)) { return }
         guard !dirty, saving == nil else { return }
         do {
@@ -131,6 +153,7 @@ final class EditorStore {
 
     /// a change to the document: recorded for undo, then saved after the delay
     func apply(_ next: DocNode, caret: EditorEdits.Caret? = nil, range: NSRange? = nil, typing: Bool = false) {
+        guard editable else { return }
         guard next != doc else {
             if let caret { requestFocus(caret.path, range ?? NSRange(location: caret.offset, length: 0)) }
             return
