@@ -21,6 +21,8 @@ enum EditorAtoms {
         var text: String
         var icon: String?
         var look: Look
+        /// an embed link: `↳ ` before the icon and title (`.page-link.is-embed::before`)
+        var embed = false
     }
 
     /// the workspace as the chips need it
@@ -46,7 +48,7 @@ enum EditorAtoms {
             let anchor = node.attr("anchor")?.string
             let text = node.attr("alias")?.string ?? (anchor.map { "\(name) › \($0)" } ?? name)
             let look: Chip.Look = id != nil ? .page : !target.isEmpty ? .unresolved : .missing
-            return Chip(text: embed ? "↳ \(text)" : text, icon: page?.icon, look: look)
+            return Chip(text: text, icon: page?.icon, look: look, embed: embed)
         case "dateMention":
             let key = node.attr("date")?.string ?? ""
             let look: Chip.Look = key == lookup.today ? .today : key < lookup.today && Daily.parseDateKey(key) != nil ? .pastDate : .date
@@ -188,6 +190,7 @@ private struct ChipView: View {
 
     var body: some View {
         HStack(spacing: size * 0.2) {
+            if chip.embed { Text("↳").font(font.weight(.medium)).foregroundStyle(foreground).opacity(0.6) }
             if let icon = chip.icon { EmojiImage(emoji: icon, size: size * 0.95) }
             Text(chip.text)
                 .font(font.weight(.medium))

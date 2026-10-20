@@ -230,7 +230,8 @@ struct TextBlock: View {
         let font = store.controller.preferences.font
         let ranges = matches
         EditorTextBlock(store: store, path: path, block: node, style: style, context: context, font: font, editable: store.editable, matches: ranges,
-                        dark: colorScheme == .dark, rendered: hasFormula ? WebRenderer.shared.version : 0)
+                        dark: colorScheme == .dark, rendered: hasFormula ? WebRenderer.shared.version : 0,
+                        revision: hasLink ? store.controller.revision : 0)
             .overlay(alignment: .topLeading) {
                 if let placeholder {
                     Text(placeholder)
@@ -244,6 +245,7 @@ struct TextBlock: View {
     }
 
     private var hasFormula: Bool { (node.content ?? []).contains { $0.type == "inlineMath" } }
+    private var hasLink: Bool { (node.content ?? []).contains { $0.type == "pageLink" || $0.type == "dateMention" } }
 
     private var matches: [NSRange] {
         guard store.find != nil else { return [] }

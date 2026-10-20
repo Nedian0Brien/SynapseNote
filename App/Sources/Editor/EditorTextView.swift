@@ -20,6 +20,9 @@ struct EditorTextBlock {
     var dark = false
     /// the renderer's count when this block has inline formulas, so a finished one redraws the block
     var rendered = 0
+    /// the workspace's revision when this block has page links, dates or embeds, so a page made, renamed or
+    /// moved to the trash redraws them
+    var revision = 0
 
     var model: NSAttributedString { InlineText.attributed(block.content ?? []) }
     var plain: Bool { block.type == "codeBlock" }
@@ -169,7 +172,7 @@ extension EditorTextBlock: UIViewRepresentable {
         let coordinator = context.coordinator
         let changedStyle = coordinator.block?.style != style || coordinator.block?.context != context.coordinator.block?.context
             || coordinator.block?.font != font || coordinator.block?.matches != matches || coordinator.block?.context != self.context
-            || coordinator.block?.dark != dark || coordinator.block?.rendered != rendered
+            || coordinator.block?.dark != dark || coordinator.block?.rendered != rendered || coordinator.block?.revision != revision
         // a pass where the block at this path is no longer text, before SwiftUI swaps the view out
         guard EditorSchema.textBlocks.contains(block.type) else { return }
         coordinator.block = self
@@ -345,7 +348,7 @@ extension EditorTextBlock: UIViewRepresentable {
         func sync(_ textView: UITextView) {
             guard let block, let store, let current = store.block(path), EditorSchema.textBlocks.contains(current.type) else { return }
             let updated = EditorTextBlock(store: store, path: path, block: current, style: block.style, context: block.context, font: block.font,
-                                          editable: block.editable, matches: block.matches, dark: block.dark, rendered: block.rendered)
+                                          editable: block.editable, matches: block.matches, dark: block.dark, rendered: block.rendered, revision: block.revision)
             if !updated.same(textView.attributedText) {
                 applying = true
                 textView.attributedText = updated.styled()
@@ -384,7 +387,7 @@ extension EditorTextBlock: UIViewRepresentable {
                   let model = store.block(path), EditorSchema.textBlocks.contains(model.type) else { return }
             // this can run while SwiftUI updates its views: the view changes now, the store a moment later
             let updated = EditorTextBlock(store: store, path: path, block: model, style: block.style, context: block.context, font: block.font,
-                                          editable: block.editable, matches: block.matches, dark: block.dark, rendered: block.rendered)
+                                          editable: block.editable, matches: block.matches, dark: block.dark, rendered: block.rendered, revision: block.revision)
             applying = true
             if !updated.same(view.attributedText) { view.attributedText = updated.styled() }
             let became = view.isFirstResponder || view.becomeFirstResponder()
@@ -644,7 +647,7 @@ extension EditorTextBlock: NSViewRepresentable {
         let coordinator = context.coordinator
         let changedStyle = coordinator.block?.style != style || coordinator.block?.font != font
             || coordinator.block?.matches != matches || coordinator.block?.context != self.context
-            || coordinator.block?.dark != dark || coordinator.block?.rendered != rendered
+            || coordinator.block?.dark != dark || coordinator.block?.rendered != rendered || coordinator.block?.revision != revision
         guard EditorSchema.textBlocks.contains(block.type) else { return }
         coordinator.block = self
         view.isEditable = editable
@@ -740,7 +743,7 @@ extension EditorTextBlock: NSViewRepresentable {
             guard let block, let store, let storage = view.textStorage, let current = store.block(path),
                   EditorSchema.textBlocks.contains(current.type) else { return }
             let updated = EditorTextBlock(store: store, path: path, block: current, style: block.style, context: block.context, font: block.font,
-                                          editable: block.editable, matches: block.matches, dark: block.dark, rendered: block.rendered)
+                                          editable: block.editable, matches: block.matches, dark: block.dark, rendered: block.rendered, revision: block.revision)
             if !updated.same(storage) {
                 applying = true
                 storage.setAttributedString(updated.styled())
@@ -773,7 +776,7 @@ extension EditorTextBlock: NSViewRepresentable {
             guard let store, let current = store.focusRequest, current.path == path, current.id != taken, let window = view.window, let block,
                   let storage = view.textStorage, let model = store.block(path), EditorSchema.textBlocks.contains(model.type) else { return }
             let updated = EditorTextBlock(store: store, path: path, block: model, style: block.style, context: block.context, font: block.font,
-                                          editable: block.editable, matches: block.matches, dark: block.dark, rendered: block.rendered)
+                                          editable: block.editable, matches: block.matches, dark: block.dark, rendered: block.rendered, revision: block.revision)
             applying = true
             if !updated.same(storage) { storage.setAttributedString(updated.styled()) }
             let became = window.firstResponder === view || window.makeFirstResponder(view)

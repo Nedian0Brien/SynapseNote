@@ -51,6 +51,9 @@ struct RowPropertiesView: View {
                 .padding(.top, 8)
                 .accessibilityElement(children: .contain)
                 .accessibilityLabel("Properties")
+            } else {
+                // a view that is there before the database is read, so the task below runs
+                Color.clear.frame(height: 0)
             }
         }
         .task(id: controller.revision) { await store.load() }

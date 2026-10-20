@@ -149,6 +149,8 @@ struct EmbeddedCanvas: View {
     @State private var store: CanvasStore
     /// the size while the corner is dragged
     @State private var resizing: AppPreferences.CanvasSize?
+    /// the size when the drag began, which the drag's movement is added to
+    @State private var dragStart: AppPreferences.CanvasSize?
     @State private var room: CGFloat = 0
 
     static let minWidth = 360.0
@@ -169,10 +171,10 @@ struct EmbeddedCanvas: View {
             EmbedHead(controller: controller, page: page)
             CanvasBoard(store: store, editable: editable)
                 .frame(width: size?.width.map { min(room, $0) }, height: size?.height ?? Self.defaultHeight)
-                .frame(maxWidth: .infinity, alignment: .leading)
                 .clipShape(.rect(cornerRadius: 8))
                 .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.separator))
                 .overlay(alignment: .bottomTrailing) { grip(size) }
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .onGeometryChange(for: CGFloat.self, of: \.size.width) { room = $0 }
         .padding(.vertical, 16)
@@ -193,12 +195,14 @@ struct EmbeddedCanvas: View {
             .contentShape(.rect)
             .gesture(DragGesture(minimumDistance: 0, coordinateSpace: .global)
                 .onChanged { drag in
-                    let start = size ?? AppPreferences.CanvasSize(width: nil, height: Self.defaultHeight)
+                    let start = dragStart ?? size ?? AppPreferences.CanvasSize(width: nil, height: Self.defaultHeight)
+                    dragStart = start
                     resizing = Self.resized(from: start, room: room, by: drag.translation)
                 }
                 .onEnded { _ in
                     if let resizing { controller.preferences.canvasSizes[page.id] = resizing }
                     resizing = nil
+                    dragStart = nil
                 })
             .accessibilityLabel("Drag to resize")
     }
