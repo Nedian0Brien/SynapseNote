@@ -62,6 +62,11 @@ struct EditorBlockEditsTests {
         #expect(T.json(rows) == T.json(T.doc(Self.table(Self.row(Self.cell("a", header: true), Self.cell("b", header: true)),
                                                         Self.row(Self.cell("c"), Self.cell("d")), Self.row(Self.cell(""), Self.cell(""))))))
         #expect(rowCaret == Caret(path: [0, 2, 1, 0], offset: 0))
+        // in a header column the new row's cell is a header cell
+        let sideways = T.doc(Self.table(Self.row(Self.cell("a", header: true), Self.cell("b")), Self.row(Self.cell("c", header: true), Self.cell("d"))))
+        #expect(T.json(EditorEdits.addRow(sideways, place).doc) == T.json(T.doc(Self.table(
+            Self.row(Self.cell("a", header: true), Self.cell("b")), Self.row(Self.cell("c", header: true), Self.cell("d")),
+            Self.row(Self.cell("", header: true), Self.cell(""))))))
         // a new column: a header cell in the header row
         let (columns, _) = EditorEdits.addColumn(start, EditorEdits.CellPlace(table: [0], row: 0, column: 0))
         #expect(T.json(columns) == T.json(T.doc(Self.table(Self.row(Self.cell("a", header: true), Self.cell("", header: true), Self.cell("b", header: true)),
