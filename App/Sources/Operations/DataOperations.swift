@@ -100,7 +100,9 @@ extension EditorController {
         Task {
             guard let state = await state else { return }
             let root = rootId.flatMap { state.pages[$0] }
-            let title = root.map(Model.displayTitle) ?? vaultURL.map(\.lastPathComponent).flatMap { $0.isEmpty ? nil : $0 } ?? "SynapseNote"
+            // Morrow: the session's location, its last part; the app gives the vault's name as the location
+            let location = vaultName.flatMap { $0.split(whereSeparator: { $0 == "/" || $0 == "\\" }).last.map(String.init) }
+            let title = root.map(Model.displayTitle) ?? location ?? "SynapseNote"
             let site = Site.buildSite(state, Site.Options(rootId: rootId, title: title, renderMath: Katex.mathML))
             let folder = Portability.safeFileName(title)
             var entries = site.files.map { ("\(folder)/\($0.path)", Data($0.content.utf8)) }
@@ -283,12 +285,15 @@ extension EditorController {
 
     // MARK: files
 
-    /// Morrow's unusedFiles: files nothing points at, not pages, not the trash, not page history
+    /// Morrow's unusedFiles: files nothing points at, not pages, not the trash, not page history. Unlike Morrow,
+    /// a page's own file is never one: Morrow reads a note kept in the attachments folder as a page and also
+    /// lists it as a file, so it would delete that note.
     func unusedFiles() async -> [FileMeta] {
         guard let host, let state = await state else { return [] }
         var used = Portability.referencedFileIds(state)
         for snapshot in await host.allSnapshots() { for id in Doc.fileIdsInDoc(snapshot.doc) { used.insert(id) } }
-        return await host.files().filter { !used.has($0.id) }
+        let pages = await host.pageFiles()
+        return await host.files().filter { !used.has($0.id) && !pages.has($0.id) }
     }
 
     /// Morrow's settings: how many files the vault holds, their size, and how many are unused

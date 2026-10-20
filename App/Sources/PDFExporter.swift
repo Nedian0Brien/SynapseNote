@@ -61,9 +61,10 @@ final class PDFExporter: NSObject, WKNavigationDelegate {
             .replacingOccurrences(of: ">", with: "&gt;")
     }
 
-    /// a page of HTML made by the app, printed with only the vault's files to read
+    /// a page of HTML made by the app, printed with only the vault's files to read; it is loaded at the vault's
+    /// address, as a page with no address (about:blank) printed empty
     func pdf(html: String) async throws -> Data {
-        try await pdf(document: html, baseURL: nil)
+        try await pdf(document: html, baseURL: URL(string: "\(VaultSchemeHandler.scheme)://vault/"))
     }
 
     func pdf(of snapshot: Snapshot) async throws -> Data {
@@ -82,6 +83,16 @@ final class PDFExporter: NSObject, WKNavigationDelegate {
         let width = Self.paper.width - Self.margin * 2
         let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: width, height: Self.paper.height), configuration: configuration)
         webView.navigationDelegate = self
+        #if os(iOS)
+        // the page lays out only while the view is in a window, so it is put in one, never shown, before it loads
+        guard let scene = UIApplication.shared.connectedScenes.lazy.compactMap({ $0 as? UIWindowScene }).first else {
+            throw Failure.notLoaded
+        }
+        let window = UIWindow(windowScene: scene)
+        window.frame = webView.frame
+        window.addSubview(webView)
+        defer { webView.removeFromSuperview() }
+        #endif
         let finished = await withCheckedContinuation { continuation in
             loaded = continuation
             webView.loadHTMLString(document, baseURL: baseURL)
@@ -147,15 +158,7 @@ final class PDFExporter: NSObject, WKNavigationDelegate {
     }
     #else
     private func print(_ webView: WKWebView) async throws -> Data {
-        // the formatter lays the page out only while the view is in a window; this one, in the app's scene,
-        // is never shown
-        guard let scene = UIApplication.shared.connectedScenes.lazy.compactMap({ $0 as? UIWindowScene }).first else {
-            throw Failure.notLoaded
-        }
-        let window = UIWindow(windowScene: scene)
-        window.frame = webView.frame
-        window.addSubview(webView)
-        defer { webView.removeFromSuperview() }
+        // the view is in a window (see pdf(document:)), where the formatter can lay it out
         let renderer = UIPrintPageRenderer()
         renderer.addPrintFormatter(webView.viewPrintFormatter(), startingAtPageAt: 0)
         let paper = CGRect(origin: .zero, size: Self.paper)

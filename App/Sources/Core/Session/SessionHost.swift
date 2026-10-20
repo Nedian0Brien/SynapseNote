@@ -550,6 +550,14 @@ nonisolated final class SessionHost: @unchecked Sendable {
         await run(writes: false) { [self] in session?.getFile(id) }
     }
 
+    /// the files pages are kept in, so a note kept in the attachments folder is never taken for a stored file
+    func pageFiles() async -> JSSet {
+        await run(writes: false) { [self] in
+            guard let session else { return JSSet() }
+            return JSSet(session.state.pages.keys.compactMap { session.pathOf($0) })
+        }
+    }
+
     /// Every page's versions, for what backups and the unused file check count as used.
     func allSnapshots() async -> [Snapshot] {
         await run(writes: false) { [self] in session?.allSnapshots() ?? [] }
