@@ -34,7 +34,7 @@
 | 11d | 네이티브 화면 | 11d-1~11d-5로 나눔(`.intent/spec_phase11d-native-screens.md`). 편집기가 데이터베이스·캔버스를 블록으로 품으므로 편집기를 마지막에 |
 | 11d-1 | 화면이 쓰는 core 이식(데이터베이스·수식·diff·게시 HTML·백업·가져오기), Morrow 결과와 비교. 앱 동작은 그대로 | 구현 (PR #17, `docs/verification/phase11d1-core-ports.md`) |
 | 11d-2 | 페이지 머리, Markdown 원문 편집, 읽지 못한 페이지 알림(기록 창은 11d-5로) | 구현 (PR #18, `docs/verification/phase11d2-page-chrome.md`) |
-| 11d-3 | 데이터베이스 보기 | |
+| 11d-3 | 데이터베이스 페이지 전체(보기 다섯 가지, 도구 막대, 속성·보기 설정, 값 편집). 다른 페이지 안의 데이터베이스와 행 속성 줄은 11d-5로 | 구현 (PR #PRNUM, `docs/verification/phase11d3-database-page.md`) |
 | 11d-4 | 캔버스 | |
 | 11d-5 | 블록 편집기 | |
 | 11e | 웹 편집기·번들·node 빌드 제거 | |

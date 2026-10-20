@@ -8,3 +8,9 @@ spec: `spec_phase11d-native-screens.md`(11d-3 수정 포함). 브랜치 `feat/sw
 4. **편집 변환** (`Core/Database/DatabaseEdits.swift`, 순수 함수, 단위 테스트·변형 확인): 보기 이름·레이아웃·복제·삭제, 필터 추가·속성 바꾸기·값, 정렬 추가·바꾸기·오름차순 하나로, 속성 이름 검사·추가·삭제(모든 보기에서 지움)·종류 바꾸기 명령, 옵션 만들기(`ensureOption`), 보드 열의 값, 행 수 문구.
 5. **화면** (`App/Sources/Database/`): `DatabaseScreenView`(머리·보기 탭·도구 막대·행 수, 빈 보기면 표 보기 하나 만들기, 고른 보기는 UserDefaults `morrow.view.<id>`), `DatabaseTableView`, `DatabaseBoardView`, `DatabaseCalendarView`(월요일 시작 6주, 끌어 놓기), `DatabaseCards`(목록·갤러리·카드), `PropertyEditors`(값 편집 9종, 표시, 옵션·관계 선택), `DatabasePanels`(필터·정렬·묶기·속성·속성 설정·보기 설정·수식). 머리는 11d-2 `PageHeaderView`에서 태그를 뺀 것.
 6. **확인**: 단위 테스트와 변형 확인. iPad에서 새 데이터베이스, 보기 바꾸기·추가, 속성 추가·이름·종류 바꾸기(값 변환)·삭제, 옵션 만들기, 필터·정렬·숨기기, 보드·달력 끌어 놓기, 표·보드·달력에서 새 행, 갤러리 커버, 관계와 열기, 읽지 못한 폴더 노트, DEBUG 비교. 문서·로드맵·PR.
+
+## 구현하며 바뀐 것
+
+- 화면 사본(`DatabaseStore`)이 편집을 바로 반영한다. 세션에서 다시 읽기 전에 이어지는 편집이 앞 편집을 덮어쓰지 않게 하려는 것이다.
+- 관계 칩은 표시만 한다(칸·카드가 단추라 겹칠 수 없음). 관계 페이지 열기는 관계 선택 창에 둔다.
+- iPad 확인 중 나온 11d-1·11d-2 문제(`JSNumber.parse` 진법, 제목 마지막 글자, 화면 고르기의 페이지 종류)를 같은 브랜치에서 고쳤다.
