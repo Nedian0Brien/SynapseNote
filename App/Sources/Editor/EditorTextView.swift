@@ -98,9 +98,8 @@ extension EditorTextBlock: UIViewRepresentable {
             coordinator.restyle(view)
         }
         if view.isFirstResponder { coordinator.applyTypingAttributes(view) }
-        if store.focusRequest?.path == path {
-            DispatchQueue.main.async { coordinator.takeFocusIfAsked(view) }
-        }
+        // the caret moves in this same pass, so no key pressed meanwhile finds no text view to go to
+        if store.focusRequest?.path == path { coordinator.takeFocusIfAsked(view) }
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: BlockTextView, context: Context) -> CGSize? {
@@ -131,8 +130,13 @@ extension EditorTextBlock: UIViewRepresentable {
             if text == "\n", !block.plain || store.slash != nil {
                 // Enter: the block splits; a syllable being composed is finished first
                 textView.unmarkText()
-                store.textChanged(path, textView.attributedText)
+                pushUnsent(textView.attributedText)
                 store.enter(path, range.location)
+                sync(textView)
+                return false
+            }
+            if !block.plain, text.contains("\n"), textView.markedTextRange == nil {
+                store.insertLines(path, range, text, in: textView.attributedText)
                 sync(textView)
                 return false
             }
@@ -159,7 +163,17 @@ extension EditorTextBlock: UIViewRepresentable {
         }
 
         /// composed text not yet given to the store
-        private var unsent = false
+        var unsent = false
+        /// the last focus request this view has carried out
+        var taken: Int?
+
+        /// composed text the store has not had yet; text the store already has is never sent again, as the view's
+        /// copy can be older than the store's
+        func pushUnsent(_ text: NSAttributedString) {
+            guard unsent, let store else { return }
+            unsent = false
+            store.textChanged(path, text)
+        }
 
         /// the view takes the block's text from the store at once after an edit it asked for, so nothing typed
         /// before SwiftUI draws again lands in old text
@@ -192,34 +206,54 @@ extension EditorTextBlock: UIViewRepresentable {
             applyTypingAttributes(textView)
         }
 
-        func textViewDidBeginEditing(_ textView: UITextView) { reportSelection(textView) }
+        func textViewDidBeginEditing(_ textView: UITextView) {
+            guard !applying else { return }
+            reportSelection(textView)
+        }
 
         /// the caret comes here when the store asks for it, once the view is in a window; a view not yet in one
         /// takes it when it arrives (`didMoveToWindow`), and one on its way out leaves it to the view replacing it
-        func takeFocusIfAsked(_ view: UITextView) {
-            guard let store, store.focusRequest?.path == path, view.window != nil else { return }
-            sync(view)
-            guard store.focusRequest?.path == path else { return }
-            if !view.isFirstResponder, !view.becomeFirstResponder() { return }
-            // the request as it is now: text typed ahead may have moved it
-            guard let current = store.focusRequest, current.path == path else { return }
-            let length = view.attributedText.length
-            let location = min(current.range.location, length)
+        func takeFocusIfAsked(_ view: UITextView, attempt: Int = 0) {
+            // a request is taken once: until the store hears of it, later passes would put the caret back
+            guard let store, let current = store.focusRequest, current.path == path, current.id != taken, view.window != nil, let block,
+                  let model = store.block(path), EditorSchema.textBlocks.contains(model.type) else { return }
+            // this can run while SwiftUI updates its views: the view changes now, the store a moment later
+            let updated = EditorTextBlock(store: store, path: path, block: model, style: block.style, context: block.context, font: block.font,
+                                          editable: block.editable, matches: block.matches)
             applying = true
-            view.selectedRange = NSRange(location: location, length: min(current.range.length, length - location))
+            if !updated.same(view.attributedText) { view.attributedText = updated.styled() }
+            let became = view.isFirstResponder || view.becomeFirstResponder()
+            if became {
+                let length = view.attributedText.length
+                let location = min(current.range.location, length)
+                view.selectedRange = NSRange(location: location, length: min(current.range.length, length - location))
+            }
             applying = false
-            store.tookFocus(current)
-            reportSelection(view)
+            guard became else {
+                // UIKit can refuse while it is changing its views; the next turn of the run loop takes it
+                if attempt < 5 { DispatchQueue.main.async { [weak self] in self?.takeFocusIfAsked(view, attempt: attempt + 1) } }
+                return
+            }
+            taken = current.id
+            self.block = updated
+            DispatchQueue.main.async { [weak self] in
+                store.tookFocus(current)
+                self?.reportSelection(view)
+                self?.applyTypingAttributes(view)
+            }
         }
 
         func textViewDidEndEditing(_ textView: UITextView) {
             guard let store else { return }
+            let path = path
             // only what the store has not had yet: the view's text may be older than the store's by now
-            if unsent {
-                unsent = false
-                store.textChanged(path, textView.attributedText)
+            let pending = unsent ? NSAttributedString(attributedString: textView.attributedText) : nil
+            unsent = false
+            // the caret can leave while SwiftUI updates its views, so the store hears of it a moment later
+            DispatchQueue.main.async {
+                if let pending { store.textChanged(path, pending) }
+                store.blurred(path)
             }
-            store.blurred(path)
         }
 
         func reportSelection(_ textView: UITextView) {
@@ -272,10 +306,7 @@ final class BlockTextView: UITextView {
     override func didMoveToWindow() {
         super.didMoveToWindow()
         guard window != nil else { return }
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            self.owner?.takeFocusIfAsked(self)
-        }
+        owner?.takeFocusIfAsked(self)
     }
 
     private var store: EditorStore? { owner?.store }
@@ -284,7 +315,7 @@ final class BlockTextView: UITextView {
     override func deleteBackward() {
         if let store, store.caretLeaving(path), markedTextRange == nil { return }
         if markedTextRange == nil, selectedRange == NSRange(location: 0, length: 0), let store {
-            store.textChanged(path, attributedText)
+            owner?.pushUnsent(attributedText)
             store.backspaceAtStart(path)
             return
         }
@@ -386,7 +417,7 @@ final class BlockTextView: UITextView {
                 return
             }
         case .keyboardDeleteForward where selectedRange == NSRange(location: length, length: 0):
-            store.textChanged(path, attributedText)
+            owner?.pushUnsent(attributedText)
             store.deleteAtEnd(path)
             return
         default:
@@ -452,9 +483,7 @@ extension EditorTextBlock: NSViewRepresentable {
             coordinator.restyle(view)
         }
         if view.window?.firstResponder === view { coordinator.applyTypingAttributes(view) }
-        if store.focusRequest?.path == path {
-            DispatchQueue.main.async { coordinator.takeFocusIfAsked(view) }
-        }
+        if store.focusRequest?.path == path { coordinator.takeFocusIfAsked(view) }
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, nsView: BlockTextView, context: Context) -> CGSize? {
@@ -485,12 +514,19 @@ extension EditorTextBlock: NSViewRepresentable {
                 store.typeAhead(text)
                 return false
             }
+            if let store, let text, block?.plain == false, text.contains("\n"), !textView.hasMarkedText(), let storage = textView.textStorage {
+                store.insertLines(path, range, text, in: storage)
+                sync(textView)
+                return false
+            }
             inserted = text.flatMap { $0.utf16.count == 1 && range.length == 0 ? ($0, range.location) : nil }
             return true
         }
 
         /// composed text not yet given to the store
-        private var unsent = false
+        var unsent = false
+        /// the last focus request this view has carried out
+        var taken: Int?
 
         func textDidChange(_ notification: Notification) {
             guard !applying, let view = notification.object as? NSTextView, let store, let storage = view.textStorage else { return }
@@ -508,6 +544,12 @@ extension EditorTextBlock: NSViewRepresentable {
             }
             store.textChanged(path, storage)
             view.invalidateIntrinsicContentSize()
+        }
+
+        func pushUnsent(_ text: NSAttributedString) {
+            guard unsent, let store else { return }
+            unsent = false
+            store.textChanged(path, text)
         }
 
         /// the view takes the block's text from the store at once after an edit it asked for
@@ -540,31 +582,42 @@ extension EditorTextBlock: NSViewRepresentable {
         }
 
         func textDidBeginEditing(_ notification: Notification) {
-            if let view = notification.object as? NSTextView { reportSelection(view) }
+            guard !applying, let view = notification.object as? NSTextView else { return }
+            reportSelection(view)
         }
 
         func takeFocusIfAsked(_ view: NSTextView) {
-            guard let store, store.focusRequest?.path == path, let window = view.window else { return }
-            sync(view)
-            guard store.focusRequest?.path == path else { return }
-            if window.firstResponder !== view, !window.makeFirstResponder(view) { return }
-            guard let current = store.focusRequest, current.path == path else { return }
-            let length = view.textStorage?.length ?? 0
-            let location = min(current.range.location, length)
+            guard let store, let current = store.focusRequest, current.path == path, current.id != taken, let window = view.window, let block,
+                  let storage = view.textStorage, let model = store.block(path), EditorSchema.textBlocks.contains(model.type) else { return }
+            let updated = EditorTextBlock(store: store, path: path, block: model, style: block.style, context: block.context, font: block.font,
+                                          editable: block.editable, matches: block.matches)
             applying = true
-            view.setSelectedRange(NSRange(location: location, length: min(current.range.length, length - location)))
+            if !updated.same(storage) { storage.setAttributedString(updated.styled()) }
+            let became = window.firstResponder === view || window.makeFirstResponder(view)
+            if became {
+                let location = min(current.range.location, storage.length)
+                view.setSelectedRange(NSRange(location: location, length: min(current.range.length, storage.length - location)))
+            }
             applying = false
-            store.tookFocus(current)
-            reportSelection(view)
+            guard became else { return }
+            taken = current.id
+            self.block = updated
+            DispatchQueue.main.async { [weak self] in
+                store.tookFocus(current)
+                self?.reportSelection(view)
+                self?.applyTypingAttributes(view)
+            }
         }
 
         func textDidEndEditing(_ notification: Notification) {
             guard let view = notification.object as? NSTextView, let store, let storage = view.textStorage else { return }
-            if unsent {
-                unsent = false
-                store.textChanged(path, storage)
+            let path = path
+            let pending = unsent ? NSAttributedString(attributedString: storage) : nil
+            unsent = false
+            DispatchQueue.main.async {
+                if let pending { store.textChanged(path, pending) }
+                store.blurred(path)
             }
-            store.blurred(path)
         }
 
         func textView(_ textView: NSTextView, doCommandBy selector: Selector) -> Bool {
@@ -579,7 +632,7 @@ extension EditorTextBlock: NSViewRepresentable {
                     return true
                 }
                 textView.unmarkText()
-                store.textChanged(path, storage)
+                pushUnsent(storage)
                 defer { sync(textView) }
                 if shift {
                     store.hardBreak(path, range, storage)
@@ -593,11 +646,11 @@ extension EditorTextBlock: NSViewRepresentable {
                 store.hardBreak(path, range, storage)
                 return true
             case #selector(NSResponder.deleteBackward(_:)) where range == NSRange(location: 0, length: 0):
-                store.textChanged(path, storage)
+                pushUnsent(storage)
                 store.backspaceAtStart(path)
                 return true
             case #selector(NSResponder.deleteForward(_:)) where range == NSRange(location: length, length: 0):
-                store.textChanged(path, storage)
+                pushUnsent(storage)
                 store.deleteAtEnd(path)
                 return true
             case #selector(NSResponder.insertTab(_:)):
@@ -686,10 +739,7 @@ final class BlockTextView: NSTextView {
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         guard window != nil else { return }
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            self.owner?.takeFocusIfAsked(self)
-        }
+        owner?.takeFocusIfAsked(self)
     }
 
     override var intrinsicContentSize: NSSize {

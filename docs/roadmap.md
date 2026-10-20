@@ -36,7 +36,10 @@
 | 11d-2 | 페이지 머리, Markdown 원문 편집, 읽지 못한 페이지 알림(기록 창은 11d-5로) | 구현 (PR #18, `docs/verification/phase11d2-page-chrome.md`) |
 | 11d-3 | 데이터베이스 페이지 전체(보기 다섯 가지, 도구 막대, 속성·보기 설정, 값 편집). 다른 페이지 안의 데이터베이스와 행 속성 줄은 11d-5로 | 구현 (PR #19, `docs/verification/phase11d3-database-page.md`) |
 | 11d-4 | 캔버스 페이지 전체(노드 여섯 종류, 연결, 잉크, 그룹, 되돌리기, 확대). 다른 페이지 안의 캔버스는 11d-5로 | 구현 (PR #20, `docs/verification/phase11d4-canvas-page.md`) |
-| 11d-5 | 블록 편집기 | |
+| 11d-5 | 블록 편집기 | 5a~5c로 나눔(`.intent/spec_phase11d-native-screens.md`). 5c까지 실행 인자 `-nativeEditor YES`일 때만 |
+| 11d-5a | 편집기 모델(TipTap 정규화)과 글 블록: 문단·제목·목록·할 일·인용·코드·구분선, 마크 8종, 입력 규칙, 슬래시 메뉴, 서식·링크·찾기, 되돌리기 | 구현 (PR #21, `docs/verification/phase11d5a-text-editor.md`) |
+| 11d-5b | 페이지 링크·날짜·태그, 표, 콜아웃, 접기, 단, 목차, 블록 메뉴, Markdown 붙여넣기 | |
+| 11d-5c | 그림·첨부 파일, 수식, 원문 블록, 끼워 넣기, 행 속성 줄, 기록 창 | |
 | 11e | 웹 편집기·번들·node 빌드 제거 | |
 
 ## 전환 단계(11)에서 볼 것
