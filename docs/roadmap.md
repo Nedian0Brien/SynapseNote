@@ -39,7 +39,9 @@
 | 11d-5 | 블록 편집기 | 5a~5c로 나눔(`.intent/spec_phase11d-native-screens.md`). 5c까지 실행 인자 `-nativeEditor YES`일 때만 |
 | 11d-5a | 편집기 모델(TipTap 정규화)과 글 블록: 문단·제목·목록·할 일·인용·코드·구분선, 마크 8종, 입력 규칙, 슬래시 메뉴, 서식·링크·찾기, 되돌리기 | 구현 (PR #21, `docs/verification/phase11d5a-text-editor.md`) |
 | 11d-5b | 페이지 링크·날짜·태그, 표, 콜아웃, 접기, 단, 목차, 블록 메뉴, Markdown 붙여넣기 | 구현 (PR #22, `docs/verification/phase11d5b-editor-blocks.md`) |
-| 11d-5c | 그림·첨부 파일, 수식, 원문 블록, 끼워 넣기, 행 속성 줄, 기록 창 | |
+| 11d-5c | 5c-1·5c-2로 나눔(`.intent/spec_phase11d-native-screens.md`, 2026-10-21) | |
+| 11d-5c-1 | 그림·첨부 파일(소리·영상·PDF)·붙여넣기·끌어 놓기, 수식(KaTeX), 원문 블록, 코드 강조(lowlight), Mermaid | 구현 (`docs/verification/phase11d5c1-editor-media.md`) |
+| 11d-5c-2 | 페이지 끼워 넣기(데이터베이스·캔버스·페이지), 행 속성 줄, 기록 창, 네이티브 편집기를 기본으로 | |
 | 11e | 웹 편집기·번들·node 빌드 제거 | |
 
 ## 전환 단계(11)에서 볼 것
