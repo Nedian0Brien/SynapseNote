@@ -92,6 +92,11 @@ struct WorkspaceTests {
         #expect(json(.setDoc(id: "a", doc: doc)) == #"{"type":"page.setDoc","id":"a","doc":{"type":"doc","content":[{"type":"paragraph","content":[{"text":"b","type":"text"}]}]},"now":1000}"#)
         #expect(json(.setProperties(id: "r", values: JSObject([("p", "x")]))) == #"{"type":"page.setProperties","id":"r","values":{"p":"x"},"now":1000}"#)
         #expect(json(.createPage(id: "r", parentId: "db", title: "", properties: JSObject())) == #"{"type":"page.create","id":"r","parentId":"db","now":1000,"title":"","properties":{}}"#)
+        // operations.ts createPage: kind after title, then a canvas's document
+        #expect(json(.newPage(id: "n", parentId: "p", title: "Plan", kind: "page", database: nil, doc: nil))
+            == #"{"type":"page.create","id":"n","parentId":"p","now":1000,"title":"Plan","kind":"page"}"#)
+        #expect(json(.newPage(id: "c", parentId: "p", title: "", kind: "canvas", database: nil, doc: CanvasFile.canvasDoc(CanvasFile.emptyCanvas())))
+            .hasPrefix(#"{"type":"page.create","id":"c","parentId":"p","now":1000,"title":"","kind":"canvas","doc":{"#))
         #expect(json(.setDatabase(id: "db", database: DatabaseDef(properties: [], views: []))) == #"{"type":"database.set","id":"db","database":{"properties":[],"views":[]},"now":1000}"#)
         // and reach the page as text
         let message = EditorCommand.command(json: json(.rename(id: "a", title: "t"))).json
