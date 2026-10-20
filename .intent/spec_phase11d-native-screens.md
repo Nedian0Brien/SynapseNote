@@ -12,7 +12,10 @@
 | 11d-2 | 페이지 머리(커버·아이콘·제목·태그), Markdown 원문 편집, 읽지 못한 페이지 알림을 SwiftUI로. 기록 창은 판을 서식대로 그려야 해서 네이티브 읽기 전용 렌더링이 생기는 11d-5로 옮김(수정 2026-10-20) | iPad 화면, DEBUG 세션 비교 차이 0 |
 | 11d-3 | 데이터베이스 페이지 전체(머리, 표·보드·달력·목록·갤러리, 도구 막대, 속성·보기 설정, 값 편집). 다른 페이지 안에 든 데이터베이스와 행 페이지의 속성 줄은 편집기 페이지에 속해 11d-5에서 옮김(수정 2026-10-20) | 보기 계산은 11d-1 비교 자료로 확인됨. 편집 변환 단위 테스트, iPad 확인, DEBUG 세션 비교 차이 0 |
 | 11d-4 | 캔버스 페이지(노드·연결·그리기·보기 이동과 확대·되돌리기). 편집기 안에 든 캔버스는 11d-5에서 옮김(수정 2026-10-20) | `CanvasFile` 왕복은 앞 단계에서 확인됨. 편집 변환 단위 테스트, `strokePath` Morrow 비교, iPad 확인, DEBUG 세션 비교 차이 0 |
-| 11d-5 | 블록 편집기: 모든 `KNOWN_NODE_TYPES`·`KNOWN_MARK_TYPES` 표시와 편집, 슬래시 명령, 블록 손잡이, 붙여넣기, 찾기, 기록 창 | `markdown.json`·`markdown-fuzz.json`의 문서를 편집기 모델로 읽고 다시 꺼내면 입력과 같음, iPad·macOS 편집 |
+| 11d-5 | 블록 편집기. 셋으로 나눔(수정 2026-10-20). 호스트는 문서의 노드·마크 종류가 모두 네이티브 지원 목록에 있을 때만 네이티브 편집기를 고르고, 아니면 지금처럼 웹 편집기를 쓴다. 그래서 단계마다 앱이 온전하다 | 아래 11d-5a~c |
+| 11d-5a | 편집기 모델(TipTap 스키마대로 문서 정규화, 끝 문단 추가), 글 블록: 문단·제목·글머리표·번호·할 일 목록·인용·코드·구분선·줄바꿈과 마크 8종, 자리 표시 글, 입력 규칙(`# `, `- `, `1. `, `[ ] `, `> `, ```` ``` ````, `---`), 슬래시 명령(이 단계 블록), 서식 단축키와 링크 편집, 찾기, 되돌리기, 250ms 저장, 바깥 변경 반영, 맨 위에서 위 화살표로 제목, ⌘S | `markdown.json`·`markdown-fuzz.json`의 문서를 정규화한 결과가 TipTap(`getSchema` + `nodeFromJSON().toJSON()`)과 JSON으로 같음. 글 블록 ↔ 편집 텍스트 왕복이 입력과 같음. 편집 변환 단위 테스트·변형 확인. iPad·macOS 편집, 한글 조합 입력, DEBUG 세션 비교 차이 0 |
+| 11d-5b | 페이지 링크(`[[`)·날짜(`@`)·태그 표시, 표와 표 메뉴, 콜아웃, 접기, 단, 목차, 블록 손잡이와 블록 메뉴, Markdown 붙여넣기 | 같은 기준 |
+| 11d-5c | 그림·첨부 파일·끌어 놓기, 수식(인라인·블록), 원문 블록, 페이지 끼워 넣기(데이터베이스·캔버스·페이지), 행 페이지 속성 줄, 기록 창. 끝나면 모든 `KNOWN_NODE_TYPES`·`KNOWN_MARK_TYPES`가 네이티브 | 같은 기준. 수식 표시 방식은 이 단계 spec에서 문서 확인 후 정함 |
 
 11e에서 웹 편집기·번들·node 빌드를 없애고, 저장 시점을 Swift `SaveQueue` 타이머로 옮기고, 내보내기·게시·가져오기·백업을 11d-1 이식으로 돌린다.
 
@@ -20,7 +23,9 @@
 
 - 11a부터의 JS 규칙(UTF-16, 키 순서, 안정 정렬, `localeCompare`, 로캘 날짜)을 그대로 쓴다.
 - 화면 단계는 새 계산을 만들지 않고 11d-1 이식만 부른다.
-- 편집기 기술은 문서로 확인한 뒤 11d-5 spec에서 정한다(SwiftUI `TextEditor`와 `AttributedString`이 무엇을 지원하는지, 안 되면 블록마다 TextKit 2).
+- 편집기 기술(2026-10-20 확인): SwiftUI `TextEditor(text:selection:)`는 iOS·macOS 26에서 `AttributedString` 서식 편집을 하지만, 문서에 첨부물이나 글 안에 끼우는 뷰에 대한 설명이 없다([TextEditor](https://developer.apple.com/documentation/swiftui/texteditor)). 페이지 링크·날짜·수식은 글 안의 뷰여야 하므로 블록마다 TextKit 2 텍스트 뷰(`UITextView`·`NSTextView`)를 쓰고, 글 안 원자는 `NSTextAttachment`와 `NSTextAttachmentViewProvider`(iOS 15·macOS 12부터, [UIKit](https://developer.apple.com/documentation/uikit/nstextattachmentviewprovider), [AppKit](https://developer.apple.com/documentation/appkit/nstextattachmentviewprovider))로 그린다. 목록·인용·표·단 같은 구조는 SwiftUI 컨테이너다.
+- 문서(`DocNode`)가 유일한 기준이다. 편집은 `EditorEdits`의 순수 변환으로 문서를 바꾸고, Morrow처럼 문서 전체를 `page.setDoc`으로 보낸다.
+- Morrow와 다른 점(예정): 글 선택은 한 블록 안에서만 된다. 여러 블록 선택은 블록 손잡이로 한다(11d-5b). 되돌리기는 페이지 단위 기록(문서 상태)으로 한다.
 
 ## 범위 밖
 
