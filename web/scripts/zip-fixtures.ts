@@ -1,9 +1,10 @@
 // writes archives made by fflate, as Morrow makes its exports and reads its imports (zipSync, unzipSync), with
-// what is in them, for the Swift zip to read. run: npm run zip-fixtures, which writes
-// ../App/Tests/Fixtures/core/expected/zip.json
+// what is in them, for the Swift zip to read; and formulas as Morrow's publishSite renders them with KaTeX.
+// run: npm run zip-fixtures, which writes ../App/Tests/Fixtures/core/expected/zip.json and katex.json
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { strToU8, zipSync } from 'fflate';
+import katex from 'katex';
 
 const out = process.argv[2];
 if (!out) throw new Error('usage: zip-fixtures <fixtures dir>');
@@ -31,6 +32,26 @@ writeFileSync(
       archives: archives.map((archive) => ({ name: archive.name, zip: base64(archive.data) })),
       entries: Object.fromEntries(Object.entries(entries).map(([name, data]) => [name, base64(data)])),
     },
+    null,
+    1,
+  )}\n`,
+);
+
+const formulas: Array<[string, boolean]> = [
+  ['x^2 + \\frac{a}{b}', false],
+  ['\\int_0^1 x\\,dx', true],
+  ['\\begin{aligned} a &= b \\\\ c &= d \\end{aligned}', true],
+  ['\\dfrac{1}{2}', false],
+  ['\\badcommand{x}', false],
+];
+writeFileSync(
+  path.join(out, 'expected', 'katex.json'),
+  `${JSON.stringify(
+    formulas.map(([latex, display]) => ({
+      latex,
+      display,
+      html: katex.renderToString(latex, { output: 'mathml', displayMode: display, throwOnError: false }),
+    })),
     null,
     1,
   )}\n`,

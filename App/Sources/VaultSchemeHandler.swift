@@ -18,6 +18,11 @@ nonisolated final class VaultAccess: @unchecked Sendable {
 nonisolated struct VaultSchemeHandler: URLSchemeHandler {
     static let scheme = "synapse-vault"
 
+    /// the URL a vault file is served at, as the editor's `fileUrl` makes it (encodePathForUrl)
+    static func url(for path: String) -> URL? {
+        URL(string: "\(scheme)://vault/\(Paths.encodePathForUrl(path))")
+    }
+
     let access: VaultAccess
 
     enum Failure: Error, Equatable {

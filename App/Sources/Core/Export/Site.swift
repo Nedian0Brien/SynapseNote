@@ -385,6 +385,44 @@ nonisolated enum Site {
         return "<div class=\"cards\">\(cards)</div>"
     }
 
+    /// one page as a published page shows it, without the site's navigation, for printing to PDF: its icon
+    /// and title, tags and content, then its subpages and the pages linking to it are left out. Pictures are
+    /// read from the vault through `assetPath`.
+    static func printPage(_ state: WorkspaceState, _ id: String, assetPath: @escaping (String) -> String, now: Double = JSEnvironment.now()) -> String? {
+        guard let page = state.pages[id] else { return nil }
+        let context = RenderContext(href: { _ in nil }, assetPath: assetPath, titleOf: { state.pages[$0].map(Model.displayTitle) },
+                                    renderMath: Katex.mathML)
+        let doc = state.docs[id]
+        let main: String
+        if page.kind == .database, page.database != nil {
+            main = databaseHtml(state, page, context, now: now)
+        } else if let doc {
+            main = docToHtml(doc, context)
+        } else {
+            main = ""
+        }
+        let tags = page.tags.isEmpty ? "" : "<p class=\"tags\">" + page.tags.map { "<span>#\(escape($0))</span>" }.joined(separator: " ") + "</p>"
+        let icon = page.icon.flatMap { $0.isEmpty ? nil : "<span class=\"icon\">\(escape($0))</span> " } ?? ""
+        return """
+            <!doctype html>
+            <html lang="en">
+            <head>
+            <meta charset="utf-8">
+            <meta name="color-scheme" content="light">
+            <title>\(escape(Model.displayTitle(page)))</title>
+            <style>\(siteCSS)
+            :root{color-scheme:light;--bg:#fff;--text:#22201c;--muted:#6b665d;--line:#e6e2d9;--accent:#b04f29;--soft:rgba(192,88,47,.1);--code:#f1eee8}
+            body{display:block;background:#fff}main{max-width:none;padding:0}img{max-width:100%}
+            </style>
+            </head>
+            <body><main><article>
+            <h1>\(icon)\(escape(Model.displayTitle(page)))</h1>
+            \(tags)\(main)
+            </article></main></body>
+            </html>
+            """
+    }
+
     static let siteCSS = """
         :root{color-scheme:light dark;--bg:#fbfaf7;--text:#22201c;--muted:#6b665d;--line:#e6e2d9;--accent:#b04f29;--soft:rgba(192,88,47,.1);--code:#f1eee8}
         @media (prefers-color-scheme:dark){:root{--bg:#1b1a18;--text:#e9e5dd;--muted:#a49e93;--line:#2f2d2a;--accent:#e27d50;--soft:rgba(226,125,80,.15);--code:#262421}}

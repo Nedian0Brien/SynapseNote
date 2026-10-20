@@ -86,6 +86,13 @@ final class EditorController: WorkspaceService {
     private(set) var ownToasts: [EditorToast] = []
     /// what the buttons of this side's toasts do, by toast id
     @ObservationIgnored private var ownToastActions: [Int: () -> Void] = [:]
+    /// what the file picker is open for, and whether it is up (kept apart: SwiftUI clears the binding before
+    /// the picked files arrive)
+    var filePick: FilePickPurpose?
+    var pickingFiles = false
+    /// the newest page change the last automatic backup held (Morrow's lastAutoBackup)
+    @ObservationIgnored var lastAutoBackup = 0.0
+    @ObservationIgnored var autoBackupTimer: Task<Void, Never>?
     var allToasts: [EditorToast] { toasts + ownToasts }
     /// A file waiting for the person to say where it goes.
     var exportFile: ExportFile?
@@ -346,6 +353,8 @@ final class EditorController: WorkspaceService {
     }
 
     private func close() {
+        autoBackupTimer?.cancel()
+        autoBackupTimer = nil
         watcher?.stop()
         watcher = nil
         if let host {
@@ -458,18 +467,6 @@ final class EditorController: WorkspaceService {
     }
 
     /// Morrow's images and files summary: how many files the vault holds, their size, and how many nothing uses.
-    func filesSummary() async -> FilesSummary? {
-        guard isPageReady, phase == .ready else { return nil }
-        do {
-            let answer = try await page.callJavaScript("return await window.synapse.files()")
-            guard let text = answer as? String else { return nil }
-            return try JSONDecoder().decode(FilesSummary.self, from: Data(text.utf8))
-        } catch {
-            logger.error("files summary failed: \(error.localizedDescription, privacy: .public)")
-            return nil
-        }
-    }
-
     /// The open vault's folder, for the settings.
     var vaultURL: URL? { opened?.url }
 
@@ -676,35 +673,9 @@ final class EditorController: WorkspaceService {
 
     // MARK: data
 
-    /// The page as Markdown, a zip with its attachments when it has any.
-    func exportMarkdown(_ pageId: String) {
-        send(.exportMarkdown(pageId: pageId))
-    }
-
-    /// The whole vault as a website when `pageId` is nil, otherwise the page and the pages inside it.
-    func publish(_ pageId: String?) {
-        send(.publish(pageId: pageId))
-    }
-
+    /// Morrow's exportAllMarkdown, see Operations/DataOperations.swift.
     func exportAll() {
-        send(.exportAll)
-    }
-
-    func backup() {
-        send(.backup)
-    }
-
-    func restoreBackup() {
-        send(.restore)
-    }
-
-    /// Markdown and zip files made into pages inside `parentId`, at the top level when it is nil.
-    func importMarkdown(into parentId: String? = nil) {
-        send(.importMarkdown(parentId: parentId))
-    }
-
-    func deleteUnusedFiles() {
-        send(.deleteUnusedFiles)
+        exportAllMarkdown()
     }
 
     /// Shows a page as its Markdown source, or every page in the editor again with nil. What is typed in the
@@ -857,36 +828,20 @@ final class EditorController: WorkspaceService {
         }
     }
 
-    /// The page printed to a PDF on A4 paper, as Morrow's desktop app does. Canvases are not printed.
+    /// The page printed to a PDF on A4 paper. Morrow's desktop app prints the editor; the app prints the page as
+    /// Morrow's published site shows it (Site.printPage), formulas as MathML. Canvases are not printed.
     func exportPDF(_ pageId: String) {
         guard !exportingPDF, let info = workspace.infos[pageId], info.kind != "canvas" else { return }
-        if selection != pageId { go(to: .page(pageId)) }
         exportingPDF = true
-        // the page prints as Morrow prints it, from the web editor; a page the native editor shows is drawn there
-        // for the print and given back after (until 11e makes the printed page in Swift)
-        let native = nativeEditorPage == pageId
-        if native { send(.nativeEditor(pageId: nil)) }
         Task {
-            defer {
-                exportingPDF = false
-                if native, nativeEditorPage == pageId { send(.nativeEditor(pageId: pageId)) }
-            }
-            if native {
-                for _ in 0..<50 {
-                    let drawn = try? await page.callJavaScript("return document.querySelector('.view .page .ProseMirror') !== null")
-                    if drawn as? Bool == true { break }
-                    try? await Task.sleep(for: .milliseconds(100))
-                }
-            }
-            // pictures and diagrams get a moment to finish drawing, as in morrow
-            try? await Task.sleep(for: .milliseconds(400))
+            defer { exportingPDF = false }
             do {
-                let answer = try await page.callJavaScript("return window.synapse.pdfSnapshot(id)", arguments: ["id": pageId])
-                guard let snapshot = try WorkspaceQuery.decode(answer, as: PDFExporter.Snapshot.self) else {
+                guard let state = await host?.workspace()?.state,
+                      let html = Site.printPage(state, pageId, assetPath: { VaultSchemeHandler.url(for: $0)?.absoluteString ?? "" }) else {
                     throw PDFExporter.Failure.notLoaded
                 }
-                let data = try await PDFExporter(editorRoot: editorRoot, access: access).pdf(of: snapshot)
-                exportFile = ExportFile(name: "\(ExportFile.safeName(snapshot.title)).pdf", data: data) { name in "Saved \(name)." }
+                let data = try await PDFExporter(editorRoot: editorRoot, access: access).pdf(html: html)
+                exportFile = ExportFile(name: "\(ExportFile.safeName(info.displayTitle)).pdf", data: data) { name in "Saved \(name)." }
             } catch {
                 logger.error("pdf failed: \(error.localizedDescription, privacy: .public)")
                 showToast("Could not export the PDF: \(error.localizedDescription)", error: true)
@@ -1079,7 +1034,23 @@ final class EditorController: WorkspaceService {
             }
         }
         guard let host else { return saved }
-        return await host.flushAlone() && saved
+        let done = await host.flushAlone() && saved
+        // as Morrow's flush, an automatic backup before the app closes
+        await autoBackup()
+        return done
+    }
+
+    /// Morrow's startAutoBackup: half a minute after the vault opens, then every ten minutes
+    private func startAutoBackup() {
+        autoBackupTimer?.cancel()
+        lastAutoBackup = 0
+        autoBackupTimer = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(30))
+            while !Task.isCancelled {
+                await self?.autoBackup()
+                try? await Task.sleep(for: .seconds(10 * 60))
+            }
+        }
     }
 
     func handle(_ event: EditorEvent) {
@@ -1124,6 +1095,7 @@ final class EditorController: WorkspaceService {
                 phase = .ready
                 logger.info("vault opened with \(pages.count) pages")
                 host?.webIsReady()
+                startAutoBackup()
                 settleActiveTab()
                 if let peerId = syncWhenOpen {
                     syncWhenOpen = nil
@@ -1180,18 +1152,9 @@ final class EditorController: WorkspaceService {
             host?.externalAccepted(id: id, accepted: accepted)
         case .reviewLog(let json):
             host?.setReviewLog(json: json)
-        case .autoBackup(let json):
-            #if os(macOS)
-            // morrow keeps automatic backups on the desktop only
-            Task {
-                let failure = await Task.detached { () -> String? in
-                    do { try AutoBackup.write(json); return nil } catch { return error.localizedDescription }
-                }.value
-                if let failure { showToast("Automatic backup failed: \(failure)", error: true) }
-            }
-            #else
-            _ = json
-            #endif
+        case .autoBackup:
+            // the app writes its own automatic backups (DataOperations.autoBackup)
+            break
         }
     }
 

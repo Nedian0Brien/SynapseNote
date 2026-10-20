@@ -166,6 +166,20 @@ nonisolated extension Doc {
         return lines.joined(separator: "\n")
     }
 
+    /// `remapFileIds`: pictures and attachments pointed at the stored file ids that replaced the ones they had
+    nonisolated static func remapFileIds(_ doc: DocNode, _ ids: JSMap<String>) -> DocNode {
+        if ids.isEmpty { return doc }
+        func visit(_ node: DocNode) -> DocNode {
+            var next = node
+            if node.type == "image" || node.type == "fileAttachment", case .string(let old) = node.attr("fileId"), let id = ids[old] {
+                next.attrs = node.attrs?.with("fileId", .string(id))
+            }
+            if let content = next.content { next.content = content.map(visit) }
+            return next
+        }
+        return visit(doc)
+    }
+
     /// every stored file a document points at, through images and attachments
     nonisolated static func fileIdsInDoc(_ doc: DocNode) -> [String] {
         var ids = JSSet()

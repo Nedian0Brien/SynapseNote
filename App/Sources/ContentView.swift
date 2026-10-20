@@ -89,6 +89,11 @@ struct ContentView: View {
                 }
             }
         }
+        // the files Morrow's restore and import ask for (Operations/DataOperations.swift)
+        .fileImporter(isPresented: $controller.pickingFiles, allowedContentTypes: controller.filePick?.types ?? [.item],
+                      allowsMultipleSelection: controller.filePick?.multiple ?? false) { result in
+            if case .success(let urls) = result { controller.picked(urls) } else { controller.filePick = nil }
+        }
         .sheet(isPresented: Binding(get: { controller.historyPage != nil }, set: { if !$0 { controller.historyPage = nil } })) {
             if let pageId = controller.historyPage, let page = controller.workspace.infos[pageId] {
                 HistorySheet(controller: controller, page: page)

@@ -61,7 +61,16 @@ final class PDFExporter: NSObject, WKNavigationDelegate {
             .replacingOccurrences(of: ">", with: "&gt;")
     }
 
+    /// a page of HTML made by the app, printed with only the vault's files to read
+    func pdf(html: String) async throws -> Data {
+        try await pdf(document: html, baseURL: nil)
+    }
+
     func pdf(of snapshot: Snapshot) async throws -> Data {
+        try await pdf(document: Self.html(for: snapshot), baseURL: EditorSchemeHandler.entry)
+    }
+
+    private func pdf(document: String, baseURL: URL?) async throws -> Data {
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
         // backgrounds print, as Electron's printBackground does for Morrow: checkbox ticks and callouts are drawn with them
@@ -75,7 +84,7 @@ final class PDFExporter: NSObject, WKNavigationDelegate {
         webView.navigationDelegate = self
         let finished = await withCheckedContinuation { continuation in
             loaded = continuation
-            webView.loadHTMLString(Self.html(for: snapshot), baseURL: EditorSchemeHandler.entry)
+            webView.loadHTMLString(document, baseURL: baseURL)
         }
         guard finished else { throw Failure.notLoaded }
         // fonts load when text first needs them and pictures load on their own; both are waited for
