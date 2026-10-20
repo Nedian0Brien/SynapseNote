@@ -48,7 +48,6 @@ import { useUi } from '../vendor/morrow/src/app/ui';
 import { getSession, run, runAll, setSession, useWorkspace } from '../vendor/morrow/src/app/workspace';
 import { listen, post } from './bridge';
 import type { Theme, ToastMessage, ViewPreferences } from './bridge';
-import { CanvasPage } from './CanvasPage';
 import { EditorApp, linkSelection } from './EditorApp';
 import type { FindRequest } from './EditorApp';
 import * as queries from './queries';
@@ -390,8 +389,8 @@ function Page({ pageId, find }: { pageId: PageId; find: FindRequest | null }) {
     run({ type: 'page.markOpened', id: pageId, now: Date.now() });
   }, [pageId]);
   if (!page || isEffectivelyTrashed(state.pages, pageId)) return <Empty />;
-  if (page.kind === 'canvas')
-    return doc ? <CanvasPage page={page} doc={doc} unreadable={getSession().unreadable.has(pageId)} /> : <Empty />;
+  // the app draws a canvas page itself (App/Sources/Canvas)
+  if (page.kind === 'canvas') return <Empty />;
   // the app draws a database page itself (App/Sources/Database)
   if (page.kind === 'database') return <Empty />;
   // in morrow's order: a page that could not be read, the markdown source of a text page, then content this

@@ -397,9 +397,9 @@ nonisolated final class SessionHost: @unchecked Sendable {
     /// draws an empty page in the same cases. A locked page is `.web` here, the app asks for its password.
     func screen(of id: String, sourceMode: Bool) async -> PageScreen {
         await run(writes: false) { [self] in
-            guard let session, let page = session.state.pages[id], !Tree.isEffectivelyTrashed(session.state.pages, id),
-                  page.kind != .canvas
+            guard let session, let page = session.state.pages[id], !Tree.isEffectivelyTrashed(session.state.pages, id)
             else { return .web }
+            if page.kind == .canvas { return .canvas(unreadable: session.unreadable.has(id)) }
             // Morrow's PageView, in its order: a database is editable unless its folder note could not be read
             if page.kind == .database { return .database(editable: !session.unreadable.has(id)) }
             if session.unreadable.has(id) { return page.encrypted ? .web : .unreadable }
@@ -480,11 +480,28 @@ nonisolated final class SessionHost: @unchecked Sendable {
         }
     }
 
+    /// The canvas screen's data: the canvas as Morrow reads it from the page's document, and the pages its page
+    /// cards show. Nil when the page is not a canvas.
+    func canvas(_ id: String) async -> CanvasSnapshot? {
+        await run(writes: false) { [self] in
+            guard let session, let page = session.state.pages[id], page.kind == .canvas else { return nil }
+            let doc = session.state.docs[id]
+            let data = CanvasFile.canvasFromDoc(doc)
+            var pages: [String: CanvasSnapshot.PageCard] = [:]
+            for pageId in CanvasFile.pagesInCanvas(data) {
+                guard let shown = session.state.pages[pageId] else { continue }
+                pages[pageId] = .init(title: Model.displayTitle(shown), icon: shown.icon,
+                                      snippet: CanvasEdits.pageSnippet(session.state.docs[pageId]))
+            }
+            return CanvasSnapshot(doc: doc, data: data, pages: pages)
+        }
+    }
+
     /// RelationPicker's search: pages by title, not the row itself
-    func findPages(_ query: String, excluding rowId: String) async -> [DatabaseSnapshot.RelatedPage] {
+    func findPages(_ query: String, excluding rowId: String, limit: Int = 12) async -> [DatabaseSnapshot.RelatedPage] {
         await run(writes: false) { [self] in
             guard let session else { return [] }
-            return Search.findPagesByTitle(session.state, query, limit: 12)
+            return Search.findPagesByTitle(session.state, query, limit: limit)
                 .filter { !$0.id.jsEquals(rowId) }
                 .map { .init(id: $0.id, title: Model.displayTitle($0)) }
         }

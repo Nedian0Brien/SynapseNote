@@ -79,6 +79,7 @@ final class EditorController: WorkspaceService {
     private(set) var sourceMode: String?
     /// What is typed in the page shown as its source, saved before anything leaves it.
     @ObservationIgnored private var sourceDraft: SourceDraft?
+    @ObservationIgnored private var waitingSaves: [String: @MainActor () async -> Void] = [:]
     /// Morrow's toasts as the editor page reports them.
     private(set) var toasts: [EditorToast] = []
     /// Toasts from this side, such as a PDF that could not be made; negative ids keep them apart.
@@ -706,9 +707,25 @@ final class EditorController: WorkspaceService {
         return await host.database(pageId)
     }
 
-    func findPages(_ query: String, excluding rowId: String) async -> [DatabaseSnapshot.RelatedPage] {
-        await host?.findPages(query, excluding: rowId) ?? []
+    func findPages(_ query: String, excluding rowId: String, limit: Int = 12) async -> [DatabaseSnapshot.RelatedPage] {
+        await host?.findPages(query, excluding: rowId, limit: limit) ?? []
     }
+
+    /// The canvas screen's data from the session.
+    func canvasSnapshot(_ pageId: String) async -> CanvasSnapshot? {
+        guard phase == .ready, let host else { return nil }
+        return await host.canvas(pageId)
+    }
+
+    /// A page's whole document from a native screen, returned once the page has applied it, so a save that
+    /// follows includes it.
+    func setDoc(_ pageId: String, _ doc: DocNode) async {
+        await deliver(.command(json: JSJSON.stringify(WorkspaceCommand.setDoc(id: pageId, doc: doc).morrow())))
+    }
+
+    /// Screens with changes waiting to be saved, such as a canvas; each is saved before the vault is.
+    func holdSave(_ key: String, _ flush: @escaping @MainActor () async -> Void) { waitingSaves[key] = flush }
+    func releaseSave(_ key: String) { waitingSaves[key] = nil }
 
     /// The page's Markdown source as typed so far, opened from the session's copy of the page when it is new.
     func sourceDraft(for pageId: String) async -> SourceDraft? {
@@ -965,6 +982,7 @@ final class EditorController: WorkspaceService {
     @discardableResult
     func flush() async -> Bool {
         await sourceDraft?.flush()
+        for flush in waitingSaves.values { await flush() }
         var saved = true
         if isPageReady, phase == .ready {
             do {

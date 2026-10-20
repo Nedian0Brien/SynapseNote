@@ -162,6 +162,36 @@ struct SessionHostTests {
         await host.close()
     }
 
+    /// the canvas screen (11d-4): chosen for a canvas page, its data and page cards, and its file written back
+    @Test func readsAndWritesACanvasForItsScreen() async throws {
+        let board = #"{"nodes":[{"id":"t","type":"text","text":"hi","x":0,"y":0,"width":250,"height":60},{"id":"p","type":"file","file":"Home.md","x":300,"y":0,"width":400,"height":240}],"edges":[]}"#
+        let root = try folder(["Home.md": "Home text\n", "Board.canvas": board, "Bad.canvas": "{not json"])
+        let host = host(root, Page())
+        let opened = try json(await call(host, "open"))
+        let ids = JSObject((opened["pages"]?.array ?? []).map { ($0["title"]!.string!, $0["id"]!) })
+        let boardId = try #require(ids["Board"]?.string)
+        let home = try #require(ids["Home"]?.string)
+        #expect(await host.screen(of: boardId, sourceMode: true) == .canvas(unreadable: false))
+        #expect(await host.screen(of: try #require(ids["Bad"]?.string), sourceMode: false) == .canvas(unreadable: true))
+
+        let snapshot = try #require(await host.canvas(boardId))
+        #expect(snapshot.data.nodes.map(CanvasEdits.id) == ["t", "p"])
+        #expect(snapshot.data.nodes[1]["pageId"] == .string(home))
+        #expect(snapshot.pages[home] == .init(title: "Home", icon: nil, snippet: "Home text"))
+        #expect(await host.canvas(home) == nil)
+
+        // a card added on the screen reaches the file, pages written as their file
+        var data = snapshot.data
+        data = CanvasEdits.add(data, CanvasEdits.textCard(at: .init(x: 125, y: 130), id: "n"))
+        host.apply(commandsJSON: JSJSON.stringify(["commands": [WorkspaceCommand.setDoc(id: boardId, doc: CanvasFile.canvasDoc(data)).morrow(now: 7)], "all": false]))
+        _ = try json(await call(host, "flush"))
+        let written = try #require(text(root, "Board.canvas"))
+        #expect(written.hasPrefix("{\n\t\"nodes\": ["))
+        #expect(written.contains(#""type": "file",\#n\#t\#t\#t"file": "Home.md""#))
+        #expect(written.contains(#""id": "n""#))
+        await host.close()
+    }
+
     @Test func aNewVaultGetsTheGuideOnce() async throws {
         let root = try folder([:])
         let host = host(root, Page())

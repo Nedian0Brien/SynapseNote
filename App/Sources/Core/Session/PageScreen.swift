@@ -12,6 +12,23 @@ nonisolated enum PageScreen: Equatable, Sendable {
     case source
     /// A database and its views; not editable when its folder note could not be read.
     case database(editable: Bool)
+    /// A canvas, or the notice that its file could not be read.
+    case canvas(unreadable: Bool)
+}
+
+/// What the canvas screen shows, read from the Swift session (`SessionHost.canvas(_:)`).
+nonisolated struct CanvasSnapshot: Sendable {
+    /// the page's document, to tell an outside change from the canvas's own saves
+    var doc: DocNode?
+    var data: CanvasFile.Data
+    /// the pages the canvas shows as cards, by page id; a page missing here no longer exists
+    var pages: [String: PageCard]
+
+    nonisolated struct PageCard: Equatable, Sendable {
+        var title: String
+        var icon: String?
+        var snippet: String
+    }
 }
 
 /// What the database screen shows, read from the Swift session in one go (`SessionHost.database(_:)`).
