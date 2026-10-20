@@ -119,6 +119,49 @@ struct SessionHostTests {
         await host.close()
     }
 
+    /// the database screen (11d-3): chosen for a database page, and its data read in one go
+    @Test func readsADatabaseForItsScreen() async throws {
+        let root = try folder(["Home.md": "Home\n"])
+        let host = host(root, Page())
+        _ = try json(await call(host, "open"))
+        let database = DatabaseDef(properties: [
+            PropDef(id: "rel", name: "Related", type: "relation", options: []),
+            PropDef(id: "status", name: "Status", type: "select", options: [SelectOption(id: "todo", name: "To do", color: "gray")]),
+        ], views: [ViewDef(id: "v", name: "Table", type: "table", filters: [], sorts: [], groupBy: nil, dateProp: nil, hidden: [])])
+        let doc: JSValue = ["type": "doc", "content": [
+            ["type": "image", "attrs": ["fileId": "attachments/a.png"]],
+            ["type": "taskList", "content": [["type": "taskItem", "attrs": ["checked": true]], ["type": "taskItem", "attrs": ["checked": false]]]],
+        ]]
+        let commands: [JSValue] = [
+            WorkspaceCommand.createPage(id: "db", parentId: nil, title: "Tasks", properties: JSObject()).morrow(now: 1),
+            WorkspaceCommand.setDatabase(id: "db", database: database).morrow(now: 2),
+            WorkspaceCommand.createPage(id: "r1", parentId: "db", title: "One", properties: JSObject([("rel", .array(["home", "Nowhere"]))])).morrow(now: 3),
+            WorkspaceCommand.createPage(id: "r2", parentId: "db", title: "Two", properties: JSObject()).morrow(now: 4),
+            WorkspaceCommand.setDoc(id: "r1", doc: doc.object!).morrow(now: 5),
+            WorkspaceCommand.setProperties(id: "r2", values: JSObject([("status", "todo")])).morrow(now: 6),
+        ]
+        var kinded = commands
+        // a database page is made with its kind, as Morrow's createPage makes one
+        kinded[0] = ["type": "page.create", "id": "db", "parentId": nil, "now": 1, "title": "Tasks", "kind": "database"]
+        host.apply(commandsJSON: JSJSON.stringify(["commands": .array(kinded), "all": true]))
+
+        #expect(await host.screen(of: "db", sourceMode: true) == .database(editable: true))
+        let snapshot = try #require(await host.database("db"))
+        #expect(snapshot.database == database)
+        #expect(snapshot.rows.map(\.id) == ["r1", "r2"])
+        #expect(snapshot.rows[1].properties["status"] == "todo")
+        #expect(snapshot.firstImages == ["r1": "attachments/a.png"])
+        #expect(snapshot.progress["r1"]?.done == 1 && snapshot.progress["r1"]?.total == 2)
+        #expect(snapshot.progress["r2"]?.total == 0)
+        let home = try #require(snapshot.relations["home"])
+        #expect(home.title == "Home")
+        #expect(snapshot.relations["Nowhere"] == nil)
+        #expect(await host.database("r1") == nil)
+        #expect(await host.findPages("ho", excluding: "r1").map(\.title) == ["Home"])
+        #expect(await host.findPages("one", excluding: "r1").isEmpty)
+        await host.close()
+    }
+
     @Test func aNewVaultGetsTheGuideOnce() async throws {
         let root = try folder([:])
         let host = host(root, Page())

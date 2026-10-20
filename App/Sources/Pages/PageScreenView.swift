@@ -32,6 +32,8 @@ struct PageScreenView: View {
                 PageNoticeView(controller: controller, page: page, unreadable: false,
                                text: "This page contains content SynapseNote does not know yet (\(types.joined(separator: ", "))). It is shown as plain text and protected from changes so nothing is lost.",
                                plain: plain)
+            case .database(let editable):
+                DatabaseScreenView(controller: controller, page: page, editable: editable)
             case .source, .web:
                 SourcePageView(controller: controller, page: page)
             }

@@ -90,6 +90,12 @@ describe('parseInbound', () => {
     // a document's keys come through in the order they were sent
     const parsed = parseInbound({ type: 'command', json: '{"type":"page.setDoc","id":"a","doc":{"type":"doc","content":[]},"now":1}' });
     expect(parsed && parsed.type === 'command' && Object.keys(parsed.command)).toEqual(['type', 'id', 'doc', 'now']);
+    // commands applied together come as one array, every one with a type
+    const both = [command, { type: 'page.rename', id: 'a', title: 'b', now: 1 }];
+    expect(parseInbound({ type: 'commands', json: JSON.stringify(both) })).toEqual({ type: 'commands', commands: both });
+    expect(parseInbound({ type: 'commands', json: '[]' })).toBeNull();
+    expect(parseInbound({ type: 'commands', json: '[{"id":"a"}]' })).toBeNull();
+    expect(parseInbound({ type: 'commands', json: '{"type":"page.rename"}' })).toBeNull();
   });
 
   it('accepts heading and find requests for the open page', () => {

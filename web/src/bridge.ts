@@ -37,6 +37,8 @@ export type InboundMessage =
   // a morrow Command from a native screen, checked by morrow's applyCommand like any other; it arrives as JSON
   // text so a document's keys keep the order the app's session gave them
   | { type: 'command'; command: Command }
+  // commands that only make sense together, applied all or none with morrow's runAll
+  | { type: 'commands'; commands: Command[] }
   | { type: 'theme'; theme: Theme }
   // the open page's top level heading at this position is scrolled into view
   | { type: 'scrollToHeading'; index: number }
@@ -211,6 +213,20 @@ export function parseInbound(value: unknown): InboundMessage | null {
     }
     case 'trashPage':
       return isId(value.pageId) ? { type: 'trashPage', pageId: value.pageId } : null;
+    case 'commands': {
+      if (typeof value.json !== 'string') return null;
+      let commands: unknown;
+      try {
+        commands = JSON.parse(value.json);
+      } catch {
+        return null;
+      }
+      return Array.isArray(commands) &&
+        commands.length > 0 &&
+        commands.every((command) => isRecord(command) && typeof command.type === 'string')
+        ? { type: 'commands', commands: commands as unknown as Command[] }
+        : null;
+    }
     case 'command': {
       // the shape is checked by morrow's applyCommand, this only makes sure there is a command to check
       if (typeof value.json !== 'string') return null;

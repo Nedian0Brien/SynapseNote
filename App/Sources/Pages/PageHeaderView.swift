@@ -7,6 +7,8 @@ struct PageHeaderView: View {
     let controller: EditorController
     let page: PageInfo
     let editable: Bool
+    /// a database page has no tags field, as in Morrow's PageView
+    var showsTags = true
     /// return or arrow down at the end of the title, to move into the page below it
     var onEnter: () -> Void = {}
     @State private var choosingCover = false
@@ -53,7 +55,7 @@ struct PageHeaderView: View {
                 .padding(.top, 8)
             }
             PageTitleField(controller: controller, page: page, editable: editable, onEnter: onEnter)
-            PageTagsView(controller: controller, page: page, editable: editable)
+            if showsTags { PageTagsView(controller: controller, page: page, editable: editable) }
         }
     }
 }

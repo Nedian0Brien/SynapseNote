@@ -529,6 +529,14 @@ final class EditorController: WorkspaceService {
         if case .move(_, let parent?, _) = command { expanded.insert(parent) }
     }
 
+    /// Commands that only make sense together, such as a property's new type and every row's converted value:
+    /// the page applies all of them or none.
+    func performAll(_ commands: [WorkspaceCommand]) {
+        guard !commands.isEmpty else { return }
+        let now = JSEnvironment.now()
+        send(.commands(json: JSJSON.stringify(.array(commands.map { $0.morrow(now: now) }))))
+    }
+
     func createPage(parent: String? = nil) {
         if let parent { expanded.insert(parent) }
         send(.createPage(parentId: parent))
@@ -690,6 +698,16 @@ final class EditorController: WorkspaceService {
     func pageScreen(_ pageId: String) async -> PageScreen {
         guard phase == .ready, let host else { return .web }
         return await host.screen(of: pageId, sourceMode: sourceMode == pageId)
+    }
+
+    /// The database screen's data from the session.
+    func databaseSnapshot(_ pageId: String) async -> DatabaseSnapshot? {
+        guard phase == .ready, let host else { return nil }
+        return await host.database(pageId)
+    }
+
+    func findPages(_ query: String, excluding rowId: String) async -> [DatabaseSnapshot.RelatedPage] {
+        await host?.findPages(query, excluding: rowId) ?? []
     }
 
     /// The page's Markdown source as typed so far, opened from the session's copy of the page when it is new.

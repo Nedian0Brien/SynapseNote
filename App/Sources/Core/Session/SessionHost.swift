@@ -398,11 +398,12 @@ nonisolated final class SessionHost: @unchecked Sendable {
     func screen(of id: String, sourceMode: Bool) async -> PageScreen {
         await run(writes: false) { [self] in
             guard let session, let page = session.state.pages[id], !Tree.isEffectivelyTrashed(session.state.pages, id),
-                  page.kind == .page
+                  page.kind != .canvas
             else { return .web }
-            // Morrow's PageView, in its order
+            // Morrow's PageView, in its order: a database is editable unless its folder note could not be read
+            if page.kind == .database { return .database(editable: !session.unreadable.has(id)) }
             if session.unreadable.has(id) { return page.encrypted ? .web : .unreadable }
-            if sourceMode { return .source }
+            if sourceMode, page.kind == .page { return .source }
             let doc = session.state.docs[id] ?? Model.emptyDoc()
             let unknown = Doc.findUnknownTypes(doc)
             return unknown.isEmpty ? .web : .unknown(types: unknown, plain: Doc.docToPlainText(doc))
@@ -449,6 +450,43 @@ nonisolated final class SessionHost: @unchecked Sendable {
                 })
             let doc = MarkdownParse.markdownToDoc(text, options)
             return broken || Doc.validateDoc(.object(doc)) != nil ? nil : doc
+        }
+    }
+
+    /// The database screen's data: the database, its rows, what only the rows' documents tell, and the pages its
+    /// relation values name. Nil when the page is not a database.
+    func database(_ id: String) async -> DatabaseSnapshot? {
+        await run(writes: false) { [self] in
+            guard let session, let page = session.state.pages[id], page.kind == .database else { return nil }
+            let state = session.state
+            let database = page.database ?? DatabaseDef(properties: [], views: [])
+            let rows = Database.rowsOf(state, id)
+            let relationProps = database.properties.filter { $0.type == "relation" }
+            var snapshot = DatabaseSnapshot(page: page, database: database, rows: rows, firstImages: [:], progress: [:],
+                                            relations: [:], now: JSEnvironment.now())
+            for row in rows {
+                let doc = state.docs[row.id]
+                snapshot.firstImages[row.id] = DatabaseEdits.firstImage(doc)
+                snapshot.progress[row.id] = DatabaseEdits.taskProgress(doc)
+                for prop in relationProps {
+                    for target in DatabaseEdits.relationTargets(row.properties[prop.id]) where snapshot.relations[target] == nil {
+                        if let found = Search.resolveLinkTarget(state, target), let related = state.pages[found] {
+                            snapshot.relations[target] = .init(id: related.id, title: Model.displayTitle(related))
+                        }
+                    }
+                }
+            }
+            return snapshot
+        }
+    }
+
+    /// RelationPicker's search: pages by title, not the row itself
+    func findPages(_ query: String, excluding rowId: String) async -> [DatabaseSnapshot.RelatedPage] {
+        await run(writes: false) { [self] in
+            guard let session else { return [] }
+            return Search.findPagesByTitle(session.state, query, limit: 12)
+                .filter { !$0.id.jsEquals(rowId) }
+                .map { .init(id: $0.id, title: Model.displayTitle($0)) }
         }
     }
 

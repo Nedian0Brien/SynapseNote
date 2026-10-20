@@ -15,6 +15,11 @@ nonisolated enum WorkspaceCommand: Equatable, Sendable {
     /// `gradient-1` to `gradient-12`, the vault path of a picture, or nil for none.
     case setCover(id: String, cover: String?)
     case setDoc(id: String, doc: DocNode)
+    case setDatabase(id: String, database: DatabaseDef)
+    /// values of a database row's properties, by property id
+    case setProperties(id: String, values: JSObject)
+    /// a new page; data.ts' createRow makes a database row with it
+    case createPage(id: String, parentId: String?, title: String, properties: JSObject)
 
     /// The command as Morrow's `applyCommand` reads it, keys in the order Morrow's screens write them. `now` is
     /// in whole milliseconds, as `Date.now()`.
@@ -48,6 +53,13 @@ nonisolated enum WorkspaceCommand: Equatable, Sendable {
             return ["type": "page.setCover", "id": .string(id), "cover": text(cover), "now": time]
         case .setDoc(let id, let doc):
             return ["type": "page.setDoc", "id": .string(id), "doc": .object(doc), "now": time]
+        case .setDatabase(let id, let database):
+            return ["type": "database.set", "id": .string(id), "database": database.json, "now": time]
+        case .setProperties(let id, let values):
+            return ["type": "page.setProperties", "id": .string(id), "values": .object(values), "now": time]
+        case .createPage(let id, let parentId, let title, let properties):
+            return ["type": "page.create", "id": .string(id), "parentId": text(parentId), "now": time, "title": .string(title),
+                    "properties": .object(properties)]
         }
     }
 }

@@ -90,6 +90,9 @@ struct WorkspaceTests {
         // a document's keys keep their order on the way to the page
         let doc = (["type": "doc", "content": [["type": "paragraph", "content": [["text": "b", "type": "text"]]]]] as JSValue).object!
         #expect(json(.setDoc(id: "a", doc: doc)) == #"{"type":"page.setDoc","id":"a","doc":{"type":"doc","content":[{"type":"paragraph","content":[{"text":"b","type":"text"}]}]},"now":1000}"#)
+        #expect(json(.setProperties(id: "r", values: JSObject([("p", "x")]))) == #"{"type":"page.setProperties","id":"r","values":{"p":"x"},"now":1000}"#)
+        #expect(json(.createPage(id: "r", parentId: "db", title: "", properties: JSObject())) == #"{"type":"page.create","id":"r","parentId":"db","now":1000,"title":"","properties":{}}"#)
+        #expect(json(.setDatabase(id: "db", database: DatabaseDef(properties: [], views: []))) == #"{"type":"database.set","id":"db","database":{"properties":[],"views":[]},"now":1000}"#)
         // and reach the page as text
         let message = EditorCommand.command(json: json(.rename(id: "a", title: "t"))).json
         #expect(message == .object(["type": .string("command"), "json": .string(#"{"type":"page.rename","id":"a","title":"t","now":1000}"#)]))

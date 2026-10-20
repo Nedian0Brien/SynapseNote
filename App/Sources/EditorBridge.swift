@@ -173,6 +173,8 @@ nonisolated enum EditorCommand: Sendable {
     case trashPage(pageId: String)
     /// A Morrow `Command` as JSON text, see `WorkspaceCommand`; text keeps a document's keys in order.
     case command(json: String)
+    /// Morrow `Command`s applied together, all or none, as a JSON array.
+    case commands(json: String)
     case theme(dark: Bool)
     /// The appearance chosen in the settings, `AppPreferences.json`.
     case preferences(JSONValue)
@@ -237,6 +239,8 @@ nonisolated enum EditorCommand: Sendable {
             .object(["type": .string("trashPage"), "pageId": .string(pageId)])
         case .command(let json):
             .object(["type": .string("command"), "json": .string(json)])
+        case .commands(let json):
+            .object(["type": .string("commands"), "json": .string(json)])
         case .theme(let dark):
             .object(["type": .string("theme"), "theme": .string(dark ? "dark" : "light")])
         case .preferences(let preferences):

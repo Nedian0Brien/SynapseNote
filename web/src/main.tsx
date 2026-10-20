@@ -45,11 +45,10 @@ import { parseDateKey } from '../vendor/morrow/src/core/daily';
 import { findTemplatesPage } from '../vendor/morrow/src/core/templates';
 import { newId } from '../vendor/morrow/src/app/platform/files';
 import { useUi } from '../vendor/morrow/src/app/ui';
-import { getSession, run, setSession, useWorkspace } from '../vendor/morrow/src/app/workspace';
+import { getSession, run, runAll, setSession, useWorkspace } from '../vendor/morrow/src/app/workspace';
 import { listen, post } from './bridge';
 import type { Theme, ToastMessage, ViewPreferences } from './bridge';
 import { CanvasPage } from './CanvasPage';
-import { DatabasePage } from './DatabasePage';
 import { EditorApp, linkSelection } from './EditorApp';
 import type { FindRequest } from './EditorApp';
 import * as queries from './queries';
@@ -393,9 +392,8 @@ function Page({ pageId, find }: { pageId: PageId; find: FindRequest | null }) {
   if (!page || isEffectivelyTrashed(state.pages, pageId)) return <Empty />;
   if (page.kind === 'canvas')
     return doc ? <CanvasPage page={page} doc={doc} unreadable={getSession().unreadable.has(pageId)} /> : <Empty />;
-  // as morrow's PageView, a database is editable unless its folder note could not be read
-  if (page.kind === 'database')
-    return doc ? <DatabasePage page={page} editable={!getSession().unreadable.has(pageId)} /> : <Empty />;
+  // the app draws a database page itself (App/Sources/Database)
+  if (page.kind === 'database') return <Empty />;
   // in morrow's order: a page that could not be read, the markdown source of a text page, then content this
   // version does not know; a page without a document yet, such as a folder without a note, starts empty
   if (getSession().unreadable.has(pageId)) return <Empty />;
@@ -482,6 +480,9 @@ listen((message) => {
       break;
     case 'command':
       if (phase.kind === 'ready') run(message.command);
+      break;
+    case 'commands':
+      if (phase.kind === 'ready') runAll(message.commands);
       break;
     case 'theme':
       applyTheme(message.theme);

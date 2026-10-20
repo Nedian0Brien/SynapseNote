@@ -275,7 +275,7 @@ nonisolated enum JSNumber {
         if trimmed == "-Infinity" { return -.infinity }
         let lower = trimmed.lowercased()
         for (prefix, radix) in [("0x", 16), ("0o", 8), ("0b", 2)] where lower.hasPrefix(prefix) {
-            return UInt64(lower.dropFirst(2), radix: radix).map(Double.init) ?? .nan
+            return UInt64(lower.dropFirst(2), radix: radix).map { Double($0) } ?? .nan
         }
         let allowed = Set("0123456789+-.eE")
         guard trimmed.allSatisfy({ allowed.contains($0) }), let value = Double(trimmed) else { return .nan }
