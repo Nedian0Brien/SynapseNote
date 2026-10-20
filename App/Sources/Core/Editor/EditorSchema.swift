@@ -221,7 +221,9 @@ nonisolated enum EditorScreen {
                                      "blockquote", "codeBlock", "horizontalRule", "hardBreak",
                                      // 11d-5b
                                      "pageLink", "dateMention", "table", "tableRow", "tableHeader", "tableCell", "callout", "details",
-                                     "detailsSummary", "detailsContent", "columns", "column", "tableOfContents"]
+                                     "detailsSummary", "detailsContent", "columns", "column", "tableOfContents",
+                                     // 11d-5c-1
+                                     "image", "fileAttachment", "rawBlock", "inlineMath", "blockMath"]
     static let marks: Set<String> = Set(EditorSchema.markSpecs.map(\.name))
 
     static func draws(_ doc: DocNode) -> Bool {

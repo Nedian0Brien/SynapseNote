@@ -34,7 +34,11 @@ struct SlashItem: Identifiable, Equatable {
         SlashItem(id: "divider", title: "Divider", description: "Horizontal line", symbol: "minus", hint: "---", keywords: "hr rule separator line"),
         SlashItem(id: "callout", title: "Callout", description: "Highlighted note", symbol: "info.circle", keywords: "note tip warning aside alert"),
         SlashItem(id: "toggle", title: "Toggle", description: "Content that folds away", symbol: "chevron.right", keywords: "details collapse fold accordion"),
+        SlashItem(id: "image", title: "Image", description: "Picture from your computer", symbol: "photo", keywords: "picture photo upload"),
+        SlashItem(id: "file", title: "File", description: "Attach any file", symbol: "paperclip", keywords: "attachment upload pdf document"),
         SlashItem(id: "table", title: "Table", description: "Rows and columns", symbol: "tablecells", keywords: "grid spreadsheet"),
+        SlashItem(id: "math", title: "Formula", description: "Display maths in LaTeX", symbol: "sum", hint: "$$", keywords: "math equation latex katex tex formula"),
+        SlashItem(id: "inlineMath", title: "Inline formula", description: "Maths inside a sentence", symbol: "sum", hint: "$", keywords: "math equation latex inline"),
         SlashItem(id: "highlight", title: "Highlight", description: "Mark text to find it again", symbol: "highlighter", hint: "==", keywords: "mark marker yellow"),
         SlashItem(id: "database", title: "Database", description: "Table, board and calendar of pages", symbol: "tablecells.badge.ellipsis",
                   keywords: "collection kanban board calendar gallery table"),
@@ -83,13 +87,19 @@ struct SlashItem: Identifiable, Equatable {
         case "code": store.setBlockType("codeBlock")
         case "divider": store.rule()
         case "highlight": store.toggleMark("highlight")
-        case "diagram": store.insertCode(language: "mermaid", text: Self.sampleDiagram)
+        case "diagram":
+            store.insertContent(.node("codeBlock", ("attrs", ["language": "mermaid"]),
+                                      ("content", [.object(JSObject([("type", "text"), ("text", .string(Self.sampleDiagram))]))])))
+        case "image": store.pickFiles(images: true)
+        case "file": store.pickFiles(images: false)
+        case "math": store.insertFormula()
+        case "inlineMath": store.insertInlineFormula()
         case "callout": store.wrapCallout()
         case "toggle": store.wrapDetails()
         case "table": store.insertBlock(EditorEdits.table(rows: 3, columns: 3))
         case "columns2": store.insertBlock(EditorEdits.columns(2))
         case "columns3": store.insertBlock(EditorEdits.columns(3))
-        case "toc": store.insertBlock(.node("tableOfContents"))
+        case "toc": store.insertContent(.node("tableOfContents"))
         case "database": store.linkChild(kind: "database")
         case "canvas": store.linkChild(kind: "canvas")
         // these type the menu's own trigger, which opens its menu

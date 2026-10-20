@@ -94,6 +94,44 @@ enum EditorAtoms {
         return attachment
     }
 
+    // MARK: formulas
+
+    /// an inline formula as KaTeX draws it, on the text's baseline; while it is drawn, and when KaTeX could not
+    /// take it, its LaTeX as tiptap's `inline-math-error` shows it (the danger colour, monospaced, 0.85em)
+    @MainActor static func formula(_ latex: String, font: PlatformFont, dark: Bool) -> NSTextAttachment? {
+        let key = WebRenderer.Key(kind: .math(display: false), source: latex, size: font.pointSize, dark: dark)
+        let attachment = NSTextAttachment()
+        switch WebRenderer.shared.result(key) {
+        case .image(let image, let descent):
+            attachment.image = image
+            attachment.bounds = CGRect(x: 0, y: -descent, width: image.size.width, height: image.size.height)
+            return attachment
+        case .failed(let text):
+            return written(text.isEmpty ? latex : text, font: font, dark: dark, color: EditorStyle.highlight(.deletion), into: attachment)
+        case nil:
+            return written(latex, font: font, dark: dark, color: EditorStyle.faint, into: attachment)
+        }
+    }
+
+    @MainActor private static func written(_ text: String, font: PlatformFont, dark: Bool, color: PlatformColor, into attachment: NSTextAttachment) -> NSTextAttachment? {
+        let view = Text(text.isEmpty ? " " : text)
+            .font(.system(size: font.pointSize * 0.85, design: .monospaced))
+            .foregroundStyle(Color(color))
+            .fixedSize()
+            .environment(\.colorScheme, dark ? .dark : .light)
+        let renderer = ImageRenderer(content: view)
+        #if os(iOS)
+        renderer.scale = UIScreen.main.scale
+        guard let image = renderer.uiImage else { return nil }
+        #else
+        renderer.scale = NSScreen.main?.backingScaleFactor ?? 2
+        guard let image = renderer.nsImage else { return nil }
+        #endif
+        attachment.image = image
+        attachment.bounds = CGRect(x: 0, y: font.descender, width: image.size.width, height: image.size.height)
+        return attachment
+    }
+
     // MARK: tags
 
     /// Morrow's TAG_PATTERN: a # after the start, a space or "(", then letters, digits, _, - and /, with at least

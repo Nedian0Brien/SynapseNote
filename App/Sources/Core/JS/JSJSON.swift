@@ -238,6 +238,35 @@ nonisolated enum JSJSON {
 /// JavaScript's `Number.prototype.toString()` for base 10: the shortest digits that read back as the same
 /// number, written plainly between 1e-7 and 1e21 and in exponent form outside it.
 nonisolated enum JSNumber {
+    /// `Number.prototype.toFixed` for 0 to 20 digits below 1e21: the exact decimal value of the number, rounded
+    /// to `digits` places with a tie going to the larger number (ECMA-262 21.1.3.3)
+    static func toFixed(_ value: Double, _ digits: Int) -> String {
+        if value.isNaN { return "NaN" }
+        if abs(value) >= 1e21 { return string(value) }
+        let negative = value < 0
+        // a double's exact decimal expansion has at most 1074 places
+        let exact = String(format: "%.1074f", abs(value))
+        let parts = exact.split(separator: ".", omittingEmptySubsequences: false)
+        var whole = Array(parts[0])
+        let fraction = Array(parts.count > 1 ? parts[1] : "")
+        var kept = Array(fraction.prefix(digits))
+        while kept.count < digits { kept.append("0") }
+        if fraction.count > digits, let next = fraction[digits].wholeNumberValue, next >= 5 {
+            // carry one into the kept digits
+            var all = whole + kept
+            var index = all.count - 1
+            while index >= 0 {
+                if all[index] == "9" { all[index] = "0"; index -= 1 } else { all[index] = Character(String(all[index].wholeNumberValue! + 1)); break }
+            }
+            if index < 0 { all.insert("1", at: 0) }
+            whole = Array(all.prefix(all.count - digits))
+            kept = Array(all.suffix(digits))
+        }
+        let text = digits == 0 ? String(whole) : String(whole) + "." + String(kept)
+        let zero = text.allSatisfy { $0 == "0" || $0 == "." }
+        return negative && !zero ? "-" + text : text
+    }
+
     static func string(_ value: Double) -> String {
         if value.isNaN { return "NaN" }
         if value == 0 { return "0" }

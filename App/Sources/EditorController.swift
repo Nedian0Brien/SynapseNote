@@ -809,33 +809,47 @@ final class EditorController: WorkspaceService {
     /// A picture picked on this device, stored in the vault as Morrow's storeFiles stores one; its vault path,
     /// nil when it could not be stored, which a toast says.
     func storeImage(_ url: URL) async -> String? {
-        guard let host else { return nil }
-        let read = await Task.detached { () -> Result<Data, CommandFailure> in
-            let scoped = url.startAccessingSecurityScopedResource()
-            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-            // morrow's MAX_FILE_BYTES, src/app/platform/attachments.ts
-            if let size = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize, size > 100 * 1024 * 1024 {
-                return .failure(CommandFailure(message: "Files larger than 100 MB were not added."))
+        await storeFiles([url]).first?.id
+    }
+
+    /// Files picked or dropped on this device, read away from the main thread and stored in the vault.
+    func storeFiles(_ urls: [URL]) async -> [FileMeta] {
+        let read = await Task.detached { () -> [(name: String, data: Data?)] in
+            urls.map { url in
+                let scoped = url.startAccessingSecurityScopedResource()
+                defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+                // a file over the limit is not read; an empty one stands for it
+                if let size = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize, size > Self.maxFileBytes { return (url.lastPathComponent, Data()) }
+                return (url.lastPathComponent, try? Data(contentsOf: url))
             }
-            guard let data = try? Data(contentsOf: url) else { return .failure(CommandFailure(message: "The picture could not be read.")) }
-            return data.count > 100 * 1024 * 1024 ? .failure(CommandFailure(message: "Files larger than 100 MB were not added.")) : .success(data)
         }.value
-        let data: Data
-        switch read {
-        case .success(let value): data = value
-        case .failure(let failure):
-            showToast(failure.message, error: true)
-            return nil
+        let unreadable = read.filter { $0.data == nil }.map(\.name)
+        if !unreadable.isEmpty { showToast("\(unreadable.joined(separator: ", ")) could not be read.", error: true) }
+        let tooLarge = read.filter { $0.data?.isEmpty == true }.count
+        return await storeFiles(read.compactMap { item in item.data.flatMap { $0.isEmpty ? nil : (item.name, $0) } }, leftOut: tooLarge)
+    }
+
+    /// morrow's MAX_FILE_BYTES, src/app/platform/attachments.ts
+    nonisolated static let maxFileBytes = 100 * 1024 * 1024
+
+    /// Morrow's storeFiles: files over 100 MB are left out with a toast, the rest stored together; their records
+    /// once every one is stored, none when storing failed, which a toast says. `leftOut` counts files already
+    /// found too large.
+    func storeFiles(_ files: [(name: String, data: Data)], leftOut: Int = 0) async -> [FileMeta] {
+        let accepted = files.filter { $0.data.count <= Self.maxFileBytes }
+        if accepted.count < files.count || leftOut > 0 { showToast("Files larger than 100 MB were not added.", error: true) }
+        guard let host, !accepted.isEmpty else { return [] }
+        let stored = accepted.map { file in
+            (meta: FileMeta(id: UUID().uuidString.lowercased(), name: file.name.isEmpty ? "file" : file.name,
+                            type: UTType(filenameExtension: (file.name as NSString).pathExtension)?.preferredMIMEType ?? "application/octet-stream",
+                            size: Double(file.data.count), createdAt: JSEnvironment.now()),
+             data: file.data)
         }
-        let name = url.lastPathComponent
-        let meta = FileMeta(id: UUID().uuidString.lowercased(), name: name.isEmpty ? "file" : name,
-                            type: UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "application/octet-stream",
-                            size: Double(data.count), createdAt: JSEnvironment.now())
-        switch await host.addFiles([(meta: meta, data: data)]) {
-        case .success(let metas): return metas.first?.id
+        switch await host.addFiles(stored) {
+        case .success(let metas): return metas
         case .failure(let failure):
             showToast(failure.message, error: true)
-            return nil
+            return []
         }
     }
 

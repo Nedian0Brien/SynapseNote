@@ -64,6 +64,18 @@ private struct EditorPage: View {
             if store.find != nil { FindBar(store: store).padding(.top, 8) }
             else if store.cellPlace != nil { TableBar(store: store).padding(.top, 8) }
         }
+        .sheet(item: Bindable(store).sourceEdit) { edit in SourceEditSheet(store: store, edit: edit) }
+        .fileImporter(isPresented: Bindable(store).pickingFiles,
+                      allowedContentTypes: store.filePick?.images == true ? [.image] : [.item], allowsMultipleSelection: true) { result in
+            if case .success(let urls) = result { store.picked(urls) } else { store.filePick = nil }
+        }
+        // files dropped on the page go in at the caret, or after the last block (Media.ts FileDrop)
+        .dropDestination(for: URL.self) { urls, _ in
+            let files = urls.filter(\.isFileURL)
+            guard !files.isEmpty else { return false }
+            store.addFiles(files, at: nil)
+            return true
+        }
         .task(id: controller.revision) { await store.refreshTargets() }
         .task(id: controller.revision) { await store.load() }
         .task(id: controller.editorRequest) { handle(controller.editorRequest) }
@@ -184,6 +196,15 @@ struct BlockView: View {
             ColumnsBlockView(store: store, node: node, path: path, context: context, depth: depth)
         case "tableOfContents":
             ContentsBlockView(store: store)
+        case "image":
+            ImageBlockView(store: store, node: node)
+                .padding(.vertical, EditorStyle.bodySize(font) * 0.9)
+        case "fileAttachment":
+            FileBlockView(store: store, node: node)
+        case "rawBlock":
+            RawBlockView(store: store, node: node, path: path)
+        case "blockMath":
+            MathBlockView(store: store, node: node, path: path)
         default:
             // the screen is only chosen for pages whose blocks this editor draws
             EmptyView()
@@ -205,7 +226,7 @@ struct TextBlock: View {
         let font = store.controller.preferences.font
         let ranges = matches
         EditorTextBlock(store: store, path: path, block: node, style: style, context: context, font: font, editable: true, matches: ranges,
-                        dark: colorScheme == .dark)
+                        dark: colorScheme == .dark, rendered: hasFormula ? WebRenderer.shared.version : 0)
             .overlay(alignment: .topLeading) {
                 if let placeholder {
                     Text(placeholder)
@@ -217,6 +238,8 @@ struct TextBlock: View {
             }
             .id(BlockList.key(path))
     }
+
+    private var hasFormula: Bool { (node.content ?? []).contains { $0.type == "inlineMath" } }
 
     private var matches: [NSRange] {
         guard store.find != nil else { return [] }
@@ -298,31 +321,58 @@ private struct CodeBlockView: View {
     let store: EditorStore
     let node: DocNode
     let path: EditorEdits.Path
+    /// a diagram's code shows while it is empty, and folds away once there is a diagram (Extras.ts CodeBlock)
+    @State private var showCode: Bool
+    @State private var width: CGFloat = 0
+
+    init(store: EditorStore, node: DocNode, path: EditorEdits.Path) {
+        self.store = store
+        self.node = node
+        self.path = path
+        _showCode = State(initialValue: InlineText.string(node.content ?? []).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+    }
 
     static var languages: [String] { CodeHighlight.languages }
 
     var body: some View {
         let language = node.attr("language")?.string
+        let mermaid = language == "mermaid"
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Spacer()
-                Menu(language ?? "Plain text") {
-                    Button("Plain text") { store.setLanguage(path, nil) }
-                    ForEach(Self.languages + (language.map { Self.languages.contains($0) ? [] : [$0] } ?? []), id: \.self) { name in
-                        Button(name) { store.setLanguage(path, name) }
-                    }
+                if mermaid {
+                    Button(showCode ? "Hide code" : "Edit diagram") { showCode.toggle() }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
                 }
-                .menuStyle(.borderlessButton)
-                .fixedSize()
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .accessibilityLabel("Code language")
+                if !mermaid || showCode {
+                    Menu(language ?? "Plain text") {
+                        Button("Plain text") { store.setLanguage(path, nil) }
+                        ForEach(Self.languages + (language.map { Self.languages.contains($0) ? [] : [$0] } ?? []), id: \.self) { name in
+                            Button(name) { store.setLanguage(path, name) }
+                        }
+                    }
+                    .menuStyle(.borderlessButton)
+                    .fixedSize()
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("Code language")
+                }
             }
-            TextBlock(store: store, node: node, path: path, style: .code, context: .init())
+            if !mermaid || showCode {
+                TextBlock(store: store, node: node, path: path, style: .code, context: .init())
+            }
+            if mermaid {
+                // the block's padding and the diagram's own, 16 on each side
+                DiagramView(source: InlineText.string(node.content ?? []), width: max(0, width - 64))
+                    .contentShape(.rect)
+                    .onTapGesture(count: 2) { showCode = true }
+            }
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 16)
         .background(Color(EditorStyle.codeBackground), in: .rect(cornerRadius: 8))
         .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.separator))
+        .onGeometryChange(for: CGFloat.self, of: \.size.width) { width = $0 }
     }
 }

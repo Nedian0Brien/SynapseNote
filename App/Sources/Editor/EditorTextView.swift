@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// One text block of the native editor: a TextKit 2 text view (`UITextView`, `NSTextView`) as tall as its text.
 /// The view holds the block's text with the editor's own attributes and the display attributes over them; what is
@@ -17,6 +18,8 @@ struct EditorTextBlock {
     let matches: [NSRange]
     /// page links and dates are drawn as pictures, in the light or dark look
     var dark = false
+    /// the renderer's count when this block has inline formulas, so a finished one redraws the block
+    var rendered = 0
 
     var model: NSAttributedString { InlineText.attributed(block.content ?? []) }
     var plain: Bool { block.type == "codeBlock" }
@@ -33,8 +36,18 @@ struct EditorTextBlock {
             // page links and dates as chips (PageLink, DateMention)
             let lookup = store.atomLookup
             text.enumerateAttribute(.editorAtom, in: whole) { value, range, _ in
-                guard let atom = value as? EditorAtom, atom.node.type != "hardBreak",
-                      let chip = EditorAtoms.chip(atom.node, lookup) else { return }
+                guard let atom = value as? EditorAtom, atom.node.type != "hardBreak" else { return }
+                if atom.node.type == "inlineMath" {
+                    let font = (text.attribute(.font, at: range.location, effectiveRange: nil) as? PlatformFont) ?? EditorStyle.font(style, self.font)
+                    for index in range.location..<NSMaxRange(range) {
+                        let node = (text.attribute(.editorAtom, at: index, effectiveRange: nil) as? EditorAtom)?.node ?? atom.node
+                        if let attachment = EditorAtoms.formula(node.attr("latex")?.string ?? "", font: font, dark: dark) {
+                            text.addAttribute(.attachment, value: attachment, range: NSRange(location: index, length: 1))
+                        }
+                    }
+                    return
+                }
+                guard let chip = EditorAtoms.chip(atom.node, lookup) else { return }
                 let font = (text.attribute(.font, at: range.location, effectiveRange: nil) as? PlatformFont) ?? EditorStyle.font(style, self.font)
                 for index in range.location..<NSMaxRange(range) {
                     if let attachment = EditorAtoms.attachment(chip, font: font, dark: dark) {
@@ -79,6 +92,7 @@ struct EditorTextBlock {
             if let atom = text.attribute(.editorAtom, at: candidate, effectiveRange: nil) as? EditorAtom, inside(range) {
                 switch atom.node.type {
                 case "pageLink": store.openLink(atom.node)
+                case "inlineMath": store.editInlineFormula(path, at: candidate, atom.node)
                 case "dateMention": store.openDate(atom.node.attr("date")?.string ?? "")
                 default: return false
                 }
@@ -134,6 +148,10 @@ extension EditorTextBlock: UIViewRepresentable {
         context.coordinator.block = self
         view.owner = context.coordinator
         view.pasteDelegate = context.coordinator
+        // pictures and files paste too, as files (Media.ts FileDrop)
+        if !plain, let configuration = view.pasteConfiguration {
+            configuration.addAcceptableTypeIdentifiers([UTType.image.identifier, UTType.fileURL.identifier])
+        }
         let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.tapped(_:)))
         tap.delegate = context.coordinator
         view.addGestureRecognizer(tap)
@@ -144,6 +162,7 @@ extension EditorTextBlock: UIViewRepresentable {
         let coordinator = context.coordinator
         let changedStyle = coordinator.block?.style != style || coordinator.block?.context != context.coordinator.block?.context
             || coordinator.block?.font != font || coordinator.block?.matches != matches || coordinator.block?.context != self.context
+            || coordinator.block?.dark != dark || coordinator.block?.rendered != rendered
         // a pass where the block at this path is no longer text, before SwiftUI swaps the view out
         guard EditorSchema.textBlocks.contains(block.type) else { return }
         coordinator.block = self
@@ -188,6 +207,32 @@ extension EditorTextBlock: UIViewRepresentable {
         /// as the system pastes them. The text comes through the paste item, as the system hands it over.
         func textPasteConfigurationSupporting(_ supporting: any UITextPasteConfigurationSupporting, transform item: UITextPasteItem) {
             let provider = item.itemProvider
+            // files first, as FileDrop's handlePaste: a file, or a picture with no text with it
+            if let store, block?.plain == false, !provider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier),
+               let view = supporting as? UITextView {
+                let caret = EditorEdits.Caret(path: path, offset: view.selectedRange.location)
+                if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
+                    _ = provider.loadObject(ofClass: URL.self) { url, _ in
+                        DispatchQueue.main.async {
+                            guard let url else { return item.setDefaultResult() }
+                            store.addFiles([url], at: caret)
+                            item.setNoResult()
+                        }
+                    }
+                    return
+                }
+                if let type = provider.registeredContentTypes.first(where: { $0.conforms(to: .image) }) {
+                    let name = (provider.suggestedName ?? "image") + "." + (type.preferredFilenameExtension ?? "png")
+                    _ = provider.loadDataRepresentation(for: type) { data, _ in
+                        DispatchQueue.main.async {
+                            guard let data else { return item.setDefaultResult() }
+                            store.addFiles([(name: name, data: data)], at: caret)
+                            item.setNoResult()
+                        }
+                    }
+                    return
+                }
+            }
             guard !provider.hasItemConformingToTypeIdentifier("public.html"), provider.canLoadObject(ofClass: NSString.self) else {
                 item.setDefaultResult()
                 return
@@ -293,7 +338,7 @@ extension EditorTextBlock: UIViewRepresentable {
         func sync(_ textView: UITextView) {
             guard let block, let store, let current = store.block(path), EditorSchema.textBlocks.contains(current.type) else { return }
             let updated = EditorTextBlock(store: store, path: path, block: current, style: block.style, context: block.context, font: block.font,
-                                          editable: block.editable, matches: block.matches, dark: block.dark)
+                                          editable: block.editable, matches: block.matches, dark: block.dark, rendered: block.rendered)
             if !updated.same(textView.attributedText) {
                 applying = true
                 textView.attributedText = updated.styled()
@@ -332,7 +377,7 @@ extension EditorTextBlock: UIViewRepresentable {
                   let model = store.block(path), EditorSchema.textBlocks.contains(model.type) else { return }
             // this can run while SwiftUI updates its views: the view changes now, the store a moment later
             let updated = EditorTextBlock(store: store, path: path, block: model, style: block.style, context: block.context, font: block.font,
-                                          editable: block.editable, matches: block.matches, dark: block.dark)
+                                          editable: block.editable, matches: block.matches, dark: block.dark, rendered: block.rendered)
             applying = true
             if !updated.same(view.attributedText) { view.attributedText = updated.styled() }
             let became = view.isFirstResponder || view.becomeFirstResponder()
@@ -388,6 +433,7 @@ extension EditorTextBlock: UIViewRepresentable {
             block.decorate(textView.textStorage)
             textView.textStorage.endEditing()
             textView.selectedRange = selection
+            textView.invalidateIntrinsicContentSize()
             applying = false
         }
 
@@ -581,6 +627,7 @@ extension EditorTextBlock: NSViewRepresentable {
         let coordinator = context.coordinator
         let changedStyle = coordinator.block?.style != style || coordinator.block?.font != font
             || coordinator.block?.matches != matches || coordinator.block?.context != self.context
+            || coordinator.block?.dark != dark || coordinator.block?.rendered != rendered
         guard EditorSchema.textBlocks.contains(block.type) else { return }
         coordinator.block = self
         view.isEditable = editable
@@ -676,7 +723,7 @@ extension EditorTextBlock: NSViewRepresentable {
             guard let block, let store, let storage = view.textStorage, let current = store.block(path),
                   EditorSchema.textBlocks.contains(current.type) else { return }
             let updated = EditorTextBlock(store: store, path: path, block: current, style: block.style, context: block.context, font: block.font,
-                                          editable: block.editable, matches: block.matches, dark: block.dark)
+                                          editable: block.editable, matches: block.matches, dark: block.dark, rendered: block.rendered)
             if !updated.same(storage) {
                 applying = true
                 storage.setAttributedString(updated.styled())
@@ -709,7 +756,7 @@ extension EditorTextBlock: NSViewRepresentable {
             guard let store, let current = store.focusRequest, current.path == path, current.id != taken, let window = view.window, let block,
                   let storage = view.textStorage, let model = store.block(path), EditorSchema.textBlocks.contains(model.type) else { return }
             let updated = EditorTextBlock(store: store, path: path, block: model, style: block.style, context: block.context, font: block.font,
-                                          editable: block.editable, matches: block.matches, dark: block.dark)
+                                          editable: block.editable, matches: block.matches, dark: block.dark, rendered: block.rendered)
             applying = true
             if !updated.same(storage) { storage.setAttributedString(updated.styled()) }
             let became = window.firstResponder === view || window.makeFirstResponder(view)
@@ -829,6 +876,7 @@ extension EditorTextBlock: NSViewRepresentable {
             block.decorate(storage)
             storage.endEditing()
             view.setSelectedRange(selection)
+            view.invalidateIntrinsicContentSize()
             applying = false
         }
 
@@ -886,7 +934,24 @@ final class BlockTextView: NSTextView {
     private(set) var pastingPlain = false
 
     override func paste(_ sender: Any?) {
-        pastingPlain = !(NSPasteboard.general.types?.contains(.html) ?? false)
+        let board = NSPasteboard.general
+        // files first, as FileDrop's handlePaste: files copied in the Finder, or a picture with no text with it
+        if let owner, let store = owner.store, owner.block?.plain == false {
+            let caret = EditorEdits.Caret(path: owner.path, offset: selectedRange().location)
+            if let urls = board.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL], !urls.isEmpty {
+                store.addFiles(urls, at: caret)
+                return
+            }
+            if board.string(forType: .string) == nil {
+                for (type, ext) in [(NSPasteboard.PasteboardType.png, "png"), (.tiff, "tiff")] {
+                    if let data = board.data(forType: type) {
+                        store.addFiles([(name: "image.\(ext)", data: data)], at: caret)
+                        return
+                    }
+                }
+            }
+        }
+        pastingPlain = !(board.types?.contains(.html) ?? false)
         defer { pastingPlain = false }
         super.paste(sender)
     }

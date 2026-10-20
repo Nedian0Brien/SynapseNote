@@ -70,6 +70,13 @@ final class EditorStore {
     var coloring = false
     /// a typed mark, such as bold turned on with nothing selected: what the next characters get (stored marks)
     var storedMarks: [DocMark]?
+    /// the formula or kept-as-written text open for editing (Morrow's SourceDialog)
+    var sourceEdit: SourceEdit?
+    /// the file picker the slash menu's Image and File open, and the caret the files go to
+    var filePick: FilePick?
+    /// whether that picker is up; kept apart from `filePick`, which SwiftUI would clear before the picked files
+    /// arrive
+    var pickingFiles = false
 
     /// what was last sent to the page or read from it, to tell an outside change from this editor's own
     @ObservationIgnored private var committed: DocNode?
@@ -312,13 +319,17 @@ final class EditorStore {
         guard let block = block(path), block.type != "codeBlock" else { return false }
         let string = text.string as NSString
         let before = string.substring(to: min(caret, string.length))
-        if let (next, place) = EditorEdits.blockInputRule(EditorEdits.replacing(doc, path, with: EditorEdits.withInline(block, InlineText.content(text))),
+        // TipTap runs no input rule next to code-marked text (run$1): the text node before the typed character,
+        // or the one after when there is none
+        let neighbour = caret - 2 >= 0 ? caret - 2 : caret < string.length ? caret : -1
+        let inCode = neighbour >= 0 && (text.attribute(.editorMarks, at: neighbour, effectiveRange: nil) as? EditorMarkSet)?.has("code") == true
+        if !inCode, let (next, place) = EditorEdits.blockInputRule(EditorEdits.replacing(doc, path, with: EditorEdits.withInline(block, InlineText.content(text))),
                                                            path, textBefore: before, caretAfter: caret) {
             apply(next, caret: place)
             slash = nil
             return true
         }
-        if let rule = EditorEdits.markInputRule(textBefore: before) {
+        if !inCode, let rule = EditorEdits.markInputRule(textBefore: before) {
             // the markers go and the text between them takes the mark (markInputRule)
             let marked = NSMutableAttributedString(attributedString: InlineText.addMark(text, rule.inner, InlineText.mark(rule.mark)))
             let innerText = marked.attributedSubstring(from: rule.inner)
@@ -327,6 +338,21 @@ final class EditorStore {
             apply(EditorEdits.replacing(doc, path, with: EditorEdits.withInline(block, InlineText.content(marked))),
                   caret: EditorEdits.Caret(path: path, offset: end))
             storedMarks = (storedMarks ?? []).filter { $0.type != rule.mark }
+            return true
+        }
+        // the formula rules, after the marks' as the extensions are added (mathExtensions)
+        if !inCode, let rule = EditorEdits.mathInputRule(textBefore: before) {
+            let current = EditorEdits.replacing(doc, path, with: EditorEdits.withInline(block, InlineText.content(text)))
+            switch rule {
+            case .inline(let range, let latex):
+                let math = DocNode.node("inlineMath", ("attrs", ["latex": .string(latex)]))
+                let (next, place) = EditorEdits.insertInline(current, path, range, [math])
+                apply(next, caret: place)
+            case .block(let latex):
+                let (next, place) = EditorEdits.applyBlockMath(current, path, textLength: string.length, caret: caret, latex: latex)
+                apply(next, caret: place)
+            }
+            slash = nil
             return true
         }
         let start = caret - 1
@@ -629,17 +655,6 @@ final class EditorStore {
         apply(cleared, caret: EditorEdits.Caret(path: open.path, offset: open.start))
         focus = Focus(path: open.path, range: NSRange(location: open.start, length: 0))
         item.run(self, open.path, open.start)
-    }
-
-    /// a code block at the caret: in place of an empty block, otherwise after it
-    func insertCode(language: String?, text: String) {
-        guard let focus, let block = block(focus.path) else { return }
-        let code = DocNode.node("codeBlock", ("attrs", ["language": language.map(JSValue.string) ?? .null]),
-                                ("content", [.object(JSObject([("type", "text"), ("text", .string(text))]))]))
-        let empty = (block.content ?? []).isEmpty
-        let next = EditorEdits.replacing(doc, focus.path, with: empty ? [code] : [block, code])
-        let path = empty ? focus.path : Array(focus.path.dropLast()) + [(focus.path.last ?? 0) + 1]
-        apply(next, caret: EditorEdits.Caret(path: path, offset: 0))
     }
 
     // MARK: find
