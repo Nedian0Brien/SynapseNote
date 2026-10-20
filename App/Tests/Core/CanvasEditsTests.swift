@@ -182,6 +182,13 @@ struct CanvasEditsTests {
         // far away, or with no active drawing, it starts another
         let far = CanvasEdits.finishStroke(first.data, [900, 900, 910, 910], highlighter: false, ink: ink, activeDrawing: first.drawing, newId: Self.ids())
         #expect(far.data.nodes.count == 2)
+        // nearby is within 160 of the drawing's box (right side 92 + 27 = 119), not touching it
+        let inside = CanvasEdits.finishStroke(first.data, [270, 100, 280, 110], highlighter: false, ink: ink, activeDrawing: first.drawing, newId: Self.ids())
+        #expect(inside.data.nodes.count == 1)
+        let edge = CanvasEdits.finishStroke(first.data, [279, 100, 289, 110], highlighter: false, ink: ink, activeDrawing: first.drawing, newId: Self.ids())
+        #expect(edge.data.nodes.count == 2)
+        let left = CanvasEdits.finishStroke(first.data, [-70, 100, -58, 110], highlighter: false, ink: ink, activeDrawing: first.drawing, newId: Self.ids())
+        #expect(left.data.nodes.count == 1)
 
         // the eraser takes the line whose point is under it, then the drawing left empty and its edges
         let card = Self.card("c", 0, 0)
