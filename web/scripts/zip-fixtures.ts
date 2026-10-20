@@ -21,9 +21,9 @@ const entries: Record<string, Uint8Array> = {
 };
 const archives = [
   // Morrow's own exports: level 6
-  { name: 'level6', data: zipSync(entries, { level: 6 }) },
+  { name: 'level6', data: zipSync(entries, { level: 6, mtime: new Date(2026, 0, 1) }) },
   // stored, and a folder entry, as other tools write them
-  { name: 'stored', data: zipSync({ 'folder/': new Uint8Array(0), 'folder/a.md': strToU8('a') }, { level: 0 }) },
+  { name: 'stored', data: zipSync({ 'folder/': new Uint8Array(0), 'folder/a.md': strToU8('a') }, { level: 0, mtime: new Date(2026, 0, 1) }) },
 ];
 writeFileSync(
   path.join(out, 'expected', 'zip.json'),
