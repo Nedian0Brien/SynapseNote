@@ -84,6 +84,8 @@ final class EditorController: WorkspaceService {
     private(set) var toasts: [EditorToast] = []
     /// Toasts from this side, such as a PDF that could not be made; negative ids keep them apart.
     private(set) var ownToasts: [EditorToast] = []
+    /// what the buttons of this side's toasts do, by toast id
+    @ObservationIgnored private var ownToastActions: [Int: () -> Void] = [:]
     var allToasts: [EditorToast] { toasts + ownToasts }
     /// A file waiting for the person to say where it goes.
     var exportFile: ExportFile?
@@ -116,7 +118,8 @@ final class EditorController: WorkspaceService {
     /// Swift session, which is the one that writes the vault
     @ObservationIgnored let mirror = StateMirror()
     /// the open vault's Swift session
-    @ObservationIgnored private var host: SessionHost?
+    /// the Swift session, which the operations (Operations/) read
+    @ObservationIgnored private(set) var host: SessionHost?
     @ObservationIgnored private let fileInput = FileInputPresenter()
     @ObservationIgnored private var opened: VaultLocation.Opened?
     @ObservationIgnored private var rpc: VaultRPC?
@@ -483,10 +486,6 @@ final class EditorController: WorkspaceService {
         if phase == .ready { showingQuickNote = true } else { quickNoteWhenOpen = true }
     }
 
-    /// Morrow's capture: the text goes to the end of today's note.
-    func capture(_ text: String) {
-        send(.capture(text))
-    }
 
     // MARK: places and tabs
 
@@ -563,24 +562,17 @@ final class EditorController: WorkspaceService {
     }
 
     func createPage(parent: String? = nil) {
-        if let parent { expanded.insert(parent) }
-        send(.createPage(parentId: parent))
+        makePage(parent: parent)
     }
 
     /// A database with Morrow's default properties and table view, opened once it is made.
     func createDatabase(parent: String? = nil) {
-        if let parent { expanded.insert(parent) }
-        send(.createPage(parentId: parent, kind: .database))
+        makePage(parent: parent, kind: .database)
     }
 
     /// An empty canvas, opened once it is made.
     func createCanvas(parent: String? = nil) {
-        if let parent { expanded.insert(parent) }
-        send(.createPage(parentId: parent, kind: .canvas))
-    }
-
-    func trash(_ pageId: String) {
-        send(.trashPage(pageId: pageId))
+        makePage(parent: parent, kind: .canvas)
     }
 
     func duplicate(_ pageId: String) {
@@ -925,21 +917,36 @@ final class EditorController: WorkspaceService {
     #endif
 
     func runToastAction(_ id: Int) {
-        if id < 0 { dismissToast(id) } else { send(.toastAction(id: id)) }
+        if id < 0 {
+            let action = ownToastActions[id]
+            dismissToast(id)
+            action?()
+        } else {
+            send(.toastAction(id: id))
+        }
     }
 
     func dismissToast(_ id: Int) {
-        if id < 0 { ownToasts.removeAll { $0.id == id } } else { send(.dismissToast(id: id)) }
+        if id < 0 {
+            ownToasts.removeAll { $0.id == id }
+            ownToastActions[id] = nil
+        } else {
+            send(.dismissToast(id: id))
+        }
     }
 
-    /// A toast from this side, gone after five seconds, eight for errors, as Morrow's.
-    func showToast(_ message: String, error: Bool = false) {
+    /// A toast from this side, as Morrow's ui.ts `toast`: gone after five seconds, eight for errors, or after
+    /// `duration`; at most four at once. `action` is the button's label and what it does.
+    func showToast(_ message: String, error: Bool = false, action: (label: String, run: () -> Void)? = nil, duration: Duration? = nil) {
         ownToastCount += 1
-        let toast = EditorToast(id: -ownToastCount, message: message, tone: error ? "error" : "info", action: nil)
+        let toast = EditorToast(id: -ownToastCount, message: message, tone: error ? "error" : "info", action: action?.label)
         ownToasts = Array((ownToasts + [toast]).suffix(4))
+        if let action { ownToastActions[toast.id] = action.run }
+        for gone in Set(ownToastActions.keys).subtracting(ownToasts.map(\.id)) { ownToastActions[gone] = nil }
         Task {
-            try? await Task.sleep(for: .seconds(error ? 8 : 5))
+            try? await Task.sleep(for: duration ?? .seconds(error ? 8 : 5))
             ownToasts.removeAll { $0.id == toast.id }
+            ownToastActions[toast.id] = nil
         }
     }
 
@@ -961,30 +968,6 @@ final class EditorController: WorkspaceService {
             logger.error("\(action, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
             return error.localizedDescription
         }
-    }
-
-    // MARK: daily notes and templates, made by morrow's operations in the page, which then opens them
-
-    /// Today's daily note, or the one for a yyyy-mm-dd day.
-    func openToday(_ date: String? = nil) {
-        send(.openToday(date: date))
-    }
-
-    func createPage(fromTemplate templateId: String, parent: String? = nil) {
-        if let parent { expanded.insert(parent) }
-        send(.createFromTemplate(templateId: templateId, parentId: parent))
-    }
-
-    func newTemplate() {
-        send(.newTemplate)
-    }
-
-    func openTemplates() {
-        send(.openTemplates)
-    }
-
-    func saveAsTemplate(_ pageId: String) {
-        send(.saveAsTemplate(pageId: pageId))
     }
 
     /// Works the answer out with the Swift core from the session's workspace. Debug builds ask the editor page as

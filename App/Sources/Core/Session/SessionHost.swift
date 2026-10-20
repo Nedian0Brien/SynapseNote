@@ -540,6 +540,29 @@ nonisolated final class SessionHost: @unchecked Sendable {
         }
     }
 
+    /// The vault's files, as Morrow's `listFiles`.
+    func files() async -> [FileMeta] {
+        await run(writes: false) { [self] in session?.listFiles() ?? [] }
+    }
+
+    /// A file's record and bytes, nil when it is not there.
+    func file(_ id: String) async -> (meta: FileMeta, data: Data)? {
+        await run(writes: false) { [self] in session?.getFile(id) }
+    }
+
+    /// Every page's versions, for what backups and the unused file check count as used.
+    func allSnapshots() async -> [Snapshot] {
+        await run(writes: false) { [self] in session?.allSnapshots() ?? [] }
+    }
+
+    func deleteFiles(_ ids: [String]) async -> CommandFailure? {
+        await run { [self] in
+            guard let session else { return CommandFailure(message: "The vault is not open.") }
+            do { try session.deleteFiles(ids) } catch { return CommandFailure(message: (error as? VaultWriteError)?.message ?? "\(error)") }
+            return nil
+        }
+    }
+
     /// Files a native screen adds, such as a cover picture, stored before a page refers to them.
     func addFiles(_ files: [(meta: FileMeta, data: Data)]) async -> Result<[FileMeta], CommandFailure> {
         await run { [self] in

@@ -22,6 +22,9 @@ nonisolated enum WorkspaceCommand: Equatable, Sendable {
     case createPage(id: String, parentId: String?, title: String, properties: JSObject)
     /// operations.ts' createPage: a page, database or canvas under a page, with the database or canvas it starts with
     case newPage(id: String, parentId: String?, title: String, kind: String, database: DatabaseDef?, doc: DocNode?)
+    /// a command an operation builds as operations.ts does, such as `page.create` with every field or
+    /// `pages.insert`, sent as written
+    case raw(JSValue)
 
     /// The command as Morrow's `applyCommand` reads it, keys in the order Morrow's screens write them. `now` is
     /// in whole milliseconds, as `Date.now()`.
@@ -68,6 +71,8 @@ nonisolated enum WorkspaceCommand: Equatable, Sendable {
             if let database { fields["database"] = database.json }
             if let doc { fields["doc"] = .object(doc) }
             return .object(fields)
+        case .raw(let command):
+            return command
         }
     }
 }

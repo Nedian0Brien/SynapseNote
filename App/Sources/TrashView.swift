@@ -51,7 +51,7 @@ struct TrashView: View {
                                     }
                                 }
                                 Spacer()
-                                Button("Restore") { controller.perform(.restore(id: page.id)) }
+                                Button("Restore") { controller.restorePage(page.id) }
                                 DeleteForeverButton(controller: controller, page: page)
                             }
                             .buttonStyle(.bordered)
