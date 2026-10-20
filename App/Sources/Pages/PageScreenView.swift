@@ -36,6 +36,8 @@ struct PageScreenView: View {
                 DatabaseScreenView(controller: controller, page: page, editable: editable)
             case .canvas(let unreadable):
                 CanvasScreenView(controller: controller, page: page, unreadable: unreadable)
+            case .editor:
+                EditorScreenView(controller: controller, page: page)
             case .source, .web:
                 SourcePageView(controller: controller, page: page)
             }

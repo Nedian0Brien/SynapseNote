@@ -123,6 +123,27 @@ final class EditorController: WorkspaceService {
     @ObservationIgnored private var navigationWatch: Task<Void, Never>?
     /// Text to select in the page shown next.
     @ObservationIgnored private var pendingFind: String?
+    /// the page the app's own editor shows, nil when the page's editor is used
+    @ObservationIgnored private(set) var nativeEditorPage: String?
+    /// what the app asks of the page in the native editor: find, a heading, a search's term, the link field
+    struct EditorRequest: Equatable {
+        enum Kind: Equatable {
+            case find
+            case heading(Int)
+            case select(String)
+            case link
+        }
+        let id: Int
+        let pageId: String
+        let kind: Kind
+    }
+    private(set) var editorRequest: EditorRequest?
+    @ObservationIgnored private var editorRequests = 0
+    /// asks the title field of a page to take the caret, as the editor's arrow up at its top does
+    private(set) var titleFocus: (id: Int, pageId: String)?
+    /// the native editor takes text pages whose blocks it draws: launched with `-nativeEditor YES` until it
+    /// draws them all (11d-5c)
+    var nativeEditorEnabled: Bool { UserDefaults.standard.bool(forKey: "nativeEditor") }
     @ObservationIgnored private var ownToastCount = 0
     /// A device to pull from once the vault just copied from it is open.
     @ObservationIgnored private var syncWhenOpen: String?
@@ -520,6 +541,7 @@ final class EditorController: WorkspaceService {
         // the sidebar opens the folders down to the page on screen
         if let id = selection { for ancestor in workspace.ancestors(of: id) { expanded.insert(ancestor.id) } }
         send(.show(pageId: selection, find: pendingFind))
+        if let find = pendingFind, let id = selection { ask(id, .select(find)) }
         pendingFind = nil
     }
 
@@ -698,7 +720,37 @@ final class EditorController: WorkspaceService {
     /// Which screen shows the page, the editor page's or one of the app's (App/Sources/Pages).
     func pageScreen(_ pageId: String) async -> PageScreen {
         guard phase == .ready, let host else { return .web }
-        return await host.screen(of: pageId, sourceMode: sourceMode == pageId)
+        return await host.screen(of: pageId, sourceMode: sourceMode == pageId, nativeEditor: nativeEditorEnabled)
+    }
+
+    /// The page's document for the native editor.
+    func editorDoc(_ pageId: String) async -> DocNode? {
+        guard phase == .ready, let host else { return nil }
+        return await host.editorDoc(pageId)
+    }
+
+    /// The native editor shows a page: the page's own editor stays closed for it.
+    func nativeEditorShows(_ pageId: String) {
+        guard nativeEditorPage != pageId else { return }
+        nativeEditorPage = pageId
+        send(.nativeEditor(pageId: pageId))
+    }
+
+    /// The native editor stopped showing a page; one that took over since is left alone.
+    func nativeEditorLeft(_ pageId: String) {
+        guard nativeEditorPage == pageId else { return }
+        nativeEditorPage = nil
+        send(.nativeEditor(pageId: nil))
+    }
+
+    private func ask(_ pageId: String, _ kind: EditorRequest.Kind) {
+        editorRequests += 1
+        editorRequest = EditorRequest(id: editorRequests, pageId: pageId, kind: kind)
+    }
+
+    func focusTitle(_ pageId: String) {
+        editorRequests += 1
+        titleFocus = (editorRequests, pageId)
     }
 
     /// The database screen's data from the session.
@@ -943,15 +995,21 @@ final class EditorController: WorkspaceService {
     // MARK: the page on screen
 
     func scrollToHeading(_ index: Int) {
+        if let page = nativeEditorPage, page == selection { return ask(page, .heading(index)) }
         send(.scrollToHeading(index: index))
     }
 
     func findInPage() {
+        if let page = nativeEditorPage, page == selection { return ask(page, .find) }
         send(.find)
     }
 
     /// Cmd K: the link editor when text is selected in the editor, as there, otherwise search.
     func searchOrLink() async {
+        if let page = nativeEditorPage, page == selection {
+            ask(page, .link)
+            return
+        }
         if isPageReady, selection != nil,
            (try? await page.callJavaScript("return window.synapse.linkSelection()")) as? Bool == true {
             return

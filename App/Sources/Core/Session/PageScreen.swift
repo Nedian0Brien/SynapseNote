@@ -14,6 +14,8 @@ nonisolated enum PageScreen: Equatable, Sendable {
     case database(editable: Bool)
     /// A canvas, or the notice that its file could not be read.
     case canvas(unreadable: Bool)
+    /// A text page in the app's own editor (App/Sources/Editor), for pages whose blocks it draws.
+    case editor
 }
 
 /// What the canvas screen shows, read from the Swift session (`SessionHost.canvas(_:)`).

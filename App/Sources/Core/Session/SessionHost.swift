@@ -395,7 +395,7 @@ nonisolated final class SessionHost: @unchecked Sendable {
 
     /// What the app draws over the editor page for a page, by the rules of web/src/main.tsx's `Page`, which
     /// draws an empty page in the same cases. A locked page is `.web` here, the app asks for its password.
-    func screen(of id: String, sourceMode: Bool) async -> PageScreen {
+    func screen(of id: String, sourceMode: Bool, nativeEditor: Bool = false) async -> PageScreen {
         await run(writes: false) { [self] in
             guard let session, let page = session.state.pages[id], !Tree.isEffectivelyTrashed(session.state.pages, id)
             else { return .web }
@@ -406,7 +406,16 @@ nonisolated final class SessionHost: @unchecked Sendable {
             if sourceMode, page.kind == .page { return .source }
             let doc = session.state.docs[id] ?? Model.emptyDoc()
             let unknown = Doc.findUnknownTypes(doc)
-            return unknown.isEmpty ? .web : .unknown(types: unknown, plain: Doc.docToPlainText(doc))
+            guard unknown.isEmpty else { return .unknown(types: unknown, plain: Doc.docToPlainText(doc)) }
+            return nativeEditor && EditorScreen.draws(doc) ? .editor : .web
+        }
+    }
+
+    /// The page's document as the session holds it, for the native editor.
+    func editorDoc(_ id: String) async -> DocNode? {
+        await run(writes: false) { [self] in
+            guard let session, session.state.pages[id] != nil else { return nil }
+            return session.state.docs[id] ?? Model.emptyDoc()
         }
     }
 

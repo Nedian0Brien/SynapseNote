@@ -68,6 +68,8 @@ export type InboundMessage =
   | { type: 'deleteUnusedFiles' }
   // the page shown as its markdown source, null for the editor
   | { type: 'setSourceMode'; pageId: PageId | null }
+  // the page the app's own editor shows, so this page does not open it too; null when none
+  | { type: 'nativeEditor'; pageId: PageId | null }
   // a toast's button was pressed, or the toast was closed, in the app
   | { type: 'toastAction'; id: number }
   | { type: 'dismissToast'; id: number };
@@ -287,6 +289,8 @@ export function parseInbound(value: unknown): InboundMessage | null {
         : null;
     case 'setSourceMode':
       return value.pageId === null || isId(value.pageId) ? { type: 'setSourceMode', pageId: value.pageId } : null;
+    case 'nativeEditor':
+      return value.pageId === null || isId(value.pageId) ? { type: 'nativeEditor', pageId: value.pageId } : null;
     case 'toastAction':
     case 'dismissToast':
       return Number.isInteger(value.id) ? { type: value.type, id: value.id as number } : null;

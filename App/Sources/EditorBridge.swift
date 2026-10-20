@@ -210,6 +210,8 @@ nonisolated enum EditorCommand: Sendable {
     case deleteUnusedFiles
     /// The page shown as its Markdown source, nil for the editor.
     case setSourceMode(pageId: String?)
+    /// the page the app's own editor shows, so the page does not open its editor for it too
+    case nativeEditor(pageId: String?)
     case toastAction(id: Int)
     case dismissToast(id: Int)
 
@@ -289,6 +291,8 @@ nonisolated enum EditorCommand: Sendable {
             .object(["type": .string("deleteUnusedFiles")])
         case .setSourceMode(let pageId):
             .object(["type": .string("setSourceMode"), "pageId": pageId.map(JSONValue.string) ?? .null])
+        case .nativeEditor(let pageId):
+            .object(["type": .string("nativeEditor"), "pageId": pageId.map(JSONValue.string) ?? .null])
         case .toastAction(let id):
             .object(["type": .string("toastAction"), "id": .number(Double(id))])
         case .dismissToast(let id):

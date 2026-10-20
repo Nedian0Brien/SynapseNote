@@ -89,6 +89,8 @@ type Phase = { kind: 'waiting' } | { kind: 'ready' };
 // state outside react, so messages that arrive before the first render are not lost
 let phase: Phase = { kind: 'waiting' };
 let shown: PageId | null = null;
+// the page the app's own editor shows (App/Sources/Editor)
+let nativeEditor: PageId | null = null;
 let find: FindRequest | null = null;
 let findCount = 0;
 let rerender: () => void = () => {};
@@ -399,6 +401,8 @@ function Page({ pageId, find }: { pageId: PageId; find: FindRequest | null }) {
   if (sourceMode === pageId && page.kind === 'page') return <Empty />;
   const text = doc ?? EMPTY_DOC;
   if (findUnknownTypes(text).length > 0) return <Empty />;
+  // the app draws this page in its own editor
+  if (nativeEditor === pageId) return <Empty />;
   return <EditorApp key={pageId} page={page} doc={text} editable find={find} onFound={clearFind} />;
 }
 
@@ -563,6 +567,11 @@ listen((message) => {
     case 'setSourceMode':
       commitEditors();
       setUi({ sourceMode: message.pageId });
+      break;
+    case 'nativeEditor':
+      commitEditors();
+      nativeEditor = message.pageId;
+      rerender();
       break;
     case 'toastAction':
       runToastAction(message.id);

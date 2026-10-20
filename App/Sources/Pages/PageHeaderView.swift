@@ -95,6 +95,10 @@ struct PageTitleField: View {
             .padding(.top, 24)
             .padding(.bottom, 18)
             .onAppear { take(page.title) }
+            // the editor's arrow up at its first line
+            .onChange(of: controller.titleFocus?.id) {
+                if controller.titleFocus?.pageId == page.id { focused = true }
+            }
             .onChange(of: page.title) { _, title in
                 if !focused { take(title) }
             }

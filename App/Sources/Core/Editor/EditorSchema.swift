@@ -213,3 +213,17 @@ nonisolated enum EditorSchema {
 private extension JSObject {
     nonisolated var rank: Int { EditorSchema.markRank[type] ?? Int.max }
 }
+
+/// Which pages the native editor takes: those whose every node and mark it draws and that open as TipTap opens
+/// them. The others stay with the web editor until their blocks are drawn here too (11d-5b, 11d-5c).
+nonisolated enum EditorScreen {
+    static let nodes: Set<String> = ["doc", "paragraph", "text", "heading", "bulletList", "orderedList", "listItem", "taskList", "taskItem",
+                                     "blockquote", "codeBlock", "horizontalRule", "hardBreak"]
+    static let marks: Set<String> = Set(EditorSchema.markSpecs.map(\.name))
+
+    static func draws(_ doc: DocNode) -> Bool {
+        let types = EditorSchema.types(doc)
+        guard types.nodes.isSubset(of: nodes), types.marks.isSubset(of: marks) else { return false }
+        return (try? EditorSchema.normalize(doc)) != nil
+    }
+}

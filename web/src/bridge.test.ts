@@ -146,6 +146,9 @@ describe('parseInbound', () => {
     expect(parseInbound({ type: 'importMarkdown', parentId: 3 })).toBeNull();
     expect(parseInbound({ type: 'setSourceMode', pageId: 'a' })).toEqual({ type: 'setSourceMode', pageId: 'a' });
     expect(parseInbound({ type: 'setSourceMode', pageId: null })).toEqual({ type: 'setSourceMode', pageId: null });
+    expect(parseInbound({ type: 'nativeEditor', pageId: 'a' })).toEqual({ type: 'nativeEditor', pageId: 'a' });
+    expect(parseInbound({ type: 'nativeEditor', pageId: null })).toEqual({ type: 'nativeEditor', pageId: null });
+    expect(parseInbound({ type: 'nativeEditor', pageId: 3 })).toBeNull();
     expect(parseInbound({ type: 'toastAction', id: 4 })).toEqual({ type: 'toastAction', id: 4 });
     expect(parseInbound({ type: 'dismissToast', id: 4 })).toEqual({ type: 'dismissToast', id: 4 });
     expect(parseInbound({ type: 'dismissToast', id: '4' })).toBeNull();
