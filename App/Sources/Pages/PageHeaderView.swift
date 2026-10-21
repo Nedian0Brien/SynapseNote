@@ -99,10 +99,14 @@ struct PageTitleField: View {
             .accessibilityLabel("Page title")
             .padding(.top, 24)
             .padding(.bottom, 18)
-            .onAppear { take(page.title) }
+            .onAppear {
+                take(page.title)
+                // a page made a moment ago opens with the caret in its title
+                if controller.takeTitleFocus(page.id) { Task { focused = true } }
+            }
             // the editor's arrow up at its first line
             .onChange(of: controller.titleFocus?.id) {
-                if controller.titleFocus?.pageId == page.id { focused = true }
+                if controller.takeTitleFocus(page.id) { focused = true }
             }
             .onChange(of: page.title) { _, title in
                 if !focused { take(title) }
@@ -110,6 +114,8 @@ struct PageTitleField: View {
             .onChange(of: focused) { _, isFocused in
                 if !isFocused, !draft.utf16.elementsEqual(page.title.utf16) { rename(draft) }
             }
+            // Return from a hardware keyboard submits the field rather than typing a line break
+            .onSubmit { onEnter() }
             .onChange(of: draft) { _, value in
                 if syncing {
                     syncing = false

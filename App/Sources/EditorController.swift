@@ -743,6 +743,14 @@ final class EditorController: WorkspaceService {
         titleFocus = (editorRequests, pageId)
     }
 
+    /// The page's title field takes the caret request once: as it comes, or when the field appears after it, as
+    /// for a page made a moment ago whose screen is drawn once the session has it.
+    func takeTitleFocus(_ pageId: String) -> Bool {
+        guard titleFocus?.pageId == pageId else { return false }
+        titleFocus = nil
+        return true
+    }
+
     /// The database screen's data from the session.
     func databaseSnapshot(_ pageId: String) async -> DatabaseSnapshot? {
         guard phase == .ready, let host else { return nil }
