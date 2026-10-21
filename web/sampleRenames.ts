@@ -1,5 +1,6 @@
 // the welcome guide's sentences that describe morrow on windows and linux or name morrow, rewritten for this
-// app's keys and screens. applied to morrow's src/core/sample.ts at build time by vite.config.ts, in order
+// app's keys and screens. applied to morrow's src/core/sample.ts in order, by scripts/guide-resource.config.mjs for
+// the guide the app carries and by vite.config.ts for the tests
 export const SAMPLE_RENAMES: Array<[string, string]> = [
   ["'Press ',\n            k('Alt N'),\n            ' (',\n            k('⌥ N'),\n            ' on a Mac) to make a page.", "'Press ',\n            k('⌘ N'),\n            ' to make a page."],
   ["['Press ', k('Ctrl K'), ' (', k('⌘ K'), ') to search everything", "['Press ', k('⌘ K'), ' to search everything"],

@@ -6,13 +6,13 @@
 
 | 항목 | 위치 |
 |---|---|
-| 버전 한 곳: `MARKETING_VERSION`(0.1.0), `CURRENT_PROJECT_VERSION`(1) | `project.yml` → Info.plist, 편집기 번들 `__APP_VERSION__` |
+| 버전 한 곳: `MARKETING_VERSION`(0.1.0), `CURRENT_PROJECT_VERSION`(1) | `project.yml` → Info.plist |
 | 개인정보 매니페스트: 추적·수집 없음, 파일 시각 C617.1·3B52.1·DDA9.1, UserDefaults CA92.1 | `App/PrivacyInfo.xcprivacy` |
 | 앱 아이콘(Icon Composer, 기본·다크·틴트 모양), AccentColor | `App/AppIcon.icon`, `App/Assets.xcassets`. 레이어 SVG: `swift scripts/make-icon.swift` → `design/app-icon/` |
 | 로컬 네트워크 권한 문구, Bonjour 서비스, `NSAllowsLocalNetworking` | `project.yml` info |
 | macOS 샌드박스 entitlements(네트워크 client·server, 사용자가 고른 파일, 북마크), Hardened Runtime | `App/SynapseNote-macOS.entitlements`, `project.yml` |
 | URL scheme `synapsenote`, App Intent "Quick Note" | `project.yml`, `App/Sources/QuickNote/` |
-| 라이선스 고지: NOTICE, Morrow Apache 2.0, 번들 라이선스 | 앱 리소스, 설정 > About > Licences |
+| 라이선스 고지: NOTICE, Morrow Apache 2.0, Swift 이식, Renderers·Emoji 라이선스 | 앱 리소스, 설정 > About > Licences |
 | Release archive(서명 없이) macOS·iOS 성공, 경고 0 | `docs/verification/phase10-release-prep.md` |
 
 제한 entitlement는 필요 없다. iOS는 UDP 브로드캐스트(`com.apple.developer.networking.multicast`) 대신 Bonjour를 쓴다(8단계 결정).
@@ -38,7 +38,7 @@
    - `xcodegen generate`.
 3. Certificates, Identifiers & Profiles에서 bundle ID `com.synapsenote.native`(iOS·macOS 같은 ID, Universal Purchase)를 등록한다. 따로 켤 capability는 없다(App Sandbox와 Hardened Runtime은 Xcode가 서명할 때 넣는다).
 4. App Store Connect에서 앱 기록을 만든다(iOS, macOS). 설명·키워드·개인정보 라벨은 `docs/release/app-store.md` 초안을 쓴다.
-5. archive: Xcode Organizer, 또는 `xcodebuild archive -scheme SynapseNote -configuration Release -destination 'generic/platform=iOS'`(macOS도 같다). archive 기계에 node 20.19 이상이 있어야 한다(편집기 번들을 만드는 pre-build script, `scripts/build-editor.sh`).
+5. archive: Xcode Organizer, 또는 `xcodebuild archive -scheme SynapseNote -configuration Release -destination 'generic/platform=iOS'`(macOS도 같다). node는 필요 없다(11e-2에서 편집기 번들 빌드 단계를 뺐다).
 6. 업로드와 검증: Organizer의 Validate·Distribute, 또는 `xcodebuild -exportArchive`(`method: app-store-connect`). 업로드 검증에서 아이콘·매니페스트·entitlement 문제가 나오면 여기서 고친다.
 7. TestFlight 내부 테스트, 실기기 확인(아래).
 8. (선택) App Store 밖에서 macOS 배포: Developer ID 서명과 `notarytool` 공증.

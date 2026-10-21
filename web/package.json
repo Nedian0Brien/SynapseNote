@@ -2,7 +2,7 @@
   "name": "synapsenote-editor",
   "private": true,
   "version": "0.1.0",
-  "description": "SynapseNote block editor bundle, loaded by the native app in a WKWebView.",
+  "description": "Tools that make the native app's comparison data and vendored files from Morrow's own code.",
   "license": "Apache-2.0",
   "type": "module",
   "engines": {
@@ -11,7 +11,6 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "build": "vite build",
     "core-fixtures": "rolldown scripts/core-fixtures.ts --format esm --platform node -o node_modules/.cache/core-fixtures.mjs && TZ=UTC node node_modules/.cache/core-fixtures.mjs ../App/Tests/Fixtures/core",
     "html-entities": "rolldown scripts/html-entities.ts --format esm --platform node -o node_modules/.cache/html-entities.mjs && node node_modules/.cache/html-entities.mjs ../App/Sources/Core/Markdown/HTMLEntities.swift",
     "markdown-unicode": "rolldown scripts/markdown-unicode.ts --format esm --platform node -o node_modules/.cache/markdown-unicode.mjs && node node_modules/.cache/markdown-unicode.mjs ../App/Sources/Core/Markdown/MarkdownPunctuation.swift",
