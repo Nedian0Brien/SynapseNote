@@ -36,7 +36,7 @@
 | 11d-2 | 페이지 머리, Markdown 원문 편집, 읽지 못한 페이지 알림(기록 창은 11d-5로) | 구현 (PR #18, `docs/verification/phase11d2-page-chrome.md`) |
 | 11d-3 | 데이터베이스 페이지 전체(보기 다섯 가지, 도구 막대, 속성·보기 설정, 값 편집). 다른 페이지 안의 데이터베이스와 행 속성 줄은 11d-5로 | 구현 (PR #19, `docs/verification/phase11d3-database-page.md`) |
 | 11d-4 | 캔버스 페이지 전체(노드 여섯 종류, 연결, 잉크, 그룹, 되돌리기, 확대). 다른 페이지 안의 캔버스는 11d-5로 | 구현 (PR #20, `docs/verification/phase11d4-canvas-page.md`) |
-| 11d-5 | 블록 편집기 | 5a~5c로 나눔(`.intent/spec_phase11d-native-screens.md`). 5c-2부터 기본, 실행 인자 `-nativeEditor NO`로 웹 편집기(11e에서 제거) |
+| 11d-5 | 블록 편집기 | 5a~5c로 나눔(`.intent/spec_phase11d-native-screens.md`). 5c-2부터 기본, 11e-2에서 웹 편집기 제거 |
 | 11d-5a | 편집기 모델(TipTap 정규화)과 글 블록: 문단·제목·목록·할 일·인용·코드·구분선, 마크 8종, 입력 규칙, 슬래시 메뉴, 서식·링크·찾기, 되돌리기 | 구현 (PR #21, `docs/verification/phase11d5a-text-editor.md`) |
 | 11d-5b | 페이지 링크·날짜·태그, 표, 콜아웃, 접기, 단, 목차, 블록 메뉴, Markdown 붙여넣기 | 구현 (PR #22, `docs/verification/phase11d5b-editor-blocks.md`) |
 | 11d-5c | 5c-1·5c-2로 나눔(`.intent/spec_phase11d-native-screens.md`, 2026-10-21) | |
@@ -44,7 +44,7 @@
 | 11d-5c-2 | 페이지 끼워 넣기(데이터베이스·캔버스·페이지), 행 속성 줄, 기록 창, 네이티브 편집기를 기본으로 | 구현 (PR #24, `docs/verification/phase11d5c2-editor-embeds.md`) |
 | 11e | 웹 계층 제거 | 11e-1·11e-2로 나눔(`.intent/spec_phase11e-web-removal.md`) |
 | 11e-1 | Morrow 작업을 Swift로: 페이지 작업, 내보내기·게시·백업·복원·가져오기, zip, PDF, 알림 | 구현 (PR #25, `docs/verification/phase11e1-swift-operations.md`) |
-| 11e-2 | 상태 소유를 Swift로, 웹 페이지·브리지·번들·node 빌드 제거 | |
+| 11e-2 | 상태 소유를 Swift로, 웹 페이지·브리지·번들·node 빌드 제거 | 구현 (`docs/verification/phase11e2-session-owner.md`) |
 
 ## 전환 단계(11)에서 볼 것
 
@@ -55,3 +55,4 @@
 - 데이터베이스 화면(전체 페이지와 인라인)은 4단계에서 Morrow `DatabaseView`를 편집기 WebView에서 그리도록 했다. 편집기를 Swift로 옮길 때 함께 옮긴다.
 - 홈, 명령 팔레트, 인스펙터는 1단계 화면처럼 `EditorController`를 직접 받는다. 조회와 명령은 `WorkspaceService`에 있지만 화면 이동(`go(to:)`, `openInNewTab`)은 아직 프로토콜 밖에 있다. Swift 코어로 바꿀 때 이 경계를 먼저 정리한다.
 - 9단계 사용자 CSS는 편집기 페이지에만 적용된다. 편집기를 Swift로 옮기면 Morrow CSS 변수(`--accent` 등)로 하던 사용자 꾸미기를 어떻게 이어 갈지 정해야 한다. 첫 실행 가이드는 Morrow `sampleCommands`를 빌드 때 고쳐 쓰므로, TS 코어를 걷어낼 때 가이드 내용을 Swift 쪽으로 옮긴다.
+- 11e-2로 위 항목을 모두 정리했다. 앱에는 웹 페이지와 TS 코어가 없고, 사용자 CSS는 설정에서 뺐으며(사용자 결정, `.morrow/style.css`는 그대로), 첫 실행 가이드는 `App/Resources/WelcomeGuide.json`(Morrow `sampleCommands`에서 만든 것)이다.
