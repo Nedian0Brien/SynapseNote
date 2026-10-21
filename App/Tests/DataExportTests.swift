@@ -35,24 +35,12 @@ struct DataExportTests {
         #expect(ExportFile(name: "Notes.zip", data: Data()).contentType == .zip)
     }
 
-    @Test func printedDocumentIsLightWithTheEditorStyles() {
-        let snapshot = PDFExporter.Snapshot(title: "A \"B\"", head: "<link rel=\"stylesheet\" href=\"/assets/index.css\">", body: "<p>x</p>", accent: "ocean", colorful: "true")
-        let html = PDFExporter.html(for: snapshot)
-        #expect(html.contains("data-theme=\"light\""))
-        #expect(html.contains("<title>A &quot;B&quot;</title>"))
-        #expect(html.contains("href=\"/assets/index.css\""))
-        #expect(html.contains("<body><p>x</p></body>"))
-    }
-
     #if os(macOS)
     @MainActor
     @Test func pagesPrintOnA4InPages() async throws {
         let paragraphs = (1...120).map { "<p>Paragraph \($0) with enough words to wrap across the line a few times on the page.</p>" }.joined()
-        let snapshot = PDFExporter.Snapshot(title: "Long", head: "<style>body{font:16px Georgia}</style>", body: "<h1>Long</h1>\(paragraphs)", accent: "ocean", colorful: "true")
-        let root = FileManager.default.temporaryDirectory.appending(path: "editor-\(UUID().uuidString)")
-        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: root) }
-        let data = try await PDFExporter(editorRoot: root, access: VaultAccess()).pdf(of: snapshot)
+        let html = "<!doctype html><html><head><style>body{font:16px Georgia}</style></head><body><h1>Long</h1>\(paragraphs)</body></html>"
+        let data = try await PDFExporter(access: VaultAccess()).pdf(html: html)
         let document = try #require(PDFDocument(data: data))
         #expect(document.pageCount > 1)
         let bounds = try #require(document.page(at: 0)).bounds(for: .mediaBox)

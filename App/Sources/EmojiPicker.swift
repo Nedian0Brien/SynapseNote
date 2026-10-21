@@ -10,7 +10,7 @@ typealias PlatformImage = UIImage
 /// The emoji the icon picker offers and the Fluent images pages are drawn with, the same set Morrow uses.
 @MainActor
 final class EmojiCatalog {
-    static let shared = EmojiCatalog(folder: Bundle.main.resourceURL!.appending(path: "Editor"))
+    static let shared = EmojiCatalog(folder: Bundle.main.resourceURL!.appending(path: "Emoji"))
 
     struct Entry: Identifiable, Hashable, Decodable {
         let emoji: String

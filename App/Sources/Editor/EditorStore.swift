@@ -78,7 +78,7 @@ final class EditorStore {
     /// arrive
     var pickingFiles = false
 
-    /// what was last sent to the page or read from it, to tell an outside change from this editor's own
+    /// what was last sent to the session or read from it, to tell an outside change from this editor's own
     @ObservationIgnored private var committed: DocNode?
     @ObservationIgnored private var dirty = false
     @ObservationIgnored private var timer: Task<Void, Never>?
@@ -215,7 +215,7 @@ final class EditorStore {
         }
     }
 
-    /// sends the document now if it changed, and returns once the page has it
+    /// sends the document now if it changed, and returns once the session has it
     func flush() async {
         timer?.cancel()
         timer = nil

@@ -32,7 +32,7 @@ struct DatabaseScreenView: View {
             .padding(.bottom, 120)
         }
         .background(.background)
-        // asked again whenever the page reports a change, as the other native screens are
+        // asked again whenever the session reports a change, as the other screens are
         .task(id: controller.revision) {
             await store.load()
             store.ensureView(editable: editable)

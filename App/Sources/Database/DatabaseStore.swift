@@ -2,7 +2,7 @@ import Foundation
 import Observation
 
 /// What the database screen shows and the changes it makes. The data comes from the Swift session after every
-/// report; a change is applied here at once and sent to the page as a Morrow command, so a second change made
+/// report; a change is applied here at once and sent to the session as a Morrow command, so a second change made
 /// before the next report builds on the first, as Morrow's screen does with `getState()`.
 @MainActor
 @Observable

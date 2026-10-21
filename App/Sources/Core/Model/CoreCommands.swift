@@ -65,7 +65,7 @@ nonisolated enum CoreCommand: Sendable {
         }
     }
 
-    /// A command as the web sends it (Morrow's `Command` object). nil for an unknown type or a missing id.
+    /// A command as Morrow's `Command` object. nil for an unknown type or a missing id.
     init?(json: JSValue) {
         guard case .object(let fields) = json, case .string(let type) = fields["type"] else { return nil }
         let id = fields["id"]?.string

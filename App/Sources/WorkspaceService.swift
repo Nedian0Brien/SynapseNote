@@ -77,8 +77,7 @@ nonisolated enum WorkspaceCommand: Equatable, Sendable {
     }
 }
 
-/// What native screens use to read and change the workspace. Today the editor page's Morrow session answers;
-/// a Swift data core can take its place later without the screens changing.
+/// What native screens use to read and change the workspace; the vault's Swift session (SessionHost) answers.
 @MainActor
 protocol WorkspaceService: AnyObject {
     var workspace: Workspace { get }

@@ -141,7 +141,7 @@ nonisolated struct GraphOptions: Codable, Hashable, Sendable {
     var depth = 1
 }
 
-/// The queries the editor page answers, by the name `window.synapse.query` takes.
+/// The questions the screens ask the session (CoreQueries), by the names of web/src/queries.ts.
 nonisolated enum WorkspaceQuery: Sendable {
     case search(String, limit: Int)
     case recent(limit: Int)
@@ -183,13 +183,13 @@ nonisolated enum WorkspaceQuery: Sendable {
         case .backlinks(let id), .mentions(let id), .outline(let id): ["id": id]
         case .tagPages(let tag): ["tag": tag]
         case .graph(let options, let focus):
-            // no focus is left out, the page reads that as the whole graph
+            // no focus is left out, which reads as the whole graph
             focus.map { ["tags": options.tags, "hierarchy": options.hierarchy, "orphans": options.orphans, "depth": options.depth, "focus": $0] }
                 ?? ["tags": options.tags, "hierarchy": options.hierarchy, "orphans": options.orphans, "depth": options.depth]
         }
     }
 
-    /// The parameters as the Swift core reads them, the same values `params` sends the page.
+    /// The parameters as the Swift core reads them.
     var jsParams: JSObject {
         var object = JSObject()
         for (key, value) in params {
@@ -204,7 +204,7 @@ nonisolated enum WorkspaceQuery: Sendable {
         return object
     }
 
-    /// Reads the page's answer, JSON text, or nil when there was none.
+    /// Reads an answer, JSON text, or nil when there was none.
     static func decode<T: Decodable>(_ answer: Any?, as type: T.Type = T.self) throws -> T? {
         guard let text = answer as? String else { return nil }
         return try JSONDecoder().decode(T.self, from: Data(text.utf8))

@@ -4,7 +4,7 @@
 <dict>
 	<key>com.apple.security.app-sandbox</key>
 	<true/>
-	<!-- the sandboxed WebKit content process does not launch without it; the editor page reaches nothing outside the app -->
+	<!-- sync sends its requests to paired devices; and the sandboxed WebKit content process, which draws formulas, diagrams and PDFs, does not launch without it -->
 	<key>com.apple.security.network.client</key>
 	<true/>
 	<!-- sync: other paired devices on the network send their requests to this one -->

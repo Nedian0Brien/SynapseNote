@@ -175,6 +175,11 @@ nonisolated enum Flashcards {
         return log
     }
 
+    /// `writeReviewLog`: the text of .morrow/review.json
+    static func writeReviewLog(_ log: JSObject) -> String {
+        "\(JSJSON.stringify(["version": 1, "cards": .object(log)]))\n"
+    }
+
     /// A review log, `{ [cardId]: { due, interval, ease, reps, lapses } }`.
     static func isDue(_ card: Card, _ log: JSObject, _ today: Date) -> Bool {
         guard let entry = log[card.id], let due = entry["due"]?.string else { return log[card.id] == nil }

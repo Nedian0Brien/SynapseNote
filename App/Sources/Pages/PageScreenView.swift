@@ -1,12 +1,11 @@
 import SwiftUI
 
-/// The screens the app draws over the editor page for a text page, by the rules of Morrow's PageView: a page
-/// that could not be read, one with content this version does not know, and a page shown as its Markdown source.
-/// The editor page draws an empty page under them; for every other page this draws nothing.
+/// The screen of a page, by the rules of Morrow's PageView: the editor, a database, a canvas, a page that could not
+/// be read, one with content this version does not know or cannot open, and a page shown as its Markdown source.
 struct PageScreenView: View {
     let controller: EditorController
     let pageId: String
-    @State private var screen: PageScreen = .web
+    @State private var screen: PageScreen = .none
 
     private struct Asked: Equatable {
         let revision: Int
@@ -15,14 +14,14 @@ struct PageScreenView: View {
 
     var body: some View {
         content
-            // asked again whenever the page reports a change, the page's own copy is changed the same way
+            // asked again whenever the session reports a change
             .task(id: Asked(revision: controller.revision, sourceMode: controller.sourceMode)) {
                 screen = await controller.pageScreen(pageId)
             }
     }
 
     @ViewBuilder private var content: some View {
-        if let page = controller.workspace.infos[pageId], screen != .web {
+        if let page = controller.workspace.infos[pageId], screen != .none {
             switch screen {
             case .unreadable:
                 PageNoticeView(controller: controller, page: page, unreadable: true,
@@ -32,19 +31,24 @@ struct PageScreenView: View {
                 PageNoticeView(controller: controller, page: page, unreadable: false,
                                text: "This page contains content SynapseNote does not know yet (\(types.joined(separator: ", "))). It is shown as plain text and protected from changes so nothing is lost.",
                                plain: plain)
+            case .invalid(let plain):
+                PageNoticeView(controller: controller, page: page, unreadable: false,
+                               text: "This page’s content does not open in the editor. It is shown as plain text and protected from changes so nothing is lost.",
+                               plain: plain)
             case .database(let editable):
                 DatabaseScreenView(controller: controller, page: page, editable: editable)
             case .canvas(let unreadable):
                 CanvasScreenView(controller: controller, page: page, unreadable: unreadable)
             case .editor:
                 EditorScreenView(controller: controller, page: page)
-            case .source, .web:
+            case .source:
                 SourcePageView(controller: controller, page: page)
+            case .none:
+                EmptyView()
             }
         } else {
-            // the editor page shows through and takes the touches; a view is kept so the task above runs
+            // nothing to show; a view is kept so the task above runs
             Color.clear
-                .allowsHitTesting(false)
                 .accessibilityHidden(true)
         }
     }

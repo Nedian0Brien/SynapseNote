@@ -8,7 +8,7 @@ struct SynapseNoteApp: App {
     #endif
 
     var body: some Scene {
-        // one window: the vault's single editor page cannot be shown in two places at once
+        // one window: the open vault has one set of tabs and screens
         #if os(macOS)
         Window("SynapseNote", id: "main") {
             ContentView(controller: controller)

@@ -6,8 +6,7 @@ import AppKit
 #endif
 
 /// The settings Morrow keeps in `src/app/platform/preferences.ts` that its settings dialog chooses, kept by the
-/// app in `UserDefaults` and sent to the editor page whenever they change. The page's own preferences, such
-/// as which folders are open in its views, stay in the page.
+/// app in `UserDefaults`.
 @Observable
 final class AppPreferences {
     enum Theme: String, CaseIterable, Identifiable {
@@ -78,7 +77,6 @@ final class AppPreferences {
     }
     var canvasSizes: [String: CanvasSize] {
         didSet {
-            // a view preference only, the editor page does not need it
             defaults.set(canvasSizes.mapValues { size -> [String: Double] in
                 var entry = ["height": size.height]
                 if let width = size.width { entry["width"] = width }
@@ -87,8 +85,6 @@ final class AppPreferences {
         }
     }
 
-    /// Called after any setting changes, to tell the editor page.
-    @ObservationIgnored var changed: () -> Void = {}
     @ObservationIgnored private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -117,17 +113,6 @@ final class AppPreferences {
     /// The name as Morrow stores it: trimmed, at most 60 characters.
     static func clean(_ name: String) -> String {
         String(name.trimmingCharacters(in: .whitespacesAndNewlines).prefix(nameLimit))
-    }
-
-    /// What the editor page puts in Morrow's preferences.
-    var json: JSONValue {
-        .object([
-            "font": .string(font.rawValue),
-            "width": .string(width.rawValue),
-            "accent": .string(accent.rawValue),
-            "colorful": .bool(colorful),
-            "name": .string(name),
-        ])
     }
 
     /// The colour scheme the app's windows use, nil for the system's.
@@ -160,6 +145,5 @@ final class AppPreferences {
 
     private func save(_ name: String, _ value: Any) {
         defaults.set(value, forKey: Self.key(name))
-        changed()
     }
 }

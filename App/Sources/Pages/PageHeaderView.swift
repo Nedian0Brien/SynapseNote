@@ -66,9 +66,9 @@ struct PageHeaderView: View {
 }
 
 /// The page title, renamed as it is typed like Morrow's TitleField. The field keeps its own text while it has
-/// focus: the new title comes back from the page a moment later, and setting the field to it then would break
+/// focus: the new title comes back from the session a moment later, and setting the field to it then would break
 /// a Korean syllable being composed. Every change typed here is sent, and the text is sent once more when the
-/// field loses focus if the page has not caught up with it, so the last letter is never lost.
+/// field loses focus if the session has not caught up with it, so the last letter is never lost.
 struct PageTitleField: View {
     let controller: EditorController
     let page: PageInfo

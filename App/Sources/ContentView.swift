@@ -1,6 +1,5 @@
 import SwiftUI
 import UniformTypeIdentifiers
-import WebKit
 
 struct ContentView: View {
     @Bindable var controller: EditorController
@@ -41,17 +40,8 @@ struct ContentView: View {
             },
             onCancellation: { controller.cancelVaultCopy() }
         )
-        // the picker is answered from its completion and cancellation alone: the binding is set to false before
-        // the completion runs, and answering there would hand the page a cancel in place of the picked files
-        .fileImporter(
-            isPresented: Binding(get: { controller.fileRequest != nil }, set: { _ in }),
-            allowedContentTypes: [.item],
-            allowsMultipleSelection: controller.fileRequest?.allowsMultiple ?? false,
-            onCompletion: { result in finishFileRequest(try? result.get()) },
-            onCancellation: { finishFileRequest(nil) }
-        )
         #if os(iOS)
-        // its own view: file dialogs on the same view as the two importers above stop the window taking touches
+        // its own view: file dialogs on the same view as the importers here stop the window taking touches
         .background { ExportSheet(controller: controller) }
         #endif
         .overlay(alignment: .bottom) { ToastOverlay(controller: controller) }
@@ -184,7 +174,7 @@ struct ContentView: View {
                 #else
                 ToolbarItem(placement: .status) { SaveStatusView(state: controller.saveState) }
                 #endif
-                // the same items every time: items coming and going rebuild the column, and with it the web view;
+                // the same items every time: items coming and going rebuild the column;
                 // search sits with the main column so it is there when the sidebar is hidden
                 ToolbarItem {
                     Button("Search", systemImage: "magnifyingglass") { controller.showingPalette = true }
@@ -235,52 +225,43 @@ struct ContentView: View {
     }
 
     private var page: some View {
-        // the web view stays fully visible: WebKit stops painting a page it starts out hidden
-        WebView(controller.page)
-            .ignoresSafeArea(.container, edges: .bottom)
-            .overlay {
-                if controller.phase != .ready {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        Group {
+            if controller.phase != .ready {
+                ProgressView()
+            } else {
+                switch controller.destination {
+                case .home:
+                    HomeView(controller: controller)
                         .background(.background)
-                } else {
-                    switch controller.destination {
-                    case .home:
-                        HomeView(controller: controller)
-                            .background(.background)
-                    case .trash:
-                        TrashView(controller: controller)
-                            .background(.background)
-                    case .tasks:
-                        TasksView(controller: controller)
-                            .background(.background)
-                    case .tags:
-                        TagsView(controller: controller)
-                            .background(.background)
-                    case .tag(let tag):
-                        TagView(controller: controller, tag: tag)
-                            .background(.background)
-                    case .graph(let focus):
-                        GraphView(controller: controller, focus: focus)
-                    case .review:
-                        ReviewView(controller: controller)
-                            .background(.background)
-                    case .page(let id):
-                        if controller.workspace.locked.contains(id) {
-                            UnlockView(controller: controller, pageId: id)
-                        } else {
-                            PageScreenView(controller: controller, pageId: id)
-                                .id(id)
-                        }
+                case .trash:
+                    TrashView(controller: controller)
+                        .background(.background)
+                case .tasks:
+                    TasksView(controller: controller)
+                        .background(.background)
+                case .tags:
+                    TagsView(controller: controller)
+                        .background(.background)
+                case .tag(let tag):
+                    TagView(controller: controller, tag: tag)
+                        .background(.background)
+                case .graph(let focus):
+                    GraphView(controller: controller, focus: focus)
+                case .review:
+                    ReviewView(controller: controller)
+                        .background(.background)
+                case .page(let id):
+                    if controller.workspace.locked.contains(id) {
+                        UnlockView(controller: controller, pageId: id)
+                    } else {
+                        PageScreenView(controller: controller, pageId: id)
+                            .id(id)
                     }
                 }
             }
-    }
-
-    private func finishFileRequest(_ urls: [URL]?) {
-        guard let request = controller.fileRequest else { return }
-        controller.fileRequest = nil
-        request.continuation.resume(returning: urls)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(.background)
     }
 }
 

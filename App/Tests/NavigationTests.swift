@@ -93,7 +93,7 @@ struct TabListTests {
     }
 }
 
-/// The editor page's answers, in the shape `web/src/queries.ts` sends.
+/// The answers, in the shape `web/src/queries.ts` gives.
 struct WorkspaceQueryTests {
     @Test func readsSearchHits() throws {
         let text = #"[{"id":"g","path":["Garden"],"titleMatch":false,"snippet":{"before":"Buy ","match":"stakes","after":""},"firstMatch":"stakes"},{"id":"t","path":[],"titleMatch":true,"snippet":null,"firstMatch":null}]"#
@@ -175,14 +175,22 @@ struct DailyViewsTests {
     }
 
     @Test func iconsFollowMorrowsPageIcon() throws {
-        let daily = try #require(PageInfo(.object(["id": .string("d"), "dailyDate": .string("2026-10-19")])))
-        let journal = try #require(PageInfo(.object(["id": .string("j"), "kind": .string("journal")])))
-        let templates = try #require(PageInfo(.object(["id": .string("t"), "kind": .string("templates")])))
+        func info(_ id: String, _ change: (inout PageMeta) -> Void) -> PageInfo {
+            var page = PageMeta(id: id, parentId: nil)
+            change(&page)
+            return PageInfo(page)
+        }
+        let daily = info("d") { $0.dailyDate = "2026-10-19" }
+        let journal = info("j") { $0.kind = .journal }
+        let templates = info("t") { $0.kind = .templates }
         #expect(PageIcon.symbol(for: daily) == "calendar")
         #expect(PageIcon.symbol(for: journal) == "book")
         #expect(PageIcon.symbol(for: templates) == "square.on.square.dashed")
         #expect(daily.dailyDate == "2026-10-19")
-        let locked = try #require(PageInfo(.object(["id": .string("l"), "encrypted": .bool(true), "icon": .string("😀")])))
+        let locked = info("l") {
+            $0.encrypted = true
+            $0.icon = "😀"
+        }
         #expect(PageIcon.symbol(for: locked) == "lock")
     }
 }

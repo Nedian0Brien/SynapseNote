@@ -119,7 +119,7 @@ extension EditorController {
 
     /// Morrow's backupJson: the pages, and the stored files they and their history point at when asked
     func backupJSON(attachments: Bool) async -> String? {
-        guard let host, await host.flushAlone(), let state = await state else { return nil }
+        guard let host, await host.flush(), let state = await state else { return nil }
         var files: [Portability.BackupFile] = []
         if attachments {
             var ids = Portability.referencedFileIds(state)

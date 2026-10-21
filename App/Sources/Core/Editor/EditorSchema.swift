@@ -215,8 +215,8 @@ private extension JSObject {
 }
 
 /// Which pages the native editor takes: those whose every node and mark it draws, which since 11d-5c is every
-/// one Morrow knows (`Doc.knownNodeTypes`, `knownMarkTypes`), and that open as TipTap opens them. A document
-/// with a node Morrow does not know stays with the web editor until 11e.
+/// one Morrow knows (`Doc.knownNodeTypes`, `knownMarkTypes`), and that open as TipTap opens them. The others
+/// are shown as plain text (PageScreen `unknown` and `invalid`).
 nonisolated enum EditorScreen {
     static let nodes: Set<String> = ["doc", "paragraph", "text", "heading", "bulletList", "orderedList", "listItem", "taskList", "taskItem",
                                      "blockquote", "codeBlock", "horizontalRule", "hardBreak",

@@ -1,7 +1,7 @@
 import Foundation
-import WebKit
+import UniformTypeIdentifiers
 
-/// The vault the scheme handler and the editor bridge read from, swapped when a vault opens.
+/// The vault the scheme handler reads from, swapped when a vault opens.
 nonisolated final class VaultAccess: @unchecked Sendable {
     private let lock = NSLock()
     private var current: VaultFileSystem?
@@ -13,9 +13,9 @@ nonisolated final class VaultAccess: @unchecked Sendable {
     }
 }
 
-/// Serves vault images and attachments under `synapse-vault://vault/<path>`, through the same path checks as
-/// every other vault read.
-nonisolated struct VaultSchemeHandler: URLSchemeHandler {
+/// Serves vault images and attachments under `synapse-vault://vault/<path>` to the web view a PDF is printed in
+/// (PDFExporter), through the same path checks as every other vault read.
+nonisolated struct VaultSchemeHandler {
     static let scheme = "synapse-vault"
 
     /// the URL a vault file is served at, as the editor's `fileUrl` makes it (encodePathForUrl)
@@ -36,7 +36,7 @@ nonisolated struct VaultSchemeHandler: URLSchemeHandler {
         let relative = String(url.path(percentEncoded: false).drop { $0 == "/" })
         _ = try VaultPaths.resolve(relative, in: files.root)
         guard let data = files.readBytes(relative) else { throw Failure.notFound }
-        let mime = EditorSchemeHandler.mimeType(for: URL(filePath: relative))
+        let mime = Self.mimeType(for: URL(filePath: relative))
         let response = HTTPURLResponse(
             url: url,
             statusCode: 200,
@@ -46,23 +46,13 @@ nonisolated struct VaultSchemeHandler: URLSchemeHandler {
         return (response, data)
     }
 
-    func reply(for request: URLRequest) -> AsyncThrowingStream<URLSchemeTaskResult, any Error> {
-        AsyncThrowingStream { continuation in
-            guard let url = request.url else {
-                continuation.finish(throwing: Failure.notFound)
-                return
-            }
-            let task = Task.detached {
-                do {
-                    let (response, data) = try response(for: url)
-                    continuation.yield(.response(response))
-                    continuation.yield(.data(data))
-                    continuation.finish()
-                } catch {
-                    continuation.finish(throwing: error)
-                }
-            }
-            continuation.onTermination = { _ in task.cancel() }
+    static func mimeType(for file: URL) -> String {
+        switch file.pathExtension.lowercased() {
+        case "js", "mjs": "text/javascript"
+        case "css": "text/css"
+        case "html": "text/html"
+        case "json": "application/json"
+        default: UTType(filenameExtension: file.pathExtension)?.preferredMIMEType ?? "application/octet-stream"
         }
     }
 }

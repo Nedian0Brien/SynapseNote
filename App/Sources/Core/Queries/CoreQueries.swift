@@ -1,7 +1,7 @@
 import Foundation
 
-/// The answers native screens read from the workspace, as web/src/queries.ts and the editor page's `query`
-/// give them: pages by id, the same JSON values.
+/// The answers native screens read from the workspace, as web/src/queries.ts gives them from Morrow's core:
+/// pages by id, the same JSON values.
 nonisolated enum CoreQueries {
     struct Context: Sendable {
         var state: WorkspaceState

@@ -1,7 +1,6 @@
 import Foundation
 
-/// The vault folder as the Swift session's `VaultBridge`: the same file system calls the editor page used to make
-/// through the RPC server, now made by the session itself.
+/// The vault folder as the Swift session's `VaultBridge`: the file system calls Morrow's vault repository makes.
 nonisolated final class FileVaultBridge: VaultBridge, @unchecked Sendable {
     let files: VaultFileSystem
 

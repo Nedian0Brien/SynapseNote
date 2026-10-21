@@ -5,10 +5,6 @@ import SwiftUI
 struct SettingsView: View {
     @Bindable var controller: EditorController
 
-    /// The custom CSS sheet is shown from here: a sheet attached inside a form section closes the settings
-    /// sheet on iOS instead of opening.
-    private var editingCss: Binding<Bool> { $controller.editingCustomCss }
-
     var body: some View {
         #if os(macOS)
         TabView {
@@ -19,7 +15,6 @@ struct SettingsView: View {
             Tab("About", systemImage: "info.circle") { AboutSettings() }
         }
         .frame(width: 560, height: 560)
-        .sheet(isPresented: editingCss) { CustomCSSSheet(controller: controller) }
         #else
         NavigationStack {
             Form {
@@ -52,7 +47,6 @@ struct SettingsView: View {
             }
         }
         .presentationSizing(.page)
-        .sheet(isPresented: editingCss) { CustomCSSSheet(controller: controller) }
         #endif
     }
 }
@@ -152,19 +146,6 @@ struct AppearanceSettings: View {
                     Text("Colourful pages")
                     Text("Coloured headings, lists, icons and tags")
                 }
-                Button {
-                    controller.editingCustomCss = true
-                } label: {
-                    LabeledContent {
-                        Text(controller.customCss?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? "On" : "None")
-                    } label: {
-                        Text("Custom CSS")
-                        Text("Restyle the pages, saved in your vault as .morrow/style.css")
-                    }
-                    .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
-                .disabled(controller.customCss == nil)
             }
         }
     }
@@ -199,70 +180,9 @@ private struct AccentSwatches: View {
     }
 }
 
-/// Morrow's custom CSS editor: shown on the pages as it is typed, saved to the vault, or put back as it was.
-struct CustomCSSSheet: View {
-    let controller: EditorController
-    @Environment(\.dismiss) private var dismiss
-    @State private var text = ""
-    @State private var saved = ""
-
-    var body: some View {
-        NavigationStack {
-            TextEditor(text: $text)
-                .font(.body.monospaced())
-                .autocorrectionDisabled()
-                #if os(iOS)
-                .textInputAutocapitalization(.never)
-                #endif
-                .scrollContentBackground(.hidden)
-                .padding(8)
-                .overlay(alignment: .topLeading) {
-                    if text.isEmpty {
-                        Text(".page-title { letter-spacing: -0.03em; }\n:root { --accent: #e5484d; }")
-                            .font(.body.monospaced())
-                            .foregroundStyle(.tertiary)
-                            .padding(.horizontal, 13)
-                            .padding(.vertical, 16)
-                            .allowsHitTesting(false)
-                    }
-                }
-                .onChange(of: text) { _, value in controller.previewCss(value) }
-                .navigationTitle("Custom CSS")
-                #if os(iOS)
-                .navigationBarTitleDisplayMode(.inline)
-                #endif
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Discard Changes") {
-                            controller.previewCss(saved)
-                            dismiss()
-                        }
-                    }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Save") {
-                            controller.saveCss(text)
-                            saved = text
-                            dismiss()
-                        }
-                        .disabled(text == saved)
-                    }
-                }
-        }
-        #if os(macOS)
-        .frame(minWidth: 520, minHeight: 380)
-        #endif
-        .onAppear {
-            saved = controller.customCss ?? ""
-            text = saved
-        }
-        // closed some other way, the pages show what is saved
-        .onDisappear { controller.previewCss(controller.customCss ?? saved) }
-    }
-}
-
 // MARK: data
 
-/// The vault's images and files, as the editor page counts them.
+/// The vault's images and files, as Morrow's settings count them.
 nonisolated struct FilesSummary: Decodable, Equatable, Sendable {
     let count: Int
     let bytes: Int
@@ -382,14 +302,15 @@ struct AboutSettings: View {
     }
 }
 
-/// The notice, Morrow's licence, the licences of what the Swift data core ports and links, and of the packages the
-/// editor bundles, as the app carries them.
+/// The notice, Morrow's licence, the licences of what the Swift data core ports and links, and of the renderers and
+/// emoji the app carries.
 private struct LicencesSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     private var text: String {
         let resources = Bundle.main.resourceURL
-        let files = ["NOTICE", "Morrow-Apache-2.0.txt", "swift-core-third-party.txt", "Editor/THIRD_PARTY_LICENSES.txt"]
+        let files = ["NOTICE", "Morrow-Apache-2.0.txt", "swift-core-third-party.txt", "Renderers/THIRD_PARTY_LICENSES.txt",
+                     "Emoji/THIRD_PARTY_LICENSES.txt"]
         return files.compactMap { name in
             resources.flatMap { try? String(contentsOf: $0.appending(path: name), encoding: .utf8) }
         }

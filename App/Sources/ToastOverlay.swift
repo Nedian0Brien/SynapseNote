@@ -7,19 +7,19 @@ struct ToastOverlay: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            ForEach(controller.allToasts) { toast in
+            ForEach(controller.toasts) { toast in
                 ToastRow(toast: toast, controller: controller)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .padding(.bottom, 20)
         .padding(.horizontal, 16)
-        .animation(.snappy, value: controller.allToasts)
+        .animation(.snappy, value: controller.toasts)
     }
 }
 
 private struct ToastRow: View {
-    let toast: EditorToast
+    let toast: Toast
     let controller: EditorController
 
     var body: some View {
@@ -47,4 +47,14 @@ private struct ToastRow: View {
         .shadow(color: .black.opacity(0.15), radius: 8, y: 2)
         .accessibilityElement(children: .contain)
     }
+}
+
+/// One of Morrow's toasts: its text, tone (info or error) and the label of its button, if it has one.
+nonisolated struct Toast: Equatable, Hashable, Sendable, Identifiable {
+    let id: Int
+    let message: String
+    let tone: String
+    let action: String?
+
+    var isError: Bool { tone == "error" }
 }

@@ -1,13 +1,16 @@
 import Foundation
 
-/// Which screen shows a page: the editor page's own, or one the app draws over it (App/Sources/Pages).
+/// Which screen shows a page (App/Sources/Pages).
 nonisolated enum PageScreen: Equatable, Sendable {
-    /// The editor page draws it: the text editor, a database, a canvas, or a locked page under the password view.
-    case web
+    /// Nothing: the page is gone or in the trash, or locked, which the main column asks the password for.
+    case none
     /// The page file could not be read; it is left as it is.
     case unreadable
     /// Content this version does not know, shown as plain text and kept from changes.
     case unknown(types: [String], plain: String)
+    /// A document of known content that does not open as Morrow's editor (ProseMirror) opens documents, such as
+    /// one with an empty text node, shown as plain text and kept from changes. Morrow opens it empty.
+    case invalid(plain: String)
     /// The page as its Markdown source.
     case source
     /// A database and its views; not editable when its folder note could not be read.

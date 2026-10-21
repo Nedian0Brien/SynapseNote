@@ -22,26 +22,20 @@ struct AppPreferencesTests {
         #expect(preferences.quickNoteFromAnyApp)
     }
 
-    @Test func keepsWhatWasChosenAndTellsThePage() {
+    @Test func keepsWhatWasChosen() {
         let store = defaults()
         let preferences = AppPreferences(defaults: store)
-        var changes = 0
-        preferences.changed = { changes += 1 }
         preferences.font = .serif
         preferences.width = .wide
         preferences.accent = .rose
         preferences.colorful = false
         preferences.name = "Dennis"
-        #expect(changes == 5)
         let again = AppPreferences(defaults: store)
         #expect(again.font == .serif)
         #expect(again.width == .wide)
         #expect(again.accent == .rose)
         #expect(!again.colorful)
-        #expect(again.json == .object([
-            "font": .string("serif"), "width": .string("wide"), "accent": .string("rose"),
-            "colorful": .bool(false), "name": .string("Dennis"),
-        ]))
+        #expect(again.name == "Dennis")
     }
 
     @Test func readsUnknownValuesAsDefaults() {

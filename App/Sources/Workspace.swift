@@ -20,23 +20,22 @@ nonisolated struct PageInfo: Hashable, Sendable, Identifiable {
     let cover: String?
     let tags: [String]
 
-    init?(_ value: JSONValue) {
-        guard let id = value["id"]?.stringValue else { return nil }
-        self.id = id
-        parentId = value["parentId"]?.stringValue
-        title = value["title"]?.stringValue ?? ""
-        icon = value["icon"]?.stringValue
-        kind = value["kind"]?.stringValue ?? "page"
-        order = value["order"]?.doubleValue ?? 0
-        createdAt = value["createdAt"]?.doubleValue ?? 0
-        updatedAt = value["updatedAt"]?.doubleValue ?? createdAt
-        lastOpenedAt = value["lastOpenedAt"]?.doubleValue
-        trashedAt = value["trashedAt"]?.doubleValue
-        favorite = value["favorite"] == .bool(true)
-        encrypted = value["encrypted"] == .bool(true)
-        dailyDate = value["dailyDate"]?.stringValue
-        cover = value["cover"]?.stringValue
-        if case .array(let items) = value["tags"] { tags = items.compactMap(\.stringValue) } else { tags = [] }
+    init(_ page: PageMeta) {
+        id = page.id
+        parentId = page.parentId
+        title = page.title
+        icon = page.icon
+        kind = page.kind.rawValue
+        order = page.order
+        createdAt = page.createdAt
+        updatedAt = page.updatedAt
+        lastOpenedAt = page.lastOpenedAt
+        trashedAt = page.trashedAt
+        favorite = page.favorite
+        encrypted = page.encrypted
+        dailyDate = page.dailyDate
+        cover = page.cover
+        tags = page.tags
     }
 
     /// The title as shown, Untitled when empty, as Morrow's `displayTitle`.
@@ -46,10 +45,9 @@ nonisolated struct PageInfo: Hashable, Sendable, Identifiable {
     }
 }
 
-/// The page records of the open vault, as the editor page reports them, with the tree rules of Morrow's
+/// The page records of the open vault, as the session reports them, with the tree rules of Morrow's
 /// `core/tree.ts` so the sidebar, trash and move screens agree with the data core.
 nonisolated struct Workspace: Hashable, Sendable {
-    private(set) var pages: [String: JSONValue] = [:]
     private(set) var infos: [String: PageInfo] = [:]
     /// Live pages by effective parent, sorted as siblings, built once per change.
     private var liveChildren: [String: [PageInfo]] = [:]
@@ -57,10 +55,9 @@ nonisolated struct Workspace: Hashable, Sendable {
     /// Encrypted pages whose password has not been given yet.
     private(set) var locked: Set<String> = []
 
-    init(pages: [String: JSONValue] = [:], locked: Set<String> = []) {
-        self.pages = pages
+    init(pages: [PageMeta] = [], locked: Set<String> = []) {
         self.locked = locked
-        infos = pages.compactMapValues(PageInfo.init)
+        infos = Dictionary(pages.map { ($0.id, PageInfo($0)) }, uniquingKeysWith: { _, last in last })
         var grouped: [String: [PageInfo]] = [:]
         for info in infos.values where info.trashedAt == nil {
             grouped[Self.key(effectiveParent(of: info)), default: []].append(info)

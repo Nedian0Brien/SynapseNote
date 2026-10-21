@@ -4,21 +4,18 @@ import Testing
 
 struct WorkspaceTests {
     private func page(_ id: String, parent: String? = nil, order: Double = 0, created: Double = 0, title: String = "",
-                      trashed: Double? = nil, favorite: Bool = false, icon: String? = nil) -> JSONValue {
-        .object([
-            "id": .string(id),
-            "parentId": parent.map(JSONValue.string) ?? .null,
-            "title": .string(title),
-            "order": .number(order),
-            "createdAt": .number(created),
-            "trashedAt": trashed.map(JSONValue.number) ?? .null,
-            "favorite": .bool(favorite),
-            "icon": icon.map(JSONValue.string) ?? .null,
-        ])
+                      trashed: Double? = nil, favorite: Bool = false, icon: String? = nil) -> PageMeta {
+        var page = PageMeta(id: id, parentId: parent, createdAt: created)
+        page.title = title
+        page.order = order
+        page.trashedAt = trashed
+        page.favorite = favorite
+        page.icon = icon
+        return page
     }
 
-    private func workspace(_ list: [JSONValue]) -> Workspace {
-        Workspace(pages: Dictionary(uniqueKeysWithValues: list.map { ($0["id"]!.stringValue!, $0) }))
+    private func workspace(_ list: [PageMeta]) -> Workspace {
+        Workspace(pages: list)
     }
 
     @Test func siblingsSortByOrderThenCreationThenId() {
@@ -87,7 +84,7 @@ struct WorkspaceTests {
         #expect(json(.rename(id: "a", title: "제목")) == #"{"type":"page.rename","id":"a","title":"제목","now":1000}"#)
         #expect(json(.setTags(id: "a", tags: ["x", "y/z"])) == #"{"type":"page.setTags","id":"a","tags":["x","y/z"],"now":1000}"#)
         #expect(json(.setCover(id: "a", cover: nil)) == #"{"type":"page.setCover","id":"a","cover":null,"now":1000}"#)
-        // a document's keys keep their order on the way to the page
+        // a document's keys keep their order
         let doc = (["type": "doc", "content": [["type": "paragraph", "content": [["text": "b", "type": "text"]]]]] as JSValue).object!
         #expect(json(.setDoc(id: "a", doc: doc)) == #"{"type":"page.setDoc","id":"a","doc":{"type":"doc","content":[{"type":"paragraph","content":[{"text":"b","type":"text"}]}]},"now":1000}"#)
         #expect(json(.setProperties(id: "r", values: JSObject([("p", "x")]))) == #"{"type":"page.setProperties","id":"r","values":{"p":"x"},"now":1000}"#)
@@ -98,9 +95,6 @@ struct WorkspaceTests {
         #expect(json(.newPage(id: "c", parentId: "p", title: "", kind: "canvas", database: nil, doc: CanvasFile.canvasDoc(CanvasFile.emptyCanvas())))
             .hasPrefix(#"{"type":"page.create","id":"c","parentId":"p","now":1000,"title":"","kind":"canvas","doc":{"#))
         #expect(json(.setDatabase(id: "db", database: DatabaseDef(properties: [], views: []))) == #"{"type":"database.set","id":"db","database":{"properties":[],"views":[]},"now":1000}"#)
-        // and reach the page as text
-        let message = EditorCommand.command(json: json(.rename(id: "a", title: "t"))).json
-        #expect(message == .object(["type": .string("command"), "json": .string(#"{"type":"page.rename","id":"a","title":"t","now":1000}"#)]))
     }
 }
 

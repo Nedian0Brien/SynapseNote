@@ -6,21 +6,10 @@ import AppKit
 import UIKit
 #endif
 
-/// Prints the open page into a PDF on A4 paper, as Morrow's desktop app does with Electron's printToPDF: the
-/// page's own markup with the editor's stylesheets, whose print rules leave the page alone, split into pages.
-/// The editor's web page cannot print in pages, so the markup is laid out again in a web view off screen
-/// that reads the same bundle and vault files.
+/// Prints a page into a PDF on A4 paper with margins of 0.6 inch, the sizes of Morrow's desktop export. The page
+/// is HTML the app makes (Site.printPage), laid out in a web view off screen that reads the vault's pictures.
 @MainActor
 final class PDFExporter: NSObject, WKNavigationDelegate {
-    /// What the editor page hands over, see `pdfSnapshot` in `web/src/main.tsx`.
-    struct Snapshot: Decodable {
-        let title: String
-        let head: String
-        let body: String
-        let accent: String
-        let colorful: String
-    }
-
     enum Failure: LocalizedError {
         case notLoaded, noPages
         var errorDescription: String? {
@@ -31,54 +20,26 @@ final class PDFExporter: NSObject, WKNavigationDelegate {
         }
     }
 
-    /// A4 in points, with margins of 0.6 inch, the sizes of Morrow's desktop export.
+    /// A4 in points, with margins of 0.6 inch.
     static let paper = CGSize(width: 595.28, height: 841.89)
     static let margin: CGFloat = 43.2
 
-    private let editorRoot: URL
     private let access: VaultAccess
     private var loaded: CheckedContinuation<Bool, Never>?
 
-    init(editorRoot: URL, access: VaultAccess) {
-        self.editorRoot = editorRoot
+    init(access: VaultAccess) {
         self.access = access
-    }
-
-    /// The document the off screen view loads. It is always light: the print rules only make the
-    /// background white, so dark theme text would be pale on it.
-    static func html(for snapshot: Snapshot) -> String {
-        """
-        <!doctype html><html lang="en" data-theme="light" data-accent="\(attribute(snapshot.accent))" \
-        data-colorful="\(attribute(snapshot.colorful))"><head><meta charset="utf-8"><title>\(attribute(snapshot.title))</title>
-        \(snapshot.head)</head><body>\(snapshot.body)</body></html>
-        """
-    }
-
-    private static func attribute(_ text: String) -> String {
-        text.replacingOccurrences(of: "&", with: "&amp;")
-            .replacingOccurrences(of: "\"", with: "&quot;")
-            .replacingOccurrences(of: "<", with: "&lt;")
-            .replacingOccurrences(of: ">", with: "&gt;")
     }
 
     /// a page of HTML made by the app, printed with only the vault's files to read; it is loaded at the vault's
     /// address, as a page with no address (about:blank) printed empty
-    func pdf(html: String) async throws -> Data {
-        try await pdf(document: html, baseURL: URL(string: "\(VaultSchemeHandler.scheme)://vault/"))
-    }
-
-    func pdf(of snapshot: Snapshot) async throws -> Data {
-        try await pdf(document: Self.html(for: snapshot), baseURL: EditorSchemeHandler.entry)
-    }
-
-    private func pdf(document: String, baseURL: URL?) async throws -> Data {
+    func pdf(html document: String) async throws -> Data {
+        let baseURL = URL(string: "\(VaultSchemeHandler.scheme)://vault/")
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
         // backgrounds print, as Electron's printBackground does for Morrow: checkbox ticks and callouts are drawn with them
         configuration.preferences.shouldPrintBackgrounds = true
-        let editor = EditorSchemeHandler(root: editorRoot)
         let vault = VaultSchemeHandler(access: access)
-        configuration.setURLSchemeHandler(SchemeAdapter { try editor.response(for: $0) }, forURLScheme: EditorSchemeHandler.scheme)
         configuration.setURLSchemeHandler(SchemeAdapter { try vault.response(for: $0) }, forURLScheme: VaultSchemeHandler.scheme)
         let width = Self.paper.width - Self.margin * 2
         let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: width, height: Self.paper.height), configuration: configuration)
@@ -158,7 +119,7 @@ final class PDFExporter: NSObject, WKNavigationDelegate {
     }
     #else
     private func print(_ webView: WKWebView) async throws -> Data {
-        // the view is in a window (see pdf(document:)), where the formatter can lay it out
+        // the view is in a window (see pdf(html:)), where the formatter can lay it out
         let renderer = UIPrintPageRenderer()
         renderer.addPrintFormatter(webView.viewPrintFormatter(), startingAtPageAt: 0)
         let paper = CGRect(origin: .zero, size: Self.paper)
@@ -190,7 +151,7 @@ private nonisolated final class PrintDone: NSObject, @unchecked Sendable {
 }
 #endif
 
-/// Answers a web view's requests for one of the app's schemes with the same code the editor page uses.
+/// Answers a web view's requests for the vault's scheme.
 private final class SchemeAdapter: NSObject, WKURLSchemeHandler {
     private let respond: (URL) throws -> (URLResponse, Data)
 

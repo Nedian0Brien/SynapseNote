@@ -2,13 +2,13 @@ import Foundation
 import Observation
 import os
 import UniformTypeIdentifiers
-import WebKit
 #if os(macOS)
 import AppKit
 #endif
 
-/// Owns the editor web page and the open vault. The page runs Morrow's workspace session; this side does
-/// the file work it asks for, draws the page list it reports and sends it the changes native screens make.
+/// Owns the open vault and what the window shows of it. The vault's Swift session (SessionHost) holds the
+/// workspace and writes the files; this side sends it the changes the screens make and keeps the page list and
+/// the save state it reports.
 @Observable
 final class EditorController: WorkspaceService {
     enum Phase: Equatable {
@@ -25,11 +25,10 @@ final class EditorController: WorkspaceService {
 
     private(set) var phase: Phase = .opening
     private(set) var workspace = Workspace()
-    /// Counts the page's workspace reports, saves included, for screens that ask again when anything changes.
+    /// Counts the session's reports, saves included, for screens that ask again when anything changes.
     private(set) var revision = 0
     private(set) var saveState: SaveState = .saved
     private(set) var vaultName: String?
-    private(set) var isPageReady = false
     private(set) var recents: [VaultLocation.RecentVault] = []
     /// The open tabs, kept per vault. The open tab's place is what the main column shows.
     private(set) var tabs = TabList() {
@@ -55,7 +54,6 @@ final class EditorController: WorkspaceService {
     var expanded: Set<String> = [] {
         didSet { saveExpanded() }
     }
-    var fileRequest: FileInputPresenter.Request?
     /// The page whose icon is being chosen.
     var iconPage: String?
     /// The page being moved with Move to….
@@ -80,12 +78,10 @@ final class EditorController: WorkspaceService {
     /// What is typed in the page shown as its source, saved before anything leaves it.
     @ObservationIgnored private var sourceDraft: SourceDraft?
     @ObservationIgnored private var waitingSaves: [String: @MainActor () async -> Void] = [:]
-    /// Morrow's toasts as the editor page reports them.
-    private(set) var toasts: [EditorToast] = []
-    /// Toasts from this side, such as a PDF that could not be made; negative ids keep them apart.
-    private(set) var ownToasts: [EditorToast] = []
-    /// what the buttons of this side's toasts do, by toast id
-    @ObservationIgnored private var ownToastActions: [Int: () -> Void] = [:]
+    /// Morrow's toasts, at most four at once.
+    private(set) var toasts: [Toast] = []
+    /// what the toasts' buttons do, by toast id
+    @ObservationIgnored private var toastActions: [Int: () -> Void] = [:]
     /// what the file picker is open for, and whether it is up (kept apart: SwiftUI clears the binding before
     /// the picked files arrive)
     var filePick: FilePickPurpose?
@@ -93,7 +89,6 @@ final class EditorController: WorkspaceService {
     /// the newest page change the last automatic backup held (Morrow's lastAutoBackup)
     @ObservationIgnored var lastAutoBackup = 0.0
     @ObservationIgnored var autoBackupTimer: Task<Void, Never>?
-    var allToasts: [EditorToast] { toasts + ownToasts }
     /// A file waiting for the person to say where it goes.
     var exportFile: ExportFile?
     /// the page whose history dialog is open
@@ -110,32 +105,22 @@ final class EditorController: WorkspaceService {
     let preferences = AppPreferences()
     /// The settings sheet, on iOS; macOS opens its settings window.
     var showingSettings = false
-    /// The custom CSS editor, over the settings.
-    var editingCustomCss = false
-    /// The open vault's custom CSS as saved, nil until the editor page has read it.
-    private(set) var customCss: String?
     /// The quick note sheet; asked for before the vault is open, it opens once it is.
     var showingQuickNote = false
 
-    @ObservationIgnored let page: WebPage
     @ObservationIgnored var openURL: (URL) -> Void = { _ in }
     @ObservationIgnored private let location: VaultLocation
     @ObservationIgnored private let access = VaultAccess()
-    /// the editor page's copy of the workspace, kept from its state deltas in debug builds and compared with the
-    /// Swift session, which is the one that writes the vault
-    @ObservationIgnored let mirror = StateMirror()
-    /// the open vault's Swift session
-    /// the Swift session, which the operations (Operations/) read
+    /// the open vault's Swift session, which the operations (Operations/) read too
     @ObservationIgnored private(set) var host: SessionHost?
-    @ObservationIgnored private let fileInput = FileInputPresenter()
     @ObservationIgnored private var opened: VaultLocation.Opened?
-    @ObservationIgnored private var rpc: VaultRPC?
     @ObservationIgnored private var watcher: VaultWatcher?
     @ObservationIgnored private var darkMode = false
-    @ObservationIgnored private var navigationWatch: Task<Void, Never>?
+    /// the page last shown, whose opening was recorded
+    @ObservationIgnored private var shownPage: String?
     /// Text to select in the page shown next.
     @ObservationIgnored private var pendingFind: String?
-    /// the page the app's own editor shows, nil when the page's editor is used
+    /// the page the editor (App/Sources/Editor) shows, nil when another screen is up
     @ObservationIgnored private(set) var nativeEditorPage: String?
     /// what the app asks of the page in the native editor: find, a heading, a search's term, the link field
     struct EditorRequest: Equatable {
@@ -153,40 +138,18 @@ final class EditorController: WorkspaceService {
     @ObservationIgnored private var editorRequests = 0
     /// asks the title field of a page to take the caret, as the editor's arrow up at its top does
     private(set) var titleFocus: (id: Int, pageId: String)?
-    /// the native editor takes every text page whose document opens as TipTap opens it; launched with
-    /// `-nativeEditor NO` the web editor does, until it goes in 11e
-    var nativeEditorEnabled: Bool { UserDefaults.standard.object(forKey: "nativeEditor") as? Bool ?? true }
-    @ObservationIgnored private var ownToastCount = 0
+    @ObservationIgnored private var toastCount = 0
     /// A device to pull from once the vault just copied from it is open.
     @ObservationIgnored private var syncWhenOpen: String?
     @ObservationIgnored private var quickNoteWhenOpen = false
     @ObservationIgnored private var afterSettings: (() -> Void)?
-    @ObservationIgnored private let editorRoot = Bundle.main.resourceURL!.appending(path: "Editor")
     @ObservationIgnored private let logger = Logger(subsystem: "com.synapsenote.native", category: "editor")
 
     init(location: VaultLocation = VaultLocation()) {
         self.location = location
-        let root = Bundle.main.resourceURL!.appending(path: "Editor")
-        var configuration = WebPage.Configuration()
-        // nothing the editor shows is kept between launches, the vault folder is the only storage
-        configuration.websiteDataStore = .nonPersistent()
-        configuration.urlSchemeHandlers[URLScheme(EditorSchemeHandler.scheme)!] = EditorSchemeHandler(root: root)
-        configuration.urlSchemeHandlers[URLScheme(VaultSchemeHandler.scheme)!] = VaultSchemeHandler(access: access)
-        let box = EventBox()
-        configuration.userContentController.add(EditorMessageHandler { event in box.receive?(event) }, name: EditorMessageHandler.name)
-        page = WebPage(configuration: configuration, navigationDecider: EditorNavigationDecider(), dialogPresenter: fileInput)
-        #if DEBUG
-        page.isInspectable = true
-        #endif
-        box.receive = { [weak self] event in self?.handle(event) }
-        fileInput.onRequest = { [weak self] request in self?.fileRequest = request }
         recents = location.recents
         restoreVault()
         connectSync()
-        preferences.changed = { [weak self] in
-            guard let self else { return }
-            send(.preferences(preferences.json))
-        }
     }
 
     // MARK: sync
@@ -309,15 +272,13 @@ final class EditorController: WorkspaceService {
         Task { await switchVault() }
     }
 
-    /// Saves what is waiting in the current vault, then opens the remembered one in a fresh editor page.
+    /// Saves what is waiting in the current vault, then opens the remembered one.
     private func switchVault() async {
         if phase == .ready { await flush() }
         await host?.close()
         close()
         workspace = Workspace()
-        isPageReady = false
         restoreVault()
-        if case .opening = phase { reloadPage() }
     }
 
     private func use(_ opened: VaultLocation.Opened) {
@@ -336,20 +297,73 @@ final class EditorController: WorkspaceService {
         #endif
         access.set(files)
         sync.vault = SyncVault(files: files, name: opened.name)
-        let host = SessionHost(
-            files: files,
-            sendExternal: { [weak self] id, json in self?.send(.external(id: id, json: json)) },
-            sendInfo: { [weak self] json in self?.send(.vaultInfo(json: json)) },
-            sendResync: { [weak self] json in self?.send(.resync(json: json)) },
-        )
-        host.begin { [weak self] reason in self?.handle(.vaultFailed(message: reason)) }
+        let host = SessionHost(files: files, report: { [weak self] report in self?.take(report) },
+                               failed: { [weak self] message in self?.showToast(message, error: true) })
         self.host = host
-        rpc = VaultRPC(host: host)
         self.watcher = watcher
         watcher.start()
         phase = .opening
-        start()
-        openInPage()
+        shownPage = nil
+        // a folder about to be filled from another device never gets the welcome guide, as in morrow
+        host.begin(guide: syncWhenOpen == nil) { [weak self, weak host] result in
+            guard let self, let host, self.host === host else { return }
+            vaultOpened(result)
+        }
+    }
+
+    /// The session opened the vault, or could not.
+    private func vaultOpened(_ result: Result<SessionHost.Opened, CommandFailure>) {
+        switch result {
+        case .failure(let failure):
+            logger.error("vault failed: \(failure.message, privacy: .public)")
+            close()
+            location.forget()
+            phase = .choosing(reason: failure.message)
+        case .success(let opened):
+            take(opened.report)
+            phase = .ready
+            logger.info("vault opened with \(opened.report.pages.count) pages")
+            startAutoBackup()
+            settleActiveTab()
+            // Morrow's main.tsx, after the vault opens
+            if opened.problems > 0 {
+                let count = opened.problems
+                showToast("\(count) item\(count == 1 ? "" : "s") could not be read and \(count == 1 ? "was" : "were") left untouched.",
+                          error: true, duration: .seconds(12))
+            }
+            if let peerId = syncWhenOpen {
+                syncWhenOpen = nil
+                Task { await sync.syncNow(peerId) }
+            }
+            if quickNoteWhenOpen {
+                quickNoteWhenOpen = false
+                showingQuickNote = true
+            }
+        }
+    }
+
+    /// What the session reports: the page list, locked pages and saving.
+    private func take(_ report: SessionHost.Report) {
+        let before = workspace
+        workspace = Workspace(pages: report.pages, locked: report.locked)
+        revision += 1
+        let wasSaved = saveState == .saved
+        saveState = switch report.save.state {
+        case .pending: .pending
+        case .saving: .saving
+        case .error: .failed(report.save.error ?? "Changes could not be saved.")
+        case .saved: .saved
+        }
+        // edits were saved: other devices hear of them a little later, as in morrow
+        if !wasSaved, saveState == .saved { sync.savesSettled() }
+        guard phase == .ready else { return }
+        if let selection, before.infos[selection] != nil, !workspace.isShowable(selection) {
+            // the page on screen went to the trash or was deleted
+            go(to: .home)
+        } else if let selection, before.infos[selection] == nil, workspace.infos[selection] != nil {
+            // a page made a moment ago opens before its report; its folders open now
+            for ancestor in workspace.ancestors(of: selection) { expanded.insert(ancestor.id) }
+        }
     }
 
     private func close() {
@@ -363,13 +377,10 @@ final class EditorController: WorkspaceService {
         }
         host = nil
         sourceDraft = nil
-        rpc = nil
-        mirror.reset()
         access.set(nil)
         sync.vault = nil
         opened?.close()
         opened = nil
-        customCss = nil
     }
 
     private var expandedKey: String {
@@ -390,9 +401,20 @@ final class EditorController: WorkspaceService {
         location.defaults.set(data, forKey: tabsKey)
     }
 
-    /// Paths another app or a sync changed: the Swift session reads them, and the editor page decides what it takes.
+    /// Paths another app or a sync changed. What is typed in the open editors goes to the session first, as Morrow's
+    /// `beforeExternal`, so a page with unsaved typing keeps it; the session then reads the files.
     func report(_ paths: Set<String>) {
-        host?.changed(paths)
+        guard let host else { return }
+        Task {
+            await commitEditors()
+            host.changed(paths)
+        }
+    }
+
+    /// Morrow's commitEditors: typing the editors and screens still hold goes to the session.
+    private func commitEditors() async {
+        await sourceDraft?.flush()
+        for flush in waitingSaves.values { await flush() }
     }
 
     /// Looks for edits made while the app was away, for writers that do not use file coordination.
@@ -400,55 +422,9 @@ final class EditorController: WorkspaceService {
         watcher?.checkForChanges()
     }
 
-    private func openInPage() {
-        guard isPageReady, let vaultName, phase == .opening else { return }
-        // a folder about to be filled from another device never gets the welcome guide, as in morrow
-        #if DEBUG
-        let compare = true
-        #else
-        let compare = false
-        #endif
-        send(.openVault(name: vaultName, guide: syncWhenOpen == nil, compare: compare))
-    }
-
-    // MARK: page
-
-    func start() {
-        guard page.url == nil else { return }
-        reloadPage()
-    }
-
-    /// Loads the editor page afresh and watches for its web content process ending.
-    private func reloadPage() {
-        isPageReady = false
-        page.load(URLRequest(url: EditorSchemeHandler.entry))
-        navigationWatch?.cancel()
-        navigationWatch = Task { [weak self, page] in
-            do {
-                for try await _ in page.navigations {}
-            } catch WebPage.NavigationError.webContentProcessTerminated {
-                self?.recoverFromTermination()
-            } catch {}
-        }
-    }
-
-    /// The system ended the page's process, which also held the vault session; the page and the vault are
-    /// opened again and the same page is shown.
-    private func recoverFromTermination() {
-        logger.error("editor web content process ended, reopening the vault")
-        guard opened != nil else { return }
-        // the Swift session kept every edit the page sent; it saves them, and the page opened again gets it as it is
-        host?.webGone()
-        if let host { Task { await host.flushAlone() } }
-        mirror.reset()
-        phase = .opening
-        workspace = Workspace()
-        reloadPage()
-    }
-
+    /// The theme the window shows, for Morrow's switch theme.
     func setDarkMode(_ dark: Bool) {
         darkMode = dark
-        send(.theme(dark: dark))
     }
 
     /// Morrow's switch light or dark theme, from the one the window shows now.
@@ -458,15 +434,6 @@ final class EditorController: WorkspaceService {
 
     // MARK: settings
 
-    func previewCss(_ css: String) {
-        send(.previewCss(css))
-    }
-
-    func saveCss(_ css: String) {
-        send(.saveCss(css))
-    }
-
-    /// Morrow's images and files summary: how many files the vault holds, their size, and how many nothing uses.
     /// The open vault's folder, for the settings.
     var vaultURL: URL? { opened?.url }
 
@@ -532,30 +499,55 @@ final class EditorController: WorkspaceService {
         showDestination()
     }
 
-    /// Sends the open tab's place to the page. The page decides what it can show: a page made a moment ago
-    /// may not be in this side's list yet.
+    /// Shows the open tab's place. A page made a moment ago may not be in the page list yet; its screen asks the
+    /// session, which has it.
     func showDestination() {
         guard phase == .ready else { return }
         // the sidebar opens the folders down to the page on screen
         if let id = selection { for ancestor in workspace.ancestors(of: id) { expanded.insert(ancestor.id) } }
-        send(.show(pageId: selection, find: pendingFind))
+        if selection != shownPage {
+            shownPage = selection
+            // when the page was last opened, for recent pages, as Morrow's PageView records it
+            if let id = selection { host?.markOpened(id) }
+        }
         if let find = pendingFind, let id = selection { ask(id, .select(find)) }
         pendingFind = nil
     }
 
     // MARK: WorkspaceService
 
+    /// Applies a command; one the session refuses is told in an error toast, as Morrow's `run`.
     func perform(_ command: WorkspaceCommand) {
-        send(.command(json: JSJSON.stringify(command.morrow())))
+        execute([command.morrow()])
         if case .move(_, let parent?, _) = command { expanded.insert(parent) }
     }
 
     /// Commands that only make sense together, such as a property's new type and every row's converted value:
-    /// the page applies all of them or none.
+    /// the session applies all of them or none, as Morrow's `runAll`.
     func performAll(_ commands: [WorkspaceCommand]) {
         guard !commands.isEmpty else { return }
         let now = JSEnvironment.now()
-        send(.commands(json: JSJSON.stringify(.array(commands.map { $0.morrow(now: now) }))))
+        execute(commands.map { $0.morrow(now: now) }, all: true)
+    }
+
+    /// Sends commands to the session at once, so they apply in the order they were made; `done` runs once they are
+    /// applied.
+    private func execute(_ commands: [JSValue], all: Bool = false, done: (@MainActor @Sendable () -> Void)? = nil) {
+        guard let host else { return }
+        host.execute(commands, all: all) { [weak self] failure in
+            Task { @MainActor in
+                if let failure { self?.showToast(failure.message, error: true) }
+                done?()
+            }
+        }
+    }
+
+    /// The same, returning once the session has applied them.
+    private func executed(_ commands: [JSValue]) async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            if host == nil { return continuation.resume() }
+            execute(commands) { continuation.resume() }
+        }
     }
 
     func createPage(parent: String? = nil) {
@@ -632,7 +624,7 @@ final class EditorController: WorkspaceService {
 
     /// Morrow's SM-2 grade for a card: again, hard, good or easy.
     func grade(_ cardId: String, _ grade: String) {
-        send(.gradeCard(cardId: cardId, grade: grade))
+        host?.grade(cardId, grade)
     }
 
     // MARK: history and encryption
@@ -648,27 +640,47 @@ final class EditorController: WorkspaceService {
         await host?.snapshots(pageId) ?? []
     }
 
-    /// Morrow's restoreVersion, done by the page, which holds the workspace until 11e; its toast says how it went.
+    /// Morrow's restoreVersion: the editors' typing goes in first, and a toast says how it went.
     func restoreVersion(_ snapshot: Snapshot) {
-        send(.restoreVersion(pageId: snapshot.pageId, snapshotId: snapshot.id))
+        guard let host else { return }
+        Task {
+            await commitEditors()
+            if let error = await host.restore(snapshot) {
+                showToast(error, error: true)
+            } else {
+                showToast("Version restored. The version it replaced is kept in the page history.")
+            }
+        }
     }
 
     /// Encrypts a page with a password. Returns the reason when it did not work.
     func encrypt(_ pageId: String, password: String) async -> String? {
-        await encryption("protect", pageId: pageId, password: password)
+        guard let host else { return "No vault is open." }
+        await commitEditors()
+        return await host.protect(pageId, password: password)
     }
 
     /// Opens a locked page with its password. Returns the reason when it did not work.
     func unlock(_ pageId: String, password: String) async -> String? {
-        await encryption("unlock", pageId: pageId, password: password)
+        guard let host else { return "No vault is open." }
+        return await host.unlock(pageId, password: password)
     }
 
+    /// Saves the page and forgets its content until the password is given again.
     func lock(_ pageId: String) {
-        send(.lockPage(pageId: pageId))
+        guard let host else { return }
+        Task {
+            await commitEditors()
+            await host.lock(pageId)
+        }
     }
 
     func removeEncryption(_ pageId: String) {
-        send(.unprotectPage(pageId: pageId))
+        guard let host else { return }
+        Task {
+            await commitEditors()
+            if let error = await host.unprotect(pageId) { showToast(error, error: true) }
+        }
     }
 
     // MARK: data
@@ -679,23 +691,24 @@ final class EditorController: WorkspaceService {
     }
 
     /// Shows a page as its Markdown source, or every page in the editor again with nil. What is typed in the
-    /// source is saved first, so the editor opens on it.
+    /// source or the editor is saved first, so the other opens on it.
     func setSourceMode(_ pageId: String?) {
         if let pageId, selection != pageId { go(to: .page(pageId)) }
         let draft = sourceDraft
         if draft?.pageId != pageId { sourceDraft = nil }
         Task {
             await draft?.flush()
-            await deliver(.setSourceMode(pageId: pageId))
+            for flush in waitingSaves.values { await flush() }
+            sourceMode = pageId
         }
     }
 
     // MARK: native page screens
 
-    /// Which screen shows the page, the editor page's or one of the app's (App/Sources/Pages).
+    /// Which screen shows the page (App/Sources/Pages).
     func pageScreen(_ pageId: String) async -> PageScreen {
-        guard phase == .ready, let host else { return .web }
-        return await host.screen(of: pageId, sourceMode: sourceMode == pageId, nativeEditor: nativeEditorEnabled)
+        guard phase == .ready, let host else { return .none }
+        return await host.screen(of: pageId, sourceMode: sourceMode == pageId)
     }
 
     /// The page's document for the native editor.
@@ -709,18 +722,15 @@ final class EditorController: WorkspaceService {
 
     func resolveTargets(_ targets: [String]) async -> [String: String] { await host?.resolveTargets(targets) ?? [:] }
 
-    /// The native editor shows a page: the page's own editor stays closed for it.
+    /// The editor shows a page, which find and the link field go to.
     func nativeEditorShows(_ pageId: String) {
-        guard nativeEditorPage != pageId else { return }
         nativeEditorPage = pageId
-        send(.nativeEditor(pageId: pageId))
     }
 
-    /// The native editor stopped showing a page; one that took over since is left alone.
+    /// The editor stopped showing a page; one that took over since is left alone.
     func nativeEditorLeft(_ pageId: String) {
         guard nativeEditorPage == pageId else { return }
         nativeEditorPage = nil
-        send(.nativeEditor(pageId: nil))
     }
 
     private func ask(_ pageId: String, _ kind: EditorRequest.Kind) {
@@ -749,10 +759,10 @@ final class EditorController: WorkspaceService {
         return await host.canvas(pageId)
     }
 
-    /// A page's whole document from a native screen, returned once the page has applied it, so a save that
-    /// follows includes it.
+    /// A page's whole document from a screen, returned once the session has applied it, so a save that follows
+    /// includes it.
     func setDoc(_ pageId: String, _ doc: DocNode) async {
-        await deliver(.command(json: JSJSON.stringify(WorkspaceCommand.setDoc(id: pageId, doc: doc).morrow())))
+        await executed([WorkspaceCommand.setDoc(id: pageId, doc: doc).morrow()])
     }
 
     /// Screens with changes waiting to be saved, such as a canvas; each is saved before the vault is.
@@ -772,12 +782,12 @@ final class EditorController: WorkspaceService {
         return draft
     }
 
-    /// Morrow's SourceEditor save: the text read back by the session, then the page set to it through the page.
-    /// It returns once the page has applied it, so a save of the vault that follows, such as when the app goes to
-    /// the background, includes it.
+    /// Morrow's SourceEditor save: the text read back by the session, then the page set to it. It returns once
+    /// the session has applied it, so a save of the vault that follows, such as when the app goes to the
+    /// background, includes it.
     private func saveSource(_ text: String, of pageId: String) async -> Bool {
         guard let host, let doc = await host.readMarkdown(text) else { return false }
-        await deliver(.command(json: JSJSON.stringify(WorkspaceCommand.setDoc(id: pageId, doc: doc).morrow())))
+        await setDoc(pageId, doc)
         return true
     }
 
@@ -840,7 +850,7 @@ final class EditorController: WorkspaceService {
                       let html = Site.printPage(state, pageId, assetPath: { VaultSchemeHandler.url(for: $0)?.absoluteString ?? "" }) else {
                     throw PDFExporter.Failure.notLoaded
                 }
-                let data = try await PDFExporter(editorRoot: editorRoot, access: access).pdf(html: html)
+                let data = try await PDFExporter(access: access).pdf(html: html)
                 exportFile = ExportFile(name: "\(ExportFile.safeName(info.displayTitle)).pdf", data: data) { name in "Saved \(name)." }
             } catch {
                 logger.error("pdf failed: \(error.localizedDescription, privacy: .public)")
@@ -872,73 +882,39 @@ final class EditorController: WorkspaceService {
     #endif
 
     func runToastAction(_ id: Int) {
-        if id < 0 {
-            let action = ownToastActions[id]
-            dismissToast(id)
-            action?()
-        } else {
-            send(.toastAction(id: id))
-        }
+        let action = toastActions[id]
+        dismissToast(id)
+        action?()
     }
 
     func dismissToast(_ id: Int) {
-        if id < 0 {
-            ownToasts.removeAll { $0.id == id }
-            ownToastActions[id] = nil
-        } else {
-            send(.dismissToast(id: id))
-        }
+        toasts.removeAll { $0.id == id }
+        toastActions[id] = nil
     }
 
-    /// A toast from this side, as Morrow's ui.ts `toast`: gone after five seconds, eight for errors, or after
-    /// `duration`; at most four at once. `action` is the button's label and what it does.
+    /// Morrow's ui.ts `toast`: gone after five seconds, eight for errors, or after `duration`; at most four at
+    /// once. `action` is the button's label and what it does.
     func showToast(_ message: String, error: Bool = false, action: (label: String, run: () -> Void)? = nil, duration: Duration? = nil) {
-        ownToastCount += 1
-        let toast = EditorToast(id: -ownToastCount, message: message, tone: error ? "error" : "info", action: action?.label)
-        ownToasts = Array((ownToasts + [toast]).suffix(4))
-        if let action { ownToastActions[toast.id] = action.run }
-        for gone in Set(ownToastActions.keys).subtracting(ownToasts.map(\.id)) { ownToastActions[gone] = nil }
+        toastCount += 1
+        let toast = Toast(id: toastCount, message: message, tone: error ? "error" : "info", action: action?.label)
+        toasts = Array((toasts + [toast]).suffix(4))
+        if let action { toastActions[toast.id] = action.run }
+        for gone in Set(toastActions.keys).subtracting(toasts.map(\.id)) { toastActions[gone] = nil }
         Task {
             try? await Task.sleep(for: duration ?? .seconds(error ? 8 : 5))
-            ownToasts.removeAll { $0.id == toast.id }
-            ownToastActions[toast.id] = nil
+            dismissToast(toast.id)
         }
     }
 
-    private struct EncryptionAnswer: Decodable {
-        let ok: Bool
-        let error: String?
-    }
-
-    private func encryption(_ action: String, pageId: String, password: String) async -> String? {
-        guard isPageReady, phase == .ready else { return "No vault is open." }
-        do {
-            let answer = try await page.callJavaScript(
-                "return await window.synapse.encryption(action, params)",
-                arguments: ["action": action, "params": ["id": pageId, "password": password]]
-            )
-            guard let result = try WorkspaceQuery.decode(answer, as: EncryptionAnswer.self) else { return "No answer came back." }
-            return result.ok ? nil : (result.error ?? "It did not work.")
-        } catch {
-            logger.error("\(action, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
-            return error.localizedDescription
-        }
-    }
-
-    /// Works the answer out with the Swift core from the session's workspace. Debug builds ask the editor page as
-    /// well, from its copy, and log where the two answers differ.
+    /// Works the answer out with the Swift core from the session's workspace.
     private func answer<T: Decodable>(_ query: WorkspaceQuery) async -> T? {
-        guard isPageReady, phase == .ready, let host else { return nil }
+        guard phase == .ready, let host else { return nil }
         let name = query.name
         let params = query.jsParams
         guard let context = await host.context(), let value = await Task.detached(operation: { CoreQueries.answer(name, params, context) }).value else {
             return nil
         }
         let text = JSJSON.stringify(value)
-        #if DEBUG
-        let revision = revision
-        Task { await compareAnswer(query, text, revision: revision) }
-        #endif
         do {
             return try WorkspaceQuery.decode(text)
         } catch {
@@ -947,54 +923,21 @@ final class EditorController: WorkspaceService {
         }
     }
 
-    #if DEBUG
-    /// 11c-2: the page's copy of the workspace (its state deltas) against the Swift session, logged
-    private func compareSession(revision: Int) async {
-        guard mirror.ready, let host, let session = await host.workspace() else { return }
-        let log = Logger(subsystem: "com.synapsenote.native", category: "core")
-        let report = CoreDualRun.compare(session: session.state, unreadable: session.unreadable, web: mirror.state, webUnreadable: mirror.unreadable)
-        if report.differences.isEmpty {
-            log.notice("core session: same as the page, \(report.pages, privacy: .public) pages, \(report.docs, privacy: .public) docs (revision \(revision, privacy: .public))")
-        } else {
-            log.error("core session: \(report.differences.count, privacy: .public) differences from the page (revision \(revision, privacy: .public))")
-            for difference in report.differences.prefix(20) { log.error("core session: \(difference, privacy: .public)") }
-        }
-    }
-
-    /// 11b: the editor page's answer to the same query, logged where it differs from the Swift core's
-    private func compareAnswer(_ query: WorkspaceQuery, _ swift: String, revision: Int) async {
-        let log = Logger(subsystem: "com.synapsenote.native", category: "core")
-        guard let answer = try? await page.callJavaScript(
-            "return window.synapse.query(name, params)", arguments: ["name": query.name, "params": query.params]
-        ) as? String, let web = try? JSJSON.parse(answer), let mine = try? JSJSON.parse(swift) else { return }
-        if web == mine {
-            log.notice("core query \(query.name, privacy: .public): same as the page (revision \(revision, privacy: .public))")
-        } else {
-            log.error("core query \(query.name, privacy: .public) differs (revision \(revision, privacy: .public)): Swift \(String(swift.prefix(400)), privacy: .public) page \(String(answer.prefix(400)), privacy: .public)")
-        }
-    }
-    #endif
-
     // MARK: the page on screen
 
     func scrollToHeading(_ index: Int) {
-        if let page = nativeEditorPage, page == selection { return ask(page, .heading(index)) }
-        send(.scrollToHeading(index: index))
+        if let page = nativeEditorPage, page == selection { ask(page, .heading(index)) }
     }
 
     func findInPage() {
-        if let page = nativeEditorPage, page == selection { return ask(page, .find) }
-        send(.find)
+        if let page = nativeEditorPage, page == selection { ask(page, .find) }
     }
 
-    /// Cmd K: the link editor when text is selected in the editor, as there, otherwise search.
+    /// Cmd K: the link editor when text is selected in the editor, as there, otherwise search. The editor opens
+    /// the palette itself when nothing is selected.
     func searchOrLink() async {
         if let page = nativeEditorPage, page == selection {
             ask(page, .link)
-            return
-        }
-        if isPageReady, selection != nil,
-           (try? await page.callJavaScript("return window.synapse.linkSelection()")) as? Bool == true {
             return
         }
         showingPalette = true
@@ -1018,26 +961,14 @@ final class EditorController: WorkspaceService {
     #endif
 
     /// Writes every edit still waiting, such as before the app quits. Returns false when something stayed unsaved.
-    /// The page saves its open editors and asks the session to save; the session then saves on its own as well,
-    /// in case the page could not ask.
+    /// The editors' typing goes to the session, the session saves, then an automatic backup as Morrow's flush.
     @discardableResult
     func flush() async -> Bool {
-        await sourceDraft?.flush()
-        for flush in waitingSaves.values { await flush() }
-        var saved = true
-        if isPageReady, phase == .ready {
-            do {
-                saved = (try await page.callJavaScript("return await window.synapse.flush()") as? Bool) ?? false
-            } catch {
-                logger.error("the page could not save before leaving: \(error.localizedDescription, privacy: .public)")
-                saved = false
-            }
-        }
-        guard let host else { return saved }
-        let done = await host.flushAlone() && saved
-        // as Morrow's flush, an automatic backup before the app closes
+        await commitEditors()
+        guard let host else { return true }
+        let saved = await host.flush()
         await autoBackup()
-        return done
+        return saved
     }
 
     /// Morrow's startAutoBackup: half a minute after the vault opens, then every ten minutes
@@ -1051,140 +982,5 @@ final class EditorController: WorkspaceService {
                 try? await Task.sleep(for: .seconds(10 * 60))
             }
         }
-    }
-
-    func handle(_ event: EditorEvent) {
-        switch event {
-        case .ready:
-            logger.info("editor page is ready")
-            isPageReady = true
-            send(.theme(dark: darkMode))
-            send(.preferences(preferences.json))
-            openInPage()
-        case .rpc(let id, let method, let params):
-            guard let rpc else {
-                send(.rpcResult(id: id, result: .failure(.init(message: "No folder is open."))))
-                return
-            }
-            rpc.handle(method: method, params: params) { [weak self] result in
-                Task { @MainActor in self?.send(.rpcResult(id: id, result: result)) }
-            }
-        case .workspace(let pages, let locked, let source, let state, let error):
-            let before = workspace
-            workspace = Workspace(pages: pages, locked: Set(locked))
-            sourceMode = source
-            // the page left its source, such as when it went to the trash: what was typed is saved
-            if let draft = sourceDraft, draft.pageId != source {
-                sourceDraft = nil
-                Task { await draft.flush() }
-            }
-            revision += 1
-            let wasSaved = saveState == .saved
-            saveState = switch state {
-            case "pending": .pending
-            case "saving": .saving
-            case "error": .failed(error ?? "Changes could not be saved.")
-            default: .saved
-            }
-            // edits were saved: other devices hear of them a little later, as in morrow
-            if !wasSaved, saveState == .saved { sync.savesSettled() }
-            #if DEBUG
-            Task { await compareSession(revision: revision) }
-            #endif
-            if phase == .opening {
-                phase = .ready
-                logger.info("vault opened with \(pages.count) pages")
-                host?.webIsReady()
-                startAutoBackup()
-                settleActiveTab()
-                if let peerId = syncWhenOpen {
-                    syncWhenOpen = nil
-                    Task { await sync.syncNow(peerId) }
-                }
-                if quickNoteWhenOpen {
-                    quickNoteWhenOpen = false
-                    showingQuickNote = true
-                }
-            } else if let selection, before.infos[selection] != nil, !workspace.isShowable(selection) {
-                // the page on screen went to the trash or was deleted
-                go(to: .home)
-            } else if let selection, before.infos[selection] == nil, workspace.infos[selection] != nil {
-                // a page made in the editor page opens before this side hears of it; its folders open now
-                for ancestor in workspace.ancestors(of: selection) { expanded.insert(ancestor.id) }
-            }
-        case .openPage(let pageId, let newTab, let find):
-            let place = pageId.map(Destination.page) ?? .home
-            if newTab { openInNewTab(place, find: find) } else { go(to: place, find: find) }
-        case .chooseIcon(let pageId):
-            iconPage = pageId
-        case .vaultFailed(let message):
-            logger.error("vault failed: \(message, privacy: .public)")
-            close()
-            location.forget()
-            phase = .choosing(reason: message)
-        case .openExternal(let url):
-            openURL(url)
-        case .log(let level, let message):
-            if level == "error" { logger.error("editor: \(message, privacy: .public)") }
-            else { logger.warning("editor: \(message, privacy: .public)") }
-        case .shortcut(let name):
-            if name == "escape", focusMode { focusMode = false }
-        case .openView(let place):
-            go(to: place)
-        case .saveFile(let name, _, let data):
-            exportFile = ExportFile(name: name, data: data)
-            #if os(macOS)
-            Task { await saveExportFile() }
-            #endif
-        case .toasts(let list):
-            toasts = list
-        case .customCss(let css):
-            customCss = css
-        case .state(let json):
-            do {
-                if !mirror.apply(try JSJSON.parse(json)) { logger.warning("a workspace delta arrived out of order") }
-            } catch {
-                logger.error("a workspace delta could not be read: \(error.localizedDescription, privacy: .public)")
-            }
-        case .commands(let json):
-            host?.apply(commandsJSON: json)
-        case .externalAccepted(let id, let accepted):
-            host?.externalAccepted(id: id, accepted: accepted)
-        case .reviewLog(let json):
-            host?.setReviewLog(json: json)
-        case .autoBackup:
-            // the app writes its own automatic backups (DataOperations.autoBackup)
-            break
-        }
-    }
-
-    private func send(_ command: EditorCommand) {
-        Task { await deliver(command) }
-    }
-
-    /// Sends a message and returns once the page has handled it: a command it applied has then been passed on
-    /// to the session, ahead of anything sent after.
-    private func deliver(_ command: EditorCommand) async {
-        guard isPageReady,
-              let data = try? JSONEncoder().encode(command.json),
-              let json = String(data: data, encoding: .utf8)
-        else { return }
-        do {
-            _ = try await page.callJavaScript("window.synapse.receive(JSON.parse(json))", arguments: ["json": json])
-        } catch {
-            logger.error("sending to the editor failed: \(error.localizedDescription, privacy: .public)")
-        }
-    }
-}
-
-/// Holds the event closure until the controller exists, the message handler is created first.
-private final class EventBox {
-    var receive: ((EditorEvent) -> Void)?
-}
-
-/// The editor page stays on its own bundle. Links are opened by the app through the bridge.
-private struct EditorNavigationDecider: WebPage.NavigationDeciding {
-    func decidePolicy(for action: WebPage.NavigationAction, preferences: inout WebPage.NavigationPreferences) async -> WKNavigationActionPolicy {
-        action.request.url?.scheme == EditorSchemeHandler.scheme ? .allow : .cancel
     }
 }

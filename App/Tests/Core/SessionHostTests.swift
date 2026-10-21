@@ -2,15 +2,15 @@ import Foundation
 import Testing
 @testable import SynapseNote
 
-/// The Swift session behind the editor page (11c-2), on a real folder: the page's storage calls, commands applied
-/// in order, saves, and outside edits that wait for the page's answer while nothing else writes.
+/// The vault's Swift session on a real folder (11e-2): opening with the welcome guide, commands applied in
+/// order, saves made on its own after Morrow's delay, outside edits, encrypted pages, history and flashcards,
+/// and what the page screens read.
 @MainActor
 struct SessionHostTests {
-    /// what the host sent the page
-    final class Page {
-        var external: [(id: Int, json: String)] = []
-        var info: [String] = []
-        var resync: [String] = []
+    /// what the host reported
+    final class Reports {
+        var list: [SessionHost.Report] = []
+        var failures: [String] = []
     }
 
     private func folder(_ files: [String: String]) throws -> URL {
@@ -24,58 +24,85 @@ struct SessionHostTests {
         return root
     }
 
-    private func host(_ root: URL, _ page: Page) -> SessionHost {
+    private func open(_ root: URL, _ reports: Reports = Reports(), guide: Bool = false) async throws -> (SessionHost, SessionHost.Opened) {
         let files = VaultFileSystem(root: root, trash: { _ in throw CocoaError(.featureUnsupported) })
-        let host = SessionHost(files: files, sendExternal: { page.external.append(($0, $1)) }, sendInfo: { page.info.append($0) },
-                               sendResync: { page.resync.append($0) })
-        host.begin { Issue.record("could not open: \($0)") }
-        return host
+        let host = SessionHost(files: files, report: { reports.list.append($0) }, failed: { reports.failures.append($0) })
+        let result = await withCheckedContinuation { continuation in
+            host.begin(guide: guide) { continuation.resume(returning: $0) }
+        }
+        return (host, try result.get())
     }
 
-    private func call(_ host: SessionHost, _ method: String, _ params: [String] = []) async -> Result<JSONValue, EditorCommand.RPCFailure> {
+    private func execute(_ host: SessionHost, _ commands: [JSValue], all: Bool = false) async -> CommandFailure? {
         await withCheckedContinuation { continuation in
-            host.call(method, params.map(JSONValue.string)) { continuation.resume(returning: $0) }
+            host.execute(commands, all: all) { continuation.resume(returning: $0) }
         }
     }
 
-    private func json(_ result: Result<JSONValue, EditorCommand.RPCFailure>) throws -> JSValue {
-        guard case .success(.string(let text)) = result else { throw EditorCommand.RPCFailure(message: "\(result)") }
-        return try JSJSON.parse(text)
+    private func ids(_ opened: SessionHost.Opened) -> [String: String] {
+        Dictionary(opened.report.pages.map { ($0.title, $0.id) }, uniquingKeysWith: { first, _ in first })
     }
 
     private func text(_ root: URL, _ path: String) -> String? {
         (try? Data(contentsOf: root.appending(path: path))).map { String(decoding: $0, as: UTF8.self) }
     }
 
-    /// lets work queued on the main actor by the host run
-    private func settle() async {
+    /// lets reports queued on the main actor by the host arrive
+    private func settle(_ milliseconds: Int = 50) async {
+        try? await Task.sleep(for: .milliseconds(milliseconds))
         for _ in 0..<20 { await Task.yield() }
-        try? await Task.sleep(for: .milliseconds(50))
     }
 
-    @Test func opensSavesAndRenamesAsThePageAsks() async throws {
+    @Test func opensRenamesAndSaves() async throws {
         let root = try folder(["Note.md": "Hello\n"])
-        let host = host(root, Page())
-        let opened = try json(await call(host, "open"))
-        let page = try #require(opened["pages"]?.array?.first)
-        let id = try #require(page["id"]?.string)
-        #expect(page["title"] == "Note")
-        #expect(opened["firstRun"] == false)
-        #expect(opened["info"]?["paths"]?[id] == "Note.md")
+        let reports = Reports()
+        let (host, opened) = try await open(root, reports)
+        let id = try #require(ids(opened)["Note"])
+        #expect(opened.problems == 0)
+        #expect(opened.report.save.state == .saved)
 
-        host.apply(commandsJSON: JSJSON.stringify(["commands": [["type": "page.rename", "id": .string(id), "title": "Renamed", "now": 5]], "all": false]))
-        let saved = try json(await call(host, "flush"))
-        #expect(saved["ok"] == true)
-        #expect(saved["info"]?["paths"]?[id] == "Renamed.md")
+        #expect(await execute(host, [["type": "page.rename", "id": .string(id), "title": "Renamed", "now": 5]]) == nil)
+        #expect(await host.flush())
         #expect(text(root, "Renamed.md") == "Hello\n")
         #expect(text(root, "Note.md") == nil)
-        // a page opened again after its process ended gets the session as it is
-        let again = try json(await call(host, "open"))
-        #expect(again["pages"]?.array?.first?["title"] == "Renamed")
+        #expect(await host.pathOf(id) == "Renamed.md")
+        await settle()
+        #expect(reports.list.last?.pages.first?.title == "Renamed")
+        #expect(reports.list.last?.save.state == .saved)
         await host.close()
     }
 
-    /// the app's own page screens (11d-2): which pages it draws, and the Markdown source read and read back
+    /// Morrow's save queue: 300 ms after the last change, with nobody asking
+    @Test func savesOnItsOwnAfterTheDelay() async throws {
+        let root = try folder(["Note.md": "Hello\n"])
+        let reports = Reports()
+        let (host, opened) = try await open(root, reports)
+        let id = try #require(ids(opened)["Note"])
+        _ = await execute(host, [["type": "page.setDoc", "id": .string(id), "doc": .object(MarkdownParse.markdownToDoc("Typed")), "now": 9]])
+        await settle()
+        #expect(reports.list.last?.save.state == .pending)
+        #expect(text(root, "Note.md") == "Hello\n")
+        await settle(600)
+        #expect(text(root, "Note.md") == "Typed\n")
+        #expect(reports.list.last?.save.state == .saved)
+        await host.close()
+    }
+
+    @Test func refusedCommandsSayWhy() async throws {
+        let root = try folder(["Note.md": "Hello\n"])
+        let (host, opened) = try await open(root)
+        let id = try #require(ids(opened)["Note"])
+        #expect(await execute(host, [["type": "page.rename", "id": "missing", "title": "x", "now": 1]]) != nil)
+        // all or none: the rename before the refused command is not kept
+        let refused = await execute(host, [["type": "page.rename", "id": .string(id), "title": "Kept?", "now": 1],
+                                           ["type": "page.rename", "id": "missing", "title": "x", "now": 1]], all: true)
+        #expect(refused != nil)
+        #expect(await host.context()?.state.pages[id]?.title == "Note")
+        #expect(await execute(host, [["type": "no.such"]]) != nil)
+        await host.close()
+    }
+
+    /// the page screens (11d): which screen draws a page, and the Markdown source read and read back
     @Test func choosesPageScreensAndReadsSourceAsMorrowDoes() async throws {
         let root = try folder([
             "Note.md": "Hello [[Other]]\n\n![pic](attachments/Pic.png)\n",
@@ -83,19 +110,18 @@ struct SessionHostTests {
             "Broken.md": "---\n- a\n- b\n---\nBody\n",
             "attachments/Pic.png": "png",
         ])
-        let host = host(root, Page())
-        let opened = try json(await call(host, "open"))
-        let ids = JSObject((opened["pages"]?.array ?? []).map { ($0["title"]!.string!, $0["id"]!) })
-        let note = try #require(ids["Note"]?.string)
-        let other = try #require(ids["Other"]?.string)
-        let broken = try #require(ids["Broken"]?.string)
+        let (host, opened) = try await open(root)
+        let ids = ids(opened)
+        let note = try #require(ids["Note"])
+        let other = try #require(ids["Other"])
+        let broken = try #require(ids["Broken"])
 
-        #expect(await host.screen(of: note, sourceMode: false) == .web)
+        #expect(await host.screen(of: note, sourceMode: false) == .editor)
         #expect(await host.screen(of: note, sourceMode: true) == .source)
         // a page that could not be read has no document; Morrow's PageView takes an empty one
         #expect(await host.screen(of: broken, sourceMode: true) == .unreadable)
         #expect(await host.markdown(of: broken) == "")
-        #expect(await host.screen(of: "missing", sourceMode: true) == .web)
+        #expect(await host.screen(of: "missing", sourceMode: true) == .none)
 
         // the text opens with links under the pages' titles and files under their vault paths
         let source = try #require(await host.markdown(of: note))
@@ -112,18 +138,21 @@ struct SessionHostTests {
 
         // content this version does not know is shown as plain text
         let unknown: JSValue = ["type": "doc", "content": [["type": "mystery", "content": [["type": "paragraph", "content": [["type": "text", "text": "kept"]]]]]]]
-        host.apply(commandsJSON: JSJSON.stringify(["commands": [["type": "page.setDoc", "id": .string(other), "doc": unknown, "now": 9]], "all": false]))
+        _ = await execute(host, [["type": "page.setDoc", "id": .string(other), "doc": unknown, "now": 9]])
         #expect(await host.screen(of: other, sourceMode: false) == .unknown(types: ["mystery"], plain: "kept"))
         // the source wins over it, as in Morrow's PageView
         #expect(await host.screen(of: other, sourceMode: true) == .source)
+        // known content the editor does not open, an empty text node here, is shown as plain text as well
+        let empty: JSValue = ["type": "doc", "content": [["type": "paragraph", "content": [["type": "text", "text": ""], ["type": "text", "text": "left"]]]]]
+        _ = await execute(host, [["type": "page.setDoc", "id": .string(other), "doc": empty, "now": 10]])
+        #expect(await host.screen(of: other, sourceMode: false) == .invalid(plain: "left"))
         await host.close()
     }
 
     /// the database screen (11d-3): chosen for a database page, and its data read in one go
     @Test func readsADatabaseForItsScreen() async throws {
         let root = try folder(["Home.md": "Home\n"])
-        let host = host(root, Page())
-        _ = try json(await call(host, "open"))
+        let (host, _) = try await open(root)
         let database = DatabaseDef(properties: [
             PropDef(id: "rel", name: "Related", type: "relation", options: []),
             PropDef(id: "status", name: "Status", type: "select", options: [SelectOption(id: "todo", name: "To do", color: "gray")]),
@@ -133,17 +162,15 @@ struct SessionHostTests {
             ["type": "taskList", "content": [["type": "taskItem", "attrs": ["checked": true]], ["type": "taskItem", "attrs": ["checked": false]]]],
         ]]
         let commands: [JSValue] = [
-            WorkspaceCommand.createPage(id: "db", parentId: nil, title: "Tasks", properties: JSObject()).morrow(now: 1),
+            // a database page is made with its kind, as Morrow's createPage makes one
+            ["type": "page.create", "id": "db", "parentId": nil, "now": 1, "title": "Tasks", "kind": "database"],
             WorkspaceCommand.setDatabase(id: "db", database: database).morrow(now: 2),
             WorkspaceCommand.createPage(id: "r1", parentId: "db", title: "One", properties: JSObject([("rel", .array(["home", "Nowhere"]))])).morrow(now: 3),
             WorkspaceCommand.createPage(id: "r2", parentId: "db", title: "Two", properties: JSObject()).morrow(now: 4),
             WorkspaceCommand.setDoc(id: "r1", doc: doc.object!).morrow(now: 5),
             WorkspaceCommand.setProperties(id: "r2", values: JSObject([("status", "todo")])).morrow(now: 6),
         ]
-        var kinded = commands
-        // a database page is made with its kind, as Morrow's createPage makes one
-        kinded[0] = ["type": "page.create", "id": "db", "parentId": nil, "now": 1, "title": "Tasks", "kind": "database"]
-        host.apply(commandsJSON: JSJSON.stringify(["commands": .array(kinded), "all": true]))
+        #expect(await execute(host, commands, all: true) == nil)
 
         #expect(await host.screen(of: "db", sourceMode: true) == .database(editable: true))
         let snapshot = try #require(await host.database("db"))
@@ -166,13 +193,12 @@ struct SessionHostTests {
     @Test func readsAndWritesACanvasForItsScreen() async throws {
         let board = #"{"nodes":[{"id":"t","type":"text","text":"hi","x":0,"y":0,"width":250,"height":60},{"id":"p","type":"file","file":"Home.md","x":300,"y":0,"width":400,"height":240}],"edges":[]}"#
         let root = try folder(["Home.md": "Home text\n", "Board.canvas": board, "Bad.canvas": "{not json"])
-        let host = host(root, Page())
-        let opened = try json(await call(host, "open"))
-        let ids = JSObject((opened["pages"]?.array ?? []).map { ($0["title"]!.string!, $0["id"]!) })
-        let boardId = try #require(ids["Board"]?.string)
-        let home = try #require(ids["Home"]?.string)
+        let (host, opened) = try await open(root)
+        let ids = ids(opened)
+        let boardId = try #require(ids["Board"])
+        let home = try #require(ids["Home"])
         #expect(await host.screen(of: boardId, sourceMode: true) == .canvas(unreadable: false))
-        #expect(await host.screen(of: try #require(ids["Bad"]?.string), sourceMode: false) == .canvas(unreadable: true))
+        #expect(await host.screen(of: try #require(ids["Bad"]), sourceMode: false) == .canvas(unreadable: true))
 
         let snapshot = try #require(await host.canvas(boardId))
         #expect(snapshot.data.nodes.map(CanvasEdits.id) == ["t", "p"])
@@ -183,129 +209,132 @@ struct SessionHostTests {
         // a card added on the screen reaches the file, pages written as their file
         var data = snapshot.data
         data = CanvasEdits.add(data, CanvasEdits.textCard(at: .init(x: 125, y: 130), id: "n"))
-        host.apply(commandsJSON: JSJSON.stringify(["commands": [WorkspaceCommand.setDoc(id: boardId, doc: CanvasFile.canvasDoc(data)).morrow(now: 7)], "all": false]))
-        _ = try json(await call(host, "flush"))
+        _ = await execute(host, [WorkspaceCommand.setDoc(id: boardId, doc: CanvasFile.canvasDoc(data)).morrow(now: 7)])
+        #expect(await host.flush())
         let written = try #require(text(root, "Board.canvas"))
         #expect(written.hasPrefix("{\n\t\"nodes\": ["))
         #expect(written.contains(#""type": "file",\#n\#t\#t\#t"file": "Home.md""#))
         #expect(written.contains(#""id": "n""#))
+        // opening a canvas never records it (Morrow's PageView), a page is
+        host.markOpened(boardId)
+        host.markOpened(home)
+        let state = try #require(await host.context()?.state)
+        #expect(state.pages[boardId]?.lastOpenedAt == nil)
+        #expect(state.pages[home]?.lastOpenedAt != nil)
         await host.close()
     }
 
+    /// Morrow's main.tsx: a vault opened for the first time gets the welcome guide, saved, and never again
     @Test func aNewVaultGetsTheGuideOnce() async throws {
         let root = try folder([:])
-        let host = host(root, Page())
-        #expect(try json(await call(host, "open"))["firstRun"] == true)
-        #expect(try json(await call(host, "open"))["firstRun"] == false)
+        let (host, opened) = try await open(root, guide: true)
+        let titles = opened.report.pages.map(\.title)
+        #expect(titles.contains("Welcome to SynapseNote"))
+        #expect(text(root, "Welcome to SynapseNote.md") != nil)
         await host.close()
+        let (again, reopened) = try await open(root, guide: true)
+        #expect(reopened.report.pages.count == opened.report.pages.count)
+        await again.close()
+
+        // a folder about to be filled from another device gets none
+        let (empty, none) = try await open(try folder([:]), guide: false)
+        #expect(none.report.pages.isEmpty)
+        await empty.close()
     }
 
-    @Test func savesWaitWhileThePageDecidesOnAnOutsideEdit() async throws {
+    /// Morrow's applyExternal: a page with unsaved changes keeps them, and the other version goes to its history
+    @Test func outsideEditsKeepUnsavedPages() async throws {
         let root = try folder(["Note.md": "Hello\n", "Other.md": "Other\n"])
-        let page = Page()
-        let host = host(root, page)
-        let opened = try json(await call(host, "open"))
-        let ids = JSObject((opened["pages"]?.array ?? []).map { ($0["title"]!.string!, $0["id"]!) })
-        let note = try #require(ids["Note"]?.string)
-        let other = try #require(ids["Other"]?.string)
-        host.webIsReady()
+        let reports = Reports()
+        let (host, opened) = try await open(root, reports)
+        let ids = ids(opened)
+        let note = try #require(ids["Note"])
+        let other = try #require(ids["Other"])
 
-        // another app edits both pages; meanwhile the page has an unsaved edit of Other
+        // another app edits both pages; meanwhile Other has an edit here not saved yet
         try Data("Edited elsewhere\n".utf8).write(to: root.appending(path: "Note.md"))
         try Data("Other, edited elsewhere\n".utf8).write(to: root.appending(path: "Other.md"))
-        host.apply(commandsJSON: JSJSON.stringify(["commands": [["type": "page.setDoc", "id": .string(other), "doc": .object(MarkdownParse.markdownToDoc("Typed here")), "now": 9]], "all": false]))
+        _ = await execute(host, [["type": "page.setDoc", "id": .string(other), "doc": .object(MarkdownParse.markdownToDoc("Typed here")), "now": 9]])
         host.changed(["Note.md", "Other.md"])
-        await settle()
-        let sent = try #require(page.external.first)
-        let patch = try JSJSON.parse(sent.json)
-        #expect(patch["pages"]?.array?.count == 2)
-
-        // the page's save waits until the page has answered
-        let flushed = Task { try json(await call(host, "flush")) }
-        await settle()
-        #expect(text(root, "Other.md") == "Other, edited elsewhere\n")
-        host.externalAccepted(id: sent.id, accepted: [note])
-        let saved = try await flushed.value
-        #expect(saved["ok"] == true)
+        #expect(await host.flush())
 
         let context = try #require(await host.context())
         #expect(Doc.docToPlainText(context.state.docs[note]!) == "Edited elsewhere")
         // the edit made here wins on disk, and the other app's version is kept in the page's history
         #expect(text(root, "Other.md") == "Typed here\n")
-        // its first save keeps a version as well, as any first save of a page does
-        let history = (try json(await call(host, "listSnapshots", [other])).array ?? []).map { Doc.docToPlainText($0["doc"]?.object ?? JSObject()) }
+        let history = await host.snapshots(other).map { Doc.docToPlainText($0.doc) }
         #expect(Set(history) == ["Other, edited elsewhere", "Typed here"])
-        #expect(page.info.count == 1)
-        await host.close()
-    }
-
-    @Test func withoutThePageTheSessionTakesOutsideEditsAlone() async throws {
-        let root = try folder(["Note.md": "Hello\n"])
-        let page = Page()
-        let host = host(root, page)
-        let opened = try json(await call(host, "open"))
-        let note = try #require(opened["pages"]?.array?.first?["id"]?.string)
-
-        // nothing is read while no page is ready to answer
-        try Data("Changed\n".utf8).write(to: root.appending(path: "Note.md"))
-        host.changed(["Note.md"])
         await settle()
-        #expect(page.external.isEmpty)
-        host.webIsReady()
+        #expect(reports.list.contains { $0.pages.contains { $0.id == note } })
+        await host.close()
+    }
+
+    @Test func encryptsLocksAndUnlocksPages() async throws {
+        let root = try folder(["Secret.md": "Hidden words\n"])
+        let reports = Reports()
+        let (host, opened) = try await open(root, reports)
+        let id = try #require(ids(opened)["Secret"])
+        #expect(await host.protect(id, password: "pass") == nil)
+        let file = try #require(text(root, "Secret.md"))
+        #expect(!file.contains("Hidden words"))
+        await host.lock(id)
         await settle()
-        #expect(page.external.count == 1)
-
-        // the page's process ends before it answers
-        host.webGone()
-        let context = try #require(await host.context())
-        #expect(Doc.docToPlainText(context.state.docs[note]!) == "Changed")
-        #expect(await host.flushAlone())
+        #expect(reports.list.last?.locked == [id])
+        #expect(await host.screen(of: id, sourceMode: false) == .none)
+        #expect(await host.unlock(id, password: "wrong") != nil)
+        #expect(await host.unlock(id, password: "pass") == nil)
+        #expect(await host.editorDoc(id).map(Doc.docToPlainText) == "Hidden words")
+        #expect(await host.unprotect(id) == nil)
+        #expect(text(root, "Secret.md")?.contains("Hidden words") == true)
         await host.close()
     }
 
-    @Test func refusedCommandsSendTheSessionsVersionBack() async throws {
-        let root = try folder(["Note.md": "Hello\n"])
-        let page = Page()
-        let host = host(root, page)
-        _ = try json(await call(host, "open"))
-        host.apply(commandsJSON: JSJSON.stringify(["commands": [["type": "page.rename", "id": "missing", "title": "x", "now": 1]], "all": false]))
-        await settle()
-        let resync = try JSJSON.parse(try #require(page.resync.first))
-        #expect(resync["removed"] == ["missing"])
+    /// Morrow's restoreVersion: the version it replaces is kept first
+    @Test func restoresAVersion() async throws {
+        let root = try folder(["Note.md": "First\n"])
+        let (host, opened) = try await open(root)
+        let id = try #require(ids(opened)["Note"])
+        // a version is kept as a page is saved, at most one every few minutes
+        _ = await execute(host, [["type": "page.setDoc", "id": .string(id), "doc": .object(MarkdownParse.markdownToDoc("Second")), "now": 9]])
+        #expect(await host.flush())
+        _ = await execute(host, [["type": "page.setDoc", "id": .string(id), "doc": .object(MarkdownParse.markdownToDoc("Third")), "now": 10]])
+        #expect(await host.flush())
+        let second = try #require(await host.snapshots(id).first { Doc.docToPlainText($0.doc) == "Second" })
+        #expect(await host.restore(second) == nil)
+        #expect(await host.flush())
+        #expect(text(root, "Note.md") == "Second\n")
+        #expect(await host.snapshots(id).contains { Doc.docToPlainText($0.doc) == "Third" })
         await host.close()
     }
 
-    @Test func thePageCannotReachFilesDirectly() async throws {
-        let root = try folder(["Note.md": "Hello\n"])
-        let host = host(root, Page())
-        _ = try json(await call(host, "open"))
-        for method in ["apply", "createFile", "scan", "readText"] {
-            guard case .failure = await call(host, method, ["Note.md"]) else {
-                Issue.record("\(method) answered")
-                continue
-            }
-        }
-        #expect(await call(host, "readMeta", ["../outside.json"]) == .success(.null))
-        await host.close()
-    }
-
-    @Test func filesAndMorrowsOwnFiles() async throws {
-        let root = try folder(["Note.md": "Hello\n"])
-        let host = host(root, Page())
-        _ = try json(await call(host, "open"))
-        let stored = try json(await call(host, "putFiles", [JSJSON.stringify([["meta": ["id": "x", "name": "photo.png", "type": "image/png", "size": 2, "createdAt": 1], "data": "AQI="]])]))
-        #expect(stored.array?.first?["id"] == "attachments/photo.png")
-        let file = try json(await call(host, "getFile", ["attachments/photo.png"]))
-        #expect(file["data"] == "AQI=")
-        #expect(await call(host, "writeMeta", ["review.json", "{\"version\":1,\"cards\":{\"c\":{\"due\":\"2026-10-20\"}}}"]) == .success(.null))
-        let context = try #require(await host.context())
-        #expect(context.reviewLog["c"]?["due"] == "2026-10-20")
-        #expect(context.reviewLog["c"]?["ease"] == 2.5)
-        // a grade reaches the session at once, before the page writes the file
-        host.setReviewLog(json: "{\"d\":{\"due\":\"2026-10-22\",\"interval\":2,\"ease\":2.6,\"reps\":2,\"lapses\":0}}")
+    /// Morrow's app/review.ts: a grade counts at once and reaches .morrow/review.json after its delay or a save
+    @Test func gradesCardsAndKeepsTheirProgress() async throws {
+        let root = try folder(["Cards.md": "Capital of France :: Paris\n"])
+        let (host, _) = try await open(root)
+        let card = try #require(await host.context().map { Flashcards.collectCards($0.state) }?.first)
+        host.grade(card.id, "good")
         let graded = try #require(await host.context())
-        #expect(graded.reviewLog.keys == ["d"])
-        #expect(graded.reviewLog["d"]?["interval"] == 2)
+        #expect(graded.reviewLog[card.id]?["reps"] == 1)
+        #expect(text(root, ".morrow/review.json") == nil)
+        #expect(await host.flush())
+        let saved = try JSJSON.parse(try #require(text(root, ".morrow/review.json")))
+        #expect(saved["version"] == 1)
+        #expect(saved["cards"]?[card.id]?["reps"] == 1)
+        await host.close()
+        // read back when the vault opens again
+        let (again, _) = try await open(root)
+        #expect(await again.context()?.reviewLog[card.id]?["reps"] == 1)
+        await again.close()
+    }
+
+    @Test func storesFiles() async throws {
+        let root = try folder(["Note.md": "Hello\n"])
+        let (host, _) = try await open(root)
+        let meta = FileMeta(id: "x", name: "photo.png", type: "image/png", size: 2, createdAt: 1)
+        let stored = try await host.addFiles([(meta, Data([1, 2]))]).get()
+        #expect(stored.first?.id == "attachments/photo.png")
+        #expect(await host.file("attachments/photo.png")?.data == Data([1, 2]))
+        #expect(await host.files().map(\.id) == ["attachments/photo.png"])
         await host.close()
     }
 }
