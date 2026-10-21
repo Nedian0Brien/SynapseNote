@@ -44,7 +44,7 @@
 | 11d-5c-2 | 페이지 끼워 넣기(데이터베이스·캔버스·페이지), 행 속성 줄, 기록 창, 네이티브 편집기를 기본으로 | 구현 (PR #24, `docs/verification/phase11d5c2-editor-embeds.md`) |
 | 11e | 웹 계층 제거 | 11e-1·11e-2로 나눔(`.intent/spec_phase11e-web-removal.md`) |
 | 11e-1 | Morrow 작업을 Swift로: 페이지 작업, 내보내기·게시·백업·복원·가져오기, zip, PDF, 알림 | 구현 (PR #25, `docs/verification/phase11e1-swift-operations.md`) |
-| 11e-2 | 상태 소유를 Swift로, 웹 페이지·브리지·번들·node 빌드 제거 | 구현 (`docs/verification/phase11e2-session-owner.md`) |
+| 11e-2 | 상태 소유를 Swift로, 웹 페이지·브리지·번들·node 빌드 제거 | 구현 (PR #26, `docs/verification/phase11e2-session-owner.md`) |
 
 ## 전환 단계(11)에서 볼 것
 
