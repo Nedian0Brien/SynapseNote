@@ -20,7 +20,10 @@
 - **zip**: iOS·macOS에 공개 zip API가 없다(Foundation·AppleArchive는 zip을 읽고 쓰지 않음). `Compression` 프레임워크의 `COMPRESSION_ZLIB`(raw DEFLATE, [문서](https://developer.apple.com/documentation/compression/compression_algorithm/compression_zlib))로 압축하고, CRC-32와 zip 머리(로컬·중앙 디렉터리·끝 레코드, UTF-8 이름 표시)는 직접 쓴다. 읽기는 저장(0)·deflate(8) 방식만, zip64는 받지 않고 안내한다. fflate와 바이트까지 같을 필요는 없고 안의 파일이 같으면 된다.
 - **PDF**: 웹 화면이 없어지면 Morrow처럼 편집기 화면을 인쇄할 수 없다. Swift `Site.docToHtml`(11d-1, Morrow `site.ts`)로 만든 페이지 HTML과 게시 사이트 스타일을 지금의 `PDFExporter`(A4, 여백 0.6인치)로 인쇄한다. 수식은 Morrow 게시처럼 KaTeX `output: 'mathml'`(JavaScriptCore에서). 모양은 Morrow 게시 사이트의 한 페이지와 같아지고 Morrow 데스크톱 PDF와는 다르다.
 - **알림**: Morrow 문구와 단추를 그대로 네이티브 알림으로. 단추 동작은 Swift 함수.
-- **사용자 CSS**: 웹 화면에만 적용되던 기능이라 웹 제거와 함께 쓸 곳이 없어진다. 11e-2에 들어가기 전에 사용자에게 처리 방식을 묻는다(열린 질문).
+- **사용자 CSS**: 웹 화면에만 적용되던 기능이라 웹 제거와 함께 쓸 곳이 없어진다. 사용자 결정(2026-10-21): 설정의 CSS 편집기를 뺀다. vault의 `.morrow/style.css`는 읽지도 지우지도 않고 그대로 둔다(Morrow에서 열면 그대로 적용된다).
+- **편집기가 열 수 없는 문서**(11e-2): Morrow가 아는 노드만 있지만 ProseMirror 규칙으로 열리지 않는 문서(빈 text 노드 등)는 지금 웹 편집기가 받는다. 웹이 없어지면 모르는 내용이 있는 페이지와 같이 읽기 전용 안내와 평문으로 보여 주고 바꾸지 않는다. Morrow(TipTap)는 이런 문서를 빈 문서로 열어 덮어쓸 수 있다. Morrow와 다른 점으로 적는다.
+- **페이지를 연 시각**(11e-2): 웹 `Page`가 하던 `page.markOpened`(캔버스는 빼고)를 Swift가 보여 줄 페이지가 바뀔 때 한다.
+- **열 때 읽지 못한 항목 알림**(11e-2): Morrow `main.tsx`처럼 "N items could not be read and were left untouched."를 오류 알림(12초)으로 보인다. 지금 웹은 보이지 않았다.
 
 ## 범위 밖
 
