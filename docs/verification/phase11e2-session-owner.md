@@ -51,6 +51,8 @@
 | 기록 복원(Editor test, 2:15 AM 버전) | 파일이 그 버전으로, 열린 편집기도 바뀜, "Version restored. The version it replaced is kept in the page history." |
 | 복습 평가(Good) | 화면 3 due·1 reviewed, 사이드바 3, 약 1초 뒤 `review.json`에 interval 6, reps 2 |
 | 첨부(/image, 파일 선택기에서 그림) | `attachments/cover-picture.png` 저장, 페이지에 그림 |
+| Media test 페이지 | 글 안·블록 수식, 그림, PDF 블록, 소리 줄, 웹 그림 안내가 그려짐(`App/Renderers`만 씀) |
+| Export Page as PDF…(Media test, 명령 팔레트) | 편집기 scheme을 뺀 뒤에도 1쪽 PDF, 제목·수식(MathML)·파일 이름·코드·원문 블록 글, 크기 156013바이트로 11e-1 결과와 같음 |
 | 앱을 내릴 때 저장 | 입력 직후 홈 단추, 0.3초 안에 파일에 들어감 |
 | 바깥 편집 | 열린 페이지(Blocks test) 파일을 바깥에서 고치자 화면이 바뀜. vault 안 폴더를 바깥에서 옮기자 그 페이지들이 목록에서 빠짐 |
 | 새 vault(빈 폴더를 Open Folder…) | 환영 안내 17쪽, 문구는 SynapseNote와 Mac 키, 날짜는 오늘 기준(`[[2026-10-21]]`, `[[2026-10-22]]`, `[[2026-10-24]]`) |
