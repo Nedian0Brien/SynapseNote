@@ -1,0 +1,39 @@
+SynapseNote-Native
+
+This product includes software from Morrow (https://github.com/Aarav2709/Morrow),
+Copyright 2026 Aarav Gupta and Morrow contributors, licensed under the Apache License 2.0.
+A copy of that licence is in LICENSES/Morrow-Apache-2.0.txt.
+
+Morrow is included unmodified as a git submodule at web/vendor/morrow, pinned to commit
+a2daae153279042b662b16a88f592cdabd5f1d32. The following SynapseNote files are adapted from
+Morrow and say so at their top:
+
+- web/vite.config.ts (emoji image and third party licence plugins; also renames the visible
+  "Morrow page" label in src/app/editor/EditorMenus.tsx at build time)
+- web/src/EditorApp.tsx (editor setup, from src/app/editor/PageEditor.tsx)
+- web/src/host/actions.ts, web/src/host/attachments.ts (functions copied with the same output)
+- web/sampleRenames.ts (rewrites the welcome guide of src/core/sample.ts at build time for this
+  app's name, keys and screens)
+
+The Swift data core in App/Sources/Core is a port of Morrow's src/core (markdown, vault, model, commands,
+canvas, templates, tasks, tree, daily, migrations) and of the planning parts of src/storage (session,
+saveQueue, vaultRepository), written to give the same results; each file names the Morrow file it follows.
+It also ports, to give the same results:
+
+- markdown-it 15.0.2, Copyright (c) 2014 Vitaly Puzrin, Alex Kocharin, MIT licence
+- entities 8.1.0 (its table of HTML character references), Copyright (c) Felix Böhm, BSD 2-Clause licence
+- mdurl 2.1.0, Copyright (c) 2015 Vitaly Puzrin, Alex Kocharin, MIT licence
+- punycode.js 2.3.1, Copyright Mathias Bynens, MIT licence
+- uc.micro 3.0.0 (its punctuation and symbol tables), Copyright Mathias Bynens, MIT licence
+- yaml 2.9.1 (its YAML 1.2 core schema and its stringify), Copyright Eemeli Aro, ISC licence
+
+and links Yams 6.2.2, Copyright (c) 2016 JP Simard, MIT licence, with the libyaml it bundles,
+Copyright (c) 2017-2020 Ingy döt Net, Copyright (c) 2006-2016 Kirill Simonov, MIT licence.
+Their licence texts are in LICENSES/swift-core-third-party.txt.
+
+The editor bundle lists the licences of every package it includes in THIRD_PARTY_LICENSES.txt.
+
+The native editor draws formulas with KaTeX, diagrams with Mermaid and highlights code with lowlight and
+highlight.js, from the files in App/Renderers (written by web/scripts/vendor-renderers.ts from the same packages
+the editor bundle uses). App/Renderers/THIRD_PARTY_LICENSES.txt lists the licences of those packages and of every
+package they bundle.

@@ -1,0 +1,8 @@
+.DS_Store
+.worktree/
+web/node_modules/
+# generated from project.yml by xcodegen
+*.xcodeproj/
+build/
+DerivedData/
+xcuserdata/

@@ -1,0 +1,80 @@
+{
+ "cases": [
+  {
+   "plain": "",
+   "password": "fixture password",
+   "iterations": 100000,
+   "salt": "AAcOFRwjKjE4P0ZNVFtiaQ==",
+   "ivStart": 0,
+   "text": "---\nmorrow-encrypted: aes-256-gcm\nkdf: pbkdf2-sha256\niterations: 100000\nsalt: AAcOFRwjKjE4P0ZNVFtiaQ==\niv: AAECAwQFBgcICQoL\n---\nThis page is encrypted with a password in Morrow.\n\nV+9+lfg+liWUhABeVgV6OQ==\n",
+   "decrypted": "",
+   "wrong": true
+  },
+  {
+   "plain": "one line",
+   "password": "pässwörd ✓",
+   "iterations": 100000,
+   "salt": "HyYtNDtCSVBXXmVsc3qBiA==",
+   "ivStart": 12,
+   "text": "---\nmorrow-encrypted: aes-256-gcm\nkdf: pbkdf2-sha256\niterations: 100000\nsalt: HyYtNDtCSVBXXmVsc3qBiA==\niv: DA0ODxAREhMUFRYX\n---\nThis page is encrypted with a password in Morrow.\n\n9SbJfVBeipMSeTAOhYT1nQgRVMbklvem\n",
+   "decrypted": "one line",
+   "wrong": true
+  },
+  {
+   "plain": "---\ntitle: Secret\n---\n\nA page with **bold**, a [[link]] and 한글 and an emoji 🎉.\n",
+   "password": "",
+   "iterations": 600000,
+   "salt": "PkVMU1phaG92fYSLkpmgpw==",
+   "ivStart": 24,
+   "text": "---\nmorrow-encrypted: aes-256-gcm\nkdf: pbkdf2-sha256\niterations: 600000\nsalt: PkVMU1phaG92fYSLkpmgpw==\niv: GBkaGxwdHh8gISIj\n---\nThis page is encrypted with a password in Morrow.\n\nyCQ2F9RctLZ1R8X4kxVaX3lOhkIGBOFfjw9inW0NO+WSL88Pz/RCWucHDQjf1zLS+xCnKGfqOAcp\nnkC4ic8z9eB0ATp+ATMVsQaSKxnqt91/pU/f+dAp5NvFm63fIU+jemh6Y73c\n",
+   "decrypted": "---\ntitle: Secret\n---\n\nA page with **bold**, a [[link]] and 한글 and an emoji 🎉.\n",
+   "wrong": true
+  },
+  {
+   "plain": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "password": "fixture password",
+   "iterations": 100000,
+   "salt": "XWRrcnmAh46VnKOqsbi/xg==",
+   "ivStart": 36,
+   "text": "---\nmorrow-encrypted: aes-256-gcm\nkdf: pbkdf2-sha256\niterations: 100000\nsalt: XWRrcnmAh46VnKOqsbi/xg==\niv: JCUmJygpKissLS4v\n---\nThis page is encrypted with a password in Morrow.\n\nvh09D7VPOrroKDlk5ctZzGNX96zDxmQzrSorFBjQlwgIj/9Om45LSIB+94mgPBbSrOTSblswjYL7\njyF1zCozYJ9cr8CwT5RzzZYRaNLyFe+7t3hMpAXbZUDiK1xi4RraC9LsZ7fBvVXEbgJhjUaDcBQz\nVsJgT4Lquah4q3UfPZ0VPp9ktlNJWV3J/ykF2r32ICs+xMIAoAfa62BFLPZDLDAh4iwCQPArVdkn\nkIzIzIWEMdaNXqmJps2GwjCAzB9zHEJagnaXdfkDBZkALF6hxdVAuobg15Zh\n",
+   "decrypted": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "wrong": true
+  }
+ ],
+ "headers": [
+  {
+   "text": "---\nmorrow-encrypted: aes-256-gcm\nkdf: pbkdf2-sha256\niterations: 600000\nsalt: AAAA\niv: AAAA\n---\nbody\n",
+   "header": {
+    "salt": "AAAA",
+    "iv": "AAAA",
+    "iterations": 600000,
+    "body": "body"
+   }
+  },
+  {
+   "text": "---\nmorrow-encrypted: aes-256-gcm\niterations: 5\nsalt: AAAA\niv: AAAA\n---\nlow iterations fall back\n",
+   "header": {
+    "salt": "AAAA",
+    "iv": "AAAA",
+    "iterations": 600000,
+    "body": "low iterations fall back"
+   }
+  },
+  {
+   "text": "---\nmorrow-encrypted: aes-128-cbc\nsalt: AAAA\niv: AAAA\n---\nother cipher\n",
+   "header": null
+  },
+  {
+   "text": "---\nmorrow-encrypted: aes-256-gcm\nsalt: \"@@\"\niv: AAAA\n---\nbad salt\n",
+   "header": null
+  },
+  {
+   "text": "---\ntitle: plain\n---\nnot encrypted\n",
+   "header": null
+  },
+  {
+   "text": "no frontmatter at all",
+   "header": null
+  }
+ ]
+}

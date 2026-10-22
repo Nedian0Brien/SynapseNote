@@ -1,0 +1,688 @@
+[
+ {
+  "name": "bom.md",
+  "text": "﻿# With BOM\n\nText.\n",
+  "split": {
+   "data": null,
+   "head": "",
+   "body": "# With BOM\n\nText.\n",
+   "error": null
+  },
+  "joined": null,
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [],
+   "database": null,
+   "error": null,
+   "keyOrder": [],
+   "aliases": []
+  }
+ },
+ {
+  "name": "code.md",
+  "text": "```\nplain fence\n```\n\n```ts title=\"x\"\nconst a = 1;\n```\n\n~~~python\nprint(\"tilde\")\n~~~\n\n    indented code\n    second line\n\n````\n``` inside\n````\n\n```mermaid\ngraph LR\n  A --> B\n```\n\n```\nunclosed fence\n",
+  "split": {
+   "data": null,
+   "head": "",
+   "body": "```\nplain fence\n```\n\n```ts title=\"x\"\nconst a = 1;\n```\n\n~~~python\nprint(\"tilde\")\n~~~\n\n    indented code\n    second line\n\n````\n``` inside\n````\n\n```mermaid\ngraph LR\n  A --> B\n```\n\n```\nunclosed fence\n",
+   "error": null
+  },
+  "joined": null,
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [],
+   "database": null,
+   "error": null,
+   "keyOrder": [],
+   "aliases": []
+  }
+ },
+ {
+  "name": "crlf.md",
+  "text": "Line one\r\n\r\n- item\r\n- item two\r\n",
+  "split": {
+   "data": null,
+   "head": "",
+   "body": "Line one\r\n\r\n- item\r\n- item two\r\n",
+   "error": null
+  },
+  "joined": null,
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [],
+   "database": null,
+   "error": null,
+   "keyOrder": [],
+   "aliases": []
+  }
+ },
+ {
+  "name": "embeds.md",
+  "text": "![[Board.canvas]]\n![[doc.pdf]]\n![[song.mp3]]\n![[movie.mp4]]\n![[Some Page#Section]]\n",
+  "split": {
+   "data": null,
+   "head": "",
+   "body": "![[Board.canvas]]\n![[doc.pdf]]\n![[song.mp3]]\n![[movie.mp4]]\n![[Some Page#Section]]\n",
+   "error": null
+  },
+  "joined": null,
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [],
+   "database": null,
+   "error": null,
+   "keyOrder": [],
+   "aliases": []
+  }
+ },
+ {
+  "name": "emphasis.md",
+  "text": "*em* _em_ **strong** __strong__ ***both*** *nested **strong** inside*\nfoo*bar*baz and foo_bar_baz stay\n**unclosed and *mixed** stars*\n~~struck~~ ~not struck~ ==marked== ===three=== `code` ``co`de``\na \\*literal\\* and \\_under\\_ and \\` tick \\\\ backslash\n<u>under</u> <b>bold html</b> <span style=\"color:red\">span</span>\nline with two spaces at end  \nnext line after hard break\\\nafter backslash break\nsoft\nbreak\n",
+  "split": {
+   "data": null,
+   "head": "",
+   "body": "*em* _em_ **strong** __strong__ ***both*** *nested **strong** inside*\nfoo*bar*baz and foo_bar_baz stay\n**unclosed and *mixed** stars*\n~~struck~~ ~not struck~ ==marked== ===three=== `code` ``co`de``\na \\*literal\\* and \\_under\\_ and \\` tick \\\\ backslash\n<u>under</u> <b>bold html</b> <span style=\"color:red\">span</span>\nline with two spaces at end  \nnext line after hard break\\\nafter backslash break\nsoft\nbreak\n",
+   "error": null
+  },
+  "joined": null,
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [],
+   "database": null,
+   "error": null,
+   "keyOrder": [],
+   "aliases": []
+  }
+ },
+ {
+  "name": "frontmatter-basic.md",
+  "text": "---\ntitle: Custom title\nicon: 🌱\ntags: [garden, plants]\ncover: gradient-3\naliases:\n  - First\n  - Second\nrating: 4.5\ndone: true\nwhen: 2026-10-19\nempty:\nquoted: \"with: colon\"\n---\nBody text.\n",
+  "split": {
+   "data": {
+    "title": "Custom title",
+    "icon": "🌱",
+    "tags": [
+     "garden",
+     "plants"
+    ],
+    "cover": "gradient-3",
+    "aliases": [
+     "First",
+     "Second"
+    ],
+    "rating": 4.5,
+    "done": true,
+    "when": "2026-10-19",
+    "empty": null,
+    "quoted": "with: colon"
+   },
+   "head": "---\ntitle: Custom title\nicon: 🌱\ntags: [garden, plants]\ncover: gradient-3\naliases:\n  - First\n  - Second\nrating: 4.5\ndone: true\nwhen: 2026-10-19\nempty:\nquoted: \"with: colon\"\n---\n",
+   "body": "Body text.\n",
+   "error": null
+  },
+  "joined": "---\ntitle: Custom title\nicon: 🌱\ntags:\n  - garden\n  - plants\ncover: gradient-3\naliases:\n  - First\n  - Second\nrating: 4.5\ndone: true\nwhen: 2026-10-19\nempty: null\nquoted: \"with: colon\"\n---\nBody text.\n",
+  "page": {
+   "title": "Custom title",
+   "icon": "🌱",
+   "cover": "gradient-3",
+   "kind": null,
+   "tags": [
+    "garden",
+    "plants"
+   ],
+   "database": null,
+   "error": null,
+   "keyOrder": [
+    "title",
+    "icon",
+    "tags",
+    "cover",
+    "aliases",
+    "rating",
+    "done",
+    "when",
+    "empty",
+    "quoted"
+   ],
+   "aliases": [
+    "First",
+    "Second"
+   ]
+  }
+ },
+ {
+  "name": "frontmatter-empty.md",
+  "text": "---\n---\nEmpty block.\n",
+  "split": {
+   "data": {},
+   "head": "---\n---\n",
+   "body": "Empty block.\n",
+   "error": null
+  },
+  "joined": "Empty block.\n",
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [],
+   "database": null,
+   "error": null,
+   "keyOrder": [],
+   "aliases": []
+  }
+ },
+ {
+  "name": "frontmatter-invalid.md",
+  "text": "---\nkey: [unclosed\nother: value\n---\nBody stays.\n",
+  "split": {
+   "data": null,
+   "head": "---\nkey: [unclosed\nother: value\n---\n",
+   "body": "Body stays.\n",
+   "error": "The properties at the top of the file could not be read: Flow sequence in block collection must be sufficiently indented and end with a ] at line 2, column 1:"
+  },
+  "joined": null,
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [],
+   "database": null,
+   "error": "The properties at the top of the file could not be read: Flow sequence in block collection must be sufficiently indented and end with a ] at line 2, column 1:",
+   "keyOrder": [],
+   "aliases": []
+  }
+ },
+ {
+  "name": "frontmatter-tags.md",
+  "text": "---\ntags: \"#one, two three\"\ntag: single\n---\nTags as string.\n",
+  "split": {
+   "data": {
+    "tags": "#one, two three",
+    "tag": "single"
+   },
+   "head": "---\ntags: \"#one, two three\"\ntag: single\n---\n",
+   "body": "Tags as string.\n",
+   "error": null
+  },
+  "joined": "---\ntags: \"#one, two three\"\ntag: single\n---\nTags as string.\n",
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [
+    "one",
+    "two",
+    "three"
+   ],
+   "database": null,
+   "error": null,
+   "keyOrder": [
+    "tags",
+    "tag"
+   ],
+   "aliases": []
+  }
+ },
+ {
+  "name": "frontmatter-yaml11.md",
+  "text": "---\nyes_value: yes\nno_value: no\non_value: on\noctal: 0o17\nlegacy_octal: 017\nhex: 0x1F\nsci: 1e3\ninf: .inf\nnull_tilde: ~\ndate_time: 2026-10-19T10:00:00Z\nmultiline: |\n  line one\n  line two\nfolded: >\n  folded one\n  folded two\nnested:\n  a: 1\n  b: [x, y]\nanchor: &a shared\nalias: *a\n---\nBody.\n",
+  "split": {
+   "data": {
+    "yes_value": "yes",
+    "no_value": "no",
+    "on_value": "on",
+    "octal": 15,
+    "legacy_octal": 17,
+    "hex": 31,
+    "sci": 1000,
+    "inf": null,
+    "null_tilde": null,
+    "date_time": "2026-10-19T10:00:00Z",
+    "multiline": "line one\nline two\n",
+    "folded": "folded one folded two\n",
+    "nested": {
+     "a": 1,
+     "b": [
+      "x",
+      "y"
+     ]
+    },
+    "anchor": "shared",
+    "alias": "shared"
+   },
+   "head": "---\nyes_value: yes\nno_value: no\non_value: on\noctal: 0o17\nlegacy_octal: 017\nhex: 0x1F\nsci: 1e3\ninf: .inf\nnull_tilde: ~\ndate_time: 2026-10-19T10:00:00Z\nmultiline: |\n  line one\n  line two\nfolded: >\n  folded one\n  folded two\nnested:\n  a: 1\n  b: [x, y]\nanchor: &a shared\nalias: *a\n---\n",
+   "body": "Body.\n",
+   "error": null
+  },
+  "joined": "---\nyes_value: yes\nno_value: no\non_value: on\noctal: 15\nlegacy_octal: 17\nhex: 31\nsci: 1000\ninf: .inf\nnull_tilde: null\ndate_time: 2026-10-19T10:00:00Z\nmultiline: |\n  line one\n  line two\nfolded: |\n  folded one folded two\nnested:\n  a: 1\n  b:\n    - x\n    - y\nanchor: shared\nalias: shared\n---\nBody.\n",
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [],
+   "database": null,
+   "error": null,
+   "keyOrder": [
+    "yes_value",
+    "no_value",
+    "on_value",
+    "octal",
+    "legacy_octal",
+    "hex",
+    "sci",
+    "inf",
+    "null_tilde",
+    "date_time",
+    "multiline",
+    "folded",
+    "nested",
+    "anchor",
+    "alias"
+   ],
+   "aliases": []
+  }
+ },
+ {
+  "name": "hangul.md",
+  "text": "# 한글 제목\n\n가나다 **굵게** *기울임* 그리고 [[한글 페이지]] 링크.\n조합 중이던 글자: ㄱㅏ ㅎ\n#태그 #한글태그 #tag/sub #123 not tag\n이모지 👋🏽 👨‍👩‍👧 합자\n",
+  "split": {
+   "data": null,
+   "head": "",
+   "body": "# 한글 제목\n\n가나다 **굵게** *기울임* 그리고 [[한글 페이지]] 링크.\n조합 중이던 글자: ㄱㅏ ㅎ\n#태그 #한글태그 #tag/sub #123 not tag\n이모지 👋🏽 👨‍👩‍👧 합자\n",
+   "error": null
+  },
+  "joined": null,
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [],
+   "database": null,
+   "error": null,
+   "keyOrder": [],
+   "aliases": []
+  }
+ },
+ {
+  "name": "headings.md",
+  "text": "# H1\n## H2 with *em*\n### H3\n#### H4\n##### H5\n###### H6\n####### not a heading\n#no space\nSetext one\n==========\nSetext two\n----------\n# Closing hashes ##\n  ## indented heading\n",
+  "split": {
+   "data": null,
+   "head": "",
+   "body": "# H1\n## H2 with *em*\n### H3\n#### H4\n##### H5\n###### H6\n####### not a heading\n#no space\nSetext one\n==========\nSetext two\n----------\n# Closing hashes ##\n  ## indented heading\n",
+   "error": null
+  },
+  "joined": null,
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [],
+   "database": null,
+   "error": null,
+   "keyOrder": [],
+   "aliases": []
+  }
+ },
+ {
+  "name": "html.md",
+  "text": "<div>\nblock html\n</div>\n\n<!-- comment -->\n\n<details><summary>Sum</summary>\n\nInside details\n\n</details>\n\nText with <br> break and &amp; &copy; &#169; &#xA9; &nbsp; entities.\n<script>alert(1)</script>\n",
+  "split": {
+   "data": null,
+   "head": "",
+   "body": "<div>\nblock html\n</div>\n\n<!-- comment -->\n\n<details><summary>Sum</summary>\n\nInside details\n\n</details>\n\nText with <br> break and &amp; &copy; &#169; &#xA9; &nbsp; entities.\n<script>alert(1)</script>\n",
+   "error": null
+  },
+  "joined": null,
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [],
+   "database": null,
+   "error": null,
+   "keyOrder": [],
+   "aliases": []
+  }
+ },
+ {
+  "name": "links.md",
+  "text": "[inline](https://example.org \"Title\") [ref][r] [collapsed][] [r]\n<https://auto.example.org> <mail@example.org> https://bare.example.org\n![image](pic.png \"Pic\") ![alt text][img]\n[[Page]] [[Page|Alias]] [[Folder/Page#Heading|Shown]] ![[embed.png]] ![[Note]]\n[[Unclosed and [[Nested]]\n[link with [brackets]](url) [empty]()\n[%EC%9D%B8%EC%BD%94%EB%94%A9](https://example.org/%EA%B0%80?q=1&x=2)\n\n[r]: https://ref.example.org \"Ref title\"\n[img]: img.png\n[collapsed]: /path\n",
+  "split": {
+   "data": null,
+   "head": "",
+   "body": "[inline](https://example.org \"Title\") [ref][r] [collapsed][] [r]\n<https://auto.example.org> <mail@example.org> https://bare.example.org\n![image](pic.png \"Pic\") ![alt text][img]\n[[Page]] [[Page|Alias]] [[Folder/Page#Heading|Shown]] ![[embed.png]] ![[Note]]\n[[Unclosed and [[Nested]]\n[link with [brackets]](url) [empty]()\n[%EC%9D%B8%EC%BD%94%EB%94%A9](https://example.org/%EA%B0%80?q=1&x=2)\n\n[r]: https://ref.example.org \"Ref title\"\n[img]: img.png\n[collapsed]: /path\n",
+   "error": null
+  },
+  "joined": null,
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [],
+   "database": null,
+   "error": null,
+   "keyOrder": [],
+   "aliases": []
+  }
+ },
+ {
+  "name": "lists.md",
+  "text": "- one\n- two\n  - nested a\n  - nested b\n    1. deep one\n    2. deep two\n- three\n\n* loose item\n\n* second loose item\n\n  continued paragraph\n\n3. starts at three\n4. four\n\n1) paren list\n2) second\n\n- [ ] open task\n- [x] done task\n- [X] capital done\n  - [ ] nested task\n- plain after tasks\n",
+  "split": {
+   "data": null,
+   "head": "",
+   "body": "- one\n- two\n  - nested a\n  - nested b\n    1. deep one\n    2. deep two\n- three\n\n* loose item\n\n* second loose item\n\n  continued paragraph\n\n3. starts at three\n4. four\n\n1) paren list\n2) second\n\n- [ ] open task\n- [x] done task\n- [X] capital done\n  - [ ] nested task\n- plain after tasks\n",
+   "error": null
+  },
+  "joined": null,
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [],
+   "database": null,
+   "error": null,
+   "keyOrder": [],
+   "aliases": []
+  }
+ },
+ {
+  "name": "math.md",
+  "text": "Inline $x^2$ and $$display inline$$ and prices $5 and $10 stay.\nEscaped \\$ dollar and $ spaced $ not math.\n\n$$\n\\int_0^1 x\\,dx\n$$\n\n$$e = mc^2$$\n",
+  "split": {
+   "data": null,
+   "head": "",
+   "body": "Inline $x^2$ and $$display inline$$ and prices $5 and $10 stay.\nEscaped \\$ dollar and $ spaced $ not math.\n\n$$\n\\int_0^1 x\\,dx\n$$\n\n$$e = mc^2$$\n",
+   "error": null
+  },
+  "joined": null,
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [],
+   "database": null,
+   "error": null,
+   "keyOrder": [],
+   "aliases": []
+  }
+ },
+ {
+  "name": "no-frontmatter-dashes.md",
+  "text": "Text first\n---\nnot frontmatter\n",
+  "split": {
+   "data": null,
+   "head": "",
+   "body": "Text first\n---\nnot frontmatter\n",
+   "error": null
+  },
+  "joined": null,
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [],
+   "database": null,
+   "error": null,
+   "keyOrder": [],
+   "aliases": []
+  }
+ },
+ {
+  "name": "quotes-callouts.md",
+  "text": "> plain quote\n> second line\n>\n> second paragraph\n\n> [!note] A note\n> body text\n\n> [!WARNING]- Folded warning\n> hidden\n\n> [!tip]+ Open tip with **bold** title\n> - list in callout\n\n> [!custom-type]\n> unknown type\n\n>> nested quote\n",
+  "split": {
+   "data": null,
+   "head": "",
+   "body": "> plain quote\n> second line\n>\n> second paragraph\n\n> [!note] A note\n> body text\n\n> [!WARNING]- Folded warning\n> hidden\n\n> [!tip]+ Open tip with **bold** title\n> - list in callout\n\n> [!custom-type]\n> unknown type\n\n>> nested quote\n",
+   "error": null
+  },
+  "joined": null,
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [],
+   "database": null,
+   "error": null,
+   "keyOrder": [],
+   "aliases": []
+  }
+ },
+ {
+  "name": "tables.md",
+  "text": "| Left | Center | Right |\n|:-----|:------:|------:|\n| a | b | c |\n| escaped \\| pipe | `code | pipe` | [[Link\\|Alias]] |\n| missing |\n| too | many | cells | here |\n\n| only header |\n| --- |\n\nnot | a | table\n",
+  "split": {
+   "data": null,
+   "head": "",
+   "body": "| Left | Center | Right |\n|:-----|:------:|------:|\n| a | b | c |\n| escaped \\| pipe | `code | pipe` | [[Link\\|Alias]] |\n| missing |\n| too | many | cells | here |\n\n| only header |\n| --- |\n\nnot | a | table\n",
+   "error": null
+  },
+  "joined": null,
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [],
+   "database": null,
+   "error": null,
+   "keyOrder": [],
+   "aliases": []
+  }
+ },
+ {
+  "name": "tasks-dates.md",
+  "text": "- [ ] Water the tomatoes [[2026-10-20]]\n- [x] Done [[2026-10-19]]\nMention @today stays text.\n",
+  "split": {
+   "data": null,
+   "head": "",
+   "body": "- [ ] Water the tomatoes [[2026-10-20]]\n- [x] Done [[2026-10-19]]\nMention @today stays text.\n",
+   "error": null
+  },
+  "joined": null,
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [],
+   "database": null,
+   "error": null,
+   "keyOrder": [],
+   "aliases": []
+  }
+ },
+ {
+  "name": "unknown-blocks.md",
+  "text": "Paragraph.\n\n<custom-block data=\"x\">raw</custom-block>\n\n[^1]: footnote definition\n\nText with footnote[^1].\n\nTerm\n: definition\n\n%% obsidian comment %%\n",
+  "split": {
+   "data": null,
+   "head": "",
+   "body": "Paragraph.\n\n<custom-block data=\"x\">raw</custom-block>\n\n[^1]: footnote definition\n\nText with footnote[^1].\n\nTerm\n: definition\n\n%% obsidian comment %%\n",
+   "error": null
+  },
+  "joined": null,
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [],
+   "database": null,
+   "error": null,
+   "keyOrder": [],
+   "aliases": []
+  }
+ },
+ {
+  "name": "whitespace.md",
+  "text": "\n   leading spaces paragraph\n\ntrailing spaces   \n\n\ttab indented\n\nmultiple\n\n\nblank lines\n",
+  "split": {
+   "data": null,
+   "head": "",
+   "body": "\n   leading spaces paragraph\n\ntrailing spaces   \n\n\ttab indented\n\nmultiple\n\n\nblank lines\n",
+   "error": null
+  },
+  "joined": null,
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [],
+   "database": null,
+   "error": null,
+   "keyOrder": [],
+   "aliases": []
+  }
+ },
+ {
+  "name": "morrow-note.md",
+  "text": "## Weekly review\n\nShipped the **sidebar** rewrite, fixed *two* bugs and wrote `docs`. See [the plan](https://example.org/plan).\n\nAlso <u>underlined</u> and ~~struck~~ text.\n\n- Groceries\n  - oat milk\n  - bread\n- Post office\n\n1. Draft\n2. Edit\n3. Publish\n\n- [x] Book train tickets\n- [ ] Call the landlord\n\n> Simplicity is prerequisite for reliability.\n\n```ts\nconst answer = 42;\n```\n\n---\n\n| Book | Author |\n| --- | --- |\n| Middlemarch | George Eliot |\n| Piranesi | Susanna Clarke |\n",
+  "split": {
+   "data": null,
+   "head": "",
+   "body": "## Weekly review\n\nShipped the **sidebar** rewrite, fixed *two* bugs and wrote `docs`. See [the plan](https://example.org/plan).\n\nAlso <u>underlined</u> and ~~struck~~ text.\n\n- Groceries\n  - oat milk\n  - bread\n- Post office\n\n1. Draft\n2. Edit\n3. Publish\n\n- [x] Book train tickets\n- [ ] Call the landlord\n\n> Simplicity is prerequisite for reliability.\n\n```ts\nconst answer = 42;\n```\n\n---\n\n| Book | Author |\n| --- | --- |\n| Middlemarch | George Eliot |\n| Piranesi | Susanna Clarke |\n",
+   "error": null
+  },
+  "joined": null,
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [],
+   "database": null,
+   "error": null,
+   "keyOrder": [],
+   "aliases": []
+  }
+ },
+ {
+  "name": "obsidian/Welcome.md",
+  "text": "---\ntags: [start]\ncssclasses: wide\n---\n# Hello\n\nSee [[Projects/Garden|the garden]].\n",
+  "split": {
+   "data": {
+    "tags": [
+     "start"
+    ],
+    "cssclasses": "wide"
+   },
+   "head": "---\ntags: [start]\ncssclasses: wide\n---\n",
+   "body": "# Hello\n\nSee [[Projects/Garden|the garden]].\n",
+   "error": null
+  },
+  "joined": "---\ntags:\n  - start\ncssclasses: wide\n---\n# Hello\n\nSee [[Projects/Garden|the garden]].\n",
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [
+    "start"
+   ],
+   "database": null,
+   "error": null,
+   "keyOrder": [
+    "tags",
+    "cssclasses"
+   ],
+   "aliases": []
+  }
+ },
+ {
+  "name": "obsidian/Projects.md",
+  "text": "All my projects.\n",
+  "split": {
+   "data": null,
+   "head": "",
+   "body": "All my projects.\n",
+   "error": null
+  },
+  "joined": null,
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [],
+   "database": null,
+   "error": null,
+   "keyOrder": [],
+   "aliases": []
+  }
+ },
+ {
+  "name": "obsidian/Projects/Garden.md",
+  "text": "Back to [[Welcome]].\n\n* loose   formatting  kept\n",
+  "split": {
+   "data": null,
+   "head": "",
+   "body": "Back to [[Welcome]].\n\n* loose   formatting  kept\n",
+   "error": null
+  },
+  "joined": null,
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [],
+   "database": null,
+   "error": null,
+   "keyOrder": [],
+   "aliases": []
+  }
+ },
+ {
+  "name": "obsidian/Ideas/Loose idea.md",
+  "text": "Just a thought with ![[pic.png]]\n",
+  "split": {
+   "data": null,
+   "head": "",
+   "body": "Just a thought with ![[pic.png]]\n",
+   "error": null
+  },
+  "joined": null,
+  "page": {
+   "title": null,
+   "icon": null,
+   "cover": null,
+   "kind": null,
+   "tags": [],
+   "database": null,
+   "error": null,
+   "keyOrder": [],
+   "aliases": []
+  }
+ }
+]

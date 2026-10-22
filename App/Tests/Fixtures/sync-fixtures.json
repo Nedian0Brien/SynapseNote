@@ -1,0 +1,407 @@
+{
+ "note": "Test vectors made by web/scripts/sync-fixtures.ts from fixed public inputs. They are not credentials.",
+ "day": "2026-10-16",
+ "plans": [
+  {
+   "name": "only remote changed",
+   "local": {
+    "a.md": "1"
+   },
+   "remote": {
+    "a.md": "2"
+   },
+   "base": {
+    "a.md": "1"
+   },
+   "device": "Laptop",
+   "plan": {
+    "actions": [
+     {
+      "kind": "download",
+      "path": "a.md",
+      "hash": "2"
+     }
+    ],
+    "base": {
+     "a.md": "2"
+    }
+   }
+  },
+  {
+   "name": "only local changed",
+   "local": {
+    "a.md": "2"
+   },
+   "remote": {
+    "a.md": "1"
+   },
+   "base": {
+    "a.md": "1"
+   },
+   "device": "Laptop",
+   "plan": {
+    "actions": [],
+    "base": {
+     "a.md": "1"
+    }
+   }
+  },
+  {
+   "name": "new on both sides",
+   "local": {
+    "x.md": "x"
+   },
+   "remote": {
+    "y.md": "y"
+   },
+   "base": {},
+   "device": "Laptop",
+   "plan": {
+    "actions": [
+     {
+      "kind": "download",
+      "path": "y.md",
+      "hash": "y"
+     }
+    ],
+    "base": {
+     "y.md": "y"
+    }
+   }
+  },
+  {
+   "name": "deleted there",
+   "local": {
+    "a.md": "1"
+   },
+   "remote": {},
+   "base": {
+    "a.md": "1"
+   },
+   "device": "Laptop",
+   "plan": {
+    "actions": [
+     {
+      "kind": "delete",
+      "path": "a.md",
+      "hash": "1"
+     }
+    ],
+    "base": {}
+   }
+  },
+  {
+   "name": "deleted here",
+   "local": {},
+   "remote": {
+    "a.md": "1"
+   },
+   "base": {
+    "a.md": "1"
+   },
+   "device": "Laptop",
+   "plan": {
+    "actions": [],
+    "base": {
+     "a.md": "1"
+    }
+   }
+  },
+  {
+   "name": "both changed, theirs larger",
+   "local": {
+    "a.md": "2"
+   },
+   "remote": {
+    "a.md": "9"
+   },
+   "base": {
+    "a.md": "1"
+   },
+   "device": "Laptop",
+   "plan": {
+    "actions": [
+     {
+      "kind": "conflict",
+      "path": "a.md",
+      "hash": "9",
+      "copy": "a (conflict from Laptop 2026-10-16).md"
+     }
+    ],
+    "base": {
+     "a.md": "9"
+    }
+   }
+  },
+  {
+   "name": "both changed, ours larger",
+   "local": {
+    "a.md": "9"
+   },
+   "remote": {
+    "a.md": "2"
+   },
+   "base": {
+    "a.md": "1"
+   },
+   "device": "Laptop",
+   "plan": {
+    "actions": [],
+    "base": {
+     "a.md": "1"
+    }
+   }
+  },
+  {
+   "name": "deleted there, edited here",
+   "local": {
+    "a.md": "2"
+   },
+   "remote": {},
+   "base": {
+    "a.md": "1"
+   },
+   "device": "Laptop",
+   "plan": {
+    "actions": [],
+    "base": {}
+   }
+  },
+  {
+   "name": "deleted here, edited there",
+   "local": {},
+   "remote": {
+    "a.md": "2"
+   },
+   "base": {
+    "a.md": "1"
+   },
+   "device": "Laptop",
+   "plan": {
+    "actions": [
+     {
+      "kind": "download",
+      "path": "a.md",
+      "hash": "2"
+     }
+    ],
+    "base": {
+     "a.md": "2"
+    }
+   }
+  },
+  {
+   "name": "both added differently",
+   "local": {
+    "n/a.md": "b"
+   },
+   "remote": {
+    "n/a.md": "c"
+   },
+   "base": {},
+   "device": "Desk: top/1",
+   "plan": {
+    "actions": [
+     {
+      "kind": "conflict",
+      "path": "n/a.md",
+      "hash": "c",
+      "copy": "n/a (conflict from Desk  top 1 2026-10-16).md"
+     }
+    ],
+    "base": {
+     "n/a.md": "c"
+    }
+   }
+  },
+  {
+   "name": "kept local bookkeeping",
+   "local": {
+    ".morrow/workspace.json": "2",
+    ".morrow/review.json": "5"
+   },
+   "remote": {
+    ".morrow/workspace.json": "3",
+    ".morrow/review.json": "6"
+   },
+   "base": {
+    ".morrow/workspace.json": "1",
+    ".morrow/review.json": "5"
+   },
+   "device": "Laptop",
+   "plan": {
+    "actions": [
+     {
+      "kind": "download",
+      "path": ".morrow/review.json",
+      "hash": "6"
+     }
+    ],
+    "base": {
+     ".morrow/review.json": "6",
+     ".morrow/workspace.json": "1"
+    }
+   }
+  },
+  {
+   "name": "hidden and temporary files are not synced",
+   "local": {
+    ".obsidian/x.json": "m",
+    ".trash/old.md": "1",
+    "a.morrow-tmp-1": "t",
+    ".morrow/history/x.json": "h"
+   },
+   "remote": {
+    ".obsidian/x.json": "t",
+    ".trash/old.md": "2",
+    "a.morrow-tmp-1": "u",
+    ".morrow/history/x.json": "i"
+   },
+   "base": {
+    ".trash/old.md": "1"
+   },
+   "device": "Laptop",
+   "plan": {
+    "actions": [
+     {
+      "kind": "download",
+      "path": ".trash/old.md",
+      "hash": "2"
+     }
+    ],
+    "base": {
+     ".trash/old.md": "2"
+    }
+   }
+  },
+  {
+   "name": "conflict copy name taken",
+   "local": {
+    "a.md": "2",
+    "a (conflict from Laptop 2026-10-16).md": "z"
+   },
+   "remote": {
+    "a.md": "9",
+    "a (conflict from Laptop 2026-10-16).md": "z"
+   },
+   "base": {
+    "a.md": "1",
+    "a (conflict from Laptop 2026-10-16).md": "z"
+   },
+   "device": "Laptop",
+   "plan": {
+    "actions": [
+     {
+      "kind": "conflict",
+      "path": "a.md",
+      "hash": "9",
+      "copy": "a (conflict from Laptop 2 2026-10-16).md"
+     }
+    ],
+    "base": {
+     "a (conflict from Laptop 2026-10-16).md": "z",
+     "a.md": "9"
+    }
+   }
+  },
+  {
+   "name": "empty device name",
+   "local": {
+    "a.md": "2"
+   },
+   "remote": {
+    "a.md": "9"
+   },
+   "base": {
+    "a.md": "1"
+   },
+   "device": "  ",
+   "plan": {
+    "actions": [
+     {
+      "kind": "conflict",
+      "path": "a.md",
+      "hash": "9",
+      "copy": "a (conflict from another computer 2026-10-16).md"
+     }
+    ],
+    "base": {
+     "a.md": "9"
+    }
+   }
+  }
+ ],
+ "conflictNames": [
+  {
+   "path": "notes/Plan.md",
+   "device": "Mac: mini?",
+   "name": "notes/Plan (conflict from Mac  mini 2026-10-16).md"
+  },
+  {
+   "path": "README",
+   "device": "iPad",
+   "name": "README (conflict from iPad 2026-10-16)"
+  }
+ ],
+ "synced": [
+  {
+   "path": "a.md",
+   "synced": true
+  },
+  {
+   "path": ".trash/x.md",
+   "synced": true
+  },
+  {
+   "path": ".trash",
+   "synced": true
+  },
+  {
+   "path": ".morrow/workspace.json",
+   "synced": true
+  },
+  {
+   "path": ".morrow/review.json",
+   "synced": true
+  },
+  {
+   "path": ".morrow/vault.json",
+   "synced": false
+  },
+  {
+   "path": "x/.git/y",
+   "synced": false
+  },
+  {
+   "path": "a.morrow-tmp-3",
+   "synced": false
+  },
+  {
+   "path": "a.morrow-move-3",
+   "synced": false
+  },
+  {
+   "path": "",
+   "synced": false
+  },
+  {
+   "path": "notes/.hidden.md",
+   "synced": false
+  },
+  {
+   "path": "b/.trash/c.md",
+   "synced": false
+  }
+ ],
+ "crypto": {
+  "secret": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=",
+  "ids": "device-aaaaaaaa|device-bbbbbbbb",
+  "peerKey": "vny3Sh2qmjtefZ0ISYDSiaYRfS0KvOjju4fcfMJWEpk=",
+  "code": "abcd-efgh-2345-6777",
+  "pairingSalt": "morrow-pair:device-aaaaaaaa",
+  "pairingKey": "5cJPwqD0+pzOJcYSnO71VrE7LxzipCpj+//YaYTRs3A=",
+  "iv": "AQIDBAUGBwgJCgsM",
+  "body": "{\"ts\":1792000000000,\"nonce\":\"bm9uY2Vub25jZW5v\",\"payload\":{\"op\":\"hello\"}}",
+  "data": "9NX+EDWAqOTYKdxjalu5P7CcAr8CXlRtvLDI9ABpy6utgZfzq83ySXJ1jh7wAojcpkht8HDN+Vfe3p4tjF6YyMX9S7pfIfQTpDQeqjEUOMCPXdYvIGntTQ=="
+ }
+}

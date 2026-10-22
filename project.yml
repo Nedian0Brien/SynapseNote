@@ -1,0 +1,122 @@
+name: SynapseNote
+options:
+  bundleIdPrefix: com.synapsenote
+  deploymentTarget:
+    iOS: "26.0"
+    macOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+packages:
+  # YAML reading for page frontmatter (libyaml); the values are resolved as YAML 1.2 core, as Morrow's yaml 2.x does
+  Yams:
+    url: https://github.com/jpsim/Yams.git
+    from: "6.2.2"
+targets:
+  SynapseNote:
+    type: application
+    supportedDestinations: [iOS, macOS]
+    dependencies:
+      - package: Yams
+    sources:
+      - path: App/Sources
+      # morrow's welcome guide for a new vault, written by web/scripts/guide-resource.ts
+      - path: App/Resources/WelcomeGuide.json
+        buildPhase: resources
+      # katex, mermaid and highlight.js for the native editor, written by web/scripts/vendor-renderers.ts
+      - path: App/Renderers
+        type: folder
+        buildPhase: resources
+      # the emoji images and list of the icon picker, written by web/scripts/vendor-emoji.ts
+      - path: App/Emoji
+        type: folder
+        buildPhase: resources
+      # app icon made in Icon Composer from the layers scripts/make-icon.swift draws (design/app-icon/),
+      # with its dark and tinted appearances; Xcode builds every platform's icon from it
+      - path: App/AppIcon.icon
+        buildPhase: resources
+      # accent colour
+      - path: App/Assets.xcassets
+      # what the app reads and why, for the App Store; see docs/release/checklist.md
+      - path: App/PrivacyInfo.xcprivacy
+        buildPhase: resources
+      # shown in Settings > About > Licences
+      - path: NOTICE
+        buildPhase: resources
+      - path: LICENSES/Morrow-Apache-2.0.txt
+        buildPhase: resources
+      - path: LICENSES/swift-core-third-party.txt
+        buildPhase: resources
+    info:
+      path: App/Info.plist
+      properties:
+        # the version is set once, in MARKETING_VERSION and CURRENT_PROJECT_VERSION above
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UIFileSharingEnabled: true
+        # sync between the person's own devices on the same network, see App/Sources/Sync
+        NSLocalNetworkUsageDescription: SynapseNote finds your other devices on this network to keep your vault the same on them.
+        NSBonjourServices: [_synapsenote-sync._tcp]
+        # requests to paired devices go to their local address over http, each one encrypted by the app
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        # synapsenote://capture opens a quick note
+        CFBundleURLTypes:
+          - CFBundleURLName: com.synapsenote.native
+            CFBundleURLSchemes: [synapsenote]
+    settings:
+      base:
+        PRODUCT_NAME: SynapseNote
+        # signed to run locally until a development team is chosen
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "-"
+        PRODUCT_BUNDLE_IDENTIFIER: com.synapsenote.native
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: SynapseNote
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        # one window on iPadOS too, for the one open vault
+        INFOPLIST_KEY_UIApplicationSupportsMultipleScenes: NO
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        # sandbox, network client for sync and WebKit, the picked vault folder and its bookmark, see the file
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": App/SynapseNote-macOS.entitlements
+        # the app's own documents folder is a vault the Files app shows (UIFileSharingEnabled is in App/Info.plist,
+        # it has no INFOPLIST_KEY_ build setting)
+        INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace: YES
+        ENABLE_HARDENED_RUNTIME: YES
+  SynapseNoteTests:
+    type: bundle.unit-test
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: App/Tests
+    dependencies:
+      - target: SynapseNote
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.synapsenote.native.tests
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "-"
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/SynapseNote.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SynapseNote"
+        "TEST_HOST[sdk=macosx*]": "$(BUILT_PRODUCTS_DIR)/SynapseNote.app/Contents/MacOS/SynapseNote"
+        "TEST_HOST[sdk=iphonesimulator*]": "$(BUILT_PRODUCTS_DIR)/SynapseNote.app/SynapseNote"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+schemes:
+  SynapseNote:
+    build:
+      targets:
+        SynapseNote: all
+        SynapseNoteTests: [test]
+    test:
+      targets:
+        - SynapseNoteTests
