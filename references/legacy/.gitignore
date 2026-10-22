@@ -1,0 +1,41 @@
+node_modules/
+dist/
+packages/*/bun.lock
+packages/desktop/out/
+packages/desktop/dist-desktop/
+packages/desktop/dist-desktop-local/
+packages/desktop/dist-desktop-local-staging-*/
+packages/desktop/dist-desktop-local-previous-*/
+packages/desktop/dev-app-update.yml
+.turbo/
+tmp/
+.DS_Store
+*.log
+.next/
+.source/
+.idea/
+.bun/
+*.tsbuildinfo
+.vercel/
+packages/content/
+test-results/
+packages/app/test-results/
+playwright-report/
+blob-report/
+.vscode/
+.mcp.json
+.cursor/mcp.json
+.claude/
+.codex/
+.synapsenote/
+.mirror-output/
+/test-doc.md
+
+# Database records created in the repository root during local UI verification.
+# Keep the records on disk without exposing user data through this public repository.
+/untitled_database_*/
+
+# Env files (keep .env.example committed)
+.env
+.env.local
+.env.*.local

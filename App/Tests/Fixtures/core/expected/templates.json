@@ -1,0 +1,132 @@
+{
+ "formats": [
+  {
+   "format": "YYYY-MM-DD",
+   "text": "2026-10-09"
+  },
+  {
+   "format": "dddd, D MMMM YYYY",
+   "text": "Friday, 9 October 2026"
+  },
+  {
+   "format": "ddd D MMM YY",
+   "text": "Fri 9 Oct 26"
+  },
+  {
+   "format": "HH:mm:ss",
+   "text": "07:05:03"
+  },
+  {
+   "format": "H [h] mm",
+   "text": "7 h 05"
+  },
+  {
+   "format": "[YYYY] YYYY",
+   "text": "YYYY 2026"
+  },
+  {
+   "format": "M/D",
+   "text": "10/9"
+  },
+  {
+   "format": "MMMM [the] D",
+   "text": "October the 9"
+  },
+  {
+   "format": "[]",
+   "text": ""
+  },
+  {
+   "format": "[unclosed",
+   "text": "[unclosed"
+  }
+ ],
+ "fills": [
+  {
+   "text": "{{title}} on {{date}}",
+   "filled": "My page on 2026-10-09"
+  },
+  {
+   "text": "{{ date:dddd }} at {{time}}",
+   "filled": "Friday at 07:05"
+  },
+  {
+   "text": "{{TIME:HH}} {{Date: YYYY }}",
+   "filled": "07 2026"
+  },
+  {
+   "text": "{{date:}} {{unknown}} {{title",
+   "filled": "2026-10-09 {{unknown}} {{title"
+  },
+  {
+   "text": "no placeholders",
+   "filled": "no placeholders"
+  }
+ ],
+ "doc": {
+  "input": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 1
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "{{title}}"
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Written {{date:D MMMM}}."
+      }
+     ]
+    },
+    {
+     "type": "blockMath",
+     "attrs": {
+      "latex": "{{title}}"
+     }
+    }
+   ]
+  },
+  "output": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 1
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "My page"
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Written 9 October."
+      }
+     ]
+    },
+    {
+     "type": "blockMath",
+     "attrs": {
+      "latex": "My page"
+     }
+    }
+   ]
+  }
+ }
+}

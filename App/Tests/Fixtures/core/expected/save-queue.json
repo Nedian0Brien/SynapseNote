@@ -1,0 +1,420 @@
+{
+ "script": [
+  {
+   "enqueue": {
+    "pages": [
+     "a"
+    ],
+    "docs": [
+     "a"
+    ],
+    "removed": []
+   }
+  },
+  {
+   "advance": 100
+  },
+  {
+   "enqueue": {
+    "pages": [],
+    "docs": [
+     "b"
+    ],
+    "removed": []
+   }
+  },
+  {
+   "advance": 400
+  },
+  {
+   "fail": 2
+  },
+  {
+   "enqueue": {
+    "pages": [
+     "c"
+    ],
+    "docs": [],
+    "removed": []
+   }
+  },
+  {
+   "advance": 300
+  },
+  {
+   "advance": 500
+  },
+  {
+   "enqueue": {
+    "pages": [],
+    "docs": [
+     "a"
+    ],
+    "removed": []
+   }
+  },
+  {
+   "advance": 1000
+  },
+  {
+   "advance": 2500
+  },
+  {
+   "remove": "a"
+  },
+  {
+   "enqueue": {
+    "pages": [],
+    "docs": [],
+    "removed": [
+     "a"
+    ]
+   }
+  },
+  {
+   "flush": true
+  },
+  {
+   "advance": 1000
+  }
+ ],
+ "events": [
+  {
+   "t": 0,
+   "step": {
+    "enqueue": {
+     "pages": [
+      "a"
+     ],
+     "docs": [
+      "a"
+     ],
+     "removed": []
+    }
+   }
+  },
+  {
+   "t": 0,
+   "status": {
+    "state": "pending",
+    "lastSavedAt": null,
+    "error": null,
+    "failures": 0
+   }
+  },
+  {
+   "t": 0,
+   "schedule": 300
+  },
+  {
+   "t": 0,
+   "step": {
+    "advance": 100
+   }
+  },
+  {
+   "t": 100,
+   "step": {
+    "enqueue": {
+     "pages": [],
+     "docs": [
+      "b"
+     ],
+     "removed": []
+    }
+   }
+  },
+  {
+   "t": 100,
+   "status": {
+    "state": "pending",
+    "lastSavedAt": null,
+    "error": null,
+    "failures": 0
+   }
+  },
+  {
+   "t": 100,
+   "schedule": 300
+  },
+  {
+   "t": 100,
+   "step": {
+    "advance": 400
+   }
+  },
+  {
+   "t": 400,
+   "status": {
+    "state": "saving",
+    "lastSavedAt": null,
+    "error": null,
+    "failures": 0
+   }
+  },
+  {
+   "t": 400,
+   "write": {
+    "pages": [
+     "a"
+    ],
+    "docs": [
+     "a",
+     "b"
+    ],
+    "removed": []
+   }
+  },
+  {
+   "t": 400,
+   "status": {
+    "state": "saved",
+    "lastSavedAt": 400,
+    "error": null,
+    "failures": 0
+   }
+  },
+  {
+   "t": 500,
+   "step": {
+    "fail": 2
+   }
+  },
+  {
+   "t": 500,
+   "step": {
+    "enqueue": {
+     "pages": [
+      "c"
+     ],
+     "docs": [],
+     "removed": []
+    }
+   }
+  },
+  {
+   "t": 500,
+   "status": {
+    "state": "pending",
+    "lastSavedAt": 400,
+    "error": null,
+    "failures": 0
+   }
+  },
+  {
+   "t": 500,
+   "schedule": 300
+  },
+  {
+   "t": 500,
+   "step": {
+    "advance": 300
+   }
+  },
+  {
+   "t": 800,
+   "status": {
+    "state": "saving",
+    "lastSavedAt": 400,
+    "error": null,
+    "failures": 0
+   }
+  },
+  {
+   "t": 800,
+   "write": {
+    "pages": [
+     "c"
+    ],
+    "docs": [],
+    "removed": []
+   }
+  },
+  {
+   "t": 800,
+   "status": {
+    "state": "error",
+    "lastSavedAt": 400,
+    "error": "The disk is full.",
+    "failures": 1
+   }
+  },
+  {
+   "t": 800,
+   "schedule": 1000
+  },
+  {
+   "t": 800,
+   "step": {
+    "advance": 500
+   }
+  },
+  {
+   "t": 1300,
+   "step": {
+    "enqueue": {
+     "pages": [],
+     "docs": [
+      "a"
+     ],
+     "removed": []
+    }
+   }
+  },
+  {
+   "t": 1300,
+   "schedule": 1000
+  },
+  {
+   "t": 1300,
+   "step": {
+    "advance": 1000
+   }
+  },
+  {
+   "t": 2300,
+   "status": {
+    "state": "saving",
+    "lastSavedAt": 400,
+    "error": "The disk is full.",
+    "failures": 1
+   }
+  },
+  {
+   "t": 2300,
+   "write": {
+    "pages": [
+     "c"
+    ],
+    "docs": [
+     "a"
+    ],
+    "removed": []
+   }
+  },
+  {
+   "t": 2300,
+   "status": {
+    "state": "error",
+    "lastSavedAt": 400,
+    "error": "The disk is full.",
+    "failures": 2
+   }
+  },
+  {
+   "t": 2300,
+   "schedule": 2000
+  },
+  {
+   "t": 2300,
+   "step": {
+    "advance": 2500
+   }
+  },
+  {
+   "t": 4300,
+   "status": {
+    "state": "saving",
+    "lastSavedAt": 400,
+    "error": "The disk is full.",
+    "failures": 2
+   }
+  },
+  {
+   "t": 4300,
+   "write": {
+    "pages": [
+     "c"
+    ],
+    "docs": [
+     "a"
+    ],
+    "removed": []
+   }
+  },
+  {
+   "t": 4300,
+   "status": {
+    "state": "saved",
+    "lastSavedAt": 4300,
+    "error": null,
+    "failures": 0
+   }
+  },
+  {
+   "t": 4800,
+   "step": {
+    "remove": "a"
+   }
+  },
+  {
+   "t": 4800,
+   "step": {
+    "enqueue": {
+     "pages": [],
+     "docs": [],
+     "removed": [
+      "a"
+     ]
+    }
+   }
+  },
+  {
+   "t": 4800,
+   "status": {
+    "state": "pending",
+    "lastSavedAt": 4300,
+    "error": null,
+    "failures": 0
+   }
+  },
+  {
+   "t": 4800,
+   "schedule": 300
+  },
+  {
+   "t": 4800,
+   "step": {
+    "flush": true
+   }
+  },
+  {
+   "t": 4800,
+   "status": {
+    "state": "saving",
+    "lastSavedAt": 4300,
+    "error": null,
+    "failures": 0
+   }
+  },
+  {
+   "t": 4800,
+   "write": {
+    "pages": [],
+    "docs": [],
+    "removed": [
+     "a"
+    ]
+   }
+  },
+  {
+   "t": 4800,
+   "status": {
+    "state": "saved",
+    "lastSavedAt": 4800,
+    "error": null,
+    "failures": 0
+   }
+  },
+  {
+   "t": 4800,
+   "flushed": true
+  },
+  {
+   "t": 4800,
+   "step": {
+    "advance": 1000
+   }
+  }
+ ]
+}

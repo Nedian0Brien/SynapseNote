@@ -1,0 +1,678 @@
+{
+ "props": {
+  "Price": 12.5,
+  "Count": 3,
+  "Name": "Tea",
+  "Done": true,
+  "Empty": null,
+  "Due": "2026-11-02",
+  "Started": "2026-01-31",
+  "Words": "alpha, beta",
+  "Zero": 0,
+  "Text": "  42 ",
+  "Leap": "2024-02-29",
+  "Old": "0050-06-15",
+  "Stamp": 1767268800000
+ },
+ "now": 1792402200000,
+ "cases": [
+  {
+   "source": "",
+   "result": {
+    "value": null,
+    "error": null
+   }
+  },
+  {
+   "source": "   ",
+   "result": {
+    "value": null,
+    "error": null
+   }
+  },
+  {
+   "source": "1 + 2 * 3",
+   "result": {
+    "value": 7,
+    "error": null
+   }
+  },
+  {
+   "source": "(1 + 2) * 3",
+   "result": {
+    "value": 9,
+    "error": null
+   }
+  },
+  {
+   "source": "2 ^ 3 ^ 2",
+   "result": {
+    "value": 512,
+    "error": null
+   }
+  },
+  {
+   "source": "-2 ^ 2",
+   "result": {
+    "value": 4,
+    "error": null
+   }
+  },
+  {
+   "source": "10 / 4",
+   "result": {
+    "value": 2.5,
+    "error": null
+   }
+  },
+  {
+   "source": "10 / 0",
+   "result": {
+    "value": null,
+    "error": null
+   }
+  },
+  {
+   "source": "10 % 3",
+   "result": {
+    "value": 1,
+    "error": null
+   }
+  },
+  {
+   "source": "-7 % 3",
+   "result": {
+    "value": -1,
+    "error": null
+   }
+  },
+  {
+   "source": "7 % 0",
+   "result": {
+    "value": null,
+    "error": null
+   }
+  },
+  {
+   "source": "0.1 + 0.2",
+   "result": {
+    "value": 0.30000000000000004,
+    "error": null
+   }
+  },
+  {
+   "source": "1e3 + .5",
+   "result": {
+    "value": 1000.5,
+    "error": null
+   }
+  },
+  {
+   "source": "1 / 3",
+   "result": {
+    "value": 0.3333333333333333,
+    "error": null
+   }
+  },
+  {
+   "source": "prop(\"Price\") * prop(\"Count\")",
+   "result": {
+    "value": 37.5,
+    "error": null
+   }
+  },
+  {
+   "source": "prop(\"price\")",
+   "result": {
+    "value": null,
+    "error": null
+   }
+  },
+  {
+   "source": "prop(\"Missing\")",
+   "result": {
+    "value": null,
+    "error": null
+   }
+  },
+  {
+   "source": "prop()",
+   "result": {
+    "value": null,
+    "error": null
+   }
+  },
+  {
+   "source": "prop(\"Name\") + \" for \" + prop(\"Count\")",
+   "result": {
+    "value": "Tea for 3",
+    "error": null
+   }
+  },
+  {
+   "source": "prop(\"Count\") + prop(\"Done\")",
+   "result": {
+    "value": 4,
+    "error": null
+   }
+  },
+  {
+   "source": "prop(\"Text\") * 2",
+   "result": {
+    "value": 84,
+    "error": null
+   }
+  },
+  {
+   "source": "prop(\"Words\") + 1",
+   "result": {
+    "value": "alpha, beta1",
+    "error": null
+   }
+  },
+  {
+   "source": "if(prop(\"Done\"), \"✅\", \"⏳\")",
+   "result": {
+    "value": "✅",
+    "error": null
+   }
+  },
+  {
+   "source": "if(prop(\"Zero\"), \"yes\", \"no\")",
+   "result": {
+    "value": "no",
+    "error": null
+   }
+  },
+  {
+   "source": "if(prop(\"Empty\"), 1)",
+   "result": {
+    "value": null,
+    "error": null
+   }
+  },
+  {
+   "source": "if(false, 1/0)",
+   "result": {
+    "value": null,
+    "error": null
+   }
+  },
+  {
+   "source": "empty(prop(\"Empty\"))",
+   "result": {
+    "value": true,
+    "error": null
+   }
+  },
+  {
+   "source": "empty(prop(\"Name\"))",
+   "result": {
+    "value": false,
+    "error": null
+   }
+  },
+  {
+   "source": "not prop(\"Done\")",
+   "result": {
+    "value": false,
+    "error": null
+   }
+  },
+  {
+   "source": "!prop(\"Done\") or prop(\"Count\") > 2 and true",
+   "result": {
+    "value": true,
+    "error": null
+   }
+  },
+  {
+   "source": "prop(\"Count\") == \"3\"",
+   "result": {
+    "value": true,
+    "error": null
+   }
+  },
+  {
+   "source": "prop(\"Name\") != \"tea\"",
+   "result": {
+    "value": true,
+    "error": null
+   }
+  },
+  {
+   "source": "\"apple\" < \"Banana\"",
+   "result": {
+    "value": true,
+    "error": null
+   }
+  },
+  {
+   "source": "\"a\" <= \"a\"",
+   "result": {
+    "value": true,
+    "error": null
+   }
+  },
+  {
+   "source": "prop(\"Count\") >= 3",
+   "result": {
+    "value": true,
+    "error": null
+   }
+  },
+  {
+   "source": "round(prop(\"Price\") / 7, 2)",
+   "result": {
+    "value": 1.79,
+    "error": null
+   }
+  },
+  {
+   "source": "round(2.5)",
+   "result": {
+    "value": 3,
+    "error": null
+   }
+  },
+  {
+   "source": "round(-2.5)",
+   "result": {
+    "value": -2,
+    "error": null
+   }
+  },
+  {
+   "source": "round(1.005, 2)",
+   "result": {
+    "value": 1,
+    "error": null
+   }
+  },
+  {
+   "source": "round(3.14159, 20)",
+   "result": {
+    "value": 3.14159,
+    "error": null
+   }
+  },
+  {
+   "source": "round(1, \"x\")",
+   "result": {
+    "value": null,
+    "error": null
+   }
+  },
+  {
+   "source": "floor(-1.5) + ceil(1.2) + abs(-3) + sqrt(16)",
+   "result": {
+    "value": 7,
+    "error": null
+   }
+  },
+  {
+   "source": "sqrt(-1)",
+   "result": {
+    "value": null,
+    "error": null
+   }
+  },
+  {
+   "source": "min(3, 1, 2) + max(3, 1, 2)",
+   "result": {
+    "value": 4,
+    "error": null
+   }
+  },
+  {
+   "source": "min()",
+   "result": {
+    "value": null,
+    "error": null
+   }
+  },
+  {
+   "source": "min(1, \"x\")",
+   "result": {
+    "value": null,
+    "error": null
+   }
+  },
+  {
+   "source": "sum(1, \"2\", \"x\", true, null)",
+   "result": {
+    "value": null,
+    "error": "“null” needs brackets, like null()"
+   }
+  },
+  {
+   "source": "length(prop(\"Name\")) + length(\"😀\")",
+   "result": {
+    "value": 5,
+    "error": null
+   }
+  },
+  {
+   "source": "concat(\"a\", 1, true, null)",
+   "result": {
+    "value": null,
+    "error": "“null” needs brackets, like null()"
+   }
+  },
+  {
+   "source": "join(\", \", \"a\", \"\", \"b\", 3)",
+   "result": {
+    "value": "a, b, 3",
+    "error": null
+   }
+  },
+  {
+   "source": "join()",
+   "result": {
+    "value": "",
+    "error": null
+   }
+  },
+  {
+   "source": "upper(\"straße\") + lower(\"ÀB\")",
+   "result": {
+    "value": "STRASSEàb",
+    "error": null
+   }
+  },
+  {
+   "source": "contains(\"Morrow notes\", \"NOTES\")",
+   "result": {
+    "value": true,
+    "error": null
+   }
+  },
+  {
+   "source": "replace(\"a-b-c\", \"-\", \"+\")",
+   "result": {
+    "value": "a+b+c",
+    "error": null
+   }
+  },
+  {
+   "source": "replace(\"abc\", \"\", \".\")",
+   "result": {
+    "value": "a.b.c",
+    "error": null
+   }
+  },
+  {
+   "source": "slice(\"abcdef\", 2)",
+   "result": {
+    "value": "cdef",
+    "error": null
+   }
+  },
+  {
+   "source": "slice(\"abcdef\", -2)",
+   "result": {
+    "value": "ef",
+    "error": null
+   }
+  },
+  {
+   "source": "slice(\"abcdef\", 1, -1)",
+   "result": {
+    "value": "bcde",
+    "error": null
+   }
+  },
+  {
+   "source": "slice(\"abcdef\", \"x\", 2)",
+   "result": {
+    "value": "ab",
+    "error": null
+   }
+  },
+  {
+   "source": "number(\"12\") + number(\"x\")",
+   "result": {
+    "value": null,
+    "error": null
+   }
+  },
+  {
+   "source": "text(1/3) + format(true)",
+   "result": {
+    "value": "0.3333333333true",
+    "error": null
+   }
+  },
+  {
+   "source": "now()",
+   "result": {
+    "value": 1792402200000,
+    "error": null
+   }
+  },
+  {
+   "source": "today()",
+   "result": {
+    "value": "2026-10-19",
+    "error": null
+   }
+  },
+  {
+   "source": "dateAdd(prop(\"Due\"), 3, \"days\")",
+   "result": {
+    "value": "2026-11-05",
+    "error": null
+   }
+  },
+  {
+   "source": "dateAdd(prop(\"Started\"), 1, \"months\")",
+   "result": {
+    "value": "2026-03-03",
+    "error": null
+   }
+  },
+  {
+   "source": "dateAdd(prop(\"Leap\"), 1, \"years\")",
+   "result": {
+    "value": "2025-03-01",
+    "error": null
+   }
+  },
+  {
+   "source": "dateAdd(prop(\"Due\"), -2, \"weeks\")",
+   "result": {
+    "value": "2026-10-19",
+    "error": null
+   }
+  },
+  {
+   "source": "dateAdd(prop(\"Due\"), 5, \"hours\")",
+   "result": {
+    "value": "2026-11-02",
+    "error": null
+   }
+  },
+  {
+   "source": "dateAdd(prop(\"Due\"), 1.5, \"months\")",
+   "result": {
+    "value": "2026-12-02",
+    "error": null
+   }
+  },
+  {
+   "source": "dateAdd(prop(\"Due\"), \"x\", \"months\")",
+   "result": {
+    "value": "NaN-NaN-NaN",
+    "error": null
+   }
+  },
+  {
+   "source": "dateAdd(prop(\"Old\"), 1, \"days\")",
+   "result": {
+    "value": "1950-06-16",
+    "error": null
+   }
+  },
+  {
+   "source": "dateAdd(prop(\"Stamp\"), 1, \"days\")",
+   "result": {
+    "value": "2026-01-02",
+    "error": null
+   }
+  },
+  {
+   "source": "dateAdd(\"nonsense\", 1)",
+   "result": {
+    "value": null,
+    "error": null
+   }
+  },
+  {
+   "source": "dateBetween(prop(\"Due\"), today(), \"days\")",
+   "result": {
+    "value": 14,
+    "error": null
+   }
+  },
+  {
+   "source": "dateBetween(today(), prop(\"Due\"), \"weeks\")",
+   "result": {
+    "value": -2,
+    "error": null
+   }
+  },
+  {
+   "source": "dateBetween(prop(\"Due\"), prop(\"Started\"))",
+   "result": {
+    "value": 275,
+    "error": null
+   }
+  },
+  {
+   "source": "dateBetween(\"x\", today())",
+   "result": {
+    "value": null,
+    "error": null
+   }
+  },
+  {
+   "source": "year(prop(\"Due\")) + month(prop(\"Due\")) + day(prop(\"Due\"))",
+   "result": {
+    "value": 2039,
+    "error": null
+   }
+  },
+  {
+   "source": "year(prop(\"Old\"))",
+   "result": {
+    "value": 1950,
+    "error": null
+   }
+  },
+  {
+   "source": "year(\"x\")",
+   "result": {
+    "value": null,
+    "error": null
+   }
+  },
+  {
+   "source": "unknown(1)",
+   "result": {
+    "value": null,
+    "error": "There is no function called unknown()"
+   }
+  },
+  {
+   "source": "prop",
+   "result": {
+    "value": null,
+    "error": "“prop” needs brackets, like prop()"
+   }
+  },
+  {
+   "source": "1 +",
+   "result": {
+    "value": null,
+    "error": "The formula ends too early"
+   }
+  },
+  {
+   "source": "(1 + 2",
+   "result": {
+    "value": null,
+    "error": "Expected “)”"
+   }
+  },
+  {
+   "source": "1 2",
+   "result": {
+    "value": null,
+    "error": "Unexpected “2”"
+   }
+  },
+  {
+   "source": "\"open",
+   "result": {
+    "value": null,
+    "error": "A piece of text is missing its closing quote"
+   }
+  },
+  {
+   "source": "'single' + 'quotes'",
+   "result": {
+    "value": "singlequotes",
+    "error": null
+   }
+  },
+  {
+   "source": "\"esc\\\"aped\"",
+   "result": {
+    "value": "esc\"aped",
+    "error": null
+   }
+  },
+  {
+   "source": "3 # 4",
+   "result": {
+    "value": null,
+    "error": "Unexpected “#”"
+   }
+  },
+  {
+   "source": ".",
+   "result": {
+    "value": null,
+    "error": "Unexpected “.”"
+   }
+  },
+  {
+   "source": "1.",
+   "result": {
+    "value": null,
+    "error": "Unexpected “.”"
+   }
+  },
+  {
+   "source": "true + true",
+   "result": {
+    "value": 2,
+    "error": null
+   }
+  },
+  {
+   "source": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "result": {
+    "value": null,
+    "error": "This formula is too long"
+   }
+  },
+  {
+   "source": "((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((1))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))",
+   "result": {
+    "value": null,
+    "error": "This formula is nested too deeply"
+   }
+  }
+ ]
+}

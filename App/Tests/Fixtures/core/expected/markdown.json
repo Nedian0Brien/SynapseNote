@@ -1,0 +1,5292 @@
+[
+ {
+  "name": "bom.md",
+  "body": "# With BOM\n\nText.\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 1
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "With BOM"
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Text."
+      }
+     ]
+    }
+   ]
+  },
+  "markdown": "# With BOM\n\nText.\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 1
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "With BOM"
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Text."
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "name": "code.md",
+  "body": "```\nplain fence\n```\n\n```ts title=\"x\"\nconst a = 1;\n```\n\n~~~python\nprint(\"tilde\")\n~~~\n\n    indented code\n    second line\n\n````\n``` inside\n````\n\n```mermaid\ngraph LR\n  A --> B\n```\n\n```\nunclosed fence\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "codeBlock",
+     "attrs": {
+      "language": null
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "plain fence"
+      }
+     ]
+    },
+    {
+     "type": "codeBlock",
+     "attrs": {
+      "language": "ts"
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "const a = 1;"
+      }
+     ]
+    },
+    {
+     "type": "codeBlock",
+     "attrs": {
+      "language": "python"
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "print(\"tilde\")"
+      }
+     ]
+    },
+    {
+     "type": "codeBlock",
+     "attrs": {
+      "language": null
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "indented code\nsecond line"
+      }
+     ]
+    },
+    {
+     "type": "codeBlock",
+     "attrs": {
+      "language": null
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "``` inside"
+      }
+     ]
+    },
+    {
+     "type": "codeBlock",
+     "attrs": {
+      "language": "mermaid"
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "graph LR\n  A --> B"
+      }
+     ]
+    },
+    {
+     "type": "codeBlock",
+     "attrs": {
+      "language": null
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "unclosed fence"
+      }
+     ]
+    }
+   ]
+  },
+  "markdown": "```\nplain fence\n```\n\n```ts\nconst a = 1;\n```\n\n```python\nprint(\"tilde\")\n```\n\n```\nindented code\nsecond line\n```\n\n````\n``` inside\n````\n\n```mermaid\ngraph LR\n  A --> B\n```\n\n```\nunclosed fence\n```\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "codeBlock",
+     "attrs": {
+      "language": null
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "plain fence"
+      }
+     ]
+    },
+    {
+     "type": "codeBlock",
+     "attrs": {
+      "language": "ts"
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "const a = 1;"
+      }
+     ]
+    },
+    {
+     "type": "codeBlock",
+     "attrs": {
+      "language": "python"
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "print(\"tilde\")"
+      }
+     ]
+    },
+    {
+     "type": "codeBlock",
+     "attrs": {
+      "language": null
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "indented code\nsecond line"
+      }
+     ]
+    },
+    {
+     "type": "codeBlock",
+     "attrs": {
+      "language": null
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "``` inside"
+      }
+     ]
+    },
+    {
+     "type": "codeBlock",
+     "attrs": {
+      "language": "mermaid"
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "graph LR\n  A --> B"
+      }
+     ]
+    },
+    {
+     "type": "codeBlock",
+     "attrs": {
+      "language": null
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "unclosed fence"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "name": "crlf.md",
+  "body": "Line one\r\n\r\n- item\r\n- item two\r\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Line one"
+      }
+     ]
+    },
+    {
+     "type": "bulletList",
+     "content": [
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "item"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "item two"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "markdown": "Line one\n\n- item\n- item two\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Line one"
+      }
+     ]
+    },
+    {
+     "type": "bulletList",
+     "content": [
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "item"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "item two"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "name": "embeds.md",
+  "body": "![[Board.canvas]]\n![[doc.pdf]]\n![[song.mp3]]\n![[movie.mp4]]\n![[Some Page#Section]]\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "Board.canvas",
+        "target": "Board.canvas",
+        "embed": true
+       }
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "doc.pdf",
+        "target": "doc.pdf",
+        "embed": true
+       }
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "song.mp3",
+        "target": "song.mp3",
+        "embed": true
+       }
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "movie.mp4",
+        "target": "movie.mp4",
+        "embed": true
+       }
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "Some Page",
+        "target": "Some Page",
+        "anchor": "Section",
+        "embed": true
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "markdown": "![[Board.canvas]] ![[doc.pdf]] ![[song.mp3]] ![[movie.mp4]] ![[Some Page#Section]]\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "Board.canvas",
+        "target": "Board.canvas",
+        "embed": true
+       }
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "doc.pdf",
+        "target": "doc.pdf",
+        "embed": true
+       }
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "song.mp3",
+        "target": "song.mp3",
+        "embed": true
+       }
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "movie.mp4",
+        "target": "movie.mp4",
+        "embed": true
+       }
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "Some Page",
+        "target": "Some Page",
+        "anchor": "Section",
+        "embed": true
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "name": "emphasis.md",
+  "body": "*em* _em_ **strong** __strong__ ***both*** *nested **strong** inside*\nfoo*bar*baz and foo_bar_baz stay\n**unclosed and *mixed** stars*\n~~struck~~ ~not struck~ ==marked== ===three=== `code` ``co`de``\na \\*literal\\* and \\_under\\_ and \\` tick \\\\ backslash\n<u>under</u> <b>bold html</b> <span style=\"color:red\">span</span>\nline with two spaces at end  \nnext line after hard break\\\nafter backslash break\nsoft\nbreak\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "em",
+       "marks": [
+        {
+         "type": "italic"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "em",
+       "marks": [
+        {
+         "type": "italic"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "strong",
+       "marks": [
+        {
+         "type": "bold"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "strong",
+       "marks": [
+        {
+         "type": "bold"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "both",
+       "marks": [
+        {
+         "type": "italic"
+        },
+        {
+         "type": "bold"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "nested ",
+       "marks": [
+        {
+         "type": "italic"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": "strong",
+       "marks": [
+        {
+         "type": "italic"
+        },
+        {
+         "type": "bold"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " inside",
+       "marks": [
+        {
+         "type": "italic"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " foo"
+      },
+      {
+       "type": "text",
+       "text": "bar",
+       "marks": [
+        {
+         "type": "italic"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": "baz and foo_bar_baz stay "
+      },
+      {
+       "type": "text",
+       "text": "unclosed and ",
+       "marks": [
+        {
+         "type": "italic"
+        },
+        {
+         "type": "italic"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": "mixed",
+       "marks": [
+        {
+         "type": "italic"
+        },
+        {
+         "type": "italic"
+        },
+        {
+         "type": "italic"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " stars",
+       "marks": [
+        {
+         "type": "italic"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "struck",
+       "marks": [
+        {
+         "type": "strike"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " ~not struck~ "
+      },
+      {
+       "type": "text",
+       "text": "marked",
+       "marks": [
+        {
+         "type": "highlight"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " ="
+      },
+      {
+       "type": "text",
+       "text": "three",
+       "marks": [
+        {
+         "type": "highlight"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": "= "
+      },
+      {
+       "type": "text",
+       "text": "code",
+       "marks": [
+        {
+         "type": "code"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "co`de",
+       "marks": [
+        {
+         "type": "code"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " a *literal* and _under_ and ` tick \\ backslash "
+      },
+      {
+       "type": "text",
+       "text": "under",
+       "marks": [
+        {
+         "type": "underline"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " <b>bold html</b> <span style=\"color:red\">span</span> line with two spaces at end"
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "type": "text",
+       "text": "next line after hard break"
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "type": "text",
+       "text": "after backslash break soft break"
+      }
+     ]
+    }
+   ]
+  },
+  "markdown": "*em* *em* **strong** **strong** ***both*** *nested* ***strong*** *inside* foo*bar*baz and foo_bar_baz stay **unclosed and *mixed** stars* ~~struck~~ ~not struck~ ==marked== ===three=== `code` ``co`de`` a \\*literal\\* and \\_under\\_ and \\` tick \\\\ backslash <u>under</u> \\<b>bold html\\</b> \\<span style=\"color:red\">span\\</span> line with two spaces at end\\\nnext line after hard break\\\nafter backslash break soft break\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "em",
+       "marks": [
+        {
+         "type": "italic"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "em",
+       "marks": [
+        {
+         "type": "italic"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "strong",
+       "marks": [
+        {
+         "type": "bold"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "strong",
+       "marks": [
+        {
+         "type": "bold"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "both",
+       "marks": [
+        {
+         "type": "italic"
+        },
+        {
+         "type": "bold"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "nested",
+       "marks": [
+        {
+         "type": "italic"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "strong",
+       "marks": [
+        {
+         "type": "italic"
+        },
+        {
+         "type": "bold"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "inside",
+       "marks": [
+        {
+         "type": "italic"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " foo"
+      },
+      {
+       "type": "text",
+       "text": "bar",
+       "marks": [
+        {
+         "type": "italic"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": "baz and foo_bar_baz stay "
+      },
+      {
+       "type": "text",
+       "text": "unclosed and ",
+       "marks": [
+        {
+         "type": "italic"
+        },
+        {
+         "type": "italic"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": "mixed",
+       "marks": [
+        {
+         "type": "italic"
+        },
+        {
+         "type": "italic"
+        },
+        {
+         "type": "italic"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " stars",
+       "marks": [
+        {
+         "type": "italic"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "struck",
+       "marks": [
+        {
+         "type": "strike"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " ~not struck~ "
+      },
+      {
+       "type": "text",
+       "text": "marked",
+       "marks": [
+        {
+         "type": "highlight"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " ="
+      },
+      {
+       "type": "text",
+       "text": "three",
+       "marks": [
+        {
+         "type": "highlight"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": "= "
+      },
+      {
+       "type": "text",
+       "text": "code",
+       "marks": [
+        {
+         "type": "code"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "co`de",
+       "marks": [
+        {
+         "type": "code"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " a *literal* and _under_ and ` tick \\ backslash "
+      },
+      {
+       "type": "text",
+       "text": "under",
+       "marks": [
+        {
+         "type": "underline"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " <b>bold html</b> <span style=\"color:red\">span</span> line with two spaces at end"
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "type": "text",
+       "text": "next line after hard break"
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "type": "text",
+       "text": "after backslash break soft break"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "name": "frontmatter-basic.md",
+  "body": "Body text.\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Body text."
+      }
+     ]
+    }
+   ]
+  },
+  "markdown": "Body text.\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Body text."
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "name": "frontmatter-empty.md",
+  "body": "Empty block.\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Empty block."
+      }
+     ]
+    }
+   ]
+  },
+  "markdown": "Empty block.\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Empty block."
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "name": "frontmatter-invalid.md",
+  "body": "Body stays.\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Body stays."
+      }
+     ]
+    }
+   ]
+  },
+  "markdown": "Body stays.\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Body stays."
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "name": "frontmatter-tags.md",
+  "body": "Tags as string.\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Tags as string."
+      }
+     ]
+    }
+   ]
+  },
+  "markdown": "Tags as string.\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Tags as string."
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "name": "frontmatter-yaml11.md",
+  "body": "Body.\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Body."
+      }
+     ]
+    }
+   ]
+  },
+  "markdown": "Body.\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Body."
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "name": "hangul.md",
+  "body": "# 한글 제목\n\n가나다 **굵게** *기울임* 그리고 [[한글 페이지]] 링크.\n조합 중이던 글자: ㄱㅏ ㅎ\n#태그 #한글태그 #tag/sub #123 not tag\n이모지 👋🏽 👨‍👩‍👧 합자\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 1
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "한글 제목"
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "가나다 "
+      },
+      {
+       "type": "text",
+       "text": "굵게",
+       "marks": [
+        {
+         "type": "bold"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "기울임",
+       "marks": [
+        {
+         "type": "italic"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " 그리고 "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "한글 페이지",
+        "target": "한글 페이지"
+       }
+      },
+      {
+       "type": "text",
+       "text": " 링크. 조합 중이던 글자: ㄱㅏ ㅎ #태그 #한글태그 #tag/sub #123 not tag 이모지 👋🏽 👨‍👩‍👧 합자"
+      }
+     ]
+    }
+   ]
+  },
+  "markdown": "# 한글 제목\n\n가나다 **굵게** *기울임* 그리고 [[한글 페이지]] 링크. 조합 중이던 글자: ㄱㅏ ㅎ #태그 #한글태그 #tag/sub #123 not tag 이모지 👋🏽 👨‍👩‍👧 합자\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 1
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "한글 제목"
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "가나다 "
+      },
+      {
+       "type": "text",
+       "text": "굵게",
+       "marks": [
+        {
+         "type": "bold"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "기울임",
+       "marks": [
+        {
+         "type": "italic"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " 그리고 "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "한글 페이지",
+        "target": "한글 페이지"
+       }
+      },
+      {
+       "type": "text",
+       "text": " 링크. 조합 중이던 글자: ㄱㅏ ㅎ #태그 #한글태그 #tag/sub #123 not tag 이모지 👋🏽 👨‍👩‍👧 합자"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "name": "headings.md",
+  "body": "# H1\n## H2 with *em*\n### H3\n#### H4\n##### H5\n###### H6\n####### not a heading\n#no space\nSetext one\n==========\nSetext two\n----------\n# Closing hashes ##\n  ## indented heading\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 1
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "H1"
+      }
+     ]
+    },
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 2
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "H2 with "
+      },
+      {
+       "type": "text",
+       "text": "em",
+       "marks": [
+        {
+         "type": "italic"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 3
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "H3"
+      }
+     ]
+    },
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 4
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "H4"
+      }
+     ]
+    },
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 5
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "H5"
+      }
+     ]
+    },
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 6
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "H6"
+      }
+     ]
+    },
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 1
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "####### not a heading #no space Setext one"
+      }
+     ]
+    },
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 2
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "Setext two"
+      }
+     ]
+    },
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 1
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "Closing hashes"
+      }
+     ]
+    },
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 2
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "indented heading"
+      }
+     ]
+    }
+   ]
+  },
+  "markdown": "# H1\n\n## H2 with *em*\n\n### H3\n\n#### H4\n\n##### H5\n\n###### H6\n\n# ####### not a heading #no space Setext one\n\n## Setext two\n\n# Closing hashes\n\n## indented heading\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 1
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "H1"
+      }
+     ]
+    },
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 2
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "H2 with "
+      },
+      {
+       "type": "text",
+       "text": "em",
+       "marks": [
+        {
+         "type": "italic"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 3
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "H3"
+      }
+     ]
+    },
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 4
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "H4"
+      }
+     ]
+    },
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 5
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "H5"
+      }
+     ]
+    },
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 6
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "H6"
+      }
+     ]
+    },
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 1
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "####### not a heading #no space Setext one"
+      }
+     ]
+    },
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 2
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "Setext two"
+      }
+     ]
+    },
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 1
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "Closing hashes"
+      }
+     ]
+    },
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 2
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "indented heading"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "name": "html.md",
+  "body": "<div>\nblock html\n</div>\n\n<!-- comment -->\n\n<details><summary>Sum</summary>\n\nInside details\n\n</details>\n\nText with <br> break and &amp; &copy; &#169; &#xA9; &nbsp; entities.\n<script>alert(1)</script>\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "rawBlock",
+     "attrs": {
+      "text": "<div>\nblock html\n</div>"
+     }
+    },
+    {
+     "type": "rawBlock",
+     "attrs": {
+      "text": "<!-- comment -->"
+     }
+    },
+    {
+     "type": "details",
+     "attrs": {
+      "open": false
+     },
+     "content": [
+      {
+       "type": "detailsSummary",
+       "content": [
+        {
+         "type": "text",
+         "text": "Sum"
+        }
+       ]
+      },
+      {
+       "type": "detailsContent",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "Inside details"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Text with "
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "type": "text",
+       "text": " break and & © © ©   entities."
+      }
+     ]
+    },
+    {
+     "type": "rawBlock",
+     "attrs": {
+      "text": "<script>alert(1)</script>"
+     }
+    }
+   ]
+  },
+  "markdown": "<div>\nblock html\n</div>\n\n<!-- comment -->\n\n<details>\n<summary>Sum</summary>\n\nInside details\n\n</details>\n\nText with \\\n break and & © © ©   entities.\n\n<script>alert(1)</script>\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "rawBlock",
+     "attrs": {
+      "text": "<div>\nblock html\n</div>"
+     }
+    },
+    {
+     "type": "rawBlock",
+     "attrs": {
+      "text": "<!-- comment -->"
+     }
+    },
+    {
+     "type": "details",
+     "attrs": {
+      "open": false
+     },
+     "content": [
+      {
+       "type": "detailsSummary",
+       "content": [
+        {
+         "type": "text",
+         "text": "Sum"
+        }
+       ]
+      },
+      {
+       "type": "detailsContent",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "Inside details"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Text with "
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "type": "text",
+       "text": "break and & © © ©   entities."
+      }
+     ]
+    },
+    {
+     "type": "rawBlock",
+     "attrs": {
+      "text": "<script>alert(1)</script>"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "links.md",
+  "body": "[inline](https://example.org \"Title\") [ref][r] [collapsed][] [r]\n<https://auto.example.org> <mail@example.org> https://bare.example.org\n![image](pic.png \"Pic\") ![alt text][img]\n[[Page]] [[Page|Alias]] [[Folder/Page#Heading|Shown]] ![[embed.png]] ![[Note]]\n[[Unclosed and [[Nested]]\n[link with [brackets]](url) [empty]()\n[%EC%9D%B8%EC%BD%94%EB%94%A9](https://example.org/%EA%B0%80?q=1&x=2)\n\n[r]: https://ref.example.org \"Ref title\"\n[img]: img.png\n[collapsed]: /path\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "inline",
+       "marks": [
+        {
+         "type": "link",
+         "attrs": {
+          "href": "https://example.org"
+         }
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "ref",
+       "marks": [
+        {
+         "type": "link",
+         "attrs": {
+          "href": "https://ref.example.org"
+         }
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "collapsed",
+       "marks": [
+        {
+         "type": "link",
+         "attrs": {
+          "href": "/path"
+         }
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "r",
+       "marks": [
+        {
+         "type": "link",
+         "attrs": {
+          "href": "https://ref.example.org"
+         }
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "https://auto.example.org",
+       "marks": [
+        {
+         "type": "link",
+         "attrs": {
+          "href": "https://auto.example.org"
+         }
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "mail@example.org",
+       "marks": [
+        {
+         "type": "link",
+         "attrs": {
+          "href": "mailto:mail@example.org"
+         }
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " https://bare.example.org"
+      }
+     ]
+    },
+    {
+     "type": "image",
+     "attrs": {
+      "fileId": null,
+      "src": "pic.png",
+      "alt": "image"
+     }
+    },
+    {
+     "type": "image",
+     "attrs": {
+      "fileId": null,
+      "src": "img.png",
+      "alt": "alt text"
+     }
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "Page",
+        "target": "Page"
+       }
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "Alias",
+        "target": "Page",
+        "alias": "Alias"
+       }
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "Shown",
+        "target": "Folder/Page",
+        "anchor": "Heading",
+        "alias": "Shown"
+       }
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "embed.png",
+        "target": "embed.png",
+        "embed": true
+       }
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "Note",
+        "target": "Note",
+        "embed": true
+       }
+      },
+      {
+       "type": "text",
+       "text": " [[Unclosed and "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "Nested",
+        "target": "Nested"
+       }
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "link with [brackets]",
+       "marks": [
+        {
+         "type": "link",
+         "attrs": {
+          "href": "url"
+         }
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "empty",
+       "marks": [
+        {
+         "type": "link",
+         "attrs": {
+          "href": ""
+         }
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "%EC%9D%B8%EC%BD%94%EB%94%A9",
+       "marks": [
+        {
+         "type": "link",
+         "attrs": {
+          "href": "https://example.org/%EA%B0%80?q=1&x=2"
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "markdown": "[inline](https://example.org) [ref](https://ref.example.org) [collapsed](/path) [r](https://ref.example.org) [https://auto.example.org](https://auto.example.org) [mail@example.org](mailto:mail@example.org) https://bare.example.org\n\n![image](pic.png)\n\n![alt text](img.png)\n\n[[Page]] [[Page|Alias]] [[Folder/Page#Heading|Shown]] ![[embed.png]] ![[Note]] \\[[Unclosed and [[Nested]] [link with [brackets]](url) [empty]() [%EC%9D%B8%EC%BD%94%EB%94%A9](https://example.org/%EA%B0%80?q=1&x=2)\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "inline",
+       "marks": [
+        {
+         "type": "link",
+         "attrs": {
+          "href": "https://example.org"
+         }
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "ref",
+       "marks": [
+        {
+         "type": "link",
+         "attrs": {
+          "href": "https://ref.example.org"
+         }
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "collapsed",
+       "marks": [
+        {
+         "type": "link",
+         "attrs": {
+          "href": "/path"
+         }
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "r",
+       "marks": [
+        {
+         "type": "link",
+         "attrs": {
+          "href": "https://ref.example.org"
+         }
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "https://auto.example.org",
+       "marks": [
+        {
+         "type": "link",
+         "attrs": {
+          "href": "https://auto.example.org"
+         }
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "mail@example.org",
+       "marks": [
+        {
+         "type": "link",
+         "attrs": {
+          "href": "mailto:mail@example.org"
+         }
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " https://bare.example.org"
+      }
+     ]
+    },
+    {
+     "type": "image",
+     "attrs": {
+      "fileId": null,
+      "src": "pic.png",
+      "alt": "image"
+     }
+    },
+    {
+     "type": "image",
+     "attrs": {
+      "fileId": null,
+      "src": "img.png",
+      "alt": "alt text"
+     }
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "Page",
+        "target": "Page"
+       }
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "Alias",
+        "target": "Page",
+        "alias": "Alias"
+       }
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "Shown",
+        "target": "Folder/Page",
+        "anchor": "Heading",
+        "alias": "Shown"
+       }
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "embed.png",
+        "target": "embed.png",
+        "embed": true
+       }
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "Note",
+        "target": "Note",
+        "embed": true
+       }
+      },
+      {
+       "type": "text",
+       "text": " [[Unclosed and "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "Nested",
+        "target": "Nested"
+       }
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "link with [brackets]",
+       "marks": [
+        {
+         "type": "link",
+         "attrs": {
+          "href": "url"
+         }
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "empty",
+       "marks": [
+        {
+         "type": "link",
+         "attrs": {
+          "href": ""
+         }
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " "
+      },
+      {
+       "type": "text",
+       "text": "%EC%9D%B8%EC%BD%94%EB%94%A9",
+       "marks": [
+        {
+         "type": "link",
+         "attrs": {
+          "href": "https://example.org/%EA%B0%80?q=1&x=2"
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "name": "lists.md",
+  "body": "- one\n- two\n  - nested a\n  - nested b\n    1. deep one\n    2. deep two\n- three\n\n* loose item\n\n* second loose item\n\n  continued paragraph\n\n3. starts at three\n4. four\n\n1) paren list\n2) second\n\n- [ ] open task\n- [x] done task\n- [X] capital done\n  - [ ] nested task\n- plain after tasks\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "bulletList",
+     "content": [
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "one"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "two"
+          }
+         ]
+        },
+        {
+         "type": "bulletList",
+         "content": [
+          {
+           "type": "listItem",
+           "content": [
+            {
+             "type": "paragraph",
+             "content": [
+              {
+               "type": "text",
+               "text": "nested a"
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "type": "listItem",
+           "content": [
+            {
+             "type": "paragraph",
+             "content": [
+              {
+               "type": "text",
+               "text": "nested b"
+              }
+             ]
+            },
+            {
+             "type": "orderedList",
+             "attrs": {
+              "start": 1
+             },
+             "content": [
+              {
+               "type": "listItem",
+               "content": [
+                {
+                 "type": "paragraph",
+                 "content": [
+                  {
+                   "type": "text",
+                   "text": "deep one"
+                  }
+                 ]
+                }
+               ]
+              },
+              {
+               "type": "listItem",
+               "content": [
+                {
+                 "type": "paragraph",
+                 "content": [
+                  {
+                   "type": "text",
+                   "text": "deep two"
+                  }
+                 ]
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "three"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "bulletList",
+     "content": [
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "loose item"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "second loose item"
+          }
+         ]
+        },
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "continued paragraph"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "orderedList",
+     "attrs": {
+      "start": 3
+     },
+     "content": [
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "starts at three"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "four"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "orderedList",
+     "attrs": {
+      "start": 1
+     },
+     "content": [
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "paren list"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "second"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "taskList",
+     "content": [
+      {
+       "type": "taskItem",
+       "attrs": {
+        "checked": false
+       },
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "open task"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "taskItem",
+       "attrs": {
+        "checked": true
+       },
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "done task"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "taskItem",
+       "attrs": {
+        "checked": true
+       },
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "capital done"
+          }
+         ]
+        },
+        {
+         "type": "taskList",
+         "content": [
+          {
+           "type": "taskItem",
+           "attrs": {
+            "checked": false
+           },
+           "content": [
+            {
+             "type": "paragraph",
+             "content": [
+              {
+               "type": "text",
+               "text": "nested task"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "bulletList",
+     "content": [
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "plain after tasks"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "markdown": "- one\n- two\n  - nested a\n  - nested b\n    1. deep one\n    2. deep two\n- three\n\n- loose item\n- second loose item\n\n  continued paragraph\n\n3. starts at three\n4. four\n\n1. paren list\n2. second\n\n- [ ] open task\n- [x] done task\n- [x] capital done\n  - [ ] nested task\n\n- plain after tasks\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "bulletList",
+     "content": [
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "one"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "two"
+          }
+         ]
+        },
+        {
+         "type": "bulletList",
+         "content": [
+          {
+           "type": "listItem",
+           "content": [
+            {
+             "type": "paragraph",
+             "content": [
+              {
+               "type": "text",
+               "text": "nested a"
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "type": "listItem",
+           "content": [
+            {
+             "type": "paragraph",
+             "content": [
+              {
+               "type": "text",
+               "text": "nested b"
+              }
+             ]
+            },
+            {
+             "type": "orderedList",
+             "attrs": {
+              "start": 1
+             },
+             "content": [
+              {
+               "type": "listItem",
+               "content": [
+                {
+                 "type": "paragraph",
+                 "content": [
+                  {
+                   "type": "text",
+                   "text": "deep one"
+                  }
+                 ]
+                }
+               ]
+              },
+              {
+               "type": "listItem",
+               "content": [
+                {
+                 "type": "paragraph",
+                 "content": [
+                  {
+                   "type": "text",
+                   "text": "deep two"
+                  }
+                 ]
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "three"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "loose item"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "second loose item"
+          }
+         ]
+        },
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "continued paragraph"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "orderedList",
+     "attrs": {
+      "start": 3
+     },
+     "content": [
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "starts at three"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "four"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "paren list"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "second"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "taskList",
+     "content": [
+      {
+       "type": "taskItem",
+       "attrs": {
+        "checked": false
+       },
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "open task"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "taskItem",
+       "attrs": {
+        "checked": true
+       },
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "done task"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "taskItem",
+       "attrs": {
+        "checked": true
+       },
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "capital done"
+          }
+         ]
+        },
+        {
+         "type": "taskList",
+         "content": [
+          {
+           "type": "taskItem",
+           "attrs": {
+            "checked": false
+           },
+           "content": [
+            {
+             "type": "paragraph",
+             "content": [
+              {
+               "type": "text",
+               "text": "nested task"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "bulletList",
+     "content": [
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "plain after tasks"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "name": "math.md",
+  "body": "Inline $x^2$ and $$display inline$$ and prices $5 and $10 stay.\nEscaped \\$ dollar and $ spaced $ not math.\n\n$$\n\\int_0^1 x\\,dx\n$$\n\n$$e = mc^2$$\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Inline "
+      },
+      {
+       "type": "inlineMath",
+       "attrs": {
+        "latex": "x^2"
+       }
+      },
+      {
+       "type": "text",
+       "text": " and "
+      },
+      {
+       "type": "inlineMath",
+       "attrs": {
+        "latex": "display inline"
+       }
+      },
+      {
+       "type": "text",
+       "text": " and prices $5 and $10 stay. Escaped $ dollar and $ spaced $ not math."
+      }
+     ]
+    },
+    {
+     "type": "blockMath",
+     "attrs": {
+      "latex": "\\int_0^1 x\\,dx"
+     }
+    },
+    {
+     "type": "blockMath",
+     "attrs": {
+      "latex": "e = mc^2"
+     }
+    }
+   ]
+  },
+  "markdown": "Inline $x^2$ and $display inline$ and prices $5 and $10 stay. Escaped $ dollar and $ spaced $ not math.\n\n$$\n\\int_0^1 x\\,dx\n$$\n\n$$\ne = mc^2\n$$\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Inline "
+      },
+      {
+       "type": "inlineMath",
+       "attrs": {
+        "latex": "x^2"
+       }
+      },
+      {
+       "type": "text",
+       "text": " and "
+      },
+      {
+       "type": "inlineMath",
+       "attrs": {
+        "latex": "display inline"
+       }
+      },
+      {
+       "type": "text",
+       "text": " and prices $5 and $10 stay. Escaped $ dollar and $ spaced $ not math."
+      }
+     ]
+    },
+    {
+     "type": "blockMath",
+     "attrs": {
+      "latex": "\\int_0^1 x\\,dx"
+     }
+    },
+    {
+     "type": "blockMath",
+     "attrs": {
+      "latex": "e = mc^2"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "no-frontmatter-dashes.md",
+  "body": "Text first\n---\nnot frontmatter\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 2
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "Text first"
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "not frontmatter"
+      }
+     ]
+    }
+   ]
+  },
+  "markdown": "## Text first\n\nnot frontmatter\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 2
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "Text first"
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "not frontmatter"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "name": "quotes-callouts.md",
+  "body": "> plain quote\n> second line\n>\n> second paragraph\n\n> [!note] A note\n> body text\n\n> [!WARNING]- Folded warning\n> hidden\n\n> [!tip]+ Open tip with **bold** title\n> - list in callout\n\n> [!custom-type]\n> unknown type\n\n>> nested quote\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "blockquote",
+     "content": [
+      {
+       "type": "paragraph",
+       "content": [
+        {
+         "type": "text",
+         "text": "plain quote second line"
+        }
+       ]
+      },
+      {
+       "type": "paragraph",
+       "content": [
+        {
+         "type": "text",
+         "text": "second paragraph"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "callout",
+     "attrs": {
+      "tone": "note",
+      "kind": "note",
+      "title": "A note"
+     },
+     "content": [
+      {
+       "type": "paragraph",
+       "content": [
+        {
+         "type": "text",
+         "text": "body text"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "callout",
+     "attrs": {
+      "tone": "warning",
+      "kind": "warning",
+      "title": "Folded warning",
+      "fold": "-"
+     },
+     "content": [
+      {
+       "type": "paragraph",
+       "content": [
+        {
+         "type": "text",
+         "text": "hidden"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "callout",
+     "attrs": {
+      "tone": "tip",
+      "kind": "tip",
+      "title": "Open tip with bold title",
+      "fold": "+"
+     },
+     "content": [
+      {
+       "type": "bulletList",
+       "content": [
+        {
+         "type": "listItem",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "list in callout"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "callout",
+     "attrs": {
+      "tone": "note",
+      "kind": "custom-type"
+     },
+     "content": [
+      {
+       "type": "paragraph",
+       "content": [
+        {
+         "type": "text",
+         "text": "unknown type"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "blockquote",
+     "content": [
+      {
+       "type": "blockquote",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "nested quote"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "markdown": "> plain quote second line\n>\n> second paragraph\n\n> [!note] A note\n> body text\n\n> [!warning]- Folded warning\n> hidden\n\n> [!tip]+ Open tip with bold title\n> - list in callout\n\n> [!custom-type]\n> unknown type\n\n> > nested quote\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "blockquote",
+     "content": [
+      {
+       "type": "paragraph",
+       "content": [
+        {
+         "type": "text",
+         "text": "plain quote second line"
+        }
+       ]
+      },
+      {
+       "type": "paragraph",
+       "content": [
+        {
+         "type": "text",
+         "text": "second paragraph"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "callout",
+     "attrs": {
+      "tone": "note",
+      "kind": "note",
+      "title": "A note"
+     },
+     "content": [
+      {
+       "type": "paragraph",
+       "content": [
+        {
+         "type": "text",
+         "text": "body text"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "callout",
+     "attrs": {
+      "tone": "warning",
+      "kind": "warning",
+      "title": "Folded warning",
+      "fold": "-"
+     },
+     "content": [
+      {
+       "type": "paragraph",
+       "content": [
+        {
+         "type": "text",
+         "text": "hidden"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "callout",
+     "attrs": {
+      "tone": "tip",
+      "kind": "tip",
+      "title": "Open tip with bold title",
+      "fold": "+"
+     },
+     "content": [
+      {
+       "type": "bulletList",
+       "content": [
+        {
+         "type": "listItem",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "list in callout"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "callout",
+     "attrs": {
+      "tone": "note",
+      "kind": "custom-type"
+     },
+     "content": [
+      {
+       "type": "paragraph",
+       "content": [
+        {
+         "type": "text",
+         "text": "unknown type"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "blockquote",
+     "content": [
+      {
+       "type": "blockquote",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "nested quote"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "name": "tables.md",
+  "body": "| Left | Center | Right |\n|:-----|:------:|------:|\n| a | b | c |\n| escaped \\| pipe | `code | pipe` | [[Link\\|Alias]] |\n| missing |\n| too | many | cells | here |\n\n| only header |\n| --- |\n\nnot | a | table\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "table",
+     "content": [
+      {
+       "type": "tableRow",
+       "content": [
+        {
+         "type": "tableHeader",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "Left"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "tableHeader",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "Center"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "tableHeader",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "Right"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "tableRow",
+       "content": [
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "a"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "b"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "c"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "tableRow",
+       "content": [
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "escaped | pipe"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "`code"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "pipe`"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "tableRow",
+       "content": [
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "missing"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": []
+          }
+         ]
+        },
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": []
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "tableRow",
+       "content": [
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "too"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "many"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "cells"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "table",
+     "content": [
+      {
+       "type": "tableRow",
+       "content": [
+        {
+         "type": "tableHeader",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "only header"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "not | a | table"
+      }
+     ]
+    }
+   ]
+  },
+  "markdown": "| Left | Center | Right |\n| --- | --- | --- |\n| a | b | c |\n| escaped \\| pipe | \\`code | pipe\\` |\n| missing |  |  |\n| too | many | cells |\n\n| only header |\n| --- |\n\nnot | a | table\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "table",
+     "content": [
+      {
+       "type": "tableRow",
+       "content": [
+        {
+         "type": "tableHeader",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "Left"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "tableHeader",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "Center"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "tableHeader",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "Right"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "tableRow",
+       "content": [
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "a"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "b"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "c"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "tableRow",
+       "content": [
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "escaped | pipe"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "`code"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "pipe`"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "tableRow",
+       "content": [
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "missing"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": []
+          }
+         ]
+        },
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": []
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "tableRow",
+       "content": [
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "too"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "many"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "cells"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "table",
+     "content": [
+      {
+       "type": "tableRow",
+       "content": [
+        {
+         "type": "tableHeader",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "only header"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "not | a | table"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "name": "tasks-dates.md",
+  "body": "- [ ] Water the tomatoes [[2026-10-20]]\n- [x] Done [[2026-10-19]]\nMention @today stays text.\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "taskList",
+     "content": [
+      {
+       "type": "taskItem",
+       "attrs": {
+        "checked": false
+       },
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "Water the tomatoes "
+          },
+          {
+           "type": "dateMention",
+           "attrs": {
+            "date": "2026-10-20"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "taskItem",
+       "attrs": {
+        "checked": true
+       },
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "Done "
+          },
+          {
+           "type": "dateMention",
+           "attrs": {
+            "date": "2026-10-19"
+           }
+          },
+          {
+           "type": "text",
+           "text": " Mention @today stays text."
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "markdown": "- [ ] Water the tomatoes [[2026-10-20]]\n- [x] Done [[2026-10-19]] Mention @today stays text.\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "taskList",
+     "content": [
+      {
+       "type": "taskItem",
+       "attrs": {
+        "checked": false
+       },
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "Water the tomatoes "
+          },
+          {
+           "type": "dateMention",
+           "attrs": {
+            "date": "2026-10-20"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "taskItem",
+       "attrs": {
+        "checked": true
+       },
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "Done "
+          },
+          {
+           "type": "dateMention",
+           "attrs": {
+            "date": "2026-10-19"
+           }
+          },
+          {
+           "type": "text",
+           "text": " Mention @today stays text."
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "name": "unknown-blocks.md",
+  "body": "Paragraph.\n\n<custom-block data=\"x\">raw</custom-block>\n\n[^1]: footnote definition\n\nText with footnote[^1].\n\nTerm\n: definition\n\n%% obsidian comment %%\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Paragraph."
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "<custom-block data=\"x\">raw</custom-block>"
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "[^1]: footnote definition"
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Text with footnote[^1]."
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Term : definition"
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "%% obsidian comment %%"
+      }
+     ]
+    }
+   ]
+  },
+  "markdown": "Paragraph.\n\n\\<custom-block data=\"x\">raw\\</custom-block>\n\n\\[^1]: footnote definition\n\nText with footnote[^1].\n\nTerm : definition\n\n%% obsidian comment %%\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Paragraph."
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "<custom-block data=\"x\">raw</custom-block>"
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "[^1]: footnote definition"
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Text with footnote[^1]."
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Term : definition"
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "%% obsidian comment %%"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "name": "whitespace.md",
+  "body": "\n   leading spaces paragraph\n\ntrailing spaces   \n\n\ttab indented\n\nmultiple\n\n\nblank lines\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "leading spaces paragraph"
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "trailing spaces"
+      }
+     ]
+    },
+    {
+     "type": "codeBlock",
+     "attrs": {
+      "language": null
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "tab indented"
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "multiple"
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "blank lines"
+      }
+     ]
+    }
+   ]
+  },
+  "markdown": "leading spaces paragraph\n\ntrailing spaces\n\n```\ntab indented\n```\n\nmultiple\n\nblank lines\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "leading spaces paragraph"
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "trailing spaces"
+      }
+     ]
+    },
+    {
+     "type": "codeBlock",
+     "attrs": {
+      "language": null
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "tab indented"
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "multiple"
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "blank lines"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "name": "morrow-note.md",
+  "body": "## Weekly review\n\nShipped the **sidebar** rewrite, fixed *two* bugs and wrote `docs`. See [the plan](https://example.org/plan).\n\nAlso <u>underlined</u> and ~~struck~~ text.\n\n- Groceries\n  - oat milk\n  - bread\n- Post office\n\n1. Draft\n2. Edit\n3. Publish\n\n- [x] Book train tickets\n- [ ] Call the landlord\n\n> Simplicity is prerequisite for reliability.\n\n```ts\nconst answer = 42;\n```\n\n---\n\n| Book | Author |\n| --- | --- |\n| Middlemarch | George Eliot |\n| Piranesi | Susanna Clarke |\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 2
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "Weekly review"
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Shipped the "
+      },
+      {
+       "type": "text",
+       "text": "sidebar",
+       "marks": [
+        {
+         "type": "bold"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " rewrite, fixed "
+      },
+      {
+       "type": "text",
+       "text": "two",
+       "marks": [
+        {
+         "type": "italic"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " bugs and wrote "
+      },
+      {
+       "type": "text",
+       "text": "docs",
+       "marks": [
+        {
+         "type": "code"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": ". See "
+      },
+      {
+       "type": "text",
+       "text": "the plan",
+       "marks": [
+        {
+         "type": "link",
+         "attrs": {
+          "href": "https://example.org/plan"
+         }
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": "."
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Also "
+      },
+      {
+       "type": "text",
+       "text": "underlined",
+       "marks": [
+        {
+         "type": "underline"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " and "
+      },
+      {
+       "type": "text",
+       "text": "struck",
+       "marks": [
+        {
+         "type": "strike"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " text."
+      }
+     ]
+    },
+    {
+     "type": "bulletList",
+     "content": [
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "Groceries"
+          }
+         ]
+        },
+        {
+         "type": "bulletList",
+         "content": [
+          {
+           "type": "listItem",
+           "content": [
+            {
+             "type": "paragraph",
+             "content": [
+              {
+               "type": "text",
+               "text": "oat milk"
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "type": "listItem",
+           "content": [
+            {
+             "type": "paragraph",
+             "content": [
+              {
+               "type": "text",
+               "text": "bread"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "Post office"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "orderedList",
+     "attrs": {
+      "start": 1
+     },
+     "content": [
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "Draft"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "Edit"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "Publish"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "taskList",
+     "content": [
+      {
+       "type": "taskItem",
+       "attrs": {
+        "checked": true
+       },
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "Book train tickets"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "taskItem",
+       "attrs": {
+        "checked": false
+       },
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "Call the landlord"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "blockquote",
+     "content": [
+      {
+       "type": "paragraph",
+       "content": [
+        {
+         "type": "text",
+         "text": "Simplicity is prerequisite for reliability."
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "codeBlock",
+     "attrs": {
+      "language": "ts"
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "const answer = 42;"
+      }
+     ]
+    },
+    {
+     "type": "horizontalRule"
+    },
+    {
+     "type": "table",
+     "content": [
+      {
+       "type": "tableRow",
+       "content": [
+        {
+         "type": "tableHeader",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "Book"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "tableHeader",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "Author"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "tableRow",
+       "content": [
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "Middlemarch"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "George Eliot"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "tableRow",
+       "content": [
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "Piranesi"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "Susanna Clarke"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "markdown": "## Weekly review\n\nShipped the **sidebar** rewrite, fixed *two* bugs and wrote `docs`. See [the plan](https://example.org/plan).\n\nAlso <u>underlined</u> and ~~struck~~ text.\n\n- Groceries\n  - oat milk\n  - bread\n- Post office\n\n1. Draft\n2. Edit\n3. Publish\n\n- [x] Book train tickets\n- [ ] Call the landlord\n\n> Simplicity is prerequisite for reliability.\n\n```ts\nconst answer = 42;\n```\n\n---\n\n| Book | Author |\n| --- | --- |\n| Middlemarch | George Eliot |\n| Piranesi | Susanna Clarke |\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 2
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "Weekly review"
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Shipped the "
+      },
+      {
+       "type": "text",
+       "text": "sidebar",
+       "marks": [
+        {
+         "type": "bold"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " rewrite, fixed "
+      },
+      {
+       "type": "text",
+       "text": "two",
+       "marks": [
+        {
+         "type": "italic"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " bugs and wrote "
+      },
+      {
+       "type": "text",
+       "text": "docs",
+       "marks": [
+        {
+         "type": "code"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": ". See "
+      },
+      {
+       "type": "text",
+       "text": "the plan",
+       "marks": [
+        {
+         "type": "link",
+         "attrs": {
+          "href": "https://example.org/plan"
+         }
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": "."
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Also "
+      },
+      {
+       "type": "text",
+       "text": "underlined",
+       "marks": [
+        {
+         "type": "underline"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " and "
+      },
+      {
+       "type": "text",
+       "text": "struck",
+       "marks": [
+        {
+         "type": "strike"
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": " text."
+      }
+     ]
+    },
+    {
+     "type": "bulletList",
+     "content": [
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "Groceries"
+          }
+         ]
+        },
+        {
+         "type": "bulletList",
+         "content": [
+          {
+           "type": "listItem",
+           "content": [
+            {
+             "type": "paragraph",
+             "content": [
+              {
+               "type": "text",
+               "text": "oat milk"
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "type": "listItem",
+           "content": [
+            {
+             "type": "paragraph",
+             "content": [
+              {
+               "type": "text",
+               "text": "bread"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "Post office"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "orderedList",
+     "attrs": {
+      "start": 1
+     },
+     "content": [
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "Draft"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "Edit"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "Publish"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "taskList",
+     "content": [
+      {
+       "type": "taskItem",
+       "attrs": {
+        "checked": true
+       },
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "Book train tickets"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "taskItem",
+       "attrs": {
+        "checked": false
+       },
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "Call the landlord"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "blockquote",
+     "content": [
+      {
+       "type": "paragraph",
+       "content": [
+        {
+         "type": "text",
+         "text": "Simplicity is prerequisite for reliability."
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "codeBlock",
+     "attrs": {
+      "language": "ts"
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "const answer = 42;"
+      }
+     ]
+    },
+    {
+     "type": "horizontalRule"
+    },
+    {
+     "type": "table",
+     "content": [
+      {
+       "type": "tableRow",
+       "content": [
+        {
+         "type": "tableHeader",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "Book"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "tableHeader",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "Author"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "tableRow",
+       "content": [
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "Middlemarch"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "George Eliot"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "tableRow",
+       "content": [
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "Piranesi"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "tableCell",
+         "content": [
+          {
+           "type": "paragraph",
+           "content": [
+            {
+             "type": "text",
+             "text": "Susanna Clarke"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "name": "obsidian/Welcome.md",
+  "body": "# Hello\n\nSee [[Projects/Garden|the garden]].\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 1
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "Hello"
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "See "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "the garden",
+        "target": "Projects/Garden",
+        "alias": "the garden"
+       }
+      },
+      {
+       "type": "text",
+       "text": "."
+      }
+     ]
+    }
+   ]
+  },
+  "markdown": "# Hello\n\nSee [[Projects/Garden|the garden]].\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "heading",
+     "attrs": {
+      "level": 1
+     },
+     "content": [
+      {
+       "type": "text",
+       "text": "Hello"
+      }
+     ]
+    },
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "See "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "the garden",
+        "target": "Projects/Garden",
+        "alias": "the garden"
+       }
+      },
+      {
+       "type": "text",
+       "text": "."
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "name": "obsidian/Projects.md",
+  "body": "All my projects.\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "All my projects."
+      }
+     ]
+    }
+   ]
+  },
+  "markdown": "All my projects.\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "All my projects."
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "name": "obsidian/Projects/Garden.md",
+  "body": "Back to [[Welcome]].\n\n* loose   formatting  kept\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Back to "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "Welcome",
+        "target": "Welcome"
+       }
+      },
+      {
+       "type": "text",
+       "text": "."
+      }
+     ]
+    },
+    {
+     "type": "bulletList",
+     "content": [
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "loose   formatting  kept"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "markdown": "Back to [[Welcome]].\n\n- loose   formatting  kept\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Back to "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "Welcome",
+        "target": "Welcome"
+       }
+      },
+      {
+       "type": "text",
+       "text": "."
+      }
+     ]
+    },
+    {
+     "type": "bulletList",
+     "content": [
+      {
+       "type": "listItem",
+       "content": [
+        {
+         "type": "paragraph",
+         "content": [
+          {
+           "type": "text",
+           "text": "loose   formatting  kept"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "name": "obsidian/Ideas/Loose idea.md",
+  "body": "Just a thought with ![[pic.png]]\n",
+  "doc": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Just a thought with "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "pic.png",
+        "target": "pic.png",
+        "embed": true
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "markdown": "Just a thought with ![[pic.png]]\n",
+  "reparsed": {
+   "type": "doc",
+   "content": [
+    {
+     "type": "paragraph",
+     "content": [
+      {
+       "type": "text",
+       "text": "Just a thought with "
+      },
+      {
+       "type": "pageLink",
+       "attrs": {
+        "id": null,
+        "label": "pic.png",
+        "target": "pic.png",
+        "embed": true
+       }
+      }
+     ]
+    }
+   ]
+  }
+ }
+]

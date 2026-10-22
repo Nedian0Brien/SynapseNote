@@ -1,0 +1,5 @@
+![[Board.canvas]]
+![[doc.pdf]]
+![[song.mp3]]
+![[movie.mp4]]
+![[Some Page#Section]]
