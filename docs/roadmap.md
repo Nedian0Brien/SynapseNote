@@ -9,7 +9,7 @@
 
 ## 단계
 
-각 단계는 `.intent/` 아래 intent → spec → plan을 남기고, 구현·검증 후 PR로 낸다. 상태는 해당 단계 PR과 `docs/verification/`로 확인한다.
+각 단계는 `.intent/` 아래 intent → spec → plan을 남기고, 구현·검증 후 PR로 낸다. 상태는 해당 단계 PR과 `docs/verification/`로 확인한다. 아래 PR 번호는 [SynapseNote-Native](https://github.com/Nedian0Brien/SynapseNote-Native) 저장소의 번호다(2026-10-22에 이 저장소로 옮김).
 
 | 단계 | 내용 | 상태 |
 |---|---|---|

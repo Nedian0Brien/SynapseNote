@@ -1,6 +1,6 @@
-# SynapseNote-Native
+# SynapseNote
 
-macOS, iPadOS, iOS용 SwiftUI 노트 앱. [Morrow](https://github.com/Aarav2709/Morrow)의 기능을 옮기며, 완성되면 기존 SynapseNote를 계승한다.
+macOS, iPadOS, iOS용 SwiftUI 노트 앱. [Morrow](https://github.com/Aarav2709/Morrow)의 기능을 옮겼다. SynapseNote-Native 저장소에서 만들었고, 2026-10-22에 이 저장소로 옮겨 기존 SynapseNote를 계승한다. 기존 SynapseNote(웹 편집기, CLI, 협업 서버, macOS 데스크톱 앱)는 [references/legacy/](references/legacy/)에 참고용으로 남겼다.
 
 화면, 편집기, 데이터 계층 모두 Swift로 작성했다. Morrow의 TypeScript 코드는 앱에 들어가지 않고, `web/`의 도구가 그 코드를 돌려 Swift 이식과 비교할 자료를 만든다.
 
@@ -16,7 +16,7 @@ macOS, iPadOS, iOS용 SwiftUI 노트 앱. [Morrow](https://github.com/Aarav2709/
 
 ```sh
 git clone <저장소 주소>
-cd SynapseNote-Native
+cd SynapseNote
 xcodegen generate
 open SynapseNote.xcodeproj
 ```
@@ -58,6 +58,7 @@ npm --prefix web test
 | `web/scripts` | 비교 자료와 위 파일을 만드는 도구 |
 | `web/src` | 질의 답(`queries.ts`)과 환영 안내 문구의 시험 |
 | `.intent` | 변경마다 남기는 intent, spec, plan |
+| `references/legacy` | 기존 SynapseNote 전체(옮기기 전 `main` ddabafa6). 빌드·CI 대상이 아니다 |
 
 ## 보안 설정
 
@@ -69,4 +70,4 @@ npm --prefix web test
 
 ## 라이선스
 
-이 저장소는 Apache License 2.0인 Morrow 코드를 포함한다. 출처와 바꾼 파일은 [NOTICE](NOTICE)에, Morrow 라이선스 전문은 [LICENSES/Morrow-Apache-2.0.txt](LICENSES/Morrow-Apache-2.0.txt)에 있다. 이 저장소 자체의 라이선스는 아직 정하지 않았다.
+이 저장소는 Apache License 2.0인 Morrow 코드를 포함한다. 출처와 바꾼 파일은 [NOTICE](NOTICE)에, Morrow 라이선스 전문은 [LICENSES/Morrow-Apache-2.0.txt](LICENSES/Morrow-Apache-2.0.txt)에 있다. 이 저장소 자체의 라이선스는 아직 정하지 않았다. `references/legacy/`의 기존 SynapseNote 코드는 [GPL-3.0](references/legacy/LICENSE)이다.
